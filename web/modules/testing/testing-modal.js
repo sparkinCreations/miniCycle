@@ -1052,7 +1052,33 @@ async function listAvailableBackups() {
     // ✅ IndexedDB backups (new system)
     if (deps.BackupManager) {
         try {
-            const { auto, manual } = await deps.BackupManager.listAllBackups();
+            const { auto, manual, session, test } = await deps.BackupManager.listAllBackups();
+
+            // Test backups (before running tests)
+            if (test && test.length > 0) {
+                appendToTestResults("🧪 Test Backups (Pre-Test - last 5):\n");
+                test.forEach(backup => {
+                    const date = new Date(backup.timestamp).toLocaleString();
+                    const size = (backup.metadata.size / 1024).toFixed(2);
+                    const cycles = backup.metadata.cycleCount || '?';
+                    appendToTestResults(`  - ${date} - ${size} KB (${cycles} cycles)\n`);
+                    totalBackups++;
+                });
+                appendToTestResults("\n");
+            }
+
+            // Session backups (most recent app opens)
+            if (session && session.length > 0) {
+                appendToTestResults("🚀 Session Backups (App Opens - last 5):\n");
+                session.forEach(backup => {
+                    const date = new Date(backup.timestamp).toLocaleString();
+                    const size = (backup.metadata.size / 1024).toFixed(2);
+                    const cycles = backup.metadata.cycleCount || '?';
+                    appendToTestResults(`  - ${date} - ${size} KB (${cycles} cycles)\n`);
+                    totalBackups++;
+                });
+                appendToTestResults("\n");
+            }
 
             if (auto.length > 0) {
                 appendToTestResults("💾 Auto-Backups (IndexedDB):\n");
@@ -1066,7 +1092,7 @@ async function listAvailableBackups() {
             }
 
             if (manual.length > 0) {
-                appendToTestResults("📌 Manual Backups (IndexedDB):\n");
+                appendToTestResults("📌 Manual Backups (IndexedDB - max 50):\n");
                 manual.forEach(backup => {
                     const date = new Date(backup.timestamp).toLocaleString();
                     const size = (backup.metadata.size / 1024).toFixed(2);
@@ -1130,7 +1156,37 @@ async function restoreFromBackup() {
     // Load IndexedDB backups
     if (deps.BackupManager) {
         try {
-            const { auto, manual } = await deps.BackupManager.listAllBackups();
+            const { auto, manual, session, test } = await deps.BackupManager.listAllBackups();
+
+            // Add test backups (before running tests)
+            if (test) {
+                test.forEach(backup => {
+                    allBackups.push({
+                        type: 'indexeddb-test',
+                        timestamp: backup.timestamp,
+                        id: backup.timestamp,
+                        name: `Test Backup ${new Date(backup.timestamp).toLocaleString()}`,
+                        size: backup.metadata.size,
+                        data: null, // Will load on restore
+                        metadata: backup.metadata
+                    });
+                });
+            }
+
+            // Add session backups (most recent app opens)
+            if (session) {
+                session.forEach(backup => {
+                    allBackups.push({
+                        type: 'indexeddb-session',
+                        timestamp: backup.timestamp,
+                        id: backup.timestamp,
+                        name: `Session Backup ${new Date(backup.timestamp).toLocaleString()}`,
+                        size: backup.metadata.size,
+                        data: null, // Will load on restore
+                        metadata: backup.metadata
+                    });
+                });
+            }
 
             // Add auto-backups
             auto.forEach(backup => {
@@ -1369,7 +1425,9 @@ async function restoreFromBackup() {
         if (!selectedBackup) return;
 
         const backupDate = new Date(selectedBackup.timestamp).toLocaleString();
-        const backupType = selectedBackup.type.includes('auto') ? 'AUTO' : 'MANUAL';
+        const backupType = selectedBackup.type.includes('test') ? 'TEST' :
+                           selectedBackup.type.includes('session') ? 'SESSION' :
+                           selectedBackup.type.includes('auto') ? 'AUTO' : 'MANUAL';
         const storage = selectedBackup.type.includes('indexeddb') ? 'IndexedDB' : 'localStorage';
 
         safeShowConfirmationModal({
@@ -1422,7 +1480,9 @@ async function restoreFromBackup() {
 
                     // ✅ Handle IndexedDB backups
                     if (selectedBackup.type.includes('indexeddb')) {
-                        const backupType = selectedBackup.type === 'indexeddb-auto' ? 'auto' : 'manual';
+                        const backupType = selectedBackup.type === 'indexeddb-test' ? 'test' :
+                                           selectedBackup.type === 'indexeddb-session' ? 'session' :
+                                           selectedBackup.type === 'indexeddb-auto' ? 'auto' : 'manual';
                         restoredData = await deps.BackupManager.restoreBackup(selectedBackup.id, backupType);
 
                         if (!restoredData) {

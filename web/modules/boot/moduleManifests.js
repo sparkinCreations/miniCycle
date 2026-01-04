@@ -418,7 +418,7 @@ export const MODULE_MANIFESTS = {
     testingModalIntegration: {
         path: '../testing/testing-modal-integration.js',
         phase: PHASES.TESTING,
-        requires: ['safeAddEventListenerById', 'showNotification', 'AppState'],
+        requires: ['safeAddEventListenerById', 'showNotification', 'AppState', 'backupManager'],
         provides: ['runAllAutomatedTests'],
         api: 'testing',
         optional: true
@@ -428,7 +428,7 @@ export const MODULE_MANIFESTS = {
         path: '../storage/backupManager.js',
         phase: PHASES.TESTING,
         requires: ['AppState'],
-        provides: ['BackupManager'],
+        provides: ['backupManager'],
         api: 'storage',
         optional: true,
         singleton: true

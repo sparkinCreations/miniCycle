@@ -14,7 +14,8 @@
 let _deps = {
     safeAddEventListenerById: null,
     showNotification: null,
-    AppState: null
+    AppState: null,
+    backupManager: null
 };
 
 /**
@@ -40,6 +41,10 @@ function getShowNotification() {
 
 function getAppState() {
     return _deps.AppState;
+}
+
+function getBackupManager() {
+    return _deps.backupManager;
 }
 
 // Setup automated testing event listeners
@@ -376,6 +381,21 @@ async function runAllAutomatedTests() {
             console.log('💾 Forced AppState save before tests');
         } catch (e) {
             console.warn('Could not force save AppState:', e);
+        }
+    }
+
+    // Create a test backup before running tests (for recovery if needed)
+    const backupManager = getBackupManager();
+    if (backupManager) {
+        try {
+            const created = await backupManager.createTestBackup();
+            if (created) {
+                appendToAutomatedTestResults("💾 Test backup created (recoverable from Restore Backups)\n");
+            } else {
+                appendToAutomatedTestResults("💾 Using recent test backup (< 5 min old)\n");
+            }
+        } catch (e) {
+            console.warn('Could not create test backup:', e);
         }
     }
 
