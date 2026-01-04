@@ -44,11 +44,18 @@ export function setBackupManagerDependencies(dependencies) {
 // ==========================================
 
 const DB_NAME = 'miniCycle_backups';
-const DB_VERSION = 1;
+const DB_VERSION = 3; // Bumped for test_backups store
 const AUTO_BACKUP_STORE = 'auto_backups';
 const MANUAL_BACKUP_STORE = 'manual_backups';
+const SESSION_BACKUP_STORE = 'session_backups'; // Backups on every app open
+const TEST_BACKUP_STORE = 'test_backups'; // Backups before running tests
 const MAX_AUTO_BACKUPS = 10; // Keep last 10 auto-backups
+const MAX_SESSION_BACKUPS = 5; // Keep last 5 session backups
+const MAX_TEST_BACKUPS = 5; // Keep last 5 test backups
+const MAX_MANUAL_BACKUPS = 50; // Keep last 50 manual backups
 const BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000; // Only backup once per day
+const MIN_SESSION_INTERVAL_MS = 5 * 60 * 1000; // Skip session backup if last was < 5 min ago
+const MIN_TEST_INTERVAL_MS = 5 * 60 * 1000; // Skip test backup if last was < 5 min ago
 
 class BackupManager {
     constructor() {
@@ -109,6 +116,20 @@ class BackupManager {
                     manualStore.createIndex('timestamp', 'timestamp', { unique: false });
                     manualStore.createIndex('name', 'name', { unique: false });
                     console.log('✅ Created manual_backups store');
+                }
+
+                // Create session-backups store (v2) - backups on every app open
+                if (!db.objectStoreNames.contains(SESSION_BACKUP_STORE)) {
+                    const sessionStore = db.createObjectStore(SESSION_BACKUP_STORE, { keyPath: 'timestamp' });
+                    sessionStore.createIndex('timestamp', 'timestamp', { unique: true });
+                    console.log('✅ Created session_backups store');
+                }
+
+                // Create test-backups store (v3) - backups before running tests
+                if (!db.objectStoreNames.contains(TEST_BACKUP_STORE)) {
+                    const testStore = db.createObjectStore(TEST_BACKUP_STORE, { keyPath: 'timestamp' });
+                    testStore.createIndex('timestamp', 'timestamp', { unique: true });
+                    console.log('✅ Created test_backups store');
                 }
             };
         });
@@ -176,6 +197,192 @@ class BackupManager {
     }
 
     /**
+     * Create a session backup (runs on every app open)
+     * Skips if last session backup was less than 5 minutes ago.
+     * Keeps only the last 5 backups for quick recovery.
+     * @returns {Promise<boolean>}
+     */
+    async createSessionBackup() {
+        try {
+            await this.init();
+
+            // Skip if last session backup was recent (avoid duplicates on rapid app opens)
+            const lastSessionBackup = await this.getLastBackupFromStore(SESSION_BACKUP_STORE);
+            if (lastSessionBackup) {
+                const timeSinceLastBackup = Date.now() - lastSessionBackup.timestamp;
+                if (timeSinceLastBackup < MIN_SESSION_INTERVAL_MS) {
+                    console.log(`⏭️ BackupManager: Skipping session backup (last was ${Math.round(timeSinceLastBackup / 1000)}s ago)`);
+                    return false;
+                }
+            }
+
+            // Get current app state (DI-pure)
+            const AppState = this._getAppState();
+            if (!AppState?.isReady?.()) {
+                console.warn('⚠️ BackupManager: AppState not ready, skipping session backup');
+                return false;
+            }
+
+            const currentState = AppState.get();
+            if (!currentState) {
+                console.warn('⚠️ BackupManager: No state data available for session backup');
+                return false;
+            }
+
+            // Check if data is meaningful (has at least one cycle)
+            const cycleCount = Object.keys(currentState?.data?.cycles || {}).length;
+            if (cycleCount === 0) {
+                console.log('⏭️ BackupManager: Skipping session backup (no cycles to backup)');
+                return false;
+            }
+
+            const timestamp = Date.now();
+            const backup = {
+                timestamp,
+                data: currentState,
+                metadata: {
+                    version: currentState.metadata?.version || '1.371',
+                    schemaVersion: currentState.metadata?.schemaVersion || '2.5',
+                    size: JSON.stringify(currentState).length,
+                    type: 'session',
+                    created: new Date(timestamp).toISOString(),
+                    cycleCount
+                }
+            };
+
+            // Save to IndexedDB
+            await this.saveBackup(SESSION_BACKUP_STORE, backup);
+
+            // Clean up old session backups (keep only last 5)
+            await this.enforceSessionRetentionPolicy();
+
+            console.log(`✅ BackupManager: Session backup created (${(backup.metadata.size / 1024).toFixed(2)} KB, ${cycleCount} cycles)`);
+            return true;
+
+        } catch (error) {
+            console.error('❌ BackupManager: Session backup failed', error);
+            return false;
+        }
+    }
+
+    /**
+     * Enforce session backup retention: keep only last N session backups
+     * @private
+     */
+    async enforceSessionRetentionPolicy() {
+        try {
+            const sessionBackups = await this.getBackupsFromStore(SESSION_BACKUP_STORE);
+
+            if (sessionBackups.length > MAX_SESSION_BACKUPS) {
+                // Delete oldest backups
+                const toDelete = sessionBackups.slice(MAX_SESSION_BACKUPS);
+
+                for (const backup of toDelete) {
+                    await this.deleteBackup(backup.timestamp, 'session');
+                }
+
+                console.log(`🧹 BackupManager: Cleaned up ${toDelete.length} old session backups`);
+            }
+
+        } catch (error) {
+            console.error('❌ BackupManager: Session retention policy enforcement failed', error);
+        }
+    }
+
+    /**
+     * Create a test backup (runs before test execution)
+     * Skips if last test backup was less than 5 minutes ago.
+     * Keeps only the last 5 backups for test recovery.
+     * @returns {Promise<boolean>}
+     */
+    async createTestBackup() {
+        try {
+            await this.init();
+
+            // Skip if last test backup was recent (avoid duplicates on rapid test runs)
+            const lastTestBackup = await this.getLastBackupFromStore(TEST_BACKUP_STORE);
+            if (lastTestBackup) {
+                const timeSinceLastBackup = Date.now() - lastTestBackup.timestamp;
+                if (timeSinceLastBackup < MIN_TEST_INTERVAL_MS) {
+                    console.log(`⏭️ BackupManager: Skipping test backup (last was ${Math.round(timeSinceLastBackup / 1000)}s ago)`);
+                    return false;
+                }
+            }
+
+            // Get current app state (DI-pure)
+            const AppState = this._getAppState();
+            if (!AppState?.isReady?.()) {
+                console.warn('⚠️ BackupManager: AppState not ready, skipping test backup');
+                return false;
+            }
+
+            const currentState = AppState.get();
+            if (!currentState) {
+                console.warn('⚠️ BackupManager: No state data available for test backup');
+                return false;
+            }
+
+            // Check if data is meaningful (has at least one cycle)
+            const cycleCount = Object.keys(currentState?.data?.cycles || {}).length;
+            if (cycleCount === 0) {
+                console.log('⏭️ BackupManager: Skipping test backup (no cycles to backup)');
+                return false;
+            }
+
+            const timestamp = Date.now();
+            const backup = {
+                timestamp,
+                data: currentState,
+                metadata: {
+                    version: currentState.metadata?.version || '1.371',
+                    schemaVersion: currentState.metadata?.schemaVersion || '2.5',
+                    size: JSON.stringify(currentState).length,
+                    type: 'test',
+                    created: new Date(timestamp).toISOString(),
+                    cycleCount
+                }
+            };
+
+            // Save to IndexedDB
+            await this.saveBackup(TEST_BACKUP_STORE, backup);
+
+            // Clean up old test backups (keep only last 5)
+            await this.enforceTestRetentionPolicy();
+
+            console.log(`✅ BackupManager: Test backup created (${(backup.metadata.size / 1024).toFixed(2)} KB, ${cycleCount} cycles)`);
+            return true;
+
+        } catch (error) {
+            console.error('❌ BackupManager: Test backup failed', error);
+            return false;
+        }
+    }
+
+    /**
+     * Enforce test backup retention: keep only last N test backups
+     * @private
+     */
+    async enforceTestRetentionPolicy() {
+        try {
+            const testBackups = await this.getBackupsFromStore(TEST_BACKUP_STORE);
+
+            if (testBackups.length > MAX_TEST_BACKUPS) {
+                // Delete oldest backups
+                const toDelete = testBackups.slice(MAX_TEST_BACKUPS);
+
+                for (const backup of toDelete) {
+                    await this.deleteBackup(backup.timestamp, 'test');
+                }
+
+                console.log(`🧹 BackupManager: Cleaned up ${toDelete.length} old test backups`);
+            }
+
+        } catch (error) {
+            console.error('❌ BackupManager: Test retention policy enforcement failed', error);
+        }
+    }
+
+    /**
      * Create a manual backup with user-specified name
      * @param {string} name - Backup name
      * @returns {Promise<boolean>}
@@ -212,12 +419,39 @@ class BackupManager {
 
             await this.saveBackup(MANUAL_BACKUP_STORE, backup);
 
+            // Clean up old manual backups (keep only last 50)
+            await this.enforceManualRetentionPolicy();
+
             console.log(`✅ BackupManager: Manual backup created: "${backup.name}"`);
             return true;
 
         } catch (error) {
             console.error('❌ BackupManager: Manual backup failed', error);
             throw error;
+        }
+    }
+
+    /**
+     * Enforce manual backup retention: keep only last N manual backups
+     * @private
+     */
+    async enforceManualRetentionPolicy() {
+        try {
+            const manualBackups = await this.getBackupsFromStore(MANUAL_BACKUP_STORE);
+
+            if (manualBackups.length > MAX_MANUAL_BACKUPS) {
+                // Delete oldest backups
+                const toDelete = manualBackups.slice(MAX_MANUAL_BACKUPS);
+
+                for (const backup of toDelete) {
+                    await this.deleteBackup(backup.id, 'manual');
+                }
+
+                console.log(`🧹 BackupManager: Cleaned up ${toDelete.length} old manual backups`);
+            }
+
+        } catch (error) {
+            console.error('❌ BackupManager: Manual retention policy enforcement failed', error);
         }
     }
 
@@ -241,12 +475,22 @@ class BackupManager {
      * @returns {Promise<Object|null>}
      */
     async getLastAutoBackup() {
+        return this.getLastBackupFromStore(AUTO_BACKUP_STORE);
+    }
+
+    /**
+     * Get the most recent backup from any store
+     * @param {string} storeName - The store to query
+     * @returns {Promise<Object|null>}
+     * @private
+     */
+    async getLastBackupFromStore(storeName) {
         try {
             await this.init();
 
             return new Promise((resolve, reject) => {
-                const transaction = this.db.transaction([AUTO_BACKUP_STORE], 'readonly');
-                const store = transaction.objectStore(AUTO_BACKUP_STORE);
+                const transaction = this.db.transaction([storeName], 'readonly');
+                const store = transaction.objectStore(storeName);
                 const index = store.index('timestamp');
                 const request = index.openCursor(null, 'prev'); // Get newest first
 
@@ -258,14 +502,14 @@ class BackupManager {
                 request.onerror = () => reject(request.error);
             });
         } catch (error) {
-            console.error('❌ BackupManager: Failed to get last auto-backup', error);
+            console.error(`❌ BackupManager: Failed to get last backup from ${storeName}`, error);
             return null;
         }
     }
 
     /**
-     * List all backups (auto and manual)
-     * @returns {Promise<{auto: Array, manual: Array}>}
+     * List all backups (auto, manual, session, and test)
+     * @returns {Promise<{auto: Array, manual: Array, session: Array, test: Array}>}
      */
     async listAllBackups() {
         try {
@@ -273,11 +517,13 @@ class BackupManager {
 
             const autoBackups = await this.getBackupsFromStore(AUTO_BACKUP_STORE);
             const manualBackups = await this.getBackupsFromStore(MANUAL_BACKUP_STORE);
+            const sessionBackups = await this.getBackupsFromStore(SESSION_BACKUP_STORE);
+            const testBackups = await this.getBackupsFromStore(TEST_BACKUP_STORE);
 
-            return { auto: autoBackups, manual: manualBackups };
+            return { auto: autoBackups, manual: manualBackups, session: sessionBackups, test: testBackups };
         } catch (error) {
             console.error('❌ BackupManager: Failed to list backups', error);
-            return { auto: [], manual: [] };
+            return { auto: [], manual: [], session: [], test: [] };
         }
     }
 
@@ -304,15 +550,17 @@ class BackupManager {
 
     /**
      * Restore backup by timestamp or ID
-     * @param {number|string} identifier - timestamp (auto) or id (manual)
-     * @param {string} type - 'auto' or 'manual'
+     * @param {number|string} identifier - timestamp (auto/session) or id (manual)
+     * @param {string} type - 'auto', 'manual', or 'session'
      * @returns {Promise<Object>} - Restored data
      */
     async restoreBackup(identifier, type = 'auto') {
         try {
             await this.init();
 
-            const storeName = type === 'auto' ? AUTO_BACKUP_STORE : MANUAL_BACKUP_STORE;
+            const storeName = type === 'test' ? TEST_BACKUP_STORE :
+                              type === 'session' ? SESSION_BACKUP_STORE :
+                              type === 'manual' ? MANUAL_BACKUP_STORE : AUTO_BACKUP_STORE;
             const backup = await this.getBackup(storeName, identifier);
 
             if (!backup) {
@@ -346,14 +594,16 @@ class BackupManager {
     /**
      * Delete specific backup
      * @param {number|string} identifier - timestamp or id
-     * @param {string} type - 'auto' or 'manual'
+     * @param {string} type - 'auto', 'manual', or 'session'
      * @returns {Promise<boolean>}
      */
     async deleteBackup(identifier, type = 'auto') {
         try {
             await this.init();
 
-            const storeName = type === 'auto' ? AUTO_BACKUP_STORE : MANUAL_BACKUP_STORE;
+            const storeName = type === 'test' ? TEST_BACKUP_STORE :
+                              type === 'session' ? SESSION_BACKUP_STORE :
+                              type === 'manual' ? MANUAL_BACKUP_STORE : AUTO_BACKUP_STORE;
 
             return new Promise((resolve, reject) => {
                 const transaction = this.db.transaction([storeName], 'readwrite');
@@ -401,11 +651,13 @@ class BackupManager {
     /**
      * Export backup as .mcyc file
      * @param {number|string} identifier
-     * @param {string} type
+     * @param {string} type - 'auto', 'manual', or 'session'
      */
     async exportBackup(identifier, type = 'auto') {
         try {
-            const storeName = type === 'auto' ? AUTO_BACKUP_STORE : MANUAL_BACKUP_STORE;
+            const storeName = type === 'test' ? TEST_BACKUP_STORE :
+                              type === 'session' ? SESSION_BACKUP_STORE :
+                              type === 'manual' ? MANUAL_BACKUP_STORE : AUTO_BACKUP_STORE;
             const backup = await this.getBackup(storeName, identifier);
 
             if (!backup) {
@@ -438,16 +690,18 @@ class BackupManager {
      */
     async getStats() {
         try {
-            const { auto, manual } = await this.listAllBackups();
+            const { auto, manual, session, test } = await this.listAllBackups();
 
-            const totalSize = [...auto, ...manual].reduce((sum, backup) => {
+            const totalSize = [...auto, ...manual, ...session, ...test].reduce((sum, backup) => {
                 return sum + (backup.metadata?.size || 0);
             }, 0);
 
             return {
                 autoBackups: auto.length,
                 manualBackups: manual.length,
-                totalBackups: auto.length + manual.length,
+                sessionBackups: session.length,
+                testBackups: test.length,
+                totalBackups: auto.length + manual.length + session.length + test.length,
                 totalSize: totalSize,
                 totalSizeMB: (totalSize / 1024 / 1024).toFixed(2),
                 oldestBackup: auto.length > 0 ? new Date(auto[auto.length - 1].timestamp) : null,

@@ -739,6 +739,19 @@ export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
   requestAnimationFrame(() => taskInput?.focus());
 
   console.log('✅ UI boot complete');
+
+  // ========== SESSION BACKUP (non-blocking) ==========
+  // Create a session backup on every app open (keeps last 5)
+  // This runs after UI is fully loaded to avoid blocking boot
+  setTimeout(async () => {
+    try {
+      if (deps.storage?.backupManager?.createSessionBackup) {
+        await deps.storage.backupManager.createSessionBackup();
+      }
+    } catch (error) {
+      console.warn('⚠️ Session backup failed (non-critical):', error);
+    }
+  }, 1000); // Delay 1s to ensure AppState is fully ready
 }
 
 // ============================================================================
