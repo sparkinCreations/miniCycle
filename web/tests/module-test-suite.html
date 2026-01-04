@@ -1808,9 +1808,32 @@
                     // Create a temporary div for results
                     const tempDiv = document.createElement('div');
 
-                    // Run the tests (pass isPartOfSuite=true for all tests to prevent localStorage conflicts)
+                    // Run the tests with a 30-second timeout per module
+                    const MODULE_TIMEOUT_MS = 30000;
                     let result;
-                    result = await module.runFn(tempDiv, true);
+
+                    const testPromise = module.runFn(tempDiv, true);
+                    const timeoutPromise = new Promise((_, reject) => {
+                        setTimeout(() => reject(new Error('TIMEOUT')), MODULE_TIMEOUT_MS);
+                    });
+
+                    try {
+                        result = await Promise.race([testPromise, timeoutPromise]);
+                    } catch (timeoutError) {
+                        if (timeoutError.message === 'TIMEOUT') {
+                            console.warn(`⏱️ Module "${module.name}" timed out after ${MODULE_TIMEOUT_MS / 1000}s`);
+                            allResults.push({
+                                name: module.name,
+                                passed: 0,
+                                total: 1,
+                                timedOut: true,
+                                html: `<div class="result fail">⏱️ TIMED OUT after ${MODULE_TIMEOUT_MS / 1000} seconds - skipped</div>`
+                            });
+                            totalTests += 1; // Count as 1 failed test
+                            continue; // Skip to next module
+                        }
+                        throw timeoutError; // Re-throw non-timeout errors
+                    }
 
                     // Store results
                     allResults.push({
@@ -1861,15 +1884,30 @@
 
             for (const result of allResults) {
                 const passRate = result.total > 0 ? (result.passed / result.total * 100).toFixed(0) : 0;
-                const statusEmoji = result.passed === result.total ? '✅' : '❌';
-                const rowBg = result.passed === result.total ? passRowBg : failRowBg;
-                const rowText = result.passed === result.total ? passRowText : failRowText;
+                let statusEmoji, rowBg, rowText, statusText;
+
+                if (result.timedOut) {
+                    statusEmoji = '⏱️';
+                    statusText = 'TIMEOUT';
+                    rowBg = isDarkMode ? '#7c4700' : '#fef3c7'; // Orange/yellow for timeout
+                    rowText = isDarkMode ? '#ffffff' : '#92400e';
+                } else if (result.passed === result.total) {
+                    statusEmoji = '✅';
+                    statusText = `${passRate}%`;
+                    rowBg = passRowBg;
+                    rowText = passRowText;
+                } else {
+                    statusEmoji = '❌';
+                    statusText = `${passRate}%`;
+                    rowBg = failRowBg;
+                    rowText = failRowText;
+                }
 
                 output += `<tr style="border-bottom: 1px solid ${rowBorder}; background: ${rowBg}; color: ${rowText};">`;
                 output += `<td style="padding: 8px; font-weight: 600;">${result.name}</td>`;
                 output += `<td style="text-align: right; padding: 8px;">${result.passed}</td>`;
                 output += `<td style="text-align: right; padding: 8px;">${result.total}</td>`;
-                output += `<td style="text-align: right; padding: 8px;">${statusEmoji} ${passRate}%</td>`;
+                output += `<td style="text-align: right; padding: 8px;">${statusEmoji} ${statusText}</td>`;
                 output += '</tr>';
             }
 
