@@ -41,6 +41,17 @@
  * @property {Object} utils.GlobalUtils - Global utility methods
  */
 
+// ============================================================================
+// POLYFILLS: Must run before any other code
+// ============================================================================
+
+// structuredClone polyfill for Safari < 15.4 (March 2022)
+// Falls back to JSON round-trip which handles most cases
+if (typeof structuredClone === 'undefined') {
+    globalThis.structuredClone = (obj) => JSON.parse(JSON.stringify(obj));
+    console.log('🔧 structuredClone polyfill installed (Safari < 15.4)');
+}
+
 // ✅ Single source of truth: Read version from globalThis (set by version.js)
 // Falls back to 'dev-local' for local development without version.js
 const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
