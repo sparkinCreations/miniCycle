@@ -1,3 +1,8 @@
+## [1.672] - 2026-01-04
+- feat: Implement localStorage backup and restoration for interrupted tests
+- feat: Add interactive localStorage viewer and enhance testing modal UI
+
+
 ## [1.671] - 2026-01-04
 - feat: add results area resize functionality and save height to AppState
 
