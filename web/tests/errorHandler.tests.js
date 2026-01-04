@@ -5,11 +5,16 @@
  * Tests the global error handling system and safe utility functions.
  */
 
-// Direct import from module (not via appContext which may not be populated)
-import { errorHandler } from '../modules/utils/errorHandler.js';
 import { hasGlobal } from './helpers/testContext.js';
 
-export function runErrorHandlerTests(resultsDiv) {
+// Module-level variable for dynamic import
+let errorHandler;
+
+export async function runErrorHandlerTests(resultsDiv) {
+    // Dynamic import with cache busting
+    const cacheBuster = window.testCacheBuster || Date.now();
+    const module = await import(`../modules/utils/errorHandler.js?v=${cacheBuster}`);
+    errorHandler = module.errorHandler;
     resultsDiv.innerHTML = '<h2>🛡️ Error Handler Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };

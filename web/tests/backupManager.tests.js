@@ -24,9 +24,15 @@ import {
     waitForAsyncOperations
 } from './testHelpers.js';
 
-import { backupManager, setBackupManagerDependencies } from '../modules/storage/backupManager.js';
+// Module-level variables for dynamic imports
+let backupManager, setBackupManagerDependencies;
 
 export async function runBackupManagerTests(resultsDiv, isPartOfSuite = false) {
+    // Dynamic import with cache busting
+    const cacheBuster = window.testCacheBuster || Date.now();
+    const module = await import(`../modules/storage/backupManager.js?v=${cacheBuster}`);
+    backupManager = module.backupManager;
+    setBackupManagerDependencies = module.setBackupManagerDependencies;
     resultsDiv.innerHTML = '<h2>BackupManager Tests</h2><h3>Setting up mocks...</h3>';
 
     // =====================================================

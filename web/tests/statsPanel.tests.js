@@ -5,7 +5,8 @@
  * Updated for Playwright compatibility - uses DI to inject mock appInit
  */
 
-import { StatsPanelManager, setStatsPanelDependencies } from '../modules/features/statsPanel.js';
+// Module-level variables for dynamic imports
+let StatsPanelManager, setStatsPanelDependencies;
 
 // Helper to create complete AppState mock (outside function scope)
 function createMockAppState(mockData) {
@@ -31,6 +32,12 @@ function createMockAppInit() {
 }
 
 export async function runStatsPanelTests(resultsDiv) {
+    // Dynamic import with cache busting
+    const cacheBuster = window.testCacheBuster || Date.now();
+    const module = await import(`../modules/features/statsPanel.js?v=${cacheBuster}`);
+    StatsPanelManager = module.StatsPanelManager;
+    setStatsPanelDependencies = module.setStatsPanelDependencies;
+
     resultsDiv.innerHTML = '<h2>📊 StatsPanel Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };

@@ -17,10 +17,15 @@ import {
     createMockData
 } from './testHelpers.js';
 
-// Import the appInit singleton and setAppInitDependencies
-import { appInit, setAppInitDependencies } from '../modules/core/appInit.js';
+// Module-level variables for dynamic imports
+let appInit, setAppInitDependencies;
 
 export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
+    // Dynamic import with cache busting
+    const cacheBuster = window.testCacheBuster || Date.now();
+    const module = await import(`../modules/core/appInit.js?v=${cacheBuster}`);
+    appInit = module.appInit;
+    setAppInitDependencies = module.setAppInitDependencies;
     resultsDiv.innerHTML = '<h2>AppInit Tests</h2><h3>Setting up mocks...</h3>';
 
     const env = await setupTestEnvironment();

@@ -3,9 +3,15 @@
  * Tests for the centralized state management system
  */
 
-import { createStateManager, resetStateManager } from '../modules/core/appState.js';
+// Module-level variables for dynamic imports
+let createStateManager, resetStateManager;
 
 export async function runStateTests(resultsDiv, isPartOfSuite = false) {
+    // Dynamic import with cache busting
+    const cacheBuster = window.testCacheBuster || Date.now();
+    const module = await import(`../modules/core/appState.js?v=${cacheBuster}`);
+    createStateManager = module.createStateManager;
+    resetStateManager = module.resetStateManager;
     resultsDiv.innerHTML = '<h2>🗄️ State Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };
