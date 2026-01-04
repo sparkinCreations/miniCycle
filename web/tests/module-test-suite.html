@@ -1701,7 +1701,7 @@
 
             // 🧹 CLEAR IndexedDB databases so tests run with clean state
             try {
-                const dbNames = ['miniCycleUndoHistory', 'miniCycleTestResultsDB'];
+                const dbNames = ['miniCycleUndoHistory', 'miniCycleTestResultsDB', 'miniCycle_backups'];
                 for (const dbName of dbNames) {
                     await new Promise((resolve) => {
                         const req = indexedDB.deleteDatabase(dbName);
