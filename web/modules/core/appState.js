@@ -26,6 +26,180 @@ import {
     DEBOUNCE
 } from './constants.js';
 
+// ============================================================================
+// TEST MODE DETECTION - Detect interrupted tests and restore real data
+// ============================================================================
+
+const TEST_MODE_DB = 'miniCycleTestResultsDB';
+const TEST_MODE_STORE = 'results';
+
+/**
+ * Check if test mode is active (tests were interrupted)
+ * Checks BOTH flags: 'testModeActive' (from test suite) and 'appInitiatedTests' (from app)
+ * @returns {Promise<boolean>} True if either test mode flag is still set
+ */
+async function isTestModeActive() {
+    return new Promise((resolve) => {
+        try {
+            const timeout = setTimeout(() => {
+                console.warn('⚠️ isTestModeActive check timed out');
+                resolve(false);
+            }, 2000);
+
+            const request = indexedDB.open(TEST_MODE_DB, 1);
+
+            request.onerror = () => {
+                clearTimeout(timeout);
+                resolve(false);
+            };
+
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(TEST_MODE_STORE)) {
+                    db.createObjectStore(TEST_MODE_STORE, { keyPath: 'id' });
+                }
+            };
+
+            request.onsuccess = () => {
+                const db = request.result;
+                try {
+                    const tx = db.transaction(TEST_MODE_STORE, 'readonly');
+                    const store = tx.objectStore(TEST_MODE_STORE);
+
+                    // Check BOTH flags - testModeActive (test suite) and appInitiatedTests (app)
+                    let testSuiteFlag = false;
+                    let appFlag = false;
+                    let checksComplete = 0;
+
+                    const checkComplete = () => {
+                        checksComplete++;
+                        if (checksComplete === 2) {
+                            clearTimeout(timeout);
+                            db.close();
+                            const isActive = testSuiteFlag || appFlag;
+                            if (isActive) {
+                                console.log('🚦 Test mode detected:', { testSuiteFlag, appFlag });
+                            }
+                            resolve(isActive);
+                        }
+                    };
+
+                    // Check test suite flag
+                    const testSuiteRequest = store.get('testModeActive');
+                    testSuiteRequest.onsuccess = () => {
+                        testSuiteFlag = testSuiteRequest.result?.active === true;
+                        checkComplete();
+                    };
+                    testSuiteRequest.onerror = () => checkComplete();
+
+                    // Check app-initiated flag
+                    const appRequest = store.get('appInitiatedTests');
+                    appRequest.onsuccess = () => {
+                        appFlag = appRequest.result?.active === true;
+                        checkComplete();
+                    };
+                    appRequest.onerror = () => checkComplete();
+
+                } catch (e) {
+                    clearTimeout(timeout);
+                    db.close();
+                    resolve(false);
+                }
+            };
+        } catch (e) {
+            resolve(false);
+        }
+    });
+}
+
+/**
+ * Get backed up real data from IndexedDB (stored before tests ran)
+ * @returns {Promise<Object|null>} Backed up data or null if none exists
+ */
+async function getBackedUpRealData() {
+    return new Promise((resolve) => {
+        try {
+            const timeout = setTimeout(() => {
+                resolve(null);
+            }, 2000);
+
+            const request = indexedDB.open(TEST_MODE_DB, 1);
+
+            request.onerror = () => {
+                clearTimeout(timeout);
+                resolve(null);
+            };
+
+            request.onsuccess = () => {
+                const db = request.result;
+                try {
+                    const tx = db.transaction(TEST_MODE_STORE, 'readonly');
+                    const store = tx.objectStore(TEST_MODE_STORE);
+                    const getRequest = store.get('preTestBackup');
+
+                    getRequest.onsuccess = () => {
+                        clearTimeout(timeout);
+                        const data = getRequest.result;
+                        db.close();
+                        resolve(data?.localStorageBackup || null);
+                    };
+
+                    getRequest.onerror = () => {
+                        clearTimeout(timeout);
+                        db.close();
+                        resolve(null);
+                    };
+                } catch (e) {
+                    clearTimeout(timeout);
+                    db.close();
+                    resolve(null);
+                }
+            };
+        } catch (e) {
+            resolve(null);
+        }
+    });
+}
+
+/**
+ * Clear test mode flags and backup after successful restoration
+ * Clears both 'testModeActive' and 'appInitiatedTests' flags
+ * @returns {Promise<void>}
+ */
+async function clearTestModeAndBackup() {
+    return new Promise((resolve) => {
+        try {
+            const request = indexedDB.open(TEST_MODE_DB, 1);
+            request.onsuccess = () => {
+                const db = request.result;
+                try {
+                    const tx = db.transaction(TEST_MODE_STORE, 'readwrite');
+                    const store = tx.objectStore(TEST_MODE_STORE);
+                    // Clear both flags and the backup
+                    store.delete('testModeActive');
+                    store.delete('appInitiatedTests');
+                    store.delete('preTestBackup');
+                    tx.oncomplete = () => {
+                        db.close();
+                        console.log('🧹 Cleared all test mode flags and backup');
+                        resolve();
+                    };
+                    tx.onerror = () => {
+                        db.close();
+                        resolve();
+                    };
+                } catch (e) {
+                    db.close();
+                    resolve();
+                }
+            };
+            request.onerror = () => resolve();
+        } catch (e) {
+            resolve();
+        }
+    });
+}
+
 // Module-level deps for late injection (must be set before createStateManager)
 let _deps = {};
 
@@ -194,6 +368,28 @@ class MiniCycleState {
         console.log('🏗️ Initializing MiniCycle state...');
 
         try {
+            // 🚦 CHECK FOR INTERRUPTED TESTS - Restore real data if tests were interrupted
+            const testModeActive = await isTestModeActive();
+            if (testModeActive) {
+                console.warn('⚠️ Test mode flag detected - tests may have been interrupted');
+                const backup = await getBackedUpRealData();
+                if (backup) {
+                    console.log('🔄 Restoring pre-test localStorage backup...');
+                    // Clear current localStorage and restore backup
+                    localStorage.clear();
+                    Object.entries(backup).forEach(([key, value]) => {
+                        localStorage.setItem(key, value);
+                    });
+                    console.log('✅ Pre-test data restored from IndexedDB backup');
+                    // Clear the test mode flag and backup
+                    await clearTestModeAndBackup();
+                } else {
+                    console.warn('⚠️ No backup found - clearing potentially corrupted test data');
+                    localStorage.removeItem('miniCycleData');
+                    await clearTestModeAndBackup();
+                }
+            }
+
             // ✅ Check if Schema 2.5 data already exists
             let existingData = null;
             try {

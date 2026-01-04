@@ -65,6 +65,98 @@ function setupAutomatedTestingFunctions() {
 const TEST_RESULTS_DB = 'miniCycleTestResultsDB';
 const TEST_RESULTS_STORE = 'results';
 
+/**
+ * Backup localStorage to IndexedDB before tests run (app-side)
+ * This is the PRIMARY backup - happens before test suite even loads
+ */
+async function backupLocalStorageBeforeTests() {
+    return new Promise((resolve) => {
+        try {
+            // Capture all localStorage data
+            const backup = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key) {
+                    backup[key] = localStorage.getItem(key);
+                }
+            }
+
+            const request = indexedDB.open(TEST_RESULTS_DB, 1);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(TEST_RESULTS_STORE)) {
+                    db.createObjectStore(TEST_RESULTS_STORE, { keyPath: 'id' });
+                }
+            };
+            request.onsuccess = () => {
+                const db = request.result;
+                const tx = db.transaction(TEST_RESULTS_STORE, 'readwrite');
+                const store = tx.objectStore(TEST_RESULTS_STORE);
+
+                // Store both the backup AND set the app-initiated flag
+                store.put({
+                    id: 'preTestBackup',
+                    localStorageBackup: backup,
+                    timestamp: Date.now()
+                });
+                store.put({
+                    id: 'appInitiatedTests',
+                    active: true,
+                    timestamp: Date.now()
+                });
+
+                tx.oncomplete = () => {
+                    db.close();
+                    console.log('💾 App-side localStorage backup created');
+                    resolve(true);
+                };
+                tx.onerror = () => {
+                    db.close();
+                    console.warn('⚠️ Failed to create app-side backup');
+                    resolve(false);
+                };
+            };
+            request.onerror = () => {
+                console.warn('⚠️ Could not open IndexedDB for app-side backup');
+                resolve(false);
+            };
+        } catch (e) {
+            console.warn('⚠️ App-side backup failed:', e);
+            resolve(false);
+        }
+    });
+}
+
+/**
+ * Clear the app-initiated test flag after tests complete
+ */
+async function clearAppInitiatedTestFlag() {
+    return new Promise((resolve) => {
+        try {
+            const request = indexedDB.open(TEST_RESULTS_DB, 1);
+            request.onsuccess = () => {
+                const db = request.result;
+                const tx = db.transaction(TEST_RESULTS_STORE, 'readwrite');
+                const store = tx.objectStore(TEST_RESULTS_STORE);
+                store.delete('appInitiatedTests');
+                store.delete('preTestBackup');
+                tx.oncomplete = () => {
+                    db.close();
+                    console.log('🧹 App-initiated test flag cleared');
+                    resolve(true);
+                };
+                tx.onerror = () => {
+                    db.close();
+                    resolve(false);
+                };
+            };
+            request.onerror = () => resolve(false);
+        } catch (e) {
+            resolve(false);
+        }
+    });
+}
+
 function openTestResultsDB() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(TEST_RESULTS_DB, 1);
@@ -399,6 +491,11 @@ async function runAllAutomatedTests() {
         }
     }
 
+    // 🔒 APP-SIDE BACKUP: Backup localStorage to IndexedDB BEFORE test suite loads
+    // This is the primary safety net - happens from the app before iframe even starts
+    await backupLocalStorageBeforeTests();
+    appendToAutomatedTestResults("🔒 App-side backup created (auto-restore on interrupted tests)\n");
+
     appendToAutomatedTestResults("🧪 Opening Test Runner...\n\n");
 
     // Create and show the iframe modal
@@ -476,9 +573,12 @@ async function runAllAutomatedTests() {
                 : '⚠️ Tests Complete (with failures)';
 
             // Wait a moment to show completion, then close
-            setTimeout(() => {
+            setTimeout(async () => {
                 closeTestRunnerModal(); // Also clears stored results
                 displayTestResults(event.data);
+
+                // 🔒 Clear app-initiated test flag - tests completed successfully
+                await clearAppInitiatedTestFlag();
 
                 getShowNotification()(
                     event.data.allPassed

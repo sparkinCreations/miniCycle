@@ -532,6 +532,88 @@
             });
         }
 
+        /**
+         * Backup localStorage to IndexedDB before tests run
+         * This allows restoration if tests are interrupted
+         */
+        async function backupLocalStorageToIndexedDB() {
+            return new Promise((resolve) => {
+                try {
+                    // Capture all localStorage data
+                    const backup = {};
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key) {
+                            backup[key] = localStorage.getItem(key);
+                        }
+                    }
+
+                    const request = indexedDB.open(TEST_MODE_DB, 1);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains(TEST_MODE_STORE)) {
+                            db.createObjectStore(TEST_MODE_STORE, { keyPath: 'id' });
+                        }
+                    };
+                    request.onsuccess = () => {
+                        const db = request.result;
+                        const tx = db.transaction(TEST_MODE_STORE, 'readwrite');
+                        const store = tx.objectStore(TEST_MODE_STORE);
+                        store.put({
+                            id: 'preTestBackup',
+                            localStorageBackup: backup,
+                            timestamp: Date.now()
+                        });
+                        tx.oncomplete = () => {
+                            db.close();
+                            console.log('💾 localStorage backed up to IndexedDB');
+                            resolve(true);
+                        };
+                        tx.onerror = () => {
+                            db.close();
+                            console.warn('⚠️ Failed to backup localStorage');
+                            resolve(false);
+                        };
+                    };
+                    request.onerror = () => {
+                        console.warn('⚠️ Could not open IndexedDB for backup');
+                        resolve(false);
+                    };
+                } catch (e) {
+                    console.warn('⚠️ localStorage backup failed:', e);
+                    resolve(false);
+                }
+            });
+        }
+
+        /**
+         * Clear the backup from IndexedDB after tests complete successfully
+         */
+        async function clearLocalStorageBackup() {
+            return new Promise((resolve) => {
+                try {
+                    const request = indexedDB.open(TEST_MODE_DB, 1);
+                    request.onsuccess = () => {
+                        const db = request.result;
+                        const tx = db.transaction(TEST_MODE_STORE, 'readwrite');
+                        const store = tx.objectStore(TEST_MODE_STORE);
+                        store.delete('preTestBackup');
+                        tx.oncomplete = () => {
+                            db.close();
+                            resolve(true);
+                        };
+                        tx.onerror = () => {
+                            db.close();
+                            resolve(false);
+                        };
+                    };
+                    request.onerror = () => resolve(false);
+                } catch (e) {
+                    resolve(false);
+                }
+            });
+        }
+
         let currentModule = null;
 
         const moduleSelect = document.getElementById('module-select');
@@ -1695,13 +1777,17 @@
             });
             console.log('🔒 Saved original localStorage before running all tests');
 
+            // 💾 BACKUP localStorage to IndexedDB (survives browser close/crash)
+            await backupLocalStorageToIndexedDB();
+
             // 🧹 CLEAR localStorage so tests run with clean state
             localStorage.clear();
             console.log('🧹 Cleared localStorage for clean test environment');
 
             // 🧹 CLEAR IndexedDB databases so tests run with clean state
+            // Note: We don't delete miniCycleTestResultsDB because it contains our backup
             try {
-                const dbNames = ['miniCycleUndoHistory', 'miniCycleTestResultsDB', 'miniCycle_backups'];
+                const dbNames = ['miniCycleUndoHistory', 'miniCycle_backups'];
                 for (const dbName of dbNames) {
                     await new Promise((resolve) => {
                         const req = indexedDB.deleteDatabase(dbName);
@@ -2010,6 +2096,10 @@
                 // 🚦 CLEAR TEST MODE FLAG - safe for app to restore from IndexedDB now
                 await setTestModeFlag(false);
                 console.log('🚦 Test mode flag CLEARED - app can safely restore from IndexedDB');
+
+                // 💾 CLEAR BACKUP - no longer needed since tests completed successfully
+                await clearLocalStorageBackup();
+                console.log('💾 IndexedDB backup cleared - tests completed successfully');
 
                 // 🛡️ RESTORE ORIGINAL handlers and clear flag
                 window.onbeforeunload = originalBeforeUnload;
