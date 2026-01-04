@@ -18,15 +18,20 @@ import {
     createMockData
 } from './testHelpers.js';
 
-// Import state manager functions
-import {
-    setAppStateDependencies,
-    createStateManager,
-    resetStateManager,
-    getStateManager
-} from '../modules/core/appState.js';
+// Module references - populated by dynamic import
+let setAppStateDependencies, createStateManager, resetStateManager, getStateManager;
 
 export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
+    resultsDiv.innerHTML = '<h2>AppState Tests</h2><h3>Loading module...</h3>';
+
+    // Dynamic import with cache busting to avoid stale CDN cache
+    const cacheBuster = window.testCacheBuster || Date.now();
+    const module = await import(`../modules/core/appState.js?v=${cacheBuster}`);
+    setAppStateDependencies = module.setAppStateDependencies;
+    createStateManager = module.createStateManager;
+    resetStateManager = module.resetStateManager;
+    getStateManager = module.getStateManager;
+
     resultsDiv.innerHTML = '<h2>AppState Tests</h2><h3>Setting up mocks...</h3>';
 
     const env = await setupTestEnvironment();

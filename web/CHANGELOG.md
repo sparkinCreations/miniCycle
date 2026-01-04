@@ -1,3 +1,8 @@
+## [1.655] - 2026-01-03
+- chore: update version to 1.654 in changelog, manifest, HTML, and version files
+- feat: implement dynamic imports with cache busting in test files
+
+
 ## [1.654] - 2026-01-03
 - chore: update version to 1.653 in manifest, HTML, package, and version files
 - feat: implement cache-busting for dynamic imports in recurring panel tests
