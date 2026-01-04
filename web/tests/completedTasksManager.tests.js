@@ -18,7 +18,8 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
 
     // Import the module directly for DI testing
     try {
-        const module = await import('../modules/ui/completedTasksManager.js');
+        const cacheBuster = window.testCacheBuster || Date.now();
+        const module = await import(`../modules/ui/completedTasksManager.js?v=${cacheBuster}`);
         CompletedTasksManager = module.CompletedTasksManager;
         setCompletedTasksManagerDependencies = module.setCompletedTasksManagerDependencies;
         resultsDiv.innerHTML = '<h2>✅ CompletedTasksManager Tests (DI-Pure)</h2><h3>Running tests...</h3>';

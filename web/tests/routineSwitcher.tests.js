@@ -30,7 +30,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
 
     // Dynamic import of the module
     try {
-        const module = await import('../modules/routine/routineSwitcher.js');
+        const cacheBuster = window.testCacheBuster || Date.now();
+        const module = await import(`../modules/routine/routineSwitcher.js?v=${cacheBuster}`);
         RoutineSwitcher = module.RoutineSwitcher;
         setRoutineSwitcherDependencies = module.setRoutineSwitcherDependencies;
     } catch (e) {

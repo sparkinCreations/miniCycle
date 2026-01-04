@@ -16,7 +16,8 @@ export async function runTaskInteractionsTests(resultsDiv, isPartOfSuite = false
 
     // Import the module directly for DI testing
     try {
-        const module = await import('../modules/ui/taskInteractions.js');
+        const cacheBuster = window.testCacheBuster || Date.now();
+        const module = await import(`../modules/ui/taskInteractions.js?v=${cacheBuster}`);
         setTaskInteractionsDependencies = module.setTaskInteractionsDependencies;
         attachKeyboardTaskOptionToggle = module.attachKeyboardTaskOptionToggle;
         // ensureTaskUILoaded is optional - tests use mocks so it's not needed

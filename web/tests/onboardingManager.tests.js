@@ -17,7 +17,8 @@ export async function runOnboardingManagerTests(resultsDiv) {
 
     // Import the module directly for DI testing
     try {
-        const module = await import('../modules/ui/onboardingManager.js');
+        const cacheBuster = window.testCacheBuster || Date.now();
+        const module = await import(`../modules/ui/onboardingManager.js?v=${cacheBuster}`);
         OnboardingManager = module.OnboardingManager;  // Named export, not default
         setOnboardingManagerDependencies = module.setOnboardingManagerDependencies;
         onboardingManagerInstance = module.onboardingManager;

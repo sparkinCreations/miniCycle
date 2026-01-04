@@ -631,7 +631,9 @@
         }
 
         async function loadAndExposeModule(moduleKey) {
-            const cacheBuster = Date.now();
+            // Use the shared cacheBuster to ensure consistent module instances
+            // between loadAndExposeModule and individual test files
+            const cacheBuster = window.testCacheBuster;
 
             // Ensure appInit is ready before loading any module that might import it
             await ensureAppInitReady();
@@ -1696,6 +1698,22 @@
             // 🧹 CLEAR localStorage so tests run with clean state
             localStorage.clear();
             console.log('🧹 Cleared localStorage for clean test environment');
+
+            // 🧹 CLEAR IndexedDB databases so tests run with clean state
+            try {
+                const dbNames = ['miniCycleUndoHistory', 'miniCycleTestResultsDB'];
+                for (const dbName of dbNames) {
+                    await new Promise((resolve) => {
+                        const req = indexedDB.deleteDatabase(dbName);
+                        req.onsuccess = () => { console.log(`🧹 Deleted IndexedDB: ${dbName}`); resolve(); };
+                        req.onerror = () => { console.warn(`⚠️ Could not delete IndexedDB: ${dbName}`); resolve(); };
+                        req.onblocked = () => { console.warn(`⚠️ IndexedDB blocked: ${dbName}`); resolve(); };
+                    });
+                }
+                console.log('🧹 Cleared IndexedDB for clean test environment');
+            } catch (e) {
+                console.warn('⚠️ Could not clear IndexedDB:', e);
+            }
 
             // 🚦 SET TEST MODE FLAG - tells app to skip IndexedDB restoration on reload
             await setTestModeFlag(true);

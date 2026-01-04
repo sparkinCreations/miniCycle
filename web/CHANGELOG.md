@@ -1,3 +1,7 @@
+## [1.657] - 2026-01-03
+- chore: update version to 1.656 in changelog, manifest, HTML, and version files
+
+
 ## [1.656] - 2026-01-03
 - feat: clear localStorage before tests for a clean environment
 - feat: implement dynamic imports for appState module with cache busting

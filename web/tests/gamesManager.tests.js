@@ -15,7 +15,8 @@ export async function runGamesManagerTests(resultsDiv) {
 
     // Import the module directly for DI testing
     try {
-        const module = await import('../modules/ui/gamesManager.js');
+        const cacheBuster = window.testCacheBuster || Date.now();
+        const module = await import(`../modules/ui/gamesManager.js?v=${cacheBuster}`);
         GamesManager = module.GamesManager;  // Named export, not default
         setGamesManagerDependencies = module.setGamesManagerDependencies;
         gamesManagerInstance = module.gamesManager;

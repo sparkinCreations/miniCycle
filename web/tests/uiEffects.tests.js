@@ -14,7 +14,8 @@ export async function runUIEffectsTests(resultsDiv, isPartOfSuite = false) {
 
     // Import the module directly for DI testing
     try {
-        const module = await import('../modules/ui/uiEffects.js');
+        const cacheBuster = window.testCacheBuster || Date.now();
+        const module = await import(`../modules/ui/uiEffects.js?v=${cacheBuster}`);
         setUIEffectsDependencies = module.setUIEffectsDependencies;
         triggerLogoBackground = module.triggerLogoBackground;
         resultsDiv.innerHTML = '<h2>UIEffects Tests (DI-Pure)</h2><h3>Running tests...</h3>';
