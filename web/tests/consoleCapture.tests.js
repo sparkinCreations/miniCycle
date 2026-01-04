@@ -14,9 +14,14 @@
  * ✅ Production Impact: NONE - This is a debugging/diagnostic tool only
  */
 
-import { MiniCycleConsoleCapture } from '../modules/utils/consoleCapture.js';
+// Module-level variable for dynamic import
+let MiniCycleConsoleCapture;
 
-export function runConsoleCaptureTests(resultsDiv) {
+export async function runConsoleCaptureTests(resultsDiv) {
+    // Dynamic import with cache busting
+    const cacheBuster = window.testCacheBuster || Date.now();
+    const module = await import(`../modules/utils/consoleCapture.js?v=${cacheBuster}`);
+    MiniCycleConsoleCapture = module.MiniCycleConsoleCapture;
     resultsDiv.innerHTML = '<h2>📝 ConsoleCapture Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };

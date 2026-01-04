@@ -13,10 +13,14 @@ import {
     waitForAsyncOperations
 } from './testHelpers.js';
 
-// Direct import from module (not via appContext which may not be populated)
-import { MiniCycleReminders } from '../modules/features/reminders.js';
+// Module-level variable for dynamic import
+let MiniCycleReminders;
 
 export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
+    // Dynamic import with cache busting
+    const cacheBuster = window.testCacheBuster || Date.now();
+    const module = await import(`../modules/features/reminders.js?v=${cacheBuster}`);
+    MiniCycleReminders = module.MiniCycleReminders;
     resultsDiv.innerHTML = '<h2>Reminders Module Tests</h2><h3>Setting up mocks...</h3>';
 
     // =====================================================

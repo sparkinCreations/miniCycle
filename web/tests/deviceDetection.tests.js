@@ -25,10 +25,14 @@ import {
     waitForAsyncOperations
 } from './testHelpers.js';
 
-// Direct import from module (not via appContext which may not be populated)
-import { DeviceDetectionManager } from '../modules/utils/deviceDetection.js';
+// Module-level variable for dynamic import
+let DeviceDetectionManager;
 
 export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false) {
+    // Dynamic import with cache busting
+    const cacheBuster = window.testCacheBuster || Date.now();
+    const module = await import(`../modules/utils/deviceDetection.js?v=${cacheBuster}`);
+    DeviceDetectionManager = module.DeviceDetectionManager;
     resultsDiv.innerHTML = '<h2>📱 DeviceDetectionManager Tests</h2><h3>Setting up mocks...</h3>';
 
     // =====================================================

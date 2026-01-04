@@ -4,12 +4,19 @@
  */
 
 import { getTestMiniCycleNotifications, getTestEducationalTipManager, hasGlobal } from './helpers/testContext.js';
-import { setNotificationsDependencies, MiniCycleNotifications } from '../modules/utils/notifications.js';
 
-// Make class available globally for tests
-window.MiniCycleNotifications = MiniCycleNotifications;
+// Module-level variables for dynamic imports
+let setNotificationsDependencies, MiniCycleNotifications;
 
 export async function runNotificationsTests(resultsDiv) {
+    // Dynamic import with cache busting
+    const cacheBuster = window.testCacheBuster || Date.now();
+    const module = await import(`../modules/utils/notifications.js?v=${cacheBuster}`);
+    setNotificationsDependencies = module.setNotificationsDependencies;
+    MiniCycleNotifications = module.MiniCycleNotifications;
+
+    // Make class available globally for tests
+    window.MiniCycleNotifications = MiniCycleNotifications;
     resultsDiv.innerHTML = '<h2>🔔 MiniCycleNotifications Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };

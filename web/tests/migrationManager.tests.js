@@ -3,9 +3,13 @@
  * Tests for the Schema 2.5 migration system with strict dependency injection
  */
 
-import * as MigrationManager from '../modules/routine/migrationManager.js';
+// Module-level variable for dynamic import
+let MigrationManager;
 
 export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false) {
+    // Dynamic import with cache busting
+    const cacheBuster = window.testCacheBuster || Date.now();
+    MigrationManager = await import(`../modules/routine/migrationManager.js?v=${cacheBuster}`);
     resultsDiv.innerHTML = '<h2>🔄 Migration Manager Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };
