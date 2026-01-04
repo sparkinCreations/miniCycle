@@ -1,3 +1,7 @@
+## [1.671] - 2026-01-04
+- feat: add results area resize functionality and save height to AppState
+
+
 ## [1.670] - 2026-01-04
 - fix: update initial visibility state for task input during onboarding
 
