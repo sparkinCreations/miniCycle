@@ -145,6 +145,9 @@ export class OnboardingManager {
     showOnboarding(cycles, activeCycle, schemaData = null) {
         console.log('🎯 Starting onboarding flow...');
 
+        // ✅ Hide task list area during onboarding (show placeholder instead)
+        document.body.classList.add('onboarding-active');
+
         // ✅ FIX: Use passed schemaData if available (avoids race condition on initial load)
         // AppState may not be ready yet when createInitialSchema25Data just created the data
         let currentState = schemaData;

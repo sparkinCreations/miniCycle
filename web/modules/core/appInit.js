@@ -404,6 +404,9 @@ class AppInit {
 	async runCompleteInitialSetup(activeCycle, fullSchemaData = null, schemaData = null) {
 		console.log('✅ Completing initial setup for cycle:', activeCycle);
 
+		// ✅ Remove onboarding-active class to show task list area
+		document.body.classList.remove('onboarding-active');
+
 		console.log('⏳ Waiting for TaskDOM to be ready...');
 		await this.waitForApp();
 		console.log('✅ TaskDOM ready, proceeding with task loading');
