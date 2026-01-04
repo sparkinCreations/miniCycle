@@ -114,6 +114,37 @@ async function waitForCoreWithTimeout() {
     }
 }
 
+// Track one-time warnings for missing optional dependencies
+const _warnedMissingDeps = new Set();
+
+/**
+ * Warn once about a missing optional dependency
+ * @param {string} depName - Dependency name
+ * @param {string} context - Where it was needed
+ * @private
+ */
+function warnMissingDep(depName, context) {
+    const key = `${depName}-${context}`;
+    if (_warnedMissingDeps.has(key)) return;
+    _warnedMissingDeps.add(key);
+    console.warn(`⚠️ [TaskCRUD] Missing optional dependency: ${depName} (needed for ${context}). Undo/redo may not work for this operation.`);
+}
+
+/**
+ * Safely capture state snapshot with warning if unavailable
+ * @param {Function|null} captureStateSnapshot - The snapshot function
+ * @param {Object} state - Current state
+ * @param {string} context - Context description for warning
+ * @private
+ */
+function safeCaptureSnapshot(captureStateSnapshot, state, context) {
+    if (captureStateSnapshot) {
+        captureStateSnapshot(state);
+    } else {
+        warnMissingDep('captureStateSnapshot', context);
+    }
+}
+
 /**
  * Fallback prompt modal using browser prompt
  * Used when showPromptModal dependency is not available
@@ -319,7 +350,7 @@ export async function editTaskImpl(taskItem, deps = {}) {
                     // Capture snapshot BEFORE changing text
                     if (AppState?.isReady?.()) {
                         const currentState = AppState.get();
-                        if (currentState) captureStateSnapshot?.(currentState);
+                        if (currentState) safeCaptureSnapshot(captureStateSnapshot, currentState, 'task edit');
                     }
 
                     // Update DOM
@@ -398,7 +429,7 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
                 // Capture snapshot BEFORE deletion
                 if (AppState?.isReady?.()) {
                     const currentState = AppState.get();
-                    if (currentState) captureStateSnapshot?.(currentState);
+                    if (currentState) safeCaptureSnapshot(captureStateSnapshot, currentState, 'task delete');
                 }
 
                 // ✅ Use AppState only (no localStorage fallback) - DI-pure
@@ -499,7 +530,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
 
         // Capture snapshot BEFORE changing priority
         if (AppState?.isReady?.()) {
-            captureStateSnapshot?.(currentState);
+            safeCaptureSnapshot(captureStateSnapshot, currentState, 'priority toggle');
         }
 
         // Update DOM based on calculated state
