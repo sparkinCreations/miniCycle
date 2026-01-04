@@ -1,3 +1,8 @@
+## [1.668] - 2026-01-04
+- chore: update version to 1.667 in manifest, HTML, package, and version files
+- feat: implement onboarding placeholder and hide task area during onboarding
+
+
 ## [1.667] - 2026-01-04
 - chore: update version to 1.666 in changelog, manifest, HTML, and version files
 
