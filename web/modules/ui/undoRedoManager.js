@@ -1263,6 +1263,12 @@ let dbWriteTimeout = null;  // Debounce timer
 async function isTestModeActive() {
   try {
     return new Promise((resolve) => {
+      // Timeout to prevent indefinite hangs
+      const timeout = setTimeout(() => {
+        console.warn('⚠️ isTestModeActive timed out');
+        resolve(false);
+      }, 3000);
+
       const request = indexedDB.open('miniCycleTestResultsDB', 1);
       request.onupgradeneeded = (e) => {
         const db = e.target.result;
@@ -1271,6 +1277,7 @@ async function isTestModeActive() {
         }
       };
       request.onsuccess = () => {
+        clearTimeout(timeout);
         const db = request.result;
         try {
           const tx = db.transaction('results', 'readonly');
@@ -1298,7 +1305,15 @@ async function isTestModeActive() {
           resolve(false);
         }
       };
-      request.onerror = () => resolve(false);
+      request.onerror = () => {
+        clearTimeout(timeout);
+        resolve(false);
+      };
+      request.onblocked = () => {
+        clearTimeout(timeout);
+        console.warn('⚠️ isTestModeActive IndexedDB blocked');
+        resolve(false);
+      };
     });
   } catch (e) {
     return false;
@@ -1312,18 +1327,34 @@ async function isTestModeActive() {
 export async function initializeUndoIndexedDB() {
   try {
     return new Promise((resolve, reject) => {
+      // Timeout to prevent indefinite hangs
+      const timeout = setTimeout(() => {
+        console.warn('⚠️ initializeUndoIndexedDB timed out');
+        undoDB = null;
+        resolve(false);
+      }, 5000);
+
       const request = indexedDB.open("miniCycleUndoHistory", 1);
 
       request.onerror = () => {
+        clearTimeout(timeout);
         console.warn('⚠️ IndexedDB unavailable - undo limited to session only');
         undoDB = null;
         resolve(false);
       };
 
       request.onsuccess = (event) => {
+        clearTimeout(timeout);
         undoDB = event.target.result;
         console.log('✅ IndexedDB undo persistence enabled');
         resolve(true);
+      };
+
+      request.onblocked = () => {
+        clearTimeout(timeout);
+        console.warn('⚠️ IndexedDB blocked - undo limited to session only');
+        undoDB = null;
+        resolve(false);
       };
 
       request.onupgradeneeded = (event) => {
@@ -1420,11 +1451,18 @@ export async function loadUndoStackFromIndexedDB(cycleId) {
 
   try {
     return new Promise((resolve) => {
+      // Timeout to prevent indefinite hangs
+      const timeout = setTimeout(() => {
+        console.warn(`⚠️ loadUndoStackFromIndexedDB timed out for "${cycleId}"`);
+        resolve({ undoStack: [], redoStack: [] });
+      }, 5000);
+
       const transaction = undoDB.transaction(["undoStacks"], "readonly");
       const objectStore = transaction.objectStore("undoStacks");
       const request = objectStore.get(cycleId);
 
       request.onsuccess = (event) => {
+        clearTimeout(timeout);
         const data = event.target.result;
         if (data) {
           console.log(`📂 Loaded undo history for "${cycleId}" (${data.undoStack?.length || 0} undo, ${data.redoStack?.length || 0} redo)`);
@@ -1439,6 +1477,7 @@ export async function loadUndoStackFromIndexedDB(cycleId) {
       };
 
       request.onerror = () => {
+        clearTimeout(timeout);
         console.warn(`⚠️ Failed to load undo history for "${cycleId}"`);
         resolve({ undoStack: [], redoStack: [] });
       };
