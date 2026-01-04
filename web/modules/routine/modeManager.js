@@ -695,8 +695,8 @@ export class ModeManager {
                 taskInput.style.display = isVisible ? '' : 'none';
             };
 
-            // Set initial state from settings (default: true = visible)
-            const initialVisible = this.deps.AppState?.get()?.settings?.showTaskInput !== false;
+            // Set initial state from settings (default: false = hidden)
+            const initialVisible = this.deps.AppState?.get()?.settings?.showTaskInput === true;
             updateToggleText(initialVisible);
 
             this.deps.safeAddEventListener(toggleTaskInputBtn, 'click', async () => {
