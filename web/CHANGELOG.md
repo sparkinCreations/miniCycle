@@ -1,3 +1,8 @@
+## [1.663] - 2026-01-04
+- feat: implement session and test backup functionality with retention policies
+- chore: update version to 1.662 in changelog, manifest, HTML, and version files
+
+
 ## [1.662] - 2026-01-03
 - feat: add 'miniCycle_backups' to IndexedDB cleanup for test isolation
 - feat: add visibility cleanup for drag state and improve warning handling for missing dependencies
