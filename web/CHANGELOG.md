@@ -1,3 +1,8 @@
+## [1.664] - 2026-01-04
+- feat: update backupManager references to use consistent casing in testing modal
+- chore: update version to 1.663 in changelog, manifest, HTML, and version files
+
+
 ## [1.663] - 2026-01-04
 - feat: implement session and test backup functionality with retention policies
 - chore: update version to 1.662 in changelog, manifest, HTML, and version files

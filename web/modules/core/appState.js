@@ -287,6 +287,47 @@ class MiniCycleState {
                 }
             });
 
+            // ✅ Multi-tab sync: Detect changes from other tabs via storage event
+            window.addEventListener('storage', (event) => {
+                if (event.key !== 'miniCycleData') return;
+                if (!event.newValue) return;
+
+                try {
+                    const externalData = JSON.parse(event.newValue);
+                    const externalTimestamp = externalData?.metadata?.lastModified || 0;
+                    const ourTimestamp = this.data?.metadata?.lastModified || 0;
+
+                    // Only reload if external data is newer
+                    if (externalTimestamp > ourTimestamp) {
+                        console.log('🔄 Multi-tab sync: Detected newer data from another tab');
+
+                        // If we have unsaved changes, warn user
+                        if (this.isDirty) {
+                            console.warn('⚠️ Multi-tab conflict: Local unsaved changes will be overwritten');
+                            if (this.deps.showNotification) {
+                                this.deps.showNotification(
+                                    'Data updated from another tab. Your unsaved changes were overwritten.',
+                                    'warning',
+                                    5000
+                                );
+                            }
+                        }
+
+                        // Reload state from the new data
+                        this.data = externalData;
+                        this.isDirty = false;
+                        this.lastSavedTimestamp = externalTimestamp;
+
+                        // Notify subscribers of the change
+                        this.notifyListeners();
+
+                        console.log('✅ Multi-tab sync: State reloaded from other tab');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Multi-tab sync: Failed to parse external data', error);
+                }
+            });
+
             console.log('✅ State initialization completed');
             return this.data;
 
