@@ -1,3 +1,8 @@
+## [1.662] - 2026-01-03
+- feat: add 'miniCycle_backups' to IndexedDB cleanup for test isolation
+- feat: add visibility cleanup for drag state and improve warning handling for missing dependencies
+
+
 ## [1.661] - 2026-01-03
 - chore: update version to 1.660 in manifest, HTML, and version files; adjust iframe dimensions in testing modal
 - chore: update version to 1.660 in changelog, manifest, HTML, and version files; add timeout handling in module tests
