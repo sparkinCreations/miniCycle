@@ -17,7 +17,7 @@ let deps = {
     AppState: null,
 
     // Backup system
-    BackupManager: null,
+    backupManager: null,
 
     // Notifications
     notifications: null,
@@ -1050,9 +1050,9 @@ async function listAvailableBackups() {
     let totalBackups = 0;
 
     // ✅ IndexedDB backups (new system)
-    if (deps.BackupManager) {
+    if (deps.backupManager) {
         try {
-            const { auto, manual, session, test } = await deps.BackupManager.listAllBackups();
+            const { auto, manual, session, test } = await deps.backupManager.listAllBackups();
 
             // Test backups (before running tests)
             if (test && test.length > 0) {
@@ -1103,7 +1103,7 @@ async function listAvailableBackups() {
             }
 
             // Show stats
-            const stats = await deps.BackupManager.getStats();
+            const stats = await deps.backupManager.getStats();
             if (stats) {
                 appendToTestResults(`📊 Total: ${stats.totalBackups} backups (${stats.totalSizeMB} MB)\n\n`);
             }
@@ -1154,9 +1154,9 @@ async function restoreFromBackup() {
     let allBackups = [];
 
     // Load IndexedDB backups
-    if (deps.BackupManager) {
+    if (deps.backupManager) {
         try {
-            const { auto, manual, session, test } = await deps.BackupManager.listAllBackups();
+            const { auto, manual, session, test } = await deps.backupManager.listAllBackups();
 
             // Add test backups (before running tests)
             if (test) {
@@ -1452,8 +1452,8 @@ async function restoreFromBackup() {
                     // ✅ SAFETY: Create pre-restore backup before making changes
                     appendToTestResults(`💾 Creating safety backup before restore...\n`);
                     try {
-                        if (deps.BackupManager) {
-                            await deps.BackupManager.createManualBackup(`Pre-Restore Safety Backup ${new Date().toLocaleString()}`);
+                        if (deps.backupManager) {
+                            await deps.backupManager.createManualBackup(`Pre-Restore Safety Backup ${new Date().toLocaleString()}`);
                             appendToTestResults(`✅ Safety backup created\n`);
                         }
                     } catch (backupErr) {
@@ -1483,7 +1483,7 @@ async function restoreFromBackup() {
                         const backupType = selectedBackup.type === 'indexeddb-test' ? 'test' :
                                            selectedBackup.type === 'indexeddb-session' ? 'session' :
                                            selectedBackup.type === 'indexeddb-auto' ? 'auto' : 'manual';
-                        restoredData = await deps.BackupManager.restoreBackup(selectedBackup.id, backupType);
+                        restoredData = await deps.backupManager.restoreBackup(selectedBackup.id, backupType);
 
                         if (!restoredData) {
                             throw new Error('Failed to load backup from IndexedDB');
@@ -1625,7 +1625,7 @@ async function createManualBackup() {
     appendToTestResults("💾 Creating Manual Backup...\n");
 
     // Check if BackupManager is available
-    if (!deps.BackupManager) {
+    if (!deps.backupManager) {
         appendToTestResults("❌ BackupManager not available\n\n");
         showNotification("❌ Backup system not loaded", "error", 3000);
         return;
@@ -1642,11 +1642,11 @@ async function createManualBackup() {
     }
 
     try {
-        const success = await deps.BackupManager.createManualBackup(backupName);
+        const success = await deps.backupManager.createManualBackup(backupName);
 
         if (success) {
             // Get stats to show user
-            const stats = await deps.BackupManager.getStats();
+            const stats = await deps.backupManager.getStats();
             const totalBackups = stats ? stats.totalBackups : '?';
 
             appendToTestResults(`✅ Manual backup created successfully!\n`);

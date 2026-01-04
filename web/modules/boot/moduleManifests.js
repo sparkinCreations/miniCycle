@@ -409,7 +409,7 @@ export const MODULE_MANIFESTS = {
     testingModal: {
         path: '../testing/testing-modal.js',
         phase: PHASES.TESTING,
-        requires: ['AppState', 'showNotification', 'safeAddEventListener', 'safeAddEventListenerById', 'safeLocalStorageGet', 'safeLocalStorageSet', 'safeJSONParse', 'safeJSONStringify', 'consoleCapture'],
+        requires: ['AppState', 'showNotification', 'safeAddEventListener', 'safeAddEventListenerById', 'safeLocalStorageGet', 'safeLocalStorageSet', 'safeJSONParse', 'safeJSONStringify', 'consoleCapture', 'backupManager'],
         provides: ['openStorageViewer', 'closeStorageViewer'],
         api: 'testing',
         optional: true
