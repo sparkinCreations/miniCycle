@@ -406,6 +406,17 @@ export const MODULE_MANIFESTS = {
     // =========================================================================
     // PHASE 8: TESTING & BACKUP
     // =========================================================================
+    // backupManager must load FIRST so testingModal and testingModalIntegration can use it
+    backupManager: {
+        path: '../storage/backupManager.js',
+        phase: PHASES.TESTING,
+        requires: ['AppState'],
+        provides: ['backupManager'],
+        api: 'storage',
+        optional: true,
+        singleton: true
+    },
+
     testingModal: {
         path: '../testing/testing-modal.js',
         phase: PHASES.TESTING,
@@ -422,16 +433,6 @@ export const MODULE_MANIFESTS = {
         provides: ['runAllAutomatedTests'],
         api: 'testing',
         optional: true
-    },
-
-    backupManager: {
-        path: '../storage/backupManager.js',
-        phase: PHASES.TESTING,
-        requires: ['AppState'],
-        provides: ['backupManager'],
-        api: 'storage',
-        optional: true,
-        singleton: true
     },
 
     basicPluginSystem: {

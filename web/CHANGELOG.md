@@ -1,3 +1,8 @@
+## [1.665] - 2026-01-04
+- feat: add lazy resolution for backupManager in module dependencies
+- feat: add structuredClone polyfill for Safari and implement multi-tab sync in state management
+
+
 ## [1.664] - 2026-01-04
 - feat: update backupManager references to use consistent casing in testing modal
 - chore: update version to 1.663 in changelog, manifest, HTML, and version files
