@@ -576,6 +576,9 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         safeJSONParse: GlobalUtils?.safeJSONParse,
         safeJSONStringify: GlobalUtils?.safeJSONStringify,
 
+        // Backup manager (from deps.storage) - use getter for lazy resolution
+        get backupManager() { return deps.storage?.backupManager; },
+
         // From appContext (registered by coreBoot/featureBoot) - wrapper functions for lazy resolution
         completeInitialSetup: (...args) => getCompleteInitialSetup()?.(...args),
 
