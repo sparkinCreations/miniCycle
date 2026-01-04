@@ -23,7 +23,8 @@ export async function runThemeManagerTests(resultsDiv) {
     const env = await setupTestEnvironment();
 
     // Import setThemeManagerDependencies to inject mocks
-    const themeModule = await import('../modules/features/themeManager.js');
+    const cacheBuster = window.testCacheBuster || Date.now();
+    const themeModule = await import(`../modules/features/themeManager.js?v=${cacheBuster}`);
     setThemeManagerDependencies = themeModule.setThemeManagerDependencies;
 
     // Inject mock dependencies using testHelpers mocks

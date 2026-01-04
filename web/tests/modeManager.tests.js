@@ -20,7 +20,8 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
     // Import the module directly for DI testing
     try {
-        const module = await import('../modules/routine/modeManager.js');
+        const cacheBuster = window.testCacheBuster || Date.now();
+        const module = await import(`../modules/routine/modeManager.js?v=${cacheBuster}`);
         ModeManager = module.ModeManager;
         setModeManagerDependencies = module.setModeManagerDependencies;
         resultsDiv.innerHTML = '<h2>🎯 ModeManager Tests (DI-Pure)</h2><h3>Running tests...</h3>';

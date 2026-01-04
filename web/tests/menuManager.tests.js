@@ -26,7 +26,8 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
 
     // Import the module directly for DI testing
     try {
-        const module = await import('../modules/ui/menuManager.js');
+        const cacheBuster = window.testCacheBuster || Date.now();
+        const module = await import(`../modules/ui/menuManager.js?v=${cacheBuster}`);
         MenuManager = module.MenuManager;
         setMenuManagerDependencies = module.setMenuManagerDependencies;
         resultsDiv.innerHTML = '<h2>🎛️ Menu Manager Tests (DI-Pure)</h2><h3>Running tests...</h3>';

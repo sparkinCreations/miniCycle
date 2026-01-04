@@ -46,6 +46,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
 
     // Import the module functions
+    const cacheBuster = window.testCacheBuster || Date.now();
     const {
         setUndoRedoManagerDependencies,
         wireUndoRedoUI,
@@ -69,7 +70,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         initializeUndoIndexedDB,
         saveUndoStackToIndexedDB,
         loadUndoStackFromIndexedDB
-    } = await import('../modules/ui/undoRedoManager.js');
+    } = await import(`../modules/ui/undoRedoManager.js?v=${cacheBuster}`);
 
     // ✅ CRITICAL: Mark appInit as ready for tests
     if (window.appInit && !window.appInit.isCoreReady()) {

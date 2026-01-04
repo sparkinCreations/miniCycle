@@ -22,7 +22,8 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
 
     // Import the module directly for DI testing
     try {
-        const module = await import('../modules/ui/taskUI.js');
+        const cacheBuster = window.testCacheBuster || Date.now();
+        const module = await import(`../modules/ui/taskUI.js?v=${cacheBuster}`);
         TaskOptionsVisibilityController = module.TaskOptionsVisibilityController;
         setTaskUIDependencies = module.setTaskUIDependencies;
         refreshTaskListUI = module.refreshTaskListUI;
