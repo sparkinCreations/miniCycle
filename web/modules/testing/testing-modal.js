@@ -90,7 +90,11 @@ function safeShowNotification(message, type = "info", duration) {
 // Safe access to confirmation modal
 function safeShowConfirmationModal(options) {
     try {
-        return notifications.showConfirmationModal(options);
+        if (deps.notifications?.showConfirmationModal) {
+            return deps.notifications.showConfirmationModal(options);
+        }
+        // Fallback to basic confirm
+        return Promise.resolve(confirm(options.message || 'Confirm action?'));
     } catch (error) {
         console.warn('Confirmation modal error:', error);
         // Fallback to basic confirm
@@ -101,7 +105,11 @@ function safeShowConfirmationModal(options) {
 // Safe access to prompt modal
 function safeShowPromptModal(options) {
     try {
-        return notifications.showPromptModal(options);
+        if (deps.notifications?.showPromptModal) {
+            return deps.notifications.showPromptModal(options);
+        }
+        // Fallback to basic prompt
+        return Promise.resolve(prompt(options.message || 'Enter value:', options.defaultValue || ''));
     } catch (error) {
         console.warn('Prompt modal error:', error);
         // Fallback to basic prompt
@@ -685,80 +693,6 @@ function setupTestButtons() {
         showNotification("⏹️ Auto-capture disabled", "info", 2000);
     });
 
-    // ModuleLoader toggle handler
-    initModuleLoaderToggle();
-}
-
-// ==========================================
-// 🔧 MODULE LOADER TOGGLE
-// ==========================================
-
-/**
- * Initialize the ModuleLoader toggle in the Debug tab
- * Reads current state from localStorage and sets up change handler
- */
-function initModuleLoaderToggle() {
-    const toggle = document.getElementById('toggle-module-loader');
-    const statusSpan = document.getElementById('module-loader-status');
-
-    if (!toggle) {
-        console.log('ModuleLoader toggle not found in DOM');
-        return;
-    }
-
-    // Read current state - moduleLoader is ON by default (unless explicitly set to 'false')
-    let currentValue = null;
-    try {
-        currentValue = localStorage.getItem('miniCycle_useModuleLoader');
-    } catch (e) {
-        console.warn('Could not read moduleLoader flag from localStorage:', e);
-    }
-    const isEnabled = currentValue !== 'false';
-
-    // Set initial toggle state
-    toggle.checked = isEnabled;
-    updateModuleLoaderStatus(statusSpan, isEnabled);
-
-    // Handle toggle changes
-    toggle.addEventListener('change', () => {
-        const newEnabled = toggle.checked;
-
-        try {
-            if (newEnabled) {
-                // Remove the flag to use default (moduleLoader enabled)
-                localStorage.removeItem('miniCycle_useModuleLoader');
-            } else {
-                // Explicitly disable moduleLoader
-                localStorage.setItem('miniCycle_useModuleLoader', 'false');
-            }
-        } catch (e) {
-            console.warn('Could not save moduleLoader flag to localStorage:', e);
-        }
-
-        updateModuleLoaderStatus(statusSpan, newEnabled);
-
-        const bootSystem = newEnabled ? 'ModuleLoader (declarative)' : 'Legacy bootFeatures()';
-        appendToTestResults(`🔧 Boot system changed to: ${bootSystem}\n`);
-        appendToTestResults(`   Refresh the page for changes to take effect.\n\n`);
-        showNotification(`Boot system: ${bootSystem}. Refresh to apply.`, 'info', 3000);
-    });
-
-    console.log('✅ ModuleLoader toggle initialized');
-}
-
-/**
- * Update the status text next to the toggle
- */
-function updateModuleLoaderStatus(statusSpan, isEnabled) {
-    if (!statusSpan) return;
-
-    if (isEnabled) {
-        statusSpan.textContent = 'ModuleLoader: ON (declarative boot)';
-        statusSpan.style.color = '#28a745';
-    } else {
-        statusSpan.textContent = 'ModuleLoader: OFF (legacy boot)';
-        statusSpan.style.color = '#dc3545';
-    }
 }
 
 // ==========================================
