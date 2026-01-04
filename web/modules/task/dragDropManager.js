@@ -114,11 +114,44 @@ export class DragDropManager {
             console.log('✅ Core systems ready, initializing drag & drop...');
 
             this.setupRearrange();
+            this.setupVisibilityCleanup();
             this.initialized = true;
             console.log('✅ DragDropManager initialized successfully');
         } catch (error) {
             console.warn('⚠️ DragDropManager initialization failed:', error);
             this.deps.showNotification('Drag & drop may not work properly', 'warning');
+        }
+    }
+
+    /**
+     * Setup visibility change handler to cleanup drag state when tab loses focus
+     * Prevents corrupted drag state if user switches tabs mid-drag
+     */
+    setupVisibilityCleanup() {
+        try {
+            const safeAdd = this.deps.safeAddEventListener;
+
+            // Cleanup drag state when page becomes hidden (tab switch, minimize, etc.)
+            document._dragVisibilityHandler = () => {
+                if (document.hidden && this.draggedTask) {
+                    console.log('🧹 Cleaning up drag state due to visibility change');
+                    this.cleanupDragState();
+                }
+            };
+            safeAdd(document, 'visibilitychange', document._dragVisibilityHandler);
+
+            // Also cleanup on window blur (user clicks outside browser)
+            window._dragBlurHandler = () => {
+                if (this.draggedTask) {
+                    console.log('🧹 Cleaning up drag state due to window blur');
+                    this.cleanupDragState();
+                }
+            };
+            safeAdd(window, 'blur', window._dragBlurHandler);
+
+            console.log('✅ Drag visibility cleanup handlers installed');
+        } catch (error) {
+            console.warn('⚠️ Failed to setup visibility cleanup:', error);
         }
     }
 

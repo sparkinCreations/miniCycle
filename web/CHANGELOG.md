@@ -1,3 +1,8 @@
+## [1.661] - 2026-01-03
+- chore: update version to 1.660 in manifest, HTML, and version files; adjust iframe dimensions in testing modal
+- chore: update version to 1.660 in changelog, manifest, HTML, and version files; add timeout handling in module tests
+
+
 ## [1.660] - 2026-01-03
 - chore: update version to 1.659 in changelog, manifest, HTML, and version files; add timeout handling in module tests
 

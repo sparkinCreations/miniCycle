@@ -669,6 +669,33 @@ export class GlobalUtils {
         console.log(`✅ Synced ${syncedCount} tasks with ${currentMode} mode${removedCount > 0 ? `, removed ${removedCount} orphaned elements` : ''}`);
         return syncedCount;
     }
+
+    // Track which warnings have been shown (prevents spam)
+    static _shownWarnings = new Set();
+
+    /**
+     * Show a warning message only once per session.
+     * Useful for missing optional dependencies - warns developer without spamming console.
+     *
+     * @param {string} key - Unique key for this warning (e.g., 'captureStateSnapshot-missing')
+     * @param {string} message - Warning message to display
+     * @returns {boolean} True if warning was shown, false if already shown before
+     */
+    static warnOnce(key, message) {
+        if (GlobalUtils._shownWarnings.has(key)) {
+            return false;
+        }
+        GlobalUtils._shownWarnings.add(key);
+        console.warn(`⚠️ [ONE-TIME] ${message}`);
+        return true;
+    }
+
+    /**
+     * Clear all tracked warnings (useful for testing)
+     */
+    static resetWarnings() {
+        GlobalUtils._shownWarnings.clear();
+    }
 }
 
 // ===========================================

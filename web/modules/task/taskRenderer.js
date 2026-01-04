@@ -175,30 +175,43 @@ export class TaskRenderer {
         console.log(`📋 Rendering ${tasksArray.length} tasks`);
 
         // ✅ Create DocumentFragment for batched DOM operations
+        // Using try/catch to preserve existing DOM if rendering fails mid-way
         const fragment = document.createDocumentFragment();
+        let renderSuccess = true;
 
-        // Build all task elements in fragment (no reflows during construction)
-        for (const task of tasksArray) {
-            if (!task || !task.id) {
-                console.warn('⚠️ Skipping invalid task:', task);
-                continue;
-            }
+        try {
+            // Build all task elements in fragment (no reflows during construction)
+            for (const task of tasksArray) {
+                if (!task || !task.id) {
+                    console.warn('⚠️ Skipping invalid task:', task);
+                    continue;
+                }
 
-            // Use injected addTask with deferred append to fragment
-            if (this.deps.addTask && this.deps.taskToAddTaskOptions) {
-                const options = this.deps.taskToAddTaskOptions(task);
-                // Defer append and use fragment as target container
-                options.deferAppend = true;
-                options.targetContainer = fragment;
-                await this.deps.addTask(task.text, options);
-            } else {
-                console.warn('⚠️ addTask or taskToAddTaskOptions not available for task:', task.id);
+                // Use injected addTask with deferred append to fragment
+                if (this.deps.addTask && this.deps.taskToAddTaskOptions) {
+                    const options = this.deps.taskToAddTaskOptions(task);
+                    // Defer append and use fragment as target container
+                    options.deferAppend = true;
+                    options.targetContainer = fragment;
+                    await this.deps.addTask(task.text, options);
+                } else {
+                    console.warn('⚠️ addTask or taskToAddTaskOptions not available for task:', task.id);
+                }
             }
+        } catch (error) {
+            console.error('❌ Error building task elements, preserving existing DOM:', error);
+            renderSuccess = false;
         }
 
-        // ✅ Atomic DOM update: replaceChildren swaps all children in one reflow
-        // This is more efficient than innerHTML = "" followed by appendChild
-        taskList.replaceChildren(...fragment.childNodes);
+        // Only replace DOM if all tasks rendered successfully
+        if (renderSuccess) {
+            // ✅ Atomic DOM update: replaceChildren swaps all children in one reflow
+            // This is more efficient than innerHTML = "" followed by appendChild
+            taskList.replaceChildren(...fragment.childNodes);
+        } else {
+            console.warn('⚠️ Render failed - existing task list preserved');
+            return;
+        }
 
         // Re-run UI state updates
         this.deps.updateProgressBar?.();
