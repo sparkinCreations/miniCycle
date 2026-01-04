@@ -5,7 +5,8 @@
  * Pattern: Resilient Constructor 🛡️
  */
 
-import { RecurringPanelManager, buildRecurringSummaryFromSettings, setRecurringPanelDependencies, loadPanelSubModules } from '../modules/recurring/recurringPanel.js';
+// Module references - populated by dynamic import in runRecurringPanelTests
+let RecurringPanelManager, buildRecurringSummaryFromSettings, setRecurringPanelDependencies, loadPanelSubModules;
 
 /**
  * Helper to set up required DI dependencies before creating RecurringPanelManager
@@ -44,10 +45,20 @@ function setupPanelDeps(overrides = {}) {
 }
 
 export async function runRecurringPanelTests(resultsDiv) {
+    resultsDiv.innerHTML = '<h2>🎛️ RecurringPanel Tests</h2><h3>Loading module...</h3>';
+
+    // Dynamic import with cache busting to avoid stale CDN cache
+    const cacheBuster = window.testCacheBuster || Date.now();
+    const module = await import(`../modules/recurring/recurringPanel.js?v=${cacheBuster}`);
+    RecurringPanelManager = module.RecurringPanelManager;
+    buildRecurringSummaryFromSettings = module.buildRecurringSummaryFromSettings;
+    setRecurringPanelDependencies = module.setRecurringPanelDependencies;
+    loadPanelSubModules = module.loadPanelSubModules;
+
     resultsDiv.innerHTML = '<h2>🎛️ RecurringPanel Tests</h2><h3>Loading sub-modules...</h3>';
 
     // Load sub-modules before running tests
-    await loadPanelSubModules('test');
+    await loadPanelSubModules(cacheBuster);
 
     resultsDiv.innerHTML = '<h2>🎛️ RecurringPanel Tests</h2><h3>Running tests...</h3>';
 

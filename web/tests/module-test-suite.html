@@ -422,6 +422,8 @@
     <script type="module">
         // Cache-busting timestamp to force fresh module loads during development
         const cacheBuster = Date.now();
+        // Expose globally so test files can use it for dynamic imports
+        window.testCacheBuster = cacheBuster;
 
         // Import shared test helpers for comprehensive mock setup
         // Note: Individual test files use these helpers - they're imported here
