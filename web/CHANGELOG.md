@@ -1,3 +1,8 @@
+## [1.666] - 2026-01-04
+- feat: remove ModuleLoader toggle from testing modal and update dependencies for notifications
+- chore: update version to 1.665 in changelog, manifest, HTML, and version files; adjust backupManager loading in module manifests
+
+
 ## [1.665] - 2026-01-04
 - feat: add lazy resolution for backupManager in module dependencies
 - feat: add structuredClone polyfill for Safari and implement multi-tab sync in state management
