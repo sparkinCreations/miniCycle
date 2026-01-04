@@ -758,7 +758,6 @@ margin: 0;
    Onboarding State - Hide task area during onboarding
    ======================================== */
 /* Hide task content during onboarding - show only onboarding placeholder */
-body.onboarding-active .task-input,
 body.onboarding-active .title-row,
 body.onboarding-active .task-list,
 body.onboarding-active .empty-state,
