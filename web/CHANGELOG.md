@@ -1,3 +1,7 @@
+## [1.667] - 2026-01-04
+- chore: update version to 1.666 in changelog, manifest, HTML, and version files
+
+
 ## [1.666] - 2026-01-04
 - feat: remove ModuleLoader toggle from testing modal and update dependencies for notifications
 - chore: update version to 1.665 in changelog, manifest, HTML, and version files; adjust backupManager loading in module manifests
