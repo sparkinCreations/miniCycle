@@ -253,7 +253,8 @@ export const MODULE_MANIFESTS = {
     routineSwitcher: {
         path: '../routine/routineSwitcher.js',
         phase: PHASES.CYCLE,
-        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showCycleCreationModal', 'getOnboardingManager', 'onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched'],
+        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showCycleCreationModal', 'getOnboardingManager'],
+        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched'],  // From undoRedoManager (phase 6)
         provides: ['switchMiniCycle', 'renameMiniCycle', 'deleteMiniCycle'],
         api: 'cycle',
         after: ['routineManager', 'onboardingManager']

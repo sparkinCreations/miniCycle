@@ -69,8 +69,12 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         initializeUndoSystemForApp,
         initializeUndoIndexedDB,
         saveUndoStackToIndexedDB,
-        loadUndoStackFromIndexedDB
+        loadUndoStackFromIndexedDB,
+        clearUndoCache
     } = await import(`../modules/ui/undoRedoManager.js?v=${cacheBuster}`);
+
+    // localStorage cache key (must match module)
+    const UNDO_CACHE_KEY = '__miniCycle_undoCache__';
 
     // ✅ CRITICAL: Mark appInit as ready for tests
     if (window.appInit && !window.appInit.isCoreReady()) {
@@ -89,11 +93,8 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
             isPerformingUndoRedo: false,
             lastSnapshotSignature: null,
             lastSnapshotTs: 0,
-            __undoRedoWired: false,
-            // Lazy loading flags (for tests, mark as loaded so button visibility uses stack length)
-            undoHistoryExists: false,
-            redoHistoryExists: false,
-            undoStackLazyLoaded: true  // Tests set stacks directly, so mark as loaded
+            __undoRedoWired: false
+            // NOTE: localStorage cache provides instant boot, no lazy loading needed
         };
 
         const mockSchemaData = {
@@ -821,41 +822,41 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    await test('undo/redo handles cycle switching', async () => {
+    await test('undo/redo is isolated per cycle (does not switch cycles)', async () => {
         const mockDeps = createMockDependencies();
         mockDeps.AppGlobalState.isInitializing = false;
+        mockDeps.AppGlobalState.activeCycleIdForUndo = 'Test Cycle';
         setUndoRedoManagerDependencies(mockDeps);
 
-        // Add second cycle via proper update
-        await mockDeps.AppState.update(state => {
-            state.data.cycles['Cycle 2'] = {
-                title: 'Cycle 2',
-                tasks: [{ id: 'task-3', text: 'Task 3', completed: false }],
-                recurringTemplates: {},
-                autoReset: true,
-                deleteCheckedTasks: false
-            };
-        });
-
-        // Capture state in Cycle 1
-        await captureStateSnapshot(mockDeps.AppState.get());
+        // Capture initial state
+        captureStateSnapshot(mockDeps.AppState.get());
 
         await new Promise(resolve => setTimeout(resolve, 350));
 
-        // Switch to Cycle 2 via proper update
+        // Make a change to current cycle
         await mockDeps.AppState.update(state => {
-            state.appState.activeCycleId = 'Cycle 2';
+            state.data.cycles['Test Cycle'].tasks.push({
+                id: 'new-task',
+                text: 'New Task',
+                completed: false
+            });
         });
 
-        // Capture state in Cycle 2
-        await captureStateSnapshot(mockDeps.AppState.get());
+        // Capture state after change
+        captureStateSnapshot(mockDeps.AppState.get());
 
-        // Undo should switch back to Cycle 1
+        // Undo should restore the current cycle's state, NOT switch cycles
         await performStateBasedUndo();
 
         const restored = mockDeps.AppState.get();
+        // Should still be on the same cycle
         if (restored.appState.activeCycleId !== 'Test Cycle') {
-            throw new Error(`Undo should restore activeCycleId to 'Test Cycle', got '${restored.appState.activeCycleId}'`);
+            throw new Error(`Undo should NOT switch cycles. Expected 'Test Cycle', got '${restored.appState.activeCycleId}'`);
+        }
+        // Should have restored the task list (removed the added task)
+        const tasks = restored.data.cycles['Test Cycle'].tasks;
+        if (tasks.some(t => t.id === 'new-task')) {
+            throw new Error('Undo should have removed the newly added task');
         }
     });
 
@@ -1711,7 +1712,99 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    // === 11. SIGNATURE CACHING (3 tests) ===
+    // === 11. LOCALSTORAGE CACHE (4 tests) ===
+    resultsDiv.innerHTML += '<h4 class="test-section">⚡ localStorage Cache (Instant Boot)</h4>';
+
+    await test('saveUndoStackToIndexedDB also writes to localStorage cache', async () => {
+        // Clear any existing cache
+        localStorage.removeItem(UNDO_CACHE_KEY);
+
+        const undoStack = [
+            {
+                activeCycleId: 'test-cycle',
+                tasks: [{ id: 'task-1', text: 'Test', completed: false }],
+                title: 'Test',
+                timestamp: Date.now()
+            }
+        ];
+        const redoStack = [];
+
+        // Save to IndexedDB (also saves to localStorage)
+        saveUndoStackToIndexedDB('test-cycle', undoStack, redoStack);
+
+        // Check localStorage cache was written
+        const cached = localStorage.getItem(UNDO_CACHE_KEY);
+        if (!cached) {
+            throw new Error('Should write to localStorage cache');
+        }
+
+        const data = JSON.parse(cached);
+        if (data.cycleId !== 'test-cycle') {
+            throw new Error('Cache should have correct cycleId');
+        }
+        if (data.undoStack.length !== 1) {
+            throw new Error('Cache should have undo stack');
+        }
+    });
+
+    await test('localStorage cache includes timestamp', async () => {
+        localStorage.removeItem(UNDO_CACHE_KEY);
+
+        const beforeTime = Date.now();
+        saveUndoStackToIndexedDB('test-cycle', [], []);
+        const afterTime = Date.now();
+
+        const cached = localStorage.getItem(UNDO_CACHE_KEY);
+        const data = JSON.parse(cached);
+
+        if (!data.timestamp) {
+            throw new Error('Cache should include timestamp');
+        }
+        if (data.timestamp < beforeTime || data.timestamp > afterTime) {
+            throw new Error('Timestamp should be recent');
+        }
+    });
+
+    await test('clearUndoCache removes localStorage cache', async () => {
+        // Set up cache
+        localStorage.setItem(UNDO_CACHE_KEY, JSON.stringify({
+            cycleId: 'test',
+            undoStack: [],
+            redoStack: [],
+            timestamp: Date.now()
+        }));
+
+        // Clear it
+        clearUndoCache();
+
+        const cached = localStorage.getItem(UNDO_CACHE_KEY);
+        if (cached !== null) {
+            throw new Error('clearUndoCache should remove localStorage cache');
+        }
+    });
+
+    await test('onCycleDeleted clears cache when deleting active cycle', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.activeCycleIdForUndo = 'cycle-to-delete';
+        setUndoRedoManagerDependencies(mockDeps);
+
+        // Set up cache for the cycle to be deleted
+        localStorage.setItem(UNDO_CACHE_KEY, JSON.stringify({
+            cycleId: 'cycle-to-delete',
+            undoStack: [{ activeCycleId: 'cycle-to-delete', tasks: [] }],
+            redoStack: [],
+            timestamp: Date.now()
+        }));
+
+        await onCycleDeleted('cycle-to-delete');
+
+        const cached = localStorage.getItem(UNDO_CACHE_KEY);
+        if (cached !== null) {
+            throw new Error('Should clear localStorage cache when deleting active cycle');
+        }
+    });
+
+    // === 12. SIGNATURE CACHING (3 tests) ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔖 Signature Caching</h4>';
 
     await test('captureStateSnapshot caches signature on snapshot', async () => {

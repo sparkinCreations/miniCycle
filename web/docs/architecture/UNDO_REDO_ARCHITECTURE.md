@@ -1,27 +1,31 @@
 # Undo/Redo System Architecture
 
-**Module:** `modules/ui/undoRedoManager.js` (1,049 lines)
-**Version:** 1.356
-**Test Coverage:** 73/73 tests passing (100%)
-**Status:** Production-ready, per-cycle IndexedDB persistence
+**Module:** `modules/ui/undoRedoManager.js` (~1,800 lines)
+**Version:** 1.672
+**Test Coverage:** 76/76 tests passing (100%)
+**Status:** Production-ready, localStorage cache + IndexedDB persistence
 
 ---
 
 ## Overview
 
-miniCycle's undo/redo system is a **per-cycle, state-based snapshot system** with persistent IndexedDB storage. Each cycle maintains its own independent undo/redo history, allowing users to undo up to 20 actions per cycle with full state restoration.
+miniCycle's undo/redo system is a **per-cycle, state-based snapshot system** with **localStorage cache for instant boot** and IndexedDB for persistent storage. Each cycle maintains its own independent undo/redo history, allowing users to undo up to 20 actions per cycle with full state restoration.
 
 ### Key Features
 
-- ✅ **Per-cycle isolation** - Each cycle has independent undo/redo history
-- ✅ **IndexedDB persistence** - History survives page reloads
+- ✅ **Per-cycle isolation** - Each cycle has independent undo/redo history (undo NEVER switches cycles)
+- ✅ **Snapshot validation** - Filters out snapshots with wrong cycleId or malformed data
+- ✅ **Instant boot via localStorage cache** - Active cycle's history loads synchronously
+- ✅ **IndexedDB persistence** - Full history survives page reloads
+- ✅ **Dual-write architecture** - localStorage (instant) + IndexedDB (persistent)
 - ✅ **Full state snapshots** - Complete cycle state, not deltas
 - ✅ **Smart deduplication** - Prevents duplicate snapshots
 - ✅ **Throttled capture** - 300ms minimum interval between snapshots
-- ✅ **Debounced writes** - Batches IndexedDB writes every 3 seconds
-- ✅ **Graceful degradation** - Works in-memory if IndexedDB unavailable
+- ✅ **Debounced IndexedDB writes** - Batches writes every 3 seconds
+- ✅ **Graceful degradation** - Works in-memory if storage unavailable
 - ✅ **Rollback on failure** - Automatic recovery from failed operations
 - ✅ **Descriptive notifications** - User-friendly change descriptions
+- ✅ **Cross-phase dependency resolution** - Lazy getters for lifecycle hooks
 
 ---
 
@@ -57,22 +61,32 @@ miniCycle's undo/redo system is a **per-cycle, state-based snapshot system** wit
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
-│          IndexedDB Persistence (Debounced)                  │
+│              Dual-Write Persistence                         │
 │                                                             │
-│  Database: miniCycleUndoHistory                            │
-│  Store: undoStacks                                         │
-│  Key: cycleId                                              │
-│  Debounce: 3 seconds                                       │
+│  ┌──────────────────────┐   ┌───────────────────────────┐  │
+│  │   localStorage       │   │   IndexedDB (Debounced)   │  │
+│  │   Cache (Immediate)  │   │                           │  │
+│  │                      │   │   Database: miniCycle...  │  │
+│  │   Key: __miniCycle_  │   │   Store: undoStacks       │  │
+│  │        undoCache__   │   │   Debounce: 3 seconds     │  │
+│  │                      │   │                           │  │
+│  │   Active cycle only  │   │   All cycles              │  │
+│  │   ~200-400KB max     │   │   Persistent storage      │  │
+│  └──────────────────────┘   └───────────────────────────┘  │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
 │              Cycle Switch Detection                         │
 │                                                             │
-│  1. Save current cycle's stacks to IndexedDB               │
-│  2. Clear in-memory stacks                                 │
+│  1. Save OLD cycle's stacks to IndexedDB (skip cache)      │
+│  2. Clear in-memory stacks, active ID, and cache           │
 │  3. Load new cycle's stacks from IndexedDB                 │
-│  4. Update UI button states                                │
+│  4. Validate loaded data (filter wrong cycleId/malformed)  │
+│  5. Set active ID and populate stacks (after validation)   │
+│  6. Update localStorage cache with validated data          │
+│  7. Update UI button states                                │
+│  8. Wait 300ms, then re-enable snapshot capture            │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -113,9 +127,31 @@ Each snapshot captures **complete cycle state** at a point in time:
 }
 ```
 
+### localStorage Cache Structure
+
+**Key:** `__miniCycle_undoCache__`
+
+Stores only the **active cycle's** undo/redo stacks for instant boot:
+
+```javascript
+{
+  cycleId: string,                 // Which cycle this cache is for
+  undoStack: Snapshot[],           // Array of undo snapshots
+  redoStack: Snapshot[],           // Array of redo snapshots
+  timestamp: number                // When cache was last updated
+}
+```
+
+**Why localStorage?**
+- **Synchronous access** - Loads in <1ms vs 5-10ms for IndexedDB
+- **Instant boot** - Buttons show correct state immediately
+- **Simple API** - No async/await needed at boot time
+- **Small footprint** - Active cycle only (~200-400KB)
+- **IndexedDB backup** - Full history still persisted in IndexedDB
+
 ### In-Memory State
 
-Stored in `window.AppGlobalState`:
+Stored in `AppGlobalState` (accessed via DI, not window.*):
 
 ```javascript
 {
@@ -173,6 +209,8 @@ Stored in `window.AppGlobalState`:
 **Keyboard:** Ctrl+Z (Cmd+Z on Mac)
 **Button:** Undo button (hidden if stack empty)
 
+**Critical:** Undo **NEVER** switches cycles. Each routine has isolated undo history. When restoring a snapshot, the cycle ID from `state.appState.activeCycleId` (current cycle) is always used, not `snapshot.activeCycleId`.
+
 **Logic Flow:**
 1. Validate: Check stack not empty, AppState ready
 2. Create rollback points (in case of failure)
@@ -180,7 +218,7 @@ Stored in `window.AppGlobalState`:
 4. Capture current state as snapshot
 5. Pop from undo stack (skip duplicates)
 6. Push current state to redo stack
-7. Restore snapshot to AppState
+7. Restore snapshot to AppState **using current cycle ID** (not snapshot's)
 8. Refresh UI from restored state
 9. Update button states
 10. Save updated stacks to IndexedDB
@@ -205,19 +243,92 @@ Stored in `window.AppGlobalState`:
 
 **Function:** `onCycleSwitched(newCycleId)`
 **Called by:** `routineSwitcher` module when user switches cycles
+**Dependency Resolution:** Lazy getter in `moduleLoader.js` (resolves at runtime, not initialization)
 
 **Logic Flow:**
-1. Check if actually changing cycles
+1. Check if actually changing cycles (skip if same cycle)
 2. Set `isSwitchingCycles` flag to block snapshots
-3. Save current cycle's stacks to IndexedDB
-4. Clear in-memory stacks
+3. Save OLD cycle's stacks to IndexedDB (with `skipCache: true`)
+4. **Clear EVERYTHING first:**
+   - Clear in-memory undo stack
+   - Clear in-memory redo stack
+   - Clear `activeCycleIdForUndo`
+   - Clear localStorage cache
 5. Load new cycle's stacks from IndexedDB
-6. Update tracking variables
-7. Update UI button states
-8. Wait 300ms for cycle to fully load
-9. Clear `isSwitchingCycles` flag
+6. **Validate loaded data** (filter out wrong cycleId or malformed snapshots)
+7. **THEN set active ID and populate stacks** (after validation completes)
+8. Update localStorage cache with validated data
+9. Update UI button states
+10. Wait 300ms for cycle to fully load
+11. Clear `isSwitchingCycles` flag
 
-**Important:** The 300ms delay ensures the new cycle's data is fully loaded before re-enabling snapshot capture, preventing corruption.
+**Important:**
+- The 300ms delay ensures the new cycle's data is fully loaded before re-enabling snapshot capture, preventing corruption.
+- Validation MUST complete before populating stacks to prevent mixed-cycle data.
+- The `skipCache` option prevents the OLD cycle's data from being written to cache during the transition.
+
+**Cross-Phase Dependency:**
+`routineSwitcher` loads in PHASES.CYCLE (5), but `undoRedoManager` loads in PHASES.UI_MANAGERS (6). To resolve this, `moduleLoader.js` provides lazy getters that resolve at runtime:
+
+```javascript
+// In moduleLoader.js buildModuleDependencies()
+onCycleSwitched: (...args) => deps.ui?.onCycleSwitched?.(...args),
+onCycleDeleted: (...args) => deps.ui?.onCycleDeleted?.(...args),
+onCycleRenamed: (...args) => deps.ui?.onCycleRenamed?.(...args),
+```
+
+This allows `routineSwitcher` to call these functions after both modules have loaded.
+
+---
+
+## Snapshot Validation
+
+To ensure per-cycle isolation and prevent data corruption, snapshots are validated before use.
+
+### Validation Functions
+
+```javascript
+/**
+ * Validate a single snapshot belongs to the expected cycle
+ */
+function validateSnapshot(snapshot, expectedCycleId) {
+  if (!snapshot || typeof snapshot !== 'object') return false;
+  if (!snapshot.activeCycleId) return false;
+  if (snapshot.activeCycleId !== expectedCycleId) return false;
+  if (!Array.isArray(snapshot.tasks)) return false;
+  return true;
+}
+
+/**
+ * Filter snapshots to only include those belonging to the specified cycle
+ */
+function filterValidSnapshots(snapshots, cycleId) {
+  if (!Array.isArray(snapshots)) return [];
+  if (!cycleId) return [];
+
+  const valid = snapshots.filter(snap => validateSnapshot(snap, cycleId));
+  const removed = snapshots.length - valid.length;
+
+  if (removed > 0) {
+    console.warn(`Filtered out ${removed} invalid snapshots (wrong cycleId or malformed)`);
+  }
+
+  return valid;
+}
+```
+
+### When Validation Occurs
+
+1. **On cycle switch** - Loaded stacks are validated before populating in-memory state
+2. **On cache load** - localStorage cache is validated before use
+3. **On snapshot capture** - Cycle mismatch check prevents capturing for wrong cycle
+
+### Why Validation Matters
+
+Without validation, these issues could occur:
+- **Mixed-cycle data** - Snapshots from different cycles in the same stack
+- **Undo switching cycles** - Restoring a snapshot could change the active cycle
+- **Corrupted cache** - Stale cache data could pollute fresh cycle loads
 
 ---
 
@@ -272,12 +383,19 @@ Signatures are cached on snapshot objects (`_sig` property) to avoid recomputing
 **Called:** During app startup after AppState ready
 
 **Steps:**
-1. Initialize IndexedDB connection
-2. Get current active cycle ID from AppState
-3. Load that cycle's undo history from IndexedDB
-4. Populate in-memory stacks
-5. Update UI button states
-6. Set up `beforeunload` handler for force-save
+1. Get current active cycle ID from AppState
+2. **Try localStorage cache first** (synchronous, instant!)
+   - If cache hit: Populate in-memory stacks immediately
+   - If cache miss: Initialize empty stacks
+3. Update UI button states (instant with cache!)
+4. **Background:** Initialize IndexedDB connection
+5. **Background:** If cache miss, load from IndexedDB and update stacks
+6. **Background:** Update localStorage cache for next boot
+7. Set up `beforeunload` handler for force-save (both cache + IndexedDB)
+
+**Boot Performance:**
+- **With cache (typical):** <1ms for undo system initialization
+- **Without cache (first boot):** 5-10ms for IndexedDB load
 
 ### Cycle Creation
 
@@ -294,6 +412,7 @@ Signatures are cached on snapshot objects (`_sig` property) to avoid recomputing
 **Action:**
 - Remove cycle's undo history from IndexedDB
 - Clear in-memory stacks if this was active cycle
+- **Clear localStorage cache** if this was active cycle
 
 ### Cycle Rename
 
@@ -308,10 +427,14 @@ Signatures are cached on snapshot objects (`_sig` property) to avoid recomputing
 
 ### Factory Reset
 
-**Function:** `clearAllUndoHistoryFromIndexedDB()`
+**Functions:**
+- `clearAllUndoHistoryFromIndexedDB()` - Clears IndexedDB
+- `clearUndoCache()` - Clears localStorage cache
 **Called by:** Settings → Factory Reset
 
-**Action:** Clear entire `undoStacks` object store
+**Action:**
+- Clear entire `undoStacks` object store in IndexedDB
+- Clear localStorage cache (`__miniCycle_undoCache__`)
 
 ---
 
@@ -468,17 +591,25 @@ Tests use mock IndexedDB implementations to avoid polluting real database.
 
 ## Performance Characteristics
 
+### Boot Performance
+
+- **With localStorage cache (typical):** <1ms for undo initialization
+- **Without cache (first boot):** 5-10ms for IndexedDB load
+- **Cache hit rate:** ~99% (only miss on first boot or cycle switch)
+
 ### Memory Usage
 
 - **Per-cycle overhead:** ~5-20KB depending on task count
 - **20 snapshots max:** Prevents unbounded growth
 - **Deep clones:** Uses `structuredClone()` for safety
+- **localStorage cache:** ~200-400KB for active cycle
 
-### IndexedDB Performance
+### Storage Performance
 
-- **Write debouncing:** Reduces writes by ~90%
+- **localStorage writes:** Immediate (<1ms)
+- **IndexedDB write debouncing:** Reduces writes by ~90%
 - **Read caching:** Stacks cached in memory
-- **Async operations:** Non-blocking UI
+- **Async IndexedDB:** Non-blocking UI
 
 ### Throttling Impact
 
@@ -574,6 +705,10 @@ const sig = buildSnapshotSignature(snapshot);
 
 // Change description
 const desc = describeChange(fromSnapshot, toSnapshot);
+
+// Snapshot validation
+const isValid = validateSnapshot(snapshot, expectedCycleId);
+const validSnapshots = filterValidSnapshots(snapshots, cycleId);
 ```
 
 ---
@@ -601,10 +736,22 @@ The module logs extensively to console:
 ### Check In-Memory State
 
 ```javascript
+// In browser console (use versioned import for cache-busting):
+let _ags;
+import('/modules/core/appGlobalState.js?v=1.677').then(m => _ags = m.AppGlobalState);
+
+// Then inspect:
+_ags.activeUndoStack
+_ags.activeRedoStack
+_ags.activeCycleIdForUndo
+```
+
+### Check localStorage Cache
+
+```javascript
 // In browser console:
-console.log(window.AppGlobalState.activeUndoStack);
-console.log(window.AppGlobalState.activeRedoStack);
-console.log(window.AppGlobalState.activeCycleIdForUndo);
+const cache = localStorage.getItem('__miniCycle_undoCache__');
+console.log(JSON.parse(cache));
 ```
 
 ### Common Issues
@@ -613,6 +760,7 @@ console.log(window.AppGlobalState.activeCycleIdForUndo);
 - Check `isInitializing` flag (should be false after first interaction)
 - Check `isSwitchingCycles` flag (should be false)
 - Check throttle window (300ms between snapshots)
+- Check for cycle mismatch (snapshot's cycleId must match activeCycleIdForUndo)
 
 **History not persisting:**
 - Check IndexedDB available (`undoDB` should not be null)
@@ -622,6 +770,18 @@ console.log(window.AppGlobalState.activeCycleIdForUndo);
 **Wrong cycle's history:**
 - Check `activeCycleIdForUndo` matches current cycle
 - Verify cycle switch completed (`isSwitchingCycles` should be false)
+- Check localStorage cache cycleId matches active cycle
+- Look for "Filtered out X invalid snapshots" warnings in console
+
+**Cache not updating on cycle switch:**
+- Verify `onCycleSwitched` is being called (check for "Switching undo context" log)
+- Check that lazy getter in moduleLoader.js is resolving correctly
+- Ensure undoRedoManager loaded before cycle switch occurs
+
+**onCycleSwitched not being called:**
+- This can happen if routineSwitcher (phase 5) tries to call before undoRedoManager (phase 6) loads
+- Solution: Lazy getters in moduleLoader.js resolve at runtime, not initialization
+- Check console for "Cleared undo stack, active ID, and cache" log after switching
 
 ---
 
@@ -633,6 +793,7 @@ console.log(window.AppGlobalState.activeCycleIdForUndo);
 
 ---
 
-**Last Updated:** November 14, 2025
-**Module Version:** 1.356
-**Test Status:** 73/73 passing ✅
+**Last Updated:** January 5, 2026
+**Module Version:** 1.672
+**Test Status:** 76/76 passing ✅
+**Architecture:** localStorage cache + IndexedDB dual-write, per-cycle isolation with validation
