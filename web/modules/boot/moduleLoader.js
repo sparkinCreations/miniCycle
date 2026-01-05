@@ -687,6 +687,10 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         performStateBasedRedo: (...args) => deps.ui?.performStateBasedRedo?.(...args),
         enableUndoSystemOnFirstInteraction: (...args) => deps.ui?.enableUndoSystemOnFirstInteraction?.(...args),
         updateUndoRedoButtons: (...args) => deps.ui?.updateUndoRedoButtons?.(...args),
+        // Undo cycle lifecycle hooks (called by routineSwitcher when cycles change)
+        onCycleSwitched: (...args) => deps.ui?.onCycleSwitched?.(...args),
+        onCycleDeleted: (...args) => deps.ui?.onCycleDeleted?.(...args),
+        onCycleRenamed: (...args) => deps.ui?.onCycleRenamed?.(...args),
 
         // Reminders (from deps.features)
         startReminders: (...args) => deps.features?.startReminders?.(...args),

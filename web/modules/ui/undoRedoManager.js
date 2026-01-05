@@ -35,6 +35,124 @@ const UNDO_LIMIT = LIMITS.UNDO_STACK;
 const UNDO_MIN_INTERVAL_MS = DEBOUNCE.UNDO_MIN_INTERVAL;
 const UNDO_DB_WRITE_DEBOUNCE_MS = DEBOUNCE.UNDO_DB_WRITE;
 
+// localStorage cache key for instant boot
+const UNDO_CACHE_KEY = '__miniCycle_undoCache__';
+
+// ============ LOCALSTORAGE CACHE (for instant boot) ============
+
+/**
+ * Save active routine's undo stack to localStorage cache
+ * Called on every save for instant boot next time
+ * @param {string} cycleId - The cycle ID
+ * @param {Array} undoStack - The undo stack
+ * @param {Array} redoStack - The redo stack
+ */
+function saveToUndoCache(cycleId, undoStack, redoStack) {
+  if (!cycleId) return;
+
+  try {
+    const cacheData = {
+      cycleId,
+      undoStack: undoStack || [],
+      redoStack: redoStack || [],
+      timestamp: Date.now()
+    };
+    localStorage.setItem(UNDO_CACHE_KEY, JSON.stringify(cacheData));
+    console.log(`💾 Undo cache saved for "${cycleId}" (${undoStack?.length || 0} undo, ${redoStack?.length || 0} redo)`);
+  } catch (e) {
+    // Graceful degradation - cache is optional
+    console.warn('⚠️ Failed to save undo cache:', e.message);
+  }
+}
+
+/**
+ * Load undo stack from localStorage cache (synchronous, instant)
+ * @param {string} expectedCycleId - The cycle ID we expect to find
+ * @returns {Object|null} Cache data if found and valid, null otherwise
+ */
+function loadFromUndoCache(expectedCycleId) {
+  if (!expectedCycleId) return null;
+
+  try {
+    const cached = localStorage.getItem(UNDO_CACHE_KEY);
+    if (!cached) return null;
+
+    const data = JSON.parse(cached);
+
+    // Validate cache matches expected cycle
+    if (data.cycleId !== expectedCycleId) {
+      console.log(`ℹ️ Undo cache is for different cycle ("${data.cycleId}" vs "${expectedCycleId}")`);
+      return null;
+    }
+
+    // Validate cache structure
+    if (!Array.isArray(data.undoStack) || !Array.isArray(data.redoStack)) {
+      console.warn('⚠️ Invalid undo cache structure');
+      return null;
+    }
+
+    // Filter out any snapshots that don't belong to this cycle
+    const validUndoStack = filterValidSnapshots(data.undoStack, expectedCycleId);
+    const validRedoStack = filterValidSnapshots(data.redoStack, expectedCycleId);
+
+    console.log(`✅ Loaded undo cache for "${expectedCycleId}" (${validUndoStack.length} undo, ${validRedoStack.length} redo)`);
+    return {
+      ...data,
+      undoStack: validUndoStack,
+      redoStack: validRedoStack
+    };
+  } catch (e) {
+    console.warn('⚠️ Failed to load undo cache:', e.message);
+    return null;
+  }
+}
+
+/**
+ * Validate a single snapshot belongs to the expected cycle
+ * @param {Object} snapshot - The snapshot to validate
+ * @param {string} expectedCycleId - The cycle ID it should belong to
+ * @returns {boolean} True if valid
+ */
+function validateSnapshot(snapshot, expectedCycleId) {
+  if (!snapshot || typeof snapshot !== 'object') return false;
+  if (!snapshot.activeCycleId) return false;
+  if (snapshot.activeCycleId !== expectedCycleId) return false;
+  if (!Array.isArray(snapshot.tasks)) return false;
+  return true;
+}
+
+/**
+ * Filter snapshots to only include those belonging to the specified cycle
+ * @param {Array} snapshots - Array of snapshots to filter
+ * @param {string} cycleId - The cycle ID to filter for
+ * @returns {Array} Filtered array of valid snapshots
+ */
+function filterValidSnapshots(snapshots, cycleId) {
+  if (!Array.isArray(snapshots)) return [];
+  if (!cycleId) return [];
+
+  const valid = snapshots.filter(snap => validateSnapshot(snap, cycleId));
+  const removed = snapshots.length - valid.length;
+
+  if (removed > 0) {
+    console.warn(`🧹 Filtered out ${removed} invalid snapshots (wrong cycleId or malformed)`);
+  }
+
+  return valid;
+}
+
+/**
+ * Clear the undo cache (used on cycle deletion or factory reset)
+ */
+export function clearUndoCache() {
+  try {
+    localStorage.removeItem(UNDO_CACHE_KEY);
+    console.log('🗑️ Undo cache cleared');
+  } catch (e) {
+    console.warn('⚠️ Failed to clear undo cache:', e.message);
+  }
+}
+
 // ============ IDLE-TIME SAVE HELPER ============
 /**
  * Schedule a state save during idle time for durability without blocking input.
@@ -333,7 +451,7 @@ export function enableUndoSystemOnFirstInteraction() {
 /**
  * Capture complete state snapshot with deduplication
  */
-export async function captureStateSnapshot(state) {
+export function captureStateSnapshot(state) {
   assertInjected('AppGlobalState', _deps.AppGlobalState);
 
   // Don't capture snapshots during initial app load
@@ -359,15 +477,17 @@ export async function captureStateSnapshot(state) {
     return;
   }
 
-  // Lazy load undo history if not yet loaded (user is performing an undoable action)
-  if (!_deps.AppGlobalState.undoStackLazyLoaded) {
-    console.log('⏳ Lazy loading undo history before capturing snapshot...');
-    await ensureUndoStackLoaded();
-  }
-
   const activeCycle = state.appState.activeCycleId;
   const currentCycle = state.data.cycles[activeCycle];
   if (!currentCycle) return;
+
+  // Safety check: Ensure we're tracking the right cycle
+  // If activeCycleIdForUndo doesn't match, update it (handles edge cases)
+  if (_deps.AppGlobalState.activeCycleIdForUndo &&
+      _deps.AppGlobalState.activeCycleIdForUndo !== activeCycle) {
+    console.warn(`⚠️ Cycle mismatch: tracking "${_deps.AppGlobalState.activeCycleIdForUndo}" but active is "${activeCycle}". Skipping snapshot.`);
+    return;
+  }
 
   const snapshot = {
     activeCycleId: activeCycle,
@@ -711,12 +831,6 @@ export async function performStateBasedUndo() {
   assertInjected('AppGlobalState', _deps.AppGlobalState);
   assertInjected('refreshUIFromState', _deps.refreshUIFromState);
 
-  // Lazy load undo history if not yet loaded
-  if (!_deps.AppGlobalState.undoStackLazyLoaded) {
-    console.log('⏳ Lazy loading undo history before undo...');
-    await ensureUndoStackLoaded();
-  }
-
   if (_deps.AppGlobalState.activeUndoStack.length === 0) {
     console.warn('⚠️ Nothing to undo');
     return;
@@ -774,11 +888,9 @@ export async function performStateBasedUndo() {
     transactionDiff.kind = 'undo';
 
     // Use non-immediate save for better UI latency (persistence via debounce)
+    // NOTE: Undo NEVER switches cycles - each routine has isolated undo history
     await _deps.AppState.update(state => {
-      if (snap.activeCycleId && snap.activeCycleId !== state.appState.activeCycleId) {
-        state.appState.activeCycleId = snap.activeCycleId;
-      }
-      const cid = state.appState.activeCycleId;
+      const cid = state.appState.activeCycleId;  // Always use current cycle
       const cycle = state.data.cycles[cid] || (state.data.cycles[cid] = {});
       cycle.tasks = structuredClone(snap.tasks || []);
       cycle.recurringTemplates = structuredClone(snap.recurringTemplates || {});
@@ -794,9 +906,11 @@ export async function performStateBasedUndo() {
     updateUndoRedoButtons();
 
     // ✅ Save updated stacks to IndexedDB (async, doesn't block UI)
-    if (currentActive) {
+    // Use current cycle (undo never switches cycles)
+    const activeAfterUndo = currentActive;
+    if (activeAfterUndo) {
       saveUndoStackToIndexedDB(
-        currentActive,
+        activeAfterUndo,
         _deps.AppGlobalState.activeUndoStack,
         _deps.AppGlobalState.activeRedoStack
       );
@@ -846,12 +960,6 @@ export async function performStateBasedRedo() {
   assertInjected('AppState', _deps.AppState);
   assertInjected('AppGlobalState', _deps.AppGlobalState);
   assertInjected('refreshUIFromState', _deps.refreshUIFromState);
-
-  // Lazy load undo history if not yet loaded
-  if (!_deps.AppGlobalState.undoStackLazyLoaded) {
-    console.log('⏳ Lazy loading undo history before redo...');
-    await ensureUndoStackLoaded();
-  }
 
   if (_deps.AppGlobalState.activeRedoStack.length === 0) {
     console.warn('⚠️ Nothing to redo');
@@ -910,11 +1018,9 @@ export async function performStateBasedRedo() {
     transactionDiff.kind = 'redo';
 
     // Use non-immediate save for better UI latency (persistence via debounce)
+    // NOTE: Redo NEVER switches cycles - each routine has isolated undo history
     await _deps.AppState.update(state => {
-      if (snap.activeCycleId && snap.activeCycleId !== state.appState.activeCycleId) {
-        state.appState.activeCycleId = snap.activeCycleId;
-      }
-      const cid = state.appState.activeCycleId;
+      const cid = state.appState.activeCycleId;  // Always use current cycle
       const cycle = state.data.cycles[cid] || (state.data.cycles[cid] = {});
       cycle.tasks = structuredClone(snap.tasks || []);
       cycle.recurringTemplates = structuredClone(snap.recurringTemplates || {});
@@ -930,9 +1036,11 @@ export async function performStateBasedRedo() {
     updateUndoRedoButtons();
 
     // ✅ Save updated stacks to IndexedDB (async, doesn't block UI)
-    if (currentActive) {
+    // Use current cycle (redo never switches cycles)
+    const activeAfterRedo = currentActive;
+    if (activeAfterRedo) {
       saveUndoStackToIndexedDB(
-        currentActive,
+        activeAfterRedo,
         _deps.AppGlobalState.activeUndoStack,
         _deps.AppGlobalState.activeRedoStack
       );
@@ -979,7 +1087,6 @@ export async function performStateBasedRedo() {
 
 /**
  * Update undo/redo button enabled/disabled states
- * Uses existence flags when stack not yet loaded (lazy loading)
  */
 export function updateUndoRedoButtonStates() {
   assertInjected('AppGlobalState', _deps.AppGlobalState);
@@ -987,13 +1094,9 @@ export function updateUndoRedoButtonStates() {
   const undoBtn = _deps.getElementById('undo-btn');
   const redoBtn = _deps.getElementById('redo-btn');
 
-  // Use existence flags if not yet loaded, otherwise use actual stack lengths
-  const hasUndo = _deps.AppGlobalState.undoStackLazyLoaded
-    ? _deps.AppGlobalState.activeUndoStack.length > 0
-    : _deps.AppGlobalState.undoHistoryExists;
-  const hasRedo = _deps.AppGlobalState.undoStackLazyLoaded
-    ? _deps.AppGlobalState.activeRedoStack.length > 0
-    : _deps.AppGlobalState.redoHistoryExists;
+  // Use actual stack lengths (instant with localStorage cache)
+  const hasUndo = _deps.AppGlobalState.activeUndoStack.length > 0;
+  const hasRedo = _deps.AppGlobalState.activeRedoStack.length > 0;
 
   if (undoBtn) {
     undoBtn.disabled = !hasUndo;
@@ -1004,12 +1107,11 @@ export function updateUndoRedoButtonStates() {
     redoBtn.style.opacity = redoBtn.disabled ? '0.5' : '1';
   }
 
-  console.log(`🔘 Button states: hasUndo=${hasUndo} disabled=${undoBtn?.disabled}, hasRedo=${hasRedo} disabled=${redoBtn?.disabled} (lazyLoaded=${_deps.AppGlobalState.undoStackLazyLoaded})`);
+  console.log(`🔘 Button states: hasUndo=${hasUndo} disabled=${undoBtn?.disabled}, hasRedo=${hasRedo} disabled=${redoBtn?.disabled}`);
 }
 
 /**
  * Update undo/redo button visibility
- * Uses existence flags when stack not yet loaded (lazy loading)
  */
 export function updateUndoRedoButtonVisibility() {
   assertInjected('AppGlobalState', _deps.AppGlobalState);
@@ -1017,18 +1119,14 @@ export function updateUndoRedoButtonVisibility() {
   const undoBtn = _deps.getElementById('undo-btn');
   const redoBtn = _deps.getElementById('redo-btn');
 
-  // Use existence flags if not yet loaded, otherwise use actual stack lengths
-  const hasUndo = _deps.AppGlobalState.undoStackLazyLoaded
-    ? _deps.AppGlobalState.activeUndoStack.length > 0
-    : _deps.AppGlobalState.undoHistoryExists;
-  const hasRedo = _deps.AppGlobalState.undoStackLazyLoaded
-    ? _deps.AppGlobalState.activeRedoStack.length > 0
-    : _deps.AppGlobalState.redoHistoryExists;
+  // Use actual stack lengths (instant with localStorage cache)
+  const hasUndo = _deps.AppGlobalState.activeUndoStack.length > 0;
+  const hasRedo = _deps.AppGlobalState.activeRedoStack.length > 0;
 
   if (undoBtn) undoBtn.hidden = !hasUndo;
   if (redoBtn) redoBtn.hidden = !hasRedo;
 
-  console.log(`👁️ Button visibility: undo hidden=${undoBtn?.hidden}, redo hidden=${redoBtn?.hidden} (lazyLoaded=${_deps.AppGlobalState.undoStackLazyLoaded})`);
+  console.log(`👁️ Button visibility: undo hidden=${undoBtn?.hidden}, redo hidden=${redoBtn?.hidden}`);
 }
 
 /**
@@ -1061,48 +1159,54 @@ export async function onCycleSwitched(newCycleId) {
   _deps.AppGlobalState.isSwitchingCycles = true;
 
   try {
-    // 1. Save current cycle's stacks to IndexedDB
-    if (oldCycleId) {
-      await saveUndoStackToIndexedDB(
+    // 1. Save OLD cycle's stacks to IndexedDB (skip cache)
+    if (oldCycleId && _deps.AppGlobalState.activeUndoStack.length > 0) {
+      saveUndoStackToIndexedDB(
         oldCycleId,
         _deps.AppGlobalState.activeUndoStack,
-        _deps.AppGlobalState.activeRedoStack
+        _deps.AppGlobalState.activeRedoStack,
+        { skipCache: true }
       );
     }
 
-    // 2. Clear in-memory stacks
+    // 2. Clear everything FIRST - undo stack, active ID, and cache
     _deps.AppGlobalState.activeUndoStack = [];
     _deps.AppGlobalState.activeRedoStack = [];
+    _deps.AppGlobalState.activeCycleIdForUndo = null;
+    clearUndoCache();
+    console.log('🧹 Cleared undo stack, active ID, and cache');
 
-    // 3. Load new cycle's stacks from IndexedDB (full load on cycle switch)
+    // 3. Load new cycle's stacks from IndexedDB
     const loaded = await loadUndoStackFromIndexedDB(newCycleId);
-    _deps.AppGlobalState.activeUndoStack = loaded.undoStack || [];
-    _deps.AppGlobalState.activeRedoStack = loaded.redoStack || [];
 
-    // 4. Update tracking and lazy loading flags
+    // 4. Validate loaded data (wait for validation to complete)
+    const validUndoStack = filterValidSnapshots(loaded.undoStack || [], newCycleId);
+    const validRedoStack = filterValidSnapshots(loaded.redoStack || [], newCycleId);
+
+    // 5. NOW set the active ID and populate stacks (after validation)
     _deps.AppGlobalState.activeCycleIdForUndo = newCycleId;
-    _deps.AppGlobalState.undoStackLazyLoaded = true; // Full load done on cycle switch
-    _deps.AppGlobalState.undoHistoryExists = loaded.undoStack.length > 0;
-    _deps.AppGlobalState.redoHistoryExists = loaded.redoStack.length > 0;
+    _deps.AppGlobalState.activeUndoStack = validUndoStack;
+    _deps.AppGlobalState.activeRedoStack = validRedoStack;
 
-    // 5. Update UI
+    // 6. Save validated data to cache for instant boot
+    console.log(`📦 Updating cache with validated data for "${newCycleId}"`);
+    saveToUndoCache(newCycleId, validUndoStack, validRedoStack);
+
+    // 7. Update UI
     updateUndoRedoButtons();
 
-    console.log(`✅ Loaded ${loaded.undoStack.length} undo, ${loaded.redoStack.length} redo steps`);
+    console.log(`✅ Switched to "${newCycleId}": ${validUndoStack.length} undo, ${validRedoStack.length} redo steps`);
 
     // ✅ Small delay to let cycle fully load before re-enabling snapshots
     await new Promise(resolve => setTimeout(resolve, 300));
   } catch (e) {
-    // ✅ FIX #5: Error boundary for cycle switching
     console.error('❌ Cycle switch failed:', e);
 
-    // Clear stacks to prevent stale data
+    // On error: clear everything and start fresh for new cycle
     _deps.AppGlobalState.activeUndoStack = [];
     _deps.AppGlobalState.activeRedoStack = [];
     _deps.AppGlobalState.activeCycleIdForUndo = newCycleId;
-    _deps.AppGlobalState.undoStackLazyLoaded = true; // Mark as loaded (empty)
-    _deps.AppGlobalState.undoHistoryExists = false;
-    _deps.AppGlobalState.redoHistoryExists = false;
+    clearUndoCache();
     updateUndoRedoButtons();
 
     if (_deps.showNotification) {
@@ -1123,7 +1227,7 @@ export async function onCycleCreated(cycleId) {
   console.log(`🆕 New cycle created: "${cycleId}" - initializing empty undo stack`);
 
   try {
-    // Initialize empty stacks in IndexedDB
+    // Initialize empty stacks in IndexedDB (also updates cache)
     await saveUndoStackToIndexedDB(cycleId, [], []);
 
     // Set as active cycle for undo and clear in-memory stacks
@@ -1131,9 +1235,6 @@ export async function onCycleCreated(cycleId) {
     _deps.AppGlobalState.activeCycleIdForUndo = cycleId;
     _deps.AppGlobalState.activeUndoStack = [];
     _deps.AppGlobalState.activeRedoStack = [];
-    _deps.AppGlobalState.undoStackLazyLoaded = true; // New cycle starts with empty stack
-    _deps.AppGlobalState.undoHistoryExists = false;
-    _deps.AppGlobalState.redoHistoryExists = false;
     updateUndoRedoButtons();
   } catch (e) {
     // ✅ FIX #5: Error boundary for cycle creation
@@ -1143,9 +1244,6 @@ export async function onCycleCreated(cycleId) {
     _deps.AppGlobalState.activeCycleIdForUndo = cycleId;
     _deps.AppGlobalState.activeUndoStack = [];
     _deps.AppGlobalState.activeRedoStack = [];
-    _deps.AppGlobalState.undoStackLazyLoaded = true;
-    _deps.AppGlobalState.undoHistoryExists = false;
-    _deps.AppGlobalState.redoHistoryExists = false;
     updateUndoRedoButtons();
 
     // Don't notify user - this is an internal operation
@@ -1153,7 +1251,7 @@ export async function onCycleCreated(cycleId) {
 }
 
 /**
- * Handle cycle deletion - cleanup IndexedDB
+ * Handle cycle deletion - cleanup IndexedDB and cache
  * Called by cycleManager when cycle is deleted
  */
 export async function onCycleDeleted(cycleId) {
@@ -1163,11 +1261,12 @@ export async function onCycleDeleted(cycleId) {
     // Remove from IndexedDB
     await deleteUndoStackFromIndexedDB(cycleId);
 
-    // If this was the active cycle, clear memory
+    // If this was the active cycle, clear memory and cache
     if (_deps.AppGlobalState.activeCycleIdForUndo === cycleId) {
       _deps.AppGlobalState.activeUndoStack = [];
       _deps.AppGlobalState.activeRedoStack = [];
       _deps.AppGlobalState.activeCycleIdForUndo = null;
+      clearUndoCache(); // Clear localStorage cache
       updateUndoRedoButtons();
     }
   } catch (e) {
@@ -1179,6 +1278,7 @@ export async function onCycleDeleted(cycleId) {
       _deps.AppGlobalState.activeUndoStack = [];
       _deps.AppGlobalState.activeRedoStack = [];
       _deps.AppGlobalState.activeCycleIdForUndo = null;
+      clearUndoCache(); // Clear localStorage cache
       updateUndoRedoButtons();
     }
 
@@ -1216,19 +1316,16 @@ export async function onCycleRenamed(oldCycleId, newCycleId) {
 
 /**
  * Initialize undo system for app startup
- * Uses lazy loading - only checks if history exists, loads full data on first use
+ * Uses localStorage cache for instant boot, IndexedDB loads in background for cycle switching
  */
 export async function initializeUndoSystemForApp() {
   assertInjected('AppState', _deps.AppState);
   assertInjected('AppGlobalState', _deps.AppGlobalState);
 
-  console.log('🔄 Initializing undo system (lazy loading enabled)...');
+  console.log('🔄 Initializing undo system...');
 
   try {
-    // 1. Initialize IndexedDB
-    await initializeUndoIndexedDB();
-
-    // 2. Get current active cycle
+    // 1. Get current active cycle
     const currentState = _deps.AppState.get();
     const activeCycleId = currentState?.appState?.activeCycleId;
 
@@ -1238,17 +1335,44 @@ export async function initializeUndoSystemForApp() {
       return;
     }
 
-    // 3. Lightweight check - just see if history exists (don't load full data)
-    const existence = await checkUndoHistoryExists(activeCycleId);
-    _deps.AppGlobalState.undoHistoryExists = existence.hasUndo;
-    _deps.AppGlobalState.redoHistoryExists = existence.hasRedo;
-    _deps.AppGlobalState.activeCycleIdForUndo = activeCycleId;
-    _deps.AppGlobalState.undoStackLazyLoaded = false; // Will be loaded on first use
+    // 2. Try localStorage cache first (sync, instant!)
+    const cached = loadFromUndoCache(activeCycleId);
+    if (cached) {
+      // Cache hit! Populate stacks instantly
+      _deps.AppGlobalState.activeUndoStack = cached.undoStack;
+      _deps.AppGlobalState.activeRedoStack = cached.redoStack;
+      _deps.AppGlobalState.activeCycleIdForUndo = activeCycleId;
+      updateUndoRedoButtons();
+      console.log(`✅ Undo system initialized from cache (instant)`);
+    } else {
+      // Cache miss - will load from IndexedDB
+      _deps.AppGlobalState.activeUndoStack = [];
+      _deps.AppGlobalState.activeRedoStack = [];
+      _deps.AppGlobalState.activeCycleIdForUndo = activeCycleId;
+      console.log('ℹ️ No cache found, will load from IndexedDB');
+    }
 
-    // 4. Update UI (uses existence flags since stack not loaded yet)
+    // 3. Initialize IndexedDB in background (for cycle switching and persistence)
+    // If we had a cache hit, this just sets up the connection
+    // If cache miss, we load from IndexedDB and update stacks
+    initializeUndoIndexedDB().then(async () => {
+      if (!cached) {
+        // Cache miss - load from IndexedDB
+        const loaded = await loadUndoStackFromIndexedDB(activeCycleId);
+        _deps.AppGlobalState.activeUndoStack = loaded.undoStack || [];
+        _deps.AppGlobalState.activeRedoStack = loaded.redoStack || [];
+        updateUndoRedoButtons();
+
+        // Update cache for next boot
+        saveToUndoCache(activeCycleId, loaded.undoStack || [], loaded.redoStack || []);
+        console.log(`✅ Undo system loaded from IndexedDB (${loaded.undoStack?.length || 0} undo steps)`);
+      }
+    }).catch(e => {
+      console.warn('⚠️ IndexedDB background init failed:', e);
+    });
+
+    // 4. Update UI with whatever we have so far
     updateUndoRedoButtons();
-
-    console.log(`✅ Undo system initialized (lazy) - hasUndo=${existence.hasUndo}, hasRedo=${existence.hasRedo}`);
 
     // 5. Set up page unload handler to force immediate save
     window.addEventListener('beforeunload', () => {
@@ -1259,16 +1383,22 @@ export async function initializeUndoSystemForApp() {
       }
 
       const cycleId = _deps.AppGlobalState.activeCycleIdForUndo;
+      const undoStack = _deps.AppGlobalState.activeUndoStack || [];
+      const redoStack = _deps.AppGlobalState.activeRedoStack || [];
+
+      // Always save to cache on unload (instant for next boot)
+      saveToUndoCache(cycleId, undoStack, redoStack);
+
+      // Also save to IndexedDB if available
       if (cycleId && undoDB) {
-        // Force immediate synchronous save (no await)
         try {
           const transaction = undoDB.transaction(["undoStacks"], "readwrite");
           const objectStore = transaction.objectStore("undoStacks");
 
           const data = {
             cycleId,
-            undoStack: _deps.AppGlobalState.activeUndoStack || [],
-            redoStack: _deps.AppGlobalState.activeRedoStack || [],
+            undoStack,
+            redoStack,
             lastUpdated: Date.now(),
             version: "1.344"
           };
@@ -1288,9 +1418,6 @@ export async function initializeUndoSystemForApp() {
     // Initialize with empty stacks to ensure app still works
     _deps.AppGlobalState.activeUndoStack = [];
     _deps.AppGlobalState.activeRedoStack = [];
-    _deps.AppGlobalState.undoStackLazyLoaded = true; // Mark as loaded (empty)
-    _deps.AppGlobalState.undoHistoryExists = false;
-    _deps.AppGlobalState.redoHistoryExists = false;
     updateUndoRedoButtons();
 
     if (_deps.showNotification) {
@@ -1424,13 +1551,20 @@ export async function initializeUndoIndexedDB() {
 }
 
 /**
- * Save undo/redo stacks to IndexedDB (debounced)
+ * Save undo/redo stacks to both localStorage cache (immediate) and IndexedDB (debounced)
  */
-export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack) {
-  if (!undoDB) return;  // Graceful degradation
+export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack, options = {}) {
   if (!cycleId) return;
 
-  // Debounce writes
+  // Save to localStorage cache unless explicitly skipped (e.g., during cycle switching)
+  if (!options.skipCache) {
+    saveToUndoCache(cycleId, undoStack, redoStack);
+  }
+
+  // Graceful degradation if IndexedDB unavailable
+  if (!undoDB) return;
+
+  // Debounce IndexedDB writes
   if (dbWriteTimeout) {
     clearTimeout(dbWriteTimeout);
   }
@@ -1478,97 +1612,6 @@ export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack) {
       }
     }
   }, UNDO_DB_WRITE_DEBOUNCE_MS);
-}
-
-/**
- * Lightweight check if undo history exists for a cycle (without loading full data)
- * Used for lazy loading - shows button without loading full stacks at boot
- * @param {string} cycleId - The cycle ID to check
- * @returns {Promise<{hasUndo: boolean, hasRedo: boolean}>} Existence flags
- */
-export async function checkUndoHistoryExists(cycleId) {
-  if (!undoDB) {
-    return { hasUndo: false, hasRedo: false };
-  }
-  if (!cycleId) {
-    return { hasUndo: false, hasRedo: false };
-  }
-
-  try {
-    return new Promise((resolve) => {
-      const timeout = setTimeout(() => {
-        console.warn(`⚠️ checkUndoHistoryExists timed out for "${cycleId}"`);
-        resolve({ hasUndo: false, hasRedo: false });
-      }, 2000);
-
-      const transaction = undoDB.transaction(["undoStacks"], "readonly");
-      const objectStore = transaction.objectStore("undoStacks");
-      const request = objectStore.get(cycleId);
-
-      request.onsuccess = (event) => {
-        clearTimeout(timeout);
-        const data = event.target.result;
-        if (data) {
-          // Just check lengths - don't store the full data
-          const hasUndo = (data.undoStack?.length || 0) > 0;
-          const hasRedo = (data.redoStack?.length || 0) > 0;
-          console.log(`🔍 Undo history check for "${cycleId}": hasUndo=${hasUndo}, hasRedo=${hasRedo}`);
-          resolve({ hasUndo, hasRedo });
-        } else {
-          resolve({ hasUndo: false, hasRedo: false });
-        }
-      };
-
-      request.onerror = () => {
-        clearTimeout(timeout);
-        resolve({ hasUndo: false, hasRedo: false });
-      };
-    });
-  } catch (e) {
-    console.warn('⚠️ checkUndoHistoryExists error:', e);
-    return { hasUndo: false, hasRedo: false };
-  }
-}
-
-/**
- * Ensure undo stack is fully loaded from IndexedDB
- * Called on first undo/redo click or first undoable action
- * @returns {Promise<boolean>} True if loaded successfully
- */
-export async function ensureUndoStackLoaded() {
-  assertInjected('AppGlobalState', _deps.AppGlobalState);
-
-  // Already loaded - skip
-  if (_deps.AppGlobalState.undoStackLazyLoaded) {
-    return true;
-  }
-
-  const cycleId = _deps.AppGlobalState.activeCycleIdForUndo;
-  if (!cycleId) {
-    console.log('ℹ️ No cycle ID for undo - cannot load');
-    return false;
-  }
-
-  console.log(`📂 Lazy loading undo history for "${cycleId}"...`);
-
-  try {
-    const loaded = await loadUndoStackFromIndexedDB(cycleId);
-    _deps.AppGlobalState.activeUndoStack = loaded.undoStack || [];
-    _deps.AppGlobalState.activeRedoStack = loaded.redoStack || [];
-    _deps.AppGlobalState.undoStackLazyLoaded = true;
-    _deps.AppGlobalState.undoHistoryExists = loaded.undoStack.length > 0;
-    _deps.AppGlobalState.redoHistoryExists = loaded.redoStack.length > 0;
-
-    // Update button states now that we have the real data
-    updateUndoRedoButtons();
-
-    console.log(`✅ Lazy loaded ${loaded.undoStack.length} undo, ${loaded.redoStack.length} redo steps`);
-    return true;
-  } catch (e) {
-    console.error('❌ Failed to lazy load undo history:', e);
-    _deps.AppGlobalState.undoStackLazyLoaded = true; // Mark as loaded to prevent retry loops
-    return false;
-  }
 }
 
 /**
@@ -1770,9 +1813,8 @@ export async function initUndoRedoManager(dependencies = {}) {
     wrapAppStateForUndo,
     setupStateBasedUndoRedo,
     initializeUndoSystemForApp,
-    // Lazy loading helpers
-    checkUndoHistoryExists,
-    ensureUndoStackLoaded
+    // Cache helpers
+    clearUndoCache
   };
 }
 
