@@ -1,3 +1,8 @@
+## [1.678] - 2026-01-05
+- feat(undoRedo): Implement localStorage caching for undo/redo stacks
+- feat: Add lazy loading flags for undo/redo tests
+
+
 ## [1.677] - 2026-01-05
 - feat: Bump version to 1.676 and implement lazy loading for undo history
 
