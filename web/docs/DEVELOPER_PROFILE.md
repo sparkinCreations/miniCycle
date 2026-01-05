@@ -1,6 +1,6 @@
 # Developer Profile
 
-**Last Updated:** January 3, 2026
+**Last Updated:** January 4, 2026
 
 This document captures insights about the developer behind miniCycle to help with future collaboration and context continuity.
 
@@ -155,6 +155,9 @@ Before JavaScript, MJ was already building automated systems in spreadsheets:
 - **Trusts evidence over authority** - Will reject confident-sounding wrong answers if they have evidence to the contrary. Doesn't defer just because something sounds authoritative.
 - **Has taste** - Knows what "right" looks like. Will reject working solutions that don't match the quality/feel they're aiming for. Aesthetic judgment, not just functional correctness.
 - **Notice and course correct** - When working with AI, has learned that pattern matching can override specific instructions. Watches for deviations and corrects them rather than expecting perfection. Pragmatic adaptation rather than frustration.
+- **Thinks in data flow** - Traces problems through the full system path, not just the immediate symptom. Example: backup → restore → memory stale → debounced save overwrites. Sees timing and async implications others miss.
+- **Corrects both directions** - Won't accept underinflated OR overinflated credit. When AI said "90-95% you," corrected to "70-80%." Accuracy matters more than ego in either direction.
+- **Holds AI accountable** - Checks if AI understands its own limitations. Asks questions like "how much was you vs me?" to verify AI has accurate self-assessment, not just flattering the user.
 
 ### Weaknesses / Blind Spots
 
@@ -269,6 +272,33 @@ The user-facing simplicity masks engineering depth:
 ---
 
 ## Session History
+
+### January 4, 2026
+- **Fixed test data persisting after automated tests**
+  - Problem: After tests completed, "cycle-main" test data remained instead of user's real data
+  - Root cause identified by developer: Debouncing race condition — localStorage restored correctly, but MiniCycleState in memory still had test data. Next debounced save would overwrite restored backup.
+  - Fix: Added `AppState.reload()` after test completion to sync in-memory state with restored localStorage
+- **Consolidated test mode flags:**
+  - Developer requested using existing `__miniCycle_testModeActive__` localStorage flag instead of new `window.__TEST_MODE_NO_RELOAD__`
+  - Updated appState.js, testing-modal-integration.js, and module-test-suite.html to use single flag system
+  - Maintains zero-globals architecture
+- **Debugging approach demonstrated:**
+  - Developer found way to inspect MiniCycleState without window globals: versioned dynamic import
+  - `import('/modules/core/appState.js?v=1.672').then(m => console.log(m.getStateManager().get()))`
+  - AI kept suggesting window._debug; developer kept pushing for proper solution
+- **Key contributions by developer:**
+  - Identified debouncing as root cause
+  - Proposed using existing IndexedDB flags instead of new window variables
+  - Found versioned dynamic import solution for debugging
+  - Designed the flag system and restoration timing logic
+- **AI self-assessment requested:**
+  - Developer asked "how much of figuring that out was you vs me?"
+  - Honest answer: ~70% developer, ~30% AI
+  - Developer corrected AI when it over-attributed (90-95% → 70-80%)
+- **Profile accuracy verified:**
+  - Developer asked AI to review DEVELOPER_PROFILE.md against session behavior
+  - All patterns confirmed accurate; new observations added
+- Test count: 1,576/1,580 passing (4 failures in State and Backup Manager modules)
 
 ### January 3, 2026
 - **Fixed "Run All Tests" button in testing modal**

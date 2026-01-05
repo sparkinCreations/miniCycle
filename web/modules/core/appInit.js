@@ -360,10 +360,16 @@ class AppInit {
 		const hasValidActiveCycle = activeCycle && cycles[activeCycle];
 
 		if (cycleCount === 0) {
-			// No routines exist at all - data corruption or cleared data
-			console.warn('⚠️ DATA INTEGRITY: No routines exist - showing creation modal with sample option');
-			_deps.showNotification?.('No routines found. Create one or load a sample.', 'warning', 5000);
-			_deps.showCycleCreationModal?.();
+			// No routines exist at all - show onboarding flow
+			console.warn('⚠️ DATA INTEGRITY: No routines exist - showing onboarding with sample option');
+			const onboardingManager = _deps.getOnboardingManager?.();
+			if (onboardingManager?.showOnboarding) {
+				onboardingManager.showOnboarding(cycles, activeCycle, schemaData);
+			} else {
+				// Fallback if onboarding manager not available
+				_deps.showNotification?.('No routines found. Create one or load a sample.', 'warning', 5000);
+				_deps.showCycleCreationModal?.();
+			}
 			return;
 		}
 

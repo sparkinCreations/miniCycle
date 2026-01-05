@@ -65,96 +65,68 @@ function setupAutomatedTestingFunctions() {
 const TEST_RESULTS_DB = 'miniCycleTestResultsDB';
 const TEST_RESULTS_STORE = 'results';
 
+// Separate database for pre-test backup (avoids any conflicts)
+const TEST_BACKUP_DB = 'miniCycleTestBackupDB';
+const TEST_BACKUP_STORE = 'backup';
+
+// localStorage key for backup (more reliable than IndexedDB in some browsers)
+const BACKUP_LOCALSTORAGE_KEY = '__miniCycle_preTestBackup__';
+const BACKUP_FLAG_KEY = '__miniCycle_testModeActive__';
+
 /**
- * Backup localStorage to IndexedDB before tests run (app-side)
- * This is the PRIMARY backup - happens before test suite even loads
+ * Backup localStorage before tests run (app-side)
+ * Uses localStorage with protected keys (test suite will preserve these)
+ * @returns {Promise<{success: boolean, keysCaptured: number, keysVerified: number, failedStep: string, error: string}>}
  */
 async function backupLocalStorageBeforeTests() {
-    return new Promise((resolve) => {
-        try {
-            // Capture all localStorage data
-            const backup = {};
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key) {
-                    backup[key] = localStorage.getItem(key);
-                }
+    try {
+        // Capture all localStorage data EXCEPT our backup keys
+        const backup = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && !key.startsWith('__miniCycle_')) {
+                backup[key] = localStorage.getItem(key);
             }
-
-            const request = indexedDB.open(TEST_RESULTS_DB, 1);
-            request.onupgradeneeded = (e) => {
-                const db = e.target.result;
-                if (!db.objectStoreNames.contains(TEST_RESULTS_STORE)) {
-                    db.createObjectStore(TEST_RESULTS_STORE, { keyPath: 'id' });
-                }
-            };
-            request.onsuccess = () => {
-                const db = request.result;
-                const tx = db.transaction(TEST_RESULTS_STORE, 'readwrite');
-                const store = tx.objectStore(TEST_RESULTS_STORE);
-
-                // Store both the backup AND set the app-initiated flag
-                store.put({
-                    id: 'preTestBackup',
-                    localStorageBackup: backup,
-                    timestamp: Date.now()
-                });
-                store.put({
-                    id: 'appInitiatedTests',
-                    active: true,
-                    timestamp: Date.now()
-                });
-
-                tx.oncomplete = () => {
-                    db.close();
-                    console.log('💾 App-side localStorage backup created');
-                    resolve(true);
-                };
-                tx.onerror = () => {
-                    db.close();
-                    console.warn('⚠️ Failed to create app-side backup');
-                    resolve(false);
-                };
-            };
-            request.onerror = () => {
-                console.warn('⚠️ Could not open IndexedDB for app-side backup');
-                resolve(false);
-            };
-        } catch (e) {
-            console.warn('⚠️ App-side backup failed:', e);
-            resolve(false);
         }
-    });
+        const keysCaptured = Object.keys(backup).length;
+
+        // Store backup and flag in localStorage with protected keys
+        const backupData = {
+            data: backup,
+            timestamp: Date.now()
+        };
+
+        localStorage.setItem(BACKUP_LOCALSTORAGE_KEY, JSON.stringify(backupData));
+        localStorage.setItem(BACKUP_FLAG_KEY, 'true');
+
+        // Verify by reading back
+        const storedBackup = localStorage.getItem(BACKUP_LOCALSTORAGE_KEY);
+        const storedFlag = localStorage.getItem(BACKUP_FLAG_KEY);
+
+        if (storedBackup && storedFlag === 'true') {
+            const parsed = JSON.parse(storedBackup);
+            const keysVerified = Object.keys(parsed.data || {}).length;
+            return { success: true, keysCaptured, keysVerified, failedStep: null, error: null };
+        } else {
+            return { success: false, keysCaptured, keysVerified: 0, failedStep: 'verify', error: 'Backup not found after write' };
+        }
+    } catch (e) {
+        return { success: false, keysCaptured: 0, keysVerified: 0, failedStep: 'exception', error: e.message };
+    }
 }
 
 /**
  * Clear the app-initiated test flag after tests complete
  */
 async function clearAppInitiatedTestFlag() {
-    return new Promise((resolve) => {
-        try {
-            const request = indexedDB.open(TEST_RESULTS_DB, 1);
-            request.onsuccess = () => {
-                const db = request.result;
-                const tx = db.transaction(TEST_RESULTS_STORE, 'readwrite');
-                const store = tx.objectStore(TEST_RESULTS_STORE);
-                store.delete('appInitiatedTests');
-                store.delete('preTestBackup');
-                tx.oncomplete = () => {
-                    db.close();
-                    console.log('🧹 App-initiated test flag cleared');
-                    resolve(true);
-                };
-                tx.onerror = () => {
-                    db.close();
-                    resolve(false);
-                };
-            };
-            request.onerror = () => resolve(false);
-        } catch (e) {
-            resolve(false);
-        }
-    });
+    try {
+        localStorage.removeItem(BACKUP_LOCALSTORAGE_KEY);
+        localStorage.removeItem(BACKUP_FLAG_KEY);
+        console.log('🧹 App-initiated test backup cleared');
+        return true;
+    } catch (e) {
+        return false;
+    }
 }
 
 function openTestResultsDB() {
@@ -493,10 +465,26 @@ async function runAllAutomatedTests() {
 
     // 🔒 APP-SIDE BACKUP: Backup localStorage to IndexedDB BEFORE test suite loads
     // This is the primary safety net - happens from the app before iframe even starts
-    await backupLocalStorageBeforeTests();
-    appendToAutomatedTestResults("🔒 App-side backup created (auto-restore on interrupted tests)\n");
+    const lsKeyCount = localStorage.length;
+    const lsKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        lsKeys.push(localStorage.key(i));
+    }
+    appendToAutomatedTestResults(`🔒 Creating backup (${lsKeyCount} localStorage keys: ${lsKeys.join(', ') || 'none'})...\n`);
+    const backupResult = await backupLocalStorageBeforeTests();
+    if (backupResult.success) {
+        appendToAutomatedTestResults(`✅ Backup saved: ${backupResult.keysVerified} keys (auto-restore if interrupted)\n`);
+    } else {
+        appendToAutomatedTestResults(`⚠️ Backup FAILED at step: ${backupResult.failedStep}\n`);
+        appendToAutomatedTestResults(`   Error: ${backupResult.error || 'unknown'}\n`);
+    }
 
     appendToAutomatedTestResults("🧪 Opening Test Runner...\n\n");
+
+    // 🧪 SET TEST MODE FLAG - prevents AppState from saving during tests
+    // Uses the same localStorage flag that appState.js checks
+    localStorage.setItem('__miniCycle_testModeActive__', 'true');
+    console.log('🧪 Test mode enabled - AppState saves paused');
 
     // Create and show the iframe modal
     const { modal, iframe } = createTestRunnerModal();
@@ -576,6 +564,19 @@ async function runAllAutomatedTests() {
             setTimeout(async () => {
                 closeTestRunnerModal(); // Also clears stored results
                 displayTestResults(event.data);
+
+                // 🧪 CLEAR TEST MODE FLAG - allow AppState saves again
+                // Uses the same localStorage flag that appState.js checks
+                localStorage.removeItem('__miniCycle_testModeActive__');
+                console.log('🧪 Test mode disabled - AppState saves resumed');
+
+                // 🔄 RELOAD AppState from restored localStorage
+                // This syncs the in-memory state with the restored backup data
+                const AppState = getAppState();
+                if (AppState?.reload) {
+                    AppState.reload();
+                    console.log('🔄 AppState reloaded from restored localStorage');
+                }
 
                 // 🔒 Clear app-initiated test flag - tests completed successfully
                 await clearAppInitiatedTestFlag();

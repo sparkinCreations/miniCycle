@@ -405,6 +405,14 @@ export function createProtectedTest(resultsDiv, passed, total) {
             if (value !== null) savedRealData[key] = value;
         });
 
+        // 🔒 ALSO save backup keys (used by test suite for interrupted test recovery)
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('__miniCycle_')) {
+                savedRealData[key] = localStorage.getItem(key);
+            }
+        }
+
         try {
             // Run test (handle both sync and async)
             const result = testFn();

@@ -182,6 +182,34 @@ export function exportDebugData() {
     showNotification("Debug package exported to downloads", "success", 3000);
 }
 
+// Test data patterns to detect and remove
+const TEST_DATA_PATTERNS = {
+    cycleIds: ['cycle-main', 'test-cycle', 'test_cycle'],
+    cycleNames: ['Main Cycle', 'Test Cycle', 'Test Routine'],
+    taskPatterns: [/^test\s*task/i, /^sample\s*task/i, /^\[TEST\]/i]
+};
+
+/**
+ * Check if a cycle appears to be test data
+ * @param {string} cycleId - Cycle ID
+ * @param {Object} cycle - Cycle object
+ * @returns {boolean} True if cycle appears to be test data
+ */
+function isTestDataCycle(cycleId, cycle) {
+    // Check cycle ID patterns
+    if (TEST_DATA_PATTERNS.cycleIds.includes(cycleId)) {
+        return true;
+    }
+    // Check cycle name/title patterns
+    const name = cycle.name || cycle.title || '';
+    if (TEST_DATA_PATTERNS.cycleNames.some(pattern =>
+        name.toLowerCase() === pattern.toLowerCase()
+    )) {
+        return true;
+    }
+    return false;
+}
+
 /**
  * Repair data issues automatically
  */
@@ -191,28 +219,71 @@ export function repairData() {
     showNotification("Attempting to repair data issues...", "warning", 3000);
 
     setTimeout(() => {
-        const state = deps.AppState?.get();
+        // Debug: Log what deps contains
+        console.log('🔧 Repair: deps object:', deps);
+        console.log('🔧 Repair: deps.AppState:', deps.AppState);
+        console.log('🔧 Repair: deps.AppState?.isReady:', deps.AppState?.isReady);
+        console.log('🔧 Repair: deps.AppState?.isReady?.():', deps.AppState?.isReady?.());
+
+        let state = deps.AppState?.get?.();
+
+        // If AppState not available, try reading localStorage directly as diagnostic
+        if (!state) {
+            console.warn('⚠️ Repair: AppState.get() returned null, trying localStorage directly');
+            appendToTestResults("AppState not available, reading localStorage directly...\n");
+
+            try {
+                const rawData = localStorage.getItem('miniCycleData');
+                if (rawData) {
+                    state = JSON.parse(rawData);
+                    console.log('🔧 Repair: Found data in localStorage:', state);
+                    appendToTestResults(`Found data in localStorage (${rawData.length} chars)\n`);
+                }
+            } catch (e) {
+                console.error('❌ Repair: Failed to read localStorage:', e);
+            }
+        }
+
         if (!state) {
             appendToTestResults("No state data available\n\n");
             return;
         }
 
         const repairs = [];
+        const testDataFound = [];
+        const useLocalStorage = !deps.AppState?.update;
 
-        deps.AppState.update(appState => {
+        // Helper to perform repairs on data object
+        function performRepairs(data, appState) {
+            // FIRST: Detect and remove test data
+            const allCycleIds = Object.keys(data.cycles || {});
+            for (const cycleId of allCycleIds) {
+                const cycle = data.cycles[cycleId];
+                if (isTestDataCycle(cycleId, cycle)) {
+                    testDataFound.push(`"${cycle.title || cycle.name || cycleId}" (id: ${cycleId})`);
+                    delete data.cycles[cycleId];
+                    repairs.push(`Removed test data cycle: "${cycle.title || cycleId}"`);
+
+                    // If this was the active cycle, we'll fix that below
+                    if (appState?.activeCycleId === cycleId) {
+                        appState.activeCycleId = null;
+                    }
+                }
+            }
+
             // Fix missing cycles object
-            if (!appState.data.cycles || typeof appState.data.cycles !== 'object') {
-                appState.data.cycles = {};
+            if (!data.cycles || typeof data.cycles !== 'object') {
+                data.cycles = {};
                 repairs.push("Created missing cycles object");
             }
 
             // Fix corrupted cycles
-            const cycleIds = Object.keys(appState.data.cycles);
+            const cycleIds = Object.keys(data.cycles);
             for (const cycleId of cycleIds) {
-                const cycle = appState.data.cycles[cycleId];
+                const cycle = data.cycles[cycleId];
 
                 if (!cycle || typeof cycle !== 'object' || Array.isArray(cycle)) {
-                    delete appState.data.cycles[cycleId];
+                    delete data.cycles[cycleId];
                     repairs.push(`Removed corrupted cycle: ${cycleId}`);
                     continue;
                 }
@@ -265,40 +336,69 @@ export function repairData() {
             }
 
             // Fix active cycle reference
-            if (appState.data.activeCycle) {
-                const activeCycleExists = appState.data.cycles[appState.data.activeCycle];
+            const activeCycleKey = appState?.activeCycleId;
+            if (activeCycleKey) {
+                const activeCycleExists = data.cycles[activeCycleKey];
                 if (!activeCycleExists) {
-                    const availableCycles = Object.keys(appState.data.cycles);
+                    const availableCycles = Object.keys(data.cycles);
                     if (availableCycles.length > 0) {
-                        appState.data.activeCycle = availableCycles[0];
+                        appState.activeCycleId = availableCycles[0];
                         repairs.push(`Fixed invalid activeCycle reference`);
                     } else {
-                        appState.data.activeCycle = null;
+                        appState.activeCycleId = null;
                         repairs.push("Cleared activeCycle (no routines exist)");
                     }
                 }
             }
 
             // Fix missing settings
-            if (!appState.data.settings || typeof appState.data.settings !== 'object') {
-                appState.data.settings = {};
+            if (!data.settings || typeof data.settings !== 'object') {
+                data.settings = {};
                 repairs.push("Created missing settings object");
             }
+        }
 
-        }, true);
+        // Perform repairs using AppState or localStorage
+        if (useLocalStorage) {
+            console.log('🔧 Repair: Using localStorage fallback');
+            appendToTestResults("Using localStorage fallback for repairs...\n");
+            performRepairs(state.data, state.appState);
+
+            // Save back to localStorage
+            try {
+                state.metadata = state.metadata || {};
+                state.metadata.lastModified = Date.now();
+                localStorage.setItem('miniCycleData', JSON.stringify(state));
+                console.log('🔧 Repair: Saved repairs to localStorage');
+            } catch (e) {
+                console.error('❌ Repair: Failed to save to localStorage:', e);
+                appendToTestResults(`ERROR: Failed to save repairs: ${e.message}\n`);
+            }
+        } else {
+            deps.AppState.update(appState => {
+                performRepairs(appState.data, appState.appState);
+            }, true);
+        }
 
         appendToTestResults(`Data Repair Complete:\n`);
         appendToTestResults(`- Total repairs: ${repairs.length}\n`);
 
+        if (testDataFound.length > 0) {
+            appendToTestResults(`- Test data removed: ${testDataFound.length} cycle(s)\n`);
+            testDataFound.forEach(t => appendToTestResults(`  - ${t}\n`));
+        }
+
         if (repairs.length > 0) {
-            appendToTestResults(`- Details:\n`);
+            appendToTestResults(`- Repair details:\n`);
             repairs.forEach(r => appendToTestResults(`  - ${r}\n`));
         } else {
             appendToTestResults(`- No issues found - data is healthy!\n`);
         }
         appendToTestResults("\n");
 
-        if (repairs.length > 0) {
+        if (testDataFound.length > 0) {
+            showNotification(`Removed ${testDataFound.length} test cycle(s), made ${repairs.length} total repairs`, "success", 4000);
+        } else if (repairs.length > 0) {
             showNotification(`Made ${repairs.length} repairs`, "success", 3000);
         } else {
             showNotification("No repairs needed", "success", 2000);
