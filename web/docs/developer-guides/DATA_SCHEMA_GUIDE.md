@@ -1,7 +1,7 @@
 # Data Schema Guide
 
-**Version**: 1.373
-**Last Updated**: November 23, 2025
+**Version**: 1.684
+**Last Updated**: January 5, 2026
 
 ---
 
@@ -15,36 +15,48 @@
 
 ## Schema 2.5 Structure (Current)
 
+> **Source of Truth**: `modules/core/types.js` contains the canonical JSDoc type definitions.
+
 ```typescript
 {
     schemaVersion: "2.5",
 
     metadata: {
-        lastModified: 1696723445123,        // Unix timestamp
-        appVersion: "1.373",
-        migrationHistory: ["2.0 → 2.5"]
+        createdAt: 1696723400000,            // Unix timestamp
+        lastModified: 1696723445123,         // Unix timestamp
+        appVersion: "1.684",
+        migrationHistory: ["2.0 → 2.5"],
+        migratedFrom: "2.0",                 // Previous schema version
+        migrationDate: "2025-10-07",         // Migration date
+        totalCyclesCreated: 5,               // Total cycles ever created
+        totalTasksCompleted: 156             // Total tasks ever completed
     },
 
     data: {
         cycles: {
             "cycle-abc123": {
+                id: "cycle-abc123",
                 name: "Morning Routine",
+                title: "Morning Routine",    // Legacy field
                 cycleCount: 42,              // Times completed
                 autoReset: true,             // Auto-cycle mode
                 deleteCheckedTasks: false,
+                createdAt: 1696723400000,    // Creation timestamp
+                lastModified: 1696723445123, // Last modification timestamp
                 tasks: [
                     {
                         id: "task-xyz789",
                         text: "☕ Make coffee",
                         completed: false,
                         highPriority: false,
-                        dueDate: null,
+                        dueDate: null,           // ISO string or null
                         remindersEnabled: false,
                         recurring: false,
                         recurringSettings: {},
                         schemaVersion: 2.5,
                         createdAt: "2025-10-07T09:00:00.000Z",
-                        completedAt: null
+                        completedAt: null,       // ISO string or null
+                        deleteWhenComplete: false
                     }
                 ],
                 recurringTemplates: {
@@ -54,24 +66,35 @@
                         dueDate: null,
                         remindersEnabled: true,
                         recurringSettings: {
-                            frequency: "daily",
+                            frequency: "daily",      // daily|weekly|monthly|yearly|custom
+                            indefinitely: true,
+                            repeatCount: 0,          // If not indefinite
+                            timesActivated: 0,
+                            weekdays: [],            // ["Mon", "Wed", "Fri"]
+                            dayOfMonth: null,        // 1-31
+                            nthWeekday: null,        // "1"|"2"|"3"|"4"|"last"
+                            weekday: null,           // "Mon"|"Tue"|etc.
+                            time: null,              // {hour, minute, meridiem}
                             daily: { time: "09:00" },
-                            indefinitely: true
+                            weekly: { days: [] },
+                            monthly: { dayOfMonth: null, nthWeekday: null, weekday: null },
+                            lastActivated: null,     // ISO string
+                            nextActivation: null     // ISO string
                         },
                         createdAt: "2025-10-01T12:00:00.000Z"
                     }
                 },
-                taskOptionButtons: {          // v1.357+: Per-cycle button visibility
+                taskOptionButtons: {
                     customize: true,
-                    moveArrows: false,       // Global setting
-                    threeDots: false,        // Global setting
+                    moveArrows: false,
+                    threeDots: false,
                     highPriority: true,
                     rename: true,
                     delete: true,
                     recurring: false,
                     dueDate: false,
                     reminders: false,
-                    deleteWhenComplete: false  // v1.370+
+                    deleteWhenComplete: false
                 }
             }
         }
@@ -79,43 +102,60 @@
 
     appState: {
         activeCycleId: "cycle-abc123",
-        currentMode: "auto-cycle",           // or "manual-cycle" or "todo-mode"
-        ui: {
-            moveArrowsVisible: true,
-            statsView: "tasks"
-        }
+        currentMode: "auto-cycle",           // "auto-cycle"|"manual-cycle"|"todo-mode"
+        overdueTaskStates: {}                // {[taskId]: boolean}
+    },
+
+    ui: {
+        moveArrowsVisible: false,
+        statsView: "tasks"
     },
 
     settings: {
-        darkMode: true,
-        theme: "dark-ocean",
-        unlockedThemes: ["dark-ocean"],
-        dismissedEducationalTips: {
-            "recurring-cycle-explanation": true
-        },
-        notificationPosition: { x: 100, y: 20 },
+        theme: "default",
+        darkMode: false,
+        alwaysShowRecurring: false,
+        autoSave: true,
+        showThreeDots: false,
+        showTaskInput: true,
+        onboardingCompleted: false,
+        dismissedEducationalTips: {},
         defaultRecurringSettings: {
             frequency: "daily",
             indefinitely: true
         },
-        showCompletedDropdown: false,        // v1.352+
+        unlockedThemes: [],
+        unlockedFeatures: [],
+        notificationPosition: { x: 100, y: 20 },
+        notificationPositionModified: false,
+        showCompletedDropdown: false,
         completedTasksExpanded: false,
-        showThreeDots: true                  // v1.357+: Global three dots setting
+        accessibility: {
+            reducedMotion: false,
+            highContrast: false,
+            screenReaderHints: false
+        },
+        debugMode: false
     },
 
-    reminders: {
-        enabled: true,
-        frequency: 30,
+    customReminders: {
+        enabled: false,
+        indefinite: false,
+        dueDatesReminders: false,
+        repeatCount: 0,
+        frequencyValue: 30,
+        frequencyUnit: "minutes",            // "minutes"|"hours"
         customMessages: []
     },
 
     userProgress: {
         cyclesCompleted: 42,
         totalTasksCompleted: 156,
-        achievementsUnlocked: ["cycle-5", "cycle-25"],
-        streaks: {
-            current: 7,
-            longest: 14
+        achievementsUnlocked: [],            // Placeholder for future feature
+        rewardMilestones: [],                // Placeholder for future feature
+        streaks: {                           // Placeholder for future feature
+            current: 0,
+            longest: 0
         }
     }
 }
@@ -134,14 +174,16 @@ AppState.update((state) => {
     // Modify state
 })
     ↓
-Debounced Save (600ms)
-    ↓
-localStorage.setItem("miniCycleData", JSON.stringify(state))
-    ↓
-State Listeners Notified
+State Listeners Notified (immediate)
     ↓
 UI Components Refresh
+    ↓
+Debounced Save (600ms, uses requestIdleCallback)
+    ↓
+localStorage.setItem("miniCycleData", JSON.stringify(state))
 ```
+
+**Note**: Listeners are notified immediately after state mutation, but localStorage persistence is debounced to avoid excessive writes during rapid changes.
 
 ---
 
@@ -149,6 +191,7 @@ UI Components Refresh
 
 ```javascript
 // User types "Buy groceries" and clicks Add
+// Note: AppState is accessed via dependency injection, not window.*
 
 function addTask(taskText) {
     // 1. Generate unique ID
@@ -166,11 +209,12 @@ function addTask(taskText) {
         recurringSettings: {},
         schemaVersion: 2.5,
         createdAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
+        deleteWhenComplete: false
     };
 
-    // 3. Update AppState
-    window.AppState.update((state) => {
+    // 3. Update AppState (via injected dependency)
+    this.deps.AppState.update((state) => {
         const activeCycleId = state.appState.activeCycleId;
         state.data.cycles[activeCycleId].tasks.push(newTask);
     }, true);  // true = save immediately
@@ -180,7 +224,7 @@ function addTask(taskText) {
     document.getElementById('taskList').appendChild(taskElement);
 
     // 5. Notify user
-    showNotification('Task added!', 'success', 2000);
+    this.deps.showNotification('Task added!', 'success', 2000);
 }
 ```
 

@@ -1,8 +1,13 @@
 # miniCycle Schema 2.5 Documentation
 
+**Version**: 1.684
+**Last Updated**: January 5, 2026
+
 ## Overview
 
 Schema 2.5 represents the current data structure for miniCycle, consolidating all application state, user data, settings, and metadata into a single unified format. This schema supports multiple cycles, recurring tasks, theme unlocks, and comprehensive user progress tracking.
+
+> **Source of Truth**: `modules/core/types.js` contains the canonical JSDoc type definitions.
 
 ## Schema Version
 
@@ -11,99 +16,108 @@ Schema 2.5 represents the current data structure for miniCycle, consolidating al
 ## Complete Schema Structure
 
 ```javascript
-const SCHEMA_2_5_CURRENT = {
+{
   schemaVersion: "2.5",
 
-  miniCycle: {
+  metadata: {
+    createdAt: 1696723400000,              // Unix timestamp
+    lastModified: 1696723445123,           // Unix timestamp
+    appVersion: "1.684",                   // App version string
+    migrationHistory: ["2.0 → 2.5"],       // Migration path history
+    migratedFrom: "2.0",                   // Previous schema version
+    migrationDate: "2025-10-07",           // When migration occurred
+    totalCyclesCreated: 5,                 // Lifetime cycle creation count
+    totalTasksCompleted: 156               // Lifetime task completion count
+  },
 
-    metadata: {
-      createdAt: null,
-      lastModified: null,
-      migratedFrom: null,
-      migrationDate: null,
-      totalCyclesCreated: 0,
-      totalTasksCompleted: 0,
-      schemaVersion: "2.5"
+  settings: {
+    theme: "default",                      // Current theme name
+    darkMode: false,                       // Dark mode enabled
+    alwaysShowRecurring: false,            // Always show recurring panel
+    autoSave: true,                        // Auto-save enabled
+    showThreeDots: false,                  // Global three dots menu visibility
+    showTaskInput: true,                   // Show task input bar
+    onboardingCompleted: false,            // User completed onboarding
+    dismissedEducationalTips: {},          // { [tipId]: boolean }
+    defaultRecurringSettings: {            // Default values for new recurring tasks
+      frequency: "daily",
+      indefinitely: true
     },
-
-    settings: {
-      theme: null,                    // Current: unlocked themes
-      darkMode: false,                // Current: dark mode toggle
-      alwaysShowRecurring: false,     // Current: always show recurring setting
-      autoSave: true,
-
-      defaultRecurringSettings: {     // Current: recurring task defaults
-        frequency: null,
-        indefinitely: true,
-        time: null
-      },
-
-      unlockedThemes: [],            // Current: milestone theme unlocks
-      unlockedFeatures: [],          // Current: milestone feature unlocks
-
-      notificationPosition: { x: 0, y: 0 },  // Current: draggable notifications
-      notificationPositionModified: false,
-
-      showCompletedDropdown: false,   // v1.352+: Enable completed tasks dropdown
-      completedTasksExpanded: false,  // v1.352+: UI state for dropdown visibility
-      showThreeDots: false,           // v1.357+: Global three dots menu setting
-
-      accessibility: {
-        reducedMotion: false,        // Future-ready for accessibility
-        highContrast: false,
-        screenReaderHints: false
-      }
+    unlockedThemes: [],                    // Themes unlocked through milestones
+    unlockedFeatures: [],                  // Features unlocked through milestones
+    notificationPosition: { x: 100, y: 20 }, // Draggable notification position
+    notificationPositionModified: false,   // User has customized position
+    showCompletedDropdown: false,          // Enable completed tasks dropdown
+    completedTasksExpanded: false,         // Completed section expanded state
+    accessibility: {
+      reducedMotion: false,                // Reduce animations
+      highContrast: false,                 // High contrast mode
+      screenReaderHints: false             // Enhanced screen reader support
     },
+    debugMode: false                       // Debug mode enabled
+  },
 
-    data: {
-      cycles: {
-        // Current miniCycleStorage structure
-        "Default Cycle": {
-          title: "Default Cycle",
-          tasks: [],
-          recurringTemplates: {},
-          autoReset: true,
-          deleteCheckedTasks: false,
-          cycleCount: 0,
-          taskOptionButtons: {        // v1.357+: Per-cycle button visibility
-            customize: true,          // -/+ customize button (always visible)
-            moveArrows: false,        // ▲▼ move task arrows (synced with global setting)
-            threeDots: false,         // ⋮ three dots menu (synced with global setting)
-            highPriority: true,       // ⚡ high priority toggle
-            rename: true,             // ✏️ rename/edit task
-            delete: true,             // 🗑️ delete task
-            recurring: false,         // 🔁 recurring task
-            dueDate: false,           // 📅 due date
-            reminders: false          // 🔔 reminders
-          }
+  data: {
+    cycles: {
+      "cycle-abc123": {
+        id: "cycle-abc123",                // Unique cycle identifier
+        name: "Morning Routine",           // Display name
+        title: "Morning Routine",          // Legacy field (same as name)
+        cycleCount: 42,                    // Times completed
+        autoReset: true,                   // Auto-reset on completion
+        deleteCheckedTasks: false,         // Delete tasks when checked
+        createdAt: 1696723400000,          // Creation timestamp
+        lastModified: 1696723445123,       // Last modification timestamp
+        tasks: [/* Task objects */],
+        recurringTemplates: {/* Template objects */},
+        taskOptionButtons: {
+          customize: true,                 // -/+ customize button
+          moveArrows: false,               // Move task arrows
+          threeDots: false,                // Three dots menu
+          highPriority: true,              // High priority toggle
+          rename: true,                    // Rename/edit task
+          delete: true,                    // Delete task
+          recurring: false,                // Recurring task option
+          dueDate: false,                  // Due date option
+          reminders: false,                // Reminders option
+          deleteWhenComplete: false        // Delete when complete option
         }
       }
-    },
-
-    ui: {
-      moveArrowsVisible: false        // v1.357+: Global arrow visibility setting
-    },
-
-    appState: {
-      activeCycleId: "Default Cycle"   // Current: lastUsedMiniCycle
-    },
-
-    userProgress: {
-      cyclesCompleted: 0,             // Current: cycle completion tracking
-      rewardMilestones: []            // Current: milestone rewards system
-    },
-
-    // Current reminder system
-    customReminders: {
-      enabled: false,
-      indefinite: false,
-      dueDatesReminders: false,
-      repeatCount: 0,
-      frequencyValue: 30,
-      frequencyUnit: "minutes"
     }
+  },
+
+  appState: {
+    activeCycleId: "cycle-abc123",         // Currently selected cycle
+    currentMode: "auto-cycle",             // "auto-cycle"|"manual-cycle"|"todo-mode"
+    overdueTaskStates: {}                  // { [taskId]: boolean }
+  },
+
+  ui: {
+    moveArrowsVisible: false,              // Global arrow visibility
+    statsView: "tasks"                     // Current stats panel view
+  },
+
+  userProgress: {
+    cyclesCompleted: 42,                   // Total cycles completed
+    totalTasksCompleted: 156,              // Total tasks completed
+    achievementsUnlocked: [],              // Unlocked achievement IDs (placeholder)
+    rewardMilestones: [],                  // Reached milestones (placeholder)
+    streaks: {                             // Streak tracking (placeholder)
+      current: 0,
+      longest: 0
+    }
+  },
+
+  customReminders: {
+    enabled: false,                        // Reminders enabled
+    indefinite: false,                     // Remind forever
+    dueDatesReminders: false,              // Remind about due dates
+    repeatCount: 0,                        // Times to repeat
+    frequencyValue: 30,                    // Interval value
+    frequencyUnit: "minutes",              // "minutes"|"hours"
+    customMessages: []                     // Custom reminder messages
   }
-};
+}
 ```
 
 ## Key Sections
@@ -112,105 +126,187 @@ const SCHEMA_2_5_CURRENT = {
 
 Tracks application-level information and migration history:
 
-- **createdAt**: Initial data creation timestamp
-- **lastModified**: Last update timestamp
-- **migratedFrom**: Previous schema version (if migrated)
-- **migrationDate**: When migration occurred
-- **totalCyclesCreated**: Lifetime cycle creation count
-- **totalTasksCompleted**: Lifetime task completion count
-- **schemaVersion**: Current schema version identifier
+| Field | Type | Description |
+|-------|------|-------------|
+| `createdAt` | number | Initial data creation timestamp |
+| `lastModified` | number | Last update timestamp |
+| `appVersion` | string | Application version string |
+| `migrationHistory` | string[] | Array of migration paths taken |
+| `migratedFrom` | string | Previous schema version (if migrated) |
+| `migrationDate` | string | When migration occurred |
+| `totalCyclesCreated` | number | Lifetime cycle creation count |
+| `totalTasksCompleted` | number | Lifetime task completion count |
 
 ### Settings
 
 #### Theme & Display
-- **theme**: Currently selected theme name
-- **darkMode**: Dark mode enabled/disabled
-- **unlockedThemes**: Array of themes unlocked through milestones
+| Field | Type | Description |
+|-------|------|-------------|
+| `theme` | string | Currently selected theme name |
+| `darkMode` | boolean | Dark mode enabled/disabled |
+| `unlockedThemes` | string[] | Themes unlocked through milestones |
+| `unlockedFeatures` | string[] | Features unlocked through milestones |
 
 #### Recurring Task Defaults
-- **defaultRecurringSettings**: Default values for new recurring tasks
-  - `frequency`: Daily, weekly, monthly, yearly
-  - `indefinitely`: Whether to repeat forever
-  - `time`: Default time of day for recurring tasks
+| Field | Type | Description |
+|-------|------|-------------|
+| `defaultRecurringSettings.frequency` | string | Daily, weekly, monthly, yearly |
+| `defaultRecurringSettings.indefinitely` | boolean | Whether to repeat forever |
 
 #### Notifications
-- **notificationPosition**: User-draggable notification position (x, y coordinates)
-- **notificationPositionModified**: Whether user has customized position
+| Field | Type | Description |
+|-------|------|-------------|
+| `notificationPosition` | {x, y} | User-draggable notification position |
+| `notificationPositionModified` | boolean | Whether user has customized position |
 
-#### UI Preferences (v1.352+, v1.357+)
-- **showCompletedDropdown**: Enable completed tasks dropdown section (v1.352+)
-- **completedTasksExpanded**: UI state for dropdown visibility (v1.352+)
-- **showThreeDots**: Global three dots menu visibility setting (v1.357+)
+#### UI Preferences
+| Field | Type | Description |
+|-------|------|-------------|
+| `showTaskInput` | boolean | Show task input bar |
+| `showCompletedDropdown` | boolean | Enable completed tasks dropdown |
+| `completedTasksExpanded` | boolean | Completed section expanded state |
+| `showThreeDots` | boolean | Global three dots menu visibility |
+| `alwaysShowRecurring` | boolean | Always show recurring panel |
+| `onboardingCompleted` | boolean | User completed onboarding |
+| `dismissedEducationalTips` | object | Map of dismissed tip IDs |
+| `debugMode` | boolean | Debug mode enabled |
 
-#### Accessibility (Future-Ready)
-- **reducedMotion**: Respect user motion preferences
-- **highContrast**: High contrast mode
-- **screenReaderHints**: Enhanced screen reader support
+#### Accessibility
+| Field | Type | Description |
+|-------|------|-------------|
+| `reducedMotion` | boolean | Reduce animations |
+| `highContrast` | boolean | High contrast mode |
+| `screenReaderHints` | boolean | Enhanced screen reader support |
 
 ### Data
 
-#### Cycles Structure
+#### Cycle Structure
 
 Each cycle contains:
-- **title**: Display name of the cycle
-- **tasks**: Array of task objects
-- **recurringTemplates**: Recurring task definitions
-- **autoReset**: Auto Cycle Mode (true) or Manual Cycle Mode (false)
-- **deleteCheckedTasks**: To-Do Mode (true) or Cycle Mode (false)
-- **cycleCount**: Number of times cycle has been completed
-- **taskOptionButtons** (v1.357+): Per-cycle button visibility settings
-  - `customize`: -/+ customize button (always true, cannot be disabled)
-  - `moveArrows`: ▲▼ move task arrows (synced with global ui.moveArrowsVisible)
-  - `threeDots`: ⋮ three dots menu (synced with global settings.showThreeDots)
-  - `highPriority`: ⚡ high priority toggle
-  - `rename`: ✏️ rename/edit task
-  - `delete`: 🗑️ delete task
-  - `recurring`: 🔁 recurring task
-  - `dueDate`: 📅 due date
-  - `reminders`: 🔔 reminders
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique cycle identifier |
+| `name` | string | Display name of the cycle |
+| `title` | string | Legacy field (same as name) |
+| `tasks` | Task[] | Array of task objects |
+| `recurringTemplates` | object | Recurring task template definitions |
+| `autoReset` | boolean | Auto-reset on completion (Auto Cycle Mode) |
+| `deleteCheckedTasks` | boolean | Delete tasks when checked (To-Do Mode) |
+| `cycleCount` | number | Number of times cycle has been completed |
+| `createdAt` | number | Creation timestamp |
+| `lastModified` | number | Last modification timestamp |
+| `taskOptionButtons` | object | Per-cycle button visibility settings |
+
+#### Task Option Buttons
+
+| Field | Description |
+|-------|-------------|
+| `customize` | -/+ customize button (always true) |
+| `moveArrows` | Move task arrows |
+| `threeDots` | Three dots menu |
+| `highPriority` | High priority toggle |
+| `rename` | Rename/edit task |
+| `delete` | Delete task |
+| `recurring` | Recurring task option |
+| `dueDate` | Due date option |
+| `reminders` | Reminders option |
+| `deleteWhenComplete` | Delete when complete option |
 
 #### Task Object Structure
 
-Each task object in the `tasks` array contains:
-- **id**: Unique task identifier (string)
-- **text**: Task description text (string)
-- **completed**: Completion status (boolean)
-- **dueDate**: Optional due date in ISO format "YYYY-MM-DD" (string | null)
-- **highPriority**: Priority flag (boolean)
-- **remindersEnabled**: Task-specific reminder toggle (boolean)
-- **recurring**: Whether task is recurring (boolean)
-- **recurringSettings**: Recurring task configuration (object)
-- **deleteWhenComplete** (v1.372+): Auto-remove on reset instead of unchecking (boolean)
-  - Default: `false` for Cycle mode, `true` for To-Do mode
-  - Recurring tasks: Always `true` (auto-enabled)
-- **schemaVersion**: Schema version identifier (number)
+Each task object in the `tasks` array:
 
-### UI State (v1.357+)
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique task identifier |
+| `text` | string | Task description text |
+| `completed` | boolean | Completion status |
+| `highPriority` | boolean | Priority flag |
+| `dueDate` | string\|null | Due date in ISO format |
+| `remindersEnabled` | boolean | Task-specific reminder toggle |
+| `recurring` | boolean | Whether task is recurring |
+| `recurringSettings` | object | Recurring task configuration |
+| `schemaVersion` | number | Schema version (2.5) |
+| `createdAt` | string | ISO timestamp of creation |
+| `completedAt` | string\|null | ISO timestamp of completion |
+| `deleteWhenComplete` | boolean | Auto-remove on reset |
 
-Global UI configuration:
-- **moveArrowsVisible**: Global arrow visibility setting (synced with all cycles' taskOptionButtons.moveArrows)
+#### Recurring Settings Structure
+
+```javascript
+{
+  frequency: "daily",              // "daily"|"weekly"|"monthly"|"yearly"|"custom"
+  indefinitely: true,              // Repeat forever
+  repeatCount: 0,                  // Times to repeat (if not indefinite)
+  timesActivated: 0,               // How many times activated
+  weekdays: ["Mon", "Wed", "Fri"], // Days for weekly recurrence
+  dayOfMonth: 15,                  // Day of month (1-31)
+  nthWeekday: "1",                 // Ordinal: "1"|"2"|"3"|"4"|"last"
+  weekday: "Mon",                  // Weekday name for nth pattern
+  time: {                          // Specific activation time
+    hour: 9,
+    minute: 0,
+    meridiem: "AM"
+  },
+  daily: { time: "09:00" },        // Daily-specific settings
+  weekly: { days: [] },            // Weekly-specific settings
+  monthly: {                       // Monthly-specific settings
+    dayOfMonth: null,
+    nthWeekday: null,
+    weekday: null
+  },
+  lastActivated: null,             // ISO timestamp of last activation
+  nextActivation: null             // ISO timestamp of next activation
+}
+```
 
 ### App State
 
 Tracks current application state:
-- **activeCycleId**: Currently selected cycle (maps to `lastUsedMiniCycle`)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `activeCycleId` | string\|null | Currently selected cycle ID |
+| `currentMode` | string | "auto-cycle"\|"manual-cycle"\|"todo-mode" |
+| `overdueTaskStates` | object | Map of task ID to overdue boolean |
+
+### UI State
+
+Global UI configuration:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `moveArrowsVisible` | boolean | Global arrow visibility |
+| `statsView` | string | Current stats panel view |
 
 ### User Progress
 
 Gamification and achievement tracking:
-- **cyclesCompleted**: Total cycles completed across all cycles
-- **rewardMilestones**: Array of unlocked milestone rewards
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `cyclesCompleted` | number | Total cycles completed |
+| `totalTasksCompleted` | number | Total tasks completed |
+| `achievementsUnlocked` | string[] | Unlocked achievement IDs (placeholder) |
+| `rewardMilestones` | string[] | Reached milestones (placeholder) |
+| `streaks` | object | Streak tracking (placeholder) |
+| `streaks.current` | number | Current streak count |
+| `streaks.longest` | number | Longest streak ever |
 
 ### Custom Reminders
 
-User-configurable reminder system stored at root level (`miniCycle.customReminders`).
-Note: Per-task reminders use the `remindersEnabled` boolean on individual tasks.
-- **enabled**: Reminders on/off
-- **indefinite**: Repeat reminders forever
-- **dueDatesReminders**: Remind about task due dates
-- **repeatCount**: Number of times to repeat reminders
-- **frequencyValue**: Numeric interval value
-- **frequencyUnit**: Time unit (minutes, hours, days)
+User-configurable reminder system:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `enabled` | boolean | Reminders on/off |
+| `indefinite` | boolean | Repeat reminders forever |
+| `dueDatesReminders` | boolean | Remind about task due dates |
+| `repeatCount` | number | Number of times to repeat |
+| `frequencyValue` | number | Numeric interval value |
+| `frequencyUnit` | string | "minutes"\|"hours" |
+| `customMessages` | string[] | Custom reminder messages |
 
 ## Migration Support
 
@@ -218,24 +314,26 @@ Schema 2.5 includes built-in migration tracking:
 
 ```javascript
 metadata: {
-  migratedFrom: "2.0",           // Previous schema version
-  migrationDate: "2024-10-15",   // When migration occurred
-  schemaVersion: "2.5"           // Current version
+  migratedFrom: "2.0",
+  migrationDate: "2025-10-15",
+  migrationHistory: ["2.0 → 2.5"]
 }
 ```
 
 ## Usage Example
 
 ```javascript
-// Loading data
-const data = JSON.parse(localStorage.getItem('miniCycleData'));
-if (data.schemaVersion === "2.5") {
-  const activeCycle = data.miniCycle.data.cycles[data.miniCycle.appState.activeCycleId];
-  const isDarkMode = data.miniCycle.settings.darkMode;
+// Loading data (via DI - AppState is injected, not accessed via window.*)
+const state = this.deps.AppState.get();
+if (state.schemaVersion === "2.5") {
+  const activeCycle = state.data.cycles[state.appState.activeCycleId];
+  const isDarkMode = state.settings.darkMode;
 }
 
-// Saving data
-localStorage.setItem('miniCycleData', JSON.stringify(schema));
+// Updating data
+this.deps.AppState.update(state => {
+  state.settings.darkMode = true;
+}, true); // true = save immediately
 ```
 
 ## File Format Compatibility
@@ -249,5 +347,6 @@ This schema structure is also used in `.mcyc` file exports/imports, ensuring con
 ## Related Documentation
 
 - [MCYC_FILE_FORMAT.md](./MCYC_FILE_FORMAT.md) - File import/export format
-- [DEVELOPER_DOCUMENTATION.md](../developer-guides/DEVELOPER_DOCUMENTATION.md) - Architecture overview
+- [DATA_SCHEMA_GUIDE.md](../developer-guides/DATA_SCHEMA_GUIDE.md) - Schema guide with data flow
+- [types.js](../../modules/core/types.js) - Canonical JSDoc type definitions
 - [minicycle-recurring-guide.md](../features/minicycle-recurring-guide.md) - Recurring task implementation
