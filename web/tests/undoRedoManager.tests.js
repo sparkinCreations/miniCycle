@@ -197,7 +197,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         // Verify by calling a function that uses dependencies
         // If dependencies weren't set, this would throw
         const mockState = mockDeps.AppState.get();
-        captureStateSnapshot(mockState);
+        await captureStateSnapshot(mockState);
     });
 
     await test('assertInjected throws when dependency missing', async () => {
@@ -325,7 +325,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         const state = mockDeps.AppState.get();
-        captureStateSnapshot(state);
+        await captureStateSnapshot(state);
 
         const snapshot = mockDeps.AppGlobalState.activeUndoStack[0];
         if (!snapshot) {
@@ -345,7 +345,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         const state = mockDeps.AppState.get();
-        captureStateSnapshot(state);
+        await captureStateSnapshot(state);
 
         if (mockDeps.AppGlobalState.activeUndoStack.length !== 0) {
             throw new Error('Should not capture snapshot during initialization');
@@ -360,10 +360,10 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         const state = mockDeps.AppState.get();
 
         // Capture first snapshot
-        captureStateSnapshot(state);
+        await captureStateSnapshot(state);
 
         // Try to capture identical snapshot immediately
-        captureStateSnapshot(state);
+        await captureStateSnapshot(state);
 
         if (mockDeps.AppGlobalState.activeUndoStack.length !== 1) {
             throw new Error('Identical snapshot should be throttled');
@@ -376,7 +376,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         const state1 = mockDeps.AppState.get();
-        captureStateSnapshot(state1);
+        await captureStateSnapshot(state1);
 
         // Modify state
         const state2 = mockDeps.AppState.get();
@@ -385,7 +385,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         // Wait to avoid time throttling
         await new Promise(resolve => setTimeout(resolve, 350));
 
-        captureStateSnapshot(state2);
+        await captureStateSnapshot(state2);
 
         if (mockDeps.AppGlobalState.activeUndoStack.length !== 2) {
             throw new Error('Different snapshot should be captured');
@@ -414,7 +414,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         state.data.cycles['Test Cycle'].tasks[0].text = 'Modified Task';
 
         await new Promise(resolve => setTimeout(resolve, 350));
-        captureStateSnapshot(state);
+        await captureStateSnapshot(state);
 
         if (mockDeps.AppGlobalState.activeUndoStack.length !== 20) {
             throw new Error(`Stack should remain at limit of 20, got ${mockDeps.AppGlobalState.activeUndoStack.length}`);
@@ -435,7 +435,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         });
 
         const state = mockDeps.AppState.get();
-        captureStateSnapshot(state);
+        await captureStateSnapshot(state);
 
         if (mockDeps.AppGlobalState.activeRedoStack.length !== 0) {
             throw new Error('redoStack should be cleared on new snapshot');
@@ -521,7 +521,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         const state = mockDeps.AppState.get();
         const originalTaskText = state.data.cycles['Test Cycle'].tasks[0].text;
 
-        captureStateSnapshot(state);
+        await captureStateSnapshot(state);
 
         // Modify original state
         state.data.cycles['Test Cycle'].tasks[0].text = 'Modified';
@@ -543,7 +543,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // Capture initial state
         const state1 = mockDeps.AppState.get();
-        captureStateSnapshot(state1);
+        await captureStateSnapshot(state1);
 
         // Modify state
         await mockDeps.AppState.update(state => {
@@ -555,7 +555,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // Capture modified state
         const state2 = mockDeps.AppState.get();
-        captureStateSnapshot(state2);
+        await captureStateSnapshot(state2);
 
         // Perform undo
         await performStateBasedUndo();
@@ -574,12 +574,12 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // Capture two states
         const state1 = mockDeps.AppState.get();
-        captureStateSnapshot(state1);
+        await captureStateSnapshot(state1);
 
         await new Promise(resolve => setTimeout(resolve, 350));
 
         state1.data.cycles['Test Cycle'].tasks[0].completed = true;
-        captureStateSnapshot(state1);
+        await captureStateSnapshot(state1);
 
         // Undo
         await performStateBasedUndo();
@@ -638,12 +638,12 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // Capture snapshot
         const state = mockDeps.AppState.get();
-        captureStateSnapshot(state);
+        await captureStateSnapshot(state);
 
         await new Promise(resolve => setTimeout(resolve, 350));
 
         state.data.cycles['Test Cycle'].tasks[0].completed = true;
-        captureStateSnapshot(state);
+        await captureStateSnapshot(state);
 
         // Check flag during undo
         let flagWasSet = false;
@@ -692,7 +692,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         // Capture initial state (completed = false)
-        captureStateSnapshot(mockDeps.AppState.get());
+        await captureStateSnapshot(mockDeps.AppState.get());
 
         await new Promise(resolve => setTimeout(resolve, 350));
 
@@ -702,7 +702,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         });
 
         // Capture modified state (completed = true)
-        captureStateSnapshot(mockDeps.AppState.get());
+        await captureStateSnapshot(mockDeps.AppState.get());
 
         // Undo to restore completed = false
         await performStateBasedUndo();
@@ -729,12 +729,12 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // Setup: capture two states and undo
         const state1 = mockDeps.AppState.get();
-        captureStateSnapshot(state1);
+        await captureStateSnapshot(state1);
 
         await new Promise(resolve => setTimeout(resolve, 350));
 
         state1.data.cycles['Test Cycle'].tasks[0].completed = true;
-        captureStateSnapshot(state1);
+        await captureStateSnapshot(state1);
 
         await performStateBasedUndo();
 
@@ -800,13 +800,13 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         state.data.cycles['Test Cycle'].recurringTemplates = {
             'template-1': { frequency: 'daily', time: '09:00' }
         };
-        captureStateSnapshot(state);
+        await captureStateSnapshot(state);
 
         await new Promise(resolve => setTimeout(resolve, 350));
 
         // Modify tasks
         state.data.cycles['Test Cycle'].tasks[0].completed = true;
-        captureStateSnapshot(state);
+        await captureStateSnapshot(state);
 
         // Undo
         await performStateBasedUndo();
@@ -834,7 +834,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         });
 
         // Capture state in Cycle 1
-        captureStateSnapshot(mockDeps.AppState.get());
+        await captureStateSnapshot(mockDeps.AppState.get());
 
         await new Promise(resolve => setTimeout(resolve, 350));
 
@@ -844,7 +844,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         });
 
         // Capture state in Cycle 2
-        captureStateSnapshot(mockDeps.AppState.get());
+        await captureStateSnapshot(mockDeps.AppState.get());
 
         // Undo should switch back to Cycle 1
         await performStateBasedUndo();
@@ -932,7 +932,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         // Capture initial state
-        captureStateSnapshot(mockDeps.AppState.get());
+        await captureStateSnapshot(mockDeps.AppState.get());
 
         await new Promise(resolve => setTimeout(resolve, 350));
 
@@ -940,7 +940,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         await mockDeps.AppState.update(state => {
             state.data.cycles['Test Cycle'].tasks[0].completed = true;
         });
-        captureStateSnapshot(mockDeps.AppState.get());
+        await captureStateSnapshot(mockDeps.AppState.get());
 
         // Wire UI
         wireUndoRedoUI();
@@ -973,14 +973,14 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         // Create two states
-        captureStateSnapshot(mockDeps.AppState.get());
+        await captureStateSnapshot(mockDeps.AppState.get());
 
         await new Promise(resolve => setTimeout(resolve, 350));
 
         await mockDeps.AppState.update(state => {
             state.data.cycles['Test Cycle'].tasks[0].completed = true;
         });
-        captureStateSnapshot(mockDeps.AppState.get());
+        await captureStateSnapshot(mockDeps.AppState.get());
 
         // Perform undo
         await performStateBasedUndo();
@@ -998,14 +998,14 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         // Setup undo/redo scenario
-        captureStateSnapshot(mockDeps.AppState.get());
+        await captureStateSnapshot(mockDeps.AppState.get());
 
         await new Promise(resolve => setTimeout(resolve, 350));
 
         await mockDeps.AppState.update(state => {
             state.data.cycles['Test Cycle'].tasks[0].completed = true;
         });
-        captureStateSnapshot(mockDeps.AppState.get());
+        await captureStateSnapshot(mockDeps.AppState.get());
 
         // Undo then redo
         await performStateBasedUndo();
@@ -1205,7 +1205,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         };
 
         // Should not throw
-        captureStateSnapshot(invalidState);
+        await captureStateSnapshot(invalidState);
 
         // Should not have captured
         if (mockDeps.AppGlobalState.activeUndoStack.length > 0) {
@@ -1229,7 +1229,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         };
 
         // Should not throw
-        captureStateSnapshot(state);
+        await captureStateSnapshot(state);
 
         // Should not have captured
         if (mockDeps.AppGlobalState.activeUndoStack.length > 0) {
@@ -1332,7 +1332,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         // Should not throw
-        captureStateSnapshot(null);
+        await captureStateSnapshot(null);
 
         // Should not have captured
         if (mockDeps.AppGlobalState.activeUndoStack.length > 0) {
@@ -1427,7 +1427,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         const state = mockDeps.AppState.get();
-        captureStateSnapshot(state);
+        await captureStateSnapshot(state);
 
         if (mockDeps.AppGlobalState.activeUndoStack.length > 0) {
             throw new Error('Should not capture snapshot during cycle switch');
@@ -1441,7 +1441,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // Capture initial state
         const state1 = mockDeps.AppState.get();
-        captureStateSnapshot(state1);
+        await captureStateSnapshot(state1);
 
         const initialCount = mockDeps.AppGlobalState.activeUndoStack.length;
 
@@ -1452,7 +1452,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         for (let i = 0; i < 5; i++) {
             const state = mockDeps.AppState.get();
             state.data.cycles['Test Cycle'].tasks[0].text = `Modified ${i}`;
-            captureStateSnapshot(state);
+            await captureStateSnapshot(state);
         }
 
         // Should not have captured any new snapshots
@@ -1469,7 +1469,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // Try to capture during switch
         const state1 = mockDeps.AppState.get();
-        captureStateSnapshot(state1);
+        await captureStateSnapshot(state1);
 
         if (mockDeps.AppGlobalState.activeUndoStack.length > 0) {
             throw new Error('Should block during switch');
@@ -1482,7 +1482,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // Now should capture
         const state2 = mockDeps.AppState.get();
-        captureStateSnapshot(state2);
+        await captureStateSnapshot(state2);
 
         if (mockDeps.AppGlobalState.activeUndoStack.length === 0) {
             throw new Error('Should capture after flag cleared');
@@ -1716,7 +1716,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         const state = mockDeps.AppState.get();
-        captureStateSnapshot(state);
+        await captureStateSnapshot(state);
 
         const snapshot = mockDeps.AppGlobalState.activeUndoStack[0];
         if (!snapshot._sig) {
@@ -1733,7 +1733,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         const state = mockDeps.AppState.get();
-        captureStateSnapshot(state);
+        await captureStateSnapshot(state);
 
         const snapshot = mockDeps.AppGlobalState.activeUndoStack[0];
         const cachedSig = snapshot._sig;
@@ -1752,11 +1752,11 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         const state = mockDeps.AppState.get();
 
         // Capture first snapshot (has cached sig)
-        captureStateSnapshot(state);
+        await captureStateSnapshot(state);
         const firstSig = mockDeps.AppGlobalState.activeUndoStack[0]._sig;
 
         // Try to capture identical snapshot
-        captureStateSnapshot(state);
+        await captureStateSnapshot(state);
 
         // Should only have one snapshot
         if (mockDeps.AppGlobalState.activeUndoStack.length !== 1) {
