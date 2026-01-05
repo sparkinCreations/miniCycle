@@ -450,10 +450,14 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     const AppState = deps.AppState || _deps.AppState;
 
     // Find all tasks that are BOTH completed AND marked for deletion
+    // Check both main taskList AND completedTaskList (for when dropdown is enabled)
     const tasksToDelete = [];
     const allTaskElements = taskList.querySelectorAll(".task");
+    const completedTaskList = document.getElementById('completedTaskList');
+    const completedTaskElements = completedTaskList?.querySelectorAll(".task") || [];
 
-    allTaskElements.forEach(taskElement => {
+    // Helper to process task elements
+    const processTaskElement = (taskElement) => {
         const taskId = taskElement.dataset.taskId;
         const task = cycleData.tasks?.find(t => t.id === taskId);
         const checkbox = taskElement.querySelector("input[type='checkbox']");
@@ -462,7 +466,13 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
         if (isCompleted && task?.deleteWhenComplete === true) {
             tasksToDelete.push({ taskId, taskElement });
         }
-    });
+    };
+
+    // Process tasks from main list
+    allTaskElements.forEach(processTaskElement);
+
+    // Process tasks from completed dropdown list
+    completedTaskElements.forEach(processTaskElement);
 
     if (tasksToDelete.length === 0) {
         _deps.showNotification?.("No completed tasks to delete.", "default", 3000);
@@ -496,6 +506,12 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
         stats: true,
         completeAllButton: true
     });
+
+    // Update completed tasks dropdown count
+    const updateCompletedTasksCount = deps.updateCompletedTasksCount || _deps.updateCompletedTasksCount;
+    if (typeof updateCompletedTasksCount === 'function') {
+        updateCompletedTasksCount();
+    }
 
     return { deleted: taskIdsToDelete.length };
 }
