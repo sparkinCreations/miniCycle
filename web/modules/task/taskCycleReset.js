@@ -41,6 +41,7 @@ const di = createDIModule('TaskCycleReset', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{appInit: Object|null, AppState: Object|null, loadMiniCycleData: Function|null, autoSave: Function|null, isPerformingUndoRedo: Function|null, showNotification: Function|null, showConfirmationModal: Function|null, captureStateSnapshot: Function|null, updateUndoRedoButtons: Function|null, updateCompletedTasksCount: Function|null, incrementCycleCount: Function|null, animateProgressBarFill: Function|null, animateProgressBarEmpty: Function|null, showCompletionAnimation: Function|null, helpWindowManager: Object|null, pluginManager: Object|null, recurringCore: Object|null, removeRecurringTasksFromCycle: Function|null, checkMiniCycle: Function|null, querySelector: Function|null, querySelectorAll: Function|null, requestUIUpdate: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

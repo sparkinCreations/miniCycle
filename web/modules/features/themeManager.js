@@ -43,6 +43,7 @@ const di = createDIModule('ThemeManager', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{appInit: Object|null, AppState: Object|null, showNotification: Function|null, hideMainMenu: Function|null, safeAddEventListener: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

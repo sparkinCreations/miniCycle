@@ -84,6 +84,7 @@ const di = createDIModule('TaskCore', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{appInit: Object|null, AppState: Object|null, loadMiniCycleData: Function|null, autoSave: Function|null, sanitizeInput: Function|null, isPerformingUndoRedo: Function|null, showNotification: Function|null, updateStatsPanel: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, updateMainMenuHeader: Function|null, checkOverdueTasks: Function|null, updateArrowsInDOM: Function|null, updateMoveArrowsVisibility: Function|null, syncTaskDeleteWhenCompleteDOM: Function|null, recurringPanel: Object|null, updateRecurringPanelButtonVisibility: Function|null, enableDragAndDropOnTask: Function|null, checkMiniCycle: Function|null, incrementCycleCount: Function|null, animateProgressBarFill: Function|null, animateProgressBarEmpty: Function|null, pluginManager: Object|null, AppMeta: Object|null, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: Object|null, DEFAULT_TASK_OPTION_BUTTONS: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

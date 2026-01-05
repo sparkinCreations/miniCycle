@@ -39,6 +39,7 @@ const di = createDIModule('TaskUI', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{loadMiniCycleData: Function|null, addTask: Function|null, updateRecurringButtonVisibility: Function|null, getElementById: Function|null, getTaskList: Function|null, getCompleteAllButton: Function|null, isTouchDevice: Function|null, taskToAddTaskOptions: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

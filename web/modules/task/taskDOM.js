@@ -53,6 +53,7 @@ const di = createDIModule('TaskDOMManager', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{appInit: Object|null, AppState: Object|null, taskCore: Object|null, loadMiniCycleData: Function|null, autoSave: Function|null, showNotification: Function|null, sanitizeInput: Function|null, escapeHtml: Function|null, generateId: Function|null, syncTaskDeleteWhenCompleteDOM: Function|null, saveTaskToSchema25: Function|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

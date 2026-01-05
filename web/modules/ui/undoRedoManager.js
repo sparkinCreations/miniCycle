@@ -197,6 +197,7 @@ const di = createDIModule('UndoRedoManager', {
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
 // Note: wrapperActive is a mutable instance property, not a DI dep
+/** @type {{wrapperActive: boolean, appInit: Object|null, AppState: Object|null, refreshUIFromState: Function|null, AppGlobalState: Object|null, getElementById: Function|null, safeAddEventListener: Function|null, showNotification: Function|null, UIOrchestrator: Object|null}} */
 const _deps = new Proxy({ wrapperActive: false }, {
   get(target, prop) {
     // wrapperActive is a mutable instance property, not a DI dep

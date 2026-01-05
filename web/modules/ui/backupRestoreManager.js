@@ -24,6 +24,7 @@ const di = createDIModule('BackupRestoreManager', {
     AppMeta: optional(null)  // For version info
 });
 
+/** @type {{AppState: Object, showNotification: Function, showConfirmationModal: Function, safeAddEventListener: Function, performSchema25Migration: Function|null, BackupManager: Object|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

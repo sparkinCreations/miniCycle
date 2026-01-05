@@ -41,6 +41,7 @@ const di = createDIModule('RoutineManager', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{AppState: Object|null, loadMiniCycleData: Function|null, showPromptModal: Function|null, showNotification: Function|null, sanitizeInput: Function|null, completeInitialSetup: Function|null, hideMainMenu: Function|null, updateMainMenuHeader: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, autoSave: Function|null, onCycleCreated: Function|null, DEFAULT_TASK_OPTION_BUTTONS: Object|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

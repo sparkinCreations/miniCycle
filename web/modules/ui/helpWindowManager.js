@@ -20,6 +20,7 @@ const di = createDIModule('HelpWindowManager', {
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
+/** @type {{loadMiniCycleData: Function|null, AppState: Object|null, safeAddEventListener: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

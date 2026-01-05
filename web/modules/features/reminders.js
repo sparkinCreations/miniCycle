@@ -35,6 +35,7 @@ const di = createDIModule('Reminders', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{AppState: Object|null, showNotification: Function|null, loadMiniCycleData: Function|null, appInit: Object|null, refreshTaskListUI: Function|null, updateUndoRedoButtons: Function|null, autoSave: Function|null, AppGlobalState: Object|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

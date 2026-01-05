@@ -29,6 +29,7 @@ const di = createDIModule('TitleManager', {
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
+/** @type {{GlobalUtils: Object|null, AppState: Object|null, loadMiniCycleData: Function|null, showNotification: Function|null, updateMainMenuHeader: Function|null, updateUndoRedoButtons: Function|null, captureStateSnapshot: Function|null, enableUndoSystemOnFirstInteraction: Function|null, onCycleRenamed: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

@@ -46,6 +46,7 @@ const di = createDIModule('TaskUtils', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{AppState: Object|null, loadMiniCycleData: Function|null, generateId: Function|null, remindOverdueTasks: Function|null, enableDragAndDropOnTask: Function|null, updateMoveArrowsVisibility: Function|null, saveTaskToSchema25: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

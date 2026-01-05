@@ -36,6 +36,7 @@ const di = createDIModule('TaskOptionsCustomizer', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{AppState: Object|null, showNotification: Function|null, renderTaskList: Function|null, updateMoveArrowsVisibility: Function|null, startReminders: Function|null, stopReminders: Function|null, modeManager: Object|null, appInit: Object|null, DEFAULT_TASK_OPTION_BUTTONS: Object|null, safeAddEventListener: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

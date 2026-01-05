@@ -44,6 +44,7 @@ const di = createDIModule('TaskCompletion', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{appInit: Object|null, AppState: Object|null, isPerformingUndoRedo: Function|null, showNotification: Function|null, captureStateSnapshot: Function|null, checkOverdueTasks: Function|null, handleTaskListMovement: Function|null, helpWindowManager: Object|null, querySelector: Function|null, querySelectorAll: Function|null, watchRecurringTasks: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

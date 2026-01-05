@@ -71,6 +71,7 @@ const di = createDIModule('TaskCRUD', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{appInit: Object|null, AppState: Object|null, sanitizeInput: Function|null, showNotification: Function|null, showPromptModal: Function|null, showConfirmationModal: Function|null, captureStateSnapshot: Function|null, enableUndoSystemOnFirstInteraction: Function|null, validateAndSanitizeTaskInput: Function|null, loadTaskContext: Function|null, createOrUpdateTaskData: Function|null, createTaskDOMElements: Function|null, setupTaskInteractions: Function|null, finalizeTaskCreation: Function|null, requestUIUpdate: Function|null, updateSearchVisibility: Function|null, getTaskCount: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

@@ -57,6 +57,7 @@ const di = createDIModule('ModalManager', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{showNotification: Function|null, hideMainMenu: Function|null, sanitizeInput: Function|null, safeAddEventListener: Function|null, waitForCore: Function, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

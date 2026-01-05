@@ -17,6 +17,7 @@ const di = createDIModule('DataSanitizer', {
     sanitizeInput: required()  // Required - no fallbacks
 });
 
+/** @type {{sanitizeInput: Function}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

@@ -22,6 +22,7 @@ const di = createDIModule('CycleExportManager', {
     AppMeta: optional(null)  // For version info
 });
 
+/** @type {{loadMiniCycleData: Function, showNotification: Function, safeAddEventListener: Function, getElementById: Function|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
