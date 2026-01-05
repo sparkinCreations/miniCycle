@@ -22,7 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { updateStorageBarUI, getObjectSizeBytes, formatBytes, forceQuotaRedetection } from '../utils/storageUtils.js';
+import { updateStorageBarUI, getObjectSizeBytes, formatBytes, forceQuotaRedetection, adjustStorageEstimate, resetStorageEstimate, updateStorageBarUIEstimated } from '../utils/storageUtils.js';
 import { getUniqueCycleName } from '../utils/nameUtils.js';
 
 // ============================================================================
@@ -281,6 +281,10 @@ export class RoutineSwitcher {
         const cycleToDelete = currentCycle.title;
         console.log('📊 Cycle to delete:', { title: cycleToDelete, isActive: cycleKey === activeCycle });
 
+        // Calculate the size of the routine being deleted (for storage estimate)
+        const routineSizeBytes = getObjectSizeBytes(currentCycle);
+        console.log(`📊 Routine size to delete: ${formatBytes(routineSizeBytes)}`);
+
         this.deps.showConfirmationModal({
             title: "Delete miniCycle",
             message: `❌ Are you sure you want to delete "${cycleToDelete}"? This action cannot be undone.`,
@@ -329,6 +333,14 @@ export class RoutineSwitcher {
                 }, true); // immediate save
 
                 console.log('💾 Deletion saved through state system');
+
+                // ✅ Update storage estimate (subtract deleted routine size)
+                adjustStorageEstimate(-routineSizeBytes);
+                const barElement = this.deps.getElementById('storage-bar-fill');
+                const textElement = this.deps.getElementById('storage-bar-text');
+                if (barElement && textElement) {
+                    updateStorageBarUIEstimated(barElement, textElement);
+                }
 
                 // ✅ Notify undo system of cycle deletion (DI-pure)
                 if (typeof this.deps.onCycleDeleted === 'function') {
@@ -467,6 +479,16 @@ export class RoutineSwitcher {
         }, true); // immediate save
 
         console.log(`✅ Cycle duplicated: "${uniqueName}"`);
+
+        // ✅ Update storage estimate (add duplicated routine size)
+        const duplicatedSizeBytes = getObjectSizeBytes(copiedCycle);
+        adjustStorageEstimate(duplicatedSizeBytes);
+        const barElement = this.deps.getElementById('storage-bar-fill');
+        const textElement = this.deps.getElementById('storage-bar-text');
+        if (barElement && textElement) {
+            updateStorageBarUIEstimated(barElement, textElement);
+        }
+        console.log(`📊 Storage estimate updated: +${formatBytes(duplicatedSizeBytes)}`);
 
         // ✅ Refresh the list and put the new item in inline edit mode
         this.loadMiniCycleList();
@@ -1145,6 +1167,8 @@ export class RoutineSwitcher {
         const textElement = this.deps.getElementById('storage-bar-text');
 
         if (barElement && textElement) {
+            // Reset estimate to actual measurement when modal opens
+            resetStorageEstimate();
             // ✅ Pass showNotification for one-time 75% storage warning
             const info = updateStorageBarUI(barElement, textElement, this.deps.showNotification);
             console.log('📊 Storage bar updated:', info);
@@ -1175,17 +1199,20 @@ export class RoutineSwitcher {
             refreshBtn.disabled = true;
 
             try {
+                // Reset storage estimate to actual measurement
+                resetStorageEstimate();
+
                 // Force re-detect quota
                 forceQuotaRedetection();
 
-                // Update the storage bar with new values
+                // Update the storage bar with fresh actual values
                 const barElement = this.deps.getElementById('storage-bar-fill');
                 const textElement = this.deps.getElementById('storage-bar-text');
                 if (barElement && textElement) {
                     updateStorageBarUI(barElement, textElement, this.deps.showNotification);
                 }
 
-                this.deps.showNotification?.('Storage quota refreshed', 'success', 2000);
+                this.deps.showNotification?.('Storage refreshed', 'success', 2000);
             } catch (error) {
                 console.error('Failed to refresh storage quota:', error);
                 this.deps.showNotification?.('Failed to refresh storage', 'error', 3000);

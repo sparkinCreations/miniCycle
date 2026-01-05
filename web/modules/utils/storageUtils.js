@@ -54,6 +54,10 @@ let _storageWarningShown = false;
 // Flag to track if quota detection has been requested
 let _quotaDetectionRequested = false;
 
+// Estimated storage tracking (for delta-based updates without re-measuring)
+let _lastMeasuredUsedBytes = null;
+let _storageDeltaBytes = 0;
+
 // Dependency injection for AppState (set via setStorageDependencies)
 let _deps = { AppState: null };
 
@@ -459,6 +463,107 @@ export function estimateTaskSize(taskText) {
     const baseOverhead = 400; // ~200 characters * 2 bytes
     const textBytes = (taskText || '').length * 2;
     return baseOverhead + textBytes;
+}
+
+// ============================================================================
+// ESTIMATED STORAGE TRACKING
+// ============================================================================
+
+/**
+ * Adjust the storage estimate by a delta (positive for additions, negative for deletions)
+ * This avoids re-measuring localStorage for every change.
+ * @param {number} deltaBytes - Bytes to add (positive) or remove (negative)
+ */
+export function adjustStorageEstimate(deltaBytes) {
+    // Initialize last measured if needed
+    if (_lastMeasuredUsedBytes === null) {
+        _lastMeasuredUsedBytes = getLocalStorageUsedBytes();
+    }
+
+    _storageDeltaBytes += deltaBytes;
+    console.log(`📊 Storage estimate adjusted by ${deltaBytes >= 0 ? '+' : ''}${formatBytes(Math.abs(deltaBytes))} (delta now: ${_storageDeltaBytes >= 0 ? '+' : ''}${formatBytes(Math.abs(_storageDeltaBytes))})`);
+}
+
+/**
+ * Get the estimated used bytes (last measurement + accumulated delta)
+ * @returns {number} Estimated bytes used
+ */
+export function getEstimatedUsedBytes() {
+    if (_lastMeasuredUsedBytes === null) {
+        _lastMeasuredUsedBytes = getLocalStorageUsedBytes();
+    }
+    return Math.max(0, _lastMeasuredUsedBytes + _storageDeltaBytes);
+}
+
+/**
+ * Reset the storage estimate to actual measurement
+ * Call this when user clicks refresh or when you need accurate values
+ */
+export function resetStorageEstimate() {
+    _lastMeasuredUsedBytes = getLocalStorageUsedBytes();
+    _storageDeltaBytes = 0;
+    console.log(`📊 Storage estimate reset to actual: ${formatBytes(_lastMeasuredUsedBytes)}`);
+}
+
+/**
+ * Get storage info using estimated values (faster, no localStorage iteration)
+ * @returns {Object} Storage info { used, total, available, percentage, status, isEstimate }
+ */
+export function getEstimatedStorageInfo() {
+    const usedBytes = getEstimatedUsedBytes();
+    const quotaBytes = getLocalStorageQuota();
+
+    // Apply 0.25MB buffer - show less total than actual
+    const effectiveQuotaBytes = Math.max(0, quotaBytes - STORAGE_BUFFER_BYTES);
+
+    const availableBytes = Math.max(0, effectiveQuotaBytes - usedBytes);
+    const percentage = effectiveQuotaBytes > 0
+        ? Math.min(100, (usedBytes / effectiveQuotaBytes) * 100)
+        : 0;
+
+    // Determine status based on percentage
+    let status = 'normal';
+    if (percentage >= 90) {
+        status = 'critical';
+    } else if (percentage >= 75) {
+        status = 'warning';
+    } else if (percentage >= 50) {
+        status = 'caution';
+    }
+
+    return {
+        used: usedBytes,
+        total: effectiveQuotaBytes,
+        available: availableBytes,
+        percentage: Math.round(percentage * 10) / 10,
+        status,
+        isEstimate: _storageDeltaBytes !== 0
+    };
+}
+
+/**
+ * Update storage bar UI using estimated values (no re-measurement)
+ * @param {HTMLElement} barElement - The progress bar element
+ * @param {HTMLElement} textElement - The text display element
+ * @returns {Object} The storage info used for display
+ */
+export function updateStorageBarUIEstimated(barElement, textElement) {
+    const info = getEstimatedStorageInfo();
+
+    if (barElement) {
+        barElement.style.width = `${info.percentage}%`;
+        barElement.className = `storage-bar-fill storage-${info.status}`;
+    }
+
+    if (textElement) {
+        const usedStr = formatBytes(info.used);
+        const totalStr = formatBytes(info.total);
+        // Show ~ prefix if we're using estimates
+        const prefix = info.isEstimate ? '~' : (_cachedQuota !== null ? '' : '~');
+        textElement.textContent = `${prefix}${usedStr} / ${prefix}${totalStr} used`;
+    }
+
+    return info;
 }
 
 /**
