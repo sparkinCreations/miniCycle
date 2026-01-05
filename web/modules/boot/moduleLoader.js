@@ -668,6 +668,8 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         updateMainMenuHeader: (...args) => deps.ui?.updateMainMenuHeader?.(...args),
         organizeCompletedTasks: (...args) => deps.ui?.completedTasksManager?.organize?.(...args),
         initCompletedTasksSection: (...args) => deps.ui?.completedTasksManager?.init?.(...args),
+        handleTaskListMovement: (...args) => deps.ui?.completedTasksManager?.handleMovement?.(...args),
+        updateCompletedTasksCount: (...args) => deps.ui?.completedTasksManager?.updateCount?.(...args),
         updateStatsPanel: (...args) => deps.ui?.updateStatsPanel?.(...args),
         triggerLogoBackground: (...args) => deps.ui?.triggerLogoBackground?.(...args),
         showTaskOptions: (...args) => deps.ui?.showTaskOptions?.(...args),
