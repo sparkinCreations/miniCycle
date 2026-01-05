@@ -588,7 +588,7 @@ The mode manager (`modules/routine/modeManager.js`) controls miniCycle's three f
 - Perfect for daily routines and habits
 - Settings: `autoReset: true`, `deleteCheckedTasks: false`
 
-**2. Manual Cycle Mode** ✅ 🔄
+**2. Manual Cycle Mode** ✋🔁
 - "Complete Cycle" button appears when all tasks done
 - User manually triggers reset for review before cycling
 - Settings: `autoReset: false`, `deleteCheckedTasks: false`
