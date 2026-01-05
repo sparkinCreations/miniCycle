@@ -199,10 +199,27 @@ async function recoverFromInterruptedTests() {
                 localStorage.setItem(key, value);
             });
             console.log('✅ Pre-test data restored from IndexedDB backup');
-            // Clear the test mode flag and backup
-            await clearTestModeFlags();
-            console.log('🧹 Cleared test mode flags');
-            return true;
+
+            // Verify restore succeeded before clearing backup
+            const restored = localStorage.getItem('miniCycleData');
+            if (restored) {
+                try {
+                    JSON.parse(restored); // Verify it's valid JSON
+                    await clearTestModeFlags();
+                    console.log('🧹 Restore verified, backup cleared');
+                    // Set flag for UI to show notification after boot completes
+                    sessionStorage.setItem('__miniCycle_recoveredFromInterruptedTests__', 'true');
+                    return true;
+                } catch (parseError) {
+                    console.error('❌ Restored data is invalid JSON - keeping backup for manual recovery');
+                    // Don't clear backup - user can manually recover via Settings > Restore Backups
+                    return false;
+                }
+            } else {
+                console.warn('⚠️ Restore may have failed (no miniCycleData) - keeping backup');
+                // Don't clear backup - something went wrong
+                return false;
+            }
         } else {
             console.warn('⚠️ No backup found - clearing potentially corrupted test data');
             localStorage.removeItem('miniCycleData');
