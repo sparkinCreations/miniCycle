@@ -1,3 +1,7 @@
+## [1.681] - 2026-01-05
+- feat: Update version to 1.680 and enhance changelog with new features
+
+
 ## [1.680] - 2026-01-05
 - feat: Update routine modes with emoji indicators and enhance user interface elements
 - feat: Enhance routine management with sorting and filtering controls, update developer profile, and add new assets

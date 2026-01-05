@@ -2567,6 +2567,8 @@ input:checked + .slider:before {
 .cycle-item-title {
     overflow: hidden;
     text-overflow: ellipsis;
+    cursor: text;
+    pointer-events: auto;
 }
 
 .cycle-item-edit-input {

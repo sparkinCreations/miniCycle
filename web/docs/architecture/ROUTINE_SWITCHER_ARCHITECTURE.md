@@ -387,15 +387,18 @@ duplicateMiniCycle() {
 
 ## Inline Editing
 
+Both **Rename** and **Duplicate** use inline editing for a seamless experience.
+
 ### Edit Flow
 
 ```
-1. _startInlineEdit() called (after duplicate or programmatically)
-2. Title span hidden, input element inserted
-3. Input focused with all text selected
-4. User types new name
-5. On Enter or blur: _finishInlineEdit() saves
-6. On Escape: original name restored
+1. User clicks Rename or Duplicate button
+2. _startInlineEdit() called on selected item
+3. Title span hidden, input element inserted
+4. Input focused with all text selected
+5. User types new name
+6. On Enter or blur: _finishInlineEdit() saves
+7. On Escape: original name restored
 ```
 
 ### Implementation
