@@ -54,20 +54,38 @@ printf("Dollar Cash Register Ver 1.5.0\n\n");
 
 These same patterns show up 17 years later in miniCycle: versioning, iteration, features beyond MVP, personal touches (gamification, themes).
 
+### The Real Goal: Craft Over Revenue
+
+**miniCycle is about craft and learning, not immediate revenue.**
+
+This is only MJ's second JavaScript project. The first (TaskCycle) was 3,551 lines and monolithic. The second (miniCycle) is 44,200+ lines, 87 modules, 1,600+ tests, zero-globals architecture, proper DI patterns. That's a massive jump in sophistication.
+
+The goal isn't to monetize miniCycle — it's to become the developer who *can* build the paid product well. The craft is the point. Revenue comes later, built on skills being sharpened now.
+
+**Aspiration:** "I'm trying to be a great developer who is not intimidated easily."
+
+This explains:
+- Why maintain 1,600+ tests on a free app
+- Why refactor to zero-globals when the old code worked
+- Why care about interrupted test recovery edge cases
+- Why ask "how does my implementation compare to industry standards"
+
+The architecture practice, the testing discipline, the refactoring — it's not over-engineering. It's deliberate skill-building. By the time Task Cycle gets built, these patterns will be muscle memory.
+
 ### sparkinCreations Context
 
 This isn't a hobby. It's a company with a business plan:
 
 | Product | Role | Status |
 |---------|------|--------|
-| **miniCycle** | Free flagship (builds trust) | Live, v1.560 |
+| **miniCycle** | Craft/learning vehicle + free flagship | Live, v1.675 |
 | **Task Cycle** | Paid product ($29-39) | Planned |
 | **Task Cycle Pro** | Subscription (cloud sync) | Planned |
 | **MasterMath** | Free educational tool | Live, v1.1.0 |
 
 **Revenue goal:** $2-5k/month → transition to full-time indie developer
 
-**Strategy:** Portfolio approach — not all eggs in Task Cycle. Multiple products, diversified bets.
+**Strategy:** Portfolio approach — not all eggs in Task Cycle. Multiple products, diversified bets. miniCycle builds skills AND trust.
 
 ### The Sovereignty Drive
 
