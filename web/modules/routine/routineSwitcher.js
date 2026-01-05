@@ -194,10 +194,10 @@ export class RoutineSwitcher {
     }
 
     /**
-     * Rename a miniCycle
+     * Rename a miniCycle (inline edit)
      */
     renameMiniCycle() {
-        console.log('📝 Renaming miniCycle (state-based)...');
+        console.log('📝 Renaming miniCycle (inline edit)...');
 
         const selectedCycle = this.deps.querySelector(".mini-cycle-switch-item.selected");
 
@@ -221,12 +221,8 @@ export class RoutineSwitcher {
             return;
         }
 
-        const { data, appState } = currentState;
-        const cycles = data.cycles || {};
         const cycleKey = selectedCycle.dataset.cycleKey;
-        const currentCycle = cycles[cycleKey];
-
-        console.log('🔍 Renaming cycle:', cycleKey);
+        const currentCycle = currentState.data?.cycles?.[cycleKey];
 
         if (!cycleKey || !currentCycle) {
             console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!currentCycle });
@@ -234,111 +230,10 @@ export class RoutineSwitcher {
             return;
         }
 
-        const oldName = currentCycle.title;
-        console.log('📊 Current cycle details:', { oldName, cycleKey });
+        console.log('🔍 Starting inline rename for:', cycleKey);
 
-        this.deps.showPromptModal({
-            title: "Rename miniCycle",
-            message: `Rename "${oldName}" to:`,
-            placeholder: "e.g., Morning Routine",
-            defaultValue: oldName,
-            confirmText: "Rename",
-            cancelText: "Cancel",
-            required: true,
-            callback: (newName) => {
-                if (!newName) {
-                    console.log('❌ User cancelled rename');
-                    this.deps.showNotification("❌ Rename canceled.", "show", 1500);
-                    return;
-                }
-
-                const cleanName = this.deps.sanitizeInput(newName.trim());
-                console.log('🧹 Cleaned name:', { original: newName, cleaned: cleanName });
-
-                if (cleanName === oldName) {
-                    console.log('ℹ️ Name unchanged');
-                    this.deps.showNotification("ℹ Name unchanged.", "show", 1500);
-                    return;
-                }
-
-                // ✅ Get unique name (auto-increment if duplicate)
-                const { name: uniqueName, wasModified } = getUniqueCycleName(cleanName, this.deps.AppState.get()?.data?.cycles || {});
-
-                if (wasModified) {
-                    console.log(`⚠️ Name collision: "${cleanName}" → "${uniqueName}"`);
-                    this.deps.showNotification(`Name already exists. Using "${uniqueName}" instead.`, "warning", 3000);
-                }
-
-                const finalName = uniqueName;
-
-                // ✅ Update through state system
-                this.deps.AppState.update(state => {
-                    console.log('🔄 Performing rename operation...');
-
-                    // Create new entry with new title as key
-                    const updatedCycle = { ...currentCycle, title: finalName };
-                    state.data.cycles[finalName] = updatedCycle;
-
-                    // Remove old entry
-                    delete state.data.cycles[cycleKey];
-
-                    console.log('📊 Updated cycles structure:', Object.keys(state.data.cycles));
-
-                    // Update active cycle if this was the active one
-                    if (state.appState.activeCycleId === cycleKey) {
-                        state.appState.activeCycleId = finalName;
-                        console.log('🎯 Updated active cycle ID to:', finalName);
-                    }
-
-                    state.metadata.lastModified = Date.now();
-
-                    console.log('💾 Rename queued through state system');
-
-                    // Store final name for UI updates (instance state, not window.*)
-                    this._tempRenameData = { oldKey: cycleKey, newKey: finalName, newName: finalName };
-
-                }, false); // deferred save - don't block UI
-
-                // ✅ Schedule idle-time save for durability
-                this._scheduleIdleSave();
-
-                // ✅ Get the rename data for UI updates (from instance state)
-                const renameData = this._tempRenameData || {};
-                this._tempRenameData = null; // cleanup
-
-                // ✅ Notify undo system of cycle rename (DI-pure)
-                if (typeof this.deps.onCycleRenamed === 'function') {
-                    this.deps.onCycleRenamed(cycleKey, finalName).catch(err => {
-                        console.warn('⚠️ Undo system cycle rename notification failed:', err);
-                    });
-                }
-
-                // Update UI
-                selectedCycle.dataset.cycleKey = finalName;
-                selectedCycle.dataset.cycleName = finalName;
-                selectedCycle.textContent = finalName;
-
-                console.log('🔄 Refreshing UI...');
-
-                // Refresh UI
-                this.loadMiniCycleList();
-                this.updatePreview(finalName);
-                setTimeout(() => {
-                    const updatedItem = [...this.deps.querySelectorAll(".mini-cycle-switch-item")]
-                        .find(item => item.dataset.cycleKey === finalName);
-                    if (updatedItem) {
-                        updatedItem.classList.add("selected");
-                        updatedItem.click();
-                        console.log('✅ Updated item selected in UI');
-                    }
-                }, 50);
-
-                console.log(`✅ Successfully renamed: "${oldName}" → "${finalName}"`);
-                if (!wasModified) {
-                    this.deps.showNotification(`✅ miniCycle renamed to "${finalName}"`, "success", 2500);
-                }
-            }
-        });
+        // ✅ Use inline edit (same as duplicate)
+        this._startInlineEdit(selectedCycle, cycleKey);
     }
 
     /**
