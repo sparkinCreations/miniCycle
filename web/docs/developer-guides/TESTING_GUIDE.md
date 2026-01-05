@@ -394,6 +394,7 @@ Current module test coverage (87 modules, 1,690+ tests):
 
 ## Next Steps
 
+- **[Testing Modal](../testing/TESTING_MODAL.md)** - Run tests from within the app
 - **[Security Guide](SECURITY_GUIDE.md)** - Security best practices
 - **[Development Workflow](DEVELOPMENT_WORKFLOW.md)** - Making changes
 - **[API Reference](API_REFERENCE.md)** - Browse available functions

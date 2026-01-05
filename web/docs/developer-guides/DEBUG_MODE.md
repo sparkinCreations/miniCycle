@@ -6,6 +6,54 @@ Debug mode controls console output visibility in miniCycle. When disabled (defau
 
 ---
 
+## Inspecting AppState at Runtime (Zero-Globals)
+
+The codebase maintains zero custom `window.*` globals. To inspect the AppState object at runtime, use **versioned dynamic imports** in the browser console:
+
+### Step 1: Get the State Manager
+
+```javascript
+let _s;
+import('/modules/core/appState.js?v=1.672').then(m => _s = m.getStateManager());
+```
+
+The version query string (`?v=1.672`) ensures you get the cached module instance. Check `version.js` for the current version number.
+
+### Step 2: Inspect State
+
+```javascript
+// Full state object
+_s.get()
+
+// Active cycle info
+_s.get().appState
+
+// All cycles
+_s.get().data.cycles
+
+// Settings
+_s.get().settings
+
+// User progress
+_s.get().userProgress
+```
+
+### One-Liner (less convenient)
+
+```javascript
+import('/modules/core/appState.js?v=1.672').then(m => console.log(m.getStateManager().get()))
+```
+
+### Why Not `window._debug`?
+
+- **Architecture integrity** - Zero-globals is a core principle
+- **Dynamic imports work** - ES modules provide runtime access without pollution
+- **Debugging is occasional** - No need to compromise architecture for dev convenience
+
+> **Important:** Never add `window.*` exports for debugging purposes. The dynamic import pattern works without polluting the global namespace.
+
+---
+
 ## Enabling Debug Mode
 
 ### Option 1: Settings UI (Recommended)

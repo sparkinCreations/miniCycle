@@ -38,24 +38,17 @@ const TEST_BACKUP_DB = 'miniCycleTestBackupDB';
 const TEST_BACKUP_STORE = 'backup';
 
 // localStorage keys for backup (more reliable than IndexedDB)
-const BACKUP_LOCALSTORAGE_KEY = '__miniCycle_preTestBackup__';
-const BACKUP_FLAG_KEY = '__miniCycle_testModeActive__';
+// IndexedDB is the single source of truth for test mode state
+// No localStorage fallbacks - IndexedDB persists and is reliable
 
 /**
- * Check if test mode is active (tests were interrupted)
- * Checks localStorage flag first (most reliable), then IndexedDB as fallback
- * @returns {Promise<boolean>} True if any test mode flag is still set
+ * Check if test mode is active (tests running or were interrupted)
+ * Checks IndexedDB for testModeActive flag - single source of truth
+ * Exported for use by coreBoot.js for interrupted test recovery
+ * @returns {Promise<boolean>} True if test mode flag is set in IndexedDB
  */
-async function isTestModeActive() {
-    // Check localStorage flag first (most reliable)
-    const localStorageFlag = localStorage.getItem(BACKUP_FLAG_KEY) === 'true';
-    if (localStorageFlag) {
-        console.log('🚦 Test mode detected via localStorage flag');
-        return true;
-    }
-
-    // Fall back to IndexedDB checks
-    const checkResultsDB = () => new Promise((resolve) => {
+export async function isTestModeActive() {
+    return new Promise((resolve) => {
         try {
             const request = indexedDB.open(TEST_MODE_DB, 1);
             request.onerror = () => resolve(false);
@@ -74,6 +67,9 @@ async function isTestModeActive() {
                     getRequest.onsuccess = () => {
                         const isActive = getRequest.result?.active === true;
                         db.close();
+                        if (isActive) {
+                            console.log('🚦 Test mode detected via IndexedDB flag');
+                        }
                         resolve(isActive);
                     };
                     getRequest.onerror = () => { db.close(); resolve(false); };
@@ -86,45 +82,16 @@ async function isTestModeActive() {
             resolve(false);
         }
     });
-
-    try {
-        const resultsActive = await Promise.race([
-            checkResultsDB(),
-            new Promise(resolve => setTimeout(() => resolve(false), 2000))
-        ]);
-
-        if (resultsActive) {
-            console.log('🚦 Test mode detected via IndexedDB flag');
-        }
-        return resultsActive;
-    } catch (e) {
-        console.warn('⚠️ isTestModeActive check failed:', e.message);
-        return false;
-    }
 }
 
 /**
  * Get backed up real data (stored before tests ran)
- * Checks localStorage first (most reliable), falls back to IndexedDB
+ * Retrieves backup from IndexedDB - single source of truth
+ * Exported for use by coreBoot.js for interrupted test recovery
  * @returns {Promise<Object|null>} Backed up data or null if none exists
  */
-async function getBackedUpRealData() {
-    // Try localStorage first (most reliable)
-    try {
-        const localStorageBackup = localStorage.getItem(BACKUP_LOCALSTORAGE_KEY);
-        if (localStorageBackup) {
-            const parsed = JSON.parse(localStorageBackup);
-            if (parsed && parsed.data) {
-                console.log('📦 Found backup in localStorage');
-                return parsed.data;
-            }
-        }
-    } catch (e) {
-        // Ignore parsing errors
-    }
-
-    // Fall back to IndexedDB
-    const getFromResultsDB = () => new Promise((resolve) => {
+export async function getBackedUpRealData() {
+    return new Promise((resolve) => {
         try {
             const request = indexedDB.open(TEST_MODE_DB, 1);
             request.onerror = () => resolve(null);
@@ -137,7 +104,12 @@ async function getBackedUpRealData() {
                     getRequest.onsuccess = () => {
                         const data = getRequest.result;
                         db.close();
-                        resolve(data?.localStorageBackup || null);
+                        if (data?.localStorageBackup) {
+                            console.log('📦 Found backup in IndexedDB');
+                            resolve(data.localStorageBackup);
+                        } else {
+                            resolve(null);
+                        }
                     };
                     getRequest.onerror = () => { db.close(); resolve(null); };
                 } catch (e) {
@@ -149,36 +121,16 @@ async function getBackedUpRealData() {
             resolve(null);
         }
     });
-
-    try {
-        const backup = await Promise.race([
-            getFromResultsDB(),
-            new Promise(resolve => setTimeout(() => resolve(null), 1500))
-        ]);
-        if (backup) {
-            console.log('📦 Found backup in IndexedDB');
-        }
-        return backup;
-    } catch (e) {
-        return null;
-    }
 }
 
 /**
  * Clear test mode flags and backup after successful restoration
- * Clears localStorage keys and IndexedDB
+ * Clears IndexedDB records - single source of truth
+ * Exported for use by coreBoot.js for interrupted test recovery
  * @returns {Promise<void>}
  */
-async function clearTestModeAndBackup() {
-    // Clear localStorage keys first (most important)
-    try {
-        localStorage.removeItem(BACKUP_LOCALSTORAGE_KEY);
-        localStorage.removeItem(BACKUP_FLAG_KEY);
-    } catch (e) {
-        // Ignore
-    }
-
-    // Clear from old results database
+export async function clearTestModeAndBackup() {
+    // Clear from IndexedDB
     const clearResultsDB = () => new Promise((resolve) => {
         try {
             const request = indexedDB.open(TEST_MODE_DB, 1);
@@ -375,32 +327,8 @@ class MiniCycleState {
         console.log('🏗️ Initializing MiniCycle state...');
 
         try {
-            // 🚦 CHECK FOR INTERRUPTED TESTS - Restore real data if tests were interrupted
-            // SKIP if tests are currently running (test suite sets the localStorage flag)
-            if (localStorage.getItem(BACKUP_FLAG_KEY) === 'true') {
-                console.log('🧪 Tests actively running - skipping interrupted test restoration');
-            } else {
-                const testModeActive = await isTestModeActive();
-                if (testModeActive) {
-                    console.warn('⚠️ Test mode flag detected - tests may have been interrupted');
-                    const backup = await getBackedUpRealData();
-                    if (backup) {
-                        console.log('🔄 Restoring pre-test localStorage backup...');
-                        // Clear current localStorage and restore backup
-                        localStorage.clear();
-                        Object.entries(backup).forEach(([key, value]) => {
-                            localStorage.setItem(key, value);
-                        });
-                        console.log('✅ Pre-test data restored from IndexedDB backup');
-                        // Clear the test mode flag and backup
-                        await clearTestModeAndBackup();
-                    } else {
-                        console.warn('⚠️ No backup found - clearing potentially corrupted test data');
-                        localStorage.removeItem('miniCycleData');
-                        await clearTestModeAndBackup();
-                    }
-                }
-            }
+            // Note: Interrupted test recovery is handled by coreBoot.js BEFORE appState loads
+            // This ensures localStorage already has the correct data when we read it here
 
             // ✅ Check if Schema 2.5 data already exists
             let existingData = null;
@@ -656,12 +584,20 @@ class MiniCycleState {
      * @param {boolean} [immediate=false] - If true, save synchronously
      * @private
      */
-    scheduleSave(immediate = false) {
-        // 🧪 SKIP saves during test runs to prevent overwriting restored data
-        // Uses the same localStorage flag that isTestModeActive() checks
-        if (localStorage.getItem(BACKUP_FLAG_KEY) === 'true') {
-            console.log('⏭️ Save skipped - tests running (testModeActive flag is set)');
-            return;
+    async scheduleSave(immediate = false) {
+        // 🧪 SKIP saves during test runs to prevent overwriting user data
+        // The testModeActive flag in IndexedDB means "tests are running in the iframe"
+        // - Main app window: should skip saves (tests might modify localStorage)
+        // - Test iframe: should save normally (tests need state persistence to work)
+        // We detect the test iframe via URL parameters set by testing-modal-integration.js
+        const isTestIframe = window.location.search.includes('embedded=true') ||
+                             window.location.pathname.includes('module-test-suite');
+        if (!isTestIframe) {
+            const testMode = await isTestModeActive();
+            if (testMode) {
+                console.log('⏭️ Save skipped - tests running in iframe (testModeActive flag in IndexedDB)');
+                return;
+            }
         }
 
         if (this.saveTimeout) {

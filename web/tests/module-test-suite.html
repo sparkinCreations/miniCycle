@@ -497,14 +497,8 @@
         const TEST_MODE_STORE = 'results';
 
         async function setTestModeFlag(active) {
-            // 🧪 ALSO set localStorage flag - this is what appState.js checks synchronously
-            // to skip saves during test runs
-            if (active) {
-                localStorage.setItem('__miniCycle_testModeActive__', 'true');
-            } else {
-                localStorage.removeItem('__miniCycle_testModeActive__');
-            }
-
+            // 🧪 Set IndexedDB flag - single source of truth for test mode
+            // appState.js checks IndexedDB directly (async) to skip saves during tests
             return new Promise((resolve) => {
                 try {
                     const request = indexedDB.open(TEST_MODE_DB, 1);

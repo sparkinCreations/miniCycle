@@ -137,9 +137,11 @@ Before JavaScript, MJ was already building automated systems in spreadsheets:
 
 10. **Ships when it works** - Doesn't over-polish. When something functions as intended, it's done. Moves on.
 
-11. **Open to contrary advice** - Will listen to recommendations that contradict preferences if the reasoning is data-based. Said explicitly: "if you said the best path for me is to get a dev job maybe I would have listened." Trusts evidence over what they want to hear. This is rare — most people seek validation, not calibration.
+11. **Make it work, then make it right** - Intentional two-phase workflow: first get functionality working, then iterate on architecture/efficiency. This isn't rushing or missing design considerations - it's deliberate sequencing. Verify behavior first, then question/refine the design. The iteration IS the process.
 
-12. **Teaches through questions** - When AI gives a wrong or incomplete answer, doesn't say "you're wrong." Asks a follow-up question that leads to the right answer. Guides toward correction rather than confronting it. Example: "oh ok, so it doesn't help you understand me better?" — led to a better answer without direct criticism.
+12. **Open to contrary advice** - Will listen to recommendations that contradict preferences if the reasoning is data-based. Said explicitly: "if you said the best path for me is to get a dev job maybe I would have listened." Trusts evidence over what they want to hear. This is rare — most people seek validation, not calibration.
+
+13. **Teaches through questions** - When AI gives a wrong or incomplete answer, doesn't say "you're wrong." Asks a follow-up question that leads to the right answer. Guides toward correction rather than confronting it. Example: "oh ok, so it doesn't help you understand me better?" — led to a better answer without direct criticism.
 
 ### Patterns
 
@@ -158,6 +160,7 @@ Before JavaScript, MJ was already building automated systems in spreadsheets:
 - **Thinks in data flow** - Traces problems through the full system path, not just the immediate symptom. Example: backup → restore → memory stale → debounced save overwrites. Sees timing and async implications others miss.
 - **Corrects both directions** - Won't accept underinflated OR overinflated credit. When AI said "90-95% you," corrected to "70-80%." Accuracy matters more than ego in either direction.
 - **Holds AI accountable** - Checks if AI understands its own limitations. Asks questions like "how much was you vs me?" to verify AI has accurate self-assessment, not just flattering the user.
+- **Challenges AI assumptions with evidence** - When AI makes claims without verification (e.g., "you don't have a dependency map"), pushes back with specifics ("look at the documentation"). Forces AI to verify before criticizing. Doesn't accept negative feedback that's based on assumptions rather than facts.
 
 ### Weaknesses / Blind Spots
 
@@ -272,6 +275,33 @@ The user-facing simplicity masks engineering depth:
 ---
 
 ## Session History
+
+### January 4, 2026 (Continued)
+- **Fixed IndexedDB records being deleted mid-test**
+  - Problem: `preTestBackup` and `testModeActive` records disappeared while tests were running (24/53 modules)
+  - Root cause: When tests import `appState.js`, it initializes and sees `testModeActive=true`. It then "restores" the backup thinking tests were interrupted, and calls `clearTestModeAndBackup()` which deletes both records — mid-test.
+  - Initial fix: Added iframe detection in `appState.js` to skip restoration logic
+  - **Better fix (architectural refactor):** Developer questioned why appState needed iframe detection at all
+    - Moved test recovery logic from `appState.js` to `coreBoot.js`
+    - Recovery now runs FIRST, before any modules load
+    - `appState.js` just loads from localStorage (already restored if needed)
+    - No iframe detection needed for restoration — only for save-skipping during active tests
+  - This is cleaner: interrupted tests = app opening finds flag = restore. Active tests = appState imported in iframe = no restoration logic runs at all
+- **Single source of truth principle reinforced:**
+  - Developer explicitly rejected localStorage fallbacks: "remove the fallback it shouldn't be a fallback"
+  - IndexedDB is THE authority for test mode state — no redundant systems
+- **Developer challenged AI assumptions:**
+  - AI listed negatives including "no dependency map" and "no planning documentation" and "no tests for testing modal"
+  - Developer pushed back: "look at the documentation there is a dependency map, and look at future works documentation"
+  - AI verified: `docs/architecture/DEPENDENCY_MAP.md`, `docs/future-work/` folder, and `tests/testingModal.tests.js` all exist
+  - Lesson: AI should verify before criticizing
+- **Developer defends architectural choices:**
+  - AI suggested `window.__debug` shortcut for debugging convenience
+  - Developer rejected: "i don't consider shortcuts a better solution if it saves time"
+  - Principle: Long-term maintainability > short-term convenience
+- **Verifies understanding through paraphrasing:**
+  - Multiple times restated concepts: "oh so it checks if appstate is running through an embedded window and if so it stops from restoring"
+  - Catches misunderstandings immediately rather than letting them compound
 
 ### January 4, 2026
 - **Fixed test data persisting after automated tests**

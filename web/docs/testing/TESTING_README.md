@@ -16,6 +16,7 @@
 
 | Document | Description | When to Use |
 |----------|-------------|-------------|
+| **[TESTING_MODAL.md](./TESTING_MODAL.md)** | In-app testing modal guide | Running tests from the app |
 | **[PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md)** | Complete performance testing reference | Deep dive into optimization |
 | **[../PERFORMANCE_SETUP.md](../performance/PERFORMANCE_SETUP.md)** | Quick start for performance testing | Getting started |
 | **[../tests/PERFORMANCE_TESTING.md](../../tests/PERFORMANCE_TESTING.md)** | Practical testing scenarios | Real-world testing |
