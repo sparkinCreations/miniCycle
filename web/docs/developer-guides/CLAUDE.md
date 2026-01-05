@@ -260,6 +260,36 @@ const instance = new MyModule();         // Then create
 5. **Creating instances before wiring deps** - Always wire first, then instantiate.
 6. **Stripping version query strings from dynamic imports** - The pattern `import(\`./module.js?v=${version}\`)` is intentional for cache-busting. Preserve it.
 7. **Hooking into only one task rendering path** - Tasks render via TWO paths: `routineLoader.renderTasksToDOM()` (boot-time) and `TaskRenderer.renderTasks()` (runtime). Hook into BOTH for "after tasks render" features. See [HIDDEN_CODEBASE_INSIGHTS.md](./HIDDEN_CODEBASE_INSIGHTS.md#51-two-separate-task-rendering-paths).
+8. **Suggesting window globals for debugging** - Use versioned dynamic imports instead (see Debugging section below).
+
+---
+
+## Debugging (Zero-Globals Pattern)
+
+The codebase maintains zero custom `window.*` globals. When debugging, **never suggest `window._debug` or similar patterns**.
+
+### Inspecting AppState at Runtime
+
+Use versioned dynamic imports in the browser console:
+
+```javascript
+// Access the state manager (versioned import for cache-busting)
+let _s;
+import('/modules/core/appState.js?v=1.672').then(m => _s = m.getStateManager());
+
+// Then inspect state
+_s.get()                    // Full state object
+_s.get().appState           // Active cycle info
+_s.get().data.cycles        // All cycles
+```
+
+The version number (`?v=1.672`) ensures the cached module is used. Check `version.js` for current version.
+
+### Why Not window.*?
+
+- **Architecture integrity** - Zero-globals is a core principle
+- **Dynamic imports work** - ES modules provide runtime access without pollution
+- **Debugging is occasional** - No need to compromise architecture for dev convenience
 
 ---
 
@@ -272,6 +302,25 @@ npm test                    # All tests (1,690+ tests across 87 modules)
 
 ### Browser Tests
 Open http://localhost:8080/tests/module-test-suite.html
+
+### Test Mode Coordination
+
+The test suite uses localStorage flags to coordinate with AppState:
+
+```javascript
+// Flag checked by appState.js to skip saves during tests
+localStorage.setItem('__miniCycle_testModeActive__', 'true');
+
+// After tests complete, flag is cleared and AppState reloads
+localStorage.removeItem('__miniCycle_testModeActive__');
+AppState.reload();  // Critical! Syncs in-memory state with restored localStorage
+```
+
+**Why `AppState.reload()` is critical:**
+- Test suite backs up and restores localStorage before/after tests
+- But MiniCycleState.data (in-memory) still has test data
+- Debounced saves would overwrite the restored backup
+- `reload()` syncs in-memory state with the restored localStorage
 
 ### Before Committing
 - Run full test suite

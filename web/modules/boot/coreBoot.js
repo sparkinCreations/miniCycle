@@ -64,6 +64,158 @@ document.documentElement.dataset.appBooted = 'true';
 document.documentElement.dataset.bootStartTime = Date.now().toString();
 
 // ============================================================================
+// INTERRUPTED TEST RECOVERY
+// Must run BEFORE any modules load to restore user data if tests were interrupted
+// This uses IndexedDB directly (not appState.js) because recovery must happen first
+// ============================================================================
+
+const TEST_MODE_DB = 'miniCycleTestResultsDB';
+const TEST_MODE_STORE = 'results';
+
+/**
+ * Check if test mode is active in IndexedDB
+ * @returns {Promise<boolean>}
+ */
+async function checkTestModeActive() {
+    return new Promise((resolve) => {
+        try {
+            const request = indexedDB.open(TEST_MODE_DB, 1);
+            request.onerror = () => resolve(false);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(TEST_MODE_STORE)) {
+                    db.createObjectStore(TEST_MODE_STORE, { keyPath: 'id' });
+                }
+            };
+            request.onsuccess = () => {
+                const db = request.result;
+                try {
+                    const tx = db.transaction(TEST_MODE_STORE, 'readonly');
+                    const store = tx.objectStore(TEST_MODE_STORE);
+                    const getRequest = store.get('testModeActive');
+                    getRequest.onsuccess = () => {
+                        const isActive = getRequest.result?.active === true;
+                        db.close();
+                        resolve(isActive);
+                    };
+                    getRequest.onerror = () => { db.close(); resolve(false); };
+                } catch (e) {
+                    db.close();
+                    resolve(false);
+                }
+            };
+        } catch (e) {
+            resolve(false);
+        }
+    });
+}
+
+/**
+ * Get pre-test backup from IndexedDB
+ * @returns {Promise<Object|null>}
+ */
+async function getPreTestBackup() {
+    return new Promise((resolve) => {
+        try {
+            const request = indexedDB.open(TEST_MODE_DB, 1);
+            request.onerror = () => resolve(null);
+            request.onsuccess = () => {
+                const db = request.result;
+                try {
+                    const tx = db.transaction(TEST_MODE_STORE, 'readonly');
+                    const store = tx.objectStore(TEST_MODE_STORE);
+                    const getRequest = store.get('preTestBackup');
+                    getRequest.onsuccess = () => {
+                        const data = getRequest.result;
+                        db.close();
+                        if (data?.localStorageBackup) {
+                            resolve(data.localStorageBackup);
+                        } else {
+                            resolve(null);
+                        }
+                    };
+                    getRequest.onerror = () => { db.close(); resolve(null); };
+                } catch (e) {
+                    db.close();
+                    resolve(null);
+                }
+            };
+        } catch (e) {
+            resolve(null);
+        }
+    });
+}
+
+/**
+ * Clear test mode flags and backup from IndexedDB
+ * @returns {Promise<void>}
+ */
+async function clearTestModeFlags() {
+    return new Promise((resolve) => {
+        try {
+            const request = indexedDB.open(TEST_MODE_DB, 1);
+            request.onerror = () => resolve();
+            request.onsuccess = () => {
+                const db = request.result;
+                try {
+                    const tx = db.transaction(TEST_MODE_STORE, 'readwrite');
+                    const store = tx.objectStore(TEST_MODE_STORE);
+                    store.delete('testModeActive');
+                    store.delete('appInitiatedTests');
+                    store.delete('preTestBackup');
+                    tx.oncomplete = () => { db.close(); resolve(); };
+                    tx.onerror = () => { db.close(); resolve(); };
+                } catch (e) {
+                    db.close();
+                    resolve();
+                }
+            };
+        } catch (e) {
+            resolve();
+        }
+    });
+}
+
+/**
+ * Recover from interrupted tests by restoring localStorage from IndexedDB backup
+ * Called at the very start of boot, BEFORE any modules load
+ * @returns {Promise<boolean>} True if recovery was performed
+ */
+async function recoverFromInterruptedTests() {
+    try {
+        const testModeActive = await checkTestModeActive();
+        if (!testModeActive) {
+            return false;
+        }
+
+        console.warn('⚠️ Test mode flag detected - tests may have been interrupted');
+
+        const backup = await getPreTestBackup();
+        if (backup) {
+            console.log('🔄 Restoring pre-test localStorage backup...');
+            // Clear current localStorage and restore backup
+            localStorage.clear();
+            Object.entries(backup).forEach(([key, value]) => {
+                localStorage.setItem(key, value);
+            });
+            console.log('✅ Pre-test data restored from IndexedDB backup');
+            // Clear the test mode flag and backup
+            await clearTestModeFlags();
+            console.log('🧹 Cleared test mode flags');
+            return true;
+        } else {
+            console.warn('⚠️ No backup found - clearing potentially corrupted test data');
+            localStorage.removeItem('miniCycleData');
+            await clearTestModeFlags();
+            return true;
+        }
+    } catch (e) {
+        console.error('❌ Failed to recover from interrupted tests:', e);
+        return false;
+    }
+}
+
+// ============================================================================
 // MODULE STATE
 // ============================================================================
 
@@ -110,6 +262,13 @@ let withV = (path) => `${path}?v=${APP_VERSION}`;
  */
 export async function initCoreBoot(deps) {
   console.log('🚀 coreBoot: Starting core initialization...');
+
+  // ========== FIRST: Check for interrupted tests and restore data ==========
+  // This MUST happen before any modules load to ensure localStorage has correct data
+  const recovered = await recoverFromInterruptedTests();
+  if (recovered) {
+    console.log('🔄 Recovered from interrupted tests - localStorage restored');
+  }
 
   // ========== Load AppGlobalState ==========
   const appGlobalStateMod = await import(
@@ -396,6 +555,7 @@ export async function initAppState(deps, showNotification) {
   deps.core.AppState = AppState;
 
   // Initialize AppState
+  // Note: AppState._initializeInternal() handles interrupted test restoration from IndexedDB
   await AppState.init();
   console.log('✅ AppState initialized');
 

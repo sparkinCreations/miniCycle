@@ -1,3 +1,7 @@
+## [1.674] - 2026-01-04
+- feat: Enhance routine management and testing framework
+
+
 ## [1.673] - 2026-01-04
 - feat: Bump version to 1.672 and update related files
 
