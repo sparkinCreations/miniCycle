@@ -1,3 +1,7 @@
+## [1.683] - 2026-01-05
+- feat: Update version to 1.682 and enhance changelog with new features
+
+
 ## [1.682] - 2026-01-05
 - feat: Enhance inline editing for renaming miniCycles and update styles for better user interaction
 

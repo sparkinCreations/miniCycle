@@ -290,8 +290,8 @@ export class HelpWindowManager {
             }
         }
 
-        // Size suffix for messages
-        const sizeSuffix = routineSize ? ` • ${routineSize}` : '';
+        // Size suffix for messages (💾 floppy disk icon for storage)
+        const sizeSuffix = routineSize ? ` • 💾 ${routineSize}` : '';
 
         // Return different constant messages based on state
         if (totalTasks === 0) {
