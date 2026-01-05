@@ -2558,8 +2558,9 @@ input:checked + .slider:before {
 }
 
 .cycle-item-emoji {
-    min-width: 45px;
-    text-align: center;
+    min-width: 32px;
+    width: 32px;
+    text-align: right;
     flex-shrink: 0;
 }
 

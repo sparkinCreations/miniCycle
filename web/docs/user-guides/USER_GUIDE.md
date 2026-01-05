@@ -140,6 +140,62 @@ For each task, you can:
 
 ---
 
+## Routine Switcher Modal
+
+The Routine Switcher lets you manage all your routines in one place. Access it via **Menu (☰) → Switch Cycle** or the folder icon button.
+
+### Visual Mode Indicators
+
+Each routine shows its mode at a glance with emojis:
+- 🔄 **Auto Cycle** - Tasks auto-reset when complete
+- ✋🔁 **Manual Cycle** - You control when to reset
+- 📋 **To-Do Mode** - Completed tasks are deleted
+
+### Sorting Routines
+
+Click the **Sort** dropdown to organize your routine list:
+- **Name** - Alphabetical order (A-Z)
+- **Date Created** - Newest or oldest first
+- **Date Modified** - Recently changed first
+- **Mode** - Group by Auto/Manual/To-Do
+
+### Filtering by Mode
+
+Use the **Filter** dropdown to show only specific routine types:
+- **All Modes** - Show everything
+- **🔄 Auto Cycle** - Only auto-cycling routines
+- **✋🔁 Manual** - Only manual cycle routines
+- **📋 To-Do** - Only to-do mode routines
+
+### Date Information
+
+Each routine shows when it was last modified or created:
+- **Modified [date]** - Shows when routine was last changed
+- **Created [date]** - Shows for new routines that haven't been modified yet
+
+### Duplicating Routines
+
+Create a copy of any routine:
+1. Select a routine in the list
+2. Click the **Duplicate** button
+3. A new routine appears as "[Name] Copy"
+4. The name is highlighted for immediate editing - type a new name
+5. Press **Enter** to save or **Escape** to keep the default name
+
+**Use cases:**
+- Create variations of existing routines
+- Back up a routine before making major changes
+- Share a template with different names for different contexts
+
+### Other Actions
+
+- **Rename** - Change the routine name
+- **Delete** - Remove the routine (with confirmation)
+- **Export** - Save as `.mcyc` file
+- **Import** - Load routines from `.mcyc` files (drag-and-drop supported)
+
+---
+
 ## Working with Tasks
 
 ### Checking Off Tasks
@@ -194,7 +250,7 @@ Click the checkbox again to uncheck a completed task.
 
 miniCycle has **three operational modes** to match different workflows. **Mode changes apply instantly without page reload (v1.372+)** - your tasks update in real-time!
 
-### 1. Auto Cycle Mode (Default)
+### 1. Auto Cycle Mode 🔄 (Default)
 
 **How it works:**
 - Complete all tasks → cycle **automatically resets**
@@ -212,7 +268,7 @@ miniCycle has **three operational modes** to match different workflows. **Mode c
 
 ---
 
-### 2. Manual Cycle Mode
+### 2. Manual Cycle Mode ✋🔁
 
 **How it works:**
 - Complete all tasks → **"Complete Cycle" button appears**
@@ -236,7 +292,7 @@ miniCycle has **three operational modes** to match different workflows. **Mode c
 
 ---
 
-### 3. To-Do Mode
+### 3. To-Do Mode 📋
 
 **How it works:**
 - Completed tasks are **deleted** (not reset)

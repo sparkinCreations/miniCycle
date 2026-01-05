@@ -46,17 +46,17 @@ miniCycle is a **routine manager** (not a to-do app). The core philosophy:
 
 Three different modes for how routines behave when tasks are completed.
 
-### Auto Cycle Mode
+### Auto Cycle Mode 🔄
 - **Behavior:** Tasks automatically reset when all are completed
 - **Use Case:** Daily routines, continuous workflows
 - **Module:** `modules/routine/modeManager.js`
 
-### Manual Cycle Mode
+### Manual Cycle Mode ✋🔁
 - **Behavior:** "Complete" button appears when all tasks done; you click to reset
 - **Use Case:** Weekly/monthly routines, review before resetting
 - **Module:** `modules/routine/modeManager.js`
 
-### To-Do Mode
+### To-Do Mode 📋
 - **Behavior:** Completed tasks are deleted (not reset)
 - **Use Case:** One-time tasks, shopping lists, project checklists
 - **Module:** `modules/routine/modeManager.js`
@@ -161,6 +161,11 @@ Create tasks that automatically appear on a schedule.
 |---------|-------------|--------|
 | Quick Switch | Instant switching between active routines | `routine/routineSwitcher.js` |
 | Search Routines | Filter routine list by name | `routine/routineSwitcher.js` |
+| Sort Routines | Sort by Name, Date Created, Date Modified, or Mode | `routine/routineSwitcher.js` |
+| Filter by Mode | Filter list by Auto 🔄, Manual ✋🔁, or To-Do 📋 modes | `routine/routineSwitcher.js` |
+| Duplicate Routine | Create a copy of any routine with inline rename | `routine/routineSwitcher.js` |
+| Visual Mode Indicators | Emojis show routine mode at a glance in list | `routine/routineSwitcher.js` |
+| Date Display | Shows "Modified" or "Created" date for each routine | `routine/routineSwitcher.js` |
 | Storage Size Display | Shows storage size per routine | `routine/routineSwitcher.js` |
 | Data Validation | Validates and repairs routine data on load | `routine/routineSwitcher.js` |
 
@@ -413,7 +418,7 @@ A **static, frozen fallback** for older devices (ES5 compatible).
 | Task Management | 12 |
 | Recurring Tasks | 10 |
 | Due Dates & Reminders | 7 |
-| Routine Management | 8 |
+| Routine Management | 13 |
 | Progress & Gamification | 10 |
 | Statistics | 6 |
 | Data Management | 12 |
@@ -423,7 +428,7 @@ A **static, frozen fallback** for older devices (ES5 compatible).
 | Privacy & Security | 7 |
 | Accessibility | 5 |
 | Developer Features | 8 |
-| **Total** | **~118 features** |
+| **Total** | **~123 features** |
 
 ---
 
