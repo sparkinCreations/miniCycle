@@ -116,6 +116,10 @@ export const AppGlobalState = {
   isPerformingUndoRedo: false,
   lastSnapshotSignature: null,
   lastSnapshotTs: 0,
+  // Lazy loading flags for undo system (improves startup performance)
+  undoHistoryExists: false,    // True if history exists (from lightweight check)
+  redoHistoryExists: false,    // True if redo history exists
+  undoStackLazyLoaded: false,  // True when full data has been loaded
 
   // UI state
   advancedVisible: false,
