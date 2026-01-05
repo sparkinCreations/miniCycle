@@ -1,3 +1,7 @@
+## [1.684] - 2026-01-05
+- feat: Enhance storage management with estimated tracking and UI updates
+
+
 ## [1.683] - 2026-01-05
 - feat: Update version to 1.682 and enhance changelog with new features
 

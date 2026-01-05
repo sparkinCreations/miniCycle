@@ -47,6 +47,7 @@ const di = createDIModule('TaskEvents', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{AppState: Object|null, taskCore: Object|null, showNotification: Function|null, autoSave: Function|null, enableUndoSystemOnFirstInteraction: Function|null, checkMiniCycle: Function|null, triggerLogoBackground: Function|null, showTaskOptions: Function|null, hideTaskOptions: Function|null, TaskOptionsVisibilityController: Object|null, setupDueDateButtonInteraction: Function|null, attachKeyboardTaskOptionToggle: Function|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

@@ -31,6 +31,7 @@ const di = createDIModule('TaskValidation', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{sanitizeInput: Function|null, showNotification: Function|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

@@ -27,6 +27,7 @@ const di = createDIModule('RecurringSettingsApplicator', {
     restartRecurringWatcher: optional(null)
 });
 
+/** @type {{appInit: Object|null, AppState: Object, showNotification: Function, getElementById: Function, querySelectorAll: Function, normalizeRecurringSettings: Function, calculateNextOccurrence: Function, updateAppState: Function|null, syncRecurringStateToDOM: Function|null, restartRecurringWatcher: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

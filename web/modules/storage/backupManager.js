@@ -24,6 +24,7 @@ const di = createDIModule('BackupManager', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{AppState: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

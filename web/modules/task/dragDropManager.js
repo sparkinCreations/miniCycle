@@ -33,6 +33,7 @@ const di = createDIModule('DragDropManager', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{appInit: Object|null, AppState: Object|null, updateProgressBar: Function|null, updateStatsPanel: Function|null, checkCompleteAllButton: Function|null, updateUndoRedoButtons: Function|null, captureStateSnapshot: Function|null, refreshUIFromState: Function|null, revealTaskButtons: Function|null, hideTaskButtons: Function|null, isTouchDevice: Function|null, enableUndoSystemOnFirstInteraction: Function|null, showNotification: Function|null, safeAddEventListener: Function|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

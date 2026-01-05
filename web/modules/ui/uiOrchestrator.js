@@ -49,6 +49,7 @@ const di = createDIModule('UIOrchestrator', {
     showNotification: optional(null)
 });
 
+/** @type {{AppState: Object, TaskDOMManager: Object|null, TaskRenderer: Object|null, updateProgressBar: Function|null, updateStatsPanel: Function|null, checkCompleteAllButton: Function|null, updateMainMenuHeader: Function|null, checkOverdueTasks: Function|null, updateFirstLastMarkers: Function|null, setArrowsEnabled: Function|null, showNotification: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

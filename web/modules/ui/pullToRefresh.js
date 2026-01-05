@@ -32,6 +32,7 @@ const di = createDIModule('PullToRefresh', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{refreshUIFromState: Function|null, checkRecurringTasksNow: Function|null, watchRecurringTasks: Function|null, promptServiceWorkerUpdate: Function|null, showNotification: Function|null, isModalOpen: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

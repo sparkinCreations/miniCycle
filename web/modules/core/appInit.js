@@ -67,6 +67,7 @@ const di = createDIModule('AppInit', {
 const getDeps = () => di.resolve();
 
 // Legacy _deps reference for compatibility (uses getter for late binding)
+/** @type {{loadMiniCycleData: Function|null, createInitialSchema25Data: Function|null, showCycleCreationModal: Function|null, getOnboardingManager: Function|null, getMiniCycleState: Function|null, showNotification: Function|null, loadMiniCycle: Function|null, updateReminderButtons: Function|null, updateDueDateVisibility: Function|null, checkOverdueTasks: Function|null, organizeCompletedTasks: Function|null, startReminders: Function|null, updateThemeColor: Function|null, getElementById: Function, addBodyClass: Function, removeBodyClass: Function}} */
 const _deps = new Proxy({}, {
 	get(_, prop) {
 		return getDeps()[prop];

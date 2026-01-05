@@ -48,6 +48,7 @@ const di = createDIModule('TaskRenderer', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{AppState: Object|null, addTask: Function|null, loadMiniCycle: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, updateStatsPanel: Function|null, updateMainMenuHeader: Function|null, updateArrowsInDOM: Function|null, checkOverdueTasks: Function|null, enableDragAndDropOnTask: Function|null, recurringPanel: Object|null, updateRecurringPanelButtonVisibility: Function|null, updateSearchVisibility: Function|null, AppMeta: Object|null, taskToAddTaskOptions: Function|null, revealTaskButtons: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

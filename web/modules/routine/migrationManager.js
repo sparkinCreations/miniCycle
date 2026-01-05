@@ -37,6 +37,7 @@ const di = createDIModule('MigrationManager', {
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
+/** @type {{storage: Storage|null, sessionStorage: Storage|null, showNotification: Function|null, initialSetup: Function|null, onInitialSetupComplete: Function|null, now: Function|null, document: Document|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

@@ -26,6 +26,7 @@ const di = createDIModule('TaskInteractions', {
 });
 
 // Late-binding deps via Proxy
+/** @type {{safeAddEventListener: Function|null, TaskOptionsVisibilityController: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

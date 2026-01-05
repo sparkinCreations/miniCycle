@@ -26,6 +26,7 @@ const di = createDIModule('CycleImportManager', {
     AppMeta: optional(null)  // For version info
 });
 
+/** @type {{AppState: Object, showNotification: Function, safeAddEventListener: Function, DataValidator: Object|null, calculateNextOccurrence: Function|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

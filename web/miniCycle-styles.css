@@ -349,6 +349,11 @@ button:not(.dot):hover {
         left: calc(50% - 10px);  /* Nudge left to center visually */
     }
 
+    /* ✅ Maintain nudge when .show class is applied after swipe */
+    #task-view.show {
+        left: calc(50% - 10px);
+    }
+
     .task-input {
         display: flex;
         align-items: center;
@@ -1115,7 +1120,7 @@ border-radius: 5px;
         width: 90%;
         max-width: 400px;
         font-size: 13px;
-        margin-left: auto;
+        margin-left: 10px; /* Nudge right to align with task card */
         margin-right: auto;
     }
 
