@@ -45,6 +45,8 @@ const di = createDIModule('RoutineSwitcher', {
     updateReminderButtons: optional(() => {}),
     updateUndoRedoButtons: optional(() => {}),
     initialSetup: optional(() => {}),
+    showCycleCreationModal: optional(() => {}),
+    getOnboardingManager: optional(() => null),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
     querySelectorAll: optional((sel) => document.querySelectorAll(sel)),
@@ -423,10 +425,9 @@ export class RoutineSwitcher {
                 const remainingCycles = Object.keys(finalState.data.cycles);
 
                 if (remainingCycles.length === 0) {
-                    // No cycles left - handle gracefully
+                    // No cycles left - show onboarding flow
                     setTimeout(() => {
                         this.hideSwitchMiniCycleModal();
-                        this.deps.showNotification("⚠ No miniCycles left. Please create a new one.");
 
                         // ✅ FIX: Query DOM elements fresh inside setTimeout (not stale from outer scope)
                         const taskList = this.deps.getElementById("taskList");
@@ -435,8 +436,17 @@ export class RoutineSwitcher {
                         if (taskList) taskList.innerHTML = "";
                         if (toggleAutoReset) toggleAutoReset.checked = false;
 
-                        // Trigger initial setup for new cycle creation
-                        setTimeout(() => this.deps.initialSetup(), 500);
+                        // Show onboarding flow (placeholder + modal)
+                        setTimeout(() => {
+                            const onboardingManager = this.deps.getOnboardingManager?.();
+                            if (onboardingManager?.showOnboarding) {
+                                const state = this.deps.AppState?.get();
+                                onboardingManager.showOnboarding(state?.data?.cycles || {}, null, state);
+                            } else {
+                                // Fallback to creation modal
+                                this.deps.showCycleCreationModal();
+                            }
+                        }, 500);
                     }, 300);
                 } else {
                     // Refresh UI with remaining cycles

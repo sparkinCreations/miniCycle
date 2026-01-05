@@ -1,3 +1,7 @@
+## [1.673] - 2026-01-04
+- feat: Bump version to 1.672 and update related files
+
+
 ## [1.672] - 2026-01-04
 - feat: Implement localStorage backup and restoration for interrupted tests
 - feat: Add interactive localStorage viewer and enhance testing modal UI

@@ -521,7 +521,13 @@ function buildModuleDependencies(manifest, deps, coreResult) {
                 return target[prop].bind(target);
             }
             // Proxy property access to the actual AppState
-            return deps.core?.AppState?.[prop];
+            // Must bind methods to preserve 'this' context when called
+            const appState = deps.core?.AppState;
+            const value = appState?.[prop];
+            if (typeof value === 'function') {
+                return value.bind(appState);
+            }
+            return value;
         },
         set(target, prop, value) {
             // Proxy property assignment to the actual AppState
@@ -737,6 +743,9 @@ function buildModuleDependencies(manifest, deps, coreResult) {
 
         // Stats panel manager (from deps.ui) - returns instance when called as function
         statsPanelManager: () => deps.ui?.statsPanelManager,
+
+        // Onboarding manager (from deps.ui) - returns instance when called as function
+        getOnboardingManager: () => deps.ui?.onboardingManager,
 
         // UIOrchestrator (from deps.ui) - lazy resolution for UI update coalescing
         // Note: Use getUIOrchestrator() to get the instance, not the class
