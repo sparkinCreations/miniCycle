@@ -100,6 +100,12 @@ export async function bootEarlyDeps(deps, coreResult) {
       notifications.show('App updated! Cache refreshed automatically.', 'info', 4000);
       AppGlobalState.pendingCacheNotification = false;
     }
+
+    // Show notification if data was recovered from interrupted tests
+    if (sessionStorage.getItem('__miniCycle_recoveredFromInterruptedTests__')) {
+      sessionStorage.removeItem('__miniCycle_recoveredFromInterruptedTests__');
+      notifications.show('Data restored after interrupted test run', 'info', 4000);
+    }
   } catch (error) {
     console.error('❌ Failed to load Notifications:', error);
   }
