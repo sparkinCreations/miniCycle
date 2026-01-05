@@ -2443,10 +2443,80 @@ input:checked + .slider:before {
     color: #999;
 }
 
+/* 🔀 Sort and Filter Row */
+.routine-sort-filter-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 8px 0;
+    gap: 10px;
+}
+
+.routine-sort-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.routine-sort-label {
+    font-size: 0.75rem;
+    color: #666;
+    margin-right: 4px;
+}
+
+.routine-sort-btn {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    border: 1px solid #ccc;
+    background: #f5f5f5;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: #555;
+}
+
+.routine-sort-btn:hover {
+    background: #e8e8e8;
+    border-color: #999;
+}
+
+.routine-sort-btn.active {
+    background: #4c79ff;
+    color: white;
+    border-color: #4c79ff;
+}
+
+/* 🔍 Filter Controls */
+.routine-filter-controls {
+    display: flex;
+    align-items: center;
+}
+
+.routine-filter-select {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    border: 1px solid #ccc;
+    background: #f5f5f5;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #555;
+    outline: none;
+}
+
+.routine-filter-select:hover {
+    border-color: #999;
+}
+
+.routine-filter-select:focus {
+    border-color: #4c79ff;
+    box-shadow: 0 0 0 2px rgba(76, 121, 255, 0.2);
+}
+
 /* 📜 Scrollable Routine List */
 .mini-cycle-switch-list {
     max-height: 240px; /* ⬅️ Smaller max height */
     overflow-y: auto;
+    overflow-x: hidden; /* ✅ Prevent horizontal scroll */
     border: 1px solid #767676;
     padding: 6px; /* ⬅️ Reduced padding */
     background: white;
@@ -2496,6 +2566,26 @@ input:checked + .slider:before {
 .cycle-item-title {
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.cycle-item-edit-input {
+    font-size: inherit;
+    font-family: inherit;
+    padding: 2px 6px;
+    border: 1px solid #007bff;
+    border-radius: 4px;
+    background: #fff;
+    color: #333;
+    outline: none;
+    min-width: 100px;
+    max-width: 200px;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.dark-mode .cycle-item-edit-input {
+    background: #333;
+    color: #eee;
+    border-color: #5a9fd4;
 }
 
 .cycle-item-size {
@@ -2565,6 +2655,15 @@ input:checked + .slider:before {
 
 .preview-task:last-child {
     border-bottom: none;
+}
+
+/* 📅 Preview Date Info */
+.switch-preview-date {
+    font-size: 0.7rem;
+    color: #888;
+    text-align: center;
+    margin-top: 6px;
+    font-style: italic;
 }
 
 /* ============================================================================

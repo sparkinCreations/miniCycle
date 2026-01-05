@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.678">
+<meta name="app-version" content="1.679">
 
 <!-- Content Security Policy -->
 <meta http-equiv="Content-Security-Policy" content="
@@ -43,17 +43,17 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.678">
+<link rel="stylesheet" href="miniCycle-styles.css?v=1.679">
 <link rel="manifest" href="manifest.json">
 
 <!-- Modulepreload for critical boot modules - speeds up ES module loading -->
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.678">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.678">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.678">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.678">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.678">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.678">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.678">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.679">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.679">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.679">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.679">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.679">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.679">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.679">
 
 <style>
   /* Critical CSS - Inlined for instant loader display */
@@ -156,7 +156,7 @@
 
 
 <!-- version.js MUST load synchronously before ES modules to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.678"></script>
+<script src="./version.js?v=1.679"></script>
 
 <script>
 
@@ -327,7 +327,7 @@ if ('serviceWorker' in navigator) {
       // Check if we have an old SW without version parameter
       for (const reg of existingRegistrations) {
         const scriptURL = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL;
-        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.678')) {
+        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.679')) {
           console.log('🗑️ Found old service worker without version - unregistering:', scriptURL);
           await reg.unregister();
           console.log('✅ Old service worker unregistered successfully');
@@ -756,8 +756,8 @@ window.installApp = () => {
   </div>
   <select id="mode-selector" class="mode-selector" aria-label="Select mode" title="Switch mode: Auto Cycle, Manual Cycle, or To-Do">
     <option value="auto-cycle" title="Automatically cycle tasks">Auto Cycle ↻</option>
-    <option value="manual-cycle" title="Manually cycle through tasks">Manual Cycle ✔︎↻</option>
-    <option value="todo-mode" title="Simple To-Do list mode">To-Do Mode ✓</option>
+    <option value="manual-cycle" title="Manually cycle through tasks">Manual Cycle ✋↻</option>
+    <option value="todo-mode" title="Simple To-Do list mode">To-Do Mode 📋</option>
   </select>
   <button id="routine-switcher-btn" class="routine-switcher-btn" aria-label="Switch routine" title="Switch routine">
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -1612,11 +1612,31 @@ window.installApp = () => {
         <div class="mini-cycle-switch-title">Open Routine</div>
         <!-- Search input for filtering routines -->
         <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off">
+        <!-- Sort and Filter controls -->
+        <div class="routine-sort-filter-row">
+            <!-- Filter dropdown -->
+            <div class="routine-filter-controls">
+                <select id="routine-filter-select" class="routine-filter-select">
+                    <option value="all">All Modes</option>
+                    <option value="auto">🔄 Auto Cycle</option>
+                    <option value="manual">✋🔁 Manual</option>
+                    <option value="todo">📋 To-Do</option>
+                </select>
+            </div>
+            <!-- Sort controls -->
+            <div class="routine-sort-controls">
+                <span class="routine-sort-label">Sort:</span>
+                <button id="sort-alpha" class="routine-sort-btn active" title="Sort alphabetically">A-Z</button>
+                <button id="sort-recent" class="routine-sort-btn" title="Sort by recently modified">Recent</button>
+                <button id="sort-size" class="routine-sort-btn" title="Sort by file size">Size</button>
+            </div>
+        </div>
         <!-- ✅ Scrollable list instead of input -->
         <div class="mini-cycle-switch-list" id="miniCycleList"></div>
         <div id="switch-items-row" class="switch-items-row">
-            <button id="switch-rename" class="switch-rename switch-buttons"><i class="fas fa-edit"></i></button>
-            <button id="switch-delete" class="switch-delete switch-buttons"><i class="fas fa-trash"></i></button>
+            <button id="switch-duplicate" class="switch-duplicate switch-buttons" title="Duplicate routine"><i class="fas fa-copy"></i></button>
+            <button id="switch-rename" class="switch-rename switch-buttons" title="Rename routine"><i class="fas fa-edit"></i></button>
+            <button id="switch-delete" class="switch-delete switch-buttons" title="Delete routine"><i class="fas fa-trash"></i></button>
             <div id="switch-preview-window" class="switch-preview-window"><br>Preview</div>
         </div>
 
@@ -1885,7 +1905,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.678"></script>
+ <script type="module" src="miniCycle-main.js?v=1.679"></script>
 
 <script>
 // Sync About modal version with meta app-version
@@ -1924,7 +1944,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
    <!-- Testing modules now loaded dynamically in miniCycle-scripts.js -->
-   <script src="modules/testing/automated-tests-fix.js?v=1.678"></script>
+   <script src="modules/testing/automated-tests-fix.js?v=1.679"></script>
    <script>
 // Late fallback: only redirect if feature gate failed OR full app never even started booting.
 (function () {

@@ -84,6 +84,13 @@ export class RoutineSwitcher {
 
         this.loadMiniCycleListTimeout = null;
         this._idleSaveScheduled = false;
+
+        // Sort preference: 'alpha', 'recent', or 'size'
+        this._sortMode = 'alpha';
+        // Sort direction: 'asc' or 'desc' (meaning varies by mode)
+        this._sortDirection = 'asc';
+        // Filter by mode: 'all', 'auto', 'manual', or 'todo'
+        this._filterMode = 'all';
         // Instance version - uses injected AppMeta (no hardcoded fallback)
         this.version = this.deps.AppMeta?.version;
 
@@ -116,6 +123,7 @@ export class RoutineSwitcher {
         const cycles = currentState.data?.cycles || {};
         const switchModal = this.deps.querySelector(".mini-cycle-switch-modal");
         const switchRow = this.deps.querySelector(".switch-items-row");
+        const duplicateButton = this.deps.getElementById("switch-duplicate");
         const renameButton = this.deps.getElementById("switch-rename");
         const deleteButton = this.deps.getElementById("switch-delete");
 
@@ -139,6 +147,12 @@ export class RoutineSwitcher {
         // ✅ Setup search input
         this.setupSearchInput();
 
+        // ✅ Setup sort controls
+        this.setupSortControls();
+
+        // ✅ Setup filter controls
+        this.setupFilterControls();
+
         // ✅ Update storage bar
         this.updateStorageBar();
 
@@ -149,6 +163,11 @@ export class RoutineSwitcher {
 
         // ✅ Event listeners - only create handler ONCE to prevent duplicates
         // (safeAddEventListener only works with the SAME function reference)
+        if (!duplicateButton._clickHandler) {
+            duplicateButton._clickHandler = () => this.duplicateMiniCycle();
+        }
+        safeAdd(duplicateButton, "click", duplicateButton._clickHandler);
+
         if (!renameButton._clickHandler) {
             renameButton._clickHandler = () => this.renameMiniCycle();
         }
@@ -380,6 +399,10 @@ export class RoutineSwitcher {
 
                 console.log('🔄 Performing deletion...');
 
+                // Track if we're deleting the active cycle
+                const wasActiveCycle = cycleKey === activeCycle;
+                let newActiveCycleName = null;
+
                 // ✅ Update through state system
                 this.deps.AppState.update(state => {
                     // Remove the selected miniCycle
@@ -389,7 +412,7 @@ export class RoutineSwitcher {
                     console.log('📊 Remaining cycles:', Object.keys(state.data.cycles));
 
                     // If the deleted cycle was the active one, handle fallback
-                    if (cycleKey === activeCycle) {
+                    if (wasActiveCycle) {
                         console.log('🎯 Deleted cycle was active, handling fallback...');
                         const remainingCycleKeys = Object.keys(state.data.cycles);
 
@@ -399,7 +422,8 @@ export class RoutineSwitcher {
                             state.appState.activeCycleId = newActiveCycleKey;
 
                             const newActiveCycle = state.data.cycles[newActiveCycleKey];
-                            console.log(`🔄 Switched to miniCycle: "${newActiveCycle.title}"`);
+                            newActiveCycleName = newActiveCycle.title;
+                            console.log(`🔄 Switched to miniCycle: "${newActiveCycleName}"`);
                         } else {
                             console.log('⚠️ No cycles remaining, resetting app...');
                             state.appState.activeCycleId = null;
@@ -449,18 +473,15 @@ export class RoutineSwitcher {
                         }, 500);
                     }, 300);
                 } else {
-                    // Refresh UI with remaining cycles
-                    if (typeof this.deps.loadMiniCycle === 'function') {
+                    // Keep modal open - just refresh the list
+                    this.loadMiniCycleList();
+
+                    // If we deleted the active cycle, update background UI to show new active
+                    if (wasActiveCycle && typeof this.deps.loadMiniCycle === 'function') {
                         this.deps.loadMiniCycle();
-                    } else {
-                        setTimeout(() => window.location.reload(), 1000);
                     }
 
-                    this.loadMiniCycleList();
-                    setTimeout(() => this.deps.updateProgressBar(), 500);
-                    setTimeout(() => this.deps.updateStatsPanel(), 500);
-                    this.deps.checkCompleteAllButton();
-
+                    // Select first remaining routine
                     setTimeout(() => {
                         const firstCycle = this.deps.querySelector(".mini-cycle-switch-item");
                         if (firstCycle) {
@@ -472,9 +493,241 @@ export class RoutineSwitcher {
                 }
 
                 console.log(`✅ Successfully deleted: "${cycleToDelete}"`);
-                this.deps.showNotification(`🗑️ "${cycleToDelete}" has been deleted.`);
+                if (wasActiveCycle && newActiveCycleName) {
+                    this.deps.showNotification(`🗑️ "${cycleToDelete}" deleted. "${newActiveCycleName}" is now active.`, "info", 4000);
+                } else {
+                    this.deps.showNotification(`🗑️ "${cycleToDelete}" has been deleted.`);
+                }
             }
         });
+    }
+
+    /**
+     * Duplicate the selected miniCycle and show it in inline edit mode
+     */
+    duplicateMiniCycle() {
+        console.log('📋 Duplicating miniCycle (state-based)...');
+
+        const selectedCycle = this.deps.querySelector(".mini-cycle-switch-item.selected");
+
+        if (!selectedCycle) {
+            console.warn('⚠️ No cycle selected for duplication');
+            this.deps.showNotification("Please select a miniCycle to duplicate.", "info", 1500);
+            return;
+        }
+
+        // ✅ Use state-based data access
+        if (!this.deps.AppState?.isReady?.()) {
+            console.error('❌ AppState not ready for duplicateMiniCycle');
+            this.deps.showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+            return;
+        }
+
+        const currentState = this.deps.AppState.get();
+        if (!currentState) {
+            console.error('❌ No state data available for duplicateMiniCycle');
+            this.deps.showNotification("⚠️ No data available. Please try again.", "error", 3000);
+            return;
+        }
+
+        const { data } = currentState;
+        const cycles = data.cycles || {};
+        const cycleKey = selectedCycle.dataset.cycleKey;
+        const originalCycle = cycles[cycleKey];
+
+        console.log('🔍 Duplicating cycle:', cycleKey);
+
+        if (!cycleKey || !originalCycle) {
+            console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!originalCycle });
+            this.deps.showNotification("⚠️ Invalid cycle selection.", "error", 1500);
+            return;
+        }
+
+        // ✅ Generate unique name for the copy
+        const baseName = `${originalCycle.title} Copy`;
+        const { name: uniqueName } = getUniqueCycleName(baseName, cycles);
+
+        console.log(`📋 Creating copy: "${originalCycle.title}" → "${uniqueName}"`);
+
+        // ✅ Deep copy the cycle data
+        const copiedCycle = structuredClone(originalCycle);
+        copiedCycle.title = uniqueName;
+        copiedCycle.createdAt = Date.now();
+        delete copiedCycle.lastModified; // Show "Created" until actual changes are made
+        copiedCycle.cycleCount = 0; // Reset cycle count for the copy
+
+        // ✅ Generate new IDs for all tasks to avoid conflicts
+        if (Array.isArray(copiedCycle.tasks)) {
+            copiedCycle.tasks = copiedCycle.tasks.map(task => ({
+                ...task,
+                id: `task-${Date.now()}-${Math.floor(Math.random() * 10000)}`
+            }));
+        }
+
+        // ✅ Update through state system
+        this.deps.AppState.update(state => {
+            state.data.cycles[uniqueName] = copiedCycle;
+            state.metadata.lastModified = Date.now();
+            state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
+        }, true); // immediate save
+
+        console.log(`✅ Cycle duplicated: "${uniqueName}"`);
+
+        // ✅ Refresh the list and put the new item in inline edit mode
+        this.loadMiniCycleList();
+
+        // Wait for list to render, then find and edit the new item
+        setTimeout(() => {
+            const newItem = [...this.deps.querySelectorAll(".mini-cycle-switch-item")]
+                .find(item => item.dataset.cycleKey === uniqueName);
+
+            if (newItem) {
+                // Select the new item
+                this.deps.querySelectorAll(".mini-cycle-switch-item").forEach(item => item.classList.remove("selected"));
+                newItem.classList.add("selected");
+
+                // Show the switch items row
+                const switchItemsRow = this.deps.getElementById("switch-items-row");
+                if (switchItemsRow) {
+                    switchItemsRow.style.display = "block";
+                }
+
+                // Update preview
+                this.updatePreview(uniqueName);
+
+                // ✅ Put the item in inline edit mode
+                this._startInlineEdit(newItem, uniqueName);
+
+                console.log('✅ New cycle selected and in edit mode');
+            }
+        }, 100);
+
+        this.deps.showNotification(`📋 Duplicated as "${uniqueName}"`, "success", 2000);
+    }
+
+    /**
+     * Start inline editing for a cycle item
+     * @param {HTMLElement} listItem - The list item element
+     * @param {string} cycleKey - The cycle key being edited
+     */
+    _startInlineEdit(listItem, cycleKey) {
+        const titleSpan = listItem.querySelector('.cycle-item-title');
+        if (!titleSpan) return;
+
+        const currentName = titleSpan.textContent;
+
+        // Create input element
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'cycle-item-edit-input';
+        input.value = currentName;
+
+        // Replace title span with input
+        titleSpan.style.display = 'none';
+        titleSpan.parentNode.insertBefore(input, titleSpan.nextSibling);
+
+        // Focus and select all text
+        input.focus();
+        input.select();
+
+        // Handle blur (save on blur)
+        const handleBlur = () => {
+            this._finishInlineEdit(listItem, cycleKey, input, titleSpan);
+        };
+
+        // Handle keydown (Enter to save, Escape to cancel)
+        const handleKeydown = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                input.blur();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                // Restore original name
+                input.value = currentName;
+                input.blur();
+            }
+        };
+
+        input.addEventListener('blur', handleBlur, { once: true });
+        input.addEventListener('keydown', handleKeydown);
+    }
+
+    /**
+     * Finish inline editing and save the new name
+     * @param {HTMLElement} listItem - The list item element
+     * @param {string} oldKey - The original cycle key
+     * @param {HTMLInputElement} input - The input element
+     * @param {HTMLElement} titleSpan - The title span element
+     */
+    _finishInlineEdit(listItem, oldKey, input, titleSpan) {
+        const newName = this.deps.sanitizeInput(input.value.trim());
+        const oldName = titleSpan.textContent;
+
+        // Remove input
+        input.remove();
+        titleSpan.style.display = '';
+
+        // If name unchanged or empty, just restore
+        if (!newName || newName === oldName) {
+            console.log('ℹ️ Name unchanged or empty');
+            return;
+        }
+
+        // ✅ Get unique name if there's a collision (but not with self)
+        const currentState = this.deps.AppState.get();
+        const cycles = { ...currentState.data.cycles };
+        delete cycles[oldKey]; // Exclude self from collision check
+
+        const { name: uniqueName, wasModified } = getUniqueCycleName(newName, cycles);
+
+        if (wasModified) {
+            console.log(`⚠️ Name collision: "${newName}" → "${uniqueName}"`);
+            this.deps.showNotification(`Name already exists. Using "${uniqueName}" instead.`, "warning", 3000);
+        }
+
+        console.log(`📝 Renaming inline: "${oldKey}" → "${uniqueName}"`);
+
+        // ✅ Update through state system
+        this.deps.AppState.update(state => {
+            const cycleData = state.data.cycles[oldKey];
+            if (!cycleData) return;
+
+            // Create new entry with new title as key
+            const updatedCycle = { ...cycleData, title: uniqueName };
+            state.data.cycles[uniqueName] = updatedCycle;
+
+            // Remove old entry
+            delete state.data.cycles[oldKey];
+
+            // Update active cycle if this was the active one
+            if (state.appState.activeCycleId === oldKey) {
+                state.appState.activeCycleId = uniqueName;
+            }
+
+            state.metadata.lastModified = Date.now();
+        }, true);
+
+        // ✅ Notify undo system of cycle rename
+        if (typeof this.deps.onCycleRenamed === 'function') {
+            this.deps.onCycleRenamed(oldKey, uniqueName).catch(err => {
+                console.warn('⚠️ Undo system cycle rename notification failed:', err);
+            });
+        }
+
+        // Refresh the list
+        this.loadMiniCycleList();
+
+        // Re-select the renamed item
+        setTimeout(() => {
+            const renamedItem = [...this.deps.querySelectorAll(".mini-cycle-switch-item")]
+                .find(item => item.dataset.cycleKey === uniqueName);
+            if (renamedItem) {
+                renamedItem.classList.add("selected");
+                renamedItem.click();
+            }
+        }, 50);
+
+        this.deps.showNotification(`✅ Renamed to "${uniqueName}"`, "success", 2000);
     }
 
     /**
@@ -534,7 +787,16 @@ export class RoutineSwitcher {
 
         // ✅ Update through state system
         this.deps.AppState.update(state => {
-            console.log('🔍 Inside state update - changing from:', state.appState.activeCycleId, 'to:', cycleKey);
+            const oldCycleId = state.appState.activeCycleId;
+            console.log('🔍 Inside state update - changing from:', oldCycleId, 'to:', cycleKey);
+
+            // ✅ Save lastModified to the OLD cycle before switching
+            // This captures when the user last worked on that routine
+            if (oldCycleId && state.data.cycles[oldCycleId]) {
+                state.data.cycles[oldCycleId].lastModified = state.metadata.lastModified || Date.now();
+                console.log(`📅 Saved lastModified to "${oldCycleId}":`, state.data.cycles[oldCycleId].lastModified);
+            }
+
             state.appState.activeCycleId = cycleKey;
             state.metadata.lastModified = Date.now();
         }, false); // deferred save - don't block UI
@@ -745,12 +1007,16 @@ export class RoutineSwitcher {
                 return;
             }
 
-            // ✅ If clicked area is NOT inside the modal, main menu, or routine switcher button, close it
+            // ✅ Check if click is inside a confirmation/prompt modal overlay
+            const modalOverlay = event.target.closest('.mini-modal-overlay');
+
+            // ✅ If clicked area is NOT inside the modal, main menu, routine switcher button, or confirmation modal, close it
             if (
                 !switchModalContent.contains(event.target) &&
                 !mainMenu.contains(event.target) &&
                 event.target !== routineSwitcherBtn &&
-                !routineSwitcherBtn?.contains(event.target)
+                !routineSwitcherBtn?.contains(event.target) &&
+                !modalOverlay
             ) {
                 switchModal.style.display = "none";
             }
@@ -794,8 +1060,18 @@ export class RoutineSwitcher {
             return temp.innerHTML;
         }
 
+        // ✅ Get or create date display element below preview
+        let dateDisplay = this.deps.getElementById("switch-preview-date");
+        if (!dateDisplay) {
+            dateDisplay = document.createElement("div");
+            dateDisplay.id = "switch-preview-date";
+            dateDisplay.className = "switch-preview-date";
+            previewWindow.parentNode.insertBefore(dateDisplay, previewWindow.nextSibling);
+        }
+
         if (!cycleData || !cycleData.tasks) {
             previewWindow.innerHTML = `<br><strong>No tasks found.</strong>`;
+            dateDisplay.textContent = '';
             console.log('⚠️ No tasks found for preview');
             return;
         }
@@ -808,6 +1084,21 @@ export class RoutineSwitcher {
             .join("");
 
         previewWindow.innerHTML = `<strong>Tasks:</strong><br>${tasksPreview}`;
+
+        // ✅ Show last modified date (falls back to created date if not yet set)
+        const timestamp = cycleData.lastModified || cycleData.createdAt;
+        if (timestamp) {
+            const date = new Date(timestamp);
+            const formattedDate = date.toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            const label = cycleData.lastModified ? 'Modified' : 'Created';
+            dateDisplay.textContent = `${label}: ${formattedDate}`;
+        } else {
+            dateDisplay.textContent = '';
+        }
 
         console.log('✅ Preview updated successfully');
     }
@@ -864,8 +1155,23 @@ export class RoutineSwitcher {
             return;
         }
 
-        // ✅ Use Object.entries to get both key and cycle data
-        Object.entries(cycles).forEach(([cycleKey, cycleData], index) => {
+        // ✅ Filter cycles based on current filter mode
+        const filteredCycles = this._filterCycles(Object.entries(cycles));
+        console.log('🔍 Filtered cycles by mode:', this._filterMode, `(${filteredCycles.length}/${Object.keys(cycles).length})`);
+
+        // ✅ Handle no matches for filter
+        if (filteredCycles.length === 0) {
+            const modeLabels = { auto: 'Auto Cycle', manual: 'Manual Cycle', todo: 'To-Do' };
+            miniCycleList.innerHTML = `<div class="no-cycles-message">No ${modeLabels[this._filterMode] || ''} routines found</div>`;
+            return;
+        }
+
+        // ✅ Sort cycles based on current sort mode
+        const sortedCycles = this._sortCycles(filteredCycles);
+        console.log('🔀 Sorted cycles by:', this._sortMode);
+
+        // ✅ Use sorted entries to render list
+        sortedCycles.forEach(([cycleKey, cycleData], index) => {
             if (!cycleData) {
                 console.warn('⚠️ Invalid cycle data for key:', cycleKey);
                 return;
@@ -877,7 +1183,7 @@ export class RoutineSwitcher {
             listItem.dataset.cycleKey = cycleKey; // ✅ Store the storage key
 
             // 🏷️ Determine emoji based on miniCycle mode
-            let emoji = "✅ 🔄"; // Manual Cycle (check + cycle)
+            let emoji = "✋🔁"; // Manual Cycle (hand + repeat)
             if (cycleData.deleteCheckedTasks) {
                 emoji = "📋"; // To-Do Mode
             } else if (cycleData.autoReset) {
@@ -1045,6 +1351,192 @@ export class RoutineSwitcher {
             selectedItem.classList.remove('selected');
             switchRow.style.display = 'none';
         }
+    }
+
+    /**
+     * Setup sort control buttons
+     */
+    setupSortControls() {
+        const sortAlpha = this.deps.getElementById('sort-alpha');
+        const sortRecent = this.deps.getElementById('sort-recent');
+        const sortSize = this.deps.getElementById('sort-size');
+
+        if (!sortAlpha || !sortRecent || !sortSize) {
+            console.warn('⚠️ Sort controls not found');
+            return;
+        }
+
+        // Update button states to match current sort mode
+        this._updateSortButtonStates();
+
+        // Setup handlers (only once)
+        if (!sortAlpha._sortHandler) {
+            sortAlpha._sortHandler = () => {
+                if (this._sortMode === 'alpha') {
+                    // Toggle direction
+                    this._sortDirection = this._sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this._sortMode = 'alpha';
+                    this._sortDirection = 'asc';
+                }
+                this._updateSortButtonStates();
+                this.loadMiniCycleList();
+            };
+            sortAlpha.addEventListener('click', sortAlpha._sortHandler);
+        }
+
+        if (!sortRecent._sortHandler) {
+            sortRecent._sortHandler = () => {
+                if (this._sortMode === 'recent') {
+                    // Toggle direction
+                    this._sortDirection = this._sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this._sortMode = 'recent';
+                    this._sortDirection = 'asc';
+                }
+                this._updateSortButtonStates();
+                this.loadMiniCycleList();
+            };
+            sortRecent.addEventListener('click', sortRecent._sortHandler);
+        }
+
+        if (!sortSize._sortHandler) {
+            sortSize._sortHandler = () => {
+                if (this._sortMode === 'size') {
+                    // Toggle direction
+                    this._sortDirection = this._sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this._sortMode = 'size';
+                    this._sortDirection = 'asc';
+                }
+                this._updateSortButtonStates();
+                this.loadMiniCycleList();
+            };
+            sortSize.addEventListener('click', sortSize._sortHandler);
+        }
+    }
+
+    /**
+     * Update sort button active states and labels
+     */
+    _updateSortButtonStates() {
+        const sortAlpha = this.deps.getElementById('sort-alpha');
+        const sortRecent = this.deps.getElementById('sort-recent');
+        const sortSize = this.deps.getElementById('sort-size');
+
+        if (sortAlpha) {
+            sortAlpha.classList.toggle('active', this._sortMode === 'alpha');
+            if (this._sortMode === 'alpha') {
+                sortAlpha.textContent = this._sortDirection === 'asc' ? 'A-Z' : 'Z-A';
+            } else {
+                sortAlpha.textContent = 'A-Z';
+            }
+        }
+        if (sortRecent) {
+            sortRecent.classList.toggle('active', this._sortMode === 'recent');
+            if (this._sortMode === 'recent') {
+                sortRecent.textContent = this._sortDirection === 'asc' ? 'Recent' : 'Oldest';
+            } else {
+                sortRecent.textContent = 'Recent';
+            }
+        }
+        if (sortSize) {
+            sortSize.classList.toggle('active', this._sortMode === 'size');
+            if (this._sortMode === 'size') {
+                sortSize.textContent = this._sortDirection === 'asc' ? 'Largest' : 'Smallest';
+            } else {
+                sortSize.textContent = 'Size';
+            }
+        }
+    }
+
+    /**
+     * Sort cycles based on current sort mode and direction
+     * @param {Array} cycleEntries - Array of [key, cycleData] entries
+     * @returns {Array} Sorted array
+     */
+    _sortCycles(cycleEntries) {
+        const isAsc = this._sortDirection === 'asc';
+
+        if (this._sortMode === 'recent') {
+            // Sort by lastModified, fall back to createdAt
+            // asc = newest first, desc = oldest first
+            return cycleEntries.sort((a, b) => {
+                const aTime = a[1].lastModified || a[1].createdAt || 0;
+                const bTime = b[1].lastModified || b[1].createdAt || 0;
+                return isAsc ? bTime - aTime : aTime - bTime;
+            });
+        } else if (this._sortMode === 'size') {
+            // Sort by file size
+            // asc = largest first, desc = smallest first
+            return cycleEntries.sort((a, b) => {
+                const aSize = getObjectSizeBytes(a[1]);
+                const bSize = getObjectSizeBytes(b[1]);
+                return isAsc ? bSize - aSize : aSize - bSize;
+            });
+        } else {
+            // Default: alphabetical by title
+            // asc = A-Z, desc = Z-A
+            return cycleEntries.sort((a, b) => {
+                const aTitle = (a[1].title || a[0]).toLowerCase();
+                const bTitle = (b[1].title || b[0]).toLowerCase();
+                return isAsc ? aTitle.localeCompare(bTitle) : bTitle.localeCompare(aTitle);
+            });
+        }
+    }
+
+    /**
+     * Setup filter dropdown
+     */
+    setupFilterControls() {
+        const filterSelect = this.deps.getElementById('routine-filter-select');
+
+        if (!filterSelect) {
+            console.warn('⚠️ Filter dropdown not found');
+            return;
+        }
+
+        // Set dropdown to current filter mode
+        filterSelect.value = this._filterMode;
+
+        // Setup handler (only once)
+        if (!filterSelect._filterHandler) {
+            filterSelect._filterHandler = (e) => {
+                this._filterMode = e.target.value;
+                this.loadMiniCycleList();
+            };
+            filterSelect.addEventListener('change', filterSelect._filterHandler);
+        }
+    }
+
+    /**
+     * Get the mode of a cycle
+     * @param {Object} cycleData - Cycle data object
+     * @returns {string} 'auto', 'manual', or 'todo'
+     */
+    _getCycleMode(cycleData) {
+        if (cycleData.deleteCheckedTasks) {
+            return 'todo';
+        } else if (cycleData.autoReset) {
+            return 'auto';
+        } else {
+            return 'manual';
+        }
+    }
+
+    /**
+     * Filter cycles based on current filter mode
+     * @param {Array} cycleEntries - Array of [key, cycleData] entries
+     * @returns {Array} Filtered array
+     */
+    _filterCycles(cycleEntries) {
+        if (this._filterMode === 'all') {
+            return cycleEntries;
+        }
+
+        return cycleEntries.filter(([key, cycleData]) => {
+            return this._getCycleMode(cycleData) === this._filterMode;
+        });
     }
 
     /**

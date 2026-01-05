@@ -141,6 +141,7 @@
  * @property {Object.<string, RecurringTemplate>} [recurringTemplates={}] - Recurring task templates
  * @property {TaskOptionButtons} [taskOptionButtons] - Per-cycle button visibility settings
  * @property {number} [createdAt] - Creation timestamp
+ * @property {number} [lastModified] - Last modification timestamp (set when switching away from this cycle)
  * @example
  * const cycle = {
  *     id: "cycle-abc123",
