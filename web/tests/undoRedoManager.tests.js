@@ -89,7 +89,11 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
             isPerformingUndoRedo: false,
             lastSnapshotSignature: null,
             lastSnapshotTs: 0,
-            __undoRedoWired: false
+            __undoRedoWired: false,
+            // Lazy loading flags (for tests, mark as loaded so button visibility uses stack length)
+            undoHistoryExists: false,
+            redoHistoryExists: false,
+            undoStackLazyLoaded: true  // Tests set stacks directly, so mark as loaded
         };
 
         const mockSchemaData = {
