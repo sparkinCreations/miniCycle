@@ -190,11 +190,11 @@ export class HelpWindowManager {
                 description: "Tasks automatically reset when all are completed."
             },
             'manual-cycle': {
-                title: "✔️ Manual Cycle Mode",
+                title: "✋🔁 Manual Cycle Mode",
                 description: "Tasks only reset when you click the Complete button."
             },
             'todo-mode': {
-                title: "✓ To-Do Mode",
+                title: "📋 To-Do Mode",
                 description: "Completed tasks are removed when you click Complete."
             }
         };

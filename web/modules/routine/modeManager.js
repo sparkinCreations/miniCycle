@@ -102,8 +102,8 @@ export class ModeManager {
     getModeName(mode) {
         const modeNames = {
             'auto-cycle': 'Auto Cycle ↻',
-            'manual-cycle': 'Manual Cycle ✔︎↻',
-            'todo-mode': 'To-Do Mode ✓'
+            'manual-cycle': 'Manual Cycle ✋🔁',
+            'todo-mode': 'To-Do Mode 📋'
         };
 
         const result = modeNames[mode] || 'Auto Cycle ↻';
@@ -432,17 +432,17 @@ export class ModeManager {
 
         if (deleteChecked) {
             currentMode = "todo-mode";
-            modeTitle = "To-Do List Mode";
+            modeTitle = "📋 To-Do Mode";
             modeDetail = `This mode will not complete any cycles.<br>
         Instead, it will delete all tasks when <br> you hit the complete button.`;
         } else if (autoReset) {
             currentMode = "auto-cycle";
-            modeTitle = "Auto Cycle Mode";
+            modeTitle = "🔄 Auto Cycle Mode";
             modeDetail = `Tasks will automatically reset to incomplete <br>when all are completed. This is the <br> traditional miniCycle experience.`;
         } else {
             currentMode = "manual-cycle";
-            modeTitle = "Manual Cycle Mode";
-            modeDetail = `Tasks will only reset when you<br>manually press the complete button.<br> 
+            modeTitle = "✋🔁 Manual Cycle Mode";
+            modeDetail = `Tasks will only reset when you<br>manually press the complete button.<br>
             The complete button will complete any<br> remaining tasks and then reset<br> all tasks to incomplete. `;
         }
 

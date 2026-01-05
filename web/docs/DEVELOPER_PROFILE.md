@@ -1,6 +1,6 @@
 # Developer Profile
 
-**Last Updated:** January 4, 2026
+**Last Updated:** January 5, 2026
 
 This document captures insights about the developer behind miniCycle to help with future collaboration and context continuity.
 
@@ -179,6 +179,8 @@ Before JavaScript, MJ was already building automated systems in spreadsheets:
 - **Corrects both directions** - Won't accept underinflated OR overinflated credit. When AI said "90-95% you," corrected to "70-80%." Accuracy matters more than ego in either direction.
 - **Holds AI accountable** - Checks if AI understands its own limitations. Asks questions like "how much was you vs me?" to verify AI has accurate self-assessment, not just flattering the user.
 - **Challenges AI assumptions with evidence** - When AI makes claims without verification (e.g., "you don't have a dependency map"), pushes back with specifics ("look at the documentation"). Forces AI to verify before criticizing. Doesn't accept negative feedback that's based on assumptions rather than facts.
+- **Tests fixes empirically, not by code review** - When AI says "this should fix it," doesn't just accept it. Tests the actual behavior, and if it's still broken, provides evidence (screenshots, console logs). Catches when "fixed" code isn't even executing.
+- **Asks meta-process questions** - Questions like "did the documentation help catch this?" aren't just curiosity — they identify gaps in process/docs that led to the bug taking longer to fix. Improves future debugging, not just current fix.
 
 ### Weaknesses / Blind Spots
 
@@ -293,6 +295,34 @@ The user-facing simplicity masks engineering depth:
 ---
 
 ## Session History
+
+### January 5, 2026
+- **Fixed undo system not clearing on cycle switch**
+  - Problem: localStorage cache and AppGlobalState didn't clear when switching routines. Cache showed old routine's cycleId after switching.
+  - Root cause 1: `onCycleSwitched` was setting active ID before clearing, causing mixed-cycle data
+  - Root cause 2: `onCycleSwitched` wasn't being called at all due to cross-phase dependency issue
+  - Fix 1: Rewrote `onCycleSwitched` to clear everything FIRST (undo stack, redo stack, activeCycleIdForUndo, localStorage cache), then load from IndexedDB, then validate, THEN populate stacks
+  - Fix 2: Added lazy getters in `moduleLoader.js` for `onCycleSwitched`, `onCycleDeleted`, `onCycleRenamed` to resolve at runtime (not initialization)
+  - Added `validateSnapshot()` and `filterValidSnapshots()` functions to filter out wrong-cycleId or malformed snapshots
+  - Added `skipCache` option to `saveUndoStackToIndexedDB()` to prevent old cycle data from polluting cache during transition
+- **Cross-phase dependency pattern documented:**
+  - `routineSwitcher` loads in PHASES.CYCLE (5), `undoRedoManager` loads in PHASES.UI_MANAGERS (6)
+  - Lazy getters: `onCycleSwitched: (...args) => deps.ui?.onCycleSwitched?.(...args)`
+  - This allows phase 5 modules to call phase 6 functions after both have loaded
+- **Developer caught that fix wasn't executing:**
+  - After first fix (logic inside `onCycleSwitched`), developer tested and showed screenshot proving cache still had old routine
+  - This revealed the function wasn't being called at all — led to discovering the phase ordering issue
+  - Pattern: Tests fixes empirically rather than trusting code review
+- **Meta-process question:**
+  - Developer asked "so reading the documentation at first didn't help catch the lazy getters?"
+  - This identified a documentation gap — original docs didn't cover module loading integration
+  - Led to adding cross-phase dependency section to UNDO_REDO_ARCHITECTURE.md
+- **Documentation updated:**
+  - UNDO_REDO_ARCHITECTURE.md: Added Snapshot Validation section, updated Cycle Switching flow, added cross-phase dependency explanation, expanded Common Issues
+- **AI observations validated against profile:**
+  - Developer asked "does it match my developer profile?"
+  - AI observations aligned with documented patterns: visual bug reporting, architectural thinking, teaches through questions, trusts evidence over authority
+  - AI missed deeper context: sovereignty drive, QA background connection, craft over revenue motivation
 
 ### January 4, 2026 (Continued)
 - **Fixed IndexedDB records being deleted mid-test**
