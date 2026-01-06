@@ -14,6 +14,62 @@
 - **Schema Source:** `modules/core/types.js`
 - **Feature List:** `docs/features/FEATURE_LIST.md`
 
+### Critical Architecture Documents (Read These First!)
+
+- **CLAUDE.md:** `docs/developer-guides/CLAUDE.md` - Architecture overview, DI patterns
+- **DI_PATTERNS.md:** `docs/developer-guides/DI_PATTERNS.md` - `required()` vs `optional()`
+- **MODULE_LOADER_GUIDE.md:** `docs/developer-guides/MODULE_LOADER_GUIDE.md` - Module loading
+- **HIDDEN_CODEBASE_INSIGHTS.md:** `docs/developer-guides/HIDDEN_CODEBASE_INSIGHTS.md` - Critical gotchas
+- **confirmation-and-notification-modal.md:** `docs/guides/confirmation-and-notification-modal.md` - Modal patterns
+- **ROUTINE_SWITCHER_ARCHITECTURE.md:** `docs/architecture/ROUTINE_SWITCHER_ARCHITECTURE.md` - Modal example
+
+---
+
+## Key Architecture Decisions
+
+### UI Approach: Buttons → Modals (NOT Inline Sections)
+
+**IMPORTANT:** Do NOT add inline collapsible sections to the stats panel. Instead:
+1. Add simple **buttons** to the stats panel
+2. Each button opens a **full-screen modal panel**
+3. Modal panels have back buttons to return to stats
+
+This follows the existing patterns in routineSwitcher and settings.
+
+### Module Placement
+
+| Module | Phase | After |
+|--------|-------|-------|
+| `historyManager.js` | 7 (FEATURES) | `statsPanel` |
+| `clearedTasksManager.js` | 7 (FEATURES) | `historyManager` |
+| `achievementsManager.js` | 7 (FEATURES) | `themeManager`, `gamesManager` |
+
+### DI Pattern Requirements
+
+```javascript
+// CORRECT - Use required() for AppState
+const di = createDIModule('HistoryManager', {
+    AppState: required(),
+    appInit: required(),
+    showNotification: required(),
+});
+
+// WRONG - Don't use optional(null) for critical deps
+const di = createDIModule('HistoryManager', {
+    AppState: optional(null),  // ❌ Will cause runtime errors
+});
+```
+
+### Files to Modify
+
+| File | Changes |
+|------|---------|
+| `modules/boot/moduleManifests.js` | Add 3 manifest entries |
+| `modules/boot/moduleLoader.js` | Add depMappings entries (~line 548) |
+| `modules/features/statsPanel.js` | Add 3 buttons (minimal changes) |
+| `modules/core/types.js` | Add new type definitions |
+| `miniCycle-styles.css` | Add modal styles |
+
 ---
 
 ## Progress Overview
@@ -53,15 +109,48 @@
   - [ ] Add default `achievements` object at root level
   - [ ] Ensure empty achievements structure on fresh install
   - **File:** `modules/core/appState.js`
-  - **Notes:**
+  - **Notes:** Look for `createInitialSchema25Data()` or similar
 
 - [ ] **1.3 Update routine creation**
   - [ ] New routines get empty `history: { events: [] }`
   - [ ] New routines get empty `clearedTasks: { entries: [], totalCleared: 0, autoPruneEnabled: true }`
   - **File:** `modules/routine/routineManager.js`
-  - **Notes:**
+  - **Notes:** Find `createNewMiniCycle()` function
 
-- [ ] **1.4 Write foundation tests**
+- [ ] **1.4 Register module manifests** (Critical!)
+  - [ ] Add `historyManager` manifest to `moduleManifests.js`
+  - [ ] Add `clearedTasksManager` manifest to `moduleManifests.js`
+  - [ ] Add `achievementsManager` manifest to `moduleManifests.js`
+  - **File:** `modules/boot/moduleManifests.js`
+  - **Example:**
+    ```javascript
+    historyManager: {
+        path: '../features/historyManager.js',
+        phase: PHASES.FEATURES,
+        requires: ['appInit', 'AppState', 'showNotification'],
+        provides: ['logHistoryEvent', 'getHistory', 'clearHistory'],
+        provideInstance: 'historyManager',
+        api: 'features',
+        after: ['statsPanel']
+    },
+    ```
+
+- [ ] **1.5 Add depMappings entries** (Critical!)
+  - [ ] Add historyManager Proxy to depMappings
+  - [ ] Add clearedTasksManager Proxy to depMappings
+  - [ ] Add achievementsManager Proxy to depMappings
+  - **File:** `modules/boot/moduleLoader.js` (~line 548)
+  - **Example:**
+    ```javascript
+    historyManager: new Proxy({}, {
+        get(target, prop) {
+            return deps.features?.historyManager?.[prop];
+        }
+    }),
+    ```
+  - **Notes:** Without this, dependencies won't resolve correctly!
+
+- [ ] **1.6 Write foundation tests**
   - [ ] Schema validation tests
   - [ ] Default initialization tests
   - [ ] New routine has empty history/clearedTasks
@@ -73,6 +162,8 @@
 - [ ] Tests passing
 - [ ] App still functions normally
 - [ ] No console errors
+- [ ] Module manifests registered
+- [ ] depMappings entries added
 
 ### Phase 1 Notes
 ```
@@ -92,9 +183,37 @@
   - [ ] `logEvent(routineId, event)` - adds event to routine's history
   - [ ] `clearHistory(routineId)` - clears a routine's history
   - [ ] `getHistory(routineId)` - returns routine's events
-  - [ ] Set up DI pattern (setHistoryManagerDependencies)
+  - [ ] Set up DI pattern using `createDIModule` from `diBase.js`
   - **File:** `modules/features/historyManager.js` (new)
-  - **Notes:**
+  - **Template:**
+    ```javascript
+    import { createDIModule, required, optional } from '../core/diBase.js';
+
+    const di = createDIModule('HistoryManager', {
+        AppState: required(),        // CRITICAL: Use required(), not optional(null)
+        appInit: required(),
+        showNotification: required(),
+    });
+
+    export const setHistoryManagerDependencies = di.setDependencies;
+
+    export class HistoryManager {
+        constructor(overrides = {}) {
+            this.deps = di.resolve(overrides);
+        }
+
+        async logEvent(routineId, event) {
+            const state = this.deps.AppState.get();
+            // ... implementation
+        }
+    }
+
+    // Export init function for moduleLoader
+    export function initHistoryManager(deps) {
+        return new HistoryManager(deps);
+    }
+    ```
+  - **Notes:** The `init*` naming convention is detected by moduleLoader
 
 - [ ] **2.2 Hook: Cycle completion**
   - [ ] Log `cycle_completed` event after cycle count increments
@@ -336,71 +455,116 @@
 
 ---
 
-## Phase 5: UI - Stats Panels
-**Goal:** Three panels accessible in stats
+## Phase 5: UI - Stats Panel Buttons & Modals
+**Goal:** Three buttons in stats panel that open modal views
 **Status:** Not Started
 **Blockers:** Phase 4
 
+### IMPORTANT: Modal Approach (NOT Inline Sections)
+
+**Do NOT add inline collapsible sections to statsPanel.js!**
+
+Instead:
+1. Add simple **buttons** to the stats panel
+2. Each button opens a **full-screen modal overlay**
+3. Modals have back buttons and are self-contained
+
+See `docs/guides/confirmation-and-notification-modal.md` for modal patterns.
+
 ### Tasks
 
-- [ ] **5.1 Update statsPanel.js structure**
-  - [ ] Add History button (under Current Routine section)
-  - [ ] Add Cleared Tasks button (under Current Routine, conditional)
-  - [ ] Add Achievements button (always visible at bottom)
-  - [ ] Add panel navigation state
+- [ ] **5.1 Add buttons to statsPanel.js** (Minimal Changes!)
+  - [ ] Add "📜 History" button in Current Routine section
+  - [ ] Add "✓ Cleared Tasks (N)" button (conditional, only if entries exist)
+  - [ ] Add "🏆 Achievements" button in Milestones section
+  - [ ] Add click handlers that call modal open functions
   - **File:** `modules/features/statsPanel.js`
-  - **Notes:**
+  - **Changes should be ~20-30 lines max**
+  - **Notes:** Do NOT add panel state, navigation, or inline HTML sections!
 
-- [ ] **5.2 Create History Panel view**
-  - [ ] Back button
+- [ ] **5.2 Create History Modal** (Separate Component)
+  - [ ] Create `openHistoryModal()` function
+  - [ ] Modal overlay with `position: fixed`, `z-index: 10000`
+  - [ ] Back button (←) in header
   - [ ] Chronological event list
   - [ ] Group by date (Today, Yesterday, Earlier)
   - [ ] Event type icons/labels
   - [ ] Clear All button
   - [ ] Empty state message
-  - **File:** `modules/features/statsPanel.js` (or new sub-module)
-  - **Notes:**
+  - [ ] Click-outside-to-close handler
+  - [ ] Escape key handler
+  - **File:** `modules/features/historyManager.js` (add modal methods)
+  - **Modal pattern:**
+    ```javascript
+    openHistoryModal() {
+        const overlay = document.createElement('div');
+        overlay.className = 'history-modal-overlay';
+        overlay.innerHTML = `
+            <div class="history-modal" role="dialog" aria-modal="true">
+                <header class="history-modal-header">
+                    <button class="back-btn" aria-label="Close">←</button>
+                    <h2>History</h2>
+                    <button class="clear-btn">Clear All</button>
+                </header>
+                <div class="history-modal-content">
+                    <!-- Content rendered here -->
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        this.setupModalHandlers(overlay);
+    }
+    ```
 
-- [ ] **5.3 Create Cleared Tasks Panel view**
-  - [ ] Back button
-  - [ ] Total Cleared counter
+- [ ] **5.3 Create Cleared Tasks Modal** (Separate Component)
+  - [ ] Create `openClearedTasksModal()` function
+  - [ ] Modal overlay following same pattern
+  - [ ] Back button in header
+  - [ ] Total Cleared counter at top
   - [ ] "Showing last 90 days" label
-  - [ ] Static list of entries
-  - [ ] Recreate button (top right)
+  - [ ] Static list of entries (default view)
+  - [ ] "Recreate Tasks" button → enters selection mode
   - [ ] Clear Cleared List button (bottom)
   - [ ] Empty state message
-  - **File:** `modules/features/statsPanel.js` (or new sub-module)
+  - **File:** `modules/features/clearedTasksManager.js` (add modal methods)
   - **Notes:**
 
-- [ ] **5.4 Create Achievement History Panel view**
-  - [ ] Back button
-  - [ ] "Your Achievements" section
-  - [ ] Unlocked achievements list (chronological)
+- [ ] **5.4 Create Achievements Modal** (Separate Component)
+  - [ ] Create `openAchievementsModal()` function
+  - [ ] Modal overlay following same pattern
+  - [ ] Back button in header
+  - [ ] "Your Achievements" section with unlocked list
   - [ ] Show how earned (cycles vs tasks)
   - [ ] Show reward if applicable
-  - [ ] "Upcoming" section
-  - [ ] Next milestones with progress
+  - [ ] "Upcoming" section with next milestones
   - [ ] Empty state for no achievements
-  - **File:** `modules/features/statsPanel.js` (or new sub-module)
+  - **File:** `modules/features/achievementsManager.js` (add modal methods)
   - **Notes:**
 
-- [ ] **5.5 Panel navigation**
-  - [ ] Track current panel state
-  - [ ] Back button returns to main stats
-  - [ ] Handle routine switch while in sub-panel
+- [ ] **5.5 Add modal styles to CSS**
+  - [ ] `.history-modal-overlay`, `.cleared-tasks-modal-overlay`, `.achievements-modal-overlay`
+  - [ ] Modal positioning (full screen on mobile, centered on desktop)
+  - [ ] Transition animations (fade in/out)
+  - [ ] Dark mode support
+  - **File:** `miniCycle-styles.css`
   - **Notes:**
 
-- [ ] **5.6 Conditional visibility**
-  - [ ] Cleared Tasks button only shows if entries exist
-  - [ ] History button only shows if events exist (or always show?)
+- [ ] **5.6 Conditional button visibility**
+  - [ ] Cleared Tasks button only shows if `clearedTasks.entries.length > 0`
+  - [ ] History button always shows (or only if `history.events.length > 0`)
+  - [ ] Achievements button always shows
   - **Notes:**
 
 ### Phase 5 Completion Checklist
 - [ ] All tasks complete
-- [ ] All three panels render correctly
-- [ ] Navigation works
-- [ ] Data displays correctly
+- [ ] Buttons added to stats panel (minimal changes)
+- [ ] All three modals open correctly
+- [ ] Back buttons close modals
+- [ ] Click-outside closes modals
+- [ ] Escape key closes modals
+- [ ] Data displays correctly in modals
 - [ ] Mobile responsive
+- [ ] Dark mode works
 
 ### Phase 5 Notes
 ```
@@ -648,6 +812,106 @@ Items discovered during implementation that should be addressed later:
 
 ---
 
+## Common Pitfalls to Avoid
+
+These mistakes were identified during initial planning and should be avoided:
+
+### 1. ❌ Inline Sections Instead of Modals
+
+**WRONG:**
+```javascript
+// Adding collapsible sections directly in statsPanel.js
+statsPanel.innerHTML += `
+    <div class="history-section collapsible">
+        <h3>History</h3>
+        <div class="history-content">...</div>
+    </div>
+`;
+```
+
+**RIGHT:**
+```javascript
+// Add simple button that opens modal
+statsPanel.innerHTML += `<button class="history-btn">📜 History</button>`;
+this.historyBtn.addEventListener('click', () => this.deps.historyManager?.openHistoryModal());
+```
+
+### 2. ❌ Using `optional(null)` for AppState
+
+**WRONG:**
+```javascript
+const di = createDIModule('HistoryManager', {
+    AppState: optional(null),  // Will cause runtime errors!
+});
+```
+
+**RIGHT:**
+```javascript
+const di = createDIModule('HistoryManager', {
+    AppState: required(),  // Fail fast if missing
+});
+```
+
+### 3. ❌ Accessing Proxy Dependencies Directly
+
+**WRONG:**
+```javascript
+// In depMappings - using getter that returns a function
+achievementsManager: () => deps.features?.achievementsManager,
+
+// Then trying to access as object
+this.deps.achievementsManager.isUnlocked();  // ERROR: isUnlocked is not a function
+```
+
+**RIGHT:**
+```javascript
+// In depMappings - use Proxy for object access
+achievementsManager: new Proxy({}, {
+    get(target, prop) {
+        return deps.features?.achievementsManager?.[prop];
+    }
+}),
+
+// Now works correctly
+this.deps.achievementsManager.isUnlocked();  // ✓ Works
+```
+
+### 4. ❌ Forgetting Module Manifest Registration
+
+**WRONG:**
+- Create new module file
+- Import it in featureBoot.js
+- Wonder why dependencies aren't working
+
+**RIGHT:**
+1. Add manifest to `moduleManifests.js` with correct phase and `after` constraints
+2. Add depMappings entries in `moduleLoader.js`
+3. Module loader handles imports automatically
+
+### 5. ❌ Adding Too Much HTML to miniCycle.html
+
+**WRONG:**
+```html
+<!-- Adding 200+ lines of panel HTML -->
+<div id="history-panel" class="history-panel hidden">
+    <header>...</header>
+    <div class="content">...</div>
+</div>
+```
+
+**RIGHT:**
+- Create HTML dynamically in JavaScript
+- Modals create their own DOM when opened
+- Clean up DOM when closed
+
+### 6. ❌ Hooking Only One Task Rendering Path
+
+Tasks render via TWO paths - hook into BOTH if needed:
+1. `routineLoader.renderTasksToDOM()` - Boot-time
+2. `TaskRenderer.renderTasks()` - Runtime
+
+---
+
 ## Final Summary
 **Total Duration:** -
 **Phases Completed:** 0/8
@@ -657,4 +921,4 @@ Items discovered during implementation that should be addressed later:
 
 ---
 
-**Last Updated:** January 5, 2026
+**Last Updated:** January 6, 2026

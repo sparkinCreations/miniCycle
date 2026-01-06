@@ -450,6 +450,17 @@ Achievement History
 
 ## 5. UI Design
 
+### Key UI Principle: Buttons → Modals (NOT Inline Sections)
+
+**IMPORTANT:** The UI should use simple buttons in the stats panel that open **separate modal views** - NOT inline collapsible sections embedded in the stats panel.
+
+**Why buttons → modals:**
+- Cleaner separation of concerns
+- Less cluttered stats panel
+- Follows existing modal patterns (routineSwitcher, settings)
+- Easier to maintain and test
+- Better mobile experience
+
 ### Stats Panel Layout
 
 ```
@@ -464,9 +475,9 @@ Achievement History
 │  Progress: ████████░░ 57%               │
 │                                         │
 │  ┌─────────┐ ┌─────────┐               │
-│  │ History │ │ Cleared │  ← Per-routine │
-│  │         │ │  Tasks  │                │
-│  └─────────┘ └─────────┘               │
+│  │ History │ │ Cleared │  ← BUTTONS     │
+│  │   📜    │ │  ✓ 147  │    that open   │
+│  └─────────┘ └─────────┘    MODALS      │
 │                                         │
 ├─────────────────────────────────────────┤
 │                                         │
@@ -482,12 +493,30 @@ Achievement History
 ├─────────────────────────────────────────┤
 │                                         │
 │  ┌──────────────────────────────────┐  │
-│  │         Achievements             │  │
-│  │         (App-Wide)               │  │ ← Always visible
+│  │     🏆 Achievements (3)          │  │ ← BUTTON that
+│  │         View All →               │  │   opens modal
 │  └──────────────────────────────────┘  │
 │                                         │
 └─────────────────────────────────────────┘
 ```
+
+### Modal Architecture
+
+Each button opens a **full-screen modal panel** (not a popup):
+
+```
+┌─────────────────────────────────────────┐
+│  ← History                  [Clear All] │  ← Modal header
+├─────────────────────────────────────────┤     with back btn
+│                                         │
+│  (Full modal content here)              │
+│                                         │
+│  ...                                    │
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+**Modal pattern to follow:** See `docs/guides/confirmation-and-notification-modal.md` and `docs/architecture/ROUTINE_SWITCHER_ARCHITECTURE.md` for existing modal implementations.
 
 ### Information Architecture
 
@@ -772,7 +801,207 @@ If history grows too large, consider:
 
 ---
 
-## 8. Implementation Plan
+## 8. Architecture & Technical Implementation
+
+This section documents the critical architecture details needed for correct implementation.
+
+### Boot Process Overview
+
+miniCycle uses a 3-phase boot process coordinated by `orchestrator.js`:
+
+1. **Phase 1 (Core)**: `coreBoot.js` - AppState, GlobalUtils, migration
+2. **Phase 2 (Features)**: `featureBoot.js` + `moduleLoader.js` - All feature modules
+3. **Phase 3 (UI)**: `uiBoot.js` - Event listeners, UI finalization
+
+### Module Loading Phases (moduleManifests.js)
+
+New modules must be registered in `modules/boot/moduleManifests.js` with the correct phase:
+
+```javascript
+export const PHASES = {
+    CORE_UTILS: 1,      // Error handler, validation, notifications
+    THEME_VISUAL: 2,    // Themes, games, onboarding
+    TASK_MANAGEMENT: 3, // Task DOM, drag-drop
+    RECURRING: 4,       // Recurring tasks, due dates
+    CYCLE: 5,           // Cycle management
+    UI_MANAGERS: 6,     // Menus, settings, modals
+    FEATURES: 7,        // Stats, help, effects  ← History/Achievements go here
+    TESTING: 8          // Testing modal, backup
+};
+```
+
+**For this feature:**
+- `historyManager.js` → **Phase 7 (FEATURES)**
+- `clearedTasksManager.js` → **Phase 7 (FEATURES)**
+- `achievementsManager.js` → **Phase 7 (FEATURES)**
+
+### Module Manifest Registration
+
+Each new module needs a manifest entry in `moduleManifests.js`:
+
+```javascript
+// Example manifest for historyManager
+historyManager: {
+    path: '../features/historyManager.js',
+    phase: PHASES.FEATURES,
+    requires: ['appInit', 'AppState', 'showNotification'],
+    provides: ['logHistoryEvent', 'getHistory', 'clearHistory'],
+    provideInstance: 'historyManager',
+    api: 'features',
+    after: ['statsPanel']  // Load after statsPanel
+},
+
+// Example manifest for achievementsManager
+achievementsManager: {
+    path: '../features/achievementsManager.js',
+    phase: PHASES.FEATURES,
+    requires: ['appInit', 'AppState', 'showNotification'],
+    optionalDeps: ['unlockDarkOceanTheme', 'unlockGoldenGlowTheme', 'unlockMiniGame'],
+    provides: ['checkAchievements', 'getAchievements', 'isUnlocked'],
+    provideInstance: 'achievementsManager',
+    api: 'features',
+    after: ['themeManager', 'gamesManager']  // Needs theme/game unlockers
+},
+```
+
+**Key manifest fields:**
+- `requires`: Dependencies needed at load time
+- `optionalDeps`: Cross-phase dependencies that may not exist yet
+- `provides`: Functions/APIs this module exports
+- `provideInstance`: Instance name stored in `deps.features.*`
+- `after`: Modules that must load before this one
+
+### Dependency Injection Pattern
+
+All modules use the `diBase.js` pattern:
+
+```javascript
+import { createDIModule, required, optional } from '../core/diBase.js';
+
+const di = createDIModule('HistoryManager', {
+    // Use required() for critical dependencies
+    AppState: required(),        // MUST have AppState
+    appInit: required(),         // MUST have appInit
+    showNotification: required(),
+
+    // Use optional() for nice-to-have dependencies
+    autoSave: optional(() => {}),
+});
+
+// Export setDependencies function
+export const setHistoryManagerDependencies = di.setDependencies;
+
+// In class constructor
+export class HistoryManager {
+    constructor(overrides = {}) {
+        this.deps = di.resolve(overrides);
+        // this.deps.AppState is now available
+    }
+}
+```
+
+**CRITICAL: Use `required()` for AppState**, not `optional(null)`. AppState is required for any state management.
+
+### depMappings in moduleLoader.js
+
+New modules need entries in the `depMappings` object in `moduleLoader.js` (around line 548):
+
+```javascript
+const depMappings = {
+    // ... existing mappings ...
+
+    // History manager (from deps.features)
+    historyManager: new Proxy({}, {
+        get(target, prop) {
+            return deps.features?.historyManager?.[prop];
+        }
+    }),
+    logHistoryEvent: (...args) => deps.features?.logHistoryEvent?.(...args),
+    getHistory: (...args) => deps.features?.getHistory?.(...args),
+    clearHistory: (...args) => deps.features?.clearHistory?.(...args),
+
+    // Achievements manager
+    achievementsManager: new Proxy({}, {
+        get(target, prop) {
+            return deps.features?.achievementsManager?.[prop];
+        }
+    }),
+    checkAchievements: (...args) => deps.features?.checkAchievements?.(...args),
+};
+```
+
+**Why Proxy for instance access:** When a dependency is a getter function (for late binding), use a Proxy to lazily resolve properties. Otherwise you get `achievementsManager.isUnlocked is not a function` errors.
+
+### Initialization Flow
+
+```
+orchestrator.js
+    │
+    ├─→ Phase 1: coreBoot.js (AppState ready)
+    │       └─→ appInit.markCoreSystemsReady()
+    │
+    ├─→ Phase 2: featureBoot.js
+    │       └─→ moduleLoader.loadAllModules()
+    │               └─→ For each phase 1-8:
+    │                       └─→ loadModule()
+    │                       └─→ setDependencies()
+    │                       └─→ initializeModule()
+    │                       └─→ registerProvides()
+    │
+    └─→ Phase 3: uiBoot.js
+            └─→ appInit.markAppReady()
+```
+
+**Key insight:** Use `await appInit.waitForCore()` before accessing AppState in any module.
+
+### Stats Panel Integration
+
+The stats panel currently uses `createDIModule` from `diBase.js`. To add buttons:
+
+1. **Minimal statsPanel.js changes:**
+   - Add 3 buttons to the existing panel HTML
+   - Add click handlers that open modals
+   - Do NOT add inline sections
+
+2. **Create modal components separately:**
+   - Each modal is its own function/class
+   - Modals follow the overlay pattern from `confirmation-and-notification-modal.md`
+   - Modals have their own event handlers and cleanup
+
+### Cross-Module Communication
+
+For achievements to trigger theme/game unlocks:
+
+```javascript
+// In achievementsManager.js
+unlockAchievement(milestone) {
+    // ...record achievement...
+
+    // Trigger rewards via optionalDeps
+    if (milestone.reward === 'dark-ocean') {
+        this.deps.unlockDarkOceanTheme?.();
+    }
+    if (milestone.reward === 'golden-glow') {
+        this.deps.unlockGoldenGlowTheme?.();
+    }
+    if (milestone.reward === 'whack-a-order') {
+        this.deps.unlockMiniGame?.('whack-a-order');
+    }
+}
+```
+
+### Two Task Rendering Paths (CRITICAL)
+
+From `HIDDEN_CODEBASE_INSIGHTS.md`: Tasks render via **TWO separate paths**:
+
+1. `routineLoader.renderTasksToDOM()` - Boot-time rendering
+2. `TaskRenderer.renderTasks()` - Runtime rendering (after user actions)
+
+If adding "after tasks render" features, hook into BOTH paths.
+
+---
+
+## 9. Implementation Plan
 
 ### Phase 1: Schema & Data Layer (Day 1)
 
@@ -957,6 +1186,15 @@ This system gives To-Do Mode users first-class gamification support while mainta
 ---
 
 **Created:** January 5, 2026
-**Updated:** January 5, 2026
+**Updated:** January 6, 2026
 **Author:** Brainstorm session with Claude
 **Status:** Ready for implementation when prioritized
+
+---
+
+## Revision History
+
+| Date | Changes |
+|------|---------|
+| Jan 5, 2026 | Initial spec created |
+| Jan 6, 2026 | Added Section 8 (Architecture & Technical Implementation) with boot process, module manifests, DI patterns, depMappings, and cross-module communication details. Updated UI Design section to clarify buttons → modals approach (not inline sections). |
