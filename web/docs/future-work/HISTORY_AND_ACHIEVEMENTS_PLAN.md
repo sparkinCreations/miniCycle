@@ -1,4 +1,4 @@
-# History, Archived Tasks & Achievement System Plan
+# History, Cleared Tasks & Achievement System Plan
 
 **Status:** Planned
 **Priority:** Medium
@@ -12,20 +12,31 @@
 This document outlines three interconnected features that enhance progress tracking and gamification in miniCycle:
 
 1. **History** - Activity log tracking routine/task changes across all modes
-2. **Archived Tasks** - Completed todo-mode tasks with optional restore capability
+2. **Cleared Tasks** - Temporary history of completed To-Do mode tasks with optional recreation
 3. **Achievement History** - App-wide achievement/milestone tracking
 
 These features work together to:
-- Give Todo Mode users visible progress and gamification rewards
+- Give To-Do Mode users visible progress and gamification rewards
 - Provide an activity audit trail for all routine changes
 - Create a unified achievement system that rewards both cycle completions AND task completions
+
+**Design Philosophy:**
+
+This is NOT an archive system. It's:
+- A **clearing mechanism** - tasks move forward, not into storage
+- A **temporary progress ledger** - tracks accomplishments for gamification
+- A **conversion layer** - cleared tasks can be recreated, not restored
+
+```
+Completion → Clearing → Forward Motion
+```
 
 ---
 
 ## Table of Contents
 
 1. [History (Activity Log)](#1-history-activity-log)
-2. [Archived Tasks](#2-archived-tasks)
+2. [Cleared Tasks (To-Do Mode)](#2-cleared-tasks-to-do-mode)
 3. [Achievement History](#3-achievement-history)
 4. [Schema Additions](#4-schema-additions)
 5. [UI Design](#5-ui-design)
@@ -50,6 +61,7 @@ A read-only activity log that tracks significant events across all routines and 
 | `task_added` | routine, taskText, timestamp | All |
 | `task_deleted` | routine, taskText, timestamp | All |
 | `task_edited` | routine, oldText, newText, timestamp | All |
+| `tasks_cleared` | routine, count, timestamp | To-Do Mode |
 | `routine_created` | routine, mode, timestamp | All |
 | `routine_deleted` | routine, timestamp | All |
 | `routine_renamed` | oldName, newName, timestamp | All |
@@ -70,7 +82,8 @@ A read-only activity log that tracks significant events across all routines and 
   oldName: "Old Routine",       // For routine_renamed
   newName: "New Routine",       // For routine_renamed
   oldMode: "auto-cycle",        // For mode_changed
-  newMode: "todo-mode"          // For mode_changed
+  newMode: "todo-mode",         // For mode_changed
+  count: 5                      // For tasks_cleared
 }
 ```
 
@@ -90,16 +103,22 @@ A read-only activity log that tracks significant events across all routines and 
 
 ---
 
-## 2. Archived Tasks
+## 2. Cleared Tasks (To-Do Mode)
 
 ### Purpose
 
-Store completed Todo Mode tasks with optional restore capability. Feeds into gamification milestones.
+Maintain a temporary history of completed tasks that have been cleared from active lists. This history exists for progress tracking, achievements, and optional task recreation — not long-term storage.
 
-### When Tasks Are Archived
+### When Tasks Are Recorded
 
-- **Todo Mode only** - When a task is completed (checked) and removed from the list
-- Auto Cycle and Manual Cycle modes do NOT archive (tasks reset, not delete)
+- **To-Do Mode only** - When the user presses "Clear Completed Tasks"
+- Auto Cycle and Manual Cycle modes do NOT contribute to Cleared Tasks
+- Tasks removed via "Mark for Removal" during a cycle reset are NOT recorded here
+
+This ensures:
+- Only intentionally cleared tasks count toward task-based achievements
+- Users don't feel "cheated" by invisible clears
+- The action is deliberate, not automatic
 
 ### Entry Structure
 
@@ -107,7 +126,9 @@ Store completed Todo Mode tasks with optional restore capability. Feeds into gam
 {
   text: "Buy groceries",
   routine: "Shopping List",
-  completedAt: "2026-01-05T10:30:00.000Z"
+  clearedAt: "2026-01-05T10:30:00.000Z",
+  priority: "high",          // optional metadata (if high priority)
+  wasRecurring: false        // optional metadata
 }
 ```
 
@@ -115,45 +136,50 @@ Store completed Todo Mode tasks with optional restore capability. Feeds into gam
 
 | Aspect | Behavior |
 |--------|----------|
-| **Default view** | Static read-only list |
-| **Restore mode** | Click "Restore" → checkboxes appear → select → restore |
-| **Restore target** | Currently active routine (regardless of original) |
-| **Restore mode** | Inherits current routine's mode |
-| **After restore** | Entry removed from archive, task added to active list |
-| **Re-completion** | If restored and completed again, counts again |
+| **Default view** | Read-only list of cleared tasks |
+| **How entries appear** | Only after user clears completed tasks |
+| **Recreation** | Optional, manual, intentional |
+| **Recreation target** | Current active routine |
+| **Recreation mode** | Inherits current routine's mode |
+| **After recreation** | Entry removed from cleared list, new task added to active list |
+| **Re-completion** | If recreated and cleared again, counts again |
 | **Retention** | 90 days - auto-prune older entries |
-| **Counter** | `totalArchived` persists through prune/restore |
+| **Advanced option** | User may opt out of auto-pruning |
+| **Counter** | `totalCleared` persists through prune/recreate/clear |
 
-### Restore Flow
+### Recreation Flow
 
 ```
 User in Stats Panel
     ↓
-Clicks "Archived Tasks" section
+Clicks "Cleared Tasks" section
     ↓
-Sees static list of archived tasks (newest first)
+Sees static list of cleared tasks (newest first)
     ↓
-Clicks "Restore Tasks" button
+Clicks "Recreate Tasks" button
     ↓
 List converts to checkboxes
     ↓
-User selects tasks to restore
+User selects tasks to recreate
     ↓
-Clicks "Restore Selected"
+Clicks "Recreate Selected"
     ↓
-Tasks added to active routine
+New tasks added to active routine
     ↓
-Removed from archive
+Removed from cleared list
     ↓
 Confirmation notification
 ```
 
+**Important:** Recreation creates NEW tasks based on the cleared history. It does not restore original task objects or their state. This is a conversion, not a retrieval.
+
 ### Design Philosophy
 
-- **Restore should be rare** - miniCycle is a routine manager, not a todo app
-- **Safety net** - Catches accidental deletions
+- **Recreation should be rare** - miniCycle is a routine manager, not a to-do app
+- **Safety net** - Catches accidental clears
 - **90-day limit** - If you haven't needed it in 3 months, you won't
 - **Gamification fuel** - Primary purpose is progress tracking
+- **Forward motion** - Tasks are cleared and counted, not stored and retrieved
 
 ---
 
@@ -161,7 +187,7 @@ Confirmation notification
 
 ### Purpose
 
-App-wide achievement tracking that shows all milestones reached across both cycle completions AND task archival.
+App-wide achievement tracking that shows all milestones reached across both cycle completions AND tasks cleared.
 
 ### Achievement Types
 
@@ -178,7 +204,7 @@ App-wide achievement tracking that shows all milestones reached across both cycl
 | 500 cycles | "Legendary" | - |
 | 1000 cycles | "Grandmaster" | - |
 
-#### Task-Based Achievements (New - Todo Mode)
+#### Task-Based Achievements (New - To-Do Mode)
 | Milestone | Name | Equivalent Cycles |
 |-----------|------|-------------------|
 | 5 tasks | "First Five" | 5 |
@@ -193,17 +219,17 @@ Achievements can be earned via EITHER path:
 
 ```
 Badge "Getting Started" unlocked by:
-  - 5 cycles completed OR 5 tasks archived
+  - 5 cycles completed OR 5 tasks cleared
 
 Badge "Consistent" unlocked by:
-  - 25 cycles completed OR 100 tasks archived
+  - 25 cycles completed OR 100 tasks cleared
 
 Badge "Dedicated" unlocked by:
-  - 50 cycles completed OR 250 tasks archived
+  - 50 cycles completed OR 250 tasks cleared
   - Unlocks: Golden Glow Theme
 
 Badge "Century" / "Completionist" unlocked by:
-  - 100 cycles completed OR 500 tasks archived
+  - 100 cycles completed OR 500 tasks cleared
   - Unlocks: Whack-a-Order Game
 ```
 
@@ -232,7 +258,7 @@ Achievement History
          Reward: Golden Glow Theme
 
 [Trophy] Consistent                   Dec 15, 2025
-         100 tasks archived
+         100 tasks cleared
          Reward: Dark Ocean Theme
 
 [Trophy] Getting Started              Nov 1, 2025
@@ -243,42 +269,81 @@ Achievement History
 
 ## 4. Schema Additions
 
-### New Top-Level Fields
+### Storage Strategy
+
+| Data | Storage | Why |
+|------|---------|-----|
+| `history` | **Per-routine** (inside cycle object) | Travels with .mcyc export |
+| `clearedTasks` | **Per-routine** (inside cycle object) | Travels with .mcyc export |
+| `achievements` | **Global** (root level) | App-wide personal progress |
+
+**Why per-routine for history & cleared tasks:**
+- When user exports a routine as .mcyc, the history and cleared tasks travel with it
+- Importing on another device preserves the routine's full context
+- Each routine owns its own activity log and cleared task history
+
+**Why global for achievements:**
+- Achievements are personal app-wide progress, not routine-specific
+- "100 cycles completed" counts ALL routines, not just one
+- Achievements stay on the device, not in exported files
+
+### Schema Changes
+
+#### Per-Routine Fields (inside each cycle object)
 
 ```javascript
-// Add to Schema 2.5 (no migration needed - new optional fields)
+// Inside data.cycles["cycle-abc123"]
 {
-  // ... existing schema ...
+  id: "cycle-abc123",
+  name: "Shopping List",
+  tasks: [...],
+  cycleCount: 42,
+  // ... existing fields ...
 
+  // NEW: Per-routine history
   history: {
     events: [
       {
         type: "cycle_completed",
-        routine: "Morning Routine",
         mode: "auto-cycle",
         timestamp: "2026-01-05T10:30:00.000Z"
       },
       {
         type: "task_added",
-        routine: "Shopping",
         taskText: "Buy milk",
         timestamp: "2026-01-05T09:00:00.000Z"
+      },
+      {
+        type: "tasks_cleared",
+        count: 5,
+        timestamp: "2026-01-05T11:00:00.000Z"
       }
-      // ... more events
     ]
   },
 
-  archivedTasks: {
+  // NEW: Per-routine cleared tasks (To-Do Mode only)
+  clearedTasks: {
     entries: [
       {
         text: "Buy groceries",
-        routine: "Shopping List",
-        completedAt: "2026-01-05T10:30:00.000Z"
+        clearedAt: "2026-01-05T10:30:00.000Z",
+        priority: "high"
       }
     ],
-    totalArchived: 147  // Persists through prune/restore/clear
-  },
+    totalCleared: 47,          // Per-routine count
+    autoPruneEnabled: true
+  }
+}
+```
 
+#### Global Fields (root level)
+
+```javascript
+// Add to Schema 2.5 root level
+{
+  // ... existing schema ...
+
+  // NEW: Global achievements (app-wide)
   achievements: {
     unlocked: [
       {
@@ -290,9 +355,9 @@ Achievement History
         reward: "Golden Glow Theme"
       }
     ],
-    // Progress tracking
-    totalCyclesCompleted: 50,    // Already exists in userProgress
-    totalTasksArchived: 147      // Mirror of archivedTasks.totalArchived
+    // Global progress counters (sum of all routines)
+    totalCyclesCompleted: 50,
+    totalTasksCleared: 147
   }
 }
 ```
@@ -300,38 +365,48 @@ Achievement History
 ### Types.js Additions
 
 ```javascript
+// ============================================
+// PER-ROUTINE TYPES (stored inside each cycle)
+// ============================================
+
 /**
  * @typedef {Object} HistoryEvent
- * @property {string} type - Event type (cycle_completed, task_added, etc.)
- * @property {string} routine - Routine name
+ * @property {string} type - Event type (cycle_completed, task_added, tasks_cleared, etc.)
  * @property {string} [mode] - Mode at time of event
  * @property {string} timestamp - ISO timestamp
  * @property {string} [taskText] - Task text (for task events)
  * @property {string} [oldText] - Old text (for task_edited)
  * @property {string} [newText] - New text (for task_edited)
- * @property {string} [oldName] - Old name (for routine_renamed)
- * @property {string} [newName] - New name (for routine_renamed)
  * @property {string} [oldMode] - Old mode (for mode_changed)
  * @property {string} [newMode] - New mode (for mode_changed)
+ * @property {number} [count] - Count (for tasks_cleared)
+ */
+// Note: No 'routine' field needed - history is stored per-routine
+
+/**
+ * @typedef {Object} RoutineHistory
+ * @property {HistoryEvent[]} events - Array of history events for this routine
  */
 
 /**
- * @typedef {Object} History
- * @property {HistoryEvent[]} events - Array of history events
- */
-
-/**
- * @typedef {Object} ArchivedTaskEntry
+ * @typedef {Object} ClearedTaskEntry
  * @property {string} text - Task text
- * @property {string} routine - Routine it came from
- * @property {string} completedAt - ISO timestamp
+ * @property {string} clearedAt - ISO timestamp
+ * @property {string} [priority] - "high" if was high priority
+ * @property {boolean} [wasRecurring] - If task was recurring
  */
+// Note: No 'routine' field needed - cleared tasks stored per-routine
 
 /**
- * @typedef {Object} ArchivedTasks
- * @property {ArchivedTaskEntry[]} entries - Archived task entries
- * @property {number} totalArchived - Total tasks ever archived (persists)
+ * @typedef {Object} RoutineClearedTasks
+ * @property {ClearedTaskEntry[]} entries - Cleared task entries for this routine
+ * @property {number} totalCleared - Total tasks cleared in this routine (persists)
+ * @property {boolean} [autoPruneEnabled=true] - Auto-prune after 90 days
  */
+
+// ============================================
+// GLOBAL TYPES (stored at root level)
+// ============================================
 
 /**
  * @typedef {Object} AchievementEntry
@@ -345,9 +420,29 @@ Achievement History
 
 /**
  * @typedef {Object} Achievements
- * @property {AchievementEntry[]} unlocked - Unlocked achievements
- * @property {number} totalCyclesCompleted - Total cycles completed
- * @property {number} totalTasksArchived - Total tasks archived
+ * @property {AchievementEntry[]} unlocked - Unlocked achievements (app-wide)
+ * @property {number} totalCyclesCompleted - Sum of all routine cycle counts
+ * @property {number} totalTasksCleared - Sum of all routine cleared task counts
+ */
+
+// ============================================
+// UPDATED CYCLE TYPE (add history & clearedTasks)
+// ============================================
+
+/**
+ * @typedef {Object} Cycle
+ * @property {string} id - Unique cycle identifier
+ * @property {string} name - Display name
+ * @property {Task[]} tasks - Array of tasks
+ * @property {number} cycleCount - Times completed
+ * @property {boolean} autoReset - Auto-reset on completion
+ * @property {boolean} deleteCheckedTasks - Delete tasks when checked
+ * @property {Object} recurringTemplates - Recurring task templates
+ * @property {Object} taskOptionButtons - Per-cycle button visibility
+ * @property {number} createdAt - Creation timestamp
+ * @property {number} lastModified - Last modification timestamp
+ * @property {RoutineHistory} [history] - Activity history for this routine
+ * @property {RoutineClearedTasks} [clearedTasks] - Cleared tasks for this routine
  */
 ```
 
@@ -368,12 +463,17 @@ Achievement History
 │  Cycles: 42                             │
 │  Progress: ████████░░ 57%               │
 │                                         │
+│  ┌─────────┐ ┌─────────┐               │
+│  │ History │ │ Cleared │  ← Per-routine │
+│  │         │ │  Tasks  │                │
+│  └─────────┘ └─────────┘               │
+│                                         │
 ├─────────────────────────────────────────┤
 │                                         │
 │  [Milestone Rewards]  ▲                 │
 │  ─────────────────────                  │
 │  Next: 50 cycles (8 more)               │
-│  OR: 250 tasks archived (103 more)      │
+│  OR: 250 tasks cleared (103 more)       │
 │  Reward: Golden Glow Theme              │
 │                                         │
 │  [5] [25] [50] [75] [100]              │
@@ -381,13 +481,37 @@ Achievement History
 │                                         │
 ├─────────────────────────────────────────┤
 │                                         │
-│  ┌─────────┐ ┌─────────┐ ┌──────────┐  │
-│  │ History │ │Archived │ │Achieve-  │  │
-│  │         │ │  Tasks  │ │  ments   │  │
-│  └─────────┘ └─────────┘ └──────────┘  │
+│  ┌──────────────────────────────────┐  │
+│  │         Achievements             │  │
+│  │         (App-Wide)               │  │ ← Always visible
+│  └──────────────────────────────────┘  │
 │                                         │
 └─────────────────────────────────────────┘
 ```
+
+### Information Architecture
+
+| Section | Scope | Storage | In .mcyc Export? |
+|---------|-------|---------|------------------|
+| **History** | Per-routine | Inside cycle object | Yes |
+| **Cleared Tasks** | Per-routine | Inside cycle object | Yes |
+| **Achievements** | App-wide | Root level | No |
+
+**Why this separation:**
+- History shows events for the *active* routine only
+- Cleared Tasks shows tasks cleared from the *active* routine only
+- Achievements track progress across *all* routines (cycles + tasks)
+
+**.mcyc Export Behavior:**
+- Exporting a routine includes its history and cleared tasks
+- Importing on another device preserves the routine's full context
+- Achievements do NOT export (they're personal device progress)
+- Global counters (`totalCyclesCompleted`, `totalTasksCleared`) recalculate from all routines
+
+**Notes:**
+- "Cleared Tasks" button only appears after entries exist for that routine
+- Switching routines updates History and Cleared Tasks views
+- Achievements remain constant regardless of active routine
 
 ### History Panel
 
@@ -401,6 +525,10 @@ Achievement History
 │  ✓ Cycle completed                      │
 │    Morning Routine (Auto Cycle)         │
 │    10:30 AM                             │
+│                                         │
+│  ☐ 5 tasks cleared                      │
+│    Shopping List (To-Do Mode)           │
+│    11:00 AM                             │
 │                                         │
 │  + Task added                           │
 │    "Call dentist" → Shopping            │
@@ -422,15 +550,15 @@ Achievement History
 └─────────────────────────────────────────┘
 ```
 
-### Archived Tasks Panel
+### Cleared Tasks Panel
 
 #### Default State (Read-Only)
 ```
 ┌─────────────────────────────────────────┐
-│  ← Archived Tasks           [Restore]   │
+│  ← Cleared Tasks           [Recreate]   │
 ├─────────────────────────────────────────┤
 │                                         │
-│  Total Archived: 147                    │
+│  Total Cleared: 147                     │
 │  Showing last 90 days                   │
 │                                         │
 │  ──────────────────────────────────     │
@@ -446,17 +574,17 @@ Achievement History
 │                                         │
 │  [Load More...]                         │
 │                                         │
-│                        [Clear Archived] │
+│                    [Clear Cleared List] │
 └─────────────────────────────────────────┘
 ```
 
-#### Restore Mode (Interactive)
+#### Recreate Mode (Interactive)
 ```
 ┌─────────────────────────────────────────┐
-│  ← Archived Tasks            [Cancel]   │
+│  ← Cleared Tasks             [Cancel]   │
 ├─────────────────────────────────────────┤
 │                                         │
-│  Select tasks to restore:               │
+│  Select tasks to recreate:              │
 │                                         │
 │  ──────────────────────────────────     │
 │                                         │
@@ -471,9 +599,9 @@ Achievement History
 │                                         │
 │  ──────────────────────────────────     │
 │                                         │
-│  Restore to: Morning Routine (current)  │
+│  Recreate in: Morning Routine (current) │
 │                                         │
-│            [Restore 2 Selected]         │
+│           [Recreate 2 Selected]         │
 │                                         │
 └─────────────────────────────────────────┘
 ```
@@ -494,7 +622,7 @@ Achievement History
 │     Reward: Golden Glow Theme           │
 │                                         │
 │  🏆 Consistent                          │
-│     100 tasks archived                  │
+│     100 tasks cleared                   │
 │     Unlocked: Dec 15, 2025              │
 │     Reward: Dark Ocean Theme            │
 │                                         │
@@ -503,7 +631,7 @@ Achievement History
 │     Unlocked: Nov 10, 2025              │
 │                                         │
 │  🏆 First Five                          │
-│     5 tasks archived                    │
+│     5 tasks cleared                     │
 │     Unlocked: Nov 1, 2025               │
 │                                         │
 │  ──────────────────────────────────     │
@@ -537,7 +665,7 @@ Achievement History
 ### Achievement Check Logic
 
 ```javascript
-function checkAchievements(totalCycles, totalTasksArchived) {
+function checkAchievements(totalCycles, totalTasksCleared) {
   const milestones = [
     { id: 'getting_started', cycles: 5, tasks: 5, name: 'Getting Started' },
     { id: 'building_habits', cycles: 10, tasks: 25, name: 'Building Habits' },
@@ -553,14 +681,14 @@ function checkAchievements(totalCycles, totalTasksArchived) {
 
     // OR logic - either path unlocks the achievement
     const cycleQualified = totalCycles >= milestone.cycles;
-    const taskQualified = totalTasksArchived >= milestone.tasks;
+    const taskQualified = totalTasksCleared >= milestone.tasks;
 
     if (cycleQualified || taskQualified) {
       unlockAchievement({
         id: milestone.id,
         name: milestone.name,
         unlockedVia: cycleQualified ? 'cycles' : 'tasks',
-        value: cycleQualified ? totalCycles : totalTasksArchived,
+        value: cycleQualified ? totalCycles : totalTasksCleared,
         reward: milestone.reward
       });
     }
@@ -571,11 +699,15 @@ function checkAchievements(totalCycles, totalTasksArchived) {
 ### Notification Flow
 
 ```
-User completes task in Todo Mode
+User clears completed tasks in To-Do Mode
     ↓
-Task archived → totalArchived++
+Tasks recorded to clearedTasks.entries
     ↓
-checkAchievements(totalCycles, totalArchived)
+totalCleared incremented
+    ↓
+History event logged (tasks_cleared)
+    ↓
+checkAchievements(totalCycles, totalCleared)
     ↓
 If milestone reached:
     ↓
@@ -597,7 +729,7 @@ Update achievements.unlocked array
 | Data | Per Entry | 90-Day Estimate | Notes |
 |------|-----------|-----------------|-------|
 | History event | ~150 bytes | ~50KB | ~10 events/day |
-| Archived task | ~100 bytes | ~30KB | ~10 tasks/day |
+| Cleared task | ~100 bytes | ~30KB | ~10 tasks/day |
 | Achievement | ~200 bytes | ~2KB | Max ~9 achievements |
 
 **Total estimate:** ~80-100KB for active users over 90 days
@@ -606,15 +738,22 @@ Update achievements.unlocked array
 
 ```javascript
 // Run on app boot
-function pruneArchivedTasks() {
+function pruneClearedTasks() {
+  const state = AppState.get();
+
+  // Check if user disabled auto-pruning
+  if (state.clearedTasks?.autoPruneEnabled === false) {
+    return;
+  }
+
   const RETENTION_DAYS = 90;
   const cutoff = Date.now() - (RETENTION_DAYS * 24 * 60 * 60 * 1000);
 
   AppState.update(state => {
-    state.archivedTasks.entries = state.archivedTasks.entries.filter(
-      entry => new Date(entry.completedAt).getTime() > cutoff
+    state.clearedTasks.entries = state.clearedTasks.entries.filter(
+      entry => new Date(entry.clearedAt).getTime() > cutoff
     );
-    // Note: totalArchived is NOT decremented
+    // Note: totalCleared is NOT decremented
   });
 }
 ```
@@ -625,6 +764,11 @@ If history grows too large, consider:
 - Keep last 500 events
 - Or last 180 days
 - Or let user clear manually (current plan)
+
+### Storage Visibility
+
+- Cleared tasks storage usage visible in routine storage breakdown
+- User explicitly owns retention decision via advanced setting
 
 ---
 
@@ -645,25 +789,26 @@ If history grows too large, consider:
   - `cycleCompletion.js` (cycle completed)
   - `routineManager.js` (routine created/deleted/renamed)
   - `modeManager.js` (mode changed)
+  - To-Do Mode clear action (tasks_cleared)
 - [ ] Create history panel UI in stats panel
 - [ ] Add "Clear History" functionality
 - [ ] Write tests for history logging
 
-### Phase 3: Archived Tasks Feature (Day 3)
+### Phase 3: Cleared Tasks Feature (Day 3)
 
-- [ ] Create `modules/features/archivedTasksManager.js`
-- [ ] Hook into Todo Mode task completion (archive instead of delete)
-- [ ] Create archived tasks panel UI
-- [ ] Implement restore mode (checkbox conversion)
-- [ ] Implement restore functionality
-- [ ] Add 90-day pruning on boot
-- [ ] Write tests for archival and restore
+- [ ] Create `modules/features/clearedTasksManager.js`
+- [ ] Hook into To-Do Mode "Clear Completed Tasks" action
+- [ ] Create cleared tasks panel UI
+- [ ] Implement recreate mode (checkbox conversion)
+- [ ] Implement recreate functionality (creates new tasks)
+- [ ] Add 90-day pruning on boot (with opt-out setting)
+- [ ] Write tests for clearing and recreation
 
 ### Phase 4: Achievement System (Day 4)
 
 - [ ] Create `modules/features/achievementManager.js`
 - [ ] Implement OR-based milestone checking
-- [ ] Hook into cycle completion and task archival
+- [ ] Hook into cycle completion and task clearing
 - [ ] Create achievement history panel UI
 - [ ] Integrate with existing theme/game unlocking
 - [ ] Add achievement notifications
@@ -674,6 +819,7 @@ If history grows too large, consider:
 - [ ] Integrate all three panels into stats panel
 - [ ] Add navigation between panels
 - [ ] Update milestone rewards display to show OR paths
+- [ ] Update "Delete When Complete" to "Mark for Removal" terminology
 - [ ] Performance testing with large datasets
 - [ ] Mobile UI testing
 - [ ] Accessibility review
@@ -684,6 +830,7 @@ If history grows too large, consider:
 - [ ] Update SCHEMA_2_5.md (or create SCHEMA_2_5_1.md)
 - [ ] Update USER_GUIDE.md
 - [ ] Update CHANGELOG.md
+- [ ] Update existing docs to use "Mark for Removal" instead of "Delete When Complete"
 - [ ] Final testing pass
 - [ ] Version bump and deploy
 
@@ -696,20 +843,23 @@ If history grows too large, consider:
 **History Manager:**
 - [ ] Logs cycle_completed event correctly
 - [ ] Logs task_added/deleted/edited events
+- [ ] Logs tasks_cleared event with count
 - [ ] Logs routine_created/deleted/renamed events
 - [ ] Logs mode_changed events
 - [ ] Clear history removes all events
 - [ ] Events have correct timestamps
 
-**Archived Tasks Manager:**
-- [ ] Archives task on Todo Mode completion
-- [ ] Does NOT archive in Auto/Manual Cycle modes
-- [ ] Prunes entries older than 90 days
-- [ ] totalArchived persists after prune
-- [ ] Restore adds task to active routine
-- [ ] Restore removes entry from archive
-- [ ] totalArchived unchanged after restore
-- [ ] Re-completing restored task increments totalArchived
+**Cleared Tasks Manager:**
+- [ ] Records tasks when "Clear Completed Tasks" pressed in To-Do Mode
+- [ ] Does NOT record in Auto/Manual Cycle modes
+- [ ] Does NOT record "Mark for Removal" tasks during reset
+- [ ] Prunes entries older than 90 days (when enabled)
+- [ ] Does NOT prune when autoPruneEnabled is false
+- [ ] totalCleared persists after prune
+- [ ] Recreate adds NEW task to active routine
+- [ ] Recreate removes entry from cleared list
+- [ ] totalCleared unchanged after recreate
+- [ ] Re-clearing recreated task increments totalCleared
 
 **Achievement Manager:**
 - [ ] Unlocks at correct cycle thresholds
@@ -721,29 +871,56 @@ If history grows too large, consider:
 
 ### Integration Tests
 
-- [ ] Full flow: complete task in Todo Mode → archived → milestone → notification
+- [ ] Full flow: complete tasks in To-Do Mode → clear → recorded → milestone → notification
 - [ ] Full flow: complete cycle → milestone → theme unlock
-- [ ] Restore flow: archive → restore mode → select → restore → verify in list
+- [ ] Recreate flow: clear → recreate mode → select → recreate → verify NEW task in list
 - [ ] History flow: add task → edit task → delete task → verify all logged
 - [ ] Stats panel navigation between all three panels
 - [ ] Data persists across page reload
+- [ ] "Mark for Removal" tasks NOT recorded to cleared tasks
 
 ### Manual Testing Checklist
 
-- [ ] Complete tasks in Todo Mode, verify archival
+- [ ] Complete and clear tasks in To-Do Mode, verify recorded
 - [ ] Complete cycles, verify history logging
-- [ ] Reach milestone via tasks, verify achievement
+- [ ] Reach milestone via tasks cleared, verify achievement
 - [ ] Reach milestone via cycles, verify achievement
-- [ ] Restore archived task, verify in active list
+- [ ] Recreate cleared task, verify NEW task in active list
 - [ ] Clear history, verify empty
-- [ ] Clear archived, verify totalArchived unchanged
+- [ ] Clear cleared tasks list, verify totalCleared unchanged
+- [ ] Disable auto-prune, verify entries persist past 90 days
 - [ ] Test on mobile (iOS Safari, Chrome)
 - [ ] Test offline functionality
-- [ ] Verify 90-day pruning works
+- [ ] Verify 90-day pruning works when enabled
 
 ---
 
-## 10. Future Considerations
+## 10. Terminology Reference
+
+### Unified Vocabulary
+
+| Term | Usage |
+|------|-------|
+| **Cleared** | Tasks removed via "Clear Completed Tasks" in To-Do Mode |
+| **Clear Completed Tasks** | Button in To-Do Mode |
+| **Cleared Tasks** | History section in stats panel |
+| **tasks cleared** | Achievement language |
+| **clearedAt** | Schema field |
+| **Recreate** | Action to add task back (not "Restore") |
+| **Mark for Removal** | Per-task option (formerly "Delete When Complete") |
+
+### What "Mark for Removal" Means
+
+Tasks marked for removal are deleted during cycle reset in Auto/Manual Cycle modes. They are NOT recorded to Cleared Tasks history because:
+- They're part of the routine cycle flow, not one-time completions
+- The user chose to exclude them from the routine going forward
+- Recording them would conflate "routine cleanup" with "task completion"
+
+Only explicitly cleared To-Do Mode tasks count toward gamification.
+
+---
+
+## 11. Future Considerations
 
 ### Potential Enhancements
 
@@ -762,16 +939,24 @@ This feature uses additive schema changes only. No migration required - missing 
 
 ## Summary
 
-| Feature | Purpose | Gamification |
-|---------|---------|--------------|
-| **History** | Activity audit trail | None (informational) |
-| **Archived Tasks** | Todo Mode completions + restore | Feeds task-based milestones |
-| **Achievement History** | Unified progress tracking | OR-based milestones (cycles OR tasks) |
+| Feature | Purpose | Gamification | Notes |
+|---------|---------|--------------|-------|
+| **History** | Activity audit trail | None (informational) | All modes |
+| **Cleared Tasks** | Temporary completion history | Feeds task-based milestones | To-Do Mode only |
+| **Achievement History** | Unified progress tracking | OR-based (cycles OR tasks) | App-wide |
 
-This system gives Todo Mode users first-class gamification support while maintaining the routine-focused nature of miniCycle for Auto/Manual Cycle users.
+This system gives To-Do Mode users first-class gamification support while maintaining the routine-focused nature of miniCycle for Auto/Manual Cycle users.
+
+**Key Design Principles:**
+- Clearing, not archiving
+- Forward motion, not storage
+- Temporary ledger, not permanent vault
+- Recreation, not restoration
+- One vocabulary throughout
 
 ---
 
 **Created:** January 5, 2026
+**Updated:** January 5, 2026
 **Author:** Brainstorm session with Claude
 **Status:** Ready for implementation when prioritized
