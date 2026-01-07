@@ -51,6 +51,7 @@
 
 * **Features**
   * [Feature List](features/FEATURE_LIST.md)
+  * [Stats Panel](features/STATS_PANEL.md)
   * [Storage Management](features/STORAGE_MANAGEMENT.md)
   * [Completed Tasks Dropdown](features/COMPLETED_TASKS_DROPDOWN.md)
   * [Task Options Customizer](features/TASK_OPTIONS_CUSTOMIZER.md)
@@ -84,15 +85,16 @@
   * [Update Version Guide](deployment/UPDATE-VERSION-GUIDE.md)
 
 * **Future Work**
-  * [Error Handling Improvements](future-work/ERROR_HANDLING_IMPROVEMENTS_PLAN.md)
-  * [Modular Overhaul Plan](future-work/MODULAR_OVERHAUL_PLAN.md)
-  * [Module Independence Refactor](future-work/MODULE_INDEPENDENCE_REFACTOR_PLAN.md)
-  * [Schema 2.6 Migration Plan](future-work/SCHEMA_2_6_PLAN.md)
-  * [Delete When Complete Plan](future-work/DELETE_WHEN_COMPLETE_PLAN.md)
-  * [Task Options Customizer Plan](future-work/TASK_OPTIONS_CUSTOMIZER_PLAN.md)
   * [CSS Refactor Plan](future-work/CSS_REFACTOR_PLAN.md)
-  * [Remaining Extractions Analysis](future-work/REMAINING_EXTRACTIONS_ANALYSIS.md)
-  * [Code Review Findings 2025](future-work/CODE_REVIEW_FINDINGS_2025.md)
+  * [DI Migration Completion](future-work/DI_MIGRATION_COMPLETION_PLAN.md)
+  * [Error Handling Improvements](future-work/ERROR_HANDLING_IMPROVEMENTS_PLAN.md)
+  * [History & Achievements Plan](future-work/HISTORY_AND_ACHIEVEMENTS_PLAN.md)
+  * [History & Achievements Implementation](future-work/HISTORY_AND_ACHIEVEMENTS_IMPLEMENTATION.md)
+  * [Module Independence Refactor](future-work/MODULE_INDEPENDENCE_REFACTOR_PLAN.md)
+  * [Recurring Panel Refactor](future-work/RECURRING_PANEL_REFACTOR_PLAN.md)
+  * [Schema 2.6 Migration Plan](future-work/SCHEMA_2_6_PLAN.md)
+  * [Singleton Safe Versioning](future-work/SINGLETON_SAFE_VERSIONING_PLAN.md)
+  * [Test Modernization Plan](future-work/TEST_MODERNIZATION_PLAN.md)
 
 * **Links**
   * [📱 Launch App](https://minicycle.app/miniCycle.html)

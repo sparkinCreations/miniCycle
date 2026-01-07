@@ -5,6 +5,48 @@
  * Extracted from taskCore.js for better maintainability
  *
  * @module task/taskCycleReset
+ *
+ * ## Hook Points for Extensions
+ *
+ * This module provides hook points for cleared tasks tracking and achievements.
+ *
+ * ### `deleteCompletedTasksImpl()` - Lines 489-534
+ * Called when tasks are deleted/cleared in To-Do mode.
+ * This is THE hook point for tracking cleared tasks.
+ *
+ * **Available data at hook point:**
+ * - `tasksToDelete` - Array of task DOM elements being deleted
+ * - `tasksToRecord` - Array of task data objects for history (text, priority)
+ * - `taskIdsToDelete` - Array of task IDs being deleted
+ *
+ * **Current hooks:**
+ * ```javascript
+ * // Record cleared tasks for recreation feature (line 499-501)
+ * _deps.recordMultipleClearedTasks(tasksToRecord);
+ *
+ * // Log history event (line 504-507)
+ * _deps.logHistoryEvent('tasks_cleared', {
+ *     tasksCleared: tasksToDelete.length
+ * });
+ *
+ * // Update totalTasksCompleted and check achievements (line 520-534)
+ * state.userProgress.totalTasksCompleted += taskIdsToDelete.length;
+ * _deps.checkAchievements(globalCyclesCompleted, totalTasksCompleted);
+ * ```
+ *
+ * **To add a new hook:**
+ * 1. Add dependency to DI setup (lines 42-44)
+ * 2. Add hook call in the `deleteCompletedTasksImpl()` function after line 507
+ *
+ * ### `resetTasks()` - The main reset orchestrator
+ * Called when cycle completes in Auto/Manual mode.
+ * Calls `incrementCycleCount()` which has its own hooks.
+ * Do NOT add cleared-task hooks here - use `deleteCompletedTasksImpl()`.
+ *
+ * ### Important: To-Do Mode vs Cycle Reset
+ * - **To-Do Mode clearing** → `deleteCompletedTasksImpl()` → records to clearedTasks
+ * - **Cycle reset (Auto/Manual)** → `resetTasks()` → does NOT record to clearedTasks
+ * - **Mark for Removal tasks** → deleted during reset, NOT recorded to clearedTasks
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
@@ -29,6 +71,7 @@ const di = createDIModule('TaskCycleReset', {
     animateProgressBarFill: optional(null),
     animateProgressBarEmpty: optional(null),
     showCompletionAnimation: optional(null),
+    showClearAnimation: optional(null),
     helpWindowManager: optional(null),
     pluginManager: optional(null),
     recurringCore: optional(null),
@@ -37,7 +80,11 @@ const di = createDIModule('TaskCycleReset', {
     querySelector: optional(null),
     querySelectorAll: optional(null),
     // UIOrchestrator for coalesced UI updates
-    requestUIUpdate: optional(null)
+    requestUIUpdate: optional(null),
+    // Cleared tasks tracking (for To-Do mode history)
+    recordMultipleClearedTasks: optional(null),
+    logHistoryEvent: optional(null),
+    checkAchievements: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -482,6 +529,27 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
 
     console.log(`Deleting ${tasksToDelete.length} tasks marked for deletion`);
 
+    // Record cleared tasks before deleting (for history tracking)
+    const tasksToRecord = tasksToDelete.map(({ taskId }) => {
+        const task = cycleData.tasks?.find(t => t.id === taskId);
+        return task ? {
+            text: task.text,
+            highPriority: task.highPriority || false,
+            dueDate: task.dueDate
+        } : null;
+    }).filter(Boolean);
+
+    if (tasksToRecord.length > 0 && typeof _deps.recordMultipleClearedTasks === 'function') {
+        _deps.recordMultipleClearedTasks(tasksToRecord);
+    }
+
+    // Log history event for tasks cleared
+    if (typeof _deps.logHistoryEvent === 'function') {
+        _deps.logHistoryEvent('tasks_cleared', {
+            tasksCleared: tasksToDelete.length
+        });
+    }
+
     // Remove from DOM and collect IDs
     const taskIdsToDelete = tasksToDelete.map(({ taskId, taskElement }) => {
         taskElement.remove();
@@ -495,7 +563,18 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
             if (cycle?.tasks) {
                 cycle.tasks = cycle.tasks.filter(t => !taskIdsToDelete.includes(t.id));
             }
+            // Update total tasks completed count for achievements
+            if (!state.userProgress) state.userProgress = {};
+            state.userProgress.totalTasksCompleted = (state.userProgress.totalTasksCompleted || 0) + taskIdsToDelete.length;
         }, true);
+
+        // Check for new achievements (OR-based: cycles OR tasks can unlock)
+        if (typeof _deps.checkAchievements === 'function') {
+            const updatedState = AppState.get();
+            const globalCyclesCompleted = updatedState.userProgress?.cyclesCompleted || 0;
+            const totalTasksCompleted = updatedState.userProgress?.totalTasksCompleted || 0;
+            _deps.checkAchievements(globalCyclesCompleted, totalTasksCompleted);
+        }
     } else {
         console.warn('⚠️ AppState not ready for task deletion - state may be lost');
     }
@@ -512,6 +591,12 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     const updateCompletedTasksCount = deps.updateCompletedTasksCount || _deps.updateCompletedTasksCount;
     if (typeof updateCompletedTasksCount === 'function') {
         updateCompletedTasksCount();
+    }
+
+    // Show clear animation for To-Do mode
+    const showClearAnimation = deps.showClearAnimation || _deps.showClearAnimation;
+    if (typeof showClearAnimation === 'function') {
+        showClearAnimation();
     }
 
     return { deleted: taskIdsToDelete.length };
@@ -594,7 +679,8 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
             checkMiniCycle: deps.checkMiniCycle || _deps.checkMiniCycle,
             updateProgressBar: deps.updateProgressBar || _deps.updateProgressBar,
             updateStatsPanel: deps.updateStatsPanel || _deps.updateStatsPanel,
-            checkCompleteAllButton: deps.checkCompleteAllButton || _deps.checkCompleteAllButton
+            checkCompleteAllButton: deps.checkCompleteAllButton || _deps.checkCompleteAllButton,
+            showClearAnimation: deps.showClearAnimation || _deps.showClearAnimation
         };
 
         // Step 1: Get context

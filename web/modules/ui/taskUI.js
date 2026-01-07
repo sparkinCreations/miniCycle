@@ -320,6 +320,7 @@ export function hideTaskOptions(event) {
 /**
  * Checks if the complete all button should be visible.
  * Shows when there are tasks and not in auto cycle mode.
+ * Updates button text and color based on mode (To-Do vs Cycle).
  */
 export function checkCompleteAllButton() {
     const getTaskList = _deps.getTaskList;
@@ -336,6 +337,20 @@ export function checkCompleteAllButton() {
 
     const isAutoMode = document.body.classList.contains('auto-cycle-mode');
     const taskView = document.getElementById('task-view');
+
+    // Detect To-Do mode from body class (set by modeManager as 'todo-mode-mode')
+    const isToDoMode = document.body.classList.contains('todo-mode-mode');
+
+    // Update button text and styling based on mode
+    if (isToDoMode) {
+        completeAllButton.textContent = '🧹 Clear Completed Tasks';
+        completeAllButton.classList.add('todo-mode-btn');
+        completeAllButton.classList.remove('cycle-mode-btn');
+    } else {
+        completeAllButton.textContent = '🔄 Complete Cycle';
+        completeAllButton.classList.add('cycle-mode-btn');
+        completeAllButton.classList.remove('todo-mode-btn');
+    }
 
     if (taskList.children.length > 0 && !isAutoMode) {
         completeAllButton.style.display = "block";

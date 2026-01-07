@@ -7,6 +7,7 @@
 
 // Module-level variables for dynamic imports
 let StatsPanelManager, setStatsPanelDependencies;
+let AchievementsManager, setAchievementsManagerDependencies;
 
 // Helper to create complete AppState mock (outside function scope)
 function createMockAppState(mockData) {
@@ -37,6 +38,11 @@ export async function runStatsPanelTests(resultsDiv) {
     const module = await import(`../modules/features/statsPanel.js?v=${cacheBuster}`);
     StatsPanelManager = module.StatsPanelManager;
     setStatsPanelDependencies = module.setStatsPanelDependencies;
+
+    // Import achievementsManager for badge tests (badge UI was moved there)
+    const achievementsModule = await import(`../modules/features/achievementsManager.js?v=${cacheBuster}`);
+    AchievementsManager = achievementsModule.AchievementsManager;
+    setAchievementsManagerDependencies = achievementsModule.setAchievementsManagerDependencies;
 
     resultsDiv.innerHTML = '<h2>📊 StatsPanel Tests</h2><h3>Running tests...</h3>';
 
@@ -261,11 +267,29 @@ export async function runStatsPanelTests(resultsDiv) {
     });
 
     // === BADGE TESTS ===
-    resultsDiv.innerHTML += '<h4 class="test-section">🏆 Badge Updates</h4>';
+    // Note: Badge UI was moved from statsPanel to achievementsManager
+    resultsDiv.innerHTML += '<h4 class="test-section">🏆 Badge Updates (via AchievementsManager)</h4>';
+
+    // Create mock data for achievementsManager tests
+    const badgeTestMockData = {
+        schemaVersion: 2.5,
+        settings: { theme: 'light', darkMode: false },
+        data: { cycles: {} },
+        appState: { activeCycleId: 'test-cycle' },
+        userProgress: { cyclesCompleted: 0, totalTasksCompleted: 0, rewardMilestones: [] },
+        achievements: { unlocked: [], seen: {} }
+    };
+
+    // Inject mock dependencies for achievementsManager
+    setAchievementsManagerDependencies({
+        AppState: createMockAppState(badgeTestMockData),
+        appInit: createMockAppInit(),
+        showNotification: () => {}
+    });
 
     await test('updates badges based on cycle count', () => {
-        const statsPanel = new StatsPanelManager();
-        statsPanel.updateBadges(10);
+        const achievementsManager = new AchievementsManager();
+        achievementsManager.updateBadges(10);
 
         const badge5 = document.querySelector('[data-milestone="5"]');
         const badge50 = document.querySelector('[data-milestone="50"]');
@@ -280,8 +304,8 @@ export async function runStatsPanelTests(resultsDiv) {
     });
 
     await test('applies theme classes to unlocked badges', () => {
-        const statsPanel = new StatsPanelManager();
-        statsPanel.updateBadges(50);
+        const achievementsManager = new AchievementsManager();
+        achievementsManager.updateBadges(50);
 
         const badge5 = document.querySelector('[data-milestone="5"]');
         const badge50 = document.querySelector('[data-milestone="50"]');

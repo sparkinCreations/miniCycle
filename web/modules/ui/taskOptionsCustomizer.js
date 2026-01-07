@@ -133,10 +133,10 @@ const BUTTON_CONFIG = [
     },
     {
         key: 'deleteWhenComplete',
-        label: 'Delete When Complete',
+        label: 'Marked for Removal',
         icon: '❌',
         scope: 'cycle',
-        description: 'Permanently remove task during auto-reset instead of unchecking'
+        description: 'When enabled, removes this task on cycle reset or task clearing'
     }
 ];
 

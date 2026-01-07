@@ -50,7 +50,7 @@
 
 #### Sophisticated Dependency Injection System
 - Custom `diBase.js` with `required()`, `optional()`, and Proxy late-binding
-- All 87 modules use consistent DI pattern
+- All 91 modules use consistent DI pattern
 - Zero `window.*` globals - everything flows through DI
 - **Circular dependency detection** in moduleLoader.js
 
@@ -83,7 +83,7 @@ Phase 3: UI (Event listeners, data loading) → 15s timeout
 
 #### Module Organization
 
-**13 directories, 87 modules with clear separation:**
+**13 directories, 91 modules with clear separation:**
 
 | Directory | Purpose | File Count |
 |-----------|---------|------------|
@@ -93,7 +93,7 @@ Phase 3: UI (Event listeners, data loading) → 15s timeout
 | `/ui/` | UI managers | 17 |
 | `/routine/` | Cycle management | 6 |
 | `/recurring/` | Recurring task system | 10 |
-| `/features/` | Theme, stats, reminders | 4 |
+| `/features/` | Theme, stats, reminders, achievements | 7 |
 | `/utils/` | Cross-cutting utilities | 9 |
 | `/progress/` | Cycle completion tracking | 1 |
 | `/storage/` | Backup functionality | 1 |
@@ -167,7 +167,7 @@ console.log('⚠️ Warning: AppState not ready');
 // ============================================================================
 ```
 
-**JSDoc Coverage** - 514 blocks across 87 modules (98% module coverage)
+**JSDoc Coverage** - 514 blocks across 91 modules (98% module coverage)
 
 #### Standardized Module Structure
 1. Documentation header with @module tag
@@ -392,7 +392,7 @@ Split `testing-modal.js` into:
 | 2025-12-24 | 2.0 | Claude Opus 4.5 | Complete rewrite with expanded analysis |
 | 2025-12-25 | 3.0 | Claude Opus 4.5 | Deep-dive update: |
 | | | | - Updated to version 1.560 |
-| | | | - Module count: 58 → 87 modules |
+| | | | - Module count: 58 → 91 modules |
 | | | | - Added error handling deep-dive (+0.8) |
 | | | | - Added security analysis (+1.5) |
 | | | | - Added memory/performance analysis |

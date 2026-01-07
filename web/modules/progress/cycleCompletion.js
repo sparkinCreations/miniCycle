@@ -5,9 +5,50 @@
  * progress bar updates, and cycle completion checking.
  *
  * @module progress/cycleCompletion
+ *
+ * ## Hook Points for Extensions
+ *
+ * This module provides hook points for history tracking and achievements.
+ *
+ * ### `incrementCycleCount()` - Lines 199-210
+ * Called when a cycle is completed (all tasks done + reset triggered).
+ *
+ * **Available data at hook point:**
+ * - `actualNewCount` - The new cycle count for this routine
+ * - `cycleData.name` - The routine name
+ * - `globalCyclesCompleted` - Total cycles across ALL routines
+ * - `totalTasksCompleted` - Total tasks completed (for OR-based achievements)
+ *
+ * **Current hooks:**
+ * ```javascript
+ * // Log history event (line 200-205)
+ * deps.logHistoryEvent('cycle_completed', {
+ *     cycleCount: actualNewCount,
+ *     cycleName: cycleData.name || activeCycle
+ * });
+ *
+ * // Check achievements (line 208-209)
+ * deps.checkAchievements(globalCyclesCompleted, totalTasksCompleted);
+ * ```
+ *
+ * **To add a new hook:**
+ * 1. Add dependency to DI setup (line 29-30)
+ * 2. Add hook call after line 210, before showCompletionAnimation()
+ *
+ * ### `handleMilestoneUnlocks()` - Lines 103-144
+ * Called after cycle count increments to check theme/game unlocks.
+ *
+ * **Available data:**
+ * - `globalCyclesCompleted` - Total cycles across all routines
+ * - `currentState.settings.unlockedFeatures` - Already unlocked features
+ *
+ * ### `checkMiniCycle()` - Lines 282-365
+ * Called on every task completion to check if cycle is complete.
+ * NOT a good hook point - use `incrementCycleCount()` instead.
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { MILESTONES } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -24,7 +65,10 @@ const di = createDIModule('CycleCompletion', {
     getTaskList: optional(null),           // () => taskList element
     getProgressBar: optional(null),        // () => progressBar element
     assignCycleVariables: optional(null),  // () => { lastUsedMiniCycle, savedMiniCycles }
-    resetTasks: optional(null)             // () => void
+    resetTasks: optional(null),            // () => void
+    // History & Achievements hooks
+    logHistoryEvent: optional(null),       // (type, details) => void
+    checkAchievements: optional(null)      // (cycles, tasks) => Array
 });
 
 // Late-binding deps via Proxy
@@ -50,6 +94,22 @@ export function showCompletionAnimation() {
     const animation = document.createElement("div");
     animation.classList.add("mini-cycle-complete-animation");
     animation.innerHTML = "✔";
+
+    document.body.appendChild(animation);
+
+    // Remove the animation after 1.5 seconds
+    setTimeout(() => {
+        animation.remove();
+    }, 1500);
+}
+
+/**
+ * Shows a clear animation when tasks are cleared in To-Do mode.
+ */
+export function showClearAnimation() {
+    const animation = document.createElement("div");
+    animation.classList.add("mini-cycle-clear-animation");
+    animation.innerHTML = "🧹";
 
     document.body.appendChild(animation);
 
@@ -115,15 +175,16 @@ function handleMilestoneUnlocks(miniCycleName, globalCyclesCompleted) {
     checkForMilestone(miniCycleName, globalCyclesCompleted);
 
     // Theme unlocks based on GLOBAL cycle count across all cycles
-    if (globalCyclesCompleted >= 5 && typeof deps.unlockDarkOceanTheme === 'function') {
+    // Thresholds from MILESTONES in constants.js (single source of truth)
+    if (globalCyclesCompleted >= MILESTONES.DARK_OCEAN_THEME && typeof deps.unlockDarkOceanTheme === 'function') {
         deps.unlockDarkOceanTheme();
     }
-    if (globalCyclesCompleted >= 50 && typeof deps.unlockGoldenGlowTheme === 'function') {
+    if (globalCyclesCompleted >= MILESTONES.GOLDEN_GLOW_THEME && typeof deps.unlockGoldenGlowTheme === 'function') {
         deps.unlockGoldenGlowTheme();
     }
 
     // Game unlock based on GLOBAL cycle count
-    if (globalCyclesCompleted >= 100) {
+    if (globalCyclesCompleted >= MILESTONES.TASK_ORDER_GAME) {
         const unlockedFeatures = currentState.settings?.unlockedFeatures || [];
         const hasGameUnlock = unlockedFeatures.includes("task-order-game");
 
@@ -188,8 +249,23 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
     console.log(`✅ Cycle count updated (state-based) for "${activeCycle}": ${actualNewCount}`);
 
     // Handle milestone rewards with the global cycle count
-    const globalCyclesCompleted = currentState.userProgress.cyclesCompleted;
+    const updatedState = deps.AppState.get();
+    const globalCyclesCompleted = updatedState.userProgress?.cyclesCompleted || 0;
+    const totalTasksCompleted = updatedState.userProgress?.totalTasksCompleted || 0;
     handleMilestoneUnlocks(activeCycle, globalCyclesCompleted);
+
+    // Log history event
+    if (typeof deps.logHistoryEvent === 'function') {
+        deps.logHistoryEvent('cycle_completed', {
+            cycleCount: actualNewCount,
+            cycleName: cycleData.name || activeCycle
+        });
+    }
+
+    // Check for new achievements (OR-based: cycles OR tasks can unlock)
+    if (typeof deps.checkAchievements === 'function') {
+        deps.checkAchievements(globalCyclesCompleted, totalTasksCompleted);
+    }
 
     // Show animation + update stats
     showCompletionAnimation();

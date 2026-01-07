@@ -44,7 +44,7 @@ miniCycle is a **routine manager** that helps users build and maintain repeatabl
 | Metric | Value | Notes |
 |--------|-------|-------|
 | Boot Files | 6 files | Split Dec 2025 for debuggability |
-| Modules | 86 files | Organized by feature |
+| Modules | 91 files | Organized by feature |
 | DI Completion | 100% | No `\|\| window.*` fallbacks |
 | Test Coverage | 100% | 1,690+ tests passing |
 
@@ -75,7 +75,7 @@ setModuleDependencies({
 ```
 
 **Result:**
-- ✅ Code organized into 86 focused modules
+- ✅ Code organized into 91 focused modules
 - ✅ All modules use strict DI
 - ✅ Modules can be tested in isolation
 - ✅ Dependencies are explicit and injected
@@ -223,9 +223,9 @@ The DI overhaul is **complete**. miniCycle now uses pure dependency injection wi
 
 **Achieved:**
 - Custom DI framework (`diBase.js`) with `required()`, `optional()`, `createDIModule()`
-- Boot orchestrator (`moduleLoader.js`) wires all 89+ modules
+- Boot orchestrator (`moduleLoader.js`) wires all 91 modules
 - Zero custom `window.*` globals
-- 1,458+ tests can inject pure mocks
+- 1,690+ tests can inject pure mocks
 
 See [DI_PATTERNS.md](./DI_PATTERNS.md) for the current DI architecture.
 

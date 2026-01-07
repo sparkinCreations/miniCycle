@@ -235,7 +235,7 @@ export class TaskButtons {
             "priority-btn": "Mark task as high priority",
             "edit-btn": "Edit task",
             "delete-btn": "Delete task",
-            "delete-when-complete-btn": "Toggle delete when complete (permanently remove on auto-reset)"
+            "delete-when-complete-btn": "Marked for removal (removes task on reset or clear)"
         };
         const label = ariaLabels[btnClass] || "Task action";
         button.setAttribute("aria-label", label);

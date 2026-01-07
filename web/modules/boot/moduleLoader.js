@@ -658,6 +658,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         checkMiniCycle: (...args) => deps.progress?.checkMiniCycle?.(...args),
         incrementCycleCount: (...args) => deps.progress?.incrementCycleCount?.(...args),
         showCompletionAnimation: (...args) => deps.progress?.showCompletionAnimation?.(...args),
+        showClearAnimation: (...args) => deps.progress?.showClearAnimation?.(...args),
         animateProgressBarFill: (...args) => deps.progress?.animateProgressBarFill?.(...args),
         animateProgressBarEmpty: (...args) => deps.progress?.animateProgressBarEmpty?.(...args),
 
@@ -705,6 +706,49 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         remindOverdueTasks: (...args) => deps.features?.remindOverdueTasks?.(...args),
         createDueDateInput: (...args) => deps.features?.createDueDateInput?.(...args),
 
+        // History manager (from deps.features) - use Proxy for lazy resolution
+        historyManager: new Proxy({}, {
+            get(target, prop) {
+                const manager = deps.features?.historyManager;
+                const value = manager?.[prop];
+                // Bind methods to preserve 'this' context
+                return typeof value === 'function' ? value.bind(manager) : value;
+            }
+        }),
+        logHistoryEvent: (...args) => deps.features?.historyManager?.logEvent?.(...args),
+        getHistory: (...args) => deps.features?.historyManager?.getHistory?.(...args),
+        clearHistory: (...args) => deps.features?.historyManager?.clearHistory?.(...args),
+        openHistoryModal: (...args) => deps.features?.historyManager?.openModal?.(...args),
+
+        // Cleared tasks manager (from deps.features) - use Proxy for lazy resolution
+        clearedTasksManager: new Proxy({}, {
+            get(target, prop) {
+                const manager = deps.features?.clearedTasksManager;
+                const value = manager?.[prop];
+                // Bind methods to preserve 'this' context
+                return typeof value === 'function' ? value.bind(manager) : value;
+            }
+        }),
+        recordClearedTask: (...args) => deps.features?.clearedTasksManager?.recordClearedTask?.(...args),
+        recordMultipleClearedTasks: (...args) => deps.features?.clearedTasksManager?.recordMultipleClearedTasks?.(...args),
+        getClearedTasks: (...args) => deps.features?.clearedTasksManager?.getClearedTasks?.(...args),
+        clearClearedTasks: (...args) => deps.features?.clearedTasksManager?.clearAll?.(...args),
+        openClearedTasksModal: (...args) => deps.features?.clearedTasksManager?.openModal?.(...args),
+
+        // Achievements manager (from deps.features) - use Proxy for lazy resolution
+        achievementsManager: new Proxy({}, {
+            get(target, prop) {
+                const manager = deps.features?.achievementsManager;
+                const value = manager?.[prop];
+                // Bind methods to preserve 'this' context
+                return typeof value === 'function' ? value.bind(manager) : value;
+            }
+        }),
+        checkAchievements: (...args) => deps.features?.achievementsManager?.checkAchievements?.(...args),
+        getAchievements: (...args) => deps.features?.achievementsManager?.getAchievements?.(...args),
+        isAchievementUnlocked: (...args) => deps.features?.achievementsManager?.isUnlocked?.(...args),
+        openAchievementsModal: (...args) => deps.features?.achievementsManager?.openModal?.(...args),
+
         // Recurring task activation/deactivation (from recurringCore via deps.recurring.core)
         handleRecurringTaskActivation: (...args) => deps.recurring?.core?.handleRecurringTaskActivation?.(...args),
         handleRecurringTaskDeactivation: (...args) => deps.recurring?.core?.handleRecurringTaskDeactivation?.(...args),
@@ -749,6 +793,13 @@ function buildModuleDependencies(manifest, deps, coreResult) {
 
         // Stats panel manager (from deps.ui) - returns instance when called as function
         statsPanelManager: () => deps.ui?.statsPanelManager,
+
+        // Gesture panel callbacks (for gesturePanelManager to call when gestures detected)
+        onShowStatsPanel: () => deps.ui?.statsPanelManager?.showStatsPanel?.(),
+        onShowTaskView: () => deps.ui?.statsPanelManager?.showTaskView?.(),
+
+        // Gesture panel manager (from deps.ui) - returns instance when called as function
+        gesturePanelManager: () => deps.ui?.gesturePanelManager,
 
         // Onboarding manager (from deps.ui) - returns instance when called as function
         getOnboardingManager: () => deps.ui?.onboardingManager,

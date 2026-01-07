@@ -1,8 +1,9 @@
 # History, Cleared Tasks & Achievement System Plan
 
-**Status:** Planned
+**Status:** ✅ IMPLEMENTED (January 7, 2026)
 **Priority:** Medium
 **Estimated Effort:** 4-6 days
+**Actual Effort:** 2 days
 **Breaking Changes:** No (schema additions only)
 
 ---
@@ -191,27 +192,16 @@ App-wide achievement tracking that shows all milestones reached across both cycl
 
 ### Achievement Types
 
-#### Cycle-Based Achievements (Existing)
-| Milestone | Name | Reward |
-|-----------|------|--------|
-| 5 cycles | "Getting Started" | - |
-| 10 cycles | "Building Habits" | - |
-| 25 cycles | "Consistent" | Dark Ocean Theme |
-| 50 cycles | "Dedicated" | Golden Glow Theme |
-| 75 cycles | "Committed" | - |
-| 100 cycles | "Century" | Whack-a-Order Game |
-| 200 cycles | "Unstoppable" | - |
-| 500 cycles | "Legendary" | - |
-| 1000 cycles | "Grandmaster" | - |
+#### Achievement Milestones (OR-Based: Cycles OR Tasks)
+| Milestone | Name | Cycles | Tasks | Reward |
+|-----------|------|--------|-------|--------|
+| 1 | "Getting Started" | 5 | 5 | Dark Ocean Theme |
+| 2 | "Consistent" | 25 | 125 | - |
+| 3 | "Dedicated" | 50 | 250 | Golden Glow Theme |
+| 4 | "Committed" | 75 | 375 | - |
+| 5 | "Centurion" | 100 | 500 | Whack-a-Order Game |
 
-#### Task-Based Achievements (New - To-Do Mode)
-| Milestone | Name | Equivalent Cycles |
-|-----------|------|-------------------|
-| 5 tasks | "First Five" | 5 |
-| 100 tasks | "Productive" | 25 |
-| 250 tasks | "Task Master" | 50 |
-| 350 tasks | "Getting Things Done" | 75 |
-| 500 tasks | "Completionist" | 100 |
+**Note:** Future tiers can be added when rewards are defined.
 
 ### OR-Based Milestones
 
@@ -220,15 +210,13 @@ Achievements can be earned via EITHER path:
 ```
 Badge "Getting Started" unlocked by:
   - 5 cycles completed OR 5 tasks cleared
-
-Badge "Consistent" unlocked by:
-  - 25 cycles completed OR 100 tasks cleared
+  - Unlocks: Dark Ocean Theme
 
 Badge "Dedicated" unlocked by:
   - 50 cycles completed OR 250 tasks cleared
   - Unlocks: Golden Glow Theme
 
-Badge "Century" / "Completionist" unlocked by:
+Badge "Centurion" unlocked by:
   - 100 cycles completed OR 500 tasks cleared
   - Unlocks: Whack-a-Order Game
 ```
@@ -655,11 +643,12 @@ Each button opens a **full-screen modal panel** (not a popup):
 │     Unlocked: Dec 15, 2025              │
 │     Reward: Dark Ocean Theme            │
 │                                         │
-│  🏆 Building Habits                     │
-│     10 cycles completed                 │
+│  🏆 Getting Started                     │
+│     5 cycles completed                  │
 │     Unlocked: Nov 10, 2025              │
+│     Reward: Dark Ocean Theme            │
 │                                         │
-│  🏆 First Five                          │
+│  🏆 First Steps                         │
 │     5 tasks cleared                     │
 │     Unlocked: Nov 1, 2025               │
 │                                         │
@@ -679,30 +668,28 @@ Each button opens a **full-screen modal panel** (not a popup):
 
 ### Milestone Mapping
 
-| Badge Level | Cycles Required | Tasks Required | Reward |
-|-------------|-----------------|----------------|--------|
-| 1 | 5 | 5 | - |
-| 2 | 10 | 25 | - |
-| 3 | 25 | 100 | Dark Ocean Theme |
-| 4 | 50 | 250 | Golden Glow Theme |
-| 5 | 75 | 350 | - |
-| 6 | 100 | 500 | Whack-a-Order Game |
-| 7 | 200 | 1000 | - |
-| 8 | 500 | 2500 | - |
-| 9 | 1000 | 5000 | - |
+| Badge Level | Name | Cycles Required | Tasks Required | Reward |
+|-------------|------|-----------------|----------------|--------|
+| 1 | Getting Started | 5 | 5 | Dark Ocean Theme |
+| 2 | Consistent | 25 | 125 | - |
+| 3 | Dedicated | 50 | 250 | Golden Glow Theme |
+| 4 | Committed | 75 | 375 | - |
+| 5 | Centurion | 100 | 500 | Whack-a-Order Game |
+
+**Note:** Future tiers can be added when rewards are defined.
 
 ### Achievement Check Logic
 
 ```javascript
+// Now reads from MILESTONES.TIERS in modules/core/constants.js
 function checkAchievements(totalCycles, totalTasksCleared) {
+  // 5-tier system (future tiers can be added when rewards are defined)
   const milestones = [
-    { id: 'getting_started', cycles: 5, tasks: 5, name: 'Getting Started' },
-    { id: 'building_habits', cycles: 10, tasks: 25, name: 'Building Habits' },
-    { id: 'consistent', cycles: 25, tasks: 100, name: 'Consistent', reward: 'Dark Ocean Theme' },
-    { id: 'dedicated', cycles: 50, tasks: 250, name: 'Dedicated', reward: 'Golden Glow Theme' },
-    { id: 'committed', cycles: 75, tasks: 350, name: 'Committed' },
-    { id: 'century', cycles: 100, tasks: 500, name: 'Century', reward: 'Whack-a-Order Game' },
-    // ... more milestones
+    { id: 'milestone-5', cycles: 5, tasks: 5, name: 'Getting Started', reward: 'Dark Ocean Theme' },
+    { id: 'milestone-25', cycles: 25, tasks: 125, name: 'Consistent' },
+    { id: 'milestone-50', cycles: 50, tasks: 250, name: 'Dedicated', reward: 'Golden Glow Theme' },
+    { id: 'milestone-75', cycles: 75, tasks: 375, name: 'Committed' },
+    { id: 'milestone-100', cycles: 100, tasks: 500, name: 'Centurion', reward: 'Whack-a-Order Game' },
   ];
 
   for (const milestone of milestones) {
@@ -1186,9 +1173,9 @@ This system gives To-Do Mode users first-class gamification support while mainta
 ---
 
 **Created:** January 5, 2026
-**Updated:** January 6, 2026
+**Updated:** January 7, 2026
 **Author:** Brainstorm session with Claude
-**Status:** Ready for implementation when prioritized
+**Status:** ✅ IMPLEMENTED
 
 ---
 
@@ -1198,3 +1185,4 @@ This system gives To-Do Mode users first-class gamification support while mainta
 |------|---------|
 | Jan 5, 2026 | Initial spec created |
 | Jan 6, 2026 | Added Section 8 (Architecture & Technical Implementation) with boot process, module manifests, DI patterns, depMappings, and cross-module communication details. Updated UI Design section to clarify buttons → modals approach (not inline sections). |
+| Jan 7, 2026 | **IMPLEMENTED** - All features complete. Created historyManager.js, clearedTasksManager.js, achievementsManager.js. Added Proxy binding fix for `this` context preservation. |

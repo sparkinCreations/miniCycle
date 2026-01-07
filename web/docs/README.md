@@ -2,7 +2,7 @@
 
 > **Comprehensive documentation for the miniCycle routine manager.**
 
-**Version**: 1.637 | **Test Coverage**: 1,690+ (100%) ✅ | **Overall Rating**: 8.8/10 | **Platforms**: Mac, iPad, iPhone
+**Version**: 1.684 | **Test Coverage**: 1,690+ (100%) ✅ | **Overall Rating**: 8.8/10 | **Platforms**: Mac, iPad, iPhone
 
 Welcome to the miniCycle documentation site! Use the sidebar to navigate through guides, architecture docs, and API references.
 
@@ -29,6 +29,7 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 - **[MODULE_SYSTEM_GUIDE.md](./developer-guides/MODULE_SYSTEM_GUIDE.md)** - Module patterns and their limitations
 
 ### Key Features
+- **[STATS_PANEL.md](./features/STATS_PANEL.md)** - Statistics dashboard with milestone tracking
 - **[TASK_OPTIONS_CUSTOMIZER.md](./features/TASK_OPTIONS_CUSTOMIZER.md)** - Per-cycle button visibility customization
 - **[MODE_MANAGER_ARCHITECTURE.md](./architecture/MODE_MANAGER_ARCHITECTURE.md)** - Mode management system
 - **[COMPLETED_TASKS_DROPDOWN.md](./features/COMPLETED_TASKS_DROPDOWN.md)** - Optional completed tasks dropdown
@@ -42,7 +43,7 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 
 ## 🧪 Testing
 
-- **[TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)** - Complete testing reference (87 modules, 1610+/1,690+ tests - 100% ✅)
+- **[TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)** - Complete testing reference (91 modules, 1,690+ tests - 100% ✅)
   - Browser-based testing
   - GitHub Actions CI/CD integration
   - localStorage protection patterns
@@ -72,12 +73,12 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 
 ## 📊 Architecture Status
 
-### Current State (December 2025)
+### Current State (January 2026)
 
 | Metric | Value |
 |--------|-------|
 | Boot files | 6 files |
-| Modules | 86 files |
+| Modules | 91 files |
 | Total LOC | ~44,200 lines |
 | DI completion | 100% (no `\|\| window.*` fallbacks) |
 | Test coverage | 1,690+ tests (100%) |
@@ -94,7 +95,7 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 ### The Reality
 
 The codebase has **complete strict DI**:
-- ✅ Code is organized into 86 focused modules
+- ✅ Code is organized into 91 focused modules
 - ✅ All modules use strict dependency injection
 - ✅ No `|| window.*` fallbacks remain
 - ✅ Modules can be tested in isolation
