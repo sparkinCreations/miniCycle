@@ -174,7 +174,8 @@ export const MODULE_MANIFESTS = {
         path: '../features/statsPanel.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['showNotification', 'AppState', 'appInit'],
-        provides: ['showStatsPanel', 'showTaskView', 'updateStatsPanel'],
+        optionalDeps: ['historyManager', 'clearedTasksManager', 'achievementsManager'],
+        provides: ['showStatsPanel', 'showTaskView', 'updateStatsPanel', 'openHistoryModal', 'openClearedTasksModal', 'openAchievementsModal'],
         provideInstance: 'statsPanelManager',
         api: 'ui'
     },
@@ -330,7 +331,8 @@ export const MODULE_MANIFESTS = {
         path: '../progress/cycleCompletion.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification'],
-        provides: ['checkMiniCycle', 'updateProgressBar', 'incrementCycleCount', 'showCompletionAnimation', 'animateProgressBarFill', 'animateProgressBarEmpty'],
+        optionalDeps: ['logHistoryEvent', 'checkAchievements'],
+        provides: ['checkMiniCycle', 'updateProgressBar', 'incrementCycleCount', 'showCompletionAnimation', 'showClearAnimation', 'animateProgressBarFill', 'animateProgressBarEmpty'],
         api: 'progress'
     },
 
@@ -377,10 +379,22 @@ export const MODULE_MANIFESTS = {
         api: 'ui'
     },
 
+    gesturePanelManager: {
+        path: '../ui/gesturePanelManager.js',
+        phase: PHASES.UI_MANAGERS,
+        requires: ['safeAddEventListener', 'showNotification'],
+        optionalDeps: ['isOverlayActive', 'isDraggingNotification'],
+        provides: [],
+        provideInstance: 'gesturePanelManager',
+        api: 'ui',
+        after: ['statsPanel']
+    },
+
     taskCore: {
         path: '../task/taskCore.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'sanitizeInput', 'removeRecurringTasksFromCycle'],
+        optionalDeps: ['showCompletionAnimation', 'showClearAnimation'],
         provides: ['addTask', 'editTask', 'deleteTask', 'toggleTaskPriority', 'handleTaskCompletionChange', 'resetTasks', 'saveTaskToSchema25', 'handleCompleteAllTasks'],
         provideInstance: 'taskCore',
         api: 'task',
@@ -403,6 +417,42 @@ export const MODULE_MANIFESTS = {
         provides: ['pullToRefresh'],
         api: 'ui',
         optional: true
+    },
+
+    // =========================================================================
+    // PHASE 7: FEATURES - History, Achievements
+    // =========================================================================
+    historyManager: {
+        path: '../features/historyManager.js',
+        phase: PHASES.FEATURES,
+        requires: ['appInit', 'AppState', 'showNotification'],
+        optionalDeps: ['safeAddEventListener', 'showConfirmationModal', 'updateStatsPanel', 'clearedTasksManager'],
+        provides: ['logHistoryEvent', 'getHistory', 'clearHistory', 'openHistoryModal'],
+        provideInstance: 'historyManager',
+        api: 'features',
+        after: ['statsPanel']
+    },
+
+    clearedTasksManager: {
+        path: '../features/clearedTasksManager.js',
+        phase: PHASES.FEATURES,
+        requires: ['appInit', 'AppState', 'showNotification'],
+        optionalDeps: ['addTask'],
+        provides: ['recordClearedTask', 'getClearedTasks', 'clearClearedTasks', 'openClearedTasksModal'],
+        provideInstance: 'clearedTasksManager',
+        api: 'features',
+        after: ['historyManager']
+    },
+
+    achievementsManager: {
+        path: '../features/achievementsManager.js',
+        phase: PHASES.FEATURES,
+        requires: ['appInit', 'AppState', 'showNotification'],
+        optionalDeps: ['unlockDarkOceanTheme', 'unlockGoldenGlowTheme', 'unlockMiniGame', 'safeAddEventListener'],
+        provides: ['checkAchievements', 'getAchievements', 'isAchievementUnlocked', 'openAchievementsModal', 'initBadgeTooltips', 'showBadgeDetail', 'hideBadgeDetail', 'updateBadges'],
+        provideInstance: 'achievementsManager',
+        api: 'features',
+        after: ['clearedTasksManager', 'themeManager', 'gamesManager']
     },
 
     // =========================================================================

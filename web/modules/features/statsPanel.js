@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { GESTURE, UI_TIMEOUTS, CHART, INTERVALS } from '../core/constants.js';
+import { GESTURE, UI_TIMEOUTS, CHART, INTERVALS, MILESTONES } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -39,7 +39,11 @@ const di = createDIModule('StatsPanel', {
     setupDarkModeToggle: optional(null),
     AppState: optional(null),
     appInit: optional(null),
-    safeAddEventListener: optional(null)
+    safeAddEventListener: optional(null),
+    // History & Achievements managers (Phase 7 features)
+    historyManager: optional(null),
+    clearedTasksManager: optional(null),
+    achievementsManager: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -130,7 +134,11 @@ export class StatsPanelManager {
             hideMainMenu: _deps.hideMainMenu || (() => {}),
             setupDarkModeToggle: _deps.setupDarkModeToggle || (() => {}),
             AppState: _deps.AppState,
-            appInit: _deps.appInit
+            appInit: _deps.appInit,
+            // History & Achievements managers (lazy resolution)
+            historyManager: _deps.historyManager,
+            clearedTasksManager: _deps.clearedTasksManager,
+            achievementsManager: _deps.achievementsManager
         };
     }
 
@@ -161,10 +169,124 @@ export class StatsPanelManager {
         // ✅ FIX: Listen for data-ready events to update stats on session load
         this.setupDataReadyListener();
 
-        // ✅ Restore collapsible section preferences
+        // ✅ Inject feature buttons FIRST (before restoring preferences)
+        this.injectFeatureButtons();
+
+        // ✅ Restore collapsible section preferences (applies to injected buttons too)
         this.restoreCollapsiblePreferences();
 
+        // NOTE: Badge tooltips are now initialized by achievementsManager during its init (Phase 7)
+        // This ensures badges are clickable after achievementsManager loads
+
         console.log('✅ StatsPanelManager initialized successfully (core ready)');
+    }
+
+    /**
+     * Inject feature buttons and setup clickable elements in stats panel
+     * - History button: inside Current Routine dropdown (per-routine data)
+     * - Achievement Badges header: clickable to open achievements modal
+     */
+    injectFeatureButtons() {
+        const statsPanel = this.elements.statsPanel;
+        if (!statsPanel) {
+            console.warn('⚠️ Stats panel not found - cannot inject feature buttons');
+            return;
+        }
+
+        // === HISTORY BUTTON (inside Current Routine dropdown) ===
+        // Note: Cleared Tasks is now a tab within the History modal
+        const currentRoutineCycleCount = statsPanel.querySelector('#current-routine-cycle-count');
+        const currentRoutineClearedCount = statsPanel.querySelector('#current-routine-cleared-count');
+        if (currentRoutineCycleCount) {
+            const routineButtonsContainer = document.createElement('div');
+            // Note: 'visible' class will be added by restoreCollapsiblePreferences() based on user preference
+            routineButtonsContainer.className = 'routine-buttons-container';
+            routineButtonsContainer.style.cssText = `
+                gap: 8px;
+                padding: 8px 0;
+                justify-content: center;
+                flex-wrap: wrap;
+            `;
+            routineButtonsContainer.innerHTML = `
+                <button class="stats-feature-btn" id="history-btn" style="
+                    display: none;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 8px 14px;
+                    border: 1px solid var(--border-color, #e0e0e0);
+                    border-radius: 20px;
+                    background: var(--bg-secondary, #f5f5f5);
+                    color: var(--text-primary, #333);
+                    font-size: 14px;
+                    cursor: pointer;
+                    transition: all 0.15s ease;
+                ">
+                    <span>📜</span> History
+                </button>
+            `;
+            // Insert after cleared count (if exists) so order is: Cycles > Cleared Tasks > History
+            const insertAfterElement = currentRoutineClearedCount || currentRoutineCycleCount;
+            insertAfterElement.insertAdjacentElement('afterend', routineButtonsContainer);
+            this.elements.historyBtn = routineButtonsContainer.querySelector('#history-btn');
+            this.elements.routineButtonsContainer = routineButtonsContainer;
+        }
+
+        // === ACHIEVEMENT BADGES BUTTON (clickable to open modal) ===
+        const achievementBadgesBtn = statsPanel.querySelector('#achievement-badges-btn');
+        if (achievementBadgesBtn) {
+            this.elements.achievementBadgesBtn = achievementBadgesBtn;
+            this.elements.achievementCountBadge = achievementBadgesBtn.querySelector('#achievement-count-badge');
+        }
+
+        // Setup click handlers
+        this.setupFeatureButtonHandlers();
+
+        // Initial update
+        this.updateFeatureButtons();
+
+        console.log('✅ Feature buttons injected into stats panel');
+    }
+
+    /**
+     * Setup click handlers for feature buttons
+     */
+    setupFeatureButtonHandlers() {
+        const safeAdd = _deps.safeAddEventListener;
+
+        if (this.elements.historyBtn) {
+            if (safeAdd) {
+                safeAdd(this.elements.historyBtn, 'click', () => this.openHistoryModal());
+            } else {
+                this.elements.historyBtn.addEventListener('click', () => this.openHistoryModal());
+            }
+        }
+
+        if (this.elements.achievementBadgesBtn) {
+            if (safeAdd) {
+                safeAdd(this.elements.achievementBadgesBtn, 'click', () => this.openAchievementsModal());
+            } else {
+                this.elements.achievementBadgesBtn.addEventListener('click', () => this.openAchievementsModal());
+            }
+        }
+    }
+
+    /**
+     * Update feature button visibility and counts
+     * Called during updateStatsPanel and when data changes
+     */
+    updateFeatureButtons() {
+        const visibility = this.getFeatureButtonsVisibility();
+
+        // History button (inside Current Routine dropdown)
+        // Note: History button includes Cleared Tasks tab when available
+        if (this.elements.historyBtn) {
+            this.elements.historyBtn.style.display = visibility.showHistory ? 'flex' : 'none';
+        }
+
+        // Achievement Badges button count
+        if (this.elements.achievementCountBadge) {
+            this.elements.achievementCountBadge.textContent = visibility.achievementCount;
+        }
     }
 
     /**
@@ -196,6 +318,8 @@ export class StatsPanelManager {
             currentCycleDoughnutText: document.getElementById("current-cycle-doughnut-text"),
             currentCycleProgressText: document.getElementById("current-cycle-progress-text"),
             currentRoutineCycleCount: document.getElementById("current-routine-cycle-count"),
+            currentRoutineClearedCount: document.getElementById("current-routine-cleared-count"),
+            perRoutineCleared: document.getElementById("per-routine-cleared"),
             // Theme elements
             themeUnlockMessage: document.getElementById("theme-unlock-message"),
             goldenUnlockMessage: document.getElementById("golden-unlock-message"),
@@ -256,11 +380,8 @@ export class StatsPanelManager {
             handleCloseThemesPanel: () => this.closeThemesPanel()
         };
 
-        this.setupTouchEvents();
-        this.setupMouseEvents();
-        this.setupWheelEvents();
-        this.setupPointerEvents();
-        this.setupKeyboardEvents();
+        // NOTE: Gesture events (touch, mouse, wheel, pointer, keyboard) are now
+        // handled by GesturePanelManager module for better separation of concerns
         this.setupUIEvents();
         this.setupThemeEvents();
     }
@@ -410,6 +531,15 @@ export class StatsPanelManager {
         if (appInitModule && typeof appInitModule.onReady === 'function') {
             appInitModule.onReady(() => {
                 console.log('📊 Stats panel detected AppInit ready - updating stats...');
+                setTimeout(() => this.updateStatsPanel(), UI_TIMEOUTS.STATS_UPDATE_DELAY);
+            });
+        }
+
+        // Listen for mode changes to update milestone text dynamically
+        const modeSelector = document.getElementById('mode-selector');
+        if (modeSelector) {
+            safeAdd(modeSelector, 'change', () => {
+                console.log('📊 Stats panel detected mode change - updating stats...');
                 setTimeout(() => this.updateStatsPanel(), UI_TIMEOUTS.STATS_UPDATE_DELAY);
             });
         }
@@ -726,31 +856,51 @@ export class StatsPanelManager {
 
         let perCycleCount = 0;
         let globalCyclesCompleted = 0;
+        let globalTasksCleared = 0;
+        let activeCycleData = null;
 
         // ✅ Safe to access AppState - core is guaranteed ready - DI-pure
         const currentState = AppState.get();
         if (currentState) {
             const { data, appState, userProgress } = currentState;
-            const activeCycle = appState.activeCycleId;
-            const cycleData = data.cycles[activeCycle];
+            const activeCycleId = appState.activeCycleId;
+            activeCycleData = data.cycles[activeCycleId];
 
-            if (activeCycle && cycleData) {
-                perCycleCount = cycleData.cycleCount || 0;
+            if (activeCycleId && activeCycleData) {
+                perCycleCount = activeCycleData.cycleCount || 0;
             }
 
             // ✅ Get global cycles completed across all cycles
             globalCyclesCompleted = userProgress?.cyclesCompleted || 0;
+            // ✅ Get global tasks cleared (in To-Do mode) across all routines
+            globalTasksCleared = userProgress?.totalTasksCompleted || 0;
         }
 
-        // ✅ Calculate progress to next milestone badge (5, 25, 50, 100)
-        const milestones = [5, 25, 50, 100];
-        let nextMilestone = milestones.find(m => m > globalCyclesCompleted) || 100;
-        let previousMilestone = milestones.reverse().find(m => m <= globalCyclesCompleted) || 0;
-        milestones.reverse(); // Restore order
+        // ✅ Detect mode: deleteCheckedTasks = true means To-Do mode
+        const isToDoMode = activeCycleData?.deleteCheckedTasks === true;
 
-        const milestoneProgress = previousMilestone === nextMilestone
-            ? 100
-            : ((globalCyclesCompleted - previousMilestone) / (nextMilestone - previousMilestone)) * 100;
+        // ✅ Calculate progress to next milestone badge (mode-aware)
+        const cycleMilestones = MILESTONES.TIERS.map(t => t.cycles);
+        const taskMilestones = MILESTONES.TIERS.map(t => t.tasks);
+
+        let nextMilestone, previousMilestone, milestoneProgress;
+
+        if (isToDoMode) {
+            // To-Do mode: progress based on cleared tasks
+            nextMilestone = taskMilestones.find(m => m > globalTasksCleared) || taskMilestones[taskMilestones.length - 1];
+            previousMilestone = [...taskMilestones].reverse().find(m => m <= globalTasksCleared) || 0;
+            milestoneProgress = previousMilestone === nextMilestone
+                ? 100
+                : ((globalTasksCleared - previousMilestone) / (nextMilestone - previousMilestone)) * 100;
+        } else {
+            // Cycle mode: progress based on completed cycles
+            nextMilestone = cycleMilestones.find(m => m > globalCyclesCompleted) || cycleMilestones[cycleMilestones.length - 1];
+            previousMilestone = [...cycleMilestones].reverse().find(m => m <= globalCyclesCompleted) || 0;
+            milestoneProgress = previousMilestone === nextMilestone
+                ? 100
+                : ((globalCyclesCompleted - previousMilestone) / (nextMilestone - previousMilestone)) * 100;
+        }
+
         const milestoneProgressPercent = milestoneProgress.toFixed(1) + "%";
 
         // Update display elements
@@ -782,9 +932,15 @@ export class StatsPanelManager {
         }
 
         // ✅ Show global cycles count (primary metric for rewards) with proper singular/plural
+        // Also show cleared tasks if user has cleared any in To-Do mode
         if (this.elements.miniCycleCount) {
             const cycleText = globalCyclesCompleted === 1 ? 'Cycle' : 'Cycles';
-            this.elements.miniCycleCount.textContent = `${globalCyclesCompleted} ${cycleText}`;
+            if (globalTasksCleared > 0) {
+                const taskText = globalTasksCleared === 1 ? 'Cleared Task' : 'Cleared Tasks';
+                this.elements.miniCycleCount.textContent = `${globalCyclesCompleted} ${cycleText} / ${globalTasksCleared} ${taskText}`;
+            } else {
+                this.elements.miniCycleCount.textContent = `${globalCyclesCompleted} ${cycleText}`;
+            }
         }
 
         // ✅ Show per-cycle count (this specific routine) with proper singular/plural
@@ -793,31 +949,71 @@ export class StatsPanelManager {
             this.elements.perCycleCount.textContent = `${perCycleCount} ${cycleText}`;
         }
 
-        // ✅ Progress bar now shows progress to next milestone, not task completion
-        if (this.elements.statsProgressBar) {
-            this.elements.statsProgressBar.style.transform = `scaleX(${milestoneProgress / 100})`;
-            this.elements.statsProgressBar.setAttribute('aria-label',
-                `${globalCyclesCompleted} of ${nextMilestone} cycles to next milestone`);
+        // ✅ Show per-routine cleared tasks count (regardless of mode, if at least 1 cleared)
+        const perRoutineCleared = activeCycleData?.clearedTasks?.totalCleared || 0;
+        if (this.elements.currentRoutineClearedCount && this.elements.perRoutineCleared) {
+            if (perRoutineCleared > 0) {
+                const clearedText = perRoutineCleared === 1 ? 'Cleared Task' : 'Cleared Tasks';
+                this.elements.perRoutineCleared.textContent = `${perRoutineCleared} ${clearedText}`;
+                // Mark as having content - visibility is controlled by .visible class from dropdown toggle
+                this.elements.currentRoutineClearedCount.classList.add('has-content');
+                // Sync with dropdown expanded state (check if cycle count has .visible)
+                if (this.elements.currentRoutineCycleCount?.classList.contains('visible')) {
+                    this.elements.currentRoutineClearedCount.classList.add('visible');
+                }
+            } else {
+                // No content - always hide
+                this.elements.currentRoutineClearedCount.classList.remove('has-content', 'visible');
+            }
         }
 
-        // ✅ Update progress text label
+        // ✅ Progress bar now shows progress to next milestone (mode-aware)
+        if (this.elements.statsProgressBar) {
+            this.elements.statsProgressBar.style.transform = `scaleX(${milestoneProgress / 100})`;
+            const ariaLabel = isToDoMode
+                ? `${globalTasksCleared} of ${nextMilestone} cleared tasks to next milestone`
+                : `${globalCyclesCompleted} of ${nextMilestone} cycles to next milestone`;
+            this.elements.statsProgressBar.setAttribute('aria-label', ariaLabel);
+        }
+
+        // ✅ Update progress text label - dynamic based on mode
         if (this.elements.milestoneProgressText) {
-            if (globalCyclesCompleted >= 100) {
+            const maxCycleMilestone = cycleMilestones[cycleMilestones.length - 1];
+            const maxTaskMilestone = taskMilestones[taskMilestones.length - 1];
+
+            // Check if all milestones are unlocked (either path)
+            const allUnlocked = globalCyclesCompleted >= maxCycleMilestone || globalTasksCleared >= maxTaskMilestone;
+
+            if (allUnlocked) {
                 this.elements.milestoneProgressText.textContent = "🎉 All Milestones Unlocked! Amazing Work!";
                 this.elements.milestoneProgressText.style.color = "#4caf50";
                 this.elements.milestoneProgressText.style.fontWeight = "bold";
+            } else if (isToDoMode) {
+                // To-Do mode: show cleared tasks progress
+                const remaining = nextMilestone - globalTasksCleared;
+                this.elements.milestoneProgressText.textContent =
+                    `${globalTasksCleared} of ${nextMilestone} cleared tasks (${remaining} remaining)`;
+                this.elements.milestoneProgressText.style.color = "var(--text-secondary, #666)";
+                this.elements.milestoneProgressText.style.fontWeight = "normal";
             } else {
+                // Cycle mode: show cycles progress
                 const remaining = nextMilestone - globalCyclesCompleted;
                 this.elements.milestoneProgressText.textContent =
-                    `${globalCyclesCompleted} of ${nextMilestone} cycles (${remaining} more to unlock next reward)`;
-                this.elements.milestoneProgressText.style.color = "#666";
+                    `${globalCyclesCompleted} of ${nextMilestone} cycles (${remaining} remaining)`;
+                this.elements.milestoneProgressText.style.color = "var(--text-secondary, #666)";
                 this.elements.milestoneProgressText.style.fontWeight = "normal";
             }
         }
 
-        // Update badges and themes with global cycle count
-        this.updateBadges(globalCyclesCompleted);
+        // Update badges via achievementsManager and themes with global cycle count
+        const achievementsManager = this.dependencies.achievementsManager;
+        if (achievementsManager?.updateBadges) {
+            achievementsManager.updateBadges(globalCyclesCompleted);
+        }
         this.updateThemeUnlockStatus(globalCyclesCompleted);
+
+        // Update feature buttons (History, Cleared Tasks, Achievements)
+        this.updateFeatureButtons();
 
         console.log(`✅ Stats updated - Global: ${globalCyclesCompleted}, Per-cycle: ${perCycleCount}, Next milestone: ${nextMilestone} (${milestoneProgressPercent})`);
     }
@@ -869,33 +1065,8 @@ export class StatsPanelManager {
         }
     }
 
-
-    /**
-     * Update achievement badges based on GLOBAL cycles completed
-     * @param {number} globalCyclesCompleted - Total cycles across all routines
-     */
-    updateBadges(globalCyclesCompleted) {
-        document.querySelectorAll(".badge").forEach(badge => {
-            const milestone = parseInt(badge.dataset.milestone);
-            const isUnlocked = globalCyclesCompleted >= milestone;
-
-            badge.classList.toggle("unlocked", isUnlocked);
-
-            // Reset theme badge classes
-            badge.classList.remove("ocean-theme", "golden-theme", "game-unlocked");
-
-            // Assign custom theme class if applicable
-            if (isUnlocked) {
-                if (milestone === 5) {
-                    badge.classList.add("ocean-theme");
-                } else if (milestone === 50) {
-                    badge.classList.add("golden-theme");
-                } else if (milestone === 100) {
-                    badge.classList.add("game-unlocked");
-                }
-            }
-        });
-    }
+    // NOTE: Badge UI methods (initBadgeTooltips, showBadgeDetail, hideBadgeDetail, updateBadges)
+    // have been extracted to achievementsManager.js for better separation of concerns
 
     /**
      * Handle task list changes
@@ -964,34 +1135,58 @@ export class StatsPanelManager {
     }
 
     /**
-     * Update theme unlock messages based on GLOBAL cycles completed
+     * Update theme unlock messages based on current mode
+     * Shows cycle-based text in Cycle mode, task-based text in To-Do mode
      * @param {number} globalCyclesCompleted - Total cycles across all routines
      * @param {Object} milestoneUnlocks - Current unlock status
      */
     updateThemeMessages(globalCyclesCompleted, milestoneUnlocks) {
         const { themeUnlockMessage, goldenUnlockMessage, gameUnlockMessage } = this.elements;
 
-        // Dark Ocean Theme
+        // Get total tasks cleared and current mode from state
+        let totalTasksCleared = 0;
+        let isToDoMode = false;
+        const AppState = this.dependencies.AppState;
+        if (AppState?.isReady?.()) {
+            const state = AppState.get();
+            totalTasksCleared = state?.userProgress?.totalTasksCompleted || 0;
+            // Check current mode from active cycle
+            const activeCycleId = state?.appState?.activeCycleId;
+            const currentCycle = activeCycleId ? state?.data?.cycles?.[activeCycleId] : null;
+            isToDoMode = currentCycle?.deleteCheckedTasks || false;
+        }
+
+        // Dark Ocean Theme (5 cycles OR 5 tasks)
         if (themeUnlockMessage) {
             if (milestoneUnlocks.darkOcean) {
                 themeUnlockMessage.textContent = "🌊 Dark Ocean Theme unlocked! 🔓";
                 themeUnlockMessage.classList.add("unlocked-message");
             } else {
-                const needed = Math.max(0, 5 - globalCyclesCompleted);
-                themeUnlockMessage.textContent = `🔒 Only ${needed} more cycle${needed !== 1 ? "s" : ""} to unlock 🌊 Dark Ocean Theme!`;
+                if (isToDoMode) {
+                    const tasksNeeded = Math.max(0, 5 - totalTasksCleared);
+                    themeUnlockMessage.textContent = `🔒 ${tasksNeeded} more cleared task${tasksNeeded !== 1 ? "s" : ""} to unlock 🌊 Dark Ocean Theme!`;
+                } else {
+                    const cyclesNeeded = Math.max(0, 5 - globalCyclesCompleted);
+                    themeUnlockMessage.textContent = `🔒 ${cyclesNeeded} more cycle${cyclesNeeded !== 1 ? "s" : ""} to unlock 🌊 Dark Ocean Theme!`;
+                }
                 themeUnlockMessage.classList.remove("unlocked-message");
             }
         }
 
-        // Golden Glow Theme (only show if Ocean is unlocked)
+        // Golden Glow Theme (50 cycles OR 250 tasks) - only show if Ocean is unlocked
         if (goldenUnlockMessage) {
             if (milestoneUnlocks.darkOcean) {
-                if (globalCyclesCompleted >= 50) {
+                if (globalCyclesCompleted >= 50 || totalTasksCleared >= 250) {
                     goldenUnlockMessage.textContent = "🌟 Golden Glow Theme unlocked! 🔓";
                     goldenUnlockMessage.classList.add("unlocked-message");
                 } else {
-                    const needed = 50 - globalCyclesCompleted;
-                    goldenUnlockMessage.textContent = `🔒 ${needed} more cycle${needed !== 1 ? "s" : ""} to unlock 🌟 Golden Glow Theme!`;
+                    if (isToDoMode) {
+                        const tasksNeeded = Math.max(0, 250 - totalTasksCleared);
+                        goldenUnlockMessage.textContent = `🔒 ${tasksNeeded} more cleared task${tasksNeeded !== 1 ? "s" : ""} to unlock 🌟 Golden Glow Theme!`;
+                    } else {
+                        const cyclesNeeded = Math.max(0, 50 - globalCyclesCompleted);
+                        goldenUnlockMessage.textContent = `🔒 ${cyclesNeeded} more cycle${cyclesNeeded !== 1 ? "s" : ""} to unlock 🌟 Golden Glow Theme!`;
+                    }
                     goldenUnlockMessage.classList.remove("unlocked-message");
                 }
             } else {
@@ -1000,17 +1195,21 @@ export class StatsPanelManager {
             }
         }
 
-        // Task Order Game (only show if Golden Glow unlocked)
+        // Task Order Game (100 cycles OR 500 tasks) - only show if Golden Glow unlocked
         if (gameUnlockMessage) {
             const showGameHint = milestoneUnlocks.goldenGlow;
             if (showGameHint) {
-                const cyclesLeft = Math.max(0, 100 - globalCyclesCompleted);
-                
                 if (milestoneUnlocks.taskOrderGame) {
-                    gameUnlockMessage.textContent = "🎮 Task Whack-a-Order Game unlocked! 🔓";
+                    gameUnlockMessage.textContent = "🎮 Whack-a-Order Game unlocked! 🔓";
                     gameUnlockMessage.classList.add("unlocked-message");
                 } else {
-                    gameUnlockMessage.textContent = `🔒 Only ${cyclesLeft} more cycle${cyclesLeft !== 1 ? "s" : ""} to unlock 🎮 Task Order Game!`;
+                    if (isToDoMode) {
+                        const tasksNeeded = Math.max(0, 500 - totalTasksCleared);
+                        gameUnlockMessage.textContent = `🔒 ${tasksNeeded} more cleared task${tasksNeeded !== 1 ? "s" : ""} to unlock 🎮 Whack-a-Order Game!`;
+                    } else {
+                        const cyclesNeeded = Math.max(0, 100 - globalCyclesCompleted);
+                        gameUnlockMessage.textContent = `🔒 ${cyclesNeeded} more cycle${cyclesNeeded !== 1 ? "s" : ""} to unlock 🎮 Whack-a-Order Game!`;
+                    }
                     gameUnlockMessage.classList.remove("unlocked-message");
                 }
             } else {
@@ -1140,16 +1339,21 @@ export class StatsPanelManager {
      */
     handleCurrentRoutineToggle() {
         const { currentCycleDoughnutContainer, currentCycleProgressText,
-                currentRoutineCycleCount, currentRoutineStatus } = this.elements;
+                currentRoutineCycleCount, currentRoutineClearedCount, currentRoutineStatus, routineButtonsContainer } = this.elements;
 
         if (!currentRoutineCycleCount) return;
 
         console.log('📋 Handling Current Routine toggle...');
 
-        // Toggle doughnut chart, progress text, and cycle count
+        // Toggle doughnut chart, progress text, cycle count, cleared count, and History button container
         if (currentCycleDoughnutContainer) currentCycleDoughnutContainer.classList.toggle("visible");
         if (currentCycleProgressText) currentCycleProgressText.classList.toggle("visible");
         currentRoutineCycleCount.classList.toggle("visible");
+        // Only toggle cleared count if it has content to show
+        if (currentRoutineClearedCount?.classList.contains('has-content')) {
+            currentRoutineClearedCount.classList.toggle("visible");
+        }
+        if (routineButtonsContainer) routineButtonsContainer.classList.toggle("visible");
 
         // Update toggle arrow
         const toggleIcon = currentRoutineStatus?.querySelector(".toggle-icon");
@@ -1246,12 +1450,14 @@ export class StatsPanelManager {
 
             // Restore Current Routine state
             const { currentCycleDoughnutContainer, currentCycleProgressText,
-                    currentRoutineCycleCount, currentRoutineStatus } = this.elements;
+                    currentRoutineCycleCount, currentRoutineClearedCount, currentRoutineStatus, routineButtonsContainer } = this.elements;
 
             if (currentRoutineExpanded && currentRoutineCycleCount) {
                 if (currentCycleDoughnutContainer) currentCycleDoughnutContainer.classList.add("visible");
                 if (currentCycleProgressText) currentCycleProgressText.classList.add("visible");
                 currentRoutineCycleCount.classList.add("visible");
+                // Don't add visible to cleared count here - let updateStats() handle it based on content
+                if (routineButtonsContainer) routineButtonsContainer.classList.add("visible");
 
                 const toggleIcon = currentRoutineStatus?.querySelector(".toggle-icon");
                 if (toggleIcon) toggleIcon.textContent = "▲";
@@ -1330,6 +1536,81 @@ export class StatsPanelManager {
         if (this.elements.themesModal) {
             this.elements.themesModal.style.display = "none";
         }
+    }
+
+    // ==========================================
+    // 📜 HISTORY & ACHIEVEMENTS MODAL METHODS
+    // ==========================================
+
+    /**
+     * Open the history modal
+     */
+    openHistoryModal() {
+        const historyManager = this.dependencies.historyManager;
+        if (historyManager?.openModal) {
+            historyManager.openModal();
+        } else {
+            console.warn('HistoryManager not available');
+            this.dependencies.showNotification('History not available', 'warning');
+        }
+    }
+
+    /**
+     * Open the cleared tasks modal
+     */
+    openClearedTasksModal() {
+        // Cleared Tasks is now a tab within the History modal
+        const historyManager = this.dependencies.historyManager;
+        if (historyManager?.openModal) {
+            historyManager.openModal('cleared');
+        } else {
+            console.warn('HistoryManager not available');
+            this.dependencies.showNotification('Cleared tasks not available', 'warning');
+        }
+    }
+
+    /**
+     * Open the achievements modal
+     */
+    openAchievementsModal() {
+        const achievementsManager = this.dependencies.achievementsManager;
+        if (achievementsManager?.openModal) {
+            achievementsManager.openModal();
+        } else {
+            console.warn('AchievementsManager not available');
+            this.dependencies.showNotification('Achievements not available', 'warning');
+        }
+    }
+
+    /**
+     * Get visibility status for history/achievements buttons
+     * @returns {Object} { showHistory, showAchievements, achievementCount }
+     */
+    getFeatureButtonsVisibility() {
+        const AppState = this.dependencies.AppState;
+        if (!AppState?.isReady?.()) {
+            return { showHistory: false, showAchievements: true, achievementCount: 0 };
+        }
+
+        const state = AppState.get();
+        const activeCycleId = state?.appState?.activeCycleId;
+        const cycle = activeCycleId ? state.data.cycles[activeCycleId] : null;
+
+        // History button: show if there are any events OR any cleared tasks
+        // (Cleared Tasks is now a tab within the History modal)
+        const historyEvents = cycle?.history?.events || [];
+        const clearedEntries = cycle?.clearedTasks?.entries || [];
+        const showHistory = historyEvents.length > 0 || clearedEntries.length > 0;
+
+        // Achievements button: always show, with count
+        const achievements = state.achievements?.unlocked || [];
+        const achievementCount = achievements.length;
+
+        return {
+            showHistory,
+            showAchievements: true,
+            achievementCount
+        };
     }
 
     // ==========================================
@@ -1506,6 +1787,49 @@ export function updateStatsPanel() {
         return;
     }
     return statsPanelManager.updateStatsPanel();
+}
+
+/**
+ * Open the history modal
+ */
+export function openHistoryModal() {
+    if (!statsPanelManager) {
+        console.warn('⚠️ StatsPanelManager not initialized');
+        return;
+    }
+    return statsPanelManager.openHistoryModal();
+}
+
+/**
+ * Open the cleared tasks modal
+ */
+export function openClearedTasksModal() {
+    if (!statsPanelManager) {
+        console.warn('⚠️ StatsPanelManager not initialized');
+        return;
+    }
+    return statsPanelManager.openClearedTasksModal();
+}
+
+/**
+ * Open the achievements modal
+ */
+export function openAchievementsModal() {
+    if (!statsPanelManager) {
+        console.warn('⚠️ StatsPanelManager not initialized');
+        return;
+    }
+    return statsPanelManager.openAchievementsModal();
+}
+
+/**
+ * Get feature buttons visibility status
+ */
+export function getFeatureButtonsVisibility() {
+    if (!statsPanelManager) {
+        return { showHistory: false, showAchievements: true, achievementCount: 0 };
+    }
+    return statsPanelManager.getFeatureButtonsVisibility();
 }
 
 // DI-pure module (no window.* fallbacks)

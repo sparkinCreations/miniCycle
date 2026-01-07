@@ -159,10 +159,71 @@ export const GESTURE = Object.freeze({
  * Cycle completion milestones for unlocking features
  * @constant {Object}
  */
+/**
+ * Achievement milestone thresholds - SINGLE SOURCE OF TRUTH
+ * Used by: cycleCompletion.js (reward unlocks), achievementsManager.js (achievement tracking)
+ *
+ * To change thresholds, edit ONLY this file.
+ */
 export const MILESTONES = Object.freeze({
-    DARK_OCEAN_THEME: 5,           // Cycles to unlock Dark Ocean theme
-    GOLDEN_GLOW_THEME: 50,         // Cycles to unlock Golden Glow theme
-    TASK_ORDER_GAME: 100           // Cycles to unlock Task Order Game
+    // Legacy format (for backwards compatibility)
+    DARK_OCEAN_THEME: 5,
+    GOLDEN_GLOW_THEME: 50,
+    TASK_ORDER_GAME: 100,
+
+    // Full milestone definitions (5 tiers: 5, 25, 50, 75, 100)
+    // Names match badge emojis: 🌊 💎 🌞 💫 👑
+    TIERS: Object.freeze([
+        {
+            id: 'milestone-5',
+            name: 'Making Waves',
+            emoji: '🌊',
+            cycles: 5,
+            tasks: 5,
+            reward: 'dark-ocean',
+            rewardType: 'theme',
+            rewardLabel: 'Dark Ocean Theme'
+        },
+        {
+            id: 'milestone-25',
+            name: 'Diamond',
+            emoji: '💎',
+            cycles: 25,
+            tasks: 125,
+            reward: null,
+            rewardType: null
+        },
+        {
+            id: 'milestone-50',
+            name: 'Radiant',
+            emoji: '🌞',
+            cycles: 50,
+            tasks: 250,
+            reward: 'golden-glow',
+            rewardType: 'theme',
+            rewardLabel: 'Golden Glow Theme'
+        },
+        {
+            id: 'milestone-75',
+            name: 'Stellar',
+            emoji: '💫',
+            cycles: 75,
+            tasks: 375,
+            reward: null,
+            rewardType: null
+        },
+        {
+            id: 'milestone-100',
+            name: 'Crowned',
+            emoji: '👑',
+            cycles: 100,
+            tasks: 500,
+            reward: 'whack-a-order',
+            rewardType: 'game',
+            rewardLabel: 'Whack-a-Order Game'
+        }
+        // Future tiers can be added here when rewards are defined
+    ])
 });
 
 // ============================================================================

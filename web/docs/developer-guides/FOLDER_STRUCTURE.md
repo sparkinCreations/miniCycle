@@ -1,7 +1,7 @@
 # miniCycle Folder Structure
 
-**Last Updated:** January 2, 2026
-**Status:** All 87 modules use strict DI | Boot files split (Dec 2025)
+**Last Updated:** January 7, 2026
+**Status:** All 91 modules use strict DI | Boot files split (Dec 2025)
 
 ---
 
@@ -82,7 +82,7 @@ web/
 ├── 📄 package.json                      # Dependencies & scripts
 ├── 📄 _redirects                        # Netlify redirects for URL compatibility
 │
-├── 📁 modules/                          # ES6 application modules (87 modules, all strict DI)
+├── 📁 modules/                          # ES6 application modules (91 modules, all strict DI)
 │   ├── boot/                            # Boot sequence modules (6 modules)
 │   │   ├── orchestrator.js              # DI wiring hub
 │   │   ├── coreBoot.js                  # Core state & init
@@ -94,8 +94,8 @@ web/
 │   ├── task/                            # Task management system (10 modules)
 │   ├── routine/                         # Routine management system (5 modules)
 │   ├── recurring/                       # Recurring tasks system (15 modules)
-│   ├── ui/                              # UI coordination (20 modules)
-│   ├── features/                        # Optional/pluggable features (4 modules)
+│   ├── ui/                              # UI coordination (21 modules)
+│   ├── features/                        # Optional/pluggable features (7 modules)
 │   ├── utils/                           # Shared utilities (10 modules)
 │   ├── storage/                         # Storage & backup (1 module)
 │   ├── progress/                        # Cycle completion (1 module)
@@ -247,7 +247,7 @@ web/
 
 ## Modules Organization
 
-The `/modules/` directory contains 86 ES6 modules organized into 12 logical groups. **All modules use strict dependency injection with no `|| window.*` fallbacks.**
+The `/modules/` directory contains 91 ES6 modules organized into 12 logical groups. **All modules use strict dependency injection with no `|| window.*` fallbacks.**
 
 ### `boot/` - Boot Sequence Modules (6 modules)
 **Purpose:** Application boot orchestration split into focused files
@@ -353,7 +353,7 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `ui/` - UI Coordination (20 modules)
+### `ui/` - UI Coordination (21 modules)
 **Purpose:** Application-level UI that coordinates multiple systems
 **When to add here:** Modals, menus, settings, onboarding, undo/redo, customization
 
@@ -377,6 +377,7 @@ miniCycle-main.js (entrypoint)
 - `titleManager.js` - Page title management
 - `uiEffects.js` - UI animations and effects
 - `uiOrchestrator.js` - UI coordination and orchestration
+- `gesturePanelManager.js` - Multi-platform gesture handling for panel navigation
 
 **Philosophy:** UI modules don't contain business logic - they coordinate other modules and present data.
 
@@ -384,14 +385,17 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `features/` - Optional/Pluggable Features (4 modules)
+### `features/` - Optional/Pluggable Features (7 modules)
 **Purpose:** Features that enhance core experience but aren't required
 **When to add here:** New optional features that can be disabled
 
 - `dueDates.js` (233 lines) - Task due date management
 - `reminders.js` (621 lines) - Custom reminder system
-- `themeManager.js` (856 lines) - Dynamic theming with unlockables
-- `statsPanel.js` (1,047 lines) - Statistics and achievements
+- `themeManager.js` (950 lines) - Dynamic theming with unlockables
+- `statsPanel.js` (1,841 lines) - Statistics panel and view switching
+- `achievementsManager.js` (1,018 lines) - Achievement/badge system with OR-based unlocking
+- `historyManager.js` (984 lines) - Per-routine activity logging and history modal
+- `clearedTasksManager.js` (675 lines) - Cleared task tracking for To-Do mode
 
 **Philosophy:** Features should be optional and independently testable. The app works without them.
 

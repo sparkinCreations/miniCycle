@@ -36,17 +36,17 @@ npm test                     # Run automated tests (1,690+ tests, Playwright)
 
 ## Architecture: Strict Dependency Injection
 
-### Current State (January 2, 2026 - Updated)
+### Current State (January 7, 2026 - Updated)
 
 | Metric | Before | Current | Target | Progress |
 |--------|--------|---------|--------|----------|
 | Boot files | 1 monolithic | **6 focused files** | — | Split Dec 2025 |
-| Modules | 43 files | **86 files** | — | — |
+| Modules | 43 files | **91 files** | — | — |
 | `|| window.*` fallbacks | ~40 modules | **0** | 0 | **100%** ✅ |
 | Custom `window.*` globals | ~270 | **0** | 0 | **100%** ✅ |
 | Modules with `set*Dependencies()` | 0 | **40+** | All stateful | **Exceeded** |
 | `this.deps.*` usage | 0 | **950+** | 100+ | **Exceeded** |
-| **All modules use strict DI** | 0 | **86** | All | **100%** ✅ |
+| **All modules use strict DI** | 0 | **91** | All | **100%** ✅ |
 
 ### Architecture Philosophy
 
@@ -143,7 +143,7 @@ Only standard browser API event handlers remain (`window.onload`, `window.onerro
 - **appInit system** - 2-phase initialization prevents race conditions
 - **AppState** - Centralized state with subscriptions and debounced saves
 - **File organization** - Clear folder structure by feature
-- **Test coverage** - 1,690+ tests across 87 modules, 100% passing
+- **Test coverage** - 1,690+ tests across 91 modules, 100% passing
 - **Object.defineProperties** - Preserves lazy getters during DI wiring
 
 ---
@@ -177,12 +177,15 @@ Only standard browser API event handlers remain (`window.onload`, `window.onerro
         autoReset: boolean,
         deleteCheckedTasks: boolean,
         taskOptionButtons: { /* per-cycle button visibility */ },
-        recurringTemplates: []
+        recurringTemplates: [],
+        history: [],           // Per-routine activity log
+        clearedTasks: { items: [], totalCleared: 0 }  // For To-Do mode
       }
     }
   },
   appState: { activeCycleId: string },
-  userProgress: { cyclesCompleted, rewardMilestones }
+  userProgress: { cyclesCompleted, totalTasksCompleted, rewardMilestones },
+  achievements: { unlocked: [], seen: {} }  // OR-based achievements
 }
 ```
 
@@ -297,7 +300,7 @@ The version number (`?v=1.672`) ensures the cached module is used. Check `versio
 
 ### Run Tests
 ```bash
-npm test                    # All tests (1,690+ tests across 87 modules)
+npm test                    # All tests (1,690+ tests across 91 modules)
 ```
 
 ### Browser Tests
@@ -332,7 +335,7 @@ AppState.reload();  // Critical! Syncs in-memory state with restored localStorag
 
 ## Module Organization
 
-### Folder Structure (`web/modules/`) - 87 modules total
+### Folder Structure (`web/modules/`) - 91 modules total
 
 | Folder | Purpose | Modules |
 |--------|---------|---------|
@@ -341,8 +344,8 @@ AppState.reload();  // Critical! Syncs in-memory state with restored localStorag
 | `task/` | Task CRUD, DOM, events, drag-drop | 10 |
 | `routine/` | Routine management, switching, migration | 5 |
 | `recurring/` | Recurring task scheduling, activation, panel | 15 |
-| `ui/` | Modals, menus, settings, onboarding | 20 |
-| `features/` | Themes, stats, reminders, due dates | 4 |
+| `ui/` | Modals, menus, settings, onboarding, gestures | 21 |
+| `features/` | Themes, stats, achievements, history, reminders | 7 |
 | `utils/` | Notifications, device detection, utilities | 10 |
 | `storage/` | Backup manager | 1 |
 | `progress/` | Cycle completion tracking | 1 |

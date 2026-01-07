@@ -1,7 +1,7 @@
 # API Reference
 
-**Version**: 1.373
-**Last Updated**: November 23, 2025
+**Version**: 1.684
+**Last Updated**: January 7, 2026
 
 ---
 
@@ -213,6 +213,101 @@ const mode = ModeManager.getCurrentMode();
 
 // Sync toggles from mode
 ModeManager.syncTogglesFromMode(mode);
+```
+
+### Achievements Manager Module
+
+```javascript
+import { AchievementsManager, initAchievementsManager } from './modules/features/achievementsManager.js';
+
+// Initialize (called by boot)
+const manager = initAchievementsManager({
+    AppState, showNotification, safeAddEventListener
+});
+
+// Update achievements based on current state
+manager.refreshAchievements();
+
+// Get all achievements
+const achievements = manager.getAchievements();
+
+// Badge UI methods (extracted from statsPanel in v1.684)
+manager.initBadgeTooltips();           // Initialize badge click handlers
+manager.updateBadges(cyclesCompleted); // Update badge display
+manager.showBadgeDetail(milestone);    // Show badge popup
+manager.hideBadgeDetail();             // Hide badge popup
+
+// Open achievements modal
+manager.showAchievementsModal();
+```
+
+### Gesture Panel Manager Module
+
+```javascript
+import { GesturePanelManager, initGesturePanelManager } from './modules/ui/gesturePanelManager.js';
+
+// Initialize with callbacks
+const gestures = initGesturePanelManager({
+    safeAddEventListener,
+    showNotification,
+    isOverlayActive: () => false,
+    isDraggingNotification: () => false,
+    onShowStatsPanel: () => statsPanel.showStatsPanel(),
+    onShowTaskView: () => statsPanel.showTaskView()
+});
+
+// Handles: touch swipes, mouse swipes, wheel scrolls, pointer events, keyboard (Tab)
+// Automatically triggers callbacks when gestures detected
+```
+
+### History Manager Module
+
+```javascript
+import { HistoryManager, initHistoryManager } from './modules/features/historyManager.js';
+
+// Initialize
+const history = initHistoryManager({ AppState, showNotification });
+
+// Add entry to history
+history.addHistoryEntry(cycleId, {
+    type: 'task_completed',
+    taskId: 'task-123',
+    taskText: 'Morning workout',
+    timestamp: Date.now()
+});
+
+// Get history for cycle
+const entries = history.getHistory(cycleId);
+
+// Open history modal
+history.showHistoryModal();
+
+// Clear history for cycle
+history.clearHistory(cycleId);
+```
+
+### Cleared Tasks Manager Module
+
+```javascript
+import { ClearedTasksManager, initClearedTasksManager } from './modules/features/clearedTasksManager.js';
+
+// Initialize
+const clearedTasks = initClearedTasksManager({ AppState, showNotification });
+
+// Track cleared task (To-Do mode)
+clearedTasks.addClearedTask(cycleId, taskText);
+
+// Get cleared count for cycle
+const count = clearedTasks.getClearedCount(cycleId);
+
+// Get all cleared items
+const items = clearedTasks.getClearedItems(cycleId);
+
+// Open cleared tasks modal
+clearedTasks.showClearedTasksModal();
+
+// Reset cleared tasks for cycle
+clearedTasks.resetClearedTasks(cycleId);
 ```
 
 ---

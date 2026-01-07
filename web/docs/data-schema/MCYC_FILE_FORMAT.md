@@ -205,7 +205,16 @@ When using the complete format, each cycle is stored in `data.cycles`:
   "deleteCheckedTasks": false,
   "cycleCount": 0,
   "createdAt": 1234567890,
-  "recurringTemplates": {}
+  "recurringTemplates": {},
+  "history": {
+    "events": [],
+    "maxEvents": 100
+  },
+  "clearedTasks": {
+    "entries": [],
+    "totalCleared": 0,
+    "autoPruneEnabled": true
+  }
 }
 ```
 
@@ -221,6 +230,61 @@ When using the complete format, each cycle is stored in `data.cycles`:
 | `cycleCount` | number | No | Times completed |
 | `createdAt` | number | No | Unix timestamp (milliseconds) |
 | `recurringTemplates` | object | No | Recurring task templates |
+| `history` | object | No | Per-routine activity log (v1.685+) |
+| `clearedTasks` | object | No | Cleared tasks tracking for To-Do mode (v1.685+) |
+
+### History Object (v1.685+)
+
+Per-routine history tracking. Travels with .mcyc exports.
+
+```json
+{
+  "events": [
+    {
+      "id": "evt-1704567890123-abc12",
+      "type": "cycle_completed",
+      "timestamp": 1704567890123,
+      "details": {
+        "cycleCount": 42,
+        "cycleName": "Morning Routine"
+      }
+    }
+  ],
+  "maxEvents": 100
+}
+```
+
+**Event Types:**
+- `cycle_completed` - Routine cycle completed
+- `tasks_cleared` - Tasks cleared in To-Do mode
+- `achievement_unlocked` - Achievement milestone reached
+
+### Cleared Tasks Object (v1.685+)
+
+Per-routine tracking of cleared tasks in To-Do mode. Travels with .mcyc exports.
+
+```json
+{
+  "entries": [
+    {
+      "id": "clr-1704567890123-xyz98",
+      "text": "Buy groceries",
+      "clearedAt": 1704567890123,
+      "priority": "high"
+    }
+  ],
+  "totalCleared": 147,
+  "autoPruneEnabled": true
+}
+```
+
+**Properties:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `entries` | array | Recent cleared tasks (auto-pruned after 90 days) |
+| `totalCleared` | number | Lifetime count of cleared tasks (persists through prune) |
+| `autoPruneEnabled` | boolean | Whether to auto-remove entries older than 90 days |
 
 ---
 
@@ -1029,11 +1093,11 @@ python3 create_mcyc.py
 
 ## Version
 
-**Document Version:** 1.0
+**Document Version:** 1.1
 **Schema Version:** 2.5
-**miniCycle Version:** 1.330
+**miniCycle Version:** 1.685
 
-**Last Updated:** January 2025
+**Last Updated:** January 7, 2026
 
 ---
 

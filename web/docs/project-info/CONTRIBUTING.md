@@ -7,9 +7,9 @@ miniCycle is built with **vanilla JavaScript (ES6 modules)** and uses a **pure d
 
 > **✅ Pure Dependency Injection**
 >
-> miniCycle uses a custom DI framework (`diBase.js`) with zero `window.*` fallbacks. All dependencies are explicitly injected via `setXxxDependencies()` functions. Modules use `required()` for mandatory dependencies and `optional(defaultValue)` for optional ones. The boot orchestrator (`moduleLoader.js`) wires all 89+ modules at startup.
+> miniCycle uses a custom DI framework (`diBase.js`) with zero `window.*` fallbacks. All dependencies are explicitly injected via `setXxxDependencies()` functions. Modules use `required()` for mandatory dependencies and `optional(defaultValue)` for optional ones. The boot orchestrator (`moduleLoader.js`) wires all 91 modules at startup.
 >
-> **This enables true unit testing** - the 1,458+ test suite injects pure mocks without touching global state.
+> **This enables true unit testing** - the 1,690+ test suite injects pure mocks without touching global state.
 
 ---
 
@@ -71,7 +71,8 @@ If you’re building a new feature, decide **which stage** your module should ho
  ├── modeManager.js           ← Auto/manual/to-do switching
  ├── recurringCore.js         ← Recurring engine
  ├── reminders.js             ← Reminder scheduling
- ├── statsPanel.js            ← Completion rates, badges
+ ├── statsPanel.js            ← Completion rates, statistics
+ ├── achievementsManager.js   ← Badge UI, achievements
  └── globalUtils.js           ← Cross-cutting utilities
 ```
 

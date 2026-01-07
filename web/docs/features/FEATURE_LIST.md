@@ -1,7 +1,7 @@
 # miniCycle Feature List
 
-> **Last Updated:** January 2, 2026
-> **Version:** 1.625+
+> **Last Updated:** January 7, 2026
+> **Version:** 1.685+
 > **Status:** Production Ready
 
 A comprehensive list of all features in miniCycle, organized by category.
@@ -86,7 +86,7 @@ Three different modes for how routines behave when tasks are completed.
 |---------|-------------|--------|
 | Per-Routine Button Visibility | Show/hide specific action buttons per routine | `ui/taskOptionsCustomizer.js` |
 | Global UI Settings | Move arrows and three-dots menu visibility (global) | `ui/taskOptionsCustomizer.js` |
-| Delete When Complete | Remove task during auto-reset instead of unchecking | `ui/taskOptionsCustomizer.js` |
+| Marked for Removal | Remove task on cycle reset or task clearing | `ui/taskOptionsCustomizer.js` |
 
 ### Completed Tasks
 | Feature | Description | Module |
@@ -178,14 +178,33 @@ Create tasks that automatically appear on a schedule.
 |---------|-------------|--------|
 | Cycle Count | Tracks number of times routine completed | `progress/cycleCompletion.js` |
 | Progress Bar | Visual indicator of completion progress | `progress/cycleCompletion.js` |
-| Complete All Button | Mark all tasks complete at once | `progress/cycleCompletion.js` |
-| Celebration Animation | Visual feedback on routine completion | `progress/cycleCompletion.js` |
+| Complete All Button | Mode-aware button (🔄 green for Cycle, 🧹 blue for To-Do) | `ui/taskUI.js` |
+| Celebration Animation | Green checkmark on cycle completion | `progress/cycleCompletion.js` |
+| Clear Animation | Blue broom animation for To-Do mode task clearing | `progress/cycleCompletion.js` |
 
 ### Milestones & Achievements
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Milestone Notifications | Notifications at 10, 25, 50, 100, 200, 500, 1000 cycles | `progress/cycleCompletion.js` |
-| Achievement Tracking | Persistent tracking of milestones reached | `progress/cycleCompletion.js` |
+| Milestone Notifications | Notifications at 5, 10, 25, 50, 75, 100, 200, 500, 1000 milestones | `progress/cycleCompletion.js` |
+| Achievement System | OR-based achievement unlocking (cycles OR tasks) | `features/achievementsManager.js` |
+| Achievement Modal | View unlocked achievements and upcoming milestones | `features/achievementsManager.js` |
+| Achievement History | Track when and how each achievement was unlocked | `features/achievementsManager.js` |
+
+### History & Activity Log
+| Feature | Description | Module |
+|---------|-------------|--------|
+| History Tracking | Per-routine activity log (cycle completions, tasks cleared) | `features/historyManager.js` |
+| History Modal | View chronological event history grouped by date | `features/historyManager.js` |
+| Clear History | Remove all history events for a routine | `features/historyManager.js` |
+| Reset Routine Progress | Reset cycle count and cleared tasks for current routine | `features/historyManager.js` |
+
+### Cleared Tasks (To-Do Mode)
+| Feature | Description | Module |
+|---------|-------------|--------|
+| Cleared Tasks Tracking | Records tasks cleared in To-Do Mode | `features/clearedTasksManager.js` |
+| Cleared Tasks Modal | View recently cleared tasks (last 90 days) | `features/clearedTasksManager.js` |
+| Task Recreation | Recreate cleared tasks as new tasks in active routine | `features/clearedTasksManager.js` |
+| Auto-Prune | Automatically removes cleared tasks older than 90 days | `features/clearedTasksManager.js` |
 
 ### Theme Unlocking
 | Feature | Description | Module |
@@ -209,7 +228,8 @@ Create tasks that automatically appear on a schedule.
 | Feature | Description | Module |
 |---------|-------------|--------|
 | Statistics View | Comprehensive stats panel | `features/statsPanel.js` |
-| Swipe Navigation | Touch/mouse gestures between views | `features/statsPanel.js` |
+| Swipe Navigation | Touch/mouse/wheel gestures between views | `ui/gesturePanelManager.js` |
+| Keyboard Navigation | Shift+Arrow keys and Shift+Tab for panel switching | `ui/gesturePanelManager.js` |
 | Collapsible Sections | Expand/collapse individual stat sections | `features/statsPanel.js` |
 
 ### Tracked Statistics
@@ -261,7 +281,8 @@ Create tasks that automatically appear on a schedule.
 |---------|-------------|--------|
 | Main Menu | Navigation menu with app controls | `ui/menuManager.js` |
 | Settings Panel | Configure app behavior and preferences | `ui/settingsManager.js` |
-| Help Window | In-app help and documentation | `ui/helpWindowManager.js` |
+| Help Window | Mode-aware in-app help and documentation | `ui/helpWindowManager.js` |
+| Reset Achievement Progress | Reset global achievements (keeps routine stats) | `ui/settingsUIManager.js` |
 
 ### Theme System
 | Feature | Description | Module |
@@ -382,7 +403,7 @@ Create tasks that automatically appear on a schedule.
 ### Architecture
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Dependency Injection | Pure DI architecture (87 modules) | `core/diBase.js` |
+| Dependency Injection | Pure DI architecture (91 modules) | `core/diBase.js` |
 | Modular Boot System | 8-phase module loading | `boot/moduleLoader.js` |
 | Module Manifests | Dependency declarations | `boot/moduleManifests.js` |
 | App Context | Centralized module registry | `core/appContext.js` |
@@ -419,16 +440,16 @@ A **static, frozen fallback** for older devices (ES5 compatible).
 | Recurring Tasks | 10 |
 | Due Dates & Reminders | 7 |
 | Routine Management | 13 |
-| Progress & Gamification | 10 |
-| Statistics | 6 |
+| Progress & Gamification | 23 |
+| Statistics | 7 |
 | Data Management | 12 |
-| User Interface | 18 |
+| User Interface | 19 |
 | Undo/Redo | 5 |
 | Mobile & PWA | 7 |
 | Privacy & Security | 7 |
 | Accessibility | 5 |
 | Developer Features | 8 |
-| **Total** | **~123 features** |
+| **Total** | **~138 features** |
 
 ---
 

@@ -30,6 +30,7 @@ const di = createDIModule('SettingsUIManager', {
     loadMiniCycleData: required(),
     showNotification: required(),
     safeAddEventListener: required(),
+    showConfirmationModal: optional(null),
     hideMainMenu: optional(null),
     setupDarkModeToggle: optional(null),
     setupQuickDarkToggle: optional(null),
@@ -37,7 +38,8 @@ const di = createDIModule('SettingsUIManager', {
     toggleHoverTaskOptions: optional(null),
     refreshTaskListUI: optional(null),
     organizeCompletedTasks: optional(null),
-    resetDefaultRecurringSettings: optional(null)
+    resetDefaultRecurringSettings: optional(null),
+    updateStatsPanel: optional(null)
 });
 
 /** @type {{AppState: Object, loadMiniCycleData: Function, showNotification: Function, safeAddEventListener: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, organizeCompletedTasks: Function|null, resetDefaultRecurringSettings: Function|null}} */
@@ -73,6 +75,7 @@ export function _resetForTesting() {
     _initialized.completedDropdownToggle = false;
     _initialized.debugToggle = false;
     _initialized.resetRecurringDefaults = false;
+    _initialized.resetAchievementProgress = false;
 }
 
 // ============================================================================
@@ -85,7 +88,8 @@ const _initialized = {
     threeDotsToggle: false,
     completedDropdownToggle: false,
     debugToggle: false,
-    resetRecurringDefaults: false
+    resetRecurringDefaults: false,
+    resetAchievementProgress: false
 };
 
 // ============================================================================
@@ -540,6 +544,92 @@ export function setupResetRecurringButton() {
 }
 
 /**
+ * Setup Reset Achievement Progress button
+ * Resets global achievement progress (cycles, cleared tasks, milestones)
+ * but keeps individual routine stats intact
+ */
+export function setupResetAchievementProgressButton() {
+    // ✅ Idempotency guard
+    if (_initialized.resetAchievementProgress) {
+        console.log('✅ Reset achievement progress button already set up');
+        return;
+    }
+    _initialized.resetAchievementProgress = true;
+
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('SettingsUIManager: safeAddEventListener dependency not injected');
+        return;
+    }
+
+    const resetBtn = document.getElementById("reset-achievement-progress");
+    if (!resetBtn) return;
+
+    resetBtn._clickHandler = async () => {
+        const showConfirmationModal = _deps.showConfirmationModal;
+
+        // Use confirmation modal if available, otherwise use browser confirm
+        const doReset = async () => {
+            console.log('🏆 Resetting achievement progress...');
+
+            const AppState = _deps.AppState?.();
+            if (AppState?.isReady?.()) {
+                await AppState.update(state => {
+                    // Reset global achievement tracking
+                    if (state.userProgress) {
+                        state.userProgress.cyclesCompleted = 0;
+                        state.userProgress.totalTasksCompleted = 0;
+                        // Reset milestone unlocks
+                        if (state.userProgress.rewardMilestones) {
+                            state.userProgress.rewardMilestones = [];
+                        }
+                    }
+
+                    // Reset unlocked achievements (re-lock all badges)
+                    if (state.achievements) {
+                        state.achievements.unlocked = [];
+                        state.achievements.seen = {};
+                    }
+                }, true);
+
+                // Refresh stats panel to reflect changes
+                _deps.updateStatsPanel?.();
+
+                _deps.showNotification?.("Achievement progress reset. Badges are now locked.", "success");
+                console.log('✅ Achievement progress reset complete');
+            } else {
+                console.error('AppState not ready - achievement reset failed');
+                _deps.showNotification?.("Failed to reset achievements.", "error");
+            }
+        };
+
+        if (showConfirmationModal) {
+            showConfirmationModal({
+                title: "Reset Achievement Progress",
+                message: "This will reset all achievement badges and global progress to 0. Your individual routine stats and history will NOT be affected. Are you sure?",
+                confirmText: "Reset Achievements",
+                cancelText: "Cancel",
+                callback: async (confirmed) => {
+                    if (confirmed) {
+                        await doReset();
+                    } else {
+                        _deps.showNotification?.("Achievement reset cancelled.", "info", 2000);
+                    }
+                }
+            });
+        } else {
+            // Fallback to browser confirm
+            const confirmed = confirm("This will reset all achievement badges and global progress to 0. Your individual routine stats and history will NOT be affected. Are you sure?");
+            if (confirmed) {
+                await doReset();
+            }
+        }
+    };
+
+    safeAddEventListener(resetBtn, "click", resetBtn._clickHandler);
+}
+
+/**
  * Sync current settings to storage
  */
 export async function syncCurrentSettingsToStorage() {
@@ -600,6 +690,7 @@ export function initAllToggles() {
     setupScrollOnLoadToggle();
     setupDebugModeToggle();
     setupResetRecurringButton();
+    setupResetAchievementProgressButton();
 }
 
 console.log('Settings UI Manager loaded');

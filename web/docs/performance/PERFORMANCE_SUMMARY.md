@@ -200,7 +200,7 @@ Layer 5: Lighthouse CI (5 metrics, 3min)
 **Two parallel workflows:**
 
 1. **Functional Tests** (`test.yml`)
-   - 1,690+ tests across 87 modules
+   - 1,690+ tests across 91 modules
    - Tests on Node.js 18.x and 20.x
    - Duration: ~90 seconds
    - Artifacts: Test results (30 days)
@@ -384,7 +384,7 @@ miniCycle has **exceptional performance and quality**:
 ✅ 12/12 performance benchmarks passing (100%)
 ✅ Operations 9-125x faster than requirements
 ✅ Memory usage 16x better than budget
-✅ 100% test coverage across 87 modules
+✅ 100% test coverage across 91 modules
 ✅ Production-ready CI/CD pipeline
 ✅ Comprehensive documentation
 ```

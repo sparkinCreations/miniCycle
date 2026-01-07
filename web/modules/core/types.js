@@ -142,6 +142,8 @@
  * @property {TaskOptionButtons} [taskOptionButtons] - Per-cycle button visibility settings
  * @property {number} [createdAt] - Creation timestamp
  * @property {number} [lastModified] - Last modification timestamp (set when switching away from this cycle)
+ * @property {RoutineHistory} [history] - History events for this routine (per-routine)
+ * @property {RoutineClearedTasks} [clearedTasks] - Cleared tasks tracking for To-Do mode (per-routine)
  * @example
  * const cycle = {
  *     id: "cycle-abc123",
@@ -182,6 +184,7 @@
  * @property {DataContainer} data - Cycle and task data
  * @property {AppStateData} appState - Runtime application state
  * @property {UserProgress} userProgress - Gamification and progress tracking
+ * @property {Achievements} [achievements] - Global achievements (app-wide, NOT exported with .mcyc)
  * @property {CustomReminders} [customReminders] - Custom reminder configuration
  * @property {UIState} [ui] - UI state
  * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md}
@@ -419,6 +422,99 @@
  * @property {string} [name] - User-provided name (for manual backups)
  * @property {string} [id] - Unique ID (for manual backups)
  * @property {'auto'|'manual'} type - Backup type
+ */
+
+// =============================================================================
+// HISTORY & ACHIEVEMENTS TYPES
+// =============================================================================
+
+/**
+ * A history event logged in a routine
+ * @typedef {Object} HistoryEvent
+ * @property {string} id - Unique event ID (e.g., "evt-1704567890123")
+ * @property {'cycle_completed'|'tasks_cleared'|'cycle_reset'|'achievement_unlocked'} type - Event type
+ * @property {number} timestamp - Unix timestamp of event
+ * @property {Object} [details] - Additional event-specific details
+ * @property {number} [details.cycleCount] - Cycle count at time of event
+ * @property {number} [details.tasksCleared] - Number of tasks cleared
+ * @property {string} [details.achievementId] - Achievement that was unlocked
+ * @example
+ * const event = {
+ *     id: "evt-1704567890123",
+ *     type: "cycle_completed",
+ *     timestamp: 1704567890123,
+ *     details: { cycleCount: 42 }
+ * };
+ */
+
+/**
+ * History container for a routine (per-routine, stored in cycle)
+ * @typedef {Object} RoutineHistory
+ * @property {HistoryEvent[]} events - Array of history events
+ * @property {number} [maxEvents=100] - Maximum events to retain
+ */
+
+/**
+ * A cleared task entry (for To-Do mode tracking)
+ * @typedef {Object} ClearedTaskEntry
+ * @property {string} id - Unique entry ID
+ * @property {string} taskText - Original task text
+ * @property {number} clearedAt - Unix timestamp when cleared
+ * @property {boolean} [wasHighPriority=false] - Whether task was high priority
+ * @property {boolean} [hadDueDate=false] - Whether task had a due date
+ * @example
+ * const entry = {
+ *     id: "clr-1704567890123",
+ *     taskText: "Buy groceries",
+ *     clearedAt: 1704567890123,
+ *     wasHighPriority: false
+ * };
+ */
+
+/**
+ * Cleared tasks container for a routine (per-routine, stored in cycle)
+ * @typedef {Object} RoutineClearedTasks
+ * @property {ClearedTaskEntry[]} entries - Array of cleared task entries
+ * @property {number} totalCleared - Total tasks ever cleared in this routine
+ * @property {boolean} [autoPruneEnabled=true] - Auto-prune entries older than 90 days
+ */
+
+/**
+ * Achievement milestone definition
+ * @typedef {Object} AchievementMilestone
+ * @property {string} id - Milestone ID (e.g., "cycles-5", "tasks-100")
+ * @property {string} name - Display name
+ * @property {string} description - Description of how to earn
+ * @property {'cycles'|'tasks'} type - What triggers this milestone
+ * @property {number} threshold - Number required to unlock
+ * @property {string} [reward] - Reward unlocked (theme name, game name, etc.)
+ * @property {string} [rewardType] - Type of reward ('theme', 'game', 'badge')
+ * @example
+ * const milestone = {
+ *     id: "cycles-50",
+ *     name: "Dedicated",
+ *     description: "Complete 50 cycles",
+ *     type: "cycles",
+ *     threshold: 50,
+ *     reward: "golden-glow",
+ *     rewardType: "theme"
+ * };
+ */
+
+/**
+ * A single achievement entry (when user unlocks a milestone)
+ * @typedef {Object} AchievementEntry
+ * @property {string} milestoneId - Reference to AchievementMilestone.id
+ * @property {number} unlockedAt - Unix timestamp when unlocked
+ * @property {'cycles'|'tasks'} unlockedVia - Which path triggered unlock
+ * @property {number} valueAtUnlock - The count that triggered unlock
+ */
+
+/**
+ * Global achievements container (app-wide, NOT exported with .mcyc)
+ * @typedef {Object} Achievements
+ * @property {AchievementEntry[]} unlocked - Array of unlocked achievements
+ * @property {Object.<string, boolean>} [seen={}] - Achievements user has seen the notification for
  */
 
 // =============================================================================

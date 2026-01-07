@@ -58,7 +58,7 @@ const morningRoutine = {
 | Metric | Value |
 |--------|-------|
 | Boot Files | 6 files |
-| Modules | 87 modules (all strict DI) |
+| Modules | 91 modules (all strict DI) |
 | Schema Version | 2.5 |
 | App Version | 1.637 |
 | Test Coverage | 100% (1,690+ tests) ✅ |
@@ -817,7 +817,7 @@ window.exportDebugData()                 // Debug package
 
 **✅ MODULARIZATION & BOOT SPLIT COMPLETE!**
 - Boot files: 6 focused files
-- 87 modules (all strict DI)
+- 91 modules (all strict DI)
 - 100% test coverage (1,690+ tests passing) ✅
 
 **Architecture:** See [BOOT_FILE_SPLIT_PLAN.md](../future-work/BOOT_FILE_SPLIT_PLAN.md) for boot file structure details.

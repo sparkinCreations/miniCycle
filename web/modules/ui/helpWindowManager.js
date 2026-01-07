@@ -191,7 +191,7 @@ export class HelpWindowManager {
                 description: "Tasks automatically reset when all are completed."
             },
             'manual-cycle': {
-                title: "✋🔁 Manual Cycle Mode",
+                title: "✋ Manual Cycle Mode",
                 description: "Tasks only reset when you click the Complete button."
             },
             'todo-mode': {
@@ -260,8 +260,10 @@ export class HelpWindowManager {
         const completedTasks = document.querySelectorAll('.task input:checked').length;
         const remaining = totalTasks - completedTasks;
 
-        // Get cycle count and size from Schema 2.5 (DI-pure, no window.* fallbacks)
+        // Get cycle count, cleared tasks, mode, and size from Schema 2.5 (DI-pure, no window.* fallbacks)
         let cycleCount = 0;
+        let clearedTasksCount = 0;
+        let isToDoMode = false;
         let routineSize = '';
 
         // Prefer AppState if available, fall back to loadMiniCycleData
@@ -271,6 +273,8 @@ export class HelpWindowManager {
                 const activeCycle = state.appState?.activeCycleId;
                 const currentCycle = state.data?.cycles?.[activeCycle];
                 cycleCount = currentCycle?.cycleCount || 0;
+                clearedTasksCount = currentCycle?.clearedTasks?.totalCleared || 0;
+                isToDoMode = currentCycle?.deleteCheckedTasks === true;
                 // Calculate routine size (~ indicates estimate)
                 if (currentCycle) {
                     const sizeBytes = getObjectSizeBytes(currentCycle);
@@ -283,6 +287,8 @@ export class HelpWindowManager {
                 const { cycles, activeCycle } = schemaData;
                 const currentCycle = cycles[activeCycle];
                 cycleCount = currentCycle?.cycleCount || 0;
+                clearedTasksCount = currentCycle?.clearedTasks?.totalCleared || 0;
+                isToDoMode = currentCycle?.deleteCheckedTasks === true;
                 // Calculate routine size (~ indicates estimate)
                 if (currentCycle) {
                     const sizeBytes = getObjectSizeBytes(currentCycle);
@@ -294,21 +300,30 @@ export class HelpWindowManager {
         // Size suffix for messages (💾 floppy disk icon for storage)
         const sizeSuffix = routineSize ? ` • 💾 ${routineSize}` : '';
 
+        // Mode-aware progress text: show cleared tasks in To-Do mode, cycles in other modes
+        const progressText = isToDoMode
+            ? `${clearedTasksCount} completed task${clearedTasksCount === 1 ? '' : 's'} cleared`
+            : `${cycleCount} cycle${cycleCount === 1 ? '' : 's'} completed`;
+
         // Return different constant messages based on state
         if (totalTasks === 0) {
-            return `📝 Add your first task to get started! • ${cycleCount} cycle${cycleCount === 1 ? '' : 's'} completed${sizeSuffix}`;
+            return `📝 Add your first task to get started! • ${progressText}${sizeSuffix}`;
         }
 
         if (remaining === 0 && totalTasks > 0) {
-            return `🎉 All tasks complete! • ${cycleCount} cycle${cycleCount === 1 ? '' : 's'} completed${sizeSuffix}`;
+            return `🎉 All tasks complete! • ${progressText}${sizeSuffix}`;
         }
 
-        if (cycleCount === 0) {
+        // First-time message for either mode
+        if (isToDoMode && clearedTasksCount === 0) {
+            return `📋 ${remaining} task${remaining === 1 ? '' : 's'} remaining • Clear your first completed task!${sizeSuffix}`;
+        }
+        if (!isToDoMode && cycleCount === 0) {
             return `📋 ${remaining} task${remaining === 1 ? '' : 's'} remaining • Complete your first cycle!${sizeSuffix}`;
         }
 
-        // Show progress and cycle count
-        return `📋 ${remaining} task${remaining === 1 ? '' : 's'} remaining • ${cycleCount} cycle${cycleCount === 1 ? '' : 's'} completed${sizeSuffix}`;
+        // Show progress and cycle count or cleared tasks
+        return `📋 ${remaining} task${remaining === 1 ? '' : 's'} remaining • ${progressText}${sizeSuffix}`;
     }
 
     updateContent(message) {

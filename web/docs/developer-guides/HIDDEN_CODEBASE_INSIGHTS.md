@@ -1,7 +1,7 @@
 # Hidden Codebase Insights - miniCycle
 
-> **Analysis Date:** December 25, 2025
-> **Version:** 1.560
+> **Analysis Date:** January 7, 2026
+> **Version:** 1.685
 > **Analyst:** Claude AI (Opus 4.5)
 
 This document captures non-obvious patterns, hidden behaviors, and things that may not be immediately apparent about the miniCycle codebase.
@@ -101,7 +101,7 @@ clearTimeout(this._tipTimeout);
 
 **Location:** `/modules/core/diBase.js`
 
-53 of 87 modules import from diBase.js. If this file has a bug or breaking change, **97% of your app breaks**.
+53 of 91 modules import from diBase.js. If this file has a bug or breaking change, **97% of your app breaks**.
 
 **This is by design** (DI foundation), but worth knowing the risk.
 
@@ -427,12 +427,57 @@ If two tabs save at 999ms apart, they won't detect conflict. Probably fine for y
 
 ---
 
+### 5.6 Proxy depMappings Lose `this` Context (Fixed Jan 2026)
+
+**Location:** `/modules/boot/moduleLoader.js` (~line 708)
+
+**The Gotcha:**
+
+When using Proxy for lazy dependency resolution in depMappings, methods lose their `this` context:
+
+```javascript
+// WRONG - this loses `this` binding
+historyManager: new Proxy({}, {
+    get(target, prop) {
+        return deps.features?.historyManager?.[prop];  // Returns unbound method
+    }
+}),
+
+// When called:
+deps.historyManager.openModal();  // `this` is wrong inside openModal()!
+```
+
+**The Fix:**
+
+Bind methods to their instance when returning from Proxy:
+
+```javascript
+// RIGHT - preserves `this` binding
+historyManager: new Proxy({}, {
+    get(target, prop) {
+        const manager = deps.features?.historyManager;
+        const value = manager?.[prop];
+        // Bind methods to preserve 'this' context
+        return typeof value === 'function' ? value.bind(manager) : value;
+    }
+}),
+```
+
+**Symptoms:**
+- `Cannot set properties of null` errors inside methods
+- `this.someProperty` is undefined inside class methods
+- Methods work when called directly but fail through depMappings Proxy
+
+**Modules affected:** historyManager, clearedTasksManager, achievementsManager (all fixed)
+
+---
+
 ## 6. Interesting Metrics
 
 | Metric | Value | Industry Comparison |
 |--------|-------|---------------------|
-| Total JS Lines | 44,200 | Large for vanilla JS |
-| Modules | 80 | Well-modularized |
+| Total JS Lines | 46,000+ | Large for vanilla JS |
+| Modules | 90 | Well-modularized |
 | DI Coverage | 100% | Rare for non-framework |
 | Tests | 1,623 | Excellent |
 | Doc Files | 76 | Over-documented (good) |

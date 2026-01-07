@@ -439,6 +439,15 @@ button:not(.dot):hover {
     background: #009c41;
 }
 
+/* To-Do Mode button style - blue color */
+.complete-all-btn.todo-mode-btn {
+    background: #3b82f6;
+    border: 1px solid #2563eb;
+}
+
+.complete-all-btn.todo-mode-btn:hover {
+    background: #2563eb;
+}
 
 .mini-cycle-complete-animation {
     position: fixed;
@@ -463,7 +472,22 @@ button:not(.dot):hover {
     100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
 }
 
-
+/* Clear animation for To-Do mode */
+.mini-cycle-clear-animation {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(59, 130, 246, 0.909);
+    color: white;
+    padding: 15px 25px;
+    font-size: 60px;
+    font-weight: bold;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    animation: fadeOut 1.5s ease-in-out;
+    z-index: 2;
+}
 
 
 
@@ -1120,8 +1144,6 @@ border-radius: 5px;
         width: 90%;
         max-width: 400px;
         font-size: 13px;
-        margin-left: 10px; /* Nudge right to align with task card */
-        margin-right: auto;
     }
 
     /* Move background to title-row so it stays full width */
@@ -3144,7 +3166,17 @@ input:checked + .slider:before {
   .factory-reset-btn:hover {
     background: #e60000;
   }
-  
+
+  /* ⚠️ Danger Button (warning actions) */
+  .settings-btn.danger-btn {
+    background: #dc2626;
+    color: white;
+  }
+
+  .settings-btn.danger-btn:hover {
+    background: #b91c1c;
+  }
+
   /* ❌ Close Button */
   .close-btn {
     background: #888;
@@ -6886,6 +6918,15 @@ body.dark-mode {
   transition: background 0.3s ease;
 }
 
+.dark-mode .complete-all-btn.todo-mode-btn {
+  background: #2563eb;
+  border: 1px solid #1d4ed8;
+}
+
+.dark-mode .complete-all-btn.todo-mode-btn:hover {
+  background: #1d4ed8;
+}
+
 .dark-mode .task-options button:hover,
 .dark-mode .complete-all-btn:hover {
   background: #555;
@@ -6934,7 +6975,8 @@ body.dark-mode .current-routine-status .clickable:hover {
 }
 
 body.dark-mode #current-cycle-progress-text,
-body.dark-mode #current-routine-cycle-count {
+body.dark-mode #current-routine-cycle-count,
+body.dark-mode #current-routine-cleared-count {
   color: #dddddd;
 }
 
@@ -7128,6 +7170,37 @@ body.dark-mode .modal-panel {
   border: 1px solid #555;
 }
 
+/* 🌙 Stats Panel Containers */
+body.dark-mode .badge-container,
+body.dark-mode .global-stats-container {
+  background-color: #3a3a3a !important;
+  border-color: #555 !important;
+}
+
+body.dark-mode .global-stats-container p,
+body.dark-mode .global-stats-container strong {
+  color: #f0f0f0 !important;
+}
+
+body.dark-mode #milestone-progress-text {
+  color: #cccccc !important;
+}
+
+/* 🌙 Stats Panel Buttons */
+body.dark-mode .stats-feature-btn,
+body.dark-mode #achievement-badges-btn {
+  background-color: #2a2a2a !important;
+  border: 1px solid #555 !important;
+  color: #f0f0f0 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .stats-feature-btn:hover,
+body.dark-mode #achievement-badges-btn:hover {
+  background-color: #3a3a3a !important;
+  border-color: #666 !important;
+}
+
 /* 🌙 Buttons */
 body.dark-mode .task-options button,
 body.dark-mode .complete-all-btn {
@@ -7184,7 +7257,8 @@ body.dark-mode .current-routine-status .clickable:hover {
 }
 
 body.dark-mode #current-cycle-progress-text,
-body.dark-mode #current-routine-cycle-count {
+body.dark-mode #current-routine-cycle-count,
+body.dark-mode #current-routine-cleared-count {
   color: #cccccc;
 }
 
@@ -7994,6 +8068,27 @@ body.dark-mode.theme-golden-glow {
 
   #current-routine-cycle-count.visible {
     display: block;
+  }
+
+  #current-routine-cleared-count {
+    display: none;
+    font-weight: 500;
+    color: #444;
+    white-space: pre-wrap;
+    transition: opacity 0.3s ease;
+  }
+
+  #current-routine-cleared-count.visible {
+    display: block;
+  }
+
+  /* History button container - follows Current Routine collapsible state */
+  .routine-buttons-container {
+    display: none;
+  }
+
+  .routine-buttons-container.visible {
+    display: flex;
   }
 
   /* Milestone Rewards Collapsible Section */

@@ -83,7 +83,7 @@ tests/
 | **Plugins & A11y** | basicPluginSystem, accessibility | 83 |
 | **Stress Testing** | stress | 50 |
 
-**Total**: 1,690+ tests across 87 modules
+**Total**: 1,690+ tests across 91 modules
 
 ### Running Specific Tests
 
@@ -104,9 +104,9 @@ npm start
 ### Test Coverage
 
 ```
-Module Coverage: 100% (87/87 modules)
+Module Coverage: 100% (87/91 modules)
 Test Pass Rate: 100% (1,690+)
-Lines Covered: ~15,000 lines across 87 modules
+Lines Covered: ~15,000 lines across 91 modules
 ```
 
 **Notable Coverage:**

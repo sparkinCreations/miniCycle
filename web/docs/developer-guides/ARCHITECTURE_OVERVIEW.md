@@ -1,6 +1,6 @@
 # Architecture Overview
 
-**Last Updated**: December 30, 2025
+**Last Updated**: January 7, 2026
 
 ---
 
@@ -26,10 +26,10 @@
 | Metric | Value | Notes |
 |--------|-------|-------|
 | **Boot Files** | 6 files | Split Dec 2025 for debuggability |
-| **Modules** | 87 modules | All using strict DI |
+| **Modules** | 91 modules | All using strict DI |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
 | **Browser Support** | Modern + ES5 | Dual-version system |
-| **Test Coverage** | 100% ✅ | 1,690+ tests across 87 modules |
+| **Test Coverage** | 100% ✅ | 1,690+ tests across 91 modules |
 | **DI Completion** | 100% ✅ | No `\|\| window.*` fallbacks |
 | **Modules with setters** | 40+ | `set*Dependencies()` functions |
 
@@ -137,7 +137,7 @@ web/
 ├── miniCycle-styles.css             # Styles
 ├── service-worker.js                # PWA service worker
 │
-├── modules/                          # 60 ES6 modules (all strict DI)
+├── modules/                          # 91 ES6 modules (all strict DI)
 │   ├── boot/                        # Boot sequence (Dec 2025 split)
 │   │   ├── orchestrator.js          # Pure sequence controller (~75 lines)
 │   │   ├── coreBoot.js              # Core state & init (~578 lines)
@@ -170,7 +170,7 @@ web/
 │   │   ├── recurringPanel.js        # Recurring UI
 │   │   └── recurringIntegration.js  # Integration layer
 │   │
-│   ├── ui/                          # UI modules (9 modules)
+│   ├── ui/                          # UI modules (21 modules)
 │   │   ├── modalManager.js          # Modal management
 │   │   ├── menuManager.js           # Main menu
 │   │   ├── settingsManager.js       # Settings panel
@@ -179,11 +179,15 @@ web/
 │   │   ├── gamesManager.js          # Mini-games
 │   │   ├── taskOptionsCustomizer.js # Per-cycle buttons
 │   │   ├── pullToRefresh.js         # Mobile refresh
-│   │   └── helpWindowManager.js     # Help system
+│   │   ├── helpWindowManager.js     # Help system
+│   │   └── gesturePanelManager.js   # Multi-platform gesture handling
 │   │
-│   ├── features/                    # Optional features (4 modules)
-│   │   ├── themeManager.js          # Theme management
-│   │   ├── statsPanel.js            # Statistics
+│   ├── features/                    # Optional features (7 modules)
+│   │   ├── themeManager.js          # Theme management + modal
+│   │   ├── statsPanel.js            # Statistics panel
+│   │   ├── achievementsManager.js   # Achievement tracking + badge UI
+│   │   ├── historyManager.js        # History tracking + modal
+│   │   ├── clearedTasksManager.js   # Cleared tasks (To-Do mode)
 │   │   ├── reminders.js             # Reminder system
 │   │   └── dueDates.js              # Due date management
 │   │

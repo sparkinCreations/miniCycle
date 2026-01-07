@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.685">
+<meta name="app-version" content="1.686">
 
 <!-- Content Security Policy -->
 <meta http-equiv="Content-Security-Policy" content="
@@ -43,17 +43,17 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.685">
+<link rel="stylesheet" href="miniCycle-styles.css?v=1.686">
 <link rel="manifest" href="manifest.json">
 
 <!-- Modulepreload for critical boot modules - speeds up ES module loading -->
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.685">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.685">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.685">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.685">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.685">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.685">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.685">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.686">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.686">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.686">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.686">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.686">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.686">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.686">
 
 <style>
   /* Critical CSS - Inlined for instant loader display */
@@ -156,7 +156,7 @@
 
 
 <!-- version.js MUST load synchronously before ES modules to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.685"></script>
+<script src="./version.js?v=1.686"></script>
 
 <script>
 
@@ -327,7 +327,7 @@ if ('serviceWorker' in navigator) {
       // Check if we have an old SW without version parameter
       for (const reg of existingRegistrations) {
         const scriptURL = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL;
-        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.685')) {
+        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.686')) {
           console.log('🗑️ Found old service worker without version - unregistering:', scriptURL);
           await reg.unregister();
           console.log('✅ Old service worker unregistered successfully');
@@ -1402,6 +1402,9 @@ window.installApp = () => {
                 <!--Reset Recurring Default Settings-->
                 <button id="reset-recurring-default"class="settings-btn">Reset Recurring Default</button>
 
+                <!--Reset Achievement Progress-->
+                <button id="reset-achievement-progress" class="settings-btn">🏆 Reset Achievement Progress</button>
+
                 <!--Customize Task Options-->
                 <button id="open-task-options-customizer" class="settings-btn">⚙️ Customize Task Options</button>
 
@@ -1619,7 +1622,7 @@ window.installApp = () => {
                 <select id="routine-filter-select" class="routine-filter-select">
                     <option value="all">All Modes</option>
                     <option value="auto">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔄 Auto Cycle</option>
-                    <option value="manual">✋🔁 Manual</option>
+                    <option value="manual">✋🔁 Manual Cycle</option>
                     <option value="todo">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📋 To-Do</option>
                 </select>
             </div>
@@ -1832,6 +1835,7 @@ window.installApp = () => {
             </div>
             <p id="current-cycle-progress-text">0 of 0 Tasks Completed</p>
             <p id="current-routine-cycle-count"><span id="per-cycle-count">0 Cycles Completed</span></p>
+            <p id="current-routine-cleared-count"><span id="per-routine-cleared">0 Cleared Tasks</span></p>
         </div>
                   <div class="theme-unlock-status" id="theme-unlock-status">
             <h3 class="clickable">
@@ -1841,22 +1845,63 @@ window.installApp = () => {
             <p id="golden-unlock-message">Loading...</p>
             <p id="game-unlock-message">Loading game unlock info...</p>
           </div>
-        <div class="badge-container">
-            <h3>🏅 Achievement Badges</h3>
+        <div class="badge-container" style="
+            position: relative;
+            margin-top: 16px;
+            padding: 12px;
+            background: var(--bg-secondary, #f5f5f5);
+            border-radius: 12px;
+            border: 1px solid var(--border-color, #e0e0e0);
+        ">
+            <button id="achievement-badges-btn" class="stats-feature-btn" style="
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                padding: 8px 14px;
+                margin: 0 auto 8px;
+                border: 1px solid var(--border-color, #e0e0e0);
+                border-radius: 20px;
+                background: var(--bg-primary, #fff);
+                color: var(--text-primary, #333);
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.15s ease;
+            ">
+                🏅 Achievement Badges <span id="achievement-count-badge" style="
+                    background: var(--primary-color, #4c79ff);
+                    color: white;
+                    border-radius: 10px;
+                    padding: 1px 6px;
+                    font-size: 12px;
+                    min-width: 18px;
+                    text-align: center;
+                ">0</span>
+            </button>
+            <!-- Badge tooltips set dynamically from MILESTONES constant in statsPanel.js -->
             <div class="badges">
-                <div class="badge" data-milestone="5" title="5 total cycles across all routines - Unlocks Dark Ocean Theme">5</div>
-              <div class="badge" data-milestone="25" title="25 total cycles across all routines">25</div>
-              <div class="badge" data-milestone="50" title="50 total cycles across all routines - Unlocks Golden Glow Theme">50</div>
-              <div class="badge" data-milestone="75" title="75 total cycles across all routines">75</div>
-              <div class="badge" data-milestone="100" title="100 total cycles across all routines - Unlocks Task Order Game!">💯</div>
+                <div class="badge" data-milestone="5">🌊</div>
+                <div class="badge" data-milestone="25">💎</div>
+                <div class="badge" data-milestone="50">🌞</div>
+                <div class="badge" data-milestone="75">💫</div>
+                <div class="badge" data-milestone="100">👑</div>
             </div>
           </div>
 
-        <p id="all-routines-count"><strong>All Routines:</strong> <span id="mini-cycle-count">0 Cycles</span></p>
-        <p><strong>Progress to Next Milestone:</strong></p>
-        <p id="milestone-progress-text" style="font-size: 0.9em; color: #666; margin-top: -8px;">Loading...</p>
-        <div class="progress-container">
-            <div id="stats-progress-bar" class="progress-bar" role="progressbar" aria-label="Progress to next milestone"></div>
+        <div class="global-stats-container" style="
+            margin-top: 16px;
+            padding: 12px;
+            background: var(--bg-secondary, #f5f5f5);
+            border-radius: 12px;
+            border: 1px solid var(--border-color, #e0e0e0);
+        ">
+            <p id="all-routines-count" style="margin: 0 0 8px 0; text-align: center; color: var(--text-primary, #333);"><strong>All Routines:</strong> <span id="mini-cycle-count">0 Cycles</span></p>
+            <p style="margin: 0 0 4px 0; text-align: center; color: var(--text-primary, #333);"><strong>Progress to Next Achievement Badge:</strong></p>
+            <p id="milestone-progress-text" style="font-size: 0.9em; color: var(--text-secondary, #666); margin: 0 0 8px 0; text-align: center;">Loading...</p>
+            <div class="progress-container" style="background: var(--border-color, #e0e0e0); border-radius: 6px; overflow: hidden;">
+                <div id="stats-progress-bar" class="progress-bar" role="progressbar" aria-label="Progress to next milestone" style="background: var(--primary-color, #4c79ff);"></div>
+            </div>
         </div>
     </section>
 
@@ -1905,7 +1950,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.685"></script>
+ <script type="module" src="miniCycle-main.js?v=1.686"></script>
 
 <script>
 // Sync About modal version with meta app-version
@@ -1944,7 +1989,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
    <!-- Testing modules now loaded dynamically in miniCycle-scripts.js -->
-   <script src="modules/testing/automated-tests-fix.js?v=1.685"></script>
+   <script src="modules/testing/automated-tests-fix.js?v=1.686"></script>
    <script>
 // Late fallback: only redirect if feature gate failed OR full app never even started booting.
 (function () {

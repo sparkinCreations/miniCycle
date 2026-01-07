@@ -38,6 +38,7 @@ const di = createDIModule('SettingsManager', {
     performSchema25Migration: optional(null),
     resetDefaultRecurringSettings: optional(null),
     organizeCompletedTasks: optional(null),
+    updateStatsPanel: optional(null),
     DataValidator: optional(null),
     calculateNextOccurrence: optional(null),
     sanitizeInput: required(),
@@ -102,6 +103,7 @@ async function loadSubModules(version) {
         setupScrollOnLoadToggle: settingsUIModule.setupScrollOnLoadToggle,
         setupDebugModeToggle: settingsUIModule.setupDebugModeToggle,
         setupResetRecurringButton: settingsUIModule.setupResetRecurringButton,
+        setupResetAchievementProgressButton: settingsUIModule.setupResetAchievementProgressButton,
         syncCurrentSettingsToStorage: settingsUIModule.syncCurrentSettingsToStorage,
         initAllToggles: settingsUIModule.initAllToggles,
 
@@ -147,6 +149,7 @@ function wireSubModuleDependencies(dependencies) {
         loadMiniCycleData: dependencies.loadMiniCycleData,
         showNotification: dependencies.showNotification,
         safeAddEventListener: dependencies.safeAddEventListener,
+        showConfirmationModal: dependencies.showConfirmationModal,
         hideMainMenu: dependencies.hideMainMenu,
         setupDarkModeToggle: dependencies.setupDarkModeToggle,
         setupQuickDarkToggle: dependencies.setupQuickDarkToggle,
@@ -154,7 +157,8 @@ function wireSubModuleDependencies(dependencies) {
         toggleHoverTaskOptions: dependencies.toggleHoverTaskOptions,
         refreshTaskListUI: dependencies.refreshTaskListUI,
         organizeCompletedTasks: dependencies.organizeCompletedTasks,
-        resetDefaultRecurringSettings: dependencies.resetDefaultRecurringSettings
+        resetDefaultRecurringSettings: dependencies.resetDefaultRecurringSettings,
+        updateStatsPanel: dependencies.updateStatsPanel
     });
 
     _subModules.setCycleExportManagerDependencies({
@@ -228,6 +232,7 @@ export class SettingsManager {
             _subModules.setupScrollOnLoadToggle();
             _subModules.setupDebugModeToggle();
             _subModules.setupResetRecurringButton();
+            _subModules.setupResetAchievementProgressButton();
             _subModules.setupExportButton();
             _subModules.setupImportButtons();
             _subModules.setupDragDropImport();
@@ -333,6 +338,7 @@ export function setupScrollToNewTaskToggle() { _subModules?.setupScrollToNewTask
 export function setupScrollOnLoadToggle() { _subModules?.setupScrollOnLoadToggle?.(); }
 export function setupDebugModeToggle() { _subModules?.setupDebugModeToggle?.(); }
 export function setupResetRecurringButton() { _subModules?.setupResetRecurringButton?.(); }
+export function setupResetAchievementProgressButton() { _subModules?.setupResetAchievementProgressButton?.(); }
 export function syncCurrentSettingsToStorage() { return _subModules?.syncCurrentSettingsToStorage?.(); }
 export function initAllToggles() { _subModules?.initAllToggles?.(); }
 export function setupExportButton() { _subModules?.setupExportButton?.(); }
