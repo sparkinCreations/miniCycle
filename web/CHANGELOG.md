@@ -1,3 +1,9 @@
+## [1.688] - 2026-01-08
+- feat: add extra bottom padding to button styles for better spacing with undo buttons
+- feat: update schema documentation to reflect new stats panel and cleared tasks tracking
+- feat: update version to 1.687 and enhance changelog with new features
+
+
 ## [1.687] - 2026-01-07
 - feat: implement Gesture Panel Manager for multi-platform input handling
 
