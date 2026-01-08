@@ -1,7 +1,7 @@
 # miniCycle Schema 2.5 Documentation
 
 **Version**: 1.684
-**Last Updated**: January 5, 2026
+**Last Updated**: January 8, 2026
 
 ## Overview
 
@@ -54,7 +54,11 @@ Schema 2.5 represents the current data structure for miniCycle, consolidating al
       highContrast: false,                 // High contrast mode
       screenReaderHints: false             // Enhanced screen reader support
     },
-    debugMode: false                       // Debug mode enabled
+    debugMode: false,                      // Debug mode enabled
+    statsPanel: {                          // Stats panel preferences
+      currentRoutineExpanded: true,        // Current routine section expanded
+      milestonesExpanded: false            // Milestones section expanded
+    }
   },
 
   data: {
@@ -81,6 +85,11 @@ Schema 2.5 represents the current data structure for miniCycle, consolidating al
           dueDate: false,                  // Due date option
           reminders: false,                // Reminders option
           deleteWhenComplete: false        // Delete when complete option
+        },
+        history: [],                       // Per-routine activity log
+        clearedTasks: {                    // For To-Do mode
+          items: [],                       // Array of cleared task records
+          totalCleared: 0                  // Total tasks cleared in this routine
         }
       }
     }
@@ -98,14 +107,18 @@ Schema 2.5 represents the current data structure for miniCycle, consolidating al
   },
 
   userProgress: {
-    cyclesCompleted: 42,                   // Total cycles completed
-    totalTasksCompleted: 156,              // Total tasks completed
-    achievementsUnlocked: [],              // Unlocked achievement IDs (placeholder)
-    rewardMilestones: [],                  // Reached milestones (placeholder)
+    cyclesCompleted: 42,                   // Total cycles completed (global)
+    totalTasksCompleted: 156,              // Total tasks cleared in To-Do mode (global)
+    rewardMilestones: [],                  // Reached milestone IDs (e.g., "golden-glow-50")
     streaks: {                             // Streak tracking (placeholder)
       current: 0,
       longest: 0
     }
+  },
+
+  achievements: {
+    unlocked: [],                          // Unlocked achievement IDs (OR-based)
+    seen: {}                               // { [achievementId]: boolean } - user has seen popup
   },
 
   customReminders: {
@@ -178,6 +191,12 @@ Tracks application-level information and migration history:
 | `highContrast` | boolean | High contrast mode |
 | `screenReaderHints` | boolean | Enhanced screen reader support |
 
+#### Stats Panel Preferences
+| Field | Type | Description |
+|-------|------|-------------|
+| `statsPanel.currentRoutineExpanded` | boolean | Current routine section expanded |
+| `statsPanel.milestonesExpanded` | boolean | Milestones section expanded |
+
 ### Data
 
 #### Cycle Structure
@@ -197,6 +216,30 @@ Each cycle contains:
 | `createdAt` | number | Creation timestamp |
 | `lastModified` | number | Last modification timestamp |
 | `taskOptionButtons` | object | Per-cycle button visibility settings |
+| `history` | array | Per-routine activity log entries |
+| `clearedTasks` | object | Cleared tasks tracking (To-Do mode) |
+| `clearedTasks.items` | array | Array of cleared task records |
+| `clearedTasks.totalCleared` | number | Total tasks cleared in this routine |
+
+#### History Entry Structure
+
+Each entry in the `history` array:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | string | Entry type (e.g., "task_completed", "cycle_completed") |
+| `taskId` | string | Task ID (if applicable) |
+| `taskText` | string | Task text at time of action |
+| `timestamp` | number | Unix timestamp of action |
+
+#### Cleared Task Record Structure
+
+Each item in `clearedTasks.items`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `taskText` | string | Text of the cleared task |
+| `clearedAt` | number | Unix timestamp when cleared |
 
 #### Task Option Buttons
 
@@ -286,13 +329,33 @@ Gamification and achievement tracking:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `cyclesCompleted` | number | Total cycles completed |
-| `totalTasksCompleted` | number | Total tasks completed |
-| `achievementsUnlocked` | string[] | Unlocked achievement IDs (placeholder) |
-| `rewardMilestones` | string[] | Reached milestones (placeholder) |
+| `cyclesCompleted` | number | Total cycles completed (global across all routines) |
+| `totalTasksCompleted` | number | Total tasks cleared in To-Do mode (global) |
+| `rewardMilestones` | string[] | Reached milestone IDs (e.g., "golden-glow-50") |
 | `streaks` | object | Streak tracking (placeholder) |
 | `streaks.current` | number | Current streak count |
 | `streaks.longest` | number | Longest streak ever |
+
+### Achievements
+
+OR-based achievement system (unlock via cycles OR tasks):
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `unlocked` | string[] | Array of unlocked achievement/badge IDs |
+| `seen` | object | Map of achievement ID to boolean (user has seen popup) |
+
+**Achievement tiers unlock at:**
+| Badge | Cycles | Tasks |
+|-------|--------|-------|
+| Bronze | 5 | 25 |
+| Silver | 10 | 50 |
+| Gold | 25 | 125 |
+| Diamond | 50 | 250 |
+| Crown | 100 | 500 |
+| Star | 250 | 1250 |
+| Lightning | 500 | 2500 |
+| Fire | 1000 | 5000 |
 
 ### Custom Reminders
 
