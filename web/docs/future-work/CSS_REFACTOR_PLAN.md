@@ -384,9 +384,9 @@ styles/
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "miniCycle Theme",
-  "description": "Schema for miniCycle theme definitions",
+  "description": "Schema for miniCycle theme definitions - extensible for future theming beyond colors",
   "type": "object",
-  "required": ["id", "name", "tokens"],
+  "required": ["id", "name"],
   "properties": {
     "id": {
       "type": "string",
@@ -397,99 +397,227 @@ styles/
       "type": "string",
       "description": "Display name"
     },
-    "description": {
-      "type": "string"
+    "description": { "type": "string" },
+    "author": { "type": "string" },
+    "version": { "type": "string", "default": "1.0.0" },
+    "tags": {
+      "type": "array",
+      "description": "Searchable tags: ['dark', 'minimal', 'colorful', 'accessible']",
+      "items": { "type": "string" }
     },
-    "author": {
-      "type": "string"
-    },
-    "version": {
-      "type": "string",
-      "default": "1.0.0"
-    },
+
     "tokens": {
       "type": "object",
-      "required": ["backgrounds", "text", "header", "components"],
+      "description": "All themeable tokens - unused sections can be omitted",
       "properties": {
-        "backgrounds": {
+
+        "colors": {
           "type": "object",
-          "required": ["gradient", "solid", "surface"],
+          "description": "Color palette tokens",
           "properties": {
-            "gradient": { "type": "string" },
-            "solid": { "type": "string" },
-            "surface": { "type": "string" },
-            "surfaceElevated": { "type": "string" }
-          }
-        },
-        "text": {
-          "type": "object",
-          "required": ["primary", "secondary", "onSurface"],
-          "properties": {
-            "primary": { "type": "string" },
-            "secondary": { "type": "string" },
-            "onSurface": { "type": "string" },
-            "muted": { "type": "string" }
-          }
-        },
-        "header": {
-          "type": "object",
-          "properties": {
-            "bg": { "type": "string" },
-            "text": { "type": "string" },
-            "border": { "type": "string" }
-          }
-        },
-        "components": {
-          "type": "object",
-          "properties": {
-            "card": {
+            "backgrounds": {
               "type": "object",
               "properties": {
-                "bg": { "type": "string" },
-                "border": { "type": "string" },
-                "shadow": { "type": "string" }
+                "gradient": { "type": "string" },
+                "solid": { "type": "string" },
+                "surface": { "type": "string" },
+                "surfaceElevated": { "type": "string" }
               }
             },
-            "input": {
+            "text": {
               "type": "object",
               "properties": {
-                "bg": { "type": "string" },
-                "border": { "type": "string" },
-                "focusBorder": { "type": "string" }
+                "primary": { "type": "string" },
+                "secondary": { "type": "string" },
+                "onSurface": { "type": "string" },
+                "muted": { "type": "string" }
               }
             },
-            "button": {
+            "semantic": {
               "type": "object",
+              "description": "Success, warning, error, info colors",
               "properties": {
-                "primaryBg": { "type": "string" },
-                "primaryText": { "type": "string" },
-                "secondaryBg": { "type": "string" },
-                "secondaryText": { "type": "string" }
+                "success": { "type": "string" },
+                "successLight": { "type": "string" },
+                "warning": { "type": "string" },
+                "warningLight": { "type": "string" },
+                "error": { "type": "string" },
+                "errorLight": { "type": "string" },
+                "info": { "type": "string" }
               }
             },
-            "modal": {
+            "header": {
               "type": "object",
               "properties": {
                 "bg": { "type": "string" },
                 "text": { "type": "string" },
-                "border": { "type": "string" },
-                "overlay": { "type": "string" }
+                "border": { "type": "string" }
               }
             },
-            "notification": {
+            "components": {
               "type": "object",
               "properties": {
-                "bg": { "type": "string" },
-                "text": { "type": "string" }
+                "card": {
+                  "properties": { "bg": {}, "border": {}, "shadow": {} }
+                },
+                "input": {
+                  "properties": { "bg": {}, "border": {}, "focusBorder": {} }
+                },
+                "button": {
+                  "properties": { "primaryBg": {}, "primaryText": {}, "secondaryBg": {}, "secondaryText": {} }
+                },
+                "modal": {
+                  "properties": { "bg": {}, "text": {}, "border": {}, "overlay": {} }
+                },
+                "notification": {
+                  "properties": { "bg": {}, "text": {} }
+                },
+                "task": {
+                  "description": "Task item theming",
+                  "properties": { "bg": {}, "completedBg": {}, "border": {}, "checkmark": {} }
+                },
+                "progress": {
+                  "description": "Progress bar theming",
+                  "properties": { "trackBg": {}, "fillBg": {}, "text": {} }
+                },
+                "statsPanel": {
+                  "description": "Stats panel theming",
+                  "properties": { "bg": {}, "text": {}, "border": {}, "chartColors": {} }
+                }
               }
             }
           }
+        },
+
+        "typography": {
+          "type": "object",
+          "description": "FUTURE: Font theming",
+          "properties": {
+            "fontFamily": {
+              "type": "object",
+              "properties": {
+                "base": { "type": "string", "description": "Main font family" },
+                "heading": { "type": "string", "description": "Heading font family" },
+                "mono": { "type": "string", "description": "Monospace font" }
+              }
+            },
+            "fontScale": {
+              "type": "object",
+              "description": "Font size multipliers",
+              "properties": {
+                "base": { "type": "number", "default": 1 },
+                "heading": { "type": "number", "default": 1 }
+              }
+            },
+            "fontWeight": {
+              "type": "object",
+              "properties": {
+                "normal": { "type": "number" },
+                "medium": { "type": "number" },
+                "bold": { "type": "number" }
+              }
+            }
+          }
+        },
+
+        "spacing": {
+          "type": "object",
+          "description": "FUTURE: Spacing/density theming",
+          "properties": {
+            "density": {
+              "type": "string",
+              "enum": ["compact", "normal", "comfortable"],
+              "description": "Overall spacing density"
+            },
+            "scale": {
+              "type": "number",
+              "description": "Spacing multiplier (1 = default)",
+              "default": 1
+            }
+          }
+        },
+
+        "shape": {
+          "type": "object",
+          "description": "FUTURE: Border radius theming",
+          "properties": {
+            "borderRadius": {
+              "type": "string",
+              "enum": ["none", "subtle", "rounded", "pill"],
+              "description": "Overall border radius style"
+            },
+            "scale": {
+              "type": "number",
+              "description": "Border radius multiplier",
+              "default": 1
+            }
+          }
+        },
+
+        "motion": {
+          "type": "object",
+          "description": "FUTURE: Animation/transition theming",
+          "properties": {
+            "reducedMotion": {
+              "type": "boolean",
+              "description": "Minimize animations for accessibility",
+              "default": false
+            },
+            "speed": {
+              "type": "string",
+              "enum": ["slow", "normal", "fast"],
+              "default": "normal"
+            },
+            "easing": {
+              "type": "string",
+              "description": "Default easing function"
+            }
+          }
+        },
+
+        "effects": {
+          "type": "object",
+          "description": "FUTURE: Visual effects theming",
+          "properties": {
+            "shadows": {
+              "type": "string",
+              "enum": ["none", "subtle", "normal", "dramatic"],
+              "default": "normal"
+            },
+            "blur": {
+              "type": "boolean",
+              "description": "Enable backdrop blur effects",
+              "default": true
+            },
+            "glassmorphism": {
+              "type": "boolean",
+              "description": "Enable glass-like transparency effects",
+              "default": false
+            }
+          }
         }
+
       }
     }
   }
 }
 ```
+
+**Note**: Only `id` and `name` are required. All token sections are optional - omit what you don't need. The theme manager will fall back to CSS defaults for any missing tokens. This allows themes to be as simple as:
+
+```json
+{
+  "id": "midnight",
+  "name": "Midnight",
+  "tokens": {
+    "colors": {
+      "backgrounds": { "gradient": "linear-gradient(135deg, #0a0a0f, #1a1a2f)" }
+    }
+  }
+}
+```
+
+Or as comprehensive as defining every token including typography, spacing, and effects.
 
 ### 2.2 Example Theme Definition
 
