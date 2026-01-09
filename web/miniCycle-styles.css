@@ -1,3 +1,9 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   CSS Variables Foundation
+   Import design tokens and theme variables
+   ═══════════════════════════════════════════════════════════════════════════ */
+@import url('./styles/base/variables.css');
+
 /* Font Awesome font-display override to prevent CLS from icon font loading */
 @font-face {
     font-family: 'Font Awesome 6 Free';
@@ -10,7 +16,7 @@
 
 /* Global Styles */
 body {
-    background: linear-gradient(135deg, #4c79ff, #74c0fc);
+    background: var(--theme-bg-gradient);
     z-index: -2;
     padding-top: 0; /* Remove since header handles safe area now */
     padding-bottom: env(safe-area-inset-bottom);
@@ -26,15 +32,15 @@ html, body {
     margin: 0;
     padding: 0;
     overflow: hidden;
-    background: linear-gradient(135deg, #4c79ff, #74c0fc);
-    background-color: #000;
+    background: var(--theme-bg-gradient);
+    background-color: var(--theme-bg-solid);
 }
 
 .app-root {
     justify-content: flex-start;
-    font-family: 'Poppins', sans-serif;
+    font-family: var(--font-family);
     text-align: center;
-    color: white;
+    color: var(--theme-text-primary);
     margin: 0;
     display: flex;
     flex-direction: column;
@@ -101,11 +107,12 @@ html, body {
   height: auto;
   max-height: 63vh;
   overflow-y: auto;
-  color: black;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+  color: var(--theme-stats-text);
+  background: var(--theme-stats-bg);
+  border: 1px solid var(--theme-stats-border);
+  box-shadow: var(--theme-card-shadow);
   padding: 15px;
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -248,10 +255,10 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgb(255, 255, 255);
-    border-radius: 8px;
+    background: var(--theme-input-bg);
+    border-radius: var(--radius-md);
     padding: 10px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-md);
     margin-bottom: 8px;  /* Space between input and title */
     width: 100%;
     height: 30px;
@@ -260,43 +267,48 @@ html, body {
 
 input[type="text"] {
     flex: 1;
-    background: white;
+    background: var(--theme-input-bg);
+    color: var(--theme-input-text);
     padding: 7px;
     font-size: 16px;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     outline: none;
     max-width: 350px;
 }
 
+input[type="text"]::placeholder {
+    color: var(--theme-input-placeholder);
+}
+
 /* ✅ Ensure proper viewport handling */
 #taskInput {
-      flex: 1;
-    background: rgb(255, 255, 255);
+    flex: 1;
+    background: var(--theme-input-bg);
+    color: var(--theme-input-text);
     padding: 7px;
     font-size: 16px;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     outline: none;
     margin: 5px;
-
 }
 
 
 
 button {
-    background: #3e3d3d;
-    color: white;
+    background: var(--theme-button-secondary-bg);
+    color: var(--theme-button-secondary-text);
     border: none;
     padding: 10px 13px;
     font-size: 16px;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: background 0.3s;
+    transition: background var(--transition-normal);
 }
 
 button:not(.dot):hover {
-    background: #ff4d4d;
+    background: var(--theme-button-secondary-hover-bg);
 }
 
 
@@ -2151,7 +2163,7 @@ body.theme-golden-glow .mode-description {
     align-items: center;
     font-size: 1rem;
     font-weight: bold;
-    color: #424242;
+    color: var(--theme-text-on-surface);
     cursor: pointer;
 }
 
@@ -2175,8 +2187,8 @@ body.theme-golden-glow .mode-description {
 
 /* 📌 Checked state */
 .custom-checkbox input:checked + .checkmark {
-    background-color: #4CAF50; /* Green when checked */
-    border-color: #000000;
+    background-color: var(--theme-task-checkmark);
+    border-color: var(--theme-task-checkmark);
     position: relative;
 }
 
@@ -4330,10 +4342,12 @@ body.dark-mode.theme-dark-ocean .mini-modal-buttons .btn-confirm {
 
 /* Modal Content */
 .modal-content {
-    background: white;
+    background: var(--theme-modal-bg);
+    color: var(--theme-modal-text);
+    border: 1px solid var(--theme-modal-border);
     padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
     width: 90%;
     max-width: 400px;
     text-align: center;
@@ -5464,20 +5478,20 @@ body.dark-mode {
 }
 
 .notification {
-    background: #323232;
-    color: #fff;
+    background: var(--theme-notification-bg);
+    color: var(--theme-notification-text);
     padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 14px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    box-shadow: var(--shadow-md);
     opacity: 0;
     transform: translateY(-10px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    transition: opacity var(--transition-normal) ease, transform var(--transition-normal) ease;
     word-wrap: break-word;
     overflow-wrap: break-word;
     white-space: normal;
     display: block;
-    line-height: 1.4;
+    line-height: var(--line-height-normal);
 }
 
 .notification.show {
