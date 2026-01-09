@@ -1,0 +1,115 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   App Container Layout
+   Main structural elements and view containers
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Root container */
+.app-root {
+    justify-content: flex-start;
+    font-family: var(--font-family);
+    text-align: center;
+    color: var(--theme-text-primary);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* Main app container */
+#app-container {
+    position: relative;
+    width: 100vw;
+    overflow: hidden;
+    padding-top: calc(env(safe-area-inset-top) + 110px); /* Status bar + header + mode selector */
+}
+
+/* Task view container - centered positioning */
+#task-view {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    max-width: 400px;
+    max-height: calc(95vh - 245px);
+    min-height: auto;
+    transition: left 0.4s ease-in-out, transform 0.4s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Re-enable clicks on task view content */
+#task-view * {
+    pointer-events: auto;
+}
+
+/* Hidden state - slide off left */
+#task-view.hide {
+    left: -50%;
+    transform: translate(-200%, -50%);
+}
+
+/* Visible state - centered */
+#task-view.show {
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Stats panel container */
+.stats-panel,
+#stats-panel {
+    position: fixed;
+    top: 54%;
+    left: 50%;
+    transform: translate(200%, -50%);
+    transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out;
+    width: 80vw;
+    max-width: 400px;
+    height: auto;
+    max-height: 63vh;
+    overflow-y: auto;
+    color: var(--theme-stats-text);
+    background: var(--theme-stats-bg);
+    border: 1px solid var(--theme-stats-border);
+    box-shadow: var(--theme-card-shadow);
+    padding: 15px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Stats panel visible state */
+#stats-panel.show {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* View toggle animations */
+.view-toggle-active #task-view {
+    transform: translate(-50%, -50%);
+}
+
+.view-toggle-active #stats-panel {
+    transform: translate(-50%, -50%);
+}
+
+/* Mobile: Move task view up to make room for help window */
+@media (max-width: 768px) {
+    #task-view {
+        top: 46%;
+    }
+
+    #task-view.show {
+        transform: translate(-50%, -50%);
+    }
+}

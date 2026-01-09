@@ -844,13 +844,21 @@ const themeManager = new ThemeManager();
  * @param {Object} dependencies - Injected dependencies
  * @returns {ThemeManager} The singleton instance
  */
-export function initThemeManager(dependencies = {}) {
+export async function initThemeManager(dependencies = {}) {
     // Set dependencies
     setThemeManagerDependencies(dependencies);
 
     // Initialize theme panel (creates containers and populates theme toggles)
     themeManager.initializeThemesPanel();
     themeManager.setupThemesPanel?.();
+
+    // ✅ Load and apply saved theme from storage on startup
+    const schemaData = themeManager.loadSchemaData();
+    const savedTheme = schemaData?.settings?.theme;
+    if (savedTheme && savedTheme !== 'default') {
+        console.log('🎨 Applying saved theme from storage:', savedTheme);
+        await themeManager.applyTheme(savedTheme, false); // false = don't save again
+    }
 
     console.log('✅ ThemeManager initialized via initThemeManager');
     return themeManager;

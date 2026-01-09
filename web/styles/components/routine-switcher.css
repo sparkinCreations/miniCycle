@@ -1,0 +1,488 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Routine Switcher Component
+   Modal for switching between miniCycles/routines
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   ROUTINE SWITCHER BUTTON
+   ============================================================================= */
+
+.routine-switcher-btn {
+    position: absolute;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
+    border: 1px solid #0c20913f;
+    color: rgb(44, 50, 112);
+    border-radius: 5px;
+    width: 88px;
+    height: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.routine-switcher-btn:hover {
+    background: rgba(255, 255, 255, 0.4);
+    border-color: #0c2091;
+}
+
+.routine-switcher-btn:active {
+    transform: scale(0.95);
+}
+
+.routine-switcher-btn svg {
+    fill: rgb(44, 50, 112);
+    width: 16px;
+    height: 16px;
+}
+
+/* =============================================================================
+   MINI CYCLE SWITCH MODAL
+   ============================================================================= */
+
+.mini-cycle-switch-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.mini-cycle-switch-modal.active,
+.mini-cycle-switch-modal.show {
+    display: flex;
+}
+
+/* =============================================================================
+   MODAL CONTENT
+   ============================================================================= */
+
+.mini-cycle-switch-modal-content {
+    background: var(--theme-modal-bg, rgb(237, 239, 246));
+    color: var(--theme-modal-text, #333);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    min-width: 300px;
+    max-width: 400px;
+    text-align: center;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.mini-cycle-switch-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: inherit;
+    text-align: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 10px;
+}
+
+.mini-cycle-switch-title-logo {
+    font-weight: bold;
+    margin-bottom: -30px;
+}
+
+.mini-cycle-switch-title-logo img {
+    width: 22px;
+    padding: 3px;
+    margin-left: -300px;
+}
+
+/* =============================================================================
+   ROUTINE SEARCH
+   ============================================================================= */
+
+.routine-search-input {
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: var(--font-family);
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.routine-search-input:focus {
+    outline: none;
+    border-color: var(--theme-button-primary-bg, #4c79ff);
+    box-shadow: 0 0 0 2px rgba(76, 121, 255, 0.2);
+}
+
+.routine-search-input::placeholder {
+    color: #999;
+}
+
+/* =============================================================================
+   SORT AND FILTER CONTROLS
+   ============================================================================= */
+
+.routine-sort-filter-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 8px 0;
+    gap: 10px;
+}
+
+.routine-sort-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.routine-sort-label {
+    font-size: 0.75rem;
+    color: #666;
+    margin-right: 4px;
+}
+
+.routine-sort-btn {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    border: 1px solid #ccc;
+    background: #f5f5f5;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: #555;
+}
+
+.routine-sort-btn:hover {
+    background: #e8e8e8;
+    border-color: #999;
+}
+
+.routine-sort-btn.active {
+    background: var(--theme-button-primary-bg, #4c79ff);
+    color: white;
+    border-color: var(--theme-button-primary-bg, #4c79ff);
+}
+
+.routine-filter-controls {
+    display: flex;
+    align-items: center;
+}
+
+.routine-filter-select {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    border: 1px solid #ccc;
+    background: #f5f5f5;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #555;
+    outline: none;
+}
+
+.routine-filter-select:hover {
+    border-color: #999;
+}
+
+.routine-filter-select:focus {
+    border-color: var(--theme-button-primary-bg, #4c79ff);
+    box-shadow: 0 0 0 2px rgba(76, 121, 255, 0.2);
+}
+
+/* =============================================================================
+   ROUTINE LIST
+   ============================================================================= */
+
+.mini-cycle-switch-list {
+    max-height: 240px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid #767676;
+    padding: 6px;
+    background: var(--theme-input-bg, white);
+    text-align: left;
+    border-radius: 5px;
+}
+
+/* =============================================================================
+   ROUTINE LIST ITEMS
+   ============================================================================= */
+
+.mini-cycle-switch-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+    padding: 8px;
+    margin-bottom: 3px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background: none;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s ease-in-out, transform 0.1s;
+    text-align: left;
+    border-radius: 3px;
+    font-size: 0.9rem;
+}
+
+.mini-cycle-switch-item span {
+    pointer-events: none;
+}
+
+.mini-cycle-switch-item:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.mini-cycle-switch-item.selected {
+    background: var(--theme-button-primary-bg, #0056b3);
+    color: white;
+    font-weight: bold;
+}
+
+/* Cycle item layout */
+.cycle-item-left {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cycle-item-emoji {
+    min-width: 32px;
+    width: 32px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.cycle-item-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: text;
+    pointer-events: auto;
+}
+
+.cycle-item-edit-input {
+    font-size: inherit;
+    font-family: inherit;
+    padding: 2px 6px;
+    border: 1px solid var(--theme-info, #007bff);
+    border-radius: 4px;
+    background: var(--theme-input-bg, #fff);
+    color: var(--theme-input-text, #333);
+    outline: none;
+    min-width: 100px;
+    max-width: 200px;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.cycle-item-size {
+    font-size: 0.75rem;
+    font-weight: normal;
+    color: #888;
+    background: rgba(0, 0, 0, 0.06);
+    padding: 2px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.mini-cycle-switch-item.selected .cycle-item-size {
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* =============================================================================
+   SWITCH PREVIEW
+   ============================================================================= */
+
+.switch-items-row {
+    display: none;
+    padding: 10px;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.switch-preview-window {
+    position: relative;
+    margin: 10px auto;
+    width: 150px;
+    height: auto;
+    padding: 10px;
+    background-color: var(--theme-input-bg, white);
+    border: 1px solid var(--theme-modal-border, black);
+    border-radius: 5px;
+    color: #3A3A3A;
+    font-size: 0.9rem;
+    text-align: left;
+    overflow-y: auto;
+    max-height: 70px;
+}
+
+.preview-task {
+    font-size: 0.85rem;
+    padding: 3px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.preview-task:last-child {
+    border-bottom: none;
+}
+
+.switch-preview-date {
+    font-size: 0.7rem;
+    color: #888;
+    text-align: center;
+    margin-top: 6px;
+    font-style: italic;
+}
+
+/* =============================================================================
+   ACTION BUTTONS
+   ============================================================================= */
+
+.mini-cycle-switch-btn {
+    width: 100px;
+    height: 30px;
+    padding: 0 16px;
+    font-size: 0.95rem;
+    margin: 5px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mini-cycle-switch-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.mini-cycle-switch-btn:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.mini-cycle-switch-btn.open-btn {
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    color: white;
+}
+
+.mini-cycle-switch-btn.open-btn:hover {
+    background: linear-gradient(135deg, #5a6578 0%, #3d4758 100%);
+}
+
+.mini-cycle-switch-btn.cancel-btn {
+    background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+    color: white;
+}
+
+.mini-cycle-switch-btn.cancel-btn:hover {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+}
+
+/* =============================================================================
+   UPLOAD BUTTON
+   ============================================================================= */
+
+.mini-cycle-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 220px;
+    padding: 10px 20px;
+    margin: 10px auto;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+    color: white;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.mini-cycle-upload-btn:hover {
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.mini-cycle-upload-btn:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.mini-cycle-upload-btn i {
+    font-size: 1rem;
+}
+
+/* =============================================================================
+   ROUTINE BUTTONS CONTAINER
+   ============================================================================= */
+
+.routine-buttons-container {
+    display: none;
+}
+
+.routine-buttons-container.visible {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .routine-switcher-btn {
+        width: 70px;
+        height: 20px;
+    }
+
+    .mini-cycle-switch-modal-content {
+        min-width: 280px;
+        max-width: 95%;
+    }
+}
+
+@media (max-width: 480px) {
+    .mini-cycle-switch-modal-content {
+        width: 85%;
+        padding: 12px;
+    }
+
+    .mini-cycle-switch-title {
+        font-size: 1.2rem;
+    }
+
+    .mini-cycle-switch-btn {
+        width: 90px;
+        padding: 8px 12px;
+    }
+
+    .mini-cycle-upload-btn {
+        max-width: 200px;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+}

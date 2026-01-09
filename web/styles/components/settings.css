@@ -1,0 +1,162 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Settings Component
+   Settings modal and configuration options
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   SETTINGS MODAL OVERLAY
+   ============================================================================= */
+
+.settings-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.settings-modal.active,
+.settings-modal.show {
+    display: flex;
+}
+
+/* =============================================================================
+   SETTINGS MODAL CONTENT
+   ============================================================================= */
+
+.settings-modal-content {
+    background: var(--theme-modal-bg, #ffffff);
+    color: var(--theme-modal-text, #333);
+    border-radius: 16px;
+    padding: 30px 25px;
+    width: 90%;
+    max-width: 400px;
+    text-align: left;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    font-family: var(--font-family);
+    position: relative;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.settings-modal-content h2 {
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 24px;
+    color: inherit;
+}
+
+/* =============================================================================
+   SETTINGS OPTIONS
+   ============================================================================= */
+
+.settings-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 0;
+    font-size: 15px;
+    color: inherit; /* Inherits from .settings-modal-content which sets --theme-modal-text */
+}
+
+.settings-option input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.settings-option label {
+    cursor: pointer;
+    flex: 1;
+}
+
+/* =============================================================================
+   SETTINGS BUTTONS
+   ============================================================================= */
+
+.settings-btn {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    background: #4790df;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.settings-btn:hover {
+    background: #2171b5;
+    transform: scale(1.01);
+}
+
+/* Danger buttons */
+.settings-btn.danger-btn {
+    background: var(--theme-error, #dc2626);
+    color: #ffffff;
+}
+
+.settings-btn.danger-btn:hover {
+    background: var(--theme-error-light, #b91c1c);
+}
+
+/* Factory reset button */
+.factory-reset-btn {
+    background: #ff4d4d;
+    color: white;
+}
+
+.factory-reset-btn:hover {
+    background: #e60000;
+}
+
+/* =============================================================================
+   SETTINGS SECTIONS
+   ============================================================================= */
+
+.settings-section {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.settings-section h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: inherit;
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .settings-modal-content {
+        padding: 20px 15px;
+        width: 95%;
+    }
+
+    .settings-btn {
+        padding: 10px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .settings-modal-content {
+        max-height: 80vh;
+    }
+}

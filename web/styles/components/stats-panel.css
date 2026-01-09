@@ -1,0 +1,374 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Stats Panel Component
+   Statistics display panel with slide animations
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   STATS PANEL BASE
+   ============================================================================= */
+
+.stats-panel {
+    position: fixed;
+    top: 54%;
+    left: 50%;
+    transform: translate(200%, -50%);
+    transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out;
+    width: 80vw;
+    max-width: 400px;
+    height: auto;
+    max-height: 63vh;
+    overflow-y: auto;
+    color: var(--theme-stats-text);
+    background: var(--theme-stats-bg);
+    border: 1px solid var(--theme-stats-border);
+    box-shadow: var(--theme-card-shadow);
+    padding: 15px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* =============================================================================
+   STATS PANEL VISIBILITY STATES
+   ============================================================================= */
+
+#stats-panel.show {
+    transform: translateX(-50%) translateY(-50%);
+    opacity: 1;
+    pointer-events: all;
+}
+
+#stats-panel.hide {
+    transform: translateX(200%) translateY(-50%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* =============================================================================
+   STATS PANEL CONTENT
+   ============================================================================= */
+
+#stats-panel p {
+    margin: 6px 0;
+}
+
+#stats-header {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+/* =============================================================================
+   STATS FEATURE BUTTONS
+   ============================================================================= */
+
+.stats-feature-btn {
+    background: var(--theme-button-secondary-bg);
+    color: var(--theme-button-secondary-text);
+    border: 1px solid var(--theme-stats-border, rgba(0, 0, 0, 0.1));
+    padding: 10px 16px;
+    border-radius: var(--radius-md);
+    margin: 5px;
+    cursor: pointer;
+    transition: background var(--transition-normal), transform var(--transition-fast);
+}
+
+.stats-feature-btn:hover {
+    background: var(--theme-button-secondary-hover-bg);
+    transform: scale(1.02);
+}
+
+/* =============================================================================
+   SLIDE ARROWS
+   ============================================================================= */
+
+.slide-arrow {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 32px;
+    color: black;
+    cursor: pointer;
+    z-index: 10;
+    opacity: 0.6;
+    transition: opacity var(--transition-fast);
+}
+
+.slide-arrow:hover {
+    opacity: 1;
+}
+
+.slide-arrow.left {
+    left: 10px;
+}
+
+.slide-arrow.right {
+    right: 10px;
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .stats-panel {
+        width: 90vw;
+        max-height: 60vh;
+        padding: 12px;
+    }
+
+    .slide-arrow {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-panel {
+        width: 95vw;
+        padding: 10px;
+    }
+}
+
+/* =============================================================================
+   CURRENT ROUTINE STATUS (Collapsible Section)
+   ============================================================================= */
+
+.current-routine-status {
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-size: 14px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.current-routine-status h3 {
+    cursor: pointer;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.current-routine-status h3:hover {
+    color: var(--theme-color-success, #2e8b57);
+    transform: scale(1.05);
+}
+
+.current-routine-status .clickable {
+    cursor: pointer;
+    background-color: var(--theme-bg-surface, #f0f0f0);
+    padding: 8px 12px;
+    border-radius: 4px;
+    display: inline-block;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.current-routine-status .clickable:hover {
+    background-color: var(--theme-bg-surface-elevated, #e0e0e0);
+    transform: scale(1.02);
+}
+
+/* =============================================================================
+   DOUGHNUT CHART
+   ============================================================================= */
+
+.current-cycle-doughnut-container {
+    width: 90px;
+    height: 90px;
+    margin: 10px auto;
+    display: none;
+}
+
+.current-cycle-doughnut-container.visible {
+    display: block;
+}
+
+.current-cycle-doughnut {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.doughnut-bg {
+    stroke: var(--theme-progress-track-bg, #e0e0e0);
+}
+
+.doughnut-progress {
+    stroke-dasharray: 251.2;
+    stroke-dashoffset: 251.2;
+    transition: stroke-dashoffset 0.6s ease;
+    will-change: stroke-dashoffset;
+}
+
+.doughnut-text {
+    font-size: 16px;
+    font-weight: bold;
+    fill: var(--theme-stats-text, #333);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+#current-cycle-progress-text {
+    text-align: center;
+    font-size: 1.05em;
+    font-weight: 500;
+    color: var(--theme-stats-text, #555);
+    margin-top: 8px;
+    margin-bottom: 8px;
+    display: none;
+}
+
+#current-cycle-progress-text.visible {
+    display: block;
+}
+
+#current-routine-cycle-count,
+#current-routine-cleared-count {
+    display: none;
+    font-weight: 500;
+    color: var(--theme-stats-text, #444);
+    white-space: pre-wrap;
+    transition: opacity 0.3s ease;
+}
+
+#current-routine-cycle-count.visible,
+#current-routine-cleared-count.visible {
+    display: block;
+}
+
+.routine-buttons-container {
+    display: none;
+}
+
+.routine-buttons-container.visible {
+    display: flex;
+}
+
+/* =============================================================================
+   THEME UNLOCK STATUS (Collapsible Section)
+   ============================================================================= */
+
+.theme-unlock-status {
+    margin-top: 0px;
+    margin-bottom: -10px;
+    font-size: 14px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.theme-unlock-status h3 {
+    cursor: pointer;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.theme-unlock-status h3:hover {
+    color: var(--theme-color-success, #2e8b57);
+    transform: scale(1.05);
+}
+
+.theme-unlock-status .clickable {
+    cursor: pointer;
+    background-color: var(--theme-bg-surface, #f0f0f0);
+    padding: 8px 12px;
+    border-radius: 4px;
+    display: inline-block;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.theme-unlock-status .clickable:hover {
+    background-color: var(--theme-bg-surface-elevated, #e0e0e0);
+    transform: scale(1.02);
+}
+
+#theme-unlock-message,
+#golden-unlock-message,
+#game-unlock-message {
+    display: none;
+    font-weight: 500;
+    color: var(--theme-stats-text, #444);
+    white-space: pre-wrap;
+    transition: opacity 0.3s ease;
+}
+
+#theme-unlock-message.visible,
+#golden-unlock-message.visible,
+#game-unlock-message.visible {
+    display: block;
+}
+
+#theme-unlock-message.unlocked-message,
+#golden-unlock-message.unlocked-message,
+#game-unlock-message.unlocked-message {
+    color: var(--theme-color-success, #2e8b57);
+    font-weight: bold;
+}
+
+.toggle-icon {
+    margin-left: 8px;
+    font-size: 0.9em;
+    vertical-align: middle;
+}
+
+/* =============================================================================
+   BADGES
+   ============================================================================= */
+
+.badge-container {
+    text-align: center;
+    margin-top: 0px;
+    margin-bottom: 15px;
+}
+
+.badges {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 10px;
+    user-select: none;
+    cursor: default;
+}
+
+#all-routines-count {
+    margin-top: 15px;
+}
+
+.badge {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background-color: var(--theme-bg-surface, #ddd);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    color: var(--theme-text-muted, #888);
+    transition: all 0.3s ease;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.badge.unlocked {
+    background-color: #4caf50;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.badge.unlocked.ocean-theme {
+    background-color: #4ecdc4;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 160, 147, 0.4);
+}
+
+.badge.unlocked.golden-theme {
+    background-color: #ffd700;
+    color: #4a3d00;
+    box-shadow: 0 4px 10px rgba(255, 215, 0, 0.5);
+}
+
+.badge.unlocked.game-unlocked {
+    background-color: rgba(0, 0, 0, 0.868);
+    color: white;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+    font-weight: bold;
+}

@@ -1,0 +1,567 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Helper Utilities
+   Common utility classes for visibility, display, and state management
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   VISIBILITY UTILITIES
+   ============================================================================= */
+
+.hidden {
+    display: none !important;
+}
+
+.visible {
+    display: block;
+}
+
+.invisible {
+    visibility: hidden;
+}
+
+.opacity-0 {
+    opacity: 0;
+}
+
+.opacity-50 {
+    opacity: 0.5;
+}
+
+.opacity-100 {
+    opacity: 1;
+}
+
+/* =============================================================================
+   DISPLAY UTILITIES
+   ============================================================================= */
+
+.d-none {
+    display: none;
+}
+
+.d-block {
+    display: block;
+}
+
+.d-flex {
+    display: flex;
+}
+
+.d-inline-flex {
+    display: inline-flex;
+}
+
+.d-grid {
+    display: grid;
+}
+
+/* =============================================================================
+   FLEXBOX UTILITIES
+   ============================================================================= */
+
+.flex-row {
+    flex-direction: row;
+}
+
+.flex-column {
+    flex-direction: column;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+.flex-shrink-0 {
+    flex-shrink: 0;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.justify-end {
+    justify-content: flex-end;
+}
+
+.align-center {
+    align-items: center;
+}
+
+.align-start {
+    align-items: flex-start;
+}
+
+.align-end {
+    align-items: flex-end;
+}
+
+.gap-sm {
+    gap: 4px;
+}
+
+.gap-md {
+    gap: 8px;
+}
+
+.gap-lg {
+    gap: 16px;
+}
+
+/* =============================================================================
+   TEXT UTILITIES
+   ============================================================================= */
+
+.text-left {
+    text-align: left;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.text-wrap {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.font-bold {
+    font-weight: bold;
+}
+
+.font-normal {
+    font-weight: normal;
+}
+
+/* =============================================================================
+   SPACING UTILITIES
+   ============================================================================= */
+
+.m-0 {
+    margin: 0;
+}
+
+.mt-0 {
+    margin-top: 0;
+}
+
+.mb-0 {
+    margin-bottom: 0;
+}
+
+.p-0 {
+    padding: 0;
+}
+
+.mx-auto {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* =============================================================================
+   POINTER & INTERACTION UTILITIES
+   ============================================================================= */
+
+.pointer-events-none {
+    pointer-events: none;
+}
+
+.pointer-events-auto {
+    pointer-events: auto;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.cursor-default {
+    cursor: default;
+}
+
+.cursor-not-allowed {
+    cursor: not-allowed;
+}
+
+.user-select-none {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.user-select-text {
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+/* =============================================================================
+   WIDTH UTILITIES
+   ============================================================================= */
+
+.w-full {
+    width: 100%;
+}
+
+.w-auto {
+    width: auto;
+}
+
+.max-w-full {
+    max-width: 100%;
+}
+
+/* =============================================================================
+   POSITION UTILITIES
+   ============================================================================= */
+
+.relative {
+    position: relative;
+}
+
+.absolute {
+    position: absolute;
+}
+
+.fixed {
+    position: fixed;
+}
+
+/* =============================================================================
+   OVERFLOW UTILITIES
+   ============================================================================= */
+
+.overflow-hidden {
+    overflow: hidden;
+}
+
+.overflow-auto {
+    overflow: auto;
+}
+
+.overflow-y-auto {
+    overflow-y: auto;
+}
+
+.overflow-x-hidden {
+    overflow-x: hidden;
+}
+
+/* =============================================================================
+   ACCESSIBILITY
+   ============================================================================= */
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* =============================================================================
+   PULL TO REFRESH
+   ============================================================================= */
+
+.pull-refresh-indicator {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    background: var(--theme-notification-bg);
+    color: var(--theme-notification-text);
+    border-radius: 0 0 10px 10px;
+    z-index: 9999;
+    box-shadow: var(--shadow-md);
+}
+
+.pull-refresh-indicator.visible {
+    display: block;
+}
+
+/* =============================================================================
+   NAVIGATION DOTS
+   ============================================================================= */
+
+.navigation-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    position: absolute;
+    bottom: 35px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    pointer-events: auto;
+    cursor: pointer;
+    background: none;
+    background-color: rgba(130, 177, 250, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    padding: 4px 8px;
+    border: 1px solid rgba(220, 231, 252, 0.2);
+    border-radius: 20px;
+    transition: background-color 0.2s ease;
+}
+
+.navigation-dots:hover {
+    background-color: rgba(130, 177, 250, 0.55);
+}
+
+.dot {
+    width: 7px;
+    height: 7px;
+    background-color: rgba(68, 82, 124, 1);
+    border-radius: 50%;
+    transition: background-color 0.3s ease;
+    pointer-events: auto;
+    cursor: pointer;
+    position: relative;
+    border: none;
+    outline: none;
+    padding: 0;
+    margin: 0;
+}
+
+.dot:hover {
+    background-color: #aaa;
+}
+
+.dot:focus {
+    outline: 2px solid #007BFF;
+    outline-offset: -16px;
+}
+
+.dot.active {
+    background-color: rgb(220, 231, 252);
+    transform: scale(1.3);
+}
+
+.dot.active:hover {
+    background-color: #0056b3;
+}
+
+.dot.active:active {
+    background-color: #004494;
+}
+
+/* Mobile: Move navigation dots higher to avoid footer overlap */
+@media (max-width: 768px) {
+    .navigation-dots {
+        bottom: 55px;
+    }
+}
+
+/* =============================================================================
+   VISUALLY HIDDEN
+   ============================================================================= */
+
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+    pointer-events: none !important;
+}
+
+/* =============================================================================
+   APP LOADER
+   ============================================================================= */
+
+#app-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #4c79ff, #74c0fc);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
+}
+
+#app-loader.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.loader-logo {
+    width: 120px;
+    height: 96px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+}
+
+.loader-text {
+    margin-top: 20px;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    opacity: 0.9;
+}
+
+.loader-bar-container {
+    margin-top: 24px;
+    width: 200px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.loader-bar {
+    width: 0%;
+    height: 100%;
+    background: white;
+    border-radius: 3px;
+    transition: width 0.3s ease-out;
+}
+
+/* Loading overlay for operations */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 99998;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.loading-spinner img {
+    width: 80px;
+    height: 80px;
+    animation: spin 2s linear infinite;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+}
+
+.loading-spinner-text {
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+}
+
+/* =============================================================================
+   PULL TO REFRESH (Enhanced)
+   ============================================================================= */
+
+.pull-refresh-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    pointer-events: none;
+    transform: translateY(-60px);
+    transition: transform 0.2s ease-out;
+}
+
+.pull-refresh-indicator.visible {
+    transition: none;
+}
+
+.pull-refresh-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    background: var(--background-color, #fff);
+    border-radius: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.pull-refresh-icon {
+    font-size: 1.4em;
+    transition: transform 0.1s ease-out;
+    color: var(--primary-color, #4a90d9);
+}
+
+.pull-refresh-text {
+    font-size: 0.9em;
+    color: var(--text-color, #333);
+    font-weight: 500;
+}
+
+.pull-refresh-indicator.ready .pull-refresh-icon {
+    color: var(--success-color, #4caf50);
+}
+
+.pull-refresh-indicator.ready .pull-refresh-text {
+    color: var(--success-color, #4caf50);
+}
+
+.pull-refresh-indicator.refreshing .pull-refresh-icon {
+    color: var(--primary-color, #4a90d9);
+}
+
+@keyframes pull-refresh-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Dark mode support */
+body.dark-mode .pull-refresh-content {
+    background: var(--background-color, #1a1a2e);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .pull-refresh-text {
+    color: var(--text-color, #e0e0e0);
+}
+
+/* Hide on desktop - only show on touch devices */
+@media (hover: hover) and (pointer: fine) {
+    .pull-refresh-indicator {
+        display: none;
+    }
+}

@@ -1,0 +1,139 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Typography
+   Font families, sizes, weights, and text styling
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Base text styles */
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    margin: 0;
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+}
+
+h1 {
+    font-size: var(--font-size-2xl);
+}
+
+h2 {
+    font-size: var(--font-size-xl);
+}
+
+h3 {
+    font-size: var(--font-size-lg);
+}
+
+h4, h5, h6 {
+    font-size: var(--font-size-base);
+}
+
+/* Paragraph text */
+p {
+    margin: 0 0 1em 0;
+    line-height: var(--line-height-relaxed);
+}
+
+/* Small text */
+small, .text-sm {
+    font-size: var(--font-size-sm);
+}
+
+/* Extra small text */
+.text-xs {
+    font-size: var(--font-size-xs);
+}
+
+/* Large text */
+.text-lg {
+    font-size: var(--font-size-lg);
+}
+
+/* Extra large text */
+.text-xl {
+    font-size: var(--font-size-xl);
+}
+
+/* Font weights */
+.font-normal {
+    font-weight: var(--font-weight-normal);
+}
+
+.font-medium {
+    font-weight: var(--font-weight-medium);
+}
+
+.font-semibold {
+    font-weight: var(--font-weight-semibold);
+}
+
+.font-bold {
+    font-weight: var(--font-weight-bold);
+}
+
+/* Text alignment */
+.text-left {
+    text-align: left;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+/* Text colors using theme variables */
+.text-primary {
+    color: var(--theme-text-primary);
+}
+
+.text-secondary {
+    color: var(--theme-text-secondary);
+}
+
+.text-muted {
+    color: var(--theme-text-muted);
+}
+
+/* Text truncation */
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Multi-line truncation */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Word break */
+.break-word {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Prevent text selection */
+.no-select {
+    -webkit-user-select: none;
+    user-select: none;
+}

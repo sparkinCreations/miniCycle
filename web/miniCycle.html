@@ -43,7 +43,10 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.692">
+<!-- Original CSS (for reference) -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.692"> -->
+<!-- Modular CSS -->
+<link rel="stylesheet" href="styles/main.css?v=1.697">
 <link rel="manifest" href="manifest.json">
 
 <!-- Modulepreload for critical boot modules - speeds up ES module loading -->
@@ -152,8 +155,27 @@
 
   </style>
 
-
-
+<!-- Early dark mode application - prevents flash of light mode -->
+<script>
+  (function() {
+    try {
+      var data = localStorage.getItem('miniCycleData');
+      if (data) {
+        var parsed = JSON.parse(data);
+        if (parsed && parsed.settings && parsed.settings.darkMode) {
+          // Apply to html immediately (body doesn't exist yet)
+          document.documentElement.classList.add('dark-mode');
+          // Also apply to body once it's ready
+          document.addEventListener('DOMContentLoaded', function() {
+            document.body.classList.add('dark-mode');
+          });
+        }
+      }
+    } catch (e) {
+      // Silently fail - dark mode will be applied later by JS
+    }
+  })();
+</script>
 
 <!-- version.js MUST load synchronously before ES modules to set globalThis.APP_VERSION -->
 <script src="./version.js?v=1.692"></script>

@@ -55,9 +55,11 @@
 
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Text
+     Note: Original CSS referenced these but never defined them, so they defaulted
+     to inherit. Themes can override these via theme-manager.js.
      ═══════════════════════════════════════════════════════════════════════════ */
-  --theme-text-primary: #ffffff;
-  --theme-text-secondary: rgba(255, 255, 255, 0.8);
+  --theme-text-primary: inherit;
+  --theme-text-secondary: inherit;
   --theme-text-on-surface: #333333;
   --theme-text-muted: #888888;
 

@@ -1,0 +1,344 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Storage Component
+   Storage usage bar and related UI elements
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   STORAGE BAR CONTAINER
+   ============================================================================= */
+
+.storage-bar-container {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+}
+
+.storage-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.storage-bar-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* =============================================================================
+   STORAGE REFRESH BUTTON
+   ============================================================================= */
+
+.storage-refresh-btn {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 4px 6px;
+    font-size: 0.7rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.storage-refresh-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: var(--theme-button-primary-bg, #4c79ff);
+}
+
+.storage-refresh-btn.refreshing {
+    animation: spin 1s linear infinite;
+}
+
+/* =============================================================================
+   STORAGE BAR TRACK
+   ============================================================================= */
+
+.storage-bar-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.storage-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease, background-color 0.3s ease;
+    min-width: 2px;
+}
+
+/* =============================================================================
+   STORAGE STATUS COLORS
+   ============================================================================= */
+
+.storage-normal {
+    background: linear-gradient(90deg, #4CAF50, #66BB6A);
+}
+
+.storage-caution {
+    background: linear-gradient(90deg, #FFC107, #FFD54F);
+}
+
+.storage-warning {
+    background: linear-gradient(90deg, #FF9800, #FFB74D);
+}
+
+.storage-critical {
+    background: linear-gradient(90deg, #F44336, #EF5350);
+}
+
+/* =============================================================================
+   STORAGE BAR TEXT
+   ============================================================================= */
+
+.storage-bar-text {
+    font-size: 0.7rem;
+    color: #888;
+    margin-top: 6px;
+    text-align: right;
+}
+
+/* =============================================================================
+   STORAGE MODAL
+   ============================================================================= */
+
+.storage-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.storage-modal-overlay.hidden {
+    display: none;
+}
+
+.storage-modal-content {
+    background: var(--theme-modal-bg, #ffffff);
+    color: var(--theme-modal-text, #333);
+    border-radius: 12px;
+    padding: 20px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+.storage-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.storage-modal-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+/* =============================================================================
+   STORAGE DETAILS
+   ============================================================================= */
+
+.storage-details {
+    margin-top: 15px;
+}
+
+.storage-detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.storage-detail-row:last-child {
+    border-bottom: none;
+}
+
+.storage-detail-label {
+    color: var(--theme-text-secondary, #666);
+    font-size: 14px;
+}
+
+.storage-detail-value {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .storage-bar-container {
+        padding: 8px;
+    }
+
+    .storage-bar-label {
+        font-size: 0.7rem;
+    }
+
+    .storage-modal-content {
+        width: 95%;
+        padding: 15px;
+    }
+}
+
+/* =============================================================================
+   STORAGE VIEWER MODAL
+   ============================================================================= */
+
+.storage-modal-box {
+    pointer-events: auto;
+    width: 90%;
+    max-width: 700px;
+    max-height: 90vh;
+    background-color: var(--modal-bg, #fff);
+    color: var(--modal-text, #333);
+    border-radius: 12px;
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-size: 1rem;
+    border: 2px solid var(--modal-border, #ccc);
+}
+
+.storage-modal-header {
+    font-weight: bold;
+    font-size: 1.2rem;
+    padding: 16px;
+    background-color: var(--modal-header-bg, #f5f5f5);
+    border-bottom: 1px solid var(--modal-border, #ccc);
+}
+
+.storage-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.storage-modal-buttons {
+    padding: 12px 16px;
+    text-align: right;
+    border-top: 1px solid var(--modal-border, #ccc);
+    background-color: var(--modal-footer-bg, #f5f5f5);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.storage-modal-buttons .btn-confirm {
+    padding: 8px 16px;
+    background-color: var(--btn-bg, #007bff);
+    color: var(--btn-text, white);
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.storage-modal-buttons .btn-confirm:hover {
+    background-color: var(--btn-hover-bg, #0056b3);
+}
+
+/* Storage Viewer Overlay */
+#storage-viewer-overlay {
+    position: absolute;
+    top: 60px;
+    left: 60px;
+    z-index: 2000;
+    pointer-events: none;
+}
+
+#storage-viewer-overlay.hidden {
+    display: none;
+}
+
+#storage-viewer-overlay .mini-modal-box.wide {
+    width: 90%;
+    max-width: 700px;
+    max-height: 90vh;
+    background-color: var(--modal-bg, #fff);
+    color: var(--modal-text, #333);
+    border-radius: 12px;
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-size: 1rem;
+    border: 2px solid var(--modal-border, #ccc);
+    pointer-events: auto;
+}
+
+#storage-viewer-overlay .mini-modal-header {
+    font-weight: bold;
+    font-size: 1.2rem;
+    padding: 16px;
+    background-color: var(--modal-header-bg, #f5f5f5);
+    border-bottom: 1px solid var(--modal-border, #ccc);
+}
+
+#storage-content {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+#storage-content.scrollable {
+    max-height: 60vh;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.9em;
+    background: #282828;
+    padding: 10px;
+    border: 1px solid #ccc;
+    text-align: left;
+}
+
+.storage-key {
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    color: #a8a8a8;
+}
+
+.storage-key-title {
+    font-weight: bold;
+    margin-bottom: 2px;
+    color: #d7d7d7;
+}
+
+/* JSON Entry Styling */
+.json-entry {
+    margin-bottom: 8px;
+    padding: 6px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+.json-toggle {
+    cursor: pointer;
+    color: var(--theme-info, #007bff);
+    font-weight: bold;
+}
+
+.json-toggle:hover {
+    text-decoration: underline;
+}

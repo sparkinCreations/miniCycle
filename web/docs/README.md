@@ -79,6 +79,7 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 |--------|-------|
 | Boot files | 6 files |
 | Modules | 91 files |
+| CSS files | 29 files (modularized Jan 2026) |
 | Total LOC | ~44,200 lines |
 | DI completion | 100% (no `\|\| window.*` fallbacks) |
 | Test coverage | 1,690+ tests (100%) |
@@ -94,12 +95,13 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 
 ### The Reality
 
-The codebase has **complete strict DI**:
+The codebase has **complete strict DI** and **modular CSS**:
 - ✅ Code is organized into 91 focused modules
 - ✅ All modules use strict dependency injection
 - ✅ No `|| window.*` fallbacks remain
 - ✅ Modules can be tested in isolation
 - ✅ Boot files split for debuggability (Dec 2025)
+- ✅ CSS modularized into 29 files (Jan 2026)
 - ✅ Comprehensive error handling with multi-tier fallbacks
 - ✅ Enterprise-grade DI system rivaling frameworks
 
@@ -108,7 +110,9 @@ See [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) for complete analysis.
 ### Future Work
 - **[MODULAR_OVERHAUL_PLAN.md](./future-work/MODULAR_OVERHAUL_PLAN.md)** - Plan for true modularization
 - **[SCHEMA_2_6_PLAN.md](./future-work/SCHEMA_2_6_PLAN.md)** - Terminology alignment (cycles → routine)
-- **[CSS_REFACTOR_PLAN.md](./future-work/CSS_REFACTOR_PLAN.md)** - CSS organization improvements
+
+### Completed Initiatives
+- ✅ **CSS Modularization** (Jan 2026) - See [archive/CSS_REFACTOR_PLAN_COMPLETED.md](./archive/CSS_REFACTOR_PLAN_COMPLETED.md)
 
 ---
 
@@ -142,6 +146,9 @@ See [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) for complete analysis.
 
 **...see code quality assessment**
 → Check [COMPREHENSIVE_CODE_REVIEW_DEC_2025.md](./developer-guides/COMPREHENSIVE_CODE_REVIEW_DEC_2025.md) and [HIDDEN_CODEBASE_INSIGHTS.md](./developer-guides/HIDDEN_CODEBASE_INSIGHTS.md)
+
+**...modify styles or CSS**
+→ See `styles/` folder structure in [FOLDER_STRUCTURE.md](./developer-guides/FOLDER_STRUCTURE.md) and CSS standards in [CODING_STANDARDS.md](./developer-guides/CODING_STANDARDS.md)
 
 ---
 

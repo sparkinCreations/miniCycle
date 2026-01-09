@@ -1,0 +1,123 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Footer Component
+   Footer container, copyright, and footer links
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   FOOTER CONTAINER
+   ============================================================================= */
+
+#footer-container {
+    display: block;
+    position: fixed;
+    bottom: 18px;
+    color: white;
+    text-align: center;
+    font-size: 10px;
+    font-family: 'Poppins', sans-serif;
+    z-index: 0;
+    width: 100%;
+}
+
+/* =============================================================================
+   COPYRIGHT TEXT
+   ============================================================================= */
+
+#copyright {
+    margin: 0;
+    line-height: 1.5;
+    opacity: 0.8;
+    transition: opacity 0.3s ease-in-out;
+    align-items: center;
+    color: white;
+}
+
+#copyright a {
+    color: white;
+    text-decoration: none;
+}
+
+#copyright a:hover {
+    text-decoration: underline;
+}
+
+#footer-container:hover #copyright {
+    opacity: 1;
+}
+
+/* =============================================================================
+   FOOTER ITEMS
+   ============================================================================= */
+
+.footer-item {
+    margin: 0;
+    line-height: 1.5;
+    opacity: 0.8;
+    transition: opacity 0.3s ease-in-out;
+    align-items: center;
+    color: white;
+    z-index: 2;
+}
+
+.footer-item:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.footer-item a {
+    color: white;
+    text-decoration: none;
+}
+
+.footer-item a:hover {
+    text-decoration: underline;
+}
+
+#footer-container:hover .footer-item {
+    opacity: 1;
+}
+
+/* =============================================================================
+   FOOTER LINKS
+   ============================================================================= */
+
+#footer-container .footer-links {
+    gap: 1em;
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 600px) {
+    #footer-container .footer-links {
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 1em;
+    }
+
+    #footer-container .footer-links > li {
+        order: 0;
+    }
+
+    #footer-container #copyright {
+        order: 99;
+        flex-basis: 100%;
+        display: flex;
+        justify-content: center;
+        gap: .3em;
+        margin-top: -10px;
+    }
+}
+
+/* =============================================================================
+   FOOTER LINKS DISPLAY
+   ============================================================================= */
+
+.footer-links {
+    display: flex;
+    justify-content: center;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}

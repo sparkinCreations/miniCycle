@@ -1,0 +1,785 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Task List Component
+   Task items, checkboxes, and list containers
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   TASK CARD CONTAINER
+   ============================================================================= */
+
+.task-card {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* =============================================================================
+   TASK LIST CONTAINER
+   ============================================================================= */
+
+.task-list-container {
+    position: relative;
+    width: 100%;
+    height: auto;
+    max-height: calc(100vh - 300px);
+    min-height: 0px;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 0 0 8px 8px;
+    padding: 10px 10px 80px 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    flex: 1 1 auto;
+}
+
+/* Custom scrollbar */
+.task-list-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.task-list-container::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.6);
+    border-radius: 10px;
+}
+
+.task-list-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* =============================================================================
+   TASK LIST
+   ============================================================================= */
+
+.task-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#taskList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* =============================================================================
+   EMPTY STATE
+   ============================================================================= */
+
+/* Show empty state when task list is empty */
+.task-list:empty + .empty-state {
+    display: flex;
+}
+
+.empty-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    opacity: 0.7;
+}
+
+.empty-state-text {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.empty-state-hint {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    max-width: 250px;
+    line-height: 1.4;
+}
+
+.empty-state-hint strong {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* =============================================================================
+   SAVING INDICATOR
+   ============================================================================= */
+
+.saving-indicator {
+    position: fixed;
+    top: 105px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--theme-text-secondary, rgba(80, 80, 80, 0.85));
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease-out, visibility 0.15s ease-out;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.saving-indicator.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+@media (max-width: 768px) {
+    .saving-indicator {
+        top: 120px;
+    }
+}
+
+/* =============================================================================
+   ONBOARDING STATE
+   ============================================================================= */
+
+/* Hide task content during onboarding */
+body.onboarding-active .title-row,
+body.onboarding-active .task-list,
+body.onboarding-active .empty-state,
+body.onboarding-active .completed-tasks-section,
+body.onboarding-active .task-search-input-row,
+body.onboarding-active .progress-container,
+body.onboarding-active .complete-all-and-help-window-container {
+    display: none !important;
+}
+
+/* Onboarding placeholder shown instead of task list */
+.onboarding-placeholder {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.9);
+    min-height: 200px;
+}
+
+body.onboarding-active .onboarding-placeholder {
+    display: flex;
+}
+
+.onboarding-placeholder-icon {
+    font-size: 56px;
+    margin-bottom: 20px;
+    opacity: 0.9;
+}
+
+.onboarding-placeholder-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.onboarding-placeholder-text {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.75);
+    max-width: 280px;
+    line-height: 1.5;
+}
+
+/* =============================================================================
+   COMPLETED TASKS SECTION
+   ============================================================================= */
+
+.completed-tasks-section {
+    width: 100%;
+    margin: 15px 0 0 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-top: 10px;
+    display: none; /* Hidden by default, shown when tasks are added */
+}
+
+.completed-tasks-header {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+    padding: 10px 15px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+}
+
+.completed-tasks-header:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.01);
+}
+
+.completed-tasks-header .toggle-icon {
+    margin-left: 5px;
+    font-size: 0.9em;
+    transition: transform 0.2s ease;
+}
+
+#completed-count {
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.completed-task-list {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0 0;
+    display: none; /* Hidden by default */
+}
+
+.completed-task-list.visible {
+    display: block;
+}
+
+/* Completed tasks have slightly reduced opacity */
+.completed-task-list .task {
+    opacity: 0.75;
+    transition: opacity 0.2s ease;
+}
+
+.completed-task-list .task:hover {
+    opacity: 0.9;
+}
+
+/* Hide certain buttons for completed tasks */
+.completed-task-list .task .recurring-settings-btn,
+.completed-task-list .task .due-date-btn,
+.completed-task-list .task .reminder-btn {
+    opacity: 0.5;
+}
+
+/* =============================================================================
+   TASK CONTENT LAYOUT
+   ============================================================================= */
+
+.task-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+/* =============================================================================
+   DUE DATE
+   ============================================================================= */
+
+.due-date {
+    font-size: 14px;
+    border: 1px solid var(--theme-input-border, #ccc);
+    border-radius: 5px;
+    margin-left: 15%;
+    width: 100%;
+    max-width: 180px;
+    background-color: var(--theme-input-bg, #c8c8c868);
+    color: var(--theme-input-text, #333);
+}
+
+.due-date.hidden {
+    display: none;
+}
+
+/* =============================================================================
+   OVERDUE TASK
+   ============================================================================= */
+
+.overdue-task {
+    background-color: rgba(255, 0, 0, 0.2);
+    color: darkred;
+    font-weight: bold;
+}
+
+.overdue-task:hover {
+    background-color: rgba(255, 0, 0, 0.2);
+}
+
+/* =============================================================================
+   HIGH PRIORITY
+   ============================================================================= */
+
+.high-priority {
+    border-left: 5px solid red;
+}
+
+/* =============================================================================
+   TASK INDICATORS
+   ============================================================================= */
+
+/* Task marked for deletion on reset (Cycle mode) */
+.task.show-delete-indicator::after {
+    content: "❌";
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Task marked to be kept in To-Do mode */
+.task.kept-task::after {
+    content: "📌";
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Adjust task padding for indicators */
+.task.show-delete-indicator,
+.task.kept-task {
+    padding-right: 30px;
+}
+
+/* =============================================================================
+   TASK DRAGGING
+   ============================================================================= */
+
+.dragging {
+    opacity: 0.7;
+    background-color: var(--theme-bg-surface-elevated, #e0e0e0);
+    transform: scale(1.05);
+    transition: none;
+}
+
+/* Prevent scrolling past the last task */
+#taskList {
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+}
+
+/* =============================================================================
+   HIDDEN UTILITY
+   ============================================================================= */
+
+.hidden {
+    display: none !important;
+}
+
+/* =============================================================================
+   TITLE ROW
+   ============================================================================= */
+
+.title-row {
+    position: relative;
+    flex-shrink: 0;
+    width: 100%;
+}
+
+.mini-cycle-title {
+    position: sticky;
+    font-family: 'Inter', sans-serif;
+    text-decoration: underline;
+    font-weight: 600;
+    font-size: 18px;
+    text-align: center;
+    letter-spacing: 0.5px;
+    color: rgba(43, 43, 43, 0.783); /* Dark text on light surface - dark mode overrides this */
+    background: none;
+    background-color: rgba(255, 255, 255, 0.4);
+    padding: 8px 10px;
+    border: none;
+    outline: none;
+    cursor: text;
+    top: 0;
+    border-radius: 8px 8px 0 0;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    padding-top: 5px;
+    padding-bottom: 5px;
+    width: 100%;
+    z-index: 1;
+}
+
+#mini-cycle-title:focus {
+    background: rgba(255, 255, 255, 0.2);
+    color: #f8f8f8;
+    border-bottom: 2px solid #ffffff;
+}
+
+/* =============================================================================
+   TASK SEARCH
+   ============================================================================= */
+
+.task-search-container {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    padding: 0;
+    z-index: 10;
+}
+
+.task-search-btn {
+    background: transparent;
+    border: none;
+    color: var(--theme-text-secondary, rgba(40, 40, 40, 0.7));
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.task-search-btn:hover {
+    color: rgba(60, 60, 60, 0.8);
+}
+
+.task-search-btn.active {
+    color: rgba(60, 60, 60, 0.9);
+}
+
+.task-search-input-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 6px 10px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.task-search-input {
+    border: none;
+    background: transparent;
+    padding: 4px 0;
+    font-size: 13px;
+    color: var(--theme-input-text, #333);
+    width: 140px;
+    outline: none;
+}
+
+.task-search-input::placeholder {
+    color: var(--theme-input-placeholder, rgba(60, 60, 60, 0.5));
+}
+
+.task-search-clear {
+    background: transparent;
+    border: none;
+    color: var(--theme-text-muted, rgba(60, 60, 60, 0.4));
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 16px;
+    line-height: 1;
+    border-radius: 4px;
+    transition: color 0.2s ease;
+}
+
+.task-search-clear:hover {
+    color: rgba(60, 60, 60, 0.8);
+}
+
+/* =============================================================================
+   TASK ITEMS
+   ============================================================================= */
+
+.task {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px;
+    background: var(--theme-task-bg, white);
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+    color: var(--theme-task-text, #333);
+    position: relative;
+}
+
+.task:hover {
+    transform: scale(1.02);
+    background: var(--theme-bg-surface-elevated, #f8f9fa);
+}
+
+.task input {
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.task span {
+    flex: 1;
+    text-align: left;
+    font-size: 16px;
+    max-width: calc(100% - 120px);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin-right: 120px;
+}
+
+/* =============================================================================
+   CIRCULAR CHECKBOX
+   ============================================================================= */
+
+.task input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    aspect-ratio: 1/1;
+    border-radius: 50%;
+    border: 2px solid var(--theme-task-border, #ccc);
+    background-color: var(--theme-task-bg, white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    outline: none;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+.task input[type="checkbox"]:hover {
+    border-color: #40af4d;
+}
+
+.task input[type="checkbox"]:checked {
+    background-color: #5db567;
+    border-color: #40af4d;
+}
+
+.task input[type="checkbox"]::after {
+    content: "✔";
+    font-size: 28px;
+    color: rgb(18, 70, 9);
+    font-weight: bold;
+    display: none;
+    position: relative;
+    top: -4px;
+    left: 5px;
+}
+
+.task input[type="checkbox"]:checked::after {
+    display: block;
+}
+
+.task input[type="checkbox"]:focus {
+    outline: 2px solid var(--accent-color, #007BFF);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    border-radius: 50%;
+}
+
+/* Completed task */
+.task.completed {
+    background: var(--theme-task-completed-bg, rgba(40, 167, 69, 0.1));
+    border-color: var(--theme-task-checkmark, #28a745);
+}
+
+.task.completed .task-text {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+/* High priority task */
+.task.high-priority {
+    border-left: 4px solid var(--theme-error, #dc3545);
+}
+
+/* =============================================================================
+   CHECKBOX CONTAINER
+   ============================================================================= */
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    padding: 5px 10px;
+    margin-left: 5px;
+}
+
+/* =============================================================================
+   CUSTOM CHECKBOX
+   ============================================================================= */
+
+.custom-checkbox {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    font-weight: bold;
+    color: var(--theme-text-on-surface);
+    cursor: pointer;
+}
+
+/* Hide default checkbox */
+.custom-checkbox input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* Custom checkmark box */
+.custom-checkbox .checkmark {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--theme-task-border, #666);
+    border-radius: 4px;
+    margin-right: 8px;
+    transition: background 0.2s ease;
+}
+
+/* Checked state */
+.custom-checkbox input:checked + .checkmark {
+    background-color: var(--theme-task-checkmark);
+    border-color: var(--theme-task-checkmark);
+    position: relative;
+}
+
+/* Checkmark tick */
+.custom-checkbox input:checked + .checkmark::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: -1px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* =============================================================================
+   TASK TEXT
+   ============================================================================= */
+
+.task-text {
+    flex: 1;
+    word-break: break-word;
+    text-align: left;
+    color: var(--theme-task-text, #333);
+}
+
+/* =============================================================================
+   MOVE ARROWS (Accessibility)
+   ============================================================================= */
+
+#taskList:not([data-move-arrows="true"]) .move-up,
+#taskList:not([data-move-arrows="true"]) .move-down {
+    display: none;
+}
+
+#taskList[data-move-arrows="true"] .move-up,
+#taskList[data-move-arrows="true"] .move-down {
+    display: inline-flex;
+}
+
+/* Hide up arrow on first task */
+#taskList[data-move-arrows="true"] > .task.is-first-task .move-up {
+    visibility: hidden;
+}
+
+/* Hide down arrow on last task */
+#taskList[data-move-arrows="true"] > .task.is-last-task .move-down {
+    visibility: hidden;
+}
+
+/* =============================================================================
+   DESKTOP ADJUSTMENTS
+   ============================================================================= */
+
+@media (min-width: 769px) {
+    .task-card {
+        max-height: calc(100vh - 320px);
+    }
+
+    /* Shorter task card when Complete button is visible */
+    #task-view.complete-btn-visible .task-card {
+        max-height: calc(100vh - 380px);
+    }
+
+    /* Shorter task card when mode description is visible */
+    #task-view.mode-description-visible .task-card {
+        max-height: calc(100vh - 380px);
+    }
+
+    /* Both Complete button AND mode description visible */
+    #task-view.complete-btn-visible.mode-description-visible .task-card {
+        max-height: calc(100vh - 430px);
+    }
+}
+
+@media (min-width: 1024px) {
+    .task-card {
+        max-width: 600px;
+    }
+
+    #task-view {
+        max-width: 600px;
+    }
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .task {
+        padding: 6px 10px;
+    }
+
+    .checkbox-container {
+        gap: 20px;
+        padding: 4px 8px;
+    }
+
+    /* More bottom padding on mobile for undo buttons and navigation dots */
+    .task-list-container {
+        padding-bottom: 100px;
+    }
+
+    /* Mobile task card constraints - using dvh for iOS Safari compatibility */
+    .task-card {
+        max-height: calc(100dvh - 325px);
+        margin-top: 18px;
+    }
+
+    /* Shorter task card when Complete button is visible on mobile */
+    #task-view.complete-btn-visible .task-card {
+        max-height: calc(100dvh - 395px);
+    }
+
+    /* Shorter task card when mode description is visible on mobile */
+    #task-view.mode-description-visible .task-card {
+        max-height: calc(100dvh - 405px);
+    }
+
+    /* Even shorter when both are visible on mobile */
+    #task-view.complete-btn-visible.mode-description-visible .task-card {
+        max-height: calc(100dvh - 445px);
+    }
+
+    #task-view {
+        width: 90vw;
+        max-width: none;
+        left: calc(50% - 10px);
+    }
+
+    /* Maintain nudge when .show class is applied after swipe */
+    #task-view.show {
+        left: calc(50% - 10px);
+    }
+}

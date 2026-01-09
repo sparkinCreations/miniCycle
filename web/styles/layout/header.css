@@ -1,0 +1,381 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Header & Navigation
+   Top navigation bar and mode selector
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   HEADER ROW - Fixed top navigation
+   ============================================================================= */
+
+.mini-cycle-header-row {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+    /* Extend padding to cover status bar seamlessly */
+    padding: calc(env(safe-area-inset-top) + 8px) 16px 8px 16px;
+    /* Use theme-aware backgrounds */
+    background: var(--theme-header-bg, var(--header-bg, #5680ff));
+    border: 1px solid var(--theme-header-border, var(--header-border, rgba(255, 255, 255, 0.2)));
+    border-radius: 0;
+    backdrop-filter: blur(5px);
+    height: auto;
+    min-height: 55px;
+    z-index: 20;
+}
+
+/* =============================================================================
+   HEADER VARIABLES
+   ============================================================================= */
+
+:root {
+    --header-bg: #5680ff;
+    --header-border: rgba(255, 255, 255, 0.2);
+    --header-text: #ffffff;
+    --header-height: 60px;
+}
+
+/* Dark mode header variables are in dark-mode.css */
+
+/* =============================================================================
+   HEADER BRANDING
+   ============================================================================= */
+
+.header-branding {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.header-logo {
+    height: 25px;
+    width: auto;
+    border-radius: 6px;
+    position: relative;
+    z-index: 1;
+    order: 1;
+}
+
+.header-logo:hover {
+    transform: scale(1.1);
+}
+
+/* Logo flash effects for feedback */
+.header-logo.logo-flash-green {
+    background-color: #28a745 !important;
+    border-radius: 6px !important;
+    transition: background-color 0.3s ease;
+}
+
+.header-logo.logo-flash-red {
+    background-color: #dc3545 !important;
+    border-radius: 6px !important;
+    transition: background-color 0.3s ease;
+}
+
+/* =============================================================================
+   MENU BUTTON
+   ============================================================================= */
+
+.menu-button {
+    justify-self: end;
+    background: rgba(0, 0, 0, 0.787);
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 6px;
+    color: white;
+    padding: 7px 10px;
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.menu-button:hover {
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.menu-button:active {
+    transform: scale(0.95);
+}
+
+/* =============================================================================
+   MODE SELECTOR WRAPPER
+   ============================================================================= */
+
+.mode-selector-wrapper {
+    position: fixed;
+    top: 72px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2px 0;
+    background: linear-gradient(135deg, #f1f1f172, #ffffff10);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+    z-index: 19;
+    min-height: 28px;
+}
+
+/* Mode selector dropdown */
+.mode-selector-wrapper .mode-selector {
+    position: relative;
+    background: rgba(255,255,255,0.2);
+    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
+    border: 1px solid #0c20913f;
+    color: rgb(44, 50, 112);
+    border-radius: 5px;
+    padding: 3px 20px 3px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    max-width: 140px;
+    height: 22px;
+    appearance: none;
+    cursor: pointer;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: all 0.3s ease;
+    /* Dropdown arrow */
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%232c3270' viewBox='0 0 16 16'%3e%3cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+    background-size: 10px;
+}
+
+/* =============================================================================
+   ROUTINE SWITCHER BUTTON
+   ============================================================================= */
+
+.routine-switcher-btn {
+    position: absolute;
+    right: 15px;
+    background: rgba(255,255,255,0.2);
+    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
+    border: 1px solid #0c20913f;
+    color: rgb(44, 50, 112);
+    border-radius: 5px;
+    width: 88px;
+    height: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.routine-switcher-btn:hover {
+    background: rgba(255,255,255,0.4);
+    border-color: #0c2091;
+}
+
+.routine-switcher-btn:active {
+    transform: scale(0.95);
+}
+
+.routine-switcher-btn svg {
+    fill: rgb(44, 50, 112);
+    width: 16px;
+    height: 16px;
+}
+
+/* =============================================================================
+   QUICK ACTIONS
+   ============================================================================= */
+
+.quick-actions-container {
+    position: absolute;
+    left: 15px;
+}
+
+.quick-actions-btn {
+    background: rgba(255,255,255,0.2);
+    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
+    border: 1px solid #0c20913f;
+    color: rgb(44, 50, 112);
+    border-radius: 5px;
+    width: 88px;
+    height: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.quick-actions-btn:hover {
+    background: rgba(255,255,255,0.4);
+    border-color: #0c2091;
+}
+
+.quick-actions-btn:active {
+    transform: scale(0.95);
+}
+
+.quick-actions-btn svg {
+    fill: rgb(44, 50, 112);
+    width: 20px;
+    height: 20px;
+    stroke: rgb(44, 50, 112);
+    stroke-width: 1px;
+}
+
+/* Quick Actions Dropdown Menu */
+.quick-actions-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 5px;
+    background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+    border: 1px solid rgba(12, 32, 145, 0.3);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 180px;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.quick-action-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-size: 13px;
+    color: rgb(44, 50, 112);
+    transition: background 0.2s ease;
+}
+
+.quick-action-item:hover {
+    background: rgba(12, 32, 145, 0.1);
+}
+
+.quick-action-item:active {
+    background: rgba(12, 32, 145, 0.2);
+}
+
+.quick-action-item:not(:last-child) {
+    border-bottom: 1px solid rgba(12, 32, 145, 0.1);
+}
+
+.quick-action-icon {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+
+.quick-action-text {
+    flex: 1;
+    font-weight: 500;
+}
+
+/* Desktop: Move buttons closer to center */
+@media (min-width: 769px) {
+    .quick-actions-container {
+        left: calc(50% - 280px);
+    }
+
+    .routine-switcher-btn {
+        right: calc(50% - 280px);
+    }
+}
+
+/* =============================================================================
+   APP NAME
+   ============================================================================= */
+
+.app-name {
+    height: 35px;
+    width: auto;
+    position: relative;
+    z-index: 1;
+    order: 2;
+}
+
+/* =============================================================================
+   MOBILE HEADER ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .mini-cycle-header-row {
+        padding: 13px 13px;
+        background: var(--theme-header-bg, var(--header-bg));
+        border: none;
+        height: 60px;
+        grid-template-columns: 1fr auto;
+        gap: 6px;
+        z-index: 20;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+    }
+
+    .mode-selector-wrapper {
+        top: 87px;
+    }
+
+    .header-logo {
+        width: auto;
+        height: 30px;
+    }
+
+    .app-name {
+        width: auto;
+        height: 40px;
+    }
+
+    .menu-button {
+        background-color: rgba(0, 0, 0, 0.8);
+        border: 1px solid rgba(0, 0, 0, 0.475);
+        color: rgb(255, 255, 255);
+        font-size: 20px;
+    }
+}
+
+/* =============================================================================
+   TITLE TEXT
+   ============================================================================= */
+
+.title-text {
+    color: rgb(255, 255, 255);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 480px) {
+    .mini-cycle-header-row {
+        padding: calc(env(safe-area-inset-top) + 6px) 12px 6px 12px;
+        min-height: 50px;
+        background: var(--theme-header-bg, var(--header-bg));
+    }
+
+    .header-logo {
+        width: 28px;
+        height: 28px;
+    }
+
+    .mode-selector-wrapper {
+        top: 65px;
+    }
+}

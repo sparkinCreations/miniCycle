@@ -213,6 +213,13 @@ function applyThemeTokens(theme) {
     }
   }
 
+  // Add theme-active class to indicate a custom theme is applied
+  // This prevents dark-mode.css from overriding theme variables
+  root.classList.add('theme-active');
+  if (document.body) {
+    document.body.classList.add('theme-active');
+  }
+
   console.log(`🎨 Applied ${appliedCount} theme tokens for: ${theme.name}`);
   return true;
 }
@@ -227,6 +234,12 @@ function resetThemeTokens() {
   // Remove all theme CSS variables
   for (const cssVar of Object.values(TOKEN_TO_CSS)) {
     root.style.removeProperty(cssVar);
+  }
+
+  // Remove theme-active class so dark-mode.css can apply its variable overrides
+  root.classList.remove('theme-active');
+  if (document.body) {
+    document.body.classList.remove('theme-active');
   }
 
   console.log('🎨 Theme tokens reset to defaults');
