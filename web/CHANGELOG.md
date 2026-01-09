@@ -1,3 +1,8 @@
+## [1.689] - 2026-01-09
+- feat: enhance task recreation logic to retain historical records in cleared tasks
+- feat: update version to 1.688 and reflect changes in changelog, manifest, and HTML files
+
+
 ## [1.688] - 2026-01-08
 - feat: add extra bottom padding to button styles for better spacing with undo buttons
 - feat: update schema documentation to reflect new stats panel and cleared tasks tracking
