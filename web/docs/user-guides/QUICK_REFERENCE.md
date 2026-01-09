@@ -85,7 +85,7 @@ PWA: Service Worker v109, Cache-first, Offline
 web/
 ├── miniCycle.html              # Main entry
 ├── modules/boot/orchestrator.js        # Core app (3,674 lines) - 74.8% reduction! ✅
-├── miniCycle-styles.css        # Styles
+├── styles/                     # Modular CSS (29 files in base/, components/, layout/, utilities/)
 ├── service-worker.js           # PWA (v82)
 ├── modules/                  # 33 modules (12,003 lines extracted)
 │   ├── state.js               # Centralized state
@@ -414,7 +414,7 @@ canRedo()  // boolean
 
 ```javascript
 // 1. Edit files directly (no build step!)
-// modules/boot/orchestrator.js, utilities/*.js, miniCycle-styles.css
+// modules/boot/orchestrator.js, modules/*.js, styles/components/*.css
 
 // 2. Refresh browser to see changes
 

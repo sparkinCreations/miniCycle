@@ -1,0 +1,112 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   miniCycle Main Stylesheet
+   Entry point for all CSS - uses native @import (no build step)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   BASE LAYER - Foundation styles
+   ============================================================================= */
+
+/* Design tokens and CSS custom properties */
+@import url('./base/variables.css');
+
+/* CSS reset and normalization */
+@import url('./base/reset.css');
+
+/* Typography - fonts, sizes, line heights */
+@import url('./base/typography.css');
+
+/* Keyframe animations (deduplicated) */
+@import url('./base/animations.css');
+
+
+/* =============================================================================
+   LAYOUT LAYER - Structural components
+   ============================================================================= */
+
+/* Main app container and structure */
+@import url('./layout/app-container.css');
+
+/* Header and navigation */
+@import url('./layout/header.css');
+
+/* iOS safe areas and notch handling */
+@import url('./layout/safe-areas.css');
+
+
+/* =============================================================================
+   COMPONENTS LAYER - UI components
+   ============================================================================= */
+
+/* Task input field */
+@import url('./components/task-input.css');
+
+/* Task list and items */
+@import url('./components/task-list.css');
+
+/* Task action buttons and options */
+@import url('./components/task-options.css');
+
+/* Generic button styles */
+@import url('./components/buttons.css');
+
+/* Modal dialogs */
+@import url('./components/modals.css');
+
+/* Toast notifications */
+@import url('./components/notifications.css');
+
+/* Statistics panel */
+@import url('./components/stats-panel.css');
+
+/* Progress indicators */
+@import url('./components/progress-bar.css');
+
+/* Form elements - inputs, selects, checkboxes */
+@import url('./components/forms.css');
+
+/* Settings panel */
+@import url('./components/settings.css');
+
+/* Mode selector (Auto/Manual/Todo) */
+@import url('./components/mode-selector.css');
+
+/* Routine switcher */
+@import url('./components/routine-switcher.css');
+
+/* Games panel */
+@import url('./components/games.css');
+
+/* Onboarding screens */
+@import url('./components/onboarding.css');
+
+/* Recurring tasks panel */
+@import url('./components/recurring.css');
+
+/* Storage usage display */
+@import url('./components/storage.css');
+
+/* Footer and copyright */
+@import url('./components/footer.css');
+
+/* Menu container and slide arrows */
+@import url('./components/menu.css');
+
+
+/* =============================================================================
+   UTILITIES LAYER - Helper classes
+   ============================================================================= */
+
+/* Utility classes and helpers */
+@import url('./utilities/helpers.css');
+
+/* Responsive utilities and media queries */
+@import url('./utilities/responsive.css');
+
+
+/* =============================================================================
+   DARK MODE OVERRIDES
+   These styles modify components when body.dark-mode is active
+   ============================================================================= */
+
+@import url('./utilities/dark-mode.css');

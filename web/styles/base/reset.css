@@ -1,0 +1,99 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   CSS Reset & Normalization
+   Establishes consistent base styles across browsers
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Box-sizing reset */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* Remove default margins and paddings */
+html, body {
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: var(--theme-bg-gradient);
+    background-color: var(--theme-bg-solid);
+}
+
+body {
+    background: var(--theme-bg-gradient);
+    z-index: -2;
+    padding-top: 0; /* Header handles safe area */
+    padding-bottom: env(safe-area-inset-bottom);
+    background-size: cover;
+}
+
+/* Font Awesome font-display override to prevent CLS from icon font loading */
+@font-face {
+    font-family: 'Font Awesome 6 Free';
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Font Awesome 6 Brands';
+    font-display: swap;
+}
+
+/* Remove default list styles */
+ul, ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Remove default button styles */
+button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+/* Remove default anchor styles */
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Remove default input styles */
+input, textarea, select {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+/* Prevent text selection on interactive elements */
+button, label, .checkbox-container {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Smooth scrolling for all scrollable containers */
+.scrollable {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbars but keep functionality */
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Accessibility: Focus visible styles */
+:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
+}
+
+/* Remove focus outline for mouse users */
+:focus:not(:focus-visible) {
+    outline: none;
+}

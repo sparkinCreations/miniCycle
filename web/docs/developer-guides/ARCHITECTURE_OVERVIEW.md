@@ -1,6 +1,6 @@
 # Architecture Overview
 
-**Last Updated**: January 7, 2026
+**Last Updated**: January 9, 2026
 
 ---
 
@@ -27,6 +27,7 @@
 |--------|-------|-------|
 | **Boot Files** | 6 files | Split Dec 2025 for debuggability |
 | **Modules** | 91 modules | All using strict DI |
+| **CSS Files** | 29 files | Modularized Jan 2026 |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
 | **Browser Support** | Modern + ES5 | Dual-version system |
 | **Test Coverage** | 100% ✅ | 1,690+ tests across 91 modules |
@@ -34,6 +35,8 @@
 | **Modules with setters** | 40+ | `set*Dependencies()` functions |
 
 **Strict DI Complete:** All modules use dependency injection. No `|| window.*` fallbacks exist in the codebase. DI wiring happens in `modules/boot/featureBoot.js`, while `orchestrator.js` is a pure sequence controller.
+
+**CSS Modularized:** All styles organized in `styles/` folder with component-based architecture. Entry point is `styles/main.css`.
 
 ---
 
@@ -134,8 +137,15 @@ See [DI_PATTERNS.md](./DI_PATTERNS.md) for complete patterns and examples.
 web/
 ├── miniCycle.html                   # Main entry point
 ├── miniCycle-main.js                # Entrypoint (~133 lines)
-├── miniCycle-styles.css             # Styles
 ├── service-worker.js                # PWA service worker
+│
+├── styles/                          # Modular CSS (29 files)
+│   ├── main.css                     # Entry point - imports all modules
+│   ├── base/                        # Foundation (variables, reset, typography, animations)
+│   ├── layout/                      # Page structure (app-container, header, safe-areas)
+│   ├── components/                  # UI components (18 files)
+│   ├── utilities/                   # Dark mode, helpers, responsive
+│   └── themes/                      # Theme system
 │
 ├── modules/                          # 91 ES6 modules (all strict DI)
 │   ├── boot/                        # Boot sequence (Dec 2025 split)

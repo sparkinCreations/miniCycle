@@ -1,7 +1,7 @@
 # miniCycle Folder Structure
 
-**Last Updated:** January 7, 2026
-**Status:** All 91 modules use strict DI | Boot files split (Dec 2025)
+**Last Updated:** January 9, 2026
+**Status:** All 91 modules use strict DI | Boot files split (Dec 2025) | CSS modularized (Jan 2026)
 
 ---
 
@@ -32,6 +32,9 @@ Modules were organized into domain-based subfolders (`core/`, `task/`, `routine/
 
 ### 3. **Clean Root** (Nov 2025)
 Marketing pages, legal documents, and archived code were moved into dedicated folders, leaving the root clean and deployment-ready.
+
+### 4. **CSS Modularization** (Jan 2026)
+The monolithic 8,000+ line `miniCycle-styles.css` was refactored into 29 focused CSS files organized by purpose: base styles, components, layout, utilities, and themes.
 
 **Result:** A structure that's easy to navigate, test, and deploy without breaking URLs or requiring build tools.
 
@@ -74,8 +77,44 @@ web/
 │
 ├── 📄 miniCycle.html                    # Main PWA entry point
 ├── 📄 miniCycle-main.js                 # Entrypoint (~133 lines) - loads orchestrator
-├── 📄 miniCycle-styles.css              # Application styles
 ├── 📄 service-worker.js                 # PWA service worker
+│
+├── 📁 styles/                           # Modular CSS architecture (29 files)
+│   ├── main.css                         # Entry point - imports all modules
+│   ├── base/                            # Foundation styles
+│   │   ├── variables.css                # CSS custom properties & theme variables
+│   │   ├── reset.css                    # CSS reset & normalization
+│   │   ├── typography.css               # Font styles & text utilities
+│   │   └── animations.css               # Keyframe animations
+│   ├── layout/                          # Page structure
+│   │   ├── app-container.css            # Main app container & views
+│   │   ├── header.css                   # Header & navigation bar
+│   │   └── safe-areas.css               # iOS safe area handling
+│   ├── components/                      # UI components (18 files)
+│   │   ├── task-list.css                # Task items & list container
+│   │   ├── task-input.css               # Task input field
+│   │   ├── task-options.css             # Task option buttons
+│   │   ├── buttons.css                  # Button styles & undo/redo
+│   │   ├── modals.css                   # Modal dialogs
+│   │   ├── menu.css                     # Settings menu
+│   │   ├── settings.css                 # Settings panel
+│   │   ├── recurring.css                # Recurring task UI
+│   │   ├── stats-panel.css              # Statistics panel
+│   │   ├── progress-bar.css             # Progress indicators
+│   │   ├── mode-selector.css            # Cycle/Todo mode selector
+│   │   ├── routine-switcher.css         # Routine switching modal
+│   │   ├── notifications.css            # Toast notifications
+│   │   ├── onboarding.css               # Onboarding flow
+│   │   ├── forms.css                    # Form elements
+│   │   ├── footer.css                   # Footer styles
+│   │   ├── storage.css                  # Storage indicator
+│   │   └── games.css                    # Mini-games UI
+│   ├── utilities/                       # Utility styles
+│   │   ├── dark-mode.css                # Dark mode overrides
+│   │   ├── helpers.css                  # Helper classes & navigation dots
+│   │   └── responsive.css               # Media queries
+│   └── themes/                          # Theme system
+│       └── theme-manager.js             # Dynamic theme application
 ├── 📄 version.js                        # Single source of truth for versions
 ├── 📄 manifest.json                     # PWA manifest (full version)
 ├── 📄 manifest-lite.json                # PWA manifest (lite version)
@@ -168,6 +207,20 @@ web/
 ---
 
 ## Top-Level Directories
+
+### `/styles/` - Modular CSS Architecture
+**Purpose:** All application styles organized by purpose
+**Philosophy:** Component-based CSS with clear separation of concerns
+**Why this matters:** Finding "task list styles" is easier than searching 8,000 lines
+
+**Structure:**
+- `base/` - Foundation (variables, reset, typography, animations)
+- `layout/` - Page structure (app container, header, safe areas)
+- `components/` - UI components (18 files for specific features)
+- `utilities/` - Dark mode, helpers, responsive breakpoints
+- `themes/` - Dynamic theme system
+
+**Entry Point:** `main.css` imports all modules in correct order
 
 ### `/modules/` - Application Code
 **Purpose:** All ES6 application modules organized by domain
@@ -537,9 +590,28 @@ miniCycle-main.js (entrypoint)
 - **Impact:** Better debuggability, each file uploadable for AI debugging
 - **Key docs:** `docs/future-work/BOOT_FILE_SPLIT_PLAN.md`
 
+### Phase 6: CSS Modularization (Jan 9, 2026)
+- **Before:** 8,000+ line monolithic `miniCycle-styles.css`
+- **After:** 29 focused CSS files in `styles/` folder:
+  - `base/` (4 files) - Variables, reset, typography, animations
+  - `layout/` (3 files) - App container, header, safe areas
+  - `components/` (18 files) - UI component styles
+  - `utilities/` (3 files) - Dark mode, helpers, responsive
+  - `themes/` (1 file) - Theme manager
+- **Entry point:** `styles/main.css` imports all modules
+- **Impact:** Easier maintenance, clearer organization, component-based architecture
+- **Original file:** Archived to `archive/miniCycle-styles.css`
+
 ---
 
 ## Navigation Guide
+
+### "I want to modify styles"
+1. Find the relevant component in `styles/components/`
+2. Check `styles/base/variables.css` for CSS custom properties
+3. For dark mode changes, edit `styles/utilities/dark-mode.css`
+4. For responsive adjustments, check `styles/utilities/responsive.css`
+5. Entry point is `styles/main.css` - imports are ordered by dependency
 
 ### "I want to understand how tasks work"
 1. Start with `docs/DEVELOPER_DOCUMENTATION.md` for high-level overview

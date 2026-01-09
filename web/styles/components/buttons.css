@@ -1,0 +1,458 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Buttons Component
+   Generic button styles and variants
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   BASE BUTTON STYLES
+   ============================================================================= */
+
+button {
+    background: var(--theme-button-secondary-bg);
+    color: var(--theme-button-secondary-text);
+    border: none;
+    padding: 10px 13px;
+    font-size: 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background var(--transition-normal), transform var(--transition-fast);
+    font-family: inherit;
+}
+
+button:not(.dot):hover {
+    background: var(--theme-button-secondary-hover-bg);
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* =============================================================================
+   PRIMARY BUTTONS
+   ============================================================================= */
+
+.btn-primary,
+button.primary {
+    background: var(--theme-button-primary-bg, #4c79ff);
+    color: var(--theme-button-primary-text, #ffffff);
+}
+
+.btn-primary:hover,
+button.primary:hover {
+    background: var(--theme-button-primary-hover-bg, #5a87ff);
+}
+
+/* =============================================================================
+   SECONDARY BUTTONS
+   ============================================================================= */
+
+.btn-secondary,
+button.secondary {
+    background: var(--theme-button-secondary-bg);
+    color: var(--theme-button-secondary-text);
+}
+
+.btn-secondary:hover,
+button.secondary:hover {
+    background: var(--theme-button-secondary-hover-bg);
+}
+
+/* =============================================================================
+   DANGER BUTTONS
+   ============================================================================= */
+
+.btn-danger,
+button.danger {
+    background: var(--theme-error, #dc3545);
+    color: #ffffff;
+}
+
+.btn-danger:hover,
+button.danger:hover {
+    background: var(--theme-error-light, #e55353);
+}
+
+/* =============================================================================
+   SUCCESS BUTTONS
+   ============================================================================= */
+
+.btn-success,
+button.success {
+    background: var(--theme-success, #28a745);
+    color: #ffffff;
+}
+
+.btn-success:hover,
+button.success:hover {
+    background: var(--theme-success-light, #48c764);
+}
+
+/* =============================================================================
+   GHOST/OUTLINE BUTTONS
+   ============================================================================= */
+
+.btn-ghost,
+button.ghost {
+    background: transparent;
+    border: 1px solid currentColor;
+}
+
+.btn-ghost:hover,
+button.ghost:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* =============================================================================
+   ICON BUTTONS
+   ============================================================================= */
+
+.btn-icon,
+button.icon-only {
+    padding: 8px;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+}
+
+.btn-icon i,
+button.icon-only i {
+    font-size: 16px;
+}
+
+/* =============================================================================
+   COMPLETE ALL BUTTON
+   ============================================================================= */
+
+.complete-all-btn {
+    background: #08c352;
+    border: 1px solid rgba(0, 160, 11, 0.655);
+    margin-top: 10px;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+    color: rgba(255, 251, 251, 0.938);
+    position: relative;
+    z-index: 2;
+    margin-bottom: -20px;
+}
+
+.complete-all-btn:hover {
+    background: #009c41;
+}
+
+/* To-Do Mode button style - blue color */
+.complete-all-btn.todo-mode-btn {
+    background: #3b82f6;
+    border: 1px solid #2563eb;
+}
+
+.complete-all-btn.todo-mode-btn:hover {
+    background: #2563eb;
+}
+
+/* Complete All and Help Window Container */
+.complete-all-and-help-window-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    margin-top: 0px;
+}
+
+/* =============================================================================
+   HELP WINDOW
+   ============================================================================= */
+
+.help-window {
+    background: rgba(125, 186, 255, 0.85);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 450px;
+    width: 100%;
+    padding: 10px 10px;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    transition: opacity 0.3s ease;
+    opacity: 1;
+    margin-top: 20px;
+}
+
+.help-window.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.help-window.hide {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.help-window h4 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.help-window p {
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* =============================================================================
+   RECURRING BUTTON
+   ============================================================================= */
+
+.recurring-btn {
+    color: #0056b3;
+}
+
+.task-btn.recurring-btn.active {
+    background-color: #4CAF50;
+    color: white;
+}
+
+/* =============================================================================
+   UNDO/REDO BUTTONS
+   ============================================================================= */
+
+.undo-container {
+    display: flex;
+    justify-content: flex-start;
+    position: absolute;
+    bottom: 50px;
+    width: 100%;
+    z-index: 1;
+    pointer-events: grab;
+}
+
+.undo-redo-btn {
+    background: none;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2d2c45;
+    cursor: pointer;
+    padding: 2px 6px;
+    opacity: .8;
+    transition: color 0.2s ease;
+    min-width: 50px;
+    position: absolute;
+}
+
+.undo-redo-btn#undo-btn {
+    left: 42%;
+}
+
+.undo-redo-btn#redo-btn {
+    right: 42%;
+}
+
+.undo-redo-btn:hover {
+    background: none;
+    color: #000;
+}
+
+.undo-redo-btn[hidden] {
+    visibility: hidden;
+    opacity: 0;
+}
+
+/* =============================================================================
+   CLOSE BUTTONS
+   ============================================================================= */
+
+.close-btn,
+.close-modal {
+    background: transparent;
+    color: inherit;
+    padding: 4px 8px;
+    font-size: 20px;
+    line-height: 1;
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.close-btn:hover,
+.close-modal:hover {
+    opacity: 1;
+    background: transparent;
+}
+
+/* Full-width close button */
+.close-button-fullwidth {
+    width: 100%;
+    padding: 12px;
+    background: var(--theme-button-secondary-bg);
+    color: var(--theme-button-secondary-text);
+    border: 1px solid var(--theme-button-secondary-border, rgba(0, 0, 0, 0.1));
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    transition: background var(--transition-normal);
+}
+
+.close-button-fullwidth:hover {
+    background: var(--theme-button-secondary-hover-bg);
+}
+
+/* =============================================================================
+   BUTTON GROUPS
+   ============================================================================= */
+
+.btn-group {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-group-vertical {
+    flex-direction: column;
+}
+
+.btn-group-center {
+    justify-content: center;
+}
+
+.btn-group-spread {
+    justify-content: space-between;
+}
+
+/* =============================================================================
+   BUTTON SIZES
+   ============================================================================= */
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.btn-lg {
+    padding: 14px 28px;
+    font-size: 18px;
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    button {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+
+    .complete-all-btn {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+
+    .title-header-inner {
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+
+    .undo-container {
+        position: absolute;
+        bottom: 58px;
+        width: 100%;
+    }
+
+    /* Mobile positioning */
+    .undo-redo-btn#undo-btn {
+        left: 25%;
+    }
+
+    .undo-redo-btn#redo-btn {
+        right: 25%;
+    }
+
+    .undo-redo-btn {
+        font-size: 0.85em;
+        color: #fff;
+        background: rgba(0,0,0,0.4);
+        padding: 4px 8px;
+        border-radius: 6px;
+    }
+
+    .undo-redo-btn:hover {
+        background: rgba(255,255,255,0.15);
+        color: #fff;
+    }
+
+    /* Mobile Dark Mode */
+    body.dark-mode .undo-redo-btn {
+        background: rgba(255,255,255,0.1);
+        color: #f0f0f0;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    body.dark-mode .undo-redo-btn:hover {
+        background: rgba(255,255,255,0.2);
+        color: #ffffff;
+    }
+}
+
+/* =============================================================================
+   CYCLE COMPLETE ANIMATION (Green Checkmark)
+   ============================================================================= */
+
+.mini-cycle-complete-animation {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(76, 175, 79, 0.909);
+    color: black;
+    padding: 15px 25px;
+    font-size: 60px;
+    font-weight: bold;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    animation: fadeOut 1.5s ease-in-out;
+    z-index: 2;
+}
+
+/* =============================================================================
+   CYCLE CLEAR ANIMATION (Blue Broom)
+   ============================================================================= */
+
+.mini-cycle-clear-animation {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(59, 130, 246, 0.909);
+    color: white;
+    padding: 15px 25px;
+    font-size: 60px;
+    font-weight: bold;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    animation: fadeOut 1.5s ease-in-out;
+    z-index: 2;
+}
+
+/* Animation for fading out */
+@keyframes fadeOut {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}

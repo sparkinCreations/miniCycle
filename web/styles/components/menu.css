@@ -1,0 +1,344 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Menu Component
+   Hamburger menu container and menu items
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   MENU CONTAINER
+   ============================================================================= */
+
+.menu-container {
+    font-size: 14px;
+    font-weight: bold;
+    background: #ccd7ddfb;
+    position: fixed;
+    top: 50px;
+    right: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 500;
+    min-width: 220px;
+    max-height: 600px;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.menu-container.visible {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* =============================================================================
+   MENU HEADER
+   ============================================================================= */
+
+.main-menu-header-row {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: none;
+    border-radius: 8px 8px 0 0;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: bold;
+    margin-top: -10px;
+    margin-left: -10px;
+}
+
+.main-menu-header-logo img {
+    width: 22px;
+    height: auto;
+    filter: brightness(1.1) contrast(1.1);
+}
+
+.main-menu-header {
+    flex-grow: 1;
+    text-align: left;
+    font-size: 18px;
+    font-weight: 600;
+    color: #081d3ace;
+    margin-left: 8px;
+}
+
+.main-menu-header-row::after {
+    content: "";
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* =============================================================================
+   CURRENT DATE
+   ============================================================================= */
+
+#current-date {
+    font-size: 14px;
+    font-weight: bold;
+    color: rgba(0, 0, 0, 0.6);
+    margin-left: 12px;
+    padding-right: 15px;
+}
+
+/* =============================================================================
+   MAIN MENU ROW
+   ============================================================================= */
+
+.main-menu-row {
+    display: flex;
+    justify-content: space-evenly;
+    border-top: 1px solid rgba(0, 0, 0, 0.374);
+}
+
+/* =============================================================================
+   MENU UL LIST
+   ============================================================================= */
+
+.menu-container ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 0;
+}
+
+.menu-container ul li {
+    margin: 5px 0;
+}
+
+.menu-container ul li button {
+    padding: 5px 5px;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+    background: none;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    transition: background 0.2s ease-in-out, transform 0.1s;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.menu-container button i {
+    font-size: 20px;
+}
+
+.menu-container ul li button:hover {
+    background: #b4b5bb;
+    transform: scale(1.02);
+}
+
+/* =============================================================================
+   MODE DESCRIPTION
+   ============================================================================= */
+
+.mode-description {
+    margin-bottom: 7px;
+    padding: 12px;
+    background: #f4f8ff;
+    color: #222;
+    border-radius: 10px;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.08);
+    font-size: 14.5px;
+    font-weight: 500;
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    display: block;
+    white-space: normal;
+}
+
+/* =============================================================================
+   MENU BUTTONS
+   ============================================================================= */
+
+.menu-container button,
+.menu-container .menu-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 14px;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+.menu-container button:hover,
+.menu-container .menu-button:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* =============================================================================
+   MENU GRID
+   ============================================================================= */
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.menu-grid button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 8px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    font-size: 12px;
+    transition: background 0.2s ease;
+}
+
+.menu-grid button:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.menu-grid button i {
+    font-size: 20px;
+    margin-bottom: 4px;
+}
+
+/* =============================================================================
+   SLIDE ARROWS
+   ============================================================================= */
+
+.slide-arrow {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 32px;
+    color: black;
+    font-weight: bold;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out, opacity 0.3s;
+    z-index: 2;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    outline: none;
+}
+
+.slide-arrow:hover {
+    background-color: white;
+}
+
+.slide-arrow:focus {
+    outline: 2px solid #007BFF;
+    outline-offset: 2px;
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+#slide-left {
+    left: 15%;
+}
+
+#slide-right {
+    right: 15%;
+}
+
+/* Desktop: Always visible */
+@media (min-width: 768px) {
+    .slide-arrow {
+        opacity: 1;
+        pointer-events: all;
+    }
+}
+
+/* Mobile: Hidden */
+@media (max-width: 768px) {
+    .slide-arrow {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+/* Hide left arrow when task view is visible */
+#slide-left.hide {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Hide right arrow when stats panel is visible */
+#slide-right.hide {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Hover states */
+#slide-left.show:hover,
+#slide-left:hover:not(.hide) {
+    background-color: white;
+}
+
+#slide-right.show:hover,
+#slide-right:hover:not(.hide) {
+    background-color: white;
+}
+
+.slide-arrow:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .slide-arrow {
+        border: 2px solid currentColor;
+    }
+
+    .slide-arrow:focus {
+        outline: 3px solid #007BFF;
+    }
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .menu-container {
+        top: 45px;
+        right: 5px;
+        min-width: 200px;
+        max-height: 80vh;
+    }
+
+    .complete-all-and-help-window-container {
+        gap: 10px;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    .help-window {
+        width: 90%;
+        max-width: 400px;
+        font-size: 13px;
+    }
+
+    .title-row {
+        background-color: rgba(255, 255, 255, 0.4);
+        border-radius: 10px 10px 0 0;
+        padding: 8px 10px;
+    }
+
+    .mini-cycle-title {
+        max-width: 85%;
+        margin-left: auto;
+        margin-right: auto;
+        background: none;
+        background-color: transparent;
+        padding: 0;
+        box-shadow: none;
+    }
+}

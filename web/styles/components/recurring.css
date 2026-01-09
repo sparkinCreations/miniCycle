@@ -1,0 +1,612 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Recurring Tasks Component
+   Recurring task selection, scheduling, and configuration
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   RECURRING TASK LIST
+   ============================================================================= */
+
+#recurring-task-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+}
+
+/* =============================================================================
+   RECURRING TASK ITEM
+   ============================================================================= */
+
+.recurring-task-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--theme-input-bg, white);
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 2px 4px;
+    margin-bottom: 4px;
+    user-select: none;
+    gap: 8px;
+    box-shadow: inset 0 0 0 1px #989898;
+    transition: background-color 0.3s ease, box-shadow 0.2s ease;
+}
+
+.recurring-task-item.checked {
+    background-color: #b9b9b9;
+}
+
+.recurring-task-item.selected {
+    border: 1px solid var(--theme-success, #4caf4f);
+    background-color: #dfffdf;
+}
+
+.recurring-task-item input[type="checkbox"] {
+    accent-color: var(--theme-success, #4CAF50);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.recurring-task-item input[type="checkbox"]:hover {
+    filter: brightness(1.2);
+}
+
+.recurring-task-item .recurring-task-text {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* =============================================================================
+   RECURRING REMOVE BUTTON
+   ============================================================================= */
+
+.recurring-remove-btn {
+    background: none;
+    border: none;
+    color: var(--theme-error, red);
+    font-weight: bold;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.recurring-task-item button:hover {
+    color: #c0392b;
+}
+
+/* =============================================================================
+   RECURRING SETTINGS PANEL
+   ============================================================================= */
+
+#recurring-settings-panel {
+    margin-top: 12px;
+    padding: 10px;
+    background: #f0f0f0;
+    border-top: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+#recurring-settings-panel.hidden {
+    display: none;
+}
+
+#recurring-settings-panel label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+#recur-count-input {
+    width: 60px;
+    margin-left: 6px;
+}
+
+#recur-count-container.hidden {
+    display: none;
+}
+
+/* =============================================================================
+   RECURRING FREQUENCY
+   ============================================================================= */
+
+#recur-frequency-container {
+    margin-top: 10px;
+}
+
+#recur-frequency-container label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+#recur-frequency {
+    width: 50%;
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+}
+
+/* =============================================================================
+   APPLY RECURRING SETTINGS BUTTON
+   ============================================================================= */
+
+#apply-recurring-settings {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: var(--theme-success, #4CAF50);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+#apply-recurring-settings:hover {
+    background-color: #45a049;
+    transform: scale(1.02);
+}
+
+#apply-recurring-settings:active {
+    background-color: #3e8e41;
+    transform: scale(0.98);
+}
+
+/* =============================================================================
+   OPEN RECURRING PANEL BUTTON
+   ============================================================================= */
+
+#open-recurring-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
+    border-radius: 8px;
+    background-color: #c4dcc6;
+    color: #333;
+    box-shadow: inset 0 0 0 1px #989898;
+    cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.2s ease;
+    width: 60%;
+    margin: 8px auto;
+}
+
+#open-recurring-panel:hover:not(:disabled) {
+    background-color: #f1f1f1;
+    box-shadow: inset 0 0 0 1px #aaa;
+}
+
+#open-recurring-panel:disabled {
+    background-color: #e0e0e0;
+    color: #999;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+#open-recurring-panel i {
+    font-size: 1.1rem;
+}
+
+/* =============================================================================
+   RECURRING SCROLL AREA
+   ============================================================================= */
+
+.recurring-scroll-area {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 4px;
+    margin-top: 10px;
+}
+
+.recurring-scroll-area::-webkit-scrollbar {
+    width: 6px;
+}
+
+.recurring-scroll-area::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 100, 100, 0.3);
+    border-radius: 4px;
+}
+
+.recurring-scroll-area::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(100, 100, 100, 0.5);
+}
+
+.close-recurring-panel {
+    padding: 5px;
+    margin: 10px;
+    width: 70%;
+}
+
+/* =============================================================================
+   RADIO CIRCLE (FREQUENCY SELECTION)
+   ============================================================================= */
+
+.radio-circle {
+    width: 8px;
+    height: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.radio-circle:hover {
+    border-color: #fff;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+.radio-circle.selected {
+    background: var(--theme-success, #4CAF50);
+    border-color: var(--theme-success, #4CAF50);
+    box-shadow: 0 0 12px rgba(76, 175, 80, 0.4);
+}
+
+.radio-circle.selected::after {
+    content: '';
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    position: absolute;
+}
+
+.option-label {
+    color: #001748;
+    font-size: 13px;
+    font-weight: 600;
+    user-select: none;
+    flex: 1;
+}
+
+/* =============================================================================
+   MONTHLY DAYS SELECTOR
+   ============================================================================= */
+
+.monthly-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+    padding: 8px;
+    background: #d3d3d3;
+    border-radius: 10px;
+}
+
+.monthly-day-box {
+    text-align: center;
+    padding: 12px 0;
+    background: var(--theme-input-bg, white);
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.monthly-day-box.selected {
+    background: var(--theme-success, #4CAF50);
+    border-color: var(--theme-success, #4CAF50);
+    color: white;
+}
+
+.monthly-day-box.selected::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    background: white;
+    border-radius: 50%;
+}
+
+/* =============================================================================
+   WEEKLY DAYS SELECTOR
+   ============================================================================= */
+
+.weekly-day-box {
+    text-align: center;
+    padding: 10px;
+    background: var(--theme-input-bg, white);
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.weekly-day-box.selected {
+    background: var(--theme-success, #4CAF50);
+    border-color: var(--theme-success, #4CAF50);
+    color: white;
+}
+
+.weekly-day-box.selected::after {
+    content: '';
+}
+
+/* =============================================================================
+   RECURRING SUMMARY
+   ============================================================================= */
+
+.recurring-summary {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+}
+
+#recurring-summary-preview {
+    font-size: 14px;
+    color: var(--theme-text-secondary, #666);
+}
+
+#recurring-preview-text {
+    font-weight: 500;
+}
+
+.change-recurring-btn {
+    margin-top: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    background: var(--theme-button-secondary-bg);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.change-recurring-btn:hover {
+    background: var(--theme-button-secondary-hover-bg);
+}
+
+/* =============================================================================
+   RECURRING TOGGLE ACTIONS
+   ============================================================================= */
+
+#recurring-toggle-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.recurring-check.hidden {
+    display: none;
+}
+
+/* =============================================================================
+   RECURRING ICONS
+   ============================================================================= */
+
+.recurring-date-trash-icon,
+.recurring-trash-icon {
+    color: #999;
+    transition: color 0.2s ease;
+}
+
+.trash-btn:hover .recurring-date-trash-icon,
+.trash-btn:hover .recurring-trash-icon {
+    color: var(--theme-error, #e74c3c);
+}
+
+.recurring-indicator {
+    display: inline-block;
+    font-size: 14px;
+    color: #3498db; /* Blue */
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .monthly-days {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+    }
+
+    .monthly-day-box {
+        padding: 8px 0;
+        font-size: 12px;
+    }
+
+    #open-recurring-panel {
+        width: 80%;
+    }
+}
+
+@media (max-width: 480px) {
+    .quick-recurring-options {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =============================================================================
+   TIME PICKER STYLES
+   ============================================================================= */
+
+/* Shared styles for all time containers */
+#daily-time-container,
+#weekly-time-container,
+#biweekly-time-container,
+#monthly-time-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 10px 0;
+    align-items: center;
+    font-size: 16px;
+}
+
+.time-picker-wrapper {
+    margin: 20px auto 0 auto;
+    max-width: 350px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.time-picker-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.time-picker-group input[type="number"],
+.time-picker-group select {
+    padding: 4px 4px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: 2px solid #ccc;
+    width: 70px;
+    text-align: center;
+    appearance: none;
+    transition: border-color 0.2s;
+}
+
+.time-picker-group input[type="number"]:focus,
+.time-picker-group select:focus {
+    outline: none;
+    border-color: #38a169;
+}
+
+select.hidden {
+    display: none;
+}
+
+.time-format-toggle {
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.time-picker-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.section-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.time-picker-group input::placeholder {
+    color: #aaa;
+    font-style: italic;
+    font-size: 14px;
+}
+
+/* =============================================================================
+   YEARLY SELECTORS
+   ============================================================================= */
+
+.yearly-months,
+.yearly-days {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 10px;
+    padding: 10px;
+    background: #d3d3d3;
+    border-radius: 10px;
+}
+
+.yearly-month-box,
+.yearly-day-box {
+    text-align: center;
+    padding: 12px 0;
+    background: white;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s, border-color 0.2s;
+    width: 60px;
+}
+
+.yearly-month-box.selected,
+.yearly-day-box.selected {
+    background: #b0f1b5;
+    border-color: #38a169;
+    color: #000000;
+}
+
+.yearly-month-box.selected::after,
+.yearly-day-box.selected::after {
+    content: "✔";
+    font-size: 14px;
+    position: absolute;
+    top: 4px;
+    left: 6px;
+    color: #000000;
+}
+
+/* =============================================================================
+   BIWEEKLY DAYS SELECTOR
+   ============================================================================= */
+
+.biweekly-day-box {
+    text-align: center;
+    padding: 10px;
+    background: var(--theme-input-bg, white);
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.biweekly-day-box.selected {
+    background: var(--theme-success, #4CAF50);
+    border-color: var(--theme-success, #4CAF50);
+    color: white;
+}
+
+/* =============================================================================
+   SPECIFIC DATES PANEL
+   ============================================================================= */
+
+#specific-dates-panel {
+    margin-top: 12px;
+    padding: 12px;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+}
+
+#specific-date-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.specific-date-entry {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.specific-date-entry input[type="date"] {
+    flex: 1;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}

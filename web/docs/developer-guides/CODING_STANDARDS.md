@@ -1,7 +1,7 @@
 # miniCycle Coding Standards
 
-Version: 1.1
-Last Updated: 2025-12-30
+Version: 1.2
+Last Updated: 2026-01-09
 
 ## 1. Export Patterns
 
@@ -248,3 +248,122 @@ export class ModuleName { ... }
 
 console.log('📦 ModuleName module loaded');
 ```
+
+---
+
+## 8. CSS Standards
+
+### Modular Architecture
+
+All styles are organized in the `styles/` folder using native CSS imports (no build step):
+
+```
+styles/
+├── main.css                 # Entry point - imports all modules
+├── base/                    # Foundation styles
+│   ├── variables.css        # CSS custom properties
+│   ├── reset.css            # CSS reset
+│   ├── typography.css       # Font styles
+│   └── animations.css       # Keyframe animations
+├── layout/                  # Page structure
+├── components/              # UI component styles (18 files)
+├── utilities/               # Dark mode, helpers, responsive
+└── themes/                  # Theme system
+```
+
+### File Naming
+
+| Type | Convention | Example |
+|------|------------|---------|
+| Component styles | kebab-case matching component | `task-list.css`, `stats-panel.css` |
+| Base files | lowercase | `variables.css`, `reset.css` |
+| Utility files | lowercase | `dark-mode.css`, `helpers.css` |
+
+### CSS Variables
+
+Use CSS custom properties for all theme-able values:
+
+```css
+/* In styles/base/variables.css */
+:root {
+    --theme-text-primary: inherit;
+    --theme-bg-surface: rgba(255, 255, 255, 0.4);
+    --theme-success: #4CAF50;
+    --theme-error: #dc2626;
+}
+
+/* In component files - use with fallbacks */
+.task {
+    background: var(--theme-task-bg, white);
+    color: var(--theme-task-text, #333);
+}
+```
+
+### Dark Mode
+
+Dark mode overrides live in `styles/utilities/dark-mode.css`:
+
+```css
+/* Use body.dark-mode selector for overrides */
+body.dark-mode .component {
+    background-color: #2a2a2a;
+    color: #f0f0f0;
+}
+```
+
+### Component CSS Structure
+
+Each component file should follow this structure:
+
+```css
+/* ═══════════════════════════════════════════════════════════════════════════
+   Component Name
+   Brief description of what this component styles
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   SECTION NAME
+   ============================================================================= */
+
+.component-class {
+    /* Layout */
+    display: flex;
+    position: relative;
+
+    /* Sizing */
+    width: 100%;
+    padding: 10px;
+
+    /* Colors - use CSS variables */
+    background: var(--theme-bg, white);
+    color: var(--theme-text, #333);
+
+    /* Effects */
+    transition: background 0.2s ease;
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .component-class {
+        padding: 8px;
+    }
+}
+```
+
+### Best Practices
+
+**DO:**
+- Use CSS variables for colors, spacing, and timing values
+- Group related properties (layout, sizing, colors, effects)
+- Add section headers for organization
+- Put media queries at the end of each file
+- Use `var(--property, fallback)` for backwards compatibility
+
+**DON'T:**
+- Use `!important` unless absolutely necessary
+- Hard-code colors that should be themeable
+- Create overly specific selectors (avoid `.parent .child .grandchild`)
+- Duplicate styles across components (extract to variables or utilities)
