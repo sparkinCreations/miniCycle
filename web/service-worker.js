@@ -314,63 +314,49 @@ self.addEventListener('fetch', function (event) {
       fetchUrl.searchParams.set('v', APP_VERSION);
     }
 
+    // ✅ NETWORK-FIRST for JS/CSS: Always fetch fresh, cache as backup
+    // This ensures users always get the latest code while maintaining offline support
+    var freshRequest = new Request(fetchUrl.href, {
+      method: 'GET',
+      headers: request.headers,
+      mode: request.mode,
+      credentials: request.credentials,
+      cache: 'no-cache'  // Force revalidation, bypass stale browser cache
+    });
+
     // ✅ Create normalized cache key (strip version param for consistent caching)
     var cacheUrl = new URL(request.url);
     cacheUrl.searchParams.delete('v');
     var cacheRequest = new Request(cacheUrl.href);
 
-    // ✅ STALE-WHILE-REVALIDATE for JS/CSS: Fast startup, background refresh
-    // 1. Serve from cache immediately if available (instant load)
-    // 2. Fetch fresh copy in background and update cache
-    // 3. If no cache, wait for network
     event.respondWith(
-      caches.match(cacheRequest).then(function (cached) {
-        // Create fresh request for background revalidation
-        var freshRequest = new Request(fetchUrl.href, {
-          method: 'GET',
-          headers: request.headers,
-          mode: request.mode,
-          credentials: request.credentials,
-          cache: 'no-cache'  // Force revalidation, bypass stale browser cache
-        });
-
-        // ✅ Background revalidation - always fetch fresh and update cache
-        var networkFetch = fetch(freshRequest).then(function (res) {
+      fetch(freshRequest)
+        .then(function (res) {
           if (res && res.status === 200) {
-            // Clone response before caching (can only read body once)
-            var responseToCache = res.clone();
-            caches.open(DYNAMIC_CACHE).then(function (cache) {
-              cache.put(cacheRequest, responseToCache).then(function() {
+            return caches.open(DYNAMIC_CACHE).then(function (cache) {
+              // Store with normalized URL (no version) for consistent cache keys
+              return cache.put(cacheRequest, res.clone()).then(function() {
                 trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
+                return res;
               }).catch(function(cacheError) {
                 console.warn('⚠️ Cache put failed for:', request.url, cacheError);
+                return res;
               });
             });
           }
           return res;
-        }).catch(function (error) {
-          console.warn('❌ Background fetch failed for JS/CSS:', request.url, error);
-          return null; // Return null on network error
-        });
-
-        // ✅ If we have a cached version, return it immediately
-        // The background fetch will update the cache for next time
-        if (cached) {
-          // console.log('⚡ Stale-while-revalidate: serving cached JS/CSS:', request.url);
-          return cached;
-        }
-
-        // ✅ No cache - wait for network response
-        return networkFetch.then(function (res) {
-          if (res) return res;
-          // Network failed and no cache available
-          return new Response('// Offline - file not cached', {
-            status: 504,
-            statusText: 'Gateway Timeout',
-            headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
+        })
+        .catch(function (error) {
+          // ✅ Offline fallback: use cache (with normalized key)
+          console.warn('❌ Fetch failed for JS/CSS, trying cache:', request.url, error);
+          return caches.match(cacheRequest).then(function (cached) {
+            return cached || new Response('// Offline - file not cached', {
+              status: 504,
+              statusText: 'Gateway Timeout',
+              headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
+            });
           });
-        });
-      })
+        })
     );
   } else {
     // ✅ CACHE-FIRST for images and other static assets
