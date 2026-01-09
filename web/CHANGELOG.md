@@ -1,3 +1,7 @@
+## [1.691] - 2026-01-09
+- feat: update manifest and service worker for improved file paths and caching strategy
+
+
 ## [1.690] - 2026-01-09
 - feat: update version to 1.689 and reflect changes in changelog, manifest, HTML, and version files
 
