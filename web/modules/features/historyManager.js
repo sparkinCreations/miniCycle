@@ -27,7 +27,8 @@ const di = createDIModule('HistoryManager', {
     safeAddEventListener: optional(null),
     showConfirmationModal: optional(null),
     clearedTasksManager: optional(null),
-    updateStatsPanel: optional(null)
+    updateStatsPanel: optional(null),
+    addTask: optional(null)
 });
 
 export const setHistoryManagerDependencies = di.setDependencies;
@@ -607,12 +608,30 @@ export class HistoryManager {
             content.querySelectorAll('.cleared-entry').forEach(el => {
                 el.addEventListener('click', () => {
                     const id = el.dataset.id;
+                    const checkbox = el.querySelector('span');
+
                     if (this.selectedTasks.has(id)) {
                         this.selectedTasks.delete(id);
                         el.classList.remove('selected');
+                        // Update inline styles for deselected state
+                        el.style.background = 'var(--bg-secondary, #f5f5f5)';
+                        el.style.border = '2px solid transparent';
+                        if (checkbox) {
+                            checkbox.style.background = 'transparent';
+                            checkbox.style.borderColor = 'var(--border-color, #ccc)';
+                            checkbox.textContent = '';
+                        }
                     } else {
                         this.selectedTasks.add(id);
                         el.classList.add('selected');
+                        // Update inline styles for selected state
+                        el.style.background = 'var(--primary-color-light, #e8efff)';
+                        el.style.border = '2px solid var(--primary-color, #4c79ff)';
+                        if (checkbox) {
+                            checkbox.style.background = 'var(--primary-color, #4c79ff)';
+                            checkbox.style.borderColor = 'var(--primary-color, #4c79ff)';
+                            checkbox.textContent = '✓';
+                        }
                     }
                     this._updateConfirmButton();
                 });
@@ -884,32 +903,41 @@ export class HistoryManager {
      * Recreate selected tasks from cleared list
      * @private
      */
-    _recreateSelectedTasks() {
+    async _recreateSelectedTasks() {
         if (this.selectedTasks.size === 0) return;
+
+        const addTask = this.deps.addTask;
+        console.log('🔄 HistoryManager: addTask dependency:', typeof addTask, addTask);
+
+        if (!addTask || typeof addTask !== 'function') {
+            console.error('❌ HistoryManager: addTask not available');
+            this.deps.showNotification('Cannot recreate tasks - addTask not available', 'error');
+            return;
+        }
 
         const clearedData = this._getClearedTasks();
         const entries = clearedData.entries || [];
         const toRecreate = entries.filter(e => this.selectedTasks.has(e.id));
+        console.log('🔄 HistoryManager: Tasks to recreate:', toRecreate.length);
 
         let created = 0;
         for (const entry of toRecreate) {
             try {
-                // Get addTask function from appInit
-                const addTask = this.deps.appInit?.getAddTask?.();
-                if (addTask) {
-                    addTask(entry.taskText, {
-                        highPriority: entry.wasHighPriority || false,
-                        isRecurring: false
-                    });
-                    created++;
+                console.log(`🔄 HistoryManager: Recreating task "${entry.taskText}"`);
+                const result = await addTask(entry.taskText, {
+                    highPriority: entry.wasHighPriority || false
+                });
+                console.log('🔄 HistoryManager: addTask result:', result);
 
-                    // Remove from cleared tasks
-                    if (this.deps.clearedTasksManager) {
-                        this.deps.clearedTasksManager.removeEntry(entry.id);
-                    }
+                if (result) {
+                    created++;
+                    // Note: Entry stays in cleared list as historical record
+                    // Recreate ≠ Restore - we're creating a new task, not undoing the clear
+                } else {
+                    console.warn('⚠️ HistoryManager: addTask returned falsy value');
                 }
             } catch (err) {
-                console.error('Failed to recreate task:', err);
+                console.error('❌ HistoryManager: Failed to recreate task:', err);
             }
         }
 
@@ -918,6 +946,8 @@ export class HistoryManager {
                 `Recreated ${created} task${created !== 1 ? 's' : ''}`,
                 'success'
             );
+        } else {
+            this.deps.showNotification('Failed to recreate tasks - check console for details', 'warning');
         }
 
         // Reset state and refresh

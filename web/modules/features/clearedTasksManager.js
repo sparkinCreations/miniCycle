@@ -249,27 +249,41 @@ export class ClearedTasksManager {
         }
 
         const addTask = this.deps.addTask;
-        if (!addTask) {
+        console.log('🔄 ClearedTasksManager: addTask dependency:', typeof addTask, addTask);
+
+        if (!addTask || typeof addTask !== 'function') {
+            console.error('❌ ClearedTasksManager: addTask not available or not a function');
             this.deps.showNotification('Cannot recreate tasks - addTask not available', 'error');
             return;
         }
 
         const { entries } = this.getClearedTasks();
         const toRecreate = entries.filter(e => this.selectedTasks.has(e.id));
+        console.log('🔄 ClearedTasksManager: Tasks to recreate:', toRecreate.length, toRecreate);
 
         let created = 0;
         for (const entry of toRecreate) {
             try {
-                await addTask(entry.taskText, {
+                console.log(`🔄 ClearedTasksManager: Recreating task "${entry.taskText}" (highPriority: ${entry.wasHighPriority})`);
+                const result = await addTask(entry.taskText, {
                     highPriority: entry.wasHighPriority
                 });
-                created++;
+                console.log('🔄 ClearedTasksManager: addTask result:', result);
+                if (result) {
+                    created++;
+                } else {
+                    console.warn('⚠️ ClearedTasksManager: addTask returned falsy value:', result);
+                }
             } catch (err) {
-                console.error('Failed to recreate task:', err);
+                console.error('❌ ClearedTasksManager: Failed to recreate task:', err);
             }
         }
 
-        this.deps.showNotification(`Recreated ${created} task${created !== 1 ? 's' : ''}`, 'success');
+        if (created > 0) {
+            this.deps.showNotification(`Recreated ${created} task${created !== 1 ? 's' : ''}`, 'success');
+        } else {
+            this.deps.showNotification('Failed to recreate tasks - check console for details', 'warning');
+        }
 
         // Exit recreate mode
         this.isRecreateMode = false;
@@ -549,12 +563,30 @@ export class ClearedTasksManager {
             content.querySelectorAll('.cleared-entry').forEach(el => {
                 el.addEventListener('click', () => {
                     const id = el.dataset.id;
+                    const checkbox = el.querySelector('span');
+
                     if (this.selectedTasks.has(id)) {
                         this.selectedTasks.delete(id);
                         el.classList.remove('selected');
+                        // Update inline styles for deselected state
+                        el.style.background = 'var(--bg-secondary, #f5f5f5)';
+                        el.style.border = '2px solid transparent';
+                        if (checkbox) {
+                            checkbox.style.background = 'transparent';
+                            checkbox.style.borderColor = 'var(--border-color, #ccc)';
+                            checkbox.textContent = '';
+                        }
                     } else {
                         this.selectedTasks.add(id);
                         el.classList.add('selected');
+                        // Update inline styles for selected state
+                        el.style.background = 'var(--primary-color-light, #e8efff)';
+                        el.style.border = '2px solid var(--primary-color, #4c79ff)';
+                        if (checkbox) {
+                            checkbox.style.background = 'var(--primary-color, #4c79ff)';
+                            checkbox.style.borderColor = 'var(--primary-color, #4c79ff)';
+                            checkbox.textContent = '✓';
+                        }
                     }
                     this._updateConfirmButton();
                 });

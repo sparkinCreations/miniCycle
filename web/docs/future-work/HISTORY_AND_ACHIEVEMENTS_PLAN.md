@@ -142,11 +142,15 @@ This ensures:
 | **Recreation** | Optional, manual, intentional |
 | **Recreation target** | Current active routine |
 | **Recreation mode** | Inherits current routine's mode |
-| **After recreation** | Entry removed from cleared list, new task added to active list |
-| **Re-completion** | If recreated and cleared again, counts again |
+| **After recreation** | Entry stays in cleared list (historical record), new task added to active list |
+| **Re-completion** | If recreated and cleared again, adds new entry, counts again |
 | **Retention** | 90 days - auto-prune older entries |
 | **Advanced option** | User may opt out of auto-pruning |
 | **Counter** | `totalCleared` persists through prune/recreate/clear |
+
+**Important distinction:**
+- **Recreate** = Create a NEW task based on cleared entry. Entry remains in history as a record of what was cleared.
+- **Restore** (not implemented) = Would undo the clear entirely, removing entry and putting original task back.
 
 ### Recreation Flow
 
@@ -167,7 +171,7 @@ Clicks "Recreate Selected"
     ↓
 New tasks added to active routine
     ↓
-Removed from cleared list
+Entries remain in cleared list (historical record)
     ↓
 Confirmation notification
 ```
@@ -1073,7 +1077,7 @@ If adding "after tasks render" features, hook into BOTH paths.
 - [ ] Does NOT prune when autoPruneEnabled is false
 - [ ] totalCleared persists after prune
 - [ ] Recreate adds NEW task to active routine
-- [ ] Recreate removes entry from cleared list
+- [ ] Recreate keeps entry in cleared list (historical record)
 - [ ] totalCleared unchanged after recreate
 - [ ] Re-clearing recreated task increments totalCleared
 

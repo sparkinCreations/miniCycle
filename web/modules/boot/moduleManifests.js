@@ -426,7 +426,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/historyManager.js',
         phase: PHASES.FEATURES,
         requires: ['appInit', 'AppState', 'showNotification'],
-        optionalDeps: ['safeAddEventListener', 'showConfirmationModal', 'updateStatsPanel', 'clearedTasksManager'],
+        optionalDeps: ['safeAddEventListener', 'showConfirmationModal', 'updateStatsPanel', 'clearedTasksManager', 'addTask'],
         provides: ['logHistoryEvent', 'getHistory', 'clearHistory', 'openHistoryModal'],
         provideInstance: 'historyManager',
         api: 'features',

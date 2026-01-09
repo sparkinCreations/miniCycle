@@ -618,7 +618,14 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         setupTaskInteractions: (...args) => deps.task?.setupTaskInteractions?.(...args),
         finalizeTaskCreation: (...args) => deps.task?.finalizeTaskCreation?.(...args),
         refreshTaskListUI: (...args) => deps.task?.refreshTaskListUI?.(...args),
-        addTask: (...args) => deps.task?.addTask?.(...args),
+        addTask: (...args) => {
+            console.log('🔗 moduleLoader addTask wrapper called:', args);
+            console.log('🔗 deps.task:', deps.task);
+            console.log('🔗 deps.task?.addTask:', deps.task?.addTask);
+            const result = deps.task?.addTask?.(...args);
+            console.log('🔗 addTask wrapper result:', result);
+            return result;
+        },
         resetTasks: (...args) => deps.task?.resetTasks?.(...args),
         handleTaskCompletionChange: (...args) => deps.task?.handleTaskCompletionChange?.(...args),
         saveTaskToSchema25: (...args) => deps.task?.saveTaskToSchema25?.(...args),
