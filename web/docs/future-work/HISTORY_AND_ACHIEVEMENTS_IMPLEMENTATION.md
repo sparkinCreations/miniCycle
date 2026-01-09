@@ -341,7 +341,7 @@ const di = createDIModule('HistoryManager', {
   - [ ] Prune respects autoPruneEnabled setting
   - [ ] totalCleared persists after prune
   - [ ] recreateTask creates NEW task
-  - [ ] recreateTask removes entry from list
+  - [ ] recreateTask keeps entry in list (historical record)
   - [ ] totalCleared unchanged after recreate
   - [ ] Re-clearing recreated task increments totalCleared
   - **File:** `tests/clearedTasks.tests.js` (new)
@@ -608,7 +608,7 @@ See `docs/guides/confirmation-and-notification-modal.md` for modal patterns.
 - [ ] **6.5 Write recreate UI tests**
   - [ ] Mode toggle works
   - [ ] Selection updates correctly
-  - [ ] Recreate creates tasks and removes entries
+  - [ ] Recreate creates tasks and keeps entries in history
   - [ ] Cancel reverts without changes
   - **File:** `tests/clearedTasks.tests.js` (add to existing)
   - **Notes:**
