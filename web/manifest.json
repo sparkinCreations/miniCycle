@@ -12,7 +12,7 @@
   "dir": "ltr",
   "theme_color": "#4c79ff",
   "background_color": "#4c79ff",
-  "version": "1.689",
+  "version": "1.690",
   "categories": ["productivity", "lifestyle", "utilities"],
   "icons": [
     {
@@ -33,7 +33,7 @@
       "name": "Open miniCycle Lite",
       "short_name": "Lite",
       "description": "Switch to the lightweight version for older devices",
-      "url": "./miniCycle-lite.html",
+      "url": "./lite/miniCycle-lite.html",
       "icons": [
         {
           "src": "assets/images/logo/minicycle_logo_icon.png",
@@ -59,7 +59,7 @@
       "name": "User Manual",
       "short_name": "Manual",
       "description": "Read the user manual",
-      "url": "./user-manual.html",
+      "url": "./legal/user-manual.html",
       "icons": [
         {
           "src": "assets/images/logo/minicycle_logo_icon.png",

@@ -10,135 +10,72 @@ var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 var MAX_DYNAMIC_ENTRIES = 100;  // Maximum entries in dynamic cache
 var MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
+// ============================================================================
+// PRECACHE LISTS - Optimized for iOS PWA performance
+// ============================================================================
+
+// Core assets needed for basic app shell
 var CORE = [
   './',
-  './assets/images/logo/taskcycle_logo_blackandwhite_transparent.png',
-  './assets/images/logo/logo.png',
-  './assets/images/logo/app_name.png',
-  './assets/images/logo/App_Name_tp_bw.png',
+  './manifest.json',
+  './manifest-lite.json',
+  // Essential logos only
   './assets/images/logo/minicycle_logo_icon.png',
-  // ✅ UPDATED: Correct manifest names
-  './manifest.json',      // Full version manifest
-  './manifest-lite.json'  // Lite version manifest
+  './assets/images/logo/logo.png'
 ];
 
-var FULL_SHELL = [
+// Boot-critical files - MUST be precached for instant startup
+var BOOT_CRITICAL = [
+  // HTML shells
   './miniCycle.html',
   './miniCycle-styles.css',
-  './miniCycle-main.js',              // Entrypoint
-  './modules/boot/orchestrator.js',   // Boot orchestration
-  './modules/boot/coreBoot.js',       // Core state + init
-  './modules/boot/featureBoot.js',    // DI wiring
-  './modules/boot/uiBoot.js',         // UI event handlers
-  // User manual files (in legal/ subdirectory)
-  './legal/user-manual.html',
-  './legal/user-manual-styles.css'
+  // Entrypoint and boot chain
+  './miniCycle-main.js',
+  './modules/boot/orchestrator.js',
+  './modules/boot/coreBoot.js',
+  './modules/boot/featureBoot.js',
+  './modules/boot/uiBoot.js',
+  './modules/boot/moduleLoader.js',
+  './modules/boot/moduleManifests.js',
+  // Core foundation (Phase 1 dependencies)
+  './modules/core/appState.js',
+  './modules/core/appInit.js',
+  './modules/core/diBase.js',
+  './modules/core/constants.js',
+  './modules/core/appContext.js',
+  './modules/core/appGlobalState.js',
+  './modules/core/migrationFacade.js',
+  // Essential utils for boot
+  './modules/utils/globalUtils.js',
+  './modules/utils/errorHandler.js',
+  './modules/utils/notifications.js'
 ];
 
+// Lite version shell (smaller precache)
 var LITE_SHELL = [
-  // Lite version files (in lite/ subdirectory)
   './lite/miniCycle-lite.html',
   './lite/miniCycle-lite-styles.css',
   './lite/miniCycle-lite-scripts.js'
 ];
 
-var UTILITIES = [
-  // Core modules
-  './modules/core/appGlobalState.js',
-  './modules/core/appInit.js',
-  './modules/core/appState.js',
-  './modules/core/appContext.js',
-  './modules/core/constants.js',
-  './modules/core/dataAccess.js',
-  './modules/core/diBase.js',
-  './modules/core/migrationFacade.js',
-  // Boot modules (additional)
-  './modules/boot/moduleLoader.js',
-  './modules/boot/moduleManifests.js',
-  // Feature modules
-  './modules/features/themeManager.js',
-  './modules/features/statsPanel.js',
-  './modules/features/reminders.js',
-  './modules/features/dueDates.js',
-  // Recurring modules
-  './modules/recurring/recurringPanel.js',
-  './modules/recurring/recurringPanelForm.js',
-  './modules/recurring/recurringPanelEvents.js',
-  './modules/recurring/recurringPanelGrids.js',
-  './modules/recurring/recurringPanelSetup.js',
-  './modules/recurring/recurringPanelSummary.js',
-  './modules/recurring/recurringIntegration.js',
-  './modules/recurring/recurringSettingsApplicator.js',
-  './modules/recurring/recurringCore.js',
-  './modules/recurring/recurringActivation.js',
-  './modules/recurring/recurringWatcher.js',
-  './modules/recurring/recurringSettings.js',
-  './modules/recurring/recurringDateUtils.js',
-  './modules/recurring/recurringCalculators.js',
-  './modules/recurring/recurringMatcher.js',
-  // Utils modules
-  './modules/utils/globalUtils.js',
-  './modules/utils/deviceDetection.js',
-  './modules/utils/notifications.js',
-  './modules/utils/consoleCapture.js',
-  './modules/utils/dataValidator.js',
-  './modules/utils/dataSanitizer.js',
-  './modules/utils/debugMode.js',
-  './modules/utils/errorHandler.js',
-  './modules/utils/nameUtils.js',
-  './modules/utils/storageUtils.js',
-  // Storage modules
-  './modules/storage/backupManager.js',
-  // Progress modules
-  './modules/progress/cycleCompletion.js',
-  // Routine modules
-  './modules/routine/routineLoader.js',
-  './modules/routine/routineManager.js',
-  './modules/routine/routineSwitcher.js',
-  './modules/routine/migrationManager.js',
-  './modules/routine/modeManager.js',
-  // Task modules
-  './modules/task/dragDropManager.js',
-  './modules/task/taskCore.js',
-  './modules/task/taskCRUD.js',
-  './modules/task/taskCompletion.js',
-  './modules/task/taskCycleReset.js',
-  './modules/task/taskDOM.js',
-  './modules/task/taskEvents.js',
-  './modules/task/taskRenderer.js',
-  './modules/task/taskUtils.js',
-  './modules/task/taskValidation.js',
-  // UI modules
-  './modules/ui/backupRestoreManager.js',
-  './modules/ui/completedTasksManager.js',
-  './modules/ui/cycleExportManager.js',
-  './modules/ui/cycleImportManager.js',
-  './modules/ui/gamesManager.js',
-  './modules/ui/helpWindowManager.js',
-  './modules/ui/menuManager.js',
-  './modules/ui/modalManager.js',
-  './modules/ui/onboardingManager.js',
-  './modules/ui/pullToRefresh.js',
-  './modules/ui/settingsManager.js',
-  './modules/ui/settingsUIManager.js',
-  './modules/ui/taskInteractions.js',
-  './modules/ui/taskOptionsCustomizer.js',
-  './modules/ui/taskUI.js',
-  './modules/ui/titleManager.js',
-  './modules/ui/uiEffects.js',
-  './modules/ui/uiOrchestrator.js',
-  './modules/ui/undoRedoManager.js',
-  // Other modules
-  './modules/other/basicPluginSystem.js',
-  // Testing modules (optional - only needed for dev)
-  './modules/testing/testing-modal.js'
+// Secondary files - will be lazy-cached on first use via stale-while-revalidate
+// NOT precached to keep install fast on iOS
+var LAZY_CACHE_ON_USE = [
+  // User manual (in legal/ subdirectory)
+  './legal/user-manual.html',
+  './legal/user-manual-styles.css',
+  // Additional logos
+  './assets/images/logo/taskcycle_logo_blackandwhite_transparent.png',
+  './assets/images/logo/app_name.png',
+  './assets/images/logo/App_Name_tp_bw.png'
+  // All other modules will be cached on first use automatically
 ];
 
 self.addEventListener('install', function (event) {
   console.log('🔧 Service Worker ' + CACHE_VERSION + ' (App v' + APP_VERSION + ') installing...');
 
-  // Build the full pre-cache list once
-  var precacheList = CORE.concat(FULL_SHELL, LITE_SHELL, UTILITIES);
+  // Build the full pre-cache list - boot-critical files only for fast iOS install
+  var precacheList = CORE.concat(BOOT_CRITICAL, LITE_SHELL);
 
   function addAllSafe(cache, urls) {
     // 1) Fast path: one shot addAll
@@ -167,11 +104,11 @@ self.addEventListener('install', function (event) {
 
   event.waitUntil(
     caches.open(STATIC_CACHE).then(function (cache) {
-      console.log('💾 Caching assets…',
+      console.log('💾 Caching boot-critical assets…',
         '\n  📦 CORE:', CORE.length,
-        '\n  💻 FULL shell:', FULL_SHELL.length,
+        '\n  🚀 BOOT_CRITICAL:', BOOT_CRITICAL.length,
         '\n  📱 LITE shell:', LITE_SHELL.length,
-        '\n  🔧 UTILITIES:', UTILITIES.length
+        '\n  📊 Total:', precacheList.length
       );
       return addAllSafe(cache, precacheList);
     }).then(function (result) {
@@ -377,52 +314,63 @@ self.addEventListener('fetch', function (event) {
       fetchUrl.searchParams.set('v', APP_VERSION);
     }
 
-    // ✅ NETWORK-FIRST for JS/CSS: Always fetch fresh, cache as backup
-    // ✅ IMPORTANT: Use cache: 'no-cache' to bypass browser HTTP cache
-    // This prevents 304 responses returning stale module content
-    var freshRequest = new Request(fetchUrl.href, {
-      method: 'GET',
-      headers: request.headers,
-      mode: request.mode,
-      credentials: request.credentials,
-      cache: 'no-cache'  // Force revalidation, bypass stale browser cache
-    });
-
     // ✅ Create normalized cache key (strip version param for consistent caching)
     var cacheUrl = new URL(request.url);
     cacheUrl.searchParams.delete('v');
     var cacheRequest = new Request(cacheUrl.href);
 
+    // ✅ STALE-WHILE-REVALIDATE for JS/CSS: Fast startup, background refresh
+    // 1. Serve from cache immediately if available (instant load)
+    // 2. Fetch fresh copy in background and update cache
+    // 3. If no cache, wait for network
     event.respondWith(
-      fetch(freshRequest)
-        .then(function (res) {
+      caches.match(cacheRequest).then(function (cached) {
+        // Create fresh request for background revalidation
+        var freshRequest = new Request(fetchUrl.href, {
+          method: 'GET',
+          headers: request.headers,
+          mode: request.mode,
+          credentials: request.credentials,
+          cache: 'no-cache'  // Force revalidation, bypass stale browser cache
+        });
+
+        // ✅ Background revalidation - always fetch fresh and update cache
+        var networkFetch = fetch(freshRequest).then(function (res) {
           if (res && res.status === 200) {
-            return caches.open(DYNAMIC_CACHE).then(function (cache) {
-              // Store with normalized URL (no version) for consistent cache keys
-              return cache.put(cacheRequest, res.clone()).then(function() {
-                // console.log('📦 Cached fresh JS/CSS:', request.url);
-                // ✅ Trim cache after adding new entry
+            // Clone response before caching (can only read body once)
+            var responseToCache = res.clone();
+            caches.open(DYNAMIC_CACHE).then(function (cache) {
+              cache.put(cacheRequest, responseToCache).then(function() {
                 trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
-                return res;
               }).catch(function(cacheError) {
                 console.warn('⚠️ Cache put failed for:', request.url, cacheError);
-                return res;
               });
             });
           }
           return res;
-        })
-        .catch(function (error) {
-          // ✅ Offline fallback: use cache (with normalized key)
-          console.warn('❌ Fetch failed for JS/CSS, trying cache:', request.url, error);
-          return caches.match(cacheRequest).then(function (cached) {
-            return cached || new Response('// Offline - file not cached', {
-              status: 504,
-              statusText: 'Gateway Timeout',
-              headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
-            });
+        }).catch(function (error) {
+          console.warn('❌ Background fetch failed for JS/CSS:', request.url, error);
+          return null; // Return null on network error
+        });
+
+        // ✅ If we have a cached version, return it immediately
+        // The background fetch will update the cache for next time
+        if (cached) {
+          // console.log('⚡ Stale-while-revalidate: serving cached JS/CSS:', request.url);
+          return cached;
+        }
+
+        // ✅ No cache - wait for network response
+        return networkFetch.then(function (res) {
+          if (res) return res;
+          // Network failed and no cache available
+          return new Response('// Offline - file not cached', {
+            status: 504,
+            statusText: 'Gateway Timeout',
+            headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
           });
-        })
+        });
+      })
     );
   } else {
     // ✅ CACHE-FIRST for images and other static assets
