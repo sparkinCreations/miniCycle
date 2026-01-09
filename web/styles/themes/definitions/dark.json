@@ -1,0 +1,81 @@
+{
+  "$schema": "../theme-schema.json",
+  "id": "dark",
+  "name": "Dark Mode",
+  "description": "Dark theme for reduced eye strain",
+  "version": "1.0.0",
+  "tags": ["dark", "night", "low-light"],
+  "tokens": {
+    "colors": {
+      "backgrounds": {
+        "gradient": "linear-gradient(135deg, #1a1a2e, #16213e)",
+        "solid": "#2a2a2a",
+        "surface": "rgba(45, 45, 55, 0.95)",
+        "surfaceElevated": "#3a3a4a"
+      },
+      "text": {
+        "primary": "#ffffff",
+        "secondary": "rgba(255, 255, 255, 0.8)",
+        "onSurface": "#e0e0e0",
+        "muted": "#a0a0a0"
+      },
+      "header": {
+        "bg": "#2a2a2a",
+        "text": "#ffffff",
+        "border": "rgba(255, 255, 255, 0.1)"
+      },
+      "components": {
+        "card": {
+          "bg": "rgba(45, 45, 55, 0.95)",
+          "border": "rgba(255, 255, 255, 0.1)",
+          "shadow": "0 4px 6px rgba(0, 0, 0, 0.3)"
+        },
+        "input": {
+          "bg": "#3a3a4a",
+          "text": "#e0e0e0",
+          "border": "#555555",
+          "focusBorder": "#74c0fc",
+          "placeholder": "#888888"
+        },
+        "button": {
+          "primaryBg": "#4c79ff",
+          "primaryText": "#ffffff",
+          "primaryHoverBg": "#5a87ff",
+          "secondaryBg": "#4a4a5a",
+          "secondaryText": "#e0e0e0",
+          "secondaryHoverBg": "#5a5a6a"
+        },
+        "modal": {
+          "bg": "#2d2d3d",
+          "text": "#e0e0e0",
+          "border": "rgba(255, 255, 255, 0.1)",
+          "overlay": "rgba(0, 0, 0, 0.7)",
+          "headerBg": "#3a3a4a",
+          "footerBg": "#252535"
+        },
+        "notification": {
+          "bg": "#3a3a4a",
+          "text": "#ffffff"
+        },
+        "task": {
+          "bg": "rgba(45, 45, 55, 0.95)",
+          "text": "#e0e0e0",
+          "completedBg": "rgba(40, 100, 60, 0.8)",
+          "completedText": "#a0d0a0",
+          "border": "rgba(255, 255, 255, 0.1)",
+          "checkmark": "#48c764"
+        },
+        "progress": {
+          "trackBg": "rgba(255, 255, 255, 0.1)",
+          "fillBg": "#74c0fc",
+          "text": "#e0e0e0"
+        },
+        "statsPanel": {
+          "bg": "rgba(45, 45, 55, 0.95)",
+          "text": "#e0e0e0",
+          "border": "rgba(255, 255, 255, 0.1)"
+        }
+      }
+    }
+  }
+}

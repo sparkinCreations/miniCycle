@@ -1,0 +1,90 @@
+{
+  "$schema": "../theme-schema.json",
+  "id": "golden-glow",
+  "name": "Golden Glow",
+  "description": "Warm golden theme with rich amber tones",
+  "version": "1.0.0",
+  "tags": ["light", "gold", "warm", "amber", "sunny"],
+  "tokens": {
+    "colors": {
+      "backgrounds": {
+        "gradient": "linear-gradient(135deg, #fff9e0, #ffe066)",
+        "solid": "#ffd700",
+        "surface": "rgba(255, 251, 230, 0.95)",
+        "surfaceElevated": "#fffbe6"
+      },
+      "text": {
+        "primary": "#4a3d00",
+        "secondary": "rgba(74, 61, 0, 0.8)",
+        "onSurface": "#333333",
+        "muted": "#6f5400"
+      },
+      "semantic": {
+        "success": "#28a745",
+        "successLight": "#48c764",
+        "warning": "#e6ac00",
+        "warningLight": "#ffcc33",
+        "error": "#dc3545",
+        "errorLight": "#f1737e",
+        "info": "#d4a700"
+      },
+      "header": {
+        "bg": "#ffd700",
+        "text": "#4a3d00",
+        "border": "rgba(255, 215, 0, 0.3)"
+      },
+      "components": {
+        "card": {
+          "bg": "#fffbe6",
+          "border": "rgba(255, 215, 0, 0.3)",
+          "shadow": "0 4px 6px rgba(255, 215, 0, 0.2)"
+        },
+        "input": {
+          "bg": "#ffffff",
+          "text": "#333333",
+          "border": "rgba(255, 215, 0, 0.4)",
+          "focusBorder": "#d4a700",
+          "placeholder": "#a08500"
+        },
+        "button": {
+          "primaryBg": "#ffd700",
+          "primaryText": "#4a3d00",
+          "primaryHoverBg": "#e6be00",
+          "secondaryBg": "#ffe477",
+          "secondaryText": "#4a3d00",
+          "secondaryHoverBg": "#ffed4e"
+        },
+        "modal": {
+          "bg": "#fffbe6",
+          "text": "#4a3d00",
+          "border": "rgba(255, 215, 0, 0.3)",
+          "overlay": "rgba(0, 0, 0, 0.4)",
+          "headerBg": "#fff9e0",
+          "footerBg": "#fff2b8"
+        },
+        "notification": {
+          "bg": "#ffd700",
+          "text": "#4a3d00"
+        },
+        "task": {
+          "bg": "#fffbe6",
+          "text": "#4a3d00",
+          "completedBg": "#fff2b8",
+          "completedText": "#6f5400",
+          "border": "rgba(255, 215, 0, 0.3)",
+          "checkmark": "#28a745"
+        },
+        "progress": {
+          "trackBg": "rgba(255, 215, 0, 0.2)",
+          "fillBg": "#d4a700",
+          "text": "#4a3d00"
+        },
+        "statsPanel": {
+          "bg": "#fffbe6",
+          "text": "#4a3d00",
+          "border": "rgba(255, 215, 0, 0.3)"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,258 @@
+/**
+ * CSS Variables Foundation
+ *
+ * Single source of truth for all design tokens.
+ * Theme variables (--theme-*) are overridden by theme-manager.js at runtime.
+ *
+ * @see docs/guides/THEME_CREATION_GUIDE.md
+ * @see docs/future-work/THEME_ARCHITECTURE.md
+ */
+
+:root {
+  /* ═══════════════════════════════════════════════════════════════════════════
+     BRAND COLORS (Static - don't change per theme)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --color-primary: #4c79ff;
+  --color-primary-light: #74c0fc;
+  --color-primary-dark: #3a5fc7;
+  --color-accent: #007BFF;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     SEMANTIC COLORS (Static defaults, can be themed)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --color-success: #28a745;
+  --color-success-light: #48c764;
+  --color-warning: #ffc107;
+  --color-warning-light: #ffda6a;
+  --color-error: #dc3545;
+  --color-error-light: #f1737e;
+  --color-info: #17a2b8;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     NEUTRAL COLORS (Static palette)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f5f5f5;
+  --color-gray-200: #e5e5e5;
+  --color-gray-300: #d4d4d4;
+  --color-gray-400: #a3a3a3;
+  --color-gray-500: #737373;
+  --color-gray-600: #525252;
+  --color-gray-700: #404040;
+  --color-gray-800: #262626;
+  --color-gray-900: #171717;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Backgrounds
+     These are overridden by theme-manager.js when a theme is applied
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-bg-gradient: linear-gradient(135deg, #4c79ff, #74c0fc);
+  --theme-bg-solid: #4c79ff;
+  --theme-bg-surface: rgba(255, 255, 255, 0.95);
+  --theme-bg-surface-elevated: #ffffff;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Text
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-text-primary: #ffffff;
+  --theme-text-secondary: rgba(255, 255, 255, 0.8);
+  --theme-text-on-surface: #333333;
+  --theme-text-muted: #888888;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Semantic (themeable)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-color-success: var(--color-success);
+  --theme-color-success-light: var(--color-success-light);
+  --theme-color-warning: var(--color-warning);
+  --theme-color-warning-light: var(--color-warning-light);
+  --theme-color-error: var(--color-error);
+  --theme-color-error-light: var(--color-error-light);
+  --theme-color-info: var(--color-info);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Header
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-header-bg: transparent;
+  --theme-header-text: #ffffff;
+  --theme-header-border: rgba(255, 255, 255, 0.2);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Card/Surface
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-card-bg: rgba(255, 255, 255, 0.95);
+  --theme-card-border: transparent;
+  --theme-card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Input
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-input-bg: #ffffff;
+  --theme-input-text: #333333;
+  --theme-input-border: #cccccc;
+  --theme-input-focus-border: var(--color-primary);
+  --theme-input-placeholder: #999999;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Button
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-button-primary-bg: var(--color-primary);
+  --theme-button-primary-text: #ffffff;
+  --theme-button-primary-hover-bg: var(--color-primary-dark);
+  --theme-button-secondary-bg: #e0e0e0;
+  --theme-button-secondary-text: #333333;
+  --theme-button-secondary-hover-bg: #d0d0d0;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Modal
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-modal-bg: #ffffff;
+  --theme-modal-text: #333333;
+  --theme-modal-border: transparent;
+  --theme-modal-overlay: rgba(0, 0, 0, 0.5);
+  --theme-modal-header-bg: transparent;
+  --theme-modal-footer-bg: #f5f5f5;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Notification
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-notification-bg: #333333;
+  --theme-notification-text: #ffffff;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Task
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-task-bg: rgba(255, 255, 255, 0.95);
+  --theme-task-text: #333333;
+  --theme-task-completed-bg: rgba(200, 255, 200, 0.9);
+  --theme-task-completed-text: #666666;
+  --theme-task-border: transparent;
+  --theme-task-checkmark: var(--color-success);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Progress
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-progress-track-bg: rgba(0, 0, 0, 0.1);
+  --theme-progress-fill-bg: var(--color-primary);
+  --theme-progress-text: #333333;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Stats Panel
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-stats-bg: rgba(255, 255, 255, 0.95);
+  --theme-stats-text: #333333;
+  --theme-stats-border: transparent;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     LEGACY VARIABLES (for backward compatibility)
+     These map to theme variables - will be deprecated
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --header-bg: var(--theme-header-bg);
+  --header-text: var(--theme-header-text);
+  --header-border: var(--theme-header-border);
+  --modal-bg: var(--theme-modal-bg);
+  --modal-text: var(--theme-modal-text);
+  --modal-border: var(--theme-modal-border);
+  --modal-header-bg: var(--theme-modal-header-bg);
+  --modal-footer-bg: var(--theme-modal-footer-bg);
+  --background-color: var(--theme-bg-surface);
+  --text-color: var(--theme-text-on-surface);
+  --primary-color: var(--color-primary);
+  --accent-color: var(--color-accent);
+  --success-color: var(--color-success);
+  --focus-color: var(--color-primary);
+  --btn-bg: var(--theme-button-primary-bg);
+  --btn-text: var(--theme-button-primary-text);
+  --btn-hover-bg: var(--theme-button-primary-hover-bg);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     SPACING SCALE
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     TYPOGRAPHY
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-mono: 'SF Mono', 'Monaco', 'Consolas', monospace;
+
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     TIMING & EASING
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --transition-fast: 150ms;
+  --transition-normal: 300ms;
+  --transition-slow: 500ms;
+  --ease-default: ease-in-out;
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     BORDERS & RADIUS
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     SHADOWS
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     Z-INDEX LAYERS
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --z-background: -1;
+  --z-base: 0;
+  --z-content: 1;
+  --z-header: 10;
+  --z-dropdown: 50;
+  --z-modal-backdrop: 90;
+  --z-modal: 100;
+  --z-notification: 200;
+  --z-tooltip: 300;
+  --z-loader: 9999;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     LAYOUT
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --header-height: 110px;
+  --max-content-width: 400px;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+}

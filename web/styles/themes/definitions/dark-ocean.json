@@ -1,0 +1,90 @@
+{
+  "$schema": "../theme-schema.json",
+  "id": "dark-ocean",
+  "name": "Dark Ocean",
+  "description": "Deep ocean depths with teal accents",
+  "version": "1.0.0",
+  "tags": ["dark", "ocean", "teal", "blue", "nature"],
+  "tokens": {
+    "colors": {
+      "backgrounds": {
+        "gradient": "linear-gradient(135deg, #1a3a4f, #0c1724)",
+        "solid": "#0e1d2f",
+        "surface": "rgba(16, 36, 57, 0.95)",
+        "surfaceElevated": "#244d6a"
+      },
+      "text": {
+        "primary": "#e0f7fa",
+        "secondary": "rgba(224, 247, 250, 0.8)",
+        "onSurface": "#f0faff",
+        "muted": "#a2d9ff"
+      },
+      "semantic": {
+        "success": "#4ecdc4",
+        "successLight": "#81d4c4",
+        "warning": "#ffc107",
+        "warningLight": "#ffda6a",
+        "error": "#ff6b6b",
+        "errorLight": "#ff9999",
+        "info": "#4ecdc4"
+      },
+      "header": {
+        "bg": "#1a3a4f",
+        "text": "#e0f7fa",
+        "border": "rgba(78, 205, 196, 0.3)"
+      },
+      "components": {
+        "card": {
+          "bg": "rgba(16, 36, 57, 0.95)",
+          "border": "rgba(78, 205, 196, 0.2)",
+          "shadow": "0 4px 6px rgba(0, 0, 0, 0.3)"
+        },
+        "input": {
+          "bg": "#244d6a",
+          "text": "#f0faff",
+          "border": "rgba(78, 205, 196, 0.3)",
+          "focusBorder": "#4ecdc4",
+          "placeholder": "#7ab8d4"
+        },
+        "button": {
+          "primaryBg": "#4ecdc4",
+          "primaryText": "#18304a",
+          "primaryHoverBg": "#36b1a8",
+          "secondaryBg": "#244d6a",
+          "secondaryText": "#e0f7fa",
+          "secondaryHoverBg": "#2e5e80"
+        },
+        "modal": {
+          "bg": "#18304a",
+          "text": "#e0f7fa",
+          "border": "rgba(78, 205, 196, 0.2)",
+          "overlay": "rgba(0, 0, 0, 0.7)",
+          "headerBg": "#1e3a4f",
+          "footerBg": "#142535"
+        },
+        "notification": {
+          "bg": "#244d6a",
+          "text": "#e0f7fa"
+        },
+        "task": {
+          "bg": "rgba(36, 77, 106, 0.9)",
+          "text": "#f0faff",
+          "completedBg": "#3a7ca5",
+          "completedText": "#e0f7fa",
+          "border": "rgba(78, 205, 196, 0.2)",
+          "checkmark": "#4ecdc4"
+        },
+        "progress": {
+          "trackBg": "rgba(78, 205, 196, 0.2)",
+          "fillBg": "#4ecdc4",
+          "text": "#e0f7fa"
+        },
+        "statsPanel": {
+          "bg": "rgba(16, 36, 57, 0.95)",
+          "text": "#e0f7fa",
+          "border": "rgba(78, 205, 196, 0.2)"
+        }
+      }
+    }
+  }
+}
