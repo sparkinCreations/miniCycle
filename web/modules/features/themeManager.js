@@ -29,6 +29,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { JSONThemeManager } from '../../styles/themes/theme-manager.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -111,12 +112,12 @@ export class ThemeManager {
      * @param {string} themeName - Theme name ('default', 'dark-ocean', 'golden-glow')
      * @param {boolean} shouldSave - Whether to save to storage (false during initial load)
      */
-    applyTheme(themeName, shouldSave = true) {
+    async applyTheme(themeName, shouldSave = true) {
         try {
-            console.log('🎨 Applying theme (Schema 2.5 only)...', themeName);
+            console.log('🎨 Applying theme...', themeName);
 
             // Step 1: Remove all theme classes
-            const allThemes = ['theme-dark-ocean', 'theme-golden-glow'];
+            const allThemes = ['theme-dark-ocean', 'theme-golden-glow', 'theme-dark'];
             allThemes.forEach(theme => document.body?.classList.remove(theme));
 
             // Step 2: Add selected theme class if it's not 'default'
@@ -124,15 +125,18 @@ export class ThemeManager {
                 document.body?.classList.add(`theme-${themeName}`);
             }
 
-            // Step 3: Update theme color after applying theme
+            // Step 3: Apply JSON theme tokens via CSS variables
+            await JSONThemeManager.setTheme(themeName || 'default');
+
+            // Step 4: Update theme color after applying theme
             this.updateThemeColor();
 
-            // Step 4: Save to Schema 2.5 only (skip during initial load)
+            // Step 5: Save to Schema 2.5 only (skip during initial load)
             if (shouldSave) {
                 this.saveThemeToStorage(themeName);
             }
 
-            // Step 5: Update UI checkboxes
+            // Step 6: Update UI checkboxes
             this.updateThemeToggles(themeName);
 
             console.log('✅ Theme application completed');
@@ -858,8 +862,9 @@ export function initThemeManager(dependencies = {}) {
  * Apply a theme
  * @param {string} themeName - Theme to apply
  * @param {boolean} shouldSave - Whether to save (default true)
+ * @returns {Promise<void>}
  */
-function applyTheme(themeName, shouldSave = true) {
+async function applyTheme(themeName, shouldSave = true) {
     return themeManager.applyTheme(themeName, shouldSave);
 }
 
