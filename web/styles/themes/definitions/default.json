@@ -1,0 +1,81 @@
+{
+  "$schema": "../theme-schema.json",
+  "id": "default",
+  "name": "Default Blue",
+  "description": "The classic miniCycle blue gradient theme",
+  "version": "1.0.0",
+  "tags": ["light", "blue", "default", "gradient"],
+  "tokens": {
+    "colors": {
+      "backgrounds": {
+        "gradient": "linear-gradient(135deg, #4c79ff, #74c0fc)",
+        "solid": "#4c79ff",
+        "surface": "rgba(255, 255, 255, 0.95)",
+        "surfaceElevated": "#ffffff"
+      },
+      "text": {
+        "primary": "#ffffff",
+        "secondary": "rgba(255, 255, 255, 0.8)",
+        "onSurface": "#333333",
+        "muted": "#888888"
+      },
+      "header": {
+        "bg": "transparent",
+        "text": "#ffffff",
+        "border": "rgba(255, 255, 255, 0.2)"
+      },
+      "components": {
+        "card": {
+          "bg": "rgba(255, 255, 255, 0.95)",
+          "border": "transparent",
+          "shadow": "0 4px 6px rgba(0, 0, 0, 0.1)"
+        },
+        "input": {
+          "bg": "#ffffff",
+          "text": "#333333",
+          "border": "#cccccc",
+          "focusBorder": "#4c79ff",
+          "placeholder": "#999999"
+        },
+        "button": {
+          "primaryBg": "#4c79ff",
+          "primaryText": "#ffffff",
+          "primaryHoverBg": "#3a5fc7",
+          "secondaryBg": "#e0e0e0",
+          "secondaryText": "#333333",
+          "secondaryHoverBg": "#d0d0d0"
+        },
+        "modal": {
+          "bg": "#ffffff",
+          "text": "#333333",
+          "border": "transparent",
+          "overlay": "rgba(0, 0, 0, 0.5)",
+          "headerBg": "transparent",
+          "footerBg": "#f5f5f5"
+        },
+        "notification": {
+          "bg": "#333333",
+          "text": "#ffffff"
+        },
+        "task": {
+          "bg": "rgba(255, 255, 255, 0.95)",
+          "text": "#333333",
+          "completedBg": "rgba(200, 255, 200, 0.9)",
+          "completedText": "#666666",
+          "border": "transparent",
+          "checkmark": "#28a745"
+        },
+        "progress": {
+          "trackBg": "rgba(0, 0, 0, 0.1)",
+          "fillBg": "#4c79ff",
+          "text": "#333333"
+        },
+        "statsPanel": {
+          "bg": "rgba(255, 255, 255, 0.95)",
+          "text": "#333333",
+          "border": "transparent"
+        }
+      }
+    }
+  }
+}

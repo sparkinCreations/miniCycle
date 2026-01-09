@@ -1,0 +1,184 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "miniCycle Theme",
+  "description": "Schema for miniCycle theme definitions - extensible for future theming beyond colors",
+  "type": "object",
+  "required": ["id", "name"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier (used in body class)",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Display name"
+    },
+    "description": {
+      "type": "string"
+    },
+    "author": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "default": "1.0.0"
+    },
+    "tags": {
+      "type": "array",
+      "description": "Searchable tags",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tokens": {
+      "type": "object",
+      "description": "All themeable tokens - unused sections can be omitted",
+      "properties": {
+        "colors": {
+          "type": "object",
+          "description": "Color palette tokens",
+          "properties": {
+            "backgrounds": {
+              "type": "object",
+              "properties": {
+                "gradient": { "type": "string" },
+                "solid": { "type": "string" },
+                "surface": { "type": "string" },
+                "surfaceElevated": { "type": "string" }
+              }
+            },
+            "text": {
+              "type": "object",
+              "properties": {
+                "primary": { "type": "string" },
+                "secondary": { "type": "string" },
+                "onSurface": { "type": "string" },
+                "muted": { "type": "string" }
+              }
+            },
+            "semantic": {
+              "type": "object",
+              "properties": {
+                "success": { "type": "string" },
+                "successLight": { "type": "string" },
+                "warning": { "type": "string" },
+                "warningLight": { "type": "string" },
+                "error": { "type": "string" },
+                "errorLight": { "type": "string" },
+                "info": { "type": "string" }
+              }
+            },
+            "header": {
+              "type": "object",
+              "properties": {
+                "bg": { "type": "string" },
+                "text": { "type": "string" },
+                "border": { "type": "string" }
+              }
+            },
+            "components": {
+              "type": "object",
+              "properties": {
+                "card": {
+                  "type": "object",
+                  "properties": {
+                    "bg": { "type": "string" },
+                    "border": { "type": "string" },
+                    "shadow": { "type": "string" }
+                  }
+                },
+                "input": {
+                  "type": "object",
+                  "properties": {
+                    "bg": { "type": "string" },
+                    "text": { "type": "string" },
+                    "border": { "type": "string" },
+                    "focusBorder": { "type": "string" },
+                    "placeholder": { "type": "string" }
+                  }
+                },
+                "button": {
+                  "type": "object",
+                  "properties": {
+                    "primaryBg": { "type": "string" },
+                    "primaryText": { "type": "string" },
+                    "primaryHoverBg": { "type": "string" },
+                    "secondaryBg": { "type": "string" },
+                    "secondaryText": { "type": "string" },
+                    "secondaryHoverBg": { "type": "string" }
+                  }
+                },
+                "modal": {
+                  "type": "object",
+                  "properties": {
+                    "bg": { "type": "string" },
+                    "text": { "type": "string" },
+                    "border": { "type": "string" },
+                    "overlay": { "type": "string" },
+                    "headerBg": { "type": "string" },
+                    "footerBg": { "type": "string" }
+                  }
+                },
+                "notification": {
+                  "type": "object",
+                  "properties": {
+                    "bg": { "type": "string" },
+                    "text": { "type": "string" }
+                  }
+                },
+                "task": {
+                  "type": "object",
+                  "properties": {
+                    "bg": { "type": "string" },
+                    "text": { "type": "string" },
+                    "completedBg": { "type": "string" },
+                    "completedText": { "type": "string" },
+                    "border": { "type": "string" },
+                    "checkmark": { "type": "string" }
+                  }
+                },
+                "progress": {
+                  "type": "object",
+                  "properties": {
+                    "trackBg": { "type": "string" },
+                    "fillBg": { "type": "string" },
+                    "text": { "type": "string" }
+                  }
+                },
+                "statsPanel": {
+                  "type": "object",
+                  "properties": {
+                    "bg": { "type": "string" },
+                    "text": { "type": "string" },
+                    "border": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "typography": {
+          "type": "object",
+          "description": "FUTURE: Font theming"
+        },
+        "spacing": {
+          "type": "object",
+          "description": "FUTURE: Spacing/density theming"
+        },
+        "shape": {
+          "type": "object",
+          "description": "FUTURE: Border radius theming"
+        },
+        "motion": {
+          "type": "object",
+          "description": "FUTURE: Animation/transition theming"
+        },
+        "effects": {
+          "type": "object",
+          "description": "FUTURE: Visual effects theming"
+        }
+      }
+    }
+  }
+}
