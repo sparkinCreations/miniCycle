@@ -177,6 +177,8 @@ Before JavaScript, MJ was already building automated systems in spreadsheets:
 - **Notice and course correct** - When working with AI, has learned that pattern matching can override specific instructions. Watches for deviations and corrects them rather than expecting perfection. Pragmatic adaptation rather than frustration.
 - **Thinks in data flow** - Traces problems through the full system path, not just the immediate symptom. Example: backup → restore → memory stale → debounced save overwrites. Sees timing and async implications others miss.
 - **Corrects both directions** - Won't accept underinflated OR overinflated credit. When AI said "90-95% you," corrected to "70-80%." Accuracy matters more than ego in either direction.
+- **Restructures before patching** - When workarounds accumulate (e.g., multiple pixel offsets that need manual coordination), will push for architectural fix (e.g., wrapper container) rather than adding more patches. Prefers solving the underlying structure.
+- **Teaches the tool about itself** - Uses documentation (like this profile) to train AI continuity across sessions. Asks AI to read context rather than re-explaining. Meta-level thinking about collaboration.
 - **Holds AI accountable** - Checks if AI understands its own limitations. Asks questions like "how much was you vs me?" to verify AI has accurate self-assessment, not just flattering the user.
 - **Challenges AI assumptions with evidence** - When AI makes claims without verification (e.g., "you don't have a dependency map"), pushes back with specifics ("look at the documentation"). Forces AI to verify before criticizing. Doesn't accept negative feedback that's based on assumptions rather than facts.
 - **Tests fixes empirically, not by code review** - When AI says "this should fix it," doesn't just accept it. Tests the actual behavior, and if it's still broken, provides evidence (screenshots, console logs). Catches when "fixed" code isn't even executing.
@@ -295,6 +297,30 @@ The user-facing simplicity masks engineering depth:
 ---
 
 ## Session History
+
+### January 10, 2026
+- **Header restructuring for cleaner architecture**
+  - Problem: Header and mode-selector-wrapper both used `position: fixed` with absolute pixel values. Moving one required manually adjusting the other.
+  - Solution: Created `.fixed-header-container` wrapper that holds both elements. Only the container is `position: fixed`; children flow naturally.
+  - Removed duplicate `.mode-selector-wrapper` styles from `mode-selector.css` that were conflicting with `header.css`
+- **Visual polish pass:**
+  - Removed border lines from header row and mode-selector-wrapper for cleaner look
+  - Adjusted mobile header positioning (768px: top 20px, 480px: top 15px)
+  - Fine-tuned mode-selector-wrapper margin-top to 10px
+- **Moved saving-indicator into fixed-header-container**
+  - Was at bottom of HTML with fixed positioning
+  - Now flows naturally below mode-selector-wrapper within the container
+  - Updated CSS to remove fixed positioning, use natural flow
+- **Debugging lesson:**
+  - CSS changes weren't applying — turned out to be mobile view, not caching
+  - Developer caught this faster than AI did
+- **New pattern observed: "Restructures before patching"**
+  - When pixel offsets weren't working cleanly, pushed for the wrapper solution rather than accumulating more hacky top values
+  - Prefers solving underlying structure over workarounds
+- **Profile read and validated:**
+  - Developer asked AI to read DEVELOPER_PROFILE.md
+  - Patterns confirmed: visual bug reporting, pragmatic pivoting, has taste, terse communication
+  - New observation added: "Teaches the tool about itself" — uses profile document to train AI continuity across sessions
 
 ### January 5, 2026
 - **Fixed undo system not clearing on cycle switch**
