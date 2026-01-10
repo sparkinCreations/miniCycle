@@ -1,3 +1,7 @@
+## [1.697] - 2026-01-10
+- feat: update version to 1.695 and reflect changes in changelog, manifest, HTML, and version files
+
+
 ## [1.695] - 2026-01-10
 - feat: enhance service worker with navigation preload and improved caching strategies
 - feat: restructure header for cleaner architecture and improve visual polish
