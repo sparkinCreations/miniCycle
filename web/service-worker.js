@@ -129,14 +129,26 @@ self.addEventListener('install', function (event) {
 self.addEventListener('activate', function (event) {
   console.log('🚀 Service Worker ' + CACHE_VERSION + ' activated');
   event.waitUntil(
-    caches.keys().then(function (keys) {
-      return Promise.all(keys.map(function (k) {
-        if (k.indexOf('miniCycle-') === 0 && k !== STATIC_CACHE && k !== DYNAMIC_CACHE) {
-          console.log('🗑️ Deleting old cache:', k);
-          return caches.delete(k);
-        }
-      }));
-    }).then(function () {
+    Promise.all([
+      // ✅ Enable navigation preload for faster page loads
+      // Starts network request while SW boots, saving ~50-100ms on mobile
+      (self.registration.navigationPreload ?
+        self.registration.navigationPreload.enable().then(function() {
+          console.log('✅ Navigation preload enabled');
+        }).catch(function(err) {
+          console.warn('⚠️ Navigation preload not supported:', err);
+        }) : Promise.resolve()),
+
+      // Clean old caches
+      caches.keys().then(function (keys) {
+        return Promise.all(keys.map(function (k) {
+          if (k.indexOf('miniCycle-') === 0 && k !== STATIC_CACHE && k !== DYNAMIC_CACHE) {
+            console.log('🗑️ Deleting old cache:', k);
+            return caches.delete(k);
+          }
+        }));
+      })
+    ]).then(function () {
       console.log('✅ Old caches cleaned');
       // ✅ Clean expired entries and trim cache on activation
       cleanExpiredEntries();
@@ -242,8 +254,16 @@ self.addEventListener('fetch', function (event) {
 
   if (isNavigate) {
     event.respondWith(
-      // ✅ Network-first for navigation
-      fetch(request)
+      // ✅ Use navigation preload if available (saves ~50-100ms on mobile)
+      // Falls back to regular fetch if preload not supported
+      (event.preloadResponse || Promise.resolve(null))
+        .then(function (preloadResponse) {
+          if (preloadResponse) {
+            console.log('⚡ Using navigation preload response');
+            return preloadResponse;
+          }
+          return fetch(request);
+        })
         .then(function (fresh) {
           return caches.open(DYNAMIC_CACHE).then(function (cache) {
             // ✅ ADDED: Safe cache.put for navigation requests
@@ -314,27 +334,29 @@ self.addEventListener('fetch', function (event) {
       fetchUrl.searchParams.set('v', APP_VERSION);
     }
 
-    // ✅ NETWORK-FIRST for JS/CSS: Always fetch fresh, cache as backup
-    // This ensures users always get the latest code while maintaining offline support
-    var freshRequest = new Request(fetchUrl.href, {
-      method: 'GET',
-      headers: request.headers,
-      mode: request.mode,
-      credentials: request.credentials,
-      cache: 'no-cache'  // Force revalidation, bypass stale browser cache
-    });
-
     // ✅ Create normalized cache key (strip version param for consistent caching)
     var cacheUrl = new URL(request.url);
     cacheUrl.searchParams.delete('v');
     var cacheRequest = new Request(cacheUrl.href);
 
+    // ✅ STALE-WHILE-REVALIDATE for JS/CSS: Instant loads + background updates
+    // Serves cached version immediately for fast mobile performance,
+    // then fetches fresh version in background to update cache
     event.respondWith(
-      fetch(freshRequest)
-        .then(function (res) {
+      caches.match(cacheRequest).then(function (cached) {
+        // Create fresh request for background update
+        var freshRequest = new Request(fetchUrl.href, {
+          method: 'GET',
+          headers: request.headers,
+          mode: request.mode,
+          credentials: request.credentials,
+          cache: 'no-cache'
+        });
+
+        // Background fetch to update cache (fire-and-forget)
+        var fetchPromise = fetch(freshRequest).then(function (res) {
           if (res && res.status === 200) {
             return caches.open(DYNAMIC_CACHE).then(function (cache) {
-              // Store with normalized URL (no version) for consistent cache keys
               return cache.put(cacheRequest, res.clone()).then(function() {
                 trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
                 return res;
@@ -345,18 +367,28 @@ self.addEventListener('fetch', function (event) {
             });
           }
           return res;
-        })
-        .catch(function (error) {
-          // ✅ Offline fallback: use cache (with normalized key)
-          console.warn('❌ Fetch failed for JS/CSS, trying cache:', request.url, error);
-          return caches.match(cacheRequest).then(function (cached) {
-            return cached || new Response('// Offline - file not cached', {
-              status: 504,
-              statusText: 'Gateway Timeout',
-              headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
-            });
+        }).catch(function (error) {
+          console.warn('⚠️ Background fetch failed for:', request.url);
+          return null; // Swallow error for background update
+        });
+
+        // Return cached immediately if available, otherwise wait for network
+        if (cached) {
+          // console.log('⚡ SWR cache hit:', request.url);
+          return cached;
+        }
+
+        // No cache - must wait for network
+        return fetchPromise.then(function (res) {
+          if (res) return res;
+          // Network failed and no cache
+          return new Response('// Offline - file not cached', {
+            status: 504,
+            statusText: 'Gateway Timeout',
+            headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
           });
-        })
+        });
+      })
     );
   } else {
     // ✅ CACHE-FIRST for images and other static assets

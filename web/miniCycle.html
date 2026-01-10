@@ -50,13 +50,24 @@
 <link rel="manifest" href="manifest.json">
 
 <!-- Modulepreload for critical boot modules - speeds up ES module loading -->
+<!-- Boot chain (7 modules) -->
 <link rel="modulepreload" href="./miniCycle-main.js?v=1.694">
 <link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.694">
 <link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.694">
 <link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.694">
+<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.694">
+<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.694">
+<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.694">
+<!-- Core state modules (5 modules) -->
 <link rel="modulepreload" href="./modules/core/appState.js?v=1.694">
 <link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.694">
+<link rel="modulepreload" href="./modules/core/appInit.js?v=1.694">
 <link rel="modulepreload" href="./modules/core/constants.js?v=1.694">
+<link rel="modulepreload" href="./modules/core/diBase.js?v=1.694">
+<!-- Critical utilities (3 modules) -->
+<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.694">
+<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.694">
+<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.694">
 
 <style>
   /* Critical CSS - Inlined for instant loader display */
