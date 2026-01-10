@@ -1,3 +1,8 @@
+## [1.700] - 2026-01-10
+- feat: implement network-first strategy for boot-critical files in service worker
+- feat: update version to 1.699 across changelog, manifest, HTML, and service worker
+
+
 ## [1.699] - 2026-01-10
 - feat: update changelog for version 1.698 with loader bar width adjustment and cache validation improvements
 - feat: update version to 1.698 across manifest, HTML, and version files
