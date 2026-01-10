@@ -10,6 +10,17 @@ var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 var MAX_DYNAMIC_ENTRIES = 100;  // Maximum entries in dynamic cache
 var MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
+// ✅ Boot-critical files that must always be network-first
+// These modules have tight interdependencies and must load fresh to avoid version mismatches
+var NETWORK_FIRST_PATTERNS = [
+  '/modules/boot/',        // Boot chain (orchestrator, coreBoot, featureBoot, uiBoot, moduleLoader)
+  '/modules/core/',        // Core modules (appState, diBase, constants, appInit)
+  '/modules/utils/',       // Utilities (globalUtils, errorHandler, notifications)
+  '/gesturePanelManager',  // Swipe gestures
+  '/statsPanel',           // Stats panel (swipe target)
+  'miniCycle-main.js'      // Entry point
+];
+
 // ============================================================================
 // PRECACHE LISTS - Optimized for iOS PWA performance
 // ============================================================================
@@ -160,6 +171,19 @@ self.addEventListener('activate', function (event) {
 
 function fromScope(path) {
   return new URL(path, self.registration.scope).href;
+}
+
+/**
+ * Check if a URL should use network-first strategy
+ * Boot-critical files need fresh loads to avoid version mismatches
+ */
+function isNetworkFirstFile(urlPath) {
+  for (var i = 0; i < NETWORK_FIRST_PATTERNS.length; i++) {
+    if (urlPath.indexOf(NETWORK_FIRST_PATTERNS[i]) !== -1) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -328,56 +352,103 @@ self.addEventListener('fetch', function (event) {
 
   if (isScriptOrStyle) {
     // ✅ AUTO-VERSION: Append version parameter to JS/CSS requests for cache-busting
-    // This ensures ALL modules show with ?v= in DevTools Sources panel
     var fetchUrl = new URL(request.url);
     if (!fetchUrl.searchParams.has('v') && fetchUrl.pathname.endsWith('.js')) {
       fetchUrl.searchParams.set('v', APP_VERSION);
     }
-
-    // ✅ NETWORK-FIRST for JS/CSS: Always fetch fresh, cache as backup
-    // This ensures users always get the latest code while maintaining offline support
-    var freshRequest = new Request(fetchUrl.href, {
-      method: 'GET',
-      headers: request.headers,
-      mode: request.mode,
-      credentials: request.credentials,
-      cache: 'no-cache'  // Force revalidation, bypass stale browser cache
-    });
 
     // ✅ Create normalized cache key (strip version param for consistent caching)
     var cacheUrl = new URL(request.url);
     cacheUrl.searchParams.delete('v');
     var cacheRequest = new Request(cacheUrl.href);
 
-    event.respondWith(
-      fetch(freshRequest)
-        .then(function (res) {
-          if (res && res.status === 200) {
-            return caches.open(DYNAMIC_CACHE).then(function (cache) {
-              // Store with normalized URL (no version) for consistent cache keys
-              return cache.put(cacheRequest, res.clone()).then(function() {
-                trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
-                return res;
-              }).catch(function(cacheError) {
-                console.warn('⚠️ Cache put failed for:', request.url, cacheError);
-                return res;
+    // ✅ HYBRID STRATEGY: Network-first for boot-critical, stale-while-revalidate for rest
+    var needsNetworkFirst = isNetworkFirstFile(url.pathname);
+
+    if (needsNetworkFirst) {
+      // ═══════════════════════════════════════════════════════════════════
+      // NETWORK-FIRST: Boot-critical files must always load fresh
+      // Prevents version mismatches that break gestures, loading bar, etc.
+      // ═══════════════════════════════════════════════════════════════════
+      var freshRequest = new Request(fetchUrl.href, {
+        method: 'GET',
+        headers: request.headers,
+        mode: request.mode,
+        credentials: request.credentials,
+        cache: 'no-cache'
+      });
+
+      event.respondWith(
+        fetch(freshRequest)
+          .then(function (res) {
+            if (res && res.status === 200) {
+              return caches.open(DYNAMIC_CACHE).then(function (cache) {
+                return cache.put(cacheRequest, res.clone()).then(function() {
+                  trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
+                  return res;
+                }).catch(function(cacheError) {
+                  console.warn('⚠️ Cache put failed for:', request.url, cacheError);
+                  return res;
+                });
+              });
+            }
+            return res;
+          })
+          .catch(function (error) {
+            console.warn('❌ Network failed for boot-critical file, trying cache:', request.url);
+            return caches.match(cacheRequest).then(function (cached) {
+              return cached || new Response('// Offline - file not cached', {
+                status: 504,
+                statusText: 'Gateway Timeout',
+                headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
               });
             });
+          })
+      );
+    } else {
+      // ═══════════════════════════════════════════════════════════════════
+      // STALE-WHILE-REVALIDATE: Non-critical files for faster repeat loads
+      // Serves cached version instantly, updates in background
+      // ═══════════════════════════════════════════════════════════════════
+      event.respondWith(
+        caches.match(cacheRequest).then(function (cached) {
+          var freshRequest = new Request(fetchUrl.href, {
+            method: 'GET',
+            headers: request.headers,
+            mode: request.mode,
+            credentials: request.credentials,
+            cache: 'no-cache'
+          });
+
+          // Background fetch to update cache
+          var fetchPromise = fetch(freshRequest).then(function (res) {
+            if (res && res.status === 200) {
+              return caches.open(DYNAMIC_CACHE).then(function (cache) {
+                return cache.put(cacheRequest, res.clone()).then(function() {
+                  trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
+                  return res;
+                }).catch(function() { return res; });
+              });
+            }
+            return res;
+          }).catch(function () { return null; });
+
+          // Return cached immediately if available
+          if (cached) {
+            return cached;
           }
-          return res;
-        })
-        .catch(function (error) {
-          // ✅ Offline fallback: use cache (with normalized key)
-          console.warn('❌ Fetch failed for JS/CSS, trying cache:', request.url, error);
-          return caches.match(cacheRequest).then(function (cached) {
-            return cached || new Response('// Offline - file not cached', {
+
+          // No cache - wait for network
+          return fetchPromise.then(function (res) {
+            return res || new Response('// Offline - file not cached', {
               status: 504,
               statusText: 'Gateway Timeout',
               headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
             });
           });
         })
-    );
+      );
+    }
   } else {
     // ✅ CACHE-FIRST for images and other static assets
     event.respondWith(
