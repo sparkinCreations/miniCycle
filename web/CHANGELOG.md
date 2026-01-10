@@ -1,3 +1,7 @@
+## [1.701] - 2026-01-10
+- feat: update version to 1.700 across changelog, manifest, HTML, and version files
+
+
 ## [1.700] - 2026-01-10
 - feat: implement network-first strategy for boot-critical files in service worker
 - feat: update version to 1.699 across changelog, manifest, HTML, and service worker
