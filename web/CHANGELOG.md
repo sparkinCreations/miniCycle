@@ -1,3 +1,8 @@
+## [1.698] - 2026-01-10
+- feat: update loader bar width and improve cache response validation in service worker
+- feat: update version to 1.696 in manifest, HTML, and version files
+
+
 ## [1.697] - 2026-01-10
 - feat: update version to 1.695 and reflect changes in changelog, manifest, HTML, and version files
 
