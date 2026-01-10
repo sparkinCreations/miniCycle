@@ -113,21 +113,11 @@
     overflow: hidden;
   }
   .loader-bar {
-    width: 30%;
+    width: 0%;
     height: 100%;
     background: white;
     border-radius: 3px;
     transition: width 0.3s ease-out;
-    animation: loader-pulse 1.5s ease-in-out infinite;
-  }
-  @keyframes loader-pulse {
-    0%, 100% { opacity: 0.6; width: 30%; }
-    50% { opacity: 1; width: 50%; }
-  }
-  /* Once JS sets explicit width, disable animation */
-  .loader-bar[style*="width"] {
-    animation: none;
-    opacity: 1;
   }
 
   /* Notification styles */

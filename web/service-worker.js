@@ -374,8 +374,13 @@ self.addEventListener('fetch', function (event) {
 
         // Return cached immediately if available, otherwise wait for network
         if (cached) {
-          // console.log('⚡ SWR cache hit:', request.url);
-          return cached;
+          // Verify cached response is valid before returning
+          if (cached.ok || cached.status === 200) {
+            // console.log('⚡ SWR cache hit:', request.url);
+            return cached;
+          }
+          // Invalid cached response, fall through to network
+          console.warn('⚠️ Invalid cached response, fetching fresh:', request.url);
         }
 
         // No cache - must wait for network
