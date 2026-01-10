@@ -45,7 +45,20 @@
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
 <!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.700"> -->
-<!-- Modular CSS -->
+
+<!-- Preload critical CSS files to avoid @import waterfall -->
+<link rel="preload" href="styles/base/variables.css?v=1.700" as="style">
+<link rel="preload" href="styles/base/reset.css?v=1.700" as="style">
+<link rel="preload" href="styles/base/animations.css?v=1.700" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=1.700" as="style">
+<link rel="preload" href="styles/layout/header.css?v=1.700" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=1.700" as="style">
+<link rel="preload" href="styles/components/buttons.css?v=1.700" as="style">
+<link rel="preload" href="styles/components/notifications.css?v=1.700" as="style">
+<link rel="preload" href="styles/components/stats-panel.css?v=1.700" as="style">
+<link rel="preload" href="styles/utilities/helpers.css?v=1.700" as="style">
+
+<!-- Modular CSS (main entry point) -->
 <link rel="stylesheet" href="styles/main.css?v=1.700">
 <link rel="manifest" href="manifest.json">
 
