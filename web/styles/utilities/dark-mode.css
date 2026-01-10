@@ -96,6 +96,22 @@ body.dark-mode .task:hover {
     background: #1f1f1f;
 }
 
+/* Circular checkbox - solid white when unchecked in dark mode */
+body.dark-mode .task input[type="checkbox"]:not(:checked) {
+    border-color: #ffffff;
+    background-color: #ffffff;
+}
+
+body.dark-mode .task input[type="checkbox"]:not(:checked):hover {
+    border-color: #40af4d;
+}
+
+/* Keep green when checked */
+body.dark-mode .task input[type="checkbox"]:checked {
+    background-color: #5db567;
+    border-color: #40af4d;
+}
+
 /* High Priority in Dark Mode */
 .dark-mode .high-priority {
     border-left: 5px solid #ff6b6b;
@@ -855,16 +871,25 @@ body.dark-mode #addTaskBtn {
 }
 
 /* =============================================================================
+   DARK MODE TITLE ROW
+   ============================================================================= */
+
+body.dark-mode .title-row {
+    background-color: #5a5a5a;
+    border-radius: 10px 10px 0 0;
+}
+
+/* =============================================================================
    DARK MODE MINI-CYCLE TITLE
    ============================================================================= */
 
 body.dark-mode .mini-cycle-title {
-    background-color: rgba(50, 50, 50, 0.6);
-    color: rgba(240, 240, 240, 0.9);
+    background-color: transparent;
+    color: rgba(240, 240, 240, 0.95);
 }
 
 body.dark-mode #mini-cycle-title:focus {
-    background: rgba(60, 60, 60, 0.8);
+    background: rgba(80, 80, 80, 0.8);
     color: #f8f8f8;
 }
 
@@ -873,7 +898,7 @@ body.dark-mode #mini-cycle-title:focus {
    ============================================================================= */
 
 body.dark-mode .task-list-container {
-    background: rgba(40, 40, 40, 0.4);
+    background: #4a4a4a;
 }
 
 body.dark-mode .task-list-container::-webkit-scrollbar-thumb {

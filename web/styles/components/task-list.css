@@ -114,29 +114,21 @@
    ============================================================================= */
 
 .saving-indicator {
-    position: fixed;
-    top: 105px;
-    left: 50%;
-    transform: translateX(-50%);
+    width: 100%;
+    text-align: center;
     font-family: 'Inter', sans-serif;
     font-size: 12px;
     color: var(--theme-text-secondary, rgba(80, 80, 80, 0.85));
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.15s ease-out, visibility 0.15s ease-out;
-    z-index: 100;
     pointer-events: none;
+    padding: 2px 0;
 }
 
 .saving-indicator.visible {
     opacity: 1;
     visibility: visible;
-}
-
-@media (max-width: 768px) {
-    .saving-indicator {
-        top: 120px;
-    }
 }
 
 /* =============================================================================
