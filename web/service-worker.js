@@ -11,14 +11,15 @@ var MAX_DYNAMIC_ENTRIES = 100;  // Maximum entries in dynamic cache
 var MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
 // ✅ Boot-critical files that must always be network-first
-// These modules have tight interdependencies and must load fresh to avoid version mismatches
+// Minimal list - only files that directly broke when stale
 var NETWORK_FIRST_PATTERNS = [
-  '/modules/boot/',        // Boot chain (orchestrator, coreBoot, featureBoot, uiBoot, moduleLoader)
-  '/modules/core/',        // Core modules (appState, diBase, constants, appInit)
-  '/modules/utils/',       // Utilities (globalUtils, errorHandler, notifications)
-  '/gesturePanelManager',  // Swipe gestures
-  '/statsPanel',           // Stats panel (swipe target)
-  'miniCycle-main.js'      // Entry point
+  'miniCycle-main.js',     // Entry point
+  'orchestrator.js',       // Boot orchestration (loading bar)
+  'coreBoot.js',           // Phase 1 boot
+  'diBase.js',             // DI system (all modules depend on this)
+  'constants.js',          // Shared constants (gesture thresholds)
+  'gesturePanelManager',   // Swipe gestures
+  'statsPanel.js'          // Stats panel (swipe target)
 ];
 
 // ============================================================================
