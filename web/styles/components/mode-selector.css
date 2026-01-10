@@ -7,23 +7,8 @@
    MODE SELECTOR WRAPPER
    ============================================================================= */
 
-.mode-selector-wrapper {
-    position: fixed;
-    top: 72px;
-    left: 0;
-    right: 0;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 2px 0;
-    background: linear-gradient(135deg, #f1f1f172, #ffffff10);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    z-index: 19;
-    min-height: 28px;
-}
+/* NOTE: Main .mode-selector-wrapper styles are in header.css
+   since it's now part of the fixed-header-container */
 
 /* =============================================================================
    MODE SELECTOR (in wrapper)
@@ -233,7 +218,6 @@
 
 @media (max-width: 768px) {
     .mode-selector-wrapper {
-        top: 60px;
         min-height: 26px;
     }
 

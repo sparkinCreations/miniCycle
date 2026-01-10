@@ -4,28 +4,35 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* =============================================================================
-   HEADER ROW - Fixed top navigation
+   FIXED HEADER CONTAINER - Wraps header and mode selector
+   ============================================================================= */
+
+.fixed-header-container {
+    position: fixed;
+    top: 15px;
+    left: 0;
+    right: 0;
+    z-index: 20;
+}
+
+/* =============================================================================
+   HEADER ROW - Top navigation bar
    ============================================================================= */
 
 .mini-cycle-header-row {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 12px;
     /* Extend padding to cover status bar seamlessly */
-    padding: calc(env(safe-area-inset-top) + 8px) 16px 8px 16px;
+    padding: calc(env(safe-area-inset-top) + 4px) 16px 4px 16px;
     /* Use theme-aware backgrounds */
     background: var(--theme-header-bg, var(--header-bg, #5680ff));
-    border: 1px solid var(--theme-header-border, var(--header-border, rgba(255, 255, 255, 0.2)));
+    border: none;
     border-radius: 0;
     backdrop-filter: blur(5px);
     height: auto;
-    min-height: 55px;
-    z-index: 20;
+    min-height: 45px;
 }
 
 /* =============================================================================
@@ -110,19 +117,16 @@
    ============================================================================= */
 
 .mode-selector-wrapper {
-    position: fixed;
-    top: 72px;
-    left: 0;
-    right: 0;
+    position: relative;
     width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
+    margin-top: 10px;
     padding: 2px 0;
     background: linear-gradient(135deg, #f1f1f172, #ffffff10);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: none;
     backdrop-filter: blur(5px);
-    z-index: 19;
     min-height: 28px;
 }
 
@@ -312,22 +316,17 @@
    ============================================================================= */
 
 @media (max-width: 768px) {
-    .mini-cycle-header-row {
-        padding: 13px 13px;
-        background: var(--theme-header-bg, var(--header-bg));
-        border: none;
-        height: 60px;
-        grid-template-columns: 1fr auto;
-        gap: 6px;
-        z-index: 20;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
+    .fixed-header-container {
+        top: 20px;
     }
 
-    .mode-selector-wrapper {
-        top: 87px;
+    .mini-cycle-header-row {
+        padding: 8px 13px;
+        background: var(--theme-header-bg, var(--header-bg));
+        border: none;
+        height: 50px;
+        grid-template-columns: 1fr auto;
+        gap: 6px;
     }
 
     .header-logo {
@@ -364,18 +363,18 @@
    ============================================================================= */
 
 @media (max-width: 480px) {
+    .fixed-header-container {
+        top: 15px;
+    }
+
     .mini-cycle-header-row {
-        padding: calc(env(safe-area-inset-top) + 6px) 12px 6px 12px;
-        min-height: 50px;
+        padding: calc(env(safe-area-inset-top) + 4px) 12px 4px 12px;
+        min-height: 42px;
         background: var(--theme-header-bg, var(--header-bg));
     }
 
     .header-logo {
         width: 28px;
         height: 28px;
-    }
-
-    .mode-selector-wrapper {
-        top: 65px;
     }
 }
