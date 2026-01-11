@@ -1,3 +1,8 @@
+## [1.707] - 2026-01-11
+- feat: adjust mobile header breakpoint to 868px and update styles
+- feat: update version to 1.706 across changelog, manifest, HTML, and version files
+
+
 ## [1.706] - 2026-01-11
 - feat: adjust margin-top for fixed header in responsive layouts
 - feat: update version to 1.705 across changelog, manifest, HTML, and version files
