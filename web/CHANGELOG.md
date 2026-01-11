@@ -1,3 +1,7 @@
+## [1.703] - 2026-01-10
+- feat: update version to 1.702 across changelog, manifest, HTML, and version files
+
+
 ## [1.702] - 2026-01-10
 - feat: refine CSS loading strategy and update boot-critical files in service worker
 - feat: update version to 1.701 across changelog, manifest, HTML, and version files
