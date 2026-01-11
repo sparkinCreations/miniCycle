@@ -196,6 +196,7 @@
 @media (max-width: 768px) {
     .fixed-header-container {
         top: env(safe-area-inset-top, 20px);
+        margin-top: 20px;
     }
 
     .mini-cycle-header-row {
@@ -243,6 +244,7 @@
 @media (max-width: 480px) {
     .fixed-header-container {
         top: env(safe-area-inset-top, 15px);
+        margin-top: 20px;
     }
 
     .mini-cycle-header-row {
