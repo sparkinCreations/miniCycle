@@ -1,3 +1,8 @@
+## [1.704] - 2026-01-11
+- feat: refactor styles across components, consolidate onboarding and modal styles, and enhance task input layout
+- feat: update version to 1.703 across changelog, manifest, HTML, and version files
+
+
 ## [1.703] - 2026-01-10
 - feat: update version to 1.702 across changelog, manifest, HTML, and version files
 
