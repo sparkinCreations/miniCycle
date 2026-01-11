@@ -40,13 +40,8 @@ var CORE = [
 var BOOT_CRITICAL = [
   // HTML shells
   './miniCycle.html',
-  // Modular CSS (entry point + critical files for instant styling)
-  './styles/main.css',
-  './styles/base/variables.css',
-  './styles/base/reset.css',
-  './styles/layout/app-container.css',
-  './styles/layout/header.css',
-  './styles/components/task-list.css',
+  // CSS is NOT precached - uses network-first via NETWORK_FIRST_PATTERNS
+  // This ensures iOS PWA gets fresh CSS without requiring reinstall
   // Entrypoint and boot chain
   './miniCycle-main.js',
   './modules/boot/orchestrator.js',
