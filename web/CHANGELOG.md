@@ -1,3 +1,8 @@
+## [1.706] - 2026-01-11
+- feat: adjust margin-top for fixed header in responsive layouts
+- feat: update version to 1.705 across changelog, manifest, HTML, and version files
+
+
 ## [1.705] - 2026-01-11
 - feat: update cache version to 499, adjust header margin, and clean up stats panel preference handling
 - feat: update version to 1.704 across changelog, manifest, HTML, and version files
