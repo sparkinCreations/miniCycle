@@ -1,3 +1,9 @@
+## [1.702] - 2026-01-10
+- feat: refine CSS loading strategy and update boot-critical files in service worker
+- feat: update version to 1.701 across changelog, manifest, HTML, and version files
+- feat: preload critical CSS files and refine network-first strategy in service worker
+
+
 ## [1.701] - 2026-01-10
 - feat: update version to 1.700 across changelog, manifest, HTML, and version files
 
