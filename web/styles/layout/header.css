@@ -193,7 +193,7 @@
    MOBILE HEADER ADJUSTMENTS
    ============================================================================= */
 
-@media (max-width: 768px) {
+@media (max-width: 868px) {
     .fixed-header-container {
         top: env(safe-area-inset-top, 20px);
         margin-top: 20px;
