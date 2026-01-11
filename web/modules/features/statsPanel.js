@@ -1387,12 +1387,6 @@ export class StatsPanelManager {
                 }, false); // Debounced save
 
                 console.log(`💾 Saved preference to AppState: ${key} = ${value}`);
-            } else {
-                // Fallback for when AppState isn't ready
-                console.warn('⚠️ AppState not ready, using temporary localStorage fallback');
-                const preferences = JSON.parse(localStorage.getItem('statsPanelPreferences')) || {};
-                preferences[key] = value;
-                localStorage.setItem('statsPanelPreferences', JSON.stringify(preferences));
             }
         } catch (error) {
             console.warn('⚠️ Failed to save collapsible preference:', error);
@@ -1407,38 +1401,12 @@ export class StatsPanelManager {
         try {
             let preferences = {};
 
-            // ✅ Read from AppState first - DI-pure
+            // Read from AppState
             const AppState = this.dependencies.AppState;
             if (AppState?.isReady?.()) {
                 const currentState = AppState.get();
                 if (currentState?.settings?.statsPanel) {
                     preferences = currentState.settings.statsPanel;
-                    console.log('🔄 Reading preferences from AppState');
-                }
-            }
-
-            // ✅ MIGRATION: Check for old separate localStorage key
-            const oldPreferences = JSON.parse(localStorage.getItem('statsPanelPreferences'));
-            if (oldPreferences && Object.keys(oldPreferences).length > 0) {
-                console.log('🔄 Migrating old statsPanelPreferences to AppState...');
-
-                // Merge old preferences (they take priority if AppState is empty)
-                if (Object.keys(preferences).length === 0) {
-                    preferences = oldPreferences;
-                }
-
-                // Migrate to AppState - DI-pure
-                if (AppState?.isReady?.()) {
-                    AppState.update(state => {
-                        if (!state.settings.statsPanel) {
-                            state.settings.statsPanel = {};
-                        }
-                        Object.assign(state.settings.statsPanel, oldPreferences);
-                    }, true); // Immediate save
-
-                    // Remove old key after successful migration
-                    localStorage.removeItem('statsPanelPreferences');
-                    console.log('✅ Migration complete - removed old localStorage key');
                 }
             }
 

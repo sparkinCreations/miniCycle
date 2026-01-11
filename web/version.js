@@ -3,7 +3,7 @@
 
 // Use globalThis for universal compatibility (window, self, Node, SW)
 globalThis.APP_VERSION = '1.704';
-globalThis.CACHE_VERSION = 498;
+globalThis.CACHE_VERSION = 499;
 
 // Debug markers in modules derive from globalThis.APP_VERSION at runtime
 // No separate version constants needed - true single source of truth
