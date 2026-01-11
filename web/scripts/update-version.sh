@@ -122,6 +122,10 @@ CORE_HTML_FILES=(
     "pages/product.html"
 )
 
+CSS_FILES=(
+    "styles/main.css"
+)
+
 # Note: JS files now read from globalThis.APP_VERSION at runtime - no manual updates needed
 
 # Lite version files (only included with --lite flag)
@@ -176,6 +180,7 @@ if [ "$DRY_RUN" = false ]; then
     # Create backup folder structure
     mkdir -p "$BACKUP_DIR/lite" 2>/dev/null || true
     mkdir -p "$BACKUP_DIR/pages" 2>/dev/null || true
+    mkdir -p "$BACKUP_DIR/styles" 2>/dev/null || true
     mkdir -p "$BACKUP_DIR/modules/boot" 2>/dev/null || true
 
     # Clean up old backups (keep only last 3)
@@ -321,6 +326,9 @@ if [ "$UPDATE_MODE" == "1" ]; then
         FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
     done
     # Note: CORE_JS_FILES removed - JS files now derive from globalThis.APP_VERSION
+    for file in "${CSS_FILES[@]}"; do
+        FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
+    done
     for file in "${MANIFEST_FILES[@]}"; do
         FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
     done
@@ -349,6 +357,21 @@ elif [ "$UPDATE_MODE" == "2" ]; then
 
     echo "--- Core HTML Files ---"
     for file in "${CORE_HTML_FILES[@]}"; do
+        if [ -f "$file" ]; then
+            read -p "Update $file? (Y/n): " -n 1 -r
+            echo ""
+            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
+                echo "✅ Will update $file"
+            else
+                echo "⏭️  Skipping $file"
+            fi
+        fi
+    done
+    echo ""
+
+    echo "--- CSS Files ---"
+    for file in "${CSS_FILES[@]}"; do
         if [ -f "$file" ]; then
             read -p "Update $file? (Y/n): " -n 1 -r
             echo ""
@@ -621,11 +644,38 @@ fi
 echo ""
 
 # ============================================
-# STAGE 3: UPDATE LITE JS (if applicable)
+# STAGE 3: UPDATE CSS @IMPORT VERSIONS
+# ============================================
+
+echo "📝 Stage 3: Updating CSS @import versions..."
+STAGE3_SUCCESS=true
+
+if should_update "styles/main.css"; then
+    if [ "$DRY_RUN" = true ]; then
+        echo "   Would update: styles/main.css (@import ?v= parameters)"
+    elif backup_file "styles/main.css"; then
+        # Update all ?v=X.XXX parameters in @import statements
+        do_sed "styles/main.css" 's/\.css?v=[0-9.]\{1,\}/.css?v='"$NEW_VERSION"'/g'
+        echo "✅ Updated styles/main.css (@import versions)"
+    else
+        echo "⚠️  Failed to update styles/main.css"
+        STAGE3_SUCCESS=false
+    fi
+fi
+
+if [ "$STAGE3_SUCCESS" = true ]; then
+    echo "✅ Stage 3 complete"
+else
+    echo "⚠️  Stage 3 completed with warnings"
+fi
+echo ""
+
+# ============================================
+# STAGE 4: UPDATE LITE JS (if applicable)
 # ============================================
 
 if should_update "lite/miniCycle-lite-scripts.js"; then
-    echo "📝 Stage 3: Updating lite JS files..."
+    echo "📝 Stage 4: Updating lite JS files..."
     if [ "$DRY_RUN" = true ]; then
         echo "   Would update: lite/miniCycle-lite-scripts.js"
     elif backup_file "lite/miniCycle-lite-scripts.js"; then
@@ -633,16 +683,16 @@ if should_update "lite/miniCycle-lite-scripts.js"; then
         do_sed "lite/miniCycle-lite-scripts.js" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$NEW_VERSION'/g"
         echo "✅ Updated lite/miniCycle-lite-scripts.js"
     fi
-    echo "✅ Stage 3 complete"
+    echo "✅ Stage 4 complete"
     echo ""
 fi
 
 # ============================================
-# STAGE 4: UPDATE MANIFESTS & PACKAGE
+# STAGE 5: UPDATE MANIFESTS & PACKAGE
 # ============================================
 
-echo "📝 Stage 4: Updating manifests & package.json..."
-STAGE4_SUCCESS=true
+echo "📝 Stage 5: Updating manifests & package.json..."
+STAGE5_SUCCESS=true
 
 if should_update "manifest.json"; then
     if [ "$DRY_RUN" = true ]; then
@@ -651,7 +701,7 @@ if should_update "manifest.json"; then
         do_sed "manifest.json" "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/g"
         echo "✅ Updated manifest.json"
     else
-        STAGE4_SUCCESS=false
+        STAGE5_SUCCESS=false
     fi
 fi
 
@@ -662,7 +712,7 @@ if should_update "manifest-lite.json"; then
         do_sed "manifest-lite.json" "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/g"
         echo "✅ Updated manifest-lite.json"
     else
-        STAGE4_SUCCESS=false
+        STAGE5_SUCCESS=false
     fi
 fi
 
@@ -673,14 +723,14 @@ if should_update "package.json"; then
         do_sed "package.json" "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/g"
         echo "✅ Updated package.json"
     else
-        STAGE4_SUCCESS=false
+        STAGE5_SUCCESS=false
     fi
 fi
 
-if [ "$STAGE4_SUCCESS" = true ]; then
-    echo "✅ Stage 4 complete"
+if [ "$STAGE5_SUCCESS" = true ]; then
+    echo "✅ Stage 5 complete"
 else
-    echo "⚠️  Stage 4 completed with warnings"
+    echo "⚠️  Stage 5 completed with warnings"
 fi
 echo ""
 
@@ -693,11 +743,11 @@ echo "   now derive from globalThis.APP_VERSION at runtime - no script updates n
 echo ""
 
 # ============================================
-# STAGE 5: GENERATE RESTORE SCRIPT
+# STAGE 6: GENERATE RESTORE SCRIPT
 # ============================================
 
 if [ "$DRY_RUN" = false ]; then
-    echo "📝 Stage 5: Generating restore script..."
+    echo "📝 Stage 6: Generating restore script..."
 
     cat > "$BACKUP_FOLDER/restore.sh" << 'EOF'
 #!/bin/bash
@@ -733,6 +783,10 @@ EOF
         echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
     done
 
+    for file in "${CSS_FILES[@]}"; do
+        echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
+    done
+
     for file in "${MANIFEST_FILES[@]}"; do
         echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
     done
@@ -753,16 +807,16 @@ EOF
 
     chmod +x "$BACKUP_FOLDER/restore.sh"
     echo "✅ Restore script created: $BACKUP_FOLDER/restore.sh"
-    echo "✅ Stage 5 complete"
+    echo "✅ Stage 6 complete"
     echo ""
 fi
 
 # ============================================
-# STAGE 6: VALIDATION
+# STAGE 7: VALIDATION
 # ============================================
 
 if [ "$DRY_RUN" = false ]; then
-    echo "📝 Stage 6: Validating updated files..."
+    echo "📝 Stage 7: Validating updated files..."
     VALIDATION_ERRORS=0
 
     # Validate version.js
@@ -799,7 +853,7 @@ if [ "$DRY_RUN" = false ]; then
 
     if [ $VALIDATION_ERRORS -eq 0 ]; then
         echo "✅ All files validated successfully!"
-        echo "✅ Stage 6 complete"
+        echo "✅ Stage 7 complete"
     else
         echo "⚠️  Found $VALIDATION_ERRORS potential issues - check files manually"
         echo "💡 If needed, restore with: cd $BACKUP_FOLDER && ./restore.sh"
