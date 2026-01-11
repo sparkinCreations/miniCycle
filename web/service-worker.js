@@ -40,7 +40,13 @@ var CORE = [
 var BOOT_CRITICAL = [
   // HTML shells
   './miniCycle.html',
-  './miniCycle-styles.css',
+  // Modular CSS (entry point + critical files for instant styling)
+  './styles/main.css',
+  './styles/base/variables.css',
+  './styles/base/reset.css',
+  './styles/layout/app-container.css',
+  './styles/layout/header.css',
+  './styles/components/task-list.css',
   // Entrypoint and boot chain
   './miniCycle-main.js',
   './modules/boot/orchestrator.js',
