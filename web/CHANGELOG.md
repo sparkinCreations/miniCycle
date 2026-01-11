@@ -1,3 +1,7 @@
+## [1.709] - 2026-01-11
+- feat: update version to 1.708 across changelog, manifest, HTML, CSS, and JS files
+
+
 ## [1.708] - 2026-01-11
 - feat: update CSS @import statements to include versioning parameters
 - feat: add '/styles/' to NETWORK_FIRST_PATTERNS for fresh CSS imports
