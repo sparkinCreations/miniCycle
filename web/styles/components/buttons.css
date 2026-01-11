@@ -426,7 +426,7 @@ button.icon-only i {
     font-weight: bold;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    animation: fadeOut 1.5s ease-in-out;
+    animation: fadeOutScale 1.5s ease-in-out;
     z-index: 2;
 }
 
@@ -446,13 +446,6 @@ button.icon-only i {
     font-weight: bold;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    animation: fadeOut 1.5s ease-in-out;
+    animation: fadeOutScale 1.5s ease-in-out;
     z-index: 2;
-}
-
-/* Animation for fading out */
-@keyframes fadeOut {
-    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
 }

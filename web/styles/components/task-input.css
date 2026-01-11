@@ -10,14 +10,16 @@
 .task-input {
     display: flex;
     align-items: center;
-    justify-content: center;
-    background: var(--theme-input-bg);
-    border-radius: var(--radius-md);
-    padding: 10px;
-    box-shadow: var(--shadow-md);
-    margin-bottom: 8px;
-    width: 100%;
-    height: 30px;
+    justify-content: space-between;
+    align-self: center;
+    background: rgb(255, 255, 255);
+    border-radius: 8px;
+    padding: 5px 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    margin-bottom: 16px;
+    max-width: 450px;
+    width: 80%;
+    height: 40px;
     flex-shrink: 0; /* Don't shrink - task list shrinks instead */
 }
 
@@ -42,20 +44,24 @@ input[type="text"]::placeholder {
 }
 
 input[type="text"]:focus {
-    box-shadow: 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+    outline: none;
 }
 
 /* Specific task input element */
 #taskInput {
     flex: 1;
-    background: var(--theme-input-bg);
-    color: var(--theme-input-text);
-    padding: 7px;
+    background: rgb(255, 255, 255);
+    color: #333;
+    padding: 7px 0 7px 7px;
     font-size: 16px;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: 6px;
     outline: none;
-    margin: 5px;
+}
+
+#taskInput:focus {
+    outline: none;
+    box-shadow: none;
 }
 
 /* =============================================================================
@@ -63,20 +69,20 @@ input[type="text"]:focus {
    ============================================================================= */
 
 #addTaskBtn {
-    padding: 10px 15px;
-    font-size: 13px;
-    height: 35px;
-    margin-right: 3px;
-    background: var(--theme-button-primary-bg, #4c79ff);
-    color: var(--theme-button-primary-text, #ffffff);
+    padding: 8px 12px;
+    font-size: 12px;
+    height: 30px;
+    margin-right: 0px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: 6px;
     cursor: pointer;
     transition: background var(--transition-normal), transform var(--transition-fast);
 }
 
 #addTaskBtn:hover {
-    background: var(--theme-button-primary-hover-bg, #5a87ff);
+    background: #dc3545;
     transform: scale(1.02);
 }
 
@@ -86,88 +92,12 @@ input[type="text"]:focus {
 
 /* =============================================================================
    TASK INPUT BUTTONS (inside input container)
+   NOTE: Colors inherited from base button styles in buttons.css
    ============================================================================= */
-
-.task-input button {
-    background: var(--theme-button-secondary-bg);
-    color: var(--theme-button-secondary-text);
-    border: none;
-    padding: 8px 12px;
-    font-size: 14px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: background var(--transition-normal);
-}
-
-.task-input button:hover {
-    background: var(--theme-button-secondary-hover-bg);
-}
 
 /* =============================================================================
-   MOBILE ADJUSTMENTS
+   MOBILE/DESKTOP ADJUSTMENTS - Currently using unified styling above
    ============================================================================= */
-
-@media (max-width: 768px) {
-    .task-input {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        align-self: center;
-        background: rgb(255, 255, 255);
-        border-radius: 8px;
-        padding: 10px 0px;
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
-        margin-bottom: 8px;
-        max-width: 450px;
-        width: 90%;
-        height: 25px;
-    }
-
-    #taskInput {
-        flex: 1;
-        background: rgb(255, 255, 255);
-        padding: 7px;
-        font-size: 16px; /* Prevent zoom on iOS */
-        border: none;
-        border-radius: 6px;
-        outline: none;
-        max-width: 350px;
-        width: 60%;
-    }
-
-    #addTaskBtn {
-        padding: 8px 12px;
-        font-size: 12px;
-        height: 30px;
-        margin-right: 10px;
-    }
-}
-
-@media (max-width: 480px) {
-    .task-input {
-        padding: 6px;
-        margin-bottom: 6px;
-    }
-}
-
-/* Desktop adjustments */
-@media (min-width: 1024px) {
-    .task-input {
-        max-width: 450px;
-        align-self: center;
-    }
-
-    .task-search-input-row {
-        max-width: 300px;
-        margin: 0 auto 8px auto;
-    }
-
-    /* Push Add button to the right */
-    #addTaskBtn {
-        margin-left: auto;
-        margin-right: 0px;
-    }
-}
 
 /* Ensure proper viewport handling */
 .task-input button {
