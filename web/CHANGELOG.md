@@ -1,3 +1,9 @@
+## [1.708] - 2026-01-11
+- feat: update CSS @import statements to include versioning parameters
+- feat: add '/styles/' to NETWORK_FIRST_PATTERNS for fresh CSS imports
+- feat: update version to 1.707 across changelog, manifest, HTML, and version files
+
+
 ## [1.707] - 2026-01-11
 - feat: adjust mobile header breakpoint to 868px and update styles
 - feat: update version to 1.706 across changelog, manifest, HTML, and version files
