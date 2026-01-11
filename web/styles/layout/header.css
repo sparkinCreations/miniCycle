@@ -9,10 +9,11 @@
 
 .fixed-header-container {
     position: fixed;
-    top: 15px;
+    top: env(safe-area-inset-top, 15px);
     left: 0;
     right: 0;
-    z-index: 20;
+    z-index: 100;
+    overflow: visible; /* Allow dropdowns to overflow */
 }
 
 /* =============================================================================
@@ -128,6 +129,7 @@
     border-bottom: none;
     backdrop-filter: blur(5px);
     min-height: 28px;
+    overflow: visible; /* Allow quick-actions menu to overflow */
 }
 
 /* Mode selector dropdown */
@@ -159,134 +161,9 @@
 }
 
 /* =============================================================================
-   ROUTINE SWITCHER BUTTON
+   LAYOUT POSITIONING FOR MODE SELECTOR BUTTONS
+   Component styles are in mode-selector.css and routine-switcher.css
    ============================================================================= */
-
-.routine-switcher-btn {
-    position: absolute;
-    right: 15px;
-    background: rgba(255,255,255,0.2);
-    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
-    border: 1px solid #0c20913f;
-    color: rgb(44, 50, 112);
-    border-radius: 5px;
-    width: 88px;
-    height: 22px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-}
-
-.routine-switcher-btn:hover {
-    background: rgba(255,255,255,0.4);
-    border-color: #0c2091;
-}
-
-.routine-switcher-btn:active {
-    transform: scale(0.95);
-}
-
-.routine-switcher-btn svg {
-    fill: rgb(44, 50, 112);
-    width: 16px;
-    height: 16px;
-}
-
-/* =============================================================================
-   QUICK ACTIONS
-   ============================================================================= */
-
-.quick-actions-container {
-    position: absolute;
-    left: 15px;
-}
-
-.quick-actions-btn {
-    background: rgba(255,255,255,0.2);
-    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
-    border: 1px solid #0c20913f;
-    color: rgb(44, 50, 112);
-    border-radius: 5px;
-    width: 88px;
-    height: 22px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-}
-
-.quick-actions-btn:hover {
-    background: rgba(255,255,255,0.4);
-    border-color: #0c2091;
-}
-
-.quick-actions-btn:active {
-    transform: scale(0.95);
-}
-
-.quick-actions-btn svg {
-    fill: rgb(44, 50, 112);
-    width: 20px;
-    height: 20px;
-    stroke: rgb(44, 50, 112);
-    stroke-width: 1px;
-}
-
-/* Quick Actions Dropdown Menu */
-.quick-actions-menu {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    margin-top: 5px;
-    background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
-    border: 1px solid rgba(12, 32, 145, 0.3);
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    min-width: 180px;
-    z-index: 1000;
-    overflow: hidden;
-}
-
-.quick-action-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 10px 14px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    text-align: left;
-    font-size: 13px;
-    color: rgb(44, 50, 112);
-    transition: background 0.2s ease;
-}
-
-.quick-action-item:hover {
-    background: rgba(12, 32, 145, 0.1);
-}
-
-.quick-action-item:active {
-    background: rgba(12, 32, 145, 0.2);
-}
-
-.quick-action-item:not(:last-child) {
-    border-bottom: 1px solid rgba(12, 32, 145, 0.1);
-}
-
-.quick-action-icon {
-    font-size: 16px;
-    width: 20px;
-    text-align: center;
-}
-
-.quick-action-text {
-    flex: 1;
-    font-weight: 500;
-}
 
 /* Desktop: Move buttons closer to center */
 @media (min-width: 769px) {
@@ -317,7 +194,7 @@
 
 @media (max-width: 768px) {
     .fixed-header-container {
-        top: 20px;
+        top: env(safe-area-inset-top, 20px);
     }
 
     .mini-cycle-header-row {
@@ -364,7 +241,7 @@
 
 @media (max-width: 480px) {
     .fixed-header-container {
-        top: 15px;
+        top: env(safe-area-inset-top, 15px);
     }
 
     .mini-cycle-header-row {

@@ -146,41 +146,7 @@ body.onboarding-active .complete-all-and-help-window-container {
     display: none !important;
 }
 
-/* Onboarding placeholder shown instead of task list */
-.onboarding-placeholder {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
-    text-align: center;
-    color: rgba(255, 255, 255, 0.9);
-    min-height: 200px;
-}
-
-body.onboarding-active .onboarding-placeholder {
-    display: flex;
-}
-
-.onboarding-placeholder-icon {
-    font-size: 56px;
-    margin-bottom: 20px;
-    opacity: 0.9;
-}
-
-.onboarding-placeholder-title {
-    font-size: 20px;
-    font-weight: 600;
-    margin-bottom: 12px;
-    color: rgba(255, 255, 255, 0.95);
-}
-
-.onboarding-placeholder-text {
-    font-size: 15px;
-    color: rgba(255, 255, 255, 0.75);
-    max-width: 280px;
-    line-height: 1.5;
-}
+/* NOTE: .onboarding-placeholder styles are defined in onboarding.css */
 
 /* =============================================================================
    COMPLETED TASKS SECTION
@@ -359,13 +325,7 @@ body.onboarding-active .onboarding-placeholder {
     touch-action: pan-y;
 }
 
-/* =============================================================================
-   HIDDEN UTILITY
-   ============================================================================= */
-
-.hidden {
-    display: none !important;
-}
+/* NOTE: .hidden utility class is defined in helpers.css */
 
 /* =============================================================================
    TITLE ROW

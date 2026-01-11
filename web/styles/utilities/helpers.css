@@ -277,27 +277,7 @@
     border: 0;
 }
 
-/* =============================================================================
-   PULL TO REFRESH
-   ============================================================================= */
-
-.pull-refresh-indicator {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 10px 20px;
-    background: var(--theme-notification-bg);
-    color: var(--theme-notification-text);
-    border-radius: 0 0 10px 10px;
-    z-index: 9999;
-    box-shadow: var(--shadow-md);
-}
-
-.pull-refresh-indicator.visible {
-    display: block;
-}
+/* NOTE: Pull-to-refresh indicator styles are defined in the enhanced section below */
 
 /* =============================================================================
    NAVIGATION DOTS
@@ -544,10 +524,7 @@
     color: var(--primary-color, #4a90d9);
 }
 
-@keyframes pull-refresh-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
+/* NOTE: @keyframes pull-refresh-spin is defined in animations.css */
 
 /* Dark mode support */
 body.dark-mode .pull-refresh-content {
