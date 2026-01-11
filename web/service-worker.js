@@ -18,7 +18,8 @@ var NETWORK_FIRST_PATTERNS = [
   '/modules/core/',        // Core modules (diBase, constants, appState)
   '/modules/utils/',       // Utilities (globalUtils, errorHandler)
   'gesturePanelManager',   // Swipe gestures
-  'statsPanel'             // Stats panel (swipe target)
+  'statsPanel',            // Stats panel (swipe target)
+  '/styles/'               // CSS files (imported via @import, need fresh versions)
 ];
 
 // ============================================================================
