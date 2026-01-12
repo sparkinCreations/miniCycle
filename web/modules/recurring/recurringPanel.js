@@ -342,6 +342,9 @@ export class RecurringPanelManager {
             // ✅ MEMORY LEAK FIX: Initialize event delegation for all repeated elements
             this.initEventDelegation();
 
+            // Setup add task section
+            this.setupAddTaskSection();
+
             this.state.isInitialized = true;
             console.log('✅ Recurring panel setup complete');
 
@@ -880,19 +883,7 @@ export class RecurringPanelManager {
             // Clear existing list
             recurringList.innerHTML = "";
 
-            if (recurringTasks.length === 0) {
-                console.log('📋 No recurring tasks found, hiding panel');
-                const overlay = this.deps.getElementById("recurring-panel-overlay");
-                if (overlay) overlay.classList.add("hidden");
-                
-                // ✅ Hide preview when no tasks
-                const summaryContainer = this.deps.getElementById("recurring-summary-preview");
-                if (summaryContainer) {
-                    summaryContainer.classList.add("hidden");
-                }
-                return;
-            }
-
+            
             // Remember previously selected task AND checked tasks
             const previouslySelectedId = this.state.selectedTaskId;
             const previouslyCheckedIds = Array.from(
@@ -904,31 +895,47 @@ export class RecurringPanelManager {
                 el.classList.remove("selected");
             });
 
-            // Render each recurring task
-            recurringTasks.forEach(task => {
-                if (!task || !task.id || !task.text) {
-                    console.warn("⚠ Skipping malformed recurring task in panel:", task);
-                    return;
+            // Handle empty state
+            const emptyState = this.deps.getElementById("recurring-empty-state");
+
+            if (recurringTasks.length === 0) {
+                console.log('📋 No recurring tasks found, showing empty state');
+                if (emptyState) emptyState.classList.remove("hidden");
+
+                // ✅ Hide the preview when no tasks
+                const summaryContainer = this.deps.getElementById("recurring-summary-preview");
+                if (summaryContainer) {
+                    summaryContainer.classList.add("hidden");
                 }
+            } else {
+                if (emptyState) emptyState.classList.add("hidden");
 
-                const item = this.createRecurringTaskItem(task, cycleData);
-                recurringList.appendChild(item);
-
-                // ✅ Restore selection if this was the previously selected task
-                if (previouslySelectedId && task.id === previouslySelectedId) {
-                    item.classList.add("selected");
-                    this.showTaskSummaryPreview(task);
-                }
-
-                // ✅ Restore checked state if this task was previously checked
-                if (previouslyCheckedIds.includes(task.id)) {
-                    item.classList.add("checked");
-                    const checkbox = item.querySelector(".recurring-check");
-                    if (checkbox) {
-                        checkbox.checked = true;
+                // Render each recurring task
+                recurringTasks.forEach(task => {
+                    if (!task || !task.id || !task.text) {
+                        console.warn("⚠ Skipping malformed recurring task in panel:", task);
+                        return;
                     }
-                }
-            });
+
+                    const item = this.createRecurringTaskItem(task, cycleData);
+                    recurringList.appendChild(item);
+
+                    // ✅ Restore selection if this was the previously selected task
+                    if (previouslySelectedId && task.id === previouslySelectedId) {
+                        item.classList.add("selected");
+                        this.showTaskSummaryPreview(task);
+                    }
+
+                    // ✅ Restore checked state if this task was previously checked
+                    if (previouslyCheckedIds.includes(task.id)) {
+                        item.classList.add("checked");
+                        const checkbox = item.querySelector(".recurring-check");
+                        if (checkbox) {
+                            checkbox.checked = true;
+                        }
+                    }
+                });
+            }
 
             this.updateRecurringSummary();
             console.log('✅ Recurring panel updated successfully');
@@ -1382,7 +1389,7 @@ export class RecurringPanelManager {
 
     /**
      * Update recurring panel button visibility
-     * Shows button only when there are recurring tasks
+     * Button is now always visible (no longer hidden when no recurring tasks)
      */
     updateRecurringPanelButtonVisibility() {
         try {
@@ -1392,42 +1399,285 @@ export class RecurringPanelManager {
                 return;
             }
 
-            let hasRecurring = false;
-
-            try {
-                // ✅ Use AppState instead of loadData
-                if (!this.deps.AppState?.isReady?.()) {
-                    console.warn('⚠️ AppState not ready for button visibility check');
-                    panelButton.classList.add("hidden"); // Hide by default
-                    return;
-                }
-
-                const state = this.deps.AppState.get();
-                const activeCycleId = state?.appState?.activeCycleId;
-                const currentCycle = state?.data?.cycles?.[activeCycleId];
-
-                if (currentCycle?.recurringTemplates) {
-                    const templateCount = Object.keys(currentCycle.recurringTemplates).length;
-                    hasRecurring = templateCount > 0;
-
-                    console.log('🔍 Recurring button visibility:', {
-                        activeCycleId,
-                        templateCount,
-                        willShow: hasRecurring
-                    });
-                }
-            } catch (error) {
-                console.warn('⚠️ Could not check recurring tasks:', error);
-                panelButton.classList.add("hidden"); // Hide on error
-                return;
-            }
-
-            // Toggle visibility
-            panelButton.classList.toggle("hidden", !hasRecurring);
-            console.log(`🔘 Recurring button ${hasRecurring ? 'SHOWN' : 'HIDDEN'}`);
+            // Always show the recurring button - users can now add tasks from the panel
+            panelButton.classList.remove("hidden");
+            console.log('🔘 Recurring button always visible');
 
         } catch (error) {
             console.error('❌ Error updating panel button visibility:', error);
+        }
+    }
+
+    // ============================================
+    // ADD TASK SECTION
+    // ============================================
+
+    /**
+     * Setup the "Add Task" button and available tasks list
+     */
+    setupAddTaskSection() {
+        const addTaskBtn = this.deps.getElementById("add-recurring-task-btn");
+        const availableTasksList = this.deps.getElementById("available-tasks-list");
+        const confirmBtn = this.deps.getElementById("confirm-add-recurring");
+
+        if (!addTaskBtn || !availableTasksList) {
+            console.warn('⚠️ Add task section elements not found');
+            return;
+        }
+
+        // Toggle available tasks list visibility
+        this.deps.safeAddEventListener(addTaskBtn, "click", () => {
+            const isHidden = availableTasksList.classList.contains("hidden");
+
+            if (isHidden) {
+                // Populate and show the list
+                this.populateAvailableTasks();
+                availableTasksList.classList.remove("hidden");
+                addTaskBtn.innerHTML = '<i class="fas fa-times"></i> Cancel';
+            } else {
+                // Hide the list and reset
+                availableTasksList.classList.add("hidden");
+                addTaskBtn.innerHTML = '<i class="fas fa-plus"></i> Add Task';
+                if (confirmBtn) confirmBtn.classList.add("hidden");
+            }
+        });
+
+        // Setup delegation for checkbox changes
+        const nonRecurringList = this.deps.getElementById("non-recurring-tasks");
+        if (nonRecurringList) {
+            this.deps.safeAddEventListener(nonRecurringList, "change", (e) => {
+                if (e.target.type === "checkbox") {
+                    const taskItem = e.target.closest("li[data-task-id]");
+                    if (taskItem) {
+                        taskItem.classList.toggle("selected", e.target.checked);
+                    }
+                    this.updateConfirmButtonVisibility();
+                }
+            });
+
+            // Also allow clicking the row to toggle
+            this.deps.safeAddEventListener(nonRecurringList, "click", (e) => {
+                // Don't toggle if clicking directly on checkbox
+                if (e.target.type === "checkbox") return;
+
+                const taskItem = e.target.closest("li[data-task-id]");
+                if (!taskItem) return;
+
+                const checkbox = taskItem.querySelector("input[type='checkbox']");
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    taskItem.classList.toggle("selected", checkbox.checked);
+                    this.updateConfirmButtonVisibility();
+                }
+            });
+        }
+
+        // Setup confirm button
+        if (confirmBtn) {
+            this.deps.safeAddEventListener(confirmBtn, "click", () => {
+                this.handleConfirmAddRecurring();
+            });
+        }
+
+        console.log('✅ Add task section setup complete');
+    }
+
+    /**
+     * Update confirm button visibility based on selection
+     */
+    updateConfirmButtonVisibility() {
+        const confirmBtn = this.deps.getElementById("confirm-add-recurring");
+        const selectedCount = this.deps.querySelectorAll("#non-recurring-tasks li.selected").length;
+
+        if (confirmBtn) {
+            if (selectedCount > 0) {
+                confirmBtn.classList.remove("hidden");
+                confirmBtn.textContent = selectedCount === 1
+                    ? "Add to Recurring"
+                    : `Add ${selectedCount} Tasks to Recurring`;
+            } else {
+                confirmBtn.classList.add("hidden");
+            }
+        }
+    }
+
+    /**
+     * Populate the available (non-recurring) tasks list
+     */
+    populateAvailableTasks() {
+        const nonRecurringList = this.deps.getElementById("non-recurring-tasks");
+        const noTasksMessage = this.deps.getElementById("no-available-tasks");
+        const confirmBtn = this.deps.getElementById("confirm-add-recurring");
+
+        if (!nonRecurringList || !noTasksMessage) {
+            console.warn('⚠️ Available tasks list elements not found');
+            return;
+        }
+
+        // Clear existing list and hide confirm button
+        nonRecurringList.innerHTML = "";
+        if (confirmBtn) confirmBtn.classList.add("hidden");
+
+        try {
+            if (!this.deps.AppState?.isReady?.()) {
+                console.warn('⚠️ AppState not ready for populating available tasks');
+                noTasksMessage.classList.remove("hidden");
+                noTasksMessage.textContent = "Unable to load tasks. Please try again.";
+                return;
+            }
+
+            const state = this.deps.AppState.get();
+            const activeCycleId = state.appState?.activeCycleId;
+            const currentCycle = state.data?.cycles?.[activeCycleId];
+
+            if (!currentCycle) {
+                console.warn('⚠️ No active cycle found');
+                noTasksMessage.classList.remove("hidden");
+                noTasksMessage.textContent = "No routine loaded.";
+                return;
+            }
+
+            const allTasks = currentCycle.tasks || [];
+            const recurringTemplateIds = Object.keys(currentCycle.recurringTemplates || {});
+
+            // Filter to non-recurring tasks only
+            const nonRecurringTasks = allTasks.filter(task =>
+                task && task.id && task.text && !recurringTemplateIds.includes(task.id)
+            );
+
+            if (nonRecurringTasks.length === 0) {
+                // Check if there are no tasks at all vs all are recurring
+                if (allTasks.length === 0) {
+                    noTasksMessage.textContent = "No tasks in this routine. Add tasks first!";
+                } else {
+                    noTasksMessage.textContent = "All tasks are already recurring.";
+                }
+                noTasksMessage.classList.remove("hidden");
+                return;
+            }
+
+            // Hide "no tasks" message
+            noTasksMessage.classList.add("hidden");
+
+            // Render non-recurring tasks with checkboxes
+            nonRecurringTasks.forEach(task => {
+                const li = document.createElement("li");
+                li.dataset.taskId = task.id;
+
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.id = `add-recurring-${task.id}`;
+                checkbox.setAttribute("aria-label", `Select ${task.text} to make recurring`);
+
+                const textSpan = document.createElement("span");
+                textSpan.className = "task-text";
+                textSpan.textContent = task.text;
+
+                li.appendChild(checkbox);
+                li.appendChild(textSpan);
+                nonRecurringList.appendChild(li);
+            });
+
+            console.log(`📋 Populated ${nonRecurringTasks.length} available tasks`);
+
+        } catch (error) {
+            console.error('❌ Error populating available tasks:', error);
+            noTasksMessage.classList.remove("hidden");
+            noTasksMessage.textContent = "Error loading tasks.";
+        }
+    }
+
+    /**
+     * Handle confirming add selected tasks as recurring
+     * Adds all selected tasks with default recurring settings
+     */
+    handleConfirmAddRecurring() {
+        console.log('➕ Confirming add tasks as recurring...');
+
+        try {
+            if (!this.deps.AppState?.isReady?.()) {
+                console.error('❌ AppState not ready');
+                this.deps.showNotification('App not ready, please try again', 'error');
+                return;
+            }
+
+            // Get selected task IDs
+            const selectedItems = this.deps.querySelectorAll("#non-recurring-tasks li.selected");
+            const selectedTaskIds = Array.from(selectedItems).map(li => li.dataset.taskId);
+
+            if (selectedTaskIds.length === 0) {
+                this.deps.showNotification('No tasks selected', 'warning');
+                return;
+            }
+
+            const state = this.deps.AppState.get();
+            const activeCycleId = state.appState?.activeCycleId;
+
+            if (!activeCycleId) {
+                console.error('❌ No active cycle');
+                this.deps.showNotification('No active routine', 'error');
+                return;
+            }
+
+            // Default recurring settings
+            const defaultSettings = this.deps.normalizeRecurringSettings({
+                frequency: 'daily',
+                recurIndefinitely: true
+            });
+
+            // Add each selected task to recurring templates
+            this.deps.updateAppState(draft => {
+                const cycle = draft.data.cycles[activeCycleId];
+                if (!cycle.recurringTemplates) {
+                    cycle.recurringTemplates = {};
+                }
+
+                selectedTaskIds.forEach(taskId => {
+                    const task = cycle.tasks.find(t => t.id === taskId);
+                    if (task) {
+                        // Mark task as recurring
+                        task.recurring = true;
+                        task.recurringSettings = { ...defaultSettings };
+
+                        // Create recurring template
+                        cycle.recurringTemplates[taskId] = {
+                            id: taskId,
+                            text: task.text,
+                            recurring: true,
+                            recurringSettings: { ...defaultSettings },
+                            nextScheduledOccurrence: this.deps.calculateNextOccurrence?.(defaultSettings) || null
+                        };
+                    }
+                });
+            }, true); // Immediate save
+
+            // Hide the available tasks list
+            const availableTasksList = this.deps.getElementById("available-tasks-list");
+            const addTaskBtn = this.deps.getElementById("add-recurring-task-btn");
+            const confirmBtn = this.deps.getElementById("confirm-add-recurring");
+
+            if (availableTasksList) availableTasksList.classList.add("hidden");
+            if (addTaskBtn) addTaskBtn.innerHTML = '<i class="fas fa-plus"></i> Add Task';
+            if (confirmBtn) confirmBtn.classList.add("hidden");
+
+            // Refresh the panel to show new recurring tasks
+            this.updateRecurringPanel();
+
+            // Update task DOM to show recurring indicators
+            if (this.deps.syncRecurringStateToDOM) {
+                selectedTaskIds.forEach(taskId => {
+                    this.deps.syncRecurringStateToDOM(taskId);
+                });
+            }
+
+            const taskWord = selectedTaskIds.length === 1 ? 'task' : 'tasks';
+            this.deps.showNotification(`🔁 Added ${selectedTaskIds.length} ${taskWord} to recurring (daily by default)`, 'success');
+
+            console.log(`✅ Added ${selectedTaskIds.length} tasks as recurring`);
+
+        } catch (error) {
+            console.error('❌ Error adding tasks as recurring:', error);
+            this.deps.showNotification('Failed to add tasks', 'error');
         }
     }
 
