@@ -1,3 +1,9 @@
+## [1.718] - 2026-01-12
+- feat: reorganize menu layout into sections and add recurring task management features
+- feat: update version to 1.717 across changelog, manifest, HTML, CSS, and JS files
+- feat: enhance about modal design and update mode descriptions for clarity
+
+
 ## [1.717] - 2026-01-12
 - feat: update version to 1.716 across changelog, manifest, HTML, CSS, and JS files
 
