@@ -1,3 +1,8 @@
+## [1.711] - 2026-01-11
+- feat: add iPhone-specific adjustments for task card margin
+- feat: update version to 1.710 across changelog, manifest, HTML, CSS, and JS files
+
+
 ## [1.710] - 2026-01-11
 - feat: update theme color for consistency and add mobile adjustments for task input
 - feat: update version to 1.709 across changelog, manifest, HTML, CSS, and JS files
