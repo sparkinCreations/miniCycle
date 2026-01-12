@@ -1,3 +1,9 @@
+## [1.720] - 2026-01-12
+- feat: add collapsible mode description toggle with persistence
+- feat: update version to 1.719 across changelog, manifest, HTML, CSS, and JS files
+- feat: add staggered animations for task reset and clear actions
+
+
 ## [1.719] - 2026-01-12
 - feat: update version to 1.718 across changelog, manifest, HTML, CSS, and JS files
 
