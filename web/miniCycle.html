@@ -920,6 +920,7 @@ window.installApp = () => {
                 <div class="menu-section-header">App</div>
                 <div class="menu-section-grid">
                     <button id="open-settings" class="open-settings" title="Open settings"><i class="fas fa-cog"></i>Settings</button>
+                    <button id="open-preferences" title="Customize task list colors"><i class="fas fa-paint-brush"></i>Preferences</button>
                 </div>
             </div>
 
@@ -1720,6 +1721,56 @@ window.installApp = () => {
     </div>
   </div>
 
+<!-- Preferences Modal -->
+<div class="preferences-modal" data-modal id="preferences-modal">
+    <div class="preferences-modal-content">
+        <h2>Customize Task List</h2>
+
+        <!-- Theme Notice -->
+        <div class="preferences-theme-notice" id="preferences-theme-notice">
+            Custom colors only apply in the Default theme.
+            <button id="preferences-open-themes" class="preferences-theme-btn">Open Themes</button>
+        </div>
+
+        <!-- Color Options -->
+        <div class="preferences-color-section">
+            <div class="preferences-color-row">
+                <label for="pref-task-list-bg">Task List Background</label>
+                <input type="color" id="pref-task-list-bg" value="#ffffff" />
+                <button class="preferences-reset-btn" data-target="pref-task-list-bg" title="Reset to default">Reset</button>
+            </div>
+
+            <div class="preferences-color-row">
+                <label for="pref-task-bg">Task Background</label>
+                <input type="color" id="pref-task-bg" value="#ffffff" />
+                <button class="preferences-reset-btn" data-target="pref-task-bg" title="Reset to default">Reset</button>
+            </div>
+
+            <div class="preferences-color-row">
+                <label for="pref-task-text">Task Text</label>
+                <input type="color" id="pref-task-text" value="#333333" />
+                <button class="preferences-reset-btn" data-target="pref-task-text" title="Reset to default">Reset</button>
+            </div>
+
+            <div class="preferences-color-row">
+                <label for="pref-title-bg">Title Background</label>
+                <input type="color" id="pref-title-bg" value="#ffffff" />
+                <button class="preferences-reset-btn" data-target="pref-title-bg" title="Reset to default">Reset</button>
+            </div>
+
+            <div class="preferences-color-row">
+                <label for="pref-title-text">Title Text</label>
+                <input type="color" id="pref-title-text" value="#2b2b2b" />
+                <button class="preferences-reset-btn" data-target="pref-title-text" title="Reset to default">Reset</button>
+            </div>
+        </div>
+
+        <!-- Reset All Button -->
+        <button id="preferences-reset-all" class="preferences-reset-all-btn">Reset All Colors</button>
+
+        <button id="close-preferences-btn" class="close-btn">Close</button>
+    </div>
+</div>
 
 
 <!-- miniCycle Switch Modal -->

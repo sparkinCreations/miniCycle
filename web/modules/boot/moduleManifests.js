@@ -319,6 +319,16 @@ export const MODULE_MANIFESTS = {
         after: ['menuManager', 'themeManager']
     },
 
+    preferencesManager: {
+        path: '../ui/preferencesManager.js',
+        phase: PHASES.UI_MANAGERS,
+        requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListener', 'hideMainMenu'],
+        provides: ['applyCustomColors', 'removeCustomColors'],
+        provideInstance: 'preferencesManager',
+        api: 'ui',
+        after: ['menuManager', 'themeManager']
+    },
+
     titleManager: {
         path: '../ui/titleManager.js',
         phase: PHASES.UI_MANAGERS,

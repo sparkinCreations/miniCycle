@@ -904,7 +904,14 @@ class MiniCycleState {
                 },
                 debugMode: false,
                 testingModalResultsHeight: null,
-                modeDescriptionCollapsed: false
+                modeDescriptionCollapsed: false,
+                customColors: {
+                    taskListBg: null,
+                    taskBg: null,
+                    taskText: null,
+                    titleBg: null,
+                    titleText: null
+                }
             },
             data: {
                 cycles: {} // ✅ This matches what autoSaveWithStateModule expects
