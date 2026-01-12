@@ -470,6 +470,14 @@
 .preview-option-icon {
     font-size: 3em;
     margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-option-icon svg {
+    width: 48px;
+    height: 48px;
 }
 
 .preview-option-title {
@@ -540,6 +548,14 @@
     font-size: 1.1em;
     min-width: 20px;
     text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.option-icon svg {
+    width: 16px;
+    height: 16px;
 }
 
 .option-label {

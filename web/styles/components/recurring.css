@@ -403,11 +403,30 @@
 }
 
 .recurring-indicator {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0; /* Prevent shrinking on narrow screens */
+    min-width: 14px;
+    min-height: 14px;
     font-size: 14px;
     color: #3498db; /* Blue */
     margin-left: 6px;
     vertical-align: middle;
+}
+
+.recurring-indicator .icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+}
+
+.recurring-indicator .icon svg {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    min-height: 14px;
 }
 
 /* =============================================================================

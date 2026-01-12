@@ -22,8 +22,15 @@
     height: 100%;
 }
 
+/* Support both fill-based and stroke-based SVG icons */
 .icon svg path {
-    fill: currentColor;  /* Default for non-task-btn icons */
+    fill: currentColor;  /* Default for fill-based icons */
+}
+
+/* Stroke-based icons (thin/light style) - don't override fill="none" */
+.icon svg[fill="none"] path {
+    fill: none;
+    stroke: currentColor;
 }
 
 /* =============================================================================

@@ -39,7 +39,7 @@
 <!-- <link rel="preconnect" href="https://cdnjs.cloudflare.com"> -->
 
 <!-- Google Fonts stylesheet -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <!-- Font Awesome removed - using inline SVG icons instead (see modules/utils/icons.js) -->
@@ -185,7 +185,8 @@
   .notification.success { background-color: #27ae60; }
   .notification.info { background-color: #2980b9; }
   .notification.warning { background-color: #f39c12; }
-  .notification.recurring { background-color: #8e44ad; }  
+  /* .notification.recurring is defined in notifications.css - not needed in critical CSS
+     since recurring notifications don't appear on initial page load */  
 
   .notification .notification-content {
     margin-right: 24px; /* Space for close button */
