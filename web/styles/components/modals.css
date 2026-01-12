@@ -725,6 +725,187 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     content: " 🔒";
 }
 
+/* =============================================================================
+   PREFERENCES MODAL
+   ============================================================================= */
+
+.preferences-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.preferences-modal-content {
+    background: var(--theme-modal-bg, #ffffff);
+    color: var(--theme-modal-text, #333);
+    padding: 0;
+    border-radius: 16px;
+    width: 380px;
+    max-width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    cursor: default;
+}
+
+.preferences-modal-content h2 {
+    margin: 0;
+    padding: 18px 24px;
+    background: var(--theme-header-bg, #f5f5f5);
+    color: var(--theme-modal-text, #333);
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.08));
+}
+
+/* Theme notice section */
+.preferences-theme-notice {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 16px;
+    margin: 16px 16px 8px;
+    background: rgba(74, 144, 226, 0.1);
+    border: 1px solid rgba(74, 144, 226, 0.2);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--theme-modal-text, #555);
+    text-align: left;
+}
+
+.preferences-theme-btn {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    background: var(--theme-button-bg, #4a90e2);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.preferences-theme-btn:hover {
+    background: var(--theme-button-hover, #3a7bc8);
+}
+
+/* Color options section */
+.preferences-color-section {
+    padding: 16px;
+}
+
+.preferences-color-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    background: var(--theme-input-bg, rgba(0, 0, 0, 0.03));
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.preferences-color-row:hover {
+    background: var(--theme-hover-bg, rgba(0, 0, 0, 0.06));
+}
+
+.preferences-color-row label {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--theme-modal-text, #333);
+    text-align: left;
+}
+
+.preferences-color-row input[type="color"] {
+    width: 40px;
+    height: 32px;
+    padding: 0;
+    border: 2px solid var(--theme-border, #ddd);
+    border-radius: 6px;
+    cursor: pointer;
+    background: transparent;
+}
+
+.preferences-color-row input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 2px;
+}
+
+.preferences-color-row input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+}
+
+.preferences-reset-btn {
+    padding: 4px 10px;
+    background: transparent;
+    color: var(--theme-text-muted, #888);
+    border: 1px solid var(--theme-border, #ddd);
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.preferences-reset-btn:hover {
+    background: var(--theme-hover-bg, rgba(0, 0, 0, 0.05));
+    color: var(--theme-modal-text, #333);
+}
+
+/* Reset all button */
+.preferences-reset-all-btn {
+    display: block;
+    width: calc(100% - 32px);
+    margin: 0 16px 16px;
+    padding: 10px;
+    background: transparent;
+    color: var(--theme-error, #dc3545);
+    border: 1px solid var(--theme-error, #dc3545);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.preferences-reset-all-btn:hover {
+    background: var(--theme-error, #dc3545);
+    color: white;
+}
+
+/* Close button */
+.preferences-modal .close-btn {
+    width: 100%;
+    margin: 0;
+    padding: 14px;
+    background: var(--theme-button-bg, #4a90e2);
+    color: var(--theme-button-text, white);
+    border: none;
+    border-radius: 0;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.preferences-modal .close-btn:hover {
+    background: var(--theme-button-hover, #3a7bc8);
+}
+
 /* NOTE: Games modal styles are defined in games.css */
 
 /* =============================================================================

@@ -731,3 +731,31 @@ body.onboarding-active .complete-all-and-help-window-container {
         margin-top: 35px;
     }
 }
+
+/* =============================================================================
+   CUSTOM PREFERENCE COLORS (Default Theme Only)
+   These colors are set via the Preferences modal and only apply when
+   not using a theme or dark mode.
+   ============================================================================= */
+
+/* Task list container - uses custom pref color when set */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-list-container {
+    background: var(--pref-task-list-bg, rgba(255, 255, 255, 0.2));
+}
+
+/* Task items - uses custom pref colors when set */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task {
+    background: var(--pref-task-bg, var(--theme-task-bg, white));
+    color: var(--pref-task-text, var(--theme-task-text, #333));
+}
+
+/* Task text element */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-text {
+    color: var(--pref-task-text, var(--theme-task-text, #333));
+}
+
+/* Title bar - uses custom pref colors when set */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .mini-cycle-title {
+    background-color: var(--pref-title-bg, rgba(255, 255, 255, 0.4));
+    color: var(--pref-title-text, rgba(43, 43, 43, 0.783));
+}
