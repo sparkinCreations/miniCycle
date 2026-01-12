@@ -290,6 +290,9 @@ function resetTasksData(context, deps) {
 
     // Process non-recurring tasks
     const tasksToDelete = [];
+    let animationIndex = 0;
+    const STAGGER_DELAY = 60; // ms between each task animation
+
     taskElements.forEach(taskEl => {
         if (taskEl.classList.contains("recurring")) return;
 
@@ -304,15 +307,27 @@ function resetTasksData(context, deps) {
             return;
         }
 
-        // Reset task DOM
+        // Reset task DOM with staggered animation
         const checkbox = taskEl.querySelector("input[type='checkbox']");
         const dueDateInput = taskEl.querySelector(".due-date");
-        if (checkbox) checkbox.checked = false;
-        taskEl.classList.remove("overdue-task");
-        if (dueDateInput) {
-            dueDateInput.value = "";
-            dueDateInput.classList.add("hidden");
-        }
+
+        // Apply staggered reset animation
+        const delay = animationIndex * STAGGER_DELAY;
+        setTimeout(() => {
+            taskEl.classList.add("task-resetting");
+            if (checkbox) checkbox.checked = false;
+            taskEl.classList.remove("overdue-task");
+            if (dueDateInput) {
+                dueDateInput.value = "";
+                dueDateInput.classList.add("hidden");
+            }
+            // Remove animation class after it completes
+            setTimeout(() => {
+                taskEl.classList.remove("task-resetting");
+            }, 400);
+        }, delay);
+
+        animationIndex++;
     });
 
     // ✅ Use AppState only (no localStorage fallback) - DI-pure
@@ -550,10 +565,22 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
         });
     }
 
-    // Remove from DOM and collect IDs
-    const taskIdsToDelete = tasksToDelete.map(({ taskId, taskElement }) => {
-        taskElement.remove();
-        return taskId;
+    // Animate and remove from DOM, collect IDs
+    const CLEAR_STAGGER_DELAY = 50; // ms between each task animation
+    const CLEAR_ANIMATION_DURATION = 350; // matches CSS animation duration
+
+    const taskIdsToDelete = tasksToDelete.map(({ taskId }) => taskId);
+
+    // Apply staggered clear animation
+    tasksToDelete.forEach(({ taskElement }, index) => {
+        const delay = index * CLEAR_STAGGER_DELAY;
+        setTimeout(() => {
+            taskElement.classList.add("task-clearing");
+            // Remove from DOM after animation completes
+            setTimeout(() => {
+                taskElement.remove();
+            }, CLEAR_ANIMATION_DURATION);
+        }, delay);
     });
 
     // ✅ Use AppState only (no localStorage fallback) - DI-pure

@@ -247,3 +247,55 @@
 .animation-fill-forwards { animation-fill-mode: forwards; }
 .animation-fill-backwards { animation-fill-mode: backwards; }
 .animation-fill-both { animation-fill-mode: both; }
+
+
+/* =============================================================================
+   TASK RESET ANIMATION
+   ============================================================================= */
+
+/* Task reset flash - brief highlight when task is unchecked during cycle reset */
+@keyframes taskResetFlash {
+    0% {
+        background-color: inherit;
+        transform: scale(1);
+    }
+    30% {
+        background-color: rgba(76, 175, 80, 0.3);
+        transform: scale(1.02);
+    }
+    100% {
+        background-color: inherit;
+        transform: scale(1);
+    }
+}
+
+/* Class applied to tasks during reset */
+.task-resetting {
+    animation: taskResetFlash 0.4s ease-out;
+}
+
+/* Task clear/delete - fade out and shrink when task is removed */
+@keyframes taskClearOut {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+        max-height: 100px;
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(0.95) translateX(10px);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.9) translateX(20px);
+        max-height: 0;
+        padding: 0;
+        margin: 0;
+    }
+}
+
+/* Class applied to tasks being cleared/deleted */
+.task-clearing {
+    animation: taskClearOut 0.35s ease-in forwards;
+    overflow: hidden;
+}
