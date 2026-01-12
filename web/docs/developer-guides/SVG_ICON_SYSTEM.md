@@ -61,17 +61,26 @@ iconSpan.appendChild(svgNode);
 
 **Why this works**: The `<template>` element's `content` property is a DocumentFragment that properly parses HTML5 content, including SVG elements with their correct XML namespaces.
 
-### 2. Explicit Fill Colors in SVG
+### 2. CSS Controls Colors via `fill="currentColor"`
 
-**Problem**: CSS `fill: currentColor` didn't reliably inherit button text colors.
-
-**Solution**: Hardcode fill colors directly in SVG path elements:
+SVGs use `fill="currentColor"` on the `<svg>` element, allowing CSS to control icon colors:
 
 ```html
-<path fill="#bf0303" d="..."/>  <!-- Priority button - red -->
-<path fill="#4d4dff" d="..."/>  <!-- Edit button - blue -->
-<path fill="#dc3545" d="..."/>  <!-- Delete button - red -->
+<svg xmlns="..." fill="currentColor"><path d="..."/></svg>
 ```
+
+CSS sets the color on button classes:
+
+```css
+.priority-btn .icon { color: #bf0303; }  /* Red */
+.edit-btn .icon { color: #333333; }      /* Black */
+.delete-btn .icon { color: #333333; }    /* Black */
+```
+
+This is the proper approach because:
+- Single source of truth (CSS)
+- Easy to theme
+- Active states can override (e.g., white icon when button is active)
 
 ### 3. Explicit Width/Height Attributes
 
@@ -96,14 +105,16 @@ SVG elements include explicit dimensions for reliable rendering:
 
 ## Icon Colors by Button Type
 
-| Button | Color | Hex |
-|--------|-------|-----|
-| Priority (exclamation-triangle) | Dark red | `#bf0303` |
-| Edit (pencil) | Black | `#333333` |
-| Delete (trash) | Black | `#333333` |
-| Recurring (repeat) | Dark blue | `#0056b3` |
-| Due Date (calendar) | Gray | `#555555` |
-| Reminders (bell) | Black | `#333333` |
+Colors are defined in `styles/components/task-options.css`:
+
+| Button | Color | Hex | CSS Selector |
+|--------|-------|-----|--------------|
+| Priority | Dark red | `#bf0303` | `.priority-btn .icon` |
+| Edit | Black | `#333333` | `.edit-btn .icon` |
+| Delete | Black | `#333333` | `.delete-btn .icon` |
+| Recurring | Dark blue | `#0056b3` | `.recurring-btn .icon` |
+| Due Date | Gray | `#555` | `.set-due-date .icon` |
+| Reminders | Black | `#333333` | `.enable-task-reminders .icon` |
 
 ---
 
@@ -142,11 +153,13 @@ const doc = parser.parseFromString(svg, 'image/svg+xml');
 iconSpan.appendChild(doc.documentElement);
 ```
 
-### 3. CSS fill: currentColor
-```javascript
-// FAILS - Color inheritance unreliable
-<path fill="currentColor" d="..."/>
+### 3. Inline fill on `<path>` element
+```html
+<!-- FAILS to pick up CSS colors, gets overridden -->
+<path fill="#333" d="..."/>
 ```
+
+**Note**: `fill="currentColor"` on the `<svg>` element DOES work and is the correct approach.
 
 ---
 
