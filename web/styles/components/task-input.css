@@ -105,3 +105,13 @@ input[type="text"]:focus {
     touch-action: manipulation;
     transform: translateZ(0);
 }
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS - iOS
+   ============================================================================= */
+
+@media (max-width: 480px) {
+    .task-input {
+        margin-top: 20px;
+    }
+}
