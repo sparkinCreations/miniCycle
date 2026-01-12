@@ -859,15 +859,32 @@ window.installApp = () => {
 
             <!-- About Modal -->
             <div id="about-modal" class="modal" data-modal role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
-                <div class="modal-content">
+                <div class="modal-content about-modal-content">
                     <span class="close-modal" role="button" tabindex="0" aria-label="Close about modal">&times;</span>
-                  <h2 id="about-modal-title">About miniCycle</h2>
-                    <p><strong>Version:</strong> <span id="about-version">—</span></p>
-                    <p><strong>Service Worker Cache:</strong> <span id="about-sw-version">—</span></p>
-          <p>miniCycle is your routine workflow companion — turn repeatable tasks into effortless cycles, stay focused, and build momentum.</p>
-          <p>Developed by <strong>sparkinCreations</strong>.</p>
-          <p><a href="pages/product.html#changelog" target="_blank" rel="noopener noreferrer">Changelog</a></p>
-          <p class="about-legal" style="font-size: 12px; opacity: 0.8; margin-top: 8px;">&copy; 2025 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a> &bull; <a href="pages/product.html" target="_blank" rel="noopener noreferrer">miniCycle&trade;</a></p>
+
+                    <div class="about-header">
+                        <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="miniCycle Logo" class="about-logo">
+                        <h2 id="about-modal-title">miniCycle</h2>
+                        <p class="about-tagline">Turn Your Routine Into Progress</p>
+                    </div>
+
+                    <div class="about-version-badge">
+                        v<span id="about-version">—</span>
+                    </div>
+
+                    <p class="about-description">Your routine workflow companion — turn repeatable tasks into effortless cycles, stay focused, and build momentum.</p>
+
+                    <div class="about-links">
+                        <a href="pages/product.html#changelog" target="_blank" rel="noopener noreferrer">Changelog</a>
+                        <span class="about-link-divider">•</span>
+                        <a href="pages/product.html" target="_blank" rel="noopener noreferrer">Learn More</a>
+                    </div>
+
+                    <div class="about-footer">
+                        <p>Developed by <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a></p>
+                        <p class="about-copyright">&copy; 2025 miniCycle&trade;</p>
+                        <p class="about-cache">Cache: <span id="about-sw-version">—</span></p>
+                    </div>
                 </div>
             </div>
 
