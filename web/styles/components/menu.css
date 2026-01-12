@@ -22,6 +22,7 @@
     gap: 10px;
     z-index: 500;
     min-width: 220px;
+    max-width: 320px;
     max-height: 600px;
     overflow-y: auto;
     flex-shrink: 0;
@@ -286,6 +287,37 @@
 #slide-right.hide {
     opacity: 0;
     pointer-events: none;
+}
+
+/* =============================================================================
+   CLOSE MAIN MENU BUTTON
+   ============================================================================= */
+
+#close-main-menu {
+    width: 100%;
+    padding: 12px 20px;
+    margin-top: 8px;
+    background: #3a3a3a;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+#close-main-menu:hover {
+    background: #4a4a4a;
+}
+
+/* =============================================================================
+   DELETE ALL TASKS - RED ICON
+   ============================================================================= */
+
+#delete-all-mini-cycle-tasks i,
+#delete-all-mini-cycle-tasks .icon {
+    color: #c0392b !important;
 }
 
 /* Hover states */

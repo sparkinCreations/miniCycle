@@ -432,18 +432,16 @@ export class ModeManager {
 
         if (deleteChecked) {
             currentMode = "todo-mode";
-            modeTitle = "📋 To-Do Mode";
-            modeDetail = `This mode will not complete any cycles.<br>
-        Instead, it will delete all tasks when <br> you hit the complete button.`;
+            modeTitle = "To-Do Mode";
+            modeDetail = `This mode will not complete any cycles. Instead, it will delete all tasks when you hit the complete button.`;
         } else if (autoReset) {
             currentMode = "auto-cycle";
-            modeTitle = "🔄 Auto Cycle Mode";
-            modeDetail = `Tasks will automatically reset to incomplete <br>when all are completed. This is the <br> traditional miniCycle experience.`;
+            modeTitle = "Auto Cycle Mode";
+            modeDetail = `Tasks will automatically reset to incomplete when all are completed. This is the traditional miniCycle experience.`;
         } else {
             currentMode = "manual-cycle";
-            modeTitle = "✋🔁 Manual Cycle Mode";
-            modeDetail = `Tasks will only reset when you<br>manually press the complete button.<br>
-            The complete button will complete any<br> remaining tasks and then reset<br> all tasks to incomplete. `;
+            modeTitle = "Manual Cycle Mode";
+            modeDetail = `Tasks will only reset when you manually press the complete button. The complete button will complete any remaining tasks and then reset all tasks to incomplete.`;
         }
 
         descriptionBox.innerHTML = `<strong>${modeTitle}:</strong><br>${modeDetail}`;
