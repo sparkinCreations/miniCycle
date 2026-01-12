@@ -62,10 +62,23 @@
     flex-shrink: 0;
 }
 
-.task-btn svg,
 .task-btn {
     color: black;
     font-size: 14px;
+}
+
+.task-btn .icon,
+.task-btn svg {
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.task-btn .icon svg {
+    width: 100%;
+    height: 100%;
 }
 
 .task-btn:hover {
@@ -74,21 +87,25 @@
 }
 
 /* Button color variants */
-.recurring-btn {
+.recurring-btn,
+.recurring-btn .icon {
     color: #0056b3;
 }
 
-.task-btn.recurring-btn.active {
+.task-btn.recurring-btn.active,
+.task-btn.recurring-btn.active .icon {
     background-color: #4CAF50;
     color: white;
     font-weight: bold;
 }
 
-.priority-btn {
+.priority-btn,
+.priority-btn .icon {
     color: rgba(191, 3, 3, 0.715);
 }
 
-.task-btn.priority-btn.priority-active {
+.task-btn.priority-btn.priority-active,
+.task-btn.priority-btn.priority-active .icon {
     background: #d9534f;
     color: white;
 }
@@ -97,7 +114,8 @@
     background: #b52b27;
 }
 
-.edit-btn {
+.edit-btn,
+.edit-btn .icon {
     color: rgba(77, 77, 255, 0.771);
 }
 
@@ -109,13 +127,16 @@
 
 /* Delete when complete button */
 .delete-when-complete-btn.active,
-.delete-when-complete-btn.delete-when-complete-active {
+.delete-when-complete-btn.delete-when-complete-active,
+.delete-when-complete-btn.active .icon,
+.delete-when-complete-btn.delete-when-complete-active .icon {
     background-color: #ff4444;
     color: white;
 }
 
 /* Reminder button active state */
-.task-btn.enable-task-reminders.reminder-active {
+.task-btn.enable-task-reminders.reminder-active,
+.task-btn.enable-task-reminders.reminder-active .icon {
     background: #4790df;
     color: white;
 }
@@ -126,6 +147,11 @@
 
 .task-btn.enable-task-reminders.reminder-active:hover {
     background: #2171b5;
+}
+
+/* Due date button active state */
+.task-btn.set-due-date.active .icon {
+    color: white;
 }
 
 .hidden-task-btn {
