@@ -1081,11 +1081,8 @@ export class RecurringPanelManager {
                         if (overlay) overlay.classList.add("hidden");
                     }
 
-                    // Update undo/redo buttons
-                    const undoBtn = this.deps.getElementById("undo-btn");
-                    const redoBtn = this.deps.getElementById("redo-btn");
-                    if (undoBtn) undoBtn.hidden = false;
-                    if (redoBtn) redoBtn.hidden = true;
+                    // Undo/redo buttons are updated automatically via the undo system
+                    // when AppState changes (captureStateSnapshot is called)
 
                 } catch (error) {
                     console.error('❌ Error removing recurring task:', error);

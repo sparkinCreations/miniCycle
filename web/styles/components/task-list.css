@@ -535,17 +535,6 @@ body.onboarding-active .complete-all-and-help-window-container {
     border-radius: 50%;
 }
 
-/* Completed task */
-.task.completed {
-    background: var(--theme-task-completed-bg, rgba(40, 167, 69, 0.1));
-    border-color: var(--theme-task-checkmark, #28a745);
-}
-
-.task.completed .task-text {
-    text-decoration: line-through;
-    opacity: 0.7;
-}
-
 /* High priority task */
 .task.high-priority {
     border-left: 4px solid var(--theme-error, #dc3545);
