@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.718">
+<meta name="app-version" content="1.719">
 
 <!-- Content Security Policy -->
 <meta http-equiv="Content-Security-Policy" content="
@@ -46,40 +46,40 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.718"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.719"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=1.718" as="style">
-<link rel="preload" href="styles/base/variables.css?v=1.718" as="style">
-<link rel="preload" href="styles/base/reset.css?v=1.718" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=1.718" as="style">
-<link rel="preload" href="styles/layout/header.css?v=1.718" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=1.718" as="style">
+<link rel="preload" href="styles/main.css?v=1.719" as="style">
+<link rel="preload" href="styles/base/variables.css?v=1.719" as="style">
+<link rel="preload" href="styles/base/reset.css?v=1.719" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=1.719" as="style">
+<link rel="preload" href="styles/layout/header.css?v=1.719" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=1.719" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=1.718" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="styles/main.css?v=1.718"></noscript>
+<link rel="stylesheet" href="styles/main.css?v=1.719" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="styles/main.css?v=1.719"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- Modulepreload for critical boot modules - speeds up ES module loading -->
 <!-- Boot chain (7 modules) -->
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.718">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.718">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.718">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.718">
-<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.718">
-<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.718">
-<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.718">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.719">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.719">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.719">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.719">
+<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.719">
+<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.719">
+<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.719">
 <!-- Core state modules (5 modules) -->
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.718">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.718">
-<link rel="modulepreload" href="./modules/core/appInit.js?v=1.718">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.718">
-<link rel="modulepreload" href="./modules/core/diBase.js?v=1.718">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.719">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.719">
+<link rel="modulepreload" href="./modules/core/appInit.js?v=1.719">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.719">
+<link rel="modulepreload" href="./modules/core/diBase.js?v=1.719">
 <!-- Critical utilities (3 modules) -->
-<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.718">
-<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.718">
-<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.718">
+<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.719">
+<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.719">
+<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.719">
 
 <style>
   /* ═══════════════════════════════════════════════════════════════════════
@@ -219,7 +219,7 @@
 </script>
 
 <!-- version.js MUST load synchronously before ES modules to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.718"></script>
+<script src="./version.js?v=1.719"></script>
 
 <script>
 
@@ -390,7 +390,7 @@ if ('serviceWorker' in navigator) {
       // Check if we have an old SW without version parameter
       for (const reg of existingRegistrations) {
         const scriptURL = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL;
-        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.718')) {
+        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.719')) {
           console.log('🗑️ Found old service worker without version - unregistering:', scriptURL);
           await reg.unregister();
           console.log('✅ Old service worker unregistered successfully');
@@ -2035,7 +2035,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.718"></script>
+ <script type="module" src="miniCycle-main.js?v=1.719"></script>
 
 <script>
 // Sync About modal version with meta app-version
@@ -2074,7 +2074,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
    <!-- Testing modules now loaded dynamically in miniCycle-scripts.js -->
-   <script src="modules/testing/automated-tests-fix.js?v=1.718"></script>
+   <script src="modules/testing/automated-tests-fix.js?v=1.719"></script>
    <script>
 // Late fallback: only redirect if feature gate failed OR full app never even started booting.
 (function () {
