@@ -1,3 +1,9 @@
+## [1.710] - 2026-01-11
+- feat: update theme color for consistency and add mobile adjustments for task input
+- feat: update version to 1.709 across changelog, manifest, HTML, CSS, and JS files
+- feat: update service worker to use network-first for CSS, ensuring fresh styles for iOS PWA
+
+
 ## [1.709] - 2026-01-11
 - feat: update version to 1.708 across changelog, manifest, HTML, CSS, and JS files
 
