@@ -23,6 +23,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
+import { ICONS } from '../utils/icons.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -528,7 +529,7 @@ export class RecurringPanelManager {
                 const trash = document.createElement("button");
                 trash.type = "button";
                 trash.className = "trash-btn";
-                trash.innerHTML = "<i class='fas fa-trash recurring-date-trash-icon'></i>";
+                trash.innerHTML = `<span class="icon recurring-date-trash-icon" aria-hidden="true">${ICONS['trash']}</span>`;
                 trash.title = "Remove this date";
 
                 this.deps.safeAddEventListener(trash, "click", () => {
@@ -964,7 +965,7 @@ export class RecurringPanelManager {
         const removeBtn = document.createElement("button");
         removeBtn.title = "Remove from Recurring";
         removeBtn.className = "recurring-remove-btn";
-        removeBtn.innerHTML = "<i class='fas fa-trash recurring-trash-icon'></i>";
+        removeBtn.innerHTML = `<span class="icon recurring-trash-icon" aria-hidden="true">${ICONS['trash']}</span>`;
 
         item.appendChild(checkbox);
         item.appendChild(textSpan);

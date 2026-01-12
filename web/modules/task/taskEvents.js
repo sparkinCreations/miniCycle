@@ -23,6 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { ICONS } from '../utils/icons.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -399,7 +400,7 @@ export class TaskEvents {
             if (!existingIcon) {
                 const icon = document.createElement("span");
                 icon.className = "recurring-indicator";
-                icon.innerHTML = `<i class="fas fa-sync-alt"></i>`;
+                icon.innerHTML = `<span class="icon" aria-hidden="true">${ICONS['sync-alt']}</span>`;
                 taskLabel.appendChild(icon);
                 console.log('✅ Added recurring icon via syncRecurringStateToDOM');
             }

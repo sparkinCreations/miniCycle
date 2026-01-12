@@ -1,0 +1,114 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   SVG Icons
+   Inline SVG icon styles (replaces Font Awesome)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   BASE ICON STYLES
+   ============================================================================= */
+
+.icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+    line-height: 1;
+}
+
+.icon svg {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+}
+
+/* =============================================================================
+   ICON SIZES
+   ============================================================================= */
+
+.icon-xs {
+    font-size: 0.75em;
+}
+
+.icon-sm {
+    font-size: 0.875em;
+}
+
+.icon-lg {
+    font-size: 1.25em;
+}
+
+.icon-xl {
+    font-size: 1.5em;
+}
+
+.icon-2x {
+    font-size: 2em;
+}
+
+/* =============================================================================
+   BUTTON ICONS
+   Icons inside buttons should have consistent spacing
+   ============================================================================= */
+
+button .icon,
+.btn .icon {
+    margin-right: 0.4em;
+}
+
+button .icon:only-child,
+.btn .icon:only-child {
+    margin-right: 0;
+}
+
+/* =============================================================================
+   MENU BUTTON ICONS
+   Specific styling for menu/navigation buttons
+   ============================================================================= */
+
+#menu-items button .icon,
+.menu-item .icon {
+    display: block;
+    font-size: 1.5em;
+    margin-bottom: 4px;
+}
+
+/* =============================================================================
+   TASK BUTTON ICONS
+   Icons in task action buttons
+   ============================================================================= */
+
+.task-buttons .icon,
+.task-options .icon {
+    font-size: 1em;
+}
+
+/* =============================================================================
+   ANIMATIONS
+   ============================================================================= */
+
+.icon-spin {
+    animation: icon-spin 1s linear infinite;
+}
+
+@keyframes icon-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* =============================================================================
+   BACKWARDS COMPATIBILITY
+   Support for existing Font Awesome class patterns during transition
+   ============================================================================= */
+
+/* Hide Font Awesome icons if they fail to load */
+i.fas:empty,
+i.far:empty,
+i.fab:empty {
+    display: none;
+}

@@ -51,6 +51,9 @@
 /* Generic button styles */
 @import url('./components/buttons.css?v=1.711');
 
+/* SVG icons (replaces Font Awesome) */
+@import url('./components/icons.css?v=1.711');
+
 /* Modal dialogs */
 @import url('./components/modals.css?v=1.711');
 

@@ -30,6 +30,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
+import { ICONS } from '../utils/icons.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -900,9 +901,7 @@ export class TaskDOMManager {
         if (recurring) {
             const icon = document.createElement("span");
             icon.className = "recurring-indicator";
-            const iconEl = document.createElement("i");
-            iconEl.classList.add("fas", "fa-sync-alt");
-            icon.appendChild(iconEl);
+            icon.innerHTML = `<span class="icon" aria-hidden="true">${ICONS['sync-alt']}</span>`;
             taskLabel.appendChild(icon);
         }
 
@@ -974,9 +973,7 @@ export class TaskDOMManager {
                     if (isNowRecurring && !existingIcon) {
                         const icon = document.createElement("span");
                         icon.className = "recurring-indicator";
-                        const iconEl = document.createElement("i");
-                        iconEl.classList.add("fas", "fa-sync-alt");
-                        icon.appendChild(iconEl);
+                        icon.innerHTML = `<span class="icon" aria-hidden="true">${ICONS['sync-alt']}</span>`;
                         taskLabel.appendChild(icon);
                         console.log('✅ Added recurring icon to task:', assignedTaskId);
                     } else if (!isNowRecurring && existingIcon) {

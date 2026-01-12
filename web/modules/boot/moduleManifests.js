@@ -105,6 +105,15 @@ export const MODULE_MANIFESTS = {
         api: 'utils'
     },
 
+    iconInit: {
+        path: '../utils/iconInit.js',
+        phase: PHASES.CORE_UTILS,
+        requires: [],
+        provides: ['initIcons', 'iconHTML', 'createIcon', 'replaceFAIcon'],
+        api: 'utils',
+        optional: true
+    },
+
     // =========================================================================
     // PHASE 2: THEME & VISUAL
     // =========================================================================
