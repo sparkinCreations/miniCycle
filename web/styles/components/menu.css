@@ -10,13 +10,13 @@
 .menu-container {
     font-size: 14px;
     font-weight: bold;
-    background: linear-gradient(180deg, #e3f2fd 0%, #4a90c2 100%);
+    background: var(--menu-bg, linear-gradient(180deg, #e3f2fd 0%, #4a90c2 100%));
     position: fixed;
     top: 50px;
     right: 10px;
     padding: 10px;
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--menu-shadow, 0 4px 6px rgba(0, 0, 0, 0.1));
     display: none;
     flex-direction: column;
     gap: 10px;
@@ -65,7 +65,7 @@
     text-align: left;
     font-size: 18px;
     font-weight: 600;
-    color: #081d3ace;
+    color: var(--menu-header-text, #081d3ace);
     margin-left: 8px;
     gap: 2px;
 }
@@ -83,7 +83,7 @@
 #current-date {
     font-size: 13px;
     font-weight: 500;
-    color: rgba(0, 0, 0, 0.5);
+    color: var(--menu-date-text, rgba(0, 0, 0, 0.5));
     margin-left: 0;
     padding-right: 0;
 }
@@ -103,12 +103,12 @@
 }
 
 .menu-section {
-    background: rgba(255, 255, 255, 0.5);
+    background: var(--menu-section-bg, rgba(255, 255, 255, 0.5));
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-radius: 8px;
     padding: 8px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid var(--menu-section-border, rgba(255, 255, 255, 0.3));
 }
 
 .menu-section-header {
@@ -116,7 +116,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #555;
+    color: var(--menu-section-header, #555);
     margin-bottom: 6px;
     padding-left: 4px;
 }
@@ -136,8 +136,8 @@
     padding: 6px 12px;
     font-size: 12px;
     font-weight: 500;
-    color: #333;
-    background: rgba(0, 0, 0, 0.04);
+    color: var(--menu-button-text, #333);
+    background: var(--menu-button-bg, rgba(0, 0, 0, 0.04));
     border: none;
     border-radius: 20px;
     cursor: pointer;
@@ -146,7 +146,7 @@
 }
 
 .menu-section-grid button:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--menu-button-hover-bg, rgba(0, 0, 0, 0.1));
     transform: translateY(-1px);
 }
 
@@ -472,8 +472,8 @@
     margin-bottom: -10px;
     margin-top: 8px;
     padding: 14px;
-    background: #3d7ab5;
-    color: white;
+    background: var(--menu-close-bg, #3d7ab5);
+    color: var(--menu-close-text, white);
     border: none;
     border-radius: 0 0 8px 8px;
     font-size: 17px;
@@ -485,7 +485,7 @@
 }
 
 #close-main-menu:hover {
-    background: #326a9e;
+    background: var(--menu-close-hover-bg, #326a9e);
 }
 
 /* =============================================================================
@@ -563,4 +563,162 @@
         padding: 0;
         box-shadow: none;
     }
+}
+
+/* =============================================================================
+   DARK MODE MENU
+   ============================================================================= */
+
+body.dark-mode {
+    --menu-bg: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    --menu-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --menu-header-text: #e2e8f0;
+    --menu-date-text: rgba(255, 255, 255, 0.5);
+    --menu-section-bg: rgba(255, 255, 255, 0.05);
+    --menu-section-border: rgba(255, 255, 255, 0.1);
+    --menu-section-header: #94a3b8;
+    --menu-button-bg: rgba(255, 255, 255, 0.08);
+    --menu-button-text: #e2e8f0;
+    --menu-button-hover-bg: rgba(255, 255, 255, 0.15);
+    --menu-close-bg: #3d7ab5;
+    --menu-close-text: white;
+    --menu-close-hover-bg: #326a9e;
+}
+
+body.dark-mode .main-menu-header-logo img {
+    filter: brightness(1.5) contrast(1.1);
+}
+
+body.dark-mode .menu-section-grid button i,
+body.dark-mode .menu-section-grid button .icon {
+    opacity: 0.9;
+}
+
+/* Keep colored icons visible in dark mode */
+body.dark-mode .menu-section-grid #delete-all-mini-cycle-tasks i,
+body.dark-mode .menu-section-grid #delete-all-mini-cycle-tasks .icon {
+    color: #ef5350;
+}
+
+body.dark-mode .menu-section-grid #open-recurring-panel i,
+body.dark-mode .menu-section-grid #open-recurring-panel .icon {
+    color: #42a5f5;
+}
+
+body.dark-mode .menu-section-grid #new-mini-cycle i,
+body.dark-mode .menu-section-grid #new-mini-cycle .icon {
+    color: #ffd54f;
+}
+
+body.dark-mode .menu-section-grid #open-user-manual i,
+body.dark-mode .menu-section-grid #open-user-manual .icon {
+    color: #ab47bc;
+}
+
+body.dark-mode .menu-section-grid #open-themes-panel i,
+body.dark-mode .menu-section-grid #open-themes-panel .icon {
+    color: #ec407a;
+}
+
+body.dark-mode .menu-section-grid #open-games-panel i,
+body.dark-mode .menu-section-grid #open-games-panel .icon {
+    color: #66bb6a;
+}
+
+body.dark-mode .menu-section-grid #menu-task-options .icon-text {
+    color: #e2e8f0;
+}
+
+/* =============================================================================
+   DARK OCEAN THEME MENU
+   ============================================================================= */
+
+body.theme-dark-ocean {
+    --menu-bg: linear-gradient(180deg, #1a3a4f 0%, #0c1724 100%);
+    --menu-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --menu-header-text: #e0f7fa;
+    --menu-date-text: rgba(224, 247, 250, 0.6);
+    --menu-section-bg: rgba(36, 77, 106, 0.5);
+    --menu-section-border: rgba(78, 205, 196, 0.2);
+    --menu-section-header: #a2d9ff;
+    --menu-button-bg: rgba(78, 205, 196, 0.1);
+    --menu-button-text: #e0f7fa;
+    --menu-button-hover-bg: rgba(78, 205, 196, 0.25);
+    --menu-close-bg: #4ecdc4;
+    --menu-close-text: #18304a;
+    --menu-close-hover-bg: #36b1a8;
+}
+
+body.theme-dark-ocean .main-menu-header-logo img {
+    filter: brightness(1.3) contrast(1.1);
+}
+
+/* Dark Ocean colored icons */
+body.theme-dark-ocean .menu-section-grid #delete-all-mini-cycle-tasks i,
+body.theme-dark-ocean .menu-section-grid #delete-all-mini-cycle-tasks .icon {
+    color: #ff6b6b;
+}
+
+body.theme-dark-ocean .menu-section-grid #open-recurring-panel i,
+body.theme-dark-ocean .menu-section-grid #open-recurring-panel .icon {
+    color: #4ecdc4;
+}
+
+body.theme-dark-ocean .menu-section-grid #new-mini-cycle i,
+body.theme-dark-ocean .menu-section-grid #new-mini-cycle .icon {
+    color: #ffc107;
+}
+
+body.theme-dark-ocean .menu-section-grid #open-themes-panel i,
+body.theme-dark-ocean .menu-section-grid #open-themes-panel .icon {
+    color: #4ecdc4;
+}
+
+body.theme-dark-ocean .menu-section-grid #menu-task-options .icon-text {
+    color: #e0f7fa;
+}
+
+/* =============================================================================
+   GOLDEN GLOW THEME MENU
+   ============================================================================= */
+
+body.theme-golden-glow {
+    --menu-bg: linear-gradient(180deg, #fff9e0 0%, #ffd700 100%);
+    --menu-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+    --menu-header-text: #3d3200;
+    --menu-date-text: #5c4d00;
+    --menu-section-bg: rgba(255, 255, 255, 0.6);
+    --menu-section-border: rgba(180, 150, 0, 0.3);
+    --menu-section-header: #5c4d00;
+    --menu-button-bg: rgba(255, 215, 0, 0.2);
+    --menu-button-text: #3d3200;
+    --menu-button-hover-bg: rgba(255, 215, 0, 0.4);
+    --menu-close-bg: #b89000;
+    --menu-close-text: #fff;
+    --menu-close-hover-bg: #9a7800;
+}
+
+/* Golden Glow colored icons - darker for contrast on light background */
+body.theme-golden-glow .menu-section-grid #delete-all-mini-cycle-tasks i,
+body.theme-golden-glow .menu-section-grid #delete-all-mini-cycle-tasks .icon {
+    color: #c0392b;
+}
+
+body.theme-golden-glow .menu-section-grid #open-recurring-panel i,
+body.theme-golden-glow .menu-section-grid #open-recurring-panel .icon {
+    color: #d4a700;
+}
+
+body.theme-golden-glow .menu-section-grid #new-mini-cycle i,
+body.theme-golden-glow .menu-section-grid #new-mini-cycle .icon {
+    color: #8b6914;
+}
+
+body.theme-golden-glow .menu-section-grid #open-themes-panel i,
+body.theme-golden-glow .menu-section-grid #open-themes-panel .icon {
+    color: #d4a700;
+}
+
+body.theme-golden-glow .menu-section-grid #menu-task-options .icon-text {
+    color: #3d3200;
 }
