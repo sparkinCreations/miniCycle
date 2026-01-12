@@ -1,3 +1,9 @@
+## [1.721] - 2026-01-12
+- feat: add preferences modal for task list color customization
+- feat: implement CSS variables for menu styles and add dark mode support
+- feat: update version to 1.720 across changelog, manifest, HTML, CSS, and JS files
+
+
 ## [1.720] - 2026-01-12
 - feat: add collapsible mode description toggle with persistence
 - feat: update version to 1.719 across changelog, manifest, HTML, CSS, and JS files
