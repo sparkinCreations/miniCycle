@@ -1,3 +1,7 @@
+## [1.719] - 2026-01-12
+- feat: update version to 1.718 across changelog, manifest, HTML, CSS, and JS files
+
+
 ## [1.718] - 2026-01-12
 - feat: reorganize menu layout into sections and add recurring task management features
 - feat: update version to 1.717 across changelog, manifest, HTML, CSS, and JS files
