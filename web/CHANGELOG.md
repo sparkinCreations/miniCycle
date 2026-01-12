@@ -1,3 +1,8 @@
+## [1.713] - 2026-01-11
+- feat: enhance task button styles for better icon alignment and responsiveness
+- feat: update version to 1.712 across changelog, manifest, HTML, CSS, and JS files
+
+
 ## [1.712] - 2026-01-11
 - feat: Replace Font Awesome icons with inline SVGs for improved performance
 - feat: update version to 1.711 across changelog, manifest, HTML, CSS, and JS files
