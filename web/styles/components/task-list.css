@@ -735,3 +735,10 @@ body.onboarding-active .complete-all-and-help-window-container {
         left: calc(50% - 10px);
     }
 }
+
+/* iPhone-specific adjustments */
+@media (max-width: 480px) {
+    .task-card {
+        margin-top: 35px;
+    }
+}
