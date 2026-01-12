@@ -17,6 +17,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { ICONS } from '../utils/icons.js';
 
 // Default delete-when-complete settings (imported where needed)
 const DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = {
@@ -176,9 +177,20 @@ export class TaskButtons {
         button.classList.add("task-btn", btnClass);
 
         if (iconClass) {
-            const iconEl = document.createElement("i");
-            iconClass.split(" ").forEach(cls => iconEl.classList.add(cls));
-            button.appendChild(iconEl);
+            // Extract icon name from FA class (e.g., "fas fa-trash" -> "trash")
+            const iconName = iconClass.split(' ').find(c => c.startsWith('fa-') && c !== 'fa-solid')?.replace('fa-', '');
+            if (iconName && ICONS[iconName]) {
+                const iconSpan = document.createElement("span");
+                iconSpan.className = "icon";
+                iconSpan.innerHTML = ICONS[iconName];
+                iconSpan.setAttribute("aria-hidden", "true");
+                button.appendChild(iconSpan);
+            } else {
+                // Fallback to FA element (will be replaced by iconInit if loaded)
+                const iconEl = document.createElement("i");
+                iconClass.split(" ").forEach(cls => iconEl.classList.add(cls));
+                button.appendChild(iconEl);
+            }
         } else if (icon) {
             button.textContent = icon;
         }
