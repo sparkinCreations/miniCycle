@@ -564,40 +564,39 @@ export class ThemeManager {
     }
     
     /**
-     * Add a theme toggle to the container
+     * Add a theme toggle to the container (radio button style)
      */
     addThemeToggle(container, theme, currentTheme, isUnlocked) {
         try {
             if (!isUnlocked) return;
-            
-            const toggleDiv = document.createElement('div');
-            toggleDiv.className = 'checkbox-container';
-            
+
+            const toggleDiv = document.createElement('label');
+            toggleDiv.className = 'theme-radio-option';
+            toggleDiv.setAttribute('for', `toggle${theme.id}Theme`);
+
             const isChecked = currentTheme === theme.class || (currentTheme === 'default' && theme.class === 'default');
-            
+
             toggleDiv.innerHTML = `
-                <label class="custom-checkbox" for="toggle${theme.id}Theme">
-                    <input
-                        type="checkbox"
-                        class="theme-toggle"
-                        id="toggle${theme.id}Theme"
-                        name="toggle${theme.id}Theme"
-                        ${isChecked ? 'checked' : ''}
-                    />
-                    <span class="checkmark" aria-hidden="true"></span>
-                    <span>${theme.label}</span>
-                </label>
+                <input
+                    type="radio"
+                    class="theme-toggle"
+                    id="toggle${theme.id}Theme"
+                    name="theme-selection"
+                    value="${theme.class}"
+                    ${isChecked ? 'checked' : ''}
+                />
+                <span class="theme-radio-label">${theme.label}</span>
             `;
-            
-            const checkbox = toggleDiv.querySelector('input');
-            if (checkbox) {
+
+            const radio = toggleDiv.querySelector('input');
+            if (radio) {
                 const safeAdd = _deps.safeAddEventListener;
-                checkbox._themeChangeHandler = (e) => {
+                radio._themeChangeHandler = (e) => {
                     if (e.target.checked) {
                         this.applyTheme(theme.class === 'default' ? 'default' : theme.class);
                     }
                 };
-                safeAdd(checkbox, 'change', checkbox._themeChangeHandler);
+                safeAdd(radio, 'change', radio._themeChangeHandler);
             }
 
             container.appendChild(toggleDiv);
@@ -649,16 +648,17 @@ export class ThemeManager {
             const { settings } = schemaData;
             const unlockedThemes = settings?.unlockedThemes || [];
             const hasUnlockedThemes = unlockedThemes.length > 0;
-            
+
             const themeButton = document.getElementById("open-themes-panel");
             const themesModal = document.getElementById("themes-modal");
+            const themesModalContent = themesModal?.querySelector(".themes-modal-content");
             const closeThemesBtn = document.getElementById("close-themes-btn");
-          
+
             // Show the button if any theme is unlocked
             if (hasUnlockedThemes && themeButton) {
                 themeButton.style.display = "block";
             }
-          
+
             // Open modal
             const safeAdd = _deps.safeAddEventListener;
             if (themeButton) {
@@ -671,7 +671,7 @@ export class ThemeManager {
                 safeAdd(themeButton, "click", themeButton._clickHandler);
             }
 
-            // Close modal
+            // Close modal on button click
             if (closeThemesBtn) {
                 closeThemesBtn._clickHandler = () => {
                     if (themesModal) {
@@ -680,10 +680,29 @@ export class ThemeManager {
                 };
                 safeAdd(closeThemesBtn, "click", closeThemesBtn._clickHandler);
             }
-          
+
+            // Close modal on click outside (backdrop click)
+            if (themesModal) {
+                themesModal._backdropClickHandler = (e) => {
+                    // Only close if clicking on the backdrop itself, not the content
+                    if (e.target === themesModal) {
+                        themesModal.style.display = "none";
+                    }
+                };
+                safeAdd(themesModal, "click", themesModal._backdropClickHandler);
+            }
+
+            // Prevent clicks inside modal content from closing
+            if (themesModalContent) {
+                themesModalContent._stopPropagation = (e) => {
+                    e.stopPropagation();
+                };
+                safeAdd(themesModalContent, "click", themesModalContent._stopPropagation);
+            }
+
             // Setup dark mode toggle inside themes modal
             this.setupDarkModeToggle("darkModeToggleThemes", ["darkModeToggle", "darkModeToggleThemes"]);
-            
+
             console.log('✅ Themes panel setup completed (Schema 2.5)');
         } catch (error) {
             console.warn('⚠️ Themes panel setup with data failed:', error.message);
