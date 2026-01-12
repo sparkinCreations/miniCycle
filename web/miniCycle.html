@@ -896,8 +896,8 @@ window.installApp = () => {
                 <div class="menu-section-header">Routines</div>
                 <div class="menu-section-grid">
                     <button id="new-mini-cycle" title="Create a new routine"><i class="fas fa-sparkles"></i>New</button>
-                    <button id="open-mini-cycle" title="Open an existing routine"><i class="fas fa-folder-open"></i>Open</button>
                     <button id="export-mini-cycle" title="Download the current routine as a file"><i class="fas fa-file-download"></i>Download</button>
+                    <button id="open-mini-cycle" title="Open an existing routine"><i class="fas fa-folder-open"></i>Open</button>
                     <button id="import-mini-cycle" title="Import a routine from a file"><i class="fas fa-file-upload"></i>Import</button>
                     <button id="save-as-mini-cycle" title="Duplicate the current routine"><i class="fas fa-copy"></i>Duplicate</button>
                 </div>
@@ -907,10 +907,11 @@ window.installApp = () => {
             <div class="menu-section">
                 <div class="menu-section-header">Tasks</div>
                 <div class="menu-section-grid">
-                    <button id="clear-mini-cycle-tasks" title="Uncheck all tasks in this routine"><i class="fas fa-eraser"></i>Uncheck All</button>
-                    <button id="delete-all-mini-cycle-tasks" title="Delete all tasks in this routine"><i class="fas fa-trash"></i>Delete All</button>
                     <button id="open-recurring-panel" title="Manage recurring tasks"><i class="fas fa-repeat"></i>Recurring</button>
+                    <button id="clear-mini-cycle-tasks" title="Uncheck all tasks in this routine"><i class="fas fa-eraser"></i>Uncheck All</button>
                     <button id="open-reminders-modal" title="Configure reminders and notifications"><i class="fas fa-bell"></i>Reminders</button>
+                    <button id="menu-task-options" title="Customize task option buttons"><span class="icon-text">-/+</span>Task Options</button>
+                    <button id="delete-all-mini-cycle-tasks" title="Delete all tasks in this routine"><i class="fas fa-trash"></i>Delete All</button>
                 </div>
             </div>
 
@@ -919,6 +920,13 @@ window.installApp = () => {
                 <div class="menu-section-header">App</div>
                 <div class="menu-section-grid">
                     <button id="open-settings" class="open-settings" title="Open settings"><i class="fas fa-cog"></i>Settings</button>
+                </div>
+            </div>
+
+            <!-- Rewards Section -->
+            <div class="menu-section">
+                <div class="menu-section-header">Rewards</div>
+                <div class="menu-section-grid">
                     <div id="themes-menu-option" class="themes-menu-option">
                         <button id="open-themes-panel" class="open-themes-panel" title="Open Themes Panel"><i class="fas fa-palette"></i>Themes</button>
                     </div>
@@ -939,7 +947,13 @@ window.installApp = () => {
         </div>
 
         <div class="main-menu-controls-container">
-            <div id="mode-description" class="mode-description" aria-live="polite"></div>
+            <div class="mode-description-wrapper">
+                <button id="mode-description-toggle" class="mode-description-toggle" aria-expanded="true" aria-controls="mode-description">
+                    <span class="toggle-label">Mode Info</span>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </button>
+                <div id="mode-description" class="mode-description" aria-live="polite"></div>
+            </div>
            <div class="toggle-container" id="autoResetContainer" style="display: none;">
             <label class="switch">
                 <input type="checkbox" id="toggleAutoReset" name="toggleAutoReset" aria-label="Toggle auto reset" checked>

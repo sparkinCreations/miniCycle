@@ -648,7 +648,63 @@ export class ModeManager {
         // ✅ Setup quick actions button (plus icon in mode selector banner)
         this.setupQuickActionsButton();
 
+        // ✅ Setup mode description toggle (collapsible)
+        this.setupModeDescriptionToggle();
+
         console.log('✅ ModeManager: Mode selector setup complete');
+    }
+
+    /**
+     * Setup mode description toggle (collapsible)
+     * Allows users to collapse/expand the mode description with persistence
+     */
+    setupModeDescriptionToggle() {
+        const toggleBtn = this.deps.getElementById('mode-description-toggle');
+        const modeDescription = this.deps.getElementById('mode-description');
+
+        if (!toggleBtn || !modeDescription) {
+            console.warn('⚠️ ModeManager: Mode description toggle elements not found');
+            return;
+        }
+
+        // ✅ Load initial collapsed state from AppState
+        const AppState = this.deps.AppState;
+        const currentState = AppState?.get();
+        const isCollapsed = currentState?.settings?.modeDescriptionCollapsed || false;
+
+        // Apply initial state
+        if (isCollapsed) {
+            modeDescription.classList.add('collapsed');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+        } else {
+            modeDescription.classList.remove('collapsed');
+            toggleBtn.setAttribute('aria-expanded', 'true');
+        }
+
+        // ✅ Setup click handler
+        this.deps.safeAddEventListener(toggleBtn, 'click', async () => {
+            const currentlyCollapsed = modeDescription.classList.contains('collapsed');
+            const newCollapsed = !currentlyCollapsed;
+
+            // Update UI
+            if (newCollapsed) {
+                modeDescription.classList.add('collapsed');
+                toggleBtn.setAttribute('aria-expanded', 'false');
+            } else {
+                modeDescription.classList.remove('collapsed');
+                toggleBtn.setAttribute('aria-expanded', 'true');
+            }
+
+            // ✅ Persist to AppState
+            if (AppState?.isReady?.()) {
+                await AppState.update(state => {
+                    state.settings.modeDescriptionCollapsed = newCollapsed;
+                });
+                console.log('💾 ModeManager: Mode description collapsed state saved:', newCollapsed);
+            }
+        });
+
+        console.log('✅ ModeManager: Mode description toggle setup complete');
     }
 
     /**

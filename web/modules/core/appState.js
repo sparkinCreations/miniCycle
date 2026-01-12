@@ -513,7 +513,8 @@ class MiniCycleState {
                 darkMode: false,
                 showTaskInput: false,
                 debugMode: false,
-                testingModalResultsHeight: null
+                testingModalResultsHeight: null,
+                modeDescriptionCollapsed: false
             },
             data: { cycles: {} },
             appState: { activeCycleId: null },
@@ -902,7 +903,8 @@ class MiniCycleState {
                     screenReaderHints: false
                 },
                 debugMode: false,
-                testingModalResultsHeight: null
+                testingModalResultsHeight: null,
+                modeDescriptionCollapsed: false
             },
             data: {
                 cycles: {} // ✅ This matches what autoSaveWithStateModule expects

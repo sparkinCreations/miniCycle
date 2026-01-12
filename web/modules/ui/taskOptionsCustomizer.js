@@ -257,6 +257,30 @@ export class TaskOptionsCustomizer {
                 console.warn('⚠️ open-task-options-customizer button not found');
             }
 
+            // Also attach listener for menu button (quick access from main menu)
+            const menuButton = document.getElementById('menu-task-options');
+            if (menuButton) {
+                menuButton._clickHandler = () => {
+                    const state = this.deps.AppState?.get();
+                    const currentCycleId = state?.appState?.activeCycleId;
+
+                    if (currentCycleId) {
+                        // Close the menu first
+                        const menuContainer = document.querySelector('.menu-container');
+                        if (menuContainer) {
+                            menuContainer.classList.remove('visible');
+                        }
+
+                        // Then open the customization modal
+                        this.showCustomizationModal(currentCycleId);
+                    } else {
+                        this.deps.showNotification?.('Please select a routine first', 'warning');
+                    }
+                };
+                safeAdd(menuButton, 'click', menuButton._clickHandler);
+                console.log('✅ Task options menu button listener attached');
+            }
+
             // ✅ Check if we need to re-open customizer after page reload
             this.checkAndReopenAfterReload();
         };
@@ -377,10 +401,12 @@ export class TaskOptionsCustomizer {
                 </div>
 
                 <div class="modal-footer">
-                    <p class="modal-footer-note">Changes apply immediately</p>
-                    <button id="reset-task-options-btn" class="secondary-button">
-                        🔄 Reset to Default
-                    </button>
+                    <div class="modal-footer-row">
+                        <p class="modal-footer-note">Changes apply immediately</p>
+                        <button id="reset-task-options-btn">
+                            🔄 Reset to Default
+                        </button>
+                    </div>
                     <button id="close-task-options-btn" class="close-button-fullwidth">
                         Close
                     </button>

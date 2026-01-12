@@ -10,7 +10,7 @@
 .menu-container {
     font-size: 14px;
     font-weight: bold;
-    background: #ccd7ddfb;
+    background: linear-gradient(180deg, #e3f2fd 0%, #4a90c2 100%);
     position: fixed;
     top: 50px;
     right: 10px;
@@ -21,10 +21,10 @@
     flex-direction: column;
     gap: 10px;
     z-index: 500;
-    min-width: 220px;
-    max-width: 320px;
-    max-height: 600px;
-    overflow-y: auto;
+    min-width: 280px;
+    max-width: 380px;
+    max-height: calc(100vh - 80px);
+    overflow: hidden;
     flex-shrink: 0;
 }
 
@@ -49,6 +49,7 @@
     font-weight: bold;
     margin-top: -10px;
     margin-left: -10px;
+    flex-shrink: 0;
 }
 
 .main-menu-header-logo img {
@@ -59,11 +60,14 @@
 
 .main-menu-header {
     flex-grow: 1;
+    display: flex;
+    flex-direction: column;
     text-align: left;
     font-size: 18px;
     font-weight: 600;
     color: #081d3ace;
     margin-left: 8px;
+    gap: 2px;
 }
 
 .main-menu-header-row::after {
@@ -77,11 +81,11 @@
    ============================================================================= */
 
 #current-date {
-    font-size: 14px;
-    font-weight: bold;
-    color: rgba(0, 0, 0, 0.6);
-    margin-left: 12px;
-    padding-right: 15px;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.5);
+    margin-left: 0;
+    padding-right: 0;
 }
 
 /* =============================================================================
@@ -91,15 +95,19 @@
 .menu-sections {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    padding-right: 8px;
 }
 
 .menu-section {
     background: rgba(255, 255, 255, 0.5);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border-radius: 10px;
-    padding: 10px 12px;
+    border-radius: 8px;
+    padding: 8px 10px;
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
@@ -109,14 +117,14 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: #555;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     padding-left: 4px;
 }
 
 .menu-section-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
+    gap: 4px;
 }
 
 .menu-section-grid button,
@@ -125,7 +133,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 14px;
+    padding: 6px 12px;
     font-size: 12px;
     font-weight: 500;
     color: #333;
@@ -153,6 +161,57 @@
 .menu-section-grid #delete-all-mini-cycle-tasks i,
 .menu-section-grid #delete-all-mini-cycle-tasks .icon {
     color: #c0392b;
+}
+
+/* Recurring button - no background, blue icon */
+.menu-section-grid #open-recurring-panel {
+    background: none;
+}
+
+.menu-section-grid #open-recurring-panel:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.menu-section-grid #open-recurring-panel i,
+.menu-section-grid #open-recurring-panel .icon {
+    color: #2980b9;
+}
+
+/* New button - gold/amber icon */
+.menu-section-grid #new-mini-cycle i,
+.menu-section-grid #new-mini-cycle .icon {
+    color: #b8860b;
+}
+
+/* User Manual button - purple icon */
+.menu-section-grid #open-user-manual i,
+.menu-section-grid #open-user-manual .icon {
+    color: #6a1b9a;
+}
+
+/* Themes button - pink/magenta icon (artistic) */
+.menu-section-grid #open-themes-panel i,
+.menu-section-grid #open-themes-panel .icon {
+    color: #d81b60;
+    margin-right: 4px;
+}
+
+/* Games button - green icon (playful) */
+.menu-section-grid #open-games-panel i,
+.menu-section-grid #open-games-panel .icon {
+    color: #2e7d32;
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+}
+
+/* Task Options button - text icon style */
+.menu-section-grid #menu-task-options .icon-text {
+    font-size: 16px;
+    font-weight: 900;
+    color: #555;
+    min-width: 18px;
 }
 
 /* =============================================================================
@@ -218,8 +277,41 @@
    MODE DESCRIPTION
    ============================================================================= */
 
-.mode-description {
+.mode-description-wrapper {
     margin-bottom: 7px;
+}
+
+.mode-description-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.05);
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.mode-description-toggle:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.mode-description-toggle .toggle-icon {
+    font-size: 10px;
+    transition: transform 0.2s ease;
+}
+
+.mode-description-toggle[aria-expanded="false"] .toggle-icon {
+    transform: rotate(-90deg);
+}
+
+.mode-description {
+    margin-top: 8px;
     padding: 12px;
     background: #f4f8ff;
     color: #222;
@@ -235,6 +327,15 @@
     box-sizing: border-box;
     display: block;
     white-space: normal;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+}
+
+.mode-description.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding: 0 12px;
+    margin-top: 0;
 }
 
 /* =============================================================================
@@ -365,21 +466,26 @@
    ============================================================================= */
 
 #close-main-menu {
-    width: 100%;
-    padding: 12px 20px;
+    width: calc(100% + 20px);
+    margin-left: -10px;
+    margin-right: -10px;
+    margin-bottom: -10px;
     margin-top: 8px;
-    background: #3a3a3a;
+    padding: 14px;
+    background: #3d7ab5;
     color: white;
     border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 600;
+    border-radius: 0 0 8px 8px;
+    font-size: 17px;
+    font-weight: 700;
     cursor: pointer;
     transition: background 0.2s ease;
+    flex-shrink: 0;
+    text-align: center;
 }
 
 #close-main-menu:hover {
-    background: #4a4a4a;
+    background: #326a9e;
 }
 
 /* =============================================================================
