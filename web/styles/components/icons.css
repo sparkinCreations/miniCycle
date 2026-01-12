@@ -20,7 +20,10 @@
 .icon svg {
     width: 100%;
     height: 100%;
-    fill: currentColor;
+}
+
+.icon svg path {
+    fill: currentColor;  /* Default for non-task-btn icons */
 }
 
 /* =============================================================================
@@ -76,12 +79,21 @@ button .icon:only-child,
 
 /* =============================================================================
    TASK BUTTON ICONS
-   Icons in task action buttons
+   Icons in task action buttons (half-circle style buttons)
    ============================================================================= */
 
-.task-buttons .icon,
-.task-options .icon {
-    font-size: 1em;
+.task-btn .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+}
+
+.task-btn .icon svg {
+    width: 14px;
+    height: 14px;
+    overflow: visible;
 }
 
 /* =============================================================================
