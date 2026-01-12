@@ -1,3 +1,8 @@
+## [1.712] - 2026-01-11
+- feat: Replace Font Awesome icons with inline SVGs for improved performance
+- feat: update version to 1.711 across changelog, manifest, HTML, CSS, and JS files
+
+
 ## [1.711] - 2026-01-11
 - feat: add iPhone-specific adjustments for task card margin
 - feat: update version to 1.710 across changelog, manifest, HTML, CSS, and JS files
