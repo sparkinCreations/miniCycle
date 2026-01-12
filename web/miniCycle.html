@@ -890,45 +890,53 @@ window.installApp = () => {
 
 
             <!--Main Menu-->
-        <div class="menu-buttons-together">
-        <ul>
-            <div class="main-menu-row">
-            <li><button id="new-mini-cycle" title="Create a new routine"><i class="fas fa-plus"></i>New <br>Routine</button></li>
-            <li><button id="open-mini-cycle" title="Open an existing routine"><i class="fas fa-folder-open"></i>Open Existing<br>Routine</button></li>
-            <li><button id="save-as-mini-cycle" title="Duplicate the current routine"><i class="fas fa-copy"></i>Duplicate <br>Routine</button></li>
-            </div>
-            <div class="main-menu-row">
-            <li><button id="export-mini-cycle" title="Download the current routine as a file"><i class="fas fa-file-download"></i>Download <br>Routine</button></li>
-            <li><button id="import-mini-cycle" title="Import a routine from a file"><i class="fas fa-file-upload"></i> Import <br>Routine</button></li>
-          <div class="divider-vertical"></div>
-            <li><button id="clear-mini-cycle-tasks" title="Uncheck all tasks in this routine"><i class="fas fa-eraser"></i> Uncheck All<br>Tasks</button></li>
-            <li><button id="delete-all-mini-cycle-tasks" title="Delete all tasks in this routine"><i class="fas fa-trash"></i> Delete All<br>Tasks</button></li>
-            </div>
-            <div class="main-menu-row">
-                <li><button id="open-reminders-modal" title="Configure reminders and notifications"><i class="fas fa-bell"></i>Reminders &<br> Notifications</button></li>
-                <li><button id="open-feedback-modal" class="open-feedback-modal"><i class="fas fa-comment"></i>Send <br> Feedback</button></li>
-                <li><button id="open-user-manual" class="open-user-manual" title="Open the user manual"><i class="fas fa-book"></i>User Manual</button></li>
-                <li><button id="open-settings" class="open-settings" title="Open settings"><i class="fas fa-cog"></i>Settings</button></li>
+        <div class="menu-sections">
+            <!-- Routines Section -->
+            <div class="menu-section">
+                <div class="menu-section-header">Routines</div>
+                <div class="menu-section-grid">
+                    <button id="new-mini-cycle" title="Create a new routine"><i class="fas fa-sparkles"></i>New</button>
+                    <button id="open-mini-cycle" title="Open an existing routine"><i class="fas fa-folder-open"></i>Open</button>
+                    <button id="export-mini-cycle" title="Download the current routine as a file"><i class="fas fa-file-download"></i>Download</button>
+                    <button id="import-mini-cycle" title="Import a routine from a file"><i class="fas fa-file-upload"></i>Import</button>
+                    <button id="save-as-mini-cycle" title="Duplicate the current routine"><i class="fas fa-copy"></i>Duplicate</button>
                 </div>
-           </ul>
+            </div>
+
+            <!-- Tasks Section -->
+            <div class="menu-section">
+                <div class="menu-section-header">Tasks</div>
+                <div class="menu-section-grid">
+                    <button id="clear-mini-cycle-tasks" title="Uncheck all tasks in this routine"><i class="fas fa-eraser"></i>Uncheck All</button>
+                    <button id="delete-all-mini-cycle-tasks" title="Delete all tasks in this routine"><i class="fas fa-trash"></i>Delete All</button>
+                    <button id="open-recurring-panel" title="Manage recurring tasks"><i class="fas fa-repeat"></i>Recurring</button>
+                    <button id="open-reminders-modal" title="Configure reminders and notifications"><i class="fas fa-bell"></i>Reminders</button>
+                </div>
+            </div>
+
+            <!-- App Section -->
+            <div class="menu-section">
+                <div class="menu-section-header">App</div>
+                <div class="menu-section-grid">
+                    <button id="open-settings" class="open-settings" title="Open settings"><i class="fas fa-cog"></i>Settings</button>
+                    <div id="themes-menu-option" class="themes-menu-option">
+                        <button id="open-themes-panel" class="open-themes-panel" title="Open Themes Panel"><i class="fas fa-palette"></i>Themes</button>
+                    </div>
+                    <div id="games-menu-option" style="display: none;">
+                        <button id="open-games-panel"><i class="fas fa-gamepad"></i>Games</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="menu-section">
+                <div class="menu-section-header">Help</div>
+                <div class="menu-section-grid">
+                    <button id="open-user-manual" class="open-user-manual" title="Open the user manual"><i class="fas fa-book"></i>User Manual</button>
+                    <button id="open-feedback-modal" class="open-feedback-modal"><i class="fas fa-comment"></i>Feedback</button>
+                </div>
+            </div>
         </div>
-
-
-
-    <!-- Theme Button: ONLY SHOWN if theme is unlocked -->
-<div class="unlockables">
-    <div id="themes-menu-option" class="themes-menu-option">
-        <div id="open-themes-panel" class="open-themes-panel" role="button" tabindex="0" aria-label="Open Themes Panel">
-            <i class="fas fa-palette" aria-hidden="true"></i> Themes
-          </div>          
-    </div>
-  
-    <div id="games-menu-option" style="display: none;">
-      <div id="open-games-panel">
-        <i class="fas fa-gamepad"></i> Games
-      </div>
-    </div>
-  </div>
 
         <div class="main-menu-controls-container">
             <div id="mode-description" class="mode-description" aria-live="polite"></div>
@@ -951,18 +959,9 @@ window.installApp = () => {
               <span class="checkmark" aria-hidden="true"></span>
               <span id="delete-label">Delete Checked Tasks after Complete</span>
             </label>
-          </div>  
+          </div>
     </div>
 
-
-
- 
-  
-  <button id="open-recurring-panel" class="open-recurring-panel hidden" title="Manage recurring tasks"><i class="fas fa-repeat"></i> Manage Recurring Tasks</button>
-    
-
-    
-  
     <button id="close-main-menu" aria-label="Close Main Menu">Close</button>
     <!--<button id="exit-mini-cycle"><i class="fas fa-sign-out-alt"></i> Exit to Main Menu </button>-->
         
@@ -979,6 +978,21 @@ window.installApp = () => {
     </div>
     <div class="recurring-scroll-area">
       <ul id="recurring-task-list" aria-label="List of recurring tasks"></ul>
+      <div id="recurring-empty-state" class="recurring-empty-state hidden">
+        <p>No recurring tasks yet.</p>
+      </div>
+    </div>
+    <!-- Add Task Section -->
+    <div id="add-recurring-task-section">
+      <button id="add-recurring-task-btn" class="add-recurring-task-btn" title="Add a task from this routine to make it recurring">
+        <i class="fas fa-plus"></i> Add Task
+      </button>
+      <div id="available-tasks-list" class="available-tasks-list hidden">
+        <p class="available-tasks-header">Select tasks to make recurring:</p>
+        <ul id="non-recurring-tasks" aria-label="Available tasks to make recurring"></ul>
+        <p id="no-available-tasks" class="no-available-tasks hidden">All tasks are already recurring, or no tasks exist in this routine.</p>
+        <button id="confirm-add-recurring" class="confirm-add-recurring-btn hidden">Add to Recurring</button>
+      </div>
     </div>
     <div id="recurring-summary-preview" class="hidden">
       <div class="summary-box">
