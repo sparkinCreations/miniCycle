@@ -63,22 +63,8 @@
 }
 
 .task-btn {
-    color: black;
+    color: #333;
     font-size: 14px;
-}
-
-.task-btn .icon,
-.task-btn svg {
-    width: 14px;
-    height: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.task-btn .icon svg {
-    width: 100%;
-    height: 100%;
 }
 
 .task-btn:hover {
@@ -92,11 +78,14 @@
     color: #0056b3;
 }
 
-.task-btn.recurring-btn.active,
-.task-btn.recurring-btn.active .icon {
+.task-btn.recurring-btn.active {
     background-color: #4CAF50;
     color: white;
     font-weight: bold;
+}
+
+.task-btn.recurring-btn.active .icon {
+    color: white;
 }
 
 .priority-btn,
@@ -104,9 +93,12 @@
     color: rgba(191, 3, 3, 0.715);
 }
 
-.task-btn.priority-btn.priority-active,
-.task-btn.priority-btn.priority-active .icon {
+.task-btn.priority-btn.priority-active {
     background: #d9534f;
+    color: white;
+}
+
+.task-btn.priority-btn.priority-active .icon {
     color: white;
 }
 
@@ -116,7 +108,17 @@
 
 .edit-btn,
 .edit-btn .icon {
-    color: rgba(77, 77, 255, 0.771);
+    color: #333333;
+}
+
+.delete-btn,
+.delete-btn .icon {
+    color: #333333;
+}
+
+.set-due-date,
+.set-due-date .icon {
+    color: #555;
 }
 
 .task-btn.set-due-date.active {
@@ -125,19 +127,29 @@
     font-weight: bold;
 }
 
+.task-btn.set-due-date.active .icon {
+    color: white;
+}
+
 /* Delete when complete button */
 .delete-when-complete-btn.active,
-.delete-when-complete-btn.delete-when-complete-active,
-.delete-when-complete-btn.active .icon,
-.delete-when-complete-btn.delete-when-complete-active .icon {
+.delete-when-complete-btn.delete-when-complete-active {
     background-color: #ff4444;
     color: white;
 }
 
-/* Reminder button active state */
-.task-btn.enable-task-reminders.reminder-active,
-.task-btn.enable-task-reminders.reminder-active .icon {
+/* Reminder button */
+.enable-task-reminders,
+.enable-task-reminders .icon {
+    color: #333333;
+}
+
+.task-btn.enable-task-reminders.reminder-active {
     background: #4790df;
+    color: white;
+}
+
+.task-btn.enable-task-reminders.reminder-active .icon {
     color: white;
 }
 
@@ -147,11 +159,6 @@
 
 .task-btn.enable-task-reminders.reminder-active:hover {
     background: #2171b5;
-}
-
-/* Due date button active state */
-.task-btn.set-due-date.active .icon {
-    color: white;
 }
 
 .hidden-task-btn {

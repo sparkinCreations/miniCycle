@@ -7,6 +7,26 @@
 import { ICONS, FA_MAP, getIcon } from './icons.js';
 
 /**
+ * Parse SVG string and return the SVG element
+ * Uses DOMParser for proper namespace handling
+ * @param {string} svgString - SVG markup string
+ * @returns {SVGElement|null} Parsed SVG element or null on error
+ */
+function parseSVG(svgString) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgString, 'image/svg+xml');
+    const svg = doc.documentElement;
+
+    // Check for parsing errors
+    if (svg.tagName === 'parsererror') {
+        console.warn('SVG parsing error');
+        return null;
+    }
+
+    return svg;
+}
+
+/**
  * Replace a single Font Awesome <i> element with an SVG icon
  * @param {HTMLElement} element - The <i> element to replace
  * @returns {HTMLElement|null} The new span element, or null if replacement failed
@@ -28,8 +48,13 @@ export function replaceFAIcon(element) {
     if (iconName && ICONS[iconName]) {
         const span = document.createElement('span');
         span.className = 'icon';
-        span.innerHTML = ICONS[iconName];
         span.setAttribute('aria-hidden', 'true');
+
+        // Parse SVG using DOMParser for proper namespace handling
+        const svgElement = parseSVG(ICONS[iconName]);
+        if (svgElement) {
+            span.appendChild(svgElement);
+        }
 
         // Preserve any additional custom classes (not FA classes)
         const customClasses = classes.filter(c =>
@@ -86,7 +111,10 @@ export function createIcon(faClass) {
     span.setAttribute('aria-hidden', 'true');
 
     if (iconName && ICONS[iconName]) {
-        span.innerHTML = ICONS[iconName];
+        const svgElement = parseSVG(ICONS[iconName]);
+        if (svgElement) {
+            span.appendChild(svgElement);
+        }
     }
 
     return span;

@@ -46,13 +46,13 @@
 @import url('./components/task-list.css?v=1.713');
 
 /* Task action buttons and options */
-@import url('./components/task-options.css?v=1.713');
+@import url('./components/task-options.css?v=1.714');
 
 /* Generic button styles */
 @import url('./components/buttons.css?v=1.713');
 
 /* SVG icons (replaces Font Awesome) */
-@import url('./components/icons.css?v=1.713');
+@import url('./components/icons.css?v=1.714');
 
 /* Modal dialogs */
 @import url('./components/modals.css?v=1.713');
