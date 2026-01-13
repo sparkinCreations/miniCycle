@@ -1,3 +1,8 @@
+## [1.722] - 2026-01-13
+- feat: Add custom preference colors for various components in the default theme
+- feat: update version to 1.721 and modify changelog for new features
+
+
 ## [1.721] - 2026-01-12
 - feat: add preferences modal for task list color customization
 - feat: implement CSS variables for menu styles and add dark mode support
