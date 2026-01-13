@@ -927,6 +927,13 @@ class MiniCycleState {
                     app: true,
                     rewards: true,
                     help: true
+                },
+                settingsCollapsedSections: {
+                    display: false,
+                    behavior: true,
+                    data: true,
+                    reset: true,
+                    advanced: true
                 }
             },
             data: {

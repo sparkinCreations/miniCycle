@@ -149,6 +149,86 @@ export function setupSettingsMenu() {
     }
 
     safeAddEventListener(document, "click", closeOnClickOutside);
+
+    // Setup collapsible sections
+    setupSettingsCollapsibleSections(safeAddEventListener);
+
+    // Display version number
+    updateVersionDisplay();
+}
+
+/**
+ * Setup collapsible sections in settings modal
+ * @param {Function} safeAddEventListener - Event listener helper
+ */
+function setupSettingsCollapsibleSections(safeAddEventListener) {
+    const sectionHeaders = document.querySelectorAll('.settings-section-header');
+
+    // Load saved collapsed states
+    loadSettingsCollapsedStates();
+
+    sectionHeaders.forEach(header => {
+        safeAddEventListener(header, 'click', (e) => {
+            e.stopPropagation();
+            const section = header.closest('.settings-section');
+            if (section) {
+                section.classList.toggle('collapsed');
+                saveSettingsCollapsedStates();
+            }
+        });
+    });
+}
+
+/**
+ * Load collapsed states from AppState
+ */
+function loadSettingsCollapsedStates() {
+    const state = _deps.AppState?.get();
+    const collapsedStates = state?.settings?.settingsCollapsedSections;
+
+    if (!collapsedStates) return;
+
+    const sections = document.querySelectorAll('.settings-section.collapsible[data-section]');
+    sections.forEach(section => {
+        const sectionName = section.dataset.section;
+        if (sectionName && collapsedStates[sectionName] !== undefined) {
+            if (collapsedStates[sectionName]) {
+                section.classList.add('collapsed');
+            } else {
+                section.classList.remove('collapsed');
+            }
+        }
+    });
+}
+
+/**
+ * Save collapsed states to AppState
+ */
+function saveSettingsCollapsedStates() {
+    const sections = document.querySelectorAll('.settings-section.collapsible[data-section]');
+    const collapsedStates = {};
+
+    sections.forEach(section => {
+        const sectionName = section.dataset.section;
+        if (sectionName) {
+            collapsedStates[sectionName] = section.classList.contains('collapsed');
+        }
+    });
+
+    _deps.AppState?.update(state => {
+        if (!state.settings) state.settings = {};
+        state.settings.settingsCollapsedSections = collapsedStates;
+    });
+}
+
+/**
+ * Update the version display in settings
+ */
+function updateVersionDisplay() {
+    const versionDisplay = document.getElementById('settings-version-display');
+    if (versionDisplay && window.AppMeta?.version) {
+        versionDisplay.textContent = `v${window.AppMeta.version}`;
+    }
 }
 
 /**
