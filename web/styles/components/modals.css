@@ -1414,12 +1414,50 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
    PREFERENCES MODAL RESPONSIVE
    ============================================================================= */
 
+@media (max-width: 768px) {
+    .preferences-modal-content {
+        width: 92%;
+        max-width: 380px;
+        max-height: 80vh;
+        border-radius: 14px;
+    }
+
+    .preferences-modal-content h2 {
+        padding: 14px 16px;
+        font-size: 16px;
+    }
+
+    .preferences-scroll-area {
+        padding: 10px 12px;
+    }
+
+    .preferences-preview-container {
+        transform: scale(0.95);
+        transform-origin: center top;
+    }
+}
+
 @media (max-width: 480px) {
     .preferences-modal-content {
-        width: 100%;
-        max-width: 100%;
-        max-height: 100vh;
-        border-radius: 0;
+        width: 90%;
+        max-width: 340px;
+        max-height: 75vh;
+        border-radius: 12px;
+    }
+
+    .preferences-modal-content h2 {
+        padding: 12px 14px;
+        font-size: 15px;
+    }
+
+    .preferences-theme-notice {
+        padding: 8px 10px;
+        margin: 10px 12px 0;
+        font-size: 11px;
+    }
+
+    .preferences-scroll-area {
+        padding: 8px 10px;
     }
 
     .preferences-quick-presets-grid {
@@ -1428,12 +1466,48 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     }
 
     .quick-preset-swatch {
-        width: 28px;
-        height: 28px;
+        width: 26px;
+        height: 26px;
+    }
+
+    .quick-preset-name {
+        font-size: 9px;
+    }
+
+    .preferences-section-header.collapsible {
+        padding: 5px 6px;
+    }
+
+    .preferences-color-row {
+        padding: 8px 10px;
+        gap: 8px;
+    }
+
+    .preferences-color-row label {
+        font-size: 12px;
+    }
+
+    .preferences-color-row input[type="color"] {
+        width: 40px;
+        height: 32px;
+    }
+
+    .pref-color-icon {
+        font-size: 12px;
+        width: 16px;
+    }
+
+    .preferences-footer {
+        padding: 10px 12px;
     }
 
     .preferences-preset-btn.export-btn {
         display: none;
+    }
+
+    .preferences-modal .close-btn {
+        padding: 12px;
+        font-size: 13px;
     }
 }
 
