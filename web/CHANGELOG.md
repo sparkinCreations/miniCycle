@@ -1,3 +1,8 @@
+## [1.727] - 2026-01-13
+- feat: implement collapsible sections in settings UI and enhance styles for better usability
+- feat: update version to 1.726 and modify changelog for new features
+
+
 ## [1.726] - 2026-01-13
 - feat: update Manual Cycle Mode emoji representation across documentation and UI
 - feat: update version to 1.725 and modify changelog for new features
