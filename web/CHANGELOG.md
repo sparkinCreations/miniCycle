@@ -1,3 +1,9 @@
+## [1.726] - 2026-01-13
+- feat: update Manual Cycle Mode emoji representation across documentation and UI
+- feat: update version to 1.725 and modify changelog for new features
+- feat: improve button styles and layout for better user experience
+
+
 ## [1.725] - 2026-01-13
 - feat: update version to 1.724 and modify changelog for new features
 
