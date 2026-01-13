@@ -133,41 +133,60 @@ button.icon-only i {
 
 .complete-all-btn {
     background: #08c352;
-    border: 1px solid rgba(0, 160, 11, 0.655);
+    border: none;
     margin-top: 10px;
-    padding: 12px 20px;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 6px;
+    padding: 14px 32px;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    border-radius: 12px;
     cursor: pointer;
-    transition: background 0.3s;
-    color: rgba(255, 251, 251, 0.938);
+    transition: all 0.25s ease;
+    color: white;
     position: relative;
     z-index: 2;
     margin-bottom: -20px;
+    box-shadow: 0 4px 15px rgba(8, 195, 82, 0.4),
+                0 2px 4px rgba(0, 0, 0, 0.1);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .complete-all-btn:hover {
-    background: #009c41;
+    background: #0ad65a;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(8, 195, 82, 0.5),
+                0 3px 6px rgba(0, 0, 0, 0.12);
+}
+
+.complete-all-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(8, 195, 82, 0.4);
 }
 
 /* To-Do Mode button style - blue color */
 .complete-all-btn.todo-mode-btn {
     background: #3b82f6;
-    border: 1px solid #2563eb;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4),
+                0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .complete-all-btn.todo-mode-btn:hover {
-    background: #2563eb;
+    background: #4b8ef7;
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5),
+                0 3px 6px rgba(0, 0, 0, 0.12);
 }
 
 /* Custom preference colors (Default theme only) */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn:not(.todo-mode-btn) {
     background: var(--pref-complete-btn, #08c352);
+    box-shadow: 0 4px 15px color-mix(in srgb, var(--pref-complete-btn, #08c352) 40%, transparent),
+                0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn.todo-mode-btn {
     background: var(--pref-clear-btn, #3b82f6);
+    box-shadow: 0 4px 15px color-mix(in srgb, var(--pref-clear-btn, #3b82f6) 40%, transparent),
+                0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Complete All and Help Window Container */
