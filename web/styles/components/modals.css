@@ -1607,12 +1607,16 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     justify-content: center;
     align-items: center;
-    animation: fadeIn 0.3s ease;
+}
+
+.testing-modal.active,
+.testing-modal.show {
+    display: flex;
 }
 
 .testing-modal-content {
@@ -1620,29 +1624,264 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     color: var(--theme-modal-text, #333);
     padding: 0;
     border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
     width: 90%;
-    max-width: 900px;
-    max-height: 95vh;
+    max-width: 700px;
+    max-height: 90vh;
     overflow: hidden;
     position: relative;
-    border: 1px solid var(--theme-modal-border, rgba(255, 255, 255, 0.2));
-    animation: slideUp 0.3s ease;
+    display: flex;
+    flex-direction: column;
 }
 
 .testing-modal-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 24px 28px;
+    padding: 16px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .testing-modal-header h2 {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     color: white;
-    font-weight: 700;
+    font-weight: 600;
+}
+
+.close-testing-modal {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+    line-height: 1;
+}
+
+.close-testing-modal:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Testing Modal Body */
+.testing-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Testing Tabs */
+.testing-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--theme-modal-border, #e0e0e0);
+    padding-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.testing-tab {
+    padding: 8px 16px;
+    border: none;
+    background: var(--theme-input-bg, #f0f0f0);
+    color: var(--theme-modal-text, #555);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.testing-tab:hover {
+    background: var(--theme-input-hover-bg, #e5e5e5);
+}
+
+.testing-tab.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+/* Tab Content */
+.testing-tab-content {
+    display: none;
+}
+
+.testing-tab-content.active {
+    display: block;
+}
+
+/* Testing Sections */
+.testing-section {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.08));
+}
+
+.testing-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.testing-section h3 {
+    margin: 0 0 12px 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--theme-modal-text, #333);
+}
+
+.testing-section h4 {
+    margin: 0 0 10px 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--theme-modal-text, #555);
+}
+
+/* Test Buttons */
+.test-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    margin: 4px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--theme-button-secondary-bg, #6c757d);
+    color: white;
+}
+
+.test-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.test-btn:active {
+    transform: translateY(0);
+}
+
+.test-btn.test-primary {
+    background: #667eea;
+}
+
+.test-btn.test-primary:hover {
+    background: #5a6fd6;
+}
+
+.test-btn.test-secondary {
+    background: #6c757d;
+}
+
+.test-btn.test-secondary:hover {
+    background: #5a6268;
+}
+
+.test-btn.test-info {
+    background: #17a2b8;
+}
+
+.test-btn.test-info:hover {
+    background: #138496;
+}
+
+.test-btn.test-success {
+    background: #28a745;
+}
+
+.test-btn.test-success:hover {
+    background: #218838;
+}
+
+.test-btn.test-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.test-btn.test-warning:hover {
+    background: #e0a800;
+}
+
+.test-btn.test-danger {
+    background: #dc3545;
+}
+
+.test-btn.test-danger:hover {
+    background: #c82333;
+}
+
+.test-btn.test-clear,
+.test-btn.test-export,
+.test-btn.test-copy {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+}
+
+/* Button Group */
+.testing-section .button-group {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--theme-modal-border, rgba(0, 0, 0, 0.1));
+}
+
+/* Results Area */
+.testing-results-area {
+    border-top: 1px solid var(--theme-modal-border, #e0e0e0);
+    background: var(--theme-input-bg, #f8f9fa);
+    flex-shrink: 0;
+}
+
+.testing-results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background: var(--theme-input-bg, #f0f0f0);
+    border-bottom: 1px solid var(--theme-modal-border, #e0e0e0);
+}
+
+.testing-results-header h3 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.testing-results-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.testing-results {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.testing-output {
+    padding: 12px 16px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.testing-output .welcome-message {
+    text-align: center;
+    color: #888;
+    font-family: var(--font-family);
+}
+
+.testing-output .welcome-message p {
+    margin: 4px 0;
 }
 
 /* =============================================================================
@@ -1684,6 +1923,43 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     .testing-modal-content {
         width: 95%;
         max-height: 90vh;
+        max-width: 100%;
+    }
+
+    .testing-modal-header {
+        padding: 12px 16px;
+    }
+
+    .testing-modal-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .testing-modal-body {
+        padding: 12px;
+    }
+
+    .testing-tabs {
+        gap: 6px;
+    }
+
+    .testing-tab {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .test-btn {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+        margin: 3px;
+    }
+
+    .testing-results {
+        max-height: 150px;
+    }
+
+    .testing-output {
+        font-size: 0.7rem;
+        padding: 10px 12px;
     }
 }
 

@@ -191,8 +191,8 @@ export class PullToRefresh {
     handleTouchStart(e) {
         if (!this.enabled || this.isRefreshing) return;
 
-        // Don't trigger pull-to-refresh when a modal is open
-        if (this.deps.isModalOpen?.()) return;
+        // Only allow pull-to-refresh on main task view
+        if (!this.isMainTaskViewActive()) return;
 
         // Store the touch target to check scrollable containers
         this.touchStartTarget = e.target;
@@ -204,6 +204,44 @@ export class PullToRefresh {
 
         this.startY = e.touches[0].clientY;
         this.isPulling = true;
+    }
+
+    /**
+     * Check if main task view is active (no modals, menus, or stats view open)
+     * @returns {boolean} True if pull-to-refresh should be allowed
+     */
+    isMainTaskViewActive() {
+        // Check if any modal is open via dependency
+        if (this.deps.isModalOpen?.()) return false;
+
+        // Check for stats view being active
+        const statsPanel = document.querySelector('.stats-panel');
+        if (statsPanel && (statsPanel.classList.contains('active') || statsPanel.classList.contains('show'))) {
+            return false;
+        }
+
+        // Check for any visible modal (using data-modal attribute or common modal classes)
+        const modals = document.querySelectorAll('[data-modal], .modal, .settings-modal, .mini-cycle-switch-modal, .preferences-modal, .themes-modal, .testing-modal, .feedback-modal');
+        for (const modal of modals) {
+            const style = window.getComputedStyle(modal);
+            if (style.display !== 'none' && (modal.classList.contains('active') || modal.classList.contains('show') || style.display === 'flex')) {
+                return false;
+            }
+        }
+
+        // Check if main menu is open
+        const mainMenu = document.querySelector('.main-menu');
+        if (mainMenu && (mainMenu.classList.contains('active') || mainMenu.classList.contains('show'))) {
+            return false;
+        }
+
+        // Check for hamburger menu open
+        const hamburgerMenu = document.querySelector('.hamburger-menu');
+        if (hamburgerMenu && hamburgerMenu.classList.contains('open')) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
