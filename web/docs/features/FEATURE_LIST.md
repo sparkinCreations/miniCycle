@@ -1,7 +1,7 @@
 # miniCycle Feature List
 
-> **Last Updated:** January 7, 2026
-> **Version:** 1.685+
+> **Last Updated:** January 13, 2026
+> **Version:** 1.684+
 > **Status:** Production Ready
 
 A comprehensive list of all features in miniCycle, organized by category.
@@ -20,6 +20,7 @@ A comprehensive list of all features in miniCycle, organized by category.
 - [Statistics](#statistics)
 - [Data Management](#data-management)
 - [User Interface](#user-interface)
+- [Personalization](#personalization)
 - [Undo/Redo](#undoredo)
 - [Mobile & PWA](#mobile--pwa)
 - [Privacy & Security](#privacy--security)
@@ -279,8 +280,11 @@ Create tasks that automatically appear on a schedule.
 ### Navigation & Menus
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Main Menu | Navigation menu with app controls | `ui/menuManager.js` |
-| Settings Panel | Configure app behavior and preferences | `ui/settingsManager.js` |
+| Main Menu | Navigation menu with collapsible sections | `ui/menuManager.js` |
+| Menu Collapsed State | Remember expanded/collapsed menu sections | `ui/menuManager.js` |
+| Settings Panel | Configure app behavior with collapsible sections | `ui/settingsManager.js` |
+| Settings Toggle Switches | Toggle-style switches for settings options | `ui/settingsUIManager.js` |
+| Settings Collapsed State | Remember expanded/collapsed settings sections | `ui/settingsUIManager.js` |
 | Help Window | Mode-aware in-app help and documentation | `ui/helpWindowManager.js` |
 | Reset Achievement Progress | Reset global achievements (keeps routine stats) | `ui/settingsUIManager.js` |
 
@@ -327,6 +331,38 @@ Create tasks that automatically appear on a schedule.
 
 ---
 
+## Personalization
+
+Customize app colors and visual appearance.
+
+### Color Customization
+| Feature | Description | Module |
+|---------|-------------|--------|
+| Live Color Preview | See color changes in real-time as you adjust | `ui/preferencesManager.js` |
+| Header Color | Customize the app header color | `ui/preferencesManager.js` |
+| Background Color | Customize the main background color | `ui/preferencesManager.js` |
+| Accent Color | Customize buttons and interactive elements | `ui/preferencesManager.js` |
+| Text Color | Customize main text color | `ui/preferencesManager.js` |
+| Task Background | Customize task item background color | `ui/preferencesManager.js` |
+
+### Theme Presets
+| Feature | Description | Module |
+|---------|-------------|--------|
+| Quick Presets | Pre-built color themes (Ocean, Sunset, Forest, etc.) | `ui/preferencesManager.js` |
+| Default Preset | Reset all colors to default values | `ui/preferencesManager.js` |
+| Saved Presets | Save your custom color combinations | `ui/preferencesManager.js` |
+| Apply Saved Preset | Apply previously saved presets with one click | `ui/preferencesManager.js` |
+| Delete Saved Preset | Remove saved presets you no longer need | `ui/preferencesManager.js` |
+
+### Theme Import/Export
+| Feature | Description | Module |
+|---------|-------------|--------|
+| Export Theme | Export custom theme as shareable JSON file | `ui/preferencesManager.js` |
+| Import Theme | Import shared themes from JSON files | `ui/preferencesManager.js` |
+| Theme File Validation | Validates imported theme files | `ui/preferencesManager.js` |
+
+---
+
 ## Undo/Redo
 
 | Feature | Description | Module |
@@ -351,7 +387,8 @@ Create tasks that automatically appear on a schedule.
 ### Mobile Features
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Pull-to-Refresh | Mobile swipe gesture to refresh | `ui/pullToRefresh.js` |
+| Pull-to-Refresh | Mobile swipe gesture to refresh (main task view only) | `ui/pullToRefresh.js` |
+| Smart Context Detection | Pull-to-refresh disabled in modals, menus, stats view | `ui/pullToRefresh.js` |
 | Touch Gestures | Swipe, drag, touch support | `ui/taskInteractions.js` |
 | Responsive Design | Adapts to all screen sizes | CSS |
 
@@ -443,13 +480,14 @@ A **static, frozen fallback** for older devices (ES5 compatible).
 | Progress & Gamification | 23 |
 | Statistics | 7 |
 | Data Management | 12 |
-| User Interface | 19 |
+| User Interface | 22 |
+| Personalization | 14 |
 | Undo/Redo | 5 |
-| Mobile & PWA | 7 |
+| Mobile & PWA | 8 |
 | Privacy & Security | 7 |
 | Accessibility | 5 |
 | Developer Features | 8 |
-| **Total** | **~138 features** |
+| **Total** | **~156 features** |
 
 ---
 

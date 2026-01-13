@@ -2,8 +2,8 @@
 
 > **Complete guide to using miniCycle for task management and routine building**
 
-**Version:** 1.352
-**Last Updated:** November 13, 2025
+**Version:** 1.684+
+**Last Updated:** January 13, 2026
 **For:** End Users (Non-Technical)
 
 ---
@@ -19,6 +19,7 @@
 - [Recurring Tasks](#recurring-tasks)
 - [Organizing Tasks](#organizing-tasks)
 - [Customization](#customization)
+- [Personalization](#personalization)
 - [Tips & Best Practices](#tips--best-practices)
 - [Keyboard Shortcuts](#keyboard-shortcuts)
 - [Troubleshooting](#troubleshooting)
@@ -506,24 +507,97 @@ Unlock different color themes by completing cycles:
 
 ### Settings Overview
 
-Access via **Menu → Settings**:
+Access via **Menu → Settings**. Settings are organized into collapsible sections with toggle switches for easy control.
 
-**General Settings:**
-- Dark mode toggle
-- Notification preferences
-- Sound effects
+**Display Settings:**
+- Show Move Arrows - Toggle task reorder arrows
+- Show Three Dots Menu - Toggle task options menu
+- Dark Mode - Switch between light and dark themes
 
-**Cycle Settings:**
-- Auto Cycle / Manual / To-Do mode (instant switching, no reload!)
-- Completed tasks dropdown
-- Recurring task defaults
-- Task button customization (`-/+` customize button)
+**Behavior Settings:**
+- Organize Completed Tasks - Move completed tasks to dropdown
+- High Contrast Mode - Enhanced visibility option
 
-**Data Settings:**
-- Export cycle (backup)
-- Import cycle (restore)
-- Clear data
-- Factory reset
+**Data Management:**
+- Export Current Routine - Save as `.mcyc` file
+- Import Routines - Load routines from files
+
+**Reset Options:**
+- Reset Achievement Progress - Clear global achievements
+- Clear All Data - Factory reset with confirmation
+
+**Advanced Settings:**
+- Try Lite Version - Simplified version for older devices
+- Check for Updates - Manual update check
+
+**Tip:** Settings sections remember their expanded/collapsed state across sessions!
+
+---
+
+## Personalization
+
+Customize colors and visual appearance of miniCycle to match your preferences.
+
+### Accessing Personalization
+
+1. Click **Menu (☰)** → **Personalization**
+2. The Personalization modal opens with color options
+
+### Color Options
+
+Customize these colors with live preview:
+- **Header Color** - App header background
+- **Background Color** - Main app background
+- **Accent Color** - Buttons and interactive elements
+- **Text Color** - Main text throughout the app
+- **Task Background** - Individual task item backgrounds
+
+**How to change colors:**
+1. Click any color swatch
+2. Use the color picker to choose your color
+3. See changes immediately in real-time!
+
+### Quick Presets
+
+Pre-built color themes for instant transformation:
+- **Default** - Reset all colors to original values
+- **Ocean** - Cool blue tones
+- **Sunset** - Warm orange/red tones
+- **Forest** - Natural green tones
+- **Midnight** - Dark theme with purple accents
+- **Lavender** - Soft purple tones
+
+Click any preset to apply it instantly!
+
+### Saved Presets
+
+Save your custom color combinations:
+
+**Saving a Preset:**
+1. Customize colors to your liking
+2. Enter a name in "Preset Name" field
+3. Click **"Save Current Colors"**
+
+**Applying a Saved Preset:**
+1. Find your preset in the saved presets list
+2. Click the preset name to apply
+
+**Deleting a Saved Preset:**
+1. Click the **trash icon** next to the preset
+
+### Import/Export Themes
+
+Share your themes or use themes from others:
+
+**Exporting:**
+1. Create your custom color combination
+2. Click **"Export"** button
+3. Save the `.json` theme file
+
+**Importing:**
+1. Click **"Import"** button
+2. Select a `.json` theme file
+3. Colors apply immediately
 
 ---
 
@@ -731,8 +805,8 @@ We'd love to hear from you!
 
 ---
 
-**Last Updated:** November 13, 2025
-**Version:** 1.352
-**Guide Version:** 1.0
+**Last Updated:** January 13, 2026
+**Version:** 1.684+
+**Guide Version:** 2.0
 
 *Happy cycling! 🚴*

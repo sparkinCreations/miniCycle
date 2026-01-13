@@ -31,6 +31,7 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 ### Key Features
 - **[STATS_PANEL.md](./features/STATS_PANEL.md)** - Statistics dashboard with milestone tracking
 - **[TASK_OPTIONS_CUSTOMIZER.md](./features/TASK_OPTIONS_CUSTOMIZER.md)** - Per-cycle button visibility customization
+- **[FEATURE_LIST.md](./features/FEATURE_LIST.md)** - Complete feature list (156+ features)
 - **[MODE_MANAGER_ARCHITECTURE.md](./architecture/MODE_MANAGER_ARCHITECTURE.md)** - Mode management system
 - **[COMPLETED_TASKS_DROPDOWN.md](./features/COMPLETED_TASKS_DROPDOWN.md)** - Optional completed tasks dropdown
 - **[minicycle-recurring-guide.md](./features/minicycle-recurring-guide.md)** - Recurring tasks implementation
