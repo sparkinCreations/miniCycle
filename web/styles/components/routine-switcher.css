@@ -185,6 +185,7 @@
     cursor: pointer;
     color: #555;
     outline: none;
+    max-width: 100px;
 }
 
 .routine-filter-select:hover {
@@ -507,5 +508,9 @@
     .mini-cycle-upload-btn {
         padding: 6px 14px;
         font-size: 0.8rem;
+    }
+
+    .routine-filter-select {
+        max-width: 90px;
     }
 }

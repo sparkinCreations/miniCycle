@@ -102,7 +102,7 @@ export class ModeManager {
     getModeName(mode) {
         const modeNames = {
             'auto-cycle': 'Auto Cycle ↻',
-            'manual-cycle': 'Manual Cycle ✋🔁',
+            'manual-cycle': 'Manual Cycle ✋',
             'todo-mode': 'To-Do Mode 📋'
         };
 

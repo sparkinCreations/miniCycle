@@ -68,7 +68,7 @@ Prior to v1.372, switching modes required a page reload. The Mode Manager now:
 
 ---
 
-### 2. Manual Cycle Mode ✋🔁
+### 2. Manual Cycle Mode ✋
 
 **Behavior:**
 - "Complete Cycle" button appears when all tasks done
@@ -146,7 +146,7 @@ Converts mode identifier to friendly display name.
 getModeName(mode) {
     const modeNames = {
         'auto-cycle': 'Auto Cycle ↻',
-        'manual-cycle': 'Manual Cycle ✋🔁',
+        'manual-cycle': 'Manual Cycle ✋',
         'todo-mode': 'To-Do Mode 📋'
     };
     return modeNames[mode] || 'Auto Cycle ↻';

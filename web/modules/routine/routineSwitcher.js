@@ -1100,8 +1100,7 @@ export class RoutineSwitcher {
             listItem.dataset.cycleKey = cycleKey; // ✅ Store the storage key
 
             // 🏷️ Determine emoji based on miniCycle mode
-            // Leading space on single emojis aligns them with 🔁 in ✋🔁
-            let emoji = "✋🔁"; // Manual Cycle (hand + repeat)
+            let emoji = " ✋"; // Manual Cycle
             if (cycleData.deleteCheckedTasks) {
                 emoji = " 📋"; // To-Do Mode (space for alignment)
             } else if (cycleData.autoReset) {

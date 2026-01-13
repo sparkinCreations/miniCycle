@@ -148,7 +148,7 @@ The Routine Switcher lets you manage all your routines in one place. Access it v
 
 Each routine shows its mode at a glance with emojis:
 - 🔄 **Auto Cycle** - Tasks auto-reset when complete
-- ✋🔁 **Manual Cycle** - You control when to reset
+- ✋ **Manual Cycle** - You control when to reset
 - 📋 **To-Do Mode** - Completed tasks are deleted
 
 ### Sorting Routines
@@ -164,7 +164,7 @@ Click the **Sort** dropdown to organize your routine list:
 Use the **Filter** dropdown to show only specific routine types:
 - **All Modes** - Show everything
 - **🔄 Auto Cycle** - Only auto-cycling routines
-- **✋🔁 Manual** - Only manual cycle routines
+- **✋ Manual** - Only manual cycle routines
 - **📋 To-Do** - Only to-do mode routines
 
 ### Date Information
@@ -268,7 +268,7 @@ miniCycle has **three operational modes** to match different workflows. **Mode c
 
 ---
 
-### 2. Manual Cycle Mode ✋🔁
+### 2. Manual Cycle Mode ✋
 
 **How it works:**
 - Complete all tasks → **"Complete Cycle" button appears**
