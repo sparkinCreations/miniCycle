@@ -759,3 +759,14 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .mini-cycle-
     background-color: var(--pref-title-bg, rgba(255, 255, 255, 0.4));
     color: var(--pref-title-text, rgba(43, 43, 43, 0.783));
 }
+
+/* Checkbox checked background - uses custom pref color when set */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"]:checked {
+    background-color: var(--pref-checkbox-bg, #5db567);
+    border-color: var(--pref-checkbox-bg, #40af4d);
+}
+
+/* Checkmark color - uses custom pref color when set */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"]:checked::after {
+    color: var(--pref-checkmark, rgb(18, 70, 9));
+}

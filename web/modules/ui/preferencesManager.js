@@ -7,6 +7,10 @@
  * Features:
  * - Color picker inputs for task list elements
  * - Live preview of color changes
+ * - Collapsible sections for organization
+ * - Quick preset themes (built-in)
+ * - Save/Load/Export/Import custom presets
+ * - Undo last color change
  * - Reset to defaults functionality
  * - Saves preferences to appState
  * - Only applies colors in default theme
@@ -21,39 +25,188 @@ import { createDIModule, optional } from '../core/diBase.js';
 // ============================================================================
 
 const DEFAULT_COLORS = {
+    appBg: '#4c79ff',
     taskListBg: '#ffffff',
     taskBg: '#ffffff',
     taskText: '#333333',
     titleBg: '#ffffff',
-    titleText: '#2b2b2b'
+    titleText: '#2b2b2b',
+    checkboxBg: '#5db567',
+    checkmark: '#124609',
+    completeBtn: '#08c352',
+    clearBtn: '#3b82f6',
+    progressBar: '#82db8c',
+    statsBg: '#ffffff',
+    statsText: '#333333'
+};
+
+// ============================================================================
+// QUICK PRESET THEMES (Built-in)
+// ============================================================================
+
+const QUICK_PRESETS = {
+    default: {
+        name: 'Default',
+        colors: { ...DEFAULT_COLORS }
+    },
+    warm: {
+        name: 'Warm',
+        colors: {
+            appBg: '#ff6b6b',
+            taskListBg: '#fff9e6',
+            taskBg: '#ffffff',
+            taskText: '#5c4033',
+            titleBg: '#ffeaa7',
+            titleText: '#a85a32',
+            checkboxBg: '#e17055',
+            checkmark: '#ffffff',
+            completeBtn: '#fd79a8',
+            clearBtn: '#fdcb6e',
+            progressBar: '#f8b739',
+            statsBg: '#fff9e6',
+            statsText: '#5c4033'
+        }
+    },
+    cool: {
+        name: 'Cool',
+        colors: {
+            appBg: '#74b9ff',
+            taskListBg: '#e8f8f5',
+            taskBg: '#ffffff',
+            taskText: '#2c3e50',
+            titleBg: '#dfe6e9',
+            titleText: '#2980b9',
+            checkboxBg: '#0984e3',
+            checkmark: '#ffffff',
+            completeBtn: '#00cec9',
+            clearBtn: '#6c5ce7',
+            progressBar: '#81ecec',
+            statsBg: '#e8f8f5',
+            statsText: '#2c3e50'
+        }
+    },
+    forest: {
+        name: 'Forest',
+        colors: {
+            appBg: '#2d5016',
+            taskListBg: '#d4edda',
+            taskBg: '#e8f5e9',
+            taskText: '#1b4332',
+            titleBg: '#a8d5ba',
+            titleText: '#1b4332',
+            checkboxBg: '#2e7d32',
+            checkmark: '#ffffff',
+            completeBtn: '#388e3c',
+            clearBtn: '#558b2f',
+            progressBar: '#66bb6a',
+            statsBg: '#d4edda',
+            statsText: '#1b4332'
+        }
+    },
+    monochrome: {
+        name: 'Monochrome',
+        colors: {
+            appBg: '#2d3436',
+            taskListBg: '#dfe6e9',
+            taskBg: '#ffffff',
+            taskText: '#2d3436',
+            titleBg: '#b2bec3',
+            titleText: '#2d3436',
+            checkboxBg: '#636e72',
+            checkmark: '#ffffff',
+            completeBtn: '#2d3436',
+            clearBtn: '#636e72',
+            progressBar: '#95a5a6',
+            statsBg: '#dfe6e9',
+            statsText: '#2d3436'
+        }
+    },
+    professional: {
+        name: 'Professional',
+        colors: {
+            appBg: '#f5f5f7',
+            taskListBg: '#ffffff',
+            taskBg: '#ffffff',
+            taskText: '#1d1d1f',
+            titleBg: '#ffffff',
+            titleText: '#1d1d1f',
+            checkboxBg: '#007aff',
+            checkmark: '#ffffff',
+            completeBtn: '#34c759',
+            clearBtn: '#007aff',
+            progressBar: '#007aff',
+            statsBg: '#ffffff',
+            statsText: '#1d1d1f'
+        }
+    }
 };
 
 // Map input IDs to settings keys and CSS properties
 const COLOR_MAP = {
+    'pref-app-bg': {
+        key: 'appBg',
+        cssVar: '--pref-app-bg',
+        previewVar: '--preview-app-bg'
+    },
     'pref-task-list-bg': {
         key: 'taskListBg',
         cssVar: '--pref-task-list-bg',
-        selector: '.task-list-container'
+        previewVar: '--preview-task-list-bg'
     },
     'pref-task-bg': {
         key: 'taskBg',
         cssVar: '--pref-task-bg',
-        selector: '.task'
+        previewVar: '--preview-task-bg'
     },
     'pref-task-text': {
         key: 'taskText',
         cssVar: '--pref-task-text',
-        selector: '.task'
+        previewVar: '--preview-task-text'
     },
     'pref-title-bg': {
         key: 'titleBg',
         cssVar: '--pref-title-bg',
-        selector: '.mini-cycle-title'
+        previewVar: '--preview-title-bg'
     },
     'pref-title-text': {
         key: 'titleText',
         cssVar: '--pref-title-text',
-        selector: '.mini-cycle-title'
+        previewVar: '--preview-title-text'
+    },
+    'pref-checkbox-bg': {
+        key: 'checkboxBg',
+        cssVar: '--pref-checkbox-bg',
+        previewVar: '--preview-checkbox-bg'
+    },
+    'pref-checkmark': {
+        key: 'checkmark',
+        cssVar: '--pref-checkmark',
+        previewVar: '--preview-checkmark'
+    },
+    'pref-complete-btn': {
+        key: 'completeBtn',
+        cssVar: '--pref-complete-btn',
+        previewVar: '--preview-complete-btn'
+    },
+    'pref-clear-btn': {
+        key: 'clearBtn',
+        cssVar: '--pref-clear-btn',
+        previewVar: '--preview-clear-btn'
+    },
+    'pref-progress-bar': {
+        key: 'progressBar',
+        cssVar: '--pref-progress-bar',
+        previewVar: '--preview-progress-bar'
+    },
+    'pref-stats-bg': {
+        key: 'statsBg',
+        cssVar: '--pref-stats-bg',
+        previewVar: '--preview-stats-bg'
+    },
+    'pref-stats-text': {
+        key: 'statsText',
+        cssVar: '--pref-stats-text',
+        previewVar: '--preview-stats-text'
     }
 };
 
@@ -65,6 +218,8 @@ const di = createDIModule('PreferencesManager', {
     appInit: optional(null),
     AppState: optional(null),
     showNotification: optional(null),
+    showPromptModal: optional(null),
+    showConfirmationModal: optional(null),
     safeAddEventListener: optional(null),
     hideMainMenu: optional(null)
 });
@@ -93,6 +248,8 @@ export class PreferencesManager {
         this._initialized = false;
         this.modal = null;
         this.colorInputs = {};
+        this.undoStack = [];
+        this.maxUndoSteps = 20;
     }
 
     /**
@@ -114,6 +271,7 @@ export class PreferencesManager {
             this.loadSavedColors();
             this.applyCustomColors();
             this.setupThemeObserver();
+            this.updatePreview();
 
             this._initialized = true;
             console.log('🎨 PreferencesManager initialized');
@@ -126,11 +284,9 @@ export class PreferencesManager {
      * Setup MutationObserver to watch for theme class changes
      */
     setupThemeObserver() {
-        // Watch for theme class changes on body
         const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                    // Theme has changed, reapply custom colors (or remove them)
                     this.applyCustomColors();
                 }
             });
@@ -216,6 +372,42 @@ export class PreferencesManager {
             resetAllBtn._clickHandler = () => this.resetAllColors();
             safeAdd(resetAllBtn, 'click', resetAllBtn._clickHandler);
         }
+
+        // Save preset button
+        const savePresetBtn = document.getElementById('pref-save-preset');
+        if (savePresetBtn) {
+            savePresetBtn._clickHandler = () => this.promptSavePreset();
+            safeAdd(savePresetBtn, 'click', savePresetBtn._clickHandler);
+        }
+
+        // Import preset button
+        const importPresetBtn = document.getElementById('pref-import-preset');
+        if (importPresetBtn) {
+            importPresetBtn._clickHandler = () => this.promptImportPreset();
+            safeAdd(importPresetBtn, 'click', importPresetBtn._clickHandler);
+        }
+
+        // Undo button
+        const undoBtn = document.getElementById('preferences-undo');
+        if (undoBtn) {
+            undoBtn._clickHandler = () => this.undoLastChange();
+            safeAdd(undoBtn, 'click', undoBtn._clickHandler);
+        }
+
+        // Quick preset buttons
+        document.querySelectorAll('.quick-preset-btn').forEach(btn => {
+            const presetKey = btn.dataset.preset;
+            if (presetKey) {
+                btn._clickHandler = () => this.applyQuickPreset(presetKey);
+                safeAdd(btn, 'click', btn._clickHandler);
+            }
+        });
+
+        // Collapsible sections
+        document.querySelectorAll('.preferences-section-header.collapsible').forEach(header => {
+            header._clickHandler = () => this.toggleSection(header);
+            safeAdd(header, 'click', header._clickHandler);
+        });
     }
 
     /**
@@ -223,15 +415,12 @@ export class PreferencesManager {
      */
     openModal() {
         if (this.modal) {
-            // Close main menu first
             _deps.hideMainMenu?.();
-
-            // Update the theme notice based on current theme
             this.updateThemeNotice();
-
-            // Load current saved colors
             this.loadSavedColors();
-
+            this.renderPresetsList();
+            this.updatePreview();
+            this.updateUndoButton();
             this.modal.style.display = 'flex';
         }
     }
@@ -292,13 +481,21 @@ export class PreferencesManager {
         const config = COLOR_MAP[inputId];
         if (!config) return;
 
+        // Save current state for undo before changing
+        this.pushToUndoStack();
+
         // Save to appState
         this.saveColor(config.key, color);
+
+        // Update preview immediately
+        this.updatePreview();
 
         // Apply immediately if in default theme
         if (this.isDefaultTheme()) {
             this.applyCustomColors();
         }
+
+        this.updateUndoButton();
     }
 
     /**
@@ -325,20 +522,22 @@ export class PreferencesManager {
         const config = COLOR_MAP[inputId];
         if (!config) return;
 
+        this.pushToUndoStack();
+
         const defaultColor = DEFAULT_COLORS[config.key];
         const input = this.colorInputs[inputId];
         if (input) {
             input.value = defaultColor;
         }
 
-        // Save null to indicate default
         this.saveColor(config.key, null);
+        this.updatePreview();
 
-        // Apply changes
         if (this.isDefaultTheme()) {
             this.applyCustomColors();
         }
 
+        this.updateUndoButton();
         _deps.showNotification?.('Color reset to default', 'info', 2000);
     }
 
@@ -346,6 +545,8 @@ export class PreferencesManager {
      * Reset all colors to defaults
      */
     resetAllColors() {
+        this.pushToUndoStack();
+
         Object.entries(COLOR_MAP).forEach(([inputId, config]) => {
             const input = this.colorInputs[inputId];
             if (input) {
@@ -353,72 +554,57 @@ export class PreferencesManager {
             }
         });
 
-        // Clear all custom colors in appState
         if (_deps.AppState) {
             _deps.AppState.update(state => {
                 state.settings.customColors = {
+                    appBg: null,
                     taskListBg: null,
                     taskBg: null,
                     taskText: null,
                     titleBg: null,
-                    titleText: null
+                    titleText: null,
+                    checkboxBg: null,
+                    checkmark: null,
+                    completeBtn: null,
+                    clearBtn: null,
+                    progressBar: null,
+                    statsBg: null,
+                    statsText: null
                 };
             });
         }
 
-        // Apply changes
+        this.updatePreview();
+
         if (this.isDefaultTheme()) {
             this.applyCustomColors();
         }
 
+        this.updateUndoButton();
         _deps.showNotification?.('All colors reset to defaults', 'success', 2000);
     }
 
     /**
      * Apply custom colors to the task list (only in default theme)
-     * Sets CSS custom properties that the CSS rules will use
      */
     applyCustomColors() {
         const state = _deps.AppState?.get();
         const customColors = state?.settings?.customColors || {};
         const root = document.documentElement;
 
-        // Only apply in default theme, otherwise remove
         if (!this.isDefaultTheme()) {
             this.removeCustomColors();
             return;
         }
 
-        // Set CSS custom properties - the CSS rules handle applying them
-        if (customColors.taskListBg) {
-            root.style.setProperty('--pref-task-list-bg', customColors.taskListBg);
-        } else {
-            root.style.removeProperty('--pref-task-list-bg');
-        }
-
-        if (customColors.taskBg) {
-            root.style.setProperty('--pref-task-bg', customColors.taskBg);
-        } else {
-            root.style.removeProperty('--pref-task-bg');
-        }
-
-        if (customColors.taskText) {
-            root.style.setProperty('--pref-task-text', customColors.taskText);
-        } else {
-            root.style.removeProperty('--pref-task-text');
-        }
-
-        if (customColors.titleBg) {
-            root.style.setProperty('--pref-title-bg', customColors.titleBg);
-        } else {
-            root.style.removeProperty('--pref-title-bg');
-        }
-
-        if (customColors.titleText) {
-            root.style.setProperty('--pref-title-text', customColors.titleText);
-        } else {
-            root.style.removeProperty('--pref-title-text');
-        }
+        Object.entries(COLOR_MAP).forEach(([inputId, config]) => {
+            const color = customColors[config.key];
+            if (color) {
+                root.style.setProperty(config.cssVar, color);
+            } else {
+                root.style.removeProperty(config.cssVar);
+            }
+        });
     }
 
     /**
@@ -426,13 +612,502 @@ export class PreferencesManager {
      */
     removeCustomColors() {
         const root = document.documentElement;
+        Object.values(COLOR_MAP).forEach(config => {
+            root.style.removeProperty(config.cssVar);
+        });
+    }
 
-        // Remove all custom color CSS variables
-        root.style.removeProperty('--pref-task-list-bg');
-        root.style.removeProperty('--pref-task-bg');
-        root.style.removeProperty('--pref-task-text');
-        root.style.removeProperty('--pref-title-bg');
-        root.style.removeProperty('--pref-title-text');
+    /**
+     * Update the live preview with current colors
+     */
+    updatePreview() {
+        const preview = document.getElementById('preferences-preview');
+        if (!preview) return;
+
+        const state = _deps.AppState?.get();
+        const customColors = state?.settings?.customColors || {};
+
+        Object.entries(COLOR_MAP).forEach(([inputId, config]) => {
+            const input = this.colorInputs[inputId];
+            const color = input?.value || customColors[config.key] || DEFAULT_COLORS[config.key];
+            if (config.previewVar) {
+                preview.style.setProperty(config.previewVar, color);
+            }
+        });
+    }
+
+    /**
+     * Toggle a collapsible section
+     * @param {HTMLElement} header - The section header element
+     */
+    toggleSection(header) {
+        const section = header.closest('.preferences-section');
+        if (section) {
+            section.classList.toggle('collapsed');
+        }
+    }
+
+    /**
+     * Apply a quick preset theme
+     * @param {string} presetKey - The preset key
+     */
+    applyQuickPreset(presetKey) {
+        const preset = QUICK_PRESETS[presetKey];
+        if (!preset) return;
+
+        this.pushToUndoStack();
+
+        // Apply preset colors
+        Object.entries(preset.colors).forEach(([key, color]) => {
+            this.saveColor(key, color);
+        });
+
+        // Update inputs
+        this.loadSavedColors();
+        this.updatePreview();
+
+        if (this.isDefaultTheme()) {
+            this.applyCustomColors();
+        }
+
+        this.updateUndoButton();
+        _deps.showNotification?.(`Applied "${preset.name}" theme`, 'success', 2000);
+    }
+
+    // =========================================================================
+    // UNDO FUNCTIONALITY
+    // =========================================================================
+
+    /**
+     * Push current state to undo stack
+     */
+    pushToUndoStack() {
+        const state = _deps.AppState?.get();
+        const customColors = state?.settings?.customColors || {};
+        const snapshot = { ...customColors };
+
+        this.undoStack.push(snapshot);
+
+        // Limit stack size
+        if (this.undoStack.length > this.maxUndoSteps) {
+            this.undoStack.shift();
+        }
+    }
+
+    /**
+     * Undo the last color change
+     */
+    undoLastChange() {
+        if (this.undoStack.length === 0) return;
+
+        const previousState = this.undoStack.pop();
+
+        if (_deps.AppState) {
+            _deps.AppState.update(state => {
+                state.settings.customColors = previousState;
+            });
+        }
+
+        this.loadSavedColors();
+        this.updatePreview();
+
+        if (this.isDefaultTheme()) {
+            this.applyCustomColors();
+        }
+
+        this.updateUndoButton();
+        _deps.showNotification?.('Undone', 'info', 1500);
+    }
+
+    /**
+     * Update undo button state
+     */
+    updateUndoButton() {
+        const undoBtn = document.getElementById('preferences-undo');
+        if (undoBtn) {
+            undoBtn.disabled = this.undoStack.length === 0;
+        }
+    }
+
+    // =========================================================================
+    // PRESET MANAGEMENT
+    // =========================================================================
+
+    /**
+     * Prompt user for preset name and save current colors
+     */
+    promptSavePreset() {
+        if (_deps.showPromptModal) {
+            _deps.showPromptModal({
+                title: 'Save Preset',
+                message: 'Enter a name for this color preset:',
+                placeholder: 'My Custom Theme',
+                confirmText: 'Save',
+                cancelText: 'Cancel',
+                required: true,
+                callback: (name) => {
+                    if (name && name.trim()) {
+                        this.savePreset(name.trim());
+                    }
+                }
+            });
+        } else {
+            // Fallback to native prompt
+            const name = prompt('Enter a name for this preset:');
+            if (name && name.trim()) {
+                this.savePreset(name.trim());
+            }
+        }
+    }
+
+    /**
+     * Save current colors as a new preset
+     * @param {string} name - Name for the preset
+     */
+    savePreset(name) {
+        if (!_deps.AppState) return;
+
+        const state = _deps.AppState.get();
+        const currentColors = { ...state?.settings?.customColors } || {};
+
+        // Create new preset
+        const preset = {
+            id: Date.now().toString(),
+            name: name,
+            colors: currentColors,
+            createdAt: Date.now()
+        };
+
+        _deps.AppState.update(state => {
+            if (!state.settings.savedColorPresets) {
+                state.settings.savedColorPresets = [];
+            }
+            state.settings.savedColorPresets.push(preset);
+        });
+
+        this.renderPresetsList();
+        _deps.showNotification?.(`Preset "${name}" saved`, 'success', 2000);
+    }
+
+    /**
+     * Load a preset's colors
+     * @param {string} presetId - ID of the preset to load
+     */
+    loadPreset(presetId) {
+        if (!_deps.AppState) return;
+
+        const state = _deps.AppState.get();
+        const presets = state?.settings?.savedColorPresets || [];
+        const preset = presets.find(p => p.id === presetId);
+
+        if (!preset) {
+            _deps.showNotification?.('Preset not found', 'error', 2000);
+            return;
+        }
+
+        this.pushToUndoStack();
+
+        _deps.AppState.update(state => {
+            state.settings.customColors = { ...preset.colors };
+        });
+
+        this.loadSavedColors();
+        this.updatePreview();
+        this.applyCustomColors();
+        this.updateUndoButton();
+
+        _deps.showNotification?.(`Loaded "${preset.name}"`, 'success', 2000);
+    }
+
+    /**
+     * Rename a preset
+     * @param {string} presetId - ID of the preset to rename
+     * @param {string} newName - New name for the preset
+     */
+    renamePreset(presetId, newName) {
+        if (!_deps.AppState || !newName.trim()) return;
+
+        _deps.AppState.update(state => {
+            const presets = state.settings.savedColorPresets || [];
+            const preset = presets.find(p => p.id === presetId);
+            if (preset) {
+                preset.name = newName.trim();
+            }
+        });
+
+        this.renderPresetsList();
+        _deps.showNotification?.('Preset renamed', 'success', 2000);
+    }
+
+    /**
+     * Delete a preset
+     * @param {string} presetId - ID of the preset to delete
+     */
+    deletePreset(presetId) {
+        if (!_deps.AppState) return;
+
+        const state = _deps.AppState.get();
+        const presets = state?.settings?.savedColorPresets || [];
+        const preset = presets.find(p => p.id === presetId);
+
+        if (!preset) return;
+
+        const doDelete = () => {
+            _deps.AppState.update(state => {
+                state.settings.savedColorPresets = (state.settings.savedColorPresets || [])
+                    .filter(p => p.id !== presetId);
+            });
+
+            this.renderPresetsList();
+            _deps.showNotification?.('Preset deleted', 'info', 2000);
+        };
+
+        if (_deps.showConfirmationModal) {
+            _deps.showConfirmationModal({
+                title: 'Delete Preset',
+                message: `Are you sure you want to delete "${preset.name}"?`,
+                confirmText: 'Delete',
+                cancelText: 'Cancel',
+                callback: (confirmed) => {
+                    if (confirmed) {
+                        doDelete();
+                    }
+                }
+            });
+        } else {
+            // Fallback to native confirm
+            if (confirm(`Delete preset "${preset.name}"?`)) {
+                doDelete();
+            }
+        }
+    }
+
+    /**
+     * Export a preset as a shareable code
+     * @param {string} presetId - ID of the preset to export
+     */
+    exportPreset(presetId) {
+        const state = _deps.AppState?.get();
+        const presets = state?.settings?.savedColorPresets || [];
+        const preset = presets.find(p => p.id === presetId);
+
+        if (!preset) return;
+
+        const exportData = {
+            name: preset.name,
+            colors: preset.colors,
+            version: 1
+        };
+
+        const code = btoa(JSON.stringify(exportData));
+
+        // Try to copy to clipboard
+        navigator.clipboard.writeText(code).then(() => {
+            _deps.showNotification?.('Preset code copied to clipboard!', 'success', 3000);
+        }).catch(() => {
+            // Fallback: show code in a modal for manual copying
+            if (_deps.showPromptModal) {
+                _deps.showPromptModal({
+                    title: 'Export Preset',
+                    message: 'Copy this code to share your preset:',
+                    defaultValue: code,
+                    confirmText: 'Done',
+                    cancelText: 'Close',
+                    callback: () => {}
+                });
+            } else {
+                prompt('Copy this preset code:', code);
+            }
+        });
+    }
+
+    /**
+     * Prompt user to import a preset from code
+     */
+    promptImportPreset() {
+        if (_deps.showPromptModal) {
+            _deps.showPromptModal({
+                title: 'Import Preset',
+                message: 'Paste the preset code you received:',
+                placeholder: 'Paste code here...',
+                confirmText: 'Import',
+                cancelText: 'Cancel',
+                required: true,
+                callback: (code) => {
+                    if (code && code.trim()) {
+                        this.importPreset(code.trim());
+                    }
+                }
+            });
+        } else {
+            // Fallback to native prompt
+            const code = prompt('Paste the preset code:');
+            if (code && code.trim()) {
+                this.importPreset(code.trim());
+            }
+        }
+    }
+
+    /**
+     * Import a preset from a code string
+     * @param {string} code - The preset code
+     */
+    importPreset(code) {
+        try {
+            const data = JSON.parse(atob(code));
+
+            if (!data.name || !data.colors) {
+                throw new Error('Invalid preset format');
+            }
+
+            // Save as new preset
+            if (!_deps.AppState) return;
+
+            const preset = {
+                id: Date.now().toString(),
+                name: data.name + ' (imported)',
+                colors: data.colors,
+                createdAt: Date.now()
+            };
+
+            _deps.AppState.update(state => {
+                if (!state.settings.savedColorPresets) {
+                    state.settings.savedColorPresets = [];
+                }
+                state.settings.savedColorPresets.push(preset);
+            });
+
+            this.renderPresetsList();
+            _deps.showNotification?.(`Imported "${data.name}"`, 'success', 2000);
+
+        } catch (error) {
+            _deps.showNotification?.('Invalid preset code', 'error', 2000);
+        }
+    }
+
+    /**
+     * Render the saved presets list in the UI
+     */
+    renderPresetsList() {
+        const listContainer = document.getElementById('preferences-presets-list');
+        const noPresetsMsg = document.getElementById('preferences-no-presets');
+
+        if (!listContainer) return;
+
+        const state = _deps.AppState?.get();
+        const presets = state?.settings?.savedColorPresets || [];
+
+        // Clear existing items
+        const existingItems = listContainer.querySelectorAll('.preferences-preset-item');
+        existingItems.forEach(item => item.remove());
+
+        // Show/hide no presets message
+        if (noPresetsMsg) {
+            noPresetsMsg.style.display = presets.length === 0 ? 'block' : 'none';
+        }
+
+        // Create preset items
+        presets.forEach(preset => {
+            const item = document.createElement('div');
+            item.className = 'preferences-preset-item';
+            item.dataset.presetId = preset.id;
+
+            // Create color swatch
+            const swatchHtml = this.createPresetSwatch(preset.colors);
+
+            item.innerHTML = `
+                ${swatchHtml}
+                <span class="preferences-preset-name" title="Click to rename">${this.escapeHtml(preset.name)}</span>
+                <div class="preferences-preset-actions">
+                    <button class="preferences-preset-btn load-btn" title="Load this preset">Load</button>
+                    <button class="preferences-preset-btn export-btn" title="Export as code">Export</button>
+                    <button class="preferences-preset-btn delete-btn" title="Delete this preset">Del</button>
+                </div>
+            `;
+
+            // Add event listeners
+            const nameSpan = item.querySelector('.preferences-preset-name');
+            const loadBtn = item.querySelector('.load-btn');
+            const exportBtn = item.querySelector('.export-btn');
+            const deleteBtn = item.querySelector('.delete-btn');
+
+            nameSpan.addEventListener('click', () => this.startRenamePreset(preset.id, nameSpan));
+            loadBtn.addEventListener('click', () => this.loadPreset(preset.id));
+            exportBtn.addEventListener('click', () => this.exportPreset(preset.id));
+            deleteBtn.addEventListener('click', () => this.deletePreset(preset.id));
+
+            listContainer.appendChild(item);
+        });
+    }
+
+    /**
+     * Create color swatch HTML for a preset
+     * @param {Object} colors - The preset colors
+     * @returns {string} HTML string for the swatch
+     */
+    createPresetSwatch(colors) {
+        const swatchColors = [
+            colors.appBg || DEFAULT_COLORS.appBg,
+            colors.taskListBg || DEFAULT_COLORS.taskListBg,
+            colors.checkboxBg || DEFAULT_COLORS.checkboxBg,
+            colors.completeBtn || DEFAULT_COLORS.completeBtn
+        ];
+
+        return `
+            <div class="preferences-preset-swatch">
+                ${swatchColors.map(color =>
+                    `<span class="preferences-preset-swatch-color" style="background: ${color}"></span>`
+                ).join('')}
+            </div>
+        `;
+    }
+
+    /**
+     * Start inline editing of preset name
+     * @param {string} presetId - ID of the preset
+     * @param {HTMLElement} nameSpan - The span element to replace with input
+     */
+    startRenamePreset(presetId, nameSpan) {
+        const currentName = nameSpan.textContent;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'preferences-preset-name-input';
+        input.value = currentName;
+
+        nameSpan.replaceWith(input);
+        input.focus();
+        input.select();
+
+        const finishEdit = () => {
+            const newName = input.value.trim();
+            if (newName && newName !== currentName) {
+                this.renamePreset(presetId, newName);
+            } else {
+                this.renderPresetsList();
+            }
+        };
+
+        input.addEventListener('blur', finishEdit);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                finishEdit();
+            } else if (e.key === 'Escape') {
+                this.renderPresetsList();
+            }
+        });
+    }
+
+    /**
+     * Escape HTML to prevent XSS
+     * @param {string} str - String to escape
+     * @returns {string} Escaped string
+     */
+    escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
     }
 }
 

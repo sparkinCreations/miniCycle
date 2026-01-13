@@ -750,23 +750,27 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     color: var(--theme-modal-text, #333);
     padding: 0;
     border-radius: 16px;
-    width: 380px;
-    max-width: 90%;
+    width: 420px;
+    max-width: 95%;
+    max-height: 85vh;
     text-align: center;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
     overflow: hidden;
     cursor: default;
+    display: flex;
+    flex-direction: column;
 }
 
 .preferences-modal-content h2 {
     margin: 0;
-    padding: 18px 24px;
+    padding: 16px 20px;
     background: var(--theme-header-bg, #f5f5f5);
     color: var(--theme-modal-text, #333);
     font-size: 17px;
     font-weight: 600;
     letter-spacing: 0.3px;
     border-bottom: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.08));
+    flex-shrink: 0;
 }
 
 /* Theme notice section */
@@ -775,24 +779,25 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    padding: 12px 16px;
-    margin: 16px 16px 8px;
+    padding: 10px 14px;
+    margin: 12px 16px 0;
     background: rgba(74, 144, 226, 0.1);
     border: 1px solid rgba(74, 144, 226, 0.2);
     border-radius: 8px;
-    font-size: 13px;
+    font-size: 12px;
     color: var(--theme-modal-text, #555);
     text-align: left;
+    flex-shrink: 0;
 }
 
 .preferences-theme-btn {
     flex-shrink: 0;
-    padding: 6px 12px;
+    padding: 5px 10px;
     background: var(--theme-button-bg, #4a90e2);
     color: white;
     border: none;
     border-radius: 6px;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s ease;
@@ -802,61 +807,518 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     background: var(--theme-button-hover, #3a7bc8);
 }
 
-/* Color options section */
-.preferences-color-section {
-    padding: 16px;
+/* Scrollable content area */
+.preferences-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
 }
+
+/* =============================================================================
+   LIVE PREVIEW SECTION
+   ============================================================================= */
+
+.preferences-preview-section {
+    margin-bottom: 14px;
+}
+
+.preferences-preview-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--theme-text-muted, #888);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    text-align: left;
+}
+
+.preferences-preview-container {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.preview-app-bg {
+    padding: 12px;
+    background: var(--preview-app-bg, #4c79ff);
+    transition: background 0.3s ease;
+}
+
+.preview-title {
+    background: var(--preview-title-bg, #ffffff);
+    color: var(--preview-title-text, #2b2b2b);
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-align: left;
+    transition: all 0.3s ease;
+}
+
+.preview-task-list {
+    background: var(--preview-task-list-bg, #ffffff);
+    border-radius: 6px;
+    padding: 6px;
+    margin-bottom: 8px;
+    transition: background 0.3s ease;
+}
+
+.preview-task {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: var(--preview-task-bg, #ffffff);
+    border-radius: 4px;
+    margin-bottom: 4px;
+    transition: background 0.3s ease;
+}
+
+.preview-task:last-child {
+    margin-bottom: 0;
+}
+
+.preview-checkbox {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 2px solid var(--preview-checkbox-bg, #5db567);
+    background: transparent;
+    flex-shrink: 0;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.preview-checkbox.checked {
+    background: var(--preview-checkbox-bg, #5db567);
+}
+
+.preview-checkbox.checked::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 1px;
+    width: 4px;
+    height: 8px;
+    border: solid var(--preview-checkmark, #124609);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.preview-task-text {
+    font-size: 11px;
+    color: var(--preview-task-text, #333333);
+    transition: color 0.3s ease;
+}
+
+.preview-progress-bar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.preview-progress-fill {
+    width: 50%;
+    height: 100%;
+    background: var(--preview-progress-bar, #82db8c);
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.preview-button {
+    background: var(--preview-complete-btn, #08c352);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 600;
+    text-align: center;
+    transition: background 0.3s ease;
+}
+
+/* =============================================================================
+   QUICK PRESETS SECTION
+   ============================================================================= */
+
+.preferences-quick-presets {
+    margin-bottom: 14px;
+    padding: 12px;
+    background: var(--theme-input-bg, rgba(0, 0, 0, 0.03));
+    border-radius: 10px;
+}
+
+.preferences-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--theme-modal-text, #333);
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+.preferences-section-icon {
+    font-size: 14px;
+}
+
+.preferences-quick-presets-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.quick-preset-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 4px;
+    background: var(--theme-modal-bg, #fff);
+    border: 1px solid var(--theme-border, #ddd);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quick-preset-btn:hover {
+    border-color: var(--theme-accent, #4a90e2);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.quick-preset-btn:active {
+    transform: translateY(0);
+}
+
+.quick-preset-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.quick-preset-name {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--theme-modal-text, #555);
+}
+
+/* =============================================================================
+   SAVED PRESETS SECTION
+   ============================================================================= */
+
+.preferences-presets-section {
+    margin-bottom: 14px;
+    padding: 12px;
+    background: var(--theme-input-bg, rgba(0, 0, 0, 0.03));
+    border-radius: 10px;
+}
+
+.preferences-presets-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.preferences-presets-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--theme-modal-text, #333);
+}
+
+.preferences-presets-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.preferences-import-btn {
+    padding: 5px 10px;
+    background: transparent;
+    color: var(--theme-modal-text, #555);
+    border: 1px solid var(--theme-border, #ddd);
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.preferences-import-btn:hover {
+    background: var(--theme-hover-bg, rgba(0, 0, 0, 0.05));
+    border-color: var(--theme-accent, #4a90e2);
+}
+
+.preferences-save-btn {
+    padding: 5px 10px;
+    background: var(--theme-success, #28a745);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.preferences-save-btn:hover {
+    background: var(--theme-success-hover, #218838);
+}
+
+.preferences-presets-list {
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+.preferences-no-presets {
+    font-size: 12px;
+    color: var(--theme-text-muted, #888);
+    text-align: center;
+    padding: 8px;
+}
+
+.preferences-preset-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    margin-bottom: 6px;
+    background: var(--theme-modal-bg, #fff);
+    border: 1px solid var(--theme-border, #ddd);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.preferences-preset-item:last-child {
+    margin-bottom: 0;
+}
+
+.preferences-preset-item:hover {
+    border-color: var(--theme-accent, #4a90e2);
+}
+
+/* Color swatch thumbnails for presets */
+.preferences-preset-swatch {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.preferences-preset-swatch-color {
+    width: 12px;
+    height: 20px;
+    border-radius: 2px;
+}
+
+.preferences-preset-swatch-color:first-child {
+    border-radius: 3px 0 0 3px;
+}
+
+.preferences-preset-swatch-color:last-child {
+    border-radius: 0 3px 3px 0;
+}
+
+.preferences-preset-name {
+    flex: 1;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--theme-modal-text, #333);
+    cursor: pointer;
+    padding: 3px 6px;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.preferences-preset-name:hover {
+    background: var(--theme-hover-bg, rgba(0, 0, 0, 0.05));
+}
+
+.preferences-preset-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.preferences-preset-btn {
+    padding: 3px 6px;
+    background: transparent;
+    border: 1px solid var(--theme-border, #ddd);
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--theme-modal-text, #555);
+}
+
+.preferences-preset-btn:hover {
+    background: var(--theme-hover-bg, rgba(0, 0, 0, 0.05));
+}
+
+.preferences-preset-btn.load-btn {
+    background: var(--theme-button-bg, #4a90e2);
+    color: white;
+    border-color: var(--theme-button-bg, #4a90e2);
+}
+
+.preferences-preset-btn.load-btn:hover {
+    background: var(--theme-button-hover, #3a7bc8);
+}
+
+.preferences-preset-btn.export-btn:hover {
+    background: var(--theme-info, #17a2b8);
+    color: white;
+    border-color: var(--theme-info, #17a2b8);
+}
+
+.preferences-preset-btn.delete-btn:hover {
+    background: var(--theme-error, #dc3545);
+    color: white;
+    border-color: var(--theme-error, #dc3545);
+}
+
+/* Preset name editing */
+.preferences-preset-name-input {
+    flex: 1;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 6px;
+    border: 1px solid var(--theme-accent, #4a90e2);
+    border-radius: 4px;
+    outline: none;
+    background: var(--theme-modal-bg, #fff);
+    color: var(--theme-modal-text, #333);
+}
+
+/* =============================================================================
+   COLLAPSIBLE COLOR SECTIONS
+   ============================================================================= */
+
+.preferences-section {
+    margin-bottom: 10px;
+    background: var(--theme-input-bg, rgba(0, 0, 0, 0.03));
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.preferences-section-header.collapsible {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s ease;
+}
+
+.preferences-section-header.collapsible:hover {
+    background: var(--theme-hover-bg, rgba(0, 0, 0, 0.05));
+}
+
+.preferences-section-toggle {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--theme-text-muted, #888);
+    transition: transform 0.3s ease;
+}
+
+.preferences-section.collapsed .preferences-section-toggle {
+    transform: rotate(-90deg);
+}
+
+.preferences-section-content {
+    padding: 0 12px 12px;
+    transition: all 0.3s ease;
+}
+
+.preferences-section.collapsed .preferences-section-content {
+    display: none;
+}
+
+/* =============================================================================
+   COLOR ROWS (IMPROVED)
+   ============================================================================= */
 
 .preferences-color-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 10px;
-    padding: 10px 14px;
-    margin-bottom: 8px;
-    background: var(--theme-input-bg, rgba(0, 0, 0, 0.03));
-    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    background: var(--theme-modal-bg, #fff);
+    border-radius: 8px;
     transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.preferences-color-row:last-child {
+    margin-bottom: 0;
 }
 
 .preferences-color-row:hover {
-    background: var(--theme-hover-bg, rgba(0, 0, 0, 0.06));
+    border-color: var(--theme-border, #ddd);
+}
+
+.pref-color-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
 }
 
 .preferences-color-row label {
     flex: 1;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     color: var(--theme-modal-text, #333);
     text-align: left;
 }
 
+/* Larger color picker wells */
 .preferences-color-row input[type="color"] {
-    width: 40px;
-    height: 32px;
+    width: 48px;
+    height: 36px;
     padding: 0;
     border: 2px solid var(--theme-border, #ddd);
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     background: transparent;
+    transition: all 0.2s ease;
+}
+
+.preferences-color-row input[type="color"]:hover {
+    border-color: var(--theme-accent, #4a90e2);
+    transform: scale(1.05);
 }
 
 .preferences-color-row input[type="color"]::-webkit-color-swatch-wrapper {
-    padding: 2px;
+    padding: 3px;
 }
 
 .preferences-color-row input[type="color"]::-webkit-color-swatch {
     border: none;
-    border-radius: 4px;
+    border-radius: 5px;
 }
 
 .preferences-reset-btn {
-    padding: 4px 10px;
+    padding: 4px 8px;
     background: transparent;
     color: var(--theme-text-muted, #888);
     border: 1px solid var(--theme-border, #ddd);
     border-radius: 4px;
-    font-size: 11px;
+    font-size: 10px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -866,11 +1328,52 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     color: var(--theme-modal-text, #333);
 }
 
-/* Reset all button */
+/* =============================================================================
+   FOOTER ACTIONS
+   ============================================================================= */
+
+.preferences-footer {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--theme-header-bg, #f5f5f5);
+    border-top: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.08));
+    flex-shrink: 0;
+}
+
+.preferences-undo-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px;
+    background: transparent;
+    color: var(--theme-modal-text, #555);
+    border: 1px solid var(--theme-border, #ddd);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.preferences-undo-btn:hover:not(:disabled) {
+    background: var(--theme-hover-bg, rgba(0, 0, 0, 0.05));
+    border-color: var(--theme-accent, #4a90e2);
+}
+
+.preferences-undo-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.preferences-undo-btn span {
+    font-size: 16px;
+}
+
 .preferences-reset-all-btn {
-    display: block;
-    width: calc(100% - 32px);
-    margin: 0 16px 16px;
+    flex: 1;
     padding: 10px;
     background: transparent;
     color: var(--theme-error, #dc3545);
@@ -900,10 +1403,38 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .preferences-modal .close-btn:hover {
     background: var(--theme-button-hover, #3a7bc8);
+}
+
+/* =============================================================================
+   PREFERENCES MODAL RESPONSIVE
+   ============================================================================= */
+
+@media (max-width: 480px) {
+    .preferences-modal-content {
+        width: 100%;
+        max-width: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .preferences-quick-presets-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+
+    .quick-preset-swatch {
+        width: 28px;
+        height: 28px;
+    }
+
+    .preferences-preset-btn.export-btn {
+        display: none;
+    }
 }
 
 /* NOTE: Games modal styles are defined in games.css */
