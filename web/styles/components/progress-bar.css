@@ -47,6 +47,18 @@
 }
 
 /* =============================================================================
+   CUSTOM PREFERENCE COLORS (Default Theme Only)
+   ============================================================================= */
+
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .progress-bar {
+    background: var(--pref-progress-bar, var(--theme-success, #82db8c));
+}
+
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .progress-bar.complete {
+    background: var(--pref-progress-bar, var(--theme-success, #28a745));
+}
+
+/* =============================================================================
    MOBILE ADJUSTMENTS
    ============================================================================= */
 

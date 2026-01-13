@@ -198,6 +198,73 @@ export class MenuManager {
                 window.location.href = "../index.html";
             }
         );
+
+        // Setup collapsible menu sections
+        this.setupCollapsibleSections();
+    }
+
+    /**
+     * Setup collapsible menu sections
+     * Handles toggle functionality and persists collapsed state
+     */
+    setupCollapsibleSections() {
+        const collapsibleHeaders = this.deps.querySelectorAll('.menu-section-header.collapsible');
+
+        // Load saved collapsed states from appState
+        this.loadCollapsedStates();
+
+        collapsibleHeaders.forEach(header => {
+            this.deps.safeAddEventListener(header, 'click', (e) => {
+                e.stopPropagation();
+                const section = header.closest('.menu-section');
+                if (section) {
+                    section.classList.toggle('collapsed');
+                    this.saveCollapsedStates();
+                }
+            });
+        });
+    }
+
+    /**
+     * Load collapsed states from appState
+     */
+    loadCollapsedStates() {
+        const state = this.deps.AppState?.get();
+        const collapsedSections = state?.settings?.menuCollapsedSections;
+
+        if (!collapsedSections) return;
+
+        // Apply saved collapsed states
+        Object.entries(collapsedSections).forEach(([sectionName, isCollapsed]) => {
+            const section = this.deps.querySelector(`.menu-section[data-section="${sectionName}"]`);
+            if (section) {
+                if (isCollapsed) {
+                    section.classList.add('collapsed');
+                } else {
+                    section.classList.remove('collapsed');
+                }
+            }
+        });
+    }
+
+    /**
+     * Save collapsed states to appState
+     */
+    saveCollapsedStates() {
+        if (!this.deps.AppState) return;
+
+        const sections = this.deps.querySelectorAll('.menu-section[data-section]');
+        const collapsedSections = {};
+
+        sections.forEach(section => {
+            const sectionName = section.dataset.section;
+            collapsedSections[sectionName] = section.classList.contains('collapsed');
+        });
+
+        this.deps.AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.menuCollapsedSections = collapsedSections;
+        });
     }
 
     /**

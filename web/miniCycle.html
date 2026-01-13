@@ -891,9 +891,12 @@ window.installApp = () => {
 
             <!--Main Menu-->
         <div class="menu-sections">
-            <!-- Routines Section -->
-            <div class="menu-section">
-                <div class="menu-section-header">Routines</div>
+            <!-- Routines Section (expanded by default) -->
+            <div class="menu-section" data-section="routines">
+                <div class="menu-section-header collapsible" data-toggle="routines">
+                    <span>Routine Actions</span>
+                    <span class="menu-section-toggle">&#x25BC;</span>
+                </div>
                 <div class="menu-section-grid">
                     <button id="new-mini-cycle" title="Create a new routine"><i class="fas fa-sparkles"></i>New</button>
                     <button id="export-mini-cycle" title="Download the current routine as a file"><i class="fas fa-file-download"></i>Download</button>
@@ -903,9 +906,12 @@ window.installApp = () => {
                 </div>
             </div>
 
-            <!-- Tasks Section -->
-            <div class="menu-section">
-                <div class="menu-section-header">Tasks</div>
+            <!-- Tasks Section (collapsed by default) -->
+            <div class="menu-section collapsed" data-section="tasks">
+                <div class="menu-section-header collapsible" data-toggle="tasks">
+                    <span>Task Actions</span>
+                    <span class="menu-section-toggle">&#x25BC;</span>
+                </div>
                 <div class="menu-section-grid">
                     <button id="open-recurring-panel" title="Manage recurring tasks"><i class="fas fa-repeat"></i>Recurring</button>
                     <button id="clear-mini-cycle-tasks" title="Uncheck all tasks in this routine"><i class="fas fa-eraser"></i>Uncheck All</button>
@@ -915,18 +921,24 @@ window.installApp = () => {
                 </div>
             </div>
 
-            <!-- App Section -->
-            <div class="menu-section">
-                <div class="menu-section-header">App</div>
+            <!-- App Section (collapsed by default) -->
+            <div class="menu-section collapsed" data-section="app">
+                <div class="menu-section-header collapsible" data-toggle="app">
+                    <span>App Settings</span>
+                    <span class="menu-section-toggle">&#x25BC;</span>
+                </div>
                 <div class="menu-section-grid">
                     <button id="open-settings" class="open-settings" title="Open settings"><i class="fas fa-cog"></i>Settings</button>
                     <button id="open-preferences" title="Customize task list colors"><i class="fas fa-paint-brush"></i>Preferences</button>
                 </div>
             </div>
 
-            <!-- Rewards Section -->
-            <div class="menu-section">
-                <div class="menu-section-header">Rewards</div>
+            <!-- Rewards Section (collapsed by default) -->
+            <div class="menu-section collapsed" data-section="rewards">
+                <div class="menu-section-header collapsible" data-toggle="rewards">
+                    <span>Rewards & Extras</span>
+                    <span class="menu-section-toggle">&#x25BC;</span>
+                </div>
                 <div class="menu-section-grid">
                     <div id="themes-menu-option" class="themes-menu-option">
                         <button id="open-themes-panel" class="open-themes-panel" title="Open Themes Panel"><i class="fas fa-palette"></i>Themes</button>
@@ -937,9 +949,12 @@ window.installApp = () => {
                 </div>
             </div>
 
-            <!-- Help Section -->
-            <div class="menu-section">
-                <div class="menu-section-header">Help</div>
+            <!-- Help Section (collapsed by default) -->
+            <div class="menu-section collapsed" data-section="help">
+                <div class="menu-section-header collapsible" data-toggle="help">
+                    <span>Help & Support</span>
+                    <span class="menu-section-toggle">&#x25BC;</span>
+                </div>
                 <div class="menu-section-grid">
                     <button id="open-user-manual" class="open-user-manual" title="Open the user manual"><i class="fas fa-book"></i>User Manual</button>
                     <button id="open-feedback-modal" class="open-feedback-modal"><i class="fas fa-comment"></i>Feedback</button>
@@ -1732,41 +1747,217 @@ window.installApp = () => {
             <button id="preferences-open-themes" class="preferences-theme-btn">Open Themes</button>
         </div>
 
-        <!-- Color Options -->
-        <div class="preferences-color-section">
-            <div class="preferences-color-row">
-                <label for="pref-task-list-bg">Task List Background</label>
-                <input type="color" id="pref-task-list-bg" value="#ffffff" />
-                <button class="preferences-reset-btn" data-target="pref-task-list-bg" title="Reset to default">Reset</button>
+        <!-- Scrollable Content Area -->
+        <div class="preferences-scroll-area">
+
+            <!-- Live Preview Section -->
+            <div class="preferences-preview-section">
+                <div class="preferences-preview-label">Live Preview</div>
+                <div class="preferences-preview-container" id="preferences-preview">
+                    <div class="preview-app-bg">
+                        <div class="preview-title">My Routine</div>
+                        <div class="preview-task-list">
+                            <div class="preview-task">
+                                <span class="preview-checkbox checked"></span>
+                                <span class="preview-task-text">Sample task 1</span>
+                            </div>
+                            <div class="preview-task">
+                                <span class="preview-checkbox"></span>
+                                <span class="preview-task-text">Sample task 2</span>
+                            </div>
+                        </div>
+                        <div class="preview-progress-bar">
+                            <div class="preview-progress-fill"></div>
+                        </div>
+                        <div class="preview-button">Complete Cycle</div>
+                    </div>
+                </div>
             </div>
 
-            <div class="preferences-color-row">
-                <label for="pref-task-bg">Task Background</label>
-                <input type="color" id="pref-task-bg" value="#ffffff" />
-                <button class="preferences-reset-btn" data-target="pref-task-bg" title="Reset to default">Reset</button>
+            <!-- Quick Presets Section -->
+            <div class="preferences-quick-presets">
+                <div class="preferences-section-header">
+                    <span class="preferences-section-icon">&#x1F3A8;</span>
+                    <span>Quick Themes</span>
+                </div>
+                <div class="preferences-quick-presets-grid">
+                    <button class="quick-preset-btn" data-preset="default" title="Default blue theme">
+                        <span class="quick-preset-swatch" style="background: linear-gradient(135deg, #4c79ff 50%, #ffffff 50%)"></span>
+                        <span class="quick-preset-name">Default</span>
+                    </button>
+                    <button class="quick-preset-btn" data-preset="warm" title="Warm sunset colors">
+                        <span class="quick-preset-swatch" style="background: linear-gradient(135deg, #ff6b6b 50%, #ffeaa7 50%)"></span>
+                        <span class="quick-preset-name">Warm</span>
+                    </button>
+                    <button class="quick-preset-btn" data-preset="cool" title="Cool ocean colors">
+                        <span class="quick-preset-swatch" style="background: linear-gradient(135deg, #74b9ff 50%, #e8f8f5 50%)"></span>
+                        <span class="quick-preset-name">Cool</span>
+                    </button>
+                    <button class="quick-preset-btn" data-preset="forest" title="Natural forest colors">
+                        <span class="quick-preset-swatch" style="background: linear-gradient(135deg, #2d5016 50%, #d4edda 50%)"></span>
+                        <span class="quick-preset-name">Forest</span>
+                    </button>
+                    <button class="quick-preset-btn" data-preset="monochrome" title="Elegant grayscale">
+                        <span class="quick-preset-swatch" style="background: linear-gradient(135deg, #2d3436 50%, #dfe6e9 50%)"></span>
+                        <span class="quick-preset-name">Mono</span>
+                    </button>
+                    <button class="quick-preset-btn" data-preset="professional" title="Clean minimal look">
+                        <span class="quick-preset-swatch" style="background: linear-gradient(135deg, #007aff 50%, #f5f5f7 50%)"></span>
+                        <span class="quick-preset-name">Pro</span>
+                    </button>
+                </div>
             </div>
 
-            <div class="preferences-color-row">
-                <label for="pref-task-text">Task Text</label>
-                <input type="color" id="pref-task-text" value="#333333" />
-                <button class="preferences-reset-btn" data-target="pref-task-text" title="Reset to default">Reset</button>
+            <!-- Saved Presets Section -->
+            <div class="preferences-presets-section">
+                <div class="preferences-presets-header">
+                    <div class="preferences-presets-title">
+                        <span class="preferences-section-icon">&#x1F4BE;</span>
+                        <span>Saved Presets</span>
+                    </div>
+                    <div class="preferences-presets-actions">
+                        <button id="pref-import-preset" class="preferences-import-btn" title="Import preset from code">Import</button>
+                        <button id="pref-save-preset" class="preferences-save-btn" title="Save current colors as a preset">Save Current</button>
+                    </div>
+                </div>
+                <div class="preferences-presets-list" id="preferences-presets-list">
+                    <div class="preferences-no-presets" id="preferences-no-presets">No saved presets yet</div>
+                </div>
             </div>
 
-            <div class="preferences-color-row">
-                <label for="pref-title-bg">Title Background</label>
-                <input type="color" id="pref-title-bg" value="#ffffff" />
-                <button class="preferences-reset-btn" data-target="pref-title-bg" title="Reset to default">Reset</button>
+            <!-- Collapsible Color Sections -->
+
+            <!-- App & Task List Section -->
+            <div class="preferences-section" data-section="app">
+                <div class="preferences-section-header collapsible" data-toggle="app">
+                    <span class="preferences-section-icon">&#x1F4F1;</span>
+                    <span>App & Task List</span>
+                    <span class="preferences-section-toggle">&#x25BC;</span>
+                </div>
+                <div class="preferences-section-content" id="pref-section-app">
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F3A8;</span>
+                        <label for="pref-app-bg">App Background</label>
+                        <input type="color" id="pref-app-bg" value="#4c79ff" />
+                        <button class="preferences-reset-btn" data-target="pref-app-bg" title="Reset to default">Reset</button>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F4CB;</span>
+                        <label for="pref-task-list-bg">List Background</label>
+                        <input type="color" id="pref-task-list-bg" value="#ffffff" />
+                        <button class="preferences-reset-btn" data-target="pref-task-list-bg" title="Reset to default">Reset</button>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F516;</span>
+                        <label for="pref-title-bg">Title Background</label>
+                        <input type="color" id="pref-title-bg" value="#ffffff" />
+                        <button class="preferences-reset-btn" data-target="pref-title-bg" title="Reset to default">Reset</button>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F524;</span>
+                        <label for="pref-title-text">Title Text</label>
+                        <input type="color" id="pref-title-text" value="#2b2b2b" />
+                        <button class="preferences-reset-btn" data-target="pref-title-text" title="Reset to default">Reset</button>
+                    </div>
+                </div>
             </div>
 
-            <div class="preferences-color-row">
-                <label for="pref-title-text">Title Text</label>
-                <input type="color" id="pref-title-text" value="#2b2b2b" />
-                <button class="preferences-reset-btn" data-target="pref-title-text" title="Reset to default">Reset</button>
+            <!-- Tasks Section -->
+            <div class="preferences-section" data-section="tasks">
+                <div class="preferences-section-header collapsible" data-toggle="tasks">
+                    <span class="preferences-section-icon">&#x2705;</span>
+                    <span>Tasks & Checkboxes</span>
+                    <span class="preferences-section-toggle">&#x25BC;</span>
+                </div>
+                <div class="preferences-section-content" id="pref-section-tasks">
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F4DD;</span>
+                        <label for="pref-task-bg">Task Background</label>
+                        <input type="color" id="pref-task-bg" value="#ffffff" />
+                        <button class="preferences-reset-btn" data-target="pref-task-bg" title="Reset to default">Reset</button>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F4AC;</span>
+                        <label for="pref-task-text">Task Text</label>
+                        <input type="color" id="pref-task-text" value="#333333" />
+                        <button class="preferences-reset-btn" data-target="pref-task-text" title="Reset to default">Reset</button>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x2611;&#xFE0F;</span>
+                        <label for="pref-checkbox-bg">Checkbox Fill</label>
+                        <input type="color" id="pref-checkbox-bg" value="#5db567" />
+                        <button class="preferences-reset-btn" data-target="pref-checkbox-bg" title="Reset to default">Reset</button>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x2714;&#xFE0F;</span>
+                        <label for="pref-checkmark">Checkmark</label>
+                        <input type="color" id="pref-checkmark" value="#124609" />
+                        <button class="preferences-reset-btn" data-target="pref-checkmark" title="Reset to default">Reset</button>
+                    </div>
+                </div>
             </div>
+
+            <!-- Buttons & Progress Section -->
+            <div class="preferences-section" data-section="buttons">
+                <div class="preferences-section-header collapsible" data-toggle="buttons">
+                    <span class="preferences-section-icon">&#x1F518;</span>
+                    <span>Buttons & Progress</span>
+                    <span class="preferences-section-toggle">&#x25BC;</span>
+                </div>
+                <div class="preferences-section-content" id="pref-section-buttons">
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F504;</span>
+                        <label for="pref-complete-btn">Complete Cycle</label>
+                        <input type="color" id="pref-complete-btn" value="#08c352" />
+                        <button class="preferences-reset-btn" data-target="pref-complete-btn" title="Reset to default">Reset</button>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F5D1;&#xFE0F;</span>
+                        <label for="pref-clear-btn">Clear Completed</label>
+                        <input type="color" id="pref-clear-btn" value="#3b82f6" />
+                        <button class="preferences-reset-btn" data-target="pref-clear-btn" title="Reset to default">Reset</button>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F4CA;</span>
+                        <label for="pref-progress-bar">Progress Bar</label>
+                        <input type="color" id="pref-progress-bar" value="#82db8c" />
+                        <button class="preferences-reset-btn" data-target="pref-progress-bar" title="Reset to default">Reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Panel Section -->
+            <div class="preferences-section" data-section="stats">
+                <div class="preferences-section-header collapsible" data-toggle="stats">
+                    <span class="preferences-section-icon">&#x1F4CA;</span>
+                    <span>Stats Panel</span>
+                    <span class="preferences-section-toggle">&#x25BC;</span>
+                </div>
+                <div class="preferences-section-content" id="pref-section-stats">
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F5BC;&#xFE0F;</span>
+                        <label for="pref-stats-bg">Background</label>
+                        <input type="color" id="pref-stats-bg" value="#ffffff" />
+                        <button class="preferences-reset-btn" data-target="pref-stats-bg" title="Reset to default">Reset</button>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F4DD;</span>
+                        <label for="pref-stats-text">Text Color</label>
+                        <input type="color" id="pref-stats-text" value="#333333" />
+                        <button class="preferences-reset-btn" data-target="pref-stats-text" title="Reset to default">Reset</button>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- End scroll area -->
+
+        <!-- Footer Actions -->
+        <div class="preferences-footer">
+            <button id="preferences-undo" class="preferences-undo-btn" title="Undo last color change" disabled>
+                <span>&#x21A9;</span> Undo
+            </button>
+            <button id="preferences-reset-all" class="preferences-reset-all-btn">Reset All</button>
         </div>
-
-        <!-- Reset All Button -->
-        <button id="preferences-reset-all" class="preferences-reset-all-btn">Reset All Colors</button>
 
         <button id="close-preferences-btn" class="close-btn">Close</button>
     </div>

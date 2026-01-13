@@ -398,3 +398,25 @@
     box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
     font-weight: bold;
 }
+
+/* =============================================================================
+   CUSTOM PREFERENCE COLORS (Default Theme Only)
+   ============================================================================= */
+
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .stats-panel {
+    background: var(--pref-stats-bg, var(--theme-stats-bg));
+    color: var(--pref-stats-text, var(--theme-stats-text));
+}
+
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #stats-panel p,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #stats-header,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .doughnut-text,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #current-cycle-progress-text,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #current-routine-cycle-count,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #current-routine-cleared-count,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #theme-unlock-message,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #golden-unlock-message,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #game-unlock-message,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #all-routines-count {
+    color: var(--pref-stats-text, var(--theme-stats-text, #333));
+}

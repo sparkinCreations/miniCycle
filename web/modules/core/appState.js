@@ -906,11 +906,27 @@ class MiniCycleState {
                 testingModalResultsHeight: null,
                 modeDescriptionCollapsed: false,
                 customColors: {
+                    appBg: null,
                     taskListBg: null,
                     taskBg: null,
                     taskText: null,
                     titleBg: null,
-                    titleText: null
+                    titleText: null,
+                    checkboxBg: null,
+                    checkmark: null,
+                    completeBtn: null,
+                    clearBtn: null,
+                    progressBar: null,
+                    statsBg: null,
+                    statsText: null
+                },
+                savedColorPresets: [],
+                menuCollapsedSections: {
+                    routines: false,
+                    tasks: true,
+                    app: true,
+                    rewards: true,
+                    help: true
                 }
             },
             data: {

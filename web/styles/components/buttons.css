@@ -161,6 +161,15 @@ button.icon-only i {
     background: #2563eb;
 }
 
+/* Custom preference colors (Default theme only) */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn:not(.todo-mode-btn) {
+    background: var(--pref-complete-btn, #08c352);
+}
+
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn.todo-mode-btn {
+    background: var(--pref-clear-btn, #3b82f6);
+}
+
 /* Complete All and Help Window Container */
 .complete-all-and-help-window-container {
     display: flex;

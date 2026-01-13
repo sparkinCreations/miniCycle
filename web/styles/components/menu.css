@@ -121,6 +121,44 @@
     padding-left: 4px;
 }
 
+/* Collapsible menu section headers */
+.menu-section-header.collapsible {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 6px 8px;
+    margin: -8px -10px 6px -10px;
+    border-radius: 6px 6px 0 0;
+    transition: background 0.2s ease;
+    user-select: none;
+}
+
+.menu-section-header.collapsible:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.menu-section-toggle {
+    font-size: 8px;
+    color: var(--menu-section-header, #555);
+    transition: transform 0.2s ease;
+    opacity: 0.7;
+}
+
+/* Collapsed state */
+.menu-section.collapsed .menu-section-header.collapsible {
+    margin-bottom: -8px;
+    border-radius: 6px;
+}
+
+.menu-section.collapsed .menu-section-toggle {
+    transform: rotate(-90deg);
+}
+
+.menu-section.collapsed .menu-section-grid {
+    display: none;
+}
+
 .menu-section-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);

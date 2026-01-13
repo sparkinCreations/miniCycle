@@ -28,6 +28,11 @@ body {
     background-size: cover;
 }
 
+/* Custom app background color (Preferences - Default theme only) */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
+    background: var(--pref-app-bg, var(--theme-bg-gradient));
+}
+
 /* Font Awesome font-display override to prevent CLS from icon font loading */
 @font-face {
     font-family: 'Font Awesome 6 Free';
