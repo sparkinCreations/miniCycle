@@ -1,3 +1,8 @@
+## [1.724] - 2026-01-13
+- feat: update preferences modal for improved responsiveness and rename sections
+- feat: enhance task actions menu and reorganize app settings section
+
+
 ## [1.723] - 2026-01-13
 - feat: update version to 1.722 and modify changelog for new features
 
