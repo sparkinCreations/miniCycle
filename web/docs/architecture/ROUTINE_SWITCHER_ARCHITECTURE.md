@@ -55,7 +55,7 @@ Each routine displays its mode using emojis for quick identification:
 | Mode | Emoji | Settings |
 |------|-------|----------|
 | Auto Cycle | 🔄 | `autoReset: true`, `deleteCheckedTasks: false` |
-| Manual Cycle | ✋🔁 | `autoReset: false`, `deleteCheckedTasks: false` |
+| Manual Cycle | ✋ | `autoReset: false`, `deleteCheckedTasks: false` |
 | To-Do Mode | 📋 | `deleteCheckedTasks: true` |
 
 ```javascript
@@ -176,7 +176,7 @@ const di = createDIModule('RoutineSwitcher', {
 ├─────────────────────────────────────────────────┤
 │  ┌─────────────────────────────────────────┐    │
 │  │ 🔄  Morning Routine              ~2.1KB │    │
-│  │ ✋🔁 Weekly Review               ~1.4KB │    │
+│  │ ✋  Weekly Review               ~1.4KB │    │
 │  │ 📋  Shopping List                ~0.8KB │    │
 │  └─────────────────────────────────────────┘    │
 ├─────────────────────────────────────────────────┤
@@ -213,7 +213,7 @@ leftSide.className = "cycle-item-left";
 
 const emojiSpan = document.createElement("span");
 emojiSpan.className = "cycle-item-emoji";
-emojiSpan.textContent = emoji;  // 🔄, ✋🔁, or 📋
+emojiSpan.textContent = emoji;  // 🔄, ✋, or 📋
 
 const titleSpan = document.createElement("span");
 titleSpan.className = "cycle-item-title";
@@ -295,7 +295,7 @@ sortAlpha._sortHandler = () => {
 |-------|-------|-------|
 | `all` | All Modes | All routines |
 | `auto` | 🔄 Auto Cycle | Only `autoReset: true` routines |
-| `manual` | ✋🔁 Manual | Only manual cycle routines |
+| `manual` | ✋ Manual | Only manual cycle routines |
 | `todo` | 📋 To-Do | Only `deleteCheckedTasks: true` routines |
 
 ### Filter Implementation
