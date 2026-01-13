@@ -655,6 +655,12 @@ export class PreferencesManager {
         const preset = QUICK_PRESETS[presetKey];
         if (!preset) return;
 
+        // Default preset should behave the same as Reset All
+        if (presetKey === 'default') {
+            this.resetAllColors();
+            return;
+        }
+
         this.pushToUndoStack();
 
         // Apply preset colors

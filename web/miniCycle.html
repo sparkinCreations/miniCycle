@@ -1484,79 +1484,128 @@ window.installApp = () => {
             <div class="settings-modal-content">
                 <h2>Settings</h2>
 
-                <label class="settings-option">
-                    <input type="checkbox" id="toggle-move-arrows" name="toggle-move-arrows">
-                    Show Move Arrows for Manual Rearranging
-                </label>
+                <!-- Display Section -->
+                <div class="settings-section collapsible" data-section="display">
+                    <div class="settings-section-header" data-toggle="display">
+                        <span>Display</span>
+                        <span class="settings-section-toggle">▼</span>
+                    </div>
+                    <div class="settings-section-content">
+                        <label class="settings-option">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="toggle-move-arrows" name="toggle-move-arrows">
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span>Show Move Arrows</span>
+                        </label>
+                        <label class="settings-option">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="toggle-three-dots" name="toggle-three-dots">
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span>Show Three Dots Menu</span>
+                        </label>
+                        <label class="settings-option">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="always-show-recurring" name="always-show-recurring">
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span>Always Show Recurring Button</span>
+                        </label>
+                        <label class="settings-option">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="toggle-completed-dropdown" name="toggle-completed-dropdown">
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span>Show Completed in Dropdown</span>
+                        </label>
+                        <label class="settings-option">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="darkModeToggle" name="darkModeToggle">
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span>Dark Mode</span>
+                        </label>
+                    </div>
+                </div>
 
-                <label class="settings-option">
-                    <input type="checkbox" id="toggle-three-dots" name="toggle-three-dots">
-                    Show Three Dots Menu on Tasks
-                </label>
+                <!-- Behavior Section -->
+                <div class="settings-section collapsible collapsed" data-section="behavior">
+                    <div class="settings-section-header" data-toggle="behavior">
+                        <span>Behavior</span>
+                        <span class="settings-section-toggle">▼</span>
+                    </div>
+                    <div class="settings-section-content">
+                        <label class="settings-option">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="toggle-scroll-to-new-task" name="toggle-scroll-to-new-task" checked>
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span>Scroll to New Task</span>
+                        </label>
+                        <label class="settings-option">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="toggle-scroll-on-load" name="toggle-scroll-on-load">
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span>Scroll to Last Task on Load</span>
+                        </label>
+                    </div>
+                </div>
 
-                <label class="settings-option">
-              <input type="checkbox" id="always-show-recurring" name="always-show-recurring">
-              Always Show Recurring Button in Task Options
-          </label>
+                <!-- Data Management Section -->
+                <div class="settings-section collapsible collapsed" data-section="data">
+                    <div class="settings-section-header" data-toggle="data">
+                        <span>Data Management</span>
+                        <span class="settings-section-toggle">▼</span>
+                    </div>
+                    <div class="settings-section-content">
+                        <button id="backup-mini-cycles" class="settings-btn settings-btn-primary"><i class="fas fa-download"></i> Backup All Routines</button>
+                        <button id="restore-mini-cycles" class="settings-btn settings-btn-primary"><i class="fas fa-upload"></i> Restore All Routines</button>
+                        <button id="open-task-options-customizer" class="settings-btn"><span class="icon-text">-/+</span> Customize Task Options</button>
+                    </div>
+                </div>
 
-                <label class="settings-option">
-                    <input type="checkbox" id="toggle-completed-dropdown" name="toggle-completed-dropdown">
-                    Show Completed Tasks in Dropdown
-                </label>
+                <!-- Reset Options Section -->
+                <div class="settings-section collapsible collapsed" data-section="reset">
+                    <div class="settings-section-header" data-toggle="reset">
+                        <span>Reset Options</span>
+                        <span class="settings-section-toggle">▼</span>
+                    </div>
+                    <div class="settings-section-content">
+                        <button id="reset-onboarding" class="settings-btn settings-btn-ghost"><i class="fas fa-redo"></i> Reset Onboarding</button>
+                        <button id="reset-notification-position" class="settings-btn settings-btn-ghost"><i class="fas fa-bell"></i> Reset Notification Position</button>
+                        <button id="reset-recurring-default" class="settings-btn settings-btn-ghost"><i class="fas fa-sync"></i> Reset Recurring Default</button>
+                        <button id="reset-achievement-progress" class="settings-btn settings-btn-ghost"><i class="fas fa-trophy"></i> Reset Achievements</button>
+                    </div>
+                </div>
 
-                <label class="settings-option">
-                    <input type="checkbox" id="toggle-scroll-to-new-task" name="toggle-scroll-to-new-task" checked>
-                    Scroll to New Task After Adding
-                </label>
+                <!-- Advanced Section -->
+                <div class="settings-section collapsible collapsed" data-section="advanced">
+                    <div class="settings-section-header" data-toggle="advanced">
+                        <span>Advanced</span>
+                        <span class="settings-section-toggle">▼</span>
+                    </div>
+                    <div class="settings-section-content">
+                        <label class="settings-option">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="toggle-debug-mode" name="toggle-debug-mode">
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span>Debug Mode</span>
+                        </label>
+                        <button id="open-testing-modal" class="settings-btn"><i class="fas fa-flask"></i> App Diagnostics</button>
+                        <button id="check-for-updates" class="settings-btn"><i class="fas fa-sync-alt"></i> Check for Updates</button>
+                        <button id="try-lite-version" class="settings-btn"><i class="fas fa-mobile-alt"></i> Try Lite Version</button>
+                        <button id="factory-reset" class="settings-btn factory-reset-btn"><i class="fas fa-exclamation-triangle"></i> Factory Reset</button>
+                    </div>
+                </div>
 
-                <label class="settings-option">
-                    <input type="checkbox" id="toggle-scroll-on-load" name="toggle-scroll-on-load">
-                    Scroll to Last Task on Page Load
-                </label>
-
-                <!-- Dark Mode Toggle -->
-                <label class="settings-option">
-                    <input type="checkbox" id="darkModeToggle" name="darkModeToggle" />
-                    Enable Dark Mode
-                </label>
-
-                <!-- Debug Mode Toggle -->
-                <label class="settings-option">
-                    <input type="checkbox" id="toggle-debug-mode" name="toggle-debug-mode">
-                    Enable Debug Mode (Console Logging)
-                </label>
-
-                <!--Reset Onboarding-->
-                <button id="reset-onboarding" class="settings-btn">Reset Onboarding</button>
-
-                <!--Reset Notification Position-->
-                <button id="reset-notification-position"class="settings-btn">Reset Notification Position</button>
-
-                <!--Reset Recurring Default Settings-->
-                <button id="reset-recurring-default"class="settings-btn">Reset Recurring Default</button>
-
-                <!--Reset Achievement Progress-->
-                <button id="reset-achievement-progress" class="settings-btn">🏆 Reset Achievement Progress</button>
-
-                <!--Customize Task Options-->
-                <button id="open-task-options-customizer" class="settings-btn">⚙️ Customize Task Options</button>
-
-                <!-- Backup & Restore -->
-                <button id="backup-mini-cycles" class="settings-btn">📥 Backup All Routines</button>
-                <button id="restore-mini-cycles" class="settings-btn">📤 Restore All Routines</button>
-
-                <!-- Testing Button (for debugging) -->
-              <button id="open-testing-modal" class="settings-btn">
-                  🔬 Open App Diagnostics & Testing
-              </button>
-              <button id="check-for-updates" class="settings-btn">🔄 Check for Updates</button>
-              <button id="try-lite-version" class="settings-btn">📱 Try Lite Version</button>
-
-                <!-- Factory Reset -->
-                <button id="factory-reset" class="settings-btn factory-reset-btn">⚠️ Factory Reset</button>
-
-                <!-- Close Button -->
-                <button id="close-settings" class="settings-btn close-btn">❌ Close</button>
+                <!-- Version & Close -->
+                <div class="settings-footer">
+                    <div class="settings-version" id="settings-version-display">v1.0.0</div>
+                    <button id="close-settings" class="settings-btn close-btn"><i class="fas fa-times"></i> Close</button>
+                </div>
             </div>
         </div>
 
