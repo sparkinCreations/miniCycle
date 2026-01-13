@@ -1,3 +1,8 @@
+## [1.728] - 2026-01-13
+- feat: enhance pull-to-refresh functionality and improve modal styles for better user experience
+- feat: update version to 1.727 and modify changelog for new features
+
+
 ## [1.727] - 2026-01-13
 - feat: implement collapsible sections in settings UI and enhance styles for better usability
 - feat: update version to 1.726 and modify changelog for new features
