@@ -85,6 +85,7 @@
   * [Update Version Guide](deployment/UPDATE-VERSION-GUIDE.md)
 
 * **Future Work**
+  * [Contextual Theme System](future-work/CONTEXTUAL_THEME_SYSTEM_PLAN.md)
   * [CSS Refactor Plan](future-work/CSS_REFACTOR_PLAN.md)
   * [DI Migration Completion](future-work/DI_MIGRATION_COMPLETION_PLAN.md)
   * [Error Handling Improvements](future-work/ERROR_HANDLING_IMPROVEMENTS_PLAN.md)
