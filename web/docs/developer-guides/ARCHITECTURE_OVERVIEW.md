@@ -26,11 +26,11 @@
 | Metric | Value | Notes |
 |--------|-------|-------|
 | **Boot Files** | 6 files | Split Dec 2025 for debuggability |
-| **Modules** | 91 modules | All using strict DI |
+| **Modules** | 103 modules | All using strict DI |
 | **CSS Files** | 29 files | Modularized Jan 2026 |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
 | **Browser Support** | Modern + ES5 | Dual-version system |
-| **Test Coverage** | 100% ✅ | 1,690+ tests across 91 modules |
+| **Test Coverage** | 100% ✅ | 1,690+ tests across 103 modules |
 | **DI Completion** | 100% ✅ | No `\|\| window.*` fallbacks |
 | **Modules with setters** | 40+ | `set*Dependencies()` functions |
 
@@ -115,11 +115,11 @@ const myModule = new MyModule();
 
 **Boot File Structure (Dec 2025):**
 ```
-miniCycle-main.js (entrypoint, ~133 lines)
-  → modules/boot/orchestrator.js (pure sequence controller, ~75 lines)
-      → modules/boot/coreBoot.js (core state, ~578 lines)
-      → modules/boot/featureBoot.js (feature loading, ~385 lines)
-      → modules/boot/uiBoot.js (UI handlers + initUIBoot(), ~714 lines)
+miniCycle-main.js (entrypoint, ~56 lines)
+  → modules/boot/orchestrator.js (pure sequence controller, ~402 lines)
+      → modules/boot/coreBoot.js (core state, ~905 lines)
+      → modules/boot/featureBoot.js (feature loading, ~516 lines)
+      → modules/boot/uiBoot.js (UI handlers + initUIBoot(), ~761 lines)
 ```
 
 **Key Architecture Points:**
@@ -136,7 +136,7 @@ See [DI_PATTERNS.md](./DI_PATTERNS.md) for complete patterns and examples.
 ```
 web/
 ├── miniCycle.html                   # Main entry point
-├── miniCycle-main.js                # Entrypoint (~133 lines)
+├── miniCycle-main.js                # Entrypoint (~56 lines)
 ├── service-worker.js                # PWA service worker
 │
 ├── styles/                          # Modular CSS (29 files)
@@ -147,12 +147,12 @@ web/
 │   ├── utilities/                   # Dark mode, helpers, responsive
 │   └── themes/                      # Theme system
 │
-├── modules/                          # 91 ES6 modules (all strict DI)
+├── modules/                          # 103 ES6 modules (all strict DI)
 │   ├── boot/                        # Boot sequence (Dec 2025 split)
-│   │   ├── orchestrator.js          # Pure sequence controller (~75 lines)
-│   │   ├── coreBoot.js              # Core state & init (~578 lines)
-│   │   ├── featureBoot.js           # Feature loading (~385 lines)
-│   │   └── uiBoot.js                # UI handlers + initUIBoot() (~714 lines)
+│   │   ├── orchestrator.js          # Pure sequence controller (~402 lines)
+│   │   ├── coreBoot.js              # Core state & init (~905 lines)
+│   │   ├── featureBoot.js           # Feature loading (~516 lines)
+│   │   └── uiBoot.js                # UI handlers + initUIBoot() (~761 lines)
 │   │
 │   ├── core/                        # Core systems (4 modules)
 │   │   ├── appState.js              # Centralized state management

@@ -44,16 +44,16 @@ miniCycle is a **routine manager** that helps users build and maintain repeatabl
 | Metric | Value | Notes |
 |--------|-------|-------|
 | Boot Files | 6 files | Split Dec 2025 for debuggability |
-| Modules | 91 files | Organized by feature |
+| Modules | 103 files | Organized by feature |
 | DI Completion | 100% | No `\|\| window.*` fallbacks |
 | Test Coverage | 100% | 1,690+ tests passing |
 
 **Boot File Structure:**
-- `miniCycle-main.js` (133 lines) - Entrypoint
-- `modules/boot/orchestrator.js` (1,883 lines) - DI wiring hub
-- `modules/boot/coreBoot.js` (673 lines) - Core state & init
-- `modules/boot/featureBoot.js` (1,470 lines) - Feature loading
-- `modules/boot/uiBoot.js` (406 lines) - UI handlers
+- `miniCycle-main.js` (~56 lines) - Entrypoint
+- `modules/boot/orchestrator.js` (~402 lines) - Pure sequence controller
+- `modules/boot/coreBoot.js` (~905 lines) - Core state & init
+- `modules/boot/featureBoot.js` (~516 lines) - DI wiring hub
+- `modules/boot/uiBoot.js` (~761 lines) - UI handlers
 
 ### The Architecture
 
@@ -223,7 +223,7 @@ The DI overhaul is **complete**. miniCycle now uses pure dependency injection wi
 
 **Achieved:**
 - Custom DI framework (`diBase.js`) with `required()`, `optional()`, `createDIModule()`
-- Boot orchestrator (`moduleLoader.js`) wires all 91 modules
+- Boot orchestrator (`moduleLoader.js`) wires all 103 modules
 - Zero custom `window.*` globals
 - 1,690+ tests can inject pure mocks
 

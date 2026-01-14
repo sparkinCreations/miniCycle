@@ -1,7 +1,7 @@
 # miniCycle Folder Structure
 
 **Last Updated:** January 9, 2026
-**Status:** All 91 modules use strict DI | Boot files split (Dec 2025) | CSS modularized (Jan 2026)
+**Status:** All 103 modules use strict DI | Boot files split (Dec 2025) | CSS modularized (Jan 2026)
 
 ---
 
@@ -76,7 +76,7 @@ The monolithic 8,000+ line `miniCycle-styles.css` was refactored into 29 focused
 web/
 │
 ├── 📄 miniCycle.html                    # Main PWA entry point
-├── 📄 miniCycle-main.js                 # Entrypoint (~133 lines) - loads orchestrator
+├── 📄 miniCycle-main.js                 # Entrypoint (~56 lines) - loads orchestrator
 ├── 📄 service-worker.js                 # PWA service worker
 │
 ├── 📁 styles/                           # Modular CSS architecture (29 files)
@@ -121,7 +121,7 @@ web/
 ├── 📄 package.json                      # Dependencies & scripts
 ├── 📄 _redirects                        # Netlify redirects for URL compatibility
 │
-├── 📁 modules/                          # ES6 application modules (91 modules, all strict DI)
+├── 📁 modules/                          # ES6 application modules (103 modules, all strict DI)
 │   ├── boot/                            # Boot sequence modules (6 modules)
 │   │   ├── orchestrator.js              # DI wiring hub
 │   │   ├── coreBoot.js                  # Core state & init

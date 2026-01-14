@@ -1,6 +1,6 @@
 # API Reference
 
-**Version**: 1.684
+**Version**: 1.729
 **Last Updated**: January 7, 2026
 
 ---
@@ -231,7 +231,7 @@ manager.refreshAchievements();
 // Get all achievements
 const achievements = manager.getAchievements();
 
-// Badge UI methods (extracted from statsPanel in v1.684)
+// Badge UI methods (extracted from statsPanel in v1.729)
 manager.initBadgeTooltips();           // Initialize badge click handlers
 manager.updateBadges(cyclesCompleted); // Update badge display
 manager.showBadgeDetail(milestone);    // Show badge popup

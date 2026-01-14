@@ -1,6 +1,6 @@
 # miniCycle Schema 2.5 Documentation
 
-**Version**: 1.684
+**Version**: 1.729
 **Last Updated**: January 8, 2026
 
 ## Overview
@@ -22,7 +22,7 @@ Schema 2.5 represents the current data structure for miniCycle, consolidating al
   metadata: {
     createdAt: 1696723400000,              // Unix timestamp
     lastModified: 1696723445123,           // Unix timestamp
-    appVersion: "1.684",                   // App version string
+    appVersion: "1.729",                   // App version string
     migrationHistory: ["2.0 → 2.5"],       // Migration path history
     migratedFrom: "2.0",                   // Previous schema version
     migrationDate: "2025-10-07",           // When migration occurred

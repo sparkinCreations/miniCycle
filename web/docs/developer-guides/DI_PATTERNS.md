@@ -3,7 +3,7 @@
 **Last Updated:** December 30, 2025
 **Status:** All modules now use strict DI - No `|| window.*` fallbacks remain
 
-This document covers the dependency injection patterns used in miniCycle. All 91 modules follow these patterns.
+This document covers the dependency injection patterns used in miniCycle. All 103 modules follow these patterns.
 
 ---
 
@@ -320,7 +320,7 @@ setMyModuleDependencies({
 });
 ```
 
-**All 91 modules now use this pattern consistently.**
+**All 103 modules now use this pattern consistently.**
 
 ---
 
@@ -474,7 +474,7 @@ loadData: () => window.loadMiniCycleData?.()
 
 ## All DI Modules
 
-**All 91 modules use strict dependency injection with no `|| window.*` fallbacks.**
+**All 103 modules use strict dependency injection with no `|| window.*` fallbacks.**
 
 ### Modules with `set*Dependencies()` (40 modules)
 

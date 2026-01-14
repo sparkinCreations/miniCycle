@@ -1,6 +1,6 @@
 # Stats Panel
 
-> **Version:** 1.684+ (January 2026)
+> **Version:** 1.729+ (January 2026)
 > **Status:** ✅ Production Ready
 > **Test Coverage:** 100% (24/24 tests passing)
 > **Module:** `modules/features/statsPanel.js` (~1,841 lines)
@@ -310,17 +310,17 @@ The stats panel integrates with several other modules:
 
 | Module | Integration |
 |--------|-------------|
-| `achievementsManager.js` | Badge UI, achievement popups (delegated in v1.684) |
+| `achievementsManager.js` | Badge UI, achievement popups (delegated in v1.729) |
 | `historyManager.js` | History button opens history modal |
 | `clearedTasksManager.js` | Cleared tasks button opens cleared tasks modal |
 | `themeManager.js` | Theme selection modal |
-| `gesturePanelManager.js` | Gesture handling (extracted in v1.684) |
+| `gesturePanelManager.js` | Gesture handling (extracted in v1.729) |
 | `appState.js` | All data access via DI |
 | `appInit.js` | Waits for core ready before accessing state |
 
-### Badge UI Delegation (v1.684+)
+### Badge UI Delegation (v1.729+)
 
-As of v1.684, badge UI methods have been moved to `achievementsManager.js`:
+As of v1.729, badge UI methods have been moved to `achievementsManager.js`:
 
 - `initBadgeTooltips()` - Initialize badge click handlers
 - `updateBadges(cyclesCompleted)` - Update badge display
@@ -413,8 +413,8 @@ npm test
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.684 | Jan 2026 | Badge UI delegated to achievementsManager |
-| 1.684 | Jan 2026 | Gesture handling extracted to gesturePanelManager |
+| 1.729 | Jan 2026 | Badge UI delegated to achievementsManager |
+| 1.729 | Jan 2026 | Gesture handling extracted to gesturePanelManager |
 | 1.672 | Dec 2025 | Mode-aware milestone progress |
 | 1.650 | Dec 2025 | OR-based achievements (cycles OR tasks) |
 | 1.606 | Dec 2025 | Collapsible section preferences |

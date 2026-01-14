@@ -1,6 +1,6 @@
 # Data Schema Guide
 
-**Version**: 1.684
+**Version**: 1.729
 **Last Updated**: January 5, 2026
 
 ---
@@ -24,7 +24,7 @@
     metadata: {
         createdAt: 1696723400000,            // Unix timestamp
         lastModified: 1696723445123,         // Unix timestamp
-        appVersion: "1.684",
+        appVersion: "1.729",
         migrationHistory: ["2.0 → 2.5"],
         migratedFrom: "2.0",                 // Previous schema version
         migrationDate: "2025-10-07",         // Migration date

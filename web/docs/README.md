@@ -2,7 +2,7 @@
 
 > **Comprehensive documentation for the miniCycle routine manager.**
 
-**Version**: 1.684 | **Test Coverage**: 1,690+ (100%) ✅ | **Overall Rating**: 8.8/10 | **Platforms**: Mac, iPad, iPhone
+**Version**: 1.729 | **Test Coverage**: 1,690+ (100%) ✅ | **Overall Rating**: 8.8/10 | **Platforms**: Mac, iPad, iPhone
 
 Welcome to the miniCycle documentation site! Use the sidebar to navigate through guides, architecture docs, and API references.
 
@@ -44,7 +44,7 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 
 ## 🧪 Testing
 
-- **[TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)** - Complete testing reference (91 modules, 1,690+ tests - 100% ✅)
+- **[TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)** - Complete testing reference (103 modules, 1,690+ tests - 100% ✅)
   - Browser-based testing
   - GitHub Actions CI/CD integration
   - localStorage protection patterns
@@ -79,25 +79,25 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 | Metric | Value |
 |--------|-------|
 | Boot files | 6 files |
-| Modules | 91 files |
-| CSS files | 29 files (modularized Jan 2026) |
+| Modules | 103 files |
+| CSS files | 30 files (modularized Jan 2026) |
 | Total LOC | ~44,200 lines |
 | DI completion | 100% (no `\|\| window.*` fallbacks) |
 | Test coverage | 1,690+ tests (100%) |
-| JSDoc blocks | 514 (98% module coverage) |
+| JSDoc blocks | 896 (98% module coverage) |
 | Overall rating | 8.8/10 |
 
 **Boot File Structure:**
-- `miniCycle-main.js` (~133 lines) - Entrypoint
-- `modules/boot/orchestrator.js` (~75 lines) - Pure sequence controller
-- `modules/boot/coreBoot.js` (~578 lines) - Core state & init
-- `modules/boot/featureBoot.js` (~385 lines) - DI wiring hub
-- `modules/boot/uiBoot.js` (~714 lines) - UI handlers
+- `miniCycle-main.js` (~56 lines) - Entrypoint
+- `modules/boot/orchestrator.js` (~402 lines) - Pure sequence controller
+- `modules/boot/coreBoot.js` (~905 lines) - Core state & init
+- `modules/boot/featureBoot.js` (~516 lines) - DI wiring hub
+- `modules/boot/uiBoot.js` (~761 lines) - UI handlers
 
 ### The Reality
 
 The codebase has **complete strict DI** and **modular CSS**:
-- ✅ Code is organized into 91 focused modules
+- ✅ Code is organized into 103 focused modules
 - ✅ All modules use strict dependency injection
 - ✅ No `|| window.*` fallbacks remain
 - ✅ Modules can be tested in isolation
