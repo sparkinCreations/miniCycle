@@ -5,7 +5,7 @@
 **Prerequisite:** Grouped APIs Refactor (Complete)
 **Goal:** Complete the DI infrastructure migration for zero boilerplate, automatic load ordering, and clean consumer APIs
 
-> **✅ This plan has been fully implemented.** All 91 modules now use `createDIModule()` from `diBase.js`. The boot orchestrator (`moduleLoader.js`) handles automatic wiring. See [DI_PATTERNS.md](../developer-guides/DI_PATTERNS.md) for the current architecture.
+> **✅ This plan has been fully implemented.** All 103 modules now use `createDIModule()` from `diBase.js`. The boot orchestrator (`moduleLoader.js`) handles automatic wiring. See [DI_PATTERNS.md](../developer-guides/DI_PATTERNS.md) for the current architecture.
 
 ---
 
@@ -15,7 +15,7 @@ This document captured the state as of December 16, 2025 when migration was in e
 
 | Phase | Goal | Status |
 |-------|------|--------|
-| Phase 1 | Migrate modules to diBase.js | ✅ Complete (91 modules) |
+| Phase 1 | Migrate modules to diBase.js | ✅ Complete (103 modules) |
 | Phase 2 | Switch to moduleLoader.js | ✅ Complete |
 | Phase 3 | Update consumers to grouped APIs | ✅ Complete |
 | Phase 4 | Cleanup legacy code | ✅ Complete |
@@ -28,7 +28,7 @@ This document captured the state as of December 16, 2025 when migration was in e
 Eliminate ~800 lines of boilerplate by migrating all 45+ modules to use `createDIModule()`.
 
 ### Final State (December 2025)
-- ✅ All 91 modules migrated to `createDIModule()`
+- ✅ All 103 modules migrated to `createDIModule()`
 - ✅ Zero manual DI boilerplate remaining
 
 ### Pattern to Replace

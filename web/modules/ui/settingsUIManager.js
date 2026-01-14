@@ -228,7 +228,7 @@ function saveSettingsCollapsedStates() {
 function updateVersionDisplay() {
     const versionDisplay = document.getElementById('settings-version-display');
     // Use globalThis.APP_VERSION directly (set by version.js, updated by update-version.sh)
-    const version = globalThis.APP_VERSION || window.AppMeta?.version;
+    const version = globalThis.APP_VERSION;
     if (versionDisplay && version) {
         versionDisplay.textContent = `v${version}`;
     }

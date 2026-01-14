@@ -1,7 +1,7 @@
 # miniCycle Feature List
 
 > **Last Updated:** January 13, 2026
-> **Version:** 1.684+
+> **Version:** 1.729+
 > **Status:** Production Ready
 
 A comprehensive list of all features in miniCycle, organized by category.

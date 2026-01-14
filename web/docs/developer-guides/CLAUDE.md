@@ -41,12 +41,12 @@ npm test                     # Run automated tests (1,690+ tests, Playwright)
 | Metric | Before | Current | Target | Progress |
 |--------|--------|---------|--------|----------|
 | Boot files | 1 monolithic | **6 focused files** | — | Split Dec 2025 |
-| Modules | 43 files | **91 files** | — | — |
+| Modules | 43 files | **103 files** | — | — |
 | `|| window.*` fallbacks | ~40 modules | **0** | 0 | **100%** ✅ |
 | Custom `window.*` globals | ~270 | **0** | 0 | **100%** ✅ |
 | Modules with `set*Dependencies()` | 0 | **40+** | All stateful | **Exceeded** |
 | `this.deps.*` usage | 0 | **950+** | 100+ | **Exceeded** |
-| **All modules use strict DI** | 0 | **91** | All | **100%** ✅ |
+| **All modules use strict DI** | 0 | **103** | All | **100%** ✅ |
 
 ### Architecture Philosophy
 
@@ -101,11 +101,11 @@ deps.ui.myModule = myModule;  // Store in deps container, NOT window.*
 
 **Boot File Structure (Dec 2025):**
 ```
-miniCycle-main.js (entrypoint, ~133 lines)
-  → modules/boot/orchestrator.js (pure sequence controller, ~75 lines)
-      → modules/boot/coreBoot.js (core state, ~578 lines)
-      → modules/boot/featureBoot.js (DI wiring + feature loading, ~385 lines)
-      → modules/boot/uiBoot.js (UI handlers + initUIBoot(), ~714 lines)
+miniCycle-main.js (entrypoint, ~56 lines)
+  → modules/boot/orchestrator.js (pure sequence controller, ~402 lines)
+      → modules/boot/coreBoot.js (core state, ~905 lines)
+      → modules/boot/featureBoot.js (DI wiring + feature loading, ~516 lines)
+      → modules/boot/uiBoot.js (UI handlers + initUIBoot(), ~761 lines)
 ```
 
 **Key Architecture Points:**
@@ -143,7 +143,7 @@ Only standard browser API event handlers remain (`window.onload`, `window.onerro
 - **appInit system** - 2-phase initialization prevents race conditions
 - **AppState** - Centralized state with subscriptions and debounced saves
 - **File organization** - Clear folder structure by feature
-- **Test coverage** - 1,690+ tests across 91 modules, 100% passing
+- **Test coverage** - 1,690+ tests across 103 modules, 100% passing
 - **Object.defineProperties** - Preserves lazy getters during DI wiring
 
 ---
@@ -300,7 +300,7 @@ The version number (`?v=1.672`) ensures the cached module is used. Check `versio
 
 ### Run Tests
 ```bash
-npm test                    # All tests (1,690+ tests across 91 modules)
+npm test                    # All tests (1,690+ tests across 103 modules)
 ```
 
 ### Browser Tests
@@ -335,7 +335,7 @@ AppState.reload();  // Critical! Syncs in-memory state with restored localStorag
 
 ## Module Organization
 
-### Folder Structure (`web/modules/`) - 91 modules total
+### Folder Structure (`web/modules/`) - 103 modules total
 
 | Folder | Purpose | Modules |
 |--------|---------|---------|

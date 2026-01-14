@@ -2,7 +2,7 @@
 
 > **Complete guide to using miniCycle for task management and routine building**
 
-**Version:** 1.684+
+**Version:** 1.729+
 **Last Updated:** January 13, 2026
 **For:** End Users (Non-Technical)
 
@@ -806,7 +806,7 @@ We'd love to hear from you!
 ---
 
 **Last Updated:** January 13, 2026
-**Version:** 1.684+
+**Version:** 1.729+
 **Guide Version:** 2.0
 
 *Happy cycling! 🚴*

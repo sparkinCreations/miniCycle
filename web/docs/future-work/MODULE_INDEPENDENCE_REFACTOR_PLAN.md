@@ -4,7 +4,7 @@
 **Status:** ✅ **COMPLETED** (December 2025)
 **Goal:** Make modules truly independent and unit-testable
 
-> **✅ This plan has been implemented.** All 91 modules now use pure DI via `diBase.js` with zero `window.*` fallbacks. The app now scores **10/10** on independence with 1,690+ tests passing. See [DI_PATTERNS.md](../developer-guides/DI_PATTERNS.md) for the current architecture.
+> **✅ This plan has been implemented.** All 103 modules now use pure DI via `diBase.js` with zero `window.*` fallbacks. The app now scores **10/10** on independence with 1,690+ tests passing. See [DI_PATTERNS.md](../developer-guides/DI_PATTERNS.md) for the current architecture.
 
 ---
 
