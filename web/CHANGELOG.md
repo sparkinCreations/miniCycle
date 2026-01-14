@@ -1,3 +1,8 @@
+## [1.729] - 2026-01-14
+- feat: update documentation for version 1.684+, add personalization section, and enhance feature list
+- feat: update version to 1.728 and modify changelog for new features
+
+
 ## [1.728] - 2026-01-13
 - feat: enhance pull-to-refresh functionality and improve modal styles for better user experience
 - feat: update version to 1.727 and modify changelog for new features
