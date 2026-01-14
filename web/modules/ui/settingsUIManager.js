@@ -223,11 +223,14 @@ function saveSettingsCollapsedStates() {
 
 /**
  * Update the version display in settings
+ * Uses globalThis.APP_VERSION from version.js (single source of truth)
  */
 function updateVersionDisplay() {
     const versionDisplay = document.getElementById('settings-version-display');
-    if (versionDisplay && window.AppMeta?.version) {
-        versionDisplay.textContent = `v${window.AppMeta.version}`;
+    // Use globalThis.APP_VERSION directly (set by version.js, updated by update-version.sh)
+    const version = globalThis.APP_VERSION || window.AppMeta?.version;
+    if (versionDisplay && version) {
+        versionDisplay.textContent = `v${version}`;
     }
 }
 
