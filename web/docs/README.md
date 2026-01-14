@@ -109,6 +109,7 @@ The codebase has **complete strict DI** and **modular CSS**:
 See [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) for complete analysis.
 
 ### Future Work
+- **[CONTEXTUAL_THEME_SYSTEM_PLAN.md](./future-work/CONTEXTUAL_THEME_SYSTEM_PLAN.md)** - Transform themes into contextual "lenses" that adapt terminology
 - **[MODULAR_OVERHAUL_PLAN.md](./future-work/MODULAR_OVERHAUL_PLAN.md)** - Plan for true modularization
 - **[SCHEMA_2_6_PLAN.md](./future-work/SCHEMA_2_6_PLAN.md)** - Terminology alignment (cycles → routine)
 
