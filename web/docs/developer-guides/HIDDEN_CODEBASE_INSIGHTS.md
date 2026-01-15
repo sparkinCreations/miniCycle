@@ -476,15 +476,15 @@ historyManager: new Proxy({}, {
 
 | Metric | Value | Industry Comparison |
 |--------|-------|---------------------|
-| Total JS Lines | 46,000+ | Large for vanilla JS |
-| Modules | 90 | Well-modularized |
+| Total JS Lines | See [PROJECT_STATS.md](../PROJECT_STATS.md) | Large for vanilla JS |
+| Modules | See [PROJECT_STATS.md](../PROJECT_STATS.md) | Well-modularized |
 | DI Coverage | 100% | Rare for non-framework |
-| Tests | 1,623 | Excellent |
+| Tests | See [PROJECT_STATS.md](../PROJECT_STATS.md) | Excellent |
 | Doc Files | 76 | Over-documented (good) |
 | Window Globals | 0 | Perfect |
 | Console.log Statements | 500+ | High (debug mode helps) |
 | setTimeout/setInterval | 160/10 | Reasonable |
-| Event Listeners | 496 safeAdd calls | Well-managed |
+| Event Listeners | See [PROJECT_STATS.md](../PROJECT_STATS.md) | Well-managed |
 | innerHTML Uses | 78 across 28 files | Controlled |
 | WeakMap Usage | 2 files | Could expand |
 

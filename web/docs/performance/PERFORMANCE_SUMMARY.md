@@ -1,6 +1,8 @@
 # Performance Testing Summary
 
 > **Executive summary of miniCycle's performance testing results and capabilities**
+>
+> **For current test counts and module counts, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
 **Date**: December 20, 2025
 **Version**: 1.516

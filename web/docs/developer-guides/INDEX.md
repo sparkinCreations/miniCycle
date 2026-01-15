@@ -1,8 +1,9 @@
 # miniCycle Documentation Index
 
 > **Complete guide to all miniCycle documentation**
+>
+> **For current version and metrics, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
-**Version**: 1.516
 **Last Updated**: December 20, 2025
 **Status**: ✅ Production Ready
 

@@ -21,18 +21,18 @@
 
 ---
 
-## Current Stats (January 2026)
+## Current Stats
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| **Boot Files** | 6 files | Split Dec 2025 for debuggability |
-| **Modules** | 103 modules | All using strict DI |
-| **CSS Files** | 29 files | Modularized Jan 2026 |
-| **Schema Version** | 2.5 | Auto-migration from older versions |
-| **Browser Support** | Modern + ES5 | Dual-version system |
-| **Test Coverage** | 100% ✅ | 1,690+ tests across 103 modules |
-| **DI Completion** | 100% ✅ | No `\|\| window.*` fallbacks |
-| **Modules with setters** | 40+ | `set*Dependencies()` functions |
+> **For current metrics (module counts, test counts, line counts), see [PROJECT_STATS.md](../PROJECT_STATS.md).**
+
+| Achievement | Status |
+|-------------|--------|
+| **Strict DI** | 100% ✅ (no `\|\| window.*` fallbacks) |
+| **Zero custom window.* globals** | 100% ✅ |
+| **Boot files split** | Dec 2025 |
+| **CSS modularized** | Jan 2026 |
+| **Schema Version** | 2.5 |
+| **Test Pass Rate** | 100% ✅ |
 
 **Strict DI Complete:** All modules use dependency injection. No `|| window.*` fallbacks exist in the codebase. DI wiring happens in `modules/boot/featureBoot.js`, while `orchestrator.js` is a pure sequence controller.
 
@@ -115,12 +115,14 @@ const myModule = new MyModule();
 
 **Boot File Structure (Dec 2025):**
 ```
-miniCycle-main.js (entrypoint, ~56 lines)
-  → modules/boot/orchestrator.js (pure sequence controller, ~402 lines)
-      → modules/boot/coreBoot.js (core state, ~905 lines)
-      → modules/boot/featureBoot.js (feature loading, ~516 lines)
-      → modules/boot/uiBoot.js (UI handlers + initUIBoot(), ~761 lines)
+miniCycle-main.js (entrypoint)
+  → modules/boot/orchestrator.js (pure sequence controller)
+      → modules/boot/coreBoot.js (core state)
+      → modules/boot/featureBoot.js (feature loading)
+      → modules/boot/uiBoot.js (UI handlers + initUIBoot())
 ```
+
+> See [PROJECT_STATS.md](../PROJECT_STATS.md) for current line counts.
 
 **Key Architecture Points:**
 - `orchestrator.js` is a pure sequence controller - no DI writes, no DOM queries, no UI logic

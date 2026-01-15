@@ -1,8 +1,8 @@
 # miniCycle - Developer Documentation Hub
 
-**Version**: 1.516
 **Last Updated**: December 20, 2025
-**Test Status**: 1610+/1,690+ tests passing (100%)
+
+> **For current version, test counts, and metrics, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
 ---
 
@@ -39,21 +39,25 @@ miniCycle is a **routine manager** that helps users build and maintain repeatabl
 
 ## Architecture Overview
 
-### Current State (December 2025)
+### Current State
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| Boot Files | 6 files | Split Dec 2025 for debuggability |
-| Modules | 103 files | Organized by feature |
-| DI Completion | 100% | No `\|\| window.*` fallbacks |
-| Test Coverage | 100% | 1,690+ tests passing |
+> **For current metrics (module counts, test counts, line counts), see [PROJECT_STATS.md](../PROJECT_STATS.md).**
+
+| Achievement | Status |
+|-------------|--------|
+| Strict DI | 100% ✅ (no `\|\| window.*` fallbacks) |
+| Zero custom window.* globals | 100% ✅ |
+| Boot files split | Dec 2025 |
+| Test Pass Rate | 100% ✅ |
 
 **Boot File Structure:**
-- `miniCycle-main.js` (~56 lines) - Entrypoint
-- `modules/boot/orchestrator.js` (~402 lines) - Pure sequence controller
-- `modules/boot/coreBoot.js` (~905 lines) - Core state & init
-- `modules/boot/featureBoot.js` (~516 lines) - DI wiring hub
-- `modules/boot/uiBoot.js` (~761 lines) - UI handlers
+- `miniCycle-main.js` - Entrypoint
+- `modules/boot/orchestrator.js` - Pure sequence controller
+- `modules/boot/coreBoot.js` - Core state & init
+- `modules/boot/featureBoot.js` - DI wiring hub
+- `modules/boot/uiBoot.js` - UI handlers
+
+> See [PROJECT_STATS.md](../PROJECT_STATS.md) for current line counts.
 
 ### The Architecture
 
@@ -75,7 +79,6 @@ setModuleDependencies({
 ```
 
 **Result:**
-- ✅ Code organized into 91 focused modules
 - ✅ All modules use strict DI
 - ✅ Modules can be tested in isolation
 - ✅ Dependencies are explicit and injected

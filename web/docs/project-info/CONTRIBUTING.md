@@ -7,9 +7,11 @@ miniCycle is built with **vanilla JavaScript (ES6 modules)** and uses a **pure d
 
 > **✅ Pure Dependency Injection**
 >
-> miniCycle uses a custom DI framework (`diBase.js`) with zero `window.*` fallbacks. All dependencies are explicitly injected via `setXxxDependencies()` functions. Modules use `required()` for mandatory dependencies and `optional(defaultValue)` for optional ones. The boot orchestrator (`moduleLoader.js`) wires all 103 modules at startup.
+> miniCycle uses a custom DI framework (`diBase.js`) with zero `window.*` fallbacks. All dependencies are explicitly injected via `setXxxDependencies()` functions. Modules use `required()` for mandatory dependencies and `optional(defaultValue)` for optional ones. The boot orchestrator (`moduleLoader.js`) wires all modules at startup.
 >
-> **This enables true unit testing** - the 1,690+ test suite injects pure mocks without touching global state.
+> **This enables true unit testing** - the test suite injects pure mocks without touching global state.
+>
+> See [PROJECT_STATS.md](../PROJECT_STATS.md) for current module and test counts.
 
 ---
 

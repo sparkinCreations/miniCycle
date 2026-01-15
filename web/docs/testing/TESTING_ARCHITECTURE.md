@@ -1,6 +1,8 @@
 # miniCycle Testing Architecture
 
 > **Visual guide to the testing system architecture and flow**
+>
+> **For current test counts and module counts, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
 ---
 

@@ -1,9 +1,9 @@
 # miniCycle Developer - Quick Reference
 
-**Version**: 1.729+ | **Service Worker**: v110 | **Schema**: 2.5
 **Last Updated**: January 13, 2026
-**Modularization**: ✅ COMPLETE (74.8% reduction achieved!)
-**Tests**: ✅ 1,690+ passing (100%) - All platforms
+**Modularization**: ✅ COMPLETE
+
+> **For current version, test counts, and metrics, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
 ---
 
@@ -55,21 +55,22 @@ const morningRoutine = {
 
 ### Stats - ✅ MODULARIZATION COMPLETE!
 
-| Metric | Value |
-|--------|-------|
-| Boot Files | 6 files |
-| Modules | 103 modules (all strict DI) |
+> **For current metrics (version, module count, test count, line counts), see [PROJECT_STATS.md](../PROJECT_STATS.md).**
+
+| Achievement | Status |
+|-------------|--------|
+| Strict DI | 100% ✅ |
+| Zero window.* globals | 100% ✅ |
 | Schema Version | 2.5 |
-| App Version | 1.729+ |
-| Test Coverage | 100% (1,690+ tests) ✅ |
+| Test Pass Rate | 100% ✅ |
 | Browser Support | Modern + ES5 |
 
-**Boot File Structure (Dec 2025):**
-- `miniCycle-main.js` (133 lines) - Entrypoint
-- `modules/boot/orchestrator.js` (1,883 lines) - DI wiring
-- `modules/boot/coreBoot.js` (673 lines) - Core state
-- `modules/boot/featureBoot.js` (1,470 lines) - Feature loading
-- `modules/boot/uiBoot.js` (406 lines) - UI handlers
+**Boot File Structure:**
+- `miniCycle-main.js` - Entrypoint
+- `modules/boot/orchestrator.js` - Pure sequence controller
+- `modules/boot/coreBoot.js` - Core state
+- `modules/boot/featureBoot.js` - DI wiring hub
+- `modules/boot/uiBoot.js` - UI handlers
 
 ### Tech Stack
 

@@ -1,9 +1,10 @@
 # miniCycle Roadmap
 
 > **Future plans for miniCycle - The Free Tier**
+>
+> **For current metrics, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
 **Last Updated:** December 20, 2025
-**Version:** 1.516
 
 ---
 

@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **For current metrics (version, module count, test count, line counts), see [PROJECT_STATS.md](../PROJECT_STATS.md).**
+
 ## What is miniCycle?
 
 **miniCycle is a routine manager, not a todo app.**
@@ -22,7 +24,7 @@ npm start                    # Starts Python HTTP server on port 8080
 ./update-version.sh          # Interactive version updater
 
 # Testing
-npm test                     # Run automated tests (1,690+ tests, Playwright)
+npm test                     # Run automated tests (Playwright)
 ```
 
 ### File Access
@@ -36,17 +38,17 @@ npm test                     # Run automated tests (1,690+ tests, Playwright)
 
 ## Architecture: Strict Dependency Injection
 
-### Current State (January 7, 2026 - Updated)
+> **For current module counts, test counts, and line counts, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
-| Metric | Before | Current | Target | Progress |
-|--------|--------|---------|--------|----------|
-| Boot files | 1 monolithic | **6 focused files** | — | Split Dec 2025 |
-| Modules | 43 files | **103 files** | — | — |
-| `|| window.*` fallbacks | ~40 modules | **0** | 0 | **100%** ✅ |
-| Custom `window.*` globals | ~270 | **0** | 0 | **100%** ✅ |
-| Modules with `set*Dependencies()` | 0 | **40+** | All stateful | **Exceeded** |
-| `this.deps.*` usage | 0 | **950+** | 100+ | **Exceeded** |
-| **All modules use strict DI** | 0 | **103** | All | **100%** ✅ |
+### Architecture Achievements
+
+| Achievement | Status |
+|-------------|--------|
+| Strict DI (no `\|\| window.*` fallbacks) | ✅ 100% |
+| Zero custom `window.*` globals | ✅ 100% |
+| Boot files split for debuggability | ✅ Dec 2025 |
+| CSS modularization | ✅ Jan 2026 |
+| All modules use `set*Dependencies()` | ✅ Complete |
 
 ### Architecture Philosophy
 
@@ -99,14 +101,16 @@ const myModule = new MyModule();
 deps.ui.myModule = myModule;  // Store in deps container, NOT window.*
 ```
 
-**Boot File Structure (Dec 2025):**
+**Boot File Structure:**
 ```
-miniCycle-main.js (entrypoint, ~56 lines)
-  → modules/boot/orchestrator.js (pure sequence controller, ~402 lines)
-      → modules/boot/coreBoot.js (core state, ~905 lines)
-      → modules/boot/featureBoot.js (DI wiring + feature loading, ~516 lines)
-      → modules/boot/uiBoot.js (UI handlers + initUIBoot(), ~761 lines)
+miniCycle-main.js (entrypoint)
+  → modules/boot/orchestrator.js (pure sequence controller)
+      → modules/boot/coreBoot.js (core state)
+      → modules/boot/featureBoot.js (DI wiring + feature loading)
+      → modules/boot/uiBoot.js (UI handlers + initUIBoot())
 ```
+
+> See [PROJECT_STATS.md](../PROJECT_STATS.md) for current line counts.
 
 **Key Architecture Points:**
 - `orchestrator.js` is a pure sequence controller - no DI writes, no DOM queries, no UI logic
@@ -143,7 +147,7 @@ Only standard browser API event handlers remain (`window.onload`, `window.onerro
 - **appInit system** - 2-phase initialization prevents race conditions
 - **AppState** - Centralized state with subscriptions and debounced saves
 - **File organization** - Clear folder structure by feature
-- **Test coverage** - 1,690+ tests across 103 modules, 100% passing
+- **Test coverage** - 100% passing (see [PROJECT_STATS.md](../PROJECT_STATS.md) for counts)
 - **Object.defineProperties** - Preserves lazy getters during DI wiring
 
 ---
@@ -278,7 +282,7 @@ Use versioned dynamic imports in the browser console:
 ```javascript
 // Access the state manager (versioned import for cache-busting)
 let _s;
-import('/modules/core/appState.js?v=1.672').then(m => _s = m.getStateManager());
+import('/modules/core/appState.js?v=1.729').then(m => _s = m.getStateManager());
 
 // Then inspect state
 _s.get()                    // Full state object
@@ -286,7 +290,7 @@ _s.get().appState           // Active cycle info
 _s.get().data.cycles        // All cycles
 ```
 
-The version number (`?v=1.672`) ensures the cached module is used. Check `version.js` for current version.
+The version number ensures the cached module is used. Check `version.js` for current version.
 
 ### Why Not window.*?
 
@@ -300,7 +304,7 @@ The version number (`?v=1.672`) ensures the cached module is used. Check `versio
 
 ### Run Tests
 ```bash
-npm test                    # All tests (1,690+ tests across 103 modules)
+npm test                    # All tests (see PROJECT_STATS.md for counts)
 ```
 
 ### Browser Tests
@@ -335,22 +339,24 @@ AppState.reload();  // Critical! Syncs in-memory state with restored localStorag
 
 ## Module Organization
 
-### Folder Structure (`web/modules/`) - 103 modules total
+> **For current module counts by folder, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
-| Folder | Purpose | Modules |
-|--------|---------|---------|
-| `boot/` | Boot sequence, module loading | 6 |
-| `core/` | AppState, appInit, appContext, DI base | 8 |
-| `task/` | Task CRUD, DOM, events, drag-drop | 10 |
-| `routine/` | Routine management, switching, migration | 5 |
-| `recurring/` | Recurring task scheduling, activation, panel | 15 |
-| `ui/` | Modals, menus, settings, onboarding, gestures | 21 |
-| `features/` | Themes, stats, achievements, history, reminders | 7 |
-| `utils/` | Notifications, device detection, utilities | 10 |
-| `storage/` | Backup manager | 1 |
-| `progress/` | Cycle completion tracking | 1 |
-| `testing/` | Test infrastructure | 3 |
-| `other/` | Plugins, experimental | 3 |
+### Folder Structure (`web/modules/`)
+
+| Folder | Purpose |
+|--------|---------|
+| `boot/` | Boot sequence, module loading |
+| `core/` | AppState, appInit, appContext, DI base |
+| `task/` | Task CRUD, DOM, events, drag-drop |
+| `routine/` | Routine management, switching, migration |
+| `recurring/` | Recurring task scheduling, activation, panel |
+| `ui/` | Modals, menus, settings, onboarding, gestures |
+| `features/` | Themes, stats, achievements, history, reminders |
+| `utils/` | Notifications, device detection, utilities |
+| `storage/` | Backup manager |
+| `progress/` | Cycle completion tracking |
+| `testing/` | Test infrastructure |
+| `other/` | Plugins, experimental |
 
 ### All Modules Use Strict DI
 
@@ -376,11 +382,13 @@ Every module follows this pattern:
 | DI wiring | `modules/boot/featureBoot.js` |
 | Boot sequencer | `modules/boot/orchestrator.js` |
 | Entrypoint | `miniCycle-main.js` |
+| **Current metrics** | **[PROJECT_STATS.md](../PROJECT_STATS.md)** |
 
 ---
 
 ## Documentation
 
+- **Current metrics**: [PROJECT_STATS.md](../PROJECT_STATS.md)
 - **Product vision**: [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md)
 - **DI patterns & pitfalls**: [DI_PATTERNS.md](./DI_PATTERNS.md)
 - **Architecture overview**: [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md)

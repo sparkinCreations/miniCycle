@@ -19,7 +19,9 @@
 
 ## Overview
 
-miniCycle has **100% test coverage** with **1,690+ tests passing** across 103 modules. The testing system runs:
+> **For current test counts and module counts, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
+
+miniCycle has **100% test pass rate**. The testing system runs:
 - ✅ **Locally** - Browser-based manual testing via web interface
 - ✅ **Automated** - Playwright-based automated testing
 - ✅ **CI/CD** - GitHub Actions on every push/PR (Node.js 18.x and 20.x)
@@ -98,9 +100,9 @@ Running 53 test modules across all systems...
    ✅ PASS globalUtils            36/36 tests
    ✅ PASS notifications          35/35 tests
    ✅ PASS state                  40/40 tests
-   ... (103 modules total)
+   ... (see PROJECT_STATS.md for current counts)
 ============================================================
-🎉 All tests passed! (1,690+ - 100%) ✅
+🎉 All tests passed! (100%) ✅
 ============================================================
 ```
 
@@ -128,10 +130,10 @@ miniCycle has **automated testing** that runs on every push and pull request via
 2. Setup Node.js environment
 3. Install dependencies (Playwright)
 4. Start HTTP server on port 8080
-5. Run all 1,690+ tests via Playwright
+5. Run all tests via Playwright (see [PROJECT_STATS.md](../PROJECT_STATS.md) for counts)
 6. Report results (pass/fail)
 
-**Current Status:** 1610+/1,690+ tests passing (100%) ✅
+**Current Status:** 100% passing ✅
 
 ---
 
@@ -339,7 +341,7 @@ export function runOnboardingManagerTests(resultsDiv) {
 
 ## Test Coverage
 
-Current module test coverage (103 modules, 1,690+ tests):
+Current module test coverage (see [PROJECT_STATS.md](../PROJECT_STATS.md) for totals):
 
 | Module | Tests | Module | Tests |
 |--------|-------|--------|-------|
@@ -371,9 +373,9 @@ Current module test coverage (103 modules, 1,690+ tests):
 | completedTasksManager | 29 | featureBoot | 13 |
 | pullToRefresh | 18 | | |
 
-**Total: 1,690+ tests across 103 modules**
+**See [PROJECT_STATS.md](../PROJECT_STATS.md) for current test and module counts.**
 
-**Overall Pass Rate: 100% ✅ (1610+/1,690+ tests passing)**
+**Overall Pass Rate: 100% ✅**
 
 ---
 

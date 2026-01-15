@@ -1,7 +1,8 @@
 # Data Schema Guide
 
-**Version**: 1.729
 **Last Updated**: January 5, 2026
+
+> **For current version, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
 ---
 

@@ -20,7 +20,7 @@
 | **Documentation** | 8/10 | **8.2/10** | +0.2 | 76 docs, 7,880+ lines guides, excellent onboarding |
 | **Security (XSS)** | 7.5/10 | **9/10** | +1.5 | Systematic escaping, import sanitization, zero eval() |
 | **Memory/Performance** | 8/10 | **8.2/10** | +0.2 | WeakMap usage, event delegation, debounce/throttle |
-| **Testing** | 9/10 | **9/10** | — | 1,623 tests, 100% pass rate, zero-dependency browser testing |
+| **Testing** | 9/10 | **9/10** | — | 100% pass rate, zero-dependency browser testing |
 | **Large Module Nav** | N/A | **8.6/10** | NEW | Clear section headers, sub-module delegation |
 | **Overall** | **8.4/10** | **8.8/10** | **+0.4** | Production-quality vanilla JS that rivals framework apps |
 
@@ -28,19 +28,14 @@
 
 ## Codebase Statistics
 
+> **For current metrics, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
+
 | Metric | Value |
 |--------|-------|
-| **Total Lines of Code** | ~44,200 |
-| **Total Modules** | 80 |
-| **Test Files** | 53 |
-| **Test Lines** | 33,966 |
-| **Total Tests** | 1,623 |
-| **Pass Rate** | 100% |
-| **Documentation Files** | 76 active |
-| **JSDoc Blocks** | 514 |
 | **Schema Version** | 2.5 |
 | **Window.* Globals** | 0 |
 | **DI Coverage** | 100% |
+| **Pass Rate** | 100% |
 
 ---
 
@@ -167,7 +162,7 @@ console.log('⚠️ Warning: AppState not ready');
 // ============================================================================
 ```
 
-**JSDoc Coverage** - 514 blocks across 103 modules (98% module coverage)
+**JSDoc Coverage** - See [PROJECT_STATS.md](../PROJECT_STATS.md) for current counts
 
 #### Standardized Module Structure
 1. Documentation header with @module tag

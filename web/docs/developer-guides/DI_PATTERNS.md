@@ -3,7 +3,9 @@
 **Last Updated:** December 30, 2025
 **Status:** All modules now use strict DI - No `|| window.*` fallbacks remain
 
-This document covers the dependency injection patterns used in miniCycle. All 103 modules follow these patterns.
+> **For current module counts, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
+
+This document covers the dependency injection patterns used in miniCycle. All modules follow these patterns.
 
 ---
 
