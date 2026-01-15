@@ -750,7 +750,7 @@ if [ -f "$PROJECT_STATS_FILE" ]; then
         echo "   Would update: $PROJECT_STATS_FILE (version → $NEW_VERSION)"
     elif backup_file "$PROJECT_STATS_FILE"; then
         # Update the version line in the metrics table
-        do_sed "$PROJECT_STATS_FILE" "s/| \*\*Version\*\* | [0-9.]* |/| **Version** | $NEW_VERSION |/g"
+        do_sed "$PROJECT_STATS_FILE" "s/| \*\*App Version\*\* | [0-9.]* |/| **App Version** | $NEW_VERSION |/g"
         echo "✅ Updated $PROJECT_STATS_FILE"
     else
         echo "⚠️  Failed to update $PROJECT_STATS_FILE"
