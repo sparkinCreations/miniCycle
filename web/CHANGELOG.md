@@ -1,3 +1,7 @@
+## [1.734] - 2026-01-15
+- feat: update version to 1.733 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.733] - 2026-01-15
 - feat: enhance service worker with additional boot-critical and CSS files for offline support
 - feat: update version to 1.732 and enhance related documentation and scripts
