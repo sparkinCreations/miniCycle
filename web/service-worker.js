@@ -40,8 +40,10 @@ var CORE = [
 var BOOT_CRITICAL = [
   // HTML shells
   './miniCycle.html',
-  // CSS is NOT precached - uses network-first via NETWORK_FIRST_PATTERNS
-  // This ensures iOS PWA gets fresh CSS without requiring reinstall
+  // Version file - required for app to boot
+  './version.js',
+  // Main CSS - required for app to display correctly offline
+  './styles/main.css',
   // Entrypoint and boot chain
   './miniCycle-main.js',
   './modules/boot/orchestrator.js',
@@ -61,7 +63,75 @@ var BOOT_CRITICAL = [
   // Essential utils for boot
   './modules/utils/globalUtils.js',
   './modules/utils/errorHandler.js',
-  './modules/utils/notifications.js'
+  './modules/utils/notifications.js',
+  './modules/utils/deviceDetection.js',
+  // Task modules - core functionality
+  './modules/task/taskCore.js',
+  './modules/task/taskDOM.js',
+  './modules/task/taskRenderer.js',
+  './modules/task/taskEvents.js',
+  './modules/task/taskUtils.js',
+  './modules/task/taskValidation.js',
+  './modules/task/dragDropManager.js',
+  // Routine modules
+  './modules/routine/routineLoader.js',
+  './modules/routine/routineManager.js',
+  './modules/routine/routineSwitcher.js',
+  './modules/routine/modeManager.js',
+  './modules/routine/migrationManager.js',
+  // UI modules
+  './modules/ui/modalManager.js',
+  './modules/ui/menuManager.js',
+  './modules/ui/settingsManager.js',
+  './modules/ui/settingsUIManager.js',
+  './modules/ui/titleManager.js',
+  './modules/ui/taskUI.js',
+  './modules/ui/gesturePanelManager.js',
+  './modules/ui/completedTasksManager.js',
+  './modules/ui/uiEffects.js',
+  // Features
+  './modules/features/themeManager.js',
+  './modules/features/statsPanel.js',
+  './modules/features/achievementsManager.js',
+  './modules/features/dueDates.js',
+  './modules/features/reminders.js',
+  // Progress
+  './modules/progress/cycleCompletion.js',
+  // Recurring (core only)
+  './modules/recurring/recurringCore.js'
+];
+
+// CSS files - all @imports from main.css (required for offline styling)
+var CSS_FILES = [
+  './styles/base/variables.css',
+  './styles/base/reset.css',
+  './styles/base/typography.css',
+  './styles/base/animations.css',
+  './styles/layout/app-container.css',
+  './styles/layout/header.css',
+  './styles/layout/safe-areas.css',
+  './styles/components/task-input.css',
+  './styles/components/task-list.css',
+  './styles/components/task-options.css',
+  './styles/components/buttons.css',
+  './styles/components/icons.css',
+  './styles/components/modals.css',
+  './styles/components/notifications.css',
+  './styles/components/stats-panel.css',
+  './styles/components/progress-bar.css',
+  './styles/components/forms.css',
+  './styles/components/settings.css',
+  './styles/components/mode-selector.css',
+  './styles/components/routine-switcher.css',
+  './styles/components/games.css',
+  './styles/components/onboarding.css',
+  './styles/components/recurring.css',
+  './styles/components/storage.css',
+  './styles/components/footer.css',
+  './styles/components/menu.css',
+  './styles/utilities/helpers.css',
+  './styles/utilities/responsive.css',
+  './styles/utilities/dark-mode.css'
 ];
 
 // Lite version shell (smaller precache)
@@ -87,8 +157,8 @@ var LAZY_CACHE_ON_USE = [
 self.addEventListener('install', function (event) {
   console.log('🔧 Service Worker ' + CACHE_VERSION + ' (App v' + APP_VERSION + ') installing...');
 
-  // Build the full pre-cache list - boot-critical files only for fast iOS install
-  var precacheList = CORE.concat(BOOT_CRITICAL, LITE_SHELL);
+  // Build the full pre-cache list - includes CSS for offline support
+  var precacheList = CORE.concat(BOOT_CRITICAL, CSS_FILES, LITE_SHELL);
 
   function addAllSafe(cache, urls) {
     // 1) Fast path: one shot addAll
@@ -117,9 +187,10 @@ self.addEventListener('install', function (event) {
 
   event.waitUntil(
     caches.open(STATIC_CACHE).then(function (cache) {
-      console.log('💾 Caching boot-critical assets…',
+      console.log('💾 Caching assets for offline support…',
         '\n  📦 CORE:', CORE.length,
         '\n  🚀 BOOT_CRITICAL:', BOOT_CRITICAL.length,
+        '\n  🎨 CSS_FILES:', CSS_FILES.length,
         '\n  📱 LITE shell:', LITE_SHELL.length,
         '\n  📊 Total:', precacheList.length
       );
