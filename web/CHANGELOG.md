@@ -1,3 +1,12 @@
+## [1.730] - 2026-01-15
+- feat: Enhance documentation and metrics tracking
+- Update documentation and module statistics for miniCycle version 1.729
+- feat: add Contextual Theme System plan and update documentation
+- feat: update version to 1.729 and modify changelog for new features
+- feat: update version display logic to use globalThis.APP_VERSION for consistency
+- Updated App Settings Group Description
+
+
 ## [1.729] - 2026-01-14
 - feat: update documentation for version 1.684+, add personalization section, and enhance feature list
 - feat: update version to 1.728 and modify changelog for new features
