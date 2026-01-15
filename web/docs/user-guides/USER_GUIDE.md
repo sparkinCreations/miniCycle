@@ -2,9 +2,10 @@
 
 > **Complete guide to using miniCycle for task management and routine building**
 
-**Version:** 1.729+
 **Last Updated:** January 13, 2026
 **For:** End Users (Non-Technical)
+
+> See [PROJECT_STATS.md](../PROJECT_STATS.md) for current version.
 
 ---
 

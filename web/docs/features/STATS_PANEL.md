@@ -1,9 +1,10 @@
 # Stats Panel
 
-> **Version:** 1.729+ (January 2026)
 > **Status:** ✅ Production Ready
 > **Test Coverage:** 100% (24/24 tests passing)
-> **Module:** `modules/features/statsPanel.js` (~1,841 lines)
+> **Module:** `modules/features/statsPanel.js`
+>
+> See [PROJECT_STATS.md](../PROJECT_STATS.md) for current version.
 
 ---
 

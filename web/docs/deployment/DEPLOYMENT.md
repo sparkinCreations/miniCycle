@@ -1,6 +1,7 @@
 # Deployment Guide
 
-**Version:** 1.569
+> **For current version and metrics, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
+
 **Last Updated:** December 27, 2025
 
 ---

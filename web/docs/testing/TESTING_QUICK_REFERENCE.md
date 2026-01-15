@@ -1,8 +1,9 @@
 # miniCycle Testing - Quick Reference
 
 **Last Updated**: January 7, 2026
-**Test Coverage**: 100% (1,690+ tests passing across 103 modules) ✅
 **Platforms**: Mac ✅ | iPad ✅ | iPhone ✅
+
+> **For current test counts and module counts, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
 ---
 

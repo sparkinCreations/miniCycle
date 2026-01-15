@@ -2,8 +2,10 @@
 
 > **Complete guide to testing miniCycle - functional tests, performance benchmarks, and quality assurance**
 
+> **For current test counts and module counts, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
+
 **Current Status**:
-- ✅ **Functional Tests**: 1,690+ (100%)
+- ✅ **Test Pass Rate**: 100%
 - ✅ **Performance Benchmarks**: 12/12 (100%)
 - ✅ **Execution Time**: ~65s total
 - ✅ **Memory Usage**: 9.54MB (0.3%)

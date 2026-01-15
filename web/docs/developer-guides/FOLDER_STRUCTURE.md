@@ -1,7 +1,9 @@
 # miniCycle Folder Structure
 
 **Last Updated:** January 9, 2026
-**Status:** All 103 modules use strict DI | Boot files split (Dec 2025) | CSS modularized (Jan 2026)
+**Status:** All modules use strict DI | Boot files split (Dec 2025) | CSS modularized (Jan 2026)
+
+> **For current module counts and line counts, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
 ---
 

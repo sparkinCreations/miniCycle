@@ -1,9 +1,10 @@
 #!/bin/bash
 # update-version.sh - Enhanced Interactive Version Updater for miniCycle
-# Version: 5.0 - Added --dry-run, set -euo pipefail, staged status messages (Dec 2025)
+# Version: 5.1 - Added PROJECT_STATS.md auto-update (Jan 2026)
 #
 # Features:
 #  - Generates version.js as single source of truth (using globalThis)
+#  - Auto-updates docs/PROJECT_STATS.md with new version
 #  - Multi-mode: Update all, one-by-one, or custom selection
 #  - Automatic backup with restore scripts
 #  - macOS and Linux compatible
@@ -63,7 +64,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help|-h)
-            echo "🎯 miniCycle Version Updater v5.0"
+            echo "🎯 miniCycle Version Updater v5.1"
             echo ""
             echo "Usage: ./update-version.sh [options]"
             echo ""
@@ -101,14 +102,14 @@ done
 # ============================================
 
 if [ "$DRY_RUN" = true ]; then
-    echo "🔍 miniCycle Version Updater v5.0 (DRY RUN MODE)"
+    echo "🔍 miniCycle Version Updater v5.1 (DRY RUN MODE)"
     echo "================================================="
     echo "⚠️  No files will be modified - preview only"
 elif [ "$AUTO_MODE" = true ]; then
-    echo "🤖 miniCycle Version Updater v5.0 (AUTO MODE)"
+    echo "🤖 miniCycle Version Updater v5.1 (AUTO MODE)"
     echo "=============================================="
 else
-    echo "🎯 miniCycle Version Updater v5.0"
+    echo "🎯 miniCycle Version Updater v5.1"
     echo "================================="
 fi
 echo ""
@@ -182,6 +183,7 @@ if [ "$DRY_RUN" = false ]; then
     mkdir -p "$BACKUP_DIR/pages" 2>/dev/null || true
     mkdir -p "$BACKUP_DIR/styles" 2>/dev/null || true
     mkdir -p "$BACKUP_DIR/modules/boot" 2>/dev/null || true
+    mkdir -p "$BACKUP_DIR/docs" 2>/dev/null || true
 
     # Clean up old backups (keep only last 3)
     cleanup_old_backups() {
@@ -735,6 +737,37 @@ fi
 echo ""
 
 # ============================================
+# STAGE 5B: UPDATE PROJECT_STATS.md
+# ============================================
+
+echo "📝 Stage 5B: Updating PROJECT_STATS.md..."
+STAGE5B_SUCCESS=true
+
+PROJECT_STATS_FILE="docs/PROJECT_STATS.md"
+
+if [ -f "$PROJECT_STATS_FILE" ]; then
+    if [ "$DRY_RUN" = true ]; then
+        echo "   Would update: $PROJECT_STATS_FILE (version → $NEW_VERSION)"
+    elif backup_file "$PROJECT_STATS_FILE"; then
+        # Update the version line in the metrics table
+        do_sed "$PROJECT_STATS_FILE" "s/| \*\*Version\*\* | [0-9.]* |/| **Version** | $NEW_VERSION |/g"
+        echo "✅ Updated $PROJECT_STATS_FILE"
+    else
+        echo "⚠️  Failed to update $PROJECT_STATS_FILE"
+        STAGE5B_SUCCESS=false
+    fi
+else
+    echo "ℹ️  $PROJECT_STATS_FILE not found (skipping)"
+fi
+
+if [ "$STAGE5B_SUCCESS" = true ]; then
+    echo "✅ Stage 5B complete"
+else
+    echo "⚠️  Stage 5B completed with warnings"
+fi
+echo ""
+
+# ============================================
 # NOTE: Debug markers now derive from globalThis
 # ============================================
 
@@ -794,6 +827,9 @@ EOF
     for file in "${PACKAGE_FILES[@]}"; do
         echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
     done
+
+    # Add PROJECT_STATS.md to restore script
+    echo "restore_file \"docs/PROJECT_STATS.md\"" >> "$BACKUP_FOLDER/restore.sh"
 
     cat >> "$BACKUP_FOLDER/restore.sh" << 'EOF'
 

@@ -33,7 +33,7 @@ JavaScript was self-taught. The technical foundation was not.
 | **2008** | CET124 (College C) | First code. Already versioning, iterating, adding features beyond requirements |
 | **Ongoing** | Spreadsheet Tools | Budget tracker, GD&T calculator for work, miniCycle spreadsheet version — building automated systems before "learning to code" |
 | **2024** | TaskCycle | First JS project. 3,551 lines, 40+ features, monolithic but complete |
-| **2024-25** | miniCycle | Second JS project. Evolved from 11,758-line monolith to 44,200 lines across 103 modules |
+| **2024-25** | miniCycle | Second JS project. Evolved from monolith to modular architecture (see [PROJECT_STATS.md](./PROJECT_STATS.md)) |
 | **2025** | MasterMath | Third JS project. Adapted Base44 scaffold, replaced AI backend with local math libraries |
 
 ### Key Insight: The Patterns Were Always There
@@ -58,7 +58,7 @@ These same patterns show up 17 years later in miniCycle: versioning, iteration, 
 
 **miniCycle is about craft and learning, not immediate revenue.**
 
-This is only MJ's second JavaScript project. The first (TaskCycle) was 3,551 lines and monolithic. The second (miniCycle) is 44,200+ lines, 103 modules, 1,600+ tests, zero-globals architecture, proper DI patterns. That's a massive jump in sophistication.
+This is only MJ's second JavaScript project. The first (TaskCycle) was 3,551 lines and monolithic. The second (miniCycle) has grown into a comprehensive modular architecture with zero-globals, proper DI patterns, and comprehensive test coverage. That's a massive jump in sophistication. (See [PROJECT_STATS.md](./PROJECT_STATS.md) for current metrics.)
 
 The goal isn't to monetize miniCycle — it's to become the developer who *can* build the paid product well. The craft is the point. Revenue comes later, built on skills being sharpened now.
 

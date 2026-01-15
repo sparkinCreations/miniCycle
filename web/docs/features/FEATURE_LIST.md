@@ -1,8 +1,9 @@
 # miniCycle Feature List
 
 > **Last Updated:** January 13, 2026
-> **Version:** 1.729+
 > **Status:** Production Ready
+>
+> See [PROJECT_STATS.md](../PROJECT_STATS.md) for current version.
 
 A comprehensive list of all features in miniCycle, organized by category.
 
@@ -440,7 +441,7 @@ Customize app colors and visual appearance.
 ### Architecture
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Dependency Injection | Pure DI architecture (91 modules) | `core/diBase.js` |
+| Dependency Injection | Pure DI architecture (see [PROJECT_STATS.md](../PROJECT_STATS.md)) | `core/diBase.js` |
 | Modular Boot System | 8-phase module loading | `boot/moduleLoader.js` |
 | Module Manifests | Dependency declarations | `boot/moduleManifests.js` |
 | App Context | Centralized module registry | `core/appContext.js` |
