@@ -1,3 +1,8 @@
+## [1.733] - 2026-01-15
+- feat: enhance service worker with additional boot-critical and CSS files for offline support
+- feat: update version to 1.732 and enhance related documentation and scripts
+
+
 ## [1.730] - 2026-01-15
 - feat: Enhance documentation and metrics tracking
 - Update documentation and module statistics for miniCycle version 1.729
