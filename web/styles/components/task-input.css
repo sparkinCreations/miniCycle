@@ -10,11 +10,11 @@
 .task-input {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 8px; /* Space between input and button */
     align-self: center;
     background: rgb(255, 255, 255);
     border-radius: 8px;
-    padding: 5px 10px;
+    padding: 5px 5px 5px 10px; /* Less right padding since button has its own */
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
     margin-bottom: 16px;
     max-width: 450px;
@@ -29,6 +29,7 @@
 
 input[type="text"] {
     flex: 1;
+    min-width: 0; /* Allow flex shrinking below content size */
     background: var(--theme-input-bg);
     color: var(--theme-input-text);
     padding: 7px;
@@ -36,7 +37,6 @@ input[type="text"] {
     border: none;
     border-radius: var(--radius-sm);
     outline: none;
-    max-width: 350px;
 }
 
 input[type="text"]::placeholder {
@@ -69,10 +69,10 @@ input[type="text"]:focus {
    ============================================================================= */
 
 #addTaskBtn {
-    padding: 8px 12px;
+    padding: 8px 16px;
     font-size: 12px;
     height: 30px;
-    margin-right: 0px;
+    flex-shrink: 0; /* Don't shrink the button */
     background: rgba(0, 0, 0, 0.8);
     color: white;
     border: none;
@@ -113,5 +113,6 @@ input[type="text"]:focus {
 @media (max-width: 480px) {
     .task-input {
         margin-top: 20px;
+        width: 90%; /* Wider on mobile for more input space */
     }
 }
