@@ -1,3 +1,8 @@
+## [1.753] - 2026-01-16
+- feat: implement temporary network-only fetch strategy for JS files to address Safari caching issues
+- feat: update version to 1.752 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.752] - 2026-01-16
 - feat: temporarily disable modulepreload due to duplicate instance issue with versioned URLs
 - feat: update version to 1.751 and reflect changes in documentation, manifest, and styles
