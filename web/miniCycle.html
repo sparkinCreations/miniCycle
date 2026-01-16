@@ -387,11 +387,11 @@ if ('serviceWorker' in navigator) {
 
       let needsReload = false;
 
-      // Check if we have an old SW without version parameter
+      // Check if we have an old SW without version parameter or with mismatched version
       for (const reg of existingRegistrations) {
         const scriptURL = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL;
-        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.741')) {
-          console.log('🗑️ Found old service worker without version - unregistering:', scriptURL);
+        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes(`?v=${APP_VERSION}`)) {
+          console.log('🗑️ Found old service worker (version mismatch) - unregistering:', scriptURL);
           await reg.unregister();
           console.log('✅ Old service worker unregistered successfully');
           needsReload = true;
