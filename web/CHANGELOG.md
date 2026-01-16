@@ -1,3 +1,8 @@
+## [1.747] - 2026-01-16
+- feat: implement automatic cache clearing on version change to prevent stale content
+- feat: update version to 1.746 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.746] - 2026-01-16
 - feat: add automatic cache integrity check to clear stale browser cache
 
