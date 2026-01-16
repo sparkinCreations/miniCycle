@@ -77,6 +77,12 @@
   // Only run on production
   if (location.hostname.indexOf('minicycle.app') === -1) return;
 
+  // Clean up cache-buster param from URL (for Safari workaround)
+  if (location.search.indexOf('_cb=') !== -1) {
+    var cleanUrl = location.pathname + location.hash;
+    history.replaceState(null, '', cleanUrl);
+  }
+
   var currentVersion = globalThis.APP_VERSION || 'unknown';
   var lastSeenVersion = localStorage.getItem('__miniCycle_lastVersion');
   var justCleared = sessionStorage.getItem('__miniCycle_justCleared');
@@ -105,7 +111,7 @@
     document.write('var clearPromises = [];');
     document.write('if ("caches" in window) { clearPromises.push(caches.keys().then(function(n) { console.log("Deleting caches:", n); return Promise.all(n.map(function(c) { return caches.delete(c); })); })); }');
     document.write('if ("serviceWorker" in navigator) { clearPromises.push(navigator.serviceWorker.getRegistrations().then(function(r) { console.log("Unregistering", r.length, "service workers"); return Promise.all(r.map(function(reg) { return reg.unregister(); })); })); }');
-    document.write('Promise.all(clearPromises).then(function() { localStorage.setItem("__miniCycle_lastVersion", "' + currentVersion + '"); console.log("Cache cleared, reloading..."); location.reload(true); }).catch(function(e) { console.error("Clear failed:", e); localStorage.setItem("__miniCycle_lastVersion", "' + currentVersion + '"); location.reload(true); });');
+    document.write('Promise.all(clearPromises).then(function() { localStorage.setItem("__miniCycle_lastVersion", "' + currentVersion + '"); console.log("Cache cleared, reloading with cache buster..."); window.location.href = window.location.pathname + "?_cb=" + Date.now(); }).catch(function(e) { console.error("Clear failed:", e); localStorage.setItem("__miniCycle_lastVersion", "' + currentVersion + '"); window.location.href = window.location.pathname + "?_cb=" + Date.now(); });');
     document.write('</' + 'script></body></html>');
     document.close();
     return; // Stop - document.write replaced the page
