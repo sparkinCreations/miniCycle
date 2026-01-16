@@ -19,12 +19,11 @@ var MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 // Boot-critical files need network-first to prevent version mismatch errors
 // This prevents stale-while-revalidate from serving old cached modules
 var NETWORK_FIRST_PATTERNS = [
+  'version.js',                  // Version source of truth - MUST be fresh
   'miniCycle-main.js',           // Entry point
-  'modules/boot/',               // All boot files - version critical
-  'modules/utils/notifications', // Early-loaded, DI-critical
-  'modules/core/appState',       // State management - must be fresh
-  'modules/core/appInit'         // Init coordinator
-  // iOS PWA loads faster when serving from cache first for non-critical files
+  'modules/boot/'                // All boot files - version critical
+  // Note: Other modules use version mismatch detection (see fetch handler)
+  // which automatically uses network-first when ?v= param doesn't match SW version
 ];
 
 // ============================================================================
@@ -516,8 +515,16 @@ self.addEventListener('fetch', function (event) {
     cacheUrl.searchParams.delete('v');
     var cacheRequest = new Request(cacheUrl.href);
 
-    // ✅ HYBRID STRATEGY: Network-first for boot-critical, stale-while-revalidate for rest
-    var needsNetworkFirst = isNetworkFirstFile(url.pathname);
+    // ✅ VERSION MISMATCH DETECTION: If request has a version param that doesn't
+    // match the SW's version, use network-first to avoid serving stale cached files
+    var requestVersion = url.searchParams.get('v');
+    var versionMismatch = requestVersion && requestVersion !== APP_VERSION;
+    if (versionMismatch) {
+      console.log('⚠️ Version mismatch detected:', requestVersion, '→', APP_VERSION, url.pathname);
+    }
+
+    // ✅ HYBRID STRATEGY: Network-first for boot-critical OR version mismatch
+    var needsNetworkFirst = isNetworkFirstFile(url.pathname) || versionMismatch;
 
     if (needsNetworkFirst) {
       // ═══════════════════════════════════════════════════════════════════
