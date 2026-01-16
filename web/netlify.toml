@@ -76,3 +76,19 @@
   for = "/service-worker.js"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
+
+# JavaScript modules - must revalidate to ensure version param works
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/modules/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/modules/**/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
