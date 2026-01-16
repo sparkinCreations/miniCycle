@@ -54,41 +54,62 @@
     # PWA and caching headers
     Cache-Control = "public, max-age=31536000"
     
+# ═══════════════════════════════════════════════════════════════════════════
+# SAFARI FIX: Use "no-store" instead of "must-revalidate"
+# Safari's memory cache sits ABOVE service workers and ignores must-revalidate.
+# Only "no-store" reliably prevents Safari from serving stale cached content.
+# See: https://github.com/w3c/ServiceWorker/issues/1510
+# ═══════════════════════════════════════════════════════════════════════════
+
 [[headers]]
   for = "*.html"
   [headers.values]
-    # Don't cache HTML files as aggressively
-    Cache-Control = "public, max-age=0, must-revalidate"
+    # CRITICAL: no-store prevents Safari memory cache from serving stale HTML
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
 
 [[headers]]
   for = "/manifest.json"
   [headers.values]
-    # Cache manifest for PWA
-    Cache-Control = "public, max-age=86400"
+    # Cache manifest for PWA (less critical, can be cached briefly)
+    Cache-Control = "public, max-age=3600"
 
-# Version control plane - must revalidate to prevent stale version loops
+# Version control plane - MUST use no-store for Safari compatibility
 [[headers]]
   for = "/version.js"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    # CRITICAL: version.js must NEVER be cached - it's the source of truth
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
 
 [[headers]]
   for = "/service-worker.js"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    # Service worker file should never be cached
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
 
-# JavaScript modules - must revalidate to ensure version param works
+# JavaScript modules - use no-store to bypass Safari memory cache
 [[headers]]
   for = "*.js"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
 
 [[headers]]
   for = "/modules/*.js"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
 
 [[headers]]
   for = "/modules/**/*.js"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
