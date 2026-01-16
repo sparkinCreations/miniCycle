@@ -1,8 +1,13 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Import version from centralized version.js file
-importScripts('./version.js');
-var APP_VERSION = self.APP_VERSION;   // For URL cache-busting (?v=1.598)
-var CACHE_VERSION = 'v' + self.CACHE_VERSION; // For cache naming (v391)
+// ✅ iOS FIX: Wrap importScripts in try-catch to prevent SW crash
+try {
+  importScripts('./version.js');
+} catch (e) {
+  console.error('❌ Failed to load version.js:', e);
+}
+var APP_VERSION = self.APP_VERSION || '1.0.0';   // Fallback if version.js fails
+var CACHE_VERSION = 'v' + (self.CACHE_VERSION || 1); // Fallback for cache naming
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -10,16 +15,13 @@ var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 var MAX_DYNAMIC_ENTRIES = 100;  // Maximum entries in dynamic cache
 var MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
-// ✅ Boot-critical files that must always be network-first
-// These modules have tight interdependencies - serving stale versions breaks iOS PWA
+// ✅ iOS OPTIMIZATION: Minimal network-first patterns for faster offline startup
+// Only entry point needs network-first - everything else uses cache-first with revalidation
+// This prevents unnecessary network delays on iOS when offline
 var NETWORK_FIRST_PATTERNS = [
-  'miniCycle-main.js',     // Entry point
-  '/modules/boot/',        // Boot chain (orchestrator, coreBoot, etc.)
-  '/modules/core/',        // Core modules (diBase, constants, appState)
-  '/modules/utils/',       // Utilities (globalUtils, errorHandler)
-  'gesturePanelManager',   // Swipe gestures
-  'statsPanel',            // Stats panel (swipe target)
-  '/styles/'               // CSS files (imported via @import, need fresh versions)
+  'miniCycle-main.js'      // Only entry point - rest use cache-first
+  // REMOVED: boot/, core/, utils/, styles/ - these work fine from cache
+  // iOS PWA loads faster when serving from cache first
 ];
 
 // ============================================================================
@@ -295,6 +297,30 @@ function fromScope(path) {
 }
 
 /**
+ * ✅ iOS FIX: Fetch with timeout to prevent hanging on slow/flaky connections
+ * iOS Safari can hang indefinitely on fetch - this adds a 10s timeout
+ */
+var FETCH_TIMEOUT_MS = 10000; // 10 seconds
+
+function fetchWithTimeout(request, timeoutMs) {
+  timeoutMs = timeoutMs || FETCH_TIMEOUT_MS;
+
+  return new Promise(function(resolve, reject) {
+    var timeoutId = setTimeout(function() {
+      reject(new Error('Fetch timeout after ' + timeoutMs + 'ms'));
+    }, timeoutMs);
+
+    fetch(request).then(function(response) {
+      clearTimeout(timeoutId);
+      resolve(response);
+    }).catch(function(error) {
+      clearTimeout(timeoutId);
+      reject(error);
+    });
+  });
+}
+
+/**
  * Check if a URL should use network-first strategy
  * Boot-critical files need fresh loads to avoid version mismatches
  */
@@ -310,6 +336,7 @@ function isNetworkFirstFile(urlPath) {
 /**
  * Trim cache to prevent unbounded growth (LRU-style)
  * Removes oldest entries when cache exceeds MAX_DYNAMIC_ENTRIES
+ * ✅ iOS FIX: Uses iterative approach instead of recursion to prevent stack overflow
  * @param {string} cacheName - Name of the cache to trim
  * @param {number} maxEntries - Maximum number of entries to keep
  */
@@ -317,13 +344,15 @@ function trimCache(cacheName, maxEntries) {
   caches.open(cacheName).then(function(cache) {
     cache.keys().then(function(keys) {
       if (keys.length > maxEntries) {
-        // Delete oldest entry (first in list)
-        cache.delete(keys[0]).then(function() {
-          console.log('🗑️ Trimmed cache entry:', keys[0].url);
-          // Recursively trim until under limit
-          if (keys.length - 1 > maxEntries) {
-            trimCache(cacheName, maxEntries);
-          }
+        // Calculate how many to delete
+        var deleteCount = keys.length - maxEntries;
+        var toDelete = keys.slice(0, deleteCount);
+
+        // Delete all excess entries (iterative, not recursive)
+        toDelete.forEach(function(key) {
+          cache.delete(key).then(function() {
+            console.log('🗑️ Trimmed cache entry:', key.url);
+          });
         });
       }
     });
@@ -407,7 +436,8 @@ self.addEventListener('fetch', function (event) {
             console.log('⚡ Using navigation preload response');
             return preloadResponse;
           }
-          return fetch(request);
+          // ✅ iOS FIX: Use timeout to prevent hanging on slow connections
+          return fetchWithTimeout(request, FETCH_TIMEOUT_MS);
         })
         .then(function (fresh) {
           return caches.open(DYNAMIC_CACHE).then(function (cache) {
@@ -499,8 +529,9 @@ self.addEventListener('fetch', function (event) {
         cache: 'no-cache'
       });
 
+      // ✅ iOS FIX: Use fetchWithTimeout to prevent hanging
       event.respondWith(
-        fetch(freshRequest)
+        fetchWithTimeout(freshRequest, FETCH_TIMEOUT_MS)
           .then(function (res) {
             if (res && res.status === 200) {
               return caches.open(DYNAMIC_CACHE).then(function (cache) {
