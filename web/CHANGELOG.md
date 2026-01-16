@@ -1,3 +1,8 @@
+## [1.741] - 2026-01-16
+- feat: update constants module import to include versioning for cache busting
+- feat: update version to 1.740 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.740] - 2026-01-16
 - feat: enhance version mismatch detection and optimize network-first strategy for static imports
 - feat: update version to 1.739 and reflect changes in documentation, manifest, and styles
