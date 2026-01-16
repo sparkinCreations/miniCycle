@@ -515,16 +515,24 @@ self.addEventListener('fetch', function (event) {
     cacheUrl.searchParams.delete('v');
     var cacheRequest = new Request(cacheUrl.href);
 
-    // ✅ VERSION MISMATCH DETECTION: If request has a version param that doesn't
-    // match the SW's version, use network-first to avoid serving stale cached files
+    // ✅ VERSION MISMATCH DETECTION:
+    // 1. If request has a version param that doesn't match SW's version → network-first
+    // 2. If request is for a module file WITHOUT version param → network-first (static imports)
+    // This prevents serving stale cached files during version transitions
     var requestVersion = url.searchParams.get('v');
     var versionMismatch = requestVersion && requestVersion !== APP_VERSION;
+    var isModuleFile = url.pathname.indexOf('/modules/') !== -1;
+    var staticImportWithoutVersion = isModuleFile && !requestVersion;
+
     if (versionMismatch) {
       console.log('⚠️ Version mismatch detected:', requestVersion, '→', APP_VERSION, url.pathname);
     }
+    if (staticImportWithoutVersion) {
+      console.log('📦 Static import (no version):', url.pathname, '- using network-first');
+    }
 
-    // ✅ HYBRID STRATEGY: Network-first for boot-critical OR version mismatch
-    var needsNetworkFirst = isNetworkFirstFile(url.pathname) || versionMismatch;
+    // ✅ HYBRID STRATEGY: Network-first for boot-critical, version mismatch, OR static module imports
+    var needsNetworkFirst = isNetworkFirstFile(url.pathname) || versionMismatch || staticImportWithoutVersion;
 
     if (needsNetworkFirst) {
       // ═══════════════════════════════════════════════════════════════════
