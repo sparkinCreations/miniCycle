@@ -567,7 +567,11 @@ self.addEventListener('fetch', function (event) {
           .catch(function (error) {
             console.warn('❌ Network failed for boot-critical file, trying cache:', request.url);
             return caches.match(cacheRequest).then(function (cached) {
-              return cached || new Response('// Offline - file not cached', {
+              if (cached) return cached;
+              // Return a response that will cause the import to fail with a clear error
+              // rather than silently returning an empty module
+              console.error('❌ Module not in cache and network failed:', request.url);
+              return new Response('throw new Error("Module not available offline: ' + url.pathname + '");', {
                 status: 504,
                 statusText: 'Gateway Timeout',
                 headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
@@ -610,7 +614,10 @@ self.addEventListener('fetch', function (event) {
 
           // No cache - wait for network
           return fetchPromise.then(function (res) {
-            return res || new Response('// Offline - file not cached', {
+            if (res) return res;
+            // Return a response that will cause the import to fail with a clear error
+            console.error('❌ Module not in cache and network failed:', request.url);
+            return new Response('throw new Error("Module not available offline: ' + url.pathname + '");', {
               status: 504,
               statusText: 'Gateway Timeout',
               headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
