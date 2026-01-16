@@ -1,3 +1,8 @@
+## [1.748] - 2026-01-16
+- feat: implement Safari cache prevention measures in headers and clean up cache-buster URL
+- feat: update version to 1.747 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.747] - 2026-01-16
 - feat: implement automatic cache clearing on version change to prevent stale content
 - feat: update version to 1.746 and reflect changes in documentation, manifest, and styles
