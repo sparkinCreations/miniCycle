@@ -371,6 +371,55 @@ if ('serviceWorker' in navigator) {
   const CACHE_VERSION = window.CACHE_VERSION || 1;
   const CURRENT_CACHE_VERSION = 'v' + CACHE_VERSION;
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // POST-LOAD VERSION VERIFICATION
+  // Safari's memory cache can serve stale HTML BEFORE the service worker runs.
+  // This fetches version.js fresh and compares against what's currently loaded.
+  // ═══════════════════════════════════════════════════════════════════════════
+  let versionCheckInProgress = false;
+  async function verifyVersionFresh() {
+    if (versionCheckInProgress) return;
+    versionCheckInProgress = true;
+
+    try {
+      // Fetch version.js with timestamp to bypass ALL caches
+      const response = await fetch(`./version.js?_cb=${Date.now()}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      const text = await response.text();
+
+      // Extract version from response
+      const match = text.match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+      if (match) {
+        const serverVersion = match[1];
+        if (serverVersion !== APP_VERSION) {
+          console.warn(`🔄 VERSION MISMATCH: loaded=${APP_VERSION}, server=${serverVersion}`);
+          // Clear caches and reload
+          if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+          }
+          window.location.href = window.location.pathname + '?_cb=' + Date.now();
+          return;
+        }
+        console.log(`✅ Version verified: ${APP_VERSION}`);
+      }
+    } catch (err) {
+      console.warn('Version check failed (offline?):', err);
+    } finally {
+      versionCheckInProgress = false;
+    }
+  }
+
+  // Run version check on focus (iOS PWA) and visibility change
+  window.addEventListener('focus', verifyVersionFresh);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) verifyVersionFresh();
+  });
+  // Initial check after short delay (let SW register first)
+  setTimeout(verifyVersionFresh, 2000);
+
   // ✅ Function to register service worker with all event listeners
   async function registerServiceWorker() {
     const registration = await navigator.serviceWorker.register(`./service-worker.js?v=${APP_VERSION}`, {
@@ -423,6 +472,28 @@ if ('serviceWorker' in navigator) {
         });
       }
     }, 60000);
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // iOS PWA FIX: Focus event for home screen apps
+    // visibilitychange doesn't always fire on iOS PWAs, but focus does
+    // ═══════════════════════════════════════════════════════════════════════════
+    window.addEventListener('focus', () => {
+      if (registration) {
+        console.log('📱 Window focused - checking for SW updates (iOS PWA fix)...');
+        registration.update().catch(err => {
+          console.warn('Focus update check failed:', err);
+        });
+      }
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // IMMEDIATE UPDATE CHECK: Don't wait for visibility/focus events
+    // Force check right after registration to catch updates on app launch
+    // ═══════════════════════════════════════════════════════════════════════════
+    console.log('🚀 Immediate SW update check on registration...');
+    registration.update().catch(err => {
+      console.warn('Immediate update check failed:', err);
+    });
   }
 
   window.addEventListener('load', async () => {
