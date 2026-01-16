@@ -1,3 +1,8 @@
+## [1.749] - 2026-01-16
+- feat: update caching headers for JavaScript files to improve Safari compatibility
+- feat: update version to 1.748 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.748] - 2026-01-16
 - feat: implement Safari cache prevention measures in headers and clean up cache-buster URL
 - feat: update version to 1.747 and reflect changes in documentation, manifest, and styles
