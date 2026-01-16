@@ -1,3 +1,8 @@
+## [1.739] - 2026-01-16
+- feat: enhance service worker with version mismatch detection and optimize network-first strategy
+- feat: update version to 1.738 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.738] - 2026-01-16
 - feat: update version to 1.737 and reflect changes in documentation, manifest, and styles
 - feat: update version to 1.736 and reflect changes in documentation, manifest, and styles
