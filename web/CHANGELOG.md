@@ -1,3 +1,8 @@
+## [1.742] - 2026-01-16
+- feat: enhance service worker version mismatch detection and logging
+- feat: update version to 1.741 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.741] - 2026-01-16
 - feat: update constants module import to include versioning for cache busting
 - feat: update version to 1.740 and reflect changes in documentation, manifest, and styles
