@@ -1,3 +1,8 @@
+## [1.752] - 2026-01-16
+- feat: temporarily disable modulepreload due to duplicate instance issue with versioned URLs
+- feat: update version to 1.751 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.751] - 2026-01-16
 - feat: enhance loadDependencies function with error handling and logging for module imports
 - feat: update version to 1.750 and reflect changes in documentation, manifest, and styles
