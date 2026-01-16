@@ -368,7 +368,7 @@ export async function initCoreBoot(deps) {
   }
 
   // ========== Load Constants ==========
-  const constantsModule = await import('../core/constants.js');
+  const constantsModule = await import(`../core/constants.js?v=${APP_VERSION}`);
   DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = constantsModule.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
   DEFAULT_RECURRING_DELETE_SETTINGS = constantsModule.DEFAULT_RECURRING_DELETE_SETTINGS;
   TASK_LIMIT = constantsModule.TASK_LIMIT || 500;
