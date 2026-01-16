@@ -122,8 +122,18 @@
 })();
 </script>
 
-<!-- Modulepreload for critical boot modules - speeds up ES module loading -->
-<!-- Boot chain (7 modules) -->
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MODULEPRELOAD TEMPORARILY DISABLED
+     Reason: Versioned modulepreload URLs (?v=X) create duplicate module instances
+     when combined with static imports (which can't have query params).
+     This causes appInit singleton to be duplicated, breaking waitForCore().
+
+     TODO: Fix by either:
+     1. Using importmaps to map unversioned paths to versioned URLs
+     2. Using content-hash filenames instead of query params
+     3. Or accepting slightly slower initial load without preloads
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<!--
 <link rel="modulepreload" href="./miniCycle-main.js?v=1.751">
 <link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.751">
 <link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.751">
@@ -131,16 +141,15 @@
 <link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.751">
 <link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.751">
 <link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.751">
-<!-- Core state modules (5 modules) -->
 <link rel="modulepreload" href="./modules/core/appState.js?v=1.751">
 <link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.751">
 <link rel="modulepreload" href="./modules/core/appInit.js?v=1.751">
 <link rel="modulepreload" href="./modules/core/constants.js?v=1.751">
 <link rel="modulepreload" href="./modules/core/diBase.js?v=1.751">
-<!-- Critical utilities (3 modules) -->
 <link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.751">
 <link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.751">
 <link rel="modulepreload" href="./modules/utils/notifications.js?v=1.751">
+-->
 
 <style>
   /* ═══════════════════════════════════════════════════════════════════════
