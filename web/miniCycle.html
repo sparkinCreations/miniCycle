@@ -221,6 +221,60 @@
 <!-- version.js MUST load synchronously before ES modules to set globalThis.APP_VERSION -->
 <script src="./version.js?v=1.744"></script>
 
+<!-- Automatic cache integrity check - clears stale browser cache without user action -->
+<script>
+(function() {
+  // Only run on production
+  if (location.hostname.indexOf('minicycle.app') === -1) return;
+
+  // Check if we've already done a cache clear this session
+  var cacheCheckKey = '__miniCycle_cacheCheck_' + (globalThis.APP_VERSION || 'unknown');
+  if (sessionStorage.getItem(cacheCheckKey)) return;
+
+  // Fetch version.js bypassing ALL caches to see what server actually has
+  fetch('./version.js?_nocache=' + Date.now(), { cache: 'no-store' })
+    .then(function(r) { return r.text(); })
+    .then(function(text) {
+      // Extract version from fetched file
+      var match = text.match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+      var serverVersion = match ? match[1] : null;
+      var clientVersion = globalThis.APP_VERSION;
+
+      console.log('🔍 Cache check: client=' + clientVersion + ', server=' + serverVersion);
+
+      // If versions match, we're good
+      if (serverVersion && serverVersion === clientVersion) {
+        sessionStorage.setItem(cacheCheckKey, 'ok');
+        return;
+      }
+
+      // Version mismatch - browser has stale cache
+      console.warn('⚠️ Stale cache detected! Clearing and reloading...');
+
+      // Mark that we're doing a cache clear to prevent loops
+      sessionStorage.setItem('__miniCycle_clearing_cache', 'true');
+
+      // Clear all caches
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          return Promise.all(names.map(function(n) { return caches.delete(n); }));
+        }).then(function() {
+          console.log('✅ Caches cleared, reloading...');
+          location.reload();
+        });
+      } else {
+        // No Cache API, just reload with cache bust
+        location.href = location.pathname + '?_bust=' + Date.now();
+      }
+    })
+    .catch(function(e) {
+      // Network error - offline, just continue
+      console.log('📴 Offline, skipping cache check');
+      sessionStorage.setItem(cacheCheckKey, 'offline');
+    });
+})();
+</script>
+
 <script>
 
 // Minimal, ES3-safe feature gate: if arrow functions can't be parsed, go Lite.
