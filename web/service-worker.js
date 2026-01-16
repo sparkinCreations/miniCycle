@@ -16,12 +16,15 @@ var MAX_DYNAMIC_ENTRIES = 100;  // Maximum entries in dynamic cache
 var MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
 // ✅ iOS OPTIMIZATION: Minimal network-first patterns for faster offline startup
-// Only entry point needs network-first - everything else uses cache-first with revalidation
-// This prevents unnecessary network delays on iOS when offline
+// Boot-critical files need network-first to prevent version mismatch errors
+// This prevents stale-while-revalidate from serving old cached modules
 var NETWORK_FIRST_PATTERNS = [
-  'miniCycle-main.js'      // Only entry point - rest use cache-first
-  // REMOVED: boot/, core/, utils/, styles/ - these work fine from cache
-  // iOS PWA loads faster when serving from cache first
+  'miniCycle-main.js',           // Entry point
+  'modules/boot/',               // All boot files - version critical
+  'modules/utils/notifications', // Early-loaded, DI-critical
+  'modules/core/appState',       // State management - must be fresh
+  'modules/core/appInit'         // Init coordinator
+  // iOS PWA loads faster when serving from cache first for non-critical files
 ];
 
 // ============================================================================
