@@ -1,3 +1,8 @@
+## [1.737] - 2026-01-16
+- feat: update version to 1.736 and reflect changes in documentation, manifest, and styles
+- feat: enhance service worker with iOS optimizations and fetch timeout handling
+
+
 ## [1.736] - 2026-01-16
 - feat: update version to 1.735 and reflect changes in documentation, manifest, and styles
 
