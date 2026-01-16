@@ -1,3 +1,8 @@
+## [1.754] - 2026-01-16
+- feat: implement version verification for service worker updates to address caching issues in iOS PWAs
+- feat: update version to 1.753 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.753] - 2026-01-16
 - feat: implement temporary network-only fetch strategy for JS files to address Safari caching issues
 - feat: update version to 1.752 and reflect changes in documentation, manifest, and styles
