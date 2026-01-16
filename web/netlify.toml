@@ -75,11 +75,30 @@
     # Cache manifest for PWA (less critical, can be cached briefly)
     Cache-Control = "public, max-age=3600"
 
-# Version control plane - MUST use no-store for Safari compatibility
+# JavaScript modules - use no-cache (revalidate) but allow service worker caching
+# no-store is too aggressive and breaks offline support
+# The version parameter (?v=X.XXX) handles cache busting for modules
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Cache-Control = "no-cache, max-age=0"
+
+[[headers]]
+  for = "/modules/*.js"
+  [headers.values]
+    Cache-Control = "no-cache, max-age=0"
+
+[[headers]]
+  for = "/modules/**/*.js"
+  [headers.values]
+    Cache-Control = "no-cache, max-age=0"
+
+# CRITICAL FILES - Must come AFTER general *.js rule (last match wins in Netlify)
+# These use no-store for Safari compatibility - Safari ignores must-revalidate
 [[headers]]
   for = "/version.js"
   [headers.values]
-    # CRITICAL: version.js must NEVER be cached - it's the source of truth
+    # version.js must NEVER be cached - it's the source of truth for version checks
     Cache-Control = "no-cache, no-store, must-revalidate"
     Pragma = "no-cache"
     Expires = "0"
@@ -87,29 +106,7 @@
 [[headers]]
   for = "/service-worker.js"
   [headers.values]
-    # Service worker file should never be cached
-    Cache-Control = "no-cache, no-store, must-revalidate"
-    Pragma = "no-cache"
-    Expires = "0"
-
-# JavaScript modules - use no-store to bypass Safari memory cache
-[[headers]]
-  for = "*.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-    Pragma = "no-cache"
-    Expires = "0"
-
-[[headers]]
-  for = "/modules/*.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-    Pragma = "no-cache"
-    Expires = "0"
-
-[[headers]]
-  for = "/modules/**/*.js"
-  [headers.values]
+    # Service worker file should never be cached by browser
     Cache-Control = "no-cache, no-store, must-revalidate"
     Pragma = "no-cache"
     Expires = "0"
