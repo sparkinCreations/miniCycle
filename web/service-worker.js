@@ -504,6 +504,34 @@ self.addEventListener('fetch', function (event) {
                         url.pathname.endsWith('.mjs');
 
   if (isScriptOrStyle) {
+    // ═══════════════════════════════════════════════════════════════════════════
+    // TEMPORARY FIX: NETWORK-ONLY FOR ALL JS FILES
+    // Safari's aggressive caching (memory cache, HTTP cache) serves stale modules
+    // even with cache-control headers and service worker strategies.
+    // Until we implement importmaps or content-hashing, bypass all caching.
+    // ═══════════════════════════════════════════════════════════════════════════
+    console.log('🌐 Network-only fetch:', url.pathname);
+
+    event.respondWith(
+      fetch(request, { cache: 'no-store' })
+        .then(function(response) {
+          if (response && response.status === 200) {
+            console.log('✅ Fresh fetch:', url.pathname);
+          }
+          return response;
+        })
+        .catch(function(error) {
+          console.error('❌ Network failed:', url.pathname, error);
+          // Return error response so import fails clearly
+          return new Response('throw new Error("Module not available: ' + url.pathname + '");', {
+            status: 504,
+            headers: { 'Content-Type': 'application/javascript' }
+          });
+        })
+    );
+    return;
+
+    /* ORIGINAL CACHING LOGIC - DISABLED TEMPORARILY
     // ✅ AUTO-VERSION: Append version parameter to JS/CSS requests for cache-busting
     var fetchUrl = new URL(request.url);
     if (!fetchUrl.searchParams.has('v') && fetchUrl.pathname.endsWith('.js')) {
@@ -516,9 +544,6 @@ self.addEventListener('fetch', function (event) {
     var cacheRequest = new Request(cacheUrl.href);
 
     // ✅ VERSION MISMATCH DETECTION:
-    // 1. If request has a version param that doesn't match SW's version → network-first
-    // 2. If request is for a module file WITHOUT version param → network-first (static imports)
-    // This prevents serving stale cached files during version transitions
     var requestVersion = url.searchParams.get('v');
     var versionMismatch = requestVersion && requestVersion !== APP_VERSION;
     var isModuleFile = url.pathname.indexOf('/modules/') !== -1;
@@ -626,6 +651,7 @@ self.addEventListener('fetch', function (event) {
         })
       );
     }
+    END OF DISABLED CACHING LOGIC */
   } else {
     // ✅ CACHE-FIRST for images and other static assets
     event.respondWith(
