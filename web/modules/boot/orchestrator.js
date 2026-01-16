@@ -39,34 +39,68 @@ let attemptCacheRecovery, clearAllCaches, clearRecoveryFlags, isRecoveryExhauste
 
 // Load all dependencies with version params (Safari memory cache fix)
 async function loadDependencies() {
-  const [debugMod, storageMod, constantsMod, coreBootMod] = await Promise.all([
-    import(`../utils/debugMode.js?v=${APP_VERSION}`),
-    import(`../utils/storageUtils.js?v=${APP_VERSION}`),
-    import(`../core/constants.js?v=${APP_VERSION}`),
-    import(`./coreBoot.js?v=${APP_VERSION}`)
-  ]);
+  console.log('🔄 Loading orchestrator dependencies...');
 
-  // Assign from debugMode
-  installDebugFilter = debugMod.installDebugFilter;
-  setDebugModeDependencies = debugMod.setDebugModeDependencies;
-  refreshDebugState = debugMod.refreshDebugState;
+  try {
+    const [debugMod, storageMod, constantsMod, coreBootMod] = await Promise.all([
+      import(`../utils/debugMode.js?v=${APP_VERSION}`),
+      import(`../utils/storageUtils.js?v=${APP_VERSION}`),
+      import(`../core/constants.js?v=${APP_VERSION}`),
+      import(`./coreBoot.js?v=${APP_VERSION}`)
+    ]);
 
-  // Assign from storageUtils
-  setStorageDependencies = storageMod.setStorageDependencies;
+    console.log('📦 Modules loaded, extracting exports...');
+    console.log('   constants exports:', Object.keys(constantsMod));
 
-  // Assign from constants
-  BOOT_TIMEOUTS = constantsMod.BOOT_TIMEOUTS;
+    // Assign from debugMode
+    installDebugFilter = debugMod.installDebugFilter;
+    setDebugModeDependencies = debugMod.setDebugModeDependencies;
+    refreshDebugState = debugMod.refreshDebugState;
 
-  // Assign from coreBoot
-  attemptCacheRecovery = coreBootMod.attemptCacheRecovery;
-  clearAllCaches = coreBootMod.clearAllCaches;
-  clearRecoveryFlags = coreBootMod.clearRecoveryFlags;
-  isRecoveryExhausted = coreBootMod.isRecoveryExhausted;
+    // Assign from storageUtils
+    setStorageDependencies = storageMod.setStorageDependencies;
 
-  // Install debug filter after loading
-  installDebugFilter();
+    // Assign from constants - with validation
+    BOOT_TIMEOUTS = constantsMod.BOOT_TIMEOUTS;
+    if (!BOOT_TIMEOUTS) {
+      console.error('❌ BOOT_TIMEOUTS not found in constants.js exports!');
+      console.error('   Available exports:', Object.keys(constantsMod));
+      // Use fallback values to prevent crash
+      BOOT_TIMEOUTS = {
+        MODULE_IMPORT: 10000,
+        PHASE_1: 15000,
+        PHASE_2: 20000,
+        PHASE_3: 15000,
+        TOTAL: 45000,
+        RETRY_DELAY: 1000
+      };
+    }
 
-  console.log('✅ Orchestrator dependencies loaded with version params');
+    // Assign from coreBoot
+    attemptCacheRecovery = coreBootMod.attemptCacheRecovery;
+    clearAllCaches = coreBootMod.clearAllCaches;
+    clearRecoveryFlags = coreBootMod.clearRecoveryFlags;
+    isRecoveryExhausted = coreBootMod.isRecoveryExhausted;
+
+    // Install debug filter after loading
+    if (typeof installDebugFilter === 'function') {
+      installDebugFilter();
+    }
+
+    console.log('✅ Orchestrator dependencies loaded (BOOT_TIMEOUTS.MODULE_IMPORT =', BOOT_TIMEOUTS?.MODULE_IMPORT, ')');
+  } catch (error) {
+    console.error('❌ Failed to load orchestrator dependencies:', error);
+    // Use fallback BOOT_TIMEOUTS to allow boot to continue
+    BOOT_TIMEOUTS = {
+      MODULE_IMPORT: 10000,
+      PHASE_1: 15000,
+      PHASE_2: 20000,
+      PHASE_3: 15000,
+      TOTAL: 45000,
+      RETRY_DELAY: 1000
+    };
+    throw error; // Re-throw to trigger error handling
+  }
 }
 
 // Retry configuration
