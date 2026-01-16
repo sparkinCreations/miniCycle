@@ -1,3 +1,8 @@
+## [1.755] - 2026-01-16
+- feat: improve task input styling for better layout and responsiveness
+- feat: update version to 1.754 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.754] - 2026-01-16
 - feat: implement version verification for service worker updates to address caching issues in iOS PWAs
 - feat: update version to 1.753 and reflect changes in documentation, manifest, and styles
