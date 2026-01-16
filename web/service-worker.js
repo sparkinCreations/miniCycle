@@ -60,12 +60,22 @@ var BOOT_CRITICAL = [
   './modules/core/appContext.js',
   './modules/core/appGlobalState.js',
   './modules/core/migrationFacade.js',
-  // Essential utils for boot
+  './modules/core/dataAccess.js',
+  './modules/core/types.js',
+  // Utils - ALL utility modules
   './modules/utils/globalUtils.js',
   './modules/utils/errorHandler.js',
   './modules/utils/notifications.js',
   './modules/utils/deviceDetection.js',
-  // Task modules - core functionality
+  './modules/utils/consoleCapture.js',
+  './modules/utils/dataSanitizer.js',
+  './modules/utils/dataValidator.js',
+  './modules/utils/debugMode.js',
+  './modules/utils/iconInit.js',
+  './modules/utils/icons.js',
+  './modules/utils/nameUtils.js',
+  './modules/utils/storageUtils.js',
+  // Task modules - ALL task functionality
   './modules/task/taskCore.js',
   './modules/task/taskDOM.js',
   './modules/task/taskRenderer.js',
@@ -73,6 +83,11 @@ var BOOT_CRITICAL = [
   './modules/task/taskUtils.js',
   './modules/task/taskValidation.js',
   './modules/task/dragDropManager.js',
+  './modules/task/taskButtons.js',
+  './modules/task/taskCompletion.js',
+  './modules/task/taskCRUD.js',
+  './modules/task/taskCycleReset.js',
+  './modules/task/taskDOMPatch.js',
   // Routine modules
   './modules/routine/routineLoader.js',
   './modules/routine/routineManager.js',
@@ -97,8 +112,41 @@ var BOOT_CRITICAL = [
   './modules/features/reminders.js',
   // Progress
   './modules/progress/cycleCompletion.js',
-  // Recurring (core only)
-  './modules/recurring/recurringCore.js'
+  // Recurring - ALL modules (required for offline)
+  './modules/recurring/recurringCore.js',
+  './modules/recurring/recurringActivation.js',
+  './modules/recurring/recurringCalculators.js',
+  './modules/recurring/recurringDateUtils.js',
+  './modules/recurring/recurringIntegration.js',
+  './modules/recurring/recurringMatcher.js',
+  './modules/recurring/recurringPanel.js',
+  './modules/recurring/recurringPanelEvents.js',
+  './modules/recurring/recurringPanelForm.js',
+  './modules/recurring/recurringPanelGrids.js',
+  './modules/recurring/recurringPanelSetup.js',
+  './modules/recurring/recurringPanelSummary.js',
+  './modules/recurring/recurringSettings.js',
+  './modules/recurring/recurringSettingsApplicator.js',
+  './modules/recurring/recurringWatcher.js',
+  // UI - remaining modules
+  './modules/ui/backupRestoreManager.js',
+  './modules/ui/cycleExportManager.js',
+  './modules/ui/cycleImportManager.js',
+  './modules/ui/gamesManager.js',
+  './modules/ui/helpWindowManager.js',
+  './modules/ui/onboardingManager.js',
+  './modules/ui/preferencesManager.js',
+  './modules/ui/pullToRefresh.js',
+  './modules/ui/taskInteractions.js',
+  './modules/ui/taskOptionsCustomizer.js',
+  './modules/ui/taskSearch.js',
+  './modules/ui/uiOrchestrator.js',
+  './modules/ui/undoRedoManager.js',
+  // Features - remaining
+  './modules/features/clearedTasksManager.js',
+  './modules/features/historyManager.js',
+  // Storage
+  './modules/storage/backupManager.js'
 ];
 
 // CSS files - all @imports from main.css (required for offline styling)
