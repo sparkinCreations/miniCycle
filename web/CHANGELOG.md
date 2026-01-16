@@ -1,3 +1,7 @@
+## [1.736] - 2026-01-16
+- feat: update version to 1.735 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.735] - 2026-01-16
 - feat: enhance boot-critical files for improved offline functionality
 - feat: update version to 1.734 and reflect changes in documentation, manifest, and styles
