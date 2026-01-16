@@ -1,3 +1,11 @@
+## [1.746] - 2026-01-16
+- feat: add automatic cache integrity check to clear stale browser cache
+
+
+## [1.745] - 2026-01-16
+- feat: update version to 1.744 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.744] - 2026-01-16
 - feat: add Cache-Control headers for JavaScript modules to ensure revalidation
 - feat: update version to 1.743 and reflect changes in documentation, manifest, and styles
