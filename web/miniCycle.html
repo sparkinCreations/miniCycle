@@ -61,6 +61,61 @@
 <noscript><link rel="stylesheet" href="styles/main.css?v=1.746"></noscript>
 <link rel="manifest" href="manifest.json">
 
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     CRITICAL: Version check MUST run BEFORE modulepreload hints!
+     Modulepreloads start fetching immediately when parsed. If we detect a
+     version mismatch, we need to clear caches and reload BEFORE those fetches
+     complete and populate the browser's module map with stale content.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
+<script src="./version.js?v=1.746"></script>
+
+<!-- Automatic cache clear on version change - BLOCKS further parsing if reload needed -->
+<script>
+(function() {
+  // Only run on production
+  if (location.hostname.indexOf('minicycle.app') === -1) return;
+
+  var currentVersion = globalThis.APP_VERSION || 'unknown';
+  var lastSeenVersion = localStorage.getItem('__miniCycle_lastVersion');
+  var justCleared = sessionStorage.getItem('__miniCycle_justCleared');
+
+  console.log('🔍 Version check (early): current=' + currentVersion + ', lastSeen=' + lastSeenVersion);
+
+  // If we just cleared for this version, don't clear again (prevent loops)
+  if (justCleared === currentVersion) {
+    console.log('✅ Cache already cleared for v' + currentVersion);
+    localStorage.setItem('__miniCycle_lastVersion', currentVersion);
+    return;
+  }
+
+  // If this is a NEW version (different from last seen), clear ALL caches
+  // CRITICAL: This must complete BEFORE modulepreloads fetch stale content
+  if (lastSeenVersion && lastSeenVersion !== currentVersion) {
+    console.warn('🔄 NEW VERSION DETECTED: ' + lastSeenVersion + ' → ' + currentVersion);
+    console.warn('🗑️ Clearing all caches and service workers BEFORE module loading...');
+
+    // Mark that we're clearing THIS version to prevent loops
+    sessionStorage.setItem('__miniCycle_justCleared', currentVersion);
+
+    // Use document.write to STOP further HTML parsing immediately
+    // This prevents modulepreload hints from being processed with stale caches
+    document.write('<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body{margin:0;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(135deg,#4c79ff,#74c0fc);font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:white;}.loader{width:40px;height:40px;border:3px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 1s linear infinite;}@keyframes spin{to{transform:rotate(360deg)}}</style></head><body><div class="loader"></div><p style="margin-top:20px;font-size:16px;">Updating miniCycle...</p><script>');
+    document.write('var clearPromises = [];');
+    document.write('if ("caches" in window) { clearPromises.push(caches.keys().then(function(n) { console.log("Deleting caches:", n); return Promise.all(n.map(function(c) { return caches.delete(c); })); })); }');
+    document.write('if ("serviceWorker" in navigator) { clearPromises.push(navigator.serviceWorker.getRegistrations().then(function(r) { console.log("Unregistering", r.length, "service workers"); return Promise.all(r.map(function(reg) { return reg.unregister(); })); })); }');
+    document.write('Promise.all(clearPromises).then(function() { localStorage.setItem("__miniCycle_lastVersion", "' + currentVersion + '"); console.log("Cache cleared, reloading..."); location.reload(true); }).catch(function(e) { console.error("Clear failed:", e); localStorage.setItem("__miniCycle_lastVersion", "' + currentVersion + '"); location.reload(true); });');
+    document.write('</' + 'script></body></html>');
+    document.close();
+    return; // Stop - document.write replaced the page
+  }
+
+  // First visit or same version - just record it
+  localStorage.setItem('__miniCycle_lastVersion', currentVersion);
+})();
+</script>
+
 <!-- Modulepreload for critical boot modules - speeds up ES module loading -->
 <!-- Boot chain (7 modules) -->
 <link rel="modulepreload" href="./miniCycle-main.js?v=1.746">
@@ -218,62 +273,8 @@
   })();
 </script>
 
-<!-- version.js MUST load synchronously before ES modules to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.746"></script>
-
-<!-- Automatic cache integrity check - clears stale browser cache without user action -->
-<script>
-(function() {
-  // Only run on production
-  if (location.hostname.indexOf('minicycle.app') === -1) return;
-
-  // Check if we've already done a cache clear this session
-  var cacheCheckKey = '__miniCycle_cacheCheck_' + (globalThis.APP_VERSION || 'unknown');
-  if (sessionStorage.getItem(cacheCheckKey)) return;
-
-  // Fetch version.js bypassing ALL caches to see what server actually has
-  fetch('./version.js?_nocache=' + Date.now(), { cache: 'no-store' })
-    .then(function(r) { return r.text(); })
-    .then(function(text) {
-      // Extract version from fetched file
-      var match = text.match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
-      var serverVersion = match ? match[1] : null;
-      var clientVersion = globalThis.APP_VERSION;
-
-      console.log('🔍 Cache check: client=' + clientVersion + ', server=' + serverVersion);
-
-      // If versions match, we're good
-      if (serverVersion && serverVersion === clientVersion) {
-        sessionStorage.setItem(cacheCheckKey, 'ok');
-        return;
-      }
-
-      // Version mismatch - browser has stale cache
-      console.warn('⚠️ Stale cache detected! Clearing and reloading...');
-
-      // Mark that we're doing a cache clear to prevent loops
-      sessionStorage.setItem('__miniCycle_clearing_cache', 'true');
-
-      // Clear all caches
-      if ('caches' in window) {
-        caches.keys().then(function(names) {
-          return Promise.all(names.map(function(n) { return caches.delete(n); }));
-        }).then(function() {
-          console.log('✅ Caches cleared, reloading...');
-          location.reload();
-        });
-      } else {
-        // No Cache API, just reload with cache bust
-        location.href = location.pathname + '?_bust=' + Date.now();
-      }
-    })
-    .catch(function(e) {
-      // Network error - offline, just continue
-      console.log('📴 Offline, skipping cache check');
-      sessionStorage.setItem(cacheCheckKey, 'offline');
-    });
-})();
-</script>
+<!-- NOTE: version.js and cache clearing script moved BEFORE modulepreload hints (line ~71) -->
+<!-- This ensures version check runs before browser starts prefetching modules -->
 
 <script>
 
