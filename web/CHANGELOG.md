@@ -1,3 +1,8 @@
+## [1.743] - 2026-01-16
+- feat: improve error handling for offline module loading in service worker
+- feat: update version to 1.742 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.742] - 2026-01-16
 - feat: enhance service worker version mismatch detection and logging
 - feat: update version to 1.741 and reflect changes in documentation, manifest, and styles
