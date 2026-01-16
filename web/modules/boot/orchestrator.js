@@ -21,23 +21,53 @@
  * @see {@link module:boot/uiBoot} - Phase 3 implementation
  */
 
-import { installDebugFilter, setDebugModeDependencies, refreshDebugState } from '../utils/debugMode.js';
-import { setStorageDependencies } from '../utils/storageUtils.js';
-import { BOOT_TIMEOUTS } from '../core/constants.js';
-import {
-  attemptCacheRecovery,
-  clearAllCaches,
-  clearRecoveryFlags,
-  isRecoveryExhausted
-} from './coreBoot.js';
-
-// Install debug filter FIRST - before any other console.log calls
-// Enable with: ?debug=true or localStorage.setItem('miniCycle_debug', 'true')
-installDebugFilter();
-
 // ✅ Single source of truth: Read version from globalThis (set by version.js)
 // Falls back to 'dev-local' for local development without version.js
 const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SAFARI FIX: Use dynamic imports with version params to bypass memory cache
+// Safari's memory cache sits ABOVE service workers and serves stale static imports.
+// Converting to dynamic imports with ?v= params forces fresh fetches.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Module references (populated by loadDependencies)
+let installDebugFilter, setDebugModeDependencies, refreshDebugState;
+let setStorageDependencies;
+let BOOT_TIMEOUTS;
+let attemptCacheRecovery, clearAllCaches, clearRecoveryFlags, isRecoveryExhausted;
+
+// Load all dependencies with version params (Safari memory cache fix)
+async function loadDependencies() {
+  const [debugMod, storageMod, constantsMod, coreBootMod] = await Promise.all([
+    import(`../utils/debugMode.js?v=${APP_VERSION}`),
+    import(`../utils/storageUtils.js?v=${APP_VERSION}`),
+    import(`../core/constants.js?v=${APP_VERSION}`),
+    import(`./coreBoot.js?v=${APP_VERSION}`)
+  ]);
+
+  // Assign from debugMode
+  installDebugFilter = debugMod.installDebugFilter;
+  setDebugModeDependencies = debugMod.setDebugModeDependencies;
+  refreshDebugState = debugMod.refreshDebugState;
+
+  // Assign from storageUtils
+  setStorageDependencies = storageMod.setStorageDependencies;
+
+  // Assign from constants
+  BOOT_TIMEOUTS = constantsMod.BOOT_TIMEOUTS;
+
+  // Assign from coreBoot
+  attemptCacheRecovery = coreBootMod.attemptCacheRecovery;
+  clearAllCaches = coreBootMod.clearAllCaches;
+  clearRecoveryFlags = coreBootMod.clearRecoveryFlags;
+  isRecoveryExhausted = coreBootMod.isRecoveryExhausted;
+
+  // Install debug filter after loading
+  installDebugFilter();
+
+  console.log('✅ Orchestrator dependencies loaded with version params');
+}
 
 // Retry configuration
 const MAX_BOOT_RETRIES = 1;
@@ -394,9 +424,19 @@ async function initApp() {
   }
 }
 
-// Run when DOM is ready
+// Run when DOM is ready - must load dependencies first (Safari memory cache fix)
+async function startOrchestrator() {
+  try {
+    await loadDependencies();
+    await initApp();
+  } catch (error) {
+    console.error('❌ Orchestrator failed to start:', error);
+    // HTML fallback will redirect to lite version after timeout
+  }
+}
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initApp);
+  document.addEventListener('DOMContentLoaded', startOrchestrator);
 } else {
-  initApp();
+  startOrchestrator();
 }
