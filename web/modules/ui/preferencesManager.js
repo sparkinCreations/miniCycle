@@ -32,6 +32,7 @@ const DEFAULT_COLORS = {
     titleBg: '#ffffff',
     titleText: '#2b2b2b',
     checkboxBg: '#5db567',
+    checkboxIncompleteBg: '#c8c8c8',
     checkmark: '#124609',
     completeBtn: '#08c352',
     clearBtn: '#3b82f6',
@@ -59,6 +60,7 @@ const QUICK_PRESETS = {
             titleBg: '#ffeaa7',
             titleText: '#a85a32',
             checkboxBg: '#e17055',
+            checkboxIncompleteBg: '#e8d5c4',
             checkmark: '#ffffff',
             completeBtn: '#fd79a8',
             clearBtn: '#fdcb6e',
@@ -77,6 +79,7 @@ const QUICK_PRESETS = {
             titleBg: '#dfe6e9',
             titleText: '#2980b9',
             checkboxBg: '#0984e3',
+            checkboxIncompleteBg: '#b8d4e3',
             checkmark: '#ffffff',
             completeBtn: '#00cec9',
             clearBtn: '#6c5ce7',
@@ -95,6 +98,7 @@ const QUICK_PRESETS = {
             titleBg: '#a8d5ba',
             titleText: '#1b4332',
             checkboxBg: '#2e7d32',
+            checkboxIncompleteBg: '#a8c5a8',
             checkmark: '#ffffff',
             completeBtn: '#388e3c',
             clearBtn: '#558b2f',
@@ -113,6 +117,7 @@ const QUICK_PRESETS = {
             titleBg: '#b2bec3',
             titleText: '#2d3436',
             checkboxBg: '#636e72',
+            checkboxIncompleteBg: '#b2bec3',
             checkmark: '#ffffff',
             completeBtn: '#2d3436',
             clearBtn: '#636e72',
@@ -131,6 +136,7 @@ const QUICK_PRESETS = {
             titleBg: '#ffffff',
             titleText: '#1d1d1f',
             checkboxBg: '#007aff',
+            checkboxIncompleteBg: '#d1d1d6',
             checkmark: '#ffffff',
             completeBtn: '#34c759',
             clearBtn: '#007aff',
@@ -177,6 +183,11 @@ const COLOR_MAP = {
         key: 'checkboxBg',
         cssVar: '--pref-checkbox-bg',
         previewVar: '--preview-checkbox-bg'
+    },
+    'pref-checkbox-incomplete-bg': {
+        key: 'checkboxIncompleteBg',
+        cssVar: '--pref-checkbox-incomplete-bg',
+        previewVar: '--preview-checkbox-incomplete-bg'
     },
     'pref-checkmark': {
         key: 'checkmark',
@@ -357,6 +368,42 @@ export class PreferencesManager {
             }
         });
 
+        // Checkbox fill visibility toggle
+        const checkboxFillToggle = document.getElementById('toggle-checkbox-fill');
+        if (checkboxFillToggle) {
+            checkboxFillToggle._changeHandler = (e) => this.handleCheckboxFillToggle(e.target.checked);
+            safeAdd(checkboxFillToggle, 'change', checkboxFillToggle._changeHandler);
+
+            const toggleSwitch = checkboxFillToggle.closest('.toggle-switch');
+            if (toggleSwitch) {
+                toggleSwitch._clickHandler = (e) => {
+                    if (e.target !== checkboxFillToggle) {
+                        checkboxFillToggle.checked = !checkboxFillToggle.checked;
+                        this.handleCheckboxFillToggle(checkboxFillToggle.checked);
+                    }
+                };
+                safeAdd(toggleSwitch, 'click', toggleSwitch._clickHandler);
+            }
+        }
+
+        // Checkbox incomplete visibility toggle
+        const checkboxIncompleteToggle = document.getElementById('toggle-checkbox-incomplete');
+        if (checkboxIncompleteToggle) {
+            checkboxIncompleteToggle._changeHandler = (e) => this.handleCheckboxIncompleteToggle(e.target.checked);
+            safeAdd(checkboxIncompleteToggle, 'change', checkboxIncompleteToggle._changeHandler);
+
+            const toggleSwitch = checkboxIncompleteToggle.closest('.toggle-switch');
+            if (toggleSwitch) {
+                toggleSwitch._clickHandler = (e) => {
+                    if (e.target !== checkboxIncompleteToggle) {
+                        checkboxIncompleteToggle.checked = !checkboxIncompleteToggle.checked;
+                        this.handleCheckboxIncompleteToggle(checkboxIncompleteToggle.checked);
+                    }
+                };
+                safeAdd(toggleSwitch, 'click', toggleSwitch._clickHandler);
+            }
+        }
+
         // Reset buttons
         document.querySelectorAll('.preferences-reset-btn').forEach(btn => {
             const targetId = btn.dataset.target;
@@ -471,6 +518,30 @@ export class PreferencesManager {
                 input.value = savedColor || DEFAULT_COLORS[config.key];
             }
         });
+
+        // Load checkbox fill visibility toggle state
+        const checkboxFillToggle = document.getElementById('toggle-checkbox-fill');
+        if (checkboxFillToggle) {
+            const showFill = customColors.showCheckboxFill !== false; // Default to true
+            checkboxFillToggle.checked = showFill;
+
+            const colorInput = document.getElementById('pref-checkbox-bg');
+            const resetBtn = document.querySelector('[data-target="pref-checkbox-bg"]');
+            if (colorInput) colorInput.style.opacity = showFill ? '1' : '0.3';
+            if (resetBtn) resetBtn.style.opacity = showFill ? '1' : '0.3';
+        }
+
+        // Load checkbox incomplete visibility toggle state
+        const checkboxIncompleteToggle = document.getElementById('toggle-checkbox-incomplete');
+        if (checkboxIncompleteToggle) {
+            const showCheckbox = customColors.showCheckboxIncomplete !== false; // Default to true
+            checkboxIncompleteToggle.checked = showCheckbox;
+
+            const colorInput = document.getElementById('pref-checkbox-incomplete-bg');
+            const resetBtn = document.querySelector('[data-target="pref-checkbox-incomplete-bg"]');
+            if (colorInput) colorInput.style.opacity = showCheckbox ? '1' : '0.3';
+            if (resetBtn) resetBtn.style.opacity = showCheckbox ? '1' : '0.3';
+        }
     }
 
     /**
@@ -497,6 +568,70 @@ export class PreferencesManager {
         }
 
         this.updateUndoButton();
+    }
+
+    /**
+     * Handle checkbox fill visibility toggle
+     * @param {boolean} visible - Whether the checkbox fill should be visible
+     */
+    handleCheckboxFillToggle(visible) {
+        console.log('🎨 Checkbox fill toggle:', visible);
+
+        // Save to appState
+        if (_deps.AppState) {
+            _deps.AppState.update(state => {
+                if (!state.settings.customColors) {
+                    state.settings.customColors = {};
+                }
+                state.settings.customColors.showCheckboxFill = visible;
+            });
+        }
+
+        // Update color input visibility
+        const colorInput = document.getElementById('pref-checkbox-bg');
+        const resetBtn = document.querySelector('[data-target="pref-checkbox-bg"]');
+        if (colorInput) colorInput.style.opacity = visible ? '1' : '0.3';
+        if (resetBtn) resetBtn.style.opacity = visible ? '1' : '0.3';
+
+        // Update preview
+        this.updatePreview();
+
+        // Apply immediately if in default theme
+        if (this.isDefaultTheme()) {
+            this.applyCustomColors();
+        }
+    }
+
+    /**
+     * Handle checkbox incomplete visibility toggle
+     * @param {boolean} visible - Whether the incomplete checkbox should be visible
+     */
+    handleCheckboxIncompleteToggle(visible) {
+        console.log('🎨 Checkbox incomplete toggle:', visible);
+
+        // Save to appState
+        if (_deps.AppState) {
+            _deps.AppState.update(state => {
+                if (!state.settings.customColors) {
+                    state.settings.customColors = {};
+                }
+                state.settings.customColors.showCheckboxIncomplete = visible;
+            });
+        }
+
+        // Update color input visibility
+        const colorInput = document.getElementById('pref-checkbox-incomplete-bg');
+        const resetBtn = document.querySelector('[data-target="pref-checkbox-incomplete-bg"]');
+        if (colorInput) colorInput.style.opacity = visible ? '1' : '0.3';
+        if (resetBtn) resetBtn.style.opacity = visible ? '1' : '0.3';
+
+        // Update preview
+        this.updatePreview();
+
+        // Apply immediately if in default theme
+        if (this.isDefaultTheme()) {
+            this.applyCustomColors();
+        }
     }
 
     /**
@@ -606,6 +741,18 @@ export class PreferencesManager {
                 root.style.removeProperty(config.cssVar);
             }
         });
+
+        // Handle checkbox fill visibility
+        const showCheckboxFill = customColors.showCheckboxFill !== false;
+        if (!showCheckboxFill) {
+            root.style.setProperty('--pref-checkbox-bg', 'transparent');
+        }
+
+        // Handle checkbox incomplete visibility
+        const showCheckboxIncomplete = customColors.showCheckboxIncomplete !== false;
+        if (!showCheckboxIncomplete) {
+            root.style.setProperty('--pref-checkbox-incomplete-bg', 'transparent');
+        }
     }
 
     /**
@@ -635,6 +782,20 @@ export class PreferencesManager {
                 preview.style.setProperty(config.previewVar, color);
             }
         });
+
+        // Handle checkbox fill visibility in preview
+        const checkboxFillToggle = document.getElementById('toggle-checkbox-fill');
+        const showCheckboxFill = checkboxFillToggle?.checked !== false;
+        if (!showCheckboxFill) {
+            preview.style.setProperty('--preview-checkbox-bg', 'transparent');
+        }
+
+        // Handle checkbox incomplete visibility in preview
+        const checkboxIncompleteToggle = document.getElementById('toggle-checkbox-incomplete');
+        const showCheckboxIncomplete = checkboxIncompleteToggle?.checked !== false;
+        if (!showCheckboxIncomplete) {
+            preview.style.setProperty('--preview-checkbox-incomplete-bg', 'transparent');
+        }
     }
 
     /**

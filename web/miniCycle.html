@@ -1025,7 +1025,7 @@ window.installApp = () => {
 
                     <div class="about-footer">
                         <p>Developed by <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a></p>
-                        <p class="about-copyright">&copy; 2025 miniCycle&trade;</p>
+                        <p class="about-copyright">&copy; 2026 miniCycle&trade;</p>
                         <p class="about-cache">Cache: <span id="about-sw-version">—</span></p>
                     </div>
                 </div>
@@ -2080,8 +2080,22 @@ window.installApp = () => {
                     <div class="preferences-color-row">
                         <span class="pref-color-icon">&#x2611;&#xFE0F;</span>
                         <label for="pref-checkbox-bg">Checkbox Fill</label>
+                        <span class="toggle-switch pref-toggle">
+                            <input type="checkbox" id="toggle-checkbox-fill" name="toggle-checkbox-fill" checked>
+                            <span class="toggle-slider"></span>
+                        </span>
                         <input type="color" id="pref-checkbox-bg" value="#5db567" />
                         <button class="preferences-reset-btn" data-target="pref-checkbox-bg" title="Reset to default">Reset</button>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">⬜</span>
+                        <label for="pref-checkbox-incomplete-bg">Checkbox Empty</label>
+                        <span class="toggle-switch pref-toggle">
+                            <input type="checkbox" id="toggle-checkbox-incomplete" name="toggle-checkbox-incomplete" checked>
+                            <span class="toggle-slider"></span>
+                        </span>
+                        <input type="color" id="pref-checkbox-incomplete-bg" value="#c8c8c8" />
+                        <button class="preferences-reset-btn" data-target="pref-checkbox-incomplete-bg" title="Reset to default">Reset</button>
                     </div>
                     <div class="preferences-color-row">
                         <span class="pref-color-icon">&#x2714;&#xFE0F;</span>
@@ -2467,7 +2481,7 @@ window.installApp = () => {
 </nav>
 <ul class="footer-links" style="list-style: none; padding: 0; margin: 0 auto; display: flex; justify-content: center; align-items: center; width: fit-content;">
 <li id="copyright">
-  &copy; 2025 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer" title="Visit sparkinCreations website">sparkinCreations</a>
+  &copy; 2026 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer" title="Visit sparkinCreations website">sparkinCreations</a>
   &bull;
   <a href="pages/product.html" target="_blank" rel="noopener noreferrer" aria-label="miniCycle product page" title="Open the miniCycle product page">miniCycle<sup>™</sup></a>
 </li>

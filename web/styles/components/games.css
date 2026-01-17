@@ -85,36 +85,12 @@
 }
 
 /* =============================================================================
-   GAME UNLOCK MESSAGE
+   GAME UNLOCK MESSAGE (in stats panel - inline text, not popup)
    ============================================================================= */
 
-#game-unlock-message {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: linear-gradient(135deg, #4ecdc4 0%, #44a8a0 100%);
-    color: white;
-    padding: 20px 30px;
-    border-radius: 12px;
-    font-size: 18px;
-    font-weight: bold;
-    text-align: center;
-    z-index: 3001;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-
-#game-unlock-message.visible {
-    opacity: 1;
-    visibility: visible;
-}
-
-#game-unlock-message.unlocked-message {
-    animation: popIn 0.5s ease;
-}
+/* Note: #game-unlock-message styling is handled in stats-panel.css
+   This section previously had popup styling which conflicted with the
+   inline display in the milestone rewards section. */
 
 /* =============================================================================
    GAME CARD

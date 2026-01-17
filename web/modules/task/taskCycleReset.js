@@ -444,6 +444,17 @@ export async function resetTasksImpl(deps = {}) {
             await mergedDeps.animateProgressBarFill();
         }
 
+        // Step 3.5: Spin the logo (coin-flip animation)
+        const headerLogo = document.querySelector('.header-logo');
+        if (headerLogo) {
+            headerLogo.classList.remove('logo-spin'); // Reset if already spinning
+            // Force reflow to restart animation
+            void headerLogo.offsetWidth;
+            headerLogo.classList.add('logo-spin');
+            // Remove class after animation completes
+            setTimeout(() => headerLogo.classList.remove('logo-spin'), 600);
+        }
+
         // Step 4: Perform core data reset
         const result = resetTasksData(context, mergedDeps);
         if (result.aborted) {

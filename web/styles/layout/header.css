@@ -77,6 +77,29 @@
     transform: scale(1.1);
 }
 
+/* Logo coin-flip spin animation for cycle reset */
+@keyframes logo-coin-flip {
+    0% {
+        transform: rotateY(0deg);
+    }
+    100% {
+        transform: rotateY(360deg);
+    }
+}
+
+@keyframes logo-glow-green {
+    0%, 100% {
+        filter: drop-shadow(0 0 4px rgba(40, 167, 69, 0.6));
+    }
+    50% {
+        filter: drop-shadow(0 0 12px rgba(40, 167, 69, 1)) drop-shadow(0 0 20px rgba(40, 167, 69, 0.8));
+    }
+}
+
+.header-logo.logo-spin {
+    animation: logo-coin-flip 0.6s ease-in-out, logo-glow-green 0.6s ease-in-out;
+}
+
 /* Logo flash effects for feedback */
 .header-logo.logo-flash-green {
     background-color: #28a745 !important;
