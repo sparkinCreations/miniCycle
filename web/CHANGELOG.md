@@ -1,3 +1,8 @@
+## [1.765] - 2026-01-17
+- feat: enhance theme presets and update milestone progress text for clarity
+- feat: update version to 1.764 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.764] - 2026-01-17
 - feat: update copyright year to 2026 across all relevant files
 - feat: update version to 1.763 and reflect changes in documentation, manifest, and styles
