@@ -218,18 +218,18 @@
 
 @media (max-width: 768px) {
     .mode-selector-wrapper {
-        min-height: 26px;
+        min-height: 32px;
     }
 
     .mode-selector-wrapper .mode-selector {
         font-size: 11px;
-        height: 20px;
+        height: 24px;
         max-width: 120px;
     }
 
     .quick-actions-btn {
         width: 70px;
-        height: 20px;
+        height: 24px;
     }
 }
 
