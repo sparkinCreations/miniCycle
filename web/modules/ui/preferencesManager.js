@@ -144,6 +144,63 @@ const QUICK_PRESETS = {
             statsBg: '#ffffff',
             statsText: '#1d1d1f'
         }
+    },
+    goldenGlow: {
+        name: 'Golden Glow',
+        colors: {
+            appBg: '#d4a017',
+            taskListBg: '#fffef5',
+            taskBg: '#fffff8',
+            taskText: '#5c4a1f',
+            titleBg: '#ffeeba',
+            titleText: '#8b6914',
+            checkboxBg: '#daa520',
+            checkboxIncompleteBg: '#ead9a8',
+            checkmark: '#ffffff',
+            completeBtn: '#c9a227',
+            clearBtn: '#e6b800',
+            progressBar: '#ffd700',
+            statsBg: '#fffef5',
+            statsText: '#5c4a1f'
+        }
+    },
+    darkOcean: {
+        name: 'Dark Ocean',
+        colors: {
+            appBg: '#0a2540',
+            taskListBg: '#1a3a5c',
+            taskBg: '#1e4263',
+            taskText: '#e0f0ff',
+            titleBg: '#0d3156',
+            titleText: '#7dd3fc',
+            checkboxBg: '#0ea5e9',
+            checkboxIncompleteBg: '#2a4a6a',
+            checkmark: '#ffffff',
+            completeBtn: '#06b6d4',
+            clearBtn: '#38bdf8',
+            progressBar: '#22d3ee',
+            statsBg: '#1a3a5c',
+            statsText: '#e0f0ff'
+        }
+    },
+    berry: {
+        name: 'Berry',
+        colors: {
+            appBg: '#7c3aed',
+            taskListBg: '#faf5ff',
+            taskBg: '#ffffff',
+            taskText: '#4c1d95',
+            titleBg: '#ede9fe',
+            titleText: '#6d28d9',
+            checkboxBg: '#8b5cf6',
+            checkboxIncompleteBg: '#c4b5fd',
+            checkmark: '#ffffff',
+            completeBtn: '#a855f7',
+            clearBtn: '#7c3aed',
+            progressBar: '#c084fc',
+            statsBg: '#faf5ff',
+            statsText: '#4c1d95'
+        }
     }
 };
 

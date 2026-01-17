@@ -985,22 +985,22 @@ export class StatsPanelManager {
             const allUnlocked = globalCyclesCompleted >= maxCycleMilestone || globalTasksCleared >= maxTaskMilestone;
 
             if (allUnlocked) {
-                this.elements.milestoneProgressText.textContent = "🎉 All Milestones Unlocked! Amazing Work!";
+                this.elements.milestoneProgressText.textContent = "🎉 All badges unlocked!";
                 this.elements.milestoneProgressText.style.color = "#4caf50";
-                this.elements.milestoneProgressText.style.fontWeight = "bold";
+                this.elements.milestoneProgressText.style.fontWeight = "normal";
             } else if (isToDoMode) {
                 // To-Do mode: show cleared tasks progress
                 const remaining = nextMilestone - globalTasksCleared;
                 this.elements.milestoneProgressText.textContent =
-                    `${globalTasksCleared} of ${nextMilestone} cleared tasks (${remaining} remaining)`;
-                this.elements.milestoneProgressText.style.color = "var(--text-secondary, #666)";
+                    `${remaining} more cleared task${remaining !== 1 ? 's' : ''} to next badge`;
+                this.elements.milestoneProgressText.style.color = "var(--text-secondary, #888)";
                 this.elements.milestoneProgressText.style.fontWeight = "normal";
             } else {
                 // Cycle mode: show cycles progress
                 const remaining = nextMilestone - globalCyclesCompleted;
                 this.elements.milestoneProgressText.textContent =
-                    `${globalCyclesCompleted} of ${nextMilestone} cycles (${remaining} remaining)`;
-                this.elements.milestoneProgressText.style.color = "var(--text-secondary, #666)";
+                    `${remaining} more cycle${remaining !== 1 ? 's' : ''} to next badge`;
+                this.elements.milestoneProgressText.style.color = "var(--text-secondary, #888)";
                 this.elements.milestoneProgressText.style.fontWeight = "normal";
             }
         }
