@@ -1,3 +1,9 @@
+## [1.773] - 2026-01-17
+- chore: update last updated dates and version references across documentation
+- feat: update app version to 1.772 across documentation, manifest, and styles
+- refactor: replace document-level event handlers with instance methods in DragDropManager and HelpWindowManager
+
+
 ## [1.772] - 2026-01-17
 - feat: expand developer profile with insights on strategic depth, micro-patience, and internal tools
 - feat: update app version to 1.771 across documentation, manifest, and styles
