@@ -143,13 +143,15 @@ body.dark-mode .modal-panel {
 .dark-mode .complete-all-btn {
     background: #444;
     color: #fff;
-    border: 1px solid #666;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-bottom: 3px solid rgba(0, 0, 0, 0.3);
     transition: background 0.3s ease;
 }
 
 .dark-mode .complete-all-btn.todo-mode-btn {
     background: #2563eb;
-    border: 1px solid #1d4ed8;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-bottom: 3px solid rgba(0, 0, 0, 0.3);
 }
 
 .dark-mode .complete-all-btn.todo-mode-btn:hover {

@@ -39,6 +39,7 @@ const di = createDIModule('TaskEvents', {
     enableUndoSystemOnFirstInteraction: optional(null),
     checkMiniCycle: optional(null),
     triggerLogoBackground: optional(null),
+    triggerLogoScan: optional(null),
     showTaskOptions: optional(null),
     hideTaskOptions: optional(null),
     TaskOptionsVisibilityController: optional(null),
@@ -79,7 +80,8 @@ export class TaskEvents {
             showTaskOptions: dependencies.showTaskOptions,
             hideTaskOptions: dependencies.hideTaskOptions,
             attachKeyboardTaskOptionToggle: dependencies.attachKeyboardTaskOptionToggle,
-            triggerLogoBackground: dependencies.triggerLogoBackground
+            triggerLogoBackground: dependencies.triggerLogoBackground,
+            triggerLogoScan: dependencies.triggerLogoScan
         };
 
         // Instance version - uses injected AppMeta (no hardcoded fallback)
@@ -109,6 +111,7 @@ export class TaskEvents {
             enableUndoSystemOnFirstInteraction: _deps.enableUndoSystemOnFirstInteraction,
             checkMiniCycle: _deps.checkMiniCycle,
             triggerLogoBackground: this._constructorDeps.triggerLogoBackground || _deps.triggerLogoBackground,
+            triggerLogoScan: this._constructorDeps.triggerLogoScan || _deps.triggerLogoScan,
             showTaskOptions: this._constructorDeps.showTaskOptions || _deps.showTaskOptions,
             hideTaskOptions: this._constructorDeps.hideTaskOptions || _deps.hideTaskOptions,
             TaskOptionsVisibilityController: this._constructorDeps.TaskOptionsVisibilityController || _deps.TaskOptionsVisibilityController,
@@ -188,9 +191,14 @@ export class TaskEvents {
 
             // Note: autoSave removed - handleTaskCompletionChange already updates AppState
 
-            // Logo background animation (DI-pure)
-            if (typeof this.deps.triggerLogoBackground === 'function') {
-                this.deps.triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
+            // Logo animation (DI-pure) - scan effect in to-do mode, background flash otherwise
+            if (checkbox.checked) {
+                const isToDoMode = this.deps.AppState?.getState?.()?.settings?.isToDoMode;
+                if (isToDoMode && typeof this.deps.triggerLogoScan === 'function') {
+                    this.deps.triggerLogoScan(500);
+                } else if (typeof this.deps.triggerLogoBackground === 'function') {
+                    this.deps.triggerLogoBackground('green', 300);
+                }
             }
         };
         safeAdd(taskList, "click", taskList._taskClickHandler);

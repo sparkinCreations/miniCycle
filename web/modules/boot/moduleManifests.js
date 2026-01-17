@@ -376,7 +376,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/uiEffects.js',
         phase: PHASES.THEME_VISUAL, // Must load before TASK_MANAGEMENT so triggerLogoBackground is available
         requires: [],
-        provides: ['triggerLogoBackground'],
+        provides: ['triggerLogoBackground', 'triggerLogoScan'],
         api: 'ui'
     },
 

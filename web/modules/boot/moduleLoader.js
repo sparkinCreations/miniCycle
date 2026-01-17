@@ -680,6 +680,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         updateCompletedTasksCount: (...args) => deps.ui?.completedTasksManager?.updateCount?.(...args),
         updateStatsPanel: (...args) => deps.ui?.updateStatsPanel?.(...args),
         triggerLogoBackground: (...args) => deps.ui?.triggerLogoBackground?.(...args),
+        triggerLogoScan: (...args) => deps.ui?.triggerLogoScan?.(...args),
         showTaskOptions: (...args) => deps.ui?.showTaskOptions?.(...args),
         hideTaskOptions: (...args) => deps.ui?.hideTaskOptions?.(...args),
         get TaskOptionsVisibilityController() { return deps.ui?.TaskOptionsVisibilityController; },
