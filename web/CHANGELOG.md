@@ -1,3 +1,8 @@
+## [1.771] - 2026-01-17
+- feat: add documentation for Background Pattern system and update index
+- feat: update app version to 1.770 across documentation, manifest, and styles
+
+
 ## [1.770] - 2026-01-17
 - feat: add media query for delayed arrow visibility on desktop
 - feat: update app version to 1.769 across documentation, manifest, and styles
