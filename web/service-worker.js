@@ -12,7 +12,7 @@ var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
 // ✅ Cache expiration configuration
-var MAX_DYNAMIC_ENTRIES = 100;  // Maximum entries in dynamic cache
+var MAX_DYNAMIC_ENTRIES = 300;  // Maximum entries in dynamic cache (app has 100+ modules)
 var MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
 // ✅ iOS OPTIMIZATION: Minimal network-first patterns for faster offline startup
@@ -339,26 +339,41 @@ function isNetworkFirstFile(urlPath) {
  * Trim cache to prevent unbounded growth (LRU-style)
  * Removes oldest entries when cache exceeds MAX_DYNAMIC_ENTRIES
  * ✅ iOS FIX: Uses iterative approach instead of recursion to prevent stack overflow
+ * ✅ DEBOUNCED: Only runs every 10 seconds max to prevent console spam
  * @param {string} cacheName - Name of the cache to trim
  * @param {number} maxEntries - Maximum number of entries to keep
  */
-function trimCache(cacheName, maxEntries) {
-  caches.open(cacheName).then(function(cache) {
-    cache.keys().then(function(keys) {
-      if (keys.length > maxEntries) {
-        // Calculate how many to delete
-        var deleteCount = keys.length - maxEntries;
-        var toDelete = keys.slice(0, deleteCount);
+var _trimCacheTimeout = null;
+var _trimCachePending = false;
 
-        // Delete all excess entries (iterative, not recursive)
-        toDelete.forEach(function(key) {
-          cache.delete(key).then(function() {
-            console.log('🗑️ Trimmed cache entry:', key.url);
+function trimCache(cacheName, maxEntries) {
+  // Debounce: schedule trim for later if not already pending
+  if (_trimCachePending) return;
+  _trimCachePending = true;
+
+  // Clear any existing timeout and set new one
+  if (_trimCacheTimeout) clearTimeout(_trimCacheTimeout);
+  _trimCacheTimeout = setTimeout(function() {
+    _trimCachePending = false;
+    _trimCacheTimeout = null;
+
+    caches.open(cacheName).then(function(cache) {
+      cache.keys().then(function(keys) {
+        if (keys.length > maxEntries) {
+          var deleteCount = keys.length - maxEntries;
+          var toDelete = keys.slice(0, deleteCount);
+          console.log('🗑️ Trimming cache: removing', deleteCount, 'entries (total:', keys.length, ')');
+
+          // Delete all excess entries (iterative, not recursive)
+          Promise.all(toDelete.map(function(key) {
+            return cache.delete(key);
+          })).then(function() {
+            console.log('✅ Cache trimmed successfully');
           });
-        });
-      }
+        }
+      });
     });
-  });
+  }, 10000); // Wait 10 seconds before trimming
 }
 
 /**
