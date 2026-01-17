@@ -491,12 +491,31 @@
 #slide-left.hide {
     opacity: 0;
     pointer-events: none;
+    transition: opacity 0.3s ease;
+    transition-delay: 0s; /* Fade out immediately */
 }
 
 /* Hide right arrow when stats panel is visible */
 #slide-right.hide {
     opacity: 0;
     pointer-events: none;
+    transition: opacity 0.3s ease;
+    transition-delay: 0s; /* Fade out immediately */
+}
+
+/* Show arrows with delay after view switch */
+#slide-left.show {
+    opacity: 0.6;
+    pointer-events: auto;
+    transition: opacity 0.3s ease;
+    transition-delay: 0.8s; /* Wait before fading in */
+}
+
+#slide-right.show {
+    opacity: 0.6;
+    pointer-events: auto;
+    transition: opacity 0.3s ease;
+    transition-delay: 0.8s; /* Wait before fading in */
 }
 
 /* =============================================================================

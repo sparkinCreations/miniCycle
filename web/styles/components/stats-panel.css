@@ -99,6 +99,7 @@
     z-index: 10;
     opacity: 0.6;
     transition: opacity var(--transition-fast);
+    transition-delay: 0.8s; /* Delay before fading in after view switch */
 }
 
 .slide-arrow:hover {
