@@ -558,6 +558,40 @@ Customize these colors with live preview:
 2. Use the color picker to choose your color
 3. See changes immediately in real-time!
 
+### Background Pattern
+
+Toggle the decorative stationery pattern (pencils, notebooks, paperclips, etc.) on the app background:
+
+- **Toggle On** - Shows subtle stationery elements tiled across the background
+- **Toggle Off** - Shows only the solid color/gradient background
+
+The pattern is subtle (4% opacity) and adds a professional, productivity-themed aesthetic.
+
+### Background Image
+
+Upload your own custom background image:
+
+**Uploading an Image:**
+1. Click **"Upload"** in the Background Image section
+2. Select an image file (JPG, PNG, etc.)
+3. Image appears immediately as the app background
+
+**Requirements:**
+- Maximum file size: **2MB**
+- Supported formats: All standard image types
+- Uploading a new image replaces the previous one
+
+**Display Modes:**
+- **Stretch to Fill** - Image covers the entire background, may crop edges
+- **Centered** - Image displays at original size, centered on screen
+- **Tiled** - Image repeats in a pattern across the background
+
+**Removing an Image:**
+1. Click **"Remove"** button next to Upload
+2. Background returns to default color/pattern
+
+**Note:** Background images are stored locally in your browser and persist across sessions.
+
 ### Quick Presets
 
 Pre-built color themes for instant transformation:

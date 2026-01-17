@@ -530,6 +530,39 @@ const themes = {
 applyTheme('my-theme');
 ```
 
+### Background Personalization
+
+Background customization is handled in `ui/preferencesManager.js`:
+
+```javascript
+// Toggle background pattern (stationery elements)
+handleBackgroundPatternToggle(visible) {
+    // Saves to AppState.settings.customColors.showBgPattern
+    // Toggles body.no-bg-pattern class
+    document.body.classList.toggle('no-bg-pattern', !visible);
+}
+
+// Background image storage (IndexedDB)
+const BG_IMAGE_DB_NAME = 'miniCycleBackgroundDB';
+const BG_IMAGE_MAX_SIZE = 2 * 1024 * 1024; // 2MB
+
+// Display modes: 'cover', 'center', 'tile'
+applyBgImage(dataUrl, mode) {
+    document.documentElement.style.setProperty('--custom-bg-image', `url("${dataUrl}")`);
+    document.body.classList.add('has-bg-image', `bg-mode-${mode}`);
+}
+```
+
+```css
+/* Background pattern CSS (reset.css) */
+body.no-bg-pattern { background: var(--theme-bg-gradient); }
+
+/* Background image display modes */
+body.has-bg-image.bg-mode-cover { background-size: cover; }
+body.has-bg-image.bg-mode-center { background-size: auto; background-position: center; }
+body.has-bg-image.bg-mode-tile { background-repeat: repeat; }
+```
+
 ### Add New Statistic
 
 ```javascript

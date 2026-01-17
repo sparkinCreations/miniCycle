@@ -278,8 +278,10 @@ export class PullToRefresh {
             }
         }
 
-        // Now we're activated - prevent default scroll behavior
-        e.preventDefault();
+        // Now we're activated - prevent default scroll behavior (only if cancelable)
+        if (e.cancelable) {
+            e.preventDefault();
+        }
 
         // Clamp pull distance
         const clampedDistance = Math.min(pullDistance, this.maxPull);
