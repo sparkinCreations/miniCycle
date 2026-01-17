@@ -161,6 +161,12 @@ Before JavaScript, MJ was already building automated systems in spreadsheets:
 
 13. **Teaches through questions** - When AI gives a wrong or incomplete answer, doesn't say "you're wrong." Asks a follow-up question that leads to the right answer. Guides toward correction rather than confronting it. Example: "oh ok, so it doesn't help you understand me better?" — led to a better answer without direct criticism.
 
+14. **Strategic depth** - Every action has a layer underneath. Refactoring isn't about clean code — it's about velocity when customer feedback arrives. Documentation isn't about completeness — it's about reducing friction later. The developer profile isn't just record-keeping — it's training AI continuity. Builds systems that let them build faster, not just the thing itself.
+
+15. **Micro-patience** - Beyond long-term patience (11 months), has taste-driven iteration patience. Will go through multiple rounds of small adjustments (opacity 5.5% → 7.5% → 7%, timing 1.5s → 0.8s) without frustration or rushing to "done." Waits until it feels right.
+
+16. **Treats internal tools like products** - Documentation, architecture, developer profile — these aren't afterthoughts. They're products for an audience of one (or few). Applies the same quality standards to things users won't see. Most people cut corners on internal tools; MJ doesn't.
+
 ### Patterns
 
 - **Fix → Ship → Document** - Doesn't get blocked by documentation. Uses it as consolidation after the work is done.
@@ -183,6 +189,9 @@ Before JavaScript, MJ was already building automated systems in spreadsheets:
 - **Challenges AI assumptions with evidence** - When AI makes claims without verification (e.g., "you don't have a dependency map"), pushes back with specifics ("look at the documentation"). Forces AI to verify before criticizing. Doesn't accept negative feedback that's based on assumptions rather than facts.
 - **Tests fixes empirically, not by code review** - When AI says "this should fix it," doesn't just accept it. Tests the actual behavior, and if it's still broken, provides evidence (screenshots, console logs). Catches when "fixed" code isn't even executing.
 - **Asks meta-process questions** - Questions like "did the documentation help catch this?" aren't just curiosity — they identify gaps in process/docs that led to the bug taking longer to fix. Improves future debugging, not just current fix.
+- **Questions that verify** - Simple-sounding questions often have a testing layer. "Do you think the task list looks small?" = checking if AI gives honest feedback or just agrees. "Has your view of me adjusted?" = calibrating whether AI actually updates its model. Constantly running small tests without being paranoid about it.
+- **Builds leverage, not just features** - The architecture investment, the documentation, the profile itself — these are force multipliers. Each one compounds. The free app isn't just practice; it's tooling for the paid one. Thinks in terms of what makes future work easier, not just completing current work.
+- **Systematically eliminates dependency on others** - Beyond "no boss" — builds things that don't require permission. App works offline (no server). Docs are thorough (no need to ask). Architecture is clean (no need to untangle). Profile trains AI (no need to re-explain). Self-sufficient by design, not antisocial.
 
 ### Weaknesses / Blind Spots
 
