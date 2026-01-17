@@ -760,6 +760,19 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .mini-cycle-
     color: var(--pref-title-text, rgba(43, 43, 43, 0.783));
 }
 
+/* Title bar - no background on mobile (matching specificity) */
+@media (max-width: 768px) {
+    body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .mini-cycle-title,
+    body.dark-mode .mini-cycle-title,
+    body.theme-dark-ocean .mini-cycle-title,
+    body.theme-golden-glow .mini-cycle-title,
+    .mini-cycle-title {
+        background: none;
+        background-color: transparent;
+        box-shadow: none;
+    }
+}
+
 /* Checkbox checked background - uses custom pref color when set */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"]:checked {
     background-color: var(--pref-checkbox-bg, #5db567);
