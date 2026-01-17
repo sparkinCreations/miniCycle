@@ -493,8 +493,8 @@ body.onboarding-active .complete-all-and-help-window-container {
     height: 22px;
     aspect-ratio: 1/1;
     border-radius: 50%;
-    border: 2px solid var(--theme-task-border, #ccc);
-    background-color: var(--theme-task-bg, white);
+    border: 2px solid rgba(180, 180, 180, 0.6);
+    background-color: rgba(200, 200, 200, 0.25);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -771,6 +771,12 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .mini-cycle-
         background-color: transparent;
         box-shadow: none;
     }
+}
+
+/* Checkbox incomplete background - uses custom pref color when set */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"]:not(:checked) {
+    background-color: var(--pref-checkbox-incomplete-bg, rgba(200, 200, 200, 0.25));
+    border-color: var(--pref-checkbox-incomplete-bg, rgba(180, 180, 180, 0.6));
 }
 
 /* Checkbox checked background - uses custom pref color when set */
