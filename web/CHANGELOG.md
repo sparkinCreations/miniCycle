@@ -1,3 +1,9 @@
+## [1.764] - 2026-01-17
+- feat: update copyright year to 2026 across all relevant files
+- feat: update version to 1.763 and reflect changes in documentation, manifest, and styles
+- feat: update title bar styles for mobile to remove background and box shadow
+
+
 ## [1.763] - 2026-01-17
 - feat: update version to 1.762 and reflect changes in documentation, manifest, and styles
 - feat: adjust mode selector styles for improved accessibility on smaller screens
