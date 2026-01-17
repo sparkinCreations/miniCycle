@@ -24,7 +24,7 @@
     padding: 3px 20px 3px 8px;
     font-size: 12px;
     font-weight: 500;
-    max-width: 140px;
+    max-width: 200px;
     height: 22px;
     appearance: none;
     -webkit-appearance: none;
@@ -224,7 +224,7 @@
     .mode-selector-wrapper .mode-selector {
         font-size: 11px;
         height: 24px;
-        max-width: 120px;
+        max-width: 200px;
     }
 
     .quick-actions-btn {
