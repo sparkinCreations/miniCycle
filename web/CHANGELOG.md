@@ -1,3 +1,9 @@
+## [1.767] - 2026-01-17
+- feat: update help window styles for improved visibility and aesthetics
+- feat: update CHANGELOG for version 1.766 with new features and improvements
+- feat: update app version to 1.766 across documentation, manifest, and styles
+
+
 ## [1.766] - 2026-01-17
 - feat: add triggerLogoScan functionality and enhance logo effects for task clearing
 - feat: increase max-width for mode selector to improve usability
