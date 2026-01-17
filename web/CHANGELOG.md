@@ -1,3 +1,9 @@
+## [1.766] - 2026-01-17
+- feat: add triggerLogoScan functionality and enhance logo effects for task clearing
+- feat: increase max-width for mode selector to improve usability
+- feat: update version to 1.765 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.765] - 2026-01-17
 - feat: enhance theme presets and update milestone progress text for clarity
 - feat: update version to 1.764 and reflect changes in documentation, manifest, and styles
