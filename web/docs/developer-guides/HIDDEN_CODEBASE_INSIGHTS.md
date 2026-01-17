@@ -1,7 +1,7 @@
 # Hidden Codebase Insights - miniCycle
 
 > **Analysis Date:** January 7, 2026
-> **Version:** 1.685
+> **Version:** See [PROJECT_STATS.md](../PROJECT_STATS.md)
 > **Analyst:** Claude AI (Opus 4.5)
 
 This document captures non-obvious patterns, hidden behaviors, and things that may not be immediately apparent about the miniCycle codebase.

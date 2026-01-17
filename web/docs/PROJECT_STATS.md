@@ -5,7 +5,7 @@
 > This file contains metrics that change frequently (version, counts, etc.).
 > All other documentation should reference this file instead of hardcoding these values.
 
-**Last Updated**: January 14, 2026
+**Last Updated**: January 17, 2026
 
 ---
 
@@ -75,7 +75,7 @@
 | Milestone | Status | Date |
 |-----------|--------|------|
 | Strict DI (no `\|\| window.*` fallbacks) | ✅ Complete | Dec 2025 |
-| Zero custom `window.*` globals | ✅ Complete | Dec 2025 |
+| Zero custom `window.*` globals | ✅ Complete | Jan 2026 |
 | Boot file split | ✅ Complete | Dec 2025 |
 | CSS modularization | ✅ Complete | Jan 2026 |
 

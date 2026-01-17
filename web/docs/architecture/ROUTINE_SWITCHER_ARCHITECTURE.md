@@ -2,8 +2,8 @@
 
 > **Complete guide to miniCycle's routine switcher modal system**
 
-**Version**: 1.672
-**Last Updated**: January 5, 2026
+**Version**: See [PROJECT_STATS.md](../PROJECT_STATS.md)
+**Last Updated**: January 17, 2026
 **Module**: `modules/routine/routineSwitcher.js` (~1,676 lines)
 **Pattern**: Strict Dependency Injection
 
@@ -556,7 +556,8 @@ loadMiniCycleList() {
 
 ```javascript
 setupModalClickOutside() {
-    document._cycleSwitcherClickOutsideHandler = (event) => {
+    // Handler stored on class instance (not document.*) for proper cleanup
+    this._clickOutsideHandler = (event) => {
         const switchModal = this.deps.querySelector(".mini-cycle-switch-modal");
         if (!switchModal || switchModal.style.display !== "flex") return;
 
@@ -572,6 +573,7 @@ setupModalClickOutside() {
             switchModal.style.display = "none";
         }
     };
+    safeAdd(document, "click", this._clickOutsideHandler);
 }
 ```
 

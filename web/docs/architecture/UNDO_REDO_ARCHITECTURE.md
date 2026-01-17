@@ -1,7 +1,7 @@
 # Undo/Redo System Architecture
 
 **Module:** `modules/ui/undoRedoManager.js` (~1,800 lines)
-**Version:** 1.672
+**Version:** See [PROJECT_STATS.md](../PROJECT_STATS.md)
 **Test Coverage:** 76/76 tests passing (100%)
 **Status:** Production-ready, localStorage cache + IndexedDB persistence
 
@@ -793,7 +793,7 @@ console.log(JSON.parse(cache));
 
 ---
 
-**Last Updated:** January 5, 2026
-**Module Version:** 1.672
+**Last Updated:** January 17, 2026
+**Module Version:** See [PROJECT_STATS.md](../PROJECT_STATS.md)
 **Test Status:** 76/76 passing ✅
 **Architecture:** localStorage cache + IndexedDB dual-write, per-cycle isolation with validation

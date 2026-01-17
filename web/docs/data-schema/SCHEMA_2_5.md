@@ -1,7 +1,7 @@
 # miniCycle Schema 2.5 Documentation
 
-**Version**: 1.729
-**Last Updated**: January 8, 2026
+**Version**: See [PROJECT_STATS.md](../PROJECT_STATS.md)
+**Last Updated**: January 17, 2026
 
 ## Overview
 
