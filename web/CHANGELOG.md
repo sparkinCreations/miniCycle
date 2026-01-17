@@ -1,3 +1,7 @@
+## [1.761] - 2026-01-17
+- feat: update version to 1.760 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.760] - 2026-01-17
 - feat: enhance preferences preview section styling for better visibility and layout
 - feat: update version to 1.759 and reflect changes in documentation, manifest, and styles
