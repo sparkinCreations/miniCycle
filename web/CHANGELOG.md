@@ -1,3 +1,8 @@
+## [1.758] - 2026-01-17
+- feat: increase MAX_DYNAMIC_ENTRIES to 300 and implement debounced cache trimming
+- feat: update version to 1.757 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.757] - 2026-01-17
 - feat: add waitForServiceWorker function to ensure service worker readiness before module imports
 - feat: update version to 1.756 and reflect changes in documentation, manifest, and styles
