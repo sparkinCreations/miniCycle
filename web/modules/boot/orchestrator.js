@@ -458,9 +458,40 @@ async function initApp() {
   }
 }
 
+// Wait for service worker to be ready (prevents first-load import failures)
+async function waitForServiceWorker(timeoutMs = 3000) {
+  if (!('serviceWorker' in navigator)) return;
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    // If there's a waiting worker, it means an update is pending - don't wait
+    if (registration.waiting) {
+      console.log('⚠️ SW update pending, proceeding with boot');
+      return;
+    }
+    // If controller exists, SW is active and ready
+    if (navigator.serviceWorker.controller) {
+      console.log('✅ Service worker ready');
+      return;
+    }
+    // Wait briefly for controller to be set
+    await new Promise((resolve) => {
+      const timeout = setTimeout(resolve, timeoutMs);
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        clearTimeout(timeout);
+        resolve();
+      }, { once: true });
+    });
+  } catch (e) {
+    console.warn('SW ready check failed:', e);
+  }
+}
+
 // Run when DOM is ready - must load dependencies first (Safari memory cache fix)
 async function startOrchestrator() {
   try {
+    // Wait for SW to be ready before importing modules
+    await waitForServiceWorker();
     await loadDependencies();
     await initApp();
   } catch (error) {
