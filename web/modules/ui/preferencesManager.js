@@ -418,6 +418,7 @@ export class PreferencesManager {
             _deps.hideMainMenu?.();
             this.updateThemeNotice();
             this.loadSavedColors();
+            this.loadCollapsedStates();
             this.renderPresetsList();
             this.updatePreview();
             this.updateUndoButton();
@@ -644,7 +645,50 @@ export class PreferencesManager {
         const section = header.closest('.preferences-section');
         if (section) {
             section.classList.toggle('collapsed');
+            this.saveCollapsedStates();
         }
+    }
+
+    /**
+     * Load collapsed states from appState
+     */
+    loadCollapsedStates() {
+        const state = _deps.AppState?.get();
+        const collapsedSections = state?.settings?.preferencesCollapsedSections;
+
+        if (!collapsedSections) return;
+
+        // Apply saved collapsed states
+        Object.entries(collapsedSections).forEach(([sectionName, isCollapsed]) => {
+            const section = document.querySelector(`.preferences-section[data-section="${sectionName}"]`);
+            if (section) {
+                if (isCollapsed) {
+                    section.classList.add('collapsed');
+                } else {
+                    section.classList.remove('collapsed');
+                }
+            }
+        });
+    }
+
+    /**
+     * Save collapsed states to appState
+     */
+    saveCollapsedStates() {
+        if (!_deps.AppState) return;
+
+        const sections = document.querySelectorAll('.preferences-section[data-section]');
+        const collapsedSections = {};
+
+        sections.forEach(section => {
+            const sectionName = section.dataset.section;
+            collapsedSections[sectionName] = section.classList.contains('collapsed');
+        });
+
+        _deps.AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.preferencesCollapsedSections = collapsedSections;
+        });
     }
 
     /**
