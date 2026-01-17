@@ -1,3 +1,7 @@
+## [1.762] - 2026-01-17
+- feat: update version to 1.761 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.761] - 2026-01-17
 - feat: update version to 1.760 and reflect changes in documentation, manifest, and styles
 
