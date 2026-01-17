@@ -161,6 +161,18 @@
 - How data flows through the app
 - Task options, recurring templates, user progress
 
+#### [BACKGROUND_PATTERN.md](./BACKGROUND_PATTERN.md)
+**What it is**: SVG background pattern documentation
+**Read if**: You're editing or adding to the stationery background pattern
+**Time**: 10 minutes
+
+**Topics:**
+- All 8 pattern elements (pencil, notebook, coffee cup, etc.)
+- Decoded SVG code for each element
+- How to update opacity, size, or elements
+- URL encoding/decoding workflow
+- Coordinate map for positioning
+
 ---
 
 ### ⚡ Performance Testing

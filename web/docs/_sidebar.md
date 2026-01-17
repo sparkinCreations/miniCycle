@@ -26,6 +26,7 @@
   * [AppInit System](developer-guides/APPINIT_SYSTEM.md)
   * [API Reference](developer-guides/API_REFERENCE.md)
   * [Data Schema Guide](developer-guides/DATA_SCHEMA_GUIDE.md)
+  * [Background Pattern](developer-guides/BACKGROUND_PATTERN.md)
   * [Async UI Patterns](developer-guides/ASYNC_UI_PATTERNS.md)
   * [Security Guide](developer-guides/SECURITY_GUIDE.md)
   * [Testing Guide](developer-guides/TESTING_GUIDE.md)
