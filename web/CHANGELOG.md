@@ -1,3 +1,8 @@
+## [1.756] - 2026-01-17
+- feat: remove temporary network-only fetch logic for JS files to improve caching strategy
+- feat: update version to 1.755 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.755] - 2026-01-16
 - feat: improve task input styling for better layout and responsiveness
 - feat: update version to 1.754 and reflect changes in documentation, manifest, and styles
