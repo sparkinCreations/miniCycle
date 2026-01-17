@@ -1,3 +1,8 @@
+## [1.757] - 2026-01-17
+- feat: add waitForServiceWorker function to ensure service worker readiness before module imports
+- feat: update version to 1.756 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.756] - 2026-01-17
 - feat: remove temporary network-only fetch logic for JS files to improve caching strategy
 - feat: update version to 1.755 and reflect changes in documentation, manifest, and styles
