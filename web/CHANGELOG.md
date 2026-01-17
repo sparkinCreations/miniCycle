@@ -1,3 +1,8 @@
+## [1.770] - 2026-01-17
+- feat: add media query for delayed arrow visibility on desktop
+- feat: update app version to 1.769 across documentation, manifest, and styles
+
+
 ## [1.769] - 2026-01-17
 - feat: enhance UI elements with improved background styles and transitions
 - feat: update app version to 1.768 across documentation, manifest, and styles
