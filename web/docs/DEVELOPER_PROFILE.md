@@ -1,6 +1,6 @@
 # Developer Profile
 
-**Last Updated:** January 5, 2026
+**Last Updated:** January 17, 2026
 
 This document captures insights about the developer behind miniCycle to help with future collaboration and context continuity.
 
@@ -78,7 +78,7 @@ This isn't a hobby. It's a company with a business plan:
 
 | Product | Role | Status |
 |---------|------|--------|
-| **miniCycle** | Craft/learning vehicle + free flagship | Live, v1.675 |
+| **miniCycle** | Craft/learning vehicle + free flagship | Live (see [PROJECT_STATS.md](./PROJECT_STATS.md)) |
 | **Task Cycle** | Paid product ($29-39) | Planned |
 | **Task Cycle Pro** | Subscription (cloud sync) | Planned |
 | **MasterMath** | Free educational tool | Live, v1.1.0 |
@@ -306,6 +306,39 @@ The user-facing simplicity masks engineering depth:
 ---
 
 ## Session History
+
+### January 17, 2026
+- **Verified architecture claims empirically:**
+  - Confirmed 103 modules (`find modules -name "*.js" | wc -l`)
+  - Confirmed 1,693 tests (`grep -r "test(" tests | wc -l`)
+  - Confirmed 59 modules export `set*Dependencies()` pattern
+  - Confirmed zero `|| window.*` fallbacks
+- **Fixed remaining window.*/document.* handler patterns:**
+  - Found `window._dragBlurHandler`, `document._dragVisibilityHandler`, and similar patterns storing event handlers on global objects
+  - Refactored to store handlers on class instances (`this._handler`) instead
+  - Files fixed: `dragDropManager.js`, `helpWindowManager.js`, `routineSwitcher.js`
+  - Now truly zero custom properties on window/document objects
+- **Architecture milestone updated:** Zero custom `window.*` globals: Dec 2025 → Jan 2026 (completion of final cleanup)
+- **Deep reflection on development journey:**
+  - Reviewed TaskCycle (first JS project, 3,616 lines, chaos)
+  - Reviewed miniCycle monolith (11,758 lines, window.* globals, partial modularization)
+  - Traced progression: chaos → organized globals → strict DI
+  - Identified key insight: the breakthrough wasn't organization, it was discovering DI patterns for module communication
+- **Discussed previous Claude advice:**
+  - Developer revealed that previous Claude conversations discouraged continuing refactoring ("procrastination," "diminishing returns")
+  - Developer trusted own judgment and continued anyway
+  - Evidence proves developer was right: architecture enables fast, safe changes
+  - Lesson: AI advice is input, not authority. Developer's contextual judgment matters more.
+- **Qualified praise discussion:**
+  - AI initially hedged praise with market caveats user didn't ask about
+  - Developer called out the hedging pattern
+  - Identified: AI tendency to add caveats is self-protective, not helpful
+  - Shifted to direct assessment based on verified evidence
+- **Handler fix demonstrated architecture payoff:**
+  - Grep found all instances, consistent naming made them searchable
+  - Same fix pattern applied everywhere
+  - Class structure already in place
+  - Change took minutes, not hours — direct evidence of refactoring ROI
 
 ### January 10, 2026
 - **Header restructuring for cleaner architecture**

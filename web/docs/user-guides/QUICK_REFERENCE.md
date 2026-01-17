@@ -846,13 +846,11 @@ window.exportDebugData()                 // Debug package
 
 ---
 
-**Version**: 1.729+ | **Last Updated**: January 13, 2026
+**Version**: See [PROJECT_STATS.md](../PROJECT_STATS.md) | **Last Updated**: January 17, 2026
 **Maintained By**: sparkinCreations
 
 **✅ MODULARIZATION & BOOT SPLIT COMPLETE!**
-- Boot files: 6 focused files
-- 103 modules (all strict DI)
-- 100% test coverage (1,690+ tests passing) ✅
+- See [PROJECT_STATS.md](../PROJECT_STATS.md) for current metrics
 
 **Architecture:** See [BOOT_FILE_SPLIT_PLAN.md](../future-work/BOOT_FILE_SPLIT_PLAN.md) for boot file structure details.
 

@@ -1,6 +1,6 @@
 # Development Assistant Notes
 
-**Last Updated:** December 30, 2025
+**Last Updated:** January 17, 2026
 
 These notes describe how the AI assistant should collaborate on this project.
 
@@ -14,7 +14,7 @@ These notes describe how the AI assistant should collaborate on this project.
 - Other modules should receive dependencies via injection, not import them directly.
 - When in doubt, propose "import once, pass via deps" as the default pattern.
 
-## 3. Zero Window.* Globals (Achieved Dec 2025)
+## 3. Zero Window.* Globals (Achieved Jan 2026)
 - The codebase has **zero custom `window.*` globals**.
 - Use `appContext.js` grouped APIs for cross-module access.
 - Use CustomEvents for HTML-to-module communication.
