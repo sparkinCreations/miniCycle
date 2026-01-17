@@ -133,22 +133,22 @@ export class DragDropManager {
             const safeAdd = this.deps.safeAddEventListener;
 
             // Cleanup drag state when page becomes hidden (tab switch, minimize, etc.)
-            document._dragVisibilityHandler = () => {
+            this._dragVisibilityHandler = () => {
                 if (document.hidden && this.draggedTask) {
                     console.log('🧹 Cleaning up drag state due to visibility change');
                     this.cleanupDragState();
                 }
             };
-            safeAdd(document, 'visibilitychange', document._dragVisibilityHandler);
+            safeAdd(document, 'visibilitychange', this._dragVisibilityHandler);
 
             // Also cleanup on window blur (user clicks outside browser)
-            window._dragBlurHandler = () => {
+            this._dragBlurHandler = () => {
                 if (this.draggedTask) {
                     console.log('🧹 Cleaning up drag state due to window blur');
                     this.cleanupDragState();
                 }
             };
-            safeAdd(window, 'blur', window._dragBlurHandler);
+            safeAdd(window, 'blur', this._dragBlurHandler);
 
             console.log('✅ Drag visibility cleanup handlers installed');
         } catch (error) {
@@ -186,7 +186,7 @@ export class DragDropManager {
             }
 
             // Setup dragover handler
-            document._dragoverHandler = (event) => {
+            this._dragoverHandler = (event) => {
                 event.preventDefault();
                 requestAnimationFrame(() => {
                     const movingTask = event.target.closest(".task");
@@ -195,10 +195,10 @@ export class DragDropManager {
                     }
                 });
             };
-            safeAdd(document, "dragover", document._dragoverHandler);
+            safeAdd(document, "dragover", this._dragoverHandler);
 
             // Setup drop handler (state-first pattern)
-            document._dropHandler = (event) => {
+            this._dropHandler = (event) => {
                 event.preventDefault();
                 if (!this.draggedTask) return;
 
@@ -255,7 +255,7 @@ export class DragDropManager {
                 this.lastReorderTime = 0;
                 this.didDragReorderOccur = false;
             };
-            safeAdd(document, "drop", document._dropHandler);
+            safeAdd(document, "drop", this._dropHandler);
 
             console.log('✅ Rearrange event handlers setup complete');
         } catch (error) {
@@ -644,12 +644,12 @@ export class DragDropManager {
     setupDragEndCleanup() {
         try {
             const safeAdd = this.deps.safeAddEventListener;
-            document._dragEndDropHandler = () => this.cleanupDragState();
-            safeAdd(document, "drop", document._dragEndDropHandler);
-            document._dragEndDragoverHandler = () => {
+            this._dragEndDropHandler = () => this.cleanupDragState();
+            safeAdd(document, "drop", this._dragEndDropHandler);
+            this._dragEndDragoverHandler = () => {
                 document.querySelectorAll(".rearranging").forEach(task => task.classList.remove("rearranging"));
             };
-            safeAdd(document, "dragover", document._dragEndDragoverHandler);
+            safeAdd(document, "dragover", this._dragEndDragoverHandler);
         } catch (error) {
             console.warn('⚠️ Failed to setup drag end cleanup:', error);
         }

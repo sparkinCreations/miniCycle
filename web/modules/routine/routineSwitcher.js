@@ -907,7 +907,7 @@ export class RoutineSwitcher {
      */
     setupModalClickOutside() {
         const safeAdd = this.deps.safeAddEventListener;
-        document._cycleSwitcherClickOutsideHandler = (event) => {
+        this._clickOutsideHandler = (event) => {
             // ✅ Early return if modal not visible (avoid DOM queries on every click)
             const switchModal = this.deps.querySelector(".mini-cycle-switch-modal");
             if (!switchModal || switchModal.style.display !== "flex") {
@@ -938,7 +938,7 @@ export class RoutineSwitcher {
                 switchModal.style.display = "none";
             }
         };
-        safeAdd(document, "click", document._cycleSwitcherClickOutsideHandler);
+        safeAdd(document, "click", this._clickOutsideHandler);
     }
 
     /**
