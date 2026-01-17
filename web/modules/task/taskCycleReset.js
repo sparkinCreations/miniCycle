@@ -84,7 +84,9 @@ const di = createDIModule('TaskCycleReset', {
     // Cleared tasks tracking (for To-Do mode history)
     recordMultipleClearedTasks: optional(null),
     logHistoryEvent: optional(null),
-    checkAchievements: optional(null)
+    checkAchievements: optional(null),
+    // Logo effects
+    triggerLogoScan: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -554,6 +556,11 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     }
 
     console.log(`Deleting ${tasksToDelete.length} tasks marked for deletion`);
+
+    // Trigger logo scan effect for to-do mode task clearing
+    if (typeof _deps.triggerLogoScan === 'function') {
+        _deps.triggerLogoScan(500);
+    }
 
     // Record cleared tasks before deleting (for history tracking)
     const tasksToRecord = tasksToDelete.map(({ taskId }) => {

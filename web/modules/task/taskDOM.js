@@ -158,6 +158,7 @@ export class TaskDOMManager {
             handleTaskCompletionChange: resolvedDeps.handleTaskCompletionChange || null,
             checkMiniCycle: resolvedDeps.checkMiniCycle || null,
             triggerLogoBackground: resolvedDeps.triggerLogoBackground || null,
+            triggerLogoScan: resolvedDeps.triggerLogoScan || null,
             updateUndoRedoButtons: resolvedDeps.updateUndoRedoButtons || null,
 
             // Due dates module
@@ -366,7 +367,8 @@ export class TaskDOMManager {
                     showTaskOptions: this.deps.showTaskOptions,
                     hideTaskOptions: this.deps.hideTaskOptions,
                     attachKeyboardTaskOptionToggle: this.deps.attachKeyboardTaskOptionToggle,
-                    triggerLogoBackground: this.deps.triggerLogoBackground
+                    triggerLogoBackground: this.deps.triggerLogoBackground,
+                    triggerLogoScan: this.deps.triggerLogoScan
                 });
 
                 // ✅ CRITICAL: Initialize event delegation for task clicks
@@ -863,8 +865,14 @@ export class TaskDOMManager {
 
             // Note: autoSave removed - handleTaskCompletionChange already updates AppState
 
-            if (typeof this.deps.triggerLogoBackground === 'function') {
-                this.deps.triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
+            // Logo animation - scan effect in to-do mode, background flash otherwise
+            if (checkbox.checked) {
+                const isToDoMode = this.deps.AppState?.getState?.()?.settings?.isToDoMode;
+                if (isToDoMode && typeof this.deps.triggerLogoScan === 'function') {
+                    this.deps.triggerLogoScan(500);
+                } else if (typeof this.deps.triggerLogoBackground === 'function') {
+                    this.deps.triggerLogoBackground('green', 300);
+                }
             }
 
             // ✅ Update undo/redo button states

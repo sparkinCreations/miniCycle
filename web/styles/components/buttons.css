@@ -133,7 +133,8 @@ button.icon-only i {
 
 .complete-all-btn {
     background: #08c352;
-    border: none;
+    border: 2px solid rgba(0, 0, 0, 0.15);
+    border-bottom: 3px solid rgba(0, 0, 0, 0.25);
     margin-top: 10px;
     padding: 14px 32px;
     font-size: 17px;
@@ -146,47 +147,42 @@ button.icon-only i {
     position: relative;
     z-index: 2;
     margin-bottom: -20px;
-    box-shadow: 0 4px 15px rgba(8, 195, 82, 0.4),
-                0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .complete-all-btn:hover {
     background: #0ad65a;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(8, 195, 82, 0.5),
-                0 3px 6px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.18);
 }
 
 .complete-all-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(8, 195, 82, 0.4);
+    transform: translateY(1px);
+    border-bottom-width: 2px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 /* To-Do Mode button style - blue color */
 .complete-all-btn.todo-mode-btn {
     background: #3b82f6;
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4),
-                0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .complete-all-btn.todo-mode-btn:hover {
     background: #4b8ef7;
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5),
-                0 3px 6px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.18);
 }
 
 /* Custom preference colors (Default theme only) */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn:not(.todo-mode-btn) {
     background: var(--pref-complete-btn, #08c352);
-    box-shadow: 0 4px 15px color-mix(in srgb, var(--pref-complete-btn, #08c352) 40%, transparent),
-                0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn.todo-mode-btn {
     background: var(--pref-clear-btn, #3b82f6);
-    box-shadow: 0 4px 15px color-mix(in srgb, var(--pref-clear-btn, #3b82f6) 40%, transparent),
-                0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* Complete All and Help Window Container */
@@ -222,6 +218,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
     transition: opacity 0.3s ease;
     opacity: 1;
     margin-top: 20px;
+    margin-bottom: 80px;
 }
 
 .help-window.show {
