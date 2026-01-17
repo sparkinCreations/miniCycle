@@ -1,3 +1,8 @@
+## [1.760] - 2026-01-17
+- feat: enhance preferences preview section styling for better visibility and layout
+- feat: update version to 1.759 and reflect changes in documentation, manifest, and styles
+
+
 ## [1.759] - 2026-01-17
 - feat: implement load and save functionality for collapsed section states in preferences manager
 - feat: update version to 1.758 and reflect changes in documentation, manifest, and styles
