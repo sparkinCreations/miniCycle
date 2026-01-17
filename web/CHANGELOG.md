@@ -1,4 +1,10 @@
 ## [1.768] - 2026-01-17
+- feat: implement background personalization features including image upload and pattern toggle
+- feat: add routine_list image asset for enhanced UI
+- feat: update app version to 1.767 across documentation, manifest, and styles
+
+
+## [1.768] - 2026-01-17
 - feat: add background pattern toggle in personalization modal
 - feat: add custom background image upload with IndexedDB storage (max 2MB)
 - feat: add background image display modes (cover, center, tile)
