@@ -1,3 +1,8 @@
+## [1.763] - 2026-01-17
+- feat: update version to 1.762 and reflect changes in documentation, manifest, and styles
+- feat: adjust mode selector styles for improved accessibility on smaller screens
+
+
 ## [1.762] - 2026-01-17
 - feat: update version to 1.761 and reflect changes in documentation, manifest, and styles
 
