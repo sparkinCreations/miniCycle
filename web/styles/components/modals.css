@@ -1342,6 +1342,94 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 }
 
 /* =============================================================================
+   BACKGROUND IMAGE UPLOAD
+   ============================================================================= */
+
+.preferences-bg-image-section {
+    margin: 8px 0;
+    padding: 8px 0;
+    border-top: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.06));
+    border-bottom: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.06));
+}
+
+.preferences-upload-btn,
+.preferences-remove-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.preferences-upload-btn {
+    background: var(--theme-accent, #4a90e2);
+    color: white;
+    border: none;
+}
+
+.preferences-upload-btn:hover {
+    background: var(--theme-accent-hover, #3a7bc8);
+    transform: scale(1.02);
+}
+
+.preferences-remove-btn {
+    background: transparent;
+    color: var(--theme-text-muted, #888);
+    border: 1px solid var(--theme-border, #ddd);
+    margin-left: 6px;
+}
+
+.preferences-remove-btn:hover {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+
+.preferences-select {
+    padding: 6px 10px;
+    border: 1px solid var(--theme-border, #ddd);
+    border-radius: 6px;
+    background: var(--theme-modal-bg, #fff);
+    color: var(--theme-modal-text, #333);
+    font-size: 12px;
+    cursor: pointer;
+    min-width: 120px;
+}
+
+.preferences-select:hover {
+    border-color: var(--theme-accent, #4a90e2);
+}
+
+.preferences-bg-image-options {
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
+.bg-image-preview-container {
+    margin-top: 10px;
+    padding: 8px;
+    background: var(--theme-header-bg, #f5f5f5);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.bg-image-preview {
+    max-width: 100%;
+    max-height: 100px;
+    border-radius: 6px;
+    object-fit: contain;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.preferences-bg-image-hint {
+    font-size: 11px;
+    color: var(--theme-text-muted, #888);
+    margin-top: 6px;
+    padding-left: 28px;
+}
+
+/* =============================================================================
    FOOTER ACTIONS
    ============================================================================= */
 

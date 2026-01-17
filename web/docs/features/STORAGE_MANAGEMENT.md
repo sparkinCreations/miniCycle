@@ -28,6 +28,23 @@ This approach respects that different users have different needs. A routine with
 
 miniCycle chose localStorage for its simplicity and reliability. The constraints are managed through smart limits and user tools rather than migrating to a more complex storage system.
 
+### IndexedDB Usage
+
+While localStorage handles most app data, IndexedDB is used for larger data that exceeds localStorage limits:
+
+| Database | Purpose | Max Size | Module |
+|----------|---------|----------|--------|
+| `miniCycleBackgroundDB` | Custom background images | 2MB per image | `ui/preferencesManager.js` |
+| `miniCycleUndoHistory` | Undo/redo state snapshots | Configurable | `ui/undoRedoManager.js` |
+| `miniCycleTestResultsDB` | Test results storage | - | `testing/testing-modal-integration.js` |
+
+**Background Image Storage:**
+- Images are stored as data URLs in IndexedDB
+- Single object store: `backgroundImage`
+- Schema: `{ id: 'background', dataUrl: string, mode: string, updatedAt: number }`
+- Uploading a new image replaces the existing one
+- Display modes: `cover`, `center`, `tile`
+
 ### Task Limit: 150 per Routine
 
 Each routine is limited to **150 tasks**. This limit:

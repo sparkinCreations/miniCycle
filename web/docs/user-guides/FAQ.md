@@ -448,10 +448,36 @@ This keeps your data 100% under your control.
 
 ### Can I customize the look?
 
-**Yes!**
-- **Themes:** Unlock achievement-based themes
-- **Dark mode:** Toggle in Settings
-- **Custom CSS:** Not currently supported (future consideration)
+**Yes!** miniCycle offers extensive customization options:
+
+**Personalization (Menu → Personalization):**
+- **Color Customization:** Change app background, header, task colors, and more
+- **Quick Presets:** Pre-built color themes (Ocean, Sunset, Forest, etc.)
+- **Save Presets:** Save and apply your custom color combinations
+- **Import/Export:** Share themes with others via JSON files
+
+**Background Options:**
+- **Background Pattern:** Toggle a subtle stationery pattern (pencils, notebooks, paperclips)
+- **Background Image:** Upload your own image (max 2MB) with three display modes:
+  - Stretch to Fill - covers entire background
+  - Centered - displays at original size
+  - Tiled - repeats the image
+
+**Themes:**
+- **Dark Mode:** Toggle in Settings
+- **Achievement Themes:** Unlock special themes (Dark Ocean, Golden Glow) by reaching milestones
+
+---
+
+### How do I upload a background image?
+
+1. Open **Menu (☰) → Personalization**
+2. Find the **Background Image** section
+3. Click **Upload** and select an image (max 2MB)
+4. Choose a display mode: Stretch, Centered, or Tiled
+5. To remove, click the **Remove** button
+
+Your image is stored locally in your browser and persists across sessions.
 
 ---
 

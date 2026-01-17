@@ -42,6 +42,15 @@ const DEFAULT_COLORS = {
 };
 
 // ============================================================================
+// BACKGROUND IMAGE CONSTANTS
+// ============================================================================
+
+const BG_IMAGE_DB_NAME = 'miniCycleBackgroundDB';
+const BG_IMAGE_DB_VERSION = 1;
+const BG_IMAGE_STORE = 'backgroundImage';
+const BG_IMAGE_MAX_SIZE = 2 * 1024 * 1024; // 2MB
+
+// ============================================================================
 // QUICK PRESET THEMES (Built-in)
 // ============================================================================
 
@@ -340,6 +349,7 @@ export class PreferencesManager {
             this.applyCustomColors();
             this.setupThemeObserver();
             this.updatePreview();
+            this.initBgImage(); // Load saved background image
 
             this._initialized = true;
             console.log('🎨 PreferencesManager initialized');
@@ -461,6 +471,24 @@ export class PreferencesManager {
             }
         }
 
+        // Background pattern visibility toggle
+        const bgPatternToggle = document.getElementById('toggle-bg-pattern');
+        if (bgPatternToggle) {
+            bgPatternToggle._changeHandler = (e) => this.handleBackgroundPatternToggle(e.target.checked);
+            safeAdd(bgPatternToggle, 'change', bgPatternToggle._changeHandler);
+
+            const toggleSwitch = bgPatternToggle.closest('.toggle-switch');
+            if (toggleSwitch) {
+                toggleSwitch._clickHandler = (e) => {
+                    if (e.target !== bgPatternToggle) {
+                        bgPatternToggle.checked = !bgPatternToggle.checked;
+                        this.handleBackgroundPatternToggle(bgPatternToggle.checked);
+                    }
+                };
+                safeAdd(toggleSwitch, 'click', toggleSwitch._clickHandler);
+            }
+        }
+
         // Reset buttons
         document.querySelectorAll('.preferences-reset-btn').forEach(btn => {
             const targetId = btn.dataset.target;
@@ -507,6 +535,30 @@ export class PreferencesManager {
             }
         });
 
+        // Background image upload
+        const bgImageUploadBtn = document.getElementById('bg-image-upload-btn');
+        const bgImageUpload = document.getElementById('bg-image-upload');
+        const bgImageRemoveBtn = document.getElementById('bg-image-remove-btn');
+        const bgImageMode = document.getElementById('bg-image-mode');
+
+        if (bgImageUploadBtn && bgImageUpload) {
+            bgImageUploadBtn._clickHandler = () => bgImageUpload.click();
+            safeAdd(bgImageUploadBtn, 'click', bgImageUploadBtn._clickHandler);
+
+            bgImageUpload._changeHandler = (e) => this.handleBgImageUpload(e);
+            safeAdd(bgImageUpload, 'change', bgImageUpload._changeHandler);
+        }
+
+        if (bgImageRemoveBtn) {
+            bgImageRemoveBtn._clickHandler = () => this.removeBgImage();
+            safeAdd(bgImageRemoveBtn, 'click', bgImageRemoveBtn._clickHandler);
+        }
+
+        if (bgImageMode) {
+            bgImageMode._changeHandler = (e) => this.handleBgImageModeChange(e.target.value);
+            safeAdd(bgImageMode, 'change', bgImageMode._changeHandler);
+        }
+
         // Collapsible sections
         document.querySelectorAll('.preferences-section-header.collapsible').forEach(header => {
             header._clickHandler = () => this.toggleSection(header);
@@ -517,7 +569,7 @@ export class PreferencesManager {
     /**
      * Open the preferences modal
      */
-    openModal() {
+    async openModal() {
         if (this.modal) {
             _deps.hideMainMenu?.();
             this.updateThemeNotice();
@@ -526,6 +578,11 @@ export class PreferencesManager {
             this.renderPresetsList();
             this.updatePreview();
             this.updateUndoButton();
+
+            // Refresh background image UI
+            const bgData = await this.loadBgImage();
+            this.updateBgImageUI(bgData?.dataUrl || null, bgData?.mode || 'cover');
+
             this.modal.style.display = 'flex';
         }
     }
@@ -598,6 +655,15 @@ export class PreferencesManager {
             const resetBtn = document.querySelector('[data-target="pref-checkbox-incomplete-bg"]');
             if (colorInput) colorInput.style.opacity = showCheckbox ? '1' : '0.3';
             if (resetBtn) resetBtn.style.opacity = showCheckbox ? '1' : '0.3';
+        }
+
+        // Load background pattern visibility toggle state
+        const bgPatternToggle = document.getElementById('toggle-bg-pattern');
+        if (bgPatternToggle) {
+            const showPattern = customColors.showBgPattern !== false; // Default to true
+            bgPatternToggle.checked = showPattern;
+            // Apply body class immediately
+            document.body.classList.toggle('no-bg-pattern', !showPattern);
         }
     }
 
@@ -688,6 +754,283 @@ export class PreferencesManager {
         // Apply immediately if in default theme
         if (this.isDefaultTheme()) {
             this.applyCustomColors();
+        }
+    }
+
+    /**
+     * Handle background pattern visibility toggle
+     * @param {boolean} visible - Whether the background pattern should be visible
+     */
+    handleBackgroundPatternToggle(visible) {
+        console.log('🎨 Background pattern toggle:', visible);
+
+        // Save to appState
+        if (_deps.AppState) {
+            _deps.AppState.update(state => {
+                if (!state.settings.customColors) {
+                    state.settings.customColors = {};
+                }
+                state.settings.customColors.showBgPattern = visible;
+            });
+        }
+
+        // Toggle body class to show/hide pattern
+        document.body.classList.toggle('no-bg-pattern', !visible);
+    }
+
+    // =========================================================================
+    // BACKGROUND IMAGE METHODS
+    // =========================================================================
+
+    /**
+     * Open the background image IndexedDB database
+     * @returns {Promise<IDBDatabase>}
+     */
+    openBgImageDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(BG_IMAGE_DB_NAME, BG_IMAGE_DB_VERSION);
+
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve(request.result);
+
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(BG_IMAGE_STORE)) {
+                    db.createObjectStore(BG_IMAGE_STORE, { keyPath: 'id' });
+                }
+            };
+        });
+    }
+
+    /**
+     * Handle background image file upload
+     * @param {Event} event - The file input change event
+     */
+    async handleBgImageUpload(event) {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Check file size
+        if (file.size > BG_IMAGE_MAX_SIZE) {
+            _deps.showNotification?.('Image too large. Max size is 2MB.', 'error', 3000);
+            event.target.value = ''; // Reset input
+            return;
+        }
+
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+            _deps.showNotification?.('Please select an image file.', 'error', 3000);
+            event.target.value = '';
+            return;
+        }
+
+        try {
+            // Read file as data URL
+            const dataUrl = await this.readFileAsDataURL(file);
+
+            // Get current display mode
+            const modeSelect = document.getElementById('bg-image-mode');
+            const mode = modeSelect?.value || 'cover';
+
+            // Save to IndexedDB
+            await this.saveBgImage(dataUrl, mode);
+
+            // Apply to body
+            this.applyBgImage(dataUrl, mode);
+
+            // Update UI
+            this.updateBgImageUI(dataUrl, mode);
+
+            _deps.showNotification?.('Background image set', 'success', 2000);
+        } catch (error) {
+            console.error('Failed to upload background image:', error);
+            _deps.showNotification?.('Failed to set background image', 'error', 3000);
+        }
+
+        // Reset input so same file can be selected again
+        event.target.value = '';
+    }
+
+    /**
+     * Read a file as data URL
+     * @param {File} file - The file to read
+     * @returns {Promise<string>} - The data URL
+     */
+    readFileAsDataURL(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    /**
+     * Save background image to IndexedDB
+     * @param {string} dataUrl - The image data URL
+     * @param {string} mode - The display mode
+     */
+    async saveBgImage(dataUrl, mode) {
+        const db = await this.openBgImageDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([BG_IMAGE_STORE], 'readwrite');
+            const store = transaction.objectStore(BG_IMAGE_STORE);
+
+            const data = {
+                id: 'background',
+                dataUrl: dataUrl,
+                mode: mode,
+                updatedAt: Date.now()
+            };
+
+            const request = store.put(data);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+
+            transaction.oncomplete = () => db.close();
+        });
+    }
+
+    /**
+     * Load background image from IndexedDB
+     * @returns {Promise<{dataUrl: string, mode: string}|null>}
+     */
+    async loadBgImage() {
+        try {
+            const db = await this.openBgImageDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([BG_IMAGE_STORE], 'readonly');
+                const store = transaction.objectStore(BG_IMAGE_STORE);
+                const request = store.get('background');
+
+                request.onsuccess = () => {
+                    const result = request.result;
+                    resolve(result ? { dataUrl: result.dataUrl, mode: result.mode } : null);
+                };
+                request.onerror = () => reject(request.error);
+
+                transaction.oncomplete = () => db.close();
+            });
+        } catch (error) {
+            console.warn('Failed to load background image:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Apply background image to body
+     * @param {string} dataUrl - The image data URL
+     * @param {string} mode - The display mode (cover, center, tile)
+     */
+    applyBgImage(dataUrl, mode) {
+        const body = document.body;
+
+        // Set the CSS variable for the image
+        document.documentElement.style.setProperty('--custom-bg-image', `url("${dataUrl}")`);
+
+        // Add the has-bg-image class
+        body.classList.add('has-bg-image');
+
+        // Remove any existing mode classes
+        body.classList.remove('bg-mode-cover', 'bg-mode-center', 'bg-mode-tile');
+
+        // Add the appropriate mode class
+        body.classList.add(`bg-mode-${mode}`);
+    }
+
+    /**
+     * Remove background image
+     */
+    async removeBgImage() {
+        try {
+            // Remove from IndexedDB
+            const db = await this.openBgImageDB();
+            await new Promise((resolve, reject) => {
+                const transaction = db.transaction([BG_IMAGE_STORE], 'readwrite');
+                const store = transaction.objectStore(BG_IMAGE_STORE);
+                const request = store.delete('background');
+
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+
+                transaction.oncomplete = () => db.close();
+            });
+
+            // Remove from body
+            const body = document.body;
+            document.documentElement.style.removeProperty('--custom-bg-image');
+            body.classList.remove('has-bg-image', 'bg-mode-cover', 'bg-mode-center', 'bg-mode-tile');
+
+            // Update UI
+            this.updateBgImageUI(null, 'cover');
+
+            _deps.showNotification?.('Background image removed', 'info', 2000);
+        } catch (error) {
+            console.error('Failed to remove background image:', error);
+            _deps.showNotification?.('Failed to remove background image', 'error', 3000);
+        }
+    }
+
+    /**
+     * Handle display mode change
+     * @param {string} mode - The new display mode
+     */
+    async handleBgImageModeChange(mode) {
+        try {
+            // Load current image
+            const bgData = await this.loadBgImage();
+            if (!bgData) return;
+
+            // Save with new mode
+            await this.saveBgImage(bgData.dataUrl, mode);
+
+            // Apply new mode
+            const body = document.body;
+            body.classList.remove('bg-mode-cover', 'bg-mode-center', 'bg-mode-tile');
+            body.classList.add(`bg-mode-${mode}`);
+        } catch (error) {
+            console.error('Failed to change display mode:', error);
+        }
+    }
+
+    /**
+     * Update the background image UI elements
+     * @param {string|null} dataUrl - The image data URL (null if no image)
+     * @param {string} mode - The display mode
+     */
+    updateBgImageUI(dataUrl, mode) {
+        const optionsDiv = document.getElementById('bg-image-options');
+        const removeBtn = document.getElementById('bg-image-remove-btn');
+        const preview = document.getElementById('bg-image-preview');
+        const modeSelect = document.getElementById('bg-image-mode');
+
+        if (dataUrl) {
+            // Show options and remove button
+            if (optionsDiv) optionsDiv.style.display = 'block';
+            if (removeBtn) removeBtn.style.display = 'inline-block';
+            if (preview) preview.src = dataUrl;
+            if (modeSelect) modeSelect.value = mode;
+        } else {
+            // Hide options and remove button
+            if (optionsDiv) optionsDiv.style.display = 'none';
+            if (removeBtn) removeBtn.style.display = 'none';
+            if (preview) preview.src = '';
+            if (modeSelect) modeSelect.value = 'cover';
+        }
+    }
+
+    /**
+     * Initialize background image on startup
+     */
+    async initBgImage() {
+        try {
+            const bgData = await this.loadBgImage();
+            if (bgData) {
+                this.applyBgImage(bgData.dataUrl, bgData.mode);
+                this.updateBgImageUI(bgData.dataUrl, bgData.mode);
+            }
+        } catch (error) {
+            console.warn('Failed to initialize background image:', error);
         }
     }
 

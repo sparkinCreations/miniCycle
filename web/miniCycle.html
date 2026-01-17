@@ -178,7 +178,9 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #4c79ff, #74c0fc);
+    background:
+      linear-gradient(135deg, rgba(76, 121, 255, 0.5), rgba(116, 192, 252, 0.45)),
+      url('assets/images/Stock/routine_list.png') center/cover no-repeat;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -219,6 +221,25 @@
     background: white;
     border-radius: 3px;
     transition: width 0.3s ease-out;
+  }
+
+  /* Mobile loading screen optimizations */
+  @media (max-width: 768px) {
+    #app-loader {
+      background:
+        linear-gradient(135deg, rgba(76, 121, 255, 0.55), rgba(116, 192, 252, 0.5)),
+        url('assets/images/Stock/routine_list.png') left center/cover no-repeat;
+    }
+    .loader-logo {
+      width: 100px;
+      height: 80px;
+    }
+    .loader-text {
+      font-size: 14px;
+    }
+    .loader-bar-container {
+      width: 160px;
+    }
   }
 
   /* Notification styles */
@@ -2048,6 +2069,39 @@ window.installApp = () => {
                         <label for="pref-app-bg">App Background</label>
                         <input type="color" id="pref-app-bg" value="#4c79ff" />
                         <button class="preferences-reset-btn" data-target="pref-app-bg" title="Reset to default">Reset</button>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F4D0;</span>
+                        <label for="toggle-bg-pattern">Background Pattern</label>
+                        <span class="toggle-switch pref-toggle">
+                            <input type="checkbox" id="toggle-bg-pattern" name="toggle-bg-pattern" checked>
+                            <span class="toggle-slider"></span>
+                        </span>
+                    </div>
+                    <!-- Background Image Upload -->
+                    <div class="preferences-bg-image-section">
+                        <div class="preferences-color-row">
+                            <span class="pref-color-icon">&#x1F5BC;</span>
+                            <label>Background Image</label>
+                            <input type="file" id="bg-image-upload" accept="image/*" style="display: none;">
+                            <button class="preferences-upload-btn" id="bg-image-upload-btn">Upload</button>
+                            <button class="preferences-remove-btn" id="bg-image-remove-btn" style="display: none;">Remove</button>
+                        </div>
+                        <div class="preferences-bg-image-options" id="bg-image-options" style="display: none;">
+                            <div class="preferences-color-row">
+                                <span class="pref-color-icon">&#x2B55;</span>
+                                <label for="bg-image-mode">Display Mode</label>
+                                <select id="bg-image-mode" class="preferences-select">
+                                    <option value="cover">Stretch to Fill</option>
+                                    <option value="center">Centered</option>
+                                    <option value="tile">Tiled</option>
+                                </select>
+                            </div>
+                            <div class="bg-image-preview-container">
+                                <img id="bg-image-preview" class="bg-image-preview" alt="Background preview">
+                            </div>
+                        </div>
+                        <div class="preferences-bg-image-hint">Max 2MB. Replaces current image.</div>
                     </div>
                     <div class="preferences-color-row">
                         <span class="pref-color-icon">&#x1F4CB;</span>

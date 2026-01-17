@@ -362,6 +362,25 @@ Customize app colors and visual appearance.
 | Import Theme | Import shared themes from JSON files | `ui/preferencesManager.js` |
 | Theme File Validation | Validates imported theme files | `ui/preferencesManager.js` |
 
+### Background Pattern
+| Feature | Description | Module |
+|---------|-------------|--------|
+| Pattern Toggle | Show/hide decorative stationery pattern on background | `ui/preferencesManager.js` |
+| SVG Pattern | Tiled stationery elements (pencils, notebooks, paperclips) | `styles/base/reset.css` |
+| Subtle Design | 4% opacity for non-intrusive aesthetic | `styles/base/reset.css` |
+
+### Background Image
+| Feature | Description | Module |
+|---------|-------------|--------|
+| Image Upload | Upload custom background image (max 2MB) | `ui/preferencesManager.js` |
+| IndexedDB Storage | Images stored locally in browser database | `ui/preferencesManager.js` |
+| Display Mode: Cover | Stretch image to fill entire background | `ui/preferencesManager.js` |
+| Display Mode: Center | Display image at original size, centered | `ui/preferencesManager.js` |
+| Display Mode: Tile | Repeat image in a pattern | `ui/preferencesManager.js` |
+| Image Preview | Preview uploaded image in settings | `ui/preferencesManager.js` |
+| Image Removal | Remove uploaded image and restore default | `ui/preferencesManager.js` |
+| Persistent Storage | Image persists across browser sessions | `ui/preferencesManager.js` |
+
 ---
 
 ## Undo/Redo

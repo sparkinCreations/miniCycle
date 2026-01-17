@@ -464,11 +464,11 @@
 }
 
 #slide-left {
-    left: 15%;
+    right: 15%;
 }
 
 #slide-right {
-    right: 15%;
+    left: 15%;
 }
 
 /* Desktop: Always visible */
@@ -587,19 +587,15 @@
     }
 
     .title-row {
-        background-color: rgba(255, 255, 255, 0.4);
-        border-radius: 10px 10px 0 0;
-        padding: 8px 10px;
-    }
-
-    .mini-cycle-title {
-        max-width: 85%;
-        margin-left: auto;
-        margin-right: auto;
         background: none;
         background-color: transparent;
         padding: 0;
-        box-shadow: none;
+    }
+
+    .mini-cycle-title {
+        max-width: 100%;
+        width: 100%;
+        border-bottom: none;
     }
 }
 

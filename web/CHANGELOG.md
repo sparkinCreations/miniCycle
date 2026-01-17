@@ -1,3 +1,15 @@
+## [1.768] - 2026-01-17
+- feat: add background pattern toggle in personalization modal
+- feat: add custom background image upload with IndexedDB storage (max 2MB)
+- feat: add background image display modes (cover, center, tile)
+- feat: add image preview and remove functionality in personalization
+- docs: update USER_GUIDE.md with background pattern and image documentation
+- docs: update FEATURE_LIST.md with new background personalization features
+- docs: update QUICK_REFERENCE.md with background personalization code examples
+- docs: update FAQ.md with customization and background image questions
+- docs: update STORAGE_MANAGEMENT.md with IndexedDB usage documentation
+
+
 ## [1.767] - 2026-01-17
 - feat: update help window styles for improved visibility and aesthetics
 - feat: update CHANGELOG for version 1.766 with new features and improvements
