@@ -87,7 +87,7 @@ export class HelpWindowManager {
         const safeAdd = _deps.safeAddEventListener;
 
         // Listen for checkbox changes on tasks
-        document._helpWindowChangeHandler = (e) => {
+        this._changeHandler = (e) => {
             // Guard: e.target may not have closest() if event dispatched on document
             if (e.target?.type === 'checkbox' && e.target?.closest?.('.task')) {
                 setTimeout(() => {
@@ -95,10 +95,10 @@ export class HelpWindowManager {
                 }, 50);
             }
         };
-        safeAdd(document, 'change', document._helpWindowChangeHandler);
+        safeAdd(document, 'change', this._changeHandler);
 
         // Listen for click events on tasks
-        document._helpWindowClickHandler = (e) => {
+        this._clickHandler = (e) => {
             // Guard: e.target may not have closest() if event dispatched on document
             if (e.target?.closest?.('.task')) {
                 setTimeout(() => {
@@ -106,7 +106,7 @@ export class HelpWindowManager {
                 }, 100);
             }
         };
-        safeAdd(document, 'click', document._helpWindowClickHandler);
+        safeAdd(document, 'click', this._clickHandler);
 
         // Listen for task list mutations (task additions/deletions)
         const taskList = document.getElementById('taskList');
@@ -136,15 +136,15 @@ export class HelpWindowManager {
         }
 
         // Listen for custom events
-        document._helpWindowTaskCompletedHandler = () => {
+        this._taskCompletedHandler = () => {
             this.updateConstantMessage();
         };
-        safeAdd(document, 'taskCompleted', document._helpWindowTaskCompletedHandler);
+        safeAdd(document, 'taskCompleted', this._taskCompletedHandler);
 
-        document._helpWindowTasksResetHandler = () => {
+        this._tasksResetHandler = () => {
             this.updateConstantMessage();
         };
-        safeAdd(document, 'tasksReset', document._helpWindowTasksResetHandler);
+        safeAdd(document, 'tasksReset', this._tasksResetHandler);
     }
 
     showConstantMessage() {
