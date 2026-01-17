@@ -13,7 +13,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 1.758 |
+| **App Version** | 1.759 |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 103 |
 | **Total Tests** | 1,693 |
