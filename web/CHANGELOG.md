@@ -1,3 +1,8 @@
+## [1.809] - 2026-01-18
+- feat: enhance color selection logic in PreferencesManager for improved customization
+- feat: update app version to 1.808 across documentation, manifest, and styles
+
+
 ## [1.808] - 2026-01-18
 - feat: update status bar style for iOS and ensure app background color is applied
 - feat: update app version to 1.807 across documentation, manifest, and styles
