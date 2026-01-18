@@ -24,7 +24,7 @@
     width: 100%;
     height: auto;
     max-height: calc(100vh - 475px); /* Accounts for header + 200px bottom padding */
-    min-height: 0px;
+    min-height: 200px; /* Reserve space to prevent CLS when tasks load from IndexedDB */
     overflow-y: auto;
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(2px);
@@ -352,6 +352,7 @@ body.onboarding-active .complete-all-and-help-window-container {
     font-weight: 600;
     font-size: 18px;
     text-align: center;
+    min-height: 32px; /* Reserve space to prevent CLS when title loads from IndexedDB */
     letter-spacing: 0.5px;
     color: rgba(43, 43, 43, 0.85); /* Dark text on light surface - dark mode overrides this */
     background:

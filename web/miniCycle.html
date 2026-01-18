@@ -330,6 +330,14 @@
     background: linear-gradient(135deg, #f1f1f172, #ffffff10);
   }
 
+  /* Reserve space for task list to prevent CLS when data loads from IndexedDB */
+  .task-list-container {
+    min-height: 200px;
+  }
+  .mini-cycle-title {
+    min-height: 32px;
+  }
+
   /* Footer mobile layout is defined in miniCycle-styles.css */
 
   </style>
