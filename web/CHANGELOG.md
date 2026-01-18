@@ -1,3 +1,9 @@
+## [1.812] - 2026-01-18
+- feat: update status bar style to black-translucent and adjust theme color for improved visibility
+- feat: update app version to 1.811 across documentation, manifest, and styles
+- feat: update status bar style to solid black for improved visibility on iOS
+
+
 ## [1.811] - 2026-01-18
 - feat: update app version to 1.810 across documentation, manifest, and styles
 
