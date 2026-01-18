@@ -1,3 +1,12 @@
+## [1.797] - 2026-01-18
+- feat: add image validation and compression functionality for background uploads
+
+
+## [1.796] - 2026-01-18
+- feat: update app version to 1.795 across documentation, manifest, and styles
+- fix: adjust header padding for improved layout and safe area handling
+
+
 ## [1.795] - 2026-01-18
 - feat: update app version to 1.794 across documentation, manifest, and styles
 
