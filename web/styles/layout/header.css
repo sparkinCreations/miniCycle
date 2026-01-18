@@ -26,7 +26,7 @@
     align-items: center;
     gap: 12px;
     /* Extend padding to cover status bar seamlessly */
-    padding: calc(env(safe-area-inset-top, 0px) + 20px) 16px 8px 16px;
+    padding: calc(env(safe-area-inset-top, 7px) + 20px) 16px 8px 16px;
     /* Use theme-aware backgrounds - transparent to show gradient through */
     background: var(--theme-header-bg, var(--header-bg, transparent));
     border: none;
