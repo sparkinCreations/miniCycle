@@ -1,3 +1,8 @@
+## [1.800] - 2026-01-18
+- feat: enhance progress bar styling and adjust z-index for stats panel button
+- feat: update app version to 1.799 across documentation, manifest, and styles
+
+
 ## [1.799] - 2026-01-18
 - feat: update background image hint to clarify automatic compression for images over 2MB
 - feat: update app version to 1.798 across documentation, manifest, and styles
