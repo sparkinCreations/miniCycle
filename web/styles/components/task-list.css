@@ -23,7 +23,7 @@
     position: relative;
     width: 100%;
     height: auto;
-    max-height: calc(100vh - 375px); /* Accounts for header + 200px bottom padding */
+    max-height: calc(100vh - 385px); /* Accounts for header + 200px bottom padding */
     min-height: 200px; /* Reserve space to prevent CLS when tasks load from IndexedDB */
     overflow-y: auto;
     background: rgba(255, 255, 255, 0.15);
@@ -685,7 +685,7 @@ body.onboarding-active .complete-all-and-help-window-container {
 
     /* Both Complete button AND mode description visible */
     #task-view.complete-btn-visible.mode-description-visible .task-card {
-        max-height: calc(100vh - 430px);
+        max-height: calc(100vh - 445px);
     }
 }
 
