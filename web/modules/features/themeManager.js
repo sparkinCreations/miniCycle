@@ -205,6 +205,10 @@ export class ThemeManager {
                 statusBarMeta.setAttribute('content', statusBarStyle);
             }
 
+            // CRITICAL: Also update body's background-color for iOS black-translucent status bar
+            // iOS reads the actual CSS background-color, not just the meta tag
+            body.style.backgroundColor = themeColor;
+
             console.log(`🎨 Theme color updated to: ${themeColor}, Status bar: ${statusBarStyle}`);
         } catch (error) {
             console.warn('⚠️ Theme color update failed:', error.message);
