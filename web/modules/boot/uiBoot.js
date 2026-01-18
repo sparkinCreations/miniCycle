@@ -460,6 +460,9 @@ export function updateNavDots() {
  */
 export function hideAppLoader() {
   setTimeout(() => {
+    // Remove app-loading class to reveal main content (prevents CLS during boot)
+    document.body.classList.remove('app-loading');
+
     const appLoader = document.getElementById('app-loader');
     if (appLoader) {
       appLoader.classList.add('fade-out');
