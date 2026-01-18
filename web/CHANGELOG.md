@@ -1,3 +1,8 @@
+## [1.781] - 2026-01-17
+- feat: implement app loading state to prevent CLS during boot
+- feat: update app version to 1.780 across documentation, manifest, and styles
+
+
 ## [1.780] - 2026-01-17
 - feat: refactor display handling for onboarding and completed tasks sections
 - feat: add critical CSS for onboarding state to prevent CLS
