@@ -150,7 +150,8 @@ export class ThemeManager {
     /**
      * Update theme color meta tags for PWA
      * - Default view: Blue (#4c79ff) for seamless look
-     * - Custom background: Black
+     * - Custom appBg color: Use that color
+     * - Custom background image: Black
      * - Dark mode: Black
      */
     updateThemeColor() {
@@ -178,16 +179,24 @@ export class ThemeManager {
                 currentTheme = 'golden-glow';
             }
 
-            // Use black for dark mode or custom background
+            // Always use black-translucent so iOS shows the page content behind status bar
+            statusBarStyle = 'black-translucent';
+
+            // Use black for dark mode or custom background image
             if (isDarkMode || hasCustomBackground) {
                 themeColor = '#000000';
-                statusBarStyle = 'black-translucent';
             } else {
-                // Apply colors based on theme - use solid blue for status bar
-                const colorSet = this.themeColors.light;
-                themeColor = colorSet[currentTheme] || '#4c79ff';
-                // Use 'default' status bar style for light themes so iOS uses theme-color directly
-                statusBarStyle = 'default';
+                // Check for custom appBg color from preferences
+                const customAppBg = getComputedStyle(document.documentElement).getPropertyValue('--pref-app-bg').trim();
+
+                if (customAppBg) {
+                    // Use custom app background color
+                    themeColor = customAppBg;
+                } else {
+                    // Apply colors based on theme
+                    const colorSet = this.themeColors.light;
+                    themeColor = colorSet[currentTheme] || '#4c79ff';
+                }
             }
 
             // Update meta tags
