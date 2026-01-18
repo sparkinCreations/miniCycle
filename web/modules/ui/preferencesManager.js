@@ -1523,6 +1523,9 @@ export class PreferencesManager {
             const color = customColors[config.key];
             if (color) {
                 root.style.setProperty(config.cssVar, color);
+            } else if (config.key === 'appBg') {
+                // Always set appBg to ensure iOS status bar shows correct color
+                root.style.setProperty(config.cssVar, DEFAULT_COLORS.appBg);
             } else {
                 root.style.removeProperty(config.cssVar);
             }
@@ -1539,6 +1542,9 @@ export class PreferencesManager {
         if (!showCheckboxIncomplete) {
             root.style.setProperty('--pref-checkbox-incomplete-bg', 'transparent');
         }
+
+        // Update status bar color to match app background
+        updateThemeColor();
     }
 
     /**
@@ -1549,6 +1555,9 @@ export class PreferencesManager {
         Object.values(COLOR_MAP).forEach(config => {
             root.style.removeProperty(config.cssVar);
         });
+
+        // Update status bar color back to default
+        updateThemeColor();
     }
 
     /**

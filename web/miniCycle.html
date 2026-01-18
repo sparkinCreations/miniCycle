@@ -7,8 +7,8 @@
 <!-- ✅ Use a solid representative color that matches your theme gradient start -->
 <meta name="theme-color" content="#4c79ff" id="theme-color-meta">
 
-<!-- ✅ Status bar matches theme-color for seamless look on iOS -->
-<meta name="apple-mobile-web-app-status-bar-style" content="default" id="status-bar-style-meta">
+<!-- ✅ Transparent status bar so app background shows through on iOS -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
 <!-- Add cache prevention for development -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -388,6 +388,28 @@
       }
     } catch (e) {
       // Silently fail - dark mode will be applied later by JS
+    }
+  })();
+</script>
+
+<!-- Early app background color - ensures iOS status bar shows correct color -->
+<script>
+  (function() {
+    try {
+      var data = localStorage.getItem('miniCycleData');
+      var appBg = '#4c79ff'; // Default blue
+      if (data) {
+        var parsed = JSON.parse(data);
+        var customAppBg = parsed && parsed.settings && parsed.settings.customColors && parsed.settings.customColors.appBg;
+        if (customAppBg) {
+          appBg = customAppBg;
+        }
+      }
+      // Set CSS variable immediately
+      document.documentElement.style.setProperty('--pref-app-bg', appBg);
+    } catch (e) {
+      // Fallback to default
+      document.documentElement.style.setProperty('--pref-app-bg', '#4c79ff');
     }
   })();
 </script>
