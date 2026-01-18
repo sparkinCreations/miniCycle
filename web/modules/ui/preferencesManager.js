@@ -19,6 +19,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { updateThemeColor } from '../features/themeManager.js';
 
 // ============================================================================
 // DEFAULT COLORS
@@ -1018,6 +1019,9 @@ export class PreferencesManager {
         // The image data stays in IndexedDB, we just hide/show it via CSS class
         document.body.classList.toggle('has-bg-image', visible);
 
+        // Update status bar color (black for custom background, blue for default)
+        updateThemeColor();
+
         // Update live preview
         this.updatePreview();
     }
@@ -1269,6 +1273,8 @@ export class PreferencesManager {
         // Only add has-bg-image class if the toggle is on
         if (showBgImage) {
             body.classList.add('has-bg-image');
+            // Update status bar color to black for custom background
+            updateThemeColor();
         }
 
         // Remove any existing mode classes
@@ -1300,6 +1306,9 @@ export class PreferencesManager {
             const body = document.body;
             document.documentElement.style.removeProperty('--custom-bg-image');
             body.classList.remove('has-bg-image', 'bg-mode-cover', 'bg-mode-center', 'bg-mode-tile');
+
+            // Update status bar color (back to blue for default view)
+            updateThemeColor();
 
             // Update UI
             this.updateBgImageUI(null, 'cover');
