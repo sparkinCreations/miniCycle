@@ -343,6 +343,30 @@
     pointer-events: none;
   }
 
+  /* Onboarding state - critical CSS to prevent CLS when onboarding is shown */
+  body.onboarding-active .title-row,
+  body.onboarding-active .task-list,
+  body.onboarding-active .empty-state,
+  body.onboarding-active .completed-tasks-section,
+  body.onboarding-active .task-search-input-row,
+  body.onboarding-active .progress-container,
+  body.onboarding-active .complete-all-and-help-window-container {
+    display: none !important;
+  }
+  .onboarding-placeholder {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.9);
+    min-height: 200px;
+  }
+  body.onboarding-active .onboarding-placeholder {
+    display: flex;
+  }
+
   /* Footer mobile layout is defined in miniCycle-styles.css */
 
   </style>
