@@ -1,3 +1,8 @@
+## [1.775] - 2026-01-17
+- feat: update font family to Poppins and add fixed header styles
+- feat: update app version to 1.774 across documentation, manifest, and styles
+
+
 ## [1.774] - 2026-01-17
 - chore: clean up empty code change sections in the changes log
 - feat: update app version to 1.773 across documentation, manifest, and styles
