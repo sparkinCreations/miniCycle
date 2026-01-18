@@ -96,7 +96,7 @@
     font-size: 32px;
     color: black;
     cursor: pointer;
-    z-index: 10;
+    z-index: 50;
     opacity: 0.6;
     transition: opacity var(--transition-fast);
     transition-delay: 0.8s; /* Delay before fading in after view switch */
