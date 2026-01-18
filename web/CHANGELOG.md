@@ -1,3 +1,8 @@
+## [1.779] - 2026-01-17
+- feat: adjust max-height values in task list and task view to improve layout
+- feat: update app version to 1.778 across documentation, manifest, and styles
+
+
 ## [1.778] - 2026-01-17
 - feat: adjust max-height of task list to improve layout and prevent CLS
 - feat: implement visibility:hidden for task input to reserve space and prevent CLS
