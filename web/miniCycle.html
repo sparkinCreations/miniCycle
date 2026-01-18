@@ -367,6 +367,12 @@
     display: flex;
   }
 
+  /* App loading state - hide main content to prevent CLS measurement during boot */
+  body.app-loading #app-container,
+  body.app-loading .fixed-header-container {
+    visibility: hidden;
+  }
+
   /* Footer mobile layout is defined in miniCycle-styles.css */
 
   </style>
@@ -1009,7 +1015,7 @@ window.installApp = () => {
 
 </head>
 
-<body>
+<body class="app-loading">
   <!-- Initial App Loader -->
   <div id="app-loader">
     <img src="assets/images/logo/minicycle_logo_icon.png" alt="Loading..." class="loader-logo" width="120" height="96" fetchpriority="high">
