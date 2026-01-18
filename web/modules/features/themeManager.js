@@ -178,15 +178,16 @@ export class ThemeManager {
                 currentTheme = 'golden-glow';
             }
 
-            // Use black for dark mode or custom background, otherwise use theme colors
+            // Use black for dark mode or custom background
             if (isDarkMode || hasCustomBackground) {
                 themeColor = '#000000';
                 statusBarStyle = 'black-translucent';
             } else {
-                // Apply colors based on theme
+                // Apply colors based on theme - use solid blue for status bar
                 const colorSet = this.themeColors.light;
                 themeColor = colorSet[currentTheme] || '#4c79ff';
-                statusBarStyle = 'black-translucent';
+                // Use 'default' status bar style for light themes so iOS uses theme-color directly
+                statusBarStyle = 'default';
             }
 
             // Update meta tags
