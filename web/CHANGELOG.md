@@ -1,3 +1,9 @@
+## [1.780] - 2026-01-17
+- feat: refactor display handling for onboarding and completed tasks sections
+- feat: add critical CSS for onboarding state to prevent CLS
+- feat: update app version to 1.779 across documentation, manifest, and styles
+
+
 ## [1.779] - 2026-01-17
 - feat: adjust max-height values in task list and task view to improve layout
 - feat: update app version to 1.778 across documentation, manifest, and styles
