@@ -1,3 +1,8 @@
+## [1.802] - 2026-01-18
+- feat: add pattern color customization and update background handling in preferences
+- feat: update app version to 1.801 across documentation, manifest, and styles
+
+
 ## [1.801] - 2026-01-18
 - feat: add background image visibility toggle in preferences
 - feat: update app version to 1.800 across documentation, manifest, and styles
