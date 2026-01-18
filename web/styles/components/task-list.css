@@ -151,7 +151,7 @@ body.onboarding-active .completed-tasks-section,
 body.onboarding-active .task-search-input-row,
 body.onboarding-active .progress-container,
 body.onboarding-active .complete-all-and-help-window-container {
-    display: none !important;
+    display: none;
 }
 
 /* NOTE: .onboarding-placeholder styles are defined in onboarding.css */
@@ -166,6 +166,11 @@ body.onboarding-active .complete-all-and-help-window-container {
     border-top: 1px solid rgba(255, 255, 255, 0.2);
     padding-top: 10px;
     display: none; /* Hidden by default, shown when tasks are added */
+}
+
+/* Show completed section when it has tasks (JS adds this class) */
+.completed-tasks-section.show {
+    display: block;
 }
 
 .completed-tasks-header {

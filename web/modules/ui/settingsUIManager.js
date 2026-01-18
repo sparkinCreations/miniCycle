@@ -432,7 +432,7 @@ export function setupCompletedDropdownToggle() {
                 });
                 const completedSection = document.getElementById('completed-tasks-section');
                 if (completedSection) {
-                    completedSection.style.display = 'none';
+                    completedSection.classList.remove('show');
                 }
             }
         }
