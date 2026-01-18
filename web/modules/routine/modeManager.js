@@ -266,7 +266,8 @@ export class ModeManager {
         const AppState = this.deps.AppState;
         const currentState = AppState?.get();
         if (!currentState) {
-            console.error('❌ ModeManager: No state data available for syncModeFromToggles');
+            // ✅ Normal during Phase 2 - data loads in Phase 3, syncModeFromToggles will be called again
+            console.log('⏳ ModeManager: State not yet available, will sync when data loads');
             return;
         }
 
@@ -614,9 +615,8 @@ export class ModeManager {
         };
         safeAdd(deleteCheckedTasks, 'change', deleteCheckedTasks._modeChangeHandler);
 
-        // ✅ Initialize on load
-        console.log('🚀 ModeManager: Initializing mode selector...');
-        this.syncModeFromToggles();
+        // ✅ Mode sync happens via routineLoader when data is loaded (Phase 3)
+        // No need to call syncModeFromToggles() here - data doesn't exist yet
 
         // ✅ Check if we need to restore mode after reload
         const modeToRestore = sessionStorage.getItem('restoreModeAfterReload');
