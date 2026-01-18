@@ -89,7 +89,7 @@ body.has-bg-image.bg-mode-tile:not(.dark-mode):not(.theme-dark-ocean):not(.theme
 body.dark-mode.has-bg-image.bg-mode-cover,
 body.theme-dark-ocean.has-bg-image.bg-mode-cover {
     background:
-        linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+        linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
         var(--custom-bg-image) center/cover no-repeat;
     background-color: var(--theme-bg-solid);
 }
@@ -97,7 +97,7 @@ body.theme-dark-ocean.has-bg-image.bg-mode-cover {
 body.dark-mode.has-bg-image.bg-mode-center,
 body.theme-dark-ocean.has-bg-image.bg-mode-center {
     background:
-        linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+        linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
         var(--custom-bg-image) center/auto no-repeat;
     background-color: var(--theme-bg-solid);
 }
@@ -105,7 +105,7 @@ body.theme-dark-ocean.has-bg-image.bg-mode-center {
 body.dark-mode.has-bg-image.bg-mode-tile,
 body.theme-dark-ocean.has-bg-image.bg-mode-tile {
     background:
-        linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+        linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
         var(--custom-bg-image) top left/auto repeat;
     background-color: var(--theme-bg-solid);
 }

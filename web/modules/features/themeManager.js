@@ -229,6 +229,7 @@ export class ThemeManager {
             // Set initial state
             thisToggle.checked = isDark;
             document.body?.classList.toggle("dark-mode", isDark);
+            document.documentElement?.classList.toggle("dark-mode", isDark);
 
             // Update theme color and quick toggle
             this.updateThemeColor();
@@ -314,7 +315,8 @@ export class ThemeManager {
     toggleDarkMode(enabled, allToggleIds = [], excludeToggle = null) {
         try {
             document.body?.classList.toggle("dark-mode", enabled);
-            
+            document.documentElement?.classList.toggle("dark-mode", enabled);
+
             console.log('🌙 Dark mode toggle changed:', enabled);
             
             // Save to storage
