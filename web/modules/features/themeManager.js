@@ -179,8 +179,8 @@ export class ThemeManager {
                 currentTheme = 'golden-glow';
             }
 
-            // Use solid black status bar by default
-            statusBarStyle = 'black';
+            // Use black-translucent to show body background-color
+            statusBarStyle = 'black-translucent';
 
             // Check for custom appBg color from preferences
             const customAppBg = getComputedStyle(document.documentElement).getPropertyValue('--pref-app-bg').trim();
@@ -192,8 +192,8 @@ export class ThemeManager {
                 // Black for dark mode or custom background image
                 themeColor = '#000000';
             } else {
-                // Default: black status bar (works cleanly with gradient)
-                themeColor = '#000000';
+                // Default: match the app's blue gradient starting color
+                themeColor = '#4c79ff';
             }
 
             // Update meta tags
