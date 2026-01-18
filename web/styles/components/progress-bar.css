@@ -8,9 +8,11 @@
    ============================================================================= */
 
 .progress-container {
+    position: relative;
+    z-index: 5;
     width: 90%;
     max-width: 400px;
-    background: rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.35);
     border-radius: 10px;
     height: 12px;
     min-height: 12px;
