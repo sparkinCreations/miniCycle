@@ -1,3 +1,9 @@
+## [1.778] - 2026-01-17
+- feat: adjust max-height of task list to improve layout and prevent CLS
+- feat: implement visibility:hidden for task input to reserve space and prevent CLS
+- feat: update app version to 1.777 across documentation, manifest, and styles
+
+
 ## [1.777] - 2026-01-17
 - feat: reserve space in task list and title to prevent CLS during data loading
 - feat: update app version to 1.776 across documentation, manifest, and styles
