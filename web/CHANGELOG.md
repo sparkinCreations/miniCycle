@@ -1,3 +1,8 @@
+## [1.808] - 2026-01-18
+- feat: update status bar style for iOS and ensure app background color is applied
+- feat: update app version to 1.807 across documentation, manifest, and styles
+
+
 ## [1.807] - 2026-01-18
 - feat: update status bar style to match theme color for improved iOS appearance
 - feat: update app version to 1.806 across documentation, manifest, and styles
