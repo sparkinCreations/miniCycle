@@ -503,7 +503,7 @@ body.onboarding-active .complete-all-and-help-window-container {
     cursor: pointer;
 }
 
-.task span {
+.task span.task-text {
     flex: 1;
     text-align: left;
     font-size: 16px;
@@ -648,8 +648,13 @@ body.onboarding-active .complete-all-and-help-window-container {
 /* Ensure recurring indicator stays inline with task text, not below checkbox */
 .task-text .recurring-indicator {
     display: inline-flex;
+    align-items: center;
     vertical-align: middle;
+    flex: 0 0 auto;
+    max-width: none;
     margin-left: 8px;
+    margin-right: 0;
+    white-space: nowrap;
 }
 
 /* =============================================================================
@@ -765,10 +770,15 @@ body.onboarding-active .complete-all-and-help-window-container {
     /* Recurring indicator - ensure it stays inline on mobile */
     .task-text .recurring-indicator {
         display: inline-flex;
+        align-items: center;
         vertical-align: middle;
+        flex: 0 0 auto;
+        max-width: none;
         margin-left: 6px;
+        margin-right: 0;
         min-width: 12px;
         min-height: 12px;
+        white-space: nowrap;
     }
 
     .task-text .recurring-indicator .icon,
