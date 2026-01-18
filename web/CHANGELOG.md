@@ -1,3 +1,8 @@
+## [1.794] - 2026-01-18
+- fix: adjust header padding for improved safe area handling
+- feat: update app version to 1.793 across documentation, manifest, and styles
+
+
 ## [1.793] - 2026-01-18
 - fix: update background SVG opacity for improved visibility
 - feat: update app version to 1.792 across documentation, manifest, and styles
