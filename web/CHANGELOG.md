@@ -1,3 +1,7 @@
+## [1.811] - 2026-01-18
+- feat: update app version to 1.810 across documentation, manifest, and styles
+
+
 ## [1.810] - 2026-01-18
 - feat: update theme color management for improved status bar visibility and customization
 - feat: update app version to 1.809 across documentation, manifest, and styles
