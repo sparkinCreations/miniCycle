@@ -1,3 +1,7 @@
+## [1.791] - 2026-01-18
+- feat: update app version to 1.790 across documentation, manifest, and styles
+
+
 ## [1.790] - 2026-01-18
 - refactor: update logging for state synchronization and mode initialization in ModeManager
 - feat: update app version to 1.789 across documentation, manifest, and styles
