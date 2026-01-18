@@ -351,7 +351,7 @@
   body.onboarding-active .task-search-input-row,
   body.onboarding-active .progress-container,
   body.onboarding-active .complete-all-and-help-window-container {
-    display: none !important;
+    display: none;
   }
   .onboarding-placeholder {
     display: none;
@@ -2462,7 +2462,7 @@ window.installApp = () => {
         </div>
         <div class="task-list-container">
         <!-- Search Input Row (appears below title when search is expanded) -->
-        <div id="task-search-input-row" class="task-search-input-row" style="display: none;">
+        <div id="task-search-input-row" class="task-search-input-row hidden">
             <input type="text" id="task-search-input" class="task-search-input" placeholder="Search tasks...">
             <button id="task-search-clear" class="task-search-clear" title="Clear search">×</button>
         </div>

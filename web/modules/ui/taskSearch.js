@@ -119,7 +119,7 @@ function expandSearch() {
     const inputRow = deps.getElementById('task-search-input-row');
 
     if (inputRow && searchBtn) {
-        inputRow.style.display = 'flex';
+        inputRow.classList.remove('hidden');
         searchBtn.classList.add('active');
         searchInput?.focus();
         isSearchExpanded = true;
@@ -135,7 +135,7 @@ function collapseSearch() {
     const inputRow = deps.getElementById('task-search-input-row');
 
     if (inputRow && searchBtn) {
-        inputRow.style.display = 'none';
+        inputRow.classList.add('hidden');
         searchBtn.classList.remove('active');
         isSearchExpanded = false;
     }

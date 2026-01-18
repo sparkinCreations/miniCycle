@@ -148,7 +148,7 @@ export class CompletedTasksManager {
         completedList.appendChild(taskElement);
 
         // Show the completed section if it has tasks
-        completedSection.style.display = 'block';
+        completedSection.classList.add('show');
 
         // Update count
         this.updateCount();
@@ -189,9 +189,9 @@ export class CompletedTasksManager {
 
         // Hide section if no completed tasks
         if (count === 0) {
-            completedSection.style.display = 'none';
+            completedSection.classList.remove('show');
         } else {
-            completedSection.style.display = 'block';
+            completedSection.classList.add('show');
         }
     }
 
