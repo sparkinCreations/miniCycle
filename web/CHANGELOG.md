@@ -1,3 +1,8 @@
+## [1.790] - 2026-01-18
+- refactor: update logging for state synchronization and mode initialization in ModeManager
+- feat: update app version to 1.789 across documentation, manifest, and styles
+
+
 ## [1.789] - 2026-01-17
 - feat: implement self-hosted Poppins font and update security policies
 - feat: update app version to 1.788 across documentation, manifest, and styles
