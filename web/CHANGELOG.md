@@ -1,3 +1,9 @@
+## [1.803] - 2026-01-18
+- feat: enhance dark mode handling and update background gradient opacity
+- feat: update app version to 1.802 across documentation, manifest, and styles
+- feat: update CHANGELOG for version 1.802 with new features and app version updates
+
+
 ## [1.802] - 2026-01-18
 - feat: add pattern color customization and update background handling in preferences
 - feat: update app version to 1.801 across documentation, manifest, and styles
