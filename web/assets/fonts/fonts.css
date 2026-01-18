@@ -1,0 +1,36 @@
+/* =============================================================================
+   Self-hosted Poppins Font
+   Weights: 300 (Light), 400 (Regular), 500 (Medium), 600 (SemiBold)
+   ============================================================================= */
+
+@font-face {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url('./poppins-300.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('./poppins-400.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('./poppins-500.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('./poppins-600.woff2') format('woff2');
+}
