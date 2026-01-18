@@ -1,3 +1,8 @@
+## [1.785] - 2026-01-17
+- feat: update initialSetup calls to await for proper async handling in migrationManager and appInit
+- feat: update app version to 1.784 across documentation, manifest, and styles
+
+
 ## [1.784] - 2026-01-17
 - feat: improve recurring indicator alignment and styling for task text
 - feat: add recurring indicator styles for mobile alignment
