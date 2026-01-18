@@ -1,3 +1,9 @@
+## [1.806] - 2026-01-18
+- feat: initialize theme color on startup and update for default theme
+- feat: update app version to 1.805 across documentation, manifest, and styles
+- feat: enhance theme color management in PreferencesManager for better responsiveness
+
+
 ## [1.805] - 2026-01-18
 - feat: update app version to 1.804 across documentation, manifest, and styles
 
