@@ -8,6 +8,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { getObjectSizeBytes, formatBytes } from '../utils/storageUtils.js';
+import { getUndoCacheSizeBytes } from './undoRedoManager.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -275,10 +276,11 @@ export class HelpWindowManager {
                 cycleCount = currentCycle?.cycleCount || 0;
                 clearedTasksCount = currentCycle?.clearedTasks?.totalCleared || 0;
                 isToDoMode = currentCycle?.deleteCheckedTasks === true;
-                // Calculate routine size (~ indicates estimate)
+                // Calculate routine size including undo history (~ indicates estimate)
                 if (currentCycle) {
-                    const sizeBytes = getObjectSizeBytes(currentCycle);
-                    routineSize = `~${formatBytes(sizeBytes)}`;
+                    const cycleDataSize = getObjectSizeBytes(currentCycle);
+                    const undoSize = getUndoCacheSizeBytes();
+                    routineSize = `~${formatBytes(cycleDataSize + undoSize)}`;
                 }
             }
         } else if (typeof _deps.loadMiniCycleData === 'function') {
@@ -289,10 +291,11 @@ export class HelpWindowManager {
                 cycleCount = currentCycle?.cycleCount || 0;
                 clearedTasksCount = currentCycle?.clearedTasks?.totalCleared || 0;
                 isToDoMode = currentCycle?.deleteCheckedTasks === true;
-                // Calculate routine size (~ indicates estimate)
+                // Calculate routine size including undo history (~ indicates estimate)
                 if (currentCycle) {
-                    const sizeBytes = getObjectSizeBytes(currentCycle);
-                    routineSize = `~${formatBytes(sizeBytes)}`;
+                    const cycleDataSize = getObjectSizeBytes(currentCycle);
+                    const undoSize = getUndoCacheSizeBytes();
+                    routineSize = `~${formatBytes(cycleDataSize + undoSize)}`;
                 }
             }
         }

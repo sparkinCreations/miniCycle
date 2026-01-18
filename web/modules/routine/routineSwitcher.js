@@ -24,6 +24,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { updateStorageBarUI, getObjectSizeBytes, formatBytes, forceQuotaRedetection, adjustStorageEstimate, resetStorageEstimate, updateStorageBarUIEstimated } from '../utils/storageUtils.js';
 import { getUniqueCycleName } from '../utils/nameUtils.js';
+import { getUndoCacheSizeBytes, getUndoCacheCycleId } from '../ui/undoRedoManager.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -707,10 +708,18 @@ export class RoutineSwitcher {
             const oldCycleId = state.appState.activeCycleId;
             console.log('🔍 Inside state update - changing from:', oldCycleId, 'to:', cycleKey);
 
-            // ✅ Save lastModified to the OLD cycle before switching
-            // This captures when the user last worked on that routine
+            // ✅ Save lastModified and undoSizeBytes to the OLD cycle before switching
+            // This captures when the user last worked on that routine and its undo storage footprint
             if (oldCycleId && state.data.cycles[oldCycleId]) {
                 state.data.cycles[oldCycleId].lastModified = state.metadata.lastModified || Date.now();
+
+                // Save undo size if the cache belongs to this cycle
+                const undoCacheCycleId = getUndoCacheCycleId();
+                if (undoCacheCycleId === oldCycleId) {
+                    state.data.cycles[oldCycleId].undoSizeBytes = getUndoCacheSizeBytes();
+                    console.log(`💾 Saved undoSizeBytes to "${oldCycleId}":`, state.data.cycles[oldCycleId].undoSizeBytes);
+                }
+
                 console.log(`📅 Saved lastModified to "${oldCycleId}":`, state.data.cycles[oldCycleId].lastModified);
             }
 
@@ -1123,10 +1132,16 @@ export class RoutineSwitcher {
             leftSide.appendChild(titleSpan);
 
             // 📊 Create right side with size (~ indicates estimate)
-            const cycleSize = getObjectSizeBytes(cycleData);
+            // Include undo history size: live from cache for active, saved metadata for inactive
+            const activeCycleId = currentState.appState?.activeCycleId;
+            const isActiveCycle = cycleKey === activeCycleId;
+            const cycleDataSize = getObjectSizeBytes(cycleData);
+            const undoSize = isActiveCycle ? getUndoCacheSizeBytes() : (cycleData.undoSizeBytes || 0);
+            const totalSize = cycleDataSize + undoSize;
+
             const sizeSpan = document.createElement("span");
             sizeSpan.className = "cycle-item-size";
-            sizeSpan.textContent = `~${formatBytes(cycleSize)}`;
+            sizeSpan.textContent = `~${formatBytes(totalSize)}`;
 
             listItem.appendChild(leftSide);
             listItem.appendChild(sizeSpan);

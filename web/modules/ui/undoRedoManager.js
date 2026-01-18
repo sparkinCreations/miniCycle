@@ -108,6 +108,38 @@ function loadFromUndoCache(expectedCycleId) {
 }
 
 /**
+ * Get the size in bytes of the undo cache for the active routine
+ * Reads directly from localStorage - synchronous and fast
+ * @returns {number} Size in bytes, or 0 if no cache exists
+ */
+export function getUndoCacheSizeBytes() {
+  try {
+    const cached = localStorage.getItem(UNDO_CACHE_KEY);
+    if (!cached) return 0;
+    // Return the actual string length (approximately bytes in UTF-8 for ASCII)
+    return cached.length;
+  } catch (e) {
+    console.warn('⚠️ Failed to get undo cache size:', e.message);
+    return 0;
+  }
+}
+
+/**
+ * Get the cycle ID that the current undo cache belongs to
+ * @returns {string|null} The cycle ID or null if no cache
+ */
+export function getUndoCacheCycleId() {
+  try {
+    const cached = localStorage.getItem(UNDO_CACHE_KEY);
+    if (!cached) return null;
+    const data = JSON.parse(cached);
+    return data.cycleId || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
  * Validate a single snapshot belongs to the expected cycle
  * @param {Object} snapshot - The snapshot to validate
  * @param {string} expectedCycleId - The cycle ID it should belong to
