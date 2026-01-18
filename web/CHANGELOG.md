@@ -1,3 +1,8 @@
+## [1.782] - 2026-01-17
+- feat: enhance loading feedback during orchestrator startup
+- feat: update app version to 1.781 across documentation, manifest, and styles
+
+
 ## [1.781] - 2026-01-17
 - feat: implement app loading state to prevent CLS during boot
 - feat: update app version to 1.780 across documentation, manifest, and styles
