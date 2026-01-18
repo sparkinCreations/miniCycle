@@ -1,3 +1,10 @@
+## [1.784] - 2026-01-17
+- feat: improve recurring indicator alignment and styling for task text
+- feat: add recurring indicator styles for mobile alignment
+- feat: update app version to 1.783 across documentation, manifest, and styles
+- feat: adjust recurring task styles for better alignment and spacing
+
+
 ## [1.783] - 2026-01-17
 - feat: update app version to 1.782 across documentation, manifest, and styles
 
