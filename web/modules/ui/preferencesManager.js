@@ -49,6 +49,153 @@ const BG_IMAGE_DB_NAME = 'miniCycleBackgroundDB';
 const BG_IMAGE_DB_VERSION = 1;
 const BG_IMAGE_STORE = 'backgroundImage';
 const BG_IMAGE_MAX_SIZE = 2 * 1024 * 1024; // 2MB
+const BG_IMAGE_MAX_UPLOAD_SIZE = 20 * 1024 * 1024; // 20MB - max file size to even attempt
+const BG_IMAGE_MAX_DIMENSION = 1920; // Max width/height for compression
+const BG_IMAGE_COMPRESSION_TIMEOUT = 30000; // 30 seconds timeout
+
+// Allowed image MIME types (security: block SVG to prevent XSS)
+const ALLOWED_IMAGE_TYPES = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/webp',
+    'image/gif'
+];
+
+/**
+ * Validate image file for security
+ * @param {File} file - The file to validate
+ * @returns {{valid: boolean, error?: string}}
+ */
+function validateImageFile(file) {
+    // Check if file exists
+    if (!file) {
+        return { valid: false, error: 'No file selected' };
+    }
+
+    // Check MIME type (block SVG for XSS prevention)
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type.toLowerCase())) {
+        return { valid: false, error: 'Invalid file type. Please use JPG, PNG, WebP, or GIF.' };
+    }
+
+    // Check file size limit for attempting compression
+    if (file.size > BG_IMAGE_MAX_UPLOAD_SIZE) {
+        return { valid: false, error: 'Image too large (max 20MB). Please use a smaller image.' };
+    }
+
+    // Check file extension matches MIME type (basic validation)
+    const ext = file.name.toLowerCase().split('.').pop();
+    const validExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    if (!validExtensions.includes(ext)) {
+        return { valid: false, error: 'Invalid file extension. Please use JPG, PNG, WebP, or GIF.' };
+    }
+
+    return { valid: true };
+}
+
+/**
+ * Compress an image file to fit within size limit
+ * Uses Canvas API - no external libraries needed
+ * @param {File} file - The image file to compress
+ * @param {number} maxSize - Maximum size in bytes
+ * @param {number} maxDimension - Maximum width/height
+ * @returns {Promise<{dataUrl: string, originalSize: number, compressedSize: number, quality: number}>}
+ */
+async function compressImage(file, maxSize = BG_IMAGE_MAX_SIZE, maxDimension = BG_IMAGE_MAX_DIMENSION) {
+    return new Promise((resolve, reject) => {
+        // Set timeout to prevent hanging on corrupt files
+        const timeout = setTimeout(() => {
+            cleanup();
+            reject(new Error('Image processing timed out. The file may be corrupt.'));
+        }, BG_IMAGE_COMPRESSION_TIMEOUT);
+
+        const img = new Image();
+        let objectUrl = null;
+
+        // Cleanup function to revoke object URL and clear timeout
+        const cleanup = () => {
+            clearTimeout(timeout);
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+            }
+        };
+
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                if (!ctx) {
+                    cleanup();
+                    reject(new Error('Failed to create canvas context'));
+                    return;
+                }
+
+                // Calculate new dimensions (maintain aspect ratio)
+                let { width, height } = img;
+                const originalWidth = width;
+                const originalHeight = height;
+
+                if (width > maxDimension || height > maxDimension) {
+                    if (width > height) {
+                        height = Math.round((height * maxDimension) / width);
+                        width = maxDimension;
+                    } else {
+                        width = Math.round((width * maxDimension) / height);
+                        height = maxDimension;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Try progressively lower quality until under size limit
+                let quality = 0.9;
+                let dataUrl = canvas.toDataURL('image/jpeg', quality);
+
+                while (dataUrl.length > maxSize && quality > 0.1) {
+                    quality -= 0.1;
+                    dataUrl = canvas.toDataURL('image/jpeg', quality);
+                }
+
+                // If still too large, reduce dimensions further
+                if (dataUrl.length > maxSize) {
+                    const scale = 0.7;
+                    canvas.width = Math.round(width * scale);
+                    canvas.height = Math.round(height * scale);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    quality = 0.7;
+                }
+
+                const compressedSize = Math.round(dataUrl.length * 0.75); // Approximate actual size (base64 overhead)
+
+                console.log(`📸 Image compressed: ${originalWidth}x${originalHeight} → ${canvas.width}x${canvas.height}, ${(file.size / 1024).toFixed(0)}KB → ${(compressedSize / 1024).toFixed(0)}KB (quality: ${(quality * 100).toFixed(0)}%)`);
+
+                cleanup();
+                resolve({
+                    dataUrl,
+                    originalSize: file.size,
+                    compressedSize,
+                    quality: Math.round(quality * 100)
+                });
+            } catch (err) {
+                cleanup();
+                reject(new Error('Failed to process image: ' + err.message));
+            }
+        };
+
+        img.onerror = () => {
+            cleanup();
+            reject(new Error('Failed to load image. The file may be corrupt or unsupported.'));
+        };
+
+        // Create object URL and load image
+        objectUrl = URL.createObjectURL(file);
+        img.src = objectUrl;
+    });
+}
 
 // ============================================================================
 // QUICK PRESET THEMES (Built-in)
@@ -808,25 +955,45 @@ export class PreferencesManager {
      */
     async handleBgImageUpload(event) {
         const file = event.target.files?.[0];
+
+        // Reset input early so same file can be selected again
+        if (event.target) {
+            event.target.value = '';
+        }
+
         if (!file) return;
 
-        // Check file size
-        if (file.size > BG_IMAGE_MAX_SIZE) {
-            _deps.showNotification?.('Image too large. Max size is 2MB.', 'error', 3000);
-            event.target.value = ''; // Reset input
+        // Security validation
+        const validation = validateImageFile(file);
+        if (!validation.valid) {
+            _deps.showNotification?.(validation.error, 'error', 4000);
+            console.warn('🚫 Image upload rejected:', validation.error);
             return;
         }
 
-        // Check file type
-        if (!file.type.startsWith('image/')) {
-            _deps.showNotification?.('Please select an image file.', 'error', 3000);
-            event.target.value = '';
-            return;
-        }
+        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        console.log(`📤 Processing image: ${file.name} (${fileSizeMB}MB, ${file.type})`);
 
         try {
-            // Read file as data URL
-            const dataUrl = await this.readFileAsDataURL(file);
+            let dataUrl;
+            let compressionInfo = null;
+
+            // Compress if over size limit, otherwise read directly
+            if (file.size > BG_IMAGE_MAX_SIZE) {
+                _deps.showNotification?.(`Compressing ${fileSizeMB}MB image...`, 'info', 3000);
+
+                const result = await compressImage(file);
+                dataUrl = result.dataUrl;
+                compressionInfo = result;
+            } else {
+                // File is small enough, read directly
+                dataUrl = await this.readFileAsDataURL(file);
+            }
+
+            // Verify we got valid data
+            if (!dataUrl || !dataUrl.startsWith('data:image/')) {
+                throw new Error('Invalid image data generated');
+            }
 
             // Get current display mode
             const modeSelect = document.getElementById('bg-image-mode');
@@ -841,14 +1008,37 @@ export class PreferencesManager {
             // Update UI
             this.updateBgImageUI(dataUrl, mode);
 
-            _deps.showNotification?.('Background image set', 'success', 2000);
-        } catch (error) {
-            console.error('Failed to upload background image:', error);
-            _deps.showNotification?.('Failed to set background image', 'error', 3000);
-        }
+            // Show success notification with compression details
+            if (compressionInfo) {
+                const savedKB = Math.round((compressionInfo.originalSize - compressionInfo.compressedSize) / 1024);
+                _deps.showNotification?.(
+                    `Image set! Compressed ${savedKB}KB (${compressionInfo.quality}% quality)`,
+                    'success',
+                    3000
+                );
+            } else {
+                _deps.showNotification?.('Background image set', 'success', 2000);
+            }
 
-        // Reset input so same file can be selected again
-        event.target.value = '';
+            console.log('✅ Background image uploaded successfully');
+
+        } catch (error) {
+            console.error('❌ Failed to upload background image:', error);
+
+            // Provide specific error messages
+            let errorMessage = 'Failed to set background image';
+            if (error.message.includes('timed out')) {
+                errorMessage = 'Image processing timed out. Try a smaller image.';
+            } else if (error.message.includes('corrupt')) {
+                errorMessage = 'Image appears to be corrupt. Try another file.';
+            } else if (error.message.includes('memory') || error.message.includes('quota')) {
+                errorMessage = 'Not enough storage space. Try a smaller image.';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            _deps.showNotification?.(errorMessage, 'error', 4000);
+        }
     }
 
     /**
