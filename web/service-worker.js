@@ -37,7 +37,13 @@ var CORE = [
   './manifest-lite.json',
   // Essential logos only
   './assets/images/logo/minicycle_logo_icon.png',
-  './assets/images/logo/logo.png'
+  './assets/images/logo/logo.png',
+  // Self-hosted fonts
+  './assets/fonts/fonts.css',
+  './assets/fonts/poppins-300.woff2',
+  './assets/fonts/poppins-400.woff2',
+  './assets/fonts/poppins-500.woff2',
+  './assets/fonts/poppins-600.woff2'
 ];
 
 // Boot-critical files - MUST be precached for instant startup
