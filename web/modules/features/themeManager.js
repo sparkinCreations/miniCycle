@@ -179,8 +179,8 @@ export class ThemeManager {
                 currentTheme = 'golden-glow';
             }
 
-            // Always use black-translucent so iOS shows the page content behind status bar
-            statusBarStyle = 'black-translucent';
+            // Use solid black status bar by default
+            statusBarStyle = 'black';
 
             // Check for custom appBg color from preferences
             const customAppBg = getComputedStyle(document.documentElement).getPropertyValue('--pref-app-bg').trim();
