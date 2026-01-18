@@ -645,6 +645,13 @@ body.onboarding-active .complete-all-and-help-window-container {
     color: var(--theme-task-text, #333);
 }
 
+/* Ensure recurring indicator stays inline with task text, not below checkbox */
+.task-text .recurring-indicator {
+    display: inline-flex;
+    vertical-align: middle;
+    margin-left: 8px;
+}
+
 /* =============================================================================
    MOVE ARROWS (Accessibility)
    ============================================================================= */
