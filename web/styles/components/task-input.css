@@ -23,6 +23,13 @@
     flex-shrink: 0; /* Don't shrink - task list shrinks instead */
 }
 
+/* Hidden state - use visibility to reserve space and prevent CLS */
+.task-input[hidden],
+.task-input.hidden {
+    visibility: hidden;
+    pointer-events: none;
+}
+
 /* =============================================================================
    TEXT INPUT FIELD
    ============================================================================= */
