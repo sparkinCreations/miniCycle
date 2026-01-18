@@ -1,3 +1,7 @@
+## [1.795] - 2026-01-18
+- feat: update app version to 1.794 across documentation, manifest, and styles
+
+
 ## [1.794] - 2026-01-18
 - fix: adjust header padding for improved safe area handling
 - feat: update app version to 1.793 across documentation, manifest, and styles
