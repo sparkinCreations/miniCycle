@@ -99,6 +99,8 @@ export class ThemeManager {
     
     init() {
         try {
+            // Set initial theme color on startup
+            this.updateThemeColor();
             console.log('🎨 ThemeManager ready');
         } catch (error) {
             console.warn('⚠️ ThemeManager init warning:', error.message);
@@ -889,6 +891,9 @@ export async function initThemeManager(dependencies = {}) {
     if (savedTheme && savedTheme !== 'default') {
         console.log('🎨 Applying saved theme from storage:', savedTheme);
         await themeManager.applyTheme(savedTheme, false); // false = don't save again
+    } else {
+        // For default theme, still update the theme color (status bar)
+        themeManager.updateThemeColor();
     }
 
     console.log('✅ ThemeManager initialized via initThemeManager');
