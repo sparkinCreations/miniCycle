@@ -1572,7 +1572,21 @@ export class PreferencesManager {
 
         Object.entries(COLOR_MAP).forEach(([inputId, config]) => {
             const input = this.colorInputs[inputId];
-            const color = input?.value || customColors[config.key] || DEFAULT_COLORS[config.key];
+            // Use saved custom color, or input value if different from black (default for color inputs), or default
+            const savedColor = customColors[config.key];
+            const inputValue = input?.value;
+            const defaultColor = DEFAULT_COLORS[config.key];
+
+            // Prefer saved color, then input value (if not the default black), then our default
+            let color;
+            if (savedColor) {
+                color = savedColor;
+            } else if (inputValue && inputValue !== '#000000') {
+                color = inputValue;
+            } else {
+                color = defaultColor;
+            }
+
             if (config.previewVar) {
                 preview.style.setProperty(config.previewVar, color);
             }
