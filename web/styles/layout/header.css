@@ -9,8 +9,7 @@
 
 .fixed-header-container {
     position: fixed;
-    top: env(safe-area-inset-top, 15px);
-    margin-top: 15px;
+    top: 0;
     left: 0;
     right: 0;
     z-index: 100;
@@ -27,9 +26,9 @@
     align-items: center;
     gap: 12px;
     /* Extend padding to cover status bar seamlessly */
-    padding: calc(env(safe-area-inset-top) + 4px) 16px 4px 16px;
-    /* Use theme-aware backgrounds */
-    background: var(--theme-header-bg, var(--header-bg, #5680ff));
+    padding: calc(env(safe-area-inset-top, 0px) + 20px) 16px 8px 16px;
+    /* Use theme-aware backgrounds - transparent to show gradient through */
+    background: var(--theme-header-bg, var(--header-bg, transparent));
     border: none;
     border-radius: 0;
     backdrop-filter: blur(5px);
@@ -42,7 +41,7 @@
    ============================================================================= */
 
 :root {
-    --header-bg: #5680ff;
+    --header-bg: transparent;
     --header-border: rgba(255, 255, 255, 0.2);
     --header-text: #ffffff;
     --header-height: 60px;
@@ -139,10 +138,10 @@
     justify-self: end;
     background: rgba(0, 0, 0, 0.787);
     border: 1px solid rgba(255, 255, 255, 0.72);
-    border-radius: 6px;
+    border-radius: 5px;
     color: white;
-    padding: 7px 10px;
-    font-size: 18px;
+    padding: 5px 8px;
+    font-size: 15px;
     cursor: pointer;
     z-index: 2;
 }
@@ -165,9 +164,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 10px;
     padding: 2px 0;
-    background: linear-gradient(135deg, #f1f1f172, #ffffff10);
+    background: transparent;
     border-bottom: none;
     backdrop-filter: blur(5px);
     min-height: 28px;
