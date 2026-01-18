@@ -165,7 +165,7 @@
     margin: 0;
     padding: 0;
     min-height: 100vh;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: linear-gradient(135deg, #4c79ff, #74c0fc);
     color: white;
     -webkit-font-smoothing: antialiased;
@@ -204,7 +204,7 @@
     color: white;
     font-size: 16px;
     font-weight: 500;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     opacity: 0.9;
   }
   .loader-bar-container {
@@ -283,6 +283,51 @@
 
   .notification .notification-content {
     margin-right: 24px; /* Space for close button */
+  }
+
+  /* Critical header styles - reserve space to prevent CLS */
+  .fixed-header-container {
+    position: fixed;
+    top: env(safe-area-inset-top, 15px);
+    margin-top: 15px;
+    left: 0;
+    right: 0;
+    z-index: 100;
+  }
+  .mini-cycle-header-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: calc(env(safe-area-inset-top) + 4px) 16px 4px 16px;
+    background: #5680ff;
+    min-height: 45px;
+  }
+  .header-branding {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .header-logo {
+    height: 25px;
+    width: auto;
+  }
+  .app-name {
+    height: 35px;
+    width: auto;
+  }
+  .mode-selector-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 28px;
+    margin-top: 10px;
+    padding: 2px 0;
+    background: linear-gradient(135deg, #f1f1f172, #ffffff10);
   }
 
   /* Footer mobile layout is defined in miniCycle-styles.css */
@@ -955,8 +1000,8 @@ window.installApp = () => {
   <header class="mini-cycle-header-row">
     <!-- Logo and App Name -->
     <div class="header-branding">
-      <img src="assets/images/logo/logo.png" alt="miniCycle" class="header-logo" width="40" height="40">
-      <img src="assets/images/logo/app_name.png" alt="miniCycle App Name" class="app-name" width="100" height="24">
+      <img src="assets/images/logo/logo.png" alt="miniCycle" class="header-logo" width="40" height="36">
+      <img src="assets/images/logo/app_name.png" alt="miniCycle App Name" class="app-name" width="100" height="21">
     </div>
 
     <!-- Menu Button -->
