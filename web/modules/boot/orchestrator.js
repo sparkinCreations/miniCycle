@@ -120,7 +120,7 @@ function updateLoaderProgress(message, percent = 0) {
   }
   const loaderBar = document.querySelector('.loader-bar');
   if (loaderBar) {
-    loaderBar.style.width = `${percent}%`;
+    loaderBar.style.transform = `scaleX(${percent / 100})`;
   }
 }
 
