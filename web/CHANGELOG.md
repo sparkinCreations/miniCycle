@@ -1,3 +1,7 @@
+## [1.783] - 2026-01-17
+- feat: update app version to 1.782 across documentation, manifest, and styles
+
+
 ## [1.782] - 2026-01-17
 - feat: enhance loading feedback during orchestrator startup
 - feat: update app version to 1.781 across documentation, manifest, and styles
