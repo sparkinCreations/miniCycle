@@ -190,12 +190,14 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: 10px;
     margin-top: 0px;
+    margin-bottom: 20px;
 }
 
 /* =============================================================================
    HELP WINDOW
+   Inside #task-view - positioned below content on mobile, to the right on desktop
    ============================================================================= */
 
 .help-window {
@@ -220,8 +222,8 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
     -webkit-backdrop-filter: blur(2px);
     transition: opacity 0.3s ease;
     opacity: 1;
-    margin-top: 20px;
-    margin-bottom: 80px;
+    margin-top: 10px;
+    margin-bottom: 100px;
 }
 
 .help-window.show {
@@ -244,6 +246,87 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
     margin: 0;
     line-height: 1.4;
 }
+
+/* =============================================================================
+   HELP WINDOW - MOBILE ADJUSTMENTS
+   Ensure clearance from footer
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .help-window {
+        margin-bottom: 60px;
+        font-size: 14px;
+        padding: 8px 10px;
+    }
+}
+
+/* Tablet range - reduce task list to make room for help window */
+@media (min-width: 769px) and (max-width: 1023px) {
+    .task-list-container {
+        max-height: calc(100vh - 450px);
+    }
+
+    .help-window {
+        margin-bottom: 80px;
+        font-size: 14px;
+        padding: 10px;
+    }
+}
+
+/* =============================================================================
+   HELP WINDOW SIDE POSITION (Desktop only)
+   Positioned to the right of task list, vertically centered
+   ============================================================================= */
+
+@media (min-width: 1024px) {
+    /* Position to the right of task-view, vertically centered */
+    .help-window {
+        position: absolute;
+        left: calc(100% + 25px);
+        top: 50%;
+        transform: translateY(-50%);
+        /* Explicit dimensions with centered content */
+        min-height: 150px;
+        min-width: 200px;
+        max-width: 230px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        padding: 15px;
+        margin: 0;
+    }
+
+    /* Reduce task list height to clear footer */
+    .task-list-container {
+        max-height: calc(100vh - 400px);
+    }
+}
+
+/* Wider screens */
+@media (min-width: 1280px) {
+    .help-window {
+        left: calc(100% + 30px);
+        min-height: 200px;
+        min-width: 250px;
+        max-width: 295px;
+        font-size: 15px;
+        padding: 15px;
+    }
+}
+
+/* Ultra-wide screens */
+@media (min-width: 1800px) {
+    .help-window {
+        left: calc(100% + 40px);
+        min-height: 220px;
+        min-width: 300px;
+        max-width: 400px;
+        font-size: 15px;
+        padding: 20px;
+    }
+}
+
 
 /* =============================================================================
    RECURRING BUTTON

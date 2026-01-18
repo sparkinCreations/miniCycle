@@ -235,16 +235,11 @@
 @media (max-width: 868px) {
     .fixed-header-container {
         top: env(safe-area-inset-top, 20px);
-        margin-top: 20px;
+        top: 10px;
     }
 
     .mini-cycle-header-row {
-        padding: 8px 13px;
-        background: var(--theme-header-bg, var(--header-bg));
-        border: none;
-        height: 50px;
-        grid-template-columns: 1fr auto;
-        gap: 6px;
+  padding: 15px;
     }
 
     .header-logo {
@@ -283,11 +278,10 @@
 @media (max-width: 480px) {
     .fixed-header-container {
         top: env(safe-area-inset-top, 15px);
-        margin-top: 20px;
     }
 
     .mini-cycle-header-row {
-        padding: calc(env(safe-area-inset-top) + 4px) 12px 4px 12px;
+        padding: 15px;
         min-height: 42px;
         background: var(--theme-header-bg, var(--header-bg));
     }

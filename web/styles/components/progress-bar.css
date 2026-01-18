@@ -83,3 +83,17 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .progress-ba
         margin-top: 10px;
     }
 }
+
+@media (min-width: 1024px) {
+    .progress-container {
+        width: 60%;
+        max-width: 50vw;
+        height: 10px;
+        min-height: 10px;
+        margin-top: 12px;
+    }
+
+    .progress-bar {
+        min-height: 10px;
+    }
+}
