@@ -517,6 +517,11 @@ class AppInit {
 		if (settings.darkMode) {
 			console.log('🌙 Applying dark mode...');
 			_deps.addBodyClass?.('dark-mode');
+			document.documentElement?.classList.add('dark-mode');
+		} else {
+			console.log('☀️ Applying light mode...');
+			_deps.removeBodyClass?.('dark-mode');
+			document.documentElement?.classList.remove('dark-mode');
 		}
 
 		if (settings.theme && settings.theme !== 'default') {

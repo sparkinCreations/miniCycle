@@ -388,6 +388,7 @@ function updateCycleUIState(currentCycle, settings) {
  */
 function applyThemeSettings(settings) {
   document.body.classList.toggle('dark-mode', !!settings.darkMode);
+  document.documentElement.classList.toggle('dark-mode', !!settings.darkMode);
   console.log('applyThemes applied!!!');
 
   const allThemes = ['theme-dark-ocean', 'theme-golden-glow'];
