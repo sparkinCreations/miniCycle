@@ -1,3 +1,8 @@
+## [1.789] - 2026-01-17
+- feat: implement self-hosted Poppins font and update security policies
+- feat: update app version to 1.788 across documentation, manifest, and styles
+
+
 ## [1.788] - 2026-01-17
 - feat: update loader bar animation to use scale transform for smoother transitions
 - feat: update app version to 1.787 across documentation, manifest, and styles
