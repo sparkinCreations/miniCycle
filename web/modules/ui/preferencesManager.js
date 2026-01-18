@@ -38,7 +38,8 @@ const DEFAULT_COLORS = {
     clearBtn: '#3b82f6',
     progressBar: '#82db8c',
     statsBg: '#ffffff',
-    statsText: '#333333'
+    statsText: '#333333',
+    patternColor: '#ffffff'
 };
 
 // ============================================================================
@@ -61,6 +62,28 @@ const ALLOWED_IMAGE_TYPES = [
     'image/webp',
     'image/gif'
 ];
+
+// Default pattern color (white with 12% opacity)
+const DEFAULT_PATTERN_COLOR = '#ffffff';
+const DEFAULT_PATTERN_OPACITY = 0.12;
+
+/**
+ * Generate the background pattern SVG with a custom color
+ * @param {string} hexColor - Hex color (e.g., "#ffffff")
+ * @param {number} opacity - Opacity value (0-1)
+ * @returns {string} - Data URL for the SVG pattern
+ */
+function generatePatternSvg(hexColor, opacity = DEFAULT_PATTERN_OPACITY) {
+    // Convert hex to rgba
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    const rgbaColor = `rgba(${r},${g},${b},${opacity})`;
+
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><g fill='none' stroke='${rgbaColor}' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'><g transform='rotate(-12 20 28)'><path d='M15 5 L15 28 L18 32 L21 28 L21 5 L18 2 Z'/><path d='M15 5 L21 5'/><path d='M15.5 7 L20.5 7'/><rect x='15' y='28' width='6' height='2' rx='0.5'/><line x1='18' y1='32' x2='18' y2='35'/><path d='M16 8 L16 26 M18 8 L18 26 M20 8 L20 26' stroke-width='0.5'/></g><g transform='rotate(18 155 22)'><path d='M148 6 C146 6 145 8 145 10 L145 14 C145 18 149 18 149 14 L149 10 C149 8 151 8 151 10 L151 22 C151 26 145 26 145 22 L145 12'/></g><g transform='rotate(-6 95 32)'><rect x='78' y='12' width='28' height='36' rx='2'/><circle cx='82' cy='16' r='1.5'/><circle cx='82' cy='22' r='1.5'/><circle cx='82' cy='28' r='1.5'/><circle cx='82' cy='34' r='1.5'/><circle cx='82' cy='40' r='1.5'/><line x1='86' y1='18' x2='102' y2='18'/><line x1='86' y1='24' x2='102' y2='24'/><line x1='86' y1='30' x2='98' y2='30'/><line x1='86' y1='36' x2='100' y2='36'/><line x1='86' y1='42' x2='94' y2='42'/></g><g transform='rotate(15 175 95)'><path d='M168 70 L168 103 L171 107 L174 103 L174 70 L171 67 Z'/><path d='M168 70 L174 70'/><rect x='168' y='72' width='6' height='4' rx='0.5'/><path d='M167 77 L167 87 M167 82 L165 82' stroke-width='1'/><line x1='171' y1='107' x2='171' y2='111'/></g><g transform='rotate(-18 18 125)'><rect x='8' y='100' width='10' height='32' rx='2'/><rect x='9' y='130' width='8' height='6' rx='1'/><rect x='10' y='132' width='6' height='4'/><path d='M11 104 L11 112 M15 104 L15 112' stroke-width='0.8'/><rect x='8' y='98' width='10' height='3' rx='1'/></g><g transform='rotate(8 90 135)'><path d='M65 115 Q65 112 68 112 L98 112 Q101 112 101 115 L101 145 Q101 148 98 148 L68 148 Q65 148 65 145 Z'/><path d='M65 115 L65 145 Q65 148 68 148' stroke-width='2'/><path d='M68 112 L68 148'/><line x1='72' y1='119' x2='97' y2='119'/><line x1='72' y1='125' x2='97' y2='125'/><line x1='72' y1='131' x2='91' y2='131'/><line x1='72' y1='137' x2='95' y2='137'/></g><g transform='rotate(-8 160 150)'><rect x='148' y='138' width='18' height='18' rx='3'/><rect x='150' y='140' width='14' height='14' rx='2' stroke-width='0.8'/><path d='M153 148 L156 151 L162 143' stroke-width='1.8'/></g><g transform='rotate(5 42 175)'><ellipse cx='42' cy='190' rx='12' ry='3'/><path d='M32 190 L32 173 Q32 168 37 168 L47 168 Q52 168 52 173 L52 190'/><path d='M52 178 Q58 178 58 183 Q58 188 52 186'/><path d='M38 165 Q42 162 46 165' stroke-width='0.8'/><path d='M36 162 Q42 158 48 162' stroke-width='0.8'/><path d='M39 159 Q42 156 45 159' stroke-width='0.8'/></g></g></svg>`;
+
+    return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
 
 /**
  * Validate image file for security
@@ -582,6 +605,14 @@ export class PreferencesManager {
             }
         });
 
+        // Pattern color input (special handling - generates SVG dynamically)
+        const patternColorInput = document.getElementById('pref-pattern-color');
+        if (patternColorInput) {
+            this.colorInputs['pref-pattern-color'] = patternColorInput;
+            patternColorInput._changeHandler = (e) => this.handlePatternColorChange(e.target.value);
+            safeAdd(patternColorInput, 'input', patternColorInput._changeHandler);
+        }
+
         // Checkbox fill visibility toggle
         const checkboxFillToggle = document.getElementById('toggle-checkbox-fill');
         if (checkboxFillToggle) {
@@ -838,6 +869,18 @@ export class PreferencesManager {
             bgImageVisibleToggle.checked = showBgImage;
             // Note: The has-bg-image class is handled by applyBgImage based on this setting
         }
+
+        // Load pattern color input
+        const patternColorInput = document.getElementById('pref-pattern-color');
+        if (patternColorInput) {
+            const savedPatternColor = customColors.patternColor || DEFAULT_COLORS.patternColor;
+            patternColorInput.value = savedPatternColor;
+
+            // Apply pattern color if not default and in default theme
+            if (savedPatternColor !== DEFAULT_COLORS.patternColor && this.isDefaultTheme()) {
+                this.applyPatternColor(savedPatternColor);
+            }
+        }
     }
 
     /**
@@ -949,6 +992,9 @@ export class PreferencesManager {
 
         // Toggle body class to show/hide pattern
         document.body.classList.toggle('no-bg-pattern', !visible);
+
+        // Update live preview
+        this.updatePreview();
     }
 
     /**
@@ -971,6 +1017,53 @@ export class PreferencesManager {
         // Toggle body class to show/hide background image
         // The image data stays in IndexedDB, we just hide/show it via CSS class
         document.body.classList.toggle('has-bg-image', visible);
+
+        // Update live preview
+        this.updatePreview();
+    }
+
+    /**
+     * Handle background pattern color change
+     * @param {string} color - The hex color value
+     */
+    handlePatternColorChange(color) {
+        console.log('🎨 Pattern color change:', color);
+
+        // Save to appState
+        if (_deps.AppState) {
+            _deps.AppState.update(state => {
+                if (!state.settings.customColors) {
+                    state.settings.customColors = {};
+                }
+                state.settings.customColors.patternColor = color;
+            });
+        }
+
+        // Apply the pattern with the new color (only if in default theme)
+        if (this.isDefaultTheme()) {
+            this.applyPatternColor(color);
+        }
+
+        // Update live preview
+        this.updatePreview();
+    }
+
+    /**
+     * Apply pattern color to the body background
+     * @param {string} hexColor - The hex color value
+     */
+    applyPatternColor(hexColor) {
+        const patternUrl = generatePatternSvg(hexColor, DEFAULT_PATTERN_OPACITY);
+        document.documentElement.style.setProperty('--custom-pattern-bg', patternUrl);
+        document.body.classList.add('custom-pattern');
+    }
+
+    /**
+     * Remove custom pattern color
+     */
+    removePatternColor() {
+        document.documentElement.style.removeProperty('--custom-pattern-bg');
+        document.body.classList.remove('custom-pattern');
     }
 
     // =========================================================================
@@ -1055,6 +1148,9 @@ export class PreferencesManager {
 
             // Update UI
             this.updateBgImageUI(dataUrl, mode);
+
+            // Update live preview
+            this.updatePreview();
 
             // Show success notification with compression details
             if (compressionInfo) {
@@ -1208,6 +1304,9 @@ export class PreferencesManager {
             // Update UI
             this.updateBgImageUI(null, 'cover');
 
+            // Update live preview
+            this.updatePreview();
+
             _deps.showNotification?.('Background image removed', 'info', 2000);
         } catch (error) {
             console.error('Failed to remove background image:', error);
@@ -1306,6 +1405,33 @@ export class PreferencesManager {
      * @param {string} inputId - The input element ID
      */
     resetColor(inputId) {
+        // Special handling for pattern color (not in COLOR_MAP)
+        if (inputId === 'pref-pattern-color') {
+            this.pushToUndoStack();
+
+            const defaultColor = DEFAULT_COLORS.patternColor;
+            const input = this.colorInputs[inputId];
+            if (input) {
+                input.value = defaultColor;
+            }
+
+            // Save to appState
+            if (_deps.AppState) {
+                _deps.AppState.update(state => {
+                    if (state.settings.customColors) {
+                        delete state.settings.customColors.patternColor;
+                    }
+                });
+            }
+
+            // Remove custom pattern
+            this.removePatternColor();
+            this.updatePreview();
+            this.updateUndoButton();
+            _deps.showNotification?.('Pattern color reset to default', 'info', 2000);
+            return;
+        }
+
         const config = COLOR_MAP[inputId];
         if (!config) return;
 
@@ -1446,6 +1572,32 @@ export class PreferencesManager {
         const showCheckboxIncomplete = checkboxIncompleteToggle?.checked !== false;
         if (!showCheckboxIncomplete) {
             preview.style.setProperty('--preview-checkbox-incomplete-bg', 'transparent');
+        }
+
+        // Handle background pattern color in preview
+        const bgPatternToggle = document.getElementById('toggle-bg-pattern');
+        const showPattern = bgPatternToggle?.checked !== false;
+        const patternColorInput = document.getElementById('pref-pattern-color');
+
+        if (showPattern && patternColorInput) {
+            const patternColor = patternColorInput.value || DEFAULT_COLORS.patternColor;
+            const patternUrl = generatePatternSvg(patternColor, DEFAULT_PATTERN_OPACITY);
+            preview.style.setProperty('--preview-pattern-bg', patternUrl);
+        } else {
+            preview.style.removeProperty('--preview-pattern-bg');
+        }
+
+        // Handle background image in preview
+        const bgImageVisibleToggle = document.getElementById('toggle-bg-image-visible');
+        const showBgImage = bgImageVisibleToggle?.checked !== false;
+        const bgImagePreview = document.getElementById('bg-image-preview');
+
+        if (showBgImage && bgImagePreview?.src && bgImagePreview.src !== window.location.href) {
+            // Show background image in live preview
+            preview.style.setProperty('--preview-bg-image', `url("${bgImagePreview.src}")`);
+        } else {
+            // Remove background image, fall back to color
+            preview.style.removeProperty('--preview-bg-image');
         }
     }
 

@@ -846,7 +846,12 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 
 .preview-app-bg {
     padding: 12px;
-    background: var(--preview-app-bg, #4c79ff);
+    background:
+        var(--preview-bg-image,
+            var(--preview-pattern-bg,
+                var(--preview-app-bg, #4c79ff)));
+    background-size: cover, 100px 100px, cover;
+    background-position: center;
     transition: background 0.3s ease;
 }
 
