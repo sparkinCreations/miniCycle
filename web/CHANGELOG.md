@@ -1,3 +1,8 @@
+## [1.777] - 2026-01-17
+- feat: reserve space in task list and title to prevent CLS during data loading
+- feat: update app version to 1.776 across documentation, manifest, and styles
+
+
 ## [1.776] - 2026-01-17
 - feat: update link text from 'Learn More' to 'About miniCycle' for clarity
 - feat: update app version to 1.775 across documentation, manifest, and styles
