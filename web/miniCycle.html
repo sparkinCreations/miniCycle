@@ -337,6 +337,11 @@
   .mini-cycle-title {
     min-height: 32px;
   }
+  /* Task input: use visibility:hidden to reserve space and prevent CLS */
+  .task-input.hidden {
+    visibility: hidden;
+    pointer-events: none;
+  }
 
   /* Footer mobile layout is defined in miniCycle-styles.css */
 
@@ -2415,7 +2420,7 @@ window.installApp = () => {
 
 <div id="task-view">
     <div class="task-card">
-        <div class="task-input" style="display: none;">
+        <div class="task-input hidden">
             <input type="text" id="taskInput" name="taskInput" class="taskInput" placeholder="Enter a task..." title="Type a task and press Add or Enter">
             <button id="addTaskBtn" title="Add task">Add</button>
         </div>

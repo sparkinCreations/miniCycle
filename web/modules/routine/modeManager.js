@@ -742,11 +742,16 @@ export class ModeManager {
             const toggleText = this.deps.getElementById('toggle-task-input-text');
 
             // Update button text and visibility based on state
+            // Use CSS class toggle (visibility:hidden) instead of display:none to prevent CLS
             const updateToggleText = (isVisible) => {
                 if (toggleText) {
                     toggleText.textContent = isVisible ? 'Hide Task Input' : 'Add Task';
                 }
-                taskInput.style.display = isVisible ? '' : 'none';
+                // Remove inline display style if present (from initial HTML)
+                if (taskInput.style.display) {
+                    taskInput.style.display = '';
+                }
+                taskInput.classList.toggle('hidden', !isVisible);
             };
 
             // Set initial state from settings (default: false = hidden)
@@ -754,7 +759,7 @@ export class ModeManager {
             updateToggleText(initialVisible);
 
             this.deps.safeAddEventListener(toggleTaskInputBtn, 'click', async () => {
-                const currentVisible = taskInput.style.display !== 'none';
+                const currentVisible = !taskInput.classList.contains('hidden');
                 const newVisible = !currentVisible;
 
                 // Update UI immediately
