@@ -490,8 +490,13 @@ async function waitForServiceWorker(timeoutMs = 3000) {
 // Run when DOM is ready - must load dependencies first (Safari memory cache fix)
 async function startOrchestrator() {
   try {
+    // Show initial progress immediately
+    updateLoaderProgress('Connecting...', 2);
+
     // Wait for SW to be ready before importing modules
     await waitForServiceWorker();
+    updateLoaderProgress('Loading modules...', 4);
+
     await loadDependencies();
     await initApp();
   } catch (error) {
