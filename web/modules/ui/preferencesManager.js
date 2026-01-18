@@ -1523,9 +1523,6 @@ export class PreferencesManager {
             const color = customColors[config.key];
             if (color) {
                 root.style.setProperty(config.cssVar, color);
-            } else if (config.key === 'appBg') {
-                // Always set appBg to ensure iOS status bar shows correct color
-                root.style.setProperty(config.cssVar, DEFAULT_COLORS.appBg);
             } else {
                 root.style.removeProperty(config.cssVar);
             }

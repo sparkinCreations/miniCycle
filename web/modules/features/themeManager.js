@@ -182,21 +182,18 @@ export class ThemeManager {
             // Always use black-translucent so iOS shows the page content behind status bar
             statusBarStyle = 'black-translucent';
 
-            // Use black for dark mode or custom background image
-            if (isDarkMode || hasCustomBackground) {
+            // Check for custom appBg color from preferences
+            const customAppBg = getComputedStyle(document.documentElement).getPropertyValue('--pref-app-bg').trim();
+
+            if (customAppBg) {
+                // Use custom app background color for status bar
+                themeColor = customAppBg;
+            } else if (isDarkMode || hasCustomBackground) {
+                // Black for dark mode or custom background image
                 themeColor = '#000000';
             } else {
-                // Check for custom appBg color from preferences
-                const customAppBg = getComputedStyle(document.documentElement).getPropertyValue('--pref-app-bg').trim();
-
-                if (customAppBg) {
-                    // Use custom app background color
-                    themeColor = customAppBg;
-                } else {
-                    // Apply colors based on theme
-                    const colorSet = this.themeColors.light;
-                    themeColor = colorSet[currentTheme] || '#4c79ff';
-                }
+                // Default: black status bar (works cleanly with gradient)
+                themeColor = '#000000';
             }
 
             // Update meta tags
