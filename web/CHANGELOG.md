@@ -1,3 +1,8 @@
+## [1.793] - 2026-01-18
+- fix: update background SVG opacity for improved visibility
+- feat: update app version to 1.792 across documentation, manifest, and styles
+
+
 ## [1.792] - 2026-01-18
 - fix: revert app version to 1.790 and update header styles for improved layout
 - feat: update app version to 1.791 across documentation, manifest, and styles
