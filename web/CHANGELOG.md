@@ -1,3 +1,8 @@
+## [1.774] - 2026-01-17
+- chore: clean up empty code change sections in the changes log
+- feat: update app version to 1.773 across documentation, manifest, and styles
+
+
 ## [1.773] - 2026-01-17
 - chore: update last updated dates and version references across documentation
 - feat: update app version to 1.772 across documentation, manifest, and styles
