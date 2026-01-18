@@ -406,11 +406,14 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0; /* Prevent shrinking on narrow screens */
+    flex: 0 0 auto; /* Override .task span flex:1 rule */
     min-width: 14px;
     min-height: 14px;
+    max-width: none; /* Override .task span max-width rule */
     font-size: 14px;
     color: #3498db; /* Blue */
-    margin-left: 6px;
+    margin-left: 8px;
+    margin-right: 0; /* Override .task span margin-right rule */
     vertical-align: middle;
 }
 
