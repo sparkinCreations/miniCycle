@@ -636,6 +636,24 @@ export class PreferencesManager {
             }
         }
 
+        // Background image visibility toggle
+        const bgImageVisibleToggle = document.getElementById('toggle-bg-image-visible');
+        if (bgImageVisibleToggle) {
+            bgImageVisibleToggle._changeHandler = (e) => this.handleBgImageVisibleToggle(e.target.checked);
+            safeAdd(bgImageVisibleToggle, 'change', bgImageVisibleToggle._changeHandler);
+
+            const toggleSwitch = bgImageVisibleToggle.closest('.toggle-switch');
+            if (toggleSwitch) {
+                toggleSwitch._clickHandler = (e) => {
+                    if (e.target !== bgImageVisibleToggle) {
+                        bgImageVisibleToggle.checked = !bgImageVisibleToggle.checked;
+                        this.handleBgImageVisibleToggle(bgImageVisibleToggle.checked);
+                    }
+                };
+                safeAdd(toggleSwitch, 'click', toggleSwitch._clickHandler);
+            }
+        }
+
         // Reset buttons
         document.querySelectorAll('.preferences-reset-btn').forEach(btn => {
             const targetId = btn.dataset.target;
@@ -812,6 +830,14 @@ export class PreferencesManager {
             // Apply body class immediately
             document.body.classList.toggle('no-bg-pattern', !showPattern);
         }
+
+        // Load background image visibility toggle state
+        const bgImageVisibleToggle = document.getElementById('toggle-bg-image-visible');
+        if (bgImageVisibleToggle) {
+            const showBgImage = customColors.showBgImage !== false; // Default to true
+            bgImageVisibleToggle.checked = showBgImage;
+            // Note: The has-bg-image class is handled by applyBgImage based on this setting
+        }
     }
 
     /**
@@ -923,6 +949,28 @@ export class PreferencesManager {
 
         // Toggle body class to show/hide pattern
         document.body.classList.toggle('no-bg-pattern', !visible);
+    }
+
+    /**
+     * Handle background image visibility toggle
+     * @param {boolean} visible - Whether the background image should be visible
+     */
+    handleBgImageVisibleToggle(visible) {
+        console.log('🖼️ Background image visibility toggle:', visible);
+
+        // Save to appState
+        if (_deps.AppState) {
+            _deps.AppState.update(state => {
+                if (!state.settings.customColors) {
+                    state.settings.customColors = {};
+                }
+                state.settings.customColors.showBgImage = visible;
+            });
+        }
+
+        // Toggle body class to show/hide background image
+        // The image data stays in IndexedDB, we just hide/show it via CSS class
+        document.body.classList.toggle('has-bg-image', visible);
     }
 
     // =========================================================================
@@ -1115,11 +1163,17 @@ export class PreferencesManager {
     applyBgImage(dataUrl, mode) {
         const body = document.body;
 
-        // Set the CSS variable for the image
+        // Set the CSS variable for the image (always set it so it's ready when toggled on)
         document.documentElement.style.setProperty('--custom-bg-image', `url("${dataUrl}")`);
 
-        // Add the has-bg-image class
-        body.classList.add('has-bg-image');
+        // Check if the image should be visible based on user preference
+        const customColors = _deps.AppState?.get()?.settings?.customColors || {};
+        const showBgImage = customColors.showBgImage !== false; // Default to true
+
+        // Only add has-bg-image class if the toggle is on
+        if (showBgImage) {
+            body.classList.add('has-bg-image');
+        }
 
         // Remove any existing mode classes
         body.classList.remove('bg-mode-cover', 'bg-mode-center', 'bg-mode-tile');
@@ -1193,6 +1247,7 @@ export class PreferencesManager {
         const removeBtn = document.getElementById('bg-image-remove-btn');
         const preview = document.getElementById('bg-image-preview');
         const modeSelect = document.getElementById('bg-image-mode');
+        const visibleToggle = document.getElementById('toggle-bg-image-visible');
 
         if (dataUrl) {
             // Show options and remove button
@@ -1200,6 +1255,12 @@ export class PreferencesManager {
             if (removeBtn) removeBtn.style.display = 'inline-block';
             if (preview) preview.src = dataUrl;
             if (modeSelect) modeSelect.value = mode;
+
+            // Set the visibility toggle state from saved preference
+            if (visibleToggle) {
+                const customColors = _deps.AppState?.get()?.settings?.customColors || {};
+                visibleToggle.checked = customColors.showBgImage !== false; // Default to true
+            }
         } else {
             // Hide options and remove button
             if (optionsDiv) optionsDiv.style.display = 'none';
