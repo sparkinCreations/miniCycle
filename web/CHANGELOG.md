@@ -1,3 +1,7 @@
+## [1.805] - 2026-01-18
+- feat: update app version to 1.804 across documentation, manifest, and styles
+
+
 ## [1.804] - 2026-01-18
 - feat: add new landscape images and enhance help window layout for better responsiveness
 - feat: update app version to 1.803 across documentation, manifest, and styles
