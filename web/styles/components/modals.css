@@ -1685,20 +1685,20 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 #quick-dark-toggle {
     position: fixed;
     bottom: 30px;
-    right: 5px;
+    right: 10px;
     z-index: 1;
     background: none;
     color: white;
     border: none;
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    font-size: 20px;
+    width: 60px;
+    height: 60px;
+    font-size: 32px;
     cursor: pointer;
 }
 
 #quick-dark-toggle:hover {
-    transform: scale(1.3);
+    transform: scale(1.15);
 }
 
 /* =============================================================================

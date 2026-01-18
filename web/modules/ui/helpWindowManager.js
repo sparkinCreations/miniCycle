@@ -49,8 +49,63 @@ export class HelpWindowManager {
         this.isShowingModeDescription = false;
         this.modeDescriptionTimeout = null;
         this.initialized = false;
+        this.sideLayoutEnabled = false;
 
         this.init();
+    }
+
+    /**
+     * Check if help window should be in side layout (desktop only, task list overflowing)
+     * When task list reaches max height and starts scrolling, move help window to side
+     * to give more vertical space to the task list
+     */
+    updateSideLayout() {
+        const taskView = document.getElementById('task-view');
+        const taskListContainer = document.querySelector('.task-list-container');
+
+        if (!taskView || !taskListContainer) return;
+
+        // Only apply on desktop (1024px+)
+        const isDesktop = window.innerWidth >= 1024;
+
+        if (!isDesktop) {
+            // On mobile/tablet, always use bottom layout
+            if (this.sideLayoutEnabled) {
+                this.sideLayoutEnabled = false;
+                taskView.classList.remove('help-window-side');
+                console.log('📐 Help window layout: bottom (not desktop)');
+            }
+            return;
+        }
+
+        // Calculate if content would overflow at the normal (smaller) max-height
+        // Normal max-height is calc(100vh - 385px), side layout is calc(100vh - 250px)
+        // Difference is 135px - so if content exceeds visible + 135px buffer, keep side layout
+        const scrollHeight = taskListContainer.scrollHeight;
+        const clientHeight = taskListContainer.clientHeight;
+        const isOverflowing = scrollHeight > clientHeight;
+
+        // Use hysteresis to prevent flip-flopping:
+        // - Enable when overflowing
+        // - Disable only when content fits comfortably (with buffer)
+        const bufferPx = 100; // Buffer to prevent rapid toggling
+
+        let shouldEnableSideLayout;
+        if (this.sideLayoutEnabled) {
+            // Currently in side layout - only disable if content fits with buffer
+            // Check against the smaller max-height threshold
+            const normalMaxHeight = window.innerHeight - 385;
+            shouldEnableSideLayout = scrollHeight > (normalMaxHeight - bufferPx);
+        } else {
+            // Currently in bottom layout - enable if overflowing
+            shouldEnableSideLayout = isOverflowing;
+        }
+
+        if (shouldEnableSideLayout !== this.sideLayoutEnabled) {
+            this.sideLayoutEnabled = shouldEnableSideLayout;
+            taskView.classList.toggle('help-window-side', shouldEnableSideLayout);
+            console.log(`📐 Help window layout: ${shouldEnableSideLayout ? 'side' : 'bottom'} (scrollH: ${scrollHeight}, clientH: ${clientHeight})`);
+        }
     }
 
     init() {
@@ -126,6 +181,7 @@ export class HelpWindowManager {
                     console.log('📝 Help window: Task list changed');
                     setTimeout(() => {
                         this.updateConstantMessage();
+                        this.updateSideLayout();
                     }, 200);
                 }
             });
@@ -135,6 +191,22 @@ export class HelpWindowManager {
                 subtree: true
             });
         }
+
+        // Listen for window resize to update side layout
+        this._resizeHandler = () => {
+            this.updateSideLayout();
+        };
+        // Debounce resize handler
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(this._resizeHandler, 150);
+        });
+
+        // Initial side layout check after a delay (tasks may still be loading)
+        setTimeout(() => {
+            this.updateSideLayout();
+        }, 500);
 
         // Listen for custom events
         this._taskCompletedHandler = () => {
@@ -369,10 +441,16 @@ export class HelpWindowManager {
             clearTimeout(this.modeDescriptionTimeout);
             this.modeDescriptionTimeout = null;
             this.isShowingModeDescription = false;
-            // Remove class from task-view
-            const taskView = document.getElementById('task-view');
-            taskView?.classList.remove('mode-description-visible');
         }
+
+        // Remove layout classes from task-view
+        const taskView = document.getElementById('task-view');
+        if (taskView) {
+            taskView.classList.remove('mode-description-visible');
+            taskView.classList.remove('help-window-side');
+        }
+
+        this.sideLayoutEnabled = false;
     }
 }
 

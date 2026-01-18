@@ -25,7 +25,7 @@
     padding-top: calc(env(safe-area-inset-top) + 110px); /* Status bar + header + mode selector */
 }
 
-/* Task view container - centered positioning */
+/* Task view container - vertically centered */
 #task-view {
     position: fixed;
     top: 50%;
@@ -33,7 +33,7 @@
     transform: translate(-50%, -50%);
     width: 90vw;
     max-width: 400px;
-    max-height: calc(95vh - 245px);
+    max-height: calc(100vh - 260px);
     min-height: auto;
     transition: left 0.4s ease-in-out, transform 0.4s ease-in-out;
     display: flex;
@@ -61,7 +61,7 @@
     transform: translate(-50%, -50%);
 }
 
-/* Stats panel container */
+/* Stats panel container - base styles only, sizing in stats-panel.css */
 .stats-panel,
 #stats-panel {
     position: fixed;
@@ -69,16 +69,12 @@
     left: 50%;
     transform: translate(200%, -50%);
     transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out;
-    width: 80vw;
-    max-width: 400px;
     height: auto;
-    max-height: 63vh;
     overflow-y: auto;
     color: var(--theme-stats-text);
     background: var(--theme-stats-bg);
     border: 1px solid var(--theme-stats-border);
     box-shadow: var(--theme-card-shadow);
-    padding: 15px;
     border-radius: var(--radius-lg);
     display: flex;
     flex-direction: column;
@@ -104,13 +100,37 @@
     transform: translate(-50%, -50%);
 }
 
-/* Mobile: Move task view up to make room for help window */
+/* Mobile: Adjust task view max-height */
 @media (max-width: 768px) {
     #task-view {
-        top: 46%;
+        max-height: calc(100vh - 250px);
     }
 
     #task-view.show {
+        transform: translate(-50%, -50%);
+    }
+}
+
+/* Desktop: wider task view, vertically centered - MUST come after base rules */
+@media (min-width: 1024px) {
+    #task-view {
+        max-width: 50vw;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    #task-view.show {
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    #task-view.hide {
+        left: -50%;
+        transform: translate(-200%, -50%);
+    }
+
+    .view-toggle-active #task-view {
         transform: translate(-50%, -50%);
     }
 }
