@@ -416,9 +416,13 @@ class AppInit {
 		// ✅ Remove onboarding-active class to show task list area
 		document.body.classList.remove('onboarding-active');
 
-		console.log('⏳ Waiting for TaskDOM to be ready...');
-		await this.waitForApp();
-		console.log('✅ TaskDOM ready, proceeding with task loading');
+		// Wait for core systems (TaskDOM is loaded in Phase 2, before Phase 3 runs)
+		// Note: With orchestrator pattern, core is always ready by the time this runs
+		if (!this.isCoreReady()) {
+			console.log('⏳ Waiting for core systems (TaskDOM)...');
+			await this.waitForCore();
+		}
+		console.log('✅ Core ready, proceeding with task loading');
 
 		console.log('🎯 Loading miniCycle...');
 		const loadMiniCycle = _deps.loadMiniCycle?.();
