@@ -1,3 +1,8 @@
+## [1.810] - 2026-01-18
+- feat: update theme color management for improved status bar visibility and customization
+- feat: update app version to 1.809 across documentation, manifest, and styles
+
+
 ## [1.809] - 2026-01-18
 - feat: enhance color selection logic in PreferencesManager for improved customization
 - feat: update app version to 1.808 across documentation, manifest, and styles
