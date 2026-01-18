@@ -38,6 +38,14 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
     background-size: 400px 400px, cover;
 }
 
+/* Custom pattern color (Preferences - Default theme only) */
+body.custom-pattern:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow):not(.no-bg-pattern) {
+    background:
+        var(--custom-pattern-bg) repeat,
+        var(--pref-app-bg, var(--theme-bg-gradient));
+    background-size: 400px 400px, cover;
+}
+
 /* Hide background pattern when toggle is off */
 body.no-bg-pattern {
     background: var(--theme-bg-gradient);
@@ -74,6 +82,53 @@ body.has-bg-image.bg-mode-center:not(.dark-mode):not(.theme-dark-ocean):not(.the
 body.has-bg-image.bg-mode-tile,
 body.has-bg-image.bg-mode-tile:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
     background: var(--custom-bg-image) top left/auto repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+/* Dark mode overlay for custom background images */
+body.dark-mode.has-bg-image.bg-mode-cover,
+body.theme-dark-ocean.has-bg-image.bg-mode-cover {
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+        var(--custom-bg-image) center/cover no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.dark-mode.has-bg-image.bg-mode-center,
+body.theme-dark-ocean.has-bg-image.bg-mode-center {
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+        var(--custom-bg-image) center/auto no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.dark-mode.has-bg-image.bg-mode-tile,
+body.theme-dark-ocean.has-bg-image.bg-mode-tile {
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+        var(--custom-bg-image) top left/auto repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+/* Golden Glow theme - lighter overlay to preserve warm tones */
+body.theme-golden-glow.has-bg-image.bg-mode-cover {
+    background:
+        linear-gradient(rgba(30, 20, 0, 0.4), rgba(30, 20, 0, 0.4)),
+        var(--custom-bg-image) center/cover no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.theme-golden-glow.has-bg-image.bg-mode-center {
+    background:
+        linear-gradient(rgba(30, 20, 0, 0.4), rgba(30, 20, 0, 0.4)),
+        var(--custom-bg-image) center/auto no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.theme-golden-glow.has-bg-image.bg-mode-tile {
+    background:
+        linear-gradient(rgba(30, 20, 0, 0.4), rgba(30, 20, 0, 0.4)),
+        var(--custom-bg-image) top left/auto repeat;
     background-color: var(--theme-bg-solid);
 }
 
