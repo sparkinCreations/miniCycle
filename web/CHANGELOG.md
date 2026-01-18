@@ -1,3 +1,11 @@
+## [1.787] - 2026-01-17
+- feat: enhance core readiness check before task loading in appInit
+
+
+## [1.786] - 2026-01-17
+- feat: update app version to 1.785 across documentation, manifest, and styles
+
+
 ## [1.785] - 2026-01-17
 - feat: update initialSetup calls to await for proper async handling in migrationManager and appInit
 - feat: update app version to 1.784 across documentation, manifest, and styles
