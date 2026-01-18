@@ -1,3 +1,8 @@
+## [1.788] - 2026-01-17
+- feat: update loader bar animation to use scale transform for smoother transitions
+- feat: update app version to 1.787 across documentation, manifest, and styles
+
+
 ## [1.787] - 2026-01-17
 - feat: enhance core readiness check before task loading in appInit
 
