@@ -1,3 +1,8 @@
+## [1.798] - 2026-01-18
+- feat: add undo cache size tracking and integrate into routine size calculations
+- feat: update app version to 1.797 across documentation, manifest, and styles
+
+
 ## [1.797] - 2026-01-18
 - feat: add image validation and compression functionality for background uploads
 
