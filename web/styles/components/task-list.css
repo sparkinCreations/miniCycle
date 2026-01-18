@@ -761,6 +761,21 @@ body.onboarding-active .complete-all-and-help-window-container {
     #task-view.show {
         left: calc(50% - 10px);
     }
+
+    /* Recurring indicator - ensure it stays inline on mobile */
+    .task-text .recurring-indicator {
+        display: inline-flex;
+        vertical-align: middle;
+        margin-left: 6px;
+        min-width: 12px;
+        min-height: 12px;
+    }
+
+    .task-text .recurring-indicator .icon,
+    .task-text .recurring-indicator .icon svg {
+        width: 12px;
+        height: 12px;
+    }
 }
 
 /* iPhone-specific adjustments */
