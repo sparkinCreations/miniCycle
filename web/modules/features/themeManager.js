@@ -147,6 +147,9 @@ export class ThemeManager {
     
     /**
      * Update theme color meta tags for PWA
+     * - Default view: Blue (#4c79ff) for seamless look
+     * - Custom background: Black
+     * - Dark mode: Black
      */
     updateThemeColor() {
         try {
@@ -155,11 +158,15 @@ export class ThemeManager {
                 console.warn('⚠️ Document body not available for theme color update');
                 return;
             }
-            
+
             const themeColorMeta = document.getElementById('theme-color-meta');
             const statusBarMeta = document.getElementById('status-bar-style-meta');
-            
-            let themeColor = '#5680ff'; // Default
+
+            const isDarkMode = body.classList.contains('dark-mode');
+            const hasCustomBackground = body.classList.contains('has-bg-image');
+
+            let themeColor;
+            let statusBarStyle;
 
             // Determine current theme
             let currentTheme = 'default';
@@ -169,23 +176,26 @@ export class ThemeManager {
                 currentTheme = 'golden-glow';
             }
 
-            // Apply colors based on dark mode + theme
-            const isDarkMode = body.classList.contains('dark-mode');
-            const colorSet = isDarkMode ? this.themeColors.dark : this.themeColors.light;
+            // Use black for dark mode or custom background, otherwise use theme colors
+            if (isDarkMode || hasCustomBackground) {
+                themeColor = '#000000';
+                statusBarStyle = 'black-translucent';
+            } else {
+                // Apply colors based on theme
+                const colorSet = this.themeColors.light;
+                themeColor = colorSet[currentTheme] || '#4c79ff';
+                statusBarStyle = 'black-translucent';
+            }
 
-            themeColor = colorSet[currentTheme] || colorSet.default;
-            // Always use black-translucent so the gradient shows through the status bar
-            const statusBarStyle = 'black-translucent';
-            
             // Update meta tags
             if (themeColorMeta) {
                 themeColorMeta.setAttribute('content', themeColor);
             }
-            
+
             if (statusBarMeta) {
                 statusBarMeta.setAttribute('content', statusBarStyle);
             }
-            
+
             console.log(`🎨 Theme color updated to: ${themeColor}, Status bar: ${statusBarStyle}`);
         } catch (error) {
             console.warn('⚠️ Theme color update failed:', error.message);
