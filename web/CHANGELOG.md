@@ -1,3 +1,9 @@
+## [1.792] - 2026-01-18
+- fix: revert app version to 1.790 and update header styles for improved layout
+- feat: update app version to 1.791 across documentation, manifest, and styles
+- refactor: remove automated tests tab fix script and related references
+
+
 ## [1.791] - 2026-01-18
 - feat: update app version to 1.790 across documentation, manifest, and styles
 
