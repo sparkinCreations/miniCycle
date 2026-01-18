@@ -1634,7 +1634,7 @@ export async function initializeAppWithAutoMigration(options = {}) {
 
         // Load app with legacy data
         console.log('📱 Loading app in legacy fallback mode...');
-        _deps.initialSetup();
+        await _deps.initialSetup();
         _deps.onInitialSetupComplete?.();
         return;
     }
@@ -1663,16 +1663,16 @@ export async function initializeAppWithAutoMigration(options = {}) {
                     forced: result.forced || false,
                     minimal: result.minimal || false
                 });
-                _deps.initialSetup();
-                  _deps.onInitialSetupComplete?.();
+                await _deps.initialSetup();
+                _deps.onInitialSetupComplete?.();
             } else if (result.fallbackActive) {
                 console.log('⚠️ Migration failed but fallback active, loading app with legacy data...');
                 console.log('📊 Fallback details:', {
                     reason: result.reason,
                     message: result.message
                 });
-                _deps.initialSetup();
-                  _deps.onInitialSetupComplete?.();
+                await _deps.initialSetup();
+                _deps.onInitialSetupComplete?.();
             } else {
                 console.error('❌ Auto-migration failed completely:', result.message);
                 console.error('🚨 Critical failure details:', result);
@@ -1686,8 +1686,8 @@ export async function initializeAppWithAutoMigration(options = {}) {
     } else {
         console.log('✅ No migration needed, loading app normally...');
         console.log('📦 Current schema status:', migrationCheck.currentVersion);
-        _deps.initialSetup();
-          _deps.onInitialSetupComplete?.();
+        await _deps.initialSetup();
+        _deps.onInitialSetupComplete?.();
     }
 }
 

@@ -293,10 +293,12 @@ class AppInit {
 	async runInitialSetup() {
 		console.log('🚀 Initializing app (Schema 2.5 only)...');
 
-		if (!this.isAppReady()) {
-			console.log('⏳ Waiting for Phase 2 modules to finish loading...');
-			await this.waitForApp();
-			console.log('✅ Phase 2 modules ready, proceeding with initialSetup');
+		// Wait for core systems (AppState, etc.) to be ready before loading data
+		// Note: With orchestrator pattern, core is always ready by Phase 3, but we check defensively
+		if (!this.isCoreReady()) {
+			console.log('⏳ Waiting for core systems...');
+			await this.waitForCore();
+			console.log('✅ Core systems ready, proceeding with initialSetup');
 		}
 
 		const miniCycleState = _deps.getMiniCycleState?.();
