@@ -1066,6 +1066,10 @@ function toggleTaskPriority(taskItem) {
   }
 
   var isHighPriority = hasClass(taskItem, 'high-priority');
+
+  // ✅ Save undo state before changing priority
+  saveUndoState(isHighPriority ? 'removePriority' : 'setPriority');
+
   var priorityBtn = taskItem.querySelector('.priority-btn');
 
   if (isHighPriority) {
@@ -1396,7 +1400,10 @@ function updateProgressBadges(stats) {
 // ✅ MODIFY your handleTaskCompletionChange function to include logo glow:
 function handleTaskCompletionChange(event) {
   var checkbox = event.target;
-  
+
+  // ✅ Save undo state before changing completion
+  saveUndoState(checkbox.checked ? 'complete' : 'uncomplete');
+
   // ✅ If task was just completed (checked), trigger logo glow
   if (checkbox && checkbox.checked) {
     triggerLogoGlow();
