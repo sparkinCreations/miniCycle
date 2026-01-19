@@ -121,7 +121,7 @@ html, body {
 /* ✅ Extra small screens (phones in portrait) */
 @media (max-width: 480px) {
     #task-view {
-        top: calc(400px + env(safe-area-inset-top, 0px)); /* ✅ Adds extra space for notch/dynamic island */
+        top: calc(50vh + env(safe-area-inset-top, 0px)); /* ✅ Adds extra space for notch/dynamic island */
         width: 95%;
         max-height: 68%; /* ✅ Fixed height for better performance */
         padding-bottom: 100px;
@@ -130,7 +130,7 @@ html, body {
 /* ✅ Extra small screens (phones in portrait) */
 @media (max-width: 768px) {
     #task-view {
-        top: calc(400px + env(safe-area-inset-top, 0px)); /* ✅ Adds extra space for notch/dynamic island */
+        top: calc(50vh + env(safe-area-inset-top, 0px)); /* ✅ Adds extra space for notch/dynamic island */
         width: 95%;
         max-height: 68%; /* ✅ Fixed height for better performance */
         padding-bottom: 100px;
