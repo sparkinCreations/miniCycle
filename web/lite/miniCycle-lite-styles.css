@@ -2548,6 +2548,7 @@ body.dark-mode .edit-task-modal input[type="text"]:focus {
     color: #333;
     position: relative;
     transition: transform 0.2s ease;
+    z-index: 2998;
     
     /* ✅ Prevent tasks from being too narrow */
     min-height: 50px;
