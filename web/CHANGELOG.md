@@ -1,3 +1,8 @@
+## [1.838] - 2026-01-19
+- feat: save undo state before changing task priority and completion
+- feat: update app version to 1.837 across documentation, manifest, and styles
+
+
 ## [1.837] - 2026-01-19
 - feat: implement lite toast notifications and enhance styles for better visibility
 - feat: update app version to 1.836 across documentation, manifest, and styles
