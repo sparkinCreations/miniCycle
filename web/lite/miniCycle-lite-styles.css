@@ -413,7 +413,7 @@ body.dark-mode .complete-all-btn:hover {
     transition: background-color 0.2s ease;
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 400px;
+    max-width: 520px;
     z-index: 1;
 }
 
@@ -1653,14 +1653,14 @@ body.dark-mode .stats-grid p {
     /* ✅ Quick Help Toggle Button */
 #quick-help-toggle {
     position: fixed;
-    bottom: 30px;
+    bottom: 20px;
     left: 20px;
     background: none;
     color: white;
     padding: 4px 6px;
     border-radius: 25px;
     cursor: pointer;
-    font-size: 18px;
+    font-size: 24px;
     z-index: 10;
     transition: all 0.2s ease;
 }
