@@ -85,7 +85,7 @@ html, body {
 /* ✅ Task View - Identical Layout */
 #task-view {
     position: fixed;
-    top: 345px;
+    top: 400px;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90%;
