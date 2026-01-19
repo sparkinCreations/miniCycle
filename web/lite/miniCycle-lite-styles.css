@@ -4820,6 +4820,21 @@ body.dark-mode .tasks-added-count {
     pointer-events: none;
 }
 
+/* Desktop: position notifications at upper right */
+@media (min-width: 600px) {
+    .mc-toast-wrap {
+        top: 20px;
+        right: 20px;
+        bottom: auto;
+        left: auto;
+        -webkit-transform: none;
+        -ms-transform: none;
+        transform: none;
+        width: 320px;
+        max-width: 320px;
+    }
+}
+
 .mc-toast {
     display: -webkit-box;
     display: -webkit-flex;
@@ -4964,79 +4979,3 @@ body.dark-mode .tasks-added-count {
     font-size: 12px;
 }
 
-/* ==========================================
-   🔔 LITE TOAST NOTIFICATIONS
-   ========================================== */
-
-/* Base notification style - mobile first (top center) */
-.lite-toast-notification {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    -webkit-transform: translateX(-50%);
-    -ms-transform: translateX(-50%);
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.85);
-    color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    z-index: 10000;
-    font-size: 14px;
-    font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    max-width: 90vw;
-    text-align: center;
-}
-
-/* Desktop: position at upper right (600px+ to work with dev tools open) */
-@media (min-width: 600px) {
-    .lite-toast-notification {
-        top: 20px;
-        right: 20px;
-        left: auto;
-        -webkit-transform: none;
-        -ms-transform: none;
-        transform: none;
-        max-width: 320px;
-        text-align: left;
-    }
-}
-
-/* Notification type variants */
-.lite-toast-success {
-    background: rgba(34, 139, 34, 0.9);
-    border-left: 4px solid #28a745;
-}
-
-.lite-toast-warning {
-    background: rgba(255, 140, 0, 0.9);
-    border-left: 4px solid #ffc107;
-}
-
-.lite-toast-error {
-    background: rgba(178, 34, 34, 0.9);
-    border-left: 4px solid #dc3545;
-}
-
-.lite-toast-info {
-    background: rgba(0, 0, 0, 0.85);
-    border-left: 4px solid #17a2b8;
-}
-
-/* Dark mode adjustments */
-body.dark-mode .lite-toast-notification {
-    background: rgba(50, 50, 50, 0.95);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-}
-
-body.dark-mode .lite-toast-success {
-    background: rgba(34, 100, 34, 0.95);
-}
-
-body.dark-mode .lite-toast-warning {
-    background: rgba(180, 100, 0, 0.95);
-}
-
-body.dark-mode .lite-toast-error {
-    background: rgba(139, 34, 34, 0.95);
-}

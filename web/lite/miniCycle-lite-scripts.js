@@ -2714,29 +2714,11 @@ function clearCompletedTasks() {
 // ==========================================
 // 🔔 NOTIFICATION SYSTEM
 // ==========================================
+// Note: This function is overwritten by the inline mc-toast system in HTML
+// This serves as a fallback if the inline script doesn't load
 
 function showNotification(message, type) {
   console.log('🔔 ' + (type || 'info').toUpperCase() + ':', message);
-
-  // Remove any existing notification (single notification mode)
-  var existingNotification = document.querySelector('.lite-toast-notification');
-  if (existingNotification && existingNotification.parentNode) {
-    existingNotification.parentNode.removeChild(existingNotification);
-  }
-
-  // Create notification element
-  var notification = document.createElement('div');
-  notification.className = 'lite-toast-notification lite-toast-' + (type || 'info');
-  notification.textContent = message;
-
-  document.body.appendChild(notification);
-
-  // Auto remove after 3 seconds
-  setTimeout(function() {
-    if (notification.parentNode) {
-      notification.parentNode.removeChild(notification);
-    }
-  }, 3000);
 }
 
 // ==========================================
