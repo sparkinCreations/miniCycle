@@ -1,3 +1,8 @@
+## [1.832] - 2026-01-18
+- feat: adjust styles for complete all button and quick help toggle for improved usability
+- feat: update app version to 1.831 across documentation, manifest, and styles
+
+
 ## [1.831] - 2026-01-18
 - feat: enhance layout and styling of stats panel and task container for improved usability
 - feat: update app version to 1.830 across documentation, manifest, and styles
