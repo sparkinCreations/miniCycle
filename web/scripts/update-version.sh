@@ -283,6 +283,9 @@ LITE_HTML_FILES=(
 LITE_JS_FILES=(
     "lite/miniCycle-lite-scripts.js"
 )
+LITE_CSS_FILES=(
+    "lite/miniCycle-lite-styles.css"
+)
 
 MANIFEST_FILES=(
     "manifest.json"
@@ -520,6 +523,9 @@ if [ "$LITE_ONLY" = true ]; then
     for file in "${LITE_JS_FILES[@]}"; do
         FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
     done
+    for file in "${LITE_CSS_FILES[@]}"; do
+        FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
+    done
     for file in "${LITE_MANIFEST_FILES[@]}"; do
         FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
     done
@@ -553,6 +559,9 @@ elif [ "$UPDATE_MODE" == "1" ]; then
             FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
         done
         for file in "${LITE_JS_FILES[@]}"; do
+            FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
+        done
+        for file in "${LITE_CSS_FILES[@]}"; do
             FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
         done
         for file in "${LITE_MANIFEST_FILES[@]}"; do
@@ -839,6 +848,8 @@ if should_update "lite/miniCycle-lite.html"; then
         do_sed "lite/miniCycle-lite.html" "s/miniCycle-lite-styles\.css\"/miniCycle-lite-styles.css?v=$NEW_VERSION\"/g"
         do_sed "lite/miniCycle-lite.html" "s/miniCycle-lite-scripts\.js\"/miniCycle-lite-scripts.js?v=$NEW_VERSION\"/g"
         do_sed "lite/miniCycle-lite.html" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g"
+        # Update "Last meaningful update: vX.XXX" in header comment
+        do_sed "lite/miniCycle-lite.html" "s/Last meaningful update: v[0-9.]*/Last meaningful update: v$NEW_VERSION/g"
         echo "✅ Updated lite/miniCycle-lite.html"
     else
         echo "⚠️  Failed to update lite/miniCycle-lite.html"
@@ -910,9 +921,28 @@ if should_update "lite/miniCycle-lite-scripts.js"; then
     elif backup_file "lite/miniCycle-lite-scripts.js"; then
         do_sed "lite/miniCycle-lite-scripts.js" "s/var currentVersion = '[0-9.]*'/var currentVersion = '$NEW_VERSION'/g"
         do_sed "lite/miniCycle-lite-scripts.js" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$NEW_VERSION'/g"
+        # Update "Last meaningful update: vX.XXX" in header comment
+        do_sed "lite/miniCycle-lite-scripts.js" "s/Last meaningful update: v[0-9.]*/Last meaningful update: v$NEW_VERSION/g"
         echo "✅ Updated lite/miniCycle-lite-scripts.js"
     fi
     echo "✅ Stage 4 complete"
+    echo ""
+fi
+
+# ============================================
+# STAGE 4B: UPDATE LITE CSS
+# ============================================
+
+if should_update "lite/miniCycle-lite-styles.css"; then
+    echo "📝 Stage 4B: Updating lite CSS files..."
+    if [ "$DRY_RUN" = true ]; then
+        echo "   Would update: lite/miniCycle-lite-styles.css"
+    elif backup_file "lite/miniCycle-lite-styles.css"; then
+        # Update "Last meaningful update: vX.XXX" in header comment
+        do_sed "lite/miniCycle-lite-styles.css" "s/Last meaningful update: v[0-9.]*/Last meaningful update: v$NEW_VERSION/g"
+        echo "✅ Updated lite/miniCycle-lite-styles.css"
+    fi
+    echo "✅ Stage 4B complete"
     echo ""
 fi
 
