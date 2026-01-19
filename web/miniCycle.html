@@ -478,6 +478,26 @@
 if ('serviceWorker' in navigator) {
   let refreshing;
 
+  // ✅ RELOAD COOLDOWN: Prevent perpetual reload loops when multiple tabs are open
+  const RELOAD_COOLDOWN_MS = 10000; // 10 seconds cooldown between reloads
+  const RELOAD_COOLDOWN_KEY = 'miniCycle_lastReload';
+
+  function canReloadSafely() {
+    try {
+      const lastReload = parseInt(sessionStorage.getItem(RELOAD_COOLDOWN_KEY) || '0', 10);
+      const now = Date.now();
+      if (now - lastReload < RELOAD_COOLDOWN_MS) {
+        console.log('⏳ Reload cooldown active, skipping reload');
+        return false;
+      }
+      sessionStorage.setItem(RELOAD_COOLDOWN_KEY, String(now));
+      return true;
+    } catch (e) {
+      // sessionStorage not available, allow reload
+      return true;
+    }
+  }
+
   // ✅ Zero-globals helpers - dispatch CustomEvents instead of calling window.*
   function showNotification(message, type, duration) {
     document.dispatchEvent(new CustomEvent('app:showNotification', {
@@ -573,6 +593,11 @@ if ('serviceWorker' in navigator) {
     // Handle controlled page refresh - AUTO-RELOAD when new SW takes control
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (refreshing) return;
+      // ✅ Check cooldown to prevent perpetual reload loops
+      if (!canReloadSafely()) {
+        console.log('⏳ Skipping reload due to cooldown');
+        return;
+      }
       refreshing = true;
       console.log('🔄 New service worker is now controlling the page - reloading...');
       window.location.reload();

@@ -83,6 +83,26 @@ if ('serviceWorker' in navigator) {
   var refreshing = false;
   var deferredPrompt = null;
 
+  // ✅ RELOAD COOLDOWN: Prevent perpetual reload loops when multiple tabs are open
+  var RELOAD_COOLDOWN_MS = 10000; // 10 seconds cooldown between reloads
+  var RELOAD_COOLDOWN_KEY = 'miniCycleLite_lastReload';
+
+  function canReloadSafely() {
+    try {
+      var lastReload = parseInt(sessionStorage.getItem(RELOAD_COOLDOWN_KEY) || '0', 10);
+      var now = Date.now();
+      if (now - lastReload < RELOAD_COOLDOWN_MS) {
+        console.log('⏳ [LITE] Reload cooldown active, skipping reload');
+        return false;
+      }
+      sessionStorage.setItem(RELOAD_COOLDOWN_KEY, String(now));
+      return true;
+    } catch (e) {
+      // sessionStorage not available, allow reload
+      return true;
+    }
+  }
+
   // Install prompt
   window.addEventListener('beforeinstallprompt', function (e) {
     try { e.preventDefault(); } catch (err) {}
@@ -139,6 +159,11 @@ if ('serviceWorker' in navigator) {
 
         navigator.serviceWorker.addEventListener('controllerchange', function () {
           if (refreshing) return;
+          // ✅ Check cooldown to prevent perpetual reload loops
+          if (!canReloadSafely()) {
+            console.log('⏳ [LITE] Skipping reload due to cooldown');
+            return;
+          }
           refreshing = true;
           console.log('🔄 [LITE] Reloading for new version...');
           window.location.reload();
