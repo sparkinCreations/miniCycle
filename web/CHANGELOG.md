@@ -1,3 +1,9 @@
+## [1.846] - 2026-01-19
+- feat: add safe area insets for notched devices in body and complete all button styles
+- feat: increase minimum height for complete all button and help window for improved usability
+- feat: update app version to 1.845 and adjust related references across files
+
+
 ## [1.845] - 2026-01-19
 - feat: reposition notifications in dark mode for better visibility
 - feat: update app version to 1.844 and adjust related references across files
