@@ -418,7 +418,7 @@ body.dark-mode .complete-all-btn:hover {
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
     width: 100%;
     max-width: 520px;
-    z-index: 1;
+    /* z-index removed - was causing options menu to appear behind title */
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
