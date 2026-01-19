@@ -10,7 +10,7 @@
   "orientation": "portrait-primary",
   "lang": "en-US",
   "dir": "ltr",
-  "theme_color": "#black",
+  "theme_color": "#000000",
   "background_color": "#4c79ff",
   "version": "1.598",
   "categories": ["productivity", "lifestyle", "utilities"],
