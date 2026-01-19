@@ -130,7 +130,7 @@ html, body {
 /* ✅ Extra small screens (phones in portrait) */
 @media (max-width: 768px) {
     #task-view {
-        top: 425px; /* ✅ Slightly higher for smaller screens */
+        top: 450px; /* ✅ Slightly higher for smaller screens */
         width: 95%;
             max-height: 70%; /* ✅ Fixed height for better performance */
         padding-bottom: 100px;
