@@ -151,7 +151,10 @@ console.log('🚀 Initializing miniCycle Lite v' + currentVersion + '...');
   
   // ✅ ADD: Initialize badge system
   initializeBadgeSystem();
-  
+
+  // ✅ Ensure undo/redo buttons are in correct state on load
+  updateUndoRedoButtons();
+
   // ✅ Show version info
   showVersionInfo();
   
@@ -1633,6 +1636,33 @@ function incrementToDoDeletedTasks(count) {
   }
 }
 
+// ✅ NEW function to reset all statistics
+function resetAllStats() {
+  try {
+    // Reset cycles completed
+    localStorage.setItem('miniCycleLiteCycles', '0');
+
+    // Reset lifetime completed tasks
+    localStorage.setItem('miniCycleLiteLifetimeCompleted', '0');
+
+    // Reset tasks cleared in To-Do mode
+    localStorage.setItem('miniCycleLiteToDoDeleted', '0');
+
+    // Reset celebrated badges (so they can be earned again)
+    localStorage.setItem('miniCycleLite_celebratedBadges', '[]');
+    localStorage.setItem('miniCycleLite_celebratedClearedBadges', '[]');
+
+    console.log('📊 All statistics have been reset');
+
+    // Update the UI
+    updateStats();
+
+  } catch (e) {
+    console.error('❌ Could not reset statistics:', e);
+    showNotification('Failed to reset statistics', 'error');
+  }
+}
+
 // ✅ ENHANCED deleteCompletedTasks to handle lifetime stats properly
 function deleteCompletedTasks() {
   if (!taskList) return;
@@ -2796,6 +2826,18 @@ function setupMenuButtons() {
     });
   }
   
+  // ✅ Reset all stats
+  var resetStatsBtn = document.getElementById('reset-all-stats');
+  if (resetStatsBtn) {
+    resetStatsBtn.addEventListener('click', function() {
+      if (confirm('Reset all statistics? This will clear cycles completed, tasks cleared, and all badge progress. This cannot be undone.')) {
+        resetAllStats();
+        closeMenu();
+        showNotification('📊 All statistics have been reset', 'success');
+      }
+    });
+  }
+
   // Exit mini cycle
   var exitBtn = document.getElementById('exit-mini-cycle');
   if (exitBtn) {
@@ -2805,7 +2847,7 @@ function setupMenuButtons() {
       }
     });
   }
-  
+
   // Stats button
   var statsBtn = document.getElementById('show-stats');
   if (statsBtn) {
