@@ -121,7 +121,7 @@ html, body {
 /* ✅ Extra small screens (phones in portrait) */
 @media (max-width: 480px) {
     #task-view {
-        top: 50%;
+        top: 60%;
         width: 95%;
         max-height: 68%;
         padding-bottom: 100px;
@@ -131,7 +131,7 @@ html, body {
 /* ✅ Medium screens (tablets in portrait, large phones) */
 @media (max-width: 768px) {
     #task-view {
-        top: 50%;
+        top: 60%;
         width: 95%;
         max-height: 68%;
         padding-bottom: 100px;
