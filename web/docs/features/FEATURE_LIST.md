@@ -1,6 +1,6 @@
 # miniCycle Feature List
 
-> **Last Updated:** January 13, 2026
+> **Last Updated:** January 18, 2026
 > **Status:** Production Ready
 >
 > See [PROJECT_STATS.md](../PROJECT_STATS.md) for current version.
@@ -60,8 +60,9 @@ Three different modes for how routines behave when tasks are completed.
 
 ### To-Do Mode 📋
 - **Behavior:** Completed tasks are deleted (not reset)
+- **Feedback:** "🧹 X tasks cleared!" message displays when tasks are cleared
 - **Use Case:** One-time tasks, shopping lists, project checklists
-- **Module:** `modules/routine/modeManager.js`
+- **Module:** `modules/routine/modeManager.js`, `modules/ui/helpWindowManager.js`
 
 ---
 
@@ -292,7 +293,8 @@ Create tasks that automatically appear on a schedule.
 ### Theme System
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Dark Mode Toggle | Quick-access dark/light mode switch | `features/themeManager.js` |
+| Dark Mode Toggle | 🌓 Quick-access toggle in bottom-right corner | `features/themeManager.js` |
+| Dark Mode Styling | Muted button colors, white header icons for clean dark appearance | `styles/utilities/dark-mode.css` |
 | Theme Persistence | Theme preference saved across sessions | `features/themeManager.js` |
 | PWA Theme Colors | Theme colors sync with PWA meta tags | `features/themeManager.js` |
 
@@ -336,10 +338,17 @@ Create tasks that automatically appear on a schedule.
 
 Customize app colors and visual appearance.
 
+### Quick Access
+| Feature | Description | Module |
+|---------|-------------|--------|
+| Personalization Button | 🖌️ Quick access button in bottom-left corner | `ui/preferencesManager.js` |
+| Direct Modal Access | Opens personalization modal without navigating menu | `ui/preferencesManager.js` |
+
 ### Color Customization
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Live Color Preview | See color changes in real-time as you adjust | `ui/preferencesManager.js` |
+| Live Color Preview | See color changes in real-time; shows blue gradient by default | `ui/preferencesManager.js` |
+| Dynamic Preview Update | Preview section background updates when app background changes | `ui/preferencesManager.js` |
 | Header Color | Customize the app header color | `ui/preferencesManager.js` |
 | Background Color | Customize the main background color | `ui/preferencesManager.js` |
 | Accent Color | Customize buttons and interactive elements | `ui/preferencesManager.js` |
@@ -403,6 +412,8 @@ Customize app colors and visual appearance.
 | Installable | Add to home screen on any device | `manifest.json` |
 | Offline Support | Works without internet connection | `service-worker.js` |
 | App-Like Experience | Full-screen, no browser chrome | `manifest.json` |
+| iOS Status Bar Integration | Status bar matches app theme (blue default, black for dark mode/custom backgrounds) | `features/themeManager.js` |
+| Loading State | Black status bar during app load, transitions to theme color | `miniCycle.html` |
 
 ### Mobile Features
 | Feature | Description | Module |

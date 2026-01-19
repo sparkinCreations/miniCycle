@@ -377,6 +377,14 @@ No need to remember or recreate — the routine resets for you.
 
 Designed for repeatable workflows, not one-off tasks.
 
+### 🎨 Quick Personalization
+
+Personalization button (🖌️) in the bottom-left corner provides instant access to color customization. Change your app background, task colors, and theme with a single tap.
+
+### 🌓 Easy Dark Mode
+
+Dark mode toggle in the bottom-right corner lets you switch between light and dark themes instantly.
+
 ### 🔒 Privacy-First
 
 No accounts, no cloud sync. All data stays on your device.
@@ -414,6 +422,8 @@ Progressive Web App (PWA) works without internet.
 ✅ **Flexible cycling** modes for different needs
 ✅ **Full task management** within routine structure
 ✅ **Time-based features** (recurring, due dates, notifications)
+✅ **Quick personalization** (🖌️ button for instant color customization)
+✅ **Easy dark mode** (🌓 toggle in bottom corner)
 ✅ **Customizable interface** (show/hide task option buttons per cycle)
 ✅ **Privacy-focused** (local storage only)
 ✅ **Works offline** (PWA)

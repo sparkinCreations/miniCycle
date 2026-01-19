@@ -2,8 +2,8 @@
 
 > **Complete guide to miniCycle's mode management system**
 
-**Version**: 1.373
-**Last Updated**: November 23, 2025
+**Version**: 1.811
+**Last Updated**: January 18, 2026
 **Module**: `modules/routine/modeManager.js` (633 lines)
 **Pattern**: Resilient Constructor 🛡️
 
@@ -92,10 +92,16 @@ Prior to v1.372, switching modes required a page reload. The Mode Manager now:
 - Completed tasks are deleted (not reset)
 - Traditional to-do list behavior
 - Recurring tasks enabled for repeating items
+- **Feedback Message**: "🧹 X tasks cleared!" displays in help window when tasks are cleared (v1.811+)
 
 **Settings:**
 - `autoReset: false`
 - `deleteCheckedTasks: true`
+
+**UI Feedback:**
+- `helpWindowManager.showTasksClearedMessage(count)` - Shows clearing feedback
+- Parallels `showCycleCompleteMessage()` used in Auto/Manual modes
+- Message displays for 2 seconds, then returns to normal status
 
 **Use Cases:**
 - One-time project tasks
