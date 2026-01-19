@@ -4785,7 +4785,7 @@ body.dark-mode .tasks-added-count {
     -webkit-transform: translateX(-50%);
     -ms-transform: translateX(-50%);
     transform: translateX(-50%);
-    bottom: 70px;
+    bottom: 80px;
     max-width: 92vw;
     width: 520px;
     pointer-events: none;
