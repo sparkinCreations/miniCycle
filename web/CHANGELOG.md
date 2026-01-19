@@ -1,3 +1,8 @@
+## [1.842] - 2026-01-19
+- feat: update feedback form action to Web3Forms and add hidden fields for access key and subject
+- feat: update app version to 1.841 across documentation, manifest, and styles
+
+
 ## [1.841] - 2026-01-19
 - feat: adjust button padding in dark mode for improved layout
 - feat: update app version to 1.840 across documentation, manifest, and styles
