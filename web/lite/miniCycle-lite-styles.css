@@ -4423,7 +4423,7 @@ body.dark-mode .navigation-dots button.dot:focus {
     justify-content: center;
     gap: 8px;
     padding: 12px 24px;
-    background: #999;
+    background: #4ea1ff;
     border: 2px solid #3a5fcc;
     border-radius: 8px;
     color: white;
