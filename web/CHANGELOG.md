@@ -1,3 +1,10 @@
+## [1.848] - 2026-01-19
+- feat: adjust task view position and spacing for improved layout
+- feat: adjust positioning and sizing of tasks added count in dark mode
+- feat: update app version to 1.847 and adjust related references across files
+- feat: adjust position of tasks added count in dark mode
+
+
 ## [1.847] - 2026-01-19
 - feat: increase max-height for improved performance on task view and container
 - feat: reduce max-height for improved performance on task view and container
