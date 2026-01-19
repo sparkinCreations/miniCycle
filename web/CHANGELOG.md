@@ -1,3 +1,9 @@
+## [1.823] - 2026-01-18
+- feat: update mini-modal button background to a gradient and improve text color for better visibility
+- feat: update app version to 1.822 across documentation, manifest, and styles
+- feat: update mini-modal button background to use a gradient for improved aesthetics
+
+
 ## [1.822] - 2026-01-18
 - feat: update app version to 1.821 across documentation, manifest, and styles
 
