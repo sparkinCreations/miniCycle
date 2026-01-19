@@ -822,7 +822,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     position: sticky;
     top: -12px;
     z-index: 10;
-    background: linear-gradient(135deg, #4c79ff, #74c0fc);
+    background: var(--preview-section-bg, linear-gradient(135deg, #4c79ff, #74c0fc));
     margin: 0 -16px 14px -16px;
     padding: 12px 16px 14px 16px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);

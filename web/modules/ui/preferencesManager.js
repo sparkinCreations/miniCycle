@@ -1594,6 +1594,14 @@ export class PreferencesManager {
             if (config.previewVar) {
                 preview.style.setProperty(config.previewVar, color);
             }
+
+            // Also update the preview section background when app background changes
+            if (config.key === 'appBg') {
+                const previewSection = document.querySelector('.preferences-preview-section');
+                if (previewSection) {
+                    previewSection.style.setProperty('--preview-section-bg', color);
+                }
+            }
         });
 
         // Handle checkbox fill visibility in preview
