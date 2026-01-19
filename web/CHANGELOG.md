@@ -1,3 +1,8 @@
+## [1.843] - 2026-01-19
+- feat: adjust padding for complete all button in default theme
+- feat: update app version to 1.842 across documentation, manifest, and styles
+
+
 ## [1.842] - 2026-01-19
 - feat: update feedback form action to Web3Forms and add hidden fields for access key and subject
 - feat: update app version to 1.841 across documentation, manifest, and styles
