@@ -146,16 +146,16 @@ html, body {
     left: 50%;
     transform: translate(-50%, -50%);
     transition: all 0.3s ease;
-    width: 85%;
-    max-width: 400px;
+    width: 94%;
+    max-width: 520px;
     height: auto;
-    max-height: none;
-    overflow-y: visible;
+    max-height: 80vh;
+    overflow-y: auto;
     color: black;
     background: rgba(255, 255, 255, 0.95);
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-    padding: 15px;
-    border-radius: 15px;
+    padding: 12px 16px;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -172,16 +172,16 @@ html, body {
     left: 50%;
     transform: translate(-50%, -50%);
     transition: all 0.3s ease;
-    width: 90%;
-    max-width: 400px;
+    width: 94%;
+    max-width: 520px;
     height: auto;
-    max-height: 80vh;
-    overflow-y: visible;
+    max-height: 75vh;
+    overflow-y: auto;
     color: black;
     background: rgba(255, 255, 255, 0.95);
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-    padding: 15px;
-    border-radius: 15px;
+    padding: 10px 14px;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -198,8 +198,8 @@ html, body {
 }
 
 #stats-panel h2 {
-    margin: 0 0 18px 0;
-    font-size: 20px;
+    margin: 0 0 10px 0;
+    font-size: 18px;
     font-weight: 700;
     text-align: center;
     color: #212529;
@@ -1784,20 +1784,21 @@ body.dark-mode .badge.celebrated {
 .stats-grid {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    margin-bottom: 20px;
-    padding: 12px;
+    gap: 4px;
+    margin-bottom: 12px;
+    padding: 8px;
     background: rgba(0, 0, 0, 0.03);
-    border-radius: 12px;
+    border-radius: 10px;
     border: 1px solid rgba(0, 0, 0, 0.06);
+    width: 100%;
 }
 
 .stats-grid p {
     margin: 0;
-    padding: 10px 12px;
+    padding: 8px 10px;
     background: rgba(255, 255, 255, 0.7);
-    border-radius: 8px;
-    font-size: 14px;
+    border-radius: 6px;
+    font-size: 13px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1810,7 +1811,7 @@ body.dark-mode .badge.celebrated {
 .stats-grid p span {
     font-weight: 600;
     color: #212529;
-    font-size: 15px;
+    font-size: 14px;
 }
 
 body.dark-mode .stats-grid {
@@ -1833,10 +1834,11 @@ body.dark-mode .stats-grid p span {
 /* ✅ Stats Section Card - for badge containers */
 .stats-section {
     background: rgba(0, 0, 0, 0.03);
-    border-radius: 12px;
+    border-radius: 10px;
     border: 1px solid rgba(0, 0, 0, 0.06);
-    padding: 15px;
-    margin-bottom: 15px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    width: 100%;
 }
 
 body.dark-mode .stats-section {
@@ -1849,15 +1851,15 @@ body.dark-mode .stats-section {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    margin-bottom: 12px;
-    padding-bottom: 10px;
+    gap: 6px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .stats-section-header h3 {
     margin: 0;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     color: #343a40;
 }
@@ -1876,19 +1878,19 @@ body.dark-mode .stats-section-header h3 {
     justify-content: center;
     align-items: baseline;
     gap: 6px;
-    margin-top: 12px;
-    padding-top: 10px;
+    margin-top: 8px;
+    padding-top: 6px;
     border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .stats-count strong {
-    font-size: 13px;
+    font-size: 12px;
     color: #6c757d;
     font-weight: 500;
 }
 
 .stats-count span {
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 700;
     color: #212529;
 }
@@ -3571,24 +3573,56 @@ body.dark-mode .options-menu .delete-btn:hover {
     }
 
     .stats-panel {
-        width: 92%;
-        padding: 12px;
-        max-height: none;
-        overflow-y: visible;
+        width: 96%;
+        padding: 8px 10px;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    #stats-panel h2 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+    }
+
+    .stats-grid {
+        padding: 6px;
+        margin-bottom: 8px;
     }
 
     .stats-grid p {
+        font-size: 12px;
+        padding: 6px 8px;
+    }
+
+    .stats-section {
+        padding: 8px 10px;
+        margin-bottom: 8px;
+    }
+
+    .stats-section-header {
+        margin-bottom: 6px;
+        padding-bottom: 4px;
+    }
+
+    .stats-section-header h3 {
         font-size: 13px;
-        padding: 6px;
+    }
+
+    .stats-count strong {
+        font-size: 11px;
+    }
+
+    .stats-count span {
+        font-size: 16px;
     }
 
     .badge-container {
-        margin: 10px 0;
+        margin: 8px 0;
     }
 
     .badge-container h3 {
-        font-size: 14px;
-        margin-bottom: 8px;
+        font-size: 13px;
+        margin-bottom: 6px;
     }
 
     .back-button {
