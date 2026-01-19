@@ -1,3 +1,7 @@
+## [1.822] - 2026-01-18
+- feat: update app version to 1.821 across documentation, manifest, and styles
+
+
 ## [1.821] - 2026-01-18
 - feat: update personalization button icon for improved visual clarity
 - feat: update CHANGELOG for version 1.820 with new features and improvements
