@@ -621,14 +621,6 @@ body.dark-mode .complete-all-btn:hover {
 }
 
 /* ✅ Help Window */
-.complete-all-and-help-window-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    margin-top: 10px;
-}
-
 .help-window {
     background: rgba(125, 186, 255, 0.478);
     border-radius: 30px;
@@ -1550,64 +1542,6 @@ body.dark-mode .back-button:hover {
     font-size: 12px;
     font-weight: bold;
     border: 2px solid #dee2e6;
-    transition: all 0.2s ease;
-}
-
-.badge.earned {
-    background: #28a745;
-    color: white;
-    border-color: #1e7e34;
-    transform: scale(1.1);
-}
-
-.badge:hover {
-    transform: scale(1.05);
-}
-
-/* ✅ Dark Mode for Badges */
-body.dark-mode .badge {
-    background: #495057;
-    color: #f0f0f0;
-    border-color: #6c757d;
-}
-
-body.dark-mode .badge.earned {
-    background: #198754;
-    border-color: #146c43;
-}
-
-
-/* ✅ CORRECTED Badge Container and Badges */
-.badge-container {
-    margin: 15px 0;
-    text-align: center;
-}
-
-.badge-container h3 {
-    margin: 0 0 10px 0;
-    font-size: 16px;
-    color: inherit;
-}
-
-.badges {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.badge {
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    background: #e9ecef;
-    color: #495057;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: bold;
-    border: 2px solid #dee2e6;
     transition: all 0.3s ease;
     cursor: default;
 }
@@ -2068,25 +2002,6 @@ body.dark-mode .edit-task-modal input[type="text"]:focus {
     -webkit-flex: 1;
     -ms-flex: 1;
     flex: 1;
-}
-
-/* ✅ Complete All Container */
-.complete-all-and-help-window-container {
-    display: -webkit-box;
-    display: -webkit-flex;
-    display: -ms-flexbox;
-    display: flex;
-    
-    -webkit-box-orient: vertical;
-    -webkit-box-direction: normal;
-    -webkit-flex-direction: column;
-    -ms-flex-direction: column;
-    flex-direction: column;
-    
-    -webkit-box-align: center;
-    -webkit-align-items: center;
-    -ms-flex-align: center;
-    align-items: center;
 }
 
 /* ✅ Navigation Dots Container */
@@ -3394,7 +3309,7 @@ body.dark-mode .options-menu .delete-btn:hover {
    🎯 CUSTOM ACCESSIBILITY FOCUS STYLES
    ========================================== */
 
-/* ✅ Option 1: Match your brand blue */
+/* ✅ Default focus style */
 button:focus,
 input:focus,
 textarea:focus,
@@ -3406,40 +3321,7 @@ select:focus,
   box-shadow: 0 0 0 4px rgba(86, 128, 255, 0.2);
 }
 
-/* ✅ Option 2: High contrast orange (great for accessibility) */
-button:focus,
-input:focus,
-textarea:focus,
-select:focus {
-  outline: 2px solid #ff6b35;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.2);
-}
-
-/* ✅ Option 3: Green for positive actions */
-button:focus,
-input:focus,
-textarea:focus,
-select:focus {
-  outline: 2px solid #28a745;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.2);
-}
-
-/* ✅ Option 4: Gradient focus (modern look) */
-button:focus,
-input:focus,
-textarea:focus,
-select:focus {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-  box-shadow: 
-    0 0 0 2px white,
-    0 0 0 4px #0026ff,
-    0 0 8px rgba(86, 128, 255, 0.3);
-}   
-
-/* ✅ Option 5: Dynamic based on context */
+/* ✅ Context-specific focus styles */
 /* Task-related elements */
 #taskInput:focus,
 #addTask:focus,
@@ -4362,4 +4244,395 @@ body.dark-mode .navigation-dots button.dot:focus {
     font-size: 16px;
     font-weight: 500;
     font-family: 'Inter', sans-serif;
+}
+
+/* ==========================================
+   ➕ ADD TASK BUTTON & MODAL
+   ========================================== */
+
+/* ✅ Add Task Button Container */
+.add-task-button-container {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    padding: 15px 10px;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+/* ✅ Add Task Button */
+.add-task-btn {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 14px 24px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px dashed rgba(76, 121, 255, 0.5);
+    border-radius: 12px;
+    color: #4c79ff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.add-task-btn:hover,
+.add-task-btn:focus {
+    background: #4c79ff;
+    border-color: #4c79ff;
+    color: white;
+    box-shadow: 0 4px 12px rgba(76, 121, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.add-task-icon {
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+/* ✅ Add Task Modal */
+.add-task-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.add-task-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    cursor: pointer;
+}
+
+.add-task-modal-content {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 450px;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.add-task-modal-header {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-pack: justify;
+    -webkit-justify-content: space-between;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #4c79ff, #74c0fc);
+    color: white;
+}
+
+.add-task-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.add-task-modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.add-task-modal-close:hover {
+    opacity: 1;
+}
+
+.add-task-modal-body {
+    padding: 20px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.add-task-input-row {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.modal-task-input {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1;
+    -ms-flex: 1;
+    flex: 1;
+    padding: 12px 16px;
+    font-size: 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+}
+
+.modal-task-input:focus {
+    border-color: #4c79ff;
+    box-shadow: 0 0 0 3px rgba(76, 121, 255, 0.15);
+}
+
+.modal-add-btn {
+    padding: 12px 20px;
+    background: #4c79ff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+
+.modal-add-btn:hover {
+    background: #3a5fcc;
+}
+
+.added-tasks-list {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.added-task-item {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-pack: justify;
+    -webkit-justify-content: space-between;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid #28a745;
+    animation: taskAdded 0.3s ease;
+}
+
+@keyframes taskAdded {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.added-task-text {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1;
+    -ms-flex: 1;
+    flex: 1;
+    font-size: 14px;
+    color: #333;
+    word-break: break-word;
+}
+
+.added-task-remove {
+    background: none;
+    border: none;
+    color: #dc3545;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.added-task-remove:hover {
+    opacity: 1;
+}
+
+.add-task-modal-footer {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-pack: justify;
+    -webkit-justify-content: space-between;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+}
+
+.tasks-added-count {
+    font-size: 14px;
+    color: #666;
+}
+
+.done-adding-btn {
+    padding: 10px 24px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.done-adding-btn:hover {
+    background: #218838;
+}
+
+/* ✅ Dark mode for add task modal */
+body.dark-mode .add-task-btn {
+    background: rgba(46, 46, 46, 0.95);
+    border-color: rgba(76, 121, 255, 0.5);
+    color: #74c0fc;
+}
+
+body.dark-mode .add-task-btn:hover,
+body.dark-mode .add-task-btn:focus {
+    background: #4c79ff;
+    color: white;
+}
+
+body.dark-mode .add-task-modal-content {
+    background: #2e2e2e;
+}
+
+body.dark-mode .add-task-modal-header {
+    background: linear-gradient(135deg, #3a5fcc, #5a8fd8);
+}
+
+body.dark-mode .add-task-modal-body {
+    background: #2e2e2e;
+}
+
+body.dark-mode .modal-task-input {
+    background: #3a3a3a;
+    border-color: #555;
+    color: #f0f0f0;
+}
+
+body.dark-mode .modal-task-input:focus {
+    border-color: #74c0fc;
+}
+
+body.dark-mode .added-task-item {
+    background: #3a3a3a;
+    border-left-color: #28a745;
+}
+
+body.dark-mode .added-task-text {
+    color: #f0f0f0;
+}
+
+body.dark-mode .add-task-modal-footer {
+    background: #252525;
+    border-top-color: #444;
+}
+
+body.dark-mode .tasks-added-count {
+    color: #aaa;
+}
+
+/* ✅ Mobile responsive */
+@media (max-width: 480px) {
+    .add-task-modal-content {
+        max-height: 90vh;
+        margin: 10px;
+    }
+
+    .add-task-input-row {
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -webkit-flex-direction: column;
+        -ms-flex-direction: column;
+        flex-direction: column;
+    }
+
+    .modal-add-btn {
+        width: 100%;
+    }
 }

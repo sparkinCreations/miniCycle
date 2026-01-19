@@ -135,7 +135,8 @@ console.log('🚀 Initializing miniCycle Lite v' + currentVersion + '...');
   setupFeedbackModal();
   setupFeedbackKeyboardSupport();
   setupTryFullVersionButton();
-  setupMobileInputOverlay(); // ✅ ADD THIS LINE
+  setupMobileInputOverlay();
+  setupAddTaskModal(); // ✅ Add task modal system
 
   // ✅ Initial stats update
   setTimeout(function() {
@@ -1462,32 +1463,6 @@ function incrementLifetimeCompletedTasks(count) {
 }
 
 
-// ✅ ENHANCED resetAllTasks to NOT affect lifetime stats (tasks were already counted as completed)
-function resetAllTasks() {
-  if (!taskList) return;
-  
-  var taskItems = taskList.children;
-  var resetCount = 0;
-  
-  // ✅ Uncheck all tasks (but don't decrement lifetime counter - they were already completed)
-  for (var i = 0; i < taskItems.length; i++) {
-    var checkbox = taskItems[i].querySelector("input[type='checkbox']");
-    if (checkbox && checkbox.checked) {
-      checkbox.checked = false;
-      // ✅ Don't trigger change event to avoid affecting lifetime counter
-      resetCount++;
-    }
-  }
-  
-  console.log('🔄 Reset ' + resetCount + ' tasks for new cycle');
-  
-  updateProgressBar();
-  checkCompleteAllButton();
-  autoSave();
-  
-  return resetCount;
-}
-
 // ✅ ENHANCED deleteCompletedTasks to handle lifetime stats properly
 function deleteCompletedTasks() {
   if (!taskList) return;
@@ -2249,19 +2224,6 @@ function handleAllTasksComplete(mode) {
 }
 
 
-// ✅ ADD function to get current cycle mode:
-function getCurrentCycleMode() {
-  var modeSelect = document.getElementById('cycle-mode-select');
-  if (modeSelect) {
-    return modeSelect.value;
-  }
-  
-  // ✅ Fallback: check localStorage for saved preference
-  var savedMode = localStorage.getItem('miniCycleLiteMode');
-  return savedMode || 'auto-cycle'; // ✅ CHANGE from 'manual-cycle' to 'auto-cycle'
-}
-
-
 // ✅ MODIFY your resetAllTasks function to trigger glow for cycle completion:
 function resetAllTasks() {
   if (!taskList) return;
@@ -2292,34 +2254,6 @@ function resetAllTasks() {
   
   return resetCount;
 }
-
-// ✅ ADD function to delete completed tasks (for to-do mode):
-function deleteCompletedTasks() {
-  if (!taskList) return;
-  
-  var taskItems = Array.prototype.slice.call(taskList.children); // Convert to array
-  var deletedCount = 0;
-  
-  // ✅ Remove completed tasks from DOM
-  for (var i = 0; i < taskItems.length; i++) {
-    var taskItem = taskItems[i];
-    var checkbox = taskItem.querySelector("input[type='checkbox']");
-    
-    if (checkbox && checkbox.checked) {
-      taskList.removeChild(taskItem);
-      deletedCount++;
-    }
-  }
-  
-  console.log('🗑️ Deleted ' + deletedCount + ' completed tasks');
-  
-  updateProgressBar();
-  checkCompleteAllButton();
-  autoSave();
-  
-  return deletedCount;
-}
-
 
 // ✅ ADD cycle completion animation:
 function showCycleCompletionAnimation() {
@@ -3438,26 +3372,7 @@ function forceNavigationUpdate() {
 }
 
 
-// ✅ MODIFY your showTaskView function to use the helper:
-function showTaskView() {
-  var statsPanel = document.getElementById("stats-panel");
-  var taskView = document.getElementById("task-view");
-  
-  if (statsPanel && taskView) {
-    // ✅ IE-compatible class management
-    removeClass(statsPanel, 'show');
-    addClass(statsPanel, 'hide');
-    removeClass(taskView, 'hide');
-    addClass(taskView, 'show');
-    
-    // ✅ Use the enhanced update function
-    forceNavigationUpdate();
-    
-    console.log('📝 Task view shown');
-  }
-}
-
-// ✅ MODIFY your showStatsPanel function to use the helper:
+// ✅ showStatsPanel function:
 function showStatsPanel() {
   var statsPanel = document.getElementById("stats-panel");
   var taskView = document.getElementById("task-view");
@@ -3670,4 +3585,273 @@ window.withLoader = function(callback, message) {
 };
 
 console.log('🎉 miniCycle Lite fully initialized with enhanced compatibility!');
+
+// ==========================================
+// ➕ ADD TASK MODAL SYSTEM
+// ==========================================
+
+var pendingModalTasks = [];
+
+function setupAddTaskModal() {
+  var openModalBtn = document.getElementById('open-add-task-modal');
+  var modal = document.getElementById('add-task-modal');
+  var closeModalBtn = document.getElementById('close-add-task-modal');
+  var overlay = modal ? modal.querySelector('.add-task-modal-overlay') : null;
+  var modalInput = document.getElementById('modalTaskInput');
+  var modalAddBtn = document.getElementById('modalAddTask');
+  var doneBtn = document.getElementById('done-adding-tasks');
+  var addedTasksList = document.getElementById('added-tasks-list');
+  var tasksAddedCount = document.getElementById('tasks-added-count');
+
+  if (!openModalBtn || !modal) {
+    console.log('⚠️ Add task modal elements not found');
+    return;
+  }
+
+  console.log('✅ Setting up add task modal');
+
+  // ✅ Open modal
+  openModalBtn.addEventListener('click', function() {
+    openAddTaskModal();
+  });
+
+  // ✅ Close modal - X button
+  if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', function() {
+      closeAddTaskModal(true);
+    });
+  }
+
+  // ✅ Close modal - overlay click
+  if (overlay) {
+    overlay.addEventListener('click', function() {
+      closeAddTaskModal(true);
+    });
+  }
+
+  // ✅ Done button - close and add tasks
+  if (doneBtn) {
+    doneBtn.addEventListener('click', function() {
+      closeAddTaskModal(true);
+    });
+  }
+
+  // ✅ Add task button in modal
+  if (modalAddBtn) {
+    modalAddBtn.addEventListener('click', function() {
+      addTaskToModalList();
+    });
+  }
+
+  // ✅ Enter key to add task in modal
+  if (modalInput) {
+    modalInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.keyCode === 13) {
+        e.preventDefault();
+        addTaskToModalList();
+      }
+
+      // ✅ Escape key to close
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        e.preventDefault();
+        closeAddTaskModal(true);
+      }
+    });
+  }
+
+  // ✅ Keyboard trap for accessibility
+  modal.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      closeAddTaskModal(true);
+    }
+  });
+}
+
+function openAddTaskModal() {
+  var modal = document.getElementById('add-task-modal');
+  var modalInput = document.getElementById('modalTaskInput');
+  var addedTasksList = document.getElementById('added-tasks-list');
+  var tasksAddedCount = document.getElementById('tasks-added-count');
+
+  if (!modal) return;
+
+  // ✅ Reset state
+  pendingModalTasks = [];
+  if (addedTasksList) addedTasksList.innerHTML = '';
+  if (tasksAddedCount) tasksAddedCount.textContent = '';
+  if (modalInput) modalInput.value = '';
+
+  // ✅ Show modal
+  modal.style.display = 'flex';
+
+  // ✅ Focus input after animation
+  setTimeout(function() {
+    if (modalInput) {
+      try { modalInput.focus(); } catch (e) {}
+    }
+  }, 100);
+
+  // ✅ Prevent body scroll
+  document.body.style.overflow = 'hidden';
+
+  console.log('📝 Add task modal opened');
+}
+
+function closeAddTaskModal(addTasks) {
+  var modal = document.getElementById('add-task-modal');
+  var modalInput = document.getElementById('modalTaskInput');
+
+  if (!modal) return;
+
+  // ✅ Add pending tasks to the actual task list
+  if (addTasks && pendingModalTasks.length > 0) {
+    saveUndoState('add');
+
+    for (var i = 0; i < pendingModalTasks.length; i++) {
+      addTask(pendingModalTasks[i], false, false);
+    }
+
+    // ✅ Save after all tasks added
+    saveMiniCycle();
+
+    // ✅ Show success notification
+    var count = pendingModalTasks.length;
+    var message = count === 1 ? 'Task added!' : count + ' tasks added!';
+    showNotification(message, 'success');
+
+    // ✅ Hide empty state if it was showing
+    hideEmptyState();
+
+    console.log('✅ Added ' + count + ' tasks from modal');
+  }
+
+  // ✅ Reset state
+  pendingModalTasks = [];
+
+  // ✅ Hide modal
+  modal.style.display = 'none';
+
+  // ✅ Restore body scroll
+  document.body.style.overflow = '';
+
+  // ✅ Clear input
+  if (modalInput) modalInput.value = '';
+
+  console.log('📝 Add task modal closed');
+}
+
+function addTaskToModalList() {
+  var modalInput = document.getElementById('modalTaskInput');
+  var addedTasksList = document.getElementById('added-tasks-list');
+  var tasksAddedCount = document.getElementById('tasks-added-count');
+
+  if (!modalInput) return;
+
+  var taskText = modalInput.value.trim();
+
+  if (!taskText) {
+    showNotification('Please enter a task', 'warning');
+    return;
+  }
+
+  // ✅ Check task limit
+  var currentTasks = taskList ? taskList.children.length : 0;
+  if (currentTasks + pendingModalTasks.length >= TASK_LIMIT) {
+    showNotification('Maximum ' + TASK_LIMIT + ' tasks allowed', 'warning');
+    return;
+  }
+
+  // ✅ Clean the text
+  var cleanText = taskText.replace(/\s+/g, ' ').substring(0, 100);
+
+  // ✅ Check for duplicates in pending list
+  for (var i = 0; i < pendingModalTasks.length; i++) {
+    if (pendingModalTasks[i].toLowerCase() === cleanText.toLowerCase()) {
+      showNotification('Task already in list', 'warning');
+      return;
+    }
+  }
+
+  // ✅ Add to pending list
+  pendingModalTasks.push(cleanText);
+
+  // ✅ Create visual item in modal
+  if (addedTasksList) {
+    var taskItem = document.createElement('div');
+    taskItem.className = 'modal-added-task-item';
+    taskItem.setAttribute('role', 'listitem');
+
+    var taskSpan = document.createElement('span');
+    taskSpan.className = 'modal-task-text';
+    taskSpan.textContent = cleanText;
+
+    var removeBtn = document.createElement('button');
+    removeBtn.className = 'modal-task-remove';
+    removeBtn.innerHTML = '&times;';
+    removeBtn.setAttribute('aria-label', 'Remove task');
+    removeBtn.setAttribute('data-index', pendingModalTasks.length - 1);
+
+    removeBtn.addEventListener('click', function() {
+      var index = parseInt(this.getAttribute('data-index'), 10);
+      removeTaskFromModalList(index, this.parentNode);
+    });
+
+    taskItem.appendChild(taskSpan);
+    taskItem.appendChild(removeBtn);
+    addedTasksList.appendChild(taskItem);
+
+    // ✅ Scroll to bottom of list
+    addedTasksList.scrollTop = addedTasksList.scrollHeight;
+  }
+
+  // ✅ Update count
+  updateModalTaskCount();
+
+  // ✅ Clear input and refocus
+  modalInput.value = '';
+  modalInput.focus();
+
+  console.log('📝 Task added to modal list: ' + cleanText);
+}
+
+function removeTaskFromModalList(index, element) {
+  // ✅ Remove from array
+  if (index >= 0 && index < pendingModalTasks.length) {
+    pendingModalTasks.splice(index, 1);
+  }
+
+  // ✅ Remove visual element
+  if (element && element.parentNode) {
+    element.parentNode.removeChild(element);
+  }
+
+  // ✅ Reindex remaining remove buttons
+  var addedTasksList = document.getElementById('added-tasks-list');
+  if (addedTasksList) {
+    var items = addedTasksList.querySelectorAll('.modal-task-remove');
+    for (var i = 0; i < items.length; i++) {
+      items[i].setAttribute('data-index', i);
+    }
+  }
+
+  // ✅ Update count
+  updateModalTaskCount();
+
+  console.log('📝 Task removed from modal list');
+}
+
+function updateModalTaskCount() {
+  var tasksAddedCount = document.getElementById('tasks-added-count');
+  if (!tasksAddedCount) return;
+
+  var count = pendingModalTasks.length;
+  if (count === 0) {
+    tasksAddedCount.textContent = '';
+  } else if (count === 1) {
+    tasksAddedCount.textContent = '1 task ready to add';
+  } else {
+    tasksAddedCount.textContent = count + ' tasks ready to add';
+  }
+}
+
 // End of miniCycle-lite-scripts.js
