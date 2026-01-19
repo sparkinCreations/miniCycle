@@ -2410,11 +2410,21 @@ body.dark-mode .edit-task-modal input[type="text"]:focus {
 }
 
 
+/* ✅ Menu icon logo for Try Full Version */
+.menu-icon-logo {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    vertical-align: middle;
+    object-fit: contain;
+}
+
 /* ✅ Try Full Version button styling */
 #try-full-version {
     display: inline-flex;
+    align-items: center;
   color: rgb(0, 0, 0);
- 
+
   position: relative;
   overflow: hidden;
 }
