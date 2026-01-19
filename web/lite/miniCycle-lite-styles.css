@@ -4422,7 +4422,7 @@ body.dark-mode .navigation-dots button.dot:focus {
     -ms-flex-pack: center;
     justify-content: center;
     gap: 8px;
-    padding: 12px 24px;
+    padding: 12px 12px;
     background: #4ea1ff;
     border: 2px solid #3a5fcc;
     border-radius: 8px;
