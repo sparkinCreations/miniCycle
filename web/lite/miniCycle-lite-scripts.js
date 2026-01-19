@@ -1317,20 +1317,23 @@ function updateStats() {
     console.warn('⚠️ Cannot update stats - taskList not found');
     return;
   }
-  
+
   var stats = calculateTaskStats();
-  
+
   // ✅ Update basic stats
   updateStatElement('total-tasks', stats.total);
   updateStatElement('completed-tasks', stats.completed);
   updateStatElement('completion-rate', stats.completionRate + '%');
-  
+
+  // ✅ Update tasks cleared in To-Do mode
+  updateStatElement('todo-deleted-tasks', getToDoDeletedTasks());
+
   // ✅ Update progress badges
   updateProgressBadges(stats);
-  
+
   // ✅ Update cycles completed
   updateCyclesCompleted(stats);
-  
+
   console.log('📊 Stats updated:', stats);
 }
 
@@ -1515,31 +1518,66 @@ function incrementLifetimeCompletedTasks(count) {
   }
 }
 
+// ✅ NEW function to get tasks deleted via Complete All in To-Do mode
+function getToDoDeletedTasks() {
+  try {
+    var deletedCount = localStorage.getItem('miniCycleLiteToDoDeleted');
+    return deletedCount ? parseInt(deletedCount, 10) : 0;
+  } catch (e) {
+    console.warn('⚠️ Could not read to-do deleted tasks:', e);
+    return 0;
+  }
+}
+
+// ✅ NEW function to increment tasks deleted via Complete All in To-Do mode
+function incrementToDoDeletedTasks(count) {
+  count = count || 1;
+  try {
+    var currentDeleted = getToDoDeletedTasks();
+    var newDeleted = currentDeleted + count;
+    localStorage.setItem('miniCycleLiteToDoDeleted', newDeleted.toString());
+    console.log('🗑️ To-Do deleted tasks updated:', newDeleted);
+    return newDeleted;
+  } catch (e) {
+    console.warn('⚠️ Could not save to-do deleted tasks:', e);
+    return getToDoDeletedTasks();
+  }
+}
 
 // ✅ ENHANCED deleteCompletedTasks to handle lifetime stats properly
 function deleteCompletedTasks() {
   if (!taskList) return;
-  
+
   var taskItems = Array.prototype.slice.call(taskList.children); // Convert to array
   var deletedCount = 0;
-  
+
   // ✅ Remove completed tasks from DOM (lifetime stats already counted when tasks were completed)
   for (var i = 0; i < taskItems.length; i++) {
     var taskItem = taskItems[i];
     var checkbox = taskItem.querySelector("input[type='checkbox']");
-    
+
     if (checkbox && checkbox.checked) {
       taskList.removeChild(taskItem);
       deletedCount++;
     }
   }
-  
+
   console.log('🗑️ Deleted ' + deletedCount + ' completed tasks');
-  
+
+  // ✅ Track tasks deleted via Complete All in To-Do mode
+  if (deletedCount > 0) {
+    incrementToDoDeletedTasks(deletedCount);
+  }
+
+  // ✅ Show empty state if all tasks were deleted
+  if (taskList.children.length === 0) {
+    showEmptyState();
+  }
+
   updateProgressBar();
   checkCompleteAllButton();
   autoSave();
-  
+
   return deletedCount;
 }
 
