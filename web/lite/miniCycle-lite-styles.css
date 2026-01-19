@@ -85,7 +85,7 @@ html, body {
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90%;
-    max-width: 400px;
+    max-width: 550px;
     max-height: 550px; /* ✅ Fixed height for better performance */
     transition: all 0.3s ease; /* ✅ Simplified transition */
     display: flex;
@@ -138,19 +138,19 @@ html, body {
 /* ✅ Stats Panel - Same Visual Design */
 .stats-panel {
     position: fixed;
-    top: 54%;
+    top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     transition: all 0.3s ease;
-    width: 80%;
+    width: 85%;
     max-width: 400px;
     height: auto;
-    max-height: 450px;
-    overflow-y: auto;
+    max-height: none;
+    overflow-y: visible;
     color: black;
     background: rgba(255, 255, 255, 0.95);
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-    padding: 10px;
+    padding: 15px;
     border-radius: 15px;
     display: flex;
     flex-direction: column;
@@ -164,19 +164,19 @@ html, body {
 @media (max-width: 768px) {
 .stats-panel {
     position: fixed;
-    top: 54%;
+    top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     transition: all 0.3s ease;
-    width: 80%;
+    width: 90%;
     max-width: 400px;
     height: auto;
-    max-height: 280px;
-    overflow-y: auto;
+    max-height: 80vh;
+    overflow-y: visible;
     color: black;
     background: rgba(255, 255, 255, 0.95);
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-    padding: 10px;
+    padding: 15px;
     border-radius: 15px;
     display: flex;
     flex-direction: column;
@@ -2314,7 +2314,7 @@ body.dark-mode .edit-task-modal input[type="text"]:focus {
 
 /* ✅ UPDATED: Center the task container itself */
 .task-list-container {
-    max-width: 400px;
+    max-width: 520px;
     width: 100%;
     height: auto;
     max-height: 600px;
@@ -2350,7 +2350,7 @@ body.dark-mode .edit-task-modal input[type="text"]:focus {
     padding: 0;
     margin: 0;
     width: 100%;
-    max-width: 380px; /* ✅ Slightly smaller than container for centered look */
+    max-width: 500px; /* ✅ Slightly smaller than container for centered look */
     
     /* ✅ Center the tasks */
     display: -webkit-box;
@@ -3293,12 +3293,28 @@ body.dark-mode .options-menu .delete-btn:hover {
         margin: 20px;
         width: calc(100% - 40px);
     }
-    
+
+    .stats-panel {
+        width: 92%;
+        padding: 12px;
+        max-height: none;
+        overflow-y: visible;
+    }
+
     .stats-grid p {
         font-size: 13px;
         padding: 6px;
     }
-    
+
+    .badge-container {
+        margin: 10px 0;
+    }
+
+    .badge-container h3 {
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+
     .back-button {
         padding: 8px 16px;
         font-size: 13px;
@@ -4262,7 +4278,7 @@ body.dark-mode .navigation-dots button.dot:focus {
     justify-content: center;
     padding: 15px 10px;
     width: 100%;
-    max-width: 400px;
+    max-width: 520px;
     margin: 0 auto;
 }
 
@@ -4280,26 +4296,27 @@ body.dark-mode .navigation-dots button.dot:focus {
     -webkit-justify-content: center;
     -ms-flex-pack: center;
     justify-content: center;
-    gap: 6px;
-    padding: 10px 16px;
-    background: transparent;
-    border: none;
-    color: #666;
-    font-size: 14px;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #f5f7fa;
+    border: 1px solid #e0e4ea;
+    border-radius: 8px;
+    color: #555;
+    font-size: 15px;
     font-weight: 500;
     cursor: pointer;
-    transition: color 0.2s ease;
-    opacity: 0.8;
+    transition: all 0.2s ease;
 }
 
 .add-task-btn:hover,
 .add-task-btn:focus {
+    background: #eef1f6;
+    border-color: #4c79ff;
     color: #4c79ff;
-    opacity: 1;
 }
 
 .add-task-icon {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 600;
     line-height: 1;
 }
@@ -4565,11 +4582,15 @@ body.dark-mode .navigation-dots button.dot:focus {
 
 /* ✅ Dark mode for add task modal */
 body.dark-mode .add-task-btn {
-    color: #888;
+    background: #3a3a3a;
+    border-color: #555;
+    color: #aaa;
 }
 
 body.dark-mode .add-task-btn:hover,
 body.dark-mode .add-task-btn:focus {
+    background: #444;
+    border-color: #74c0fc;
     color: #74c0fc;
 }
 
