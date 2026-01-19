@@ -2883,7 +2883,7 @@ body.dark-mode .task.high-priority {
     right: 40px;
 
     /* ✅ Semi-transparent background so task content visible */
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(0, 0, 0, 0.498);
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 20px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
