@@ -1741,26 +1741,26 @@ document.addEventListener("touchstart", function(e) {
   
 
 
-  // ✅ REMOVE duplicate showTaskView function and keep only this one:
+  console.log('✅ Swipe support initialized');
+}
+
+// ✅ Global showTaskView function (must be outside setupBasicSwipe)
 function showTaskView() {
   var statsPanel = document.getElementById("stats-panel");
   var taskView = document.getElementById("task-view");
-  
+
   if (statsPanel && taskView) {
     // ✅ IE-compatible class management
     removeClass(statsPanel, 'show');
     addClass(statsPanel, 'hide');
     removeClass(taskView, 'hide');
     addClass(taskView, 'show');
-    
+
     updateNavigationState();
-         forceNavigationUpdate();
-    
+    forceNavigationUpdate();
+
     console.log('📝 Task view shown');
   }
-}
-
-  console.log('✅ Swipe support initialized'); 
 }
 
 // ✅ Add these missing functions to your script
