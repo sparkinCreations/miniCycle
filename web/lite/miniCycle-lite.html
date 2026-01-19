@@ -478,7 +478,6 @@ window.addEventListener('appinstalled', function () {
       <p role="listitem" data-tooltip="Total number of tasks you've created"><strong>Total Tasks:</strong> <span id="total-tasks" aria-live="polite">0</span></p>
       <p role="listitem" data-tooltip="Number of tasks you've completed"><strong>Completed Tasks:</strong> <span id="completed-tasks" aria-live="polite">0</span></p>
       <p role="listitem" data-tooltip="Percentage of tasks completed"><strong>Completion Rate:</strong> <span id="completion-rate" aria-live="polite">0%</span></p>
-      <p role="listitem" data-tooltip="Tasks cleared via Complete All in To-Do mode"><strong>Tasks Cleared:</strong> <span id="todo-deleted-tasks" aria-live="polite">0</span></p>
     </div>
     
     <div class="badge-container" role="region" aria-label="Achievement badges">
@@ -491,6 +490,10 @@ window.addEventListener('appinstalled', function () {
       </div>
     </div>
 
+
+
+    <p data-tooltip="Number of complete cycles you've finished"><strong>Cycles Completed:</strong> <span id="mini-cycle-count" aria-live="polite">0</span></p>
+
     <div class="badge-container" role="region" aria-label="Tasks cleared badges">
       <h3>🗑️ Tasks Cleared</h3>
       <div class="badges cleared-badges" role="list">
@@ -501,12 +504,15 @@ window.addEventListener('appinstalled', function () {
       </div>
     </div>
 
-    <p data-tooltip="Number of complete cycles you've finished"><strong>Cycles Completed:</strong> <span id="mini-cycle-count" aria-live="polite">0</span></p>
+     <p data-tooltip="Tasks cleared via Complete All in To-Do mode"><strong>Tasks Cleared:</strong> <span id="todo-deleted-tasks" aria-live="polite">0</span></p>
+
   </section>
 
   <!-- ✅ Navigation arrows with tooltips -->
   <button class="slide-arrow" id="slide-right" aria-label="View statistics" title="Swipe or click to view stats" tabindex="0" data-tooltip="Swipe right to view your statistics">→</button>
   <button class="slide-arrow" id="slide-left" aria-label="View tasks" title="Swipe or click to view tasks" tabindex="0" data-tooltip="Swipe left to view your tasks">←</button>
+
+
 </main>
 
 
