@@ -793,7 +793,7 @@ body.dark-mode .complete-all-btn:hover {
 }
 
 .header-logo {
-    height: 25px;
+    height: 35px;
     width: auto;
     border-radius: 6px;
     z-index: 1;
@@ -880,7 +880,7 @@ body.dark-mode .header-logo.task-completed-glow {
 }
 
 .app-name {
-    height: 35px;
+    height: 55px;
     width: auto;
     z-index: 1;
     -webkit-box-ordinal-group: 3;
