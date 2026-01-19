@@ -1890,7 +1890,7 @@ button.slide-arrow:hover {
 
 
 
-/* ✅ Missing Undo/Redo Button Styles */
+/* ✅ Undo/Redo Button Container */
 .undo-container {
     position: fixed;
     bottom: 60px;
@@ -1898,12 +1898,13 @@ button.slide-arrow:hover {
     -webkit-transform: translateX(-50%);
     -ms-transform: translateX(-50%);
     transform: translateX(-50%);
-    
+    z-index: 100;
+
     display: -webkit-box;
     display: -webkit-flex;
     display: -ms-flexbox;
-    display: none;
-    
+    display: flex;
+
     gap: 10px;
 }
 

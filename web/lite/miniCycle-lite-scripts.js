@@ -2779,23 +2779,24 @@ function saveUndoState(action) {
 
 function getCurrentTasksState() {
   if (!taskList) return [];
-  
+
   var tasks = [];
   var taskElements = taskList.children;
-  
+
   for (var i = 0; i < taskElements.length; i++) {
     var taskElement = taskElements[i];
     var taskText = taskElement.querySelector(".task-text");
     var checkbox = taskElement.querySelector("input[type='checkbox']");
-    
+
     if (taskText && checkbox) {
       tasks.push({
         text: taskText.textContent,
-        completed: checkbox.checked
+        completed: checkbox.checked,
+        highPriority: hasClass(taskElement, 'high-priority')
       });
     }
   }
-  
+
   return tasks;
 }
 
@@ -2893,18 +2894,26 @@ function performRedo() {
 
 function restoreTasksState(tasksData) {
   if (!taskList || !Array.isArray(tasksData)) return;
-  
+
   // Clear current tasks
   taskList.innerHTML = '';
-  
+
   // Restore tasks
   for (var i = 0; i < tasksData.length; i++) {
     var task = tasksData[i];
     if (task.text) {
-      addTask(task.text, task.completed, false); // Don't save during restore
+      // Pass highPriority as 5th argument (dueDate is 4th, pass null)
+      addTask(task.text, task.completed, false, null, task.highPriority);
     }
   }
-  
+
+  // Update empty state visibility
+  if (tasksData.length > 0) {
+    hideEmptyState();
+  } else {
+    showEmptyState();
+  }
+
   console.log('🔄 Restored', tasksData.length, 'tasks from state');
 }
 // ==========================================
