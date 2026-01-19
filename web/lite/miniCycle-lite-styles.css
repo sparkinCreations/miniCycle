@@ -2660,43 +2660,6 @@ body.dark-mode .edit-task-modal input[type="text"]:focus {
     flex-shrink: 0; /* ✅ Don't shrink the options */
 }
 
-/* ✅ Mobile responsive centering */
-@media (max-width: 768px) {
-    .task-list-container {
-        padding: 8px;
-        max-width: 100%;
-    }
-    
-    .task-list {
-        max-width: 95%;
-    }
-    
-    .task {
-        max-width: 100%;
-        padding: 10px 12px;
-        margin-bottom: 6px;
-    }
-    
-    .task-content {
-        gap: 10px;
-    }
-    
-    .task input[type="checkbox"] {
-        width: 22px;
-        height: 22px;
-    }
-}
-
-/* ✅ Very small screens */
-@media (max-width: 480px) {
-    .task {
-        padding: 8px 10px;
-    }
-    
-    .task-text {
-        font-size: 15px;
-    }
-}
 
 /* ✅ Empty state centering */
 .empty-state {
