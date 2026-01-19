@@ -1,8 +1,9 @@
 # Mode Manager Architecture
 
 > **Complete guide to miniCycle's mode management system**
+>
+> **For current app version, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
-**Version**: 1.811
 **Last Updated**: January 18, 2026
 **Module**: `modules/routine/modeManager.js` (633 lines)
 **Pattern**: Resilient Constructor 🛡️
