@@ -331,6 +331,9 @@ window.addEventListener('appinstalled', function () {
 
 </head>
 <body>
+<!-- ✅ Skip Link for Keyboard Navigation -->
+<a href="#taskList" class="skip-link" tabindex="0">Skip to task list</a>
+
 <!-- Initial App Loader -->
 <div id="app-loader">
   <img src="../assets/images/logo/minicycle_logo_icon.png" alt="Loading..." class="loader-logo">
@@ -348,11 +351,13 @@ window.addEventListener('appinstalled', function () {
 <!-- ✅ Header with tooltips -->
 <header class="mini-cycle-header-row">
   <div class="mode-selector-container">
-    <select id="mode-selector" class="mode-selector" data-tooltip="Choose how tasks behave when completed">
+    <label for="mode-selector" class="sr-only">Task completion mode</label>
+    <select id="mode-selector" class="mode-selector" data-tooltip="Choose how tasks behave when completed" aria-describedby="mode-selector-desc">
       <option value="auto-cycle">Auto Cycle ↻</option>
       <option value="manual-cycle">Manual Cycle ✔︎↻</option>
       <option value="todo-mode">To-Do Mode ✓</option>
     </select>
+    <span id="mode-selector-desc" class="sr-only">Auto Cycle resets tasks automatically, Manual Cycle requires button press, To-Do Mode deletes completed tasks</span>
   </div>
   <div class="header-branding">
     <img src="../assets/images/logo/logo.png" alt="miniCycle Logo" class="header-logo" onerror="this.style.display='none';">
@@ -363,6 +368,7 @@ window.addEventListener('appinstalled', function () {
 
 <!-- ✅ Mobile Mode Selector with tooltip -->
 <div class="mobile-mode-selector-wrapper">
+  <label for="mobile-mode-selector" class="sr-only">Task completion mode</label>
   <select id="mobile-mode-selector" class="mode-selector" data-tooltip="Choose your task completion mode">
     <option value="auto-cycle">Auto Cycle ↻</option>
     <option value="manual-cycle">Manual Cycle ✔︎↻</option>
@@ -433,12 +439,14 @@ window.addEventListener('appinstalled', function () {
       </button>
     </div>
     
-    <div id="mini-cycle-title" 
-         class="mini-cycle-title" 
+    <div id="mini-cycle-title"
+         class="mini-cycle-title"
          contenteditable="true"
          role="textbox"
-         aria-label="Task list title"
+         aria-label="Task list title - editable"
+         aria-multiline="false"
          spellcheck="true"
+         tabindex="0"
          data-tooltip="Click to edit the title of your task list">My Tasks</div>
     
     <div class="task-list-container" role="region" aria-label="Task list">
@@ -474,37 +482,47 @@ window.addEventListener('appinstalled', function () {
   <!-- ✅ Stats panel with tooltips -->
   <section id="stats-panel" class="stats-panel" role="region" aria-label="Statistics">
     <h2>📊 Stats</h2>
+
+    <!-- ✅ Overview Stats Card -->
     <div class="stats-grid" role="list">
-      <p role="listitem" data-tooltip="Total number of tasks you've created"><strong>Total Tasks:</strong> <span id="total-tasks" aria-live="polite">0</span></p>
-      <p role="listitem" data-tooltip="Number of tasks you've completed"><strong>Completed Tasks:</strong> <span id="completed-tasks" aria-live="polite">0</span></p>
-      <p role="listitem" data-tooltip="Percentage of tasks completed"><strong>Completion Rate:</strong> <span id="completion-rate" aria-live="polite">0%</span></p>
+      <p role="listitem" data-tooltip="Total number of tasks you've created"><strong>Total Tasks</strong> <span id="total-tasks" aria-live="polite">0</span></p>
+      <p role="listitem" data-tooltip="Number of tasks you've completed"><strong>Completed</strong> <span id="completed-tasks" aria-live="polite">0</span></p>
+      <p role="listitem" data-tooltip="Percentage of tasks completed"><strong>Completion Rate</strong> <span id="completion-rate" aria-live="polite">0%</span></p>
     </div>
-    
-    <div class="badge-container" role="region" aria-label="Achievement badges">
-      <h3>🏅 Cycle Progress</h3>
+
+    <!-- ✅ Cycle Progress Section -->
+    <div class="stats-section" role="region" aria-label="Cycle progress achievements">
+      <div class="stats-section-header">
+        <h3>🏅 Cycle Progress</h3>
+      </div>
       <div class="badges" role="list">
         <div class="badge" data-milestone="5" role="listitem" aria-label="5 cycles milestone" data-tooltip="Complete 5 cycles to earn this badge">5</div>
         <div class="badge" data-milestone="10" role="listitem" aria-label="10 cycles milestone" data-tooltip="Complete 10 cycles to earn this badge">10</div>
         <div class="badge" data-milestone="25" role="listitem" aria-label="25 cycles milestone" data-tooltip="Complete 25 cycles to earn this badge">25</div>
         <div class="badge" data-milestone="50" role="listitem" aria-label="50 cycles milestone" data-tooltip="Complete 50 cycles to earn this badge">50</div>
       </div>
+      <div class="stats-count" data-tooltip="Number of complete cycles you've finished">
+        <strong>Cycles Completed</strong>
+        <span id="mini-cycle-count" aria-live="polite">0</span>
+      </div>
     </div>
 
-
-
-    <p data-tooltip="Number of complete cycles you've finished"><strong>Cycles Completed:</strong> <span id="mini-cycle-count" aria-live="polite">0</span></p>
-
-    <div class="badge-container" role="region" aria-label="Tasks cleared badges">
-      <h3>🗑️ Tasks Cleared</h3>
+    <!-- ✅ Tasks Cleared Section -->
+    <div class="stats-section" role="region" aria-label="Tasks cleared achievements">
+      <div class="stats-section-header">
+        <h3>🗑️ Tasks Cleared</h3>
+      </div>
       <div class="badges cleared-badges" role="list">
         <div class="badge cleared-badge" data-cleared-milestone="10" role="listitem" aria-label="10 tasks cleared milestone" data-tooltip="Clear 10 tasks in To-Do mode to earn this badge">10</div>
         <div class="badge cleared-badge" data-cleared-milestone="25" role="listitem" aria-label="25 tasks cleared milestone" data-tooltip="Clear 25 tasks in To-Do mode to earn this badge">25</div>
         <div class="badge cleared-badge" data-cleared-milestone="50" role="listitem" aria-label="50 tasks cleared milestone" data-tooltip="Clear 50 tasks in To-Do mode to earn this badge">50</div>
         <div class="badge cleared-badge" data-cleared-milestone="100" role="listitem" aria-label="100 tasks cleared milestone" data-tooltip="Clear 100 tasks in To-Do mode to earn this badge">100</div>
       </div>
+      <div class="stats-count" data-tooltip="Tasks cleared via Clear Completed in To-Do mode">
+        <strong>Total Cleared</strong>
+        <span id="todo-deleted-tasks" aria-live="polite">0</span>
+      </div>
     </div>
-
-     <p data-tooltip="Tasks cleared via Complete All in To-Do mode"><strong>Tasks Cleared:</strong> <span id="todo-deleted-tasks" aria-live="polite">0</span></p>
 
   </section>
 
@@ -586,7 +604,7 @@ window.addEventListener('appinstalled', function () {
         <label for="feedback-text" class="sr-only">Your feedback</label>
         <textarea id="feedback-text" name="message" placeholder="Your feedback..." rows="4" required></textarea>
         <label for="feedback-email" class="sr-only">Email (optional)</label>
-        <input type="email" id="feedback-email" name="email" placeholder="Email (optional)">
+        <input type="email" id="feedback-email" name="email" placeholder="Email (optional)" autocomplete="email">
       </div>
       <div class="feedback-modal-footer">
         <button type="button" class="close-feedback-modal feedback-cancel-btn">Cancel</button>
