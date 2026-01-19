@@ -1,3 +1,8 @@
+## [1.830] - 2026-01-18
+- feat: update add task button styles for a more understated appearance and adjust toast position
+- feat: update app version to 1.829 across documentation, manifest, and styles
+
+
 ## [1.829] - 2026-01-18
 - feat: enhance task view and modal styles for improved usability
 - feat: update app version to 1.828 across documentation, manifest, and styles
