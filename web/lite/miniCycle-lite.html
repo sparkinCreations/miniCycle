@@ -737,6 +737,8 @@ setTimeout(function() {
   if (!computedStyle.content || computedStyle.content === 'none') {
     // FontAwesome didn't load, show fallback icons
     console.log('⚠️ FontAwesome not loaded, using emoji fallbacks');
+    // Add body class for CSS-based fallbacks (including dynamically created elements)
+    document.body.className = document.body.className + ' no-fontawesome';
     var faIcons = document.querySelectorAll('i.fas, i.far, i.fab');
     for (var i = 0; i < faIcons.length; i++) {
       faIcons[i].style.display = 'none';
