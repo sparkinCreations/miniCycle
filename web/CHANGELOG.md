@@ -1,3 +1,9 @@
+## [1.841] - 2026-01-19
+- feat: adjust button padding in dark mode for improved layout
+- feat: update app version to 1.840 across documentation, manifest, and styles
+- feat: update button background color in dark mode
+
+
 ## [1.840] - 2026-01-19
 - feat: update app version to 1.839 across documentation, manifest, and styles
 
