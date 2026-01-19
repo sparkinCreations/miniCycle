@@ -48,6 +48,10 @@ body {
     overflow: hidden;
     height: 100vh;
     padding-bottom: 20px; /* ✅ Safe area fallback */
+    /* ✅ Safe area insets for notched devices */
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
 }
 
 html, body {
@@ -665,7 +669,11 @@ body.dark-mode .complete-all-btn:hover {
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 12px;
-    padding: 20px 16px 8px 16px; /* ✅ Fixed padding */
+    /* ✅ Safe area inset for notched devices (iPhone X+, etc.) */
+    padding: 20px 16px 8px 16px; /* Fallback */
+    padding-top: calc(20px + env(safe-area-inset-top));
+    padding-left: calc(16px + env(safe-area-inset-left));
+    padding-right: calc(16px + env(safe-area-inset-right));
     background: #5680ff; /* ✅ Solid color fallback */
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 0;
