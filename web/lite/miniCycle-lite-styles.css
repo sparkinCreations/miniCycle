@@ -142,7 +142,7 @@ html, body {
 /* ✅ Stats Panel - Same Visual Design */
 .stats-panel {
     position: fixed;
-    top: 50%;
+    top: 52%;
     left: 50%;
     transform: translate(-50%, -50%);
     transition: all 0.3s ease;
