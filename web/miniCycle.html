@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.818">
+<meta name="app-version" content="1.819">
 
 <!-- Content Security Policy -->
 <meta http-equiv="Content-Security-Policy" content="
@@ -40,19 +40,19 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.818"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.819"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=1.818" as="style">
-<link rel="preload" href="styles/base/variables.css?v=1.818" as="style">
-<link rel="preload" href="styles/base/reset.css?v=1.818" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=1.818" as="style">
-<link rel="preload" href="styles/layout/header.css?v=1.818" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=1.818" as="style">
+<link rel="preload" href="styles/main.css?v=1.819" as="style">
+<link rel="preload" href="styles/base/variables.css?v=1.819" as="style">
+<link rel="preload" href="styles/base/reset.css?v=1.819" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=1.819" as="style">
+<link rel="preload" href="styles/layout/header.css?v=1.819" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=1.819" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=1.818" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="styles/main.css?v=1.818"></noscript>
+<link rel="stylesheet" href="styles/main.css?v=1.819" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="styles/main.css?v=1.819"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -63,7 +63,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.818"></script>
+<script src="./version.js?v=1.819"></script>
 
 <!-- Automatic cache clear on version change - BLOCKS further parsing if reload needed -->
 <script>
@@ -130,21 +130,21 @@
      3. Or accepting slightly slower initial load without preloads
      ═══════════════════════════════════════════════════════════════════════════ -->
 <!--
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.818">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.818">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.818">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.818">
-<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.818">
-<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.818">
-<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.818">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.818">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.818">
-<link rel="modulepreload" href="./modules/core/appInit.js?v=1.818">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.818">
-<link rel="modulepreload" href="./modules/core/diBase.js?v=1.818">
-<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.818">
-<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.818">
-<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.818">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.819">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.819">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.819">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.819">
+<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.819">
+<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.819">
+<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.819">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.819">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.819">
+<link rel="modulepreload" href="./modules/core/appInit.js?v=1.819">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.819">
+<link rel="modulepreload" href="./modules/core/diBase.js?v=1.819">
+<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.819">
+<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.819">
+<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.819">
 -->
 
 <style>
@@ -2683,7 +2683,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.818"></script>
+ <script type="module" src="miniCycle-main.js?v=1.819"></script>
 
 <script>
 // Sync About modal version with meta app-version
