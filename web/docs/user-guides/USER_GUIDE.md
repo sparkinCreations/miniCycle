@@ -865,7 +865,8 @@ We'd love to hear from you!
 ---
 
 **Last Updated:** January 18, 2026
-**Version:** 1.811+
 **Guide Version:** 2.1
+
+> **For current app version, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
 *Happy cycling! 🚴*

@@ -2,8 +2,9 @@
 
 > **Quick answers to common questions about miniCycle**
 
-**Last Updated:** January 2, 2026
-**Version:** 1.625+
+**Last Updated:** January 18, 2026
+
+> **For current version, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
 ---
 
@@ -118,15 +119,18 @@ Depends on your **mode**:
 **Auto Cycle Mode** (default):
 - Tasks automatically reset to unchecked
 - Cycle count increments
+- "Cycle Complete!" message displays
 - Ready to start again immediately
 
 **Manual Cycle Mode**:
 - "Complete Cycle" button appears
 - You click it to reset
+- "Cycle Complete!" message displays
 - Gives you time to review before resetting
 
 **To-Do Mode**:
 - Completed tasks are deleted
+- "🧹 X tasks cleared!" message displays
 - Works like a traditional to-do list
 
 ---
@@ -450,11 +454,16 @@ This keeps your data 100% under your control.
 
 **Yes!** miniCycle offers extensive customization options:
 
-**Personalization (Menu → Personalization):**
+**Quick Access Buttons:**
+- **Personalization (🖌️):** Bottom-left corner button opens color customization instantly
+- **Dark Mode (🌓):** Bottom-right corner button toggles dark/light theme
+
+**Personalization (Menu → Personalization or 🖌️ button):**
 - **Color Customization:** Change app background, header, task colors, and more
 - **Quick Presets:** Pre-built color themes (Ocean, Sunset, Forest, etc.)
 - **Save Presets:** Save and apply your custom color combinations
 - **Import/Export:** Share themes with others via JSON files
+- **Live Preview:** See color changes in real-time before applying
 
 **Background Options:**
 - **Background Pattern:** Toggle a subtle stationery pattern (pencils, notebooks, paperclips)
@@ -464,7 +473,7 @@ This keeps your data 100% under your control.
   - Tiled - repeats the image
 
 **Themes:**
-- **Dark Mode:** Toggle in Settings
+- **Dark Mode:** Toggle via 🌓 button or in Settings
 - **Achievement Themes:** Unlock special themes (Dark Ocean, Golden Glow) by reaching milestones
 
 ---
@@ -574,8 +583,7 @@ It has the core features (routines, three modes, cycle tracking) without advance
 
 ---
 
-**FAQ Version:** 2.0
-**Last Updated:** January 2, 2026
-**miniCycle Version:** 1.625+
+**FAQ Version:** 2.1
+**Last Updated:** January 18, 2026
 
 *Can't find your question? Check the [User Manual](../../legal/user-manual.html) or open a GitHub Issue!*

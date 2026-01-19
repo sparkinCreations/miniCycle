@@ -60,13 +60,13 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 
 ## Current Status ✅
 
-**v1.357 - November 2025**
+> **For current version and metrics, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
-- ✅ Modularization Complete (74.8% reduction, 103 modules)
-- ✅ 1,690+ Tests Passing (100%)
+**Core Features Complete:**
+
+- ✅ Modularization Complete (100+ modules)
+- ✅ Full Test Coverage (100% passing)
 - ✅ Task Options Customizer (per-cycle button visibility)
-- ✅ XSS Vulnerability Tests (25 tests)
-- ✅ Error Handler Tests (34 tests)
 - ✅ Schema 2.5 Stable
 - ✅ PWA Fully Functional
 - ✅ Recurring Tasks System
@@ -74,6 +74,7 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 - ✅ Drag & Drop System
 - ✅ Theme System (gamification)
 - ✅ Completed Tasks Dropdown
+- ✅ Quick Access Buttons (personalization 🖌️, dark mode 🌓)
 - ✅ Comprehensive Documentation
 
 **miniCycle is feature-complete for personal habit building.**
@@ -468,8 +469,8 @@ Professional features require ongoing development, support, and potentially infr
 
 ---
 
-**Roadmap Version:** 2.0 (Aligned with Business Plan)
-**Last Updated:** November 14, 2025
+**Roadmap Version:** 2.1
+**Last Updated:** January 18, 2026
 **Next Review:** March 2026
 
 *miniCycle: Forever free, forever focused on personal habit building.*

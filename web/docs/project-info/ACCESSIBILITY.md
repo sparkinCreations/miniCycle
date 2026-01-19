@@ -1,9 +1,10 @@
 # Accessibility Documentation
 
 > **Making miniCycle accessible to everyone**
+>
+> **For current app version, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
-**Version:** 1.389
-**Last Updated:** December 3, 2025
+**Last Updated:** January 18, 2026
 **WCAG Target:** 2.1 Level AA (In Progress)
 **Current Status:** Partial Implementation
 
@@ -99,6 +100,10 @@ checkbox.setAttribute("aria-checked", checkbox.checked);
 <!-- Buttons with labels -->
 <button aria-label="Edit task">✏️</button>
 <button aria-label="Delete task">🗑️</button>
+
+<!-- Quick Access Buttons (v1.811+) -->
+<button id="personalization-btn" aria-label="Personalization" title="Personalize colors">🖌️</button>
+<button id="quick-dark-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">🌓</button>
 ```
 
 ### Semantic HTML ✅
@@ -587,9 +592,8 @@ If you encounter accessibility barriers:
 
 ---
 
-**Accessibility Documentation Version:** 2.1 (Form Attributes Update)
-**Last Updated:** December 3, 2025
-**miniCycle Version:** 1.389
+**Accessibility Documentation Version:** 2.2 (Quick Access Buttons)
+**Last Updated:** January 18, 2026
 **WCAG Compliance:** Partial (In Progress)
 
 *We're committed to making miniCycle accessible to all users. This document honestly reflects our current progress and roadmap.*
