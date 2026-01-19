@@ -2464,6 +2464,7 @@ body.dark-mode .edit-task-modal input[type="text"]:focus {
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
+    z-index: 2999;
     
     /* ✅ Center the tasks within the container */
     display: -webkit-box;
