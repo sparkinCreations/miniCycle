@@ -168,7 +168,7 @@ html, body {
 @media (max-width: 768px) {
 .stats-panel {
     position: fixed;
-    top: 52%;
+    top: 55%;
     left: 50%;
     transform: translate(-50%, -50%);
     transition: all 0.3s ease;
