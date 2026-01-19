@@ -610,7 +610,7 @@ body.dark-mode .complete-all-btn:hover {
 
 /* ✅ Progress Bar */
 .progress-container {
-    width: 90%;
+    width: 80%;
     max-width: 500px;
     background: white;
     border-radius: 8px;
