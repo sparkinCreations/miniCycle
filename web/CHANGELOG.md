@@ -1,3 +1,8 @@
+## [1.837] - 2026-01-19
+- feat: implement lite toast notifications and enhance styles for better visibility
+- feat: update app version to 1.836 across documentation, manifest, and styles
+
+
 ## [1.836] - 2026-01-19
 - feat: enhance task state management and update undo/redo button styles
 - feat: update app version to 1.835 across documentation, manifest, and styles
