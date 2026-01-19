@@ -2416,17 +2416,17 @@ body.dark-mode .edit-task-modal input[type="text"]:focus {
 
 
 .options-menu .task-btn:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgb(200, 200, 200);
     color: #212529;
 }
 
-/* ✅ Specific button colors */
+/* ✅ Specific button colors - solid backgrounds */
 .options-menu .move-btn {
     color: #007bff;
 }
 
 .options-menu .move-btn:hover {
-    background: #e3f2fd;
+    background: rgb(179, 212, 252);
     color: #0056b3;
 }
 
@@ -2950,26 +2950,26 @@ body.dark-mode .task.high-priority {
 
 
 
-/* ✅ Button hover states - subtle dark background so emojis stay visible */
+/* ✅ Button hover states - slightly darker solid background */
 .options-menu .task-btn:hover {
-    background: rgba(0, 0, 0, 0.08);
+    background: rgb(200, 200, 200);
     transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
-/* ✅ Specific button colors - contrasting text for visibility */
+/* ✅ Specific button colors - solid backgrounds for visibility */
 .options-menu .move-btn:hover {
-    background: rgba(0, 123, 255, 0.15);
+    background: rgb(179, 212, 252);
     color: #0056b3;
 }
 
 .options-menu .edit-btn:hover {
-    background: rgba(255, 193, 7, 0.2);
+    background: rgb(255, 236, 179);
     color: #856404;
 }
 
 .options-menu .delete-btn:hover {
-    background: rgba(220, 53, 70, 0.15);
+    background: rgb(248, 194, 198);
     color: #a71d2a;
 }
 
@@ -3855,41 +3855,41 @@ body.dark-mode .lite-notification.error {
     }
 
 
-    /* ✅ Mobile button hover/active states - subtle bg so emojis stay visible */
+    /* ✅ Mobile button hover/active states - solid backgrounds */
     .options-menu .task-btn:hover,
     .options-menu .task-btn:active {
-        background: rgba(0, 0, 0, 0.08);
+        background: rgb(200, 200, 200);
         transform: scale(1.05);
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
 
-    /* ✅ Mobile-specific button colors - darker text for contrast */
+    /* ✅ Mobile-specific button colors - solid backgrounds */
     .options-menu .move-btn:hover,
     .options-menu .move-btn:active {
-        background: rgba(0, 123, 255, 0.15);
+        background: rgb(179, 212, 252);
         color: #0056b3;
-        border-color: rgba(0, 123, 255, 0.3);
+        border-color: rgb(128, 179, 255);
     }
 
     .options-menu .edit-btn:hover,
     .options-menu .edit-btn:active {
-        background: rgba(255, 193, 7, 0.2);
+        background: rgb(255, 236, 179);
         color: #856404;
-        border-color: rgba(255, 193, 7, 0.3);
+        border-color: rgb(255, 213, 102);
     }
 
     .options-menu .delete-btn:hover,
     .options-menu .delete-btn:active {
-        background: rgba(220, 53, 69, 0.15);
+        background: rgb(248, 194, 198);
         color: #a71d2a;
-        border-color: rgba(220, 53, 69, 0.3);
+        border-color: rgb(245, 150, 160);
     }
 
     .options-menu .priority-btn:hover,
     .options-menu .priority-btn:active {
-        background: rgba(253, 126, 20, 0.15);
+        background: rgb(255, 213, 179);
         color: #c35a00;
-        border-color: rgba(253, 126, 20, 0.3);
+        border-color: rgb(255, 179, 128);
     }
 
     .options-menu .priority-btn.active {
