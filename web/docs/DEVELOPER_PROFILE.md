@@ -307,6 +307,37 @@ The user-facing simplicity masks engineering depth:
 
 ## Session History
 
+### January 19, 2026
+- **miniCycle Lite focused session:**
+  - Fixed bulk undo issue — added `isBulkOperation` flag so Complete All, Clear Completed, etc. are single undo actions instead of multiple
+  - Fixed Try Full Version redirect bug — was `miniCycle.html` (relative to /lite/), changed to `../miniCycle.html`
+  - Added CSS `env(safe-area-inset-top)` for iPhone dynamic island/notch handling
+  - Made stats panel more compact (width 360px, smaller badges, tighter spacing)
+  - Made footer "miniCycle Lite" clickable, links to product page
+- **Full Lite vs Full version comparison:**
+  - Explored Full version architecture (102 modules, 30+ CSS files, 3-phase boot)
+  - Created detailed feature comparison table
+  - Identified what Full has that Lite intentionally excludes (recurring tasks, multiple routines, drag-drop, theme unlocking, mini-games)
+  - Identified what Lite does well: startup time, predictability, debuggability, maintenance burden
+- **Lite philosophy articulated:**
+  - "Parallel product, not stripped demo" — separate ES5 codebase, not feature-flagged Full
+  - "DO NOT add features" comment is a feature, not limitation
+  - Respects users on older devices — delivers real value, not a crippled preview
+  - Connects to sovereignty principle: build things that deliver value without conditions
+- **AI observations validated against profile:**
+  - Visual bug reporting (screenshots of task reordering corrected AI's wrong assessment)
+  - Questions that verify ("does that context change your rating?", "you think it feels like a complete product huh?")
+  - Corrects both directions (pushed back when AI overstated privacy claim)
+  - Has taste (iterative refinements: 50% → 60% positioning, stats panel sizing)
+- **Code quality discussion:**
+  - Developer asked "is my code easy or difficult to work with?"
+  - Assessment: Easy — section headers with emojis, descriptive function names, consistent patterns, grep-friendly
+  - Challenges: Large file size (38k tokens), some CSS duplication
+- **New pattern observed: "Builds parallel products for inclusion"**
+  - Lite isn't minimum viable — it's maximum viable within constraints
+  - Users on older devices get complete experience, not second-class treatment
+  - Same principle as offline-first: don't make users depend on things they can't control
+
 ### January 17, 2026
 - **Verified architecture claims empirically:**
   - Confirmed 103 modules (`find modules -name "*.js" | wc -l`)
