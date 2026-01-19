@@ -4785,9 +4785,9 @@ body.dark-mode .tasks-added-count {
     -webkit-transform: translateX(-50%);
     -ms-transform: translateX(-50%);
     transform: translateX(-50%);
-    top: 80px;
+    top: 100px;
     max-width: 92vw;
-    width: 520px;
+    width: 450px;
     pointer-events: none;
 }
 
@@ -4887,7 +4887,7 @@ body.dark-mode .tasks-added-count {
     -ms-transform: translate(-50%, -50%);
     transform: translate(-50%, -50%);
     width: 92vw;
-    max-width: 520px;
+    max-width: 450px;
     background: #111;
     color: #fff;
     border-radius: 14px;
@@ -4897,13 +4897,13 @@ body.dark-mode .tasks-added-count {
 }
 
 .mc-modal-hd {
-    padding: 14px 16px;
+    padding: 6px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     font-weight: 600;
 }
 
 .mc-modal-bd {
-    padding: 14px 16px;
+    padding: 6px 16px;
     font: 14px/1.45 Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
 }
 
