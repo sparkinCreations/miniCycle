@@ -849,7 +849,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     background:
         var(--preview-bg-image,
             var(--preview-pattern-bg,
-                var(--preview-app-bg, #4c79ff)));
+                var(--preview-app-bg, linear-gradient(135deg, #4c79ff, #74c0fc))));
     background-size: cover, 100px 100px, cover;
     background-position: center;
     transition: background 0.3s ease;
