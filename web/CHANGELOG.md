@@ -1,3 +1,9 @@
+## [1.844] - 2026-01-19
+- feat: reduce minimum height for complete all button and help window in default theme
+- feat: update notification system to use mc-toast and remove legacy lite-toast styles
+- feat: update app version to 1.843 and adjust related references across files
+
+
 ## [1.843] - 2026-01-19
 - feat: adjust padding for complete all button in default theme
 - feat: update app version to 1.842 across documentation, manifest, and styles
