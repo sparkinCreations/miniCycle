@@ -1,3 +1,7 @@
+## [1.834] - 2026-01-18
+- feat: update app version to 1.833 across documentation, manifest, and styles
+
+
 ## [1.833] - 2026-01-18
 - feat: add screen reader support and toast/modal styles for improved accessibility and user notifications
 - feat: update app version to 1.832 across documentation, manifest, and styles
