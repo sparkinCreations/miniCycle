@@ -1,6 +1,6 @@
 #!/bin/bash
 # update-version.sh - Enhanced Interactive Version Updater for miniCycle
-# Version: 5.1 - Added PROJECT_STATS.md auto-update (Jan 2026)
+# Version: 5.2 - Added --lite-only flag for independent lite version updates (Jan 2026)
 #
 # Features:
 #  - Generates version.js as single source of truth (using globalThis)
@@ -13,6 +13,7 @@
 #  - --auto flag for fully automated sequential version bumps
 #  - --changelog flag for auto-generated changelog from git commits
 #  - --lite flag for optional lite version updates
+#  - --lite-only flag for updating ONLY the lite version (independent of main app)
 #  - --dry-run flag to preview changes without writing
 
 # ============================================
@@ -29,6 +30,7 @@ AUTO_MODE=false
 AUTO_GIT_TAG=false
 AUTO_GIT_PUSH=false
 INCLUDE_LITE=false
+LITE_ONLY=false
 AUTO_CHANGELOG=false
 DRY_RUN=false
 
@@ -55,6 +57,11 @@ while [[ $# -gt 0 ]]; do
             INCLUDE_LITE=true
             shift
             ;;
+        --lite-only)
+            LITE_ONLY=true
+            INCLUDE_LITE=true  # LITE_ONLY implies INCLUDE_LITE
+            shift
+            ;;
         --changelog|-c)
             AUTO_CHANGELOG=true
             shift
@@ -64,7 +71,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help|-h)
-            echo "🎯 miniCycle Version Updater v5.1"
+            echo "🎯 miniCycle Version Updater v5.2"
             echo ""
             echo "Usage: ./update-version.sh [options]"
             echo ""
@@ -72,6 +79,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --auto, -a      Auto-bump versions and update all files (no prompts)"
             echo "  --changelog, -c Auto-generate changelog from git commits"
             echo "  --lite, -l      Include lite version files (normally static)"
+            echo "  --lite-only     Update ONLY lite version files (independent of main app)"
             echo "  --tag, -t       Auto-create git tag (use with --auto)"
             echo "  --push, -p      Auto-push tag to remote (implies --tag)"
             echo "  --dry-run, -n   Preview changes without writing any files"
@@ -86,6 +94,11 @@ while [[ $# -gt 0 ]]; do
             echo "  ./update-version.sh --auto --tag # Auto-bump + create tag"
             echo "  ./update-version.sh -a -c -t     # Auto-bump + changelog + tag"
             echo "  ./update-version.sh -a -p        # Auto-bump + tag + push"
+            echo ""
+            echo "Lite-only examples:"
+            echo "  ./update-version.sh --lite-only        # Update only lite version (interactive)"
+            echo "  ./update-version.sh --lite-only --auto # Auto-bump lite version only"
+            echo "  ./update-version.sh --lite-only -n     # Dry run lite-only update"
             echo ""
             exit 0
             ;;
@@ -102,14 +115,18 @@ done
 # ============================================
 
 if [ "$DRY_RUN" = true ]; then
-    echo "🔍 miniCycle Version Updater v5.1 (DRY RUN MODE)"
+    echo "🔍 miniCycle Version Updater v5.2 (DRY RUN MODE)"
     echo "================================================="
     echo "⚠️  No files will be modified - preview only"
+elif [ "$LITE_ONLY" = true ]; then
+    echo "📱 miniCycle Version Updater v5.2 (LITE ONLY MODE)"
+    echo "=================================================="
+    echo "⚠️  Only lite version files will be updated"
 elif [ "$AUTO_MODE" = true ]; then
-    echo "🤖 miniCycle Version Updater v5.1 (AUTO MODE)"
+    echo "🤖 miniCycle Version Updater v5.2 (AUTO MODE)"
     echo "=============================================="
 else
-    echo "🎯 miniCycle Version Updater v5.1"
+    echo "🎯 miniCycle Version Updater v5.2"
     echo "================================="
 fi
 echo ""
@@ -154,12 +171,17 @@ PACKAGE_FILES=(
 # INFO MESSAGES
 # ============================================
 
-echo "ℹ️  Module files use DI for versioning (no updates needed)"
-echo "ℹ️  Debug markers derive from globalThis.APP_VERSION at runtime"
-if [ "$INCLUDE_LITE" = true ]; then
-    echo "📱 Lite version files INCLUDED (--lite flag)"
+if [ "$LITE_ONLY" = true ]; then
+    echo "📱 LITE ONLY MODE: Only updating lite version files"
+    echo "   Main app files will NOT be modified"
 else
-    echo "📱 Lite version files excluded (use --lite to include)"
+    echo "ℹ️  Module files use DI for versioning (no updates needed)"
+    echo "ℹ️  Debug markers derive from globalThis.APP_VERSION at runtime"
+    if [ "$INCLUDE_LITE" = true ]; then
+        echo "📱 Lite version files INCLUDED (--lite flag)"
+    else
+        echo "📱 Lite version files excluded (use --lite to include)"
+    fi
 fi
 echo ""
 
@@ -231,19 +253,59 @@ fi
 # GET CURRENT VERSIONS
 # ============================================
 
-CURRENT_VERSION=$(grep -oE "APP_VERSION = '[^']*'" version.js 2>/dev/null | sed -E "s/.*'([^']*)'.*/\1/" || echo "")
-CURRENT_CACHE_VERSION=$(grep -oE "CACHE_VERSION = [0-9]+" version.js 2>/dev/null | sed -E "s/.*= ([0-9]+).*/\1/" || echo "")
+if [ "$LITE_ONLY" = true ]; then
+    # Read lite version from lite HTML file (using ?v= parameter)
+    CURRENT_LITE_VERSION=$(grep -oE 'miniCycle-lite-styles\.css\?v=[0-9.]+' lite/miniCycle-lite.html 2>/dev/null | sed -E 's/.*\?v=([0-9.]+).*/\1/' | head -1 || echo "")
 
-echo "📊 Current versions (from version.js):"
-echo "   App version: ${CURRENT_VERSION:-"Not set"}"
-echo "   Cache version: ${CURRENT_CACHE_VERSION:-"Not set"}"
-echo ""
+    echo "📊 Current lite version (from lite/miniCycle-lite.html):"
+    echo "   Lite version: ${CURRENT_LITE_VERSION:-"Not set"}"
+    echo ""
+else
+    CURRENT_VERSION=$(grep -oE "APP_VERSION = '[^']*'" version.js 2>/dev/null | sed -E "s/.*'([^']*)'.*/\1/" || echo "")
+    CURRENT_CACHE_VERSION=$(grep -oE "CACHE_VERSION = [0-9]+" version.js 2>/dev/null | sed -E "s/.*= ([0-9]+).*/\1/" || echo "")
+
+    echo "📊 Current versions (from version.js):"
+    echo "   App version: ${CURRENT_VERSION:-"Not set"}"
+    echo "   Cache version: ${CURRENT_CACHE_VERSION:-"Not set"}"
+    echo ""
+fi
 
 # ============================================
 # GET NEW VERSION
 # ============================================
 
-if [ "$AUTO_MODE" = true ]; then
+if [ "$LITE_ONLY" = true ]; then
+    # LITE ONLY MODE - separate version handling
+    if [ "$AUTO_MODE" = true ]; then
+        # Auto-bump lite version
+        if [[ "$CURRENT_LITE_VERSION" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+            MAJOR="${BASH_REMATCH[1]}"
+            MINOR="${BASH_REMATCH[2]}"
+            NEW_MINOR=$((MINOR + 1))
+            NEW_LITE_VERSION="${MAJOR}.${NEW_MINOR}"
+        else
+            echo "❌ Cannot parse current lite version for auto-bump: $CURRENT_LITE_VERSION"
+            exit 1
+        fi
+
+        echo "🤖 Auto-calculated new lite version:"
+        echo "   Lite version: $CURRENT_LITE_VERSION → $NEW_LITE_VERSION"
+        echo ""
+    else
+        # Interactive mode for lite
+        read -p "🔢 Enter new lite version (e.g., 2.0): " NEW_LITE_VERSION
+
+        # Validate input
+        if [[ ! "$NEW_LITE_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid version format. Use format like 2.0"
+            exit 1
+        fi
+    fi
+
+    # Lite mode doesn't use cache version, set placeholder
+    NEW_CACHE_VERSION="N/A"
+    NEW_VERSION="$NEW_LITE_VERSION"  # Use NEW_VERSION for consistency in later logic
+elif [ "$AUTO_MODE" = true ]; then
     # Auto-bump app version (increment by 1)
     if [[ "$CURRENT_VERSION" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
         MAJOR="${BASH_REMATCH[1]}"
@@ -315,7 +377,24 @@ FILES_TO_UPDATE=""
 # MODE HANDLING
 # ============================================
 
-if [ "$UPDATE_MODE" == "1" ]; then
+if [ "$LITE_ONLY" = true ]; then
+    # LITE ONLY MODE - skip mode selection, just update lite files
+    echo ""
+    echo "📱 LITE ONLY MODE: Updating lite version files"
+    UPDATE_MODE="1"  # Set to "all" mode for file marking
+
+    # Only mark lite files for update
+    for file in "${LITE_HTML_FILES[@]}"; do
+        FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
+    done
+    for file in "${LITE_JS_FILES[@]}"; do
+        FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
+    done
+    for file in "${LITE_MANIFEST_FILES[@]}"; do
+        FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
+    done
+
+elif [ "$UPDATE_MODE" == "1" ]; then
     echo ""
     if [ "$INCLUDE_LITE" = true ]; then
         echo "📦 Mode: Update ALL files (including lite version)"
@@ -558,20 +637,25 @@ do_sed() {
 # STAGE 1: GENERATE version.js (Single Source of Truth)
 # ============================================
 
-echo "📝 Stage 1: Generating version.js..."
-
-if [ "$DRY_RUN" = true ]; then
-    echo "   Would generate version.js with:"
-    echo "   - globalThis.APP_VERSION = '$NEW_VERSION'"
-    echo "   - globalThis.CACHE_VERSION = $NEW_CACHE_VERSION"
+if [ "$LITE_ONLY" = true ]; then
+    echo "📝 Stage 1: Skipping version.js (LITE ONLY mode)"
+    echo "   Lite version has its own independent versioning"
+    echo ""
 else
-    # Backup existing version.js
-    if [ -f "version.js" ]; then
-        backup_file "version.js"
-    fi
+    echo "📝 Stage 1: Generating version.js..."
 
-    # Generate new version.js using globalThis (cleaner, works everywhere)
-    cat > "version.js" << EOF
+    if [ "$DRY_RUN" = true ]; then
+        echo "   Would generate version.js with:"
+        echo "   - globalThis.APP_VERSION = '$NEW_VERSION'"
+        echo "   - globalThis.CACHE_VERSION = $NEW_CACHE_VERSION"
+    else
+        # Backup existing version.js
+        if [ -f "version.js" ]; then
+            backup_file "version.js"
+        fi
+
+        # Generate new version.js using globalThis (cleaner, works everywhere)
+        cat > "version.js" << EOF
 // Version file - Auto-generated by update-version.sh
 // Single source of truth for all version info
 
@@ -583,18 +667,24 @@ globalThis.CACHE_VERSION = $NEW_CACHE_VERSION;
 // No separate version constants needed - true single source of truth
 EOF
 
-    echo "✅ Generated version.js (app: $NEW_VERSION, cache: $NEW_CACHE_VERSION)"
+        echo "✅ Generated version.js (app: $NEW_VERSION, cache: $NEW_CACHE_VERSION)"
+    fi
+    echo ""
 fi
-echo ""
 
 # ============================================
 # STAGE 2: UPDATE HTML FILES
 # ============================================
 
-echo "📝 Stage 2: Updating HTML files..."
+if [ "$LITE_ONLY" = true ]; then
+    echo "📝 Stage 2: Updating lite HTML files..."
+else
+    echo "📝 Stage 2: Updating HTML files..."
+fi
 STAGE2_SUCCESS=true
 
-if should_update "miniCycle.html"; then
+# Main app HTML (skipped in LITE_ONLY mode)
+if [ "$LITE_ONLY" = false ] && should_update "miniCycle.html"; then
     if [ "$DRY_RUN" = true ]; then
         echo "   Would update: miniCycle.html"
     elif backup_file "miniCycle.html"; then
@@ -610,6 +700,7 @@ if should_update "miniCycle.html"; then
     fi
 fi
 
+# Lite HTML
 if should_update "lite/miniCycle-lite.html"; then
     if [ "$DRY_RUN" = true ]; then
         echo "   Would update: lite/miniCycle-lite.html"
@@ -625,7 +716,8 @@ if should_update "lite/miniCycle-lite.html"; then
     fi
 fi
 
-if should_update "pages/product.html"; then
+# Product HTML (skipped in LITE_ONLY mode)
+if [ "$LITE_ONLY" = false ] && should_update "pages/product.html"; then
     if [ "$DRY_RUN" = true ]; then
         echo "   Would update: pages/product.html"
     elif backup_file "pages/product.html"; then
@@ -649,28 +741,33 @@ echo ""
 # STAGE 3: UPDATE CSS @IMPORT VERSIONS
 # ============================================
 
-echo "📝 Stage 3: Updating CSS @import versions..."
-STAGE3_SUCCESS=true
-
-if should_update "styles/main.css"; then
-    if [ "$DRY_RUN" = true ]; then
-        echo "   Would update: styles/main.css (@import ?v= parameters)"
-    elif backup_file "styles/main.css"; then
-        # Update all ?v=X.XXX parameters in @import statements
-        do_sed "styles/main.css" 's/\.css?v=[0-9.]\{1,\}/.css?v='"$NEW_VERSION"'/g'
-        echo "✅ Updated styles/main.css (@import versions)"
-    else
-        echo "⚠️  Failed to update styles/main.css"
-        STAGE3_SUCCESS=false
-    fi
-fi
-
-if [ "$STAGE3_SUCCESS" = true ]; then
-    echo "✅ Stage 3 complete"
+if [ "$LITE_ONLY" = true ]; then
+    echo "📝 Stage 3: Skipping main CSS (LITE ONLY mode)"
+    echo ""
 else
-    echo "⚠️  Stage 3 completed with warnings"
+    echo "📝 Stage 3: Updating CSS @import versions..."
+    STAGE3_SUCCESS=true
+
+    if should_update "styles/main.css"; then
+        if [ "$DRY_RUN" = true ]; then
+            echo "   Would update: styles/main.css (@import ?v= parameters)"
+        elif backup_file "styles/main.css"; then
+            # Update all ?v=X.XXX parameters in @import statements
+            do_sed "styles/main.css" 's/\.css?v=[0-9.]\{1,\}/.css?v='"$NEW_VERSION"'/g'
+            echo "✅ Updated styles/main.css (@import versions)"
+        else
+            echo "⚠️  Failed to update styles/main.css"
+            STAGE3_SUCCESS=false
+        fi
+    fi
+
+    if [ "$STAGE3_SUCCESS" = true ]; then
+        echo "✅ Stage 3 complete"
+    else
+        echo "⚠️  Stage 3 completed with warnings"
+    fi
+    echo ""
 fi
-echo ""
 
 # ============================================
 # STAGE 4: UPDATE LITE JS (if applicable)
@@ -693,10 +790,15 @@ fi
 # STAGE 5: UPDATE MANIFESTS & PACKAGE
 # ============================================
 
-echo "📝 Stage 5: Updating manifests & package.json..."
+if [ "$LITE_ONLY" = true ]; then
+    echo "📝 Stage 5: Updating lite manifest..."
+else
+    echo "📝 Stage 5: Updating manifests & package.json..."
+fi
 STAGE5_SUCCESS=true
 
-if should_update "manifest.json"; then
+# Main manifest (skipped in LITE_ONLY mode)
+if [ "$LITE_ONLY" = false ] && should_update "manifest.json"; then
     if [ "$DRY_RUN" = true ]; then
         echo "   Would update: manifest.json"
     elif backup_file "manifest.json"; then
@@ -707,6 +809,7 @@ if should_update "manifest.json"; then
     fi
 fi
 
+# Lite manifest
 if should_update "manifest-lite.json"; then
     if [ "$DRY_RUN" = true ]; then
         echo "   Would update: manifest-lite.json"
@@ -718,7 +821,8 @@ if should_update "manifest-lite.json"; then
     fi
 fi
 
-if should_update "package.json"; then
+# Package.json (skipped in LITE_ONLY mode)
+if [ "$LITE_ONLY" = false ] && should_update "package.json"; then
     if [ "$DRY_RUN" = true ]; then
         echo "   Would update: package.json"
     elif backup_file "package.json"; then
@@ -740,40 +844,45 @@ echo ""
 # STAGE 5B: UPDATE PROJECT_STATS.md
 # ============================================
 
-echo "📝 Stage 5B: Updating PROJECT_STATS.md..."
-STAGE5B_SUCCESS=true
+if [ "$LITE_ONLY" = true ]; then
+    echo "📝 Stage 5B: Skipping PROJECT_STATS.md (LITE ONLY mode)"
+    echo ""
+else
+    echo "📝 Stage 5B: Updating PROJECT_STATS.md..."
+    STAGE5B_SUCCESS=true
 
-PROJECT_STATS_FILE="docs/PROJECT_STATS.md"
+    PROJECT_STATS_FILE="docs/PROJECT_STATS.md"
 
-if [ -f "$PROJECT_STATS_FILE" ]; then
-    if [ "$DRY_RUN" = true ]; then
-        echo "   Would update: $PROJECT_STATS_FILE (version → $NEW_VERSION)"
-    elif backup_file "$PROJECT_STATS_FILE"; then
-        # Update the version line in the metrics table
-        do_sed "$PROJECT_STATS_FILE" "s/| \*\*App Version\*\* | [0-9.]* |/| **App Version** | $NEW_VERSION |/g"
-        echo "✅ Updated $PROJECT_STATS_FILE"
+    if [ -f "$PROJECT_STATS_FILE" ]; then
+        if [ "$DRY_RUN" = true ]; then
+            echo "   Would update: $PROJECT_STATS_FILE (version → $NEW_VERSION)"
+        elif backup_file "$PROJECT_STATS_FILE"; then
+            # Update the version line in the metrics table
+            do_sed "$PROJECT_STATS_FILE" "s/| \*\*App Version\*\* | [0-9.]* |/| **App Version** | $NEW_VERSION |/g"
+            echo "✅ Updated $PROJECT_STATS_FILE"
+        else
+            echo "⚠️  Failed to update $PROJECT_STATS_FILE"
+            STAGE5B_SUCCESS=false
+        fi
     else
-        echo "⚠️  Failed to update $PROJECT_STATS_FILE"
-        STAGE5B_SUCCESS=false
+        echo "ℹ️  $PROJECT_STATS_FILE not found (skipping)"
     fi
-else
-    echo "ℹ️  $PROJECT_STATS_FILE not found (skipping)"
+
+    if [ "$STAGE5B_SUCCESS" = true ]; then
+        echo "✅ Stage 5B complete"
+    else
+        echo "⚠️  Stage 5B completed with warnings"
+    fi
+    echo ""
+
+    # ============================================
+    # NOTE: Debug markers now derive from globalThis
+    # ============================================
+
+    echo "ℹ️  Debug markers (APPCONTEXT_VERSION, CONSTANTS_VERSION, DIBASE_VERSION)"
+    echo "   now derive from globalThis.APP_VERSION at runtime - no script updates needed"
+    echo ""
 fi
-
-if [ "$STAGE5B_SUCCESS" = true ]; then
-    echo "✅ Stage 5B complete"
-else
-    echo "⚠️  Stage 5B completed with warnings"
-fi
-echo ""
-
-# ============================================
-# NOTE: Debug markers now derive from globalThis
-# ============================================
-
-echo "ℹ️  Debug markers (APPCONTEXT_VERSION, CONSTANTS_VERSION, DIBASE_VERSION)"
-echo "   now derive from globalThis.APP_VERSION at runtime - no script updates needed"
-echo ""
 
 # ============================================
 # STAGE 6: GENERATE RESTORE SCRIPT
@@ -855,35 +964,56 @@ if [ "$DRY_RUN" = false ]; then
     echo "📝 Stage 7: Validating updated files..."
     VALIDATION_ERRORS=0
 
-    # Validate version.js
-    if [ -f "version.js" ]; then
-        if ! grep -q "globalThis.APP_VERSION = '$NEW_VERSION'" version.js; then
-            echo "⚠️  Warning: version.js APP_VERSION may not have generated correctly"
-            VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
-        elif ! grep -q "globalThis.CACHE_VERSION = $NEW_CACHE_VERSION" version.js; then
-            echo "⚠️  Warning: version.js CACHE_VERSION may not have generated correctly"
-            VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
-        else
-            echo "✅ version.js validated"
+    if [ "$LITE_ONLY" = true ]; then
+        # Validate lite files only
+        if should_update "lite/miniCycle-lite.html" && [ -f "lite/miniCycle-lite.html" ]; then
+            if ! grep -q "?v=$NEW_VERSION" lite/miniCycle-lite.html; then
+                echo "⚠️  Warning: lite/miniCycle-lite.html may not have updated correctly"
+                VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+            else
+                echo "✅ lite/miniCycle-lite.html validated"
+            fi
+        fi
+
+        if should_update "manifest-lite.json" && [ -f "manifest-lite.json" ]; then
+            if ! grep -q "\"version\": \"$NEW_VERSION\"" manifest-lite.json; then
+                echo "⚠️  Warning: manifest-lite.json may not have updated correctly"
+                VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+            else
+                echo "✅ manifest-lite.json validated"
+            fi
         fi
     else
-        echo "❌ Error: version.js was not generated"
-        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
-    fi
-
-    # Validate HTML files
-    if should_update "miniCycle.html" && [ -f "miniCycle.html" ]; then
-        if ! grep -q "content=\"$NEW_VERSION\"" miniCycle.html; then
-            echo "⚠️  Warning: miniCycle.html may not have updated correctly"
+        # Validate version.js
+        if [ -f "version.js" ]; then
+            if ! grep -q "globalThis.APP_VERSION = '$NEW_VERSION'" version.js; then
+                echo "⚠️  Warning: version.js APP_VERSION may not have generated correctly"
+                VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+            elif ! grep -q "globalThis.CACHE_VERSION = $NEW_CACHE_VERSION" version.js; then
+                echo "⚠️  Warning: version.js CACHE_VERSION may not have generated correctly"
+                VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+            else
+                echo "✅ version.js validated"
+            fi
+        else
+            echo "❌ Error: version.js was not generated"
             VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
         fi
-    fi
 
-    # Validate manifests
-    if should_update "manifest.json" && [ -f "manifest.json" ]; then
-        if ! grep -q "\"version\": \"$NEW_VERSION\"" manifest.json; then
-            echo "⚠️  Warning: manifest.json may not have updated correctly"
-            VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+        # Validate HTML files
+        if should_update "miniCycle.html" && [ -f "miniCycle.html" ]; then
+            if ! grep -q "content=\"$NEW_VERSION\"" miniCycle.html; then
+                echo "⚠️  Warning: miniCycle.html may not have updated correctly"
+                VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+            fi
+        fi
+
+        # Validate manifests
+        if should_update "manifest.json" && [ -f "manifest.json" ]; then
+            if ! grep -q "\"version\": \"$NEW_VERSION\"" manifest.json; then
+                echo "⚠️  Warning: manifest.json may not have updated correctly"
+                VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+            fi
         fi
     fi
 
@@ -905,14 +1035,20 @@ echo ""
 echo "════════════════════════════════════════"
 if [ "$DRY_RUN" = true ]; then
     echo "🔍 DRY RUN COMPLETE - No files were modified"
+elif [ "$LITE_ONLY" = true ]; then
+    echo "✅ LITE VERSION UPDATE COMPLETE"
 else
     echo "✅ CORE FILE UPDATES COMPLETE"
 fi
 echo "════════════════════════════════════════"
 echo ""
 echo "📊 Summary:"
-echo "   App version: $NEW_VERSION"
-echo "   Cache version: $NEW_CACHE_VERSION"
+if [ "$LITE_ONLY" = true ]; then
+    echo "   Lite version: $NEW_VERSION"
+else
+    echo "   App version: $NEW_VERSION"
+    echo "   Cache version: $NEW_CACHE_VERSION"
+fi
 if [ "$DRY_RUN" = false ]; then
     echo "   Files updated: $TOTAL_FILES"
     echo "   Backup location: $BACKUP_FOLDER"
@@ -933,7 +1069,9 @@ echo "📝 Optional: Changelog"
 echo "----------------------"
 
 UPDATE_CHANGELOG=false
-if [ "$AUTO_MODE" = true ]; then
+if [ "$LITE_ONLY" = true ]; then
+    echo "⏭️  Skipping changelog (LITE ONLY mode)"
+elif [ "$AUTO_MODE" = true ]; then
     if [ "$AUTO_CHANGELOG" = true ]; then
         UPDATE_CHANGELOG=true
         echo "🤖 Auto mode: Generating changelog..."
@@ -1003,7 +1141,9 @@ echo "🏷️  Optional: Git Tag"
 echo "---------------------"
 
 CREATE_TAG=false
-if [ "$AUTO_MODE" = true ]; then
+if [ "$LITE_ONLY" = true ]; then
+    echo "⏭️  Skipping git tag (LITE ONLY mode)"
+elif [ "$AUTO_MODE" = true ]; then
     if [ "$AUTO_GIT_TAG" = true ]; then
         CREATE_TAG=true
         echo "🤖 Auto mode: Creating git tag..."
