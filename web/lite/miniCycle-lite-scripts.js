@@ -38,7 +38,7 @@
 //   • Theme unlocks, Gamification, Import/export, Advanced settings
 //
 // Last meaningful update: v1.480 (intentionally static thereafter)
-// © 2025 sparkinCreations - https://sparkincreations.com
+// © 2026 sparkinCreations - https://sparkincreations.com
 // ================================================================================
 
 // ✅ Global Variables
@@ -85,7 +85,7 @@ console.log('📱 miniCycle Lite Mode Activated for maximum compatibility!');
 
 
 
-var currentVersion = '1.598'; 
+var currentVersion = '2.0'; 
 
 // ✅ ADD version display function
 function showVersionInfo() {
@@ -2524,7 +2524,7 @@ function handleTryFullVersion() {
     return; // User cancelled
   }
 
-  var currentVersion = '1.598';
+  var currentVersion = '2.0';
 
   // Show confirmation
   showNotification(
