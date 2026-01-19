@@ -3715,10 +3715,10 @@ body.dark-mode .lite-notification.error {
 }
 
 /* ✅ Responsive Design */
-@media (max-width: 600px) {
+@media (max-width: 800px) {
     .complete-all-and-help-window-container {
-        margin-bottom: 10px;
-        gap: 10px;
+        margin-bottom: 5px;
+        gap: 5px;
     }
     
     .help-window {
