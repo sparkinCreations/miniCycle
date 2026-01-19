@@ -1,3 +1,11 @@
+## [1.818] - 2026-01-18
+- feat: update dark mode button styles for improved visibility
+
+
+## [1.817] - 2026-01-18
+- feat: update app version to 1.816 across documentation, manifest, and styles
+
+
 ## [1.816] - 2026-01-18
 - feat: add message display for cleared tasks in help window
 
