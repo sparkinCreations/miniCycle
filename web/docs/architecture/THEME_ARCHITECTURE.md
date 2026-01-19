@@ -754,6 +754,78 @@ themes/
 
 ---
 
+## Recent Updates (January 2026)
+
+### Dark Mode Improvements (v1.811)
+
+Dark mode now has refined styling for better visual consistency:
+
+**Button Styling:**
+- **Clear Completed Tasks button**: Uses muted dark blue (`#1e3a5f`) instead of bright blue
+- **Header icons** (+ and folder buttons): Now white in dark mode for visibility
+
+**CSS Location:** `styles/utilities/dark-mode.css`
+
+```css
+/* Muted button color in dark mode */
+.dark-mode .complete-all-btn.todo-mode-btn {
+    background: #1e3a5f;
+}
+
+/* White icons in dark mode */
+body.dark-mode .quick-actions-btn svg,
+body.dark-mode .routine-switcher-btn svg {
+    fill: #ffffff;
+    stroke: #ffffff;
+}
+```
+
+### iOS Status Bar Integration (v1.811)
+
+The app now properly integrates with iOS PWA status bar:
+
+**Behavior:**
+- **Loading**: Black status bar during app load
+- **Default**: Blue (`#4c79ff`) matching the gradient
+- **Dark mode or custom backgrounds**: Black status bar
+
+**Technical Implementation:**
+- Uses `black-translucent` status bar style
+- Body `background-color` set synchronously in inline CSS (iOS requirement)
+- `updateThemeColor()` dynamically updates body background-color
+
+**Key Files:**
+- `miniCycle.html` - Inline CSS sets initial background-color
+- `features/themeManager.js` - `updateThemeColor()` function
+- `boot/uiBoot.js` - Calls `updateThemeColor()` after load completes
+
+### Live Preview Improvements (v1.811)
+
+The personalization modal's live preview now accurately represents the app:
+
+**Changes:**
+- Preview section shows **blue gradient by default** (not white)
+- Background updates **dynamically** when user changes app background color
+- Uses CSS variable `--preview-section-bg` for real-time updates
+
+**CSS Location:** `styles/components/modals.css`
+
+```css
+.preferences-preview-section {
+    background: var(--preview-section-bg, linear-gradient(135deg, #4c79ff, #74c0fc));
+}
+```
+
+### Quick Access Personalization Button (v1.811)
+
+New 🖌️ brush icon button in bottom-left corner for quick access to personalization:
+
+**Rationale:** The blue gradient is a bold design choice. The button signals to new users that they can customize the app immediately without hunting through menus.
+
+**Mirror Design:** Positioned opposite the 🌓 dark mode toggle in the bottom-right corner.
+
+---
+
 ## Checklist: Implementing This System
 
 - [ ] Create `themes/` directory structure
@@ -771,4 +843,4 @@ themes/
 ---
 
 **Maintainer**: Update schema when adding themeable properties
-**Last Updated**: 2024-11-09
+**Last Updated**: January 18, 2026

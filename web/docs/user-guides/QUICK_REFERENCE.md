@@ -1,6 +1,6 @@
 # miniCycle Developer - Quick Reference
 
-**Last Updated**: January 13, 2026
+**Last Updated**: January 18, 2026
 **Modularization**: ✅ COMPLETE
 
 > **For current version, test counts, and metrics, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
@@ -396,7 +396,16 @@ refreshUIFromState()
 // Update components
 updateProgressBar()
 updateStatsPanel()
+
+// Theme color (iOS status bar)
+updateThemeColor()  // Updates meta tags and body background-color
 ```
+
+### Quick Access Buttons (Bottom Corners)
+| Button | Location | Action | ID |
+|--------|----------|--------|-----|
+| 🖌️ Personalization | Bottom-left | Opens preferences modal | `#personalization-btn` |
+| 🌓 Dark Mode | Bottom-right | Toggles dark/light mode | `#quick-dark-toggle` |
 
 ### Undo/Redo
 

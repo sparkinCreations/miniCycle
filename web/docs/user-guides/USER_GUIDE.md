@@ -2,7 +2,7 @@
 
 > **Complete guide to using miniCycle for task management and routine building**
 
-**Last Updated:** January 13, 2026
+**Last Updated:** January 18, 2026
 **For:** End Users (Non-Technical)
 
 > See [PROJECT_STATS.md](../PROJECT_STATS.md) for current version.
@@ -64,6 +64,11 @@ miniCycle is a **routine-building task manager** that helps you establish consis
 2. Click browser menu → "Install miniCycle" or "Add to Home Screen"
 3. Launch from your desktop/home screen like a native app
 4. Works offline!
+
+**iOS Users:** When installed as a PWA, the status bar seamlessly matches the app:
+- **During loading:** Status bar appears black
+- **Default view:** Status bar matches the blue gradient
+- **Dark mode or custom backgrounds:** Status bar turns black for a clean look
 
 ### First Launch
 
@@ -298,6 +303,8 @@ miniCycle has **three operational modes** to match different workflows. **Mode c
 
 **How it works:**
 - Completed tasks are **deleted** (not reset)
+- Click **"Clear Completed Tasks"** button to remove all checked tasks
+- A **"🧹 X tasks cleared!"** message confirms the action
 - Best for: One-time tasks, traditional to-do lists
 
 **Example:** Project tasks that won't repeat.
@@ -306,6 +313,7 @@ miniCycle has **three operational modes** to match different workflows. **Mode c
 - ✅ Familiar to-do list behavior
 - ✅ List empties as you complete
 - ✅ Good for one-time projects
+- ✅ Visual feedback when tasks are cleared
 
 **Cons:**
 - ⚠️ Tasks don't repeat (defeats cycling concept)
@@ -514,6 +522,8 @@ Access via **Menu → Settings**. Settings are organized into collapsible sectio
 - Show Move Arrows - Toggle task reorder arrows
 - Show Three Dots Menu - Toggle task options menu
 - Dark Mode - Switch between light and dark themes
+  - Quick toggle: Tap the **🌓 moon icon** in the bottom-right corner
+  - Dark mode features refined styling with muted button colors and white icons
 
 **Behavior Settings:**
 - Organize Completed Tasks - Move completed tasks to dropdown
@@ -541,8 +551,22 @@ Customize colors and visual appearance of miniCycle to match your preferences.
 
 ### Accessing Personalization
 
+**Quick Access (Recommended):**
+- Tap the **🖌️ brush icon** in the bottom-left corner of the app
+- Opens personalization modal directly - no menu needed!
+
+**Via Menu:**
 1. Click **Menu (☰)** → **Personalization**
 2. The Personalization modal opens with color options
+
+**Why the quick access button?** miniCycle's blue gradient is a bold design choice. The brush icon gives new users immediate reassurance they can customize the app to their taste.
+
+### Live Preview
+
+The personalization modal includes a **live preview** at the top that shows exactly how your app will look:
+- Displays the **blue gradient by default** (matching the actual app appearance)
+- Updates in **real-time** as you change colors
+- Shows sample tasks so you can see text readability
 
 ### Color Options
 
@@ -840,8 +864,8 @@ We'd love to hear from you!
 
 ---
 
-**Last Updated:** January 13, 2026
-**Version:** 1.729+
-**Guide Version:** 2.0
+**Last Updated:** January 18, 2026
+**Version:** 1.811+
+**Guide Version:** 2.1
 
 *Happy cycling! 🚴*
