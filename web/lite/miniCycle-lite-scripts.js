@@ -2808,7 +2808,7 @@ function setupMenuButtons() {
   var deleteAllBtn = document.getElementById('delete-all-mini-cycle-tasks');
   if (deleteAllBtn) {
     deleteAllBtn.addEventListener('click', function() {
-      if (confirm('Delete all tasks? This cannot be undone.')) {
+      if (confirm('Are you sure you want to delete all tasks?')) {
         deleteAllTasks();
         closeMenu();
       }
@@ -2819,7 +2819,7 @@ function setupMenuButtons() {
   var clearCompletedBtn = document.getElementById('clear-mini-cycle-tasks');
   if (clearCompletedBtn) {
     clearCompletedBtn.addEventListener('click', function() {
-      if (confirm('Clear all completed tasks? This cannot be undone.')) {
+      if (confirm('Are you sure you want to uncheck all completed tasks?')) {
         clearCompletedTasks();
         closeMenu();
       }
