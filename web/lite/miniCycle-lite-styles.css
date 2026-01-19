@@ -121,7 +121,7 @@ html, body {
 /* ✅ Extra small screens (phones in portrait) */
 @media (max-width: 480px) {
     #task-view {
-        top: calc(50% + env(safe-area-inset-top, 0px)); /* ✅ Adds extra space for notch/dynamic island */
+        top: calc(60% + env(safe-area-inset-top, 0px)); /* ✅ Adds extra space for notch/dynamic island */
         width: 95%;
         max-height: 68%; /* ✅ Fixed height for better performance */
         padding-bottom: 100px;
@@ -130,7 +130,7 @@ html, body {
 /* ✅ Extra small screens (phones in portrait) */
 @media (max-width: 768px) {
     #task-view {
-        top: calc(50% + env(safe-area-inset-top, 0px)); /* ✅ Adds extra space for notch/dynamic island */
+        top: calc(60% + env(safe-area-inset-top, 0px)); /* ✅ Adds extra space for notch/dynamic island */
         width: 95%;
         max-height: 68%; /* ✅ Fixed height for better performance */
         padding-bottom: 100px;
@@ -146,16 +146,16 @@ html, body {
     left: 50%;
     transform: translate(-50%, -50%);
     transition: all 0.3s ease;
-    width: 94%;
-    max-width: 520px;
+    width: 85%;
+    max-width: 360px;
     height: auto;
-    max-height: 80vh;
+    max-height: 70vh;
     overflow-y: auto;
     color: black;
     background: rgba(255, 255, 255, 0.95);
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-    padding: 12px 16px;
-    border-radius: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -172,16 +172,16 @@ html, body {
     left: 50%;
     transform: translate(-50%, -50%);
     transition: all 0.3s ease;
-    width: 94%;
-    max-width: 520px;
+    width: 85%;
+    max-width: 340px;
     height: auto;
-    max-height: 75vh;
+    max-height: 65vh;
     overflow-y: auto;
     color: black;
     background: rgba(255, 255, 255, 0.95);
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-    padding: 10px 14px;
-    border-radius: 12px;
+    padding: 8px 10px;
+    border-radius: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -198,8 +198,8 @@ html, body {
 }
 
 #stats-panel h2 {
-    margin: 0 0 10px 0;
-    font-size: 18px;
+    margin: 0 0 6px 0;
+    font-size: 14px;
     font-weight: 700;
     text-align: center;
     color: #212529;
@@ -1662,34 +1662,34 @@ body.dark-mode .back-button:hover {
 
 /* ✅ Badge Container and Badges */
 .badge-container {
-    margin: 15px 0;
+    margin: 6px 0;
     text-align: center;
 }
 
 .badge-container h3 {
-    margin: 0 0 10px 0;
-    font-size: 16px;
+    margin: 0 0 4px 0;
+    font-size: 12px;
     color: inherit;
 }
 
 .badges {
     display: flex;
     justify-content: center;
-    gap: 10px;
+    gap: 6px;
     flex-wrap: wrap;
-    padding: 8px 0;
+    padding: 4px 0;
 }
 
 .badge {
-    width: 35px;
-    height: 35px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: #e9ecef;
     color: #495057;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 10px;
     font-weight: bold;
     border: 2px solid #dee2e6;
     transition: all 0.3s ease;
@@ -1784,21 +1784,21 @@ body.dark-mode .badge.celebrated {
 .stats-grid {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin-bottom: 12px;
-    padding: 8px;
+    gap: 2px;
+    margin-bottom: 6px;
+    padding: 4px;
     background: rgba(0, 0, 0, 0.03);
-    border-radius: 10px;
+    border-radius: 8px;
     border: 1px solid rgba(0, 0, 0, 0.06);
     width: 100%;
 }
 
 .stats-grid p {
     margin: 0;
-    padding: 8px 10px;
+    padding: 4px 8px;
     background: rgba(255, 255, 255, 0.7);
-    border-radius: 6px;
-    font-size: 13px;
+    border-radius: 4px;
+    font-size: 11px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1811,7 +1811,7 @@ body.dark-mode .badge.celebrated {
 .stats-grid p span {
     font-weight: 600;
     color: #212529;
-    font-size: 14px;
+    font-size: 12px;
 }
 
 body.dark-mode .stats-grid {
@@ -1834,10 +1834,10 @@ body.dark-mode .stats-grid p span {
 /* ✅ Stats Section Card - for badge containers */
 .stats-section {
     background: rgba(0, 0, 0, 0.03);
-    border-radius: 10px;
+    border-radius: 8px;
     border: 1px solid rgba(0, 0, 0, 0.06);
-    padding: 10px 12px;
-    margin-bottom: 10px;
+    padding: 6px 8px;
+    margin-bottom: 6px;
     width: 100%;
 }
 
@@ -1851,15 +1851,15 @@ body.dark-mode .stats-section {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    margin-bottom: 8px;
-    padding-bottom: 6px;
+    gap: 4px;
+    margin-bottom: 4px;
+    padding-bottom: 4px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .stats-section-header h3 {
     margin: 0;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     color: #343a40;
 }
@@ -1877,20 +1877,20 @@ body.dark-mode .stats-section-header h3 {
     display: flex;
     justify-content: center;
     align-items: baseline;
-    gap: 6px;
-    margin-top: 8px;
-    padding-top: 6px;
+    gap: 4px;
+    margin-top: 4px;
+    padding-top: 4px;
     border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .stats-count strong {
-    font-size: 12px;
+    font-size: 10px;
     color: #6c757d;
     font-weight: 500;
 }
 
 .stats-count span {
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 700;
     color: #212529;
 }
