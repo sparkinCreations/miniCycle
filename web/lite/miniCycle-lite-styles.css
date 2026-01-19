@@ -2416,7 +2416,7 @@ body.dark-mode .edit-task-modal input[type="text"]:focus {
 
 
 .options-menu .task-btn:hover {
-    background: #f8f9fa;
+    background: rgba(0, 0, 0, 0.1);
     color: #212529;
 }
 
