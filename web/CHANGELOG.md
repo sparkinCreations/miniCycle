@@ -1,3 +1,8 @@
+## [1.836] - 2026-01-19
+- feat: enhance task state management and update undo/redo button styles
+- feat: update app version to 1.835 across documentation, manifest, and styles
+
+
 ## [1.835] - 2026-01-19
 - feat: add feedback modal for user suggestions and bug reports
 - feat: update app version to 1.834 across documentation, manifest, and styles
