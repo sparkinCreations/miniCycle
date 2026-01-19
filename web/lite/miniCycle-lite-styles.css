@@ -2727,14 +2727,14 @@ body.dark-mode .priority-indicator {
     color: #ff6b6b;
 }
 
-/* ✅ High priority task styling - subtle background instead of border */
+/* ✅ High priority task styling - no background change, indicator is enough */
 .task.high-priority {
-    background: rgba(220, 53, 69, 0.05);
+    /* Exclamation mark indicator is the visual cue */
 }
 
 /* ✅ Dark mode high priority */
 body.dark-mode .task.high-priority {
-    background: rgba(255, 107, 107, 0.1);
+    /* Exclamation mark indicator is the visual cue */
 }
 
 /* ✅ Priority button styling */
@@ -2743,19 +2743,19 @@ body.dark-mode .task.high-priority {
 }
 
 .options-menu .priority-btn:hover {
-    background: rgb(220, 53, 70);
+    background: rgba(220, 53, 70, 0.15);
     color: #dc3545;
 }
 
 .options-menu .priority-btn.active {
-    color: #dc3545; /* Red when active */
-    background: rgba(220, 53, 70, 0.948);
+    color: #ffffff; /* White text for contrast */
+    background: #dc3545;
     font-weight: bold;
 }
 
 .options-menu .priority-btn.active:hover {
-    background: rgba(220, 53, 70, 0.946);
-    color: #c82333;
+    background: #c82333;
+    color: #ffffff;
 }
 
 /* ✅ Dark mode priority button */
@@ -2957,20 +2957,20 @@ body.dark-mode .task.high-priority {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
-/* ✅ Specific button colors to match full version */
+/* ✅ Specific button colors - contrasting text for visibility */
 .options-menu .move-btn:hover {
-    background: rgb(131, 191, 255);
-    color: #007bff;
+    background: rgba(0, 123, 255, 0.15);
+    color: #0056b3;
 }
 
 .options-menu .edit-btn:hover {
-    background: rgb(255, 193, 7);
-    color: #ffc107;
+    background: rgba(255, 193, 7, 0.2);
+    color: #856404;
 }
 
 .options-menu .delete-btn:hover {
-    background: rgb(220, 53, 70);
-    color: #dc3545;
+    background: rgba(220, 53, 70, 0.15);
+    color: #a71d2a;
 }
 
 
@@ -3736,10 +3736,6 @@ body.dark-mode .lite-notification.error {
 }
 
 @media (max-width: 480px) {
-    .task {
-        padding: 8px;
-        margin: 8px 0;
-    }
     
     .task-text {
         font-size: 14px;
@@ -3867,39 +3863,39 @@ body.dark-mode .lite-notification.error {
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
 
-    /* ✅ Mobile-specific button colors */
+    /* ✅ Mobile-specific button colors - darker text for contrast */
     .options-menu .move-btn:hover,
     .options-menu .move-btn:active {
         background: rgba(0, 123, 255, 0.15);
-        color: #007bff;
+        color: #0056b3;
         border-color: rgba(0, 123, 255, 0.3);
     }
 
     .options-menu .edit-btn:hover,
     .options-menu .edit-btn:active {
-        background: rgba(255, 193, 7, 0.15);
-        color: #ffc107;
+        background: rgba(255, 193, 7, 0.2);
+        color: #856404;
         border-color: rgba(255, 193, 7, 0.3);
     }
 
     .options-menu .delete-btn:hover,
     .options-menu .delete-btn:active {
         background: rgba(220, 53, 69, 0.15);
-        color: #dc3545;
+        color: #a71d2a;
         border-color: rgba(220, 53, 69, 0.3);
     }
 
     .options-menu .priority-btn:hover,
     .options-menu .priority-btn:active {
         background: rgba(253, 126, 20, 0.15);
-        color: #fd7e14;
+        color: #c35a00;
         border-color: rgba(253, 126, 20, 0.3);
     }
 
     .options-menu .priority-btn.active {
-        background: rgba(220, 53, 69, 0.2);
-        color: #dc3545;
-        border-color: rgba(220, 53, 69, 0.4);
+        background: #dc3545;
+        color: #ffffff;
+        border-color: #dc3545;
         font-weight: bold;
     }
 
