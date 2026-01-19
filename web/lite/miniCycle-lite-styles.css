@@ -121,19 +121,27 @@ html, body {
 /* ✅ Extra small screens (phones in portrait) */
 @media (max-width: 480px) {
     #task-view {
-        top: calc(50vh + env(safe-area-inset-top, 0px)); /* ✅ Adds extra space for notch/dynamic island */
+        top: 50%;
         width: 95%;
-        max-height: 68%; /* ✅ Fixed height for better performance */
+        max-height: 68%;
         padding-bottom: 100px;
     }
 }
-/* ✅ Extra small screens (phones in portrait) */
+
+/* ✅ Medium screens (tablets in portrait, large phones) */
 @media (max-width: 768px) {
     #task-view {
-        top: calc(50vh + env(safe-area-inset-top, 0px)); /* ✅ Adds extra space for notch/dynamic island */
+        top: 50%;
         width: 95%;
-        max-height: 68%; /* ✅ Fixed height for better performance */
+        max-height: 68%;
         padding-bottom: 100px;
+    }
+}
+
+/* ✅ iPhone-specific adjustments for notch/dynamic island */
+@media (max-width: 768px) {
+    body.is-iphone #task-view {
+        top: 55%; /* Extra offset for iPhone safe area */
     }
 }
 
