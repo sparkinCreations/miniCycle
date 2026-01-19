@@ -110,7 +110,13 @@ function showVersionInfo() {
 // ✅ MODIFY your DOMContentLoaded to include mobile overlay
 document.addEventListener('DOMContentLoaded', function() {
 console.log('🚀 Initializing miniCycle Lite v' + currentVersion + '...');
-  
+
+  // ✅ Detect iPhone for safe-area handling (notch/dynamic island)
+  if (/iPhone/.test(navigator.userAgent)) {
+    document.body.className += ' is-iphone';
+    console.log('📱 iPhone detected - applying safe-area adjustments');
+  }
+
   // ✅ Initialize element references with null checks
   initializeElements();
   
