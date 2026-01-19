@@ -85,12 +85,12 @@ html, body {
 /* ✅ Task View - Identical Layout */
 #task-view {
     position: fixed;
-    top: 325px;
+    top: 345px;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90%;
     max-width: 550px;
-    max-height: 70%; /* ✅ Fixed height for better performance */
+    max-height: 75%; /* ✅ Fixed height for better performance */
     transition: all 0.3s ease; /* ✅ Simplified transition */
     display: flex;
     flex-direction: column;
