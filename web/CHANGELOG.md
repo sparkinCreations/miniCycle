@@ -1,3 +1,8 @@
+## [1.845] - 2026-01-19
+- feat: reposition notifications in dark mode for better visibility
+- feat: update app version to 1.844 and adjust related references across files
+
+
 ## [1.844] - 2026-01-19
 - feat: reduce minimum height for complete all button and help window in default theme
 - feat: update notification system to use mc-toast and remove legacy lite-toast styles
