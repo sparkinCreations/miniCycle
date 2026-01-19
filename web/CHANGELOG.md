@@ -1,3 +1,8 @@
+## [1.824] - 2026-01-18
+- feat: update preview section background color in preferences manager
+- feat: update app version to 1.823 across documentation, manifest, and styles
+
+
 ## [1.823] - 2026-01-18
 - feat: update mini-modal button background to a gradient and improve text color for better visibility
 - feat: update app version to 1.822 across documentation, manifest, and styles
