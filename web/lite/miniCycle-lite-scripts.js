@@ -55,6 +55,7 @@ var undoStack = [];
 var redoStack = [];
 var UNDO_LIMIT = 4;
 var TASK_LIMIT = 100;
+var isBulkOperation = false; // Flag to prevent duplicate undo states during bulk actions
 
 // ✅ Core Element References (with null checks)
 var taskInput = null;
@@ -1540,8 +1541,10 @@ function updateClearedBadges() {
 function handleTaskCompletionChange(event) {
   var checkbox = event.target;
 
-  // ✅ Save undo state before changing completion
-  saveUndoState(checkbox.checked ? 'complete' : 'uncomplete');
+  // ✅ Save undo state before changing completion (skip if bulk operation)
+  if (!isBulkOperation) {
+    saveUndoState(checkbox.checked ? 'complete' : 'uncomplete');
+  }
 
   // ✅ If task was just completed (checked), trigger logo glow
   if (checkbox && checkbox.checked) {
@@ -2412,22 +2415,24 @@ function handleAddTask() {
 // ✅ MODIFY your handleCompleteAll function to trigger glow for multiple completions:
 function handleCompleteAll() {
   if (!taskList) return;
-  
+
+  // ✅ Set bulk operation flag - this is ONE undo action
+  isBulkOperation = true;
   saveUndoState('completeAll');
-  
+
   var totalTasks = taskList.children.length;
   var completedTasks = 0;
   var checkboxes = taskList.querySelectorAll("input[type='checkbox']");
-  
+
   // Count completed tasks
   for (var i = 0; i < checkboxes.length; i++) {
     if (checkboxes[i].checked) {
       completedTasks++;
     }
   }
-  
+
   var cycleMode = getCurrentCycleMode();
-  
+
   if (completedTasks === totalTasks && totalTasks > 0) {
     // ✅ All tasks are complete - trigger glow for cycle completion
     triggerLogoGlow();
@@ -2451,22 +2456,25 @@ function handleCompleteAll() {
           tasksToComplete++;
         }
       }
-      
+
       // ✅ Trigger glow if we completed tasks
       if (tasksToComplete > 0) {
         triggerLogoGlow();
         incrementLifetimeCompletedTasks(tasksToComplete);
       }
-      
+
       if (cycleMode !== 'auto' && cycleMode !== 'auto-cycle') {
         showNotification("All tasks completed! 🎉", "success");
       }
     }
   }
-  
+
   updateProgressBar();
   updateCompleteAllButtonText();
   autoSave();
+
+  // ✅ Reset bulk operation flag
+  isBulkOperation = false;
 }
 
 // ✅ CORRECTED handleAllTasksComplete function
@@ -2890,38 +2898,42 @@ function updateCurrentDate() {
 
 function clearCompletedTasks() {
   if (!taskList) return;
-  
+
   var taskItems = taskList.children;
   var uncheckedCount = 0;
-  
-  // ✅ Save undo state before clearing
+
+  // ✅ Set bulk operation flag - this is ONE undo action
+  isBulkOperation = true;
   saveUndoState('clearCompleted');
-  
+
   // ✅ Find all completed tasks and uncheck them
   for (var i = 0; i < taskItems.length; i++) {
     var taskItem = taskItems[i];
     var checkbox = taskItem.querySelector("input[type='checkbox']");
-    
+
     if (checkbox && checkbox.checked) {
       checkbox.checked = false; // ✅ Uncheck instead of delete
       uncheckedCount++;
-      
+
       // ✅ Trigger change event to update any listeners
       triggerEvent(checkbox, "change");
     }
   }
-  
+
+  // ✅ Reset bulk operation flag
+  isBulkOperation = false;
+
   // ✅ Update UI and save
   updateProgressBar();
   checkCompleteAllButton();
   autoSave();
-  
+
   if (uncheckedCount > 0) {
     showNotification('Unchecked ' + uncheckedCount + ' completed task' + (uncheckedCount === 1 ? '' : 's'), 'success');
   } else {
     showNotification('No completed tasks to clear', 'info');
   }
-  
+
   console.log('🔄 Unchecked ' + uncheckedCount + ' completed tasks');
 }
 // ==========================================
