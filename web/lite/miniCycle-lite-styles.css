@@ -606,9 +606,9 @@ body.dark-mode .complete-all-btn:hover {
     width: 90%;
     max-width: 500px;
     background: white;
-    border-radius: 10px;
-    height: 16px;
-    min-height: 16px;
+    border-radius: 8px;
+    height: 12px;
+    min-height: 12px;
     margin-top: 15px;
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
     overflow: hidden;
@@ -618,7 +618,7 @@ body.dark-mode .complete-all-btn:hover {
 .progress-bar {
     width: 0%;
     height: 100%;
-    min-height: 16px;
+    min-height: 12px;
     background: #82db8c;
     transition: width 0.3s ease;
 }
@@ -1401,6 +1401,136 @@ body.dark-mode .close-feedback-modal:hover {
     color: #e2e8f0;
 }
 
+/* ✅ Feedback Modal Overlay */
+.feedback-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    cursor: pointer;
+}
+
+/* ✅ Feedback Modal Header */
+.feedback-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.feedback-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #ffffff;
+}
+
+.feedback-modal-close {
+    position: static;
+    font-size: 24px;
+    font-weight: bold;
+    color: #ccc;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.feedback-modal-close:hover {
+    color: #fff;
+}
+
+/* ✅ Feedback Modal Body */
+.feedback-modal-body {
+    margin-bottom: 20px;
+}
+
+.feedback-modal-body p {
+    margin: 0 0 15px 0;
+    color: #e0e0e0;
+    font-size: 14px;
+    text-align: left;
+}
+
+/* ✅ Feedback Modal Footer */
+.feedback-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* ✅ Cancel Button */
+.feedback-cancel-btn {
+    background: transparent;
+    color: #ccc;
+    border: 1px solid #666;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.feedback-cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-color: #888;
+}
+
+/* ✅ Submit Button */
+.feedback-submit-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.feedback-submit-btn:hover {
+    background: #0056b3;
+}
+
+/* ✅ Dark Mode - Feedback Modal Structure */
+body.dark-mode .feedback-modal-header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .feedback-modal-header h3 {
+    color: #e2e8f0;
+}
+
+body.dark-mode .feedback-modal-close {
+    color: #a0aec0;
+}
+
+body.dark-mode .feedback-modal-close:hover {
+    color: #e2e8f0;
+}
+
+body.dark-mode .feedback-modal-body p {
+    color: #a0aec0;
+}
+
+body.dark-mode .feedback-cancel-btn {
+    color: #a0aec0;
+    border-color: #4a5568;
+}
+
+body.dark-mode .feedback-cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #e2e8f0;
+}
+
 .feedback-modal .modal-content {
     background: white;
     border-radius: 12px;
@@ -1458,15 +1588,6 @@ body.dark-mode .close-feedback-modal:hover {
 
 #submit-feedback:hover {
     background: #0056b3;
-}
-
-.close-feedback-modal {
-    background: #6c757d;
-    color: white;
-}
-
-.close-feedback-modal:hover {
-    background: #545b62;
 }
 
 /* ✅ Dark Mode for Feedback Modal */
@@ -4285,7 +4406,7 @@ body.dark-mode .navigation-dots button.dot:focus {
     margin: 0 auto;
 }
 
-/* ✅ Add Task Button (understated style) */
+/* ✅ Add Task Button (blue style) */
 .add-task-btn {
     display: -webkit-inline-box;
     display: -webkit-inline-flex;
@@ -4301,10 +4422,10 @@ body.dark-mode .navigation-dots button.dot:focus {
     justify-content: center;
     gap: 8px;
     padding: 12px 20px;
-    background: #6c757d;
-    border: 1px solid #e0e4ea;
+    background: #4c79ff;
+    border: 1px solid #4c79ff;
     border-radius: 8px;
-    color: #555;
+    color: white;
     font-size: 15px;
     font-weight: 500;
     cursor: pointer;
@@ -4313,9 +4434,9 @@ body.dark-mode .navigation-dots button.dot:focus {
 
 .add-task-btn:hover,
 .add-task-btn:focus {
-    background: #eef1f6;
-    border-color: #4c79ff;
-    color: #4c79ff;
+    background: #3a5fcc;
+    border-color: #3a5fcc;
+    color: white;
 }
 
 .add-task-icon {
@@ -4585,16 +4706,16 @@ body.dark-mode .navigation-dots button.dot:focus {
 
 /* ✅ Dark mode for add task modal */
 body.dark-mode .add-task-btn {
-    background: #3a3a3a;
-    border-color: #555;
-    color: #aaa;
+    background: #4c79ff;
+    border-color: #4c79ff;
+    color: white;
 }
 
 body.dark-mode .add-task-btn:hover,
 body.dark-mode .add-task-btn:focus {
-    background: #444;
-    border-color: #74c0fc;
-    color: #74c0fc;
+    background: #3a5fcc;
+    border-color: #3a5fcc;
+    color: white;
 }
 
 body.dark-mode .add-task-modal-content {

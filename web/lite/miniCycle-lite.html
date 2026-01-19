@@ -243,31 +243,6 @@ function checkServiceWorkerStatus(registration) {
     });
   }
 
-  // Try Full Version button → force full via URL param (SW honors offline)
-  document.addEventListener('DOMContentLoaded', function () {
-    var tryFullVersionBtn = document.getElementById('try-full-version');
-    if (tryFullVersionBtn) {
-      tryFullVersionBtn.addEventListener('click', function () {
-        var ok = window.confirm(
-          '🚀 Switch to Full Version?\n\n' +
-          'The full version has more features but may be slower on older devices.\n\n' +
-          'Your tasks will be preserved. Continue?'
-        );
-        if (!ok) return;
-        try {
-          localStorage.setItem('miniCycleForceFullVersion', 'true');
-        } catch (e) {}
-        var cacheBuster = '?mode=full&from=lite&v=' + new Date().getTime();
-        if (typeof showNotification === 'function') {
-          showNotification('🚀 Switching to full version...', 'info', 2000);
-        }
-        setTimeout(function () {
-          window.location.href = '../miniCycle.html' + cacheBuster;
-        }, 1000);
-      });
-    }
-  });
-
   // Foreground check → optional message to SW (only if you implement it)
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && navigator.serviceWorker && navigator.serviceWorker.controller) {
@@ -544,6 +519,33 @@ window.addEventListener('appinstalled', function () {
     <div class="add-task-modal-footer">
       <span id="tasks-added-count" class="tasks-added-count"></span>
       <button id="done-adding-tasks" class="done-adding-btn">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Feedback Modal -->
+<div id="feedback-modal" class="feedback-modal" role="dialog" aria-modal="true" aria-labelledby="feedback-modal-title" style="display: none;">
+  <div class="feedback-modal-overlay close-feedback-modal"></div>
+  <div class="feedback-modal-content">
+    <div class="feedback-modal-header">
+      <h3 id="feedback-modal-title">💬 Send Feedback</h3>
+      <button class="close-feedback-modal feedback-modal-close" aria-label="Close">&times;</button>
+    </div>
+    <form id="feedback-form" action="https://formspree.io/f/xpwzgkpd" method="POST">
+      <div class="feedback-modal-body">
+        <p>Help us improve miniCycle Lite! Share your thoughts, report bugs, or suggest features.</p>
+        <label for="feedback-text" class="sr-only">Your feedback</label>
+        <textarea id="feedback-text" name="message" placeholder="Your feedback..." rows="4" required></textarea>
+        <label for="feedback-email" class="sr-only">Email (optional)</label>
+        <input type="email" id="feedback-email" name="email" placeholder="Email (optional)">
+      </div>
+      <div class="feedback-modal-footer">
+        <button type="button" class="close-feedback-modal feedback-cancel-btn">Cancel</button>
+        <button type="submit" id="submit-feedback" class="feedback-submit-btn">Submit</button>
+      </div>
+    </form>
+    <div id="thank-you-message" style="display: none; text-align: center; padding: 20px;">
+      ✅ Thank you for your feedback!
     </div>
   </div>
 </div>

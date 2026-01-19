@@ -1064,10 +1064,10 @@ function toggleTaskPriority(taskItem) {
     console.error('❌ No task item provided to toggleTaskPriority');
     return;
   }
-  
+
   var isHighPriority = hasClass(taskItem, 'high-priority');
   var priorityBtn = taskItem.querySelector('.priority-btn');
-  
+
   if (isHighPriority) {
     // ✅ Remove high priority
     removeClass(taskItem, 'high-priority');
@@ -1077,6 +1077,7 @@ function toggleTaskPriority(taskItem) {
       removeClass(priorityBtn, 'active');
     }
     console.log('📝 Task priority removed');
+    showNotification('Priority removed', 'info');
   } else {
     // ✅ Add high priority
     addClass(taskItem, 'high-priority');
@@ -1086,8 +1087,9 @@ function toggleTaskPriority(taskItem) {
       addClass(priorityBtn, 'active');
     }
     console.log('⚠️ Task marked as high priority');
+    showNotification('Marked as high priority', 'warning');
   }
-  
+
   // ✅ Save changes
   autoSave();
 }
@@ -1864,24 +1866,27 @@ function sanitizeInput(input) {
 
 function deleteTask(taskItem) {
   if (!taskItem || !taskList) return;
-  
+
+  // ✅ Confirm before deleting
+  if (!confirm('Delete this task?')) {
+    return;
+  }
+
   // Save state for undo
   saveUndoState('delete');
-  
+
   // Remove from DOM
   taskList.removeChild(taskItem);
-  
+
   // Update UI
   updateProgressBar();
   checkCompleteAllButton();
   autoSave();
-  
+
   // ✅ ADD: Show empty state if no tasks remain
   if (taskList.children.length === 0) {
     setTimeout(showEmptyState, 100); // Small delay to ensure DOM is updated
   }
-  
-
 
   showNotification("Task deleted", "info");
 }
@@ -2501,17 +2506,26 @@ function setupTryFullVersionButton() {
 
 // ✅ UPDATED handleTryFullVersion function
 function handleTryFullVersion() {
+  // ✅ Confirm before switching
+  var ok = window.confirm(
+    '🚀 Switch to Full Version?\n\n' +
+    'The full version has more features but may be slower on older devices.\n\n' +
+    'Your tasks will be preserved. Continue?'
+  );
+
+  if (!ok) {
+    return; // User cancelled
+  }
+
   var currentVersion = '1.598';
-  
+
   // Show confirmation
   showNotification(
-    '🚀 Switching to Full Version...<br>' +
-    '⚠️ Note: Full version may be slower on older devices.<br>' +
-    'Only full version files will be cleared from cache.',
-    'warning',
-    5000
+    '🚀 Switching to Full Version...',
+    'info',
+    3000
   );
-  
+
   // Set localStorage flag to override device detection
   localStorage.setItem('miniCycleForceFullVersion', 'true');
   localStorage.setItem('miniCycleShouldUseLite_' + currentVersion, 'false');
