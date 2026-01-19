@@ -43,9 +43,9 @@
 
     # Content Security Policy - permissive for vanilla JS architecture
     # - 'unsafe-inline' required for inline scripts (no build step)
-    # - Self-hosted fonts (no external font requests)
+    # - cdnjs.cloudflare.com for Font Awesome (lite version)
     # - Web3Forms and Formspree for feedback form submissions
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://api.web3forms.com https://formspree.io; form-action 'self' https://api.web3forms.com https://formspree.io; manifest-src 'self'; worker-src 'self'; base-uri 'self'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: blob:; connect-src 'self' https://api.web3forms.com https://formspree.io; form-action 'self' https://api.web3forms.com https://formspree.io; manifest-src 'self'; worker-src 'self'; base-uri 'self'"
 
     # Permissions Policy - restrict sensitive APIs
     Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=()"
