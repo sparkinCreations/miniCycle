@@ -470,6 +470,10 @@ export function hideAppLoader() {
         appLoader.style.display = 'none';
         // Signal successful load via dataset (HTML checks this instead of window.*)
         document.documentElement.dataset.appLoaded = 'true';
+
+        // Update iOS status bar color now that loading is complete
+        // (starts black during load, switches to theme color after)
+        _appContextMod?.getUiApi?.()?.updateThemeColor?.();
       }, 500);
     }
   }, 500);
