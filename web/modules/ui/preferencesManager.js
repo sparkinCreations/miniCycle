@@ -559,11 +559,18 @@ export class PreferencesManager {
             return;
         }
 
-        // Open preferences button
+        // Open preferences button (from menu)
         const openBtn = document.getElementById('open-preferences');
         if (openBtn) {
             openBtn._clickHandler = () => this.openModal();
             safeAdd(openBtn, 'click', openBtn._clickHandler);
+        }
+
+        // Personalization button (quick access in header)
+        const personalizationBtn = document.getElementById('personalization-btn');
+        if (personalizationBtn) {
+            personalizationBtn._clickHandler = () => this.openModal();
+            safeAdd(personalizationBtn, 'click', personalizationBtn._clickHandler);
         }
 
         // Close button
