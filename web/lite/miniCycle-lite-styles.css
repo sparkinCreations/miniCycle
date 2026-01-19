@@ -4432,6 +4432,8 @@ body.dark-mode .navigation-dots button.dot:focus {
     outline: none;
     transition: border-color 0.2s;
     -webkit-appearance: none;
+    background: #ffffff;
+    color: #222222;
 }
 
 .modal-task-input:focus {

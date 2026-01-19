@@ -3712,7 +3712,7 @@ function closeAddTaskModal(addTasks) {
     }
 
     // ✅ Save after all tasks added
-    saveMiniCycle();
+    autoSave();
 
     // ✅ Show success notification
     var count = pendingModalTasks.length;
