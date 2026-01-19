@@ -2884,7 +2884,7 @@ body.dark-mode .task.high-priority {
     border: none;
     border-radius: 0;
     box-shadow: none;
-    z-index: 3000 !important;
+    z-index: 3000;
     
     /* ✅ Horizontal layout */
     min-width: auto;
@@ -2928,6 +2928,7 @@ body.dark-mode .task.high-priority {
     justify-content: center;
     padding: 1px;
      margin: 0 2px;
+     z-index: 3000;
      
 
     display: -webkit-box;
