@@ -1,3 +1,9 @@
+## [1.829] - 2026-01-18
+- feat: enhance task view and modal styles for improved usability
+- feat: update app version to 1.828 across documentation, manifest, and styles
+- feat: replace save function with autoSave in task modal and update button styles for better visibility
+
+
 ## [1.828] - 2026-01-18
 - feat: update app version to 1.827 across documentation, manifest, and styles
 - feat: implement add task modal system and enhance task management features
