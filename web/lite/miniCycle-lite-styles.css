@@ -26,7 +26,7 @@
      • Fixed values instead of calc() where possible
      • CSS variable fallbacks for IE11
 
-   Last meaningful update: v2.043 (intentionally static thereafter)
+   Last meaningful update: v2.044 (intentionally static thereafter)
    © 2026 sparkinCreations - https://sparkincreations.com
    ================================================================================ */
 
@@ -142,7 +142,7 @@ html, body {
 /* ✅ Stats Panel - Same Visual Design */
 .stats-panel {
     position: fixed;
-    top: 52%;
+    top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     transition: all 0.3s ease;
@@ -168,7 +168,7 @@ html, body {
 @media (max-width: 768px) {
 .stats-panel {
     position: fixed;
-    top: 50%;
+    top: 52%;
     left: 50%;
     transform: translate(-50%, -50%);
     transition: all 0.3s ease;
