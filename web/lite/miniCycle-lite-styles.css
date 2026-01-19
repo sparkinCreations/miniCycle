@@ -239,28 +239,28 @@ html, body {
 
 
 #slide-left {
-    left: 15%;
+    left: 5%;
 }
 
 #slide-right {
-    right: 15%;
+    right: 5%;
 }
 
-/* ✅ Desktop Only */
-@media (min-width: 768px) {
+/* ✅ Wide Desktop Only - show arrows when enough space */
+@media (min-width: 950px) {
     .slide-arrow {
         opacity: 1;
         pointer-events: all;
     }
-    
+
     #slide-left.show:hover,
     #slide-right.show:hover {
         background-color: white;
     }
 }
 
-/* ✅ Mobile Hidden */
-@media (max-width: 768px) {
+/* ✅ Hide arrows when they would overlap with content */
+@media (max-width: 949px) {
     .slide-arrow {
         opacity: 0;
         pointer-events: none;
@@ -413,7 +413,7 @@ body.dark-mode .complete-all-btn:hover {
     transition: background-color 0.2s ease;
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 520px;
+    max-width: 500px;
     z-index: 1;
 }
 
@@ -604,18 +604,21 @@ body.dark-mode .complete-all-btn:hover {
 /* ✅ Progress Bar */
 .progress-container {
     width: 90%;
-    max-width: 400px;
+    max-width: 500px;
     background: white;
     border-radius: 10px;
-    height: 12px; /* Fixed height prevents CLS */
+    height: 16px;
+    min-height: 16px;
     margin-top: 15px;
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .progress-bar {
     width: 0%;
-    height: 12px; /* Fixed height prevents CLS */
+    height: 100%;
+    min-height: 16px;
     background: #82db8c;
     transition: width 0.3s ease;
 }
@@ -4298,7 +4301,7 @@ body.dark-mode .navigation-dots button.dot:focus {
     justify-content: center;
     gap: 8px;
     padding: 12px 20px;
-    background: #f5f7fa;
+    background: #6c757d;
     border: 1px solid #e0e4ea;
     border-radius: 8px;
     color: #555;
