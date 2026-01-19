@@ -328,6 +328,35 @@ export class HelpWindowManager {
         }, 2000);
     }
 
+    /**
+     * Shows tasks cleared message (for To-Do mode).
+     * @param {number} count - Number of tasks cleared
+     */
+    showTasksClearedMessage(count = 0) {
+        if (!this.helpWindow) return;
+
+        // Clear mode description if showing
+        if (this.modeDescriptionTimeout) {
+            clearTimeout(this.modeDescriptionTimeout);
+            this.modeDescriptionTimeout = null;
+            this.isShowingModeDescription = false;
+            const taskView = document.getElementById('task-view');
+            taskView?.classList.remove('mode-description-visible');
+        }
+
+        this.isShowingCycleComplete = true; // Reuse flag to prevent updates
+        const taskText = count === 1 ? 'task' : 'tasks';
+        this.helpWindow.innerHTML = `
+            <p>🧹 ${count} ${taskText} cleared!</p>
+        `;
+
+        // Auto-hide after 2 seconds and return to normal message
+        setTimeout(() => {
+            this.isShowingCycleComplete = false;
+            this.updateConstantMessage();
+        }, 2000);
+    }
+
     getCurrentStatusMessage() {
         const totalTasks = document.querySelectorAll('.task').length;
         const completedTasks = document.querySelectorAll('.task input:checked').length;

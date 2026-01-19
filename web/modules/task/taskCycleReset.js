@@ -583,6 +583,13 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
         });
     }
 
+    // Show tasks cleared message in help window
+    const helpWindowMgr = deps.helpWindowManager || _deps.helpWindowManager;
+    const resolvedHelpMgr = typeof helpWindowMgr === 'function' ? helpWindowMgr() : helpWindowMgr;
+    if (resolvedHelpMgr?.showTasksClearedMessage) {
+        resolvedHelpMgr.showTasksClearedMessage(tasksToDelete.length);
+    }
+
     // Animate and remove from DOM, collect IDs
     const CLEAR_STAGGER_DELAY = 50; // ms between each task animation
     const CLEAR_ANIMATION_DURATION = 350; // matches CSS animation duration
