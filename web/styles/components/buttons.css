@@ -286,7 +286,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
         top: 50%;
         transform: translateY(-50%);
         /* Explicit dimensions with centered content */
-        min-height: 150px;
+        min-height: 75px;
         min-width: 200px;
         max-width: 230px;
         display: flex;
@@ -307,7 +307,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
 @media (min-width: 1280px) {
     .help-window {
         left: calc(100% + 30px);
-        min-height: 200px;
+        min-height: 100px;
         min-width: 250px;
         max-width: 295px;
         font-size: 15px;
@@ -319,7 +319,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
 @media (min-width: 1800px) {
     .help-window {
         left: calc(100% + 40px);
-        min-height: 220px;
+        min-height: 100px;
         min-width: 300px;
         max-width: 400px;
         font-size: 15px;
