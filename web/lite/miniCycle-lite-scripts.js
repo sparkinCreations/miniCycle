@@ -2776,10 +2776,10 @@ function handleTryFullVersion() {
     try {
       var cacheBuster = '?cb=' + Date.now() + '&v=' + currentVersion + '&source=lite&force=1';
       console.log('🚀 Redirecting to full miniCycle version');
-      window.location.replace('miniCycle.html' + cacheBuster);
+      window.location.replace('../miniCycle.html' + cacheBuster);
     } catch (error) {
       console.warn('⚠️ Redirect failed:', error);
-      showNotification('❌ Redirect failed - please manually visit miniCycle.html', 'error', 6000);
+      showNotification('❌ Redirect failed - please manually visit the full version', 'error', 6000);
     }
   }, 2000);
 }
