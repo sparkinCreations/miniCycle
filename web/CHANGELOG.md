@@ -1,3 +1,8 @@
+## [1.814] - 2026-01-18
+- feat: update background color for loading screen and adjust iOS status bar color handling
+- feat: update app version to 1.813 across documentation, manifest, and styles
+
+
 ## [1.813] - 2026-01-18
 - feat: update body background color for iOS black-translucent status bar compatibility
 - feat: update app version to 1.812 across documentation, manifest, and styles
