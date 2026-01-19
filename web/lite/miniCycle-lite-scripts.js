@@ -1353,51 +1353,79 @@ function updateStatElement(elementId, value) {
   }
 }
 
+// ✅ Helper to get/set celebrated badges from localStorage
+function getCelebratedBadges() {
+  try {
+    var stored = localStorage.getItem('miniCycleLite_celebratedBadges');
+    return stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function setCelebratedBadge(milestone) {
+  try {
+    var celebrated = getCelebratedBadges();
+    if (celebrated.indexOf(milestone) === -1) {
+      celebrated.push(milestone);
+      localStorage.setItem('miniCycleLite_celebratedBadges', JSON.stringify(celebrated));
+    }
+  } catch (e) {
+    console.warn('Could not save celebrated badge:', e);
+  }
+}
+
 // ✅ CORRECTED updateProgressBadges function - tracks CYCLES completed, not individual tasks
 function updateProgressBadges(stats) {
   var badges = document.querySelectorAll('.badge[data-milestone]');
-  
+
   if (badges.length === 0) {
     console.log('📅 No badges found in DOM');
     return;
   }
-  
+
   // ✅ Get cycles completed (not individual tasks)
   var cyclesCompleted = getCyclesCompletedFromStorage();
-  
+  var celebratedBadges = getCelebratedBadges();
+
   console.log('🏅 Updating badges - Cycles completed:', cyclesCompleted);
-  
+
   for (var i = 0; i < badges.length; i++) {
     var badge = badges[i];
     var milestone = parseInt(badge.getAttribute('data-milestone'), 10);
-    
+    var alreadyCelebrated = celebratedBadges.indexOf(milestone) !== -1;
+
     if (cyclesCompleted >= milestone) {
       // ✅ Achievement unlocked
-      if (hasClass(badge, 'locked') || (!hasClass(badge, 'unlocked') && !hasClass(badge, 'celebrated'))) {
-        // ✅ This is a newly unlocked badge
-        removeClass(badge, 'locked');
-        addClass(badge, 'unlocked');
+      removeClass(badge, 'locked');
+      addClass(badge, 'unlocked');
+      badge.setAttribute('aria-label', milestone + ' cycles milestone - ACHIEVED!');
+      badge.title = 'Achievement unlocked: ' + milestone + ' cycles completed!';
+
+      // ✅ Only show notification if not already celebrated
+      if (!alreadyCelebrated) {
         addClass(badge, 'celebrating');
-        
-        badge.setAttribute('aria-label', milestone + ' cycles milestone - ACHIEVED!');
-        badge.title = 'Achievement unlocked: ' + milestone + ' cycles completed!';
-        
+
         // ✅ Show celebration notification
         setTimeout(function(milestoneValue) {
           return function() {
             showNotification('🏅 Achievement unlocked: ' + milestoneValue + ' cycles completed!', 'success');
           };
         }(milestone), 300);
-        
-        // ✅ After celebration animation, mark as celebrated
-        setTimeout(function(badgeElement) {
+
+        // ✅ After celebration animation, mark as celebrated and save
+        setTimeout(function(badgeElement, milestoneValue) {
           return function() {
             removeClass(badgeElement, 'celebrating');
             addClass(badgeElement, 'celebrated');
+            setCelebratedBadge(milestoneValue);
           };
-        }(badge), 1000);
-        
+        }(badge, milestone), 1000);
+
         console.log('🎉 Badge unlocked:', milestone, 'cycles');
+      } else {
+        // Already celebrated, just mark as such
+        addClass(badge, 'celebrated');
       }
     } else {
       // ✅ Still locked
