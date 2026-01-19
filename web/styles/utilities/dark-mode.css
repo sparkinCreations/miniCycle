@@ -149,13 +149,13 @@ body.dark-mode .modal-panel {
 }
 
 .dark-mode .complete-all-btn.todo-mode-btn {
-    background: #2563eb;
+    background: #1e3a5f;
     border: 2px solid rgba(255, 255, 255, 0.15);
     border-bottom: 3px solid rgba(0, 0, 0, 0.3);
 }
 
 .dark-mode .complete-all-btn.todo-mode-btn:hover {
-    background: #1d4ed8;
+    background: #1a3352;
 }
 
 .dark-mode .task-options button:hover,
@@ -719,6 +719,11 @@ body.dark-mode .quick-actions-btn {
     background: rgba(30, 30, 30, 0.8);
     color: #f0f0f0;
     border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .quick-actions-btn svg {
+    fill: #ffffff;
+    stroke: #ffffff;
 }
 
 body.dark-mode .quick-actions-menu {
