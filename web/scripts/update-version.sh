@@ -410,12 +410,13 @@ fi
 if [ "$LITE_ONLY" = true ]; then
     # LITE ONLY MODE - separate version handling
     if [ "$AUTO_MODE" = true ]; then
-        # Auto-bump lite version
-        if [[ "$CURRENT_LITE_VERSION" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
-            MAJOR="${BASH_REMATCH[1]}"
-            MINOR="${BASH_REMATCH[2]}"
-            NEW_MINOR=$((MINOR + 1))
-            NEW_LITE_VERSION="${MAJOR}.${NEW_MINOR}"
+        # Auto-bump lite version by 0.001
+        if [[ "$CURRENT_LITE_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            # Use bc for decimal arithmetic, printf to ensure 3 decimal places
+            NEW_LITE_VERSION=$(printf "%.3f" "$(echo "$CURRENT_LITE_VERSION + 0.001" | bc)")
+            # Remove unnecessary trailing zeros but keep at least one decimal place
+            # 2.100 → 2.1, 2.101 → 2.101, 2.110 → 2.11
+            NEW_LITE_VERSION=$(echo "$NEW_LITE_VERSION" | sed 's/0*$//' | sed 's/\.$//')
         else
             echo "❌ Cannot parse current lite version for auto-bump: $CURRENT_LITE_VERSION"
             exit 1
