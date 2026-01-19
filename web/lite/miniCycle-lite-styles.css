@@ -4823,10 +4823,10 @@ body.dark-mode .tasks-added-count {
 /* Desktop: position notifications at upper right */
 @media (min-width: 600px) {
     .mc-toast-wrap {
-        top: 20px;
-        right: 20px;
+        top: 60px;
+        left: 20px;
         bottom: auto;
-        left: auto;
+        right: auto;
         -webkit-transform: none;
         -ms-transform: none;
         transform: none;
