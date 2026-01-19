@@ -1,3 +1,8 @@
+## [1.820] - 2026-01-18
+- feat: reposition and style personalization button for improved accessibility
+- feat: update app version to 1.819 across documentation, manifest, and styles
+
+
 ## [1.819] - 2026-01-18
 - feat: add personalization button for quick access to color customization
 - feat: enhance dark mode button styles for improved aesthetics and visibility
