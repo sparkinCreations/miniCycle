@@ -85,7 +85,7 @@ html, body {
 /* ✅ Task View - Identical Layout */
 #task-view {
     position: fixed;
-    top: 375px;
+    top: 325px;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90%;
@@ -2508,7 +2508,7 @@ body.dark-mode .edit-task-modal input[type="text"]:focus {
     -ms-flex-align: center;
     align-items: center;
     
-    gap: 8px; /* ✅ Consistent spacing between tasks */
+    gap: 4px; /* ✅ Consistent spacing between tasks */
 }
 
 /* ✅ UPDATED: Individual task centering */
