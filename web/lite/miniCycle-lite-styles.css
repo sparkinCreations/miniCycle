@@ -4471,7 +4471,8 @@ body.dark-mode .navigation-dots button.dot:focus {
     gap: 8px;
 }
 
-.added-task-item {
+.added-task-item,
+.modal-added-task-item {
     display: -webkit-box;
     display: -webkit-flex;
     display: -ms-flexbox;
@@ -4502,17 +4503,19 @@ body.dark-mode .navigation-dots button.dot:focus {
     }
 }
 
-.added-task-text {
+.added-task-text,
+.modal-task-text {
     -webkit-box-flex: 1;
     -webkit-flex: 1;
     -ms-flex: 1;
     flex: 1;
     font-size: 14px;
-    color: #333;
+    color: #333333;
     word-break: break-word;
 }
 
-.added-task-remove {
+.added-task-remove,
+.modal-task-remove {
     background: none;
     border: none;
     color: #dc3545;
@@ -4601,12 +4604,14 @@ body.dark-mode .modal-task-input:focus {
     border-color: #74c0fc;
 }
 
-body.dark-mode .added-task-item {
+body.dark-mode .added-task-item,
+body.dark-mode .modal-added-task-item {
     background: #3a3a3a;
     border-left-color: #28a745;
 }
 
-body.dark-mode .added-task-text {
+body.dark-mode .added-task-text,
+body.dark-mode .modal-task-text {
     color: #f0f0f0;
 }
 
