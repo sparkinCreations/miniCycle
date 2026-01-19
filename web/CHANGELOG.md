@@ -1,3 +1,11 @@
+## [1.816] - 2026-01-18
+- feat: add message display for cleared tasks in help window
+
+
+## [1.815] - 2026-01-18
+- feat: update app version to 1.814 across documentation, manifest, and styles
+
+
 ## [1.814] - 2026-01-18
 - feat: update background color for loading screen and adjust iOS status bar color handling
 - feat: update app version to 1.813 across documentation, manifest, and styles
