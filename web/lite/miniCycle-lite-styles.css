@@ -2687,19 +2687,54 @@ body.dark-mode .edit-task-modal input[type="text"]:focus {
    🔥 HIGH PRIORITY TASK STYLING
    ========================================== */
 
-/* ✅ High priority task styling */
+/* ✅ Priority indicator (red exclamation mark) - hidden by default */
+.priority-indicator {
+    display: none;
+    color: #dc3545;
+    font-size: 16px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+/* ✅ Show priority indicator when visible */
+.priority-indicator.visible {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* ✅ Hide emoji fallback when Font Awesome loads */
+.priority-indicator .priority-fallback {
+    display: none;
+}
+
+/* ✅ Show emoji fallback when Font Awesome icon has no width (didn't load) */
+.priority-indicator .fas:empty ~ .priority-fallback,
+.priority-indicator .fas[class*="fa-"]:not(:before) ~ .priority-fallback {
+    display: inline;
+}
+
+/* ✅ Fallback: if body has no-fontawesome class, show emoji */
+body.no-fontawesome .priority-indicator .fas {
+    display: none;
+}
+
+body.no-fontawesome .priority-indicator .priority-fallback {
+    display: inline;
+}
+
+/* ✅ Dark mode priority indicator */
+body.dark-mode .priority-indicator {
+    color: #ff6b6b;
+}
+
+/* ✅ High priority task styling - subtle background instead of border */
 .task.high-priority {
-    border-left: 4px solid #dc3545; /* Red left border */
-    padding-left: 16px; /* Adjust padding to compensate for border */
+    background: rgba(220, 53, 69, 0.05);
 }
 
 /* ✅ Dark mode high priority */
 body.dark-mode .task.high-priority {
-    border-left-color: #ff6b6b;
-    background: linear-gradient(90deg, 
-        rgba(255, 107, 107, 0.1) 0%, 
-        rgba(46, 46, 46, 1) 15%
-    );
+    background: rgba(255, 107, 107, 0.1);
 }
 
 /* ✅ Priority button styling */
@@ -2755,17 +2790,33 @@ body.dark-mode .task.high-priority {
 }
 
 @keyframes priorityPulse {
-    0% { 
-        border-left-width: 4px;
+    0% {
         box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
     }
-    50% { 
-        border-left-width: 6px;
+    50% {
         box-shadow: 0px 4px 12px rgba(220, 53, 69, 0.4);
     }
-    100% { 
-        border-left-width: 4px;
+    100% {
         box-shadow: 0px 3px 8px rgba(220, 53, 69, 0.2);
+    }
+}
+
+/* ✅ Priority indicator pulse animation */
+.priority-indicator.visible {
+    animation: indicatorPulse 0.3s ease-out;
+}
+
+@keyframes indicatorPulse {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
     }
 }
 
@@ -2901,7 +2952,7 @@ body.dark-mode .task.high-priority {
 
 /* ✅ Button hover states to match full version */
 .options-menu .task-btn:hover {
-    background: rgba(255, 255, 255, 1);
+    background: rgb(255, 255, 255);
     transform: translateY(-1px);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
@@ -3811,7 +3862,7 @@ body.dark-mode .lite-notification.error {
     /* ✅ Mobile button hover/active states */
     .options-menu .task-btn:hover,
     .options-menu .task-btn:active {
-        background: rgba(255, 255, 255, 1);
+        background: rgb(255, 255, 255);
         transform: scale(1.05);
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
@@ -3900,7 +3951,7 @@ body.dark-mode .lite-notification.error {
 
     body.dark-mode .options-menu .task-btn:hover,
     body.dark-mode .options-menu .task-btn:active {
-        background: rgba(108, 117, 125, 1);
+        background: rgb(108, 117, 125);
         color: #ffffff;
     }
 

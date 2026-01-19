@@ -808,10 +808,18 @@ function addTask(taskText, completed, shouldSave, dueDate, highPriority, isLoadi
   buttonContainer.appendChild(threeDots);
   buttonContainer.appendChild(optionsMenu);
 
+  // ✅ Priority indicator (red exclamation mark with emoji fallback)
+  var priorityIndicator = document.createElement("span");
+  priorityIndicator.className = "priority-indicator";
+  // Use Font Awesome with emoji fallback for older browsers
+  priorityIndicator.innerHTML = '<i class="fas fa-exclamation-circle" aria-hidden="true"></i><span class="priority-fallback">❗</span>';
+  priorityIndicator.title = "High Priority";
+
   // ✅ Task content assembly
   var taskContent = document.createElement("div");
   taskContent.className = "task-content";
   taskContent.appendChild(checkbox);
+  taskContent.appendChild(priorityIndicator);
   taskContent.appendChild(taskLabel);
 
   taskItem.appendChild(buttonContainer);
@@ -820,6 +828,7 @@ function addTask(taskText, completed, shouldSave, dueDate, highPriority, isLoadi
   // ✅ MOVED: Set priority AFTER all elements are created
   if (highPriority) {
     addClass(taskItem, 'high-priority');
+    addClass(priorityIndicator, 'visible');
     var priorityButton = taskItem.querySelector('.priority-btn');
     if (priorityButton) {
       priorityButton.innerHTML = "⚠️";
@@ -1071,10 +1080,14 @@ function toggleTaskPriority(taskItem) {
   saveUndoState(isHighPriority ? 'removePriority' : 'setPriority');
 
   var priorityBtn = taskItem.querySelector('.priority-btn');
+  var priorityIndicator = taskItem.querySelector('.priority-indicator');
 
   if (isHighPriority) {
     // ✅ Remove high priority
     removeClass(taskItem, 'high-priority');
+    if (priorityIndicator) {
+      removeClass(priorityIndicator, 'visible');
+    }
     if (priorityBtn) {
       priorityBtn.innerHTML = "⚠️";
       priorityBtn.title = "Mark as high priority";
@@ -1085,6 +1098,9 @@ function toggleTaskPriority(taskItem) {
   } else {
     // ✅ Add high priority
     addClass(taskItem, 'high-priority');
+    if (priorityIndicator) {
+      addClass(priorityIndicator, 'visible');
+    }
     if (priorityBtn) {
       priorityBtn.innerHTML = "⚠️";
       priorityBtn.title = "Remove high priority";
