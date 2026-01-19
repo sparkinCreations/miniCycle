@@ -415,6 +415,9 @@ body.dark-mode .complete-all-btn:hover {
     width: 100%;
     max-width: 520px;
     z-index: 1;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 #mini-cycle-title:focus {
@@ -2450,6 +2453,9 @@ body.dark-mode .edit-task-modal input[type="text"]:focus {
     padding: 10px;
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
     flex: 1 1 auto;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
     
     /* ✅ Center the tasks within the container */
     display: -webkit-box;
@@ -4422,7 +4428,7 @@ body.dark-mode .navigation-dots button.dot:focus {
     -ms-flex-pack: center;
     justify-content: center;
     gap: 8px;
-    padding: 12px 12px;
+    padding: 6px 12px;
     background: #4ea1ff;
     border: 2px solid #3a5fcc;
     border-radius: 8px;
@@ -4982,8 +4988,8 @@ body.dark-mode .tasks-added-count {
     text-align: center;
 }
 
-/* Desktop: position at upper right */
-@media (min-width: 769px) {
+/* Desktop: position at upper right (600px+ to work with dev tools open) */
+@media (min-width: 600px) {
     .lite-toast-notification {
         top: 20px;
         right: 20px;
