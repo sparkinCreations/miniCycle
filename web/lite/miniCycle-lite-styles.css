@@ -2458,6 +2458,7 @@ body.dark-mode .edit-task-modal input[type="text"]:focus {
     max-height: 600px;
     min-height: 50px;
     overflow-y: auto;
+    overflow-x: visible;
     background: rgba(255, 255, 255, 0.2);
     border-radius: 0 0 8px 8px;
     padding: 10px;
@@ -2466,7 +2467,6 @@ body.dark-mode .edit-task-modal input[type="text"]:focus {
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
-    z-index: 2990;
     
     /* ✅ Center the tasks within the container */
     display: -webkit-box;
@@ -2875,26 +2875,25 @@ body.dark-mode .task.high-priority {
   box-shadow: 0 0 0 4px rgba(253, 126, 20, 0.2);
 }
 
-/* ✅ UPDATED: Fix task options button positioning to match full version */
+/* ✅ UPDATED: Fix task options button positioning - inside task to avoid clipping */
 .options-menu {
     position: absolute;
-    /* ✅ Position above the task like in full version */
-    bottom: 100%;
-    right: 10px;
-    margin-bottom: 8px; /* Space above the task */
-    
-    /* ✅ Remove white background to match full version */
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
+    /* ✅ Position at top of task, overlapping slightly */
+    top: -15px;
+    right: 40px;
+
+    /* ✅ Semi-transparent background so task content visible */
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     z-index: 3000;
-    
+
     /* ✅ Horizontal layout */
     min-width: auto;
     width: auto;
     white-space: nowrap;
-    padding: 0;
+    padding: 4px 8px;
     margin-right: 0;
     
     display: -webkit-box;
