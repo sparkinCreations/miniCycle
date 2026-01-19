@@ -4266,12 +4266,12 @@ body.dark-mode .navigation-dots button.dot:focus {
     margin: 0 auto;
 }
 
-/* ✅ Add Task Button */
+/* ✅ Add Task Button (understated style) */
 .add-task-btn {
-    display: -webkit-box;
-    display: -webkit-flex;
-    display: -ms-flexbox;
-    display: flex;
+    display: -webkit-inline-box;
+    display: -webkit-inline-flex;
+    display: -ms-inline-flexbox;
+    display: inline-flex;
     -webkit-box-align: center;
     -webkit-align-items: center;
     -ms-flex-align: center;
@@ -4280,32 +4280,27 @@ body.dark-mode .navigation-dots button.dot:focus {
     -webkit-justify-content: center;
     -ms-flex-pack: center;
     justify-content: center;
-    gap: 10px;
-    width: 100%;
-    padding: 14px 24px;
-    background: rgba(255, 255, 255, 0.95);
-    border: 2px dashed rgba(76, 121, 255, 0.5);
-    border-radius: 12px;
-    color: #4c79ff;
-    font-size: 16px;
-    font-weight: 600;
+    gap: 6px;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: color 0.2s ease;
+    opacity: 0.8;
 }
 
 .add-task-btn:hover,
 .add-task-btn:focus {
-    background: #4c79ff;
-    border-color: #4c79ff;
-    color: white;
-    box-shadow: 0 4px 12px rgba(76, 121, 255, 0.3);
-    transform: translateY(-2px);
+    color: #4c79ff;
+    opacity: 1;
 }
 
 .add-task-icon {
-    font-size: 24px;
-    font-weight: bold;
+    font-size: 16px;
+    font-weight: 600;
     line-height: 1;
 }
 
@@ -4488,7 +4483,6 @@ body.dark-mode .navigation-dots button.dot:focus {
     padding: 10px 14px;
     background: #f8f9fa;
     border-radius: 8px;
-    border-left: 3px solid #28a745;
     animation: taskAdded 0.3s ease;
 }
 
@@ -4571,15 +4565,12 @@ body.dark-mode .navigation-dots button.dot:focus {
 
 /* ✅ Dark mode for add task modal */
 body.dark-mode .add-task-btn {
-    background: rgba(46, 46, 46, 0.95);
-    border-color: rgba(76, 121, 255, 0.5);
-    color: #74c0fc;
+    color: #888;
 }
 
 body.dark-mode .add-task-btn:hover,
 body.dark-mode .add-task-btn:focus {
-    background: #4c79ff;
-    color: white;
+    color: #74c0fc;
 }
 
 body.dark-mode .add-task-modal-content {
@@ -4607,7 +4598,6 @@ body.dark-mode .modal-task-input:focus {
 body.dark-mode .added-task-item,
 body.dark-mode .modal-added-task-item {
     background: #3a3a3a;
-    border-left-color: #28a745;
 }
 
 body.dark-mode .added-task-text,
