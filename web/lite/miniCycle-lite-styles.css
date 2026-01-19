@@ -413,7 +413,7 @@ body.dark-mode .complete-all-btn:hover {
     transition: background-color 0.2s ease;
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 500px;
+    max-width: 520px;
     z-index: 1;
 }
 
@@ -4422,15 +4422,16 @@ body.dark-mode .navigation-dots button.dot:focus {
     -ms-flex-pack: center;
     justify-content: center;
     gap: 8px;
-    padding: 12px 20px;
+    padding: 12px 24px;
     background: #4c79ff;
-    border: 1px solid #4c79ff;
+    border: 2px solid #3a5fcc;
     border-radius: 8px;
     color: white;
     font-size: 15px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .add-task-btn:hover,
@@ -4955,4 +4956,81 @@ body.dark-mode .tasks-added-count {
     background: rgba(78, 161, 255, 0.15);
     border: 1px solid rgba(78, 161, 255, 0.35);
     font-size: 12px;
+}
+
+/* ==========================================
+   🔔 LITE TOAST NOTIFICATIONS
+   ========================================== */
+
+/* Base notification style - mobile first (top center) */
+.lite-toast-notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    -webkit-transform: translateX(-50%);
+    -ms-transform: translateX(-50%);
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    z-index: 10000;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    max-width: 90vw;
+    text-align: center;
+}
+
+/* Desktop: position at upper right */
+@media (min-width: 769px) {
+    .lite-toast-notification {
+        top: 20px;
+        right: 20px;
+        left: auto;
+        -webkit-transform: none;
+        -ms-transform: none;
+        transform: none;
+        max-width: 320px;
+        text-align: left;
+    }
+}
+
+/* Notification type variants */
+.lite-toast-success {
+    background: rgba(34, 139, 34, 0.9);
+    border-left: 4px solid #28a745;
+}
+
+.lite-toast-warning {
+    background: rgba(255, 140, 0, 0.9);
+    border-left: 4px solid #ffc107;
+}
+
+.lite-toast-error {
+    background: rgba(178, 34, 34, 0.9);
+    border-left: 4px solid #dc3545;
+}
+
+.lite-toast-info {
+    background: rgba(0, 0, 0, 0.85);
+    border-left: 4px solid #17a2b8;
+}
+
+/* Dark mode adjustments */
+body.dark-mode .lite-toast-notification {
+    background: rgba(50, 50, 50, 0.95);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .lite-toast-success {
+    background: rgba(34, 100, 34, 0.95);
+}
+
+body.dark-mode .lite-toast-warning {
+    background: rgba(180, 100, 0, 0.95);
+}
+
+body.dark-mode .lite-toast-error {
+    background: rgba(139, 34, 34, 0.95);
 }

@@ -44,8 +44,8 @@
     # Content Security Policy - permissive for vanilla JS architecture
     # - 'unsafe-inline' required for inline scripts (no build step)
     # - Self-hosted fonts (no external font requests)
-    # - Web3Forms for feedback form submissions
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://api.web3forms.com; form-action 'self' https://api.web3forms.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'"
+    # - Web3Forms and Formspree for feedback form submissions
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://api.web3forms.com https://formspree.io; form-action 'self' https://api.web3forms.com https://formspree.io; manifest-src 'self'; worker-src 'self'; base-uri 'self'"
 
     # Permissions Policy - restrict sensitive APIs
     Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=()"

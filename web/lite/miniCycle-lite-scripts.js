@@ -2710,26 +2710,20 @@ function clearCompletedTasks() {
 
 function showNotification(message, type) {
   console.log('🔔 ' + (type || 'info').toUpperCase() + ':', message);
-  
-  // Simple visual notification (you can enhance this)
+
+  // Remove any existing notification (single notification mode)
+  var existingNotification = document.querySelector('.lite-toast-notification');
+  if (existingNotification && existingNotification.parentNode) {
+    existingNotification.parentNode.removeChild(existingNotification);
+  }
+
+  // Create notification element
   var notification = document.createElement('div');
-  notification.className = 'notification notification-' + (type || 'info');
+  notification.className = 'lite-toast-notification lite-toast-' + (type || 'info');
   notification.textContent = message;
-  notification.style.cssText = [
-    'position: fixed',
-    'top: 20px',
-    'left: 50%',
-    'transform: translateX(-50%)',
-    'background: rgba(0,0,0,0.8)',
-    'color: white',
-    'padding: 10px 20px',
-    'border-radius: 5px',
-    'z-index: 1000',
-    'font-size: 14px'
-  ].join(';');
-  
+
   document.body.appendChild(notification);
-  
+
   // Auto remove after 3 seconds
   setTimeout(function() {
     if (notification.parentNode) {
