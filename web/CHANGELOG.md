@@ -1,3 +1,7 @@
+## [1.827] - 2026-01-18
+- feat: update app version to 1.826 across documentation, manifest, and styles
+
+
 ## [1.826] - 2026-01-18
 - feat: update documentation for version 2.1, including new features and improvements
 - feat: update app version to 1.825 across documentation, manifest, and styles
