@@ -1,3 +1,15 @@
+## [1.847] - 2026-01-19
+- feat: increase max-height for improved performance on task view and container
+- feat: reduce max-height for improved performance on task view and container
+- feat: increase max-height for improved performance on task view and container
+- feat: adjust max-height for better performance on task view and container
+- feat: adjust bottom position of tasks added count in dark mode
+- feat: remove mobile responsive centering styles for task list and tasks
+- feat: update versioning script to include --lite-only flag for independent lite version updates
+- feat: adjust notification position in dark mode for improved visibility
+- feat: update app version to 1.846 and adjust related references across files
+
+
 ## [1.846] - 2026-01-19
 - feat: add safe area insets for notched devices in body and complete all button styles
 - feat: increase minimum height for complete all button and help window for improved usability
