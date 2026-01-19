@@ -121,18 +121,18 @@ html, body {
 /* ✅ Extra small screens (phones in portrait) */
 @media (max-width: 480px) {
     #task-view {
-        top: 425px; /* ✅ Slightly higher for smaller screens */
+        top: calc(50% + env(safe-area-inset-top, 0px)); /* ✅ Adds extra space for notch/dynamic island */
         width: 95%;
-            max-height: 68%; /* ✅ Fixed height for better performance */
+        max-height: 68%; /* ✅ Fixed height for better performance */
         padding-bottom: 100px;
     }
 }
 /* ✅ Extra small screens (phones in portrait) */
 @media (max-width: 768px) {
     #task-view {
-        top: 450px; /* ✅ Slightly higher for smaller screens */
+        top: calc(50% + env(safe-area-inset-top, 0px)); /* ✅ Adds extra space for notch/dynamic island */
         width: 95%;
-            max-height: 68%; /* ✅ Fixed height for better performance */
+        max-height: 68%; /* ✅ Fixed height for better performance */
         padding-bottom: 100px;
     }
 }
