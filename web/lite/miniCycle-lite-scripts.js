@@ -1738,10 +1738,89 @@ document.addEventListener("touchstart", function(e) {
       forceNavigationUpdate();
     }
   }
-  
 
+  // ✅ Desktop mouse drag support
+  var mouseStartX = 0;
+  var mouseStartY = 0;
+  var isMouseDragging = false;
+  var dragStartedOutsideTaskList = false;
 
-  console.log('✅ Swipe support initialized');
+  document.addEventListener('mousedown', function(e) {
+    // Check if click started outside task list and other interactive elements
+    var target = e.target;
+    var isInteractive = false;
+
+    // Walk up the DOM tree to check for interactive elements
+    while (target && target !== document.body) {
+      var tagName = target.tagName ? target.tagName.toLowerCase() : '';
+      var id = target.id || '';
+      var className = target.className || '';
+
+      // Skip if inside task list, modals, menus, buttons, inputs
+      if (tagName === 'button' || tagName === 'input' || tagName === 'textarea' || tagName === 'a' ||
+          id === 'taskList' || id === 'task-view' || id === 'stats-panel' ||
+          id === 'add-task-modal' || id === 'menu-container' ||
+          (typeof className === 'string' && (
+            className.indexOf('task') !== -1 ||
+            className.indexOf('modal') !== -1 ||
+            className.indexOf('menu') !== -1 ||
+            className.indexOf('btn') !== -1
+          ))) {
+        isInteractive = true;
+        break;
+      }
+      target = target.parentNode;
+    }
+
+    if (!isInteractive) {
+      mouseStartX = e.clientX;
+      mouseStartY = e.clientY;
+      isMouseDragging = true;
+      dragStartedOutsideTaskList = true;
+    }
+  }, false);
+
+  document.addEventListener('mousemove', function(e) {
+    if (isMouseDragging && dragStartedOutsideTaskList) {
+      // Optional: add visual feedback for dragging
+      e.preventDefault();
+    }
+  }, false);
+
+  document.addEventListener('mouseup', function(e) {
+    if (isMouseDragging && dragStartedOutsideTaskList) {
+      var endX = e.clientX;
+      var endY = e.clientY;
+      var differenceX = mouseStartX - endX;
+      var differenceY = Math.abs(mouseStartY - endY);
+
+      // Only trigger if horizontal movement is greater than vertical and meets minimum distance
+      if (Math.abs(differenceX) > minSwipeDistance && differenceY < Math.abs(differenceX)) {
+        if (differenceX > 0 && !isStatsVisible) {
+          // Drag left - show stats
+          showStatsPanel();
+          isStatsVisible = true;
+          console.log('🖱️ Mouse drag left - showing stats');
+        } else if (differenceX < 0 && isStatsVisible) {
+          // Drag right - show tasks
+          showTaskView();
+          isStatsVisible = false;
+          console.log('🖱️ Mouse drag right - showing tasks');
+        }
+      }
+    }
+
+    isMouseDragging = false;
+    dragStartedOutsideTaskList = false;
+  }, false);
+
+  // ✅ Cancel drag if mouse leaves window
+  document.addEventListener('mouseleave', function() {
+    isMouseDragging = false;
+    dragStartedOutsideTaskList = false;
+  }, false);
+
+  console.log('✅ Swipe support initialized (touch + mouse drag)');
 }
 
 // ✅ Global showTaskView function (must be outside setupBasicSwipe)
