@@ -1,3 +1,9 @@
+## [1.835] - 2026-01-19
+- feat: add feedback modal for user suggestions and bug reports
+- feat: update app version to 1.834 across documentation, manifest, and styles
+- feat: enhance mouse drag support and adjust styles for improved UI responsiveness
+
+
 ## [1.834] - 2026-01-18
 - feat: update app version to 1.833 across documentation, manifest, and styles
 
