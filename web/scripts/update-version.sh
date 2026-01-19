@@ -17,6 +17,136 @@
 #  - --dry-run flag to preview changes without writing
 
 # ============================================
+# INSTRUCTIONS & DOCUMENTATION
+# ============================================
+#
+# 🚀 HOW TO USE THIS SCRIPT:
+#
+# 1️⃣ First time setup (make it executable):
+#    chmod +x scripts/update-version.sh
+#
+# 2️⃣ Run from web/ directory:
+#    ./scripts/update-version.sh
+#
+# 3️⃣ Follow the prompts to enter new version numbers
+#
+# 🤖 AUTO MODE:
+#    ./scripts/update-version.sh --auto          # Auto-bump versions, no prompts
+#    ./scripts/update-version.sh --auto --tag    # Auto-bump + create git tag
+#    ./scripts/update-version.sh -a -p           # Auto-bump + tag + push to remote
+#    ./scripts/update-version.sh --auto -c       # Auto-bump + update changelog
+#
+# Auto mode:
+# • Increments app version by 0.001 (e.g., 1.738 → 1.739)
+# • Increments SW cache version by 1 (e.g., v271 → v272)
+# • Updates all files automatically
+# • Skips all confirmation prompts
+# • Use --tag to auto-create git tag
+# • Use --push to auto-push tag to remote
+# • Use --changelog to auto-generate changelog from git commits
+#
+# 📱 LITE-ONLY MODE (v5.2+):
+#    ./scripts/update-version.sh --lite-only         # Update only lite version (interactive)
+#    ./scripts/update-version.sh --lite-only --auto  # Auto-bump lite version only
+#    ./scripts/update-version.sh --lite-only -n      # Dry run lite-only update
+#
+# Lite-only mode:
+# • Updates ONLY the lite version files (independent of main app)
+# • Skips version.js, main CSS, main manifests, package.json
+# • Reads current version from lite/miniCycle-lite.html
+# • Useful for frozen lite version updates without touching main app
+#
+# 🔍 DRY RUN MODE:
+#    ./scripts/update-version.sh --dry-run       # Preview changes without writing
+#    ./scripts/update-version.sh --auto -n       # Auto-bump dry run
+#
+# 📝 PLATFORM NOTES:
+# • macOS: Uses sed -i "" (empty string after -i) ✅ Already handled
+# • Linux: Uses sed -i (no quotes) ✅ Already handled
+# • Windows: Use Git Bash or WSL ✅ Cross-platform compatible
+#
+# 🛡️ SAFETY FEATURES:
+# • ✅ Automatic backups created in backup/ folder with timestamps
+# • ✅ Auto-generated restore.sh script in each backup folder
+# • ✅ Automatic cleanup of old backups (keeps only newest 3)
+# • ✅ No manual backups needed - script handles everything!
+# • ✅ Validation stage checks that files updated correctly
+#
+# 🏷️ GIT TAG AUTOMATION:
+# • ✅ Optional git tag creation after version update
+# • ✅ Creates annotated tags with version info
+# • ✅ Handles existing tag detection/replacement
+# • ✅ Optional push to remote origin
+# • Manual: git tag -a v1.738 -m "Release v1.738"
+#
+# 🧹 BACKUP CLEANUP:
+# • ✅ Automatically removes backups older than the newest 3
+# • ✅ Runs cleanup before creating new backup
+# • ✅ Shows backup status after completion
+# • ✅ Always maintains restore capability for recent versions
+#
+# 🔄 TO RESTORE PREVIOUS VERSION:
+#    cd backup/version_update_YYYYMMDD_HHMMSS
+#    ./restore.sh
+#
+# ============================================
+# 🎯 FILES UPDATED BY THIS SCRIPT:
+# ============================================
+#
+# Core files (version parameters + meta tags):
+# • version.js                    - Single source of truth (auto-generated)
+# • miniCycle.html                - ?v= params, currentVersion, meta tags
+# • styles/main.css               - @import ?v= parameters
+#
+# Lite version (with --lite or --lite-only flag):
+# • lite/miniCycle-lite.html      - ?v= params, meta tags
+# • lite/miniCycle-lite-scripts.js - currentVersion variable
+# • manifest-lite.json            - version field
+#
+# Other pages:
+# • pages/product.html            - ?v= params, meta tags
+#
+# Manifests & package:
+# • manifest.json                 - version field
+# • package.json                  - version field
+#
+# Documentation:
+# • docs/PROJECT_STATS.md         - App Version in metrics table
+#
+# ============================================
+# 📦 MODULE VERSIONING (DI-PURE)
+# ============================================
+#
+# Modules do NOT have hardcoded versions. The version flows via DI:
+#
+#   version.js (this script generates it)
+#       ↓
+#   globalThis.APP_VERSION (set by version.js)
+#       ↓
+#   modules/boot/orchestrator.js builds: window.AppMeta = { version: globalThis.APP_VERSION }
+#       ↓
+#   initModule({ AppMeta: window.AppMeta, ... })
+#       ↓
+#   this.version = mergedDeps.AppMeta?.version
+#       ↓
+#   const version = this.version || 'dev-local'
+#       ↓
+#   import(`./submodule.js?v=${version}`)
+#
+# Benefits:
+# • No hardcoded versions in 40+ module files
+# • Single source of truth (version.js)
+# • Modules are fully DI-pure (no window.* version access)
+# • Cache-busting via dynamic imports works automatically
+#
+# Notes:
+# • Debug markers (APPCONTEXT_VERSION, etc.) derive from globalThis.APP_VERSION at runtime
+# • Modules use 'dev-local' fallback if AppMeta not provided
+# • AppMeta object is built in modules/boot/orchestrator.js, not version.js
+# • See docs/developer-guides/TASKDOM_DI_GUIDE.md for patterns
+#
+
+# ============================================
 # STRICT MODE
 # ============================================
 # Exit on error, undefined vars, pipe failures
