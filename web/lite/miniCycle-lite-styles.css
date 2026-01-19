@@ -2950,9 +2950,9 @@ body.dark-mode .task.high-priority {
 
 
 
-/* ✅ Button hover states to match full version */
+/* ✅ Button hover states - subtle dark background so emojis stay visible */
 .options-menu .task-btn:hover {
-    background: rgb(255, 255, 255);
+    background: rgba(0, 0, 0, 0.08);
     transform: translateY(-1px);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
@@ -3855,10 +3855,10 @@ body.dark-mode .lite-notification.error {
     }
 
 
-    /* ✅ Mobile button hover/active states */
+    /* ✅ Mobile button hover/active states - subtle bg so emojis stay visible */
     .options-menu .task-btn:hover,
     .options-menu .task-btn:active {
-        background: rgb(255, 255, 255);
+        background: rgba(0, 0, 0, 0.08);
         transform: scale(1.05);
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
