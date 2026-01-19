@@ -385,9 +385,9 @@ window.addEventListener('appinstalled', function () {
     <ul role="list">
       <li>
         <button id="clear-mini-cycle-tasks" tabindex="0" data-tooltip="Uncheck all tasks without deleting them">
-          <i class="fas fa-broom" aria-hidden="true"></i>
-          <span class="fallback-icon" style="display: none;">🧹</span>
-          <span>Clear Tasks</span>
+          <i class="fas fa-eraser" aria-hidden="true"></i>
+          <span class="fallback-icon" style="display: none;">🧽</span>
+          <span>Uncheck All</span>
         </button>
       </li>
       <li>
@@ -424,18 +424,12 @@ window.addEventListener('appinstalled', function () {
 <!-- ✅ Task management section with tooltips -->
 <main id="app-container" role="main">
   <div id="task-view" role="region" aria-label="Task management">
-    <div class="task-input" role="form">
-      <label for="taskInput" class="sr-only">Enter a new task</label>
-      <input type="text" 
-             id="taskInput" 
-             placeholder="Enter a task..." 
-             maxlength="100"
-             autocomplete="off"
-             spellcheck="true"
-             aria-describedby="task-input-help"
-             data-tooltip="Type your task here and press Enter or click Add">
-      <button id="addTask" type="button" aria-label="Add new task" tabindex="0" data-tooltip="Add the task to your list">Add</button>
-      <div id="task-input-help" class="sr-only">Enter a task description and press Add or Enter</div>
+    <!-- ✅ Add Task Button (opens modal) -->
+    <div class="add-task-button-container">
+      <button id="open-add-task-modal" class="add-task-btn" aria-label="Add new tasks" tabindex="0" data-tooltip="Open the add tasks dialog">
+        <span class="add-task-icon">+</span>
+        <span class="add-task-text">Add Tasks</span>
+      </button>
     </div>
     
     <div id="mini-cycle-title" 
@@ -523,6 +517,40 @@ window.addEventListener('appinstalled', function () {
 </footer>
 
 <!-- ✅ Screen reader only styles -->
+<!-- ✅ Add Task Modal -->
+<div id="add-task-modal" class="add-task-modal" role="dialog" aria-modal="true" aria-labelledby="add-task-modal-title" style="display: none;">
+  <div class="add-task-modal-overlay"></div>
+  <div class="add-task-modal-content">
+    <div class="add-task-modal-header">
+      <h3 id="add-task-modal-title">Add Tasks</h3>
+      <button id="close-add-task-modal" class="add-task-modal-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="add-task-modal-body">
+      <div class="add-task-input-row">
+        <label for="modalTaskInput" class="sr-only">Enter a new task</label>
+        <input type="text"
+               id="modalTaskInput"
+               class="modal-task-input"
+               placeholder="Enter a task..."
+               maxlength="100"
+               autocomplete="off"
+               spellcheck="true">
+        <button id="modalAddTask" class="modal-add-btn" aria-label="Add task">Add</button>
+      </div>
+      <div id="added-tasks-list" class="added-tasks-list" role="list" aria-live="polite">
+        <!-- Added tasks will appear here -->
+      </div>
+    </div>
+    <div class="add-task-modal-footer">
+      <span id="tasks-added-count" class="tasks-added-count"></span>
+      <button id="done-adding-tasks" class="done-adding-btn">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden input for compatibility with existing JS -->
+<input type="hidden" id="taskInput" value="">
+
 <style>
 .sr-only {
   position: absolute;
@@ -553,9 +581,12 @@ window.addEventListener('appinstalled', function () {
 .mc-toast.error{border-left:6px solid #e74c3c}
 </style>
 <script>
-// ES5 toast implementation
+// ES5 toast implementation - Single notification mode (replaces instead of stacking)
 (function () {
   var wrapId = 'mc-toast-wrap';
+  var currentToast = null;
+  var currentTimeout = null;
+
   function ensureWrap() {
     var el = document.getElementById(wrapId);
     if (!el) {
@@ -572,11 +603,26 @@ window.addEventListener('appinstalled', function () {
     if (type === 'error')   return '❌';
     return 'ℹ️';
   }
+  function removeCurrentToast() {
+    if (currentTimeout) {
+      clearTimeout(currentTimeout);
+      currentTimeout = null;
+    }
+    if (currentToast && currentToast.parentNode) {
+      currentToast.parentNode.removeChild(currentToast);
+    }
+    currentToast = null;
+  }
   // global: showNotification(messageHTML, type='info', durationMs=3000)
+  // Single notification mode: new notifications replace existing ones
   window.showNotification = function (message, type, duration) {
     try {
       type = type || 'info';
       duration = typeof duration === 'number' ? duration : 3000;
+
+      // Remove existing notification first
+      removeCurrentToast();
+
       var wrap = ensureWrap();
       var toast = document.createElement('div');
       toast.className = 'mc-toast ' + type;
@@ -587,7 +633,6 @@ window.addEventListener('appinstalled', function () {
 
       var body = document.createElement('div');
       body.className = 'mc-toast-body';
-      // allow simple HTML (you already pass small markup)
       body.innerHTML = message;
 
       var close = document.createElement('button');
@@ -595,7 +640,7 @@ window.addEventListener('appinstalled', function () {
       close.setAttribute('aria-label', 'Close notification');
       close.innerHTML = '×';
       close.onclick = function () {
-        if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
+        removeCurrentToast();
       };
 
       toast.appendChild(icon);
@@ -603,11 +648,12 @@ window.addEventListener('appinstalled', function () {
       toast.appendChild(close);
       wrap.appendChild(toast);
 
+      // Track current toast
+      currentToast = toast;
+
       if (duration > 0) {
-        setTimeout(function () {
-          try { close.click(); } catch (e) {
-            if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
-          }
+        currentTimeout = setTimeout(function () {
+          removeCurrentToast();
         }, duration);
       }
     } catch (e) { /* no-op on legacy */ }
