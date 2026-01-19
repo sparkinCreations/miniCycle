@@ -1,3 +1,7 @@
+## [1.840] - 2026-01-19
+- feat: update app version to 1.839 across documentation, manifest, and styles
+
+
 ## [1.839] - 2026-01-19
 - feat: implement reload cooldown to prevent perpetual reload loops in service worker
 - feat: update app version to 1.838 across documentation, manifest, and styles
