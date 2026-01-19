@@ -197,6 +197,18 @@ html, body {
     pointer-events: all;
 }
 
+#stats-panel h2 {
+    margin: 0 0 18px 0;
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+    color: #212529;
+}
+
+body.dark-mode #stats-panel h2 {
+    color: #f8f9fa;
+}
+
 #stats-panel p {
     margin: 6px 0;
 }
@@ -1663,8 +1675,9 @@ body.dark-mode .back-button:hover {
 .badges {
     display: flex;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
     flex-wrap: wrap;
+    padding: 8px 0;
 }
 
 .badge {
@@ -1771,20 +1784,125 @@ body.dark-mode .badge.celebrated {
 .stats-grid {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-bottom: 15px;
+    gap: 6px;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .stats-grid p {
     margin: 0;
-    padding: 8px;
-    background: rgba(0, 0, 0, 0.05);
-    border-radius: 6px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
     font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stats-grid p strong {
+    color: #495057;
+}
+
+.stats-grid p span {
+    font-weight: 600;
+    color: #212529;
+    font-size: 15px;
+}
+
+body.dark-mode .stats-grid {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 body.dark-mode .stats-grid p {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .stats-grid p strong {
+    color: #adb5bd;
+}
+
+body.dark-mode .stats-grid p span {
+    color: #f8f9fa;
+}
+
+/* ✅ Stats Section Card - for badge containers */
+.stats-section {
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+body.dark-mode .stats-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ✅ Stats Section Header */
+.stats-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.stats-section-header h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #343a40;
+}
+
+body.dark-mode .stats-section-header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .stats-section-header h3 {
+    color: #f8f9fa;
+}
+
+/* ✅ Stats Count Display */
+.stats-count {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: 6px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.stats-count strong {
+    font-size: 13px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.stats-count span {
+    font-size: 22px;
+    font-weight: 700;
+    color: #212529;
+}
+
+body.dark-mode .stats-count {
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .stats-count strong {
+    color: #adb5bd;
+}
+
+body.dark-mode .stats-count span {
+    color: #f8f9fa;
 }
 
     /* ✅ Quick Help Toggle Button */
@@ -4824,6 +4942,33 @@ body.dark-mode .tasks-added-count {
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+}
+
+/* ✅ Skip Link for Keyboard Navigation */
+.skip-link {
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #4c79ff;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 0 0 8px 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    z-index: 10000;
+    transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+    top: 0;
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+body.dark-mode .skip-link {
+    background: #3d5bff;
 }
 
 /* ==========================================

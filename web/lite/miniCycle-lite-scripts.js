@@ -3695,10 +3695,17 @@ window.addEventListener('error', function(e) {
 // ✅ ADD this function to show enhanced empty state
 function showEmptyState() {
   if (!taskList) return;
-  
+
   // ✅ Only show empty state if there are truly no tasks
   if (taskList.children.length > 0) return;
-  
+
+  // ✅ Check if empty state already exists - prevent duplicates
+  var existingEmptyState = document.getElementById('empty-state');
+  if (existingEmptyState) {
+    console.log('🎨 Empty state already exists, skipping');
+    return;
+  }
+
   // ✅ Create empty state container
   var emptyState = document.createElement('div');
   emptyState.id = 'empty-state';
@@ -3773,10 +3780,15 @@ function showEmptyState() {
 
 // ✅ ADD function to hide empty state
 function hideEmptyState() {
-  var emptyState = document.getElementById('empty-state');
-  if (emptyState && emptyState.parentNode) {
-    emptyState.parentNode.removeChild(emptyState);
-    console.log('🎨 Empty state hidden');
+  // ✅ Remove ALL empty states (in case duplicates exist)
+  var emptyStates = document.querySelectorAll('#empty-state, .empty-state');
+  for (var i = 0; i < emptyStates.length; i++) {
+    if (emptyStates[i] && emptyStates[i].parentNode) {
+      emptyStates[i].parentNode.removeChild(emptyStates[i]);
+    }
+  }
+  if (emptyStates.length > 0) {
+    console.log('🎨 Empty state(s) hidden:', emptyStates.length);
   }
 }
 
