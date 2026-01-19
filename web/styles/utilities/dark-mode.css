@@ -722,16 +722,9 @@ body.dark-mode .quick-actions-btn {
 }
 
 body.dark-mode .quick-actions-btn svg,
-body.dark-mode .routine-switcher-btn svg,
-body.dark-mode .personalization-btn svg {
+body.dark-mode .routine-switcher-btn svg {
     fill: #ffffff;
     stroke: #ffffff;
-}
-
-body.dark-mode .personalization-btn {
-    background: rgba(30, 30, 30, 0.8);
-    color: #f0f0f0;
-    border-color: rgba(255, 255, 255, 0.2);
 }
 
 body.dark-mode .quick-actions-menu {

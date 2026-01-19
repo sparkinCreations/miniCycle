@@ -131,9 +131,6 @@
 .quick-actions-container {
     position: absolute;
     left: 15px;
-    display: flex;
-    align-items: center;
-    gap: 0;
 }
 
 .quick-actions-btn {
@@ -142,7 +139,7 @@
     border: 1px solid #0c20913f;
     color: rgb(44, 50, 112);
     border-radius: 5px;
-    width: 32px;
+    width: 88px;
     height: 22px;
     cursor: pointer;
     display: flex;
@@ -166,41 +163,6 @@
     height: 20px;
     stroke: rgb(44, 50, 112);
     stroke-width: 1px;
-}
-
-/* =============================================================================
-   PERSONALIZATION BUTTON
-   ============================================================================= */
-
-.personalization-btn {
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
-    border: 1px solid #0c20913f;
-    color: rgb(44, 50, 112);
-    border-radius: 5px;
-    width: 32px;
-    height: 22px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    margin-left: 6px;
-}
-
-.personalization-btn:hover {
-    background: rgba(255, 255, 255, 0.4);
-    border-color: #0c2091;
-}
-
-.personalization-btn:active {
-    transform: scale(0.95);
-}
-
-.personalization-btn svg {
-    fill: rgb(44, 50, 112);
-    width: 16px;
-    height: 16px;
 }
 
 /* =============================================================================
@@ -265,9 +227,8 @@
         max-width: 200px;
     }
 
-    .quick-actions-btn,
-    .personalization-btn {
-        width: 28px;
+    .quick-actions-btn {
+        width: 70px;
         height: 24px;
     }
 }
@@ -277,13 +238,8 @@
         left: 10px;
     }
 
-    .quick-actions-btn,
-    .personalization-btn {
-        width: 26px;
-        height: 22px;
-    }
-
-    .personalization-btn {
-        margin-left: 4px;
+    .quick-actions-btn {
+        width: 60px;
+        font-size: 11px;
     }
 }

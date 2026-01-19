@@ -1701,6 +1701,26 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     transform: scale(1.15);
 }
 
+/* Personalization button (bottom left, mirrors dark toggle) */
+#personalization-btn {
+    position: fixed;
+    bottom: 30px;
+    left: 10px;
+    z-index: 1;
+    background: none;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    font-size: 32px;
+    cursor: pointer;
+}
+
+#personalization-btn:hover {
+    transform: scale(1.15);
+}
+
 /* =============================================================================
    TESTING MODAL
    ============================================================================= */
