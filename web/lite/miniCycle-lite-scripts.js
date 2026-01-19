@@ -591,15 +591,15 @@ function updateCompleteAllButtonText() {
 function getEmptyButtonText(mode) {
   switch(mode) {
     case 'auto':
-    case 'auto-cycle': 
+    case 'auto-cycle':
       return 'Complete All (Auto Reset)';
     case 'manual':
-    case 'manual-cycle': 
+    case 'manual-cycle':
       return 'Complete All (Manual)';
     case 'todo':
-    case 'todo-mode': 
-      return 'Complete All (To-Do)';
-    default: 
+    case 'todo-mode':
+      return 'Clear Completed Tasks';
+    default:
       return 'Complete All';
   }
 }
@@ -607,15 +607,15 @@ function getEmptyButtonText(mode) {
 function getCompleteButtonText(mode) {
   switch(mode) {
     case 'auto':
-    case 'auto-cycle': 
+    case 'auto-cycle':
       return 'Auto-Reset Active ⚡';
     case 'manual':
-    case 'manual-cycle': 
+    case 'manual-cycle':
       return 'Start New Cycle';
     case 'todo':
-    case 'todo-mode': 
-      return 'Delete Completed Tasks 🗑️';
-    default: 
+    case 'todo-mode':
+      return 'Clear Completed Tasks 🗑️';
+    default:
       return 'All Complete!';
   }
 }
@@ -623,15 +623,15 @@ function getCompleteButtonText(mode) {
 function getIncompleteButtonText(mode, remaining) {
   switch(mode) {
     case 'auto':
-    case 'auto-cycle': 
+    case 'auto-cycle':
       return 'Complete All (' + remaining + ' left, auto-reset)';
     case 'manual':
-    case 'manual-cycle': 
+    case 'manual-cycle':
       return 'Complete All (' + remaining + ' left, manual)';
     case 'todo':
-    case 'todo-mode': 
-      return 'Delete Completed (' + (taskList.children.length - remaining) + ' checked)';
-    default: 
+    case 'todo-mode':
+      return 'Clear Completed (' + (taskList.children.length - remaining) + ' checked)';
+    default:
       return 'Complete All (' + remaining + ' left)';
   }
 }
@@ -1331,6 +1331,9 @@ function updateStats() {
   // ✅ Update progress badges
   updateProgressBadges(stats);
 
+  // ✅ Update cleared badges (To-Do mode)
+  updateClearedBadges();
+
   // ✅ Update cycles completed
   updateCyclesCompleted(stats);
 
@@ -1375,6 +1378,28 @@ function setCelebratedBadge(milestone) {
     }
   } catch (e) {
     console.warn('Could not save celebrated badge:', e);
+  }
+}
+
+// ✅ Helper to get/set celebrated CLEARED badges from localStorage
+function getCelebratedClearedBadges() {
+  try {
+    var stored = localStorage.getItem('miniCycleLite_celebratedClearedBadges');
+    return stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function setCelebratedClearedBadge(milestone) {
+  try {
+    var celebrated = getCelebratedClearedBadges();
+    if (celebrated.indexOf(milestone) === -1) {
+      celebrated.push(milestone);
+      localStorage.setItem('miniCycleLite_celebratedClearedBadges', JSON.stringify(celebrated));
+    }
+  } catch (e) {
+    console.warn('Could not save celebrated cleared badge:', e);
   }
 }
 
@@ -1438,6 +1463,70 @@ function updateProgressBadges(stats) {
       addClass(badge, 'locked');
       badge.setAttribute('aria-label', milestone + ' cycles milestone - ' + (milestone - cyclesCompleted) + ' cycles remaining');
       badge.title = 'Complete ' + (milestone - cyclesCompleted) + ' more cycles to unlock this achievement';
+    }
+  }
+}
+
+// ✅ NEW updateClearedBadges function - tracks tasks cleared in To-Do mode
+function updateClearedBadges() {
+  var badges = document.querySelectorAll('.badge[data-cleared-milestone]');
+
+  if (badges.length === 0) {
+    console.log('🗑️ No cleared badges found in DOM');
+    return;
+  }
+
+  // ✅ Get tasks cleared count
+  var tasksCleared = getToDoDeletedTasks();
+  var celebratedClearedBadges = getCelebratedClearedBadges();
+
+  console.log('🗑️ Updating cleared badges - Tasks cleared:', tasksCleared);
+
+  for (var i = 0; i < badges.length; i++) {
+    var badge = badges[i];
+    var milestone = parseInt(badge.getAttribute('data-cleared-milestone'), 10);
+    var alreadyCelebrated = celebratedClearedBadges.indexOf(milestone) !== -1;
+
+    if (tasksCleared >= milestone) {
+      // ✅ Achievement unlocked
+      removeClass(badge, 'locked');
+      addClass(badge, 'unlocked');
+      badge.setAttribute('aria-label', milestone + ' tasks cleared milestone - ACHIEVED!');
+      badge.title = 'Achievement unlocked: ' + milestone + ' tasks cleared!';
+
+      // ✅ Only show notification if not already celebrated
+      if (!alreadyCelebrated) {
+        addClass(badge, 'celebrating');
+
+        // ✅ Show celebration notification
+        setTimeout(function(milestoneValue) {
+          return function() {
+            showNotification('🗑️ Achievement unlocked: ' + milestoneValue + ' tasks cleared!', 'success');
+          };
+        }(milestone), 300);
+
+        // ✅ After celebration animation, mark as celebrated and save
+        setTimeout(function(badgeElement, milestoneValue) {
+          return function() {
+            removeClass(badgeElement, 'celebrating');
+            addClass(badgeElement, 'celebrated');
+            setCelebratedClearedBadge(milestoneValue);
+          };
+        }(badge, milestone), 1000);
+
+        console.log('🎉 Cleared badge unlocked:', milestone, 'tasks');
+      } else {
+        // Already celebrated, just mark as such
+        addClass(badge, 'celebrated');
+      }
+    } else {
+      // ✅ Still locked
+      removeClass(badge, 'unlocked');
+      removeClass(badge, 'celebrating');
+      removeClass(badge, 'celebrated');
+      addClass(badge, 'locked');
+      badge.setAttribute('aria-label', milestone + ' tasks cleared milestone - ' + (milestone - tasksCleared) + ' tasks remaining');
+      badge.title = 'Clear ' + (milestone - tasksCleared) + ' more tasks to unlock this achievement';
     }
   }
 }
