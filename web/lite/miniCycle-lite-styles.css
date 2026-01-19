@@ -453,6 +453,8 @@ body.dark-mode .complete-all-btn:hover {
 .task:hover {
     transform: scale(1.01);
     background: #f8f9fa;
+    position: relative;
+    z-index: 100;
 }
 
 .task-content {
