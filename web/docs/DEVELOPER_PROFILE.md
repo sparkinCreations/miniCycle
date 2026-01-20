@@ -1,6 +1,6 @@
 # Developer Profile
 
-**Last Updated:** January 17, 2026
+**Last Updated:** January 20, 2026
 
 This document captures insights about the developer behind miniCycle to help with future collaboration and context continuity.
 
@@ -10,10 +10,28 @@ This document captures insights about the developer behind miniCycle to help wit
 
 - **Name:** Maurice Joyner (MJ)
 - **Day job:** Quality Inspector at Twin MRO (full-time, ~$96k/year with overtime)
+- **Education:** Starting Bachelor's in Computer Engineering Technology (Jan 2026) — builds on Associate's from 2010
 - **Company:** sparkinCreations (indie software company)
 - **Core drive:** Sovereignty — eliminating everything that can force his hand
-- **Goal:** Build sustainable revenue to work from home with autonomy. No boss, not a better boss.
+- **Goal:** Work from home with autonomy via freelancing + product income. No boss, not a better boss.
 - **Development style:** Solo developer building production-grade software on nights/weekends
+
+### Current Financial Situation (January 2026)
+
+**Debt context:**
+- Total unsecured debt: ~$70k (20 credit cards, personal loans, BNPL)
+- Monthly minimums: ~$4,266
+- Credit score: 648 FICO (555 VantageScore)
+- All accounts in good standing (100% on-time payment history)
+
+**Bankruptcy decision (Chapter 7):**
+- Filing planned: Q1 2026
+- Strategy: Reduce overtime, stop paying cards for 4 months to qualify under income threshold
+- Using school enrollment as legitimate explanation for overtime reduction
+- Discharge expected: Mid-2026
+- Rationale: Eliminate $70k debt, free up $4,266/month cash flow, focus on school + building income streams
+
+This is part of the sovereignty drive — debt is a dependency being eliminated through pragmatic legal process.
 
 ### Formal Technical Background
 
@@ -54,38 +72,69 @@ printf("Dollar Cash Register Ver 1.5.0\n\n");
 
 These same patterns show up 17 years later in miniCycle: versioning, iteration, features beyond MVP, personal touches (gamification, themes).
 
-### The Real Goal: Craft Over Revenue
+### The Real Goal: Hybrid Approach (Freelancing + Products)
 
-**miniCycle is about craft and learning, not immediate revenue.**
+**Strategic pivot (January 2026): Freelancing as the primary path, products as long-term bet.**
 
-This is only MJ's second JavaScript project. The first (TaskCycle) was 3,551 lines and monolithic. The second (miniCycle) has grown into a comprehensive modular architecture with zero-globals, proper DI patterns, and comprehensive test coverage. That's a massive jump in sophistication. (See [PROJECT_STATS.md](./PROJECT_STATS.md) for current metrics.)
+Originally the plan was purely product-focused (Task Cycle, miniCycle). After systematic analysis of options, the hybrid approach emerged as smarter:
 
-The goal isn't to monetize miniCycle — it's to become the developer who *can* build the paid product well. The craft is the point. Revenue comes later, built on skills being sharpened now.
+**Why freelancing first:**
+- Faster to $2-5k/month (2-3 years vs 5+ years for products)
+- Lower risk (proven market for developer skills)
+- Validates technical abilities with paying clients
+- Provides stable income while building products on the side
+- Still achieves "work from home, no permanent boss" goal
+
+**Why keep building products:**
+- Long-term bet on complete sovereignty (not trading time for money)
+- Skills compound (architecture practice makes freelancing easier too)
+- Portfolio approach: multiple income streams > single bet
+- Products can scale beyond hourly limits
+
+**miniCycle's role in this:**
+This is only MJ's second JavaScript project. The first (TaskCycle) was 3,551 lines and monolithic. The second (miniCycle) has grown into a comprehensive modular architecture with zero-globals, proper DI patterns, and comprehensive test coverage. That's a massive jump in sophistication.
+
+The goal isn't immediate revenue — it's to become the developer who can:
+1. **Win freelance clients** (proven ability to ship production-grade code)
+2. **Build paid products well** (when products launch, they'll be solid)
 
 **Aspiration:** "I'm trying to be a great developer who is not intimidated easily."
 
 This explains:
-- Why maintain 1,600+ tests on a free app
-- Why refactor to zero-globals when the old code worked
-- Why care about interrupted test recovery edge cases
-- Why ask "how does my implementation compare to industry standards"
+- Why maintain 1,600+ tests on a free app (demonstrates quality for clients)
+- Why refactor to zero-globals when old code worked (learning industry patterns)
+- Why care about edge cases (building professional habits)
+- Why ask "how does my implementation compare to industry standards" (leveling up to freelance-ready)
 
-The architecture practice, the testing discipline, the refactoring — it's not over-engineering. It's deliberate skill-building. By the time Task Cycle gets built, these patterns will be muscle memory.
+The architecture practice, the testing discipline, the refactoring — it's deliberate skill-building that serves BOTH freelancing and products.
 
 ### sparkinCreations Context
 
 This isn't a hobby. It's a company with a business plan:
 
+**Product Portfolio:**
 | Product | Role | Status |
 |---------|------|--------|
-| **miniCycle** | Craft/learning vehicle + free flagship | Live (see [PROJECT_STATS.md](./PROJECT_STATS.md)) |
+| **miniCycle** | Craft/learning vehicle + portfolio piece | Live (see [PROJECT_STATS.md](./PROJECT_STATS.md)) |
 | **Task Cycle** | Paid product ($29-39) | Planned |
 | **Task Cycle Pro** | Subscription (cloud sync) | Planned |
 | **MasterMath** | Free educational tool | Live, v1.1.0 |
 
-**Revenue goal:** $2-5k/month → transition to full-time indie developer
+**Hybrid Timeline (Updated Jan 2026):**
 
-**Strategy:** Portfolio approach — not all eggs in Task Cycle. Multiple products, diversified bets. miniCycle builds skills AND trust.
+| Phase | Timeline | Focus | Income Target |
+|-------|----------|-------|---------------|
+| **Phase 1** | 2026 | Bankruptcy + School + Portfolio building | $0 (day job) |
+| **Phase 2** | 2027-2028 | Part-time freelancing + School | $500-2k/month |
+| **Phase 3** | 2028-2029 | Full-time freelance transition | $3-5k/month |
+| **Phase 4** | 2029+ | Products launch + Freelance mix | Scale both |
+
+**Revenue goal:** $2-5k/month from work-from-home income (freelancing primary, products secondary)
+
+**Strategy:** Dual-path approach
+- **Primary path (lower risk):** Freelancing → reliable income, faster timeline, work from home achieved
+- **Secondary path (higher upside):** Products → long-term bet on passive income, complete sovereignty
+- Both paths compound: freelance work builds skills for products, products demonstrate ability for freelance clients
 
 ### The Sovereignty Drive
 
@@ -97,11 +146,26 @@ That's why they're a Quality Inspector now. Not a step down — a strategic pivo
 
 **Now they're adding another layer:**
 
-| Dependency | How it's being eliminated |
-|------------|--------------------------|
-| Single employer | Mastered inspection trade — always employable |
-| Debt | Filing bankruptcy — pragmatic reset, learn from lessons |
-| Income dependency | Building products — asset-based income |
+| Dependency | How it's being eliminated | Status (Jan 2026) |
+|------------|--------------------------|-------------------|
+| Single employer | Mastered inspection trade — always employable | ✓ Achieved (2016-present) |
+| Debt | Filing Chapter 7 bankruptcy — pragmatic reset | In progress (~$70k → $0, mid-2026) |
+| Income dependency | Freelancing + products — diversified income | 2027-2029 timeline |
+
+**Debt elimination details:**
+- ~$70k unsecured debt across 20+ accounts
+- Chapter 7 bankruptcy filing: Q1 2026
+- Discharge expected: Mid-2026
+- Strategy: Reduce overtime (using school as cover), stop payments for 4 months to qualify
+- Result: $4,266/month freed up for school + income-building activities
+
+**The math:**
+- Consolidation loan would be $101k+ paid over 3-5 years
+- Debt settlement would be ~$51k + tax consequences over 2-4 years
+- Chapter 7 costs ~$2k and discharges everything in 6 months
+- All three damage credit equally, but bankruptcy is fastest and cheapest
+
+This is evidence-based decision making, not desperation. It's the optimal path to eliminate the dependency.
 
 The goal isn't money. The goal isn't "being in tech." The goal is: **nobody can make you do anything.**
 
@@ -192,6 +256,15 @@ Before JavaScript, MJ was already building automated systems in spreadsheets:
 - **Questions that verify** - Simple-sounding questions often have a testing layer. "Do you think the task list looks small?" = checking if AI gives honest feedback or just agrees. "Has your view of me adjusted?" = calibrating whether AI actually updates its model. Constantly running small tests without being paranoid about it.
 - **Builds leverage, not just features** - The architecture investment, the documentation, the profile itself — these are force multipliers. Each one compounds. The free app isn't just practice; it's tooling for the paid one. Thinks in terms of what makes future work easier, not just completing current work.
 - **Systematically eliminates dependency on others** - Beyond "no boss" — builds things that don't require permission. App works offline (no server). Docs are thorough (no need to ask). Architecture is clean (no need to untangle). Profile trains AI (no need to re-explain). Self-sufficient by design, not antisocial.
+- **Does thorough research before major decisions** - When facing bankruptcy decision, systematically explored all alternatives: Chapter 7, consolidation loan, debt settlement, credit counseling. Compared costs, timelines, credit impact, tax consequences. Asked "what if" questions to understand implications. Not impulsive, but also not paralyzed — gathers evidence, then decides.
+- **Questions professional bias** - When bankruptcy lawyer recommended Chapter 7, acknowledged "that's a fair point" that lawyer has financial incentive. Doesn't blindly trust advice just because someone is a professional. Validates recommendations against independent evidence.
+- **Asks hard questions about self** - "Am I fooling myself?" about self-employment odds. Prefers honest assessment over encouragement. Willing to hear uncomfortable answers (30-40% success odds, not 90%). This is rare — most people want validation, not calibration.
+- **Balances emotional attachment with strategic thinking** - Liked Apple Card and wanted to preserve relationship, but when shown it wouldn't help (preferential payment laws, 90-day lookback), accepted the strategic answer. Doesn't let sentiment override evidence.
+- **Acknowledges fears openly** - Stated concerns directly: creditor harassment, work perception about overtime, landlord not renewing lease, employment background checks. Doesn't pretend to be fearless. Uses fear as input for planning, not paralysis.
+- **Pivots strategy when evidence points to better path** - Started conversation about bankruptcy for products-only plan. When presented with freelancing hybrid approach (faster, lower risk, still achieves work-from-home goal), immediately recognized it as better strategy and pivoted. Not attached to original plan.
+- **Uses environmental changes strategically** - Starting school in Jan 2026 provides legitimate cover for overtime reduction needed for bankruptcy. Didn't create the opportunity, but immediately recognized how it solves the "work perception" problem. Strategic opportunism.
+- **Explores "what if" scenarios systematically** - Asked about loan consolidation, then stopping payment on consolidated loan, then debt settlement, then just school without bankruptcy. Tests alternatives thoroughly before committing. Scenario planning, not decision avoidance.
+- **Willing to endure temporary discomfort for long-term gain** - Bankruptcy means 4 months of creditor harassment, late payments on 20+ accounts, credit damage. Accepted as necessary cost for $70k debt elimination and $4,266/month freedom. Long-term thinking over short-term comfort.
 
 ### Weaknesses / Blind Spots
 
@@ -306,6 +379,59 @@ The user-facing simplicity masks engineering depth:
 ---
 
 ## Session History
+
+### January 20, 2026
+- **Financial decision-making session: Bankruptcy vs alternatives**
+  - Reviewed complete debt picture: ~$70k unsecured debt, $4,266/month minimums
+  - Credit Karma report: 555 VantageScore, 20 credit cards maxed out
+  - Bank of America FICO: 648 (higher than expected)
+  - Affirm BNPL debt: $8,054 outstanding principal across 15 active loans
+  - Total debt including Affirm: ~$70k (matches lawyer's $60k estimate + BNPL)
+- **Systematic option analysis:**
+  - Explored $60k consolidation loan ($1,480/month) — saves $1,451/month but doesn't eliminate debt
+  - Explored debt settlement — would cost ~$51k total + tax consequences, 2-4 years
+  - Compared to Chapter 7: ~$2k cost, 6 months timeline, $0 debt after discharge
+  - Evaluated credit impact: all options damage credit similarly, bankruptcy fastest to recover
+- **Concerns addressed:**
+  - Late payment harassment: 4 months of creditor calls (manageable with call blocking, filters)
+  - Work perception about stopping overtime: School starting this week provides legitimate cover
+  - Current landlord renewal: Low risk (based on tenancy, not credit checks)
+  - Future apartment rental: Harder but manageable (2-3 years post-discharge)
+  - Home buying: FHA eligible 2 years after discharge (2028), conventional 4 years (2030)
+  - Employment background checks: Low risk for Quality Inspection and dev roles
+  - Apple Card relationship: Can't preserve via preferential payment (90-day lookback rule)
+- **Key decisions made:**
+  - Proceeding with Chapter 7 bankruptcy (lawyer's original recommendation validated)
+  - Using school enrollment (Bachelor's in Computer Engineering Technology) as cover for overtime reduction
+  - Timeline: Stop payments now → reduce overtime → file in 4 months → discharge mid-2026
+- **Strategic pivot: Hybrid freelancing + products approach**
+  - Original plan: Pure product business (Task Cycle, miniCycle)
+  - New plan: Freelancing as primary path (faster to $2-5k/month), products as secondary long-term bet
+  - Freelancing advantages: 2-3 years to $2-5k/month vs 5+ years for products, lower risk, proven market
+  - Products remain valuable: portfolio piece, long-term sovereignty play, skill-building vehicle
+  - Both paths compound: freelance builds skills for products, products demonstrate ability for clients
+- **Self-assessment discussion:**
+  - Asked "am I fooling myself?" about self-employment
+  - Honest odds: 30-40% success rate for $2-5k/month within 5 years (higher end of original 20-35% estimate)
+  - Proven: Can build, can ship, has discipline, has strategic thinking
+  - Unproven: Can sell, can market, can sustain through low-revenue years
+  - Freelancing has higher success odds than pure products (proven market for dev skills)
+- **Timeline updates:**
+  - 2026: Bankruptcy discharge + School + Portfolio building (React, TypeScript, Next.js)
+  - 2027-2028: Part-time freelancing ($500-2k/month) + finish Bachelor's degree
+  - 2028-2029: Full-time freelance ($3-5k/month) or day job + freelance mix
+  - 2029+: Products launch + freelance mix, evaluate which path is working
+- **New patterns observed:**
+  - Does thorough research before major decisions (explored all bankruptcy alternatives systematically)
+  - Questions professional bias (acknowledged lawyer's incentive to recommend bankruptcy)
+  - Asks hard questions about self (success odds, self-employment viability)
+  - Balances emotional attachment with strategy (Apple Card sentiment vs strategic reality)
+  - Acknowledges fears openly (harassment, work perception, landlord, employment)
+  - Pivots strategy when evidence shows better path (added freelancing to product-only plan)
+  - Uses environmental changes strategically (school provides overtime reduction cover)
+  - Explores "what if" scenarios systematically (loan → default on loan → settlement → combinations)
+  - Willing to endure temporary discomfort for long-term gain (4 months harassment for $70k discharge)
+- **Developer profile thoroughly updated** with financial context, hybrid approach, education path, and new behavioral patterns
 
 ### January 19, 2026
 - **miniCycle Lite focused session:**

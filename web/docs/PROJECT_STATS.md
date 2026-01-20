@@ -83,14 +83,43 @@
 
 ## How to Update This File
 
-When metrics change, update this file:
+**Automated Updates:**
 
-1. **Version changes**: Run `./update-version.sh` (updates `version.js`), then update the version here
-2. **Module count**: `find modules -name "*.js" -type f | wc -l`
-3. **Test count**: `grep -r "test(" tests --include="*.js" | wc -l`
-4. **CSS files**: `find styles -name "*.css" -type f | wc -l`
-5. **JSDoc blocks**: `grep -r "^/\*\*" modules --include="*.js" | wc -l`
-6. **Boot file lines**: `wc -l miniCycle-main.js modules/boot/*.js`
+Most metrics are automatically updated when you run `./scripts/update-version.sh`:
+- ✅ App Version
+- ✅ Total Modules (counted from `modules/`)
+- ✅ Total Tests (counted from `tests/`)
+- ✅ CSS Files (counted from `styles/`)
+- ✅ JSDoc Blocks (counted from `modules/`)
+- ✅ Documentation Files (counted from `docs/`)
+- ✅ Last Updated date
+
+**Manual Updates Required:**
+
+These metrics must be updated manually as needed:
+1. **Schema Version** - Only changes with data model updates
+2. **Test Pass Rate** - Update after test runs (should always be 100%)
+3. **DI Completion** - Update when DI migration milestones reached
+4. **Custom window.* Globals** - Update if global count changes
+5. **Module Breakdown** - Update counts per directory when structure changes
+6. **Boot Files table** - Update line counts when boot files significantly change
+7. **Test Files count** - Update when test file count changes significantly
+8. **Architecture Milestones** - Add new milestones as they're reached
+
+**Manual Count Commands (if needed):**
+```bash
+# Total modules by directory
+find modules/boot -name "*.js" | wc -l       # boot/
+find modules/core -name "*.js" | wc -l       # core/
+find modules/task -name "*.js" | wc -l       # task/
+# ... etc for each directory
+
+# Test file count
+find tests -name "*.tests.js" | wc -l
+
+# Boot file line counts
+wc -l miniCycle-main.js modules/boot/*.js
+```
 
 ---
 
