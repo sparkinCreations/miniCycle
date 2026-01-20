@@ -111,7 +111,7 @@
 # • package.json                  - version field
 #
 # Documentation:
-# • docs/PROJECT_STATS.md         - App Version in metrics table
+# • docs/PROJECT_STATS.md         - App Version + auto-counted metrics (modules, tests, CSS, JSDoc, docs)
 #
 # ============================================
 # 📦 MODULE VERSIONING (DI-PURE)
@@ -1009,18 +1009,51 @@ if [ "$LITE_ONLY" = true ]; then
     echo "📝 Stage 5B: Skipping PROJECT_STATS.md (LITE ONLY mode)"
     echo ""
 else
-    echo "📝 Stage 5B: Updating PROJECT_STATS.md..."
+    echo "📝 Stage 5B: Updating PROJECT_STATS.md with auto-counted metrics..."
     STAGE5B_SUCCESS=true
 
     PROJECT_STATS_FILE="docs/PROJECT_STATS.md"
 
     if [ -f "$PROJECT_STATS_FILE" ]; then
         if [ "$DRY_RUN" = true ]; then
-            echo "   Would update: $PROJECT_STATS_FILE (version → $NEW_VERSION)"
+            echo "   Would update: $PROJECT_STATS_FILE"
+            echo "   - Version → $NEW_VERSION"
+            echo "   - Auto-count modules, tests, CSS, JSDoc, docs"
+            echo "   - Update last modified date"
         elif backup_file "$PROJECT_STATS_FILE"; then
-            # Update the version line in the metrics table
+            # Count current metrics
+            echo "   📊 Counting metrics..."
+            MODULE_COUNT=$(find modules -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+            TEST_COUNT=$(grep -r "test(" tests --include="*.js" 2>/dev/null | wc -l | xargs)
+            CSS_COUNT=$(find styles -name "*.css" -type f 2>/dev/null | wc -l | xargs)
+            JSDOC_COUNT=$(grep -r "^/\*\*" modules --include="*.js" 2>/dev/null | wc -l | xargs)
+            DOC_COUNT=$(find docs -name "*.md" -type f 2>/dev/null | wc -l | xargs)
+            CURRENT_DATE=$(date +"%B %d, %Y")
+
+            echo "   - Modules: $MODULE_COUNT"
+            echo "   - Tests: $TEST_COUNT"
+            echo "   - CSS Files: $CSS_COUNT"
+            echo "   - JSDoc Blocks: $JSDOC_COUNT"
+            echo "   - Documentation Files: $DOC_COUNT"
+
+            # Update all metrics in the Quick Reference table
             do_sed "$PROJECT_STATS_FILE" "s/| \*\*App Version\*\* | [0-9.]* |/| **App Version** | $NEW_VERSION |/g"
-            echo "✅ Updated $PROJECT_STATS_FILE"
+            do_sed "$PROJECT_STATS_FILE" "s/| \*\*Total Modules\*\* | [0-9,]* |/| **Total Modules** | $MODULE_COUNT |/g"
+            do_sed "$PROJECT_STATS_FILE" "s/| \*\*Total Tests\*\* | [0-9,]* |/| **Total Tests** | $TEST_COUNT |/g"
+            do_sed "$PROJECT_STATS_FILE" "s/| \*\*CSS Files\*\* | [0-9,]* |/| **CSS Files** | $CSS_COUNT |/g"
+            do_sed "$PROJECT_STATS_FILE" "s/| \*\*JSDoc Blocks\*\* | [0-9,]* |/| **JSDoc Blocks** | $JSDOC_COUNT |/g"
+            do_sed "$PROJECT_STATS_FILE" "s/| \*\*Documentation Files\*\* | [0-9,]* |/| **Documentation Files** | $DOC_COUNT |/g"
+
+            # Update "Last Updated" date at top
+            do_sed "$PROJECT_STATS_FILE" "s/\*\*Last Updated\*\*: .*/\*\*Last Updated\*\*: $CURRENT_DATE/g"
+
+            # Update Total in Module Breakdown table (should match MODULE_COUNT)
+            do_sed "$PROJECT_STATS_FILE" "s/| \*\*Total\*\* | \*\*[0-9,]*\*\* |/| **Total** | **$MODULE_COUNT** |/g"
+
+            # Update Total Tests in Test Coverage section
+            do_sed "$PROJECT_STATS_FILE" "s/| Total Tests | [0-9,]* |/| Total Tests | $TEST_COUNT |/g"
+
+            echo "✅ Updated $PROJECT_STATS_FILE with auto-counted metrics"
         else
             echo "⚠️  Failed to update $PROJECT_STATS_FILE"
             STAGE5B_SUCCESS=false
