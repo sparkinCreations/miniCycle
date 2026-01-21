@@ -339,7 +339,7 @@ async function runBootSequence() {
   const { initUIBoot } = uiBoot;
 
   // ========== CREATE/REUSE DEPS CONTAINER ==========
-  // Reuse deps across retries to preserve DI closure references
+  // Reuse deps across retries to preserve DI closure references AND module state
   if (!deps) {
     deps = {
       utils: {}, features: {}, ui: {}, core: {}, task: {},
@@ -347,7 +347,19 @@ async function runBootSequence() {
     };
     console.log('📦 Created fresh deps container');
   } else {
-    console.log('♻️ Reusing deps container from previous attempt');
+    // ✅ FIX: Don't recreate nested objects - they already have state from first attempt
+    // Only ensure all expected categories exist (in case structure changed)
+    deps.utils = deps.utils || {};
+    deps.features = deps.features || {};
+    deps.ui = deps.ui || {};
+    deps.core = deps.core || {};
+    deps.task = deps.task || {};
+    deps.cycle = deps.cycle || {};
+    deps.recurring = deps.recurring || {};
+    deps.progress = deps.progress || {};
+    deps.storage = deps.storage || {};
+    deps.testing = deps.testing || {};
+    console.log('♻️ Reusing deps container from previous attempt (preserving nested state)');
   }
 
   // ========== PHASE 1: CORE (with timeout) ==========
