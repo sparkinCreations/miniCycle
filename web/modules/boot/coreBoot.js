@@ -71,43 +71,98 @@ document.documentElement.dataset.bootStartTime = Date.now().toString();
 
 const TEST_MODE_DB = 'miniCycleTestResultsDB';
 const TEST_MODE_STORE = 'results';
+const IDB_TIMEOUT_MS = 3000; // 3 second timeout for IndexedDB operations
+
+/**
+ * Wrap a Promise with a timeout to prevent indefinite hanging
+ * @param {Promise} promise - The promise to wrap
+ * @param {number} timeoutMs - Timeout in milliseconds
+ * @param {*} defaultValue - Value to return on timeout
+ * @returns {Promise} Race between promise and timeout
+ */
+function withTimeout(promise, timeoutMs, defaultValue) {
+    return Promise.race([
+        promise,
+        new Promise((resolve) => setTimeout(() => {
+            console.warn(`⏱️ IndexedDB operation timed out after ${timeoutMs}ms`);
+            resolve(defaultValue);
+        }, timeoutMs))
+    ]);
+}
+
+/**
+ * Check if IndexedDB is available and functional
+ * @returns {boolean} True if IndexedDB can be used
+ */
+function isIndexedDBAvailable() {
+    if (typeof indexedDB === 'undefined') {
+        console.warn('⚠️ IndexedDB not available (private browsing or disabled)');
+        return false;
+    }
+    return true;
+}
 
 /**
  * Check if test mode is active in IndexedDB
  * @returns {Promise<boolean>}
  */
 async function checkTestModeActive() {
-    return new Promise((resolve) => {
+    if (!isIndexedDBAvailable()) {
+        return false;
+    }
+
+    const operation = new Promise((resolve) => {
         try {
             const request = indexedDB.open(TEST_MODE_DB, 1);
-            request.onerror = () => resolve(false);
+
+            request.onerror = () => {
+                console.warn('⚠️ IndexedDB open failed:', request.error);
+                resolve(false);
+            };
+
+            request.onblocked = () => {
+                console.warn('⚠️ IndexedDB open blocked (another tab has DB open)');
+                resolve(false);
+            };
+
             request.onupgradeneeded = (e) => {
                 const db = e.target.result;
                 if (!db.objectStoreNames.contains(TEST_MODE_STORE)) {
                     db.createObjectStore(TEST_MODE_STORE, { keyPath: 'id' });
                 }
             };
+
             request.onsuccess = () => {
                 const db = request.result;
                 try {
                     const tx = db.transaction(TEST_MODE_STORE, 'readonly');
                     const store = tx.objectStore(TEST_MODE_STORE);
                     const getRequest = store.get('testModeActive');
+
                     getRequest.onsuccess = () => {
                         const isActive = getRequest.result?.active === true;
                         db.close();
                         resolve(isActive);
                     };
-                    getRequest.onerror = () => { db.close(); resolve(false); };
+
+                    getRequest.onerror = () => {
+                        console.warn('⚠️ IndexedDB read failed:', getRequest.error);
+                        db.close();
+                        resolve(false);
+                    };
                 } catch (e) {
+                    console.warn('⚠️ IndexedDB transaction failed:', e);
                     db.close();
                     resolve(false);
                 }
             };
         } catch (e) {
+            console.warn('⚠️ IndexedDB operation failed:', e);
             resolve(false);
         }
     });
+
+    return withTimeout(operation, IDB_TIMEOUT_MS, false);
 }
 
 /**
@@ -115,16 +170,31 @@ async function checkTestModeActive() {
  * @returns {Promise<Object|null>}
  */
 async function getPreTestBackup() {
-    return new Promise((resolve) => {
+    if (!isIndexedDBAvailable()) {
+        return null;
+    }
+
+    const operation = new Promise((resolve) => {
         try {
             const request = indexedDB.open(TEST_MODE_DB, 1);
-            request.onerror = () => resolve(null);
+
+            request.onerror = () => {
+                console.warn('⚠️ IndexedDB open failed:', request.error);
+                resolve(null);
+            };
+
+            request.onblocked = () => {
+                console.warn('⚠️ IndexedDB open blocked (another tab has DB open)');
+                resolve(null);
+            };
+
             request.onsuccess = () => {
                 const db = request.result;
                 try {
                     const tx = db.transaction(TEST_MODE_STORE, 'readonly');
                     const store = tx.objectStore(TEST_MODE_STORE);
                     const getRequest = store.get('preTestBackup');
+
                     getRequest.onsuccess = () => {
                         const data = getRequest.result;
                         db.close();
@@ -134,16 +204,25 @@ async function getPreTestBackup() {
                             resolve(null);
                         }
                     };
-                    getRequest.onerror = () => { db.close(); resolve(null); };
+
+                    getRequest.onerror = () => {
+                        console.warn('⚠️ IndexedDB read failed:', getRequest.error);
+                        db.close();
+                        resolve(null);
+                    };
                 } catch (e) {
+                    console.warn('⚠️ IndexedDB transaction failed:', e);
                     db.close();
                     resolve(null);
                 }
             };
         } catch (e) {
+            console.warn('⚠️ IndexedDB operation failed:', e);
             resolve(null);
         }
     });
+
+    return withTimeout(operation, IDB_TIMEOUT_MS, null);
 }
 
 /**
@@ -151,10 +230,24 @@ async function getPreTestBackup() {
  * @returns {Promise<void>}
  */
 async function clearTestModeFlags() {
-    return new Promise((resolve) => {
+    if (!isIndexedDBAvailable()) {
+        return;
+    }
+
+    const operation = new Promise((resolve) => {
         try {
             const request = indexedDB.open(TEST_MODE_DB, 1);
-            request.onerror = () => resolve();
+
+            request.onerror = () => {
+                console.warn('⚠️ IndexedDB open failed:', request.error);
+                resolve();
+            };
+
+            request.onblocked = () => {
+                console.warn('⚠️ IndexedDB open blocked (another tab has DB open)');
+                resolve();
+            };
+
             request.onsuccess = () => {
                 const db = request.result;
                 try {
@@ -163,17 +256,30 @@ async function clearTestModeFlags() {
                     store.delete('testModeActive');
                     store.delete('appInitiatedTests');
                     store.delete('preTestBackup');
-                    tx.oncomplete = () => { db.close(); resolve(); };
-                    tx.onerror = () => { db.close(); resolve(); };
+
+                    tx.oncomplete = () => {
+                        db.close();
+                        resolve();
+                    };
+
+                    tx.onerror = () => {
+                        console.warn('⚠️ IndexedDB transaction failed:', tx.error);
+                        db.close();
+                        resolve();
+                    };
                 } catch (e) {
+                    console.warn('⚠️ IndexedDB transaction failed:', e);
                     db.close();
                     resolve();
                 }
             };
         } catch (e) {
+            console.warn('⚠️ IndexedDB operation failed:', e);
             resolve();
         }
     });
+
+    return withTimeout(operation, IDB_TIMEOUT_MS, undefined);
 }
 
 /**
