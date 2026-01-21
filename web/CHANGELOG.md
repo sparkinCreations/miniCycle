@@ -1,3 +1,8 @@
+## [1.853] - 2026-01-21
+- fix: enhance dependency container reuse to preserve module state across boot retries
+- fix: update version to 1.852 across all relevant files and enhance project stats
+
+
 ## [1.852] - 2026-01-21
 - fix: reduce IndexedDB timeout to 1 second for faster fail on reload; reuse dependency container across boot retries
 - fix: update version references to 1.851 across all relevant files and enhance project stats
