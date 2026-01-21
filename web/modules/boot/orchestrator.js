@@ -37,6 +37,10 @@ let setStorageDependencies;
 let BOOT_TIMEOUTS;
 let attemptCacheRecovery, clearAllCaches, clearRecoveryFlags, isRecoveryExhausted;
 
+// ✅ FIX: Shared deps container that persists across boot retries
+// Creating fresh deps on each retry breaks DI closures that capture deps reference
+let deps = null;
+
 // Load all dependencies with version params (Safari memory cache fix)
 async function loadDependencies() {
   console.log('🔄 Loading orchestrator dependencies...');
@@ -334,11 +338,17 @@ async function runBootSequence() {
   const { bootFeatures, bootEarlyDeps } = featureBoot;
   const { initUIBoot } = uiBoot;
 
-  // ========== CREATE DEPS CONTAINER ==========
-  const deps = {
-    utils: {}, features: {}, ui: {}, core: {}, task: {},
-    cycle: {}, recurring: {}, progress: {}, storage: {}, testing: {}
-  };
+  // ========== CREATE/REUSE DEPS CONTAINER ==========
+  // Reuse deps across retries to preserve DI closure references
+  if (!deps) {
+    deps = {
+      utils: {}, features: {}, ui: {}, core: {}, task: {},
+      cycle: {}, recurring: {}, progress: {}, storage: {}, testing: {}
+    };
+    console.log('📦 Created fresh deps container');
+  } else {
+    console.log('♻️ Reusing deps container from previous attempt');
+  }
 
   // ========== PHASE 1: CORE (with timeout) ==========
   updateLoaderProgress('Starting systems...', 30);
