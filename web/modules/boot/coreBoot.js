@@ -71,7 +71,7 @@ document.documentElement.dataset.bootStartTime = Date.now().toString();
 
 const TEST_MODE_DB = 'miniCycleTestResultsDB';
 const TEST_MODE_STORE = 'results';
-const IDB_TIMEOUT_MS = 3000; // 3 second timeout for IndexedDB operations
+const IDB_TIMEOUT_MS = 1000; // 1 second timeout for IndexedDB operations (fail fast on reload)
 
 /**
  * Wrap a Promise with a timeout to prevent indefinite hanging
