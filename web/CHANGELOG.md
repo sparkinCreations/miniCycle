@@ -1,3 +1,8 @@
+## [1.851] - 2026-01-21
+- fix: enhance IndexedDB handling with timeout and availability checks; adjust modal button sizes for mobile
+- fix: update version references to 1.850 across all relevant files and enhance project stats
+
+
 ## [1.850] - 2026-01-20
 - fix: update developer profile and project stats with new financial context and automated metrics
 - fix: update version references to 2.05 across all relevant files
