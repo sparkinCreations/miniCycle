@@ -1,3 +1,8 @@
+## [1.858] - 2026-01-22
+- fix: implement dynamic imports with version cache-busting for various modules
+- fix: update version to 1.857 across all relevant files and enhance project stats
+
+
 ## [1.857] - 2026-01-22
 - fix: enhance network-first patterns in service worker for critical modules to prevent stale cache issues
 - fix: update version to 1.856 across all relevant files and enhance project stats
