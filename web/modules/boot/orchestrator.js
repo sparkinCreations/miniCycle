@@ -316,12 +316,12 @@ function showBootError(phase, error, willRetry = false) {
  */
 async function runBootSequence() {
   const bootStart = Date.now();
-  const isRetry = bootAttemptNumber > 1;
+  const isRetry = bootAttempt > 1;
 
   // ✅ On retry, append retry counter to version for cache busting
   // This forces fresh ES module loads, bypassing browser's module cache
   // Critical for clearing DI module state that persists in cached modules
-  const versionSuffix = isRetry ? `${APP_VERSION}.r${bootAttemptNumber}` : APP_VERSION;
+  const versionSuffix = isRetry ? `${APP_VERSION}.r${bootAttempt}` : APP_VERSION;
 
   // ========== CHECK FOR UPDATES ==========
   updateLoaderProgress('Checking for updates...', 5);
