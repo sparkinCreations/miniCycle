@@ -1,3 +1,8 @@
+## [1.854] - 2026-01-22
+- fix: reduce IndexedDB timeout to 500ms for faster boot and minimal delay in test recovery
+- fix: update version to 1.853 across all relevant files and enhance project stats
+
+
 ## [1.853] - 2026-01-21
 - fix: enhance dependency container reuse to preserve module state across boot retries
 - fix: update version to 1.852 across all relevant files and enhance project stats
