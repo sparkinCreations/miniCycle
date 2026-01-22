@@ -90,6 +90,9 @@ async function loadSubModules(version) {
         import(`../utils/dataSanitizer.js?v=${version}`)
     ]);
 
+    // Initialize modules that need dynamic utility imports
+    await cycleImportModule.initCycleImportManager();
+
     _subModules = {
         // Settings UI
         setSettingsUIManagerDependencies: settingsUIModule.setSettingsUIManagerDependencies,

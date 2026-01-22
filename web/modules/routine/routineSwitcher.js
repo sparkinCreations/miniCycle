@@ -22,9 +22,20 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { updateStorageBarUI, getObjectSizeBytes, formatBytes, forceQuotaRedetection, adjustStorageEstimate, resetStorageEstimate, updateStorageBarUIEstimated } from '../utils/storageUtils.js';
-import { getUniqueCycleName } from '../utils/nameUtils.js';
-import { getUndoCacheSizeBytes, getUndoCacheCycleId } from '../ui/undoRedoManager.js';
+
+// ============================================================================
+// DYNAMIC IMPORTS (loaded at init time with version cache-busting)
+// ============================================================================
+
+// Storage utilities - dynamically loaded to avoid ES module cache issues
+let updateStorageBarUI, getObjectSizeBytes, formatBytes, forceQuotaRedetection;
+let adjustStorageEstimate, resetStorageEstimate, updateStorageBarUIEstimated;
+
+// Name utilities
+let getUniqueCycleName;
+
+// Undo manager utilities
+let getUndoCacheSizeBytes, getUndoCacheCycleId;
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -1540,9 +1551,39 @@ let routineSwitcher = null;
 
 /**
  * Initialize the global routine switcher
+ * Dynamically imports utilities with version cache-busting before creating instance
  * @param {Object} dependencies - Required dependencies
+ * @returns {Promise<RoutineSwitcher>} The initialized routine switcher instance
  */
-export function initializeRoutineSwitcher(dependencies) {
+export async function initializeRoutineSwitcher(dependencies) {
+    // Dynamically import utilities with version for cache-busting
+    // This prevents ES module cache from serving stale versions
+    const version = globalThis.APP_VERSION || '1.857';
+
+    console.log(`📦 RoutineSwitcher: Loading utilities with version ${version}...`);
+
+    // Import storage utilities
+    const storageUtils = await import(`../utils/storageUtils.js?v=${version}`);
+    updateStorageBarUI = storageUtils.updateStorageBarUI;
+    getObjectSizeBytes = storageUtils.getObjectSizeBytes;
+    formatBytes = storageUtils.formatBytes;
+    forceQuotaRedetection = storageUtils.forceQuotaRedetection;
+    adjustStorageEstimate = storageUtils.adjustStorageEstimate;
+    resetStorageEstimate = storageUtils.resetStorageEstimate;
+    updateStorageBarUIEstimated = storageUtils.updateStorageBarUIEstimated;
+
+    // Import name utilities
+    const nameUtils = await import(`../utils/nameUtils.js?v=${version}`);
+    getUniqueCycleName = nameUtils.getUniqueCycleName;
+
+    // Import undo manager utilities
+    const undoManager = await import(`../ui/undoRedoManager.js?v=${version}`);
+    getUndoCacheSizeBytes = undoManager.getUndoCacheSizeBytes;
+    getUndoCacheCycleId = undoManager.getUndoCacheCycleId;
+
+    console.log('✅ RoutineSwitcher: Utilities loaded');
+
+    // Now create the instance
     routineSwitcher = new RoutineSwitcher(dependencies);
     console.log('✅ RoutineSwitcher instance created');
     return routineSwitcher;

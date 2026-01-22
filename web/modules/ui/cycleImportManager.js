@@ -10,8 +10,16 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { LIMITS } from '../core/constants.js';
-import { getObjectSizeBytes, canAddToStorage, getStorageShortageMessage } from '../utils/storageUtils.js';
-import { getUniqueCycleName } from '../utils/nameUtils.js';
+
+// ============================================================================
+// DYNAMIC IMPORTS (loaded at init time with version cache-busting)
+// ============================================================================
+
+// Storage utilities - dynamically loaded to avoid ES module cache issues
+let getObjectSizeBytes, canAddToStorage, getStorageShortageMessage;
+
+// Name utilities
+let getUniqueCycleName;
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -572,6 +580,34 @@ function processImportedData(fileContent) {
     }
 
     location.reload();
+}
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
+/**
+ * Initialize CycleImportManager module
+ * Dynamically imports utilities with version cache-busting
+ * @returns {Promise<void>}
+ */
+export async function initCycleImportManager() {
+    // Dynamically import utilities with version for cache-busting
+    const version = globalThis.APP_VERSION || '1.857';
+
+    console.log(`📦 CycleImportManager: Loading utilities with version ${version}...`);
+
+    // Import storage utilities
+    const storageUtils = await import(`../utils/storageUtils.js?v=${version}`);
+    getObjectSizeBytes = storageUtils.getObjectSizeBytes;
+    canAddToStorage = storageUtils.canAddToStorage;
+    getStorageShortageMessage = storageUtils.getStorageShortageMessage;
+
+    // Import name utilities
+    const nameUtils = await import(`../utils/nameUtils.js?v=${version}`);
+    getUniqueCycleName = nameUtils.getUniqueCycleName;
+
+    console.log('✅ CycleImportManager: Utilities loaded');
 }
 
 console.log('Cycle Import Manager loaded');

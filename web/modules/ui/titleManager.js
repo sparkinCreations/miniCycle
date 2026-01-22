@@ -9,7 +9,13 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { LIMITS } from '../core/constants.js';
-import { getUniqueCycleName } from '../utils/nameUtils.js';
+
+// ============================================================================
+// DYNAMIC IMPORTS (loaded at init time with version cache-busting)
+// ============================================================================
+
+// Name utilities - dynamically loaded to avoid ES module cache issues
+let getUniqueCycleName;
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -242,10 +248,22 @@ export function setupMiniCycleTitleListener() {
 
 /**
  * Initialize TitleManager (called by moduleLoader)
+ * Dynamically imports utilities with version cache-busting before setup
  * @param {Object} dependencies - Injected dependencies
- * @returns {Object} Module exports for registration
+ * @returns {Promise<Object>} Module exports for registration
  */
-export function initTitleManager(dependencies = {}) {
+export async function initTitleManager(dependencies = {}) {
+    // Dynamically import utilities with version for cache-busting
+    const version = globalThis.APP_VERSION || '1.857';
+
+    console.log(`📦 TitleManager: Loading utilities with version ${version}...`);
+
+    // Import name utilities
+    const nameUtils = await import(`../utils/nameUtils.js?v=${version}`);
+    getUniqueCycleName = nameUtils.getUniqueCycleName;
+
+    console.log('✅ TitleManager: Utilities loaded');
+
     const adaptedDeps = {
         GlobalUtils: dependencies.GlobalUtils,
         AppState: dependencies.AppState,

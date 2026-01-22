@@ -13,8 +13,16 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { canAddToStorage, getStorageShortageMessage } from '../utils/storageUtils.js';
-import { getUniqueCycleName } from '../utils/nameUtils.js';
+
+// ============================================================================
+// DYNAMIC IMPORTS (loaded at init time with version cache-busting)
+// ============================================================================
+
+// Storage utilities - dynamically loaded to avoid ES module cache issues
+let canAddToStorage, getStorageShortageMessage;
+
+// Name utilities
+let getUniqueCycleName;
 
 // Estimated size for a new empty cycle (structure overhead)
 const ESTIMATED_NEW_CYCLE_SIZE = 800; // ~400 chars * 2 bytes
@@ -504,10 +512,28 @@ console.log('✅ RoutineManager module loaded (Phase 3 - no window.* exports)');
 
 /**
  * Initialize the RoutineManager module
+ * Dynamically imports utilities with version cache-busting before creating instance
  * @param {Object} dependencies - Dependency injection object
- * @returns {RoutineManager} The initialized RoutineManager instance
+ * @returns {Promise<RoutineManager>} The initialized RoutineManager instance
  */
-export function initializeRoutineManager(dependencies) {
+export async function initializeRoutineManager(dependencies) {
+    // Dynamically import utilities with version for cache-busting
+    const version = globalThis.APP_VERSION || '1.857';
+
+    console.log(`📦 RoutineManager: Loading utilities with version ${version}...`);
+
+    // Import storage utilities
+    const storageUtils = await import(`../utils/storageUtils.js?v=${version}`);
+    canAddToStorage = storageUtils.canAddToStorage;
+    getStorageShortageMessage = storageUtils.getStorageShortageMessage;
+
+    // Import name utilities
+    const nameUtils = await import(`../utils/nameUtils.js?v=${version}`);
+    getUniqueCycleName = nameUtils.getUniqueCycleName;
+
+    console.log('✅ RoutineManager: Utilities loaded');
+
+    // Now create the instance
     routineManager = new RoutineManager(dependencies);
     console.log('✅ RoutineManager instance created');
     return routineManager;
