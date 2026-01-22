@@ -609,7 +609,7 @@ export class AchievementsManager {
      * @param {number} milestone - The milestone cycle count
      */
     showBadgeDetail(milestone) {
-        const tierConfig = MILESTONE_CONFIG.TIERS.find(t => t.cycles === milestone);
+        const tierConfig = MILESTONES ? MILESTONES.find(t => t.cycleThreshold === milestone) : null;
         if (!tierConfig) return;
 
         // Close any existing popup
@@ -958,7 +958,7 @@ export class AchievementsManager {
             badge.classList.remove("ocean-theme", "golden-theme", "game-unlocked");
 
             // Find the tier config for this milestone from constants
-            const tierConfig = MILESTONE_CONFIG.TIERS.find(t => t.cycles === milestone);
+            const tierConfig = MILESTONES ? MILESTONES.find(t => t.cycleThreshold === milestone) : null;
 
             // Assign custom theme class based on reward type from constant
             if (isUnlocked && tierConfig) {
