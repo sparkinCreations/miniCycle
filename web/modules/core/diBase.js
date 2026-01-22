@@ -44,6 +44,39 @@
 // Version marker for cache debugging (derives from Single Source of Truth)
 export const DIBASE_VERSION = globalThis.APP_VERSION;
 
+/**
+ * Validate that diBase.js version matches the expected app version
+ * Call this from modules that statically import diBase to detect cache mismatches
+ *
+ * @param {string} expectedVersion - The version the importing module expects
+ * @param {string} moduleName - Name of the importing module (for error messages)
+ * @throws {Error} If versions don't match (indicates stale cache)
+ *
+ * @example
+ * import { validateDIBaseVersion } from '../core/diBase.js';
+ * validateDIBaseVersion(globalThis.APP_VERSION, 'notifications');
+ */
+export function validateDIBaseVersion(expectedVersion, moduleName = 'unknown') {
+    if (DIBASE_VERSION !== expectedVersion) {
+        const msg = `❌ VERSION MISMATCH in ${moduleName}: ` +
+            `diBase.js has version ${DIBASE_VERSION} but app expects ${expectedVersion}. ` +
+            `This indicates a stale browser cache. Please clear cache and reload.`;
+        console.error(msg);
+
+        // Store flag for recovery detection
+        if (typeof sessionStorage !== 'undefined') {
+            sessionStorage.setItem('__miniCycle_versionMismatch__', JSON.stringify({
+                module: moduleName,
+                diBaseVersion: DIBASE_VERSION,
+                expectedVersion: expectedVersion,
+                timestamp: Date.now()
+            }));
+        }
+
+        throw new Error(msg);
+    }
+}
+
 // ============================================================================
 // DEPENDENCY MARKERS
 // ============================================================================
@@ -479,4 +512,4 @@ export function safeGet(getter, name = 'dependency') {
  * @property {boolean} [logResolution=false] - Log dependency resolution
  */
 
-console.log('📦 diBase module loaded');
+console.log(`📦 diBase module loaded (v${DIBASE_VERSION || 'unknown'})`);

@@ -21,8 +21,12 @@ var MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 var NETWORK_FIRST_PATTERNS = [
   'version.js',                  // Version source of truth - MUST be fresh
   'miniCycle-main.js',           // Entry point
-  'modules/boot/'                // All boot files - version critical
-  // Note: Other modules use version mismatch detection (see fetch handler)
+  'modules/boot/',               // All boot files - version critical
+  'modules/core/'                // Core modules (diBase, appInit, appState) - statically imported
+  // Note: modules/core/ added because these files are imported via static imports
+  // (without ?v= params) by other modules. Without network-first, stale cached
+  // versions can cause "setXxxDependencies is not a function" errors.
+  // Other modules use version mismatch detection (see fetch handler)
   // which automatically uses network-first when ?v= param doesn't match SW version
 ];
 

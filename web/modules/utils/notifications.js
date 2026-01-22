@@ -34,7 +34,22 @@
  * @property {string} [tipId] - Tip ID for dismissal tracking
  */
 
-import { createDIModule, optional } from '../core/diBase.js';
+import { createDIModule, optional, validateDIBaseVersion, DIBASE_VERSION } from '../core/diBase.js';
+
+// ============================================================================
+// VERSION VALIDATION - Detect stale cache early
+// ============================================================================
+// This catches the case where browser serves cached diBase.js with wrong version
+// The error message will clearly indicate a cache issue
+
+try {
+    validateDIBaseVersion(globalThis.APP_VERSION, 'notifications');
+} catch (e) {
+    // Log but don't block - the error is already recorded for recovery
+    console.error('🚨 Notifications module detected version mismatch:', e.message);
+}
+
+console.log(`🔔 Notifications module loading (diBase v${DIBASE_VERSION}, app v${globalThis.APP_VERSION})`);
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
