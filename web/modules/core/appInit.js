@@ -105,6 +105,24 @@ class AppInit {
 		this.phaseTimings = {};
 	}
 
+	/**
+	 * Reset appInit state for boot retry
+	 * Called by orchestrator when boot fails and retry is needed
+	 */
+	reset() {
+		console.log('🔄 Resetting AppInit state for retry...');
+		this.coreReady = false;
+		this.appReady = false;
+		this._corePromise = null;
+		this._coreResolve = null;
+		this._appPromise = null;
+		this._appResolve = null;
+		this.startTime = Date.now();
+		this.phaseTimings = {};
+		// Note: Keep plugins and hooks registered - they should persist across retries
+		console.log('✅ AppInit state reset complete');
+	}
+
 	async markCoreSystemsReady() {
 		if (this.coreReady) {
 			console.warn('⚠️ Core systems already marked as ready');
