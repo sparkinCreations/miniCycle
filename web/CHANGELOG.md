@@ -1,3 +1,8 @@
+## [1.862] - 2026-01-22
+- fix: clear nested deps object properties to prevent stale references during retries
+- fix: update version to 1.861 across all relevant files and enhance project stats
+
+
 ## [1.861] - 2026-01-22
 - fix: dynamically load MILESTONES configuration in achievementsManager, statsPanel, and cycleCompletion to avoid ES module cache issues
 - fix: update version to 1.860 across all relevant files and enhance project stats
