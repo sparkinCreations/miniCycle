@@ -91,7 +91,9 @@ async function loadSubModules(version) {
     ]);
 
     // Initialize modules that need dynamic utility imports
-    await cycleImportModule.initCycleImportManager();
+    if (typeof cycleImportModule.initCycleImportManager === 'function') {
+        await cycleImportModule.initCycleImportManager();
+    }
 
     _subModules = {
         // Settings UI
