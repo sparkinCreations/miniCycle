@@ -365,18 +365,19 @@ async function runBootSequence() {
 
     // ✅ CRITICAL FIX 2: Clear nested objects to prevent stale references
     // On retry, we need to rebuild all deps from scratch so Proxy getters work correctly
-    // Preserving old objects caused AppState Proxy to capture stale deps.core reference
-    console.log('🧹 Clearing nested deps objects for fresh DI wiring');
-    deps.utils = {};
-    deps.features = {};
-    deps.ui = {};
-    deps.core = {};  // ← CRITICAL: Clear this so AppState can be re-wired
-    deps.task = {};
-    deps.cycle = {};
-    deps.recurring = {};
-    deps.progress = {};
-    deps.storage = {};
-    deps.testing = {};
+    // IMPORTANT: We must CLEAR properties, not replace objects, because moduleLoader
+    // creates Proxies with closures that capture deps.core reference
+    console.log('🧹 Clearing nested deps object properties for fresh DI wiring');
+    Object.keys(deps.utils || {}).forEach(key => delete deps.utils[key]);
+    Object.keys(deps.features || {}).forEach(key => delete deps.features[key]);
+    Object.keys(deps.ui || {}).forEach(key => delete deps.ui[key]);
+    Object.keys(deps.core || {}).forEach(key => delete deps.core[key]);
+    Object.keys(deps.task || {}).forEach(key => delete deps.task[key]);
+    Object.keys(deps.cycle || {}).forEach(key => delete deps.cycle[key]);
+    Object.keys(deps.recurring || {}).forEach(key => delete deps.recurring[key]);
+    Object.keys(deps.progress || {}).forEach(key => delete deps.progress[key]);
+    Object.keys(deps.storage || {}).forEach(key => delete deps.storage[key]);
+    Object.keys(deps.testing || {}).forEach(key => delete deps.testing[key]);
   }
 
   // ========== PHASE 1: CORE (with timeout) ==========
