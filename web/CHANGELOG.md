@@ -1,3 +1,8 @@
+## [1.859] - 2026-01-22
+- fix: implement appInit state reset on boot retry to prevent stale references
+- fix: update version to 1.858 across all relevant files and enhance project stats
+
+
 ## [1.858] - 2026-01-22
 - fix: implement dynamic imports with version cache-busting for various modules
 - fix: update version to 1.857 across all relevant files and enhance project stats
