@@ -42,7 +42,13 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { LIMITS } from '../core/constants.js';
-import { estimateTaskSize, canAddToStorage, getStorageShortageMessage } from '../utils/storageUtils.js';
+
+// ============================================================================
+// DYNAMIC IMPORTS (loaded at init time with version cache-busting)
+// ============================================================================
+
+// Storage utilities - dynamically loaded to avoid ES module cache issues
+let estimateTaskSize, canAddToStorage, getStorageShortageMessage;
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -565,6 +571,30 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
         console.warn('Priority toggle failed:', error);
         _deps.showNotification?.('Could not toggle priority', 'warning');
     }
+}
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
+/**
+ * Initialize TaskCRUD module
+ * Dynamically imports utilities with version cache-busting
+ * @returns {Promise<void>}
+ */
+export async function initTaskCRUD() {
+    // Dynamically import utilities with version for cache-busting
+    const version = globalThis.APP_VERSION || '1.857';
+
+    console.log(`📦 TaskCRUD: Loading utilities with version ${version}...`);
+
+    // Import storage utilities
+    const storageUtils = await import(`../utils/storageUtils.js?v=${version}`);
+    estimateTaskSize = storageUtils.estimateTaskSize;
+    canAddToStorage = storageUtils.canAddToStorage;
+    getStorageShortageMessage = storageUtils.getStorageShortageMessage;
+
+    console.log('✅ TaskCRUD: Utilities loaded');
 }
 
 // ============================================================================

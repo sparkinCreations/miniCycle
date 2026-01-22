@@ -22,8 +22,16 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { getObjectSizeBytes, canAddToStorage, getStorageShortageMessage } from '../utils/storageUtils.js';
-import { getUniqueCycleName } from '../utils/nameUtils.js';
+
+// ============================================================================
+// DYNAMIC IMPORTS (loaded at init time with version cache-busting)
+// ============================================================================
+
+// Storage utilities - dynamically loaded to avoid ES module cache issues
+let getObjectSizeBytes, canAddToStorage, getStorageShortageMessage;
+
+// Name utilities
+let getUniqueCycleName;
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -678,7 +686,25 @@ export class MenuManager {
 let menuManager = null;
 
 // Export initialization function
-export function initMenuManager(dependencies) {
+export async function initMenuManager(dependencies) {
+    // Dynamically import utilities with version for cache-busting
+    const version = globalThis.APP_VERSION || '1.857';
+
+    console.log(`📦 MenuManager: Loading utilities with version ${version}...`);
+
+    // Import storage utilities
+    const storageUtils = await import(`../utils/storageUtils.js?v=${version}`);
+    getObjectSizeBytes = storageUtils.getObjectSizeBytes;
+    canAddToStorage = storageUtils.canAddToStorage;
+    getStorageShortageMessage = storageUtils.getStorageShortageMessage;
+
+    // Import name utilities
+    const nameUtils = await import(`../utils/nameUtils.js?v=${version}`);
+    getUniqueCycleName = nameUtils.getUniqueCycleName;
+
+    console.log('✅ MenuManager: Utilities loaded');
+
+    // Create instance and initialize
     menuManager = new MenuManager(dependencies);
     return menuManager.init().then(() => menuManager);
 }

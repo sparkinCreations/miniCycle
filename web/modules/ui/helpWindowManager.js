@@ -7,8 +7,16 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { getObjectSizeBytes, formatBytes } from '../utils/storageUtils.js';
-import { getUndoCacheSizeBytes } from './undoRedoManager.js';
+
+// ============================================================================
+// DYNAMIC IMPORTS (loaded at init time with version cache-busting)
+// ============================================================================
+
+// Storage utilities - dynamically loaded to avoid ES module cache issues
+let getObjectSizeBytes, formatBytes;
+
+// Undo manager utilities
+let getUndoCacheSizeBytes;
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -488,14 +496,33 @@ let helpWindowManagerInstance = null;
 
 /**
  * Initialize and get the HelpWindowManager instance.
+ * Dynamically imports utilities with version cache-busting before creating instance
  * @param {Object} dependencies - Optional dependencies to inject
- * @returns {HelpWindowManager} The manager instance
+ * @returns {Promise<HelpWindowManager>} The manager instance
  */
-export function initHelpWindowManager(dependencies = {}) {
+export async function initHelpWindowManager(dependencies = {}) {
+    // Dynamically import utilities with version for cache-busting
+    const version = globalThis.APP_VERSION || '1.857';
+
+    console.log(`📦 HelpWindowManager: Loading utilities with version ${version}...`);
+
+    // Import storage utilities
+    const storageUtils = await import(`../utils/storageUtils.js?v=${version}`);
+    getObjectSizeBytes = storageUtils.getObjectSizeBytes;
+    formatBytes = storageUtils.formatBytes;
+
+    // Import undo manager utilities
+    const undoManager = await import(`./undoRedoManager.js?v=${version}`);
+    getUndoCacheSizeBytes = undoManager.getUndoCacheSizeBytes;
+
+    console.log('✅ HelpWindowManager: Utilities loaded');
+
+    // Set dependencies
     if (dependencies && Object.keys(dependencies).length > 0) {
         setHelpWindowManagerDependencies(dependencies);
     }
 
+    // Create singleton instance
     if (!helpWindowManagerInstance) {
         helpWindowManagerInstance = new HelpWindowManager();
     }

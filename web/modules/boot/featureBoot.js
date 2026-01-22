@@ -243,7 +243,8 @@ export async function bootFeatures(deps, coreResult) {
       }
 
       // Inject into taskCRUD for add/delete visibility updates
-      const { setTaskCRUDDependencies } = await import(withV('../task/taskCRUD.js'));
+      const { setTaskCRUDDependencies, initTaskCRUD } = await import(withV('../task/taskCRUD.js'));
+      await initTaskCRUD(); // Load utilities with version cache-busting
       setTaskCRUDDependencies({
         updateSearchVisibility: taskSearchMod.updateSearchVisibility,
         getTaskCount: taskSearchMod.getTaskCount
