@@ -48,7 +48,13 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { MILESTONES } from '../core/constants.js';
+
+// ============================================================================
+// DYNAMIC IMPORTS (loaded at init time with version cache-busting)
+// ============================================================================
+
+// MILESTONES configuration - dynamically loaded to avoid ES module cache issues
+let MILESTONES = null;
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -420,4 +426,41 @@ export function checkMiniCycle() {
     }
 
     console.log("ran check MiniCycle function2");
+}
+
+// ============================================================================
+// MODULE INITIALIZATION (for moduleLoader)
+// ============================================================================
+
+/**
+ * Initialize CycleCompletion module (called by moduleLoader)
+ * Dynamically imports MILESTONES with version cache-busting
+ * @param {Object} dependencies - Injected dependencies
+ * @returns {Promise<Object>} Module exports for registration
+ */
+export async function initCycleCompletion(dependencies = {}) {
+    // Dynamically import MILESTONES with version for cache-busting
+    if (!MILESTONES) {
+        const version = globalThis.APP_VERSION || '1.860';
+        console.log(`📦 CycleCompletion: Loading MILESTONES with version ${version}...`);
+
+        const constantsMod = await import(`../core/constants.js?v=${version}`);
+        MILESTONES = constantsMod.MILESTONES;
+
+        console.log('✅ CycleCompletion: MILESTONES loaded');
+    }
+
+    setCycleCompletionDependencies(dependencies);
+
+    console.log('✅ CycleCompletion initialized via initCycleCompletion');
+
+    return {
+        incrementCycleCount,
+        checkMiniCycle,
+        updateProgressBar,
+        showCompletionAnimation,
+        showClearAnimation,
+        animateProgressBarFill,
+        animateProgressBarEmpty
+    };
 }

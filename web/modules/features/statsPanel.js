@@ -23,7 +23,14 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { GESTURE, UI_TIMEOUTS, CHART, INTERVALS, MILESTONES } from '../core/constants.js';
+import { GESTURE, UI_TIMEOUTS, CHART, INTERVALS } from '../core/constants.js';
+
+// ============================================================================
+// DYNAMIC IMPORTS (loaded at init time with version cache-busting)
+// ============================================================================
+
+// MILESTONES configuration - dynamically loaded to avoid ES module cache issues
+let MILESTONES = null;
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -846,6 +853,17 @@ export class StatsPanelManager {
         if (!AppState) {
             console.warn('⚠️ AppState not available (test cleanup race condition)');
             return;
+        }
+
+        // ✅ Ensure MILESTONES is loaded before using it
+        if (!MILESTONES) {
+            console.warn('⚠️ MILESTONES not loaded yet - skipping milestone calculations');
+            // Early return or load it now
+            const version = globalThis.APP_VERSION || '1.860';
+            console.log(`📦 StatsPanel: Loading MILESTONES with version ${version}...`);
+            const constantsMod = await import(`../core/constants.js?v=${version}`);
+            MILESTONES = constantsMod.MILESTONES;
+            console.log('✅ StatsPanel: MILESTONES loaded');
         }
 
         // Calculate current stats (using cached DOM queries for performance)
@@ -1701,10 +1719,22 @@ let statsPanelManager = null;
 
 /**
  * Initialize the stats panel manager (called by moduleLoader)
+ * Dynamically loads MILESTONES from constants.js with version cache-busting
  * @param {Object} dependencies - Injected dependencies
- * @returns {StatsPanelManager} The initialized instance
+ * @returns {Promise<StatsPanelManager>} The initialized instance
  */
 export async function initStatsPanel(dependencies = {}) {
+    // Load MILESTONES from constants.js dynamically on first init
+    if (!MILESTONES) {
+        const version = globalThis.APP_VERSION || '1.860';
+        console.log(`📦 StatsPanel: Loading MILESTONES with version ${version}...`);
+
+        const constantsMod = await import(`../core/constants.js?v=${version}`);
+        MILESTONES = constantsMod.MILESTONES;
+
+        console.log('✅ StatsPanel: MILESTONES loaded');
+    }
+
     if (statsPanelManager) {
         console.warn('⚠️ StatsPanelManager already initialized');
         return statsPanelManager;
