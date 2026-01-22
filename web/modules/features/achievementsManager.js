@@ -579,10 +579,10 @@ export class AchievementsManager {
 
         document.querySelectorAll(".badge").forEach(badge => {
             const milestone = parseInt(badge.dataset.milestone);
-            const tierConfig = MILESTONE_CONFIG.TIERS.find(t => t.cycles === milestone);
+            const tierConfig = MILESTONES.find(t => t.cycleThreshold === milestone);
 
             if (tierConfig) {
-                let tooltip = `${tierConfig.name}: ${tierConfig.cycles} cycles OR ${tierConfig.tasks} cleared tasks`;
+                let tooltip = `${tierConfig.name}: ${tierConfig.cycleThreshold} cycles OR ${tierConfig.taskThreshold} cleared tasks`;
                 if (tierConfig.rewardLabel) {
                     tooltip += ` - Unlocks ${tierConfig.rewardLabel}`;
                 }
