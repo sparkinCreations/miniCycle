@@ -21,9 +21,14 @@ var MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 var NETWORK_FIRST_PATTERNS = [
   'version.js',                  // Version source of truth - MUST be fresh
   'miniCycle-main.js',           // Entry point
-  'modules/boot/'                // All boot files - version critical
-  // Note: Other modules use version mismatch detection (see fetch handler)
-  // which automatically uses network-first when ?v= param doesn't match SW version
+  'modules/boot/',               // All boot files - version critical
+  'modules/core/',               // Core modules (diBase, appInit, appState) - statically imported
+  'modules/utils/'               // Utility modules (storageUtils, etc.) - statically imported
+  // Note: modules/core/ and modules/utils/ added because these files are imported via static imports
+  // (without ?v= params) by other modules. Without network-first, stale cached versions can cause
+  // "does not provide an export named X" errors when new exports are added.
+  // Other modules use version mismatch detection (see fetch handler) which automatically uses
+  // network-first when ?v= param doesn't match SW version.
 ];
 
 // ============================================================================
