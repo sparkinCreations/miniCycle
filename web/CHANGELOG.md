@@ -1,3 +1,8 @@
+## [1.863] - 2026-01-22
+- fix: enhance versioning for cache-busting in coreBoot and orchestrator, update achievementsManager for dynamic milestones
+- fix: update version to 1.862 across all relevant files and enhance project stats
+
+
 ## [1.862] - 2026-01-22
 - fix: clear nested deps object properties to prevent stale references during retries
 - fix: update version to 1.861 across all relevant files and enhance project stats
