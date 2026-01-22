@@ -1,3 +1,8 @@
+## [1.860] - 2026-01-22
+- fix: dynamically load MILESTONES configuration to avoid ES module cache issues
+- fix: update version to 1.859 across all relevant files and enhance project stats
+
+
 ## [1.859] - 2026-01-22
 - fix: implement appInit state reset on boot retry to prevent stale references
 - fix: update version to 1.858 across all relevant files and enhance project stats
