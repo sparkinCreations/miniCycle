@@ -71,7 +71,7 @@ document.documentElement.dataset.bootStartTime = Date.now().toString();
 
 const TEST_MODE_DB = 'miniCycleTestResultsDB';
 const TEST_MODE_STORE = 'results';
-const IDB_TIMEOUT_MS = 1000; // 1 second timeout for IndexedDB operations (fail fast on reload)
+const IDB_TIMEOUT_MS = 500; // 500ms timeout for IndexedDB operations (fail fast, minimal boot delay)
 
 /**
  * Wrap a Promise with a timeout to prevent indefinite hanging
@@ -285,6 +285,10 @@ async function clearTestModeFlags() {
 /**
  * Recover from interrupted tests by restoring localStorage from IndexedDB backup
  * Called at the very start of boot, BEFORE any modules load
+ *
+ * Note: 500ms timeout means this adds ~500ms to boot if IndexedDB is slow/unavailable.
+ * This is acceptable trade-off to catch rare interrupted test cases.
+ *
  * @returns {Promise<boolean>} True if recovery was performed
  */
 async function recoverFromInterruptedTests() {
