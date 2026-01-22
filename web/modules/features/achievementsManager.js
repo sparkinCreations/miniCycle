@@ -9,31 +9,19 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { MILESTONES as MILESTONE_CONFIG } from '../core/constants.js';
+
+// ============================================================================
+// DYNAMIC IMPORTS (loaded at init time with version cache-busting)
+// ============================================================================
+
+// MILESTONES configuration - dynamically loaded to avoid ES module cache issues
+let MILESTONES = null;
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
 const MODAL_Z_INDEX = 10000;
-
-/**
- * Achievement milestone definitions - sourced from constants.js
- * OR-based: Either cycles OR tasks can unlock each tier
- *
- * To change thresholds, edit MILESTONES.TIERS in constants.js (single source of truth)
- */
-const MILESTONES = MILESTONE_CONFIG.TIERS.map(tier => ({
-    id: tier.id,
-    name: tier.name,
-    emoji: tier.emoji,
-    description: `Complete ${tier.cycles} cycles or ${tier.tasks} cleared tasks`,
-    cycleThreshold: tier.cycles,
-    taskThreshold: tier.tasks,
-    reward: tier.reward,
-    rewardType: tier.rewardType,
-    rewardLabel: tier.rewardLabel || null
-}));
 
 // ============================================================================
 // DEPENDENCY INJECTION
@@ -994,10 +982,35 @@ let instance = null;
 
 /**
  * Initialize the achievements manager
+ * Dynamically loads MILESTONES from constants.js with version cache-busting
  * @param {Object} deps - Dependencies
- * @returns {AchievementsManager}
+ * @returns {Promise<AchievementsManager>}
  */
-export function initAchievementsManager(deps = {}) {
+export async function initAchievementsManager(deps = {}) {
+    // Load MILESTONES from constants.js dynamically on first init
+    if (!MILESTONES) {
+        const version = globalThis.APP_VERSION || '1.859';
+        console.log(`📦 AchievementsManager: Loading MILESTONES with version ${version}...`);
+
+        const constantsMod = await import(`../core/constants.js?v=${version}`);
+        const MILESTONE_CONFIG = constantsMod.MILESTONES;
+
+        // Transform MILESTONE_CONFIG.TIERS into MILESTONES array
+        MILESTONES = MILESTONE_CONFIG.TIERS.map(tier => ({
+            id: tier.id,
+            name: tier.name,
+            emoji: tier.emoji,
+            description: `Complete ${tier.cycles} cycles or ${tier.tasks} cleared tasks`,
+            cycleThreshold: tier.cycles,
+            taskThreshold: tier.tasks,
+            reward: tier.reward,
+            rewardType: tier.rewardType,
+            rewardLabel: tier.rewardLabel || null
+        }));
+
+        console.log('✅ AchievementsManager: MILESTONES loaded');
+    }
+
     if (!instance) {
         instance = new AchievementsManager(deps);
         // Initialize badge tooltips now that instance exists
