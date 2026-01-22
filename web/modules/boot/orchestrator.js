@@ -338,6 +338,9 @@ async function runBootSequence() {
   const { bootFeatures, bootEarlyDeps } = featureBoot;
   const { initUIBoot } = uiBoot;
 
+  // Import moduleLoader to clear cache on retry
+  const { clearLoadedModules } = await import(`./moduleLoader.js?v=${APP_VERSION}`);
+
   // ========== CREATE/REUSE DEPS CONTAINER ==========
   // Reuse deps across retries to preserve DI closure references AND module state
   if (!deps) {
@@ -347,8 +350,13 @@ async function runBootSequence() {
     };
     console.log('📦 Created fresh deps container');
   } else {
-    // ✅ FIX: Don't recreate nested objects - they already have state from first attempt
-    // Only ensure all expected categories exist (in case structure changed)
+    // ✅ CRITICAL FIX: Clear module loader cache on retry
+    // Cached modules have DI closures that captured the old deps from attempt 1
+    // We need to reload all modules so they get fresh closures with the current deps
+    console.log('♻️ Retry detected - clearing module cache to refresh DI closures');
+    clearLoadedModules();
+
+    // Preserve nested objects - they already have state from first attempt
     deps.utils = deps.utils || {};
     deps.features = deps.features || {};
     deps.ui = deps.ui || {};
@@ -359,7 +367,6 @@ async function runBootSequence() {
     deps.progress = deps.progress || {};
     deps.storage = deps.storage || {};
     deps.testing = deps.testing || {};
-    console.log('♻️ Reusing deps container from previous attempt (preserving nested state)');
   }
 
   // ========== PHASE 1: CORE (with timeout) ==========
