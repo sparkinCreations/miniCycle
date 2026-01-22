@@ -1,3 +1,8 @@
+## [1.856] - 2026-01-22
+- fix: update version to 1.855 and clear module loader cache on retry
+- fix: update version to 1.854 across all relevant files and enhance project stats
+
+
 ## [1.854] - 2026-01-22
 - fix: reduce IndexedDB timeout to 500ms for faster boot and minimal delay in test recovery
 - fix: update version to 1.853 across all relevant files and enhance project stats
