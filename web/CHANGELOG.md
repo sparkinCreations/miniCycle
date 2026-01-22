@@ -1,3 +1,8 @@
+## [1.867] - 2026-01-22
+- fix: add type check for initCycleImportManager function in loadSubModules
+- fix: update version to 1.866 across all relevant files and enhance project stats
+
+
 ## [1.866] - 2026-01-22
 - fix: update version to 1.865 across all relevant files and enhance project stats
 
