@@ -341,6 +341,9 @@ async function runBootSequence() {
   // Import moduleLoader to clear cache on retry
   const { clearLoadedModules } = await import(`./moduleLoader.js?v=${APP_VERSION}`);
 
+  // Import appInit to reset its state on retry
+  const { appInit } = await import(`../core/appInit.js?v=${APP_VERSION}`);
+
   // ========== CREATE/REUSE DEPS CONTAINER ==========
   // Reuse deps across retries to preserve DI closure references AND module state
   if (!deps) {
@@ -356,17 +359,24 @@ async function runBootSequence() {
     console.log('♻️ Retry detected - clearing module cache to refresh DI closures');
     clearLoadedModules();
 
-    // Preserve nested objects - they already have state from first attempt
-    deps.utils = deps.utils || {};
-    deps.features = deps.features || {};
-    deps.ui = deps.ui || {};
-    deps.core = deps.core || {};
-    deps.task = deps.task || {};
-    deps.cycle = deps.cycle || {};
-    deps.recurring = deps.recurring || {};
-    deps.progress = deps.progress || {};
-    deps.storage = deps.storage || {};
-    deps.testing = deps.testing || {};
+    // ✅ CRITICAL FIX 3: Reset appInit state on retry
+    // appInit singleton persists across retries with stale coreReady/appReady flags
+    appInit.reset();
+
+    // ✅ CRITICAL FIX 2: Clear nested objects to prevent stale references
+    // On retry, we need to rebuild all deps from scratch so Proxy getters work correctly
+    // Preserving old objects caused AppState Proxy to capture stale deps.core reference
+    console.log('🧹 Clearing nested deps objects for fresh DI wiring');
+    deps.utils = {};
+    deps.features = {};
+    deps.ui = {};
+    deps.core = {};  // ← CRITICAL: Clear this so AppState can be re-wired
+    deps.task = {};
+    deps.cycle = {};
+    deps.recurring = {};
+    deps.progress = {};
+    deps.storage = {};
+    deps.testing = {};
   }
 
   // ========== PHASE 1: CORE (with timeout) ==========
