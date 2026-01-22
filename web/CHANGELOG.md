@@ -1,3 +1,8 @@
+## [1.864] - 2026-01-22
+- fix: correct boot attempt variable for cache-busting version suffix in runBootSequence
+- fix: update version to 1.863 across all relevant files and enhance project stats
+
+
 ## [1.863] - 2026-01-22
 - fix: enhance versioning for cache-busting in coreBoot and orchestrator, update achievementsManager for dynamic milestones
 - fix: update version to 1.862 across all relevant files and enhance project stats
