@@ -1,3 +1,7 @@
+## [1.866] - 2026-01-22
+- fix: update version to 1.865 across all relevant files and enhance project stats
+
+
 ## [1.865] - 2026-01-22
 - fix: refactor cache-busting implementation in coreBoot to use withV function
 - fix: update version to 1.864 across all relevant files and enhance project stats
