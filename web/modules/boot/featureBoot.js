@@ -64,8 +64,54 @@ export async function bootEarlyDeps(deps, coreResult) {
   let showNotification = null;
   let notifications = null;
 
+  // ========== Fallback notification for when module fails to load ==========
+  const fallbackNotification = (message, type = 'info', duration = 3000) => {
+    console.log(`[${type.toUpperCase()}] ${message}`);
+    // Try to show a basic DOM notification if container exists
+    const container = document.getElementById('notification-container');
+    if (container) {
+      const notif = document.createElement('div');
+      notif.className = `notification show ${type}`;
+      notif.innerHTML = `<div class="notification-content">${message}</div>`;
+      container.appendChild(notif);
+      if (duration) {
+        setTimeout(() => {
+          notif.classList.remove('show');
+          setTimeout(() => notif.remove(), 300);
+        }, duration);
+      }
+    }
+  };
+
+  // ========== Fallback prompt modal for critical operations ==========
+  const fallbackPromptModal = ({ title, message, placeholder, confirmText, cancelText, callback }) => {
+    const result = prompt(`${title}\n${message}`, placeholder || '');
+    callback(result);
+  };
+
+  // ========== Fallback confirmation modal ==========
+  const fallbackConfirmationModal = ({ title, message, callback }) => {
+    const result = confirm(`${title}\n${message}`);
+    callback(result);
+  };
+
   try {
     const notificationsMod = await import(withV('../utils/notifications.js'));
+
+    // ✅ DEFENSIVE CHECK: Verify setNotificationsDependencies exists before calling
+    // This can fail if browser serves a stale cached module version
+    if (typeof notificationsMod.setNotificationsDependencies !== 'function') {
+      console.error('❌ Notifications module loaded but setNotificationsDependencies is not a function');
+      console.error('   Module exports:', Object.keys(notificationsMod));
+      console.error('   This usually indicates a stale cache. Try clearing browser cache and reloading.');
+
+      // Signal potential cache issue for recovery
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('__miniCycle_notificationModuleFailed__', 'true');
+      }
+
+      throw new Error('setNotificationsDependencies is not a function - possible cache issue');
+    }
 
     notificationsMod.setNotificationsDependencies({
       AppState: null, // Set later after AppState is created
@@ -108,6 +154,18 @@ export async function bootEarlyDeps(deps, coreResult) {
     }
   } catch (error) {
     console.error('❌ Failed to load Notifications:', error);
+
+    // ✅ FALLBACK: Provide basic notification functions so boot can continue
+    console.warn('⚠️ Using fallback notification system');
+    deps.utils.showNotification = fallbackNotification;
+    deps.utils.showPromptModal = fallbackPromptModal;
+    deps.utils.showConfirmationModal = fallbackConfirmationModal;
+    deps.utils.showNotificationWithTip = fallbackNotification;
+    deps.utils.showApplyConfirmation = () => {};
+    deps.utils.setupNotificationDragging = () => {};
+    deps.utils.resetNotificationPosition = () => {};
+    deps.utils.setNotificationsDependencies = () => {};
+    showNotification = fallbackNotification;
   }
 
   // ========== Wire ErrorHandler (needs showNotification) ==========
