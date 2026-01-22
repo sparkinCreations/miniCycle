@@ -1,3 +1,8 @@
+## [1.857] - 2026-01-22
+- fix: enhance network-first patterns in service worker for critical modules to prevent stale cache issues
+- fix: update version to 1.856 across all relevant files and enhance project stats
+
+
 ## [1.856] - 2026-01-22
 - fix: update version to 1.855 and clear module loader cache on retry
 - fix: update version to 1.854 across all relevant files and enhance project stats
