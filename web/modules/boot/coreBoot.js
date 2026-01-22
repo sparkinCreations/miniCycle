@@ -620,7 +620,7 @@ export async function initAppState(deps, showNotification) {
 
   // Import appContext early for use in deferred dependency getters
   // ✅ Use version param for cache-busting (like appInit pattern)
-  const appContextMod = await import(`../core/appContext.js?v=${effectiveVersion}`);
+  const appContextMod = await import(withV('../core/appContext.js'));
 
   // Wire appInit setup dependencies
   // Note: These are GETTER FUNCTIONS that resolve at call time (deferred DI)
@@ -747,7 +747,8 @@ let loadMiniCycleData, autoSave, updateCycleData;
 
 // Initialize data access functions (called after appContext is ready)
 async function initDataAccess(deps) {
-  const dataAccessMod = await import(`../core/dataAccess.js?v=${effectiveVersion}`);
+  const { withV } = deps.core;
+  const dataAccessMod = await import(withV('../core/dataAccess.js'));
 
   // ✅ FIX: Inject all deps directly into dataAccess to avoid versioned/unversioned module mismatch
   if (dataAccessMod.setDataAccessDeps) {
@@ -980,7 +981,8 @@ async function runFallbackInitialSetup(deps) {
 
     // Use appContext instead of window.* for app functions
     // ✅ Use version param for cache-busting (like appInit pattern)
-    const appContextMod = await import(`../core/appContext.js?v=${effectiveVersion}`);
+    const { withV } = deps.core;
+    const appContextMod = await import(withV('../core/appContext.js'));
 
     if (!activeCycle || !cycles?.[activeCycle]) {
       console.log('🆕 No active cycle - showing cycle creation modal...');
