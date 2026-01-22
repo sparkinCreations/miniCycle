@@ -316,6 +316,12 @@ function showBootError(phase, error, willRetry = false) {
  */
 async function runBootSequence() {
   const bootStart = Date.now();
+  const isRetry = bootAttemptNumber > 1;
+
+  // ✅ On retry, append retry counter to version for cache busting
+  // This forces fresh ES module loads, bypassing browser's module cache
+  // Critical for clearing DI module state that persists in cached modules
+  const versionSuffix = isRetry ? `${APP_VERSION}.r${bootAttemptNumber}` : APP_VERSION;
 
   // ========== CHECK FOR UPDATES ==========
   updateLoaderProgress('Checking for updates...', 5);
@@ -326,9 +332,9 @@ async function runBootSequence() {
   updateLoaderProgress('Loading core...', 15);
   const [coreBoot, featureBoot, uiBoot] = await withTimeout(
     Promise.all([
-      import(`./coreBoot.js?v=${APP_VERSION}`),
-      import(`./featureBoot.js?v=${APP_VERSION}`),
-      import(`./uiBoot.js?v=${APP_VERSION}`)
+      import(`./coreBoot.js?v=${versionSuffix}`),
+      import(`./featureBoot.js?v=${versionSuffix}`),
+      import(`./uiBoot.js?v=${versionSuffix}`)
     ]),
     BOOT_TIMEOUTS.MODULE_IMPORT,
     'Module import'
@@ -339,10 +345,10 @@ async function runBootSequence() {
   const { initUIBoot } = uiBoot;
 
   // Import moduleLoader to clear cache on retry
-  const { clearLoadedModules } = await import(`./moduleLoader.js?v=${APP_VERSION}`);
+  const { clearLoadedModules } = await import(`./moduleLoader.js?v=${versionSuffix}`);
 
   // Import appInit to reset its state on retry
-  const { appInit } = await import(`../core/appInit.js?v=${APP_VERSION}`);
+  const { appInit } = await import(`../core/appInit.js?v=${versionSuffix}`);
 
   // ========== CREATE/REUSE DEPS CONTAINER ==========
   // Reuse deps across retries to preserve DI closure references AND module state
@@ -384,7 +390,7 @@ async function runBootSequence() {
   updateLoaderProgress('Starting systems...', 30);
   console.log('🔧 Phase 1: Core systems...');
   const coreResult = await withTimeout(
-    initCoreBoot(deps),
+    initCoreBoot(deps, versionSuffix),
     BOOT_TIMEOUTS.PHASE_1,
     'Phase 1 (Core)'
   );

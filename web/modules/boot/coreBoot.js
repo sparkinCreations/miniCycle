@@ -359,7 +359,7 @@ let DEFAULT_RECURRING_DELETE_SETTINGS = null;
 let TASK_LIMIT = 500;
 
 // Version helper for cache-busted imports
-let withV = (path) => `${path}?v=${APP_VERSION}`;
+let withV = (path) => `${path}?v=${effectiveVersion}`;
 
 // ============================================================================
 // SECTION 1: Core Initialization
@@ -387,8 +387,11 @@ let withV = (path) => `${path}?v=${APP_VERSION}`;
  *     const { AppGlobalState, appInit } = coreRefs;
  * }
  */
-export async function initCoreBoot(deps) {
+export async function initCoreBoot(deps, versionSuffix = null) {
   console.log('🚀 coreBoot: Starting core initialization...');
+
+  // ✅ Use version suffix for retry cache busting (bypasses ES module cache)
+  const effectiveVersion = versionSuffix || APP_VERSION;
 
   // ========== FIRST: Check for interrupted tests and restore data ==========
   // This MUST happen before any modules load to ensure localStorage has correct data
@@ -399,7 +402,7 @@ export async function initCoreBoot(deps) {
 
   // ========== Load AppGlobalState ==========
   const appGlobalStateMod = await import(
-    `../core/appGlobalState.js?v=${APP_VERSION}`
+    `../core/appGlobalState.js?v=${effectiveVersion}`
   );
   AppGlobalState = appGlobalStateMod.AppGlobalState;
   FeatureFlags = appGlobalStateMod.FeatureFlags;
@@ -437,7 +440,7 @@ export async function initCoreBoot(deps) {
   AppGlobalState.bootStartTime = parseInt(document.documentElement.dataset.bootStartTime, 10) || Date.now();
 
   // ========== Load appInit ==========
-  const appInitModule = await import(`../core/appInit.js?v=${APP_VERSION}`);
+  const appInitModule = await import(`../core/appInit.js?v=${effectiveVersion}`);
   const { appInit: appInitInstance, setAppInitDependencies, APPINIT_VERSION } = appInitModule;
   appInit = appInitInstance;
 
@@ -478,7 +481,7 @@ export async function initCoreBoot(deps) {
   }
 
   // ========== Load Constants ==========
-  const constantsModule = await import(`../core/constants.js?v=${APP_VERSION}`);
+  const constantsModule = await import(`../core/constants.js?v=${effectiveVersion}`);
   DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = constantsModule.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
   DEFAULT_RECURRING_DELETE_SETTINGS = constantsModule.DEFAULT_RECURRING_DELETE_SETTINGS;
   TASK_LIMIT = constantsModule.TASK_LIMIT || 500;
@@ -497,7 +500,7 @@ export async function initCoreBoot(deps) {
   console.log('✅ Constants loaded');
 
   // ========== Update withV helper ==========
-  withV = (path) => `${path}?v=${APP_VERSION}`;
+  withV = (path) => `${path}?v=${effectiveVersion}`;
   deps.core.withV = withV;
 
   // ========== Create AppMeta ==========
@@ -544,7 +547,7 @@ export async function initCoreBoot(deps) {
   deps.core.initializeAppWithAutoMigration = migrationMod.initializeAppWithAutoMigration;
 
   // Initialize migration facade (consolidates 8 globals into 1 importable object)
-  const migrationFacadeMod = await import(`../core/migrationFacade.js?v=${APP_VERSION}`);
+  const migrationFacadeMod = await import(`../core/migrationFacade.js?v=${effectiveVersion}`);
   migrationFacadeMod.initMigrationFacade(migrationMod);
   deps.core.MigrationFacade = migrationFacadeMod.MigrationFacade;
 
@@ -556,7 +559,7 @@ export async function initCoreBoot(deps) {
   // This allows modules loaded between initCoreBoot and initAppState
   // to use appContext getters (e.g., getGlobalUtils())
   // ✅ Use version param for cache-busting (like appInit pattern)
-  const appContextMod = await import(`../core/appContext.js?v=${APP_VERSION}`);
+  const appContextMod = await import(`../core/appContext.js?v=${effectiveVersion}`);
   appContextMod.initAppContext({
     appInit,
     AppGlobalState,
@@ -617,7 +620,7 @@ export async function initAppState(deps, showNotification) {
 
   // Import appContext early for use in deferred dependency getters
   // ✅ Use version param for cache-busting (like appInit pattern)
-  const appContextMod = await import(`../core/appContext.js?v=${APP_VERSION}`);
+  const appContextMod = await import(`../core/appContext.js?v=${effectiveVersion}`);
 
   // Wire appInit setup dependencies
   // Note: These are GETTER FUNCTIONS that resolve at call time (deferred DI)
@@ -744,7 +747,7 @@ let loadMiniCycleData, autoSave, updateCycleData;
 
 // Initialize data access functions (called after appContext is ready)
 async function initDataAccess(deps) {
-  const dataAccessMod = await import(`../core/dataAccess.js?v=${APP_VERSION}`);
+  const dataAccessMod = await import(`../core/dataAccess.js?v=${effectiveVersion}`);
 
   // ✅ FIX: Inject all deps directly into dataAccess to avoid versioned/unversioned module mismatch
   if (dataAccessMod.setDataAccessDeps) {
@@ -977,7 +980,7 @@ async function runFallbackInitialSetup(deps) {
 
     // Use appContext instead of window.* for app functions
     // ✅ Use version param for cache-busting (like appInit pattern)
-    const appContextMod = await import(`../core/appContext.js?v=${APP_VERSION}`);
+    const appContextMod = await import(`../core/appContext.js?v=${effectiveVersion}`);
 
     if (!activeCycle || !cycles?.[activeCycle]) {
       console.log('🆕 No active cycle - showing cycle creation modal...');
