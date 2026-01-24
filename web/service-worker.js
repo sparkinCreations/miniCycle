@@ -1,13 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
-// ✅ Import version from centralized version.js file
-// ✅ iOS FIX: Wrap importScripts in try-catch to prevent SW crash
-try {
-  importScripts('./version.js');
-} catch (e) {
-  console.error('❌ Failed to load version.js:', e);
-}
-var APP_VERSION = self.APP_VERSION || '1.0.0';   // Fallback if version.js fails
-var CACHE_VERSION = 'v' + (self.CACHE_VERSION || 1); // Fallback for cache naming
+// ✅ Version constants inlined directly (updated by update-version.sh)
+// This ensures the SW always has correct version info without HTTP cache issues
+var APP_VERSION = '1.867';
+var CACHE_VERSION = 'v662';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 

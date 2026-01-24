@@ -813,6 +813,33 @@ EOF
 fi
 
 # ============================================
+# STAGE 1B: UPDATE SERVICE WORKER VERSION CONSTANTS
+# ============================================
+
+if [ "$LITE_ONLY" = true ]; then
+    echo "📝 Stage 1B: Skipping service-worker.js (LITE ONLY mode)"
+    echo ""
+else
+    echo "📝 Stage 1B: Updating service-worker.js version constants..."
+
+    if [ "$DRY_RUN" = true ]; then
+        echo "   Would update service-worker.js with:"
+        echo "   - APP_VERSION = '$NEW_VERSION'"
+        echo "   - CACHE_VERSION = 'v$NEW_CACHE_VERSION'"
+    else
+        if [ -f "service-worker.js" ]; then
+            backup_file "service-worker.js"
+            do_sed "service-worker.js" "s/var APP_VERSION = '[^']*'/var APP_VERSION = '$NEW_VERSION'/g"
+            do_sed "service-worker.js" "s/var CACHE_VERSION = 'v[0-9]*'/var CACHE_VERSION = 'v$NEW_CACHE_VERSION'/g"
+            echo "✅ Updated service-worker.js (app: $NEW_VERSION, cache: v$NEW_CACHE_VERSION)"
+        else
+            echo "⚠️  service-worker.js not found"
+        fi
+    fi
+    echo ""
+fi
+
+# ============================================
 # STAGE 2: UPDATE HTML FILES
 # ============================================
 
@@ -1114,6 +1141,7 @@ EOF
 
     # Add files to restore script
     echo "restore_file \"version.js\"" >> "$BACKUP_FOLDER/restore.sh"
+    echo "restore_file \"service-worker.js\"" >> "$BACKUP_FOLDER/restore.sh"
 
     for file in "${CORE_HTML_FILES[@]}"; do
         echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
@@ -1192,6 +1220,19 @@ if [ "$DRY_RUN" = false ]; then
         else
             echo "❌ Error: version.js was not generated"
             VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+        fi
+
+        # Validate service-worker.js
+        if [ -f "service-worker.js" ]; then
+            if ! grep -q "var APP_VERSION = '$NEW_VERSION'" service-worker.js; then
+                echo "⚠️  Warning: service-worker.js APP_VERSION may not have updated correctly"
+                VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+            elif ! grep -q "var CACHE_VERSION = 'v$NEW_CACHE_VERSION'" service-worker.js; then
+                echo "⚠️  Warning: service-worker.js CACHE_VERSION may not have updated correctly"
+                VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+            else
+                echo "✅ service-worker.js validated"
+            fi
         fi
 
         # Validate HTML files
