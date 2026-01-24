@@ -227,23 +227,23 @@ export class SettingsManager {
             // Wire dependencies to sub-modules
             wireSubModuleDependencies(di.resolve());
 
-            // Initialize all sub-modules
-            _subModules.setupSettingsMenu();
-            _subModules.setupDarkModeToggle();
-            _subModules.setupMoveArrowsToggle();
-            _subModules.setupThreeDotsToggle();
-            _subModules.setupCompletedDropdownToggle();
-            _subModules.setupScrollToNewTaskToggle();
-            _subModules.setupScrollOnLoadToggle();
-            _subModules.setupDebugModeToggle();
-            _subModules.setupResetRecurringButton();
-            _subModules.setupResetAchievementProgressButton();
-            _subModules.setupExportButton();
-            _subModules.setupImportButtons();
-            _subModules.setupDragDropImport();
-            _subModules.setupBackupButton();
-            _subModules.setupRestoreButton();
-            _subModules.setupFactoryResetButton();
+            // Initialize all sub-modules (defensive - one failure shouldn't block the rest)
+            _subModules.setupSettingsMenu?.();
+            _subModules.setupDarkModeToggle?.();
+            _subModules.setupMoveArrowsToggle?.();
+            _subModules.setupThreeDotsToggle?.();
+            _subModules.setupCompletedDropdownToggle?.();
+            _subModules.setupScrollToNewTaskToggle?.();
+            _subModules.setupScrollOnLoadToggle?.();
+            _subModules.setupDebugModeToggle?.();
+            _subModules.setupResetRecurringButton?.();
+            _subModules.setupResetAchievementProgressButton?.();
+            _subModules.setupExportButton?.();
+            _subModules.setupImportButtons?.();
+            _subModules.setupDragDropImport?.();
+            _subModules.setupBackupButton?.();
+            _subModules.setupRestoreButton?.();
+            _subModules.setupFactoryResetButton?.();
 
             this.initialized = true;
             _initialized = true;
