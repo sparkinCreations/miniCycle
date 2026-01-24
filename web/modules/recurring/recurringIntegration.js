@@ -63,6 +63,9 @@ export function setRecurringIntegrationDependencies(dependencies) {
 export async function initializeRecurringModules(options = {}) {
     console.log('🔄 Initializing recurring task modules...');
 
+    // Populate DI container from moduleLoader-provided dependencies
+    di.setDependencies(options);
+
     // ✅ Wait for core systems to be ready (AppState + data)
     await deps.appInit?.waitForCore();
     console.log('✅ Core systems ready - initializing recurring modules');
@@ -72,11 +75,10 @@ export async function initializeRecurringModules(options = {}) {
         // STEP 1: Import both modules (with version for cache-busting)
         // ============================================
 
-        // Use injected AppMeta version only (strict DI - no hardcoded fallback)
+        const version = options.AppMeta?.version || globalThis.APP_VERSION;
         if (!options.AppMeta?.version) {
-            console.warn('⚠️ recurringIntegration: AppMeta.version not provided');
+            console.warn('⚠️ recurringIntegration: AppMeta.version not provided, using globalThis fallback');
         }
-        const version = options.AppMeta?.version;
         const recurringCore = await import(`./recurringCore.js?v=${version}`);
         const { RecurringPanelManager, setRecurringPanelDependencies, buildRecurringSummaryFromSettings, loadPanelSubModules } = await import(`./recurringPanel.js?v=${version}`);
         const settingsApplicator = await import(`./recurringSettingsApplicator.js?v=${version}`);
