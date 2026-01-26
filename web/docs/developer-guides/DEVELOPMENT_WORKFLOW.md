@@ -21,22 +21,17 @@
 ### 1. Edit JavaScript Files
 
 ```javascript
-// Example: Add a new feature to modules/boot/orchestrator.js
+// Example: Add a new feature module (DI + appContext)
+import { state, ui } from '../core/appContext.js';
 
-function myNewFeature() {
-    showNotification('New feature activated!', 'success');
+export function myNewFeature() {
+    const appState = state().AppState;
+    ui().showNotification('New feature activated!', 'success');
 
-    // Access current state
-    const state = window.AppState.get();
-
-    // Make changes
-    window.AppState.update((state) => {
+    appState.update((state) => {
         state.settings.myNewSetting = true;
     }, true);
 }
-
-// Make it available globally
-window.myNewFeature = myNewFeature;
 ```
 
 Refresh browser → See changes immediately!
@@ -44,37 +39,39 @@ Refresh browser → See changes immediately!
 ### 2. Create a New Module
 
 ```javascript
-// utilities/myModule.js
+// modules/ui/myModule.js
 
 export class MyModule {
-    constructor() {
+    constructor({ showNotification }) {
+        this.showNotification = showNotification;
         console.log('MyModule initialized');
     }
 
     doSomething() {
-        showNotification('Module working!', 'success');
+        this.showNotification('Module working!', 'success');
     }
 }
 
-// Create instance and expose globally
-const myModule = new MyModule();
-window.myModule = myModule;
+export function initMyModule(deps) {
+    return new MyModule(deps);
+}
 ```
 
-**Import in main script:**
+**Register via module manifests:**
 
 ```javascript
-// modules/boot/orchestrator.js
-document.addEventListener('DOMContentLoaded', async () => {
-    await import('./modules/myModule.js');
-    console.log('✅ MyModule loaded');
-});
+// modules/boot/moduleManifests.js
+myModule: {
+    path: '../ui/myModule.js',
+    requires: ['showNotification'],
+    provideInstance: 'myModule'
+}
 ```
 
 ### 3. Update Styles
 
 ```css
-/* miniCycle-styles.css */
+/* styles/main.css */
 
 .my-new-class {
     background: var(--primary-color);
@@ -93,9 +90,6 @@ Refresh → Styles applied!
 
 ```javascript
 // Open Settings → App Diagnostics & Testing
-
-// Or via console:
-window.openTestingModal();
 ```
 
 Features:
@@ -108,22 +102,25 @@ Features:
 ### Console Debugging
 
 ```javascript
-// Check current state
-console.log(window.AppState.get());
+// Check current state (appContext)
+const { state } = await import(`./modules/core/appContext.js?v=${globalThis.APP_VERSION}`);
+const appState = state().AppState;
+console.log(appState.get());
 
 // Check active cycle
-const state = window.AppState.get();
+const state = appState.get();
 console.log(state.data.cycles[state.appState.activeCycleId]);
 
 // Check all tasks
-const cycle = getCurrentCycle();
+const cycle = state.data.cycles[state.appState.activeCycleId];
 console.log(cycle.tasks);
 
 // Test notification system
-showNotification('Test message', 'info', 3000);
+const { ui } = await import(`./modules/core/appContext.js?v=${globalThis.APP_VERSION}`);
+ui().showNotification('Test message', 'info', 3000);
 
 // Check recurring templates
-const state = window.AppState.get();
+const state = appState.get();
 const cycle = state.data.cycles[state.appState.activeCycleId];
 console.log(cycle.recurringTemplates);
 ```
@@ -134,7 +131,7 @@ console.log(cycle.recurringTemplates);
 
 ```bash
 # Update version numbers across all files
-./update-version.sh
+./scripts/update-version.sh
 
 # Prompts:
 # - New app version (e.g., 1.374)
@@ -158,7 +155,7 @@ console.log(cycle.recurringTemplates);
 
 ```bash
 # 1. Update version
-./update-version.sh
+./scripts/update-version.sh
 
 # 2. Run tests
 npm test  # Ensure all 1,690+ tests pass
@@ -254,11 +251,12 @@ const themes = {
 };
 
 // 3. Apply theme
-function applyTheme(themeName) {
+async function applyTheme(themeName) {
     document.documentElement.setAttribute('data-theme', themeName);
 
     // Save to state
-    window.AppState.update((state) => {
+    const { state } = await import(`./modules/core/appContext.js?v=${globalThis.APP_VERSION}`);
+    state().AppState.update((state) => {
         state.settings.theme = themeName;
     }, true);
 }
@@ -305,12 +303,13 @@ document.addEventListener('keydown', (e) => {
 
 **Solution:**
 ```javascript
-// Always check if ready first
-if (window.AppState?.isReady()) {
-    window.AppState.update(/* ... */);
-} else {
-    console.log('Waiting for AppState...');
+// Prefer appInit guard or appContext in modules
+const { appInit } = await import(`./modules/core/appInit.js?v=${globalThis.APP_VERSION}`);
+if (!appInit.isCoreReady()) {
+    await appInit.waitForCore();
 }
+const { state } = await import(`./modules/core/appContext.js?v=${globalThis.APP_VERSION}`);
+state().AppState.update(/* ... */);
 ```
 
 #### Issue: Service Worker Not Updating
@@ -326,7 +325,7 @@ if (window.AppState?.isReady()) {
 // Firefox: Ctrl+F5
 
 // Option 2: Force update via console
-window.forceServiceWorkerUpdate();
+window.forceServiceWorkerUpdate?.();
 
 // Option 3: Unregister service worker
 navigator.serviceWorker.getRegistrations().then(registrations => {
@@ -356,28 +355,20 @@ localStorage.clear();
 ### Debug Commands
 
 ```javascript
-// === Data Inspection ===
-window.AppState.get()                    // Full state
-getCurrentCycle()                        // Active cycle
-window.AppState.get().settings           // All settings
+// === Data Inspection (appContext) ===
+const { state, task, ui } = await import(`./modules/core/appContext.js?v=${globalThis.APP_VERSION}`);
+state().AppState.get()                   // Full state
+state().AppState.get().settings          // All settings
+task().refresh?.()                       // Refresh task list UI
+ui().showNotification('Test', 'info')    // Test notifications
 
-// === System Info ===
-window.generateDebugReport()             // Comprehensive info
-window.getServiceWorkerInfo()            // SW status
-window.checkDataIntegrity()              // Validate data
-
-// === Manual Operations ===
-updateStatsPanel()                       // Force stats refresh
-refreshUIFromState()                     // Rebuild entire UI
-window.checkRecurringTasksNow()          // Trigger recurring check
-
-// === Testing ===
-window.openTestingModal()                // Open test interface
-window.showNotification('Test', 'info')  // Test notifications
-
-// === Data Export ===
-window.exportCurrentCycle()              // Download cycle
-window.exportDebugData()                 // Debug package
+// === Diagnostics (testing modules) ===
+const { generateDebugReport } = await import(`./modules/testing/testing-modal-debug.js?v=${globalThis.APP_VERSION}`);
+const { checkDataIntegrity } = await import(`./modules/testing/testing-modal-diagnostics.js?v=${globalThis.APP_VERSION}`);
+const { exportDebugData } = await import(`./modules/testing/testing-modal-analysis.js?v=${globalThis.APP_VERSION}`);
+generateDebugReport();
+checkDataIntegrity();
+exportDebugData();
 ```
 
 ---

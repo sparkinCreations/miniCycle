@@ -608,9 +608,10 @@ const Deps = {
 // recurringIntegration.js wires them up
 import { configureRecurringCoreDeps } from './recurringCore.js';
 
+const { state } = await import(`../core/appContext.js?v=${globalThis.APP_VERSION}`);
 configureRecurringCoreDeps({
-  getAppState: window.AppState.get,
-  updateAppState: window.AppState.update,
+  getAppState: () => state().AppState.get(),
+  updateAppState: (...args) => state().AppState.update(...args),
   // ... inject real implementations
 });
 ```
@@ -624,17 +625,18 @@ configureRecurringCoreDeps({
 **Module Loading:**
 ```javascript
 // modules/boot/orchestrator.js loads in order:
-import { appInit } from './modules/appInitialization.js';
+const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
+const { appInit } = await import(`./modules/core/appInit.js?v=${APP_VERSION}`);
 
 // After core systems ready:
 const { configureRecurringCoreDeps, watchRecurringTasks } =
-  await import('./modules/recurringCore.js');
+  await import(`./modules/recurring/recurringCore.js?v=${APP_VERSION}`);
 
 const { RecurringPanelManager } =
-  await import('./modules/recurringPanel.js');
+  await import(`./modules/recurring/recurringPanel.js?v=${APP_VERSION}`);
 
 // Integration ties them together:
-await import('./modules/recurringIntegration.js');
+await import(`./modules/recurring/recurringIntegration.js?v=${APP_VERSION}`);
 ```
 
 #### Related Modules

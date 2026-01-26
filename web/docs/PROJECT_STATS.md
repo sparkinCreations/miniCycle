@@ -22,9 +22,11 @@
 | **JSDoc Blocks** | 905 |
 | **Documentation Files** | 151 |
 | **DI Completion** | 100% |
-| **Custom window.* Globals** | 0 |
+| **Custom window.* Globals (modules)** | 0 |
 
 ---
+
+**Note:** `miniCycle.html` exposes a small set of window-scoped helpers (service worker update helpers and feature gate flags). Module code remains zero-globals.
 
 ## Module Breakdown
 
@@ -75,7 +77,7 @@
 | Milestone | Status | Date |
 |-----------|--------|------|
 | Strict DI (no `\|\| window.*` fallbacks) | ✅ Complete | Dec 2025 |
-| Zero custom `window.*` globals | ✅ Complete | Jan 2026 |
+| Zero custom `window.*` globals in modules | ✅ Complete | Jan 2026 |
 | Boot file split | ✅ Complete | Dec 2025 |
 | CSS modularization | ✅ Complete | Jan 2026 |
 
