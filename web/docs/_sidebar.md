@@ -93,6 +93,7 @@
   * [History & Achievements Plan](future-work/HISTORY_AND_ACHIEVEMENTS_PLAN.md)
   * [History & Achievements Implementation](future-work/HISTORY_AND_ACHIEVEMENTS_IMPLEMENTATION.md)
   * [Module Independence Refactor](future-work/MODULE_INDEPENDENCE_REFACTOR_PLAN.md)
+  * [Module Loader Architecture Fix](future-work/MODULE_LOADER_ARCHITECTURE_FIX.md)
   * [Recurring Panel Refactor](future-work/RECURRING_PANEL_REFACTOR_PLAN.md)
   * [Schema 2.6 Migration Plan](future-work/SCHEMA_2_6_PLAN.md)
   * [Singleton Safe Versioning](future-work/SINGLETON_SAFE_VERSIONING_PLAN.md)
