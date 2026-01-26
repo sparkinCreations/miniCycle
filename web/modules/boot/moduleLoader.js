@@ -1014,23 +1014,29 @@ function buildModuleDependencies(manifest, deps, coreResult) {
 
     // AUDIT mode: Wrap in Proxy to detect undeclared dep access
     if (AUDIT_UNDECLARED_DEPS && !ENFORCE_REQUIRES) {
-        const declaredDeps = new Set([
+        // Static declared deps (from manifest)
+        const manifestDeclaredDeps = new Set([
             ...(manifest.requires || []),
             ...(manifest.lazyRequires || []),
-            // Core deps are always allowed
-            ...CORE_DEPS,
+            ...(manifest.optionalDeps || []),
             // Standard object properties
             'then', 'catch', 'finally', 'constructor', 'prototype',
             'toString', 'valueOf', 'toJSON',
         ]);
 
+        // Track warned props to avoid spamming (e.g., when devtools enumerates properties)
+        const warnedProps = new Set();
+
         return new Proxy(result, {
             get(target, prop) {
                 // Only log for string properties that look like dep names
                 if (typeof prop === 'string' &&
-                    !declaredDeps.has(prop) &&
+                    !manifestDeclaredDeps.has(prop) &&
+                    !CORE_DEPS.has(prop) &&  // Check CORE_DEPS dynamically (may be populated after Proxy creation)
                     prop in depMappings &&
-                    !prop.startsWith('_')) {
+                    !prop.startsWith('_') &&
+                    !warnedProps.has(prop)) {  // Only warn once per prop
+                    warnedProps.add(prop);
                     console.warn(`📋 AUDIT: ${manifest.path} accessed undeclared dep '${prop}' - add to requires`);
                 }
                 return target[prop];
