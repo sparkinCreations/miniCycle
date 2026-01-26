@@ -1,21 +1,24 @@
 /**
  * miniCycle Boot Orchestrator
  *
- * Pure sequence controller for the 3-phase boot process.
- * This file ONLY coordinates - no DI writes, no UI logic, no DOM queries.
+ * Coordinates the 3-phase boot process and provides boot UI feedback.
+ *
+ * Responsibilities:
+ * - Sequence control for coreBoot → featureBoot → uiBoot
+ * - Loader UI updates during boot (progress text, spinner)
+ * - Error display for boot failures (renders error UI in DOM)
+ * - Automatic retry and cache recovery for stale module issues
  *
  * Boot Phases:
  * - Phase 1: coreBoot (AppState, GlobalUtils, migration)
- * - Phase 2: featureBoot (all feature modules)
+ * - Phase 2: featureBoot (all feature modules via moduleLoader)
  * - Phase 3: uiBoot (event listeners, UI finalization)
  *
- * Error Handling:
- * - Automatic retry on first failure
- * - Cache recovery for stale module issues
- * - Lite version fallback for persistent failures
+ * Note: This file does include DOM manipulation for boot UI feedback.
+ * A future refactor could extract boot UI to a separate module.
  *
  * @module boot/orchestrator
- * @version 1.0.0
+ * @version 1.1.0
  * @see {@link module:boot/coreBoot} - Phase 1 implementation
  * @see {@link module:boot/featureBoot} - Phase 2 implementation
  * @see {@link module:boot/uiBoot} - Phase 3 implementation
