@@ -9,11 +9,55 @@ This document outlines architectural issues in the module loading system discove
 
 ---
 
-## Current Issues
+## Current Architecture (Post-Fix)
 
-### High Priority
+### Key Components
 
-#### 1. Circular Dependency Detection is a No-Op
+```
+moduleManifests.js (single source of truth)
+├── MODULE_MANIFESTS          - All module definitions
+├── PHASES                    - Phase constants
+├── CORE_DEPS                 - Core deps from coreBoot (excluded from graph)
+├── ALIAS_MAP                 - Maps alias names to canonical provides names
+├── resolveAlias()            - Resolves aliases
+├── computeEffectiveAfterConstraints() - Derives after from requires
+├── getModulesByPhase()       - Returns modules sorted by computed constraints
+├── getLoadOrder()            - Full load order using computed constraints
+└── validateCrossPhaseDeeps() - Warns about undeclared cross-phase deps
+
+moduleLoader.js (imports from versioned moduleManifests.js)
+├── loadManifests(withV)      - Loads manifests + constants via versioned import
+├── detectCircularDeps()      - Uses requires + provides + aliases
+├── createValidatedWrapper()  - Wraps lazy deps with null-check warnings
+├── buildModuleDependencies() - Provides deps based on requires + lazyRequires
+└── AUDIT_UNDECLARED_DEPS     - When true, logs undeclared dep access
+```
+
+### Configuration Flags
+
+| Flag | Default | Purpose |
+|------|---------|---------|
+| `AUDIT_UNDECLARED_DEPS` | `true` | Logs when modules access deps not in `requires` |
+| `ENFORCE_REQUIRES` | `false` | When true, modules ONLY get declared deps (breaking) |
+| `STRICT_LAZY_VALIDATION` | `false` | When true, throws instead of warns on null lazy deps |
+
+### How Load Order Works
+
+1. `getModulesByPhase(phase)` is called for each phase
+2. `computeEffectiveAfterConstraints()` analyzes all `requires` → `provides` relationships
+3. For same-phase deps, creates implicit `after` constraints
+4. `topologicalSortWithinPhase()` sorts modules respecting computed constraints
+5. Modules load in correct order without manual `after` declarations
+
+---
+
+## Original Issues (Historical Reference)
+
+> **Note:** All issues below have been fixed. This section is preserved for historical context.
+
+### High Priority (All Fixed ✅)
+
+#### 1. Circular Dependency Detection is a No-Op ✅ FIXED
 
 **Location:** `modules/boot/moduleLoader.js:104-119`
 
@@ -36,7 +80,7 @@ if (manifest.deps && Array.isArray(manifest.deps)) {
 
 ---
 
-#### 2. Load Order Ignores `requires`
+#### 2. Load Order Ignores `requires` ✅ FIXED
 
 **Location:** `modules/boot/moduleManifests.js:571-580`
 
@@ -67,7 +111,7 @@ export function getModulesByPhase(phase) {
 
 ---
 
-#### 3. Cross-Phase and Same-Phase Dependency Mismatches
+#### 3. Cross-Phase and Same-Phase Dependency Mismatches ✅ FIXED
 
 **Verified concrete examples:**
 
@@ -111,9 +155,9 @@ testingModalIntegration: {
 
 ---
 
-### Medium Priority
+### Medium Priority (All Fixed ✅)
 
-#### 4. `requires` Field is Not Enforced
+#### 4. `requires` Field is Not Enforced ✅ FIXED
 
 **Location:** `modules/boot/moduleLoader.js:864-874`
 
@@ -146,9 +190,9 @@ Object.assign(result, depMappings);  // ← This makes the above loop pointless!
 
 ---
 
-### Low Priority
+### Low Priority (All Fixed ✅)
 
-#### 5. Orchestrator Architectural Drift
+#### 5. Orchestrator Architectural Drift ✅ FIXED
 
 **Location:** `modules/boot/orchestrator.js`
 
@@ -458,7 +502,8 @@ function topologicalSort(modules, effectiveAfter) {
 **Solution:** Create an explicit alias registry that maps alias names to their canonical `provides` names.
 
 ```javascript
-// moduleLoader.js - Add after CORE_DEPS
+// moduleManifests.js - Single source of truth for constants
+// (moduleLoader.js imports these via versioned dynamic import to avoid cache mismatch)
 
 /**
  * Alias map for depMappings entries that don't match provides names.
@@ -476,15 +521,12 @@ export const ALIAS_MAP = new Map([
     ['renderTaskList', 'refreshTaskListUI'],           // taskUI provides refreshTaskListUI
 
     // NOTE: renderTasks is NOT an alias - it's a distinct API
-    // NOTE: captureSnapshot is NOT an alias - captureStateSnapshot is the actual name
 ]);
 
 /**
  * Resolve an API name to its canonical provides name
- * @param {string} apiName - The name from requires (may be alias)
- * @returns {string} - Canonical name from provides
  */
-function resolveAlias(apiName) {
+export function resolveAlias(apiName) {
     return ALIAS_MAP.get(apiName) || apiName;
 }
 ```
@@ -771,12 +813,14 @@ getModulesByPhase(3).forEach(([name]) => console.log(name));
 
 | File | Purpose |
 |------|---------|
-| `modules/boot/moduleLoader.js` | Main loader logic, dependency building |
-| `modules/boot/moduleManifests.js` | Module definitions, phase assignments, ordering |
+| `modules/boot/moduleManifests.js` | Module definitions, CORE_DEPS, ALIAS_MAP, computed ordering |
+| `modules/boot/moduleLoader.js` | Main loader logic, dependency building, validation |
 | `modules/boot/orchestrator.js` | Boot sequence coordination |
 | `modules/core/diBase.js` | DI utilities used by modules |
 | `docs/developer-guides/DI_PATTERNS.md` | DI documentation |
 | `docs/developer-guides/MODULE_SYSTEM_GUIDE.md` | Module system documentation |
+
+**Note:** `CORE_DEPS`, `ALIAS_MAP`, and `resolveAlias` live in `moduleManifests.js` as the single source of truth. `moduleLoader.js` imports them via versioned dynamic import to avoid cache mismatches.
 
 ---
 
@@ -815,27 +859,31 @@ getModulesByPhase(3).forEach(([name]) => console.log(name));
 10. **Cross-phase validation (Phase 5.5)** - `validateCrossPhaseDeeps()` warns about cross-phase deps not in `lazyRequires`
 11. **Enforce requires with audit mode (Phase 5.4)** - `AUDIT_UNDECLARED_DEPS` flag logs undeclared access, `ENFORCE_REQUIRES` flag for strict mode
 
-### ⚠️ Known Limitations - All Addressed in Phase 5 ✅
+### Previously Known Limitations - All Fixed ✅
 
-1. ~~**Load order ignores `requires`**~~ ✅ **FIXED** - `computeEffectiveAfterConstraints()` auto-derives `after` from `requires`
-   - `topologicalSortWithinPhase()` now orders modules correctly
-   - No more need to manually add `after` for same-phase deps
+1. ~~**Load order ignores `requires`**~~ ✅ **FIXED**
+   - `computeEffectiveAfterConstraints()` auto-derives `after` from `requires`
+   - `topologicalSortWithinPhase()` orders modules correctly
+   - Both `getModulesByPhase()` and `getLoadOrder()` use computed constraints
 
-2. ~~**Alias deps invisible to graph**~~ ✅ **FIXED** - Added `ALIAS_MAP` in moduleLoader.js
-   - `findProviderModule()` now resolves aliases before lookup
+2. ~~**Alias deps invisible to graph**~~ ✅ **FIXED**
+   - `ALIAS_MAP` in moduleManifests.js maps aliases to canonical names
+   - `findProviderModule()` resolves aliases before lookup
    - Example: `renderTaskList` → `refreshTaskListUI` (now detected)
 
-3. ~~**Validation doesn't catch lazy null**~~ ✅ **FIXED** - `createValidatedWrapper()` warns at call time
+3. ~~**Validation doesn't catch lazy null**~~ ✅ **FIXED**
+   - `createValidatedWrapper()` warns at call time
    - Applied to critical lazy wrappers (`updateProgressBar`, undo functions, etc.)
    - Set `STRICT_LAZY_VALIDATION = true` to throw instead of warn
 
-4. ~~**`requires` not enforced**~~ ✅ **FIXED** - Audit + enforce modes added
-   - `AUDIT_UNDECLARED_DEPS = true` logs undeclared dep access
+4. ~~**`requires` not enforced**~~ ✅ **FIXED**
+   - `AUDIT_UNDECLARED_DEPS = true` (default) logs undeclared dep access
    - `ENFORCE_REQUIRES = true` enables strict mode (breaking change)
 
-5. ~~**Cross-phase deps undocumented**~~ ✅ **FIXED** - `lazyRequires` field + validation
-   - `recurringIntegration` now uses `lazyRequires: ['updateProgressBar']`
-   - `validateCrossPhaseDeeps()` warns about undeclared cross-phase deps
+5. ~~**Cross-phase deps undocumented**~~ ✅ **FIXED**
+   - `lazyRequires` field for intentional cross-phase deps
+   - `recurringIntegration` uses `lazyRequires: ['updateProgressBar']`
+   - `validateCrossPhaseDeeps()` runs at boot, warns about violations
 
 ---
 
