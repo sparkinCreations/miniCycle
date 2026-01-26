@@ -213,7 +213,7 @@ export const MODULE_MANIFESTS = {
         provides: [],
         provideInstance: 'taskOptionsCustomizer',
         api: 'ui',
-        after: ['taskDOM', 'reminders', 'modeManager']
+        after: ['taskDOM', 'reminders', 'modeManager', 'dragDropManager']  // dragDropManager provides updateMoveArrowsVisibility
     },
 
     reminders: {
@@ -232,7 +232,9 @@ export const MODULE_MANIFESTS = {
     recurringIntegration: {
         path: '../recurring/recurringIntegration.js',
         phase: PHASES.RECURRING,
-        requires: ['appInit', 'AppState', 'showNotification', 'showNotificationWithTip', 'notifications', 'FeatureFlags', 'GlobalUtils', 'refreshUIFromState', 'updateProgressBar'],
+        requires: ['appInit', 'AppState', 'showNotification', 'showNotificationWithTip', 'notifications', 'FeatureFlags', 'GlobalUtils', 'refreshUIFromState'],
+        // Cross-phase lazy deps: these are from later phases but only called after user interaction
+        lazyRequires: ['updateProgressBar'],  // From cycleCompletion (Phase 6)
         provides: ['panel', 'core'],
         api: 'recurring',
         after: ['taskDOM', 'reminders']
@@ -334,7 +336,8 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'GlobalUtils', 'AppState', 'loadMiniCycleData', 'showNotification', 'updateMainMenuHeader', 'updateUndoRedoButtons', 'captureStateSnapshot', 'enableUndoSystemOnFirstInteraction', 'onCycleRenamed'],
         provides: ['setupMiniCycleTitleListener', 'handleMiniCycleTitleBlur'],
-        api: 'ui'
+        api: 'ui',
+        after: ['undoRedoManager']  // undoRedoManager provides updateUndoRedoButtons, captureStateSnapshot, onCycleRenamed
     },
 
     completedTasksManager: {
@@ -494,7 +497,8 @@ export const MODULE_MANIFESTS = {
         requires: ['AppState', 'showNotification', 'notifications', 'safeAddEventListener', 'safeAddEventListenerById', 'safeLocalStorageGet', 'safeLocalStorageSet', 'safeJSONParse', 'safeJSONStringify', 'consoleCapture', 'backupManager'],
         provides: ['openStorageViewer', 'closeStorageViewer'],
         api: 'testing',
-        optional: true
+        optional: true,
+        after: ['backupManager']  // backupManager must load first (same phase)
     },
 
     testingModalIntegration: {
@@ -503,7 +507,8 @@ export const MODULE_MANIFESTS = {
         requires: ['safeAddEventListenerById', 'showNotification', 'AppState', 'backupManager'],
         provides: ['runAllAutomatedTests'],
         api: 'testing',
-        optional: true
+        optional: true,
+        after: ['backupManager']  // backupManager must load first (same phase)
     },
 
     basicPluginSystem: {
@@ -517,14 +522,82 @@ export const MODULE_MANIFESTS = {
 };
 
 // ============================================================================
+// DEPENDENCY RESOLUTION CONSTANTS
+// ============================================================================
+// These are the single source of truth - moduleLoader.js imports them from here
+// via the versioned dynamic import to avoid cache mismatches.
+
+/**
+ * Core dependencies provided by coreBoot (not by manifest modules).
+ * These are always available before any manifest modules load.
+ * Used to:
+ * - Exclude from circular dependency detection
+ * - Exclude from effective after computation
+ */
+export const CORE_DEPS = new Set([
+    'AppState',
+    'appInit',
+    'GlobalUtils',
+    'FeatureFlags',
+    'AppMeta',
+    'loadMiniCycleData',
+    'autoSave',
+    'sanitizeInput',
+    'generateId',
+    'generateHashId',
+    'escapeHtml',
+    'safeAddEventListener',
+    'safeAddEventListenerById',
+    'safeLocalStorageGet',
+    'safeLocalStorageSet',
+    'safeJSONParse',
+    'safeJSONStringify',
+]);
+
+/**
+ * Alias map for depMappings entries that don't match provides names.
+ * Key: alias name used in `requires`
+ * Value: canonical name from `provides`
+ *
+ * IMPORTANT: Only add TRUE aliases here - where the alias and canonical name
+ * refer to the exact same functionality. Do NOT add entries where two names
+ * are distinct APIs that happen to be provided by the same module.
+ */
+export const ALIAS_MAP = new Map([
+    // Cycle/mode aliases (true alias - same function, different name)
+    ['initializeModeSelector', 'setupModeSelector'],   // modeManager provides setupModeSelector
+
+    // renderTaskList is a depMappings wrapper that calls refreshTaskListUI
+    // This is a true alias - same underlying function
+    ['renderTaskList', 'refreshTaskListUI'],
+
+    // NOTE: renderTasks is NOT an alias of refreshTaskListUI - they are distinct APIs.
+    // renderTasks is accessed via deps.task?.renderTasks and is not in any provides.
+    // Do NOT add ['renderTasks', 'refreshTaskListUI'] here.
+]);
+
+/**
+ * Resolve an API name to its canonical provides name
+ * @param {string} apiName - The name from requires (may be alias)
+ * @returns {string} - Canonical name from provides
+ */
+export function resolveAlias(apiName) {
+    return ALIAS_MAP.get(apiName) || apiName;
+}
+
+// ============================================================================
 // LOAD ORDER UTILITIES
 // ============================================================================
 
 /**
- * Perform topological sort on modules based on dependencies
+ * Perform topological sort on modules based on effective dependencies.
+ * Uses computeEffectiveAfterConstraints() to include derived `after` from `requires`.
  * @returns {string[]} Module names in load order
  */
 export function getLoadOrder() {
+    // Ensure effective after is computed
+    const effectiveAfter = computeEffectiveAfterConstraints();
+
     const visited = new Set();
     const result = [];
     const visiting = new Set(); // For cycle detection
@@ -541,8 +614,8 @@ export function getLoadOrder() {
 
         visiting.add(name);
 
-        // Visit dependencies first
-        const deps = manifest.after || [];
+        // Visit dependencies first (using effective after, not just explicit)
+        const deps = effectiveAfter.get(name) || new Set();
         for (const dep of deps) {
             visit(dep);
         }
@@ -563,20 +636,137 @@ export function getLoadOrder() {
     return result;
 }
 
+// ============================================================================
+// EFFECTIVE AFTER COMPUTATION
+// ============================================================================
+
+/** Cached effective after constraints (computed once on first use) */
+let _effectiveAfter = null;
+let _providerMap = null;
+
 /**
- * Get all modules for a specific phase
+ * Build a map of API name → module name from provides/provideInstance
+ * @returns {Map<string, string>}
+ */
+function buildProviderMap() {
+    if (_providerMap) return _providerMap;
+
+    _providerMap = new Map();
+    for (const [moduleName, manifest] of Object.entries(MODULE_MANIFESTS)) {
+        for (const api of manifest.provides || []) {
+            _providerMap.set(api, moduleName);
+        }
+        if (manifest.provideInstance) {
+            _providerMap.set(manifest.provideInstance, moduleName);
+        }
+    }
+    return _providerMap;
+}
+
+/**
+ * Compute effective 'after' constraints by analyzing requires → provides relationships.
+ * This makes `requires` actually affect load order within a phase.
+ *
+ * @returns {Map<string, Set<string>>} Map of module name → Set of modules it must load after
+ */
+export function computeEffectiveAfterConstraints() {
+    if (_effectiveAfter) return _effectiveAfter;
+
+    _effectiveAfter = new Map();
+    const providerMap = buildProviderMap();
+
+    for (const [moduleName, manifest] of Object.entries(MODULE_MANIFESTS)) {
+        // Start with explicit 'after' constraints
+        const afterSet = new Set(manifest.after || []);
+
+        // Add constraints derived from 'requires'
+        for (const req of manifest.requires || []) {
+            // Skip core deps (always available from coreBoot)
+            if (CORE_DEPS.has(req)) continue;
+
+            // Skip lazyRequires (intentionally cross-phase, loaded lazily)
+            if (manifest.lazyRequires?.includes(req)) continue;
+
+            // Resolve alias to canonical name
+            const canonical = resolveAlias(req);
+            const provider = providerMap.get(canonical);
+
+            if (provider && provider !== moduleName) {
+                // Only add same-phase constraints
+                // Cross-phase deps are handled by phase ordering
+                const providerPhase = MODULE_MANIFESTS[provider]?.phase;
+                const myPhase = manifest.phase;
+
+                if (providerPhase === myPhase) {
+                    afterSet.add(provider);
+                }
+            }
+        }
+
+        _effectiveAfter.set(moduleName, afterSet);
+    }
+
+    return _effectiveAfter;
+}
+
+/**
+ * Topological sort of modules within a phase using effective after constraints
+ * @param {Array<[string, Object]>} modules - Module entries to sort
+ * @param {Map<string, Set<string>>} effectiveAfter - Computed after constraints
+ * @returns {Array<[string, Object]>} Sorted modules
+ */
+function topologicalSortWithinPhase(modules, effectiveAfter) {
+    const moduleMap = new Map(modules);
+    const moduleNames = new Set(modules.map(([name]) => name));
+    const sorted = [];
+    const visited = new Set();
+    const visiting = new Set(); // For cycle detection
+
+    function visit(name) {
+        if (visited.has(name)) return;
+        if (visiting.has(name)) {
+            console.error(`🔄 Circular dependency detected within phase: ${name}`);
+            return; // Break cycle
+        }
+
+        visiting.add(name);
+
+        // Visit dependencies first (only those in this phase)
+        const deps = effectiveAfter.get(name) || new Set();
+        for (const dep of deps) {
+            if (moduleNames.has(dep)) {
+                visit(dep);
+            }
+        }
+
+        visiting.delete(name);
+        visited.add(name);
+        sorted.push([name, moduleMap.get(name)]);
+    }
+
+    for (const [name] of modules) {
+        visit(name);
+    }
+
+    return sorted;
+}
+
+/**
+ * Get all modules for a specific phase, sorted by effective dependencies.
+ * This now respects both explicit 'after' AND derived constraints from 'requires'.
+ *
  * @param {number} phase - Phase number
  * @returns {Array<[string, ModuleManifest]>} Module name and manifest pairs
  */
 export function getModulesByPhase(phase) {
-    return Object.entries(MODULE_MANIFESTS)
-        .filter(([_, manifest]) => manifest.phase === phase)
-        .sort((a, b) => {
-            // Within a phase, respect 'after' constraints
-            if (a[1].after?.includes(b[0])) return 1;
-            if (b[1].after?.includes(a[0])) return -1;
-            return 0;
-        });
+    const modules = Object.entries(MODULE_MANIFESTS)
+        .filter(([_, manifest]) => manifest.phase === phase);
+
+    // Compute effective after constraints (cached after first call)
+    const effectiveAfter = computeEffectiveAfterConstraints();
+
+    // Use topological sort for correct ordering
+    return topologicalSortWithinPhase(modules, effectiveAfter);
 }
 
 /**
@@ -587,6 +777,54 @@ export function getModulesByPhase(phase) {
 export function getModulesForApi(apiName) {
     return Object.entries(MODULE_MANIFESTS)
         .filter(([_, manifest]) => manifest.api === apiName);
+}
+
+/**
+ * Validate cross-phase dependencies.
+ * Warns if a module requires an API from a later phase without declaring it in lazyRequires.
+ *
+ * @returns {{ valid: boolean, warnings: string[] }}
+ */
+export function validateCrossPhaseDeeps() {
+    const warnings = [];
+    const providerMap = buildProviderMap();
+
+    for (const [moduleName, manifest] of Object.entries(MODULE_MANIFESTS)) {
+        const myPhase = manifest.phase;
+
+        for (const req of manifest.requires || []) {
+            // Skip core deps
+            if (CORE_DEPS.has(req)) continue;
+
+            // Resolve alias
+            const canonical = resolveAlias(req);
+            const provider = providerMap.get(canonical);
+
+            if (!provider) continue; // Unknown provider, handled elsewhere
+
+            const providerPhase = MODULE_MANIFESTS[provider]?.phase;
+
+            // Check for forward cross-phase reference (requires something from a later phase)
+            if (providerPhase && providerPhase > myPhase) {
+                if (!manifest.lazyRequires?.includes(req)) {
+                    warnings.push(
+                        `${moduleName} (Phase ${myPhase}) requires '${req}' from ${provider} (Phase ${providerPhase}) ` +
+                        `but '${req}' is not in lazyRequires. This dep must be lazy-only or move to lazyRequires.`
+                    );
+                }
+            }
+        }
+    }
+
+    if (warnings.length > 0) {
+        console.warn('⚠️ Cross-phase dependency warnings:');
+        warnings.forEach(w => console.warn(`   ${w}`));
+    }
+
+    return {
+        valid: warnings.length === 0,
+        warnings
+    };
 }
 
 /**

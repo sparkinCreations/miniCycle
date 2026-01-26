@@ -30,6 +30,7 @@ let MODULE_MANIFESTS = {};
 let PHASES = {};
 let getModulesByPhase = () => [];
 let getLoadOrder = () => [];
+let validateCrossPhaseDeeps = () => ({ valid: true, warnings: [] });
 
 // Re-export for consumers (will be populated after loadManifests())
 export { MODULE_MANIFESTS, PHASES, getLoadOrder };
@@ -77,6 +78,13 @@ export async function loadManifests(withV) {
     PHASES = manifestModule.PHASES;
     getModulesByPhase = manifestModule.getModulesByPhase;
     getLoadOrder = manifestModule.getLoadOrder;
+    validateCrossPhaseDeeps = manifestModule.validateCrossPhaseDeeps;
+
+    // Load shared constants from versioned manifest (single source of truth)
+    CORE_DEPS = manifestModule.CORE_DEPS;
+    ALIAS_MAP = manifestModule.ALIAS_MAP;
+    resolveAlias = manifestModule.resolveAlias;
+
     _manifestsLoaded = true;
 
     // Also load appContext with versioning (must match coreBoot's instance)
@@ -93,8 +101,88 @@ const loadedModules = new Map();
 const moduleInstances = new Map();
 
 // ============================================================================
+// SHARED CONSTANTS (loaded from versioned moduleManifests.js)
+// ============================================================================
+// These are populated by loadManifests() to avoid versioned/unversioned cache mismatches.
+// The constants live in moduleManifests.js as the single source of truth.
+let CORE_DEPS = new Set();  // Will be populated from manifest
+let ALIAS_MAP = new Map();  // Will be populated from manifest
+let resolveAlias = (apiName) => apiName;  // Will be populated from manifest
+
+// ============================================================================
 // CIRCULAR DEPENDENCY DETECTION
 // ============================================================================
+
+/**
+ * Enable strict mode for lazy validation (throws instead of warns).
+ * Set to true during development to catch missing providers early.
+ */
+const STRICT_LAZY_VALIDATION = false;
+
+/**
+ * Enable audit mode to log when modules access undeclared dependencies.
+ * Use this to find missing `requires` entries before enabling ENFORCE_REQUIRES.
+ */
+const AUDIT_UNDECLARED_DEPS = true;
+
+/**
+ * When true, modules ONLY receive dependencies declared in `requires`.
+ * This is a breaking change - enable only after all modules have complete `requires`.
+ * Use AUDIT_UNDECLARED_DEPS=true first to find missing entries.
+ */
+const ENFORCE_REQUIRES = false;
+
+/**
+ * Create a validated lazy wrapper that warns/throws on null provider access.
+ * This catches missing dependencies at call time instead of silently returning undefined.
+ *
+ * @param {string} apiName - Name of the API for logging
+ * @param {Function} getter - Function that returns the actual implementation
+ * @returns {Function} - Wrapper that validates before calling
+ */
+function createValidatedWrapper(apiName, getter) {
+    let hasWarned = false;
+
+    return (...args) => {
+        const impl = getter();
+
+        if (impl === undefined || impl === null) {
+            if (!hasWarned) {
+                const msg = `Lazy dep '${apiName}' resolved to null at call time`;
+                if (STRICT_LAZY_VALIDATION) {
+                    throw new Error(msg);
+                }
+                console.warn(`⚠️ ${msg}`);
+                hasWarned = true;
+            }
+            return undefined;
+        }
+
+        return impl(...args);
+    };
+}
+
+/**
+ * Find which module provides a given API
+ * @param {string} apiName - API name to find
+ * @param {Object} manifests - MODULE_MANIFESTS object
+ * @returns {string|null} - Module name that provides this API, or null
+ */
+function findProviderModule(apiName, manifests) {
+    // First resolve any alias to canonical name
+    const canonical = resolveAlias(apiName);
+
+    for (const [name, manifest] of Object.entries(manifests)) {
+        if (manifest.provides?.includes(canonical)) {
+            return name;
+        }
+        // Also check provideInstance
+        if (manifest.provideInstance === canonical) {
+            return name;
+        }
+    }
+    return null;
+}
 
 /**
  * Build a dependency graph from module manifests
@@ -107,9 +195,22 @@ function buildDependencyGraph(manifests) {
     for (const [name, manifest] of Object.entries(manifests)) {
         const deps = new Set();
 
-        // Add explicit dependencies from manifest.deps
-        if (manifest.deps && Array.isArray(manifest.deps)) {
-            manifest.deps.forEach(dep => deps.add(dep));
+        // Build dependencies from 'requires' field (maps API names to module names)
+        if (manifest.requires && Array.isArray(manifest.requires)) {
+            manifest.requires.forEach(apiName => {
+                // Skip core deps - they're always available from coreBoot
+                if (CORE_DEPS.has(apiName)) return;
+
+                const provider = findProviderModule(apiName, manifests);
+                if (provider && provider !== name) {
+                    deps.add(provider);
+                }
+            });
+        }
+
+        // Also include explicit 'after' constraints
+        if (manifest.after && Array.isArray(manifest.after)) {
+            manifest.after.forEach(dep => deps.add(dep));
         }
 
         graph.set(name, deps);
@@ -370,6 +471,9 @@ export async function loadAllModules(deps, coreResult) {
     // ✅ Check for circular dependencies before loading
     detectCircularDeps(MODULE_MANIFESTS);
 
+    // ✅ Validate cross-phase dependencies (warns about undeclared lazyRequires)
+    validateCrossPhaseDeeps();
+
     // Ensure core systems (AppState, Schema 2.5 data) are ready before loading modules
     if (appInit && !appInit.isCoreReady()) {
         console.log('⏳ moduleLoader: Waiting for core systems...');
@@ -588,10 +692,13 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // From appContext (registered by coreBoot/featureBoot) - wrapper functions for lazy resolution
         completeInitialSetup: (...args) => getCompleteInitialSetup()?.(...args),
 
-        // UI functions (from appContext or deps.ui) - wrapper functions for lazy resolution
-        hideMainMenu: (...args) => (getHideMainMenu() || deps.ui?.hideMainMenu)?.(...args),
-        updateProgressBar: (...args) => deps.progress?.updateProgressBar?.(...args),
-        checkCompleteAllButton: (...args) => deps.ui?.checkCompleteAllButton?.(...args),
+        // UI functions (from appContext or deps.ui) - validated lazy wrappers
+        hideMainMenu: createValidatedWrapper('hideMainMenu',
+            () => getHideMainMenu() || deps.ui?.hideMainMenu),
+        updateProgressBar: createValidatedWrapper('updateProgressBar',
+            () => deps.progress?.updateProgressBar),
+        checkCompleteAllButton: createValidatedWrapper('checkCompleteAllButton',
+            () => deps.ui?.checkCompleteAllButton),
 
         // Theme manager instance (from deps.features) - returns instance when called as function
         themeManager: () => deps.features?.themeManager,
@@ -669,11 +776,14 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         animateProgressBarFill: (...args) => deps.progress?.animateProgressBarFill?.(...args),
         animateProgressBarEmpty: (...args) => deps.progress?.animateProgressBarEmpty?.(...args),
 
-        // UI functions (from deps.ui)
-        refreshUIFromState: (...args) => deps.task?.refreshUIFromState?.(...args),
-        closeAllModals: (...args) => deps.ui?.modalManager?.closeAllModals?.(...args),
+        // UI functions (from deps.ui) - validated lazy wrappers for critical functions
+        refreshUIFromState: createValidatedWrapper('refreshUIFromState',
+            () => deps.task?.refreshUIFromState),
+        closeAllModals: createValidatedWrapper('closeAllModals',
+            () => deps.ui?.modalManager?.closeAllModals),
         isModalOpen: () => deps.ui?.modalManager?.isModalOpen?.(),
-        updateMainMenuHeader: (...args) => deps.ui?.updateMainMenuHeader?.(...args),
+        updateMainMenuHeader: createValidatedWrapper('updateMainMenuHeader',
+            () => deps.ui?.updateMainMenuHeader),
         organizeCompletedTasks: (...args) => deps.ui?.completedTasksManager?.organize?.(...args),
         initCompletedTasksSection: (...args) => deps.ui?.completedTasksManager?.init?.(...args),
         handleTaskListMovement: (...args) => deps.ui?.completedTasksManager?.handleMovement?.(...args),
@@ -692,12 +802,17 @@ function buildModuleDependencies(manifest, deps, coreResult) {
             }
         }),
 
-        // Undo/redo functions (api: 'undo' maps to deps.ui via apiToCategory)
-        captureStateSnapshot: (...args) => deps.ui?.captureStateSnapshot?.(...args),
-        performStateBasedUndo: (...args) => deps.ui?.performStateBasedUndo?.(...args),
-        performStateBasedRedo: (...args) => deps.ui?.performStateBasedRedo?.(...args),
-        enableUndoSystemOnFirstInteraction: (...args) => deps.ui?.enableUndoSystemOnFirstInteraction?.(...args),
-        updateUndoRedoButtons: (...args) => deps.ui?.updateUndoRedoButtons?.(...args),
+        // Undo/redo functions (api: 'undo' maps to deps.ui via apiToCategory) - validated
+        captureStateSnapshot: createValidatedWrapper('captureStateSnapshot',
+            () => deps.ui?.captureStateSnapshot),
+        performStateBasedUndo: createValidatedWrapper('performStateBasedUndo',
+            () => deps.ui?.performStateBasedUndo),
+        performStateBasedRedo: createValidatedWrapper('performStateBasedRedo',
+            () => deps.ui?.performStateBasedRedo),
+        enableUndoSystemOnFirstInteraction: createValidatedWrapper('enableUndoSystemOnFirstInteraction',
+            () => deps.ui?.enableUndoSystemOnFirstInteraction),
+        updateUndoRedoButtons: createValidatedWrapper('updateUndoRedoButtons',
+            () => deps.ui?.updateUndoRedoButtons),
         // Undo cycle lifecycle hooks (called by routineSwitcher when cycles change)
         onCycleSwitched: (...args) => deps.ui?.onCycleSwitched?.(...args),
         onCycleDeleted: (...args) => deps.ui?.onCycleDeleted?.(...args),
@@ -870,8 +985,58 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         }
     }
 
-    // Add all mappings as fallbacks
-    Object.assign(result, depMappings);
+    // Also add lazyRequires (they're still provided, just not used for ordering)
+    for (const req of manifest.lazyRequires || []) {
+        if (req in depMappings) {
+            result[req] = depMappings[req];
+        } else if (req in coreResult) {
+            result[req] = coreResult[req];
+        }
+    }
+
+    // Validate required dependencies (warning-only)
+    // This helps catch manifest errors where a module requires an API that doesn't exist
+    for (const req of [...(manifest.requires || []), ...(manifest.lazyRequires || [])]) {
+        const value = result[req];
+        if (value === undefined) {
+            // Skip core deps that are provided differently (e.g., AppState via Proxy)
+            if (!CORE_DEPS.has(req)) {
+                console.warn(`⚠️ ${manifest.path}: Required dep '${req}' is undefined (not provided by any module)`);
+            }
+        }
+    }
+
+    // ENFORCE_REQUIRES mode: Only provide declared dependencies
+    // When false (default): Provide ALL deps for backwards compatibility
+    if (!ENFORCE_REQUIRES) {
+        Object.assign(result, depMappings);
+    }
+
+    // AUDIT mode: Wrap in Proxy to detect undeclared dep access
+    if (AUDIT_UNDECLARED_DEPS && !ENFORCE_REQUIRES) {
+        const declaredDeps = new Set([
+            ...(manifest.requires || []),
+            ...(manifest.lazyRequires || []),
+            // Core deps are always allowed
+            ...CORE_DEPS,
+            // Standard object properties
+            'then', 'catch', 'finally', 'constructor', 'prototype',
+            'toString', 'valueOf', 'toJSON',
+        ]);
+
+        return new Proxy(result, {
+            get(target, prop) {
+                // Only log for string properties that look like dep names
+                if (typeof prop === 'string' &&
+                    !declaredDeps.has(prop) &&
+                    prop in depMappings &&
+                    !prop.startsWith('_')) {
+                    console.warn(`📋 AUDIT: ${manifest.path} accessed undeclared dep '${prop}' - add to requires`);
+                }
+                return target[prop];
+            }
+        });
+    }
 
     return result;
 }

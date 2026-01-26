@@ -2,9 +2,10 @@
 
 ## Overview
 
-This document outlines architectural issues in the module loading system discovered during boot failure debugging in January 2026. The system currently works due to defensive lazy resolution patterns, not because the underlying architecture is correct.
+This document outlines architectural issues in the module loading system discovered during boot failure debugging in January 2026. **All issues have been addressed** - the system now has proper dependency detection, automatic load ordering from `requires`, cross-phase validation, and audit/enforce modes.
 
-**Last Updated:** 2026-01-26 (verified against actual code)
+**Status:** ✅ **COMPLETE** - All phases implemented
+**Last Updated:** 2026-01-26
 
 ---
 
@@ -29,7 +30,9 @@ if (manifest.deps && Array.isArray(manifest.deps)) {
 
 **Impact:** `detectCircularDeps()` always reports "no cycles found" regardless of actual circular dependencies.
 
-**Fix:** Update `buildDependencyGraph()` to use `requires` field. Since `requires` contains API names (not module names), need to map APIs to modules via `provides`.
+**Fix:** Update `buildDependencyGraph()` to use `requires` field. Since `requires` contains API names (not module names), need to map APIs to modules via `provides` or `provideInstance`.
+
+**Limitation:** Cycle detection still won't "see" API aliases that only exist in `depMappings` (e.g., `renderTaskList` → `refreshTaskListUI`). These aliases are invisible to the graph unless an alias registry is added (see Phase 5.2).
 
 ---
 
@@ -253,10 +256,16 @@ export const PHASES = {
            if (manifest.provides?.includes(apiName)) {
                return name;
            }
+           // Also check provideInstance (e.g., 'taskDOMManager', 'themeManager')
+           if (manifest.provideInstance === apiName) {
+               return name;
+           }
        }
        return null;
    }
    ```
+
+   **Note:** This still won't find `depMappings` aliases (e.g., `renderTaskList`). See Phase 5.2 for alias registry solution.
 
 **Why core deps are excluded:**
 - `AppState`, `appInit`, `GlobalUtils`, etc. are loaded in coreBoot (Phase 1)
@@ -302,6 +311,441 @@ export const PHASES = {
 
 ---
 
+## Phase 5: Complete Architecture Refactor (Future Work)
+
+This phase addresses the fundamental architectural limitations that remain after Phases 1-4. It makes `requires` the source of truth for load ordering, eliminating the need for manual `after` constraints.
+
+### Overview
+
+**Goal:** Make module loading fully declarative - developers only need to specify `requires` and `provides`, and the system automatically determines correct load order.
+
+**Key Changes:**
+1. Auto-derive `after` constraints from `requires` + `provides` mapping
+2. Add alias registry for `depMappings` aliases
+3. Implement runtime validation that catches lazy null resolutions
+4. Enforce `requires` by only providing declared dependencies
+
+---
+
+### 5.1 Auto-Derive `after` from `requires` ✅ IMPLEMENTED
+
+**Problem:** Currently, `requires` has no effect on load order. Developers must manually add `after` constraints, which is error-prone and redundant.
+
+**Solution:** At boot time, compute `after` constraints automatically from `requires` declarations.
+
+```javascript
+// moduleManifests.js - Add new function
+
+/**
+ * Compute effective 'after' constraints by analyzing requires → provides relationships
+ * @param {Object} manifests - MODULE_MANIFESTS object
+ * @returns {Map<string, Set<string>>} - Map of module name → Set of modules it must load after
+ */
+export function computeEffectiveAfterConstraints(manifests) {
+    const effectiveAfter = new Map();
+
+    // Build provides → module lookup
+    const providerMap = new Map(); // API name → module name
+    for (const [moduleName, manifest] of Object.entries(manifests)) {
+        for (const api of manifest.provides || []) {
+            providerMap.set(api, moduleName);
+        }
+        if (manifest.provideInstance) {
+            providerMap.set(manifest.provideInstance, moduleName);
+        }
+    }
+
+    // For each module, find which modules provide its requirements
+    for (const [moduleName, manifest] of Object.entries(manifests)) {
+        const afterSet = new Set(manifest.after || []); // Start with explicit after
+
+        for (const req of manifest.requires || []) {
+            // Skip core deps (from coreBoot)
+            if (CORE_DEPS.has(req)) continue;
+
+            // Skip aliases (handled separately)
+            if (ALIAS_MAP.has(req)) {
+                const canonical = ALIAS_MAP.get(req);
+                const provider = providerMap.get(canonical);
+                if (provider && provider !== moduleName) {
+                    afterSet.add(provider);
+                }
+                continue;
+            }
+
+            const provider = providerMap.get(req);
+            if (provider && provider !== moduleName) {
+                // Only add same-phase constraints (cross-phase handled by phase ordering)
+                const providerPhase = manifests[provider]?.phase;
+                const myPhase = manifest.phase;
+                if (providerPhase === myPhase) {
+                    afterSet.add(provider);
+                }
+            }
+        }
+
+        effectiveAfter.set(moduleName, afterSet);
+    }
+
+    return effectiveAfter;
+}
+```
+
+**Update `getModulesByPhase()` to use computed constraints:**
+
+```javascript
+// moduleManifests.js - Replace getModulesByPhase
+
+let _effectiveAfter = null;
+
+export function getModulesByPhase(phase) {
+    // Compute effective after constraints once (lazy initialization)
+    if (!_effectiveAfter) {
+        _effectiveAfter = computeEffectiveAfterConstraints(MODULE_MANIFESTS);
+    }
+
+    const modules = Object.entries(MODULE_MANIFESTS)
+        .filter(([_, manifest]) => manifest.phase === phase);
+
+    // Topological sort within phase using effective after constraints
+    return topologicalSort(modules, _effectiveAfter);
+}
+
+function topologicalSort(modules, effectiveAfter) {
+    const moduleMap = new Map(modules);
+    const sorted = [];
+    const visited = new Set();
+    const visiting = new Set();
+
+    function visit(name) {
+        if (visited.has(name)) return;
+        if (visiting.has(name)) {
+            console.error(`🔄 Circular dependency in phase: ${name}`);
+            return;
+        }
+
+        visiting.add(name);
+
+        // Visit dependencies first
+        const deps = effectiveAfter.get(name) || new Set();
+        for (const dep of deps) {
+            if (moduleMap.has(dep)) {
+                visit(dep);
+            }
+        }
+
+        visiting.delete(name);
+        visited.add(name);
+        sorted.push([name, moduleMap.get(name)]);
+    }
+
+    for (const [name] of modules) {
+        visit(name);
+    }
+
+    return sorted;
+}
+```
+
+**Note:** Both `getModulesByPhase()` and `getLoadOrder()` now use computed constraints. The load order log in featureBoot is derived from these computed constraints, so it accurately reflects the actual order including implicit dependencies from `requires`.
+
+---
+
+### 5.2 Add Alias Registry for `depMappings` ✅ IMPLEMENTED
+
+**Problem:** Some `requires` entries (like `renderTaskList`) are aliases in `depMappings` that map to different `provides` names (like `refreshTaskListUI`). These are invisible to the dependency graph.
+
+**Solution:** Create an explicit alias registry that maps alias names to their canonical `provides` names.
+
+```javascript
+// moduleLoader.js - Add after CORE_DEPS
+
+/**
+ * Alias map for depMappings entries that don't match provides names.
+ * Key: alias name used in requires
+ * Value: canonical name from provides
+ *
+ * IMPORTANT: Only add TRUE aliases - same functionality, different name.
+ * Do NOT add distinct APIs that happen to share a module.
+ */
+export const ALIAS_MAP = new Map([
+    // Cycle/mode aliases (true alias)
+    ['initializeModeSelector', 'setupModeSelector'],   // modeManager provides setupModeSelector
+
+    // Task aliases (true alias - wrapper calls the canonical function)
+    ['renderTaskList', 'refreshTaskListUI'],           // taskUI provides refreshTaskListUI
+
+    // NOTE: renderTasks is NOT an alias - it's a distinct API
+    // NOTE: captureSnapshot is NOT an alias - captureStateSnapshot is the actual name
+]);
+
+/**
+ * Resolve an API name to its canonical provides name
+ * @param {string} apiName - The name from requires (may be alias)
+ * @returns {string} - Canonical name from provides
+ */
+function resolveAlias(apiName) {
+    return ALIAS_MAP.get(apiName) || apiName;
+}
+```
+
+**Update `findProviderModule()` to use aliases:**
+
+```javascript
+function findProviderModule(apiName, manifests) {
+    // First resolve any alias
+    const canonical = resolveAlias(apiName);
+
+    for (const [name, manifest] of Object.entries(manifests)) {
+        if (manifest.provides?.includes(canonical)) {
+            return name;
+        }
+        if (manifest.provideInstance === canonical) {
+            return name;
+        }
+    }
+    return null;
+}
+```
+
+**Validation:** Add boot-time check for unmapped aliases:
+
+```javascript
+// In loadAllModules(), after loading manifests
+function validateAliases(manifests) {
+    const allProvides = new Set();
+    for (const manifest of Object.values(manifests)) {
+        (manifest.provides || []).forEach(p => allProvides.add(p));
+        if (manifest.provideInstance) allProvides.add(manifest.provideInstance);
+    }
+
+    for (const [moduleName, manifest] of Object.entries(manifests)) {
+        for (const req of manifest.requires || []) {
+            if (CORE_DEPS.has(req)) continue;
+
+            const canonical = resolveAlias(req);
+            if (!allProvides.has(canonical)) {
+                console.warn(`⚠️ ${moduleName}: requires '${req}' (canonical: '${canonical}') not provided by any module`);
+            }
+        }
+    }
+}
+```
+
+---
+
+### 5.3 Runtime Validation for Lazy Null ✅ IMPLEMENTED
+
+**Problem:** Lazy wrappers like `(...args) => deps.x?.y?.(...args)` mask missing providers. The function exists but silently returns `undefined` when called.
+
+**Solution:** Create validated wrapper functions that log warnings on first null access.
+
+```javascript
+// moduleLoader.js - Replace lazy wrappers with validated versions
+
+/**
+ * Create a validated lazy wrapper that warns on null provider access
+ * @param {string} apiName - Name of the API for logging
+ * @param {Function} getter - Function that returns the actual implementation
+ * @returns {Function} - Wrapper that validates before calling
+ */
+function createValidatedWrapper(apiName, getter) {
+    let hasWarned = false;
+
+    return (...args) => {
+        const impl = getter();
+
+        if (impl === undefined || impl === null) {
+            if (!hasWarned) {
+                console.warn(`⚠️ Lazy dep '${apiName}' resolved to null at call time`);
+                hasWarned = true;
+            }
+            return undefined;
+        }
+
+        return impl(...args);
+    };
+}
+
+// Usage in depMappings:
+const depMappings = {
+    // Before (silent failure):
+    // updateProgressBar: (...args) => deps.progress?.updateProgressBar?.(...args),
+
+    // After (warns on null):
+    updateProgressBar: createValidatedWrapper('updateProgressBar',
+        () => deps.progress?.updateProgressBar),
+
+    // ... apply to all lazy wrappers
+};
+```
+
+**Optional: Strict mode that throws instead of warns:**
+
+```javascript
+const STRICT_LAZY_VALIDATION = false; // Enable in development
+
+function createValidatedWrapper(apiName, getter) {
+    let hasWarned = false;
+
+    return (...args) => {
+        const impl = getter();
+
+        if (impl === undefined || impl === null) {
+            if (!hasWarned) {
+                const msg = `Lazy dep '${apiName}' resolved to null at call time`;
+                if (STRICT_LAZY_VALIDATION) {
+                    throw new Error(msg);
+                }
+                console.warn(`⚠️ ${msg}`);
+                hasWarned = true;
+            }
+            return undefined;
+        }
+
+        return impl(...args);
+    };
+}
+```
+
+---
+
+### 5.4 Enforce `requires` (Optional, Breaking) ✅ IMPLEMENTED
+
+**Problem:** `Object.assign(result, depMappings)` provides ALL deps to every module, making `requires` meaningless.
+
+**Solution:** Remove `Object.assign` and only provide declared dependencies.
+
+```javascript
+// moduleLoader.js - buildModuleDependencies()
+
+function buildModuleDependencies(manifest, deps, coreResult) {
+    const result = {};
+
+    // Always provide core deps
+    result.appInit = coreResult.appInit;
+    result.GlobalUtils = coreResult.GlobalUtils;
+    result.AppState = /* ... Proxy setup ... */;
+    // ... other core deps
+
+    // ONLY provide what's in requires
+    for (const req of manifest.requires || []) {
+        if (req in depMappings) {
+            result[req] = depMappings[req];
+        } else if (req in coreResult) {
+            result[req] = coreResult[req];
+        } else {
+            console.warn(`⚠️ ${manifest.path}: Unknown required dep '${req}'`);
+        }
+    }
+
+    // NO Object.assign - modules only get what they declare
+    // Object.assign(result, depMappings); // REMOVED
+
+    return result;
+}
+```
+
+**Migration path:**
+1. Audit all modules to ensure `requires` is complete
+2. Run in "audit mode" that logs undeclared dep access:
+   ```javascript
+   // Wrap result in Proxy to detect undeclared access
+   return new Proxy(result, {
+       get(target, prop) {
+           if (!(prop in target) && prop in depMappings) {
+               console.warn(`⚠️ ${manifest.path}: Accessing undeclared dep '${prop}'`);
+           }
+           return target[prop];
+       }
+   });
+   ```
+3. Fix all warnings by adding to `requires`
+4. Remove `Object.assign`
+
+---
+
+### 5.5 Cross-Phase Dependency Handling ✅ IMPLEMENTED
+
+**Problem:** Some modules intentionally require APIs from later phases (e.g., `recurringIntegration` Phase 4 requires `updateProgressBar` from Phase 6).
+
+**Solution:** Formalize "lazy-only" dependencies with explicit annotation.
+
+```javascript
+// moduleManifests.js - Add new field
+
+recurringIntegration: {
+    path: '../recurring/recurringIntegration.js',
+    phase: PHASES.RECURRING,
+    requires: ['appInit', 'AppState', /* ... */],
+
+    // NEW: Explicitly mark cross-phase deps as lazy-only
+    lazyRequires: ['updateProgressBar'],  // Phase 6, only called after user interaction
+
+    provides: ['panel', 'core'],
+    api: 'recurring',
+},
+```
+
+**Validation:**
+
+```javascript
+function validateCrossPhaseDeeps(manifests) {
+    const phaseOf = (api) => {
+        const provider = findProviderModule(api, manifests);
+        return provider ? manifests[provider]?.phase : null;
+    };
+
+    for (const [moduleName, manifest] of Object.entries(manifests)) {
+        const myPhase = manifest.phase;
+
+        for (const req of manifest.requires || []) {
+            if (CORE_DEPS.has(req)) continue;
+
+            const reqPhase = phaseOf(req);
+            if (reqPhase && reqPhase > myPhase) {
+                // Cross-phase forward reference
+                if (!manifest.lazyRequires?.includes(req)) {
+                    console.error(`❌ ${moduleName} (Phase ${myPhase}) requires '${req}' from Phase ${reqPhase} but it's not in lazyRequires`);
+                }
+            }
+        }
+    }
+}
+```
+
+---
+
+### Implementation Order
+
+1. ✅ **5.2 Alias Registry** - Low risk, improves graph accuracy - **DONE**
+2. ✅ **5.3 Runtime Validation** - Low risk, improves debugging - **DONE**
+3. ✅ **5.1 Auto-Derive After** - Medium risk, major improvement - **DONE**
+4. ✅ **5.5 Cross-Phase Handling** - Low risk, documentation improvement - **DONE**
+5. ✅ **5.4 Enforce Requires** - High risk, breaking change - **DONE** (audit mode on, enforce mode off)
+
+### Estimated Effort
+
+| Task | Files | Risk | Status |
+|------|-------|------|--------|
+| 5.2 Alias Registry | moduleLoader.js | Low | ✅ Done |
+| 5.3 Runtime Validation | moduleLoader.js | Low | ✅ Done |
+| 5.1 Auto-Derive After | moduleManifests.js | Medium | ✅ Done |
+| 5.5 Cross-Phase Handling | moduleManifests.js | Low | ✅ Done |
+| 5.4 Enforce Requires | moduleLoader.js | High | ✅ Done (audit mode) |
+
+### Enabling Strict Enforcement
+
+To fully enforce `requires` (breaking change):
+
+1. Run app with `AUDIT_UNDECLARED_DEPS = true` (current default)
+2. Check console for `📋 AUDIT:` warnings
+3. Add missing deps to each module's `requires` array
+4. Once no audit warnings appear, set `ENFORCE_REQUIRES = true`
+5. Test thoroughly - modules will only receive declared deps
+
+---
+
 ## Testing Strategy
 
 ### Unit Tests
@@ -341,16 +785,57 @@ getModulesByPhase(3).forEach(([name]) => console.log(name));
 1. **Should `requires` drive load order?**
    - Current: No, only `after` affects order
    - Proposal: Yes, derive `after` from `requires` + `provides` mapping
-   - Decision: TBD
+   - Decision: **Yes** - Full solution documented in Phase 5.1
 
 2. **Should `requires` be enforced (error on null)?**
-   - Current: No validation, all deps provided regardless
-   - Proposal: Warn initially, error later
-   - Decision: TBD
+   - Current: Warns on undefined, but lazy wrappers mask null providers
+   - Proposal: Runtime validation at call time
+   - Decision: **Yes** - Full solution documented in Phase 5.3 (validation) and 5.4 (enforcement)
 
 3. **Is cross-phase `updateProgressBar` in `recurringIntegration` a bug?**
    - Analysis: It's wrapped in lazy closure, only called after user interaction
-   - Conclusion: **Not a bug** - intentionally lazy, but should be documented
+   - Conclusion: **Not a bug** - intentionally lazy. ✅ Documented in manifest.
+   - Future: Formalize with `lazyRequires` field (Phase 5.5)
+
+---
+
+## Implementation Status
+
+### ✅ Fixed (2026-01-26)
+
+1. **Circular detection now uses `requires` + `provides`** - `buildDependencyGraph()` maps API names to provider modules
+2. **Added missing `after` constraints** - `taskOptionsCustomizer`, `titleManager`, `testingModal`, `testingModalIntegration`
+3. **Added `requires` validation** - Warns when required deps are undefined (not provided by any module)
+4. **Documented `Object.assign` fallback** - Explains why all deps are provided regardless of `requires`
+5. **Updated orchestrator header** - Now accurately describes boot UI responsibilities
+6. **Documented cross-phase lazy dep** - `recurringIntegration` → `updateProgressBar` is intentionally lazy
+7. **Added alias registry (Phase 5.2)** - `ALIAS_MAP` maps depMappings aliases to canonical `provides` names
+8. **Runtime validation for lazy null (Phase 5.3)** - `createValidatedWrapper()` warns when lazy deps resolve to null at call time
+9. **Auto-derive `after` from `requires` (Phase 5.1)** - `computeEffectiveAfterConstraints()` + `topologicalSortWithinPhase()` in moduleManifests.js
+10. **Cross-phase validation (Phase 5.5)** - `validateCrossPhaseDeeps()` warns about cross-phase deps not in `lazyRequires`
+11. **Enforce requires with audit mode (Phase 5.4)** - `AUDIT_UNDECLARED_DEPS` flag logs undeclared access, `ENFORCE_REQUIRES` flag for strict mode
+
+### ⚠️ Known Limitations - All Addressed in Phase 5 ✅
+
+1. ~~**Load order ignores `requires`**~~ ✅ **FIXED** - `computeEffectiveAfterConstraints()` auto-derives `after` from `requires`
+   - `topologicalSortWithinPhase()` now orders modules correctly
+   - No more need to manually add `after` for same-phase deps
+
+2. ~~**Alias deps invisible to graph**~~ ✅ **FIXED** - Added `ALIAS_MAP` in moduleLoader.js
+   - `findProviderModule()` now resolves aliases before lookup
+   - Example: `renderTaskList` → `refreshTaskListUI` (now detected)
+
+3. ~~**Validation doesn't catch lazy null**~~ ✅ **FIXED** - `createValidatedWrapper()` warns at call time
+   - Applied to critical lazy wrappers (`updateProgressBar`, undo functions, etc.)
+   - Set `STRICT_LAZY_VALIDATION = true` to throw instead of warn
+
+4. ~~**`requires` not enforced**~~ ✅ **FIXED** - Audit + enforce modes added
+   - `AUDIT_UNDECLARED_DEPS = true` logs undeclared dep access
+   - `ENFORCE_REQUIRES = true` enables strict mode (breaking change)
+
+5. ~~**Cross-phase deps undocumented**~~ ✅ **FIXED** - `lazyRequires` field + validation
+   - `recurringIntegration` now uses `lazyRequires: ['updateProgressBar']`
+   - `validateCrossPhaseDeeps()` warns about undeclared cross-phase deps
 
 ---
 
@@ -358,3 +843,9 @@ getModulesByPhase(3).forEach(([name]) => console.log(name));
 
 - **2026-01-26:** Initial documentation created after boot failure debugging
 - **2026-01-26:** Verified all findings against actual code, added specific line numbers
+- **2026-01-26:** Implemented Phases 1-4, documented remaining limitations
+- **2026-01-26:** Added Phase 5 complete refactor plan addressing all architectural limitations
+- **2026-01-26:** Implemented Phase 5.2 (Alias Registry) - cycle detection now sees aliases
+- **2026-01-26:** Implemented Phase 5.1, 5.3, 5.4, 5.5 - Complete architecture refactor done
+- **2026-01-26:** Fixed review issues: getLoadOrder() now uses computed constraints, validateCrossPhaseDeeps() called at boot, removed incorrect renderTasks alias
+- **2026-01-26:** Fixed versioned import issue: moved constants to moduleManifests.js (single source of truth via versioned import), removed moduleConstants.js to avoid cache mismatch
