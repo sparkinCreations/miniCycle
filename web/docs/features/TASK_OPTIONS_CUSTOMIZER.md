@@ -415,9 +415,7 @@ if (newOptions.moveArrows !== currentGlobalMoveArrows) {
     });
 
     // Update visibility in DOM
-    if (typeof window.updateMoveArrowsVisibility === 'function') {
-        window.updateMoveArrowsVisibility();
-    }
+    this.deps.updateMoveArrowsVisibility?.();
 
     // Sync with settings panel checkbox
     const settingsMoveArrowsToggle = document.getElementById('toggle-move-arrows');
@@ -515,7 +513,7 @@ export const DEFAULT_TASK_OPTION_BUTTONS = {
 ```javascript
 // Triple fallback for maximum safety
 const visibleOptions = currentCycle.taskOptionButtons ||
-                       window.DEFAULT_TASK_OPTION_BUTTONS ||
+                       this.deps.DEFAULT_TASK_OPTION_BUTTONS ||
                        {};
 ```
 
@@ -634,18 +632,20 @@ npm start
 
 **Accessing the Customizer:**
 ```javascript
-// From JavaScript
-if (window.taskOptionsCustomizer) {
-    const cycleId = 'your-cycle-id';
-    window.taskOptionsCustomizer.showCustomizationModal(cycleId);
-}
+// From JavaScript (module already initialized)
+const { taskOptionsCustomizer } = await import(`./modules/ui/taskOptionsCustomizer.js?v=${globalThis.APP_VERSION}`);
+const cycleId = 'your-cycle-id';
+taskOptionsCustomizer?.showCustomizationModal?.(cycleId);
 ```
 
 **Reading Current Settings:**
 ```javascript
-const state = window.AppState.get();
+const { state } = await import(`./modules/core/appContext.js?v=${globalThis.APP_VERSION}`);
+const appState = state().AppState;
+const state = appState.get();
 const cycle = state.data.cycles[cycleId];
-const settings = cycle.taskOptionButtons || window.DEFAULT_TASK_OPTION_BUTTONS;
+const { DEFAULT_TASK_OPTION_BUTTONS } = await import(`./modules/utils/globalUtils.js?v=${globalThis.APP_VERSION}`);
+const settings = cycle.taskOptionButtons || DEFAULT_TASK_OPTION_BUTTONS;
 
 console.log('Recurring enabled?', settings.recurring);
 console.log('Due dates enabled?', settings.dueDate);
@@ -653,13 +653,14 @@ console.log('Due dates enabled?', settings.dueDate);
 
 **Updating Programmatically:**
 ```javascript
-window.AppState.update(state => {
+appState.update(state => {
     state.data.cycles[cycleId].taskOptionButtons.recurring = true;
     state.data.cycles[cycleId].taskOptionButtons.dueDate = true;
 });
 
 // Trigger re-render
-window.renderAllTasks?.();
+const { task } = await import(`./modules/core/appContext.js?v=${globalThis.APP_VERSION}`);
+task().refresh?.();
 ```
 
 ### Integration Points

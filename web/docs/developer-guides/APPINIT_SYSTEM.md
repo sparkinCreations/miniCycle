@@ -60,17 +60,19 @@ await appInit.markAppReady();
 Use this when your module needs AppState or cycle data:
 
 ```javascript
-// utilities/myModule.js
-
-import { appInit } from './appInitialization.js';
+// modules/myModule.js
 
 export class MyModule {
+    constructor(deps) {
+        this.deps = deps;
+    }
+
     async doSomethingWithData() {
         // ✅ Wait for core systems to be ready
-        await appInit.waitForCore();
+        await this.deps.appInit.waitForCore();
 
         // Now safe to use AppState
-        const state = window.AppState.get();
+        const state = this.deps.AppState.get();
         const activeCycle = state.data.cycles[state.appState.activeCycleId];
 
         // ... work with data
@@ -83,13 +85,12 @@ export class MyModule {
 Use this for non-critical enhancements that need all modules:
 
 ```javascript
-async function enhanceUI() {
+async function enhanceUI({ appInit, updateStatsPanel }) {
     // Wait for full app initialization
     await appInit.waitForApp();
 
     // All modules are now loaded
-    // Safe to use any global functions
-    window.statsPanel.updateStatsPanel();
+    updateStatsPanel?.();
 }
 ```
 
@@ -98,14 +99,14 @@ async function enhanceUI() {
 Use this for conditional logic:
 
 ```javascript
-function myFunction() {
-    if (!appInit.isCoreReady()) {
+function myFunction(deps) {
+    if (!deps.appInit.isCoreReady()) {
         console.log('Waiting for core systems...');
         return;
     }
 
     // Core is ready, proceed
-    const state = window.AppState.get();
+    const state = deps.AppState.get();
     // ...
 }
 ```
@@ -117,16 +118,18 @@ function myFunction() {
 ### Example 1: Stats Panel (Uses waitForCore)
 
 ```javascript
-// utilities/statsPanel.js
-
-import { appInit } from './appInitialization.js';
+// modules/features/statsPanel.js
 
 export class StatsPanelManager {
+    constructor(deps) {
+        this.deps = deps;
+    }
+
     async updateStatsPanel() {
         // Wait for data to be ready
-        await appInit.waitForCore();
+        await this.deps.appInit.waitForCore();
 
-        const state = window.AppState.get();
+        const state = this.deps.AppState.get();
         const stats = this.calculateStats(state);
         this.renderStats(stats);
     }
@@ -136,18 +139,20 @@ export class StatsPanelManager {
 ### Example 2: Device Detection (Uses waitForCore)
 
 ```javascript
-// utilities/deviceDetection.js
-
-import { appInit } from './appInitialization.js';
+// modules/utils/deviceDetection.js
 
 export class DeviceDetectionManager {
+    constructor(deps) {
+        this.deps = deps;
+    }
+
     async saveCompatibilityData(data) {
         // Wait for AppState to be ready
-        await appInit.waitForCore();
+        await this.deps.appInit.waitForCore();
 
-        const currentData = window.AppState.get();
+        const currentData = this.deps.AppState.get();
 
-        window.AppState.update((state) => {
+        this.deps.AppState.update((state) => {
             state.settings.deviceCompatibility = {
                 ...data,
                 detectedAt: Date.now()
@@ -160,28 +165,21 @@ export class DeviceDetectionManager {
 ### Example 3: Boot Orchestrator Integration
 
 ```javascript
-// modules/boot/orchestrator.js (DI wiring hub)
+// modules/boot/orchestrator.js (sequence controller)
 
 async function initApp() {
-    // 1. Load appInit (via coreBoot.js)
-    const { appInit } = await import('../core/appInit.js');
+    const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
+    const { initCoreBoot } = await import(`./coreBoot.js?v=${APP_VERSION}`);
+    const { bootFeatures } = await import(`./featureBoot.js?v=${APP_VERSION}`);
 
-    // 2. Initialize AppState and load data (via coreBoot.js)
-    const { createStateManager } = await import('../core/appState.js');
-    window.AppState = createStateManager({ /* deps */ });
-    await window.AppState.init();
+    // Core boot loads appInit/AppState and marks core ready
+    await initCoreBoot(deps);
 
-    // 3. Mark core as ready (unblocks all waiting modules)
-    await appInit.markCoreSystemsReady();
-    console.log('✅ Core systems ready');
+    // Feature boot wires modules via DI and appContext
+    await bootFeatures(deps);
 
-    // 4. Initialize all other modules
-    // ... module initialization code
-
-    // 5. Mark app as fully ready
-    await appInit.markAppReady();
-    console.log('✅ App fully ready');
-});
+    // appInit will be marked app-ready inside coreBoot/featureBoot flow
+}
 ```
 
 ---
@@ -257,7 +255,7 @@ appInit.printStatus()
 async function myAsyncFunction() {
     await appInit.waitForCore();
     // Safe to use AppState
-    const state = window.AppState.get();
+    const state = deps.AppState.get();
     // ...
 }
 ```
@@ -266,12 +264,13 @@ async function myAsyncFunction() {
 
 ```javascript
 export class MyModule {
-    constructor() {
+    constructor(deps) {
+        this.deps = deps;
         this.init();
     }
 
     async init() {
-        await appInit.waitForCore();
+        await this.deps.appInit.waitForCore();
         // Now safe to access data
         this.loadInitialData();
     }
@@ -282,9 +281,9 @@ export class MyModule {
 
 ```javascript
 button.addEventListener('click', async () => {
-    await appInit.waitForCore();
+    await deps.appInit.waitForCore();
     // Safe to use AppState
-    const state = window.AppState.get();
+    const state = deps.AppState.get();
     // ...
 });
 ```
@@ -298,15 +297,16 @@ In test files, mark core as ready manually:
 ```javascript
 export async function runMyModuleTests(resultsDiv) {
     // ✅ CRITICAL: Mark core as ready for test environment
-    if (window.appInit && !window.appInit.isCoreReady()) {
-        await window.appInit.markCoreSystemsReady();
+    const { appInit } = await import(`./modules/core/appInit.js?v=${globalThis.APP_VERSION}`);
+    if (!appInit.isCoreReady()) {
+        await appInit.markCoreSystemsReady();
         console.log('✅ Test environment: AppInit core systems marked as ready');
     }
 
     // Now run tests...
     test('my test', async () => {
         // Tests can now use AppState safely
-        const state = window.AppState.get();
+        const state = deps.AppState.get();
         // ...
     });
 }

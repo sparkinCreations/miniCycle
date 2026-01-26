@@ -4,14 +4,11 @@
 
 ---
 
-## Current State: Honest Assessment
+## Current State
 
-The codebase uses 5 module patterns:
+All production modules are **DI-Pure** (no `window.*` fallbacks). The legacy patterns below are retained as historical context and anti-pattern references.
 
-- **4 legacy patterns** - Fall back to `window.*` globals (DI structure but not true decoupling)
-- **1 new pattern** - **DI-Pure** (no `window.*` fallbacks, fully testable)
-
-**Progress:** 2 modules are now DI-pure (taskDOM, taskCore). See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for tracking.
+See [PROJECT_STATS.md](../PROJECT_STATS.md) for current module counts and milestones.
 
 ---
 
@@ -39,7 +36,7 @@ export class GlobalUtils {
 
 ---
 
-### 2. Simple Instance (Self-Contained)
+### 2. Simple Instance (Self-Contained) - Legacy
 
 **Creates its own DOM, minimal external dependencies.**
 
@@ -69,7 +66,7 @@ export class MiniCycleNotifications {
     }
 }
 
-// Exposed globally
+// Legacy global exposure (pre-DI)
 const notifications = new MiniCycleNotifications();
 window.showNotification = (msg, type, dur) => notifications.show(msg, type, dur);
 ```
@@ -78,7 +75,7 @@ window.showNotification = (msg, type, dur) => notifications.show(msg, type, dur)
 
 ---
 
-### 3. Resilient Constructor (Graceful Degradation)
+### 3. Resilient Constructor (Graceful Degradation) - Legacy
 
 **Accepts dependencies with fallbacks.** This is where the "DI theater" happens.
 
@@ -101,10 +98,10 @@ export class StatsPanelManager {
     }
 }
 
-// In main script - dependencies ARE globals
+// Legacy wiring (globals)
 const statsPanel = new StatsPanelManager({
-    showNotification: window.showNotification,  // ← global
-    loadData: window.loadMiniCycleData,         // ← global
+    showNotification: window.showNotification,
+    loadData: window.loadMiniCycleData,
 });
 ```
 
@@ -112,7 +109,7 @@ const statsPanel = new StatsPanelManager({
 
 ---
 
-### 4. Strict Injection (Fail Fast)
+### 4. Strict Injection (Fail Fast) - Legacy
 
 **Requires dependencies, throws if missing.**
 
@@ -138,10 +135,10 @@ export function loadMiniCycle() {
     // ...
 }
 
-// In main script - still injects globals
+// Legacy wiring (globals)
 setRoutineLoaderDependencies({
-    loadMiniCycleData: window.loadMiniCycleData,  // ← global
-    addTask: window.addTask,                       // ← global
+    loadMiniCycleData: window.loadMiniCycleData,
+    addTask: window.addTask,
 });
 ```
 
@@ -173,12 +170,12 @@ export class TaskCore {
     }
 }
 
-// In main script - wiring hub (window.* OK here)
+// In featureBoot/moduleLoader - wiring hub (DI-only)
 const taskCore = await initTaskCore({
-    AppState: window.AppState,
-    AppGlobalState: window.AppGlobalState,
-    AppMeta: window.AppMeta,
-    safeJSONParse: GlobalUtils.safeJSONParse,
+    AppState: deps.core.AppState,
+    AppGlobalState: deps.core.AppGlobalState,
+    AppMeta: deps.core.AppMeta,
+    safeJSONParse: deps.utils.GlobalUtils.safeJSONParse,
     showNotification: deps.utils.showNotification,
 });
 ```
@@ -187,7 +184,7 @@ const taskCore = await initTaskCore({
 
 **Key Difference:** Local fallbacks (like inline JSON.parse) instead of `|| window.*`.
 
-**✅ All 89+ Modules Are Now DI-Pure (Dec 2025)**
+**✅ All Modules Are DI-Pure**
 
 The DI overhaul is complete. All modules use the DI-Pure pattern with:
 - `createDIModule()` from `diBase.js`
@@ -200,7 +197,7 @@ See [DI_PATTERNS.md](./DI_PATTERNS.md) for current best practices.
 
 ## The Problem (Legacy Patterns)
 
-Every pattern eventually resolves to `window.*`:
+Legacy patterns eventually resolved to `window.*`:
 
 ```javascript
 // What the code looks like:
@@ -212,7 +209,7 @@ constructor(dependencies = {}) {
 
 // What gets passed in:
 new Module({
-    AppState: window.AppState,  // Just a pointer to the global
+    AppState: window.AppState,  // Legacy global wiring
 });
 ```
 
