@@ -689,6 +689,9 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         safeJSONParse: GlobalUtils?.safeJSONParse,
         safeJSONStringify: GlobalUtils?.safeJSONStringify,
 
+        // Console capture (from deps.utils) - use getter for lazy resolution
+        get consoleCapture() { return deps.utils?.consoleCapture; },
+
         // Backup manager (from deps.storage) - use getter for lazy resolution
         get backupManager() { return deps.storage?.backupManager; },
 
@@ -728,6 +731,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         setupTaskInteractions: (...args) => deps.task?.setupTaskInteractions?.(...args),
         finalizeTaskCreation: (...args) => deps.task?.finalizeTaskCreation?.(...args),
         refreshTaskListUI: (...args) => deps.task?.refreshTaskListUI?.(...args),
+        renderTasks: (...args) => deps.task?.renderTasks?.(...args),
         addTask: (...args) => {
             console.log('🔗 moduleLoader addTask wrapper called:', args);
             console.log('🔗 deps.task:', deps.task);
@@ -999,12 +1003,15 @@ function buildModuleDependencies(manifest, deps, coreResult) {
 
     // Validate required dependencies (warning-only)
     // This helps catch manifest errors where a module requires an API that doesn't exist
-    for (const req of [...(manifest.requires || []), ...(manifest.lazyRequires || [])]) {
-        const value = result[req];
-        if (value === undefined) {
-            // Skip core deps that are provided differently (e.g., AppState via Proxy)
-            if (!CORE_DEPS.has(req)) {
-                console.warn(`⚠️ ${manifest.path}: Required dep '${req}' is undefined (not provided by any module)`);
+    // Skip validation for optional modules - they're expected to have potentially missing deps
+    if (!manifest.optional) {
+        for (const req of [...(manifest.requires || []), ...(manifest.lazyRequires || [])]) {
+            const value = result[req];
+            if (value === undefined) {
+                // Skip core deps that are provided differently (e.g., AppState via Proxy)
+                if (!CORE_DEPS.has(req)) {
+                    console.warn(`⚠️ ${manifest.path}: Required dep '${req}' is undefined (not provided by any module)`);
+                }
             }
         }
     }
