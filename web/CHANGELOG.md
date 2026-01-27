@@ -1,3 +1,7 @@
+## [1.873] - 2026-01-27
+- fix: disable audit mode for undeclared dependencies to reduce false positives
+
+
 ## [1.872] - 2026-01-26
 - fix: enhance dependency auditing by refining declared dependencies and adding warning suppression
 

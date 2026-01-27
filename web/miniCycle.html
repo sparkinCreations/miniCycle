@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.872">
+<meta name="app-version" content="1.873">
 
 <!-- Content Security Policy -->
 <meta http-equiv="Content-Security-Policy" content="
@@ -40,19 +40,19 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.872"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.873"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=1.872" as="style">
-<link rel="preload" href="styles/base/variables.css?v=1.872" as="style">
-<link rel="preload" href="styles/base/reset.css?v=1.872" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=1.872" as="style">
-<link rel="preload" href="styles/layout/header.css?v=1.872" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=1.872" as="style">
+<link rel="preload" href="styles/main.css?v=1.873" as="style">
+<link rel="preload" href="styles/base/variables.css?v=1.873" as="style">
+<link rel="preload" href="styles/base/reset.css?v=1.873" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=1.873" as="style">
+<link rel="preload" href="styles/layout/header.css?v=1.873" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=1.873" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=1.872" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="styles/main.css?v=1.872"></noscript>
+<link rel="stylesheet" href="styles/main.css?v=1.873" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="styles/main.css?v=1.873"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -63,7 +63,82 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.872"></script>
+<script src="./version.js?v=1.873"></script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     BOOT FAILURE FAILSAFE: Auto-clear caches after repeated boot failures
+     If boot fails 2+ times in a row, nuke all caches and reload fresh.
+     This catches users stuck with corrupted/stale cached modules.
+     Counter is cleared on successful boot (in orchestrator.js).
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  // Only run on production
+  var host = location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.')) return;
+
+  var FAIL_KEY = '__miniCycle_bootFails';
+  var CLEARING_KEY = '__miniCycle_failsafeClearing';
+  var MAX_FAILS = 2;
+
+  // Check if we're in the middle of a failsafe clear (prevent loops)
+  if (sessionStorage.getItem(CLEARING_KEY)) {
+    console.log('🔄 Failsafe clear in progress, skipping check');
+    sessionStorage.removeItem(CLEARING_KEY);
+    sessionStorage.removeItem(FAIL_KEY);
+    return;
+  }
+
+  var fails = parseInt(sessionStorage.getItem(FAIL_KEY) || '0', 10);
+  console.log('🔍 Boot failure check: ' + fails + ' previous failures');
+
+  if (fails >= MAX_FAILS) {
+    console.warn('🚨 ' + fails + ' consecutive boot failures detected - triggering failsafe cache clear');
+    sessionStorage.setItem(CLEARING_KEY, 'true');
+    sessionStorage.removeItem(FAIL_KEY);
+
+    // Nuclear option: clear everything
+    var clearPromises = [];
+
+    if ('caches' in window) {
+      clearPromises.push(
+        caches.keys().then(function(names) {
+          console.log('🗑️ Failsafe: Deleting ' + names.length + ' caches');
+          return Promise.all(names.map(function(name) { return caches.delete(name); }));
+        })
+      );
+    }
+
+    if ('serviceWorker' in navigator) {
+      clearPromises.push(
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          console.log('🗑️ Failsafe: Unregistering ' + regs.length + ' service workers');
+          return Promise.all(regs.map(function(reg) { return reg.unregister(); }));
+        })
+      );
+    }
+
+    Promise.all(clearPromises).then(function() {
+      console.log('✅ Failsafe cache clear complete, reloading...');
+      window.location.reload(true);
+    }).catch(function(e) {
+      console.error('❌ Failsafe clear failed:', e);
+      window.location.reload(true);
+    });
+
+    return; // Stop execution - reload will happen
+  }
+
+  // Increment failure counter (will be cleared on successful boot)
+  sessionStorage.setItem(FAIL_KEY, (fails + 1).toString());
+
+  // Expose function for orchestrator to clear on success
+  window.__miniCycleBootSuccess = function() {
+    sessionStorage.removeItem(FAIL_KEY);
+    console.log('✅ Boot success - failure counter cleared');
+  };
+})();
+</script>
 
 <!-- Automatic cache clear on version change - BLOCKS further parsing if reload needed -->
 <script>
@@ -130,21 +205,21 @@
      3. Or accepting slightly slower initial load without preloads
      ═══════════════════════════════════════════════════════════════════════════ -->
 <!--
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.872">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.872">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.872">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.872">
-<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.872">
-<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.872">
-<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.872">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.872">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.872">
-<link rel="modulepreload" href="./modules/core/appInit.js?v=1.872">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.872">
-<link rel="modulepreload" href="./modules/core/diBase.js?v=1.872">
-<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.872">
-<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.872">
-<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.872">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.873">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.873">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.873">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.873">
+<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.873">
+<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.873">
+<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.873">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.873">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.873">
+<link rel="modulepreload" href="./modules/core/appInit.js?v=1.873">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.873">
+<link rel="modulepreload" href="./modules/core/diBase.js?v=1.873">
+<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.873">
+<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.873">
+<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.873">
 -->
 
 <style>
@@ -2707,7 +2782,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.872"></script>
+ <script type="module" src="miniCycle-main.js?v=1.873"></script>
 
 <script>
 // Sync About modal version with meta app-version

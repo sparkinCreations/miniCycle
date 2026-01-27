@@ -218,6 +218,19 @@ function getErrorDetails(error, phase) {
 }
 
 /**
+ * Detect cache-related boot errors (stale module/cache mismatch)
+ * @param {Error} error - The error that occurred
+ * @returns {boolean}
+ */
+function isCacheError(error) {
+  const msg = error?.message || '';
+  return msg.includes('Importing') ||
+    msg.includes('module') ||
+    msg.includes('binding name') ||
+    msg.includes('export');
+}
+
+/**
  * Show boot error to user with retry or lite fallback
  * Uses the existing #app-loader for consistent branding
  * @param {string} phase - Which phase failed
@@ -257,8 +270,7 @@ function showBootError(phase, error, willRetry = false) {
     `;
   } else {
     // Check if this looks like a cache error
-    const errorMsg = error?.message || '';
-    const isCacheError = errorMsg.includes('Importing') || errorMsg.includes('module') || errorMsg.includes('binding name') || errorMsg.includes('export');
+    const isCacheErrorMatch = isCacheError(error);
 
     loader.innerHTML = `
       <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle" width="120" height="96" style="object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2)); animation: none;">
@@ -273,7 +285,7 @@ function showBootError(phase, error, willRetry = false) {
         💡 ${safeSuggestion}
       </div>
       <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
-        ${isCacheError ? `
+        ${isCacheErrorMatch ? `
         <button id="clear-cache-btn" style="padding: 12px 24px; cursor: pointer; border: none; background: #ff9800; color: white; border-radius: 8px; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; transition: all 0.2s;">
           🗑️ Clear Cache & Reload
         </button>
@@ -299,8 +311,11 @@ function showBootError(phase, error, willRetry = false) {
         clearCacheBtn.disabled = true;
 
         try {
-          await clearAllCaches();
-          window.location.reload(true);
+          const recovered = await attemptCacheRecovery('orchestrator-user');
+          if (!recovered) {
+            await clearAllCaches();
+            window.location.reload(true);
+          }
         } catch (e) {
           console.error('Cache clear failed:', e);
           window.location.reload(true);
@@ -450,6 +465,11 @@ async function runBootSequence() {
   // Clear recovery flags on successful boot
   clearRecoveryFlags();
 
+  // Clear boot failure counter (failsafe in miniCycle.html)
+  if (typeof window.__miniCycleBootSuccess === 'function') {
+    window.__miniCycleBootSuccess();
+  }
+
   return true;
 }
 
@@ -501,6 +521,11 @@ async function initApp() {
       await new Promise(resolve => setTimeout(resolve, BOOT_TIMEOUTS.RETRY_DELAY));
       return initApp(); // Retry
     } else {
+      if (isCacheError(error) && !isRecoveryExhausted()) {
+        console.warn('🧹 Cache error after retries - attempting recovery');
+        const recovered = await attemptCacheRecovery('orchestrator-bootFailure');
+        if (recovered) return;
+      }
       // Max retries exceeded - show final error with lite option
       showBootError(phase, error, false);
     }
