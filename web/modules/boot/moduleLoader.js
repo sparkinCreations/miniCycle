@@ -122,8 +122,11 @@ const STRICT_LAZY_VALIDATION = false;
 /**
  * Enable audit mode to log when modules access undeclared dependencies.
  * Use this to find missing `requires` entries before enabling ENFORCE_REQUIRES.
+ *
+ * NOTE: Currently generates many false positives due to property enumeration
+ * (DevTools logging, Object.keys, etc.). Only enable for targeted debugging.
  */
-const AUDIT_UNDECLARED_DEPS = true;
+const AUDIT_UNDECLARED_DEPS = false;
 
 /**
  * When true, modules ONLY receive dependencies declared in `requires`.

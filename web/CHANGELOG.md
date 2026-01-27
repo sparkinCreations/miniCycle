@@ -1,3 +1,7 @@
+## [1.872] - 2026-01-26
+- fix: enhance dependency auditing by refining declared dependencies and adding warning suppression
+
+
 ## [1.871] - 2026-01-26
 - refactor: update MODULE_LOADER_ARCHITECTURE_FIX.md to reflect current architecture and resolved issues
 
