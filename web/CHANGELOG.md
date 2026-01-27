@@ -1,3 +1,8 @@
+## [1.874] - 2026-01-27
+- fix: add lazy loading for modeManager in taskOptionsCustomizer and improve dependency validation
+- chore: update version to 1.873 and reflect changes in documentation and files
+
+
 ## [1.873] - 2026-01-27
 - fix: disable audit mode for undeclared dependencies to reduce false positives
 
