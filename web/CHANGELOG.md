@@ -1,3 +1,7 @@
+## [1.875] - 2026-01-27
+- chore: update version to 1.874 and reflect changes across documentation and files
+
+
 ## [1.874] - 2026-01-27
 - fix: add lazy loading for modeManager in taskOptionsCustomizer and improve dependency validation
 - chore: update version to 1.873 and reflect changes in documentation and files
