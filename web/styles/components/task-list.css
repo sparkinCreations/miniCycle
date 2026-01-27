@@ -738,8 +738,10 @@ body.onboarding-active .complete-all-and-help-window-container {
     }
 
     /* More bottom padding on mobile for undo buttons and navigation dots */
+    /* Reduce min-height on mobile to allow shrinking when button/progress bar are tall */
     .task-list-container {
         padding-bottom: 40px;
+        min-height: 100px; /* Smaller than desktop 200px to prevent overlap */
     }
 
     /* Mobile task card constraints - using dvh for iOS Safari compatibility */
@@ -799,6 +801,11 @@ body.onboarding-active .complete-all-and-help-window-container {
 @media (max-width: 480px) {
     .task-card {
         margin-top: 35px;
+    }
+
+    /* Even smaller min-height on very small screens */
+    .task-list-container {
+        min-height: 80px;
     }
 }
 
