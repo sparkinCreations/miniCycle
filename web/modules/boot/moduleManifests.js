@@ -209,11 +209,13 @@ export const MODULE_MANIFESTS = {
     taskOptionsCustomizer: {
         path: '../ui/taskOptionsCustomizer.js',
         phase: PHASES.TASK_MANAGEMENT,
-        requires: ['appInit', 'AppState', 'showNotification', 'renderTaskList', 'updateMoveArrowsVisibility', 'startReminders', 'stopReminders', 'modeManager', 'DEFAULT_TASK_OPTION_BUTTONS', 'safeAddEventListener'],
+        requires: ['appInit', 'AppState', 'showNotification', 'renderTaskList', 'updateMoveArrowsVisibility', 'startReminders', 'stopReminders', 'DEFAULT_TASK_OPTION_BUTTONS', 'safeAddEventListener'],
+        // modeManager is Phase 5 (CYCLE) but taskOptionsCustomizer is Phase 3 - must be lazy
+        lazyRequires: ['modeManager'],
         provides: [],
         provideInstance: 'taskOptionsCustomizer',
         api: 'ui',
-        after: ['taskDOM', 'reminders', 'modeManager', 'dragDropManager']  // dragDropManager provides updateMoveArrowsVisibility
+        after: ['taskDOM', 'reminders', 'dragDropManager']  // dragDropManager provides updateMoveArrowsVisibility
     },
 
     reminders: {
