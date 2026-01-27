@@ -1,10 +1,14 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '1.872';
-var CACHE_VERSION = 'v667';
+var APP_VERSION = '1.873';
+var CACHE_VERSION = 'v668';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
+
+// ✅ ONLINE-ONLY MODE: Disable SW caching (still allows SW for routing/logic)
+// Note: Existing clients must load this new SW at least once before old caches are cleared.
+var DISABLE_CACHING = true;
 
 // ✅ Cache expiration configuration
 var MAX_DYNAMIC_ENTRIES = 300;  // Maximum entries in dynamic cache (app has 100+ modules)
@@ -215,6 +219,12 @@ var LAZY_CACHE_ON_USE = [
 self.addEventListener('install', function (event) {
   console.log('🔧 Service Worker ' + CACHE_VERSION + ' (App v' + APP_VERSION + ') installing...');
 
+  if (DISABLE_CACHING) {
+    console.log('🚫 Caching disabled - skipping precache');
+    event.waitUntil(self.skipWaiting());
+    return;
+  }
+
   // Build the full pre-cache list - includes CSS for offline support
   var precacheList = CORE.concat(BOOT_CRITICAL, CSS_FILES, LITE_SHELL);
 
@@ -284,6 +294,10 @@ self.addEventListener('activate', function (event) {
       // Clean old caches
       caches.keys().then(function (keys) {
         return Promise.all(keys.map(function (k) {
+          if (DISABLE_CACHING) {
+            console.log('🗑️ Deleting cache (online-only):', k);
+            return caches.delete(k);
+          }
           if (k.indexOf('miniCycle-') === 0 && k !== STATIC_CACHE && k !== DYNAMIC_CACHE) {
             console.log('🗑️ Deleting old cache:', k);
             return caches.delete(k);
@@ -293,8 +307,10 @@ self.addEventListener('activate', function (event) {
     ]).then(function () {
       console.log('✅ Old caches cleaned');
       // ✅ Clean expired entries and trim cache on activation
-      cleanExpiredEntries();
-      trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
+      if (!DISABLE_CACHING) {
+        cleanExpiredEntries();
+        trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
+      }
       return self.clients.claim();
     })
   );
@@ -431,6 +447,11 @@ function pickShell(urlObj) {
 self.addEventListener('fetch', function (event) {
   var request = event.request;
   if (request.method !== 'GET') return;
+
+  if (DISABLE_CACHING) {
+    event.respondWith(fetch(new Request(request, { cache: 'no-store' })));
+    return;
+  }
 
   var url = new URL(request.url);
 
