@@ -291,15 +291,16 @@
    iOS PWA Safe Area Fix
    iOS PWAs sometimes report incorrect/zero safe-area-inset-top values
    The .ios-pwa class is added by JavaScript detection in miniCycle.html
+   Keep container at top: 0 so blur extends into status area, use padding for content
    ============================================================================= */
 
 .ios-pwa .fixed-header-container {
-    /* Push entire header container below Dynamic Island/status bar */
-    top: 54px;
+    /* Keep at top so blur extends into status bar area */
+    top: 0;
 }
 
 .ios-pwa .mini-cycle-header-row {
-    /* Reduce padding since container is already pushed down */
-    padding-top: 10px;
+    /* Push content below Dynamic Island with padding (blur still extends to top) */
+    padding-top: 59px;
     padding-bottom: 8px;
 }
