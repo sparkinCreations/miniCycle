@@ -6,9 +6,9 @@ var CACHE_VERSION = 'v672';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
-// ✅ CACHING ENABLED: Full offline support with smart update handling
-// Network-first for boot-critical files, stale-while-revalidate for others
-var DISABLE_CACHING = false;
+// ✅ ONLINE-ONLY MODE: Caching disabled due to version mismatch issues
+// Re-enable after implementing forced cache clear for existing users
+var DISABLE_CACHING = true;
 
 // ✅ Cache expiration configuration
 var MAX_DYNAMIC_ENTRIES = 300;  // Maximum entries in dynamic cache (app has 100+ modules)

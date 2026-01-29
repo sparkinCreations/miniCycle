@@ -1,3 +1,7 @@
+## [1.878] - 2026-01-29
+- fix: enhance network-first caching strategy for modules with complex interdependencies
+
+
 ## [1.877] - 2026-01-29
 - chore: update version to 1.876 and reflect changes across documentation and files reenables service worker caching
 
