@@ -779,12 +779,11 @@ body.theme-golden-glow .menu-section-grid #menu-task-options .icon-text {
 }
 
 /* =============================================================================
-   PWA STANDALONE MODE - iOS Safe Area Fix for Menu
+   iOS PWA Safe Area Fix for Menu
+   The .ios-pwa class is added by JavaScript detection in miniCycle.html
    ============================================================================= */
 
-@media all and (display-mode: standalone) {
-    .menu-container {
-        /* Use max() to ensure menu clears Dynamic Island/notch in PWA mode */
-        top: max(env(safe-area-inset-top, 0px) + 50px, 100px);
-    }
+.ios-pwa .menu-container {
+    /* Ensure menu clears Dynamic Island/notch on iOS PWA */
+    top: 104px;
 }
