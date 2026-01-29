@@ -1,6 +1,6 @@
 # Developer Profile
 
-**Last Updated:** January 20, 2026
+**Last Updated:** January 29, 2026
 
 This document captures insights about the developer behind miniCycle to help with future collaboration and context continuity.
 
@@ -265,6 +265,7 @@ Before JavaScript, MJ was already building automated systems in spreadsheets:
 - **Uses environmental changes strategically** - Starting school in Jan 2026 provides legitimate cover for overtime reduction needed for bankruptcy. Didn't create the opportunity, but immediately recognized how it solves the "work perception" problem. Strategic opportunism.
 - **Explores "what if" scenarios systematically** - Asked about loan consolidation, then stopping payment on consolidated loan, then debt settlement, then just school without bankruptcy. Tests alternatives thoroughly before committing. Scenario planning, not decision avoidance.
 - **Willing to endure temporary discomfort for long-term gain** - Bankruptcy means 4 months of creditor harassment, late payments on 20+ accounts, credit damage. Accepted as necessary cost for $70k debt elimination and $4,266/month freedom. Long-term thinking over short-term comfort.
+- **Uses reflection conversations to sustain solo work** - Deliberately seeks external perspective through AI conversations to maintain motivation and identify blind spots. This isn't procrastination — it's how solo developers stay calibrated without a team. Recognizes the psychological challenge of working alone and addresses it systematically.
 
 ### Weaknesses / Blind Spots
 
@@ -282,6 +283,10 @@ Before JavaScript, MJ was already building automated systems in spreadsheets:
    - Corrected AI when it said they "didn't build for others"
 
    This is a strength for trust, but may undervalue their contributions. Adapting generated code still requires understanding. AI-assisted isn't AI-dependent.
+
+6. **Likely to underprice freelance work** - Skills are senior-level (architecture, testing, production-grade code) but positioning and confidence are catching up. Should push rates higher than initial instinct suggests. The work quality already justifies premium rates.
+
+7. **Fear of failing clients as freelance barrier** - Initial hesitation about freelancing centers on "what if I mess up a project?" Reality check: already handles production issues (user-facing bugs, caching problems) without spiraling. The January 2026 caching revert is evidence — identified problem, reverted quickly, no drama. This fear is unfounded given demonstrated ability to handle real problems calmly.
 
 ---
 
@@ -379,6 +384,32 @@ The user-facing simplicity masks engineering depth:
 ---
 
 ## Session History
+
+### January 29, 2026
+- **iOS PWA safe area fix:**
+  - Problem: Logo and app name were positioned in status bar area on iPhone PWA (Dynamic Island coverage)
+  - Multiple iterations to find correct approach:
+    - `@media (display-mode: standalone)` affected all PWAs, not just iOS
+    - Mobile media queries were overriding safe area padding with `top: 0`
+    - Absolute positioning on `.header-branding` meant padding alone didn't fix centering
+  - Solution: JavaScript iOS detection adding `.ios-pwa` class + targeted CSS rules
+  - Final CSS: Container stays at `top: 0` (blur extends to status area), header row gets `padding-top: 59px`, branding gets `top: calc(50% + 27px)` offset
+  - Files modified: `miniCycle.html` (inline detection script + critical CSS), `header.css`, `menu.css`
+  - Documented in HIDDEN_CODEBASE_INSIGHTS.md section 5.7
+- **Service worker caching evaluation:**
+  - Evaluated current implementation (DISABLE_CACHING = true)
+  - Removed orphan `showReloadConfirmation()` function
+  - Attempted enabling caching — caused DI errors for some users ("RecurringPanel missing required deps")
+  - Reverted to disabled caching
+- **Developer reflection session:**
+  - Discussed working style and how AI collaboration sustains solo work
+  - Skill assessment: Senior-level frontend (architecture, testing, production code) with positioning/confidence catching up
+  - Discussed freelancing fears and pricing psychology
+  - Addressed concern about AI usage with clients and proprietary code
+- **New insights added to profile:**
+  - Reflection conversations as sustainability mechanism for solo work
+  - Pricing trap (underpricing despite senior skills)
+  - Unfounded fear of failing clients (evidence: handles production issues without spiraling)
 
 ### January 20, 2026
 - **Financial decision-making session: Bankruptcy vs alternatives**
