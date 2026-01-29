@@ -1,3 +1,8 @@
+## [1.879] - 2026-01-29
+- chore: update app version to 1.878 across all relevant files and documentation
+- fix: center header branding vertically and horizontally, update padding for status bar compatibility
+
+
 ## [1.878] - 2026-01-29
 - fix: enhance network-first caching strategy for modules with complex interdependencies
 
