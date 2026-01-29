@@ -236,12 +236,12 @@
 
 @media (max-width: 868px) {
     .fixed-header-container {
-        top: env(safe-area-inset-top, 20px);
-        top: 10px;
+        top: 0; /* Container starts at top, header-row handles safe area via padding */
     }
 
     .mini-cycle-header-row {
-  padding: 15px;
+        /* Preserve safe area padding on mobile */
+        padding: calc(env(safe-area-inset-top, 0px) + 15px) 15px 15px 15px;
     }
 
     .header-logo {
@@ -279,11 +279,12 @@
 
 @media (max-width: 480px) {
     .fixed-header-container {
-        top: env(safe-area-inset-top, 15px);
+        top: 0; /* Container at top, header-row handles safe area */
     }
 
     .mini-cycle-header-row {
-        padding: 15px;
+        /* Preserve safe area padding on small mobile */
+        padding: calc(env(safe-area-inset-top, 0px) + 12px) 12px 12px 12px;
         min-height: 42px;
         background: var(--theme-header-bg, var(--header-bg));
     }
@@ -291,5 +292,21 @@
     .header-logo {
         width: 28px;
         height: 28px;
+    }
+}
+
+/* =============================================================================
+   PWA STANDALONE MODE - iOS Safe Area Fix
+   iOS PWAs need explicit safe area handling for Dynamic Island/notch
+   ============================================================================= */
+
+@media all and (display-mode: standalone) {
+    .fixed-header-container {
+        top: 0;
+    }
+
+    .mini-cycle-header-row {
+        /* Extra padding for PWA mode to ensure Dynamic Island clearance */
+        padding-top: calc(env(safe-area-inset-top, 20px) + 15px);
     }
 }
