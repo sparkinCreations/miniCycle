@@ -303,13 +303,13 @@
 
 @media all and (display-mode: standalone) {
     .fixed-header-container {
-        top: 0;
+        /* Push entire header container below Dynamic Island/status bar */
+        top: max(env(safe-area-inset-top, 0px), 50px);
     }
 
     .mini-cycle-header-row {
-        /* Use max() to ensure minimum 54px top padding for Dynamic Island/notch
-           even if env(safe-area-inset-top) returns 0 */
-        padding-top: max(env(safe-area-inset-top, 0px) + 5px, 54px);
+        /* Reduce padding since container is already pushed down */
+        padding-top: 10px;
         padding-bottom: 8px;
     }
 }
