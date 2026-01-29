@@ -297,7 +297,8 @@
 
 /* =============================================================================
    PWA STANDALONE MODE - iOS Safe Area Fix
-   iOS PWAs need explicit safe area handling for Dynamic Island/notch
+   iOS PWAs sometimes report incorrect/zero safe-area-inset-top values
+   Use max() to ensure minimum clearance for Dynamic Island (~59px) or notch (~47px)
    ============================================================================= */
 
 @media all and (display-mode: standalone) {
@@ -306,7 +307,9 @@
     }
 
     .mini-cycle-header-row {
-        /* Extra padding for PWA mode to ensure Dynamic Island clearance */
-        padding-top: calc(env(safe-area-inset-top, 20px) + 15px);
+        /* Use max() to ensure minimum 54px top padding for Dynamic Island/notch
+           even if env(safe-area-inset-top) returns 0 */
+        padding-top: max(env(safe-area-inset-top, 0px) + 5px, 54px);
+        padding-bottom: 8px;
     }
 }
