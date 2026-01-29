@@ -1,3 +1,7 @@
+## [1.877] - 2026-01-29
+- chore: update version to 1.876 and reflect changes across documentation and files reenables service worker caching
+
+
 ## [1.876] - 2026-01-29
 - chore: update version to 1.875 and reflect changes across documentation and files
 
