@@ -1,3 +1,7 @@
+## [1.883] - 2026-01-29
+- fix: implement iOS PWA safe area detection and adjustments for header and menu
+
+
 ## [1.882] - 2026-01-29
 - fix: adjust header positioning and padding for better compatibility with Dynamic Island and status bar
 
