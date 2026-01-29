@@ -472,6 +472,92 @@ historyManager: new Proxy({}, {
 
 ---
 
+### 5.7 iOS PWA Safe Area Requires JavaScript Detection (Fixed Jan 2026)
+
+**Locations:**
+- `/miniCycle.html` (iOS detection script + inline CSS)
+- `/styles/layout/header.css` (iOS PWA rules)
+- `/styles/components/menu.css` (iOS PWA menu positioning)
+
+**The Problem:**
+
+iOS PWAs (Add to Home Screen) don't reliably report `env(safe-area-inset-top)` values. The Dynamic Island (~59px) and older notches (~47px) need clearance, but:
+
+1. `env(safe-area-inset-top)` often returns `0` in iOS standalone mode
+2. `@media (display-mode: standalone)` affects ALL PWAs (Android, desktop), not just iOS
+3. CSS-only solutions either break non-iOS platforms or don't work on iOS
+
+**The Solution:**
+
+JavaScript detection adds an `.ios-pwa` class to `<html>`:
+
+```javascript
+// In miniCycle.html <head>
+(function() {
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                     window.navigator.standalone === true;
+  if (isIOS && isStandalone) {
+    document.documentElement.classList.add('ios-pwa');
+  }
+})();
+```
+
+CSS then targets only iOS PWAs:
+
+```css
+/* Header container stays at top (blur extends into status area) */
+.ios-pwa .fixed-header-container {
+    top: 0;
+}
+
+/* Content pushed below Dynamic Island via padding */
+.ios-pwa .mini-cycle-header-row {
+    padding-top: 59px;
+}
+
+/* Logo/app name repositioned to center in visible area */
+.ios-pwa .header-branding {
+    top: calc(50% + 27px);  /* Offset by ~half the safe area padding */
+}
+
+/* Menu positioned below safe area */
+.ios-pwa .menu-container {
+    top: 104px;
+}
+```
+
+**Why This Complexity:**
+
+1. **Blur effect** — The header's `backdrop-filter: blur()` should extend into the status bar area for visual continuity
+2. **Absolute positioning** — `.header-branding` uses `position: absolute; top: 50%` which centers in the entire padded area, not the visible content area
+3. **Platform isolation** — Android/desktop PWAs shouldn't have 59px of dead space at the top
+
+**Key Files:**
+
+| File | What It Does |
+|------|--------------|
+| `miniCycle.html` | iOS detection script (runs before render) |
+| `miniCycle.html` | Inline critical CSS for `.ios-pwa` rules |
+| `header.css` | External `.ios-pwa` rules (must match inline) |
+| `menu.css` | `.ios-pwa .menu-container` positioning |
+
+**Testing:**
+
+- **iOS PWA:** Logo below Dynamic Island, blur extends to top
+- **iOS Safari:** Normal (no `.ios-pwa` class)
+- **Android PWA:** Normal (no `.ios-pwa` class)
+- **Desktop PWA:** Normal (no `.ios-pwa` class)
+
+**If It Breaks:**
+
+1. Check if `.ios-pwa` class is being added (inspect `<html>` element)
+2. Verify inline CSS in `miniCycle.html` matches `header.css`
+3. Check for CSS specificity conflicts from mobile media queries
+
+---
+
 ## 6. Interesting Metrics
 
 | Metric | Value | Industry Comparison |
