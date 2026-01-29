@@ -235,10 +235,6 @@
    ============================================================================= */
 
 @media (max-width: 868px) {
-    .fixed-header-container {
-        top: 0; /* Container starts at top, header-row handles safe area via padding */
-    }
-
     .mini-cycle-header-row {
         /* Preserve safe area padding on mobile */
         padding: calc(env(safe-area-inset-top, 0px) + 15px) 15px 15px 15px;
@@ -278,10 +274,6 @@
    ============================================================================= */
 
 @media (max-width: 480px) {
-    .fixed-header-container {
-        top: 0; /* Container at top, header-row handles safe area */
-    }
-
     .mini-cycle-header-row {
         /* Preserve safe area padding on small mobile */
         padding: calc(env(safe-area-inset-top, 0px) + 12px) 12px 12px 12px;
@@ -296,20 +288,18 @@
 }
 
 /* =============================================================================
-   PWA STANDALONE MODE - iOS Safe Area Fix
+   iOS PWA Safe Area Fix
    iOS PWAs sometimes report incorrect/zero safe-area-inset-top values
-   Use max() to ensure minimum clearance for Dynamic Island (~59px) or notch (~47px)
+   The .ios-pwa class is added by JavaScript detection in miniCycle.html
    ============================================================================= */
 
-@media all and (display-mode: standalone) {
-    .fixed-header-container {
-        /* Push entire header container below Dynamic Island/status bar */
-        top: max(env(safe-area-inset-top, 0px), 50px);
-    }
+.ios-pwa .fixed-header-container {
+    /* Push entire header container below Dynamic Island/status bar */
+    top: 54px;
+}
 
-    .mini-cycle-header-row {
-        /* Reduce padding since container is already pushed down */
-        padding-top: 10px;
-        padding-bottom: 8px;
-    }
+.ios-pwa .mini-cycle-header-row {
+    /* Reduce padding since container is already pushed down */
+    padding-top: 10px;
+    padding-bottom: 8px;
 }
