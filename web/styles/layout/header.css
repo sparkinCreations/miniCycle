@@ -304,3 +304,8 @@
     padding-top: 59px;
     padding-bottom: 8px;
 }
+
+.ios-pwa .header-branding {
+    /* Adjust logo/app name position to account for safe area padding */
+    top: calc(50% + 27px);
+}
