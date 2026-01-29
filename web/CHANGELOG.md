@@ -1,3 +1,7 @@
+## [1.876] - 2026-01-29
+- chore: update version to 1.875 and reflect changes across documentation and files
+
+
 ## [1.875] - 2026-01-27
 - chore: update version to 1.874 and reflect changes across documentation and files
 

@@ -1,14 +1,14 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '1.875';
-var CACHE_VERSION = 'v670';
+var APP_VERSION = '1.876';
+var CACHE_VERSION = 'v671';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
-// ✅ ONLINE-ONLY MODE: Disable SW caching (still allows SW for routing/logic)
-// Note: Existing clients must load this new SW at least once before old caches are cleared.
-var DISABLE_CACHING = true;
+// ✅ CACHING ENABLED: Full offline support with smart update handling
+// Network-first for boot-critical files, stale-while-revalidate for others
+var DISABLE_CACHING = false;
 
 // ✅ Cache expiration configuration
 var MAX_DYNAMIC_ENTRIES = 300;  // Maximum entries in dynamic cache (app has 100+ modules)
