@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '1.876';
-var CACHE_VERSION = 'v671';
+var APP_VERSION = '1.877';
+var CACHE_VERSION = 'v672';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -22,10 +22,11 @@ var NETWORK_FIRST_PATTERNS = [
   'miniCycle-main.js',           // Entry point
   'modules/boot/',               // All boot files - version critical
   'modules/core/',               // Core modules (diBase, appInit, appState) - statically imported
-  'modules/utils/'               // Utility modules (storageUtils, etc.) - statically imported
-  // Note: modules/core/ and modules/utils/ added because these files are imported via static imports
-  // (without ?v= params) by other modules. Without network-first, stale cached versions can cause
-  // "does not provide an export named X" errors when new exports are added.
+  'modules/utils/',              // Utility modules (storageUtils, etc.) - statically imported
+  'modules/recurring/'           // Recurring modules - complex DI interdependencies, must be in sync
+  // Note: modules/core/, modules/utils/, and modules/recurring/ use network-first because these
+  // files have complex interdependencies. Without network-first, stale cached versions can cause
+  // DI wiring failures like "missing required deps" errors when module interfaces change.
   // Other modules use version mismatch detection (see fetch handler) which automatically uses
   // network-first when ?v= param doesn't match SW version.
 ];
