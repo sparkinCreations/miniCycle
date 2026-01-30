@@ -768,7 +768,7 @@ export class HistoryManager {
             } else if (event.details.tasksCleared !== undefined) {
                 detailText = `${event.details.tasksCleared} task${event.details.tasksCleared !== 1 ? 's' : ''}`;
             } else if (event.details.achievementId) {
-                detailText = event.details.achievementId;
+                detailText = event.details.achievementName || event.details.achievementId;
             }
         }
 
