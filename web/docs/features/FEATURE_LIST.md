@@ -490,7 +490,7 @@ A **static, frozen fallback** for older devices (ES5 compatible).
 
 | Feature | Description |
 |---------|-------------|
-| **Version** | Frozen at v1.480 |
+| **Version** | Frozen (see [PROJECT_STATS.md](../PROJECT_STATS.md)) |
 | **Purpose** | Basic routine-tracking for old browsers |
 | **Maintenance** | Intentionally NOT maintained |
 | **Location** | `lite/miniCycle-lite.html` |

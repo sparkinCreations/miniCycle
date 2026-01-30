@@ -5,7 +5,7 @@
 > This file contains metrics that change frequently (version, counts, etc.).
 > All other documentation should reference this file instead of hardcoding these values.
 
-**Last Updated**: January 29, 2026
+**Last Updated**: January 30, 2026
 
 ---
 
@@ -14,6 +14,7 @@
 | Metric | Value |
 |--------|-------|
 | **App Version** | 1.884 |
+| **Lite Version** | 2.05 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 102 |
 | **Total Tests** | 1693 |
@@ -42,7 +43,7 @@
 | `utils/` | 12 | Notifications, device detection, utilities |
 | `storage/` | 1 | Backup manager |
 | `progress/` | 1 | Cycle completion tracking |
-| `testing/` | 10 | Test infrastructure |
+| `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
 | **Total** | **102** | |
 
@@ -53,11 +54,11 @@
 | File | Lines | Purpose |
 |------|-------|---------|
 | `miniCycle-main.js` | ~56 | Entrypoint |
-| `modules/boot/orchestrator.js` | ~402 | Pure sequence controller |
-| `modules/boot/coreBoot.js` | ~905 | Core state & init |
-| `modules/boot/featureBoot.js` | ~516 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~761 | UI handlers |
-| **Total** | **~2,640** | |
+| `modules/boot/orchestrator.js` | ~586 | Pure sequence controller |
+| `modules/boot/coreBoot.js` | ~1,020 | Core state & init |
+| `modules/boot/featureBoot.js` | ~517 | DI wiring hub |
+| `modules/boot/uiBoot.js` | ~768 | UI handlers |
+| **Total** | **~2,947** | |
 
 ---
 
@@ -66,9 +67,11 @@
 | Category | Tests |
 |----------|-------|
 | Total Tests | 1693 |
-| Test Files | 59 |
+| Test Files | 54 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
+
+> **Note:** Test file count is `.tests.js` files only. The `tests/` directory also contains 5 helper/utility files (testHelpers.js, testContext.js, performance.benchmark.js, etc.).
 
 ---
 
@@ -81,19 +84,34 @@
 | Boot file split | ✅ Complete | Dec 2025 |
 | CSS modularization | ✅ Complete | Jan 2026 |
 
+> **DI breakdown:** 60 modules use `diBase.js` (`createDIModule`), ~13 use custom `set*Dependencies()` functions, and ~29 are pure utilities/constants that don't require DI. The key guarantee: **zero modules use `|| window.*` fallbacks**.
+
+### Boot Fallback Safety Nets
+
+| Fallback | Trigger | Location |
+|----------|---------|----------|
+| **8-second lite redirect** | `dataset.appBooted` not set within 8s | `miniCycle.html` (late fallback IIFE) |
+| **60-second load timeout** | App loader still visible after 60s | `miniCycle.html` (load timeout IIFE) |
+| **Boot failure counter** | 2+ consecutive boot failures → cache clear | `miniCycle.html` (boot failsafe IIFE) |
+| **Phase timeouts** | 15s/20s/15s per boot phase | `modules/core/constants.js` |
+
 ---
 
 ## How to Update This File
 
 **Automated Updates:**
 
-Most metrics are automatically updated when you run `./scripts/update-version.sh`:
+All volatile metrics are automatically updated when you run `./scripts/update-version.sh`:
 - ✅ App Version
+- ✅ Lite Version (read from `lite/miniCycle-lite-scripts.js`)
 - ✅ Total Modules (counted from `modules/`)
+- ✅ Module Breakdown per directory (counted per `modules/*/`)
 - ✅ Total Tests (counted from `tests/`)
+- ✅ Test Files (`.tests.js` files counted from `tests/`)
 - ✅ CSS Files (counted from `styles/`)
 - ✅ JSDoc Blocks (counted from `modules/`)
 - ✅ Documentation Files (counted from `docs/`)
+- ✅ Boot Files line counts (via `wc -l`)
 - ✅ Last Updated date
 
 **Manual Updates Required:**
@@ -103,25 +121,7 @@ These metrics must be updated manually as needed:
 2. **Test Pass Rate** - Update after test runs (should always be 100%)
 3. **DI Completion** - Update when DI migration milestones reached
 4. **Custom window.* Globals** - Update if global count changes
-5. **Module Breakdown** - Update counts per directory when structure changes
-6. **Boot Files table** - Update line counts when boot files significantly change
-7. **Test Files count** - Update when test file count changes significantly
-8. **Architecture Milestones** - Add new milestones as they're reached
-
-**Manual Count Commands (if needed):**
-```bash
-# Total modules by directory
-find modules/boot -name "*.js" | wc -l       # boot/
-find modules/core -name "*.js" | wc -l       # core/
-find modules/task -name "*.js" | wc -l       # task/
-# ... etc for each directory
-
-# Test file count
-find tests -name "*.tests.js" | wc -l
-
-# Boot file line counts
-wc -l miniCycle-main.js modules/boot/*.js
-```
+5. **Architecture Milestones** - Add new milestones as they're reached
 
 ---
 

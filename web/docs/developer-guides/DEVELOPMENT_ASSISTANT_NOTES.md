@@ -46,7 +46,7 @@ These notes describe how the AI assistant should collaborate on this project.
 - Align with existing DI conventions and naming instead of introducing new ones casually.
 
 ## 9. Consistent Patterns (Dec 2025)
-- **safeAddEventListener** - All 103 modules use DI-injected `safeAddEventListener` for event handling.
+- **safeAddEventListener** - All modules use DI-injected `safeAddEventListener` for event handling.
 - **State-based UI** - Prefer updating AppState and re-rendering from state over direct DOM manipulation.
 - **Object.defineProperties** - Always use this for DI setters to preserve lazy getters.
 

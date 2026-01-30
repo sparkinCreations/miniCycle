@@ -322,7 +322,7 @@ setMyModuleDependencies({
 });
 ```
 
-**All 103 modules now use this pattern consistently.**
+**All modules now use this pattern consistently.** See [PROJECT_STATS.md](../PROJECT_STATS.md) for current module count.
 
 ---
 
@@ -476,7 +476,7 @@ loadData: () => window.loadMiniCycleData?.()
 
 ## All DI Modules
 
-**All 103 modules use strict dependency injection with no `|| window.*` fallbacks.**
+**All modules use strict dependency injection with no `|| window.*` fallbacks.** See [PROJECT_STATS.md](../PROJECT_STATS.md) for current count and DI breakdown.
 
 ### Modules with `set*Dependencies()` (40 modules)
 

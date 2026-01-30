@@ -226,9 +226,9 @@ The DI overhaul is **complete**. miniCycle now uses pure dependency injection wi
 
 **Achieved:**
 - Custom DI framework (`diBase.js`) with `required()`, `optional()`, `createDIModule()`
-- Boot orchestrator (`moduleLoader.js`) wires all 103 modules
-- Zero custom `window.*` globals
-- 1,690+ tests can inject pure mocks
+- Boot orchestrator (`moduleLoader.js`) wires all modules (see [PROJECT_STATS.md](../PROJECT_STATS.md) for count)
+- Zero custom `window.*` globals in modules
+- Tests can inject pure mocks (see [PROJECT_STATS.md](../PROJECT_STATS.md) for test count)
 
 See [DI_PATTERNS.md](./DI_PATTERNS.md) for the current DI architecture.
 
