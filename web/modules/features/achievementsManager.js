@@ -623,10 +623,10 @@ export class AchievementsManager {
         const isUnlocked = !!unlockedAchievement;
 
         // Calculate progress if not unlocked
-        const cycleProgress = Math.min(100, (achievements.cyclesCompleted / tierConfig.cycles) * 100);
-        const taskProgress = Math.min(100, (achievements.tasksCleared / tierConfig.tasks) * 100);
-        const cyclesNeeded = Math.max(0, tierConfig.cycles - achievements.cyclesCompleted);
-        const tasksNeeded = Math.max(0, tierConfig.tasks - achievements.tasksCleared);
+        const cycleProgress = Math.min(100, (achievements.cyclesCompleted / tierConfig.cycleThreshold) * 100);
+        const taskProgress = Math.min(100, (achievements.tasksCleared / tierConfig.taskThreshold) * 100);
+        const cyclesNeeded = Math.max(0, tierConfig.cycleThreshold - achievements.cyclesCompleted);
+        const tasksNeeded = Math.max(0, tierConfig.taskThreshold - achievements.tasksCleared);
         const cyclesHigher = cycleProgress >= taskProgress;
 
         // Determine badge circle color based on unlock status and reward
@@ -770,7 +770,7 @@ export class AchievementsManager {
 
                 <h3 style="margin: 8px 0 4px; font-size: 20px; color: var(--text-primary, #333);">${tierConfig.name}</h3>
                 <p style="margin: 0 0 12px; font-size: 13px; color: var(--text-secondary, #666);">
-                    ${tierConfig.cycles} cycles or ${tierConfig.tasks} cleared tasks
+                    ${tierConfig.cycleThreshold} cycles or ${tierConfig.taskThreshold} cleared tasks
                 </p>
 
                 ${statusHtml}
