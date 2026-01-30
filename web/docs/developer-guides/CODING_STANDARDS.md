@@ -99,7 +99,7 @@ init() {
 
 ### Standard: DI-Injected SafeAddEventListener
 
-All 103 modules use DI-injected `safeAddEventListener` for event handling. This ensures null-safety, testability, and consistent behavior:
+All modules use DI-injected `safeAddEventListener` for event handling. This ensures null-safety, testability, and consistent behavior:
 
 ```javascript
 // In module DI setup

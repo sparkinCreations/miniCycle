@@ -32,7 +32,7 @@ npm test                     # Run automated tests (Playwright)
 - **Lite Version**: http://localhost:8080/lite/miniCycle-lite.html ⚠️ *Static fallback - see note below*
 - **Test Suite**: http://localhost:8080/tests/module-test-suite.html
 
-> ⚠️ **Lite Version Note:** The lite version (`/lite/`) is a **static, frozen fallback** (v1.480) for older devices and slow connections. It is **NOT meant to be maintained or updated**. Do not add features, modernize the code, or try to sync it with the main app. It provides the core routine-tracking concept only.
+> ⚠️ **Lite Version Note:** The lite version (`/lite/`) is a **static, frozen fallback** for older devices and slow connections (see [PROJECT_STATS.md](../PROJECT_STATS.md) for version). It is **NOT meant to be maintained or updated**. Do not add features, modernize the code, or try to sync it with the main app. It provides the core routine-tracking concept only.
 
 ---
 
@@ -45,7 +45,7 @@ npm test                     # Run automated tests (Playwright)
 | Achievement | Status |
 |-------------|--------|
 | Strict DI (no `\|\| window.*` fallbacks) | ✅ 100% |
-| Zero custom `window.*` globals | ✅ 100% |
+| Zero custom `window.*` globals (modules) | ✅ 100% |
 | Boot files split for debuggability | ✅ Dec 2025 |
 | CSS modularization | ✅ Jan 2026 |
 | All modules use `set*Dependencies()` | ✅ Complete |
@@ -116,6 +116,7 @@ miniCycle-main.js (entrypoint)
 - `orchestrator.js` is a pure sequence controller - no DI writes, no DOM queries, no UI logic
 - All UI setup consolidated into single `initUIBoot()` entrypoint in uiBoot.js
 - DI wiring happens in `featureBoot.js`
+- `miniCycle.html` has an **8-second safety net** — if `dataset.appBooted` isn't set within 8 seconds, it redirects to the lite version as a last-resort fallback
 
 ### appContext: Centralized Registry (Dec 2025)
 
@@ -129,15 +130,17 @@ const AppState = getAppState();
 const showNotification = getShowNotification();
 ```
 
-### Zero Custom `window.*` Globals (Dec 2025)
+### Zero Custom `window.*` Globals in Modules (Dec 2025)
 
-**The codebase now has zero custom window.* globals.** All module communication uses:
+**Module code has zero custom `window.*` globals.** All module communication uses:
 - **ES Module imports** - Direct function/class imports
 - **appContext.js grouped APIs** - `getStateApi()`, `getTaskApi()`, `getUiApi()`, etc.
 - **CustomEvents** - For HTML-to-module communication (e.g., `app:showNotification`)
 - **Dataset attributes** - For boot flags (`document.documentElement.dataset.appBooted`)
 
 Only standard browser API event handlers remain (`window.onload`, `window.onerror`).
+
+> **Note:** `miniCycle.html` exposes a small set of window-scoped infrastructure helpers (boot failsafe callback, service worker update functions, PWA install handler, and feature gate flags). These are not business logic — see [PROJECT_STATS.md](../PROJECT_STATS.md) for details.
 
 ### What Works Well
 
@@ -273,7 +276,7 @@ const instance = new MyModule();         // Then create
 
 ## Debugging (Zero-Globals Pattern)
 
-The codebase maintains zero custom `window.*` globals. When debugging, **never suggest `window._debug` or similar patterns**.
+Module code maintains zero custom `window.*` globals. When debugging, **never suggest `window._debug` or similar patterns**.
 
 ### Inspecting AppState at Runtime
 
@@ -358,9 +361,15 @@ AppState.reload();  // Critical! Syncs in-memory state with restored localStorag
 | `testing/` | Test infrastructure |
 | `other/` | Plugins, experimental |
 
-### All Modules Use Strict DI
+### Strict DI Across All Modules
 
-Every module follows this pattern:
+The core guarantee: **no module uses `|| window.*` fallbacks**. All stateful modules receive dependencies via injection:
+
+- **60 modules** use `diBase.js` (`createDIModule()` with `required()`/`optional()`)
+- **~13 modules** use custom `set*Dependencies()` functions (core/boot modules, testing infrastructure)
+- **~29 modules** are pure utilities, constants, or type definitions that don't require DI
+
+Every DI module follows this pattern:
 1. Exports `set*Dependencies()` function
 2. Uses `Object.defineProperties` to preserve lazy getters
 3. Receives all dependencies via injection

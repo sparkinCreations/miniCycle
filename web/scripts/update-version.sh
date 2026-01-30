@@ -111,7 +111,8 @@
 # • package.json                  - version field
 #
 # Documentation:
-# • docs/PROJECT_STATS.md         - App Version + auto-counted metrics (modules, tests, CSS, JSDoc, docs)
+# • docs/PROJECT_STATS.md         - App Version + auto-counted metrics (modules, tests, test files,
+#                                   CSS, JSDoc, docs, lite version, boot file lines, per-directory counts)
 #
 # ============================================
 # 📦 MODULE VERSIONING (DI-PURE)
@@ -1046,6 +1047,8 @@ else
             echo "   Would update: $PROJECT_STATS_FILE"
             echo "   - Version → $NEW_VERSION"
             echo "   - Auto-count modules, tests, CSS, JSDoc, docs"
+            echo "   - Auto-count test files, boot file lines, per-directory modules"
+            echo "   - Auto-detect lite version"
             echo "   - Update last modified date"
         elif backup_file "$PROJECT_STATS_FILE"; then
             # Count current metrics
@@ -1057,13 +1060,44 @@ else
             DOC_COUNT=$(find docs -name "*.md" -type f 2>/dev/null | wc -l | xargs)
             CURRENT_DATE=$(date +"%B %d, %Y")
 
+            # Count test files (.tests.js only)
+            TEST_FILE_COUNT=$(find tests -name "*.tests.js" -type f 2>/dev/null | wc -l | xargs)
+
+            # Detect lite version from source
+            LITE_VER=$(grep -oE "var currentVersion = '[^']*'" lite/miniCycle-lite-scripts.js 2>/dev/null | head -1 | sed "s/.*'\([^']*\)'.*/\1/" || echo "unknown")
+
+            # Count boot file lines
+            MAIN_JS_LINES=$(wc -l < miniCycle-main.js 2>/dev/null | xargs)
+            ORCH_LINES=$(wc -l < modules/boot/orchestrator.js 2>/dev/null | xargs)
+            COREBOOT_LINES=$(wc -l < modules/boot/coreBoot.js 2>/dev/null | xargs)
+            FEATBOOT_LINES=$(wc -l < modules/boot/featureBoot.js 2>/dev/null | xargs)
+            UIBOOT_LINES=$(wc -l < modules/boot/uiBoot.js 2>/dev/null | xargs)
+            BOOT_TOTAL=$((MAIN_JS_LINES + ORCH_LINES + COREBOOT_LINES + FEATBOOT_LINES + UIBOOT_LINES))
+
+            # Count modules per directory
+            BOOT_MOD=$(find modules/boot -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+            CORE_MOD=$(find modules/core -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+            TASK_MOD=$(find modules/task -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+            ROUTINE_MOD=$(find modules/routine -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+            RECURRING_MOD=$(find modules/recurring -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+            UI_MOD=$(find modules/ui -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+            FEATURES_MOD=$(find modules/features -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+            UTILS_MOD=$(find modules/utils -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+            STORAGE_MOD=$(find modules/storage -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+            PROGRESS_MOD=$(find modules/progress -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+            TESTING_MOD=$(find modules/testing -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+            OTHER_MOD=$(find modules/other -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+
             echo "   - Modules: $MODULE_COUNT"
             echo "   - Tests: $TEST_COUNT"
+            echo "   - Test Files: $TEST_FILE_COUNT"
             echo "   - CSS Files: $CSS_COUNT"
             echo "   - JSDoc Blocks: $JSDOC_COUNT"
             echo "   - Documentation Files: $DOC_COUNT"
+            echo "   - Lite Version: $LITE_VER"
+            echo "   - Boot Files Total: ~$BOOT_TOTAL lines"
 
-            # Update all metrics in the Quick Reference table
+            # Update Quick Reference table
             do_sed "$PROJECT_STATS_FILE" "s/| \*\*App Version\*\* | [0-9.]* |/| **App Version** | $NEW_VERSION |/g"
             do_sed "$PROJECT_STATS_FILE" "s/| \*\*Total Modules\*\* | [0-9,]* |/| **Total Modules** | $MODULE_COUNT |/g"
             do_sed "$PROJECT_STATS_FILE" "s/| \*\*Total Tests\*\* | [0-9,]* |/| **Total Tests** | $TEST_COUNT |/g"
@@ -1071,14 +1105,40 @@ else
             do_sed "$PROJECT_STATS_FILE" "s/| \*\*JSDoc Blocks\*\* | [0-9,]* |/| **JSDoc Blocks** | $JSDOC_COUNT |/g"
             do_sed "$PROJECT_STATS_FILE" "s/| \*\*Documentation Files\*\* | [0-9,]* |/| **Documentation Files** | $DOC_COUNT |/g"
 
+            # Update Lite Version
+            do_sed "$PROJECT_STATS_FILE" "s/| \*\*Lite Version\*\* | [0-9.]* (frozen) |/| **Lite Version** | $LITE_VER (frozen) |/g"
+
             # Update "Last Updated" date at top
             do_sed "$PROJECT_STATS_FILE" "s/\*\*Last Updated\*\*: .*/\*\*Last Updated\*\*: $CURRENT_DATE/g"
 
             # Update Total in Module Breakdown table (should match MODULE_COUNT)
             do_sed "$PROJECT_STATS_FILE" "s/| \*\*Total\*\* | \*\*[0-9,]*\*\* |/| **Total** | **$MODULE_COUNT** |/g"
 
-            # Update Total Tests in Test Coverage section
+            # Update per-directory module counts
+            do_sed "$PROJECT_STATS_FILE" 's#| `boot/` | [0-9]* |#| `boot/` | '"$BOOT_MOD"' |#g'
+            do_sed "$PROJECT_STATS_FILE" 's#| `core/` | [0-9]* |#| `core/` | '"$CORE_MOD"' |#g'
+            do_sed "$PROJECT_STATS_FILE" 's#| `task/` | [0-9]* |#| `task/` | '"$TASK_MOD"' |#g'
+            do_sed "$PROJECT_STATS_FILE" 's#| `routine/` | [0-9]* |#| `routine/` | '"$ROUTINE_MOD"' |#g'
+            do_sed "$PROJECT_STATS_FILE" 's#| `recurring/` | [0-9]* |#| `recurring/` | '"$RECURRING_MOD"' |#g'
+            do_sed "$PROJECT_STATS_FILE" 's#| `ui/` | [0-9]* |#| `ui/` | '"$UI_MOD"' |#g'
+            do_sed "$PROJECT_STATS_FILE" 's#| `features/` | [0-9]* |#| `features/` | '"$FEATURES_MOD"' |#g'
+            do_sed "$PROJECT_STATS_FILE" 's#| `utils/` | [0-9]* |#| `utils/` | '"$UTILS_MOD"' |#g'
+            do_sed "$PROJECT_STATS_FILE" 's#| `storage/` | [0-9]* |#| `storage/` | '"$STORAGE_MOD"' |#g'
+            do_sed "$PROJECT_STATS_FILE" 's#| `progress/` | [0-9]* |#| `progress/` | '"$PROGRESS_MOD"' |#g'
+            do_sed "$PROJECT_STATS_FILE" 's#| `testing/` | [0-9]* |#| `testing/` | '"$TESTING_MOD"' |#g'
+            do_sed "$PROJECT_STATS_FILE" 's#| `other/` | [0-9]* |#| `other/` | '"$OTHER_MOD"' |#g'
+
+            # Update Test Coverage section
             do_sed "$PROJECT_STATS_FILE" "s/| Total Tests | [0-9,]* |/| Total Tests | $TEST_COUNT |/g"
+            do_sed "$PROJECT_STATS_FILE" "s/| Test Files | [0-9,]* |/| Test Files | $TEST_FILE_COUNT |/g"
+
+            # Update Boot Files line counts
+            do_sed "$PROJECT_STATS_FILE" 's#| `miniCycle-main.js` | ~[0-9,]* |#| `miniCycle-main.js` | ~'"$MAIN_JS_LINES"' |#g'
+            do_sed "$PROJECT_STATS_FILE" 's#| `modules/boot/orchestrator.js` | ~[0-9,]* |#| `modules/boot/orchestrator.js` | ~'"$ORCH_LINES"' |#g'
+            do_sed "$PROJECT_STATS_FILE" 's#| `modules/boot/coreBoot.js` | ~[0-9,]* |#| `modules/boot/coreBoot.js` | ~'"$COREBOOT_LINES"' |#g'
+            do_sed "$PROJECT_STATS_FILE" 's#| `modules/boot/featureBoot.js` | ~[0-9,]* |#| `modules/boot/featureBoot.js` | ~'"$FEATBOOT_LINES"' |#g'
+            do_sed "$PROJECT_STATS_FILE" 's#| `modules/boot/uiBoot.js` | ~[0-9,]* |#| `modules/boot/uiBoot.js` | ~'"$UIBOOT_LINES"' |#g'
+            do_sed "$PROJECT_STATS_FILE" "s/| \*\*Total\*\* | \*\*~[0-9,]*\*\* |/| **Total** | **~$BOOT_TOTAL** |/g"
 
             echo "✅ Updated $PROJECT_STATS_FILE with auto-counted metrics"
         else

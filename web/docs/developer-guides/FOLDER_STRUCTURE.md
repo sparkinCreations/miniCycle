@@ -36,7 +36,7 @@ Modules were organized into domain-based subfolders (`core/`, `task/`, `routine/
 Marketing pages, legal documents, and archived code were moved into dedicated folders, leaving the root clean and deployment-ready.
 
 ### 4. **CSS Modularization** (Jan 2026)
-The monolithic 8,000+ line `miniCycle-styles.css` was refactored into 29 focused CSS files organized by purpose: base styles, components, layout, utilities, and themes.
+The monolithic 8,000+ line `miniCycle-styles.css` was refactored into 30 focused CSS files organized by purpose: base styles, components, layout, utilities, and themes.
 
 **Result:** A structure that's easy to navigate, test, and deploy without breaking URLs or requiring build tools.
 
@@ -62,7 +62,7 @@ The monolithic 8,000+ line `miniCycle-styles.css` was refactored into 29 focused
 ### ✅ Test-Friendly Layout
 - Tests mirror module structure
 - Easy to find corresponding tests
-- 1610+/1,690+ tests passing ✅
+- See [PROJECT_STATS.md](../PROJECT_STATS.md) for current test counts
 
 ### ✅ Clear Separation of Concerns
 - Application code in `modules/`
@@ -81,7 +81,7 @@ web/
 ├── 📄 miniCycle-main.js                 # Entrypoint (~56 lines) - loads orchestrator
 ├── 📄 service-worker.js                 # PWA service worker
 │
-├── 📁 styles/                           # Modular CSS architecture (29 files)
+├── 📁 styles/                           # Modular CSS architecture (30 files)
 │   ├── main.css                         # Entry point - imports all modules
 │   ├── base/                            # Foundation styles
 │   │   ├── variables.css                # CSS custom properties & theme variables
@@ -123,25 +123,25 @@ web/
 ├── 📄 package.json                      # Dependencies & scripts
 ├── 📄 _redirects                        # Netlify redirects for URL compatibility
 │
-├── 📁 modules/                          # ES6 application modules (103 modules, all strict DI)
-│   ├── boot/                            # Boot sequence modules (6 modules)
-│   │   ├── orchestrator.js              # DI wiring hub
+├── 📁 modules/                          # ES6 application modules (see PROJECT_STATS.md for counts)
+│   ├── boot/                            # Boot sequence, orchestration, module loading
+│   │   ├── orchestrator.js              # Pure sequence controller
 │   │   ├── coreBoot.js                  # Core state & init
-│   │   ├── featureBoot.js               # Feature module loading
+│   │   ├── featureBoot.js               # DI wiring hub
 │   │   ├── moduleLoader.js              # Dynamic module loader
 │   │   ├── moduleManifests.js           # Module dependency manifests
 │   │   └── uiBoot.js                    # UI event handlers
-│   ├── core/                            # Essential system modules (8 modules)
-│   ├── task/                            # Task management system (10 modules)
-│   ├── routine/                         # Routine management system (5 modules)
-│   ├── recurring/                       # Recurring tasks system (15 modules)
-│   ├── ui/                              # UI coordination (21 modules)
-│   ├── features/                        # Optional/pluggable features (7 modules)
-│   ├── utils/                           # Shared utilities (10 modules)
-│   ├── storage/                         # Storage & backup (1 module)
-│   ├── progress/                        # Cycle completion (1 module)
-│   ├── testing/                         # Testing infrastructure (3 modules)
-│   └── other/                           # Experimental/plugin examples (3 modules)
+│   ├── core/                            # AppState, appInit, appContext, DI base, constants
+│   ├── task/                            # Task CRUD, DOM, events, drag-drop, validation
+│   ├── routine/                         # Routine management, switching, migration
+│   ├── recurring/                       # Recurring task scheduling, panel, activation
+│   ├── ui/                              # Modals, menus, settings, onboarding, gestures
+│   ├── features/                        # Themes, stats, achievements, history, reminders
+│   ├── utils/                           # Notifications, device detection, utilities
+│   ├── storage/                         # Backup manager
+│   ├── progress/                        # Cycle completion tracking
+│   ├── testing/                         # Test infrastructure
+│   └── other/                           # Plugins, experimental
 │
 ├── 📁 pages/                            # Marketing & product pages
 │   ├── product.html
@@ -173,7 +173,7 @@ web/
 │   ├── [architecture docs]
 │   └── archive/                         # Historical/completed docs
 │
-├── 📁 tests/                            # Test suite (1,690+ tests, 100% passing)
+├── 📁 tests/                            # Test suite (see PROJECT_STATS.md for counts)
 │   ├── module-test-suite.html           # Browser test runner
 │   ├── automated/                       # Playwright automation
 │   ├── [33 module test files]
@@ -235,7 +235,7 @@ web/
 **Why this matters:** GitHub renders Markdown beautifully, Docsify adds navigation
 
 ### `/tests/` - Test Suite
-**Purpose:** 1610+ automated tests mirroring module structure
+**Purpose:** Automated tests mirroring module structure (see [PROJECT_STATS.md](../PROJECT_STATS.md) for counts)
 **Philosophy:** Tests are first-class citizens, not afterthoughts
 **Why this matters:** 100% passing tests = confidence to refactor fearlessly
 
@@ -261,7 +261,7 @@ web/
 > - Try to keep it in sync with the full version
 > - Modernize the JavaScript (ES5 is intentional)
 >
-> The lite version is frozen at v1.480 and serves users whose browsers can't run the full app or who prefer a simpler experience.
+> The lite version is frozen (see [PROJECT_STATS.md](../PROJECT_STATS.md) for version) and serves users whose browsers can't run the full app or who prefer a simpler experience.
 
 ### `/miniCycleGames/` - Hidden Games
 **Purpose:** Easter egg mini-games (unlock rewards)
