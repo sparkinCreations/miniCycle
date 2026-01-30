@@ -1,3 +1,12 @@
+## [1.885] - 2026-01-30
+- fix: update documentation for consistency and accuracy across multiple files
+- fix: update achievement detail text to use achievement name if available
+- fix: use correct property names for badge detail modal thresholds
+- fix: update developer profile with recent insights and iOS PWA safe area adjustments
+- fix: document iOS PWA safe area detection and CSS adjustments for Dynamic Island compatibility
+- fix: adjust header branding position for iOS PWA safe area compliance
+
+
 ## [1.884] - 2026-01-29
 - fix: adjust iOS PWA header positioning and padding for better compatibility with Dynamic Island
 
