@@ -1,3 +1,7 @@
+## [1.888] - 2026-01-31
+- chore: update app version to 1.887 and adjust related styles and scripts
+
+
 ## [1.887] - 2026-01-31
 - chore: update version to 1.886 and adjust related documentation and files
 

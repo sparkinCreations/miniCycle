@@ -1652,6 +1652,27 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     background: #2171b5;
 }
 
+/* Reminders close button — matches #close-main-menu style */
+#close-reminders-btn {
+    background: var(--menu-close-bg, #3d7ab5);
+    color: var(--menu-close-text, white);
+    font-size: 17px;
+    font-weight: 700;
+    padding: 14px;
+    border: none;
+    border-radius: 0 0 8px 8px;
+    margin: 12px -20px -20px;
+    width: calc(100% + 40px);
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: block;
+    text-align: center;
+}
+
+#close-reminders-btn:hover {
+    background: var(--menu-close-hover-bg, #326a9e);
+}
+
 /* =============================================================================
    UNLOCKABLES
    ============================================================================= */

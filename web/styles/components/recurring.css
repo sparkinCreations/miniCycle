@@ -218,10 +218,25 @@
     background-color: rgba(100, 100, 100, 0.5);
 }
 
+/* Close button — matches #close-main-menu style */
 .close-recurring-panel {
-    padding: 5px;
-    margin: 10px;
-    width: 70%;
+    background: var(--menu-close-bg, #3d7ab5);
+    color: var(--menu-close-text, white);
+    font-size: 17px;
+    font-weight: 700;
+    padding: 14px;
+    border: none;
+    border-radius: 0 0 15px 15px;
+    margin: 10px -25px -20px;
+    width: calc(100% + 50px);
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: block;
+    text-align: center;
+}
+
+.close-recurring-panel:hover {
+    background: var(--menu-close-hover-bg, #326a9e);
 }
 
 /* =============================================================================

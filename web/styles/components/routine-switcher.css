@@ -381,21 +381,21 @@
 }
 
 .mini-cycle-switch-btn.open-btn {
-    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    background: linear-gradient(135deg, #4790df 0%, #2171b5 100%);
     color: white;
 }
 
 .mini-cycle-switch-btn.open-btn:hover {
-    background: linear-gradient(135deg, #5a6578 0%, #3d4758 100%);
+    background: linear-gradient(135deg, #5a9fe6 0%, #3182c4 100%);
 }
 
 .mini-cycle-switch-btn.cancel-btn {
-    background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+    background: #2d3748;
     color: white;
 }
 
 .mini-cycle-switch-btn.cancel-btn:hover {
-    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+    background: #4a5568;
 }
 
 /* =============================================================================
