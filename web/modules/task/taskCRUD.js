@@ -330,7 +330,7 @@ export async function editTaskImpl(taskItem, deps = {}) {
     try {
         await waitForCoreWithTimeout();
 
-        const taskLabel = taskItem.querySelector("span");
+        const taskLabel = taskItem.querySelector(".task-text");
         const oldText = taskLabel.textContent.trim();
 
         const showPromptModal = deps.showPromptModal || _deps.showPromptModal || fallbackPromptModal;
