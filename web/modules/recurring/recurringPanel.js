@@ -52,7 +52,8 @@ const di = createDIModule('RecurringPanel', {
     escapeHtml: optional(null),
     syncRecurringStateToDOM: optional(null),
     refreshTaskButtonsForModeChange: optional(null),
-    safeAddEventListener: optional(null)
+    safeAddEventListener: optional(null),
+    refreshUIFromState: optional(null)
 }, { strict: true });  // Throw on missing required deps
 
 /**
@@ -1638,6 +1639,8 @@ export class RecurringPanelManager {
                         // Mark task as recurring
                         task.recurring = true;
                         task.recurringSettings = { ...defaultSettings };
+                        task.deleteWhenComplete = true;
+                        task.deleteWhenCompleteSettings = { cycle: true, todo: true };
 
                         // Create recurring template
                         cycle.recurringTemplates[taskId] = {
@@ -1645,6 +1648,8 @@ export class RecurringPanelManager {
                             text: task.text,
                             recurring: true,
                             recurringSettings: { ...defaultSettings },
+                            deleteWhenComplete: true,
+                            deleteWhenCompleteSettings: { cycle: true, todo: true },
                             nextScheduledOccurrence: this.deps.calculateNextOccurrence?.(defaultSettings) || null
                         };
                     }
@@ -1663,12 +1668,12 @@ export class RecurringPanelManager {
             // Refresh the panel to show new recurring tasks
             this.updateRecurringPanel();
 
-            // Update task DOM to show recurring indicators
-            if (this.deps.syncRecurringStateToDOM) {
-                selectedTaskIds.forEach(taskId => {
-                    this.deps.syncRecurringStateToDOM(taskId);
-                });
-            }
+            // Refresh main task list from state to reflect recurring + deleteWhenComplete changes
+            setTimeout(() => {
+                if (this.deps.refreshUIFromState) {
+                    this.deps.refreshUIFromState();
+                }
+            }, 0);
 
             const taskWord = selectedTaskIds.length === 1 ? 'task' : 'tasks';
             this.deps.showNotification(`🔁 Added ${selectedTaskIds.length} ${taskWord} to recurring (daily by default)`, 'success');

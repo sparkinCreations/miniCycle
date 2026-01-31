@@ -179,8 +179,7 @@ export async function initializeRecurringModules(options = {}) {
             calculateNextOccurrence: coreFunctions.calculateNextOccurrence,
             updateAppState: (updateFn, immediate) => deps.AppState?.update(updateFn, immediate),
             syncRecurringStateToDOM: deps.syncRecurringStateToDOM,
-            restartRecurringWatcher: coreFunctions.restartRecurringWatcher,
-            refreshUIFromState: () => deps.refreshUIFromState?.()
+            restartRecurringWatcher: coreFunctions.restartRecurringWatcher
         });
 
         console.log('✅ settingsApplicator dependencies configured');
@@ -215,7 +214,8 @@ export async function initializeRecurringModules(options = {}) {
             isOverlayActive: deps.isOverlayActive,
             escapeHtml: deps.escapeHtml,
             syncRecurringStateToDOM: deps.syncRecurringStateToDOM,
-            refreshTaskButtonsForModeChange: deps.refreshTaskButtonsForModeChange
+            refreshTaskButtonsForModeChange: deps.refreshTaskButtonsForModeChange,
+            refreshUIFromState: () => deps.refreshUIFromState?.()
         });
 
         console.log('🎛️ Creating RecurringPanelManager instance...');

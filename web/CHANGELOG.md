@@ -1,3 +1,7 @@
+## [1.890] - 2026-01-31
+- feat: enhance recurring settings with UI refresh and delete options
+
+
 ## [1.889] - 2026-01-31
 - docs: update developer profile with recent changes and session history
 - style: update button styles and add close button for reminders and recurring panels
