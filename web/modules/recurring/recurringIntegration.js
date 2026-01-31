@@ -179,7 +179,8 @@ export async function initializeRecurringModules(options = {}) {
             calculateNextOccurrence: coreFunctions.calculateNextOccurrence,
             updateAppState: (updateFn, immediate) => deps.AppState?.update(updateFn, immediate),
             syncRecurringStateToDOM: deps.syncRecurringStateToDOM,
-            restartRecurringWatcher: coreFunctions.restartRecurringWatcher
+            restartRecurringWatcher: coreFunctions.restartRecurringWatcher,
+            refreshUIFromState: () => deps.refreshUIFromState?.()
         });
 
         console.log('✅ settingsApplicator dependencies configured');
