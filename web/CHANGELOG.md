@@ -1,3 +1,7 @@
+## [1.887] - 2026-01-31
+- chore: update version to 1.886 and adjust related documentation and files
+
+
 ## [1.886] - 2026-01-31
 - chore: update version to 1.885 and adjust related documentation and files
 

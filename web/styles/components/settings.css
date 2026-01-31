@@ -236,14 +236,24 @@
     background: #c82333;
 }
 
-/* Close button */
+/* Close button — matches #close-main-menu style */
 .settings-btn.close-btn {
-    background: var(--theme-button-secondary-bg, #6c757d);
+    background: var(--menu-close-bg, #3d7ab5);
+    color: var(--menu-close-text, white);
+    font-size: 17px;
+    font-weight: 700;
+    padding: 14px;
     margin-top: 0;
+    margin-left: -20px;
+    margin-right: -20px;
+    margin-bottom: -24px;
+    width: calc(100% + 40px);
+    border-radius: 0 0 16px 16px;
 }
 
 .settings-btn.close-btn:hover {
-    background: var(--theme-button-secondary-hover-bg, #5a6268);
+    background: var(--menu-close-hover-bg, #326a9e);
+    transform: none;
 }
 
 /* =============================================================================
@@ -276,6 +286,15 @@
     .settings-btn {
         padding: 10px 12px;
         font-size: 13px;
+    }
+
+    .settings-btn.close-btn {
+        margin-left: -14px;
+        margin-right: -14px;
+        margin-bottom: -18px;
+        width: calc(100% + 28px);
+        font-size: 16px;
+        padding: 12px;
     }
 
     .settings-section-header {
