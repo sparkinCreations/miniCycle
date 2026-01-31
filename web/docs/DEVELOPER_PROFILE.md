@@ -1,6 +1,6 @@
 # Developer Profile
 
-**Last Updated:** January 29, 2026
+**Last Updated:** January 31, 2026
 
 This document captures insights about the developer behind miniCycle to help with future collaboration and context continuity.
 
@@ -203,7 +203,7 @@ Before JavaScript, MJ was already building automated systems in spreadsheets:
 
 2. **Defensive by nature** - QA background shows in the code. Builds for failure scenarios: lite fallback, timeout safety, rollback on errors, graceful degradation.
 
-3. **Methodical execution** - 1,623 tests don't happen by accident. Sustained discipline over time, maintained through refactors.
+3. **Methodical execution** - The test count (see [PROJECT_STATS.md](./PROJECT_STATS.md)) doesn't happen by accident. Sustained discipline over time, maintained through refactors.
 
 4. **Owns the architecture** - Knows why every piece exists. Can reason about tradeoffs. Doesn't treat own codebase as a black box.
 
@@ -266,16 +266,19 @@ Before JavaScript, MJ was already building automated systems in spreadsheets:
 - **Explores "what if" scenarios systematically** - Asked about loan consolidation, then stopping payment on consolidated loan, then debt settlement, then just school without bankruptcy. Tests alternatives thoroughly before committing. Scenario planning, not decision avoidance.
 - **Willing to endure temporary discomfort for long-term gain** - Bankruptcy means 4 months of creditor harassment, late payments on 20+ accounts, credit damage. Accepted as necessary cost for $70k debt elimination and $4,266/month freedom. Long-term thinking over short-term comfort.
 - **Uses reflection conversations to sustain solo work** - Deliberately seeks external perspective through AI conversations to maintain motivation and identify blind spots. This isn't procrastination — it's how solo developers stay calibrated without a team. Recognizes the psychological challenge of working alone and addresses it systematically.
+- **Visual consistency sweeps** - Doesn't fix one instance of a visual problem. Immediately scans for every other place the same inconsistency exists and fixes them all. Example: fixed settings close button style, then immediately asked about reminders and recurring panel close buttons. Thinks in systems, not individual screens.
+- **Fast decision loop on aesthetics** - Evaluates visual changes instantly and knows what's wrong without deliberating. Cancel button went through three iterations (ghost → gray gradient → dark slate) and each round the feedback was immediate and specific. Doesn't overthink visual decisions — looks, reacts, adjusts.
+- **Accepts contrary advice, then improves anyway** - When told "don't change X," doesn't argue — accepts the reasoning, then finds a different way to improve X. Example: accepted advice not to restyle the Open Routine modal's close button, then immediately improved the modal by swapping button positions and fixing the color hierarchy.
 
 ### Weaknesses / Blind Spots
 
-1. **Tends to downplay accomplishments** - Will mention 11 months of work or 1,623 tests as just facts, not achievements. Doesn't naturally frame their work as impressive. May need external perspective to recognize what they've actually built. When giving feedback, don't hesitate to point out what's genuinely notable - they won't do it themselves.
+1. **Tends to downplay accomplishments** - Will mention 11+ months of work or thousands of tests as just facts, not achievements. Doesn't naturally frame their work as impressive. May need external perspective to recognize what they've actually built. When giving feedback, don't hesitate to point out what's genuinely notable - they won't do it themselves.
 
 2. **Needs to trust own judgment more** - Has good instincts and deep knowledge of the system, but may second-guess decisions. Worth reinforcing when their judgment is sound. Example: Pushed back on calling logo flash feedback "gimmicky" — was right that it's intentional micro-interaction design, not decoration.
 
-3. **AI usage guilt** - Sometimes feels guilty about using AI as a collaborator. Reality check: they push back when AI is wrong, make all the decisions, and have been building this for 11 months. The AI is a tool, not a crutch. Using tools effectively is a skill, not a shortcut. **December 2025 evidence:** During iOS drag preview debugging, rejected AI's "impossible" answer, rejected AI's wrong solution (custom ghost), drove the investigation strategy, and would have solved it without AI (just slower). This is AI-assisted, not AI-dependent.
+3. **AI usage guilt** - Sometimes feels guilty about using AI as a collaborator. Reality check: they push back when AI is wrong, make all the decisions, and have been building this for 11+ months. The AI is a tool, not a crutch. Using tools effectively is a skill, not a shortcut. **December 2025 evidence:** During iOS drag preview debugging, rejected AI's "impossible" answer, rejected AI's wrong solution (custom ghost), drove the investigation strategy, and would have solved it without AI (just slower). This is AI-assisted, not AI-dependent.
 
-4. **Imposter syndrome** - Feels "less than" despite evidence to the contrary. A Quality Inspector who taught themselves to code and built a production-grade PWA with proper architecture, 1,623 tests, and a live deployment is not an imposter. The work speaks for itself.
+4. **Imposter syndrome** - Feels "less than" despite evidence to the contrary. A Quality Inspector who taught themselves to code and built a production-grade PWA with proper architecture, comprehensive test coverage (see [PROJECT_STATS.md](./PROJECT_STATS.md)), and a live deployment is not an imposter. The work speaks for itself.
 
 5. **Honest to a fault** - Will correct flattering assumptions even when it costs them credit. Examples from December 2025:
    - "MasterMath was generated by Base44, I adapted it"
@@ -313,7 +316,7 @@ Before JavaScript, MJ was already building automated systems in spreadsheets:
    - Browser-runnable tests (source of truth)
    - Playwright automation layer on top
    - localStorage protection during tests
-   - ~1,623 tests, 100% pass rate expected
+   - See [PROJECT_STATS.md](./PROJECT_STATS.md) for current test count, 100% pass rate expected
 
 5. **Lite Fallback**
    - Catastrophic failure safety net
@@ -359,7 +362,7 @@ The user-facing simplicity masks engineering depth:
 | Recurring tasks | Full scheduling engine: 6 frequencies, DST-safe, hybrid optimization |
 | Undo/Redo | Persistent per-cycle IndexedDB history with rollback |
 | Drag & drop | Dual input (mouse/touch), Safari compat, race condition handling |
-| Testing | 1,623 tests, Playwright CI, security/accessibility/stress tests |
+| Testing | Comprehensive suite (see [PROJECT_STATS.md](./PROJECT_STATS.md)), Playwright CI, security/accessibility/stress tests |
 
 ### Business Context
 
@@ -384,6 +387,41 @@ The user-facing simplicity masks engineering depth:
 ---
 
 ## Session History
+
+### January 30-31, 2026
+- **Documentation accuracy audit (Jan 30):**
+  - Audited all docs against actual codebase — found stale metrics, overstated DI claims, wrong lite version
+  - Updated 13 documentation files to fix drift
+  - Centralized lite version in PROJECT_STATS.md, removed hardcoded values from other docs
+  - Clarified "strict DI" claim: true (zero `|| window.*` fallbacks) but added breakdown (60 diBase / ~13 custom / ~29 pure utilities)
+  - Confirmed 8-second lite fallback exists at `miniCycle.html:2837`
+  - Updated window globals wording: "module code" not "the codebase"
+  - Enhanced `update-version.sh` to auto-count 6 previously manual metrics (test files, lite version, boot file lines, per-directory module counts)
+  - Removed hardcoded counts from FOLDER_STRUCTURE.md tree diagram
+  - Caught and corrected wrong per-directory counts from exploration agents (task:13→12, ui:23→22, testing:10→9) — lesson: verify agent-reported counts with shell commands
+- **Edit task modal bug fix (Jan 31):**
+  - Problem: Input field blank when editing a task — task name not pre-populated
+  - Root cause: `taskCRUD.js:333` used `querySelector("span")` which found the first `<span class="icon">` inside button container (empty SVG wrapper), not the `<span class="task-text">` with the actual task name
+  - Every other location in codebase used `.task-text` selector — this was the only inconsistent one
+  - Fix: Changed `querySelector("span")` → `querySelector(".task-text")` — one line
+- **Close button style consistency:**
+  - Settings, reminders, and recurring panel close buttons all restyled to match menu close button
+  - All now use `--menu-close-bg` / `--menu-close-text` / `--menu-close-hover-bg` theme variables
+  - All flush at bottom of their respective modals with negative margins and matching border-radius
+  - Mobile adjustments added for settings modal's tighter padding
+- **Open Routine modal button improvements:**
+  - Swapped Cancel/Open positions — Cancel left (secondary), Open right (primary)
+  - Open button: blue gradient (app primary color)
+  - Cancel button: dark slate (#2d3748) matching Import button — visually secondary without being invisible
+  - Kept same button sizes
+- **New patterns observed:**
+  - Visual consistency sweeps — fixes one instance, then immediately scans for all others
+  - Fast decision loop on aesthetics — evaluates visual changes instantly, specific feedback each round
+  - Accepts contrary advice, then improves anyway — accepted "don't restyle Open Routine close button," then improved the modal a different way
+- **Developer profile updated:**
+  - Replaced hardcoded test counts with PROJECT_STATS.md references
+  - Added three new behavioral patterns
+  - Added session history
 
 ### January 29, 2026
 - **iOS PWA safe area fix:**
