@@ -1,3 +1,8 @@
+## [1.889] - 2026-01-31
+- docs: update developer profile with recent changes and session history
+- style: update button styles and add close button for reminders and recurring panels
+
+
 ## [1.888] - 2026-01-31
 - chore: update app version to 1.887 and adjust related styles and scripts
 

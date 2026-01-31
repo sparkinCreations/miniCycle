@@ -9,6 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
+import { DEFAULT_RECURRING_DELETE_SETTINGS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -24,10 +25,11 @@ const di = createDIModule('RecurringSettingsApplicator', {
     calculateNextOccurrence: required(),
     updateAppState: optional(null),
     syncRecurringStateToDOM: optional(null),
-    restartRecurringWatcher: optional(null)
+    restartRecurringWatcher: optional(null),
+    refreshUIFromState: optional(null)
 });
 
-/** @type {{appInit: Object|null, AppState: Object, showNotification: Function, getElementById: Function, querySelectorAll: Function, normalizeRecurringSettings: Function, calculateNextOccurrence: Function, updateAppState: Function|null, syncRecurringStateToDOM: Function|null, restartRecurringWatcher: Function|null}} */
+/** @type {{appInit: Object|null, AppState: Object, showNotification: Function, getElementById: Function, querySelectorAll: Function, normalizeRecurringSettings: Function, calculateNextOccurrence: Function, updateAppState: Function|null, syncRecurringStateToDOM: Function|null, restartRecurringWatcher: Function|null, refreshUIFromState: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -112,6 +114,8 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                         task.recurring = true;
                         task.schemaVersion = 2;
                         task.recurringSettings = structuredClone(settings);
+                        task.deleteWhenComplete = true;
+                        task.deleteWhenCompleteSettings = { ...DEFAULT_RECURRING_DELETE_SETTINGS };
                     }
 
                     // Always update the template
@@ -129,6 +133,8 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                         remindersEnabled: task?.remindersEnabled || existingTemplate?.remindersEnabled || false,
                         recurring: true,
                         recurringSettings: structuredClone(settings),
+                        deleteWhenComplete: true,
+                        deleteWhenCompleteSettings: { ...DEFAULT_RECURRING_DELETE_SETTINGS },
                         nextScheduledOccurrence: _deps.calculateNextOccurrence(settings, Date.now()),
                         schemaVersion: 2
                     };
@@ -136,21 +142,40 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
             }, true); // Immediate save
         }
 
-        // Update DOM after state changes
-        if (_deps.syncRecurringStateToDOM) {
+        // Sync MAIN task list DOM elements (not panel elements)
+        const taskList = _deps.getElementById("taskList");
+        if (taskList) {
             checkedEls.forEach(checkbox => {
-                const taskEl = checkbox.closest("[data-task-id]");
-                if (!taskEl) return;
+                const panelTaskEl = checkbox.closest("[data-task-id]");
+                const taskId = panelTaskEl?.dataset.taskId;
+                if (!taskId) return;
 
-                taskEl.classList.add("recurring");
-                taskEl.setAttribute("data-recurring-settings", JSON.stringify(settings));
-                const recurringBtn = taskEl.querySelector(".recurring-btn");
+                // Find the task element in the main task list
+                const mainTaskEl = taskList.querySelector(`[data-task-id="${taskId}"]`);
+                if (!mainTaskEl) return;
+
+                // Sync recurring state
+                mainTaskEl.classList.add("recurring");
+                mainTaskEl.setAttribute("data-recurring-settings", JSON.stringify(settings));
+                const recurringBtn = mainTaskEl.querySelector(".recurring-btn");
                 if (recurringBtn) {
                     recurringBtn.classList.add("active");
                     recurringBtn.setAttribute("aria-pressed", "true");
                 }
 
-                _deps.syncRecurringStateToDOM(taskEl, settings);
+                // Add recurring icon
+                if (_deps.syncRecurringStateToDOM) {
+                    _deps.syncRecurringStateToDOM(mainTaskEl, settings);
+                }
+
+                // Sync deleteWhenComplete state (matches taskDOM.js recurring button pattern)
+                mainTaskEl.dataset.deleteWhenComplete = 'true';
+                mainTaskEl.classList.remove('kept-task', 'show-delete-indicator');
+                const deleteBtn = mainTaskEl.querySelector('.delete-when-complete-btn');
+                if (deleteBtn) {
+                    deleteBtn.classList.add('active', 'delete-when-complete-active');
+                    deleteBtn.setAttribute('aria-pressed', 'true');
+                }
             });
         }
 
