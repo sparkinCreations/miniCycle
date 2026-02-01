@@ -1,3 +1,10 @@
+## [1.904] - 2026-02-01
+- feat: add quick actions panel and related styles
+- feat: add view switching methods for Quick Actions panel, including arrow buttons, swipe gestures, and state persistence
+- feat: add Quick Actions panel design and implementation for desktop and mobile views
+- feat: update documentation for .mcyc file import methods and security measures, enhance user manual with double-click functionality and drag-and-drop support
+
+
 ## [1.903] - 2026-02-01
 - feat: update version to 1.902 across all relevant files and changelog
 - feat: implement Quick Actions Panel (Phase 1) with 5 actions (Stats, Open Routine, Recurring, Reminders, Settings)
