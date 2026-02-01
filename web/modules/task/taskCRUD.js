@@ -424,6 +424,7 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
             message: `Are you sure you want to delete "${taskName}"?`,
             confirmText: "Delete",
             cancelText: "Cancel",
+            destructive: true,
             callback: async (confirmDelete) => {
                 if (!confirmDelete) {
                     _deps.showNotification?.(`"${taskName}" has not been deleted.`, "show", 2500);

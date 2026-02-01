@@ -349,6 +349,10 @@
     transition: background 0.2s ease;
 }
 
+.mini-modal-buttons .btn-confirm.btn-destructive {
+    background: #e53e3e;
+}
+
 .mini-modal-buttons button:hover {
     opacity: 0.85;
 }
@@ -357,6 +361,10 @@
 .mini-modal-buttons .btn-cancel:focus {
     outline: 2px solid #38a169;
     outline-offset: 2px;
+}
+
+.mini-modal-buttons .btn-confirm.btn-destructive:focus {
+    outline-color: #e53e3e;
 }
 
 /* Dark mode mini-modal */

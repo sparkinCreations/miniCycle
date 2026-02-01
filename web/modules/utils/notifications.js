@@ -1210,7 +1210,8 @@ async setDefaultPosition(notificationContainer) {
     confirmText = "Yes",
     cancelText = "Cancel",
     callback = () => {},
-    trustedHTML = false  // Set to true to skip escaping (DANGEROUS - only for pre-escaped content)
+    trustedHTML = false,  // Set to true to skip escaping (DANGEROUS - only for pre-escaped content)
+    destructive = false   // Set to true for delete/remove actions (red confirm button)
   }) {
     // ✅ XSS PROTECTION: Escape all user-facing strings by default
     const escape = getEscapeHtml(this.deps);
@@ -1232,8 +1233,8 @@ async setDefaultPosition(notificationContainer) {
       <div class="mini-modal-header">${safeTitle}</div>
       <div class="mini-modal-body">${safeMessage}</div>
       <div class="mini-modal-buttons">
-        <button class="btn-confirm">${safeConfirmText}</button>
         <button class="btn-cancel">${safeCancelText}</button>
+        <button class="btn-confirm${destructive ? ' btn-destructive' : ''}">${safeConfirmText}</button>
       </div>
     `;
 

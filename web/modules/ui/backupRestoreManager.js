@@ -485,6 +485,7 @@ export function setupFactoryResetButton() {
             message: "This will DELETE ALL miniCycle data, settings, and progress. Are you sure?",
             confirmText: "Delete Everything",
             cancelText: "Cancel",
+            destructive: true,
             callback: async (confirmed) => {
                 if (!confirmed) {
                     _deps.showNotification?.("Factory reset cancelled.", "info", 2000);

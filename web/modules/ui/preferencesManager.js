@@ -1926,6 +1926,7 @@ export class PreferencesManager {
                 message: `Are you sure you want to delete "${preset.name}"?`,
                 confirmText: 'Delete',
                 cancelText: 'Cancel',
+                destructive: true,
                 callback: (confirmed) => {
                     if (confirmed) {
                         doDelete();

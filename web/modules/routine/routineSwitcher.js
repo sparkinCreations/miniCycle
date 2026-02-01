@@ -302,6 +302,7 @@ export class RoutineSwitcher {
             message: `❌ Are you sure you want to delete "${cycleToDelete}"? This action cannot be undone.`,
             confirmText: "Delete",
             cancelText: "Cancel",
+            destructive: true,
             callback: (confirmed) => {
                 if (!confirmed) {
                     console.log('❌ User cancelled deletion');
