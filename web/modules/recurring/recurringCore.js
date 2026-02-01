@@ -132,6 +132,10 @@ export let deleteRecurringTemplate = null;
 export let removeRecurringTasksFromCycle = null;
 export let handleRecurringTasksAfterReset = null;
 
+// Shared state mutation helpers (pure functions)
+export let activateTaskRecurringState = null;
+export let deactivateTaskRecurringState = null;
+
 // ============================================================================
 // DYNAMIC SUB-MODULE LOADING
 // ============================================================================
@@ -228,6 +232,10 @@ async function loadSubModules(version) {
         deleteRecurringTemplate = activation.deleteRecurringTemplate;
         removeRecurringTasksFromCycle = activation.removeRecurringTasksFromCycle;
         handleRecurringTasksAfterReset = activation.handleRecurringTasksAfterReset;
+
+        // Populate exports - Shared state mutation helpers
+        activateTaskRecurringState = activation.activateTaskRecurringState;
+        deactivateTaskRecurringState = activation.deactivateTaskRecurringState;
 
         _subModulesLoaded = true;
         console.log('✅ RecurringCore: All sub-modules loaded successfully');
@@ -334,7 +342,10 @@ export async function setRecurringCoreDependencies(overrides = {}) {
         applyRecurringToTaskSchema25,
         deleteRecurringTemplate,
         removeRecurringTasksFromCycle,
-        handleRecurringTasksAfterReset
+        handleRecurringTasksAfterReset,
+        // Shared state mutation helpers
+        activateTaskRecurringState,
+        deactivateTaskRecurringState
     };
 }
 

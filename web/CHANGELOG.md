@@ -1,3 +1,8 @@
+## [1.893] - 2026-01-31
+- feat: update changelog and project stats for version 1.892
+- fix: resolve state bug in recurring task removal by resetting deleteWhenComplete settings
+
+
 ## [1.892] - 2026-01-31
 - feat: add comprehensive guide for making code changes and dependency management
 
