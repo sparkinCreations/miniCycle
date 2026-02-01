@@ -35,7 +35,7 @@ const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Module references (populated by loadDependencies)
-let installDebugFilter, setDebugModeDependencies, refreshDebugState;
+let installDebugFilter, setDebugModeDependencies, refreshDebugState, enableDebugFn, disableDebugFn, isDebugFn;
 let setStorageDependencies;
 let BOOT_TIMEOUTS;
 let attemptCacheRecovery, clearAllCaches, clearRecoveryFlags, isRecoveryExhausted;
@@ -63,6 +63,9 @@ async function loadDependencies() {
     installDebugFilter = debugMod.installDebugFilter;
     setDebugModeDependencies = debugMod.setDebugModeDependencies;
     refreshDebugState = debugMod.refreshDebugState;
+    enableDebugFn = debugMod.enableDebug;
+    disableDebugFn = debugMod.disableDebug;
+    isDebugFn = debugMod.isDebug;
 
     // Assign from storageUtils
     setStorageDependencies = storageMod.setStorageDependencies;
@@ -421,6 +424,12 @@ async function runBootSequence() {
   // Wire AppState into debugMode for state-based persistence
   setDebugModeDependencies({ AppState: deps.core.AppState });
   refreshDebugState();
+
+  // Store versioned debug functions in deps for DI chain
+  // (settingsUIManager needs these from the versioned instance, not a bare import)
+  deps.utils.enableDebug = enableDebugFn;
+  deps.utils.disableDebug = disableDebugFn;
+  deps.utils.isDebug = isDebugFn;
 
   // Wire AppState into storageUtils for quota caching
   setStorageDependencies({ AppState: deps.core.AppState });

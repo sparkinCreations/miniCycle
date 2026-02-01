@@ -19,7 +19,6 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { enableDebug, disableDebug, isDebug } from '../utils/debugMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -39,7 +38,10 @@ const di = createDIModule('SettingsUIManager', {
     refreshTaskListUI: optional(null),
     organizeCompletedTasks: optional(null),
     resetDefaultRecurringSettings: optional(null),
-    updateStatsPanel: optional(null)
+    updateStatsPanel: optional(null),
+    enableDebug: optional(null),
+    disableDebug: optional(null),
+    isDebug: optional(null)
 });
 
 /** @type {{AppState: Object, loadMiniCycleData: Function, showNotification: Function, safeAddEventListener: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, organizeCompletedTasks: Function|null, resetDefaultRecurringSettings: Function|null}} */
@@ -561,7 +563,7 @@ export function setupDebugModeToggle() {
 
     console.log('Setting up debug mode toggle...');
 
-    const debugEnabled = isDebug();
+    const debugEnabled = _deps.isDebug?.() ?? false;
     debugModeToggle.checked = debugEnabled;
 
     debugModeToggle._changeHandler = () => {
@@ -569,10 +571,10 @@ export function setupDebugModeToggle() {
         console.log('Debug mode toggle changed:', enabled);
 
         if (enabled) {
-            enableDebug();
+            _deps.enableDebug?.();
             _deps.showNotification?.('Debug mode enabled - console.log output visible', 'success', 3000);
         } else {
-            disableDebug();
+            _deps.disableDebug?.();
             _deps.showNotification?.('Debug mode disabled - console.log output suppressed', 'info', 3000);
         }
     };

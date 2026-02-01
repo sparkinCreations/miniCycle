@@ -44,7 +44,10 @@ const di = createDIModule('SettingsManager', {
     sanitizeInput: required(),
     AppMeta: optional(null),
     safeAddEventListener: required(),
-    BackupManager: optional(null)
+    BackupManager: optional(null),
+    enableDebug: optional(null),
+    disableDebug: optional(null),
+    isDebug: optional(null)
 });
 
 /** @type {{appInit: Object|null, loadMiniCycleData: Function, AppState: Object, showNotification: Function, showConfirmationModal: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, performSchema25Migration: Function|null, resetDefaultRecurringSettings: Function|null, organizeCompletedTasks: Function|null, DataValidator: Object|null, calculateNextOccurrence: Function|null, sanitizeInput: Function, AppMeta: Object|null, safeAddEventListener: Function, BackupManager: Object|null}} */
@@ -163,7 +166,10 @@ function wireSubModuleDependencies(dependencies) {
         refreshTaskListUI: dependencies.refreshTaskListUI,
         organizeCompletedTasks: dependencies.organizeCompletedTasks,
         resetDefaultRecurringSettings: dependencies.resetDefaultRecurringSettings,
-        updateStatsPanel: dependencies.updateStatsPanel
+        updateStatsPanel: dependencies.updateStatsPanel,
+        enableDebug: dependencies.enableDebug,
+        disableDebug: dependencies.disableDebug,
+        isDebug: dependencies.isDebug
     });
 
     _subModules.setCycleExportManagerDependencies({
