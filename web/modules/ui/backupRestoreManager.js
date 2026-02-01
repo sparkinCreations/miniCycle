@@ -244,7 +244,14 @@ async function processRestoreData(fileContent) {
         return;
     }
 
-    const backupData = JSON.parse(fileContent);
+    let backupData;
+    try {
+        backupData = JSON.parse(fileContent);
+    } catch (parseErr) {
+        console.error('JSON parse failed:', parseErr.message);
+        _deps.showNotification?.("Invalid file — not valid JSON.", "error", 4000);
+        return;
+    }
 
     // Validate backup data is an object
     if (typeof backupData !== 'object' || backupData === null) {
@@ -276,6 +283,16 @@ async function processRestoreData(fileContent) {
     // Handle Schema 2.5 backup
     if (backupData.schemaVersion === "2.5" && backupData.miniCycleData) {
         console.log('Detected Schema 2.5 backup format');
+
+        // Validate miniCycleData is valid JSON before writing
+        try {
+            JSON.parse(backupData.miniCycleData);
+        } catch (dataErr) {
+            console.error('miniCycleData is not valid JSON:', dataErr.message);
+            _deps.showNotification?.("Backup data is corrupt — miniCycleData is invalid.", "error", 4000);
+            return;
+        }
+
         localStorage.setItem("miniCycleData", backupData.miniCycleData);
         _deps.showNotification?.("Schema 2.5 backup restored successfully!", "success", 4000);
         _deps.showNotification?.("Reloading app to apply changes...", "info", 2000);
@@ -503,7 +520,7 @@ export function setupFactoryResetButton() {
         }
 
         _deps.showNotification?.("Factory Reset Complete. Reloading...", "success", 2000);
-        setTimeout(() => location.reload(), 800);
+        setTimeout(() => location.reload(), 2000);
     };
 
     const showConfirmationModal = _deps.showConfirmationModal;
