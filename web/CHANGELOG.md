@@ -1,3 +1,7 @@
+## [1.898] - 2026-02-01
+- feat: add PWA file handling for .mcyc files and implement preview popout on double-click
+
+
 ## [1.897] - 2026-02-01
 - chore: update version to 1.896 across all relevant files and documentation
 - feat: implement debug mode functions and cleanup for IndexedDB in backup and settings managers

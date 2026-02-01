@@ -483,16 +483,29 @@ async function runBootSequence() {
   if ('launchQueue' in window) {
     window.launchQueue.setConsumer(async (launchParams) => {
       if (!launchParams.files?.length) return;
+
+      // Guard against reload loop: processImportedData calls location.reload()
+      // and the launchQueue re-fires on reload in some browsers
+      if (sessionStorage.getItem('__mcyc_file_import_pending')) {
+        sessionStorage.removeItem('__mcyc_file_import_pending');
+        return;
+      }
+
       try {
         const fileHandle = launchParams.files[0];
         const file = await fileHandle.getFile();
         if (!file.name.endsWith('.mcyc')) return;
         const content = await file.text();
+
+        // Set flag before import (processImportedData will reload)
+        sessionStorage.setItem('__mcyc_file_import_pending', '1');
+
         const { processImportedData } = await import(
           `../ui/cycleImportManager.js?v=${APP_VERSION}`
         );
         processImportedData(content);
       } catch (e) {
+        sessionStorage.removeItem('__mcyc_file_import_pending');
         console.error('File handling failed:', e);
       }
     });
