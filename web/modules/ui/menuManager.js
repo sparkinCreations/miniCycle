@@ -610,6 +610,7 @@ export class MenuManager {
             message: `⚠ Are you sure you want to permanently delete all tasks in "${currentCycle.title}"? This action cannot be undone.`,
             confirmText: "Delete All",
             cancelText: "Cancel",
+            destructive: true,
             callback: async (confirmed) => {
                 if (!confirmed) {
                     console.log('❌ User cancelled deletion');

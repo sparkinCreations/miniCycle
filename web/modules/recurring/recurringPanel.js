@@ -930,6 +930,7 @@ export class RecurringPanelManager {
             message: `Are you sure you want to remove "${task.text}" from recurring tasks?`,
             confirmText: "Remove",
             cancelText: "Cancel",
+            destructive: true,
             callback: (confirmed) => {
                 if (!confirmed) return;
 
