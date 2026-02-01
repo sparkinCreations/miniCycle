@@ -1,3 +1,7 @@
+## [1.891] - 2026-01-31
+- feat: add refreshUIFromState functionality and deleteWhenComplete settings for recurring tasks
+
+
 ## [1.890] - 2026-01-31
 - feat: enhance recurring settings with UI refresh and delete options
 

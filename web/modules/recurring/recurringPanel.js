@@ -30,31 +30,30 @@ import { ICONS } from '../utils/icons.js';
 // ============================================================================
 
 const di = createDIModule('RecurringPanel', {
-    // Required - will throw if missing
+    // Required — always wired by integration, panel cannot function without these
     AppState: required(),
     showNotification: required(),
     applyRecurringSettings: required(),
     normalizeRecurringSettings: required(),
     calculateNextOccurrence: required(),
+    deleteTemplate: required(),
+    buildRecurringSummary: required(),
+    formatNextOccurrence: required(),
+    updateAppState: required(),
+    showConfirmationModal: required(),
+    getElementById: required(),
+    querySelector: required(),
+    querySelectorAll: required(),
 
-    // Optional with sensible defaults/fallbacks
+    // Optional — genuinely nullable, code checks before use
     appInit: optional(null),
-    deleteTemplate: optional(null),
-    buildRecurringSummary: optional(null),
-    formatNextOccurrence: optional(null),
-    updateAppState: optional(null),
     loadData: optional(null),
-    showConfirmationModal: optional(null),
-    getElementById: optional(null),
-    querySelector: optional(null),
-    querySelectorAll: optional(null),
-    isOverlayActive: optional(null),
     escapeHtml: optional(null),
     syncRecurringStateToDOM: optional(null),
     refreshTaskButtonsForModeChange: optional(null),
     safeAddEventListener: optional(null),
     refreshUIFromState: optional(null)
-}, { strict: true });  // Throw on missing required deps
+}, { strict: true });
 
 /**
  * Set dependencies for RecurringPanel module
@@ -76,41 +75,8 @@ export class RecurringPanelManager {
     constructor(dependencies = {}) {
         console.log('🎛️ Initializing RecurringPanelManager...');
 
-        // Resolve dependencies via DI system (throws on missing required deps)
-        const resolved = di.resolve(dependencies);
-
-        // Store dependencies with sensible fallbacks for optional ones only
-        this.deps = {
-            // Required - validated by DI (will throw if missing)
-            AppState: resolved.AppState,
-            showNotification: resolved.showNotification,
-            applyRecurringSettings: resolved.applyRecurringSettings,
-            normalizeRecurringSettings: resolved.normalizeRecurringSettings,
-            calculateNextOccurrence: resolved.calculateNextOccurrence,
-
-            // Optional with graceful fallbacks
-            appInit: resolved.appInit,
-            deleteTemplate: resolved.deleteTemplate || this.fallbackDeleteTemplate.bind(this),
-            buildRecurringSummary: resolved.buildRecurringSummary || this.fallbackBuildSummary.bind(this),
-            formatNextOccurrence: resolved.formatNextOccurrence || this.fallbackFormatNext.bind(this),
-            updateAppState: resolved.updateAppState || ((fn, imm) => resolved.AppState?.update(fn, imm)),
-            loadData: resolved.loadData,
-            showConfirmationModal: resolved.showConfirmationModal || this.fallbackConfirmation.bind(this),
-
-            // DOM helpers with safe defaults
-            getElementById: resolved.getElementById || ((id) => document.getElementById(id)),
-            querySelector: resolved.querySelector || ((sel) => document.querySelector(sel)),
-            querySelectorAll: resolved.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
-
-            // Optional utilities
-            isOverlayActive: resolved.isOverlayActive || (() => false),
-            escapeHtml: resolved.escapeHtml,
-            syncRecurringStateToDOM: resolved.syncRecurringStateToDOM,
-            refreshTaskButtonsForModeChange: resolved.refreshTaskButtonsForModeChange,
-
-            // Event listener utility (strict DI - no fallback)
-            safeAddEventListener: resolved.safeAddEventListener
-        };
+        // Resolve and spread — schema defines required vs optional, no manual mapping needed
+        this.deps = { ...di.resolve(dependencies) };
 
         // Internal state
         this.state = {
@@ -148,39 +114,6 @@ export class RecurringPanelManager {
     // The initEventDelegation() method above delegates to that module.
 
     // ============================================
-    // FALLBACK METHODS (for optional dependencies only)
-    // ============================================
-
-    /**
-     * Fallback for deleteTemplate - logs warning but allows operation to continue
-     */
-    fallbackDeleteTemplate(taskId) {
-        console.warn('⚠️ deleteTemplate not wired - template deletion skipped');
-        this.deps.showNotification('Template deletion not available', 'warning');
-    }
-
-    /**
-     * Fallback for buildRecurringSummary - returns basic summary
-     */
-    fallbackBuildSummary(settings) {
-        return `Recurring ${settings?.frequency || 'daily'}`;
-    }
-
-    /**
-     * Fallback for formatNextOccurrence - returns formatted date
-     */
-    fallbackFormatNext(timestamp) {
-        return timestamp ? new Date(timestamp).toLocaleDateString() : 'Not scheduled';
-    }
-
-    /**
-     * Fallback for showConfirmationModal - uses browser confirm
-     */
-    fallbackConfirmation(options) {
-        const confirmed = confirm(options.message);
-        if (options.callback) options.callback(confirmed);
-    }
-
     // ============================================
     // PANEL INITIALIZATION
     // ============================================
@@ -1668,11 +1601,9 @@ export class RecurringPanelManager {
             // Refresh the panel to show new recurring tasks
             this.updateRecurringPanel();
 
-            // Refresh main task list from state to reflect recurring + deleteWhenComplete changes
+            // Refresh main task list from state
             setTimeout(() => {
-                if (this.deps.refreshUIFromState) {
-                    this.deps.refreshUIFromState();
-                }
+                this.deps.refreshUIFromState?.();
             }, 0);
 
             const taskWord = selectedTaskIds.length === 1 ? 'task' : 'tasks';
