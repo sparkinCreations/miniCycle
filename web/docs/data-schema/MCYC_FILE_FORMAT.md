@@ -720,6 +720,28 @@ For tasks with `recurring: true` (Schema 2.5+ structure, updated v1.349):
 2. **Confirm import**
 3. **Cycle loads**
 
+**Method 4: Open from Desktop (PWA)**
+1. **Install miniCycle as a PWA** (Chromium browsers — Chrome, Edge, etc.)
+2. **Double-click a `.mcyc` file** in your file explorer
+3. **miniCycle opens** and imports the routine automatically
+4. Requires the `file_handlers` entry in `manifest.json`
+
+> **Note:** This method only works when the app is installed as a PWA. The OS file association is registered via the [File Handling API](https://developer.chrome.com/docs/capabilities/web-apis/file-handling).
+
+---
+
+### Import Security
+
+When importing `.mcyc` files, miniCycle applies several layers of validation and sanitization:
+
+- **JSON validation:** Files that are not valid JSON are rejected with a clear error message
+- **File size limit:** Maximum 10 MB per file
+- **Task count limit:** Excess tasks beyond 150 are truncated (not rejected)
+- **Text sanitization:** All task text and cycle names are stripped of HTML and enforced to length limits
+- **Field allowlisting:** `taskOptionButtons` and `reminders` are sanitized to only allow known keys with expected types — unknown fields are stripped
+- **Storage quota check:** Import is blocked if insufficient localStorage space is available
+- **Recurring template security:** Only safe metadata fields (`id`, `createdAt`, `updatedAt`) are kept from imported templates; all text comes from the sanitized source
+
 ---
 
 ## Best Practices
