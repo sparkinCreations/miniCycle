@@ -286,7 +286,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2000;
+    z-index: 2500;
     animation: fadeIn 0.2s ease;
 }
 
@@ -2155,6 +2155,10 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 /* =============================================================================
    PREVIEW REVIEW MODAL (double-click preview popout)
    ============================================================================= */
+
+#preview-review-overlay {
+    z-index: 1010; /* must sit above routine switcher modal (1000) */
+}
 
 .preview-review-modal {
     text-align: left;
