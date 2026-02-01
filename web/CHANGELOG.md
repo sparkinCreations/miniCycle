@@ -1,3 +1,8 @@
+## [1.895] - 2026-01-31
+- feat: add destructive confirmation option for delete actions in modals and notifications
+- feat: update task names and add deleteWhenComplete settings in example routines
+
+
 ## [1.894] - 2026-01-31
 - feat: implement shared state mutation helpers for activating and deactivating recurring tasks
 
