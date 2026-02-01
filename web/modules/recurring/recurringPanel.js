@@ -147,7 +147,10 @@ export class RecurringPanelManager {
             }
 
             // Open panel button
-            this.deps.safeAddEventListener(openBtn, "click", () => this.openPanel());
+            this.deps.safeAddEventListener(openBtn, "click", () => {
+                this.deps.trackAction?.('recurring');
+                this.openPanel();
+            });
 
             // Close panel button
             this.deps.safeAddEventListener(closeBtn, "click", () => this.closePanel());

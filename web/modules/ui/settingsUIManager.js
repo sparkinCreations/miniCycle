@@ -122,6 +122,7 @@ export function setupSettingsMenu() {
 
     const openSettings = (event) => {
         event.stopPropagation();
+        _deps.trackAction?.('settings');
         if (settingsModal) {
             settingsModal.style.display = "flex";
         }

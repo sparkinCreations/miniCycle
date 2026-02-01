@@ -891,17 +891,18 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // Recurring (from deps.recurring) - use Proxy for lazy evaluation
         // Proxy allows property access (e.g., recurringPanel.updateRecurringPanelButtonVisibility)
         // to be resolved lazily after the module loads
+        // Note: manifest provides ['panel', 'core'], so keys are deps.recurring.panel / deps.recurring.core
         recurringPanel: new Proxy({}, {
             get(target, prop) {
-                return deps.recurring?.recurringPanel?.[prop];
+                return deps.recurring?.panel?.[prop];
             }
         }),
         recurringCore: new Proxy({}, {
             get(target, prop) {
-                return deps.recurring?.recurringCore?.[prop];
+                return deps.recurring?.core?.[prop];
             }
         }),
-        updateRecurringPanelButtonVisibility: (...args) => deps.recurring?.recurringPanel?.updateRecurringPanelButtonVisibility?.(...args),
+        updateRecurringPanelButtonVisibility: (...args) => deps.recurring?.panel?.updateRecurringPanelButtonVisibility?.(...args),
         catchUpMissedRecurringTasks: (...args) => deps.recurring?.core?.catchUpMissedRecurringTasks?.(...args),
         watchRecurringTasks: (...args) => deps.recurring?.core?.watchRecurringTasks?.(...args),
         removeRecurringTasksFromCycle: (...args) => {
@@ -928,6 +929,13 @@ function buildModuleDependencies(manifest, deps, coreResult) {
 
         // Stats panel manager (from deps.ui) - returns instance when called as function
         statsPanelManager: () => deps.ui?.statsPanelManager,
+
+        // Quick actions tracking (from quickActionsManager in deps.ui)
+        trackAction: (...args) => deps.ui?.trackAction?.(...args),
+
+        // Stats panel navigation (direct access for quickActionsManager and others)
+        showStatsPanel: (...args) => deps.ui?.showStatsPanel?.(...args),
+        showTaskView: (...args) => deps.ui?.statsPanelManager?.showTaskView?.(...args),
 
         // Gesture panel callbacks (for gesturePanelManager to call when gestures detected)
         onShowStatsPanel: () => deps.ui?.statsPanelManager?.showStatsPanel?.(),

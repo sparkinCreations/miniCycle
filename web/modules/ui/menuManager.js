@@ -58,6 +58,7 @@ const di = createDIModule('MenuManager', {
     updateUndoRedoButtons: optional(null),
     recurringPanel: optional(null),
     AppMeta: optional(null),
+    trackAction: optional(null),
     // DOM query functions (can be injected for testing)
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
@@ -113,7 +114,8 @@ export class MenuManager {
             updateStatsPanel: resolvedDeps.updateStatsPanel,
             checkCompleteAllButton: resolvedDeps.checkCompleteAllButton,
             updateUndoRedoButtons: resolvedDeps.updateUndoRedoButtons,
-            recurringPanel: resolvedDeps.recurringPanel
+            recurringPanel: resolvedDeps.recurringPanel,
+            trackAction: resolvedDeps.trackAction
         };
 
         // Cache DOM elements (will be set in init)
@@ -170,7 +172,10 @@ export class MenuManager {
         this.deps.safeAddEventListener(
             this.deps.getElementById("open-mini-cycle"),
             "click",
-            () => this.deps.switchMiniCycle()
+            () => {
+                this.deps.trackAction?.('open-routine');
+                this.deps.switchMiniCycle();
+            }
         );
 
         this.deps.safeAddEventListener(

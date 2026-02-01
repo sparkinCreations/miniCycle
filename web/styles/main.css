@@ -96,6 +96,9 @@
 /* Menu container and slide arrows */
 @import url('./components/menu.css?v=1.903');
 
+/* Quick actions panel */
+@import url('./components/quick-actions.css?v=1.903');
+
 
 /* =============================================================================
    UTILITIES LAYER - Helper classes

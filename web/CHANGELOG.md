@@ -1,5 +1,11 @@
 ## [1.903] - 2026-02-01
 - feat: update version to 1.902 across all relevant files and changelog
+- feat: implement Quick Actions Panel (Phase 1) with 5 actions (Stats, Open Routine, Recurring, Reminders, Settings)
+- feat: add quickActionsManager DI module with pinned/recent/frequent views, action picker modal, and action tracking
+- feat: add responsive desktop panel (2-col/3-col/5-col breakpoints) and mobile menu row for quick actions
+- fix: reposition slide arrows to screen edges to avoid panel overlap
+- fix: bump task-view and stats-panel z-index to 3 for proper stacking above slide arrows
+- fix: correct recurringPanel proxy path in moduleLoader (deps.recurring.panel, not deps.recurring.recurringPanel)
 
 
 ## [1.902] - 2026-02-01

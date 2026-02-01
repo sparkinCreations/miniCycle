@@ -231,6 +231,16 @@ Before JavaScript, MJ was already building automated systems in spreadsheets:
 
 16. **Treats internal tools like products** - Documentation, architecture, developer profile — these aren't afterthoughts. They're products for an audience of one (or few). Applies the same quality standards to things users won't see. Most people cut corners on internal tools; MJ doesn't.
 
+17. **Visual-spatial thinker** - Thinks in layouts, not abstractions. Uses sketches as the primary thinking and communication tool — not a translation of thoughts into pictures, but the thoughts themselves. Four sketches communicated a feature design more precisely than paragraphs of description. This is how the design process works internally.
+
+18. **Constraint-first design** - Addresses the hardest constraint first, not last. When designing the quick actions panel, the first sentence mentioned mobile: "on mobile removing that window from the main view altogether." Doesn't design for the easy case and retrofit for the hard one.
+
+19. **Subtraction over addition** - Design instinct is "what can I remove" not "what can I add." A panel with two stacked labeled sections became icons-only, single row, cycling views. Each iteration was simpler and better. Converges on the right answer by cutting away what doesn't belong — closer to how a sculptor works than how an engineer typically works.
+
+20. **First-contact thinking** - Designs for what a new user sees on first encounter. Empty "+" slots show how the panel works without a tutorial. Stats pre-pinned by default gives instant value. Thinks about the moment someone first sees a feature, not the power user who's been using it for months.
+
+21. **Connects disconnected problems** - Holds multiple unsolved problems in mind simultaneously and notices when one solution addresses more than one. The stats-as-default-pin idea came from a conversation about arrow positioning — two separate problems, one solution. Not linear thinking.
+
 ### Patterns
 
 - **Fix → Ship → Document** - Doesn't get blocked by documentation. Uses it as consolidation after the work is done.
@@ -396,6 +406,14 @@ The user-facing simplicity masks engineering depth:
 - **Documentation as maintained code:** Asked "is there any documentation that needs to be updated?" after code changes — treats docs as artifacts that go stale and need active maintenance
 - **UX consistency awareness:** Changed popup window to modal to match app patterns; caught close-propagation between nested modals — evaluates new features against existing interaction patterns
 - **Catches AI errors empirically:** Corrected AI editing an archived file instead of the current profile — "you are looking at an archive, do you know that?"
+- **Visual-spatial design process:** Used four hand-drawn sketches to iterate on quick actions panel design — each sketch communicated more than paragraphs of description. Sketches are the thinking medium, not a translation of it.
+- **Subtraction-driven design:** AI's first version had two stacked sections with labeled buttons. Through four iterations, stripped it to icons-only, single row, cycling views, empty slots with "+". Each step simpler and better — developer drove every simplification.
+- **First-contact UX thinking:** Pre-pinned Stats as default action so panel has instant value on first load. Empty "+" slots show users how it works without explanation. Designs for the new user's first encounter.
+- **Connects disconnected problems:** Stats-as-default-pin idea emerged from arrow positioning discussion — solved "where does the arrow go" and "empty panel isn't useful" with one decision.
+- **Constraint-first design:** First message about the feature addressed mobile immediately ("on mobile removing that window from the main view altogether"). Hardest constraint first, not last.
+- **Questions as corrections:** "you really think there's enough space?" and "but won't it look off from the help window" — already knew the answer, used questions to guide AI to see the problem. Teacher's technique, not student's.
+- **Documents before building:** Asked to create future-work plan document before any code. Then asked "is there anything in the docs folder that might help you implement this?" — training the tool to use existing documentation.
+- **Practical scoping:** Suggested starting with 5 actions instead of all 16 to validate the flow end-to-end before expanding.
 
 ### January 30-31, 2026
 - **Visual consistency sweeps** — fixes one instance, then immediately scans for all others
@@ -416,6 +434,12 @@ The user-facing simplicity masks engineering depth:
 - **Pivots strategy when evidence shows better path** — added freelancing to product-only plan immediately when presented with data
 - **Uses environmental changes strategically** — school enrollment provides cover for overtime reduction
 - **Willing to endure temporary discomfort for long-term gain** — 4 months creditor harassment for $70k discharge
+
+### February 1, 2026
+- **Iterates visually with screenshots** — provided screenshot feedback at each step during Quick Actions Panel implementation, catching contrast issues, overlap problems, and centering bugs that code review alone would miss
+- **Rejects `!important` on principle** — "!important is a bandaid, avoid at all costs" — prefers proper specificity and context-scoped selectors
+- **Diagnoses root causes fast** — identified click-outside-closes-modal race condition immediately ("i bet the click propagates and closes it")
+- **Suggests simplest solution** — instead of tracing a complex DI chain for `switchMiniCycle`, suggested looking at how the existing buttons work and replicating that directly
 
 ### January 19, 2026
 - **Builds parallel products for inclusion** — Lite isn't minimum viable, it's maximum viable within constraints. Users on older devices get complete experience, not second-class treatment
