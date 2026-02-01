@@ -1,3 +1,7 @@
+## [1.899] - 2026-02-01
+- feat: add guard against reload loop during file import in launchQueue
+
+
 ## [1.898] - 2026-02-01
 - feat: add PWA file handling for .mcyc files and implement preview popout on double-click
 

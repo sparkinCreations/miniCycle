@@ -1045,7 +1045,7 @@ export class RoutineSwitcher {
     }
 
     /**
-     * Setup double-click on preview window to pop it out into a new window
+     * Setup double-click on preview window to open it in a review modal
      */
     setupPreviewPopout() {
         const previewWindow = this.deps.getElementById("switch-preview-window");
@@ -1073,34 +1073,42 @@ export class RoutineSwitcher {
             const escDiv = document.createElement("div");
             const escapeText = (str) => { escDiv.textContent = str; return escDiv.innerHTML; };
 
+            const completedCount = cycleData.tasks.filter(t => t.completed).length;
             const taskRows = cycleData.tasks.map(task => {
                 const check = task.completed ? '&#10004;' : '&mdash;';
-                const cls = task.completed ? ' style="opacity:0.5;text-decoration:line-through;"' : '';
-                return `<div style="padding:4px 0;border-bottom:1px solid #eee;"${cls}><span style="display:inline-block;width:24px;text-align:center;">${check}</span> ${escapeText(task.text)}</div>`;
+                const cls = task.completed ? ' completed' : '';
+                return `<div class="preview-modal-task${cls}"><span class="preview-modal-check">${check}</span> ${escapeText(task.text)}</div>`;
             }).join('');
 
-            const html = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>${escapeText(cycleName)}</title>
-<style>
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;margin:0;padding:0;background:#f5f5f5;color:#333;}
-.header{background:#4c79ff;color:white;padding:16px 20px;}
-.header h2{margin:0;font-size:18px;}
-.header .date{opacity:0.8;font-size:13px;margin-top:4px;}
-.tasks{padding:12px 20px;}
-.count{padding:0 20px 12px;font-size:13px;color:#888;}
-</style></head><body>
-<div class="header"><h2>${escapeText(cycleName)}</h2>${dateStr ? `<div class="date">${dateLabel}: ${dateStr}</div>` : ''}</div>
-<div class="count">${cycleData.tasks.length} task${cycleData.tasks.length !== 1 ? 's' : ''} &middot; ${cycleData.tasks.filter(t => t.completed).length} completed</div>
-<div class="tasks">${taskRows}</div>
-</body></html>`;
+            // Remove existing preview modal if any
+            const existing = document.getElementById('preview-review-overlay');
+            if (existing) existing.remove();
 
-            const win = window.open('', '_blank', 'width=380,height=500,scrollbars=yes');
-            if (win) {
-                win.document.write(html);
-                win.document.close();
-            } else {
-                this.deps.showNotification?.('Pop-up blocked. Allow pop-ups for this site.', 'warning', 3000);
-            }
+            // Create modal
+            const overlay = document.createElement('div');
+            overlay.id = 'preview-review-overlay';
+            overlay.className = 'modal-overlay';
+            overlay.setAttribute('role', 'dialog');
+            overlay.setAttribute('aria-modal', 'true');
+            overlay.innerHTML = `
+                <div class="modal-content preview-review-modal">
+                    <span class="close-modal preview-review-close" role="button" tabindex="0" aria-label="Close">&times;</span>
+                    <h3 class="preview-review-title">${escapeText(cycleName)}</h3>
+                    <div class="preview-review-meta">
+                        ${cycleData.tasks.length} task${cycleData.tasks.length !== 1 ? 's' : ''} &middot; ${completedCount} completed${dateStr ? ` &middot; ${dateLabel}: ${dateStr}` : ''}
+                    </div>
+                    <div class="preview-review-body">${taskRows}</div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            // Close handlers
+            const close = () => overlay.remove();
+            overlay.querySelector('.preview-review-close').addEventListener('click', close);
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+            const onEsc = (e) => { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); } };
+            document.addEventListener('keydown', onEsc);
         });
     }
 
