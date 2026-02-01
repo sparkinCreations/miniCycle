@@ -12,7 +12,7 @@
   "dir": "ltr",
   "theme_color": "#4c79ff",
   "background_color": "#4c79ff",
-  "version": "1.896",
+  "version": "1.897",
   "categories": ["productivity", "lifestyle", "utilities"],
   "icons": [
     {
@@ -81,6 +81,14 @@
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "./miniCycle.html",
+      "accept": {
+        "application/json": [".mcyc"]
+      }
     }
   ]
 }

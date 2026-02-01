@@ -168,6 +168,9 @@ export class RoutineSwitcher {
         // ✅ Update storage bar
         this.updateStorageBar();
 
+        // ✅ Preview popout on double-click
+        this.setupPreviewPopout();
+
         console.log('🔗 Setting up event listeners...');
 
         // ✅ Use safeAddEventListener to prevent duplicate handlers
@@ -1042,6 +1045,66 @@ export class RoutineSwitcher {
     }
 
     /**
+     * Setup double-click on preview window to pop it out into a new window
+     */
+    setupPreviewPopout() {
+        const previewWindow = this.deps.getElementById("switch-preview-window");
+        if (!previewWindow) return;
+
+        const safeAdd = this.deps.safeAddEventListener;
+        if (!safeAdd) return;
+
+        safeAdd(previewWindow, "dblclick", () => {
+            const selected = this.deps.querySelector(".mini-cycle-switch-item.selected");
+            if (!selected) return;
+
+            const cycleKey = selected.dataset.cycleKey;
+            const currentState = this.deps.AppState?.get();
+            const cycleData = currentState?.data?.cycles?.[cycleKey];
+            if (!cycleData?.tasks) return;
+
+            const cycleName = cycleData.title || cycleKey;
+            const timestamp = cycleData.lastModified || cycleData.createdAt;
+            const dateStr = timestamp
+                ? new Date(timestamp).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+                : '';
+            const dateLabel = cycleData.lastModified ? 'Modified' : 'Created';
+
+            const escDiv = document.createElement("div");
+            const escapeText = (str) => { escDiv.textContent = str; return escDiv.innerHTML; };
+
+            const taskRows = cycleData.tasks.map(task => {
+                const check = task.completed ? '&#10004;' : '&mdash;';
+                const cls = task.completed ? ' style="opacity:0.5;text-decoration:line-through;"' : '';
+                return `<div style="padding:4px 0;border-bottom:1px solid #eee;"${cls}><span style="display:inline-block;width:24px;text-align:center;">${check}</span> ${escapeText(task.text)}</div>`;
+            }).join('');
+
+            const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>${escapeText(cycleName)}</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;margin:0;padding:0;background:#f5f5f5;color:#333;}
+.header{background:#4c79ff;color:white;padding:16px 20px;}
+.header h2{margin:0;font-size:18px;}
+.header .date{opacity:0.8;font-size:13px;margin-top:4px;}
+.tasks{padding:12px 20px;}
+.count{padding:0 20px 12px;font-size:13px;color:#888;}
+</style></head><body>
+<div class="header"><h2>${escapeText(cycleName)}</h2>${dateStr ? `<div class="date">${dateLabel}: ${dateStr}</div>` : ''}</div>
+<div class="count">${cycleData.tasks.length} task${cycleData.tasks.length !== 1 ? 's' : ''} &middot; ${cycleData.tasks.filter(t => t.completed).length} completed</div>
+<div class="tasks">${taskRows}</div>
+</body></html>`;
+
+            const win = window.open('', '_blank', 'width=380,height=500,scrollbars=yes');
+            if (win) {
+                win.document.write(html);
+                win.document.close();
+            } else {
+                this.deps.showNotification?.('Pop-up blocked. Allow pop-ups for this site.', 'warning', 3000);
+            }
+        });
+    }
+
+    /**
      * Load miniCycle list (debounced wrapper)
      */
     loadMiniCycleList() {
@@ -1176,6 +1239,14 @@ export class RoutineSwitcher {
                 this.updatePreview(cycleKey);
             };
             safeAdd(listItem, "click", listItem._clickHandler);
+
+            // Double-click to open immediately
+            listItem._dblClickHandler = () => {
+                this.deps.querySelectorAll(".mini-cycle-switch-item").forEach(item => item.classList.remove("selected"));
+                listItem.classList.add("selected");
+                this.confirmMiniCycle();
+            };
+            safeAdd(listItem, "dblclick", listItem._dblClickHandler);
 
             miniCycleList.appendChild(listItem);
         });
