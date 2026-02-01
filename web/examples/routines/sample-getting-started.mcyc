@@ -1,5 +1,5 @@
 {
-  "name": "cycle_1764477375116",
+  "name": "Getting Started 🚀",
   "title": "Getting Started 🚀",
   "tasks": [
     {
@@ -11,6 +11,11 @@
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
       "schemaVersion": 2
     },
     {
@@ -22,6 +27,11 @@
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
       "schemaVersion": 2
     },
     {
@@ -33,32 +43,51 @@
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
       "schemaVersion": 2
     },
     {
       "id": "task-getting-started-4",
-      "text": "📱 Long press on a task to rearrange it",
+      "text": "📱 Long press and drag to rearrange tasks",
       "completed": false,
       "dueDate": null,
       "highPriority": false,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
       "schemaVersion": 2
     },
     {
       "id": "task-getting-started-5",
-      "text": "🔁 Try Auto Reset by completing all tasks",
+      "text": "🔁 Watch tasks reset when all are completed",
       "completed": false,
       "dueDate": null,
       "highPriority": false,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
       "schemaVersion": 2
     }
   ],
   "autoReset": true,
   "cycleCount": 0,
-  "deleteCheckedTasks": false
-}   
+  "deleteCheckedTasks": false,
+  "taskOptionButtons": null,
+  "recurringTemplates": {},
+  "reminders": null,
+  "createdAt": 1769919347634
+}

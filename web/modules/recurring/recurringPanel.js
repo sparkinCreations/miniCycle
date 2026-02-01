@@ -1367,7 +1367,7 @@ export class RecurringPanelManager {
             } else {
                 // Hide the list and reset
                 availableTasksList.classList.add("hidden");
-                addTaskBtn.innerHTML = '<i class="fas fa-plus"></i> Add Task';
+                addTaskBtn.textContent = 'Add Task to Recurring';
                 if (confirmBtn) confirmBtn.classList.add("hidden");
             }
         });
@@ -1575,7 +1575,7 @@ export class RecurringPanelManager {
             const confirmBtn = this.deps.getElementById("confirm-add-recurring");
 
             if (availableTasksList) availableTasksList.classList.add("hidden");
-            if (addTaskBtn) addTaskBtn.innerHTML = '<i class="fas fa-plus"></i> Add Task';
+            if (addTaskBtn) addTaskBtn.textContent = 'Add Task to Recurring';
             if (confirmBtn) confirmBtn.classList.add("hidden");
 
             // Refresh the panel to show new recurring tasks
