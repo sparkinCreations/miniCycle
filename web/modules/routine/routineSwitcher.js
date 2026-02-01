@@ -1106,8 +1106,11 @@ export class RoutineSwitcher {
             // Close handlers
             const close = () => overlay.remove();
             overlay.querySelector('.preview-review-close').addEventListener('click', close);
-            overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-            const onEsc = (e) => { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); } };
+            overlay.addEventListener('click', (e) => {
+                e.stopPropagation(); // prevent routine switcher's document-level handler from closing
+                if (e.target === overlay) close();
+            });
+            const onEsc = (e) => { if (e.key === 'Escape') { e.stopImmediatePropagation(); close(); document.removeEventListener('keydown', onEsc); } };
             document.addEventListener('keydown', onEsc);
         });
     }
