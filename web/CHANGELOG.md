@@ -1,3 +1,7 @@
+## [1.900] - 2026-02-01
+- feat: implement preview review modal for double-click popout in routine switcher
+
+
 ## [1.899] - 2026-02-01
 - feat: add guard against reload loop during file import in launchQueue
 
