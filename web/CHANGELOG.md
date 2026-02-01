@@ -1,3 +1,7 @@
+## [1.901] - 2026-02-01
+- feat: adjust z-index for preview review modal and add overlay styling
+
+
 ## [1.900] - 2026-02-01
 - feat: implement preview review modal for double-click popout in routine switcher
 
