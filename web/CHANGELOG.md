@@ -1,3 +1,8 @@
+## [1.902] - 2026-02-01
+- feat: add error handling for JSON parsing in backup and import processes, and sanitize task options and reminders
+- feat: enhance overlay close behavior in RoutineSwitcher to prevent unintended closures
+
+
 ## [1.901] - 2026-02-01
 - feat: adjust z-index for preview review modal and add overlay styling
 
