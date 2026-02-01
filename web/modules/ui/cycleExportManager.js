@@ -120,7 +120,10 @@ export function setupExportButton() {
             name: activeCycle,
             title: cycle.title || "New miniCycle",
             tasks: cycle.tasks.map(task => {
-                const settings = task.recurringSettings || {};
+                // Clone to avoid mutating live cycle data
+                const settings = task.recurringSettings
+                    ? structuredClone(task.recurringSettings)
+                    : {};
 
                 // Add fallback time if task is recurring and doesn't use specificTime
                 if (task.recurring && !settings.specificTime && !settings.defaultRecurTime) {

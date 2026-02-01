@@ -365,7 +365,14 @@ export function setupDragDropImport() {
  * @param {string} fileContent - Raw file content
  */
 export function processImportedData(fileContent) {
-    const importedData = JSON.parse(fileContent);
+    let importedData;
+    try {
+        importedData = JSON.parse(fileContent);
+    } catch (parseErr) {
+        console.error('Import JSON parse failed:', parseErr.message);
+        _deps.showNotification?.("Invalid file — not valid JSON.", "error", 4000);
+        return;
+    }
 
     if (!importedData.name || !Array.isArray(importedData.tasks)) {
         _deps.showNotification?.("Invalid miniCycle file format.");
@@ -382,16 +389,22 @@ export function processImportedData(fileContent) {
     }
 
     // ✅ Check storage quota before importing
-    const estimatedSize = getObjectSizeBytes(importedData);
-    const storageCheck = canAddToStorage(estimatedSize);
-    if (!storageCheck.allowed) {
-        console.warn('Storage quota exceeded. Cannot import routine.');
-        _deps.showNotification?.(
-            getStorageShortageMessage(storageCheck.shortfall),
-            'error',
-            5000
-        );
-        return;
+    if (typeof getObjectSizeBytes === 'function' && typeof canAddToStorage === 'function') {
+        const estimatedSize = getObjectSizeBytes(importedData);
+        const storageCheck = canAddToStorage(estimatedSize);
+        if (!storageCheck.allowed) {
+            console.warn('Storage quota exceeded. Cannot import routine.');
+            _deps.showNotification?.(
+                typeof getStorageShortageMessage === 'function'
+                    ? getStorageShortageMessage(storageCheck.shortfall)
+                    : 'Not enough storage space to import this routine.',
+                'error',
+                5000
+            );
+            return;
+        }
+    } else {
+        console.warn('Storage utilities not initialized — skipping quota check');
     }
 
     console.log("Importing miniCycle with auto-conversion to Schema 2.5...");
@@ -415,7 +428,8 @@ export function processImportedData(fileContent) {
     console.log("Creating imported cycle with ID:", cycleId);
 
     // Validate and sanitize all task data
-    const mappedTasks = importedData.tasks.map((task) => {
+    const importTimestamp = Date.now();
+    const mappedTasks = importedData.tasks.map((task, index) => {
         const safeSettings = task.recurringSettings || {};
         if (task.recurring && !safeSettings.specificTime && !safeSettings.defaultRecurTime) {
             safeSettings.defaultRecurTime = new Date().toISOString();
@@ -425,7 +439,7 @@ export function processImportedData(fileContent) {
         const sanitizedText = fallbackSanitize(task.text || "", MAX_TASK_TEXT_LENGTH);
 
         const taskData = {
-            id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            id: task.id || `task-${importTimestamp}-${index}`,
             text: sanitizedText,
             completed: task.completed || false,
             dueDate: task.dueDate || null,
@@ -534,6 +548,36 @@ export function processImportedData(fileContent) {
         };
     }
 
+    // Sanitize taskOptionButtons — only allow known boolean keys
+    let safeTaskOptionButtons = null;
+    if (importedData.taskOptionButtons && typeof importedData.taskOptionButtons === 'object') {
+        const allowedBtnKeys = ['customize', 'moveArrows', 'threeDots', 'highPriority',
+            'rename', 'delete', 'recurring', 'dueDate', 'reminders', 'deleteWhenComplete'];
+        safeTaskOptionButtons = {};
+        for (const key of allowedBtnKeys) {
+            if (key in importedData.taskOptionButtons) {
+                safeTaskOptionButtons[key] = !!importedData.taskOptionButtons[key];
+            }
+        }
+    }
+
+    // Sanitize reminders — only allow known keys with correct types
+    let safeReminders = null;
+    if (importedData.reminders && typeof importedData.reminders === 'object') {
+        const r = importedData.reminders;
+        safeReminders = {
+            enabled: !!r.enabled,
+            indefinite: !!r.indefinite,
+            dueDatesReminders: !!r.dueDatesReminders,
+            repeatCount: typeof r.repeatCount === 'number' ? r.repeatCount : 0,
+            frequencyValue: typeof r.frequencyValue === 'number' ? r.frequencyValue : 1,
+            frequencyUnit: (r.frequencyUnit === 'minutes' || r.frequencyUnit === 'hours') ? r.frequencyUnit : 'hours',
+            customMessages: Array.isArray(r.customMessages)
+                ? r.customMessages.filter(m => typeof m === 'string').map(m => fallbackSanitize(m, MAX_TASK_TEXT_LENGTH))
+                : []
+        };
+    }
+
     // ✅ Create imported cycle via AppState.update() - use title as storage key (consistent with app)
     appState.update(state => {
         state.data.cycles[finalCycleTitle] = {
@@ -545,8 +589,8 @@ export function processImportedData(fileContent) {
             deleteCheckedTasks: importedData.deleteCheckedTasks || false,
             createdAt: Date.now(),
             recurringTemplates: mergedTemplates,
-            taskOptionButtons: importedData.taskOptionButtons || null,
-            reminders: importedData.reminders || null
+            taskOptionButtons: safeTaskOptionButtons,
+            reminders: safeReminders
         };
 
         state.appState.activeCycleId = finalCycleTitle;
