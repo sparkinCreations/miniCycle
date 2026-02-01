@@ -192,26 +192,25 @@ export async function initializeRecurringModules(options = {}) {
 
         // Wire module-level dependencies BEFORE creating instance
         setRecurringPanelDependencies({
-            // Required dependencies (will throw if missing)
+            // Required (panel throws at boot if any are missing)
             AppState: deps.AppState,
             showNotification: deps.showNotification,
             applyRecurringSettings: settingsApplicator.applyRecurringSettings,
             normalizeRecurringSettings: coreFunctions.normalizeRecurringSettings,
             calculateNextOccurrence: coreFunctions.calculateNextOccurrence,
-
-            // Optional dependencies
-            appInit: deps.appInit,
             deleteTemplate: coreFunctions.deleteRecurringTemplate,
             buildRecurringSummary: buildRecurringSummaryFromSettings,
             formatNextOccurrence: coreFunctions.formatNextOccurrence,
             updateAppState: (updateFn, immediate) => deps.AppState?.update(updateFn, immediate),
-            loadData: () => deps.loadMiniCycleData?.(),
             showConfirmationModal: (options) => deps.notifications?.showConfirmationModal(options),
             getElementById: (id) => document.getElementById(id),
             querySelector: (selector) => document.querySelector(selector),
             querySelectorAll: (selector) => document.querySelectorAll(selector),
+
+            // Optional (nullable — panel checks before use)
+            appInit: deps.appInit,
+            loadData: () => deps.loadMiniCycleData?.(),
             safeAddEventListener: deps.GlobalUtils?.safeAddEventListener,
-            isOverlayActive: deps.isOverlayActive,
             escapeHtml: deps.escapeHtml,
             syncRecurringStateToDOM: deps.syncRecurringStateToDOM,
             refreshTaskButtonsForModeChange: deps.refreshTaskButtonsForModeChange,
