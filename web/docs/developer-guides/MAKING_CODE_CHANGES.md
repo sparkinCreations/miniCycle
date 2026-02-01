@@ -337,6 +337,35 @@ selectedTaskIds.forEach(taskId => {
 
 **How to avoid:** When a feature sets specific state properties, search the codebase for every place that creates or modifies that state. Use the working path as a reference for what properties need to be set.
 
+### Pitfall 5: DOM Fix Masking a State Bug
+
+**What happened:** When removing a task from recurring via the panel (`handleRemoveTask` in `recurringPanel.js:925`), the AppState update set `recurring = false` and deleted `recurringSettings`, but never reset `deleteWhenComplete` or `deleteWhenCompleteSettings` back to non-recurring defaults. The task's state still had `{ cycle: true, todo: true }` from when it was recurring.
+
+The DOM update code *did* compute the correct default and toggled the right CSS classes and button states (lines 997-1019). So the UI looked correct immediately after removal. But on any page refresh or `refreshUIFromState()` call, the DOM was rebuilt from the stale state — and the task showed up with recurring-style deletion behavior.
+
+The individual button deactivation path (`recurringActivation.js:handleRecurringTaskDeactivation`, line 243) did this correctly all along:
+
+```javascript
+// recurringActivation.js:243-244 — the working path
+targetTask.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+targetTask.deleteWhenComplete = DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS[currentMode];
+```
+
+The panel's `handleRemoveTask` was missing the equivalent (now fixed at `recurringPanel.js:967-968`):
+
+```javascript
+// recurringPanel.js:967-968 — the fix
+liveTask.deleteWhenCompleteSettings = { cycle: false, todo: true };
+liveTask.deleteWhenComplete = currentMode === 'todo';
+```
+
+**Why it's silent:** The DOM looked correct immediately. The bug only appeared after a refresh, when the UI was rebuilt from state. This makes it easy to think the fix is working when it's only cosmetic.
+
+**How to avoid:**
+1. When updating state and DOM together, always update state first and completely — the DOM update should reflect state, not substitute for it
+2. After making a fix, refresh the page to verify the change persists. If it reverts on refresh, you fixed the DOM but not the state
+3. Compare your code path against the working equivalent. If another function does the same operation correctly, diff the two and look for missing state mutations
+
 ---
 
 ## Quick Reference Checklist
