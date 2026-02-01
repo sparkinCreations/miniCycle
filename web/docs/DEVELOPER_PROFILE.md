@@ -1,6 +1,6 @@
 # Developer Profile
 
-**Last Updated:** January 31, 2026
+**Last Updated:** February 1, 2026
 
 This document captures insights about the developer behind miniCycle to help with future collaboration and context continuity.
 
@@ -386,427 +386,93 @@ The user-facing simplicity masks engineering depth:
 
 ---
 
-## Session History
+## Session Insights
+
+*Behavioral observations only — technical changelogs belong in git history.*
+
+### February 1, 2026
+- **Audit-driven development:** Unprompted requests to audit restore/reset and import/export paths — actively searching for problems that haven't manifested yet
+- **Security awareness matured:** Interest in JSON validation, field allowlisting, trust boundaries on imported files — thinks about adversarial inputs, not just happy-path correctness
+- **Documentation as maintained code:** Asked "is there any documentation that needs to be updated?" after code changes — treats docs as artifacts that go stale and need active maintenance
+- **UX consistency awareness:** Changed popup window to modal to match app patterns; caught close-propagation between nested modals — evaluates new features against existing interaction patterns
+- **Catches AI errors empirically:** Corrected AI editing an archived file instead of the current profile — "you are looking at an archive, do you know that?"
 
 ### January 30-31, 2026
-- **Documentation accuracy audit (Jan 30):**
-  - Audited all docs against actual codebase — found stale metrics, overstated DI claims, wrong lite version
-  - Updated 13 documentation files to fix drift
-  - Centralized lite version in PROJECT_STATS.md, removed hardcoded values from other docs
-  - Clarified "strict DI" claim: true (zero `|| window.*` fallbacks) but added breakdown (60 diBase / ~13 custom / ~29 pure utilities)
-  - Confirmed 8-second lite fallback exists at `miniCycle.html:2837`
-  - Updated window globals wording: "module code" not "the codebase"
-  - Enhanced `update-version.sh` to auto-count 6 previously manual metrics (test files, lite version, boot file lines, per-directory module counts)
-  - Removed hardcoded counts from FOLDER_STRUCTURE.md tree diagram
-  - Caught and corrected wrong per-directory counts from exploration agents (task:13→12, ui:23→22, testing:10→9) — lesson: verify agent-reported counts with shell commands
-- **Edit task modal bug fix (Jan 31):**
-  - Problem: Input field blank when editing a task — task name not pre-populated
-  - Root cause: `taskCRUD.js:333` used `querySelector("span")` which found the first `<span class="icon">` inside button container (empty SVG wrapper), not the `<span class="task-text">` with the actual task name
-  - Every other location in codebase used `.task-text` selector — this was the only inconsistent one
-  - Fix: Changed `querySelector("span")` → `querySelector(".task-text")` — one line
-- **Close button style consistency:**
-  - Settings, reminders, and recurring panel close buttons all restyled to match menu close button
-  - All now use `--menu-close-bg` / `--menu-close-text` / `--menu-close-hover-bg` theme variables
-  - All flush at bottom of their respective modals with negative margins and matching border-radius
-  - Mobile adjustments added for settings modal's tighter padding
-- **Open Routine modal button improvements:**
-  - Swapped Cancel/Open positions — Cancel left (secondary), Open right (primary)
-  - Open button: blue gradient (app primary color)
-  - Cancel button: dark slate (#2d3748) matching Import button — visually secondary without being invisible
-  - Kept same button sizes
-- **New patterns observed:**
-  - Visual consistency sweeps — fixes one instance, then immediately scans for all others
-  - Fast decision loop on aesthetics — evaluates visual changes instantly, specific feedback each round
-  - Accepts contrary advice, then improves anyway — accepted "don't restyle Open Routine close button," then improved the modal a different way
-- **Developer profile updated:**
-  - Replaced hardcoded test counts with PROJECT_STATS.md references
-  - Added three new behavioral patterns
-  - Added session history
+- **Visual consistency sweeps** — fixes one instance, then immediately scans for all others
+- **Fast decision loop on aesthetics** — evaluates visual changes instantly, specific feedback each round
+- **Accepts contrary advice, then improves anyway** — accepted "don't restyle Open Routine close button," then improved the modal a different way
+- Verified agent-reported counts with shell commands — lesson: don't trust AI-reported metrics without verification
 
 ### January 29, 2026
-- **iOS PWA safe area fix:**
-  - Problem: Logo and app name were positioned in status bar area on iPhone PWA (Dynamic Island coverage)
-  - Multiple iterations to find correct approach:
-    - `@media (display-mode: standalone)` affected all PWAs, not just iOS
-    - Mobile media queries were overriding safe area padding with `top: 0`
-    - Absolute positioning on `.header-branding` meant padding alone didn't fix centering
-  - Solution: JavaScript iOS detection adding `.ios-pwa` class + targeted CSS rules
-  - Final CSS: Container stays at `top: 0` (blur extends to status area), header row gets `padding-top: 59px`, branding gets `top: calc(50% + 27px)` offset
-  - Files modified: `miniCycle.html` (inline detection script + critical CSS), `header.css`, `menu.css`
-  - Documented in HIDDEN_CODEBASE_INSIGHTS.md section 5.7
-- **Service worker caching evaluation:**
-  - Evaluated current implementation (DISABLE_CACHING = true)
-  - Removed orphan `showReloadConfirmation()` function
-  - Attempted enabling caching — caused DI errors for some users ("RecurringPanel missing required deps")
-  - Reverted to disabled caching
-- **Developer reflection session:**
-  - Discussed working style and how AI collaboration sustains solo work
-  - Skill assessment: Senior-level frontend (architecture, testing, production code) with positioning/confidence catching up
-  - Discussed freelancing fears and pricing psychology
-  - Addressed concern about AI usage with clients and proprietary code
-- **New insights added to profile:**
-  - Reflection conversations as sustainability mechanism for solo work
-  - Pricing trap (underpricing despite senior skills)
-  - Unfounded fear of failing clients (evidence: handles production issues without spiraling)
+- **Reflection conversations as sustainability mechanism** — deliberately seeks external perspective through AI to maintain motivation and identify blind spots as a solo developer
+- **Pricing trap identified** — skills are senior-level but likely to underprice freelance work initially
+- **Unfounded fear of failing clients** — evidence: handles production issues (caching revert) without spiraling
 
 ### January 20, 2026
-- **Financial decision-making session: Bankruptcy vs alternatives**
-  - Reviewed complete debt picture: ~$70k unsecured debt, $4,266/month minimums
-  - Credit Karma report: 555 VantageScore, 20 credit cards maxed out
-  - Bank of America FICO: 648 (higher than expected)
-  - Affirm BNPL debt: $8,054 outstanding principal across 15 active loans
-  - Total debt including Affirm: ~$70k (matches lawyer's $60k estimate + BNPL)
-- **Systematic option analysis:**
-  - Explored $60k consolidation loan ($1,480/month) — saves $1,451/month but doesn't eliminate debt
-  - Explored debt settlement — would cost ~$51k total + tax consequences, 2-4 years
-  - Compared to Chapter 7: ~$2k cost, 6 months timeline, $0 debt after discharge
-  - Evaluated credit impact: all options damage credit similarly, bankruptcy fastest to recover
-- **Concerns addressed:**
-  - Late payment harassment: 4 months of creditor calls (manageable with call blocking, filters)
-  - Work perception about stopping overtime: School starting this week provides legitimate cover
-  - Current landlord renewal: Low risk (based on tenancy, not credit checks)
-  - Future apartment rental: Harder but manageable (2-3 years post-discharge)
-  - Home buying: FHA eligible 2 years after discharge (2028), conventional 4 years (2030)
-  - Employment background checks: Low risk for Quality Inspection and dev roles
-  - Apple Card relationship: Can't preserve via preferential payment (90-day lookback rule)
-- **Key decisions made:**
-  - Proceeding with Chapter 7 bankruptcy (lawyer's original recommendation validated)
-  - Using school enrollment (Bachelor's in Computer Engineering Technology) as cover for overtime reduction
-  - Timeline: Stop payments now → reduce overtime → file in 4 months → discharge mid-2026
-- **Strategic pivot: Hybrid freelancing + products approach**
-  - Original plan: Pure product business (Task Cycle, miniCycle)
-  - New plan: Freelancing as primary path (faster to $2-5k/month), products as secondary long-term bet
-  - Freelancing advantages: 2-3 years to $2-5k/month vs 5+ years for products, lower risk, proven market
-  - Products remain valuable: portfolio piece, long-term sovereignty play, skill-building vehicle
-  - Both paths compound: freelance builds skills for products, products demonstrate ability for clients
-- **Self-assessment discussion:**
-  - Asked "am I fooling myself?" about self-employment
-  - Honest odds: 30-40% success rate for $2-5k/month within 5 years (higher end of original 20-35% estimate)
-  - Proven: Can build, can ship, has discipline, has strategic thinking
-  - Unproven: Can sell, can market, can sustain through low-revenue years
-  - Freelancing has higher success odds than pure products (proven market for dev skills)
-- **Timeline updates:**
-  - 2026: Bankruptcy discharge + School + Portfolio building (React, TypeScript, Next.js)
-  - 2027-2028: Part-time freelancing ($500-2k/month) + finish Bachelor's degree
-  - 2028-2029: Full-time freelance ($3-5k/month) or day job + freelance mix
-  - 2029+: Products launch + freelance mix, evaluate which path is working
-- **New patterns observed:**
-  - Does thorough research before major decisions (explored all bankruptcy alternatives systematically)
-  - Questions professional bias (acknowledged lawyer's incentive to recommend bankruptcy)
-  - Asks hard questions about self (success odds, self-employment viability)
-  - Balances emotional attachment with strategy (Apple Card sentiment vs strategic reality)
-  - Acknowledges fears openly (harassment, work perception, landlord, employment)
-  - Pivots strategy when evidence shows better path (added freelancing to product-only plan)
-  - Uses environmental changes strategically (school provides overtime reduction cover)
-  - Explores "what if" scenarios systematically (loan → default on loan → settlement → combinations)
-  - Willing to endure temporary discomfort for long-term gain (4 months harassment for $70k discharge)
-- **Developer profile thoroughly updated** with financial context, hybrid approach, education path, and new behavioral patterns
+- **Does thorough research before major decisions** — explored all bankruptcy alternatives systematically before committing
+- **Questions professional bias** — acknowledged lawyer's financial incentive to recommend bankruptcy
+- **Asks hard questions about self** — "am I fooling myself?" about self-employment odds
+- **Balances emotional attachment with strategy** — Apple Card sentiment vs strategic reality
+- **Pivots strategy when evidence shows better path** — added freelancing to product-only plan immediately when presented with data
+- **Uses environmental changes strategically** — school enrollment provides cover for overtime reduction
+- **Willing to endure temporary discomfort for long-term gain** — 4 months creditor harassment for $70k discharge
 
 ### January 19, 2026
-- **miniCycle Lite focused session:**
-  - Fixed bulk undo issue — added `isBulkOperation` flag so Complete All, Clear Completed, etc. are single undo actions instead of multiple
-  - Fixed Try Full Version redirect bug — was `miniCycle.html` (relative to /lite/), changed to `../miniCycle.html`
-  - Added CSS `env(safe-area-inset-top)` for iPhone dynamic island/notch handling
-  - Made stats panel more compact (width 360px, smaller badges, tighter spacing)
-  - Made footer "miniCycle Lite" clickable, links to product page
-- **Full Lite vs Full version comparison:**
-  - Explored Full version architecture (102 modules, 30+ CSS files, 3-phase boot)
-  - Created detailed feature comparison table
-  - Identified what Full has that Lite intentionally excludes (recurring tasks, multiple routines, drag-drop, theme unlocking, mini-games)
-  - Identified what Lite does well: startup time, predictability, debuggability, maintenance burden
-- **Lite philosophy articulated:**
-  - "Parallel product, not stripped demo" — separate ES5 codebase, not feature-flagged Full
-  - "DO NOT add features" comment is a feature, not limitation
-  - Respects users on older devices — delivers real value, not a crippled preview
-  - Connects to sovereignty principle: build things that deliver value without conditions
-- **AI observations validated against profile:**
-  - Visual bug reporting (screenshots of task reordering corrected AI's wrong assessment)
-  - Questions that verify ("does that context change your rating?", "you think it feels like a complete product huh?")
-  - Corrects both directions (pushed back when AI overstated privacy claim)
-  - Has taste (iterative refinements: 50% → 60% positioning, stats panel sizing)
-- **Code quality discussion:**
-  - Developer asked "is my code easy or difficult to work with?"
-  - Assessment: Easy — section headers with emojis, descriptive function names, consistent patterns, grep-friendly
-  - Challenges: Large file size (38k tokens), some CSS duplication
-- **New pattern observed: "Builds parallel products for inclusion"**
-  - Lite isn't minimum viable — it's maximum viable within constraints
-  - Users on older devices get complete experience, not second-class treatment
-  - Same principle as offline-first: don't make users depend on things they can't control
+- **Builds parallel products for inclusion** — Lite isn't minimum viable, it's maximum viable within constraints. Users on older devices get complete experience, not second-class treatment
+- **Corrects both directions** — pushed back when AI overstated privacy claim
+- **Has taste** — iterative refinements (50% → 60% positioning, stats panel sizing) until it feels right
 
 ### January 17, 2026
-- **Verified architecture claims empirically:**
-  - Confirmed 103 modules (`find modules -name "*.js" | wc -l`)
-  - Confirmed 1,693 tests (`grep -r "test(" tests | wc -l`)
-  - Confirmed 59 modules export `set*Dependencies()` pattern
-  - Confirmed zero `|| window.*` fallbacks
-- **Fixed remaining window.*/document.* handler patterns:**
-  - Found `window._dragBlurHandler`, `document._dragVisibilityHandler`, and similar patterns storing event handlers on global objects
-  - Refactored to store handlers on class instances (`this._handler`) instead
-  - Files fixed: `dragDropManager.js`, `helpWindowManager.js`, `routineSwitcher.js`
-  - Now truly zero custom properties on window/document objects
-- **Architecture milestone updated:** Zero custom `window.*` globals: Dec 2025 → Jan 2026 (completion of final cleanup)
-- **Deep reflection on development journey:**
-  - Reviewed TaskCycle (first JS project, 3,616 lines, chaos)
-  - Reviewed miniCycle monolith (11,758 lines, window.* globals, partial modularization)
-  - Traced progression: chaos → organized globals → strict DI
-  - Identified key insight: the breakthrough wasn't organization, it was discovering DI patterns for module communication
-- **Discussed previous Claude advice:**
-  - Developer revealed that previous Claude conversations discouraged continuing refactoring ("procrastination," "diminishing returns")
-  - Developer trusted own judgment and continued anyway
-  - Evidence proves developer was right: architecture enables fast, safe changes
-  - Lesson: AI advice is input, not authority. Developer's contextual judgment matters more.
-- **Qualified praise discussion:**
-  - AI initially hedged praise with market caveats user didn't ask about
-  - Developer called out the hedging pattern
-  - Identified: AI tendency to add caveats is self-protective, not helpful
-  - Shifted to direct assessment based on verified evidence
-- **Handler fix demonstrated architecture payoff:**
-  - Grep found all instances, consistent naming made them searchable
-  - Same fix pattern applied everywhere
-  - Class structure already in place
-  - Change took minutes, not hours — direct evidence of refactoring ROI
+- **Trusted own judgment over AI advice** — previous Claude conversations discouraged refactoring ("procrastination," "diminishing returns"). Developer continued anyway. Evidence proved developer right: architecture enables fast, safe changes
+- **Called out AI hedging pattern** — AI added market caveats user didn't ask about. Identified: AI tendency to add caveats is self-protective, not helpful
+- **Architecture payoff demonstrated** — handler fix was grep-searchable, same pattern everywhere, class structure in place. Direct evidence of refactoring ROI
 
 ### January 10, 2026
-- **Header restructuring for cleaner architecture**
-  - Problem: Header and mode-selector-wrapper both used `position: fixed` with absolute pixel values. Moving one required manually adjusting the other.
-  - Solution: Created `.fixed-header-container` wrapper that holds both elements. Only the container is `position: fixed`; children flow naturally.
-  - Removed duplicate `.mode-selector-wrapper` styles from `mode-selector.css` that were conflicting with `header.css`
-- **Visual polish pass:**
-  - Removed border lines from header row and mode-selector-wrapper for cleaner look
-  - Adjusted mobile header positioning (768px: top 20px, 480px: top 15px)
-  - Fine-tuned mode-selector-wrapper margin-top to 10px
-- **Moved saving-indicator into fixed-header-container**
-  - Was at bottom of HTML with fixed positioning
-  - Now flows naturally below mode-selector-wrapper within the container
-  - Updated CSS to remove fixed positioning, use natural flow
-- **Debugging lesson:**
-  - CSS changes weren't applying — turned out to be mobile view, not caching
-  - Developer caught this faster than AI did
-- **New pattern observed: "Restructures before patching"**
-  - When pixel offsets weren't working cleanly, pushed for the wrapper solution rather than accumulating more hacky top values
-  - Prefers solving underlying structure over workarounds
-- **Profile read and validated:**
-  - Developer asked AI to read DEVELOPER_PROFILE.md
-  - Patterns confirmed: visual bug reporting, pragmatic pivoting, has taste, terse communication
-  - New observation added: "Teaches the tool about itself" — uses profile document to train AI continuity across sessions
+- **Restructures before patching** — when pixel offsets weren't working cleanly, pushed for wrapper solution rather than accumulating more workarounds
+- **Teaches the tool about itself** — uses profile document to train AI continuity across sessions
 
 ### January 5, 2026
-- **Fixed undo system not clearing on cycle switch**
-  - Problem: localStorage cache and AppGlobalState didn't clear when switching routines. Cache showed old routine's cycleId after switching.
-  - Root cause 1: `onCycleSwitched` was setting active ID before clearing, causing mixed-cycle data
-  - Root cause 2: `onCycleSwitched` wasn't being called at all due to cross-phase dependency issue
-  - Fix 1: Rewrote `onCycleSwitched` to clear everything FIRST (undo stack, redo stack, activeCycleIdForUndo, localStorage cache), then load from IndexedDB, then validate, THEN populate stacks
-  - Fix 2: Added lazy getters in `moduleLoader.js` for `onCycleSwitched`, `onCycleDeleted`, `onCycleRenamed` to resolve at runtime (not initialization)
-  - Added `validateSnapshot()` and `filterValidSnapshots()` functions to filter out wrong-cycleId or malformed snapshots
-  - Added `skipCache` option to `saveUndoStackToIndexedDB()` to prevent old cycle data from polluting cache during transition
-- **Cross-phase dependency pattern documented:**
-  - `routineSwitcher` loads in PHASES.CYCLE (5), `undoRedoManager` loads in PHASES.UI_MANAGERS (6)
-  - Lazy getters: `onCycleSwitched: (...args) => deps.ui?.onCycleSwitched?.(...args)`
-  - This allows phase 5 modules to call phase 6 functions after both have loaded
-- **Developer caught that fix wasn't executing:**
-  - After first fix (logic inside `onCycleSwitched`), developer tested and showed screenshot proving cache still had old routine
-  - This revealed the function wasn't being called at all — led to discovering the phase ordering issue
-  - Pattern: Tests fixes empirically rather than trusting code review
-- **Meta-process question:**
-  - Developer asked "so reading the documentation at first didn't help catch the lazy getters?"
-  - This identified a documentation gap — original docs didn't cover module loading integration
-  - Led to adding cross-phase dependency section to UNDO_REDO_ARCHITECTURE.md
-- **Documentation updated:**
-  - UNDO_REDO_ARCHITECTURE.md: Added Snapshot Validation section, updated Cycle Switching flow, added cross-phase dependency explanation, expanded Common Issues
-- **AI observations validated against profile:**
-  - Developer asked "does it match my developer profile?"
-  - AI observations aligned with documented patterns: visual bug reporting, architectural thinking, teaches through questions, trusts evidence over authority
-  - AI missed deeper context: sovereignty drive, QA background connection, craft over revenue motivation
-
-### January 4, 2026 (Continued)
-- **Fixed IndexedDB records being deleted mid-test**
-  - Problem: `preTestBackup` and `testModeActive` records disappeared while tests were running (24/53 modules)
-  - Root cause: When tests import `appState.js`, it initializes and sees `testModeActive=true`. It then "restores" the backup thinking tests were interrupted, and calls `clearTestModeAndBackup()` which deletes both records — mid-test.
-  - Initial fix: Added iframe detection in `appState.js` to skip restoration logic
-  - **Better fix (architectural refactor):** Developer questioned why appState needed iframe detection at all
-    - Moved test recovery logic from `appState.js` to `coreBoot.js`
-    - Recovery now runs FIRST, before any modules load
-    - `appState.js` just loads from localStorage (already restored if needed)
-    - No iframe detection needed for restoration — only for save-skipping during active tests
-  - This is cleaner: interrupted tests = app opening finds flag = restore. Active tests = appState imported in iframe = no restoration logic runs at all
-- **Single source of truth principle reinforced:**
-  - Developer explicitly rejected localStorage fallbacks: "remove the fallback it shouldn't be a fallback"
-  - IndexedDB is THE authority for test mode state — no redundant systems
-- **Developer challenged AI assumptions:**
-  - AI listed negatives including "no dependency map" and "no planning documentation" and "no tests for testing modal"
-  - Developer pushed back: "look at the documentation there is a dependency map, and look at future works documentation"
-  - AI verified: `docs/architecture/DEPENDENCY_MAP.md`, `docs/future-work/` folder, and `tests/testingModal.tests.js` all exist
-  - Lesson: AI should verify before criticizing
-- **Developer defends architectural choices:**
-  - AI suggested `window.__debug` shortcut for debugging convenience
-  - Developer rejected: "i don't consider shortcuts a better solution if it saves time"
-  - Principle: Long-term maintainability > short-term convenience
-- **Verifies understanding through paraphrasing:**
-  - Multiple times restated concepts: "oh so it checks if appstate is running through an embedded window and if so it stops from restoring"
-  - Catches misunderstandings immediately rather than letting them compound
+- **Tests fixes empirically** — showed screenshot proving cache still had old routine data after "fix" was applied, revealing the function wasn't being called at all
+- **Meta-process questions** — "did the documentation help catch this?" identifies gaps in process/docs, not just current fix
+- AI matched documented patterns but missed deeper context: sovereignty drive, QA background connection, craft over revenue motivation
 
 ### January 4, 2026
-- **Fixed test data persisting after automated tests**
-  - Problem: After tests completed, "cycle-main" test data remained instead of user's real data
-  - Root cause identified by developer: Debouncing race condition — localStorage restored correctly, but MiniCycleState in memory still had test data. Next debounced save would overwrite restored backup.
-  - Fix: Added `AppState.reload()` after test completion to sync in-memory state with restored localStorage
-- **Consolidated test mode flags:**
-  - Developer requested using existing `__miniCycle_testModeActive__` localStorage flag instead of new `window.__TEST_MODE_NO_RELOAD__`
-  - Updated appState.js, testing-modal-integration.js, and module-test-suite.html to use single flag system
-  - Maintains zero-globals architecture
-- **Debugging approach demonstrated:**
-  - Developer found way to inspect MiniCycleState without window globals: versioned dynamic import
-  - `import('/modules/core/appState.js?v=1.672').then(m => console.log(m.getStateManager().get()))`
-  - AI kept suggesting window._debug; developer kept pushing for proper solution
-- **Key contributions by developer:**
-  - Identified debouncing as root cause
-  - Proposed using existing IndexedDB flags instead of new window variables
-  - Found versioned dynamic import solution for debugging
-  - Designed the flag system and restoration timing logic
-- **AI self-assessment requested:**
-  - Developer asked "how much of figuring that out was you vs me?"
-  - Honest answer: ~70% developer, ~30% AI
-  - Developer corrected AI when it over-attributed (90-95% → 70-80%)
-- **Profile accuracy verified:**
-  - Developer asked AI to review DEVELOPER_PROFILE.md against session behavior
-  - All patterns confirmed accurate; new observations added
-- Test count: 1,576/1,580 passing (4 failures in State and Backup Manager modules)
+- **Drives architectural refactors** — questioned why appState needed iframe detection, leading to cleaner separation of concerns
+- **Single source of truth principle** — "remove the fallback it shouldn't be a fallback"
+- **Challenged AI assumptions with evidence** — AI claimed "no dependency map," developer pointed to existing docs. Lesson: AI should verify before criticizing
+- **Defends architectural choices** — rejected `window.__debug` shortcut: "i don't consider shortcuts a better solution if it saves time"
+- **Corrects AI over-attribution** — when AI said 90-95% developer contribution, corrected to 70-80%. Accuracy matters more than ego
+- **Verifies understanding through paraphrasing** — restates concepts to catch misunderstandings immediately
 
 ### January 3, 2026
-- **Fixed "Run All Tests" button in testing modal**
-  - Problem: Old TEST_MODULES config was outdated (11 modules vs 53+ actual), causing 304/365 mismatch
-  - User proposed third option: open Test Suite Browser with autorun, pipe results back to modal
-  - Simplified testing-modal-integration.js from 564 to ~320 lines
-- **Cross-tab communication pattern:**
-  - postMessage for immediate results
-  - IndexedDB backup for modal close/reopen scenarios
-  - Auto-open modal with results on page reload
-- **Data architecture principle demonstrated:**
-  - User corrected: "if you're going to do this store it in indexdb not local storage"
-  - Principle: localStorage = persistent app data, IndexedDB = transient/ephemeral data
-  - Added to understanding of technical preferences
-- **Data integrity during tests:**
-  - Added AppState.forceSave() before opening test browser
-  - Test Suite Browser reloads opener after restoring localStorage
-  - Ensures active cycle state is captured
-- **AI-assisted confirmed:** User asked directly "would you say that you ai is creating my app or ai assisted be honest" - confirmed AI-assisted, user agreed
-- **Pragmatic pivoting observed:** Rejected two options (update config vs remove button) in favor of better third option
-- Test count: 1,610 tests (Test Suite Browser)
+- **Pragmatic pivoting** — rejected two options (update config vs remove button) in favor of better third option
+- **Data architecture principle** — "if you're going to do this store it in indexdb not local storage." localStorage = persistent, IndexedDB = transient
+- **AI-assisted confirmed honestly** — asked directly, agreed with assessment. Not defensive about using tools
 
 ### December 26, 2025
-- **Comprehensive code review** of miniCycle — rated 8.8/10 overall
-  - Architecture: 9.5/10, DI: 9.5/10, Security: 9/10, Testing: 9/10
-  - Created COMPREHENSIVE_CODE_REVIEW_DEC_2025.md and HIDDEN_CODEBASE_INSIGHTS.md
-- **Deep developer profile analysis** — traced patterns back to 2008 college code
-  - Read CET124 C programs from Fall 2008 (first semester of programming)
-  - Discovered: version numbers, iteration, features beyond requirements, personal touches (birthday as password) — all present 17 years ago
-  - Same patterns visible in miniCycle today
-- **Reviewed full project history:**
-  - TaskCycle (first JS): 3,551 lines, 40+ features, monolithic
-  - miniCycle pre-split: 11,758 lines, window.* globals, emerging patterns
-  - miniCycle current: 44,200 lines, 103 modules, enterprise-grade DI
-  - MasterMath: Adapted Base44 scaffold with custom solver logic
-- **Spreadsheet tools reviewed** (installed openpyxl to read xlsx files):
-  - Budget.xlsx: Personal finance model with income projections, tax breakdown, debt tracking, goal timelines
-  - true position.xlsx: GD&T calculator for quality inspection work
-  - MiniCycle_Spreadsheet_Template: Spreadsheet version with Apps Script/VBA auto-reset
-  - **Key insight:** Was building automated systems before JavaScript — same instincts, different medium
-- **Resume reviewed** (installed python-docx to read docx files):
-  - Revealed formal tech background: Associate's in Computer Engineering Technology, A+ cert, IT experience
-  - QuEST Global aerospace engineering role (2011-2016) — worked with Boeing/Airbus/Sikorsky
-  - Professional Excel automation predates personal spreadsheets (cost avoidance award in 2011-2016)
-- **The QuEST layoff story:**
-  - Got laid off in 2016 from aerospace engineering role
-  - Response: "master inspection so I won't be in need of a job again"
-  - Quality inspector role is strategic security, not a step down
-- **Sovereignty drive identified:**
-  - Goal isn't money or tech — it's eliminating everything that can force their hand
-  - Employer dependency → mastered trade
-  - Debt dependency → filing bankruptcy (pragmatic reset, learning lessons)
-  - Income dependency → building products
-- **"No boss, not a better boss"** — explicitly confirmed: doesn't want to work for any employer, even in tech. A dev job would be a different boss, not freedom.
-- **Odds of success discussed:**
-  - Estimated 20-35% odds for $2-5k/month within 5 years
-  - Higher than base rate due to discipline, shipping history, sustainable approach
-  - Key risk: building skills proven, selling skills unknown
-- **Portfolio strategy clarified:** Not all eggs in Task Cycle. Multiple products, diversified bets.
-- **sparkinCreations business context:**
-  - miniCycle = free flagship
-  - Task Cycle = planned paid product ($29-39)
-  - Task Cycle Pro = planned subscription (cloud sync)
-  - Goal: $2-5k/month → full-time indie developer
-- **Updated business plan** (SparkinCreations_BusinessPlan_v2.txt)
-- **Key insight:** Logo flash feedback is intentional micro-interaction design, not decoration. MJ pushed back correctly when it was dismissed as "gimmicky"
-- **Personal context:** Quality inspector making ~$96k/year, building products on nights/weekends, goal is work-from-home autonomy
+- **Patterns traced to 2008** — version numbers, iteration, features beyond requirements, personal touches — all present in first college C programs 17 years ago
+- **Was building automated systems before JavaScript** — spreadsheet tools with formulas, automation, documentation
+- **Sovereignty drive identified** — goal isn't money or tech, it's eliminating everything that can force their hand
+- **"No boss, not a better boss"** — a dev job would be a different boss, not freedom
+- **Logo flash is intentional** — pushed back correctly when dismissed as "gimmicky." Micro-interaction design, not decoration
 
 ### December 25, 2025
-- **Completed recurringCore.js split** (7 new modules)
-  - recurringScheduler.js, recurringActivation.js, recurringDeletion.js, recurringWatcher.js, recurringCycleHandler.js, recurringCatchup.js, recurringNormalization.js
-- **Fixed three integration bugs:**
-  - Proxy spreading in notifications.js - `{...proxy}` returns empty object
-  - 9 missing `.get()` calls in recurringPanel.js - AppState manager vs state data
-  - Missing DI injection for `openRecurringSettingsPanelForTask`
-- **Added defensive error checking:**
-  - `createDepsProxy()` warns when DI proxy is spread
-  - `createValidatedAppStateProxy()` warns when state properties accessed on manager
-  - `validateCriticalDIWiring()` in featureBoot.js checks post-boot
-- **Key lesson:** Pattern matching can override explicit instructions (version params ignored during refactor)
+- **Key lesson:** Pattern matching can override explicit instructions — AI ignored version params during refactor despite being told to preserve them
 
 ### December 21, 2025
-- **Completed `cycle/` → `routine/` folder refactor**
-  - Renamed folder: `modules/cycle/` → `modules/routine/`
-  - Renamed classes: CycleManager → RoutineManager, CycleSwitcher → RoutineSwitcher
-  - Updated all imports, test files, and 15+ documentation files
-- **Fixed silent error handling in `taskCore.js`**
-  - `handleTaskCompletionChange` and `saveCurrentTaskOrder` now show user notifications on failure
-  - Previously only logged to console (users had no feedback)
-- **Fixed delete-when-complete button not syncing on mode switch**
-  - Root cause: `refreshTaskButtonsForModeChange()` recreated buttons without syncing visual state
-  - Fix: Added `syncAllTasksWithMode()` call after button refresh
-- **Architecture review: 9.35/10** (9.7/10 with sustainability context)
-  - Recognized constraints: vanilla JS, no build, offline-first, no server
-  - Security audit confirmed: `.mcyc` imports sanitized via `sanitizeImportedData()`
-- **New insight: "Can't Enshittify" Architecture**
-  - No server dependency, no external services, no accounts, no tracking
-  - User data stays local - even developer can't access it
-  - App can be useful indefinitely without maintenance
-  - Distribution model immune to platform decay (PWA + GitHub)
-- Test count now 1,623 (up from 1,458 in Dec 14 session)
+- **"Can't Enshittify" architecture** — no server, no accounts, no tracking. App useful indefinitely without maintenance. Distribution immune to platform decay
 
 ### December 14, 2025
-- **Major window.* pollution cleanup in orchestrator.js**
-  - Removed: `window.AppInit`, `window.addTaskFunction`, `window.BackupManager`
-  - Removed: 8 testing modal window.* writes (kept only `closeStorageViewer` for HTML onclick)
-  - BackupManager now stored in `deps.storage.BackupManager` instead of window.*
-  - Window.* count in orchestrator.js reduced from ~42 to 4 intentional uses
-- **Only 2 intentional window.* exposures remain:**
-  - `window.AppBootStarted` - Required for HTML fallback detection
-  - `window.closeStorageViewer` - Required for HTML onclick handler
-- Updated all reads to use `deps` container or `appContext` getters
-- **Developer insights captured:**
-  - Teaches through questions, not statements (challenges assumptions to verify them)
-  - Doing architectural cleanup on side project after 11 months - ownership mentality
-  - Low tolerance for vestigial code - dead code isn't neutral, it's friction
-  - Builds systems that make mistakes harder (DI patterns, guardrails over carefulness)
-  - Uses insight requests as calibration - checking if AI understands the system
+- **Teaches through questions** — challenges assumptions to verify them
+- **Ownership mentality** — architectural cleanup on side project after 11 months
+- **Low tolerance for vestigial code** — dead code isn't neutral, it's friction
+- **Builds systems that make mistakes harder** — DI patterns, guardrails over carefulness
 
 ### December 13, 2025
-- Fixed navigation dots hover issue (giant red circle on hover)
-- Fixed center-click issue on dots (pointer-events on visually-hidden)
-- Added subtle pill background around navigation dots
-- Pivoted to pill-toggle navigation (click anywhere on pill to switch views)
-- Fixed tooltips after pointer-events changes
-- Added `--auto` flag to version script for unattended version bumps
-- Deep discussion on patience, problem-solving mindset, and what sustains 11 months of solo work
-- Updated developer profile with new insights
-- **Fixed iOS native drag preview missing** - `deps.utils.isTouchDevice` wasn't wired up, causing `setDragImage(transparentPixel)` to run on mobile and hide iOS's native drag preview. Fix: inline touch detection (`'ontouchstart' in window || navigator.maxTouchPoints > 0`)
-- **Lesson learned**: For critical device-specific checks, inline detection > dependency injection. DI can fail if not wired up correctly; inline checks always work.
+- Deep discussion on patience, problem-solving mindset, and what sustains 11+ months of solo work
+- **Lesson:** For critical device-specific checks, inline detection > dependency injection. DI can fail if not wired up; inline checks always work
 
 ### December 9, 2025
-- Fixed DI timing issues (gamesManager, onboardingManager)
-- Added timeout safety to `waitForCore()` (10s) and `waitForApp()` (15s)
-- Updated APPINIT_SYSTEM.md with timeout documentation
-- Deep dive into recurring system, undo system, drag-drop, testing, product page
 - Created this developer profile
 
 ---

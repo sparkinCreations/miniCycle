@@ -366,6 +366,33 @@ liveTask.deleteWhenComplete = currentMode === 'todo';
 2. After making a fix, refresh the page to verify the change persists. If it reverts on refresh, you fixed the DOM but not the state
 3. Compare your code path against the working equivalent. If another function does the same operation correctly, diff the two and look for missing state mutations
 
+### Pitfall 6: Bare Import Creating a Dual Module Instance
+
+**What happened:** `settingsUIManager.js` used a bare static import for debug functions:
+
+```javascript
+// settingsUIManager.js — WRONG
+import { enableDebug, disableDebug, isDebug } from '../utils/debugMode.js';
+```
+
+Meanwhile, the rest of the app loaded the same module via versioned dynamic import:
+
+```javascript
+// orchestrator.js
+const debugMod = await import(`../utils/debugMode.js?v=${APP_VERSION}`);
+```
+
+The browser treats `debugMode.js` and `debugMode.js?v=1.894` as **different module URLs**, creating two separate module instances with separate state. The orchestrator wired AppState into the versioned instance, but `settingsUIManager` called `enableDebug()` / `isDebug()` on the bare instance — which had no AppState wired and silently discarded all changes.
+
+**Result:** The debug toggle appeared to work (UI updated), but the state change never persisted because `setDebugInState()` inside the bare instance had a null `_AppState` and returned early.
+
+**The fix:** Thread `enableDebug`, `disableDebug`, and `isDebug` from the versioned instance through the DI chain (orchestrator → moduleLoader `depMappings` → settingsManager → settingsUIManager), and remove the bare static import entirely.
+
+**How to avoid:**
+1. Never use bare static imports for modules that are also loaded via versioned dynamic imports (`?v=${version}`)
+2. If a module has state that's wired via DI (like `debugMode.js` with its `_AppState`), always access its functions through the DI chain — not through a direct import
+3. When debugging a "function runs but nothing happens" issue, check whether the module has two instances by logging `import.meta.url` or checking if the DI-wired state is null
+
 ---
 
 ## Quick Reference Checklist

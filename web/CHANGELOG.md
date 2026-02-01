@@ -1,3 +1,7 @@
+## [1.903] - 2026-02-01
+- feat: update version to 1.902 across all relevant files and changelog
+
+
 ## [1.902] - 2026-02-01
 - feat: add error handling for JSON parsing in backup and import processes, and sanitize task options and reminders
 - feat: enhance overlay close behavior in RoutineSwitcher to prevent unintended closures
