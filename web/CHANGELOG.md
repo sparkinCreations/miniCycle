@@ -1,3 +1,7 @@
+## [1.896] - 2026-02-01
+- chore: update version to 1.895 across all relevant files and documentation
+
+
 ## [1.895] - 2026-01-31
 - feat: add destructive confirmation option for delete actions in modals and notifications
 - feat: update task names and add deleteWhenComplete settings in example routines

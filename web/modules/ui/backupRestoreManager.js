@@ -388,7 +388,11 @@ export function setupFactoryResetButton() {
                 "miniCycleAlwaysShowRecurring",
                 "miniCycle_console_logs",
                 "miniCycle_console_capture_start",
-                "miniCycle_console_capture_enabled"
+                "miniCycle_console_capture_enabled",
+                // Keys not caught by dynamic "minicycle"/"taskcycle" pattern match
+                "lastCompletionCheck",
+                "sw-migration-v1327-done",
+                "__t"
             ];
             legacyKeysToRemove.forEach(key => localStorage.removeItem(key));
 
@@ -467,6 +471,35 @@ export function setupFactoryResetButton() {
             }
         } catch (e) {
             console.warn('Cache cleanup failed:', e);
+        }
+
+        // IndexedDB cleanup
+        try {
+            if (typeof indexedDB !== 'undefined') {
+                const idbDatabases = [
+                    'miniCycle_backups',
+                    'miniCycleUndoHistory',
+                    'miniCycleBackgroundDB',
+                    'miniCycleTestResultsDB'
+                ];
+                await Promise.allSettled(
+                    idbDatabases.map(dbName => {
+                        console.log('Deleting IndexedDB:', dbName);
+                        return new Promise((resolve, reject) => {
+                            const req = indexedDB.deleteDatabase(dbName);
+                            req.onsuccess = () => resolve();
+                            req.onerror = () => reject(req.error);
+                            req.onblocked = () => {
+                                console.warn(`IndexedDB ${dbName} delete blocked (connections still open)`);
+                                resolve();
+                            };
+                        });
+                    })
+                );
+                console.log('IndexedDB cleanup complete');
+            }
+        } catch (e) {
+            console.warn('IndexedDB cleanup failed:', e);
         }
 
         _deps.showNotification?.("Factory Reset Complete. Reloading...", "success", 2000);

@@ -673,6 +673,11 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         safeAddEventListenerById: GlobalUtils?.safeAddEventListenerById,
         isTouchDevice: deps.utils?.isTouchDevice,
 
+        // Debug mode (from versioned debugMode via deps.utils)
+        enableDebug: (...args) => deps.utils?.enableDebug?.(...args),
+        disableDebug: (...args) => deps.utils?.disableDebug?.(...args),
+        isDebug: () => deps.utils?.isDebug?.(),
+
         // Constants
         DEFAULT_TASK_OPTION_BUTTONS: deps.utils?.DEFAULT_TASK_OPTION_BUTTONS,
 
