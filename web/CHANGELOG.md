@@ -1,3 +1,8 @@
+## [1.897] - 2026-02-01
+- chore: update version to 1.896 across all relevant files and documentation
+- feat: implement debug mode functions and cleanup for IndexedDB in backup and settings managers
+
+
 ## [1.896] - 2026-02-01
 - chore: update version to 1.895 across all relevant files and documentation
 

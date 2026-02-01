@@ -364,7 +364,7 @@ export function setupDragDropImport() {
  * Process imported cycle data
  * @param {string} fileContent - Raw file content
  */
-function processImportedData(fileContent) {
+export function processImportedData(fileContent) {
     const importedData = JSON.parse(fileContent);
 
     if (!importedData.name || !Array.isArray(importedData.tasks)) {

@@ -479,6 +479,25 @@ async function runBootSequence() {
     window.__miniCycleBootSuccess();
   }
 
+  // PWA File Handling: open .mcyc files from desktop
+  if ('launchQueue' in window) {
+    window.launchQueue.setConsumer(async (launchParams) => {
+      if (!launchParams.files?.length) return;
+      try {
+        const fileHandle = launchParams.files[0];
+        const file = await fileHandle.getFile();
+        if (!file.name.endsWith('.mcyc')) return;
+        const content = await file.text();
+        const { processImportedData } = await import(
+          `../ui/cycleImportManager.js?v=${APP_VERSION}`
+        );
+        processImportedData(content);
+      } catch (e) {
+        console.error('File handling failed:', e);
+      }
+    });
+  }
+
   return true;
 }
 
