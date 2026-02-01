@@ -1,3 +1,7 @@
+## [1.892] - 2026-01-31
+- feat: add comprehensive guide for making code changes and dependency management
+
+
 ## [1.891] - 2026-01-31
 - feat: add refreshUIFromState functionality and deleteWhenComplete settings for recurring tasks
 
