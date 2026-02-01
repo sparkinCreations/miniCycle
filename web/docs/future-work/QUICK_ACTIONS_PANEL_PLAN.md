@@ -1,8 +1,9 @@
 # Quick Actions Panel Plan
 
-**Status:** Planned
+**Status:** Implemented (Phase 1 — 5 actions)
 **Priority:** Medium
 **Breaking Changes:** No
+**Implemented:** 2026-02-01
 
 ---
 
@@ -498,12 +499,56 @@ Similar to how `helpWindowManager.js` has `updateSideLayout()` that dynamically 
 
 ---
 
-## Open Questions
+## Open Questions (Resolved)
 
-1. **Breakpoint for desktop panel** — 1024px or 1280px? The compact design helps but needs visual testing.
-2. **Slot count** — 5 slots as sketched? Could be 4 or 6 depending on panel width at various breakpoints.
-3. **Minimum use threshold for Frequently Used** — 3 uses? 5 uses? Lower fills faster but may show noise.
-4. **Empty auto views** — When Recently Used or Frequently Used have no data, show placeholder text or skip to next view with data?
-5. **Schema version** — Adding `quickActions` to settings is additive and optional (missing = empty). Probably no schema bump needed.
-6. **"x" remove visibility on desktop** — Always visible on filled slots, or only on hover? Hover-only is cleaner but less discoverable.
-7. **Action picker modal style** — Reuse existing modal patterns (`.modal-overlay` + centered content) or use the mini-modal pattern?
+1. **Breakpoint for desktop panel** — 1024px. Panel uses responsive multi-row layouts: 2 columns at 1024-1149px, 3 columns at 1150-1449px, full 5-column row at 1450px+.
+2. **Slot count** — 5 slots as planned.
+3. **Minimum use threshold for Frequently Used** — 3 uses.
+4. **Empty auto views** — Shows placeholder text ("No recent actions" / "No frequent actions yet").
+5. **Schema version** — No bump needed. Additive field with graceful fallback in `_ensureData()`.
+6. **"x" remove visibility on desktop** — Hover-only (opacity transition).
+7. **Action picker modal style** — Custom modal using CSS Grid centered overlay with grouped action buttons.
+
+---
+
+## Implementation Notes (Phase 1)
+
+### What Was Built
+- **5 actions:** Stats, Open Routine, Recurring, Reminders, Settings
+- **Module:** `modules/ui/quickActionsManager.js` (~767 lines, DI-pure using `createDIModule`)
+- **CSS:** `styles/components/quick-actions.css` with responsive breakpoints
+- **Desktop panel:** Inside `#task-view`, positioned left via `right: calc(100% + 25px)`
+- **Mobile menu row:** Non-collapsible top row in `.menu-sections`
+- **Action picker:** CSS Grid centered overlay with grouped sections
+- **Inline SVGs:** Both stroke-based (stats) and fill-based (folder-open, repeat, bell, cog) icons
+- **Action tracking:** `trackAction()` calls added to menuManager, recurringPanel, reminders, settingsUIManager, statsPanel
+- **Slide arrows:** Repositioned to screen edges (`#slide-left: right: 2%`, `#slide-right: left: 2%`)
+- **Z-index fix:** `#task-view` and `#stats-panel` bumped to z-index: 3 (above slide arrows at z-index: 2)
+
+### Key Design Decisions
+- **Action execution uses `setTimeout(…, 0)`** to defer modal opening — prevents click-outside handlers from immediately closing the modal
+- **Open Routine and Settings actions programmatically click** `#routine-switcher-btn` and `#open-settings` buttons rather than going through the DI chain — reuses existing handlers reliably
+- **SVG icon CSS does not force `fill`/`stroke`** — each SVG's inline attributes handle its own paint style, supporting both stroke-based and fill-based icons
+- **Mobile menu row uses dark text colors** for contrast against the light menu background (not `!important` overrides)
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `modules/ui/quickActionsManager.js` | New module (created) |
+| `styles/components/quick-actions.css` | New stylesheet (created) |
+| `miniCycle.html` | Added desktop panel HTML + mobile menu row HTML |
+| `styles/main.css` | Added CSS import |
+| `styles/layout/app-container.css` | Bumped task-view/stats-panel z-index to 3 |
+| `styles/components/menu.css` | Repositioned slide arrows to screen edges |
+| `modules/boot/moduleManifests.js` | Added quickActionsManager manifest |
+| `modules/boot/moduleLoader.js` | Added dep mappings, fixed recurringPanel proxy path |
+| `modules/boot/featureBoot.js` | Registered trackAction in UI API |
+| `modules/ui/menuManager.js` | Added trackAction to open-routine handler |
+| `modules/recurring/recurringPanel.js` | Added trackAction('recurring') |
+| `modules/features/reminders.js` | Added trackAction('reminders') |
+| `modules/ui/settingsUIManager.js` | Added trackAction('settings') |
+| `modules/features/statsPanel.js` | Added trackAction('stats') |
+
+### Future Phases
+- Phase 2: Expand ACTION_REGISTRY with remaining menu actions (new-routine, download, import, duplicate, uncheck-all, delete-all, themes, games, manual, feedback, personalization)
+- Phase 3: Visibility toggle logic (hide panel when no data, share hysteresis with helpWindowManager)

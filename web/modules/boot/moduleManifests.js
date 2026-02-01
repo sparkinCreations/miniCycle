@@ -394,6 +394,16 @@ export const MODULE_MANIFESTS = {
         after: ['taskDOM']
     },
 
+    quickActionsManager: {
+        path: '../ui/quickActionsManager.js',
+        phase: PHASES.UI_MANAGERS,
+        requires: ['appInit', 'AppState', 'showNotification'],
+        provides: ['trackAction'],
+        provideInstance: 'quickActionsManager',
+        api: 'ui',
+        after: ['menuManager', 'statsPanel']
+    },
+
     helpWindowManager: {
         path: '../ui/helpWindowManager.js',
         phase: PHASES.UI_MANAGERS,

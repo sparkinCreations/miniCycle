@@ -1010,6 +1010,7 @@ export class MiniCycleReminders {
         }
 
         this.deps.safeAddEventListener(openBtn, "click", () => {
+            _deps.trackAction?.('reminders');
             console.log('🔔 Opening reminders modal (Schema 2.5 only)...');
 
             // Load current settings from Schema 2.5 before opening

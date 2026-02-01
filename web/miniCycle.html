@@ -1253,6 +1253,15 @@ window.installApp = () => {
 
             <!--Main Menu-->
         <div class="menu-sections">
+            <!-- Quick Actions Menu Row (mobile) -->
+            <div class="menu-section quick-actions-menu-row" data-section="quick-actions">
+                <div class="quick-actions-header">
+                    <button class="quick-actions-nav quick-actions-prev">&#x25C0;</button>
+                    <span class="quick-actions-title">Quick Actions</span>
+                    <button class="quick-actions-nav quick-actions-next">&#x25B6;</button>
+                </div>
+                <div class="quick-actions-slots" id="quick-actions-menu-slots"></div>
+            </div>
             <!-- Routines Section -->
             <div class="menu-section collapsed" data-section="routines">
                 <div class="menu-section-header collapsible" data-toggle="routines">
@@ -2633,6 +2642,15 @@ window.installApp = () => {
     <div id="complete-all-and-help-window-container" class="complete-all-and-help-window-container">
         <!-- Complete All Button -->
   <button id="completeAll" class="complete-all-btn" title="Complete all checked tasks">Complete</button>
+    </div>
+    <!-- Quick Actions Panel - Inside task-view, positioned to left on desktop -->
+    <div id="quick-actions-window" class="quick-actions-window">
+        <div class="quick-actions-header">
+            <button class="quick-actions-nav quick-actions-prev" title="Previous view">&#x25C0;</button>
+            <span class="quick-actions-title">Quick Actions</span>
+            <button class="quick-actions-nav quick-actions-next" title="Next view">&#x25B6;</button>
+        </div>
+        <div class="quick-actions-slots" id="quick-actions-slots"></div>
     </div>
     <!-- Help Window - Inside task-view, positioned to right on desktop -->
     <div id="help-window" class="help-window">

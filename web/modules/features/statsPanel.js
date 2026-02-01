@@ -378,7 +378,10 @@ export class StatsPanelManager {
             handleNavPillClick: this.handleNavPillClick.bind(this),
             // UI event handlers
             handleSlideLeftClick: () => this.showTaskView(),
-            handleSlideRightClick: () => this.showStatsPanel(),
+            handleSlideRightClick: () => {
+                _deps.trackAction?.('stats');
+                this.showStatsPanel();
+            },
             // Theme event handlers
             handleCurrentRoutineToggle: () => this.handleCurrentRoutineToggle(),
             handleThemeToggleClick: () => this.handleThemeToggleClick(),

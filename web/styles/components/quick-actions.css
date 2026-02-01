@@ -1,0 +1,481 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Quick Actions Panel
+   Desktop: positioned to the left of task-view (mirrors help window on right)
+   Mobile: hidden from main view, shown as top row in menu
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   BASE STYLES (shared between desktop panel and mobile menu row)
+   ============================================================================= */
+
+.quick-actions-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.quick-actions-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    white-space: nowrap;
+    min-width: 100px;
+    text-align: center;
+}
+
+.quick-actions-nav {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+    line-height: 1;
+}
+
+.quick-actions-nav:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.quick-actions-nav:active {
+    transform: scale(0.95);
+}
+
+.quick-actions-slots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+/* =============================================================================
+   SLOT STYLES (individual action buttons and empty placeholders)
+   ============================================================================= */
+
+.quick-actions-slot {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease;
+    position: relative;
+    border: none;
+    padding: 0;
+    font-size: 18px;
+    line-height: 1;
+}
+
+/* Filled action slot */
+.quick-actions-slot.filled {
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.quick-actions-slot.filled:hover {
+    background: rgba(255, 255, 255, 0.22);
+    transform: scale(1.08);
+}
+
+.quick-actions-slot.filled:active {
+    transform: scale(0.95);
+}
+
+/* Empty "+" placeholder slot */
+.quick-actions-slot.empty {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.35);
+    border: 1.5px dashed rgba(255, 255, 255, 0.2);
+    font-size: 20px;
+    font-weight: 300;
+}
+
+.quick-actions-slot.empty:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* Slot icon (SVG or emoji) */
+.quick-actions-slot .slot-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.quick-actions-slot .slot-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Remove badge ("x" button on filled slots) */
+.quick-actions-slot .remove-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    font-size: 10px;
+    line-height: 16px;
+    text-align: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    border: none;
+    padding: 0;
+    pointer-events: none;
+}
+
+.quick-actions-slot.filled:hover .remove-badge {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* Empty view message */
+.quick-actions-empty-msg {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.45);
+    text-align: center;
+    padding: 8px 4px;
+    white-space: nowrap;
+}
+
+/* =============================================================================
+   DESKTOP PANEL (1024px+)
+   Positioned to the left of #task-view, vertically centered
+   ============================================================================= */
+
+.quick-actions-window {
+    display: none; /* Hidden by default, shown on desktop */
+}
+
+@media (min-width: 1024px) {
+    .quick-actions-window {
+        display: block;
+        position: absolute;
+        right: calc(100% + 25px);
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        box-shadow:
+            0 4px 15px rgba(0, 0, 0, 0.08),
+            inset 0 1px 1px rgba(255, 255, 255, 0.3);
+        padding: 10px 12px;
+        z-index: 1;
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        transition: opacity 0.3s ease;
+    }
+      .quick-actions-window .quick-actions-header {                                                                                                            
+      flex-wrap: wrap;                                                                                                                                     
+      gap: 4px;                                                                                                                                            
+  }  
+
+    /* Compact multi-row grid to avoid overlapping slide arrow at left: 2% */
+      .quick-actions-window .quick-actions-slots {
+          flex-wrap: wrap;
+          max-width: 88px; /* 2 × 38px + 1 × 6px gap — fits 2 per row, 3 rows */
+          margin: 0 auto;
+      }  
+}
+
+@media (min-width: 1150px) {
+    /* Mid-range: 3 columns (2 rows), header on one line */
+    .quick-actions-window .quick-actions-header {
+        flex-wrap: nowrap;
+        gap: 8px;
+    }
+
+    .quick-actions-window .quick-actions-slots {
+        max-width: 132px; /* 3 × 38px + 2 × 6px gap — fits 3 per row */
+        margin: 0 auto;
+    }
+}
+
+@media (min-width: 1450px) {
+    .quick-actions-window {
+        right: calc(100% + 30px);
+        padding: 12px 14px;
+    }
+
+    /* Enough room — single row of 5 */
+    .quick-actions-window .quick-actions-slots {
+        flex-wrap: nowrap;
+        max-width: none;
+    }
+
+    .quick-actions-slot {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+@media (min-width: 1800px) {
+    .quick-actions-window {
+        right: calc(100% + 40px);
+        padding: 12px 16px;
+    }
+
+    .quick-actions-slot {
+        width: 42px;
+        height: 42px;
+    }
+}
+
+/* =============================================================================
+   MOBILE MENU ROW (< 1024px)
+   Non-collapsible top row inside the menu
+   ============================================================================= */
+
+.quick-actions-menu-row {
+    padding: 4px 12px;
+}
+
+/* Override default menu-section collapsed behavior — always visible */
+.quick-actions-menu-row.menu-section {
+    overflow: visible !important;
+    max-height: none !important;
+}
+
+.quick-actions-menu-row .quick-actions-header {
+    margin-bottom: 10px;
+}
+
+.quick-actions-menu-row .quick-actions-title {
+    color: rgba(0, 0, 0, 0.7);
+}
+
+.quick-actions-menu-row .quick-actions-nav {
+    background: transparent;
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.quick-actions-menu-row .quick-actions-nav:hover {
+    background: transparent;
+    color: rgba(0, 0, 0, 0.75);
+}
+
+.quick-actions-menu-row .quick-actions-slot.filled {
+    background: rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.7);
+}
+
+.quick-actions-menu-row .quick-actions-slot.filled:hover {
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.quick-actions-menu-row .quick-actions-slot.empty {
+    background: rgba(0, 0, 0, 0.04);
+    color: rgba(0, 0, 0, 0.3);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+.quick-actions-menu-row .quick-actions-slots {
+    gap: 8px;
+}
+
+.quick-actions-menu-row .quick-actions-slot {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+}
+
+/* Desktop: hide the menu row version (desktop uses floating panel instead) */
+@media (min-width: 1024px) {
+    .quick-actions-menu-row {
+        display: none;
+    }
+}
+
+/* =============================================================================
+   ACTION PICKER MODAL
+   ============================================================================= */
+
+.quick-actions-picker-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.quick-actions-picker-overlay.visible {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.quick-actions-picker {
+    background: var(--theme-modal-bg, white);
+    border-radius: 16px;
+    padding: 20px;
+    width: 90%;
+    max-width: 340px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.quick-actions-picker h3 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.8);
+    text-align: center;
+}
+
+.quick-actions-picker-section {
+    margin-bottom: 12px;
+}
+
+.quick-actions-picker-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: rgba(0, 0, 0, 0.4);
+    margin-bottom: 8px;
+    padding-left: 4px;
+}
+
+.quick-actions-picker-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.quick-actions-picker-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.75);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    white-space: nowrap;
+}
+
+.quick-actions-picker-item:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.quick-actions-picker-item.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.quick-actions-picker-item .picker-icon {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.quick-actions-picker-item .picker-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.quick-actions-picker-cancel {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-top: 12px;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    text-align: center;
+}
+
+.quick-actions-picker-cancel:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* =============================================================================
+   TOOLTIP (mobile long-press)
+   ============================================================================= */
+
+.quick-actions-tooltip {
+    position: fixed;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 1001;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.quick-actions-tooltip.visible {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.quick-actions-tooltip .tooltip-remove {
+    display: block;
+    margin-top: 6px;
+    padding: 4px 10px;
+    background: rgba(220, 53, 69, 0.8);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center;
+    pointer-events: all;
+}
+
+/* =============================================================================
+   DARK MODE ADJUSTMENTS
+   ============================================================================= */
+
+body.dark-mode .quick-actions-window {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .quick-actions-slot.filled {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .quick-actions-slot.empty {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.12);
+}
