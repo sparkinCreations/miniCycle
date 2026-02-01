@@ -68,6 +68,14 @@ edge          left                 center            right
 
 Arrow buttons cycle: Quick Actions → Recently Used → Frequently Used → Quick Actions ...
 
+### View Switching
+
+Three input methods for cycling views:
+
+- **Arrow buttons**: Tap left/right arrows in header (desktop and mobile)
+- **Swipe gesture**: Drag left/right on the header row to switch views (desktop and mobile). Gesture target is the header area only — not the slots row, to avoid conflicting with icon taps.
+- **State persistence**: Active view saved in AppState (`activeView`), restored on refresh. User sees the same view they left on, on both desktop and mobile independently.
+
 ### Icons Only
 
 - **Desktop**: Icons only, hover tooltip shows action name
@@ -158,6 +166,9 @@ Actions grouped by menu section:
 ```
 ┌─────────────────────────────────┐
 │  Add Quick Action               │
+│                                 │
+│  NAVIGATION                     │
+│  [📊 Stats]                     │
 │                                 │
 │  ROUTINE ACTIONS                │
 │  [📄 New] [⬇ Download] [📂 Open] │
@@ -451,8 +462,8 @@ Add `trackAction()` calls in `menuManager.js` where button handlers are bound. E
 |----------|--------------|-------------|-------------|
 | < 768px | In menu only | Below task list | Hidden |
 | 768px - 1023px | In menu only | Below task list | Hidden |
-| 1024px - 1279px | Left panel (compact) | Right panel (narrow) | Further left |
-| 1280px+ | Left panel | Right panel (wider) | Further left |
+| 1024px - 1279px | Left panel (compact) | Right panel (narrow) | Far left edge (`left: 2%`) |
+| 1280px+ | Left panel | Right panel (wider) | Far left edge (`left: 2%`) |
 
 ### Task List Squeeze
 
@@ -469,7 +480,7 @@ Similar to how `helpWindowManager.js` has `updateSideLayout()` that dynamically 
 
 - Quick actions panel should follow the same logic — only show on side when there's room
 - Could share or extend the hysteresis logic from `helpWindowManager.js`
-- Panel hidden entirely on desktop if no pinned actions AND no recent/frequent data yet
+- Since Stats is pre-pinned by default, panel will show on first load. If a user removes all pinned actions and has no recent/frequent data, panel can hide until data exists
 
 ---
 
@@ -479,6 +490,7 @@ Similar to how `helpWindowManager.js` has `updateSideLayout()` that dynamically 
 |------|--------|
 | `modules/ui/quickActionsManager.js` | New module |
 | `modules/ui/menuManager.js` | Add `trackAction()` calls to button handlers |
+| `modules/features/statsPanel.js` | Stats action handler calls `showStatsPanel()` |
 | `modules/boot/featureBoot.js` | Wire QuickActionsManager DI |
 | `miniCycle.html` | Add `#quick-actions-window` element + action picker modal |
 | `styles/components/quick-actions.css` (new) | Panel styles, slots, header, mobile row |
