@@ -52,7 +52,9 @@ const di = createDIModule('RecurringPanel', {
     syncRecurringStateToDOM: optional(null),
     refreshTaskButtonsForModeChange: optional(null),
     safeAddEventListener: optional(null),
-    refreshUIFromState: optional(null)
+    refreshUIFromState: optional(null),
+    activateTaskRecurringState: optional(null),
+    deactivateTaskRecurringState: optional(null)
 }, { strict: true });
 
 /**
@@ -953,25 +955,10 @@ export class RecurringPanelManager {
                     const isToDoMode = currentCycle?.deleteCheckedTasks === true;
                     const currentMode = isToDoMode ? 'todo' : 'cycle';
 
-                    // ✅ Update via AppState instead of direct manipulation (immediate save)
+                    // ✅ Update via shared deactivation helper (immediate save)
                     this.deps.updateAppState(draft => {
                         const cycle = draft.data.cycles[activeCycleId];
-
-                        // Remove recurrence from the live task
-                        const liveTask = cycle.tasks.find(t => t.id === task.id);
-                        if (liveTask) {
-                            liveTask.recurring = false;
-                            delete liveTask.recurringSettings;
-                            // Reset deleteWhenComplete to non-recurring defaults
-                            // (matches recurringActivation.js deactivation path)
-                            liveTask.deleteWhenCompleteSettings = { cycle: false, todo: true };
-                            liveTask.deleteWhenComplete = currentMode === 'todo';
-                        }
-
-                        // Delete from recurringTemplates
-                        if (cycle.recurringTemplates?.[task.id]) {
-                            delete cycle.recurringTemplates[task.id];
-                        }
+                        this.deps.deactivateTaskRecurringState(cycle, task.id, currentMode);
                     }, true); // ✅ Immediate save when removing recurring from panel
 
                     this.deps.showNotification("↩️ Recurring turned off for this task.", "info", 5000);
@@ -1568,32 +1555,16 @@ export class RecurringPanelManager {
                 recurIndefinitely: true
             });
 
-            // Add each selected task to recurring templates
+            // Add each selected task to recurring templates via shared helper
             this.deps.updateAppState(draft => {
                 const cycle = draft.data.cycles[activeCycleId];
-                if (!cycle.recurringTemplates) {
-                    cycle.recurringTemplates = {};
-                }
 
                 selectedTaskIds.forEach(taskId => {
                     const task = cycle.tasks.find(t => t.id === taskId);
                     if (task) {
-                        // Mark task as recurring
-                        task.recurring = true;
-                        task.recurringSettings = { ...defaultSettings };
-                        task.deleteWhenComplete = true;
-                        task.deleteWhenCompleteSettings = { cycle: true, todo: true };
-
-                        // Create recurring template
-                        cycle.recurringTemplates[taskId] = {
-                            id: taskId,
-                            text: task.text,
-                            recurring: true,
-                            recurringSettings: { ...defaultSettings },
-                            deleteWhenComplete: true,
-                            deleteWhenCompleteSettings: { cycle: true, todo: true },
-                            nextScheduledOccurrence: this.deps.calculateNextOccurrence?.(defaultSettings) || null
-                        };
+                        this.deps.activateTaskRecurringState(
+                            cycle, taskId, defaultSettings, this.deps.calculateNextOccurrence
+                        );
                     }
                 });
             }, true); // Immediate save
@@ -1790,6 +1761,11 @@ export class RecurringPanelManager {
                     checkbox.checked = true;
                     itemToSelect.classList.add("checked");
                 }
+
+                // Scroll the selected task into view within the list
+                requestAnimationFrame(() => {
+                    itemToSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
 
                 // Show task preview
                 if (this.deps.AppState?.isReady?.()) {

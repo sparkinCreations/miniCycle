@@ -61,6 +61,72 @@ function assertInjected(name, value) {
 }
 
 // ============================================================================
+// SHARED STATE MUTATION HELPERS (Pure functions - no DI, no DOM)
+// ============================================================================
+
+/**
+ * Pure state mutation: Apply recurring state to a task and create its template.
+ * Call inside an updateAppState callback on the draft cycle.
+ *
+ * @param {Object} cycle - Draft cycle object (mutated in place)
+ * @param {string} taskId - Task ID to activate
+ * @param {Object} normalizedSettings - Already-normalized recurring settings
+ * @param {Function} calculateNextOccurrenceFn - Function to calculate next occurrence
+ */
+export function activateTaskRecurringState(cycle, taskId, normalizedSettings, calculateNextOccurrenceFn) {
+    const task = cycle.tasks.find(t => t.id === taskId);
+    if (task) {
+        task.recurring = true;
+        task.recurringSettings = structuredClone(normalizedSettings);
+        task.schemaVersion = 2;
+        task.deleteWhenComplete = true;
+        task.deleteWhenCompleteSettings = { ...DEFAULT_RECURRING_DELETE_SETTINGS };
+    }
+
+    if (!cycle.recurringTemplates) {
+        cycle.recurringTemplates = {};
+    }
+
+    cycle.recurringTemplates[taskId] = {
+        id: taskId,
+        text: task?.text || cycle.recurringTemplates[taskId]?.text || 'Untitled Task',
+        recurring: true,
+        recurringSettings: structuredClone(normalizedSettings),
+        highPriority: task?.highPriority || false,
+        dueDate: task?.dueDate || null,
+        remindersEnabled: task?.remindersEnabled || false,
+        deleteWhenComplete: true,
+        deleteWhenCompleteSettings: { ...DEFAULT_RECURRING_DELETE_SETTINGS },
+        lastTriggeredTimestamp: null,
+        nextScheduledOccurrence: calculateNextOccurrenceFn(normalizedSettings, Date.now()),
+        schemaVersion: 2
+    };
+}
+
+/**
+ * Pure state mutation: Remove recurring state from a task and delete its template.
+ * Call inside an updateAppState callback on the draft cycle.
+ * Does NOT delete recurringSettings — preserves them so re-activating remembers config.
+ *
+ * @param {Object} cycle - Draft cycle object (mutated in place)
+ * @param {string} taskId - Task ID to deactivate
+ * @param {string} currentMode - 'todo' or 'cycle'
+ */
+export function deactivateTaskRecurringState(cycle, taskId, currentMode) {
+    const task = cycle.tasks.find(t => t.id === taskId);
+    if (task) {
+        task.recurring = false;
+        task.schemaVersion = 2;
+        task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+        task.deleteWhenComplete = DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS[currentMode];
+    }
+
+    if (cycle.recurringTemplates?.[taskId]) {
+        delete cycle.recurringTemplates[taskId];
+    }
+}
+
+// ============================================================================
 // TASK ACTIVATION
 // ============================================================================
 
@@ -108,35 +174,12 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
             return;
         }
 
-        // Update the task in the tasks array
-        const taskInState = currentCycleInState.tasks.find(t => t.id === assignedTaskId);
-        if (taskInState) {
-            taskInState.recurring = true;
-            taskInState.recurringSettings = structuredClone(task.recurringSettings);
-            taskInState.schemaVersion = 2;
-            taskInState.deleteWhenComplete = true;
-            taskInState.deleteWhenCompleteSettings = { ...DEFAULT_RECURRING_DELETE_SETTINGS };
-        }
-
-        // Create/update recurring template
-        if (!currentCycleInState.recurringTemplates) {
-            currentCycleInState.recurringTemplates = {};
-        }
-
-        currentCycleInState.recurringTemplates[assignedTaskId] = {
-            id: assignedTaskId,
-            text: task.text,
-            recurring: true,
-            recurringSettings: structuredClone(task.recurringSettings),
-            highPriority: task.highPriority || false,
-            dueDate: task.dueDate || null,
-            remindersEnabled: task.remindersEnabled || false,
-            deleteWhenComplete: true,
-            deleteWhenCompleteSettings: { ...DEFAULT_RECURRING_DELETE_SETTINGS },
-            lastTriggeredTimestamp: null,
-            nextScheduledOccurrence: Deps.calculateNextOccurrence(task.recurringSettings, Date.now()),
-            schemaVersion: 2
-        };
+        activateTaskRecurringState(
+            currentCycleInState,
+            assignedTaskId,
+            task.recurringSettings,
+            Deps.calculateNextOccurrence
+        );
     }, true);
 
     // Sync DOM for delete-on-complete state
@@ -235,21 +278,11 @@ export function handleRecurringTaskDeactivation(task, taskContext, assignedTaskI
     // Update via AppState
     Deps.updateAppState(draft => {
         const cycle = draft.data.cycles[activeCycleId];
+
+        deactivateTaskRecurringState(cycle, assignedTaskId, currentMode);
+
+        // Fallback: ensure task stays in main array even if not found
         const targetTask = cycle.tasks.find(t => t.id === assignedTaskId);
-
-        if (targetTask) {
-            targetTask.recurring = false;
-            targetTask.schemaVersion = 2;
-            targetTask.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-            targetTask.deleteWhenComplete = DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS[currentMode];
-        }
-
-        // Remove from templates
-        if (cycle.recurringTemplates?.[assignedTaskId]) {
-            delete cycle.recurringTemplates[assignedTaskId];
-        }
-
-        // Ensure task stays in main array
         if (!targetTask) {
             console.warn('⚠️ Task missing from main array, re-adding:', assignedTaskId);
             cycle.tasks.push({
@@ -343,6 +376,12 @@ export function applyRecurringToTaskSchema25(taskId, newSettings) {
             targetTask.recurring = true;
             targetTask.schemaVersion = 2;
 
+            // Backfill deleteWhenComplete if missing (tasks activated via older code paths)
+            if (targetTask.deleteWhenComplete === undefined) {
+                targetTask.deleteWhenComplete = true;
+                targetTask.deleteWhenCompleteSettings = { ...DEFAULT_RECURRING_DELETE_SETTINGS };
+            }
+
             // Keep templates in sync
             if (!cycle.recurringTemplates) cycle.recurringTemplates = {};
 
@@ -357,6 +396,12 @@ export function applyRecurringToTaskSchema25(taskId, newSettings) {
                 recurringSettings: { ...targetTask.recurringSettings },
                 nextScheduledOccurrence: isNewRecurring ? 0 : Deps.calculateNextOccurrence(targetTask.recurringSettings, Date.now())
             };
+
+            // Backfill deleteWhenComplete on template if missing
+            if (cycle.recurringTemplates[taskId].deleteWhenComplete === undefined) {
+                cycle.recurringTemplates[taskId].deleteWhenComplete = true;
+                cycle.recurringTemplates[taskId].deleteWhenCompleteSettings = { ...DEFAULT_RECURRING_DELETE_SETTINGS };
+            }
         }
     }, true);
 
