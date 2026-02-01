@@ -948,6 +948,11 @@ export class RecurringPanelManager {
                         return;
                     }
 
+                    // Compute current mode for deleteWhenComplete reset
+                    const currentCycle = state.data?.cycles?.[activeCycleId];
+                    const isToDoMode = currentCycle?.deleteCheckedTasks === true;
+                    const currentMode = isToDoMode ? 'todo' : 'cycle';
+
                     // ✅ Update via AppState instead of direct manipulation (immediate save)
                     this.deps.updateAppState(draft => {
                         const cycle = draft.data.cycles[activeCycleId];
@@ -957,6 +962,10 @@ export class RecurringPanelManager {
                         if (liveTask) {
                             liveTask.recurring = false;
                             delete liveTask.recurringSettings;
+                            // Reset deleteWhenComplete to non-recurring defaults
+                            // (matches recurringActivation.js deactivation path)
+                            liveTask.deleteWhenCompleteSettings = { cycle: false, todo: true };
+                            liveTask.deleteWhenComplete = currentMode === 'todo';
                         }
 
                         // Delete from recurringTemplates
