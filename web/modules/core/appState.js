@@ -279,7 +279,13 @@ class MiniCycleState {
         try {
             const stored = this.deps.storage.getItem(STORAGE_KEYS.DATA);
             if (stored) {
-                const parsed = JSON.parse(stored);
+                let parsed;
+                try {
+                    parsed = JSON.parse(stored);
+                } catch (parseError) {
+                    console.warn('⚠️ Corrupted data in localStorage — returning null', parseError);
+                    return null;
+                }
                 if (this.validateSchema25Structure(parsed)) {
                     this.data = parsed;
                     this.isInitialized = true;
@@ -392,6 +398,12 @@ class MiniCycleState {
                         try {
                             this.deps.storage.setItem(STORAGE_KEYS.DATA, JSON.stringify(this.data));
                         } catch (error) {
+                            if (error?.name === 'QuotaExceededError' ||
+                                error?.code === 22 ||
+                                error?.code === 1014) {
+                                console.warn('⚠️ localStorage quota exceeded during deferred init save — continuing with in-memory state', error);
+                                return;
+                            }
                             console.error('❌ Deferred save failed:', error);
                             // Don't show notification during init - could interrupt boot
                         }
@@ -693,7 +705,18 @@ class MiniCycleState {
                 timestamp: Date.now()
             });
 
-            this.deps.storage.setItem(STORAGE_KEYS.DATA, JSON.stringify(this.data));
+            try {
+                this.deps.storage.setItem(STORAGE_KEYS.DATA, JSON.stringify(this.data));
+            } catch (storageError) {
+                if (storageError?.name === 'QuotaExceededError' ||
+                    storageError?.code === 22 ||
+                    storageError?.code === 1014) {
+                    console.warn('⚠️ localStorage quota exceeded — continuing with in-memory state', storageError);
+                    this._hideSavingIndicator();
+                    return;
+                }
+                throw storageError;
+            }
             this.isDirty = false;
             this.saveTimeout = null;
 

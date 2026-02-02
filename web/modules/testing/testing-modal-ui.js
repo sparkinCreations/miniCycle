@@ -227,7 +227,7 @@ export function setupResultsAreaResize() {
     // Touch events
     resultsHeader.addEventListener('touchstart', startResize, { passive: false });
     document.addEventListener('touchmove', doResize, { passive: false });
-    document.addEventListener('touchend', stopResize);
+    document.addEventListener('touchend', stopResize, { passive: true });
 
     applyResultsAreaSavedHeight();
 }

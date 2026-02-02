@@ -553,7 +553,7 @@
 
 #delete-all-mini-cycle-tasks i,
 #delete-all-mini-cycle-tasks .icon {
-    color: #c0392b !important;
+    color: #c0392b;
 }
 
 /* Hover states */

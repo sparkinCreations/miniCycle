@@ -103,14 +103,14 @@
 
 /* Logo flash effects for feedback */
 .header-logo.logo-flash-green {
-    background-color: #28a745 !important;
-    border-radius: 6px !important;
+    background-color: #28a745;
+    border-radius: 6px;
     transition: background-color 0.3s ease;
 }
 
 .header-logo.logo-flash-red {
-    background-color: #dc3545 !important;
-    border-radius: 6px !important;
+    background-color: #dc3545;
+    border-radius: 6px;
     transition: background-color 0.3s ease;
 }
 

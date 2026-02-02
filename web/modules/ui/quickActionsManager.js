@@ -337,6 +337,7 @@ export class QuickActionsManager {
         const btn = document.createElement('button');
         btn.className = 'quick-actions-slot filled';
         btn.title = action.label;
+        btn.setAttribute('aria-label', action.label);
         btn.dataset.actionId = actionId;
         btn.dataset.slotIndex = slotIndex;
 
@@ -350,6 +351,8 @@ export class QuickActionsManager {
         if (!isAutoView && slotIndex >= 0) {
             const removeBadge = document.createElement('span');
             removeBadge.className = 'remove-badge';
+            removeBadge.setAttribute('role', 'button');
+            removeBadge.setAttribute('aria-label', `Unpin ${action.label}`);
             removeBadge.textContent = '×';
             removeBadge.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -373,6 +376,7 @@ export class QuickActionsManager {
         const btn = document.createElement('button');
         btn.className = 'quick-actions-slot empty';
         btn.title = 'Add action';
+        btn.setAttribute('aria-label', 'Add action');
         btn.dataset.slotIndex = slotIndex;
         btn.textContent = '+';
 
@@ -779,6 +783,7 @@ export class QuickActionsManager {
         if (!isAutoView && slotIndex >= 0) {
             const removeBtn = document.createElement('button');
             removeBtn.className = DOM_SELECTORS.TOOLTIP_REMOVE;
+            removeBtn.setAttribute('aria-label', `Remove ${action.label} from quick actions`);
             removeBtn.textContent = 'Remove';
             removeBtn.addEventListener('click', () => {
                 this.unpinAction(slotIndex);
