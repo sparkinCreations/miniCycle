@@ -1,3 +1,7 @@
+## [1.916] - 2026-02-02
+- feat(docs): update documentation for clarity and add 'Your First Contribution' guide
+
+
 ## [1.915] - 2026-02-02
 - chore: update application version to 1.914 across all relevant files
 - feat(audit): complete code audit focusing on error handling, performance, and duplication - Enhanced error handling with improved logging and context - Optimized DOM performance by reducing redundant queries and layout thrashing - Introduced DATA_SELECTORS for parameterized data-attribute queries to reduce duplication - Implemented TASK_OPTIONS_FORCE_HIDDEN class for consistent task options visibility management - Updated tests to reflect changes in task options visibility handling

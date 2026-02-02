@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.915">
+<meta name="app-version" content="1.916">
 
 <!-- Content Security Policy -->
 <meta http-equiv="Content-Security-Policy" content="
@@ -40,19 +40,19 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.915"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.916"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=1.915" as="style">
-<link rel="preload" href="styles/base/variables.css?v=1.915" as="style">
-<link rel="preload" href="styles/base/reset.css?v=1.915" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=1.915" as="style">
-<link rel="preload" href="styles/layout/header.css?v=1.915" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=1.915" as="style">
+<link rel="preload" href="styles/main.css?v=1.916" as="style">
+<link rel="preload" href="styles/base/variables.css?v=1.916" as="style">
+<link rel="preload" href="styles/base/reset.css?v=1.916" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=1.916" as="style">
+<link rel="preload" href="styles/layout/header.css?v=1.916" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=1.916" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=1.915" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="styles/main.css?v=1.915"></noscript>
+<link rel="stylesheet" href="styles/main.css?v=1.916" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="styles/main.css?v=1.916"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -63,7 +63,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.915"></script>
+<script src="./version.js?v=1.916"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -218,21 +218,21 @@
      3. Or accepting slightly slower initial load without preloads
      ═══════════════════════════════════════════════════════════════════════════ -->
 <!--
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.915">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.915">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.915">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.915">
-<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.915">
-<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.915">
-<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.915">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.915">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.915">
-<link rel="modulepreload" href="./modules/core/appInit.js?v=1.915">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.915">
-<link rel="modulepreload" href="./modules/core/diBase.js?v=1.915">
-<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.915">
-<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.915">
-<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.915">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.916">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.916">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.916">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.916">
+<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.916">
+<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.916">
+<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.916">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.916">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.916">
+<link rel="modulepreload" href="./modules/core/appInit.js?v=1.916">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.916">
+<link rel="modulepreload" href="./modules/core/diBase.js?v=1.916">
+<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.916">
+<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.916">
+<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.916">
 -->
 
 <style>
@@ -1256,9 +1256,9 @@ window.installApp = () => {
             <!-- Quick Actions Menu Row (mobile) -->
             <div class="menu-section quick-actions-menu-row" data-section="quick-actions">
                 <div class="quick-actions-header">
-                    <button class="quick-actions-nav quick-actions-prev">&#x25C0;</button>
+                    <button class="quick-actions-nav quick-actions-prev" aria-label="Previous view">&#x25C0;</button>
                     <span class="quick-actions-title">Quick Actions</span>
-                    <button class="quick-actions-nav quick-actions-next">&#x25B6;</button>
+                    <button class="quick-actions-nav quick-actions-next" aria-label="Next view">&#x25B6;</button>
                 </div>
                 <div class="quick-actions-slots" id="quick-actions-menu-slots"></div>
             </div>
@@ -2524,10 +2524,10 @@ window.installApp = () => {
 
 
 <!-- Feedback Modal -->
-<div id="feedback-modal" class="feedback-modal" data-modal>
+<div id="feedback-modal" class="feedback-modal" role="dialog" aria-modal="true" aria-labelledby="feedback-modal-title" data-modal>
     <div class="feedback-modal-content">
-        <span class="close-feedback-modal">&times;</span>
-        <h2>Provide Feedback</h2>
+        <button class="close-feedback-modal" aria-label="Close feedback modal">&times;</button>
+        <h2 id="feedback-modal-title">Provide Feedback</h2>
         <p>We appreciate your feedback! Let us know how we can improve miniCycle.</p>
 
         <!-- Web3Forms API -->
@@ -2542,9 +2542,11 @@ window.installApp = () => {
             <input type="checkbox" name="botcheck" style="display: none;" tabindex="-1" autocomplete="off">
 
             <!-- Feedback Text -->
+            <label for="feedback-text" class="sr-only">Your feedback</label>
             <textarea id="feedback-text" name="message" placeholder="Write your feedback here..." required minlength="10"></textarea>
 
             <!-- Email (Optional, if you want users to provide their email) -->
+            <label for="feedback-email" class="sr-only">Your email (optional)</label>
             <input type="email" id="feedback-email" name="email" placeholder="Your Email (optional)" autocomplete="email">
 
             <!-- Show a success message instead of redirecting -->
@@ -2646,9 +2648,9 @@ window.installApp = () => {
     <!-- Quick Actions Panel - Inside task-view, positioned to left on desktop -->
     <div id="quick-actions-window" class="quick-actions-window">
         <div class="quick-actions-header">
-            <button class="quick-actions-nav quick-actions-prev" title="Previous view">&#x25C0;</button>
+            <button class="quick-actions-nav quick-actions-prev" title="Previous view" aria-label="Previous view">&#x25C0;</button>
             <span class="quick-actions-title">Quick Actions</span>
-            <button class="quick-actions-nav quick-actions-next" title="Next view">&#x25B6;</button>
+            <button class="quick-actions-nav quick-actions-next" title="Next view" aria-label="Next view">&#x25B6;</button>
         </div>
         <div class="quick-actions-slots" id="quick-actions-slots"></div>
     </div>
@@ -2796,7 +2798,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.915"></script>
+ <script type="module" src="miniCycle-main.js?v=1.916"></script>
 
 <script>
 // Sync About modal version with meta app-version

@@ -102,6 +102,34 @@ export class ModalManager {
         console.log(`[ModalManager] ${type.toUpperCase()}: ${message}`);
     }
 
+    /**
+     * Save the currently focused element and move focus into the modal.
+     * Call this immediately before showing a modal.
+     * @param {HTMLElement} modalElement - The modal container to focus
+     */
+    _saveFocus(modalElement) {
+        _previouslyFocusedElement = document.activeElement;
+        if (modalElement) {
+            // Try the first focusable element inside the modal, fall back to the modal itself
+            const focusable = modalElement.querySelector(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            );
+            const target = focusable || modalElement;
+            // Delay focus so the modal is visible when focus moves
+            setTimeout(() => target.focus(), UI_TIMEOUTS.FOCUS_DELAY);
+        }
+    }
+
+    /**
+     * Restore focus to the element that was focused before the modal opened.
+     */
+    _restoreFocus() {
+        if (_previouslyFocusedElement && typeof _previouslyFocusedElement.focus === 'function') {
+            _previouslyFocusedElement.focus();
+        }
+        _previouslyFocusedElement = null;
+    }
+
     async init() {
         await this.deps.waitForCore();
 
@@ -135,6 +163,9 @@ export class ModalManager {
      * Close all modals and overlays in the app
      */
     closeAllModals() {
+        // Restore focus to the element that triggered the modal
+        this._restoreFocus();
+
         // Close all registry-managed modals using their defined close method
         for (const name of MODAL_NAMES) {
             const modal = _deps.getModal(name);
@@ -194,6 +225,7 @@ export class ModalManager {
 
         // Open Modal
         openFeedbackBtn._clickHandler = () => {
+            this._saveFocus(feedbackModal);
             feedbackModal.style.display = "flex";
             if (this.deps.hideMainMenu) {
                 this.deps.hideMainMenu();
@@ -207,6 +239,7 @@ export class ModalManager {
         // Close Modal
         closeFeedbackBtn._clickHandler = () => {
             feedbackModal.style.display = "none";
+            this._restoreFocus();
         };
         safeAdd(closeFeedbackBtn, "click", closeFeedbackBtn._clickHandler);
 
@@ -214,6 +247,7 @@ export class ModalManager {
         feedbackModal._outsideClickHandler = (event) => {
             if (event.target === feedbackModal) {
                 feedbackModal.style.display = "none";
+                this._restoreFocus();
             }
         };
         safeAdd(window, "click", feedbackModal._outsideClickHandler);
@@ -256,6 +290,7 @@ export class ModalManager {
                                 thankYouMessage.style.display = "none";
                             }
                             feedbackModal.style.display = "none";
+                            this._restoreFocus();
                         }, 2000);
                     } else {
                         this.deps.showNotification("❌ Error sending feedback. Please try again.", "error");
@@ -289,6 +324,7 @@ export class ModalManager {
         if (openFeedbackFooter && feedbackModal) {
             const safeAdd = _deps.safeAddEventListener;
             openFeedbackFooter._clickHandler = () => {
+                this._saveFocus(feedbackModal);
                 feedbackModal.style.display = "flex";
                 if (thankYouMessage) {
                     thankYouMessage.style.display = "none";
@@ -315,6 +351,7 @@ export class ModalManager {
 
         // Open Modal
         openAboutBtn._clickHandler = () => {
+            this._saveFocus(aboutModal);
             aboutModal.style.display = "flex";
         };
         safeAdd(openAboutBtn, "click", openAboutBtn._clickHandler);
@@ -323,6 +360,7 @@ export class ModalManager {
         if (closeAboutBtn) {
             closeAboutBtn._clickHandler = () => {
                 aboutModal.style.display = "none";
+                this._restoreFocus();
             };
             safeAdd(closeAboutBtn, "click", closeAboutBtn._clickHandler);
         }
@@ -331,6 +369,7 @@ export class ModalManager {
         aboutModal._outsideClickHandler = (event) => {
             if (event.target === aboutModal) {
                 aboutModal.style.display = "none";
+                this._restoreFocus();
             }
         };
         safeAdd(window, "click", aboutModal._outsideClickHandler);
@@ -372,6 +411,7 @@ export class ModalManager {
         // Close button
         closeRemindersBtn._clickHandler = () => {
             remindersModal.style.display = "none";
+            this._restoreFocus();
         };
         safeAdd(closeRemindersBtn, "click", closeRemindersBtn._clickHandler);
 
@@ -379,6 +419,7 @@ export class ModalManager {
         remindersModal._outsideClickHandler = (event) => {
             if (event.target === remindersModal) {
                 remindersModal.style.display = "none";
+                this._restoreFocus();
             }
         };
         safeAdd(window, "click", remindersModal._outsideClickHandler);
@@ -401,12 +442,6 @@ export class ModalManager {
                             notification.querySelector(DOM_SELECTORS.CLOSE_BTN).click();
                         }
                     });
-
-                    // Return focus to task input
-                    const taskInput = document.getElementById(DOM_IDS.NEW_TASK_INPUT);
-                    if (taskInput) {
-                        setTimeout(() => taskInput.focus(), UI_TIMEOUTS.FOCUS_DELAY);
-                    }
                 }
             });
 
@@ -442,6 +477,13 @@ export class ModalManager {
 
 // Module-level instance (created but NOT auto-initialized)
 let modalManager = null;
+
+/**
+ * Stores the element that had focus before a modal was opened,
+ * so focus can be restored when the modal closes.
+ * @type {HTMLElement|null}
+ */
+let _previouslyFocusedElement = null;
 
 /**
  * Initialize the ModalManager module
