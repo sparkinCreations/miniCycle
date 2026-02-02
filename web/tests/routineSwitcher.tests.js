@@ -24,6 +24,7 @@ import {
 // Dynamic import to avoid circular dependency issues
 let RoutineSwitcher = null;
 let setRoutineSwitcherDependencies = null;
+let initializeRoutineSwitcher = null;
 
 export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>🔄 RoutineSwitcher Tests</h2><h3>Loading module...</h3>';
@@ -34,6 +35,7 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         const module = await import(`../modules/routine/routineSwitcher.js?v=${cacheBuster}`);
         RoutineSwitcher = module.RoutineSwitcher;
         setRoutineSwitcherDependencies = module.setRoutineSwitcherDependencies;
+        initializeRoutineSwitcher = module.initializeRoutineSwitcher;
     } catch (e) {
         resultsDiv.innerHTML = `<h2>🔄 RoutineSwitcher Tests</h2><div class="result fail">❌ Failed to import module: ${e.message}</div>`;
         return { passed: 0, total: 1 };
@@ -48,7 +50,15 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
 
     // Set up RoutineSwitcher module dependencies
     setRoutineSwitcherDependencies({
-        safeAddEventListener: env.deps.safeAddEventListener
+        safeAddEventListener: env.deps.safeAddEventListener,
+        getModal: () => document.querySelector('.mini-cycle-switch-modal')
+    });
+
+    // Initialize RoutineSwitcher to trigger dynamic imports (loads getObjectSizeBytes, getUndoCacheCycleId, etc.)
+    // This populates module-level variables that are otherwise only set via initializeRoutineSwitcher at runtime.
+    await initializeRoutineSwitcher({
+        safeAddEventListener: env.deps.safeAddEventListener,
+        getModal: () => document.querySelector('.mini-cycle-switch-modal')
     });
 
     // Make RoutineSwitcher available for tests (fallback compatibility)
@@ -185,7 +195,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
             },
             showNotification: (msg) => console.log(msg),
             loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')),
-            hideMainMenu: () => {}
+            hideMainMenu: () => {},
+            getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
 
         const instance = new RoutineSwitcher(mockDeps);
@@ -216,8 +227,12 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         document.body.appendChild(modal);
 
         const switchRow = document.createElement('div');
-        switchRow.className = 'switch-items-row';
+        switchRow.id = 'switch-items-row';
         document.body.appendChild(switchRow);
+
+        const duplicateBtn = document.createElement('button');
+        duplicateBtn.id = 'switch-duplicate';
+        document.body.appendChild(duplicateBtn);
 
         const renameBtn = document.createElement('button');
         renameBtn.id = 'switch-rename';
@@ -247,7 +262,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
             querySelector: (sel) => document.querySelector(sel),
             getElementById: (id) => document.getElementById(id),
             hideMainMenu: () => {},
-            showNotification: () => {}
+            showNotification: () => {},
+            getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
 
         const instance = new RoutineSwitcher(mockDeps);
@@ -279,7 +295,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
                 if (!msg.includes('No saved miniCycles')) {
                     throw new Error('Should notify user of no cycles');
                 }
-            }
+            },
+            getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
 
         const instance = new RoutineSwitcher(mockDeps);
@@ -293,7 +310,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         document.body.appendChild(modal);
 
         const mockDeps = {
-            querySelector: (sel) => document.querySelector(sel)
+            querySelector: (sel) => document.querySelector(sel),
+            getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
 
         const instance = new RoutineSwitcher(mockDeps);
@@ -316,7 +334,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
                 isReady: () => true,
                 get: () => schemaData
             },
-            getElementById: (id) => document.getElementById(id)
+            getElementById: (id) => document.getElementById(id),
+            getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
 
         const instance = new RoutineSwitcher(mockDeps);
@@ -342,7 +361,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
                 isReady: () => true,
                 get: () => schemaData
             },
-            getElementById: (id) => document.getElementById(id)
+            getElementById: (id) => document.getElementById(id),
+            getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
 
         const instance = new RoutineSwitcher(mockDeps);
@@ -367,7 +387,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
             },
             getElementById: (id) => document.getElementById(id),
             querySelectorAll: (sel) => document.querySelectorAll(sel),
-            updateReminderButtons: () => {}
+            updateReminderButtons: () => {},
+            getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
 
         const instance = new RoutineSwitcher(mockDeps);
@@ -394,7 +415,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
             },
             getElementById: (id) => document.getElementById(id),
             querySelectorAll: (sel) => document.querySelectorAll(sel),
-            updateReminderButtons: () => {}
+            updateReminderButtons: () => {},
+            getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
 
         const instance = new RoutineSwitcher(mockDeps);
@@ -427,7 +449,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
                 if (!msg.includes('not ready')) {
                     throw new Error('Should notify user about AppState not ready');
                 }
-            }
+            },
+            getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
 
         const instance = new RoutineSwitcher(mockDeps);
@@ -446,7 +469,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
             },
             querySelector: () => null, // Missing elements
             getElementById: () => null,
-            showNotification: () => {}
+            showNotification: () => {},
+            getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
 
         const instance = new RoutineSwitcher(mockDeps);
@@ -461,7 +485,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
 
         const mockDeps = {
             loadMiniCycleData: () => null,
-            showNotification: () => {}
+            showNotification: () => {},
+            getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
 
         const instance = new RoutineSwitcher(mockDeps);
@@ -493,7 +518,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
             },
             querySelector: (sel) => document.querySelector(sel),
             showNotification: () => {},
-            loadMiniCycle: () => {}
+            loadMiniCycle: () => {},
+            getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
 
         const instance = new RoutineSwitcher(mockDeps);
@@ -526,7 +552,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
                 isReady: () => true,
                 get: () => schemaData
             },
-            showNotification: () => {}
+            showNotification: () => {},
+            getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
 
         const instance = new RoutineSwitcher(mockDeps);
@@ -597,7 +624,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
                 return document.createElement('div');
             },
             querySelectorAll: () => [],
-            updateReminderButtons: () => {}
+            updateReminderButtons: () => {},
+            getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
 
         const instance = new RoutineSwitcher(mockDeps);
@@ -634,7 +662,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
             },
             getElementById: (id) => document.getElementById(id),
             querySelectorAll: (sel) => document.querySelectorAll(sel),
-            updateReminderButtons: () => {}
+            updateReminderButtons: () => {},
+            getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
 
         const instance = new RoutineSwitcher(mockDeps);
@@ -659,7 +688,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
 
         const mockDeps = {
             loadMiniCycleData: () => schemaData,
-            getElementById: (id) => document.getElementById(id)
+            getElementById: (id) => document.getElementById(id),
+            getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
 
         const instance = new RoutineSwitcher(mockDeps);

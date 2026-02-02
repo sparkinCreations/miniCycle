@@ -334,7 +334,7 @@ export class StatsPanelManager {
             themeUnlockStatus: document.getElementById(DOM_IDS.THEME_UNLOCK_STATUS),
             // Theme panel elements
             openThemesPanel: document.getElementById(DOM_IDS.OPEN_THEMES_PANEL),
-            themesModal: document.getElementById(DOM_IDS.THEMES_MODAL),
+            themesModal: _deps.getModal('themes'),
             closeThemesBtn: document.getElementById(DOM_IDS.CLOSE_THEMES_BTN),
             quickDarkToggle: document.getElementById(DOM_IDS.QUICK_DARK_TOGGLE)
         };

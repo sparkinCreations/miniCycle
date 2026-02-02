@@ -240,7 +240,8 @@ export function setupResultsAreaResize() {
  * Initialize drag functionality for testing modal
  */
 export function initializeTestingModalDrag() {
-    const testingModal = document.getElementById(DOM_IDS.TESTING_MODAL);
+    const deps = getDeps();
+    const testingModal = deps.getModal('testing');
     if (!testingModal) return;
 
     const modalContent = testingModal.querySelector(DOM_SELECTORS.TESTING_MODAL_CONTENT);
@@ -407,7 +408,8 @@ function makeTestingModalDraggable(modalContent, dragHandle) {
  * Add double-click to center modal functionality
  */
 export function addTestingModalDoubleClickToCenter() {
-    const testingModal = document.getElementById(DOM_IDS.TESTING_MODAL);
+    const deps = getDeps();
+    const testingModal = deps.getModal('testing');
     const modalContent = testingModal?.querySelector(DOM_SELECTORS.TESTING_MODAL_CONTENT);
     const dragHandle = modalContent?.querySelector(`${DOM_SELECTORS.TESTING_MODAL_DRAG_HANDLE}, ${DOM_SELECTORS.TESTING_MODAL_HEADER}`);
 
@@ -783,7 +785,7 @@ export function initializeTestingModalEnhancements(callbacks = {}) {
     safeAddEventListener(document, "keydown", (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "j") {
             e.preventDefault();
-            const testingModal = document.getElementById(DOM_IDS.TESTING_MODAL);
+            const testingModal = getDeps().getModal('testing');
 
             if (testingModal) {
                 const isOpen = testingModal.style.display === "flex" || testingModal.style.display === "block";

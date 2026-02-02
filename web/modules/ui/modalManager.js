@@ -43,6 +43,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -54,7 +55,8 @@ const di = createDIModule('ModalManager', {
     sanitizeInput: optional(null),
     safeAddEventListener: optional(null),
     waitForCore: optional(() => Promise.resolve()),
-    AppMeta: optional(null)
+    AppMeta: optional(null),
+    getModal: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -133,36 +135,20 @@ export class ModalManager {
      * Close all modals and overlays in the app
      */
     closeAllModals() {
-        // Close Schema 2.5 and legacy modals
-        const modalSelectors = [
-            DOM_SELECTORS.DATA_MODAL,
-            DOM_SELECTORS.SETTINGS_MODAL,
-            DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL,
-            `#${DOM_IDS.FEEDBACK_MODAL}`,
-            `#${DOM_IDS.ABOUT_MODAL}`,
-            `#${DOM_IDS.THEMES_MODAL}`,
-            `#${DOM_IDS.GAMES_PANEL}`,
-            `#${DOM_IDS.REMINDERS_MODAL}`,
-            "#testing-modal",
-            "#recurring-panel-overlay",
-            "#storage-viewer-overlay",
-            ".mini-modal-overlay",
-            ".miniCycle-overlay",
-            ".onboarding-modal"
-        ];
+        // Close all registry-managed modals using their defined close method
+        for (const name of MODAL_NAMES) {
+            const modal = _deps.getModal(name);
+            if (!modal) continue;
+            const def = MODAL_DEFS[name];
+            if (def.closeMethod === 'removeVisible') modal.classList.remove('visible');
+            else if (def.closeMethod === 'addHidden') modal.classList.add('hidden');
+            else modal.style.display = 'none';
+        }
 
-        modalSelectors.forEach(selector => {
-            document.querySelectorAll(selector).forEach(modal => {
-                // Special handling for different modal types
-                if (modal.dataset.modal !== undefined || modal.classList.contains("menu-container")) {
-                    modal.classList.remove("visible");
-                } else if (modal.id === "recurring-panel-overlay" || modal.id === "storage-viewer-overlay") {
-                    modal.classList.add("hidden");
-                } else {
-                    modal.style.display = "none";
-                }
-            });
-        });
+        // Close ephemeral overlays (not in registry — created/destroyed per use)
+        document.querySelectorAll('.mini-modal-overlay').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.miniCycle-overlay').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.onboarding-modal').forEach(el => el.style.display = 'none');
 
         // Close task options
         document.querySelectorAll(DOM_SELECTORS.TASK_OPTIONS).forEach(action => {
@@ -192,7 +178,7 @@ export class ModalManager {
      * Set up feedback modal
      */
     setupFeedbackModal() {
-        const feedbackModal = document.getElementById(DOM_IDS.FEEDBACK_MODAL);
+        const feedbackModal = _deps.getModal('feedback');
         const openFeedbackBtn = document.getElementById(DOM_IDS.OPEN_FEEDBACK_MODAL);
         const closeFeedbackBtn = document.querySelector(DOM_SELECTORS.CLOSE_FEEDBACK_MODAL);
         const feedbackForm = document.getElementById(DOM_IDS.FEEDBACK_FORM);
@@ -299,7 +285,7 @@ export class ModalManager {
      */
     setupFeedbackFooterButton() {
         const openFeedbackFooter = document.getElementById(DOM_IDS.OPEN_FEEDBACK_MODAL_FOOTER);
-        const feedbackModal = document.getElementById(DOM_IDS.FEEDBACK_MODAL);
+        const feedbackModal = _deps.getModal('feedback');
         const thankYouMessage = document.getElementById(DOM_IDS.THANK_YOU_MESSAGE);
 
         if (openFeedbackFooter && feedbackModal) {
@@ -318,7 +304,7 @@ export class ModalManager {
      * Set up about modal
      */
     setupAboutModal() {
-        const aboutModal = document.getElementById(DOM_IDS.ABOUT_MODAL);
+        const aboutModal = _deps.getModal('about');
         const openAboutBtn = document.getElementById(DOM_IDS.OPEN_ABOUT_MODAL);
 
         if (!aboutModal || !openAboutBtn) {
@@ -358,7 +344,7 @@ export class ModalManager {
      * This only handles the click-outside-to-close logic
      */
     setupSettingsModalClickOutside() {
-        const settingsModal = document.querySelector(DOM_SELECTORS.SETTINGS_MODAL);
+        const settingsModal = _deps.getModal('settings');
         const settingsModalContent = document.querySelector(DOM_SELECTORS.SETTINGS_MODAL_CONTENT);
         const openSettingsBtn = document.getElementById(DOM_IDS.OPEN_SETTINGS);
 
@@ -375,7 +361,7 @@ export class ModalManager {
      * Set up reminders modal close handlers
      */
     setupRemindersModalHandlers() {
-        const remindersModal = document.getElementById(DOM_IDS.REMINDERS_MODAL);
+        const remindersModal = _deps.getModal('reminders');
         const closeRemindersBtn = document.getElementById(DOM_IDS.CLOSE_REMINDERS_BTN);
 
         if (!remindersModal || !closeRemindersBtn) {
@@ -437,24 +423,22 @@ export class ModalManager {
      * @returns {boolean} True if any modal is open
      */
     isModalOpen() {
-        const modalSelectors = [
-            `${DOM_SELECTORS.SETTINGS_MODAL}[style*='display: flex']`,
-            `${DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL}[style*='display: flex']`,
-            `#${DOM_IDS.FEEDBACK_MODAL}[style*='display: flex']`,
-            `#${DOM_IDS.ABOUT_MODAL}[style*='display: flex']`,
-            `#${DOM_IDS.THEMES_MODAL}[style*='display: flex']`,
-            `#${DOM_IDS.GAMES_PANEL}[style*='display: flex']`,
-            `#${DOM_IDS.REMINDERS_MODAL}[style*='display: flex']`,
-            "#testing-modal[style*='display: flex']",
-            ".mini-modal-overlay",
-            ".miniCycle-overlay",
-            ".onboarding-modal:not([style*='display: none'])"
-        ];
+        // Check all registry-managed modals
+        for (const name of MODAL_NAMES) {
+            const modal = _deps.getModal(name);
+            if (!modal) continue;
+            const def = MODAL_DEFS[name];
+            if (def.closeMethod === 'removeVisible' && modal.classList.contains('visible')) return true;
+            if (def.closeMethod === 'addHidden' && !modal.classList.contains('hidden')) return true;
+            if (modal.style.display === 'flex' || modal.style.display === 'block') return true;
+        }
 
-        return modalSelectors.some(selector => {
-            const elements = document.querySelectorAll(selector);
-            return elements.length > 0;
-        });
+        // Check ephemeral overlays (not in registry)
+        if (document.querySelector('.mini-modal-overlay')) return true;
+        if (document.querySelector('.miniCycle-overlay')) return true;
+        if (document.querySelector('.onboarding-modal:not([style*="display: none"])')) return true;
+
+        return false;
     }
 }
 

@@ -676,7 +676,7 @@ export class ThemeManager {
             const hasUnlockedThemes = unlockedThemes.length > 0;
 
             const themeButton = document.getElementById(DOM_IDS.OPEN_THEMES_PANEL);
-            const themesModal = document.getElementById(DOM_IDS.THEMES_MODAL);
+            const themesModal = _deps.getModal('themes');
             const themesModalContent = themesModal?.querySelector(DOM_SELECTORS.THEMES_MODAL_CONTENT);
             const closeThemesBtn = document.getElementById(DOM_IDS.CLOSE_THEMES_BTN);
 

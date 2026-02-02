@@ -298,7 +298,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         }
 
         const deps = createValidDeps();
-        const instance = initializeRoutineManager(deps);
+        const instance = await initializeRoutineManager(deps);
 
         if (!instance) {
             throw new Error('initializeRoutineManager should return instance');
@@ -314,7 +314,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         }
 
         const deps = createValidDeps();
-        const created = initializeRoutineManager(deps);
+        const created = await initializeRoutineManager(deps);
         const retrieved = getRoutineManager();
 
         if (retrieved !== created) {

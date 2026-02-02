@@ -35,6 +35,15 @@ export async function runBackupManagerTests(resultsDiv, isPartOfSuite = false) {
     setBackupManagerDependencies = module.setBackupManagerDependencies;
     resultsDiv.innerHTML = '<h2>BackupManager Tests</h2><h3>Setting up mocks...</h3>';
 
+    // Reset singleton state to avoid stale connections from previous test modules
+    // (e.g., Testing Modal tests also import backupManager and may leave a cached initPromise)
+    if (backupManager.db) {
+        try { backupManager.db.close(); } catch (e) { /* ignore */ }
+    }
+    backupManager.db = null;
+    backupManager.isInitialized = false;
+    backupManager.initPromise = null;
+
     // =====================================================
     // Use shared testHelpers for comprehensive mock setup
     // =====================================================

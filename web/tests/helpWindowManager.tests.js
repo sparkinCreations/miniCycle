@@ -31,8 +31,12 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
 
     // Set up HelpWindowManager module dependencies
     setHelpWindowManagerDependencies({
-        safeAddEventListener: env.deps.safeAddEventListener
+        safeAddEventListener: env.deps.safeAddEventListener,
+        getModal: (name) => name === 'help' ? document.getElementById('help-window') : null
     });
+
+    // Initialize HelpWindowManager to trigger dynamic imports (loads getObjectSizeBytes, formatBytes, etc.)
+    await initHelpWindowManager();
 
     resultsDiv.innerHTML = '<h2>HelpWindowManager Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };

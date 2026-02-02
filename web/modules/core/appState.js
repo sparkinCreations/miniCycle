@@ -429,6 +429,12 @@ class MiniCycleState {
                 if (event.key !== 'miniCycleData') return;
                 if (!event.newValue) return;
 
+                // Skip sync if tests are running in another tab — test data is mock/temporary
+                if (localStorage.getItem('__miniCycle_testRunning') === 'true') {
+                    console.log('🔄 Multi-tab sync: Skipped — tests running in another tab');
+                    return;
+                }
+
                 try {
                     const externalData = JSON.parse(event.newValue);
                     const externalTimestamp = externalData?.metadata?.lastModified || 0;

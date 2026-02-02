@@ -582,7 +582,11 @@ export const DOM_IDS = Object.freeze({
     SEARCH_TEST_RESULTS: 'search-test-results',
     STORAGE_VIEWER_OVERLAY: 'storage-viewer-overlay',
     STORAGE_CONTENT: 'storage-content',
-    STAY_OPEN_TOGGLE: 'stay-open-toggle'
+    STAY_OPEN_TOGGLE: 'stay-open-toggle',
+
+    // ---- Modal Root IDs (used by modalRegistry) ----
+    ROUTINE_SWITCHER_MODAL: 'routine-switcher-modal',
+    SETTINGS_MODAL: 'settings-modal'
 });
 
 // ============================================================================

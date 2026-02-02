@@ -37,7 +37,7 @@ let handleOutsideClickRef = null;
  */
 export function openStorageViewer() {
     const deps = getDeps();
-    const overlay = document.getElementById(DOM_IDS.STORAGE_VIEWER_OVERLAY);
+    const overlay = deps.getModal('storageViewer');
     const contentEl = document.getElementById(DOM_IDS.STORAGE_CONTENT);
 
     if (!overlay || !contentEl) {
@@ -203,7 +203,7 @@ function setupStorageViewerEventListeners() {
  * Handle click outside modal to close
  */
 function handleOutsideClick(event) {
-    const overlay = document.getElementById(DOM_IDS.STORAGE_VIEWER_OVERLAY);
+    const overlay = getDeps().getModal('storageViewer');
     const stayOpenCheckbox = document.getElementById(DOM_IDS.STAY_OPEN_TOGGLE);
     const modalBox = document.querySelector(DOM_SELECTORS.STORAGE_MODAL_BOX);
 
@@ -440,7 +440,7 @@ function renderExpandableJSON(data, deps, depth = 0) {
  * Close the storage viewer modal
  */
 export function closeStorageViewer() {
-    const overlay = document.getElementById(DOM_IDS.STORAGE_VIEWER_OVERLAY);
+    const overlay = getDeps().getModal('storageViewer');
     if (overlay) {
         overlay.classList.add("hidden");
 

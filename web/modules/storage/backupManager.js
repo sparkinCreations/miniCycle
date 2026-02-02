@@ -89,12 +89,25 @@ class BackupManager {
         this.initPromise = new Promise((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, DB_VERSION);
 
+            // Timeout safety: don't hang forever if IndexedDB never responds
+            const timeout = setTimeout(() => {
+                this.initPromise = null;
+                reject(new Error('BackupManager: IndexedDB init timed out after 10s'));
+            }, 10000);
+
             request.onerror = () => {
+                clearTimeout(timeout);
                 console.error('❌ BackupManager: Failed to open IndexedDB', request.error);
                 reject(request.error);
             };
 
+            request.onblocked = () => {
+                console.warn('⚠️ BackupManager: IndexedDB open blocked by another connection');
+                // Don't reject - the request may still succeed once the blocking connection closes
+            };
+
             request.onsuccess = () => {
+                clearTimeout(timeout);
                 this.db = request.result;
                 this.isInitialized = true;
                 console.log('✅ BackupManager: IndexedDB initialized');

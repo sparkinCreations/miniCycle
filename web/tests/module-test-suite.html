@@ -1551,6 +1551,45 @@
                 return;
             }
 
+            // 💾 BACKUP localStorage to IndexedDB before running single-module tests
+            console.log('%c💾 [SingleTest] Backing up localStorage before test...', 'background: #333; color: #fff; padding: 2px 6px;');
+            await backupLocalStorageToIndexedDB();
+            await setTestModeFlag(true);
+
+            // 🔒 Signal other tabs to ignore storage events during tests
+            localStorage.setItem('__miniCycle_testRunning', 'true');
+
+            // 🛡️ Block page reloads and patch localStorage.clear during single-module test
+            const singleTestOriginalBeforeUnload = window.onbeforeunload;
+            window.onbeforeunload = (e) => { e.preventDefault(); e.returnValue = ''; return ''; };
+
+            const singleTestOriginalSetTimeout = window.setTimeout;
+            window.setTimeout = function(fn, delay, ...args) {
+                const fnStr = fn.toString();
+                if (fnStr.includes('location.reload') || fnStr.includes('window.location.reload')) {
+                    console.warn('⚠️ [SingleTest] Blocked setTimeout with location.reload()');
+                    return -1;
+                }
+                return singleTestOriginalSetTimeout(fn, delay, ...args);
+            };
+
+            const singleTestOriginalClear = localStorage.clear.bind(localStorage);
+            localStorage.clear = function() {
+                const backupKeysToPreserve = {};
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('__miniCycle_')) {
+                        backupKeysToPreserve[key] = localStorage.getItem(key);
+                    }
+                }
+                singleTestOriginalClear();
+                Object.entries(backupKeysToPreserve).forEach(([key, value]) => {
+                    localStorage.setItem(key, value);
+                });
+            };
+
+            try {
+
             if (currentModule === 'performance') {
                 await runPerformanceBenchmarks(resultsDiv);
             } else if (currentModule === 'integration') {
@@ -1659,6 +1698,45 @@
                 await runUIBootTests(resultsDiv);
             } else if (currentModule === 'featureBoot') {
                 await runFeatureBootTests(resultsDiv);
+            }
+
+            } finally {
+                // 🛡️ RESTORE ORIGINAL handlers FIRST to stop test interference
+                window.onbeforeunload = singleTestOriginalBeforeUnload;
+                window.setTimeout = singleTestOriginalSetTimeout;
+                localStorage.clear = singleTestOriginalClear;
+
+                // ⏱️ WAIT for any debounced saves to settle
+                console.log('%c⏱️ [SingleTest] Waiting for debounced saves to settle...', 'background: #333; color: #fff; padding: 2px 6px;');
+                await new Promise(resolve => setTimeout(resolve, 700));
+
+                // 🔒 RESTORE localStorage from IndexedDB
+                console.log('%c🔄 [SingleTest] Restoring localStorage after test...', 'background: #333; color: #fff; padding: 2px 6px;');
+                const restoreResult = await restoreLocalStorageFromBackup();
+                if (restoreResult.success) {
+                    console.log(`%c✅ [SingleTest] Restored ${restoreResult.keysRestored} keys from IndexedDB`, 'background: green; color: white; padding: 2px 6px;');
+                } else {
+                    console.error(`%c❌ [SingleTest] Restore failed: ${restoreResult.error}`, 'background: red; color: white; padding: 2px 6px;');
+                }
+
+                // 🛡️ POST-RESTORE VERIFICATION: Check that nothing overwrote the data
+                if (restoreResult.success && restoreResult.keysRestored > 0) {
+                    const expectedData = localStorage.getItem('miniCycleData');
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    const currentData = localStorage.getItem('miniCycleData');
+                    if (expectedData && currentData !== expectedData) {
+                        console.warn('%c⚠️ [SingleTest] Data overwritten by stale async op! Re-restoring...', 'background: orange; color: black; padding: 2px 6px;');
+                        await restoreLocalStorageFromBackup();
+                    } else {
+                        console.log('%c✅ [SingleTest] Post-restore verification passed', 'background: green; color: white; padding: 2px 6px;');
+                    }
+                }
+
+                // 🔒 Clear cross-window test flag so other tabs resume sync
+                localStorage.removeItem('__miniCycle_testRunning');
+
+                await setTestModeFlag(false);
+                await clearLocalStorageBackup();
             }
 
             // Show copy buttons after tests run
@@ -2018,8 +2096,12 @@
 
             // 🧹 CLEAR IndexedDB databases so tests run with clean state
             // Note: We don't delete miniCycleTestResultsDB or miniCycleTestBackupDB - they contain backups
+            // Note: We don't delete miniCycle_backups — if a stale connection exists from a previous run,
+            //   deleteDatabase gets blocked and the pending delete blocks all subsequent open() calls,
+            //   causing backupManager tests to time out. The backupManager tests handle this by resetting
+            //   the singleton and use relative assertions that work with existing data.
             try {
-                const dbNames = ['miniCycleUndoHistory', 'miniCycle_backups'];
+                const dbNames = ['miniCycleUndoHistory'];
                 for (const dbName of dbNames) {
                     await new Promise((resolve) => {
                         const req = indexedDB.deleteDatabase(dbName);
@@ -2036,6 +2118,9 @@
             // 🚦 SET TEST MODE FLAG - tells app to skip IndexedDB restoration on reload
             await setTestModeFlag(true);
             console.log('🚦 Test mode flag SET - app will skip IndexedDB restore on reload');
+
+            // 🔒 Signal other tabs to ignore storage events during tests
+            localStorage.setItem('__miniCycle_testRunning', 'true');
 
             // Define all modules and their test functions
             const allModules = [
@@ -2317,13 +2402,22 @@
                     }
                 }
 
-                // ⏱️ WAIT for any debounced saves to complete (700ms safety margin)
-                await new Promise(resolve => setTimeout(resolve, 700));
-
             } catch (error) {
                 console.error('❌ Fatal error during test execution:', error);
                 resultsDiv.innerHTML += `<div class="result fail">❌ Fatal error: ${error.message}</div>`;
             } finally {
+                // 🔒 Clear cross-window test flag so other tabs resume sync
+                localStorage.removeItem('__miniCycle_testRunning');
+
+                // 🛡️ RESTORE ORIGINAL handlers FIRST to stop test interference
+                window.onbeforeunload = originalBeforeUnload;
+                window.setTimeout = originalSetTimeout;
+                localStorage.clear = originalLocalStorageClear;
+
+                // ⏱️ WAIT for any debounced saves to complete (always runs, even after errors)
+                console.log('%c⏱️ Waiting for debounced saves to settle...', 'background: #333; color: #fff; padding: 2px 6px;');
+                await new Promise(resolve => setTimeout(resolve, 700));
+
                 // 🔒 RESTORE REAL APP DATA from IndexedDB backup after all tests complete
                 console.log('%c🔄 Restoring localStorage from IndexedDB backup...', 'background: #333; color: #fff; padding: 2px 6px;');
                 const restoreResult = await restoreLocalStorageFromBackup();
@@ -2332,26 +2426,42 @@
 
                 if (restoreResult.success) {
                     console.log(`%c✅ localStorage restored: ${restoreResult.keysRestored} keys from IndexedDB`, 'background: green; color: white; padding: 2px 6px;');
-                    console.log('   Restored keys:', restoreResult.keys);
 
                     // 🔍 VERIFY restoration by checking keys were restored
                     if (restoreResult.keysRestored > 0) {
                         restorationVerified = true;
-                        const miniCycleData = localStorage.getItem('miniCycleData');
-                        if (miniCycleData) {
-                            console.log('%c✅ Restoration VERIFIED - miniCycleData present in localStorage', 'background: green; color: white; padding: 2px 6px;');
-                        } else {
-                            console.log('%c✅ Restoration VERIFIED - user had no miniCycleData before tests', 'background: green; color: white; padding: 2px 6px;');
-                        }
                     } else {
                         // Backup had 0 keys - user had empty localStorage before tests
                         restorationVerified = true;
-                        console.log('%c✅ Restoration VERIFIED - user had empty localStorage before tests', 'background: green; color: white; padding: 2px 6px;');
                     }
                 } else {
                     // IndexedDB restore failed - do NOT clear flags, keep backup for next refresh
                     console.error(`%c❌ IndexedDB restore FAILED: ${restoreResult.error}`, 'background: red; color: white; padding: 2px 6px;');
                     console.error('   Backup will be preserved - appState.js will restore on next page load');
+                }
+
+                // 🛡️ POST-RESTORE VERIFICATION: Wait and check that nothing overwrote the data
+                if (restorationVerified && restoreResult.keysRestored > 0) {
+                    // Capture what we just restored for comparison
+                    const expectedData = localStorage.getItem('miniCycleData');
+
+                    // Wait for any stale async operations to fire
+                    await new Promise(resolve => setTimeout(resolve, 500));
+
+                    // Check if data was overwritten by a stale write
+                    const currentData = localStorage.getItem('miniCycleData');
+                    if (expectedData && currentData !== expectedData) {
+                        console.warn('%c⚠️ POST-RESTORE: Data was overwritten by stale async operation! Re-restoring...', 'background: orange; color: black; padding: 2px 6px;');
+                        const reRestoreResult = await restoreLocalStorageFromBackup();
+                        if (reRestoreResult.success) {
+                            console.log(`%c✅ Re-restored ${reRestoreResult.keysRestored} keys successfully`, 'background: green; color: white; padding: 2px 6px;');
+                        } else {
+                            console.error('%c❌ Re-restore FAILED', 'background: red; color: white; padding: 2px 6px;');
+                            restorationVerified = false;
+                        }
+                    } else {
+                        console.log('%c✅ Post-restore verification passed - data intact', 'background: green; color: white; padding: 2px 6px;');
+                    }
                 }
 
                 // 🚦 ONLY clear flags and backup if restoration was verified successful
@@ -2367,12 +2477,6 @@
                     console.warn('%c⚠️ KEEPING BACKUP - restoration not verified, backup preserved for next refresh', 'background: orange; color: black; padding: 2px 6px;');
                     console.warn('   On next page load, appState.js will attempt to restore from this backup');
                 }
-
-                // 🛡️ RESTORE ORIGINAL handlers
-                // Note: Test mode localStorage flag is cleared by setTestModeFlag(false) above
-                window.onbeforeunload = originalBeforeUnload;
-                window.setTimeout = originalSetTimeout;
-                localStorage.clear = originalLocalStorageClear;
 
                 // 🔍 INDEXEDDB BACKUP VALIDATION SUMMARY
                 console.log('%c📊 INDEXEDDB BACKUP VALIDATION SUMMARY', 'background: #333; color: #fff; font-size: 14px; padding: 4px 8px;');

@@ -55,7 +55,8 @@ const di = createDIModule('RecurringPanel', {
     safeAddEventListener: optional(null),
     refreshUIFromState: optional(null),
     activateTaskRecurringState: optional(null),
-    deactivateTaskRecurringState: optional(null)
+    deactivateTaskRecurringState: optional(null),
+    getModal: optional(null)
 }, { strict: true });
 
 /**
@@ -137,8 +138,8 @@ export class RecurringPanelManager {
         }
 
         try {
-            const overlay = this.deps.getElementById(DOM_IDS.RECURRING_PANEL_OVERLAY);
-            const panel = this.deps.getElementById(DOM_IDS.RECURRING_PANEL);
+            const overlay = this.deps.getModal('recurringOverlay');
+            const panel = this.deps.getModal('recurringPanel');
             const closeBtn = this.deps.getElementById(DOM_IDS.CLOSE_RECURRING_PANEL);
             const openBtn = this.deps.getElementById(DOM_IDS.OPEN_RECURRING_PANEL);
 
@@ -725,7 +726,7 @@ export class RecurringPanelManager {
             await this.updateRecurringPanel();
 
             // Show overlay
-            const overlay = this.deps.getElementById(DOM_IDS.RECURRING_PANEL_OVERLAY);
+            const overlay = this.deps.getModal('recurringOverlay');
             if (overlay) {
                 overlay.classList.remove("hidden");
             }
@@ -754,7 +755,7 @@ export class RecurringPanelManager {
         console.log('🔁 Closing recurring panel...');
 
         try {
-            const overlay = this.deps.getElementById(DOM_IDS.RECURRING_PANEL_OVERLAY);
+            const overlay = this.deps.getModal('recurringOverlay');
             if (overlay) {
                 overlay.classList.add("hidden");
             }
@@ -1019,7 +1020,7 @@ export class RecurringPanelManager {
                     const updatedCycle = updatedState.data?.cycles?.[activeCycleId];
                     const remaining = Object.values(updatedCycle?.recurringTemplates || {});
                     if (remaining.length === 0) {
-                        const overlay = this.deps.getElementById(DOM_IDS.RECURRING_PANEL_OVERLAY);
+                        const overlay = this.deps.getModal('recurringOverlay');
                         if (overlay) overlay.classList.add("hidden");
                     }
 
@@ -1240,7 +1241,7 @@ export class RecurringPanelManager {
         summaryBox.appendChild(changeBtn);
         container.appendChild(summaryBox);
 
-        const panel = this.deps.getElementById(DOM_IDS.RECURRING_PANEL);
+        const panel = this.deps.getModal('recurringPanel');
         if (panel) {
             panel.appendChild(container);
         }
@@ -1785,7 +1786,7 @@ export class RecurringPanelManager {
             }
 
             // Show panel
-            const overlay = this.deps.getElementById(DOM_IDS.RECURRING_PANEL_OVERLAY);
+            const overlay = this.deps.getModal('recurringOverlay');
             if (overlay) overlay.classList.remove("hidden");
 
             // Make sure checkboxes and toggle show correctly

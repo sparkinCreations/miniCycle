@@ -57,7 +57,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
         const container = document.createElement('div');
         container.id = 'test-completed-tasks-container';
         container.innerHTML = `
-            <div id="completed-tasks-section" style="display: none;">
+            <div id="completed-tasks-section">
                 <div id="completed-tasks-header">
                     <span>Completed</span>
                     <span class="toggle-icon">▼</span>
@@ -312,7 +312,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
 
         manager.moveToCompleted(task);
 
-        if (completedSection.style.display === 'none') {
+        if (!completedSection.classList.contains('show')) {
             throw new Error('Completed section should be visible');
         }
     });
@@ -400,11 +400,11 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
         const manager = new CompletedTasksManager();
 
         const completedSection = document.getElementById('completed-tasks-section');
-        completedSection.style.display = 'block';
+        completedSection.classList.add('show');
 
         manager.updateCount();
 
-        if (completedSection.style.display !== 'none') {
+        if (completedSection.classList.contains('show')) {
             throw new Error('Section should be hidden when count is 0');
         }
     });
@@ -420,7 +420,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
         manager.updateCount();
 
         const completedSection = document.getElementById('completed-tasks-section');
-        if (completedSection.style.display === 'none') {
+        if (!completedSection.classList.contains('show')) {
             throw new Error('Section should be visible when count > 0');
         }
     });

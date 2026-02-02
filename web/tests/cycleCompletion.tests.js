@@ -22,7 +22,8 @@ import {
     showCompletionAnimation,
     incrementCycleCount,
     updateProgressBar,
-    checkMiniCycle
+    checkMiniCycle,
+    initCycleCompletion
 } from '../modules/progress/cycleCompletion.js';
 
 export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false) {
@@ -126,6 +127,9 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
     // === DEPENDENCY INJECTION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">💉 Dependency Injection</h4>';
+
+    // Initialize the module to load MILESTONES before any tests that use incrementCycleCount
+    await initCycleCompletion();
 
     await test('setCycleCompletionDependencies accepts all dependencies', () => {
         const mockAppState = createMockAppStateWithData();
