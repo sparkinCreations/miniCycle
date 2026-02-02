@@ -436,7 +436,6 @@ class BackupManager {
             return true;
 
         } catch (error) {
-            console.error('❌ BackupManager: Manual backup failed', error);
             throw error;
         }
     }

@@ -14,7 +14,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
 // ============================================================================
@@ -124,10 +124,12 @@ export class TaskOptionsVisibilityController {
             return false;
         }
 
-        // Apply visibility state
-        taskOptions.style.visibility = visible ? "visible" : "hidden";
-        taskOptions.style.opacity = visible ? "1" : "0";
-        taskOptions.style.pointerEvents = visible ? "auto" : "none";
+        // Apply visibility state via CSS class toggle
+        if (visible) {
+            taskOptions.classList.remove(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
+        } else {
+            taskOptions.classList.add(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
+        }
 
         console.log(`${caller}: visibility -> ${visible ? 'visible' : 'hidden'} (mode: ${this.getMode()})`);
         return true;

@@ -94,9 +94,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
 
         const taskOptions = document.createElement('div');
         taskOptions.className = 'task-options';
-        taskOptions.style.visibility = 'hidden';
-        taskOptions.style.opacity = '0';
-        taskOptions.style.pointerEvents = 'none';
+        taskOptions.classList.add('task-options-force-hidden');
 
         const btn1 = document.createElement('button');
         btn1.className = 'task-btn';
@@ -199,10 +197,10 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
         if (!result) {
             throw new Error('show should return true');
         }
-        if (taskOptions.style.visibility !== 'visible') {
+        if (taskOptions.classList.contains('task-options-force-hidden')) {
             throw new Error('visibility should be visible');
         }
-        if (taskOptions.style.opacity !== '1') {
+        if (taskOptions.classList.contains('task-options-force-hidden')) {
             throw new Error('opacity should be 1');
         }
     });
@@ -223,10 +221,10 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
         if (!result) {
             throw new Error('hide should return true');
         }
-        if (taskOptions.style.visibility !== 'hidden') {
+        if (!taskOptions.classList.contains('task-options-force-hidden')) {
             throw new Error('visibility should be hidden');
         }
-        if (taskOptions.style.opacity !== '0') {
+        if (!taskOptions.classList.contains('task-options-force-hidden')) {
             throw new Error('opacity should be 0');
         }
     });
@@ -256,7 +254,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
         if (result !== false) {
             throw new Error('show should return false in three-dots mode for mouseenter');
         }
-        if (taskOptions.style.visibility !== 'hidden') {
+        if (!taskOptions.classList.contains('task-options-force-hidden')) {
             throw new Error('visibility should remain hidden');
         }
     });
@@ -278,7 +276,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
         showTaskOptions(event);
 
         const taskOptions = task.querySelector('.task-options');
-        if (taskOptions.style.visibility !== 'visible') {
+        if (taskOptions.classList.contains('task-options-force-hidden')) {
             throw new Error('Task options should be visible on desktop');
         }
     });
@@ -295,7 +293,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
         showTaskOptions(event);
 
         const taskOptions = task.querySelector('.task-options');
-        if (taskOptions.style.visibility === 'visible') {
+        if (!taskOptions.classList.contains('task-options-force-hidden')) {
             throw new Error('Task options should remain hidden on mobile without long-press');
         }
     });
@@ -313,7 +311,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
         showTaskOptions(event);
 
         const taskOptions = task.querySelector('.task-options');
-        if (taskOptions.style.visibility !== 'visible') {
+        if (taskOptions.classList.contains('task-options-force-hidden')) {
             throw new Error('Task options should be visible on mobile with long-press');
         }
     });
@@ -333,7 +331,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
         hideTaskOptions(event);
 
         const taskOptions = task.querySelector('.task-options');
-        if (taskOptions.style.visibility !== 'hidden') {
+        if (!taskOptions.classList.contains('task-options-force-hidden')) {
             throw new Error('Task options should be hidden');
         }
     });
@@ -355,7 +353,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
 
         const taskOptions = task.querySelector('.task-options');
         // Should remain visible because long-pressed
-        if (taskOptions.style.visibility !== 'visible') {
+        if (taskOptions.classList.contains('task-options-force-hidden')) {
             throw new Error('Task options should remain visible during long-press');
         }
     });
@@ -378,7 +376,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
         hideTaskButtons(task);
 
         const taskOptions = task.querySelector('.task-options');
-        if (taskOptions.style.visibility !== 'hidden') {
+        if (!taskOptions.classList.contains('task-options-force-hidden')) {
             throw new Error('Task options should be hidden');
         }
     });
@@ -398,7 +396,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
 
         const taskOptions = task.querySelector('.task-options');
         // Should remain visible because rearranging
-        if (taskOptions.style.visibility !== 'visible') {
+        if (taskOptions.classList.contains('task-options-force-hidden')) {
             throw new Error('Task options should remain visible during rearranging');
         }
     });
@@ -418,7 +416,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
 
         const taskOptions = task.querySelector('.task-options');
         // Should remain visible because long-pressed
-        if (taskOptions.style.visibility !== 'visible') {
+        if (taskOptions.classList.contains('task-options-force-hidden')) {
             throw new Error('Task options should remain visible during long-press');
         }
     });
@@ -437,7 +435,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
 
         const taskOptions = task.querySelector('.task-options');
         // Should remain visible because hideTaskButtons not allowed in three-dots mode
-        if (taskOptions.style.visibility !== 'visible') {
+        if (taskOptions.classList.contains('task-options-force-hidden')) {
             throw new Error('Task options should remain visible in three-dots mode');
         }
     });

@@ -22,7 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
 // ============================================================================
@@ -318,7 +318,7 @@ export class TaskRenderer {
         if (!activeTaskId) return;
 
         // Find the task element and show its options
-        const taskElement = document.querySelector(`.task[data-task-id="${activeTaskId}"]`);
+        const taskElement = document.querySelector(DATA_SELECTORS.taskById(activeTaskId));
         if (taskElement) {
             // Directly show task options (don't use revealTaskButtons to avoid toggle behavior)
             const taskOptions = taskElement.querySelector(DOM_SELECTORS.TASK_OPTIONS);

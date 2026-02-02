@@ -362,7 +362,10 @@ export const DOM_CLASSES = Object.freeze({
     MODE_DESCRIPTION_VISIBLE: 'mode-description-visible',
     HELP_WINDOW_SIDE: 'help-window-side',
     ONBOARDING_ACTIVE: 'onboarding-active',
-    DROPDOWN_OPEN: 'dropdown-open'
+    DROPDOWN_OPEN: 'dropdown-open',
+
+    // ---- Task Options Visibility ----
+    TASK_OPTIONS_FORCE_HIDDEN: 'task-options-force-hidden'
 });
 
 // ============================================================================
@@ -888,6 +891,23 @@ export const DOM_SELECTORS = Object.freeze({
     TESTING_TAB_CONTENT_ACTIVE: '.testing-tab-content.active',
     CLOSE_TESTING_MODAL: '.close-testing-modal',
     BACKUP_ITEM: '.backup-item'
+});
+
+// ============================================================================
+// DOM DATA SELECTORS — Factory functions for parameterized selectors
+// ============================================================================
+
+/**
+ * Selector factory functions for data-attribute queries
+ * Replaces magic template literal selectors scattered across modules
+ * @constant {Object}
+ */
+export const DATA_SELECTORS = Object.freeze({
+    taskById: (id) => `.task[data-task-id="${id}"]`,
+    recurringTaskById: (id) => `.recurring-task-item[data-task-id="${id}"]`,
+    elementByTaskId: (id) => `[data-task-id="${id}"]`,
+    menuSectionByName: (name) => `.menu-section[data-section="${name}"]`,
+    preferencesSectionByName: (name) => `.preferences-section[data-section="${name}"]`
 });
 
 // ============================================================================

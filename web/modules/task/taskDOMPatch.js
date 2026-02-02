@@ -16,7 +16,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -47,7 +47,7 @@ export class TaskDOMPatch {
      * @returns {boolean} True if patched successfully
      */
     patchTask(taskId, taskData, changedFields = null) {
-        const taskElement = document.querySelector(`.task[data-task-id="${taskId}"]`);
+        const taskElement = document.querySelector(DATA_SELECTORS.taskById(taskId));
         if (!taskElement) {
             console.warn(`🎨 patchTask: Task element not found for ${taskId}`);
             return false;
@@ -192,7 +192,7 @@ export class TaskDOMPatch {
      * @returns {boolean} True if removed, false if not found
      */
     removeTask(taskId) {
-        const taskElement = document.querySelector(`.task[data-task-id="${taskId}"]`);
+        const taskElement = document.querySelector(DATA_SELECTORS.taskById(taskId));
         if (!taskElement) {
             console.warn(`🎨 removeTask: Task element not found for ${taskId}`);
             return false;

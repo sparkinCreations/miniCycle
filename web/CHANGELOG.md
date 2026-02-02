@@ -1,3 +1,7 @@
+## [1.914] - 2026-02-02
+- Refactor initialization functions to use 'init' prefix for consistency
+
+
 ## [1.913] - 2026-02-02
 - feat: conduct comprehensive code audit addressing memory leaks, async patterns, dead code, naming consistency, and security improvements
 

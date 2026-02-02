@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
 import { updateThemeColor } from '../features/themeManager.js';
 
 // ============================================================================
@@ -1078,7 +1078,7 @@ export class PreferencesManager {
 
         // Apply saved collapsed states
         Object.entries(collapsedSections).forEach(([sectionName, isCollapsed]) => {
-            const section = document.querySelector(`.preferences-section[data-section="${sectionName}"]`);
+            const section = document.querySelector(DATA_SELECTORS.preferencesSectionByName(sectionName));
             if (section) {
                 if (isCollapsed) {
                     section.classList.add('collapsed');

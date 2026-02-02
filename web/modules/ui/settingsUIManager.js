@@ -169,8 +169,11 @@ export function setupSettingsMenu() {
 function setupSettingsCollapsibleSections(safeAddEventListener) {
     const sectionHeaders = document.querySelectorAll(DOM_SELECTORS.SETTINGS_SECTION_HEADER);
 
-    // Load saved collapsed states
-    loadSettingsCollapsedStates();
+    // Cache collapsible sections once and reuse in load/save
+    const collapsibleSections = document.querySelectorAll(DOM_SELECTORS.SETTINGS_SECTION_COLLAPSIBLE);
+
+    // Load saved collapsed states using cached sections
+    loadSettingsCollapsedStates(collapsibleSections);
 
     sectionHeaders.forEach(header => {
         safeAddEventListener(header, 'click', (e) => {
@@ -178,7 +181,7 @@ function setupSettingsCollapsibleSections(safeAddEventListener) {
             const section = header.closest('.settings-section');
             if (section) {
                 section.classList.toggle('collapsed');
-                saveSettingsCollapsedStates();
+                saveSettingsCollapsedStates(collapsibleSections);
             }
         });
     });
@@ -186,15 +189,16 @@ function setupSettingsCollapsibleSections(safeAddEventListener) {
 
 /**
  * Load collapsed states from AppState
+ * @param {NodeList} [sections] - Cached collapsible section elements
  */
-function loadSettingsCollapsedStates() {
+function loadSettingsCollapsedStates(sections) {
     const state = _deps.AppState?.get();
     const collapsedStates = state?.settings?.settingsCollapsedSections;
 
     if (!collapsedStates) return;
 
-    const sections = document.querySelectorAll(DOM_SELECTORS.SETTINGS_SECTION_COLLAPSIBLE);
-    sections.forEach(section => {
+    const sectionElements = sections || document.querySelectorAll(DOM_SELECTORS.SETTINGS_SECTION_COLLAPSIBLE);
+    sectionElements.forEach(section => {
         const sectionName = section.dataset.section;
         if (sectionName && collapsedStates[sectionName] !== undefined) {
             if (collapsedStates[sectionName]) {
@@ -208,12 +212,13 @@ function loadSettingsCollapsedStates() {
 
 /**
  * Save collapsed states to AppState
+ * @param {NodeList} [sections] - Cached collapsible section elements
  */
-function saveSettingsCollapsedStates() {
-    const sections = document.querySelectorAll(DOM_SELECTORS.SETTINGS_SECTION_COLLAPSIBLE);
+function saveSettingsCollapsedStates(sections) {
+    const sectionElements = sections || document.querySelectorAll(DOM_SELECTORS.SETTINGS_SECTION_COLLAPSIBLE);
     const collapsedStates = {};
 
-    sections.forEach(section => {
+    sectionElements.forEach(section => {
         const sectionName = section.dataset.section;
         if (sectionName) {
             collapsedStates[sectionName] = section.classList.contains('collapsed');

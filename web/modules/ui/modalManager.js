@@ -42,7 +42,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
 
 // ============================================================================
@@ -152,9 +152,7 @@ export class ModalManager {
 
         // Close task options
         document.querySelectorAll(DOM_SELECTORS.TASK_OPTIONS).forEach(action => {
-            action.style.opacity = "0";
-            action.style.visibility = "hidden";
-            action.style.pointerEvents = "none";
+            action.classList.add(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
         });
 
         // Reset task states

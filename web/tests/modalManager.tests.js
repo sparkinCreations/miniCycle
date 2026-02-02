@@ -240,16 +240,12 @@ export async function runModalManagerTests(resultsDiv) {
         // Create test task options
         const taskOptions = document.createElement('div');
         taskOptions.classList.add('task-options');
-        taskOptions.style.opacity = '1';
-        taskOptions.style.visibility = 'visible';
-        taskOptions.style.pointerEvents = 'auto';
+        // Task options start visible (no force-hidden class)
         document.body.appendChild(taskOptions);
 
         mm.closeAllModals();
 
-        if (taskOptions.style.opacity !== '0' ||
-            taskOptions.style.visibility !== 'hidden' ||
-            taskOptions.style.pointerEvents !== 'none') {
+        if (!taskOptions.classList.contains('task-options-force-hidden')) {
             throw new Error('Task options should be hidden');
         }
 

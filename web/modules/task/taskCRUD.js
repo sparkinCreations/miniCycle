@@ -117,7 +117,7 @@ async function waitForCoreWithTimeout() {
             new Promise((resolve) => setTimeout(resolve, UI_TIMEOUTS.NOTIFICATION_LONG))
         ]);
     } catch (error) {
-        console.warn('Core wait timeout or error:', error);
+        console.warn('Core wait: timeout or rejection:', error?.message || 'timeout');
     }
 }
 

@@ -29,7 +29,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 
 // ============================================================================
@@ -1206,7 +1206,7 @@ export class TaskDOMManager {
      * @returns {HTMLElement|null}
      */
     getTaskElement(taskId) {
-        return document.querySelector(`.task[data-task-id="${taskId}"]`);
+        return document.querySelector(DATA_SELECTORS.taskById(taskId));
     }
 
     /**
