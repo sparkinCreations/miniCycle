@@ -842,6 +842,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         stopReminders: (...args) => deps.features?.stopReminders?.(...args),
         updateReminderButtons: (...args) => deps.features?.updateReminderButtons?.(...args),
         setupReminderButtonHandler: (...args) => deps.features?.setupReminderButtonHandler?.(...args),
+        loadRemindersSettings: (...args) => deps.features?.loadRemindersSettings?.(...args),
 
         // Due dates (from deps.features)
         checkOverdueTasks: (...args) => deps.features?.checkOverdueTasks?.(...args),

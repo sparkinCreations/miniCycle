@@ -208,7 +208,8 @@ class MiniCycleState {
             showNotification: mergedDeps.showNotification || console.log.bind(console),
             storage: mergedDeps.storage || localStorage,
             loadInitialData: mergedDeps.loadInitialData || (() => null),
-            createInitialData: mergedDeps.createInitialData || (() => this.createInitialState())
+            createInitialData: mergedDeps.createInitialData || (() => this.createInitialState()),
+            addWindowListener: mergedDeps.addWindowListener || ((evt, fn) => window.addEventListener(evt, fn))
         };
 
         // Your existing properties
@@ -413,7 +414,7 @@ class MiniCycleState {
             this.isInitialized = true;
 
             // ✅ Flush pending saves on page unload to prevent data loss
-            window.addEventListener('beforeunload', () => {
+            this.deps.addWindowListener('beforeunload', () => {
                 if (this.saveTimeout) {
                     clearTimeout(this.saveTimeout);
                     this.saveTimeout = null;
@@ -425,7 +426,7 @@ class MiniCycleState {
             });
 
             // ✅ Multi-tab sync: Detect changes from other tabs via storage event
-            window.addEventListener('storage', (event) => {
+            this.deps.addWindowListener('storage', (event) => {
                 if (event.key !== 'miniCycleData') return;
                 if (!event.newValue) return;
 

@@ -1,3 +1,7 @@
+## [1.911] - 2026-02-02
+- fix: update cycle API method name and add initialization for completed tasks section
+
+
 ## [1.910] - 2026-02-02
 - feat(ui): add preferences background image module for upload, compression, and storage
 

@@ -22,6 +22,8 @@
  * @property {boolean} [capture=false] - Use capture phase
  */
 
+import { DOM_IDS } from '../core/constants.js';
+
 // Module-level deps for late injection (static class pattern)
 let _deps = {};
 
@@ -640,7 +642,7 @@ export class GlobalUtils {
      * @param {Object} constants - Constants object
      */
     static syncAllTasksWithMode(currentMode, tasksData, constants) {
-        const taskList = document.getElementById('taskList');
+        const taskList = document.getElementById(DOM_IDS.TASK_LIST);
         if (!taskList) {
             console.warn('⚠️ syncAllTasksWithMode: Task list not found');
             return;

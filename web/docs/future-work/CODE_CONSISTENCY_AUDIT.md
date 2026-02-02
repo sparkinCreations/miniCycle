@@ -102,7 +102,18 @@ Three strategies with no documented policy:
 | **Warn + continue** (degraded) | themeManager, statsPanel | `console.warn('⚠️...')` |
 | **Log + swallow** (silent) | recurringIntegration | `console.log(...)` in catch block |
 
-**Recommendation:** Standardize — see existing `ERROR_HANDLING_IMPROVEMENTS_PLAN.md` for prior analysis.
+**Recommended Policy** (documented Feb 2026):
+
+| Context | Strategy | Example |
+|---------|----------|---------|
+| **Missing required dep at init** | **Throw** — fail fast, caught by boot | `throw new Error('Missing required: AppState')` |
+| **Optional dep missing at runtime** | **Warn + degrade** — continue without feature | `console.warn('⚠️ Feature X unavailable'); return;` |
+| **Data operation failure** | **Warn + return null** — caller handles | `console.warn('⚠️ Load failed:', err.message); return null;` |
+| **Never** | **Silent swallow** — `catch(e) {}` or `console.log` in catch | Remove all instances |
+
+Modules with `console.log` in catch blocks (`recurringIntegration.js:383-432`) should be updated to use `console.warn` with the `⚠️` prefix for consistency.
+
+See `ERROR_HANDLING_IMPROVEMENTS_PLAN.md` for the full 5-phase improvement roadmap.
 
 ---
 
@@ -124,17 +135,20 @@ Three strategies with no documented policy:
 - [x] `uiBoot.js:654` — add validation to `finalizeUI` getter calls
 
 ### MEDIUM Priority (Functional Gaps)
-- [ ] `taskSearch.js` — 4 bare `addEventListener` → `safeAddEventListener`
-- [ ] `appState.js:416, 428` — `window.addEventListener` → DI-injected
-- [ ] `globalUtils.js:643` — hardcoded `'taskList'` → `DOM_IDS.TASK_LIST`
-- [ ] `preferencesManager.js` — 4 hardcoded `document.querySelector` calls
-- [ ] `loadRemindersSettings` — add missing depMapping wrapper
-- [ ] Document and standardize error handling strategy
+- [x] `taskSearch.js` — 4 bare `addEventListener` → `safeAddEventListener`
+- [x] `appState.js:416, 428` — `window.addEventListener` → DI-injected (`addWindowListener`)
+- [x] `globalUtils.js:643` — hardcoded `'taskList'` → `DOM_IDS.TASK_LIST`
+- [x] `preferencesManager.js` — 4 hardcoded `document.querySelector` → use `DOM_IDS` constants
+- [x] `loadRemindersSettings` — add missing depMapping wrapper in moduleLoader
+- [x] Document error handling strategy (policy table added above, references existing plan)
+
+### Bonus: Boot bugs found via LOW priority validation
+- [x] `featureBoot.js:337` — `cycleApiObj.initializeModeSelector` referenced wrong key (`initializeModeSelector` vs `setupModeSelector`)
+- [x] `featureBoot.js:343-360` — `uiApiObj` missing `initCompletedTasksSection`
 
 ### HIGH Priority (Architectural)
-- [ ] `themeManager.js` — 22+ direct `document.getElementById` → `_deps.getElementById`
-- [ ] `menuManager` — resolve Phase 5 / `api: 'ui'` contradiction
-- [ ] `finalizeUI` silent failures — add logging for undefined getters
+- [x] `themeManager.js` — 16 direct `document.getElementById/querySelector/querySelectorAll` → `_deps.*` (added to DI schema with defaults, manifest updated)
+- [x] `menuManager` — Phase 5 / `api: 'ui'` is correct (api = deps category, not phase). Added clarifying comments to manifest.
 
 ---
 

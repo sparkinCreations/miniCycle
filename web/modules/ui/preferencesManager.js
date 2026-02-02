@@ -602,7 +602,7 @@ export class PreferencesManager {
             checkboxFillToggle.checked = showFill;
 
             const colorInput = document.getElementById(DOM_IDS.PREF_CHECKBOX_BG);
-            const resetBtn = document.querySelector('[data-target="pref-checkbox-bg"]');
+            const resetBtn = document.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_BG}"]`);
             if (colorInput) colorInput.style.opacity = showFill ? '1' : '0.3';
             if (resetBtn) resetBtn.style.opacity = showFill ? '1' : '0.3';
         }
@@ -614,7 +614,7 @@ export class PreferencesManager {
             checkboxIncompleteToggle.checked = showCheckbox;
 
             const colorInput = document.getElementById(DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG);
-            const resetBtn = document.querySelector('[data-target="pref-checkbox-incomplete-bg"]');
+            const resetBtn = document.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG}"]`);
             if (colorInput) colorInput.style.opacity = showCheckbox ? '1' : '0.3';
             if (resetBtn) resetBtn.style.opacity = showCheckbox ? '1' : '0.3';
         }
@@ -694,7 +694,7 @@ export class PreferencesManager {
 
         // Update color input visibility
         const colorInput = document.getElementById(DOM_IDS.PREF_CHECKBOX_BG);
-        const resetBtn = document.querySelector('[data-target="pref-checkbox-bg"]');
+        const resetBtn = document.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_BG}"]`);
         if (colorInput) colorInput.style.opacity = visible ? '1' : '0.3';
         if (resetBtn) resetBtn.style.opacity = visible ? '1' : '0.3';
 
@@ -726,7 +726,7 @@ export class PreferencesManager {
 
         // Update color input visibility
         const colorInput = document.getElementById(DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG);
-        const resetBtn = document.querySelector('[data-target="pref-checkbox-incomplete-bg"]');
+        const resetBtn = document.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG}"]`);
         if (colorInput) colorInput.style.opacity = visible ? '1' : '0.3';
         if (resetBtn) resetBtn.style.opacity = visible ? '1' : '0.3';
 

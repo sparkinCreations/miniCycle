@@ -120,7 +120,7 @@ export const MODULE_MANIFESTS = {
     themeManager: {
         path: '../features/themeManager.js',
         phase: PHASES.THEME_VISUAL,
-        requires: ['appInit', 'showNotification', 'getModal'],
+        requires: ['appInit', 'showNotification', 'getModal', 'getElementById', 'querySelector', 'querySelectorAll'],
         provides: ['applyTheme', 'updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'unlockDarkOceanTheme', 'unlockGoldenGlowTheme', 'initializeThemesPanel', 'refreshThemeToggles', 'setupThemesPanel'],
         provideInstance: 'themeManager',
         api: 'features',
@@ -315,10 +315,10 @@ export const MODULE_MANIFESTS = {
 
     menuManager: {
         path: '../ui/menuManager.js',
-        phase: PHASES.CYCLE,  // Moved to Phase 5 - needed by routineManager
+        phase: PHASES.CYCLE,  // Phase 5 (not Phase 6 UI_MANAGERS) because routineManager needs it in same phase
         requires: ['appInit', 'AppState', 'showNotification'],
         provides: ['hideMainMenu', 'updateMainMenuHeader'],
-        api: 'ui',
+        api: 'ui',            // Exports to deps.ui — api category != phase
         singleton: true
     },
 

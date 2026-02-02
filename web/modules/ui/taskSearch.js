@@ -24,7 +24,8 @@ const TASK_THRESHOLD = 3; // Show search when this many tasks exist
 
 const di = createDIModule('TaskSearch', {
     getElementById: optional((id) => document.getElementById(id)),
-    querySelectorAll: optional((sel) => document.querySelectorAll(sel))
+    querySelectorAll: optional((sel) => document.querySelectorAll(sel)),
+    safeAddEventListener: optional(null)
 });
 
 /**
@@ -64,18 +65,20 @@ export function initTaskSearch() {
         return;
     }
 
+    const safeAdd = deps.safeAddEventListener || ((el, evt, fn) => el.addEventListener(evt, fn));
+
     // Toggle search input on button click
-    searchBtn.addEventListener('click', () => {
+    safeAdd(searchBtn, 'click', () => {
         toggleSearchInput();
     });
 
     // Filter tasks as user types
-    searchInput.addEventListener('input', (e) => {
+    safeAdd(searchInput, 'input', (e) => {
         filterTasks(e.target.value);
     });
 
     // Clear search on X button click - collapse if already empty
-    clearBtn.addEventListener('click', () => {
+    safeAdd(clearBtn, 'click', () => {
         if (searchInput.value.trim() === '') {
             collapseSearch();
         } else {
@@ -84,7 +87,7 @@ export function initTaskSearch() {
     });
 
     // Clear search on Escape key
-    searchInput.addEventListener('keydown', (e) => {
+    safeAdd(searchInput, 'keydown', (e) => {
         if (e.key === 'Escape') {
             clearSearch();
             collapseSearch();
