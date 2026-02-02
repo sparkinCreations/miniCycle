@@ -659,12 +659,22 @@ export function openTestResultsInModal() {
 
     modalOverlay.querySelector("#print-results").addEventListener("click", () => {
         const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
-            <html><head><title>miniCycle Test Results</title></head>
-            <body><pre style="font-family: monospace; white-space: pre-wrap;">${content}</pre></body>
-            </html>
-        `);
-        printWindow.document.close();
+        const doc = printWindow.document;
+        doc.open();
+        const html = doc.createElement('html');
+        const head = doc.createElement('head');
+        const title = doc.createElement('title');
+        title.textContent = 'miniCycle Test Results';
+        head.appendChild(title);
+        html.appendChild(head);
+        const body = doc.createElement('body');
+        const pre = doc.createElement('pre');
+        pre.style.cssText = 'font-family: monospace; white-space: pre-wrap;';
+        pre.textContent = content;
+        body.appendChild(pre);
+        html.appendChild(body);
+        doc.appendChild(html);
+        doc.close();
         printWindow.print();
     });
 

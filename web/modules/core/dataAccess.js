@@ -117,7 +117,7 @@ export function loadMiniCycleData() {
     const existingData = localStorage.getItem("miniCycleData");
     if (existingData) {
         console.error('❌ Data exists in localStorage but failed to parse. NOT creating fresh data to prevent data loss.');
-        console.error('❌ Existing data:', existingData.substring(0, 200) + '...');
+        console.error('❌ Existing data length:', existingData.length, 'chars');
         return null;
     }
 

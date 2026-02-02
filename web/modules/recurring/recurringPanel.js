@@ -936,7 +936,7 @@ export class RecurringPanelManager {
             confirmText: "Remove",
             cancelText: "Cancel",
             destructive: true,
-            callback: (confirmed) => {
+            callback: async (confirmed) => {
                 if (!confirmed) return;
 
                 try {
@@ -962,7 +962,7 @@ export class RecurringPanelManager {
                     const currentMode = isToDoMode ? 'todo' : 'cycle';
 
                     // ✅ Update via shared deactivation helper (immediate save)
-                    this.deps.updateAppState(draft => {
+                    await this.deps.updateAppState(draft => {
                         const cycle = draft.data.cycles[activeCycleId];
                         this.deps.deactivateTaskRecurringState(cycle, task.id, currentMode);
                     }, true); // ✅ Immediate save when removing recurring from panel
@@ -1527,7 +1527,7 @@ export class RecurringPanelManager {
      * Handle confirming add selected tasks as recurring
      * Adds all selected tasks with default recurring settings
      */
-    handleConfirmAddRecurring() {
+    async handleConfirmAddRecurring() {
         console.log('➕ Confirming add tasks as recurring...');
 
         try {
@@ -1562,7 +1562,7 @@ export class RecurringPanelManager {
             });
 
             // Add each selected task to recurring templates via shared helper
-            this.deps.updateAppState(draft => {
+            await this.deps.updateAppState(draft => {
                 const cycle = draft.data.cycles[activeCycleId];
 
                 selectedTaskIds.forEach(taskId => {
@@ -1610,7 +1610,7 @@ export class RecurringPanelManager {
     /**
      * Save always show recurring setting to AppState
      */
-    saveAlwaysShowRecurringSetting() {
+    async saveAlwaysShowRecurringSetting() {
         console.log('💾 Saving always show recurring setting...');
 
         try {
@@ -1628,7 +1628,7 @@ export class RecurringPanelManager {
                 return;
             }
 
-            this.deps.updateAppState(draft => {
+            await this.deps.updateAppState(draft => {
                 if (!draft.settings) {
                     draft.settings = {};
                 }

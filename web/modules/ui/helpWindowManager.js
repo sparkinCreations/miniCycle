@@ -177,7 +177,12 @@ export class HelpWindowManager {
         // Listen for task list mutations (task additions/deletions)
         const taskList = document.getElementById(DOM_IDS.TASK_LIST);
         if (taskList) {
-            const observer = new MutationObserver((mutations) => {
+            // Disconnect previous observer if re-initialized
+            if (this._taskListObserver) {
+                this._taskListObserver.disconnect();
+            }
+
+            this._taskListObserver = new MutationObserver((mutations) => {
                 let shouldUpdate = false;
 
                 mutations.forEach(mutation => {
@@ -196,7 +201,7 @@ export class HelpWindowManager {
                 }
             });
 
-            observer.observe(taskList, {
+            this._taskListObserver.observe(taskList, {
                 childList: true,
                 subtree: true
             });
@@ -206,11 +211,10 @@ export class HelpWindowManager {
         this._resizeHandler = () => {
             this.updateSideLayout();
         };
-        // Debounce resize handler
-        let resizeTimeout;
+        // Debounce resize handler — stored as instance property for cleanup
         window.addEventListener('resize', () => {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(this._resizeHandler, 150);
+            clearTimeout(this._resizeTimeout);
+            this._resizeTimeout = setTimeout(this._resizeHandler, 150);
         });
 
         // Initial side layout check after a delay (tasks may still be loading)

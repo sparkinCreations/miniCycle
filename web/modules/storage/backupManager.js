@@ -291,9 +291,7 @@ class BackupManager {
                 // Delete oldest backups
                 const toDelete = sessionBackups.slice(MAX_SESSION_BACKUPS);
 
-                for (const backup of toDelete) {
-                    await this.deleteBackup(backup.timestamp, 'session');
-                }
+                await Promise.all(toDelete.map(backup => this.deleteBackup(backup.timestamp, 'session')));
 
                 console.log(`🧹 BackupManager: Cleaned up ${toDelete.length} old session backups`);
             }
@@ -384,9 +382,7 @@ class BackupManager {
                 // Delete oldest backups
                 const toDelete = testBackups.slice(MAX_TEST_BACKUPS);
 
-                for (const backup of toDelete) {
-                    await this.deleteBackup(backup.timestamp, 'test');
-                }
+                await Promise.all(toDelete.map(backup => this.deleteBackup(backup.timestamp, 'test')));
 
                 console.log(`🧹 BackupManager: Cleaned up ${toDelete.length} old test backups`);
             }
@@ -457,9 +453,7 @@ class BackupManager {
                 // Delete oldest backups
                 const toDelete = manualBackups.slice(MAX_MANUAL_BACKUPS);
 
-                for (const backup of toDelete) {
-                    await this.deleteBackup(backup.id, 'manual');
-                }
+                await Promise.all(toDelete.map(backup => this.deleteBackup(backup.id, 'manual')));
 
                 console.log(`🧹 BackupManager: Cleaned up ${toDelete.length} old manual backups`);
             }
@@ -650,9 +644,7 @@ class BackupManager {
                 // Delete oldest backups
                 const toDelete = autoBackups.slice(MAX_AUTO_BACKUPS);
 
-                for (const backup of toDelete) {
-                    await this.deleteBackup(backup.timestamp, 'auto');
-                }
+                await Promise.all(toDelete.map(backup => this.deleteBackup(backup.timestamp, 'auto')));
 
                 console.log(`🧹 BackupManager: Cleaned up ${toDelete.length} old auto-backups`);
             }

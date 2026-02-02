@@ -329,7 +329,7 @@ class AppInit {
 			if (rawData) {
 				// Data exists but couldn't be parsed - CORRUPTED
 				console.error('🚨 DATA CORRUPTION DETECTED: localStorage has data but it cannot be parsed');
-				console.error('🚨 Raw data preview:', rawData.substring(0, 100));
+				console.error('🚨 Raw data length:', rawData.length, 'chars');
 
 				// Show recovery modal
 				this.showDataCorruptionRecovery(rawData);

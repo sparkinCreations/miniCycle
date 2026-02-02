@@ -174,7 +174,13 @@ class TimeTrackerPlugin extends MiniCyclePlugin {
     }
 
     saveTimeData(taskId, taskText, duration) {
-        const timeData = JSON.parse(localStorage.getItem('timeTrackerData') || '{}');
+        let timeData;
+        try {
+            timeData = JSON.parse(localStorage.getItem('timeTrackerData') || '{}');
+        } catch (e) {
+            console.warn('⚠️ Corrupted time tracker data, resetting');
+            timeData = {};
+        }
         
         if (!timeData[taskId]) {
             timeData[taskId] = {
@@ -192,7 +198,13 @@ class TimeTrackerPlugin extends MiniCyclePlugin {
     }
 
     loadSavedData() {
-        const timeData = JSON.parse(localStorage.getItem('timeTrackerData') || '{}');
+        let timeData;
+        try {
+            timeData = JSON.parse(localStorage.getItem('timeTrackerData') || '{}');
+        } catch (e) {
+            console.warn('⚠️ Corrupted time tracker data');
+            timeData = {};
+        }
         console.log('⏱️ Loaded time tracking data:', Object.keys(timeData).length, 'tasks tracked');
     }
 
@@ -216,7 +228,13 @@ class TimeTrackerPlugin extends MiniCyclePlugin {
     }
 
     showTimeReport() {
-        const timeData = JSON.parse(localStorage.getItem('timeTrackerData') || '{}');
+        let timeData;
+        try {
+            timeData = JSON.parse(localStorage.getItem('timeTrackerData') || '{}');
+        } catch (e) {
+            console.warn('⚠️ Corrupted time tracker data');
+            timeData = {};
+        }
         
         if (Object.keys(timeData).length === 0) {
             this.addNotification('No time tracking data available', 'info');

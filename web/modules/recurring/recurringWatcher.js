@@ -120,7 +120,7 @@ function showTaskLimitNotification(blockedCount) {
 /**
  * Reset the task limit notification flag (e.g., when tasks are deleted)
  */
-export function resetTaskLimitNotification() {
+function resetTaskLimitNotification() {
     _taskLimitNotificationShown = false;
 }
 
@@ -317,7 +317,7 @@ export async function catchUpMissedRecurringTasks() {
     if (tasksToActuallyAdd.length > 0 || Object.keys(templateUpdates).length > 0) {
         assertInjected('updateAppState', Deps.updateAppState);
 
-        Deps.updateAppState(draft => {
+        await Deps.updateAppState(draft => {
             const cycle = draft.data.cycles[activeCycleId];
 
             // Add missed recurring tasks (only up to limit)
@@ -476,7 +476,7 @@ export async function watchRecurringTasks() {
     if (tasksToActuallyAdd.length > 0 || Object.keys(templateUpdates).length > 0) {
         assertInjected('updateAppState', Deps.updateAppState);
 
-        Deps.updateAppState(draft => {
+        await Deps.updateAppState(draft => {
             const cycle = draft.data.cycles[activeCycleId];
 
             // Add new recurring tasks (only up to limit)
