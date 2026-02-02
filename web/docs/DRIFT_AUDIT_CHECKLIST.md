@@ -25,10 +25,16 @@ Purpose: Track documentation that appears out of sync with the current zero-glob
   - Labeled legacy patterns and updated wiring examples.
 - [x] docs/PROJECT_STATS.md
   - Clarified module-only zero-globals and HTML helper scope.
+  - Fixed boot fallback descriptions (8-second late fallback, 60-second load timeout).
+- [x] docs/project-info/CONTRIBUTING.md
+  - Fixed /src → /modules paths, removed window.* examples, updated all code samples to DI patterns.
+  - Added social layer: PR process, code review expectations, Good First Issue guidance.
+- [x] docs/developer-guides/DEVELOPER_DOCUMENTATION.md
+  - Removed window.AppState/window.showNotification examples, updated to _deps.* DI pattern.
 
 ## Medium Priority
-- [ ] docs/architecture/APPINIT_EXPLAINED.md
-  - Notes: Reads like conversational/AI output; consider rewrite or archive (not a code mismatch).
+- [x] docs/architecture/APPINIT_EXPLAINED.md
+  - Reviewed: content is accurate and uses DI patterns correctly. Tone is approachable, not conversational/AI-like. No rewrite needed.
 
 ## Verification Steps (when updating)
 - [ ] Confirm current code behavior in `modules/` before editing doc claims.

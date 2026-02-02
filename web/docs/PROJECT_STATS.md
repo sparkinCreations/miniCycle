@@ -13,7 +13,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 1.914 |
+| **App Version** | 1.915 |
 | **Lite Version** | 2.05 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 107 |
@@ -21,7 +21,7 @@
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 31 |
 | **JSDoc Blocks** | 962 |
-| **Documentation Files** | 162 |
+| **Documentation Files** | 163 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
 
@@ -90,8 +90,8 @@
 
 | Fallback | Trigger | Location |
 |----------|---------|----------|
-| **8-second lite redirect** | `dataset.appBooted` not set within 8s | `miniCycle.html` (late fallback IIFE) |
-| **60-second load timeout** | App loader still visible after 60s | `miniCycle.html` (load timeout IIFE) |
+| **8-second late fallback** | Feature gate needs lite OR boot never started within 8s | `miniCycle.html` (late fallback IIFE) |
+| **60-second load timeout** | App loader still visible after 60s → redirect to lite | `miniCycle.html` (load timeout IIFE) |
 | **Boot failure counter** | 2+ consecutive boot failures → cache clear | `miniCycle.html` (boot failsafe IIFE) |
 | **Phase timeouts** | 15s/20s/15s per boot phase | `modules/core/constants.js` |
 

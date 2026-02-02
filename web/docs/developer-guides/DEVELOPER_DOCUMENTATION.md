@@ -64,18 +64,20 @@ miniCycle is a **routine manager** that helps users build and maintain repeatabl
 The codebase uses **strict dependency injection**:
 
 ```javascript
-// All modules follow this pattern:
-constructor(dependencies = {}) {
-    const mergedDeps = { ..._deps, ...dependencies };
-    this.deps = {
-        AppState: mergedDeps.AppState,  // No fallback!
-    };
-}
+// All modules use createDIModule() from diBase.js:
+import { createDIModule, required, optional } from '../core/diBase.js'
 
-// Wiring in modules/boot/orchestrator.js:
-setModuleDependencies({
-    get AppState() { return window.AppState; },  // Lazy getter
-});
+const di = createDIModule('MyModule', {
+    AppState: required(),
+    showNotification: optional(null)
+})
+
+const _deps = new Proxy({}, {
+    get(_, prop) { return di.resolve()[prop] }
+})
+
+// Wiring is handled automatically by moduleLoader.js
+// via the manifest in moduleManifests.js
 ```
 
 **Result:**
@@ -95,19 +97,19 @@ See [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md) for detailed patterns
 Centralized state for all app data:
 
 ```javascript
-// Read state
-const state = window.AppState.get();
-const cycle = state.data.cycles[state.appState.activeCycleId];
+// Read state (via DI — AppState is injected, not accessed via window.*)
+const state = _deps.AppState.get()
+const cycle = state.data.cycles[state.appState.activeCycleId]
 
 // Update state
-window.AppState.update(state => {
-    state.data.cycles[cycleId].tasks.push(newTask);
-}, true); // true = immediate save
+_deps.AppState.update(state => {
+    state.data.cycles[cycleId].tasks.push(newTask)
+}, true) // true = immediate save
 
 // Subscribe to changes
-window.AppState.subscribe('my-listener', (newState, oldState) => {
+_deps.AppState.subscribe('my-listener', (newState, oldState) => {
     // React to state changes
-});
+})
 ```
 
 ### 2. Initialization (`modules/core/appInit.js`)
@@ -197,14 +199,14 @@ if (element) {
 
 **Showing notifications:**
 ```javascript
-window.showNotification('Message', 'success', 3000);
+_deps.showNotification('Message', 'success', 3000)
 ```
 
 **Working with tasks:**
 ```javascript
-const state = window.AppState.get();
-const activeCycleId = state.appState.activeCycleId;
-const tasks = state.data.cycles[activeCycleId].tasks;
+const state = _deps.AppState.get()
+const activeCycleId = state.appState.activeCycleId
+const tasks = state.data.cycles[activeCycleId].tasks
 ```
 
 ---
