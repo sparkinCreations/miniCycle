@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 
 // ============================================================================
@@ -970,7 +970,7 @@ export class RecurringPanelManager {
                     this.deps.showNotification("↩️ Recurring turned off for this task.", "info", 5000);
 
                     // Remove recurring visual state
-                    const matchingTaskItem = this.deps.querySelector(`.task[data-task-id="${task.id}"]`);
+                    const matchingTaskItem = this.deps.querySelector(DATA_SELECTORS.taskById(task.id));
                     if (matchingTaskItem) {
                         // Remove active state from recurring button
                         const recurringBtn = matchingTaskItem.querySelector(DOM_SELECTORS.RECURRING_BTN);
@@ -1758,7 +1758,7 @@ export class RecurringPanelManager {
             await this.updateRecurringPanel(); // Render panel fresh
 
             // Find and preselect the correct task
-            const itemToSelect = this.deps.querySelector(`.recurring-task-item[data-task-id="${taskIdToPreselect}"]`);
+            const itemToSelect = this.deps.querySelector(DATA_SELECTORS.recurringTaskById(taskIdToPreselect));
             if (itemToSelect) {
                 itemToSelect.classList.add("selected");
 

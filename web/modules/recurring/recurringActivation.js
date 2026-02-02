@@ -11,7 +11,8 @@ import { createDIModule, optional } from '../core/diBase.js';
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS,
-    DOM_SELECTORS
+    DOM_SELECTORS,
+    DATA_SELECTORS
 } from '../core/constants.js';
 
 // ============================================================================
@@ -141,7 +142,7 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
     const { assignedTaskId, currentCycle, settings } = taskContext;
 
     assertInjected('querySelector', Deps.querySelector);
-    const taskItem = Deps.querySelector(`[data-task-id="${assignedTaskId}"]`);
+    const taskItem = Deps.querySelector(DATA_SELECTORS.elementByTaskId(assignedTaskId));
 
     const defaultSettings = settings.defaultRecurringSettings || {
         frequency: "daily",
@@ -269,7 +270,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
         return;
     }
 
-    const taskItem = Deps.querySelector(`[data-task-id="${assignedTaskId}"]`);
+    const taskItem = Deps.querySelector(DATA_SELECTORS.elementByTaskId(assignedTaskId));
 
     // Get current mode
     const currentCycle = state.data?.cycles?.[activeCycleId];
@@ -408,7 +409,7 @@ export async function applyRecurringToTaskSchema25(taskId, newSettings) {
 
     // Update DOM
     assertInjected('querySelector', Deps.querySelector);
-    const taskElement = Deps.querySelector(`[data-task-id="${taskId}"]`);
+    const taskElement = Deps.querySelector(DATA_SELECTORS.elementByTaskId(taskId));
     if (taskElement) {
         taskElement.classList.add("recurring");
         taskElement.setAttribute("data-recurring-settings", JSON.stringify(task.recurringSettings));

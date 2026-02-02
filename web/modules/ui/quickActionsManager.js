@@ -258,15 +258,18 @@ export class QuickActionsManager {
     _renderPinnedSlots(container) {
         const data = this._getData();
         const pinned = data.pinned || [];
+        const fragment = document.createDocumentFragment();
 
         for (let i = 0; i < SLOT_COUNT; i++) {
             const actionId = pinned[i];
             if (actionId && ACTION_REGISTRY[actionId]) {
-                container.appendChild(this._createFilledSlot(actionId, i));
+                fragment.appendChild(this._createFilledSlot(actionId, i));
             } else {
-                container.appendChild(this._createEmptySlot(i));
+                fragment.appendChild(this._createEmptySlot(i));
             }
         }
+
+        container.appendChild(fragment);
     }
 
     _renderRecentActions(container) {
@@ -281,12 +284,13 @@ export class QuickActionsManager {
             return;
         }
 
+        const fragment = document.createDocumentFragment();
         recent.forEach(actionId => {
             if (ACTION_REGISTRY[actionId]) {
-                const slot = this._createFilledSlot(actionId, -1, true);
-                container.appendChild(slot);
+                fragment.appendChild(this._createFilledSlot(actionId, -1, true));
             }
         });
+        container.appendChild(fragment);
     }
 
     _renderFrequentActions(container) {
@@ -307,12 +311,13 @@ export class QuickActionsManager {
             return;
         }
 
+        const fragment = document.createDocumentFragment();
         qualifying.forEach(([actionId]) => {
             if (ACTION_REGISTRY[actionId]) {
-                const slot = this._createFilledSlot(actionId, -1, true);
-                container.appendChild(slot);
+                fragment.appendChild(this._createFilledSlot(actionId, -1, true));
             }
         });
+        container.appendChild(fragment);
     }
 
     _updateTitles() {
@@ -782,9 +787,11 @@ export class QuickActionsManager {
             this._tooltip.appendChild(removeBtn);
         }
 
-        this._tooltip.style.left = `${rect.left + rect.width / 2}px`;
-        this._tooltip.style.top = `${rect.top - 10}px`;
-        this._tooltip.style.transform = 'translate(-50%, -100%)';
+        Object.assign(this._tooltip.style, {
+            left: `${rect.left + rect.width / 2}px`,
+            top: `${rect.top - 10}px`,
+            transform: 'translate(-50%, -100%)'
+        });
         this._tooltip.classList.add('visible');
 
         // Auto-hide after 3 seconds

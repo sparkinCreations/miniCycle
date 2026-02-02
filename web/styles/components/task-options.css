@@ -16,6 +16,13 @@
     }
 }
 
+/* Force-hidden utility: replaces inline visibility/opacity/pointer-events triple-write */
+.task-options-force-hidden {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
 .task-options {
     position: absolute;
     top: -20px;

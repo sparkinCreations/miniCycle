@@ -22,7 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -164,14 +164,22 @@ export class MenuManager {
         }
         this._setupMainMenuInitialized = true;
 
+        // Cache DOM element references to avoid repeated getElementById calls
+        const saveBtn = this.deps.getElementById(DOM_IDS.SAVE_AS_MINI_CYCLE);
+        const openBtn = this.deps.getElementById(DOM_IDS.OPEN_MINI_CYCLE);
+        const clearBtn = this.deps.getElementById(DOM_IDS.CLEAR_MINI_CYCLE_TASKS);
+        const deleteBtn = this.deps.getElementById(DOM_IDS.DELETE_ALL_MINI_CYCLE_TASKS);
+        const newBtn = this.deps.getElementById(DOM_IDS.NEW_MINI_CYCLE);
+        const closeBtn = this.deps.getElementById(DOM_IDS.CLOSE_MAIN_MENU);
+
         this.deps.safeAddEventListener(
-            this.deps.getElementById(DOM_IDS.SAVE_AS_MINI_CYCLE),
+            saveBtn,
             "click",
             () => this.saveMiniCycleAsNew()
         );
 
         this.deps.safeAddEventListener(
-            this.deps.getElementById(DOM_IDS.OPEN_MINI_CYCLE),
+            openBtn,
             "click",
             () => {
                 this.deps.trackAction?.('open-routine');
@@ -180,25 +188,25 @@ export class MenuManager {
         );
 
         this.deps.safeAddEventListener(
-            this.deps.getElementById(DOM_IDS.CLEAR_MINI_CYCLE_TASKS),
+            clearBtn,
             "click",
             () => this.clearAllTasks()
         );
 
         this.deps.safeAddEventListener(
-            this.deps.getElementById(DOM_IDS.DELETE_ALL_MINI_CYCLE_TASKS),
+            deleteBtn,
             "click",
             () => this.deleteAllTasks()
         );
 
         this.deps.safeAddEventListener(
-            this.deps.getElementById(DOM_IDS.NEW_MINI_CYCLE),
+            newBtn,
             "click",
             () => this.deps.createNewMiniCycle()
         );
 
         this.deps.safeAddEventListener(
-            this.deps.getElementById(DOM_IDS.CLOSE_MAIN_MENU),
+            closeBtn,
             "click",
             () => this.closeMainMenu()
         );
@@ -250,7 +258,7 @@ export class MenuManager {
 
         // Apply saved collapsed states
         Object.entries(collapsedSections).forEach(([sectionName, isCollapsed]) => {
-            const section = this.deps.querySelector(`.menu-section[data-section="${sectionName}"]`);
+            const section = this.deps.querySelector(DATA_SELECTORS.menuSectionByName(sectionName));
             if (section) {
                 if (isCollapsed) {
                     section.classList.add('collapsed');

@@ -7,7 +7,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -84,6 +84,9 @@ export class DragDropManager {
         this.didDragReorderOccur = false;
         this.lastReorderTime = 0;
         this.lastRearrangeTarget = null;
+
+        // Track current drop target to avoid querySelectorAll in hot paths
+        this._currentDropTarget = null;
 
         // Initialization flag
         this.initialized = false;
@@ -484,37 +487,46 @@ export class DragDropManager {
                 this.lastReorderTime = now;
             }
 
+            // Batch reads: collect all DOM reads before any writes
             const isLastTask = !target.nextElementSibling;
             const isFirstTask = !target.previousElementSibling;
+            const isNextSiblingDragged = target.nextSibling === this.draggedTask;
+            const isPrevSiblingDragged = target.previousSibling === this.draggedTask;
 
-            document.querySelectorAll(DOM_SELECTORS.DROP_TARGET).forEach(el => el.classList.remove("drop-target"));
+            // Clear previous drop target (O(1) instead of querySelectorAll)
+            if (this._currentDropTarget) {
+                this._currentDropTarget.classList.remove(DOM_CLASSES.DROP_TARGET);
+                this._currentDropTarget = null;
+            }
 
             // ✅ Wrap all DOM manipulation in try-catch to handle race conditions
             try {
-                if (isLastTask && target.nextSibling !== this.draggedTask) {
+                if (isLastTask && !isNextSiblingDragged) {
                     // ✅ Verify nodes are still valid before DOM manipulation
                     if (!document.contains(this.draggedTask) || !parent.contains) {
                         console.warn('⚠️ DOM nodes became invalid before appendChild');
                         return;
                     }
                     parent.appendChild(this.draggedTask);
-                    this.draggedTask.classList.add("drop-target");
+                    this.draggedTask.classList.add(DOM_CLASSES.DROP_TARGET);
+                    this._currentDropTarget = this.draggedTask;
                     return;
                 }
 
-                if (isFirstTask && target.previousSibling !== this.draggedTask) {
+                if (isFirstTask && !isPrevSiblingDragged) {
                     // ✅ Verify nodes are still valid before DOM manipulation
                     if (!document.contains(this.draggedTask) || !parent.firstChild) {
                         console.warn('⚠️ DOM nodes became invalid before insertBefore (first child)');
                         return;
                     }
                     parent.insertBefore(this.draggedTask, parent.firstChild);
-                    this.draggedTask.classList.add("drop-target");
+                    this.draggedTask.classList.add(DOM_CLASSES.DROP_TARGET);
+                    this._currentDropTarget = this.draggedTask;
                     return;
                 }
 
                 if (offset > bounding.height / 3) {
-                    if (target.nextSibling !== this.draggedTask) {
+                    if (!isNextSiblingDragged) {
                         // ✅ Verify nodes are still valid before DOM manipulation
                         if (!document.contains(this.draggedTask) || !document.contains(target)) {
                             console.warn('⚠️ DOM nodes became invalid before insertBefore (next sibling)');
@@ -523,7 +535,7 @@ export class DragDropManager {
                         parent.insertBefore(this.draggedTask, target.nextSibling);
                     }
                 } else {
-                    if (target.previousSibling !== this.draggedTask) {
+                    if (!isPrevSiblingDragged) {
                         // ✅ Verify nodes are still valid before DOM manipulation (line 357 fix)
                         if (!document.contains(this.draggedTask) || !document.contains(target)) {
                             console.warn('⚠️ DOM nodes became invalid before insertBefore (target)');
@@ -535,7 +547,8 @@ export class DragDropManager {
 
                 // ✅ Final verification before adding class
                 if (this.draggedTask && document.contains(this.draggedTask)) {
-                    this.draggedTask.classList.add("drop-target");
+                    this.draggedTask.classList.add(DOM_CLASSES.DROP_TARGET);
+                    this._currentDropTarget = this.draggedTask;
                 }
             } catch (error) {
                 // ✅ Gracefully handle DOM manipulation errors (e.g., NotFoundError during race conditions)
@@ -633,7 +646,11 @@ export class DragDropManager {
 
             this.lastRearrangeTarget = null;
 
-            document.querySelectorAll(DOM_SELECTORS.DROP_TARGET).forEach(el => el.classList.remove("drop-target"));
+            // O(1) cleanup instead of querySelectorAll
+            if (this._currentDropTarget) {
+                this._currentDropTarget.classList.remove(DOM_CLASSES.DROP_TARGET);
+                this._currentDropTarget = null;
+            }
         } catch (error) {
             console.warn('⚠️ Failed to cleanup drag state:', error);
         }

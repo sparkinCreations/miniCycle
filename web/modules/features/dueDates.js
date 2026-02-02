@@ -134,7 +134,6 @@ export class MiniCycleDueDates {
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for saveTaskDueDate');
             throw new Error('Schema 2.5 data not found');
         }
 
