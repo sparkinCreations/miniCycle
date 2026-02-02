@@ -42,11 +42,14 @@ const di = createDIModule('ThemeManager', {
     showNotification: optional(null),
     hideMainMenu: optional(null),
     safeAddEventListener: optional(null),
-    getModal: optional(null)
+    getModal: optional(null),
+    getElementById: optional((id) => document.getElementById(id)),
+    querySelector: optional((sel) => document.querySelector(sel)),
+    querySelectorAll: optional((sel) => document.querySelectorAll(sel))
 });
 
 // Late-binding deps via Proxy
-/** @type {{appInit: Object|null, AppState: Object|null, showNotification: Function|null, hideMainMenu: Function|null, safeAddEventListener: Function|null, getModal: Function|null}} */
+/** @type {{appInit: Object|null, AppState: Object|null, showNotification: Function|null, hideMainMenu: Function|null, safeAddEventListener: Function|null, getModal: Function|null, getElementById: Function, querySelector: Function, querySelectorAll: Function}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -164,8 +167,8 @@ export class ThemeManager {
                 return;
             }
 
-            const themeColorMeta = document.getElementById(DOM_IDS.THEME_COLOR_META);
-            const statusBarMeta = document.getElementById(DOM_IDS.STATUS_BAR_STYLE_META);
+            const themeColorMeta = _deps.getElementById(DOM_IDS.THEME_COLOR_META);
+            const statusBarMeta = _deps.getElementById(DOM_IDS.STATUS_BAR_STYLE_META);
 
             const isDarkMode = body.classList.contains('dark-mode');
             const hasCustomBackground = body.classList.contains('has-bg-image');
@@ -226,7 +229,7 @@ export class ThemeManager {
      */
     setupDarkModeToggle(toggleId, allToggleIds = []) {
         try {
-            const thisToggle = document.getElementById(toggleId);
+            const thisToggle = _deps.getElementById(toggleId);
             if (!thisToggle) {
                 console.warn(`⚠️ Dark mode toggle element '${toggleId}' not found`);
                 return;
@@ -279,7 +282,7 @@ export class ThemeManager {
      */
     setupQuickDarkToggle() {
         try {
-            const quickToggle = document.getElementById(DOM_IDS.QUICK_DARK_TOGGLE);
+            const quickToggle = _deps.getElementById(DOM_IDS.QUICK_DARK_TOGGLE);
             if (!quickToggle) {
                 console.warn('⚠️ Quick dark toggle element not found');
                 return;
@@ -313,7 +316,7 @@ export class ThemeManager {
                 console.log('🌙 Quick dark toggle clicked');
 
                 // Find primary toggle and simulate change
-                const primaryToggle = document.getElementById(DOM_IDS.DARK_MODE_TOGGLE);
+                const primaryToggle = _deps.getElementById(DOM_IDS.DARK_MODE_TOGGLE);
                 if (primaryToggle) {
                     console.log('🔄 Triggering primary toggle, current state:', primaryToggle.checked);
                     primaryToggle.checked = !primaryToggle.checked;
@@ -349,7 +352,7 @@ export class ThemeManager {
             
             // Sync all other toggles
             allToggleIds.forEach(id => {
-                const otherToggle = document.getElementById(id);
+                const otherToggle = _deps.getElementById(id);
                 if (otherToggle && otherToggle !== excludeToggle) {
                     otherToggle.checked = enabled;
                 }
@@ -370,7 +373,7 @@ export class ThemeManager {
      */
     updateQuickToggleIcon(isDark) {
         try {
-            const currentQuickToggle = document.getElementById(DOM_IDS.QUICK_DARK_TOGGLE);
+            const currentQuickToggle = _deps.getElementById(DOM_IDS.QUICK_DARK_TOGGLE);
             if (currentQuickToggle) {
                 currentQuickToggle.textContent = isDark ? "☀️" : "🌙";
             }
@@ -507,7 +510,7 @@ export class ThemeManager {
         try {
             console.log("🌈 Initializing Theme Panel");
 
-            const existingContainer = document.querySelector(DOM_SELECTORS.THEME_CONTAINER);
+            const existingContainer = _deps.querySelector(DOM_SELECTORS.THEME_CONTAINER);
             if (existingContainer) {
                 console.log('ℹ️ Theme container already exists');
                 return;
@@ -524,7 +527,7 @@ export class ThemeManager {
             themeContainer.appendChild(themeOptionContainer);
 
             // Inject into modal
-            const themeSection = document.getElementById(DOM_IDS.THEME_OPTIONS_SECTION);
+            const themeSection = _deps.getElementById(DOM_IDS.THEME_OPTIONS_SECTION);
             if (themeSection) {
                 themeSection.appendChild(themeContainer);
                 this.refreshThemeToggles();
@@ -544,7 +547,7 @@ export class ThemeManager {
         try {
             console.log('🎨 Refreshing theme toggles (Schema 2.5 only)...');
             
-            const container = document.getElementById(DOM_IDS.THEME_OPTION_CONTAINER);
+            const container = _deps.getElementById(DOM_IDS.THEME_OPTION_CONTAINER);
             if (!container) {
                 // Settings panel not open - skip UI refresh (theme is still unlocked in state)
                 console.log('ℹ️ Theme panel not visible - skipping toggle refresh');
@@ -676,10 +679,10 @@ export class ThemeManager {
             const unlockedThemes = settings?.unlockedThemes || [];
             const hasUnlockedThemes = unlockedThemes.length > 0;
 
-            const themeButton = document.getElementById(DOM_IDS.OPEN_THEMES_PANEL);
+            const themeButton = _deps.getElementById(DOM_IDS.OPEN_THEMES_PANEL);
             const themesModal = _deps.getModal('themes');
             const themesModalContent = themesModal?.querySelector(DOM_SELECTORS.THEMES_MODAL_CONTENT);
-            const closeThemesBtn = document.getElementById(DOM_IDS.CLOSE_THEMES_BTN);
+            const closeThemesBtn = _deps.getElementById(DOM_IDS.CLOSE_THEMES_BTN);
 
             // Show the button if any theme is unlocked
             if (hasUnlockedThemes && themeButton) {
@@ -743,7 +746,7 @@ export class ThemeManager {
      */
     showThemeContainer() {
         try {
-            const themeContainer = document.querySelector(DOM_SELECTORS.THEME_CONTAINER);
+            const themeContainer = _deps.querySelector(DOM_SELECTORS.THEME_CONTAINER);
             if (themeContainer) {
                 themeContainer.classList.remove('hidden');
             }
@@ -757,7 +760,7 @@ export class ThemeManager {
      */
     showThemeButton() {
         try {
-            const themeButton = document.getElementById(DOM_IDS.OPEN_THEMES_PANEL);
+            const themeButton = _deps.getElementById(DOM_IDS.OPEN_THEMES_PANEL);
             if (themeButton) {
                 themeButton.style.display = "block";
             }
@@ -771,7 +774,7 @@ export class ThemeManager {
      */
     updateThemeToggles(themeName) {
         try {
-            document.querySelectorAll(DOM_SELECTORS.THEME_TOGGLE).forEach(cb => {
+            _deps.querySelectorAll(DOM_SELECTORS.THEME_TOGGLE).forEach(cb => {
                 const expectedId = `toggle${this.capitalize(themeName || 'default')}Theme`;
                 cb.checked = cb.id === expectedId;
             });
