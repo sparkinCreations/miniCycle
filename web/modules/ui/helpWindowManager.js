@@ -7,7 +7,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -214,7 +214,7 @@ export class HelpWindowManager {
         // Debounce resize handler — stored as instance property for cleanup
         window.addEventListener('resize', () => {
             clearTimeout(this._resizeTimeout);
-            this._resizeTimeout = setTimeout(this._resizeHandler, 150);
+            this._resizeTimeout = setTimeout(this._resizeHandler, UI_TIMEOUTS.RESIZE_DEBOUNCE);
         });
 
         // Initial side layout check after a delay (tasks may still be loading)

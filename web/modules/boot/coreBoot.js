@@ -41,6 +41,8 @@
  * @property {Object} utils.GlobalUtils - Global utility methods
  */
 
+import { STORAGE_KEYS } from '../core/constants.js';
+
 // ============================================================================
 // POLYFILLS: Must run before any other code
 // ============================================================================
@@ -311,7 +313,7 @@ async function recoverFromInterruptedTests() {
             console.log('✅ Pre-test data restored from IndexedDB backup');
 
             // Verify restore succeeded before clearing backup
-            const restored = localStorage.getItem('miniCycleData');
+            const restored = localStorage.getItem(STORAGE_KEYS.DATA);
             if (restored) {
                 try {
                     JSON.parse(restored); // Verify it's valid JSON
@@ -332,7 +334,7 @@ async function recoverFromInterruptedTests() {
             }
         } else {
             console.warn('⚠️ No backup found - clearing potentially corrupted test data');
-            localStorage.removeItem('miniCycleData');
+            localStorage.removeItem(STORAGE_KEYS.DATA);
             await clearTestModeFlags();
             return true;
         }
@@ -544,7 +546,7 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   deps.core.createInitialSchema25Data = migrationMod.createInitialSchema25Data;
   deps.core.checkMigrationNeeded = migrationMod.checkMigrationNeeded;
   deps.core.performSchema25Migration = migrationMod.performSchema25Migration;
-  deps.core.initializeAppWithAutoMigration = migrationMod.initializeAppWithAutoMigration;
+  deps.core.initAppWithAutoMigration = migrationMod.initAppWithAutoMigration;
 
   // Initialize migration facade (consolidates 8 globals into 1 importable object)
   const migrationFacadeMod = await import(`../core/migrationFacade.js?v=${effectiveVersion}`);

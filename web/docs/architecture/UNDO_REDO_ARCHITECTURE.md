@@ -379,7 +379,7 @@ Signatures are cached on snapshot objects (`_sig` property) to avoid recomputing
 
 ### App Initialization
 
-**Function:** `initializeUndoSystemForApp()`
+**Function:** `initUndoSystemForApp()`
 **Called:** During app startup after AppState ready
 
 **Steps:**
@@ -658,7 +658,7 @@ setUndoRedoManagerDependencies({
 });
 
 // Initialize system
-await initializeUndoSystemForApp();
+await initUndoSystemForApp();
 
 // Wire UI buttons
 wireUndoRedoUI();

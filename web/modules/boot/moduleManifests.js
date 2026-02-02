@@ -121,7 +121,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/themeManager.js',
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'showNotification', 'getModal', 'getElementById', 'querySelector', 'querySelectorAll'],
-        provides: ['applyTheme', 'updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'unlockDarkOceanTheme', 'unlockGoldenGlowTheme', 'initializeThemesPanel', 'refreshThemeToggles', 'setupThemesPanel'],
+        provides: ['applyTheme', 'updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'unlockDarkOceanTheme', 'unlockGoldenGlowTheme', 'initThemesPanel', 'refreshThemeToggles', 'setupThemesPanel'],
         provideInstance: 'themeManager',
         api: 'features',
         after: ['notifications']
@@ -192,7 +192,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/statsPanel.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['showNotification', 'AppState', 'appInit', 'getModal'],
-        optionalDeps: ['historyManager', 'clearedTasksManager', 'achievementsManager'],
+        optionalDeps: ['historyManager', 'clearedTasksManager', 'achievementsManager', 'gesturePanelManager'],
         provides: ['showStatsPanel', 'showTaskView', 'updateStatsPanel', 'openHistoryModal', 'openClearedTasksModal', 'openAchievementsModal'],
         provideInstance: 'statsPanelManager',
         api: 'ui'
@@ -308,7 +308,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/undoRedoManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListener', 'getElementById', 'refreshUIFromState', 'UIOrchestrator', 'requestUIUpdate'],
-        provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction', 'wrapAppStateForUndo', 'setupStateBasedUndoRedo', 'initializeUndoSystemForApp', 'onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched'],
+        provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction', 'wrapAppStateForUndo', 'setupStateBasedUndoRedo', 'initUndoSystemForApp', 'onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched'],
         api: 'undo',
         after: ['taskDOM', 'uiOrchestrator']
     },

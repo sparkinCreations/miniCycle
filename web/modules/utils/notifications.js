@@ -35,7 +35,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -217,7 +217,7 @@ class EducationalTipManager {
     `;
   }
 
-  initializeTipListeners(container) {
+  initTipListeners(container) {
     // Create bound handlers for this container (stored on container to enable removal)
     if (!container._tipCloseHandler) {
       container._tipCloseHandler = (e) => {
@@ -411,7 +411,7 @@ export class MiniCycleNotifications {
           if (cleanupTimeouts) cleanupTimeouts();
 
           notification.classList.remove("show");
-          setTimeout(() => notification.remove(), 300);
+          setTimeout(() => notification.remove(), UI_TIMEOUTS.NOTIFICATION_FADE);
         };
         _safeAddEventListener(closeBtn, "click", closeBtn._clickHandler);
       }
@@ -520,14 +520,14 @@ export class MiniCycleNotifications {
           if (cleanupTimeouts) cleanupTimeouts();
 
           notification.classList.remove("show");
-          setTimeout(() => notification.remove(), 300);
+          setTimeout(() => notification.remove(), UI_TIMEOUTS.NOTIFICATION_FADE);
         };
         _safeAddEventListener(closeBtn, "click", closeBtn._clickHandler);
       }
 
       // Initialize tip listeners if this notification has tips
       if (tipId || notification.querySelector(DOM_SELECTORS.EDUCATIONAL_TIP)) {
-        this.educationalTips.initializeTipListeners(notification);
+        this.educationalTips.initTipListeners(notification);
       }
 
       // Restore saved position from Schema 2.5
@@ -673,7 +673,7 @@ async setDefaultPosition(notificationContainer) {
     const clearNotification = () => {
       console.log(`🗑️ Auto-removing notification after ${duration}ms`);
       notification.classList.remove("show");
-      removeDelayTimeout = setTimeout(() => notification.remove(), 300);
+      removeDelayTimeout = setTimeout(() => notification.remove(), UI_TIMEOUTS.NOTIFICATION_FADE);
     };
 
     const startTimer = () => {
@@ -1036,14 +1036,14 @@ async setDefaultPosition(notificationContainer) {
   /**
    * Initialize recurring notification listeners (with expand/collapse support)
    */
-  initializeRecurringNotificationListeners(notification) {
+  initRecurringNotificationListeners(notification) {
     // Close button handler
     const closeBtn = notification.querySelector(DOM_SELECTORS.CLOSE_BTN);
     if (closeBtn) {
       closeBtn._clickHandler = (e) => {
         e.stopPropagation();
         notification.classList.remove("show");
-        setTimeout(() => notification.remove(), 300);
+        setTimeout(() => notification.remove(), UI_TIMEOUTS.NOTIFICATION_FADE);
       };
       _safeAddEventListener(closeBtn, "click", closeBtn._clickHandler);
     }
@@ -1117,7 +1117,7 @@ async setDefaultPosition(notificationContainer) {
         if (currentSettingsText) {
           currentSettingsText.textContent = `🔁 Recurring set to ${newFrequency} (${pattern})`;
           currentSettingsText.style.background = "rgba(255, 255, 255, 0.2)";
-          setTimeout(() => currentSettingsText.style.background = "transparent", 800);
+          setTimeout(() => currentSettingsText.style.background = "transparent", UI_TIMEOUTS.BG_HIGHLIGHT_RESET);
         }
 
         e.target.style.display = "none";
@@ -1162,7 +1162,7 @@ async setDefaultPosition(notificationContainer) {
         const notificationEl = e.target.closest(".notification");
         if (notificationEl) {
           notificationEl.classList.remove("show");
-          setTimeout(() => notificationEl.remove(), 300);
+          setTimeout(() => notificationEl.remove(), UI_TIMEOUTS.NOTIFICATION_FADE);
         }
       }
     };

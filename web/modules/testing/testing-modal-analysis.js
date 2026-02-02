@@ -12,6 +12,7 @@ import {
     appendToTestResults,
     safeAddEventListenerById
 } from './testing-modal-core.js';
+import { STORAGE_KEYS } from '../core/constants.js';
 
 // ==========================================
 // BUTTON SETUP
@@ -233,7 +234,7 @@ export function repairData() {
             appendToTestResults("AppState not available, reading localStorage directly...\n");
 
             try {
-                const rawData = localStorage.getItem('miniCycleData');
+                const rawData = localStorage.getItem(STORAGE_KEYS.DATA);
                 if (rawData) {
                     state = JSON.parse(rawData);
                     console.log('🔧 Repair: Found data in localStorage:', state);
@@ -368,7 +369,7 @@ export function repairData() {
             try {
                 state.metadata = state.metadata || {};
                 state.metadata.lastModified = Date.now();
-                localStorage.setItem('miniCycleData', JSON.stringify(state));
+                localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(state));
                 console.log('🔧 Repair: Saved repairs to localStorage');
             } catch (e) {
                 console.error('❌ Repair: Failed to save to localStorage:', e);

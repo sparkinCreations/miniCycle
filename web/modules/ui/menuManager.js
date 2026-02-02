@@ -22,7 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -507,7 +507,7 @@ export class MenuManager {
                     this.deps.loadMiniCycle();
                 } else {
                     // Fallback to manual refresh
-                    setTimeout(() => window.location.reload(), 1000);
+                    setTimeout(() => window.location.reload(), UI_TIMEOUTS.PAGE_RELOAD);
                 }
             }
         });

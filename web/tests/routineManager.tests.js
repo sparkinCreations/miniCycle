@@ -28,7 +28,7 @@ import {
 import {
     RoutineManager,
     setRoutineManagerDependencies,
-    initializeRoutineManager,
+    initRoutineManager,
     getRoutineManager
 } from '../modules/routine/routineManager.js';
 
@@ -292,16 +292,16 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         }
     });
 
-    await test('initializeRoutineManager creates and returns instance', async () => {
-        if (typeof initializeRoutineManager !== 'function') {
-            throw new Error('initializeRoutineManager not exported');
+    await test('initRoutineManager creates and returns instance', async () => {
+        if (typeof initRoutineManager !== 'function') {
+            throw new Error('initRoutineManager not exported');
         }
 
         const deps = createValidDeps();
-        const instance = await initializeRoutineManager(deps);
+        const instance = await initRoutineManager(deps);
 
         if (!instance) {
-            throw new Error('initializeRoutineManager should return instance');
+            throw new Error('initRoutineManager should return instance');
         }
         if (!(instance instanceof RoutineManager)) {
             throw new Error('Should return RoutineManager instance');
@@ -314,7 +314,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         }
 
         const deps = createValidDeps();
-        const created = await initializeRoutineManager(deps);
+        const created = await initRoutineManager(deps);
         const retrieved = getRoutineManager();
 
         if (retrieved !== created) {

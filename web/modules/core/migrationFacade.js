@@ -80,7 +80,7 @@ export const MigrationFacade = {
      * Initialize app with automatic migration
      */
     initWithAutoMigration() {
-        return migrationModule?.initializeAppWithAutoMigration?.();
+        return migrationModule?.initAppWithAutoMigration?.();
     },
 
     /**
@@ -117,8 +117,8 @@ export const MigrationFacade = {
         return migrationModule?.fixTaskValidationIssues;
     },
 
-    get initializeAppWithAutoMigration() {
-        return migrationModule?.initializeAppWithAutoMigration;
+    get initAppWithAutoMigration() {
+        return migrationModule?.initAppWithAutoMigration;
     },
 
     get forceAppMigration() {
@@ -151,7 +151,7 @@ export function fixTaskValidationIssues() {
     return MigrationFacade.fixIssues();
 }
 
-export function initializeAppWithAutoMigration() {
+export function initAppWithAutoMigration() {
     return MigrationFacade.initWithAutoMigration();
 }
 

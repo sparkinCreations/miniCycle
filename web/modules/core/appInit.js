@@ -36,7 +36,7 @@
  */
 
 import { createDIModule, optional } from './diBase.js';
-import { DOM_IDS } from './constants.js';
+import { DOM_IDS, STORAGE_KEYS } from './constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -325,7 +325,7 @@ class AppInit {
 
 		if (!schemaData) {
 			// Check if this is corrupted data vs truly empty
-			const rawData = localStorage.getItem('miniCycleData');
+			const rawData = localStorage.getItem(STORAGE_KEYS.DATA);
 			if (rawData) {
 				// Data exists but couldn't be parsed - CORRUPTED
 				console.error('🚨 DATA CORRUPTION DETECTED: localStorage has data but it cannot be parsed');
@@ -352,7 +352,7 @@ class AppInit {
 		// Final check - if still no data, something is very wrong
 		if (!schemaData) {
 			console.error('🚨 Failed to load or create schema data');
-			this.showDataCorruptionRecovery(localStorage.getItem('miniCycleData'));
+			this.showDataCorruptionRecovery(localStorage.getItem(STORAGE_KEYS.DATA));
 			return;
 		}
 
@@ -651,13 +651,13 @@ class AppInit {
 
 		// Button handlers
 		document.getElementById(DOM_IDS.RECOVERY_FRESH_START).addEventListener('click', () => {
-			localStorage.removeItem('miniCycleData');
+			localStorage.removeItem(STORAGE_KEYS.DATA);
 			modal.remove();
 			window.location.reload();
 		});
 
 		document.getElementById(DOM_IDS.RECOVERY_LOAD_SAMPLE).addEventListener('click', async () => {
-			localStorage.removeItem('miniCycleData');
+			localStorage.removeItem(STORAGE_KEYS.DATA);
 			modal.remove();
 			// Create initial data then show cycle creation modal with sample option
 			_deps.createInitialSchema25Data?.();

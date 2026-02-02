@@ -24,7 +24,7 @@ import {
 // Dynamic import to avoid circular dependency issues
 let RoutineSwitcher = null;
 let setRoutineSwitcherDependencies = null;
-let initializeRoutineSwitcher = null;
+let initRoutineSwitcher = null;
 
 export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>🔄 RoutineSwitcher Tests</h2><h3>Loading module...</h3>';
@@ -35,7 +35,7 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         const module = await import(`../modules/routine/routineSwitcher.js?v=${cacheBuster}`);
         RoutineSwitcher = module.RoutineSwitcher;
         setRoutineSwitcherDependencies = module.setRoutineSwitcherDependencies;
-        initializeRoutineSwitcher = module.initializeRoutineSwitcher;
+        initRoutineSwitcher = module.initRoutineSwitcher;
     } catch (e) {
         resultsDiv.innerHTML = `<h2>🔄 RoutineSwitcher Tests</h2><div class="result fail">❌ Failed to import module: ${e.message}</div>`;
         return { passed: 0, total: 1 };
@@ -55,8 +55,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
     });
 
     // Initialize RoutineSwitcher to trigger dynamic imports (loads getObjectSizeBytes, getUndoCacheCycleId, etc.)
-    // This populates module-level variables that are otherwise only set via initializeRoutineSwitcher at runtime.
-    await initializeRoutineSwitcher({
+    // This populates module-level variables that are otherwise only set via initRoutineSwitcher at runtime.
+    await initRoutineSwitcher({
         safeAddEventListener: env.deps.safeAddEventListener,
         getModal: () => document.querySelector('.mini-cycle-switch-modal')
     });

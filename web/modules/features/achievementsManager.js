@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -929,7 +929,7 @@ export class AchievementsManager {
         const popup = overlay.querySelector('div');
         if (popup) popup.style.transform = 'scale(0.9)';
 
-        setTimeout(() => overlay.remove(), 200);
+        setTimeout(() => overlay.remove(), UI_TIMEOUTS.ANIMATION_SHORT);
 
         // Cleanup coin spin listeners
         if (this._badgeCoinCleanup) {

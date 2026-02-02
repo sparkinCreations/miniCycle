@@ -13,7 +13,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // CONSTANTS
@@ -788,7 +788,7 @@ export class QuickActionsManager {
         this._tooltip.classList.add('visible');
 
         // Auto-hide after 3 seconds
-        setTimeout(() => this._hideTooltip(), 3000);
+        setTimeout(() => this._hideTooltip(), UI_TIMEOUTS.TOOLTIP_HIDE);
 
         // Hide on next touch anywhere
         const hideOnTouch = () => {

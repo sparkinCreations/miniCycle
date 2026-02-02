@@ -213,14 +213,14 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
         if (Deps.showNotificationWithTip) {
             // ✅ Pass trusted: true because createRecurringNotificationWithTip already escapes user content (task.text)
             const notification = Deps.showNotificationWithTip(notificationContent, "recurring", 10000, 'recurring-cycle-explanation', { trusted: true });
-            if (notification && Deps.notifications.initializeRecurringNotificationListeners) {
-                Deps.notifications.initializeRecurringNotificationListeners(notification);
+            if (notification && Deps.notifications.initRecurringNotificationListeners) {
+                Deps.notifications.initRecurringNotificationListeners(notification);
             }
         } else {
             assertInjected('showNotification', Deps.showNotification);
             const notification = Deps.showNotification(notificationContent, "recurring", 10000);
-            if (notification && Deps.notifications.initializeRecurringNotificationListeners) {
-                Deps.notifications.initializeRecurringNotificationListeners(notification);
+            if (notification && Deps.notifications.initRecurringNotificationListeners) {
+                Deps.notifications.initRecurringNotificationListeners(notification);
             }
         }
     } else {

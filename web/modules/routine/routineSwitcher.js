@@ -22,7 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -791,7 +791,7 @@ export class RoutineSwitcher {
             } else {
                 console.error('❌ loadMiniCycle function not available');
                 // Fallback refresh
-                setTimeout(() => window.location.reload(), 1000);
+                setTimeout(() => window.location.reload(), UI_TIMEOUTS.PAGE_RELOAD);
             }
 
             // ✅ Get cycle name from state for confirmation (use fresh state)
@@ -1356,7 +1356,7 @@ export class RoutineSwitcher {
         }
 
         // Focus the search input for immediate typing
-        setTimeout(() => searchInput.focus(), 100);
+        setTimeout(() => searchInput.focus(), UI_TIMEOUTS.FOCUS_DELAY);
     }
 
     /**
@@ -1640,7 +1640,7 @@ let routineSwitcher = null;
  * @param {Object} dependencies - Required dependencies
  * @returns {Promise<RoutineSwitcher>} The initialized routine switcher instance
  */
-export async function initializeRoutineSwitcher(dependencies) {
+export async function initRoutineSwitcher(dependencies) {
     // Dynamically import utilities with version for cache-busting
     // This prevents ES module cache from serving stale versions
     const version = globalThis.APP_VERSION || '1.857';

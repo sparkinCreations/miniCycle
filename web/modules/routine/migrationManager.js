@@ -676,7 +676,7 @@ export function fixTaskValidationIssues() {
 
 /**
  * Perform automatic migration with enhanced error handling
- * INTERNAL - Use initializeAppWithAutoMigration() instead
+ * INTERNAL - Use initAppWithAutoMigration() instead
  *
  * @param {Object} options - Migration options
  * @param {boolean} options.forceMode - Skip all safety checks
@@ -1604,7 +1604,7 @@ function showCriticalError(message) {
  *
  * @public
  */
-export async function initializeAppWithAutoMigration(options = {}) {
+export async function initAppWithAutoMigration(options = {}) {
     assertInjected('storage', _deps.storage);
     assertInjected('sessionStorage', _deps.sessionStorage);
     assertInjected('showNotification', _deps.showNotification);
@@ -1701,7 +1701,7 @@ export async function initializeAppWithAutoMigration(options = {}) {
  */
 export function forceAppMigration() {
     console.log('🚨 Forcing app migration...');
-    return initializeAppWithAutoMigration({
+    return initAppWithAutoMigration({
         forceMode: true,
         skipValidation: true
     });

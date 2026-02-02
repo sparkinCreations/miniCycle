@@ -24,7 +24,8 @@ import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS,
     DEBOUNCE,
-    DOM_IDS
+    DOM_IDS,
+    STORAGE_KEYS
 } from './constants.js';
 
 // ============================================================================
@@ -276,7 +277,7 @@ class MiniCycleState {
     reload() {
         console.log('🔄 Reloading AppState from localStorage...');
         try {
-            const stored = this.deps.storage.getItem("miniCycleData");
+            const stored = this.deps.storage.getItem(STORAGE_KEYS.DATA);
             if (stored) {
                 const parsed = JSON.parse(stored);
                 if (this.validateSchema25Structure(parsed)) {
@@ -335,7 +336,7 @@ class MiniCycleState {
             // ✅ Check if Schema 2.5 data already exists
             let existingData = null;
             try {
-                const stored = this.deps.storage.getItem("miniCycleData");
+                const stored = this.deps.storage.getItem(STORAGE_KEYS.DATA);
                 if (stored) {
                     const parsed = JSON.parse(stored);
                     // ✅ Validate the structure before using
@@ -389,7 +390,7 @@ class MiniCycleState {
                     // Defer the save operation to avoid blocking the main thread during init
                     const saveData = () => {
                         try {
-                            this.deps.storage.setItem("miniCycleData", JSON.stringify(this.data));
+                            this.deps.storage.setItem(STORAGE_KEYS.DATA, JSON.stringify(this.data));
                         } catch (error) {
                             console.error('❌ Deferred save failed:', error);
                             // Don't show notification during init - could interrupt boot
@@ -427,11 +428,11 @@ class MiniCycleState {
 
             // ✅ Multi-tab sync: Detect changes from other tabs via storage event
             this.deps.addWindowListener('storage', (event) => {
-                if (event.key !== 'miniCycleData') return;
+                if (event.key !== STORAGE_KEYS.DATA) return;
                 if (!event.newValue) return;
 
                 // Skip sync if tests are running in another tab — test data is mock/temporary
-                if (localStorage.getItem('__miniCycle_testRunning') === 'true') {
+                if (localStorage.getItem(STORAGE_KEYS.TEST_RUNNING) === 'true') {
                     console.log('🔄 Multi-tab sync: Skipped — tests running in another tab');
                     return;
                 }
@@ -647,7 +648,7 @@ class MiniCycleState {
 
         try {
             // ✅ FIX #4: Check for concurrent modifications before saving
-            const currentStored = this.deps.storage.getItem("miniCycleData");
+            const currentStored = this.deps.storage.getItem(STORAGE_KEYS.DATA);
             if (currentStored) {
                 try {
                     const storedData = JSON.parse(currentStored);
@@ -692,7 +693,7 @@ class MiniCycleState {
                 timestamp: Date.now()
             });
 
-            this.deps.storage.setItem("miniCycleData", JSON.stringify(this.data));
+            this.deps.storage.setItem(STORAGE_KEYS.DATA, JSON.stringify(this.data));
             this.isDirty = false;
             this.saveTimeout = null;
 

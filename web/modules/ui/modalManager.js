@@ -42,7 +42,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
 
 // ============================================================================
@@ -407,7 +407,7 @@ export class ModalManager {
                     // Return focus to task input
                     const taskInput = document.getElementById(DOM_IDS.NEW_TASK_INPUT);
                     if (taskInput) {
-                        setTimeout(() => taskInput.focus(), 100);
+                        setTimeout(() => taskInput.focus(), UI_TIMEOUTS.FOCUS_DELAY);
                     }
                 }
             });

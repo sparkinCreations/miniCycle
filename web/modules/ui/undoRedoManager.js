@@ -282,7 +282,7 @@ export function wireUndoRedoUI() {
   }
   _initialized.undoRedoUI = true;
 
-  initializeUndoRedoButtons();
+  initUndoRedoButtons();
 
   const undoBtn = _deps.getElementById(DOM_IDS.UNDO_BTN);
   const redoBtn = _deps.getElementById(DOM_IDS.REDO_BTN);
@@ -331,7 +331,7 @@ export function wireUndoRedoKeyboardShortcuts() {
 /**
  * Initialize undo/redo buttons to hidden state
  */
-export function initializeUndoRedoButtons() {
+export function initUndoRedoButtons() {
   const undoBtn = _deps.getElementById(DOM_IDS.UNDO_BTN);
   const redoBtn = _deps.getElementById(DOM_IDS.REDO_BTN);
 
@@ -1351,7 +1351,7 @@ export async function onCycleRenamed(oldCycleId, newCycleId) {
  * Initialize undo system for app startup
  * Uses localStorage cache for instant boot, IndexedDB loads in background for cycle switching
  */
-export async function initializeUndoSystemForApp() {
+export async function initUndoSystemForApp() {
   assertInjected('AppState', _deps.AppState);
   assertInjected('AppGlobalState', _deps.AppGlobalState);
 
@@ -1388,7 +1388,7 @@ export async function initializeUndoSystemForApp() {
     // 3. Initialize IndexedDB in background (for cycle switching and persistence)
     // If we had a cache hit, this just sets up the connection
     // If cache miss, we load from IndexedDB and update stacks
-    initializeUndoIndexedDB().then(async () => {
+    initUndoIndexedDB().then(async () => {
       if (!cached) {
         // Cache miss - load from IndexedDB
         const loaded = await loadUndoStackFromIndexedDB(activeCycleId);
@@ -1533,12 +1533,12 @@ async function isTestModeActive() {
  * Initialize IndexedDB for undo history persistence
  * Gracefully degrades if IndexedDB unavailable (private browsing)
  */
-export async function initializeUndoIndexedDB() {
+export async function initUndoIndexedDB() {
   try {
     return new Promise((resolve, reject) => {
       // Timeout to prevent indefinite hangs
       const timeout = setTimeout(() => {
-        console.warn('⚠️ initializeUndoIndexedDB timed out');
+        console.warn('⚠️ initUndoIndexedDB timed out');
         undoDB = null;
         resolve(false);
       }, 5000);
@@ -1830,7 +1830,7 @@ export async function initUndoRedoManager(dependencies = {}) {
   setupStateBasedUndoRedo();
 
   // Initialize undo system for the app
-  await initializeUndoSystemForApp();
+  await initUndoSystemForApp();
 
   console.log('✅ UndoRedoManager initialized via initUndoRedoManager');
 
@@ -1845,7 +1845,7 @@ export async function initUndoRedoManager(dependencies = {}) {
     wireUndoRedoKeyboardShortcuts,
     wrapAppStateForUndo,
     setupStateBasedUndoRedo,
-    initializeUndoSystemForApp,
+    initUndoSystemForApp,
     // Cache helpers
     clearUndoCache
   };

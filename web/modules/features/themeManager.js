@@ -28,7 +28,7 @@
  * @property {string} unlockKey - Key used for unlock tracking
  */
 
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, STORAGE_KEYS } from '../core/constants.js';
 import { createDIModule, optional } from '../core/diBase.js';
 import { JSONThemeManager } from '../../styles/themes/theme-manager.js';
 
@@ -506,7 +506,7 @@ export class ThemeManager {
     /**
      * Initialize themes panel 
      */
-    initializeThemesPanel() {
+    initThemesPanel() {
         try {
             console.log("🌈 Initializing Theme Panel");
 
@@ -807,7 +807,7 @@ export class ThemeManager {
                 return null;
             }
             // Fallback to direct localStorage if AppState not ready yet
-            const data = localStorage.getItem("miniCycleData");
+            const data = localStorage.getItem(STORAGE_KEYS.DATA);
             return data ? JSON.parse(data) : null;
         } catch (error) {
             console.warn('⚠️ Schema data load failed:', error.message);
@@ -909,7 +909,7 @@ export async function initThemeManager(dependencies = {}) {
     setThemeManagerDependencies(dependencies);
 
     // Initialize theme panel (creates containers and populates theme toggles)
-    themeManager.initializeThemesPanel();
+    themeManager.initThemesPanel();
     themeManager.setupThemesPanel?.();
 
     // ✅ Load and apply saved theme from storage on startup
@@ -979,8 +979,8 @@ function unlockGoldenGlowTheme() {
 /**
  * Initialize themes panel
  */
-function initializeThemesPanel() {
-    return themeManager.initializeThemesPanel();
+function initThemesPanel() {
+    return themeManager.initThemesPanel();
 }
 
 /**
@@ -1019,7 +1019,7 @@ export {
     setupQuickDarkToggle,
     unlockDarkOceanTheme,
     unlockGoldenGlowTheme,
-    initializeThemesPanel,
+    initThemesPanel,
     refreshThemeToggles,
     setupThemesPanel,
     setupThemesPanelWithData
