@@ -26,6 +26,8 @@
 
 // ✅ FIX: Dynamic import with version for cache-busting (prevents stale manifest issues)
 // Static imports can serve cached old versions even when moduleLoader.js is updated
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+
 let MODULE_MANIFESTS = {};
 let PHASES = {};
 let getModulesByPhase = () => [];
@@ -685,8 +687,8 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         getElementById: (id) => document.getElementById(id),
         querySelector: (sel) => document.querySelector(sel),
         querySelectorAll: (sel) => document.querySelectorAll(sel),
-        getTaskList: () => document.getElementById('taskList'),
-        getProgressBar: () => document.getElementById('progressBar'),
+        getTaskList: () => document.getElementById(DOM_IDS.TASK_LIST),
+        getProgressBar: () => document.getElementById(DOM_IDS.PROGRESS_BAR),
 
         // Safe storage
         safeLocalStorageGet: GlobalUtils?.safeLocalStorageGet,

@@ -8,6 +8,8 @@
  * @version 1.0.0
  */
 
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+
 // ============================================================================
 // GRID GENERATION FUNCTIONS
 // ============================================================================
@@ -17,7 +19,7 @@
  * @param {Object} deps - Dependencies (querySelector)
  */
 export function generateMonthlyDayGrid(deps) {
-    const container = deps.querySelector(".monthly-days");
+    const container = deps.querySelector(DOM_SELECTORS.MONTHLY_DAYS);
     if (!container) return;
 
     container.innerHTML = "";
@@ -39,7 +41,7 @@ export function generateMonthlyDayGrid(deps) {
  * @param {Object} deps - Dependencies (querySelector)
  */
 export function generateYearlyMonthGrid(deps) {
-    const container = deps.querySelector(".yearly-months");
+    const container = deps.querySelector(DOM_SELECTORS.YEARLY_MONTHS);
     if (!container) return;
 
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -66,14 +68,14 @@ export function generateYearlyMonthGrid(deps) {
  * @param {number} monthNumber - Month number (1-12)
  */
 export function generateYearlyDayGrid(deps, state, monthNumber) {
-    const container = deps.querySelector(".yearly-days");
+    const container = deps.querySelector(DOM_SELECTORS.YEARLY_DAYS);
     if (!container) return;
 
     container.innerHTML = "";
 
     const daysInMonth = new Date(new Date().getFullYear(), monthNumber, 0).getDate();
     const selectedDays = state.selectedYearlyDays[monthNumber] || [];
-    const yearlyApplyToAllCheckbox = deps.getElementById("yearly-apply-days-to-all");
+    const yearlyApplyToAllCheckbox = deps.getElementById(DOM_IDS.YEARLY_APPLY_DAYS_TO_ALL);
     const applyToAll = yearlyApplyToAllCheckbox?.checked;
 
     // If "apply to all" is checked, use the shared day list

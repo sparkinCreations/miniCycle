@@ -9,6 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -292,7 +293,7 @@ export class AchievementsManager {
         // Animate in
         requestAnimationFrame(() => {
             this.modalOverlay.style.opacity = '1';
-            this.modalOverlay.querySelector('.achievements-modal').style.transform = 'translateY(0)';
+            this.modalOverlay.querySelector(DOM_SELECTORS.ACHIEVEMENTS_MODAL).style.transform = 'translateY(0)';
         });
     }
 
@@ -303,7 +304,7 @@ export class AchievementsManager {
         if (!this.modalOverlay) return;
 
         this.modalOverlay.style.opacity = '0';
-        this.modalOverlay.querySelector('.achievements-modal').style.transform = 'translateY(20px)';
+        this.modalOverlay.querySelector(DOM_SELECTORS.ACHIEVEMENTS_MODAL).style.transform = 'translateY(20px)';
 
         setTimeout(() => {
             this.modalOverlay?.remove();
@@ -319,7 +320,7 @@ export class AchievementsManager {
         if (!this.modalOverlay) return;
 
         // Back button
-        const backBtn = this.modalOverlay.querySelector('.achievements-back-btn');
+        const backBtn = this.modalOverlay.querySelector(DOM_SELECTORS.ACHIEVEMENTS_BACK_BTN);
         backBtn?.addEventListener('click', () => this.closeModal());
 
         // Click outside to close
@@ -344,7 +345,7 @@ export class AchievementsManager {
      * @private
      */
     _renderModalContent() {
-        const content = this.modalOverlay?.querySelector('.achievements-modal-content');
+        const content = this.modalOverlay?.querySelector(DOM_SELECTORS.ACHIEVEMENTS_MODAL_CONTENT);
         if (!content) return;
 
         const { unlocked, upcoming, cyclesCompleted, tasksCleared } = this.getAchievements();
@@ -577,7 +578,7 @@ export class AchievementsManager {
     initBadgeTooltips() {
         const safeAddEventListener = this.deps.safeAddEventListener;
 
-        document.querySelectorAll(".badge").forEach(badge => {
+        document.querySelectorAll(DOM_SELECTORS.BADGE).forEach(badge => {
             const milestone = parseInt(badge.dataset.milestone);
             const tierConfig = MILESTONES.find(t => t.cycleThreshold === milestone);
 
@@ -794,8 +795,8 @@ export class AchievementsManager {
 
         // Add coin spin interaction for unlocked badges
         if (isUnlocked) {
-            const spinArea = document.getElementById('badge-spin-area');
-            const coin = document.getElementById('badge-coin');
+            const spinArea = document.getElementById(DOM_IDS.BADGE_SPIN_AREA);
+            const coin = document.getElementById(DOM_IDS.BADGE_COIN);
             if (spinArea && coin) {
                 let isDragging = false;
                 let startX = 0;
@@ -921,7 +922,7 @@ export class AchievementsManager {
      * Hide badge detail popup
      */
     hideBadgeDetail() {
-        const overlay = document.getElementById('badge-detail-overlay');
+        const overlay = document.getElementById(DOM_IDS.BADGE_DETAIL_OVERLAY);
         if (!overlay) return;
 
         overlay.style.opacity = '0';
@@ -948,7 +949,7 @@ export class AchievementsManager {
      * @param {number} globalCyclesCompleted - Total cycles across all routines
      */
     updateBadges(globalCyclesCompleted) {
-        document.querySelectorAll(".badge").forEach(badge => {
+        document.querySelectorAll(DOM_SELECTORS.BADGE).forEach(badge => {
             const milestone = parseInt(badge.dataset.milestone);
             const isUnlocked = globalCyclesCompleted >= milestone;
 

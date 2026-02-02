@@ -7,6 +7,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -173,7 +174,7 @@ export class DragDropManager {
             const safeAdd = this.deps.safeAddEventListener;
 
             // Add event delegation for arrow clicks (survives DOM re-renders)
-            const taskList = document.getElementById("taskList");
+            const taskList = document.getElementById(DOM_IDS.TASK_LIST);
             if (taskList) {
                 taskList._arrowClickHandler = (event) => {
                     if (event.target.matches('.move-up, .move-down')) {
@@ -211,8 +212,8 @@ export class DragDropManager {
                         if (currentState) this.deps.captureStateSnapshot?.(currentState);
 
                         // Read task order from DOM
-                        const taskList = document.getElementById('taskList');
-                        const taskElements = taskList?.querySelectorAll('.task');
+                        const taskList = document.getElementById(DOM_IDS.TASK_LIST);
+                        const taskElements = taskList?.querySelectorAll(DOM_SELECTORS.TASK);
                         const newTaskOrder = [];
                         taskElements?.forEach(taskEl => {
                             const taskId = taskEl.dataset.taskId;
@@ -331,7 +332,7 @@ export class DragDropManager {
                 preventClick = false;
 
                 // Remove .long-pressed from all other tasks before long press starts
-                document.querySelectorAll(".task").forEach(task => {
+                document.querySelectorAll(DOM_SELECTORS.TASK).forEach(task => {
                     if (task !== taskElement) {
                         task.classList.remove("long-pressed");
                         this.deps.hideTaskButtons?.(task);
@@ -486,7 +487,7 @@ export class DragDropManager {
             const isLastTask = !target.nextElementSibling;
             const isFirstTask = !target.previousElementSibling;
 
-            document.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
+            document.querySelectorAll(DOM_SELECTORS.DROP_TARGET).forEach(el => el.classList.remove("drop-target"));
 
             // ✅ Wrap all DOM manipulation in try-catch to handle race conditions
             try {
@@ -557,7 +558,7 @@ export class DragDropManager {
             const taskItem = button.closest('.task');
             if (!taskItem) return;
 
-            const taskList = document.getElementById('taskList');
+            const taskList = document.getElementById(DOM_IDS.TASK_LIST);
             const allTasks = Array.from(taskList.children);
             const currentIndex = allTasks.indexOf(taskItem);
 
@@ -632,7 +633,7 @@ export class DragDropManager {
 
             this.lastRearrangeTarget = null;
 
-            document.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
+            document.querySelectorAll(DOM_SELECTORS.DROP_TARGET).forEach(el => el.classList.remove("drop-target"));
         } catch (error) {
             console.warn('⚠️ Failed to cleanup drag state:', error);
         }
@@ -647,7 +648,7 @@ export class DragDropManager {
             this._dragEndDropHandler = () => this.cleanupDragState();
             safeAdd(document, "drop", this._dragEndDropHandler);
             this._dragEndDragoverHandler = () => {
-                document.querySelectorAll(".rearranging").forEach(task => task.classList.remove("rearranging"));
+                document.querySelectorAll(DOM_SELECTORS.REARRANGING).forEach(task => task.classList.remove("rearranging"));
             };
             safeAdd(document, "dragover", this._dragEndDragoverHandler);
         } catch (error) {
@@ -735,7 +736,7 @@ export class DragDropManager {
      * @param {boolean} showArrows - Whether to show arrows
      */
     setArrowsEnabled(showArrows) {
-        const taskList = document.getElementById('taskList');
+        const taskList = document.getElementById(DOM_IDS.TASK_LIST);
         if (taskList) {
             taskList.dataset.moveArrows = showArrows ? 'true' : 'false';
         }
@@ -746,12 +747,12 @@ export class DragDropManager {
      * Called after task add, delete, or reorder
      */
     updateFirstLastMarkers() {
-        const taskList = document.getElementById('taskList');
+        const taskList = document.getElementById(DOM_IDS.TASK_LIST);
         if (!taskList) return;
 
         // Remove old markers (O(1) - at most one of each)
-        taskList.querySelector('.is-first-task')?.classList.remove('is-first-task');
-        taskList.querySelector('.is-last-task')?.classList.remove('is-last-task');
+        taskList.querySelector(DOM_SELECTORS.IS_FIRST_TASK)?.classList.remove('is-first-task');
+        taskList.querySelector(DOM_SELECTORS.IS_LAST_TASK)?.classList.remove('is-last-task');
 
         // Add new markers (direct children only)
         const firstTask = taskList.firstElementChild;

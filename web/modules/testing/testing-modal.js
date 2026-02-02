@@ -53,6 +53,7 @@ import { setupBackupButtons } from './testing-modal-backup.js';
 import { setupAnalysisButtons } from './testing-modal-analysis.js';
 import { openStorageViewer, closeStorageViewer, setupStorageViewerButton } from './testing-modal-storage-viewer.js';
 import { setupDebugButtons, setupConsoleCaptureButtons } from './testing-modal-debug.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ==========================================
 // DEPENDENCY INJECTION WRAPPER
@@ -74,9 +75,9 @@ export function setTestingModalDependencies(dependencies) {
  * Setup testing modal open/close behavior
  */
 function setupTestingModal() {
-    const testingModal = document.getElementById("testing-modal");
-    const openTestingBtn = document.getElementById("open-testing-modal");
-    const closeTestingBtns = document.querySelectorAll(".close-testing-modal, #close-testing-modal");
+    const testingModal = document.getElementById(DOM_IDS.TESTING_MODAL);
+    const openTestingBtn = document.getElementById(DOM_IDS.OPEN_TESTING_MODAL);
+    const closeTestingBtns = document.querySelectorAll(`${DOM_SELECTORS.CLOSE_TESTING_MODAL}, #${DOM_IDS.CLOSE_TESTING_MODAL}`);
 
     if (!testingModal || !openTestingBtn) {
         console.warn("Testing modal elements not found");

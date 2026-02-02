@@ -36,6 +36,7 @@
  */
 
 import { createDIModule, optional } from './diBase.js';
+import { DOM_IDS } from './constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -457,7 +458,7 @@ class AppInit {
 
 			const updateDueDateVisibility = _deps.updateDueDateVisibility?.();
 			if (typeof updateDueDateVisibility === 'function') {
-				const toggleAutoReset = _deps.getElementById?.('toggleAutoReset');
+				const toggleAutoReset = _deps.getElementById?.(DOM_IDS.TOGGLE_AUTO_RESET);
 				const autoReset = toggleAutoReset?.checked || false;
 				await updateDueDateVisibility(autoReset);
 				console.log('✅ Due date visibility updated after task rendering');
@@ -499,11 +500,11 @@ class AppInit {
 
 		console.log('✅ Loading existing cycle from Schema 2.5:', activeCycle);
 
-		const titleElement = _deps.getElementById?.('mini-cycle-title');
-		const toggleAutoReset = _deps.getElementById?.('toggleAutoReset');
-		const deleteCheckedTasks = _deps.getElementById?.('deleteCheckedTasks');
-		const enableReminders = _deps.getElementById?.('enableReminders');
-		const frequencySection = _deps.getElementById?.('frequency-section');
+		const titleElement = _deps.getElementById?.(DOM_IDS.MINI_CYCLE_TITLE);
+		const toggleAutoReset = _deps.getElementById?.(DOM_IDS.TOGGLE_AUTO_RESET);
+		const deleteCheckedTasks = _deps.getElementById?.(DOM_IDS.DELETE_CHECKED_TASKS);
+		const enableReminders = _deps.getElementById?.(DOM_IDS.ENABLE_REMINDERS);
+		const frequencySection = _deps.getElementById?.(DOM_IDS.FREQUENCY_SECTION);
 
 		if (titleElement) {
 			titleElement.textContent = currentCycle.title;
@@ -649,13 +650,13 @@ class AppInit {
 		document.body.appendChild(modal);
 
 		// Button handlers
-		document.getElementById('recovery-fresh-start').addEventListener('click', () => {
+		document.getElementById(DOM_IDS.RECOVERY_FRESH_START).addEventListener('click', () => {
 			localStorage.removeItem('miniCycleData');
 			modal.remove();
 			window.location.reload();
 		});
 
-		document.getElementById('recovery-load-sample').addEventListener('click', async () => {
+		document.getElementById(DOM_IDS.RECOVERY_LOAD_SAMPLE).addEventListener('click', async () => {
 			localStorage.removeItem('miniCycleData');
 			modal.remove();
 			// Create initial data then show cycle creation modal with sample option
@@ -668,7 +669,7 @@ class AppInit {
 			_deps.showCycleCreationModal?.();
 		});
 
-		document.getElementById('recovery-download-backup').addEventListener('click', () => {
+		document.getElementById(DOM_IDS.RECOVERY_DOWNLOAD_BACKUP).addEventListener('click', () => {
 			// Download the corrupted data for potential manual recovery
 			const blob = new Blob([corruptedData || ''], { type: 'text/plain' });
 			const url = URL.createObjectURL(blob);

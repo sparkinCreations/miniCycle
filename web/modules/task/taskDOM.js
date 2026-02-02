@@ -29,7 +29,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
+import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 
 // ============================================================================
@@ -530,7 +530,7 @@ export class TaskDOMManager {
      * Show placeholder tasks when data unavailable
      */
     showPlaceholderTasks() {
-        const taskList = this.deps.getElementById('taskList');
+        const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
         if (taskList) {
             taskList.innerHTML = '<li class="task placeholder" style="padding: 20px; text-align: center; color: #888;">Loading tasks...</li>';
         }
@@ -562,8 +562,8 @@ export class TaskDOMManager {
         } = taskContext;
 
         // Get required DOM elements
-        const taskList = this.deps.getElementById("taskList");
-        const taskInput = this.deps.getElementById("taskInput");
+        const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
+        const taskInput = this.deps.getElementById(DOM_IDS.TASK_INPUT);
 
         // Validate taskList exists
         if (!taskList) {
@@ -974,9 +974,9 @@ export class TaskDOMManager {
             // ✅ Add or remove recurring icon from task label
             const taskItem = button.closest('.task');
             if (taskItem) {
-                const taskLabel = taskItem.querySelector('.task-text');
+                const taskLabel = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT);
                 if (taskLabel) {
-                    let existingIcon = taskLabel.querySelector('.recurring-indicator');
+                    let existingIcon = taskLabel.querySelector(DOM_SELECTORS.RECURRING_INDICATOR);
 
                     if (isNowRecurring && !existingIcon) {
                         const icon = document.createElement("span");
@@ -1002,7 +1002,7 @@ export class TaskDOMManager {
                     this.deps.handleRecurringTaskActivation(task, freshTaskContext, button);
                 }
                 // ✅ Immediately sync delete-on-complete button to show active (recurring = delete on complete)
-                const deleteBtn = taskItem?.querySelector('.delete-when-complete-btn');
+                const deleteBtn = taskItem?.querySelector(DOM_SELECTORS.DELETE_WHEN_COMPLETE_BTN);
                 if (deleteBtn) {
                     deleteBtn.classList.add('active', 'delete-when-complete-active');
                     deleteBtn.setAttribute('aria-pressed', 'true');
@@ -1019,7 +1019,7 @@ export class TaskDOMManager {
                 // ✅ Immediately sync delete-on-complete button to mode defaults
                 const isToDoMode = freshCycle?.deleteCheckedTasks === true;
                 const defaultDeleteState = isToDoMode; // todo=true, cycle=false
-                const deleteBtn = taskItem?.querySelector('.delete-when-complete-btn');
+                const deleteBtn = taskItem?.querySelector(DOM_SELECTORS.DELETE_WHEN_COMPLETE_BTN);
                 if (deleteBtn) {
                     deleteBtn.classList.toggle('active', defaultDeleteState);
                     deleteBtn.classList.toggle('delete-when-complete-active', defaultDeleteState);
@@ -1620,7 +1620,7 @@ function getTaskElement(taskId) {
  * @returns {NodeList}
  */
 function getAllTaskElements() {
-    if (!taskDOMManager) return document.querySelectorAll('.task-not-found');
+    if (!taskDOMManager) return document.querySelectorAll(DOM_SELECTORS.TASK_NOT_FOUND);
     return taskDOMManager.getAllTaskElements();
 }
 

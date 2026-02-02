@@ -24,6 +24,8 @@
  * @see {@link module:boot/uiBoot} - Phase 3 implementation
  */
 
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+
 // ✅ Single source of truth: Read version from globalThis (set by version.js)
 // Falls back to 'dev-local' for local development without version.js
 const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
@@ -124,11 +126,11 @@ let bootAttempt = 0;
  * @param {number} percent - Progress percentage (0-100)
  */
 function updateLoaderProgress(message, percent = 0) {
-  const loaderText = document.querySelector('.loader-text');
+  const loaderText = document.querySelector(DOM_SELECTORS.LOADER_TEXT);
   if (loaderText) {
     loaderText.textContent = message;
   }
-  const loaderBar = document.querySelector('.loader-bar');
+  const loaderBar = document.querySelector(DOM_SELECTORS.LOADER_BAR);
   if (loaderBar) {
     loaderBar.style.transform = `scaleX(${percent / 100})`;
   }
@@ -244,7 +246,7 @@ function showBootError(phase, error, willRetry = false) {
   console.error(`❌ Boot failed at ${phase} (attempt ${bootAttempt}):`, error);
 
   // Use existing app-loader for consistent styling
-  const loader = document.getElementById('app-loader');
+  const loader = document.getElementById(DOM_IDS.APP_LOADER);
   if (!loader) {
     // Fallback if loader not found
     console.error('App loader element not found');
@@ -307,7 +309,7 @@ function showBootError(phase, error, willRetry = false) {
     `;
 
     // Add clear cache handler (uses shared utility)
-    const clearCacheBtn = document.getElementById('clear-cache-btn');
+    const clearCacheBtn = document.getElementById(DOM_IDS.CLEAR_CACHE_BTN);
     if (clearCacheBtn) {
       clearCacheBtn.addEventListener('click', async () => {
         clearCacheBtn.textContent = 'Clearing...';

@@ -15,6 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -232,7 +233,7 @@ export class TaskOptionsCustomizer {
 
         // Wait for DOM to be ready, then attach listener
         const attachListener = () => {
-            const openButton = document.getElementById('open-task-options-customizer');
+            const openButton = document.getElementById(DOM_IDS.OPEN_TASK_OPTIONS_CUSTOMIZER);
             if (openButton) {
                 openButton._clickHandler = () => {
                     const state = this.deps.AppState?.get();
@@ -240,7 +241,7 @@ export class TaskOptionsCustomizer {
 
                     if (currentCycleId) {
                         // Close the settings modal first
-                        const settingsModal = document.querySelector('.settings-modal');
+                        const settingsModal = document.querySelector(DOM_SELECTORS.SETTINGS_MODAL);
                         if (settingsModal) {
                             settingsModal.style.display = 'none';
                         }
@@ -258,7 +259,7 @@ export class TaskOptionsCustomizer {
             }
 
             // Also attach listener for menu button (quick access from main menu)
-            const menuButton = document.getElementById('menu-task-options');
+            const menuButton = document.getElementById(DOM_IDS.MENU_TASK_OPTIONS);
             if (menuButton) {
                 menuButton._clickHandler = () => {
                     const state = this.deps.AppState?.get();
@@ -266,7 +267,7 @@ export class TaskOptionsCustomizer {
 
                     if (currentCycleId) {
                         // Close the menu first
-                        const menuContainer = document.querySelector('.menu-container');
+                        const menuContainer = document.querySelector(DOM_SELECTORS.MENU_CONTAINER);
                         if (menuContainer) {
                             menuContainer.classList.remove('visible');
                         }
@@ -366,12 +367,12 @@ export class TaskOptionsCustomizer {
      */
     createModal(cycleId, cycleTitle, currentOptions) {
         // Remove any existing modal
-        const existing = this.deps.getElementById('task-options-customizer-modal');
+        const existing = this.deps.getElementById(DOM_IDS.TASK_OPTIONS_CUSTOMIZER_MODAL);
         if (existing) existing.remove();
 
         // Create modal HTML
         const modal = document.createElement('div');
-        modal.id = 'task-options-customizer-modal';
+        modal.id = DOM_IDS.TASK_OPTIONS_CUSTOMIZER_MODAL;
         modal.className = 'modal-overlay';
         modal.innerHTML = `
             <div class="modal-content task-options-modal">
@@ -393,7 +394,7 @@ export class TaskOptionsCustomizer {
                                 <span class="preview-icon">ℹ️</span>
                                 <h3>Option Details</h3>
                             </div>
-                            <div id="option-preview-content" class="preview-content">
+                            <div id="${DOM_IDS.OPTION_PREVIEW_CONTENT}" class="preview-content">
                                 <p class="preview-placeholder"><span class="desktop-text">Hover over</span><span class="mobile-text">Tap</span> an option to see details</p>
                             </div>
                         </div>
@@ -403,11 +404,11 @@ export class TaskOptionsCustomizer {
                 <div class="modal-footer">
                     <div class="modal-footer-row">
                         <p class="modal-footer-note">Changes apply immediately</p>
-                        <button id="reset-task-options-btn">
+                        <button id="${DOM_IDS.RESET_TASK_OPTIONS_BTN}">
                             🔄 Reset to Default
                         </button>
                     </div>
-                    <button id="close-task-options-btn" class="close-button-fullwidth">
+                    <button id="${DOM_IDS.CLOSE_TASK_OPTIONS_BTN}" class="close-button-fullwidth">
                         Close
                     </button>
                 </div>
@@ -495,11 +496,11 @@ export class TaskOptionsCustomizer {
      * @param {string} cycleId - The cycle ID
      */
     attachModalListeners(modal, cycleId) {
-        const closeBtn = modal.querySelector('#close-task-options-btn');
-        const resetBtn = modal.querySelector('#reset-task-options-btn');
+        const closeBtn = modal.querySelector(`#${DOM_IDS.CLOSE_TASK_OPTIONS_BTN}`);
+        const resetBtn = modal.querySelector(`#${DOM_IDS.RESET_TASK_OPTIONS_BTN}`);
         const checkboxes = modal.querySelectorAll('input[type="checkbox"]');
-        const optionItems = modal.querySelectorAll('.task-option-item');
-        const previewContent = modal.querySelector('#option-preview-content');
+        const optionItems = modal.querySelectorAll(DOM_SELECTORS.TASK_OPTION_ITEM);
+        const previewContent = modal.querySelector(`#${DOM_IDS.OPTION_PREVIEW_CONTENT}`);
 
         // Use safeAddEventListener (prefer injected, fallback inline)
         const safeAdd = this.deps.safeAddEventListener;
@@ -663,7 +664,7 @@ export class TaskOptionsCustomizer {
             if (typeof updateMoveArrowsVisibility === 'function') {
                 updateMoveArrowsVisibility();
             }
-            const settingsMoveArrowsToggle = document.getElementById('toggle-move-arrows');
+            const settingsMoveArrowsToggle = document.getElementById(DOM_IDS.TOGGLE_MOVE_ARROWS);
             if (settingsMoveArrowsToggle) {
                 settingsMoveArrowsToggle.checked = newMoveArrows;
             }
@@ -671,7 +672,7 @@ export class TaskOptionsCustomizer {
 
         // Three dots DOM updates
         if (threeDotsChanged) {
-            const settingsThreeDotsToggle = document.getElementById('toggle-three-dots');
+            const settingsThreeDotsToggle = document.getElementById(DOM_IDS.TOGGLE_THREE_DOTS);
             if (settingsThreeDotsToggle) {
                 settingsThreeDotsToggle.checked = newThreeDots;
             }
@@ -680,10 +681,10 @@ export class TaskOptionsCustomizer {
 
         // Reminders DOM updates and system start/stop
         if (remindersChanged) {
-            const enableRemindersCheckbox = document.getElementById('enableReminders');
+            const enableRemindersCheckbox = document.getElementById(DOM_IDS.ENABLE_REMINDERS);
             if (enableRemindersCheckbox) {
                 enableRemindersCheckbox.checked = newRemindersEnabled;
-                const frequencySection = document.getElementById('frequency-section');
+                const frequencySection = document.getElementById(DOM_IDS.FREQUENCY_SECTION);
                 if (frequencySection) {
                     frequencySection.classList.toggle('hidden', !newRemindersEnabled);
                 }

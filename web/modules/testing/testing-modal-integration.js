@@ -10,6 +10,8 @@
  * @module testing-modal-integration
  */
 
+import { DOM_IDS } from '../core/constants.js';
+
 // Module-level deps for late injection (DI-pure, no window.* fallbacks)
 let _deps = {
     safeAddEventListenerById: null,
@@ -183,7 +185,7 @@ function displayTestResults(resultData) {
 // Get the automated test output element
 function getAutomatedTestOutput() {
     // Try to find a dedicated automated output, fallback to main testing output
-    return document.getElementById("automated-test-output") || document.getElementById("testing-output");
+    return document.getElementById(DOM_IDS.AUTOMATED_TEST_OUTPUT) || document.getElementById(DOM_IDS.TESTING_OUTPUT);
 }
 
 // Append results to automated test output
@@ -425,9 +427,9 @@ async function runAllAutomatedTests() {
             const progressPercent = Math.round((currentIndex / totalModules) * 100);
 
             // Update progress bar
-            const progressBar = document.getElementById('test-progress-bar');
-            const statusText = document.getElementById('test-status-text');
-            const timeEstimate = document.getElementById('test-time-estimate');
+            const progressBar = document.getElementById(DOM_IDS.TEST_PROGRESS_BAR);
+            const statusText = document.getElementById(DOM_IDS.TEST_STATUS_TEXT);
+            const timeEstimate = document.getElementById(DOM_IDS.TEST_TIME_ESTIMATE);
 
             if (progressBar) {
                 progressBar.style.width = `${progressPercent}%`;
@@ -463,10 +465,10 @@ async function runAllAutomatedTests() {
             console.log('📊 Received test results from iframe');
 
             // Update progress to 100%
-            const progressBar = document.getElementById('test-progress-bar');
-            const statusText = document.getElementById('test-status-text');
-            const timeEstimate = document.getElementById('test-time-estimate');
-            const title = document.getElementById('test-runner-title');
+            const progressBar = document.getElementById(DOM_IDS.TEST_PROGRESS_BAR);
+            const statusText = document.getElementById(DOM_IDS.TEST_STATUS_TEXT);
+            const timeEstimate = document.getElementById(DOM_IDS.TEST_TIME_ESTIMATE);
+            const title = document.getElementById(DOM_IDS.TEST_RUNNER_TITLE);
 
             if (progressBar) progressBar.style.width = '100%';
             if (statusText) statusText.innerHTML = event.data.allPassed
@@ -560,7 +562,7 @@ async function checkForPendingResultsOnLoad() {
     // Wait a moment for page to settle, then open modal and show results
     setTimeout(async () => {
         // Open testing modal
-        const testingModalBtn = document.getElementById('open-testing-modal');
+        const testingModalBtn = document.getElementById(DOM_IDS.OPEN_TESTING_MODAL);
         if (testingModalBtn) {
             testingModalBtn.click();
 

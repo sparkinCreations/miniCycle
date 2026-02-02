@@ -9,6 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
+import { DOM_IDS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -95,7 +96,7 @@ export function setupBackupButton() {
         return;
     }
 
-    const backupBtn = document.getElementById("backup-mini-cycles");
+    const backupBtn = document.getElementById(DOM_IDS.BACKUP_MINI_CYCLES);
     if (!backupBtn) return;
 
     backupBtn._clickHandler = () => {
@@ -149,7 +150,7 @@ export function setupRestoreButton() {
         return;
     }
 
-    const restoreBtn = document.getElementById("restore-mini-cycles");
+    const restoreBtn = document.getElementById(DOM_IDS.RESTORE_MINI_CYCLES);
 
     if (!restoreBtn) return;
 
@@ -373,7 +374,7 @@ export function setupFactoryResetButton() {
         return;
     }
 
-    const resetBtn = document.getElementById("factory-reset");
+    const resetBtn = document.getElementById(DOM_IDS.FACTORY_RESET);
 
     if (!resetBtn) return;
 

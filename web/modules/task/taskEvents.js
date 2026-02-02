@@ -23,6 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 
 // ============================================================================
@@ -134,7 +135,7 @@ export class TaskEvents {
             return;
         }
 
-        const taskList = this.deps.getElementById("taskList");
+        const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
         if (!taskList) {
             console.warn('⚠️ Cannot initialize task click delegation - #taskList not found');
             return;
@@ -149,9 +150,9 @@ export class TaskEvents {
 
             // Get task elements (✅ checkbox has no class, use type selector)
             const checkbox = taskItem.querySelector("input[type='checkbox']");
-            const buttonContainer = taskItem.querySelector(".task-options");
-            const dueDateInput = taskItem.querySelector(".due-date");
-            const threeDotsButton = taskItem.querySelector(".three-dots-btn");
+            const buttonContainer = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
+            const dueDateInput = taskItem.querySelector(DOM_SELECTORS.DUE_DATE);
+            const threeDotsButton = taskItem.querySelector(DOM_SELECTORS.THREE_DOTS_BTN);
 
             // ✅ Early return if checkbox not found (incomplete task structure)
             if (!checkbox) {
@@ -233,7 +234,7 @@ export class TaskEvents {
         const taskItem = button.closest(".task");
         if (!taskItem) return;
 
-        const taskOptions = taskItem.querySelector(".task-options");
+        const taskOptions = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
         if (taskOptions) taskOptions.style.pointerEvents = "auto";
 
         let shouldSave = false;
@@ -271,7 +272,7 @@ export class TaskEvents {
             shouldSave = false;
         } else if (button.classList.contains("set-due-date")) {
             // Toggle due date input visibility
-            const dueDateInput = taskItem.querySelector(".due-date");
+            const dueDateInput = taskItem.querySelector(DOM_SELECTORS.DUE_DATE);
             if (dueDateInput) {
                 const isHidden = dueDateInput.classList.contains("hidden");
                 dueDateInput.classList.toggle("hidden", !isHidden);
@@ -300,7 +301,7 @@ export class TaskEvents {
         const hideTaskOptions = this.deps.hideTaskOptions;
         const safeAdd = this.deps.safeAddEventListener;
 
-        this.deps.querySelectorAll(".task").forEach(taskItem => {
+        this.deps.querySelectorAll(DOM_SELECTORS.TASK).forEach(taskItem => {
             if (enableHover) {
                 if (!taskItem.classList.contains("hover-enabled")) {
                     taskItem._hoverShowHandler = showTaskOptions;
@@ -325,7 +326,7 @@ export class TaskEvents {
      * @param {string} caller - Caller identifier ('three-dots-button', 'long-press', or 'arrow-move')
      */
     revealTaskButtons(taskItem, caller = 'three-dots-button') {
-        const taskOptions = taskItem.querySelector(".task-options");
+        const taskOptions = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
         if (!taskOptions) {
             console.warn('⚠️ revealTaskButtons: No .task-options found');
             return;
@@ -350,7 +351,7 @@ export class TaskEvents {
         let hiddenCount = 0;
         // ✅ FIX: Query .task elements directly instead of using .closest()
         // This is more reliable on mobile where .closest() can sometimes fail
-        document.querySelectorAll(".task").forEach(task => {
+        document.querySelectorAll(DOM_SELECTORS.TASK).forEach(task => {
             if (task !== taskItem) {
                 // Use controller for consistency (use same caller for hide)
                 controller?.hide(task, caller);
@@ -395,16 +396,16 @@ export class TaskEvents {
      */
     syncRecurringStateToDOM(taskEl, recurringSettings) {
         taskEl.setAttribute("data-recurring-settings", JSON.stringify(recurringSettings));
-        const recurringBtn = taskEl.querySelector(".recurring-btn");
+        const recurringBtn = taskEl.querySelector(DOM_SELECTORS.RECURRING_BTN);
         if (recurringBtn) {
             recurringBtn.classList.add("active");
             recurringBtn.setAttribute("aria-pressed", "true");
         }
 
         // ✅ Add recurring icon to task label if not already present
-        const taskLabel = taskEl.querySelector(".task-text");
+        const taskLabel = taskEl.querySelector(DOM_SELECTORS.TASK_TEXT);
         if (taskLabel) {
-            let existingIcon = taskLabel.querySelector('.recurring-indicator');
+            let existingIcon = taskLabel.querySelector(DOM_SELECTORS.RECURRING_INDICATOR);
             if (!existingIcon) {
                 const icon = document.createElement("span");
                 icon.className = "recurring-indicator";
@@ -466,7 +467,7 @@ export class TaskEvents {
      * @param {boolean} highPriority - Whether task is high priority
      */
     setupPriorityButtonState(buttonContainer, highPriority) {
-        const priorityButton = buttonContainer.querySelector(".priority-btn");
+        const priorityButton = buttonContainer.querySelector(DOM_SELECTORS.PRIORITY_BTN);
         if (highPriority && priorityButton) {
             priorityButton.classList.add("priority-active");
             priorityButton.setAttribute("aria-pressed", "true");

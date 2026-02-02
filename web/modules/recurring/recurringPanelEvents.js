@@ -8,6 +8,8 @@
  * @version 1.0.0
  */
 
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+
 // ============================================================================
 // EVENT DELEGATION FUNCTIONS
 // ============================================================================
@@ -51,7 +53,7 @@ export function initEventDelegation(deps, state, callbacks) {
  * @param {Object} deps - Dependencies
  */
 export function setupMonthlyDayDelegation(deps) {
-    const container = deps.querySelector(".monthly-days");
+    const container = deps.querySelector(DOM_SELECTORS.MONTHLY_DAYS);
     if (!container) return;
 
     deps.safeAddEventListener(container, "click", (event) => {
@@ -68,7 +70,7 @@ export function setupMonthlyDayDelegation(deps) {
  * @param {Object} deps - Dependencies
  */
 export function setupWeeklyDayDelegation(deps) {
-    const container = deps.querySelector(".weekly-days");
+    const container = deps.querySelector(DOM_SELECTORS.WEEKLY_DAYS);
     if (!container) return;
 
     deps.safeAddEventListener(container, "click", (event) => {
@@ -87,7 +89,7 @@ export function setupWeeklyDayDelegation(deps) {
  * @param {Object} callbacks - Callback functions
  */
 export function setupYearlyMonthDelegation(deps, state, callbacks) {
-    const container = deps.querySelector(".yearly-months");
+    const container = deps.querySelector(DOM_SELECTORS.YEARLY_MONTHS);
     if (!container) return;
 
     deps.safeAddEventListener(container, "click", (event) => {
@@ -100,14 +102,14 @@ export function setupYearlyMonthDelegation(deps, state, callbacks) {
         const selectedMonths = callbacks.getSelectedYearlyMonths();
 
         // Reveal or hide the specific-days checkbox label
-        const specificDaysLabel = deps.getElementById("yearly-specific-days-label");
+        const specificDaysLabel = deps.getElementById(DOM_IDS.YEARLY_SPECIFIC_DAYS_LABEL);
         if (specificDaysLabel) {
             specificDaysLabel.classList.toggle("hidden", selectedMonths.length === 0);
         }
 
         // Show/hide day container based on selection + checkbox state
-        const yearlySpecificDaysCheckbox = deps.getElementById("yearly-specific-days");
-        const yearlyDayContainer = deps.getElementById("yearly-day-container");
+        const yearlySpecificDaysCheckbox = deps.getElementById(DOM_IDS.YEARLY_SPECIFIC_DAYS);
+        const yearlyDayContainer = deps.getElementById(DOM_IDS.YEARLY_DAY_CONTAINER);
 
         if (yearlySpecificDaysCheckbox && yearlyDayContainer) {
             const shouldShow = yearlySpecificDaysCheckbox.checked && selectedMonths.length > 0;
@@ -115,7 +117,7 @@ export function setupYearlyMonthDelegation(deps, state, callbacks) {
         }
 
         // Update dropdown
-        const yearlyMonthSelect = deps.getElementById("yearly-month-select");
+        const yearlyMonthSelect = deps.getElementById(DOM_IDS.YEARLY_MONTH_SELECT);
         if (yearlyMonthSelect) {
             yearlyMonthSelect.innerHTML = "";
 
@@ -143,7 +145,7 @@ export function setupYearlyMonthDelegation(deps, state, callbacks) {
  * @param {Object} callbacks - Callback functions
  */
 export function setupYearlyDayDelegation(deps, state, callbacks) {
-    const container = deps.getElementById("yearly-day-container");
+    const container = deps.getElementById(DOM_IDS.YEARLY_DAY_CONTAINER);
     if (!container) return;
 
     deps.safeAddEventListener(container, "click", (event) => {
@@ -157,8 +159,8 @@ export function setupYearlyDayDelegation(deps, state, callbacks) {
         const isNowSelected = dayBox.classList.contains("selected");
 
         // Get current state
-        const applyToAll = deps.getElementById("yearly-apply-all")?.checked || false;
-        const monthNumber = parseInt(deps.getElementById("yearly-month-select")?.value);
+        const applyToAll = deps.getElementById(DOM_IDS.YEARLY_APPLY_ALL)?.checked || false;
+        const monthNumber = parseInt(deps.getElementById(DOM_IDS.YEARLY_MONTH_SELECT)?.value);
         const activeMonths = callbacks.getSelectedYearlyMonths();
 
         if (applyToAll) {
@@ -199,15 +201,15 @@ export function setupYearlyDayDelegation(deps, state, callbacks) {
  * @param {Object} callbacks - Callback functions
  */
 export function setupTaskListDelegation(deps, state, callbacks) {
-    const container = deps.getElementById("recurring-task-list");
+    const container = deps.getElementById(DOM_IDS.RECURRING_TASK_LIST);
     if (!container) return;
 
     deps.safeAddEventListener(container, "click", (event) => {
-        const item = event.target.closest(".recurring-task-item");
+        const item = event.target.closest(DOM_SELECTORS.RECURRING_TASK_ITEM);
         if (!item) return;
 
         // Handle checkbox clicks
-        const checkbox = event.target.closest(".recurring-check");
+        const checkbox = event.target.closest(DOM_SELECTORS.RECURRING_CHECK);
         if (checkbox) {
             event.stopPropagation();
             item.classList.toggle("checked");
@@ -234,7 +236,7 @@ export function setupTaskListDelegation(deps, state, callbacks) {
         }
 
         // Handle row click for selection
-        deps.querySelectorAll(".recurring-task-item").forEach(el => {
+        deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
             el.classList.remove("selected");
         });
         item.classList.add("selected");

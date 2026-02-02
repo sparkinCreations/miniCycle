@@ -28,6 +28,7 @@
  * @property {string} unlockKey - Key used for unlock tracking
  */
 
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { createDIModule, optional } from '../core/diBase.js';
 import { JSONThemeManager } from '../../styles/themes/theme-manager.js';
 
@@ -162,8 +163,8 @@ export class ThemeManager {
                 return;
             }
 
-            const themeColorMeta = document.getElementById('theme-color-meta');
-            const statusBarMeta = document.getElementById('status-bar-style-meta');
+            const themeColorMeta = document.getElementById(DOM_IDS.THEME_COLOR_META);
+            const statusBarMeta = document.getElementById(DOM_IDS.STATUS_BAR_STYLE_META);
 
             const isDarkMode = body.classList.contains('dark-mode');
             const hasCustomBackground = body.classList.contains('has-bg-image');
@@ -277,7 +278,7 @@ export class ThemeManager {
      */
     setupQuickDarkToggle() {
         try {
-            const quickToggle = document.getElementById("quick-dark-toggle");
+            const quickToggle = document.getElementById(DOM_IDS.QUICK_DARK_TOGGLE);
             if (!quickToggle) {
                 console.warn('⚠️ Quick dark toggle element not found');
                 return;
@@ -311,7 +312,7 @@ export class ThemeManager {
                 console.log('🌙 Quick dark toggle clicked');
 
                 // Find primary toggle and simulate change
-                const primaryToggle = document.getElementById("darkModeToggle");
+                const primaryToggle = document.getElementById(DOM_IDS.DARK_MODE_TOGGLE);
                 if (primaryToggle) {
                     console.log('🔄 Triggering primary toggle, current state:', primaryToggle.checked);
                     primaryToggle.checked = !primaryToggle.checked;
@@ -368,7 +369,7 @@ export class ThemeManager {
      */
     updateQuickToggleIcon(isDark) {
         try {
-            const currentQuickToggle = document.getElementById("quick-dark-toggle");
+            const currentQuickToggle = document.getElementById(DOM_IDS.QUICK_DARK_TOGGLE);
             if (currentQuickToggle) {
                 currentQuickToggle.textContent = isDark ? "☀️" : "🌙";
             }
@@ -505,7 +506,7 @@ export class ThemeManager {
         try {
             console.log("🌈 Initializing Theme Panel");
 
-            const existingContainer = document.querySelector('.theme-container');
+            const existingContainer = document.querySelector(DOM_SELECTORS.THEME_CONTAINER);
             if (existingContainer) {
                 console.log('ℹ️ Theme container already exists');
                 return;
@@ -522,7 +523,7 @@ export class ThemeManager {
             themeContainer.appendChild(themeOptionContainer);
 
             // Inject into modal
-            const themeSection = document.getElementById("theme-options-section");
+            const themeSection = document.getElementById(DOM_IDS.THEME_OPTIONS_SECTION);
             if (themeSection) {
                 themeSection.appendChild(themeContainer);
                 this.refreshThemeToggles();
@@ -542,7 +543,7 @@ export class ThemeManager {
         try {
             console.log('🎨 Refreshing theme toggles (Schema 2.5 only)...');
             
-            const container = document.getElementById("theme-option-container");
+            const container = document.getElementById(DOM_IDS.THEME_OPTION_CONTAINER);
             if (!container) {
                 // Settings panel not open - skip UI refresh (theme is still unlocked in state)
                 console.log('ℹ️ Theme panel not visible - skipping toggle refresh');
@@ -674,10 +675,10 @@ export class ThemeManager {
             const unlockedThemes = settings?.unlockedThemes || [];
             const hasUnlockedThemes = unlockedThemes.length > 0;
 
-            const themeButton = document.getElementById("open-themes-panel");
-            const themesModal = document.getElementById("themes-modal");
-            const themesModalContent = themesModal?.querySelector(".themes-modal-content");
-            const closeThemesBtn = document.getElementById("close-themes-btn");
+            const themeButton = document.getElementById(DOM_IDS.OPEN_THEMES_PANEL);
+            const themesModal = document.getElementById(DOM_IDS.THEMES_MODAL);
+            const themesModalContent = themesModal?.querySelector(DOM_SELECTORS.THEMES_MODAL_CONTENT);
+            const closeThemesBtn = document.getElementById(DOM_IDS.CLOSE_THEMES_BTN);
 
             // Show the button if any theme is unlocked
             if (hasUnlockedThemes && themeButton) {
@@ -741,7 +742,7 @@ export class ThemeManager {
      */
     showThemeContainer() {
         try {
-            const themeContainer = document.querySelector('.theme-container');
+            const themeContainer = document.querySelector(DOM_SELECTORS.THEME_CONTAINER);
             if (themeContainer) {
                 themeContainer.classList.remove('hidden');
             }
@@ -755,7 +756,7 @@ export class ThemeManager {
      */
     showThemeButton() {
         try {
-            const themeButton = document.getElementById("open-themes-panel");
+            const themeButton = document.getElementById(DOM_IDS.OPEN_THEMES_PANEL);
             if (themeButton) {
                 themeButton.style.display = "block";
             }
@@ -769,7 +770,7 @@ export class ThemeManager {
      */
     updateThemeToggles(themeName) {
         try {
-            document.querySelectorAll('.theme-toggle').forEach(cb => {
+            document.querySelectorAll(DOM_SELECTORS.THEME_TOGGLE).forEach(cb => {
                 const expectedId = `toggle${this.capitalize(themeName || 'default')}Theme`;
                 cb.checked = cb.id === expectedId;
             });

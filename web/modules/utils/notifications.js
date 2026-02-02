@@ -35,6 +35,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -344,7 +345,7 @@ export class MiniCycleNotifications {
    */
   show(message, type = "default", duration = null) {
     try {
-      const notificationContainer = document.getElementById("notification-container");
+      const notificationContainer = document.getElementById(DOM_IDS.NOTIFICATION_CONTAINER);
       if (!notificationContainer) {
         console.warn("⚠️ Notification container not found.");
         return;
@@ -357,7 +358,7 @@ export class MiniCycleNotifications {
 
       // Generate unique ID (DI-pure) - use simple hash fallback for duplicate detection
       const newId = _deps.generateHashId?.(message) || `notif-${simpleHash(message)}`;
-      if ([...notificationContainer.querySelectorAll(".notification")]
+      if ([...notificationContainer.querySelectorAll(DOM_SELECTORS.NOTIFICATION)]
           .some(n => n.dataset.id === newId)) {
         console.log("🔄 Notification already exists, skipping duplicate.");
         return;
@@ -387,7 +388,7 @@ export class MiniCycleNotifications {
       let cleanupTimeouts = null;
 
       // Style and handler for any close button
-      const closeBtn = notification.querySelector(".close-btn");
+      const closeBtn = notification.querySelector(DOM_SELECTORS.CLOSE_BTN);
       if (closeBtn) {
         Object.assign(closeBtn.style, {
           position: "absolute",
@@ -455,7 +456,7 @@ export class MiniCycleNotifications {
    */
   showWithTip(content, type = "default", duration = null, tipId = null, options = {}) {
     try {
-      const notificationContainer = document.getElementById("notification-container");
+      const notificationContainer = document.getElementById(DOM_IDS.NOTIFICATION_CONTAINER);
       if (!notificationContainer) {
         console.warn("⚠️ Notification container not found.");
         return;
@@ -471,7 +472,7 @@ export class MiniCycleNotifications {
       const safeContent = options.trusted === true ? content : escape(content);
 
       const newId = _deps.generateHashId?.(content) || `notif-${simpleHash(content)}`;
-      const existing = [...notificationContainer.querySelectorAll(".notification")];
+      const existing = [...notificationContainer.querySelectorAll(DOM_SELECTORS.NOTIFICATION)];
 
       // Prevent duplicates
       if (existing.some(n => n.dataset.id === newId)) {
@@ -493,7 +494,7 @@ export class MiniCycleNotifications {
       // Check if HTML already has a close button before adding one (only for trusted content)
       const tempDiv = document.createElement("div");
       tempDiv.innerHTML = safeContent;
-      const hasCloseBtn = options.trusted && tempDiv.querySelector(".close-btn, .notification-close");
+      const hasCloseBtn = options.trusted && tempDiv.querySelector(DOM_SELECTORS.CLOSE_BTN + ", " + DOM_SELECTORS.NOTIFICATION_CLOSE);
 
       if (hasCloseBtn) {
         notification.innerHTML = safeContent;
@@ -510,7 +511,7 @@ export class MiniCycleNotifications {
       let cleanupTimeouts = null;
 
       // Close button click
-      const closeBtn = notification.querySelector(".close-btn, .notification-close");
+      const closeBtn = notification.querySelector(DOM_SELECTORS.CLOSE_BTN + ", " + DOM_SELECTORS.NOTIFICATION_CLOSE);
       if (closeBtn) {
         closeBtn._clickHandler = (e) => {
           e.stopPropagation();
@@ -525,7 +526,7 @@ export class MiniCycleNotifications {
       }
 
       // Initialize tip listeners if this notification has tips
-      if (tipId || notification.querySelector(".educational-tip")) {
+      if (tipId || notification.querySelector(DOM_SELECTORS.EDUCATIONAL_TIP)) {
         this.educationalTips.initializeTipListeners(notification);
       }
 
@@ -555,7 +556,7 @@ export class MiniCycleNotifications {
 
     // Apply the calculated default position (top-right, below logo)
     // setDefaultPosition handles waitForCore + saves position with modified=false
-    const container = document.getElementById("notification-container");
+    const container = document.getElementById(DOM_IDS.NOTIFICATION_CONTAINER);
     if (container) {
       await this.setDefaultPosition(container);
     } else {
@@ -1037,7 +1038,7 @@ async setDefaultPosition(notificationContainer) {
    */
   initializeRecurringNotificationListeners(notification) {
     // Close button handler
-    const closeBtn = notification.querySelector(".close-btn");
+    const closeBtn = notification.querySelector(DOM_SELECTORS.CLOSE_BTN);
     if (closeBtn) {
       closeBtn._clickHandler = (e) => {
         e.stopPropagation();
@@ -1057,7 +1058,7 @@ async setDefaultPosition(notificationContainer) {
       // Handle "Change Settings" button - expand quick actions
       if (e.target.classList.contains("show-quick-actions")) {
         const changeSettingsBtn = e.target;
-        const quickContainer = notification.querySelector(".quick-recurring-container");
+        const quickContainer = notification.querySelector(DOM_SELECTORS.QUICK_RECURRING_CONTAINER);
 
         if (quickContainer) {
           // Hide "Change Settings" button
@@ -1078,11 +1079,11 @@ async setDefaultPosition(notificationContainer) {
       // Handle quick option clicks
       if (e.target.closest(".quick-option")) {
         const quickOption = e.target.closest(".quick-option");
-        const radioCircle = quickOption.querySelector(".radio-circle");
+        const radioCircle = quickOption.querySelector(DOM_SELECTORS.RADIO_CIRCLE);
         const quickOptions = quickOption.closest(".quick-recurring-options");
-        const applyButton = notification.querySelector(".apply-quick-recurring");
+        const applyButton = notification.querySelector(DOM_SELECTORS.APPLY_QUICK_RECURRING);
 
-        quickOptions.querySelectorAll(".radio-circle").forEach(circle => {
+        quickOptions.querySelectorAll(DOM_SELECTORS.RADIO_CIRCLE).forEach(circle => {
           circle.classList.remove("selected");
         });
 
@@ -1093,7 +1094,7 @@ async setDefaultPosition(notificationContainer) {
 
       // Handle apply button clicks
       if (e.target.classList.contains("apply-quick-recurring")) {
-        const selectedCircle = notification.querySelector(".radio-circle.selected");
+        const selectedCircle = notification.querySelector(DOM_SELECTORS.RADIO_CIRCLE_SELECTED);
         if (!selectedCircle || !taskId) return;
 
         const newFrequency = selectedCircle.dataset.freq;
@@ -1138,7 +1139,7 @@ async setDefaultPosition(notificationContainer) {
         const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
 
         let startingFrequency;
-        const selectedCircle = notification.querySelector(".radio-circle.selected");
+        const selectedCircle = notification.querySelector(DOM_SELECTORS.RADIO_CIRCLE_SELECTED);
         if (selectedCircle) {
           startingFrequency = selectedCircle.dataset.freq;
         } else if (task?.recurringSettings?.frequency) {
@@ -1146,7 +1147,7 @@ async setDefaultPosition(notificationContainer) {
         }
 
         if (startingFrequency) {
-          const freqSelect = document.getElementById("recur-frequency");
+          const freqSelect = document.getElementById(DOM_IDS.RECUR_FREQUENCY);
           if (freqSelect) {
             freqSelect.value = startingFrequency;
             freqSelect.dispatchEvent(new Event("change"));
@@ -1241,8 +1242,8 @@ async setDefaultPosition(notificationContainer) {
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
 
-    const confirmBtn = modal.querySelector(".btn-confirm");
-    const cancelBtn = modal.querySelector(".btn-cancel");
+    const confirmBtn = modal.querySelector(DOM_SELECTORS.BTN_CONFIRM);
+    const cancelBtn = modal.querySelector(DOM_SELECTORS.BTN_CANCEL);
 
     setTimeout(() => cancelBtn.focus(), 20);
 
@@ -1317,9 +1318,9 @@ async setDefaultPosition(notificationContainer) {
 
     document.body.appendChild(overlay);
 
-    const input = overlay.querySelector(".miniCycle-prompt-input");
-    const cancelBtn = overlay.querySelector(".miniCycle-btn-cancel");
-    const confirmBtn = overlay.querySelector(".miniCycle-btn-confirm");
+    const input = overlay.querySelector(DOM_SELECTORS.MINI_CYCLE_PROMPT_INPUT);
+    const cancelBtn = overlay.querySelector(DOM_SELECTORS.MINI_CYCLE_BTN_CANCEL);
+    const confirmBtn = overlay.querySelector(DOM_SELECTORS.MINI_CYCLE_BTN_CONFIRM);
 
     setTimeout(() => input.focus(), 50);
 

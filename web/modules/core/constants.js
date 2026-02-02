@@ -271,6 +271,527 @@ export const TIME_UNITS = Object.freeze({
 });
 
 // ============================================================================
+// DOM ELEMENT IDS — Single source of truth for getElementById calls
+// ============================================================================
+
+export const DOM_IDS = Object.freeze({
+    // ---- Task ----
+    TASK_LIST: 'taskList',
+    TASK_INPUT: 'taskInput',
+    ADD_TASK_BTN: 'addTaskBtn',
+    COMPLETE_ALL: 'completeAll',
+    COMPLETED_TASK_LIST: 'completedTaskList',
+    COMPLETED_TASKS_SECTION: 'completed-tasks-section',
+    COMPLETED_TASKS_HEADER: 'completed-tasks-header',
+    COMPLETED_COUNT: 'completed-count',
+
+    // ---- Task Search ----
+    TASK_SEARCH_CONTAINER: 'task-search-container',
+    TASK_SEARCH_BTN: 'task-search-btn',
+    TASK_SEARCH_INPUT: 'task-search-input',
+    TASK_SEARCH_CLEAR: 'task-search-clear',
+    TASK_SEARCH_INPUT_ROW: 'task-search-input-row',
+
+    // ---- Menu ----
+    MENU_BUTTON: 'menu-button',
+    CLOSE_MAIN_MENU: 'close-main-menu',
+    MAIN_MENU_TITLE: 'main-menu-mini-cycle-title',
+    CURRENT_DATE: 'current-date',
+    MENU_TASK_OPTIONS: 'menu-task-options',
+    OPEN_USER_MANUAL: 'open-user-manual',
+    EXIT_MINI_CYCLE: 'exit-mini-cycle',
+    SAVE_AS_MINI_CYCLE: 'save-as-mini-cycle',
+    OPEN_MINI_CYCLE: 'open-mini-cycle',
+    CLEAR_MINI_CYCLE_TASKS: 'clear-mini-cycle-tasks',
+    DELETE_ALL_MINI_CYCLE_TASKS: 'delete-all-mini-cycle-tasks',
+    NEW_MINI_CYCLE: 'new-mini-cycle',
+    EXPORT_MINI_CYCLE: 'export-mini-cycle',
+
+    // ---- Settings ----
+    OPEN_SETTINGS: 'open-settings',
+    CLOSE_SETTINGS: 'close-settings',
+    SETTINGS_VERSION_DISPLAY: 'settings-version-display',
+    DARK_MODE_TOGGLE: 'darkModeToggle',
+    DARK_MODE_TOGGLE_THEMES: 'darkModeToggleThemes',
+    TOGGLE_MOVE_ARROWS: 'toggle-move-arrows',
+    TOGGLE_THREE_DOTS: 'toggle-three-dots',
+    TOGGLE_COMPLETED_DROPDOWN: 'toggle-completed-dropdown',
+    TOGGLE_SCROLL_TO_NEW_TASK: 'toggle-scroll-to-new-task',
+    TOGGLE_SCROLL_ON_LOAD: 'toggle-scroll-on-load',
+    TOGGLE_DEBUG_MODE: 'toggle-debug-mode',
+    RESET_RECURRING_DEFAULT: 'reset-recurring-default',
+    RESET_ACHIEVEMENT_PROGRESS: 'reset-achievement-progress',
+    TOGGLE_CHECKBOX_FILL: 'toggle-checkbox-fill',
+    TOGGLE_CHECKBOX_INCOMPLETE: 'toggle-checkbox-incomplete',
+    TOGGLE_BG_PATTERN: 'toggle-bg-pattern',
+    TOGGLE_BG_IMAGE_VISIBLE: 'toggle-bg-image-visible',
+
+    // ---- Backup & Recovery ----
+    BACKUP_MINI_CYCLES: 'backup-mini-cycles',
+    RESTORE_MINI_CYCLES: 'restore-mini-cycles',
+    FACTORY_RESET: 'factory-reset',
+    RECOVERY_FRESH_START: 'recovery-fresh-start',
+    RECOVERY_LOAD_SAMPLE: 'recovery-load-sample',
+    RECOVERY_DOWNLOAD_BACKUP: 'recovery-download-backup',
+
+    // ---- Modals ----
+    REMINDERS_MODAL: 'reminders-modal',
+    CLOSE_REMINDERS_BTN: 'close-reminders-btn',
+    OPEN_REMINDERS_MODAL: 'open-reminders-modal',
+    FEEDBACK_MODAL: 'feedback-modal',
+    OPEN_FEEDBACK_MODAL: 'open-feedback-modal',
+    OPEN_FEEDBACK_MODAL_FOOTER: 'open-feedback-modal-footer',
+    FEEDBACK_FORM: 'feedback-form',
+    FEEDBACK_TEXT: 'feedback-text',
+    SUBMIT_FEEDBACK: 'submit-feedback',
+    THANK_YOU_MESSAGE: 'thank-you-message',
+    ABOUT_MODAL: 'about-modal',
+    OPEN_ABOUT_MODAL: 'open-about-modal',
+    TASK_OPTIONS_CUSTOMIZER_MODAL: 'task-options-customizer-modal',
+    OPEN_TASK_OPTIONS_CUSTOMIZER: 'open-task-options-customizer',
+    CLOSE_TASK_OPTIONS_BTN: 'close-task-options-btn',
+    RESET_TASK_OPTIONS_BTN: 'reset-task-options-btn',
+    OPTION_PREVIEW_CONTENT: 'option-preview-content',
+
+    // ---- Preferences ----
+    PREFERENCES_MODAL: 'preferences-modal',
+    OPEN_PREFERENCES: 'open-preferences',
+    CLOSE_PREFERENCES_BTN: 'close-preferences-btn',
+    PERSONALIZATION_BTN: 'personalization-btn',
+    PREFERENCES_OPEN_THEMES: 'preferences-open-themes',
+    PREFERENCES_PREVIEW: 'preferences-preview',
+    PREFERENCES_NO_PRESETS: 'preferences-no-presets',
+    PREFERENCES_PRESETS_LIST: 'preferences-presets-list',
+    PREFERENCES_RESET_ALL: 'preferences-reset-all',
+    PREF_SAVE_PRESET: 'pref-save-preset',
+    PREF_IMPORT_PRESET: 'pref-import-preset',
+    PREFERENCES_UNDO: 'preferences-undo',
+    PREFERENCES_THEME_NOTICE: 'preferences-theme-notice',
+    PREF_PATTERN_COLOR: 'pref-pattern-color',
+    PREF_CHECKBOX_BG: 'pref-checkbox-bg',
+    PREF_CHECKBOX_INCOMPLETE_BG: 'pref-checkbox-incomplete-bg',
+    BG_IMAGE_OPTIONS: 'bg-image-options',
+    BG_IMAGE_REMOVE_BTN: 'bg-image-remove-btn',
+    BG_IMAGE_PREVIEW: 'bg-image-preview',
+    BG_IMAGE_MODE: 'bg-image-mode',
+    BG_IMAGE_UPLOAD_BTN: 'bg-image-upload-btn',
+    BG_IMAGE_UPLOAD: 'bg-image-upload',
+
+    // ---- Reminders Form ----
+    ENABLE_REMINDERS: 'enableReminders',
+    INDEFINITE_CHECKBOX: 'indefiniteCheckbox',
+    DUE_DATES_REMINDERS: 'dueDatesReminders',
+    REPEAT_COUNT: 'repeatCount',
+    FREQUENCY_VALUE: 'frequencyValue',
+    FREQUENCY_UNIT: 'frequencyUnit',
+    FREQUENCY_SECTION: 'frequency-section',
+    REPEAT_COUNT_ROW: 'repeat-count-row',
+
+    // ---- Routine / Cycle ----
+    MINI_CYCLE_TITLE: 'mini-cycle-title',
+    MODE_SELECTOR: 'mode-selector',
+    TOGGLE_AUTO_RESET: 'toggleAutoReset',
+    DELETE_CHECKED_TASKS: 'deleteCheckedTasks',
+    DELETE_CHECKED_TASKS_CONTAINER: 'deleteCheckedTasksContainer',
+    AUTO_RESET_CONTAINER: 'autoResetContainer',
+    MODE_DESCRIPTION: 'mode-description',
+    MODE_DESCRIPTION_TOGGLE: 'mode-description-toggle',
+    ROUTINE_SWITCHER_BTN: 'routine-switcher-btn',
+
+    // ---- Routine Switcher ----
+    MINI_CYCLE_LIST: 'miniCycleList',
+    ROUTINE_SEARCH_INPUT: 'routine-search-input',
+    SWITCH_ITEMS_ROW: 'switch-items-row',
+    SORT_ALPHA: 'sort-alpha',
+    SORT_RECENT: 'sort-recent',
+    SORT_SIZE: 'sort-size',
+    ROUTINE_FILTER_SELECT: 'routine-filter-select',
+    SWITCH_DUPLICATE: 'switch-duplicate',
+    SWITCH_RENAME: 'switch-rename',
+    SWITCH_DELETE: 'switch-delete',
+    MINI_CYCLE_SWITCH_CONFIRM: 'miniCycleSwitchConfirm',
+    MINI_CYCLE_SWITCH_CANCEL: 'miniCycleSwitchCancel',
+    STORAGE_BAR_FILL: 'storage-bar-fill',
+    STORAGE_BAR_TEXT: 'storage-bar-text',
+    SWITCH_PREVIEW_WINDOW: 'switch-preview-window',
+    SWITCH_PREVIEW_DATE: 'switch-preview-date',
+    STORAGE_REFRESH_BTN: 'storage-refresh-btn',
+    PREVIEW_REVIEW_OVERLAY: 'preview-review-overlay',
+
+    // ---- Stats & Navigation ----
+    STATS_PANEL: 'stats-panel',
+    TASK_VIEW: 'task-view',
+    LIVE_REGION: 'live-region',
+    SLIDE_LEFT: 'slide-left',
+    SLIDE_RIGHT: 'slide-right',
+    NAV_DOTS: 'nav-dots',
+    TOTAL_TASKS: 'total-tasks',
+    COMPLETED_TASKS: 'completed-tasks',
+    COMPLETION_RATE: 'completion-rate',
+    MINI_CYCLE_COUNT: 'mini-cycle-count',
+    PER_CYCLE_COUNT: 'per-cycle-count',
+    MILESTONE_PROGRESS_TEXT: 'milestone-progress-text',
+    STATS_PROGRESS_BAR: 'stats-progress-bar',
+    CURRENT_ROUTINE_STATUS: 'current-routine-status',
+    CURRENT_CYCLE_DOUGHNUT_CONTAINER: 'current-cycle-doughnut-container',
+    CURRENT_CYCLE_DOUGHNUT_PROGRESS: 'current-cycle-doughnut-progress',
+    CURRENT_CYCLE_DOUGHNUT_TEXT: 'current-cycle-doughnut-text',
+    CURRENT_CYCLE_PROGRESS_TEXT: 'current-cycle-progress-text',
+    CURRENT_ROUTINE_CYCLE_COUNT: 'current-routine-cycle-count',
+    CURRENT_ROUTINE_CLEARED_COUNT: 'current-routine-cleared-count',
+    PER_ROUTINE_CLEARED: 'per-routine-cleared',
+    THEME_UNLOCK_MESSAGE: 'theme-unlock-message',
+    GOLDEN_UNLOCK_MESSAGE: 'golden-unlock-message',
+    GAME_UNLOCK_MESSAGE: 'game-unlock-message',
+    THEME_UNLOCK_STATUS: 'theme-unlock-status',
+
+    // ---- Themes ----
+    OPEN_THEMES_PANEL: 'open-themes-panel',
+    THEMES_MODAL: 'themes-modal',
+    CLOSE_THEMES_BTN: 'close-themes-btn',
+    QUICK_DARK_TOGGLE: 'quick-dark-toggle',
+    THEME_COLOR_META: 'theme-color-meta',
+    STATUS_BAR_STYLE_META: 'status-bar-style-meta',
+    THEME_OPTIONS_SECTION: 'theme-options-section',
+    THEME_OPTION_CONTAINER: 'theme-option-container',
+
+    // ---- Recurring Panel ----
+    RECURRING_PANEL_OVERLAY: 'recurring-panel-overlay',
+    RECURRING_PANEL: 'recurring-panel',
+    RECURRING_TASK_LIST: 'recurring-task-list',
+    RECURRING_SETTINGS_PANEL: 'recurring-settings-panel',
+    RECURRING_SUMMARY_PREVIEW: 'recurring-summary-preview',
+    CLOSE_RECURRING_PANEL: 'close-recurring-panel',
+    OPEN_RECURRING_PANEL: 'open-recurring-panel',
+    CHANGE_RECURRING_SETTINGS: 'change-recurring-settings',
+    RECUR_FREQUENCY: 'recur-frequency',
+    RECUR_FREQUENCY_CONTAINER: 'recur-frequency-container',
+    SET_DEFAULT_RECURRING_CONTAINER: 'set-default-recurring-container',
+    SET_DEFAULT_RECURRING: 'set-default-recurring',
+    TOGGLE_CHECK_ALL: 'toggle-check-all',
+    TOGGLE_ADVANCED_SETTINGS: 'toggle-advanced-settings',
+    ALWAYS_SHOW_RECURRING: 'always-show-recurring',
+    APPLY_RECURRING_SETTINGS: 'apply-recurring-settings',
+    CANCEL_RECURRING_SETTINGS: 'cancel-recurring-settings',
+    RECURRING_TOGGLE_ACTIONS: 'recurring-toggle-actions',
+    RECURRING_EMPTY_STATE: 'recurring-empty-state',
+    RECURRING_PREVIEW_TEXT: 'recurring-preview-text',
+    RECURRING_SUMMARY: 'recurring-summary',
+    ADD_RECURRING_TASK_BTN: 'add-recurring-task-btn',
+    AVAILABLE_TASKS_LIST: 'available-tasks-list',
+    CONFIRM_ADD_RECURRING: 'confirm-add-recurring',
+    NON_RECURRING_TASKS: 'non-recurring-tasks',
+    NO_AVAILABLE_TASKS: 'no-available-tasks',
+    RECUR_INDEFINITELY: 'recur-indefinitely',
+    RECUR_LIMITED_CONTAINER: 'recur-limited-container',
+    RECUR_COUNT_RADIO: 'recur-count-radio',
+    RECUR_UNTIL_RADIO: 'recur-until-radio',
+    RECUR_COUNT_CONTAINER: 'recur-count-container',
+    RECUR_UNTIL_CONTAINER: 'recur-until-container',
+    RECUR_COUNT_INPUT: 'recur-count-input',
+    RECUR_UNTIL_DATE: 'recur-until-date',
+    ADD_SPECIFIC_DATE: 'add-specific-date',
+    SPECIFIC_DATE_LIST: 'specific-date-list',
+    RECUR_SPECIFIC_DATES: 'recur-specific-dates',
+    SPECIFIC_DATES_PANEL: 'specific-dates-panel',
+    SPECIFIC_DATE_TIME_OPTIONS: 'specific-date-time-options',
+    SPECIFIC_DATE_SPECIFIC_TIME: 'specific-date-specific-time',
+    SPECIFIC_DATE_TIME_CONTAINER: 'specific-date-time-container',
+    SPECIFIC_DATE_HOUR: 'specific-date-hour',
+    SPECIFIC_DATE_MINUTE: 'specific-date-minute',
+    SPECIFIC_DATE_MERIDIEM: 'specific-date-meridiem',
+    SPECIFIC_DATE_MILITARY: 'specific-date-military',
+    HOURLY_OPTIONS: 'hourly-options',
+    DAILY_OPTIONS: 'daily-options',
+    WEEKLY_OPTIONS: 'weekly-options',
+    BIWEEKLY_OPTIONS: 'biweekly-options',
+    MONTHLY_OPTIONS: 'monthly-options',
+    YEARLY_OPTIONS: 'yearly-options',
+    HOURLY_MINUTE: 'hourly-minute',
+    HOURLY_SPECIFIC_TIME: 'hourly-specific-time',
+    MONTHLY_SPECIFIC_DAYS: 'monthly-specific-days',
+    MONTHLY_WEEK_OF_MONTH: 'monthly-week-of-month',
+    MONTHLY_WEEK_CONTAINER: 'monthly-week-container',
+    MONTHLY_DAY_CONTAINER: 'monthly-day-container',
+    MONTHLY_LAST_DAY: 'monthly-last-day',
+    MONTHLY_WEEK_ORDINAL: 'monthly-week-ordinal',
+    MONTHLY_WEEK_DAY: 'monthly-week-day',
+    YEARLY_MONTH_SELECT: 'yearly-month-select',
+    YEARLY_APPLY_DAYS_TO_ALL: 'yearly-apply-days-to-all',
+    YEARLY_SPECIFIC_DAYS: 'yearly-specific-days',
+    YEARLY_DAY_CONTAINER: 'yearly-day-container',
+    YEARLY_SPECIFIC_MONTHS: 'yearly-specific-months',
+    YEARLY_SPECIFIC_DAYS_LABEL: 'yearly-specific-days-label',
+    YEARLY_APPLY_ALL: 'yearly-apply-all',
+    BIWEEKLY_SPECIFIC_DAYS: 'biweekly-specific-days',
+
+    // ---- Games & Achievements ----
+    OPEN_GAMES_PANEL: 'open-games-panel',
+    GAMES_MENU_OPTION: 'games-menu-option',
+    GAMES_PANEL: 'games-panel',
+    CLOSE_GAMES_PANEL: 'close-games-panel',
+    OPEN_TASK_ORDER_GAME: 'open-task-order-game',
+    BADGE_SPIN_AREA: 'badge-spin-area',
+    BADGE_COIN: 'badge-coin',
+    BADGE_DETAIL_OVERLAY: 'badge-detail-overlay',
+    ACHIEVEMENT_BADGES_BTN: 'achievement-badges-btn',
+
+    // ---- Undo/Redo ----
+    UNDO_BTN: 'undo-btn',
+    REDO_BTN: 'redo-btn',
+
+    // ---- Quick Actions ----
+    QUICK_ACTIONS_WINDOW: 'quick-actions-window',
+    QUICK_ACTIONS_SLOTS: 'quick-actions-slots',
+    QUICK_ACTIONS_MENU_SLOTS: 'quick-actions-menu-slots',
+    QUICK_ACTIONS_PICKER_OVERLAY: 'quick-actions-picker-overlay',
+    QUICK_ACTIONS_TOOLTIP: 'quick-actions-tooltip',
+    QUICK_ACTIONS_BTN: 'quick-actions-btn',
+    QUICK_ACTIONS_MENU: 'quick-actions-menu',
+    TOGGLE_TASK_INPUT_BTN: 'toggle-task-input-btn',
+    CREATE_ROUTINE_BTN: 'create-routine-btn',
+    TOGGLE_TASK_INPUT_TEXT: 'toggle-task-input-text',
+
+    // ---- Onboarding ----
+    ONBOARDING_STEP_CONTENT: 'onboarding-step-content',
+    ONBOARDING_NEXT: 'onboarding-next',
+    ONBOARDING_PREV: 'onboarding-prev',
+    ONBOARDING_SKIP: 'onboarding-skip',
+
+    // ---- Loading & UI ----
+    APP_LOADER: 'app-loader',
+    PROGRESS_BAR: 'progressBar',
+    LOADING_OVERLAY: 'loading-overlay',
+    CLEAR_CACHE_BTN: 'clear-cache-btn',
+    HELP_WINDOW: 'help-window',
+    NOTIFICATION_CONTAINER: 'notification-container',
+    NEW_TASK_INPUT: 'new-task-input',
+    PULL_REFRESH_INDICATOR: 'pull-refresh-indicator',
+    SAVING_INDICATOR: 'saving-indicator',
+
+    // ---- Testing ----
+    TESTING_MODAL: 'testing-modal',
+    OPEN_TESTING_MODAL: 'open-testing-modal',
+    CLOSE_TESTING_MODAL: 'close-testing-modal',
+    AUTOMATED_TEST_OUTPUT: 'automated-test-output',
+    TESTING_OUTPUT: 'testing-output',
+    TEST_PROGRESS_BAR: 'test-progress-bar',
+    TEST_STATUS_TEXT: 'test-status-text',
+    TEST_TIME_ESTIMATE: 'test-time-estimate',
+    TEST_RUNNER_TITLE: 'test-runner-title',
+    SEARCH_TEST_RESULTS: 'search-test-results',
+    STORAGE_VIEWER_OVERLAY: 'storage-viewer-overlay',
+    STORAGE_CONTENT: 'storage-content',
+    STAY_OPEN_TOGGLE: 'stay-open-toggle'
+});
+
+// ============================================================================
+// DOM CSS SELECTORS — Single source of truth for querySelector calls
+// ============================================================================
+
+export const DOM_SELECTORS = Object.freeze({
+    // ---- Task ----
+    TASK: '.task',
+    TASK_TEXT: '.task-text',
+    TASK_OPTIONS: '.task-options',
+    TASK_BTN: '.task-btn',
+    TASK_INPUT: '.task-input',
+    TASK_LIST_CONTAINER: '.task-list-container',
+    TASK_NOT_FOUND: '.task-not-found',
+    TASK_BY_ID: '.task[data-task-id]',
+    IS_FIRST_TASK: '.is-first-task',
+    IS_LAST_TASK: '.is-last-task',
+
+    // ---- Task Options & Buttons ----
+    ENABLE_TASK_REMINDERS: '.enable-task-reminders',
+    REMINDER_ACTIVE: '.reminder-active',
+    PRIORITY_BTN: '.priority-btn',
+    SET_DUE_DATE: '.set-due-date',
+    DUE_DATE: '.due-date',
+    DELETE_WHEN_COMPLETE_BTN: '.delete-when-complete-btn',
+    RECURRING_BTN: '.recurring-btn',
+    RECURRING_INDICATOR: '.recurring-indicator',
+    THREE_DOTS_BTN: '.three-dots-btn',
+
+    // ---- Menu & Settings ----
+    MENU_CONTAINER: '.menu-container',
+    MENU_CONTAINER_VISIBLE: '.menu-container.visible',
+    MENU_BUTTON: '.menu-button',
+    HAMBURGER_MENU: '.hamburger-menu',
+    MAIN_MENU: '.main-menu',
+    MENU_SECTION_HEADER: '.menu-section-header',
+    MENU_SECTION_HEADER_COLLAPSIBLE: '.menu-section-header.collapsible',
+    MENU_SECTION_BY_DATA: '.menu-section[data-section]',
+    SETTINGS_MODAL: '.settings-modal',
+    SETTINGS_MODAL_CONTENT: '.settings-modal-content',
+    SETTINGS_SECTION_HEADER: '.settings-section-header',
+    SETTINGS_SECTION_COLLAPSIBLE: '.settings-section.collapsible[data-section]',
+
+    // ---- Modals (general) ----
+    DATA_MODAL: '[data-modal]',
+    CLOSE_MODAL: '.close-modal',
+
+    // ---- Routine Switcher ----
+    MINI_CYCLE_SWITCH_MODAL: '.mini-cycle-switch-modal',
+    MINI_CYCLE_SWITCH_MODAL_CONTENT: '.mini-cycle-switch-modal-content',
+    MINI_CYCLE_SWITCH_ITEM: '.mini-cycle-switch-item',
+    MINI_CYCLE_SWITCH_ITEM_SELECTED: '.mini-cycle-switch-item.selected',
+    CYCLE_ITEM_TITLE: '.cycle-item-title',
+    MINI_CYCLE_OVERLAY: '.miniCycle-overlay',
+    MINI_MODAL_OVERLAY: '.mini-modal-overlay',
+    SWITCH_PREVIEW_WINDOW: '.switch-preview-window',
+    PREVIEW_REVIEW_CLOSE: '.preview-review-close',
+
+    // ---- Stats ----
+    STATS_PANEL: '.stats-panel',
+    DOT: '.dot',
+
+    // ---- Themes ----
+    THEME_CONTAINER: '.theme-container',
+    THEME_TOGGLE: '.theme-toggle',
+    THEMES_MODAL_CONTENT: '.themes-modal-content',
+
+    // ---- Completed Tasks ----
+    COMPLETED_TASKS_SECTION: '.completed-tasks-section',
+    TOGGLE_ICON: '.toggle-icon',
+
+    // ---- Recurring ----
+    FREQUENCY_OPTIONS: '.frequency-options',
+    RECURRING_TASK_ITEM: '.recurring-task-item',
+    RECURRING_CHECK: '.recurring-check',
+    RECURRING_CHECK_CHECKED: '.recurring-check:checked',
+    CHANGE_RECURRING_BTN: '.change-recurring-btn',
+    RECURRING_TASK_ITEM_SELECTED: '.recurring-task-item.selected',
+    RECURRING_TASK_ITEM_CHECKED: '.recurring-task-item.checked',
+    BIWEEKLY_DAY_BOX: '.biweekly-day-box',
+    BIWEEKLY_DAY_BOX_SELECTED: '.biweekly-day-box.selected',
+    MONTHLY_DAYS: '.monthly-days',
+    YEARLY_MONTHS: '.yearly-months',
+    YEARLY_DAYS: '.yearly-days',
+    MONTHLY_DAY_BOX_SELECTED: '.monthly-day-box.selected',
+    YEARLY_MONTH_BOX_SELECTED: '.yearly-month-box.selected',
+    WEEKLY_DAYS: '.weekly-days',
+    RECURRING_TASK_TEXT: '.recurring-task-text',
+    NON_RECURRING_SELECTED: '#non-recurring-tasks li.selected',
+
+    // ---- Preferences ----
+    PREFERENCES_MODAL: '.preferences-modal',
+    PREFERENCES_SECTION_HEADER_COLLAPSIBLE: '.preferences-section-header.collapsible',
+    PREFERENCES_SECTION_BY_DATA: '.preferences-section[data-section]',
+    PREFERENCES_RESET_BTN: '.preferences-reset-btn',
+    QUICK_PRESET_BTN: '.quick-preset-btn',
+    PREFERENCES_PRESET_ITEM: '.preferences-preset-item',
+    PREFERENCES_PRESET_NAME: '.preferences-preset-name',
+    PREFERENCES_PREVIEW_SECTION: '.preferences-preview-section',
+    LOAD_BTN: '.load-btn',
+    EXPORT_BTN: '.export-btn',
+    DELETE_BTN: '.delete-btn',
+
+    // ---- Feedback ----
+    FEEDBACK_MODAL: '.feedback-modal',
+    CLOSE_FEEDBACK_MODAL: '.close-feedback-modal',
+
+    // ---- Notifications ----
+    NOTIFICATION: '.notification',
+    CLOSE_BTN: '.close-btn',
+    NOTIFICATION_CLOSE: '.notification-close',
+    NOTIFICATION_CONTENT: '.notification-content',
+    EDUCATIONAL_TIP: '.educational-tip',
+    QUICK_RECURRING_CONTAINER: '.quick-recurring-container',
+    RADIO_CIRCLE: '.radio-circle',
+    RADIO_CIRCLE_SELECTED: '.radio-circle.selected',
+    APPLY_QUICK_RECURRING: '.apply-quick-recurring',
+
+    // ---- Confirmation Dialogs ----
+    BTN_CONFIRM: '.btn-confirm',
+    BTN_CANCEL: '.btn-cancel',
+    MINI_CYCLE_PROMPT_INPUT: '.miniCycle-prompt-input',
+    MINI_CYCLE_BTN_CANCEL: '.miniCycle-btn-cancel',
+    MINI_CYCLE_BTN_CONFIRM: '.miniCycle-btn-confirm',
+
+    // ---- History & Cleared Tasks ----
+    HISTORY_MODAL: '.history-modal',
+    HISTORY_MODAL_CONTENT: '.history-modal-content',
+    HISTORY_BACK_BTN: '.history-back-btn',
+    HISTORY_ACTION_BTN: '.history-action-btn',
+    HISTORY_TAB: '.history-tab',
+    HISTORY_CANCEL_BTN: '.history-cancel-btn',
+    HISTORY_CONFIRM_BTN: '.history-confirm-btn',
+    HISTORY_RESET_PROGRESS_BTN: '.history-reset-progress-btn',
+    HISTORY_FOOTER: '.history-footer',
+    CLEARED_ENTRY: '.cleared-entry',
+    CLEARED_TASKS_MODAL: '.cleared-tasks-modal',
+    CLEARED_TASKS_MODAL_CONTENT: '.cleared-tasks-modal-content',
+    CLEARED_BACK_BTN: '.cleared-back-btn',
+    CLEARED_RECREATE_BTN: '.cleared-recreate-btn',
+    CLEARED_CANCEL_BTN: '.cleared-cancel-btn',
+    CLEARED_CONFIRM_BTN: '.cleared-confirm-btn',
+    CLEARED_TASKS_FOOTER: '.cleared-tasks-footer',
+    CLEARED_TASKS_SUMMARY: '.cleared-tasks-summary',
+
+    // ---- Drag & Drop ----
+    DROP_TARGET: '.drop-target',
+    REARRANGING: '.rearranging',
+
+    // ---- Achievements ----
+    ACHIEVEMENTS_MODAL: '.achievements-modal',
+    ACHIEVEMENTS_MODAL_CONTENT: '.achievements-modal-content',
+    ACHIEVEMENTS_BACK_BTN: '.achievements-back-btn',
+
+    // ---- Games ----
+    GAMES_MODAL_CONTENT: '.games-modal-content',
+    BADGE: '.badge',
+
+    // ---- Quick Actions ----
+    QUICK_ACTIONS_MENU_ROW: '.quick-actions-menu-row',
+    QUICK_ACTIONS_PREV: '.quick-actions-prev',
+    QUICK_ACTIONS_NEXT: '.quick-actions-next',
+    QUICK_ACTIONS_HEADER: '.quick-actions-header',
+    QUICK_ACTIONS_TITLE: '.quick-actions-title',
+    QUICK_ACTIONS_PICKER: '.quick-actions-picker',
+    QUICK_ACTIONS_PICKER_GRID: '.quick-actions-picker-grid',
+    TOOLTIP_REMOVE: 'tooltip-remove',
+
+    // ---- Loading & UI ----
+    LOADER_TEXT: '.loader-text',
+    LOADER_BAR: '.loader-bar',
+    LOADING_SPINNER_TEXT: '.loading-spinner-text',
+    HEADER_BRANDING: '.header-branding',
+    HEADER_BRANDING_LOGO: '.header-branding .header-logo',
+    HEADER_LOGO: '.header-logo',
+    PULL_REFRESH_ICON: '.pull-refresh-icon',
+    PULL_REFRESH_TEXT: '.pull-refresh-text',
+
+    // ---- Import/Export ----
+    MCYC_DROP_CONTENT: '.mcyc-drop-content',
+    MCYC_DROP_ICON: '.mcyc-drop-icon',
+    MCYC_DROP_TEXT: '.mcyc-drop-text',
+
+    // ---- Task Options Customizer ----
+    TASK_OPTION_ITEM: '.task-option-item',
+
+    // ---- Icons ----
+    ICON_FONTAWESOME: 'i.fas, i.far, i.fab, i.fa',
+
+    // ---- Storage Viewer ----
+    STORAGE_MODAL_BOX: '.storage-modal-box',
+
+    // ---- Testing ----
+    TESTING_MODAL: '.testing-modal',
+    TESTING_MODAL_CONTENT: '.testing-modal-content',
+    TESTING_MODAL_HEADER: '.testing-modal-header',
+    TESTING_MODAL_BODY: '.testing-modal-body',
+    TESTING_MODAL_DRAG_HANDLE: '.testing-modal-drag-handle',
+    TESTING_RESULTS_AREA: '.testing-results-area',
+    TESTING_RESULTS_HEADER: '.testing-results-header',
+    TESTING_TAB: '.testing-tab',
+    TESTING_TAB_CONTENT: '.testing-tab-content',
+    TESTING_TAB_CONTENT_ACTIVE: '.testing-tab-content.active',
+    CLOSE_TESTING_MODAL: '.close-testing-modal',
+    BACKUP_ITEM: '.backup-item'
+});
+
+// ============================================================================
 // VERSION
 // ============================================================================
 

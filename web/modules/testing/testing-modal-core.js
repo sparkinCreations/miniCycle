@@ -7,6 +7,8 @@
  * @module testing-modal-core
  */
 
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+
 // ==========================================
 // DEPENDENCY INJECTION (DI-Pure Pattern)
 // ==========================================
@@ -198,7 +200,7 @@ export const safeAddEventListenerById = (id, event, handler) => {
  * @param {string} message - Message to append
  */
 export function appendToTestResults(message) {
-    const testingOutput = document.getElementById("testing-output");
+    const testingOutput = document.getElementById(DOM_IDS.TESTING_OUTPUT);
     if (!testingOutput) {
         console.warn("Testing output element not found");
         return;
@@ -213,7 +215,7 @@ export function appendToTestResults(message) {
  * Clear test results output
  */
 export function clearTestResults() {
-    const testingOutput = document.getElementById("testing-output");
+    const testingOutput = document.getElementById(DOM_IDS.TESTING_OUTPUT);
     if (testingOutput) {
         testingOutput.textContent = "";
         showNotification("Test results cleared", "info", 1500);
@@ -224,7 +226,7 @@ export function clearTestResults() {
  * Export test results to file
  */
 export function exportTestResults() {
-    const testingOutput = document.getElementById("testing-output");
+    const testingOutput = document.getElementById(DOM_IDS.TESTING_OUTPUT);
     if (!testingOutput || !testingOutput.textContent.trim()) {
         showNotification("No test results to export", "warning", 2000);
         return;
@@ -250,7 +252,7 @@ export function exportTestResults() {
  * Copy test results to clipboard
  */
 export function copyTestResults() {
-    const testingOutput = document.getElementById("testing-output");
+    const testingOutput = document.getElementById(DOM_IDS.TESTING_OUTPUT);
     if (!testingOutput || !testingOutput.textContent.trim()) {
         showNotification("No test results to copy", "warning", 2000);
         return;
@@ -272,8 +274,8 @@ export function copyTestResults() {
  * Setup tab switching functionality
  */
 export function setupTestingTabs() {
-    const tabButtons = document.querySelectorAll('.testing-tab');
-    const tabContents = document.querySelectorAll('.testing-tab-content');
+    const tabButtons = document.querySelectorAll(DOM_SELECTORS.TESTING_TAB);
+    const tabContents = document.querySelectorAll(DOM_SELECTORS.TESTING_TAB_CONTENT);
 
     if (tabButtons.length === 0) {
         console.warn("Testing tab buttons not found");
@@ -332,11 +334,11 @@ export function setupResultsControls(setupResultsAreaResize) {
     });
 
     // Search/filter functionality
-    const searchInput = document.getElementById("search-test-results");
+    const searchInput = document.getElementById(DOM_IDS.SEARCH_TEST_RESULTS);
     if (searchInput) {
         safeAddEventListener(searchInput, "input", (e) => {
             const query = e.target.value.toLowerCase();
-            const testingOutput = document.getElementById("testing-output");
+            const testingOutput = document.getElementById(DOM_IDS.TESTING_OUTPUT);
             if (!testingOutput) return;
 
             const lines = testingOutput.textContent.split('\n');

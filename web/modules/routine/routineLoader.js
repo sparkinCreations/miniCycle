@@ -18,7 +18,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
+import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS } from '../core/constants.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
 // ============================================================================
@@ -332,7 +332,7 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
  * BUT we need to make sure existing tasks keep their IDs and completion states
  */
 function renderTasksToDOM(tasks = []) {
-  const list = document.getElementById('taskList');
+  const list = document.getElementById(DOM_IDS.TASK_LIST);
   if (!list) return;
 
   list.innerHTML = '';
@@ -362,13 +362,13 @@ function renderTasksToDOM(tasks = []) {
  * Update UI state
  */
 function updateCycleUIState(currentCycle, settings) {
-  const titleElement = document.getElementById('mini-cycle-title');
+  const titleElement = document.getElementById(DOM_IDS.MINI_CYCLE_TITLE);
   if (titleElement) {
     titleElement.textContent = currentCycle.title || 'Untitled Cycle';
   }
 
-  const toggleAutoReset = document.getElementById('toggleAutoReset');
-  const deleteCheckedTasks = document.getElementById('deleteCheckedTasks');
+  const toggleAutoReset = document.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
+  const deleteCheckedTasks = document.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
 
   if (toggleAutoReset) {
     toggleAutoReset.checked = currentCycle.autoReset || false;
@@ -409,8 +409,8 @@ function applyThemeSettings(settings) {
  * Reminders
  */
 async function setupRemindersForCycle(reminders) {
-  const enableReminders = document.getElementById('enableReminders');
-  const frequencySection = document.getElementById('frequency-section');
+  const enableReminders = document.getElementById(DOM_IDS.ENABLE_REMINDERS);
+  const frequencySection = document.getElementById(DOM_IDS.FREQUENCY_SECTION);
   if (!enableReminders) return;
 
   const enabled = reminders.enabled === true;

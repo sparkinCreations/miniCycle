@@ -50,7 +50,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { TASK_TIMEOUTS } from '../core/constants.js';
+import { TASK_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -226,8 +226,8 @@ function getResetContext(deps) {
 
     // Get tasks from both lists
     const taskElements = [
-        ...taskList.querySelectorAll(".task"),
-        ...(completedTaskList?.querySelectorAll(".task") || [])
+        ...taskList.querySelectorAll(DOM_SELECTORS.TASK),
+        ...(completedTaskList?.querySelectorAll(DOM_SELECTORS.TASK) || [])
     ];
 
     // Get cycle data from AppState or localStorage
@@ -311,7 +311,7 @@ function resetTasksData(context, deps) {
 
         // Reset task DOM with staggered animation
         const checkbox = taskEl.querySelector("input[type='checkbox']");
-        const dueDateInput = taskEl.querySelector(".due-date");
+        const dueDateInput = taskEl.querySelector(DOM_SELECTORS.DUE_DATE);
 
         // Apply staggered reset animation
         const delay = animationIndex * STAGGER_DELAY;
@@ -367,7 +367,7 @@ function moveCompletedTasksBack(context, deps) {
 
     if (!completedTaskList || !taskList) return;
 
-    const completedTaskElements = completedTaskList.querySelectorAll('.task');
+    const completedTaskElements = completedTaskList.querySelectorAll(DOM_SELECTORS.TASK);
     completedTaskElements.forEach(taskEl => {
         if (!taskEl.classList.contains('recurring')) {
             taskList.appendChild(taskEl);
@@ -447,7 +447,7 @@ export async function resetTasksImpl(deps = {}) {
         }
 
         // Step 3.5: Spin the logo (coin-flip animation)
-        const headerLogo = document.querySelector('.header-logo');
+        const headerLogo = document.querySelector(DOM_SELECTORS.HEADER_LOGO);
         if (headerLogo) {
             headerLogo.classList.remove('logo-spin'); // Reset if already spinning
             // Force reflow to restart animation
@@ -528,9 +528,9 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     // Find all tasks that are BOTH completed AND marked for deletion
     // Check both main taskList AND completedTaskList (for when dropdown is enabled)
     const tasksToDelete = [];
-    const allTaskElements = taskList.querySelectorAll(".task");
-    const completedTaskList = document.getElementById('completedTaskList');
-    const completedTaskElements = completedTaskList?.querySelectorAll(".task") || [];
+    const allTaskElements = taskList.querySelectorAll(DOM_SELECTORS.TASK);
+    const completedTaskList = document.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
+    const completedTaskElements = completedTaskList?.querySelectorAll(DOM_SELECTORS.TASK) || [];
 
     // Helper to process task elements
     const processTaskElement = (taskElement) => {
@@ -744,7 +744,7 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
 
         // Step 2: Check if confirmation modal is needed (due dates in cycle mode)
         if (!cycleData.deleteCheckedTasks) {
-            const hasDueDates = [...taskList.querySelectorAll(".due-date")].some(
+            const hasDueDates = [...taskList.querySelectorAll(DOM_SELECTORS.DUE_DATE)].some(
                 dueDateInput => dueDateInput.value
             );
 

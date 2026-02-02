@@ -22,6 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -137,9 +138,9 @@ export class MenuManager {
 
         try {
             // Cache DOM elements
-            this.elements.menu = this.deps.querySelector('.menu-container');
-            this.elements.menuButton = this.deps.querySelector('.menu-button');
-            this.elements.exitMiniCycle = this.deps.getElementById('exit-mini-cycle');
+            this.elements.menu = this.deps.querySelector(DOM_SELECTORS.MENU_CONTAINER);
+            this.elements.menuButton = this.deps.querySelector(DOM_SELECTORS.MENU_BUTTON);
+            this.elements.exitMiniCycle = this.deps.getElementById(DOM_IDS.EXIT_MINI_CYCLE);
 
             // Setup menu
             this.setupMainMenu();
@@ -164,13 +165,13 @@ export class MenuManager {
         this._setupMainMenuInitialized = true;
 
         this.deps.safeAddEventListener(
-            this.deps.getElementById("save-as-mini-cycle"),
+            this.deps.getElementById(DOM_IDS.SAVE_AS_MINI_CYCLE),
             "click",
             () => this.saveMiniCycleAsNew()
         );
 
         this.deps.safeAddEventListener(
-            this.deps.getElementById("open-mini-cycle"),
+            this.deps.getElementById(DOM_IDS.OPEN_MINI_CYCLE),
             "click",
             () => {
                 this.deps.trackAction?.('open-routine');
@@ -179,25 +180,25 @@ export class MenuManager {
         );
 
         this.deps.safeAddEventListener(
-            this.deps.getElementById("clear-mini-cycle-tasks"),
+            this.deps.getElementById(DOM_IDS.CLEAR_MINI_CYCLE_TASKS),
             "click",
             () => this.clearAllTasks()
         );
 
         this.deps.safeAddEventListener(
-            this.deps.getElementById("delete-all-mini-cycle-tasks"),
+            this.deps.getElementById(DOM_IDS.DELETE_ALL_MINI_CYCLE_TASKS),
             "click",
             () => this.deleteAllTasks()
         );
 
         this.deps.safeAddEventListener(
-            this.deps.getElementById("new-mini-cycle"),
+            this.deps.getElementById(DOM_IDS.NEW_MINI_CYCLE),
             "click",
             () => this.deps.createNewMiniCycle()
         );
 
         this.deps.safeAddEventListener(
-            this.deps.getElementById("close-main-menu"),
+            this.deps.getElementById(DOM_IDS.CLOSE_MAIN_MENU),
             "click",
             () => this.closeMainMenu()
         );
@@ -221,7 +222,7 @@ export class MenuManager {
      * Handles toggle functionality and persists collapsed state
      */
     setupCollapsibleSections() {
-        const collapsibleHeaders = this.deps.querySelectorAll('.menu-section-header.collapsible');
+        const collapsibleHeaders = this.deps.querySelectorAll(DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE);
 
         // Load saved collapsed states from appState
         this.loadCollapsedStates();
@@ -266,7 +267,7 @@ export class MenuManager {
     saveCollapsedStates() {
         if (!this.deps.AppState) return;
 
-        const sections = this.deps.querySelectorAll('.menu-section[data-section]');
+        const sections = this.deps.querySelectorAll(DOM_SELECTORS.MENU_SECTION_BY_DATA);
         const collapsedSections = {};
 
         sections.forEach(section => {
@@ -296,8 +297,8 @@ export class MenuManager {
     updateMainMenuHeader() {
         console.log('📰 Updating main menu header (Schema 2.5 only)...');
 
-        const menuHeaderTitle = this.deps.getElementById("main-menu-mini-cycle-title");
-        const dateElement = this.deps.getElementById("current-date");
+        const menuHeaderTitle = this.deps.getElementById(DOM_IDS.MAIN_MENU_TITLE);
+        const dateElement = this.deps.getElementById(DOM_IDS.CURRENT_DATE);
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
@@ -357,7 +358,7 @@ export class MenuManager {
      * Hide main menu
      */
     hideMainMenu() {
-        const menu = this.deps.querySelector(".menu-container");
+        const menu = this.deps.querySelector(DOM_SELECTORS.MENU_CONTAINER);
         if (menu) {
             menu.classList.remove("visible");
         }
@@ -646,7 +647,7 @@ export class MenuManager {
                 console.log('💾 All tasks deleted and saved to Schema 2.5');
 
                 // ✅ Clear UI & update progress
-                const taskList = this.deps.getElementById("taskList");
+                const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
                 if (taskList) {
                     taskList.innerHTML = "";
                 }

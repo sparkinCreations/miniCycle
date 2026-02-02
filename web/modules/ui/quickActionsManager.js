@@ -13,6 +13,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // CONSTANTS
@@ -88,6 +89,7 @@ const di = createDIModule('QuickActionsManager', {
     switchMiniCycle: optional(null),
     recurringPanel: required(),
     hideMainMenu: required(),
+    isDebug: optional(() => false),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel))
 });
@@ -100,7 +102,7 @@ const _deps = new Proxy({}, {
 
 export function setQuickActionsManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('⚡ QuickActionsManager dependencies set:', Object.keys(dependencies));
+    if (dependencies.isDebug?.()) console.log('⚡ QuickActionsManager dependencies set:', Object.keys(dependencies));
 }
 
 // ============================================================================
@@ -119,6 +121,7 @@ export class QuickActionsManager {
             switchMiniCycle: resolved.switchMiniCycle,
             recurringPanel: resolved.recurringPanel,
             hideMainMenu: resolved.hideMainMenu,
+            isDebug: resolved.isDebug,
             getElementById: resolved.getElementById,
             querySelector: resolved.querySelector
         };
@@ -140,16 +143,16 @@ export class QuickActionsManager {
         this._ensureData();
 
         // Render desktop panel
-        this._renderPanel('quick-actions-slots');
+        this._renderPanel(DOM_IDS.QUICK_ACTIONS_SLOTS);
 
         // Render mobile menu row
-        this._renderPanel('quick-actions-menu-slots');
+        this._renderPanel(DOM_IDS.QUICK_ACTIONS_MENU_SLOTS);
 
         // Bind events for desktop panel
-        this._bindPanelEvents('quick-actions-window');
+        this._bindPanelEvents(DOM_IDS.QUICK_ACTIONS_WINDOW);
 
         // Bind events for mobile menu row
-        this._bindPanelEvents(null, '.quick-actions-menu-row');
+        this._bindPanelEvents(null, DOM_SELECTORS.QUICK_ACTIONS_MENU_ROW);
 
         // Create picker overlay (shared between desktop and mobile)
         this._createPickerOverlay();
@@ -158,7 +161,7 @@ export class QuickActionsManager {
         this._createTooltip();
 
         this._initialized = true;
-        console.log('⚡ QuickActionsManager initialized');
+        if (this.deps.isDebug?.()) console.log('⚡ QuickActionsManager initialized');
     }
 
     // ========================================================================
@@ -224,8 +227,8 @@ export class QuickActionsManager {
     // ========================================================================
 
     _renderAllPanels() {
-        this._renderPanel('quick-actions-slots');
-        this._renderPanel('quick-actions-menu-slots');
+        this._renderPanel(DOM_IDS.QUICK_ACTIONS_SLOTS);
+        this._renderPanel(DOM_IDS.QUICK_ACTIONS_MENU_SLOTS);
         this._updateTitles();
     }
 
@@ -313,7 +316,7 @@ export class QuickActionsManager {
     _updateTitles() {
         const view = this._getActiveView();
         const title = VIEW_TITLES[view] || 'Quick Actions';
-        document.querySelectorAll('.quick-actions-title').forEach(el => {
+        document.querySelectorAll(DOM_SELECTORS.QUICK_ACTIONS_TITLE).forEach(el => {
             el.textContent = title;
         });
     }
@@ -400,11 +403,11 @@ export class QuickActionsManager {
                 case 'switchMiniCycle': {
                     setTimeout(() => {
                         try {
-                            const routineBtn = document.getElementById('routine-switcher-btn');
+                            const routineBtn = document.getElementById(DOM_IDS.ROUTINE_SWITCHER_BTN);
                             if (routineBtn) {
                                 routineBtn.click();
                             } else {
-                                this._warnMissingDep('routine-switcher-btn', actionId);
+                                this._warnMissingDep(DOM_IDS.ROUTINE_SWITCHER_BTN, actionId);
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
@@ -431,11 +434,11 @@ export class QuickActionsManager {
                 case 'openRemindersModal': {
                     setTimeout(() => {
                         try {
-                            const modal = this.deps.getElementById('reminders-modal');
+                            const modal = this.deps.getElementById(DOM_IDS.REMINDERS_MODAL);
                             if (modal) {
                                 modal.style.display = 'flex';
                             } else {
-                                this._warnMissingDep('reminders-modal element', actionId);
+                                this._warnMissingDep(DOM_IDS.REMINDERS_MODAL, actionId);
                             }
                             this.deps.hideMainMenu?.();
                         } catch (err) {
@@ -448,11 +451,11 @@ export class QuickActionsManager {
                 case 'openSettings': {
                     setTimeout(() => {
                         try {
-                            const settingsBtn = document.getElementById('open-settings');
+                            const settingsBtn = document.getElementById(DOM_IDS.OPEN_SETTINGS);
                             if (settingsBtn) {
                                 settingsBtn.click();
                             } else {
-                                this._warnMissingDep('open-settings element', actionId);
+                                this._warnMissingDep(DOM_IDS.OPEN_SETTINGS, actionId);
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
@@ -541,8 +544,8 @@ export class QuickActionsManager {
         const pinned = data.pinned || [];
 
         // Build picker content
-        const picker = this._pickerOverlay.querySelector('.quick-actions-picker');
-        const grid = picker.querySelector('.quick-actions-picker-grid');
+        const picker = this._pickerOverlay.querySelector(DOM_SELECTORS.QUICK_ACTIONS_PICKER);
+        const grid = picker.querySelector(DOM_SELECTORS.QUICK_ACTIONS_PICKER_GRID);
         grid.innerHTML = '';
 
         // Group actions by section
@@ -603,13 +606,13 @@ export class QuickActionsManager {
 
     _createPickerOverlay() {
         // Check if already exists
-        if (document.getElementById('quick-actions-picker-overlay')) {
-            this._pickerOverlay = document.getElementById('quick-actions-picker-overlay');
+        if (document.getElementById(DOM_IDS.QUICK_ACTIONS_PICKER_OVERLAY)) {
+            this._pickerOverlay = document.getElementById(DOM_IDS.QUICK_ACTIONS_PICKER_OVERLAY);
             return;
         }
 
         const overlay = document.createElement('div');
-        overlay.id = 'quick-actions-picker-overlay';
+        overlay.id = DOM_IDS.QUICK_ACTIONS_PICKER_OVERLAY;
         overlay.className = 'quick-actions-picker-overlay';
 
         const picker = document.createElement('div');
@@ -620,7 +623,7 @@ export class QuickActionsManager {
         picker.appendChild(title);
 
         const grid = document.createElement('div');
-        grid.className = 'quick-actions-picker-grid';
+        grid.className = 'quick-actions-picker-grid';  // matches DOM_SELECTORS.QUICK_ACTIONS_PICKER_GRID (without dot)
         picker.appendChild(grid);
 
         const cancelBtn = document.createElement('button');
@@ -660,8 +663,8 @@ export class QuickActionsManager {
         if (!panel) return;
 
         // Arrow buttons
-        const prevBtn = panel.querySelector('.quick-actions-prev');
-        const nextBtn = panel.querySelector('.quick-actions-next');
+        const prevBtn = panel.querySelector(DOM_SELECTORS.QUICK_ACTIONS_PREV);
+        const nextBtn = panel.querySelector(DOM_SELECTORS.QUICK_ACTIONS_NEXT);
 
         if (prevBtn) {
             prevBtn.addEventListener('click', () => this.cycleView('prev'));
@@ -671,7 +674,7 @@ export class QuickActionsManager {
         }
 
         // Swipe gesture on header
-        const header = panel.querySelector('.quick-actions-header');
+        const header = panel.querySelector(DOM_SELECTORS.QUICK_ACTIONS_HEADER);
         if (header) {
             this._setupSwipeGesture(header);
         }
@@ -741,13 +744,13 @@ export class QuickActionsManager {
     }
 
     _createTooltip() {
-        if (document.getElementById('quick-actions-tooltip')) {
-            this._tooltip = document.getElementById('quick-actions-tooltip');
+        if (document.getElementById(DOM_IDS.QUICK_ACTIONS_TOOLTIP)) {
+            this._tooltip = document.getElementById(DOM_IDS.QUICK_ACTIONS_TOOLTIP);
             return;
         }
 
         const tooltip = document.createElement('div');
-        tooltip.id = 'quick-actions-tooltip';
+        tooltip.id = DOM_IDS.QUICK_ACTIONS_TOOLTIP;
         tooltip.className = 'quick-actions-tooltip';
         document.body.appendChild(tooltip);
         this._tooltip = tooltip;
@@ -768,7 +771,7 @@ export class QuickActionsManager {
         // Add remove button for pinned view
         if (!isAutoView && slotIndex >= 0) {
             const removeBtn = document.createElement('button');
-            removeBtn.className = 'tooltip-remove';
+            removeBtn.className = DOM_SELECTORS.TOOLTIP_REMOVE;
             removeBtn.textContent = 'Remove';
             removeBtn.addEventListener('click', () => {
                 this.unpinAction(slotIndex);
@@ -822,4 +825,4 @@ export function trackAction(actionId) {
     quickActionsManager?.trackAction(actionId);
 }
 
-console.log('⚡ QuickActionsManager loaded (DI-pure)');
+// Boot log only in debug mode (isDebug not available at module level, logged in init instead)

@@ -14,6 +14,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
 // ============================================================================
@@ -111,7 +112,7 @@ export class TaskOptionsVisibilityController {
      * @returns {boolean} Whether the visibility was changed
      */
     static setVisibility(taskItem, visible, caller = 'unknown') {
-        const taskOptions = taskItem.querySelector('.task-options');
+        const taskOptions = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
         if (!taskOptions) {
             console.warn(`TaskOptionsVisibilityController: No .task-options found for ${caller}`);
             return false;
@@ -182,7 +183,7 @@ export async function refreshTaskListUI() {
 
     // Clear current list
     const getElementById = _deps.getElementById || ((id) => document.getElementById(id));
-    const taskListContainer = getElementById("taskList");
+    const taskListContainer = getElementById(DOM_IDS.TASK_LIST);
     if (!taskListContainer) return;
     taskListContainer.innerHTML = "";
 
@@ -241,20 +242,20 @@ export function hideTaskButtons(taskItem) {
     }
 
     // Clear individual button inline styles if we successfully hid
-    const taskOptions = taskItem.querySelector(".task-options");
+    const taskOptions = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
     if (taskOptions) {
         const threeDotsEnabled = document.body.classList.contains("show-three-dots-enabled");
 
         if (threeDotsEnabled) {
             // Three-dots mode: use inline styles to explicitly hide individual buttons
-            taskItem.querySelectorAll(".task-btn").forEach(btn => {
+            taskItem.querySelectorAll(DOM_SELECTORS.TASK_BTN).forEach(btn => {
                 btn.style.visibility = "hidden";
                 btn.style.opacity = "0";
                 btn.style.pointerEvents = "none";
             });
         } else {
             // Regular hover mode: clear inline styles to let CSS handle it
-            taskItem.querySelectorAll(".task-btn").forEach(btn => {
+            taskItem.querySelectorAll(DOM_SELECTORS.TASK_BTN).forEach(btn => {
                 btn.style.visibility = "";
                 btn.style.opacity = "";
                 btn.style.pointerEvents = "";
@@ -326,8 +327,8 @@ export function checkCompleteAllButton() {
     const getTaskList = _deps.getTaskList;
     const getCompleteAllButton = _deps.getCompleteAllButton;
 
-    const taskList = typeof getTaskList === 'function' ? getTaskList() : document.getElementById('taskList');
-    const completeAllButton = typeof getCompleteAllButton === 'function' ? getCompleteAllButton() : document.getElementById('completeAll');
+    const taskList = typeof getTaskList === 'function' ? getTaskList() : document.getElementById(DOM_IDS.TASK_LIST);
+    const completeAllButton = typeof getCompleteAllButton === 'function' ? getCompleteAllButton() : document.getElementById(DOM_IDS.COMPLETE_ALL);
 
     if (!taskList || !completeAllButton) {
         // Elements should exist after DOMContentLoaded - warn if missing
@@ -336,7 +337,7 @@ export function checkCompleteAllButton() {
     }
 
     const isAutoMode = document.body.classList.contains('auto-cycle-mode');
-    const taskView = document.getElementById('task-view');
+    const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
 
     // Detect To-Do mode from body class (set by modeManager as 'todo-mode-mode')
     const isToDoMode = document.body.classList.contains('todo-mode-mode');

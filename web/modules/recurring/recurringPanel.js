@@ -23,6 +23,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 
 // ============================================================================
@@ -136,10 +137,10 @@ export class RecurringPanelManager {
         }
 
         try {
-            const overlay = this.deps.getElementById("recurring-panel-overlay");
-            const panel = this.deps.getElementById("recurring-panel");
-            const closeBtn = this.deps.getElementById("close-recurring-panel");
-            const openBtn = this.deps.getElementById("open-recurring-panel");
+            const overlay = this.deps.getElementById(DOM_IDS.RECURRING_PANEL_OVERLAY);
+            const panel = this.deps.getElementById(DOM_IDS.RECURRING_PANEL);
+            const closeBtn = this.deps.getElementById(DOM_IDS.CLOSE_RECURRING_PANEL);
+            const openBtn = this.deps.getElementById(DOM_IDS.OPEN_RECURRING_PANEL);
 
             if (!overlay || !panel || !closeBtn || !openBtn) {
                 console.warn('⚠️ Recurring panel elements not found in DOM');
@@ -163,7 +164,7 @@ export class RecurringPanelManager {
             });
 
             // Setup change recurring settings button
-            const changeSettingsBtn = this.deps.getElementById("change-recurring-settings");
+            const changeSettingsBtn = this.deps.getElementById(DOM_IDS.CHANGE_RECURRING_SETTINGS);
             if (changeSettingsBtn) {
                 this.deps.safeAddEventListener(changeSettingsBtn, "click", () => {
                     console.log('🔧 Change recurring settings clicked');
@@ -238,7 +239,7 @@ export class RecurringPanelManager {
             this.generateYearlyMonthGrid();
 
             // Setup yearly options
-            const yearlyMonthSelect = this.deps.getElementById("yearly-month-select");
+            const yearlyMonthSelect = this.deps.getElementById(DOM_IDS.YEARLY_MONTH_SELECT);
             if (yearlyMonthSelect) {
                 this.deps.safeAddEventListener(yearlyMonthSelect, "change", (e) => {
                     const selectedMonth = parseInt(e.target.value);
@@ -247,15 +248,15 @@ export class RecurringPanelManager {
                 this.generateYearlyDayGrid(1);
             }
 
-            const yearlyApplyToAllCheckbox = this.deps.getElementById("yearly-apply-days-to-all");
+            const yearlyApplyToAllCheckbox = this.deps.getElementById(DOM_IDS.YEARLY_APPLY_DAYS_TO_ALL);
             if (yearlyApplyToAllCheckbox) {
                 this.deps.safeAddEventListener(yearlyApplyToAllCheckbox, "change", () => {
                     this.handleYearlyApplyToAllChange();
                 });
             }
 
-            const yearlySpecificDaysCheckbox = this.deps.getElementById("yearly-specific-days");
-            const yearlyDayContainer = this.deps.getElementById("yearly-day-container");
+            const yearlySpecificDaysCheckbox = this.deps.getElementById(DOM_IDS.YEARLY_SPECIFIC_DAYS);
+            const yearlyDayContainer = this.deps.getElementById(DOM_IDS.YEARLY_DAY_CONTAINER);
             if (yearlySpecificDaysCheckbox && yearlyDayContainer) {
                 this.deps.safeAddEventListener(yearlySpecificDaysCheckbox, "change", () => {
                     const hasMonthSelected = this.getSelectedYearlyMonths().length > 0;
@@ -384,8 +385,8 @@ export class RecurringPanelManager {
      * Handle yearly "apply to all months" checkbox change
      */
     handleYearlyApplyToAllChange() {
-        const checkbox = this.deps.getElementById("yearly-apply-days-to-all");
-        const dropdown = this.deps.getElementById("yearly-month-select");
+        const checkbox = this.deps.getElementById(DOM_IDS.YEARLY_APPLY_DAYS_TO_ALL);
+        const dropdown = this.deps.getElementById(DOM_IDS.YEARLY_MONTH_SELECT);
         const selectedMonths = this.getSelectedYearlyMonths();
 
         if (!checkbox || !dropdown) return;
@@ -420,11 +421,11 @@ export class RecurringPanelManager {
      * Setup specific dates panel
      */
     setupSpecificDatesPanel() {
-        const checkbox = this.deps.getElementById("recur-specific-dates");
-        const panel = this.deps.getElementById("specific-dates-panel");
-        const timeOptions = this.deps.getElementById("specific-date-time-options");
-        const addBtn = this.deps.getElementById("add-specific-date");
-        const list = this.deps.getElementById("specific-date-list");
+        const checkbox = this.deps.getElementById(DOM_IDS.RECUR_SPECIFIC_DATES);
+        const panel = this.deps.getElementById(DOM_IDS.SPECIFIC_DATES_PANEL);
+        const timeOptions = this.deps.getElementById(DOM_IDS.SPECIFIC_DATE_TIME_OPTIONS);
+        const addBtn = this.deps.getElementById(DOM_IDS.ADD_SPECIFIC_DATE);
+        const list = this.deps.getElementById(DOM_IDS.SPECIFIC_DATE_LIST);
 
         if (!checkbox || !panel || !timeOptions || !addBtn || !list) {
             console.warn("⚠️ Missing elements for specific dates panel setup");
@@ -492,14 +493,14 @@ export class RecurringPanelManager {
             panel.classList.toggle("hidden", !shouldShow);
             timeOptions.classList.toggle("hidden", !shouldShow);
 
-            this.deps.querySelectorAll(".frequency-options").forEach(panel => {
+            this.deps.querySelectorAll(DOM_SELECTORS.FREQUENCY_OPTIONS).forEach(panel => {
                 panel.classList.add("hidden");
             });
 
-            this.deps.getElementById("recur-frequency-container").classList.toggle("hidden", shouldShow);
-            this.deps.getElementById("recur-indefinitely").closest("label").classList.toggle("hidden", shouldShow);
+            this.deps.getElementById(DOM_IDS.RECUR_FREQUENCY_CONTAINER).classList.toggle("hidden", shouldShow);
+            this.deps.getElementById(DOM_IDS.RECUR_INDEFINITELY).closest("label").classList.toggle("hidden", shouldShow);
 
-            const advancedBtn = this.deps.getElementById("toggle-advanced-settings");
+            const advancedBtn = this.deps.getElementById(DOM_IDS.TOGGLE_ADVANCED_SETTINGS);
             if (advancedBtn) {
                 advancedBtn.classList.toggle("hidden", shouldShow);
             }
@@ -509,10 +510,10 @@ export class RecurringPanelManager {
             }
 
             if (!shouldShow) {
-                this.deps.getElementById("specific-date-specific-time").checked = false;
-                this.deps.getElementById("specific-date-time-container").classList.add("hidden");
+                this.deps.getElementById(DOM_IDS.SPECIFIC_DATE_SPECIFIC_TIME).checked = false;
+                this.deps.getElementById(DOM_IDS.SPECIFIC_DATE_TIME_CONTAINER).classList.add("hidden");
 
-                const freqSelect = this.deps.getElementById("recur-frequency");
+                const freqSelect = this.deps.getElementById(DOM_IDS.RECUR_FREQUENCY);
                 if (freqSelect) {
                     const event = new Event("change");
                     freqSelect.dispatchEvent(event);
@@ -548,12 +549,12 @@ export class RecurringPanelManager {
      * Update recurring settings panel visibility
      */
     updateRecurringSettingsVisibility() {
-        const anySelected = this.deps.querySelector(".recurring-task-item.selected");
-        const settingsPanel = this.deps.getElementById("recurring-settings-panel");
-        const checkboxes = this.deps.querySelectorAll(".recurring-check");
-        const changeBtns = this.deps.querySelectorAll(".change-recurring-btn");
-        const toggleContainer = this.deps.getElementById("recurring-toggle-actions");
-        const taskCount = this.deps.querySelectorAll(".recurring-task-item").length;
+        const anySelected = this.deps.querySelector(DOM_SELECTORS.RECURRING_TASK_ITEM_SELECTED);
+        const settingsPanel = this.deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
+        const checkboxes = this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_CHECK);
+        const changeBtns = this.deps.querySelectorAll(DOM_SELECTORS.CHANGE_RECURRING_BTN);
+        const toggleContainer = this.deps.getElementById(DOM_IDS.RECURRING_TOGGLE_ACTIONS);
+        const taskCount = this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).length;
 
         const show = !!anySelected;
 
@@ -581,8 +582,8 @@ export class RecurringPanelManager {
      * Setup Apply and Cancel button handlers
      */
     setupApplyCancelButtons() {
-        const applyBtn = this.deps.getElementById("apply-recurring-settings");
-        const cancelBtn = this.deps.getElementById("cancel-recurring-settings");
+        const applyBtn = this.deps.getElementById(DOM_IDS.APPLY_RECURRING_SETTINGS);
+        const cancelBtn = this.deps.getElementById(DOM_IDS.CANCEL_RECURRING_SETTINGS);
 
         if (applyBtn) {
             this.deps.safeAddEventListener(applyBtn, "click", () => this.handleApplySettings());
@@ -610,25 +611,25 @@ export class RecurringPanelManager {
      * Handle canceling recurring settings changes
      */
     handleCancelSettings() {
-        const settingsPanel = this.deps.getElementById("recurring-settings-panel");
+        const settingsPanel = this.deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
         settingsPanel?.classList.add("hidden");
 
         // Deselect all selected tasks
-        this.deps.querySelectorAll(".recurring-task-item").forEach(el => {
+        this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
             el.classList.remove("selected");
             const checkbox = el.querySelector("input[type='checkbox']");
             if (checkbox) checkbox.checked = false;
         });
 
         // Hide checkboxes and uncheck them
-        this.deps.querySelectorAll(".recurring-check").forEach(cb => {
+        this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_CHECK).forEach(cb => {
             cb.checked = false;
             cb.classList.add("hidden");
             cb.closest(".recurring-task-item")?.classList.remove("checked");
         });
 
         // Hide the summary preview if visible
-        const preview = this.deps.getElementById("recurring-summary-preview");
+        const preview = this.deps.getElementById(DOM_IDS.RECURRING_SUMMARY_PREVIEW);
         if (preview) preview.classList.add("hidden");
 
         this.updateRecurringSettingsVisibility();
@@ -638,7 +639,7 @@ export class RecurringPanelManager {
      * Setup biweekly day toggle
      */
     setupBiweeklyDayToggle() {
-        this.deps.querySelectorAll(".biweekly-day-box").forEach(box => {
+        this.deps.querySelectorAll(DOM_SELECTORS.BIWEEKLY_DAY_BOX).forEach(box => {
             this.deps.safeAddEventListener(box, "click", () => {
                 box.classList.toggle("selected");
             });
@@ -649,12 +650,12 @@ export class RecurringPanelManager {
      * Setup duration options (indefinitely checkbox, count/until radio buttons)
      */
     setupDurationRadioButtons() {
-        const indefinitelyCheckbox = this.deps.getElementById("recur-indefinitely");
-        const limitedContainer = this.deps.getElementById("recur-limited-container");
-        const countRadio = this.deps.getElementById("recur-count-radio");
-        const untilRadio = this.deps.getElementById("recur-until-radio");
-        const countContainer = this.deps.getElementById("recur-count-container");
-        const untilContainer = this.deps.getElementById("recur-until-container");
+        const indefinitelyCheckbox = this.deps.getElementById(DOM_IDS.RECUR_INDEFINITELY);
+        const limitedContainer = this.deps.getElementById(DOM_IDS.RECUR_LIMITED_CONTAINER);
+        const countRadio = this.deps.getElementById(DOM_IDS.RECUR_COUNT_RADIO);
+        const untilRadio = this.deps.getElementById(DOM_IDS.RECUR_UNTIL_RADIO);
+        const countContainer = this.deps.getElementById(DOM_IDS.RECUR_COUNT_CONTAINER);
+        const untilContainer = this.deps.getElementById(DOM_IDS.RECUR_UNTIL_CONTAINER);
 
         if (!indefinitelyCheckbox || !limitedContainer) return;
 
@@ -724,13 +725,13 @@ export class RecurringPanelManager {
             await this.updateRecurringPanel();
 
             // Show overlay
-            const overlay = this.deps.getElementById("recurring-panel-overlay");
+            const overlay = this.deps.getElementById(DOM_IDS.RECURRING_PANEL_OVERLAY);
             if (overlay) {
                 overlay.classList.remove("hidden");
             }
 
             // Hide settings panel initially
-            const settingsPanel = this.deps.getElementById("recurring-settings-panel");
+            const settingsPanel = this.deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
             if (settingsPanel) {
                 settingsPanel.classList.add("hidden");
             }
@@ -753,13 +754,13 @@ export class RecurringPanelManager {
         console.log('🔁 Closing recurring panel...');
 
         try {
-            const overlay = this.deps.getElementById("recurring-panel-overlay");
+            const overlay = this.deps.getElementById(DOM_IDS.RECURRING_PANEL_OVERLAY);
             if (overlay) {
                 overlay.classList.add("hidden");
             }
 
             // ✅ Hide the preview when panel closes
-            const summaryContainer = this.deps.getElementById("recurring-summary-preview");
+            const summaryContainer = this.deps.getElementById(DOM_IDS.RECURRING_SUMMARY_PREVIEW);
             if (summaryContainer) {
                 summaryContainer.classList.add("hidden");
             }
@@ -787,7 +788,7 @@ export class RecurringPanelManager {
         console.log('🔄 Updating recurring panel...');
 
         try {
-            const recurringList = this.deps.getElementById("recurring-task-list");
+            const recurringList = this.deps.getElementById(DOM_IDS.RECURRING_TASK_LIST);
             if (!recurringList) {
                 console.warn('⚠️ Recurring task list element not found');
                 return;
@@ -826,23 +827,23 @@ export class RecurringPanelManager {
             // Remember previously selected task AND checked tasks
             const previouslySelectedId = this.state.selectedTaskId;
             const previouslyCheckedIds = Array.from(
-                this.deps.querySelectorAll(".recurring-task-item.checked")
+                this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM_CHECKED)
             ).map(el => el.dataset.taskId);
 
             // Clear previous selections
-            this.deps.querySelectorAll(".recurring-task-item").forEach(el => {
+            this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
                 el.classList.remove("selected");
             });
 
             // Handle empty state
-            const emptyState = this.deps.getElementById("recurring-empty-state");
+            const emptyState = this.deps.getElementById(DOM_IDS.RECURRING_EMPTY_STATE);
 
             if (recurringTasks.length === 0) {
                 console.log('📋 No recurring tasks found, showing empty state');
                 if (emptyState) emptyState.classList.remove("hidden");
 
                 // ✅ Hide the preview when no tasks
-                const summaryContainer = this.deps.getElementById("recurring-summary-preview");
+                const summaryContainer = this.deps.getElementById(DOM_IDS.RECURRING_SUMMARY_PREVIEW);
                 if (summaryContainer) {
                     summaryContainer.classList.add("hidden");
                 }
@@ -868,7 +869,7 @@ export class RecurringPanelManager {
                     // ✅ Restore checked state if this task was previously checked
                     if (previouslyCheckedIds.includes(task.id)) {
                         item.classList.add("checked");
-                        const checkbox = item.querySelector(".recurring-check");
+                        const checkbox = item.querySelector(DOM_SELECTORS.RECURRING_CHECK);
                         if (checkbox) {
                             checkbox.checked = true;
                         }
@@ -971,14 +972,14 @@ export class RecurringPanelManager {
                     const matchingTaskItem = this.deps.querySelector(`.task[data-task-id="${task.id}"]`);
                     if (matchingTaskItem) {
                         // Remove active state from recurring button
-                        const recurringBtn = matchingTaskItem.querySelector(".recurring-btn");
+                        const recurringBtn = matchingTaskItem.querySelector(DOM_SELECTORS.RECURRING_BTN);
                         if (recurringBtn) {
                             recurringBtn.classList.remove("active");
                             recurringBtn.setAttribute("aria-pressed", "false");
                             recurringBtn.disabled = false;
                         }
                         // Remove the recurring indicator icon from task label
-                        const recurringIndicator = matchingTaskItem.querySelector(".recurring-indicator");
+                        const recurringIndicator = matchingTaskItem.querySelector(DOM_SELECTORS.RECURRING_INDICATOR);
                         if (recurringIndicator) {
                             recurringIndicator.remove();
                         }
@@ -992,7 +993,7 @@ export class RecurringPanelManager {
                         const defaultDeleteState = isToDoMode; // todo=true, cycle=false
 
                         // Update delete-when-complete button
-                        const deleteBtn = matchingTaskItem.querySelector('.delete-when-complete-btn');
+                        const deleteBtn = matchingTaskItem.querySelector(DOM_SELECTORS.DELETE_WHEN_COMPLETE_BTN);
                         if (deleteBtn) {
                             deleteBtn.classList.toggle('active', defaultDeleteState);
                             deleteBtn.classList.toggle('delete-when-complete-active', defaultDeleteState);
@@ -1018,7 +1019,7 @@ export class RecurringPanelManager {
                     const updatedCycle = updatedState.data?.cycles?.[activeCycleId];
                     const remaining = Object.values(updatedCycle?.recurringTemplates || {});
                     if (remaining.length === 0) {
-                        const overlay = this.deps.getElementById("recurring-panel-overlay");
+                        const overlay = this.deps.getElementById(DOM_IDS.RECURRING_PANEL_OVERLAY);
                         if (overlay) overlay.classList.add("hidden");
                     }
 
@@ -1042,13 +1043,13 @@ export class RecurringPanelManager {
      */
     updateRecurringSettingsVisibility() {
         try {
-            const anySelected = this.deps.querySelector(".recurring-task-item.selected");
-            const settingsPanel = this.deps.getElementById("recurring-settings-panel");
-            const checkboxes = this.deps.querySelectorAll(".recurring-check");
-            const changeBtns = this.deps.querySelectorAll(".change-recurring-btn");
-            const toggleContainer = this.deps.getElementById("recurring-toggle-actions");
-            const toggleBtn = this.deps.getElementById("toggle-check-all");
-            const taskCount = this.deps.querySelectorAll(".recurring-task-item").length;
+            const anySelected = this.deps.querySelector(DOM_SELECTORS.RECURRING_TASK_ITEM_SELECTED);
+            const settingsPanel = this.deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
+            const checkboxes = this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_CHECK);
+            const changeBtns = this.deps.querySelectorAll(DOM_SELECTORS.CHANGE_RECURRING_BTN);
+            const toggleContainer = this.deps.getElementById(DOM_IDS.RECURRING_TOGGLE_ACTIONS);
+            const toggleBtn = this.deps.getElementById(DOM_IDS.TOGGLE_CHECK_ALL);
+            const taskCount = this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).length;
 
             const show = !!anySelected;
 
@@ -1104,7 +1105,7 @@ export class RecurringPanelManager {
                 return;
             }
 
-            let summaryContainer = this.deps.getElementById("recurring-summary-preview");
+            let summaryContainer = this.deps.getElementById(DOM_IDS.RECURRING_SUMMARY_PREVIEW);
             if (!summaryContainer) {
                 summaryContainer = this.createTaskSummaryPreview();
             }
@@ -1139,7 +1140,7 @@ export class RecurringPanelManager {
             const template = currentCycle?.recurringTemplates?.[task.id];
 
             // ✅ Update the preview text element instead of replacing entire innerHTML
-            const previewText = this.deps.getElementById("recurring-preview-text");
+            const previewText = this.deps.getElementById(DOM_IDS.RECURRING_PREVIEW_TEXT);
             if (!previewText) {
                 console.warn('⚠️ recurring-preview-text element not found');
                 return;
@@ -1180,8 +1181,8 @@ export class RecurringPanelManager {
             }
 
             // ✅ Only show button if settings panel is NOT currently open
-            const changeBtn = this.deps.getElementById("change-recurring-settings");
-            const settingsPanel = this.deps.getElementById("recurring-settings-panel");
+            const changeBtn = this.deps.getElementById(DOM_IDS.CHANGE_RECURRING_SETTINGS);
+            const settingsPanel = this.deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
             const isEditingSettings = settingsPanel && !settingsPanel.classList.contains("hidden");
 
             if (changeBtn) {
@@ -1239,7 +1240,7 @@ export class RecurringPanelManager {
         summaryBox.appendChild(changeBtn);
         container.appendChild(summaryBox);
 
-        const panel = this.deps.getElementById('recurring-panel');
+        const panel = this.deps.getElementById(DOM_IDS.RECURRING_PANEL);
         if (panel) {
             panel.appendChild(container);
         }
@@ -1258,7 +1259,7 @@ export class RecurringPanelManager {
         console.log('📝 Updating recurring summary...');
 
         try {
-            const summaryEl = this.deps.getElementById("recurring-summary");
+            const summaryEl = this.deps.getElementById(DOM_IDS.RECURRING_SUMMARY);
             if (!summaryEl) {
                 console.warn('⚠️ Recurring summary element not found');
                 return;
@@ -1327,7 +1328,7 @@ export class RecurringPanelManager {
      */
     updateRecurringPanelButtonVisibility() {
         try {
-            const panelButton = this.deps.getElementById("open-recurring-panel");
+            const panelButton = this.deps.getElementById(DOM_IDS.OPEN_RECURRING_PANEL);
             if (!panelButton) {
                 console.warn('⚠️ Recurring panel button not found in DOM');
                 return;
@@ -1350,9 +1351,9 @@ export class RecurringPanelManager {
      * Setup the "Add Task" button and available tasks list
      */
     setupAddTaskSection() {
-        const addTaskBtn = this.deps.getElementById("add-recurring-task-btn");
-        const availableTasksList = this.deps.getElementById("available-tasks-list");
-        const confirmBtn = this.deps.getElementById("confirm-add-recurring");
+        const addTaskBtn = this.deps.getElementById(DOM_IDS.ADD_RECURRING_TASK_BTN);
+        const availableTasksList = this.deps.getElementById(DOM_IDS.AVAILABLE_TASKS_LIST);
+        const confirmBtn = this.deps.getElementById(DOM_IDS.CONFIRM_ADD_RECURRING);
 
         if (!addTaskBtn || !availableTasksList) {
             console.warn('⚠️ Add task section elements not found');
@@ -1377,7 +1378,7 @@ export class RecurringPanelManager {
         });
 
         // Setup delegation for checkbox changes
-        const nonRecurringList = this.deps.getElementById("non-recurring-tasks");
+        const nonRecurringList = this.deps.getElementById(DOM_IDS.NON_RECURRING_TASKS);
         if (nonRecurringList) {
             this.deps.safeAddEventListener(nonRecurringList, "change", (e) => {
                 if (e.target.type === "checkbox") {
@@ -1420,8 +1421,8 @@ export class RecurringPanelManager {
      * Update confirm button visibility based on selection
      */
     updateConfirmButtonVisibility() {
-        const confirmBtn = this.deps.getElementById("confirm-add-recurring");
-        const selectedCount = this.deps.querySelectorAll("#non-recurring-tasks li.selected").length;
+        const confirmBtn = this.deps.getElementById(DOM_IDS.CONFIRM_ADD_RECURRING);
+        const selectedCount = this.deps.querySelectorAll(DOM_SELECTORS.NON_RECURRING_SELECTED).length;
 
         if (confirmBtn) {
             if (selectedCount > 0) {
@@ -1439,9 +1440,9 @@ export class RecurringPanelManager {
      * Populate the available (non-recurring) tasks list
      */
     populateAvailableTasks() {
-        const nonRecurringList = this.deps.getElementById("non-recurring-tasks");
-        const noTasksMessage = this.deps.getElementById("no-available-tasks");
-        const confirmBtn = this.deps.getElementById("confirm-add-recurring");
+        const nonRecurringList = this.deps.getElementById(DOM_IDS.NON_RECURRING_TASKS);
+        const noTasksMessage = this.deps.getElementById(DOM_IDS.NO_AVAILABLE_TASKS);
+        const confirmBtn = this.deps.getElementById(DOM_IDS.CONFIRM_ADD_RECURRING);
 
         if (!nonRecurringList || !noTasksMessage) {
             console.warn('⚠️ Available tasks list elements not found');
@@ -1536,7 +1537,7 @@ export class RecurringPanelManager {
             }
 
             // Get selected task IDs
-            const selectedItems = this.deps.querySelectorAll("#non-recurring-tasks li.selected");
+            const selectedItems = this.deps.querySelectorAll(DOM_SELECTORS.NON_RECURRING_SELECTED);
             const selectedTaskIds = Array.from(selectedItems).map(li => li.dataset.taskId);
 
             if (selectedTaskIds.length === 0) {
@@ -1574,9 +1575,9 @@ export class RecurringPanelManager {
             }, true); // Immediate save
 
             // Hide the available tasks list
-            const availableTasksList = this.deps.getElementById("available-tasks-list");
-            const addTaskBtn = this.deps.getElementById("add-recurring-task-btn");
-            const confirmBtn = this.deps.getElementById("confirm-add-recurring");
+            const availableTasksList = this.deps.getElementById(DOM_IDS.AVAILABLE_TASKS_LIST);
+            const addTaskBtn = this.deps.getElementById(DOM_IDS.ADD_RECURRING_TASK_BTN);
+            const confirmBtn = this.deps.getElementById(DOM_IDS.CONFIRM_ADD_RECURRING);
 
             if (availableTasksList) availableTasksList.classList.add("hidden");
             if (addTaskBtn) addTaskBtn.textContent = 'Add Task to Recurring';
@@ -1612,7 +1613,7 @@ export class RecurringPanelManager {
         console.log('💾 Saving always show recurring setting...');
 
         try {
-            const checkbox = this.deps.getElementById("always-show-recurring");
+            const checkbox = this.deps.getElementById(DOM_IDS.ALWAYS_SHOW_RECURRING);
             if (!checkbox) {
                 console.warn('⚠️ Always show recurring checkbox not found');
                 return;
@@ -1666,7 +1667,7 @@ export class RecurringPanelManager {
 
             console.log('📊 Loaded always show recurring setting from AppState:', isEnabled);
 
-            const checkbox = this.deps.getElementById("always-show-recurring");
+            const checkbox = this.deps.getElementById(DOM_IDS.ALWAYS_SHOW_RECURRING);
             if (checkbox) {
                 checkbox.checked = isEnabled;
             }
@@ -1688,7 +1689,7 @@ export class RecurringPanelManager {
         console.log('🔗 Attaching recurring summary listeners...');
 
         try {
-            const panel = this.deps.getElementById("recurring-settings-panel");
+            const panel = this.deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
             if (!panel) {
                 console.warn('⚠️ Recurring settings panel not found');
                 return;
@@ -1711,7 +1712,7 @@ export class RecurringPanelManager {
      */
     wireAlwaysShowRecurringListener() {
         if (!this.deps.safeAddEventListener) return; // Guard: dependency not injected (e.g., in tests)
-        const checkbox = this.deps.getElementById("always-show-recurring");
+        const checkbox = this.deps.getElementById(DOM_IDS.ALWAYS_SHOW_RECURRING);
         if (!checkbox) {
             console.warn('⚠️ always-show-recurring checkbox not found');
             return;
@@ -1784,7 +1785,7 @@ export class RecurringPanelManager {
             }
 
             // Show panel
-            const overlay = this.deps.getElementById("recurring-panel-overlay");
+            const overlay = this.deps.getElementById(DOM_IDS.RECURRING_PANEL_OVERLAY);
             if (overlay) overlay.classList.remove("hidden");
 
             // Make sure checkboxes and toggle show correctly

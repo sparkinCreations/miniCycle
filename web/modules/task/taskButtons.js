@@ -17,6 +17,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_SELECTORS } from '../core/constants.js';
 
 // SVG icons for task buttons (Font Awesome style)
 // Colors controlled by CSS via fill="currentColor" - see task-options.css
@@ -356,7 +357,7 @@ export class TaskButtons {
         button._deleteWhenCompleteClickHandler = async (e) => {
             e.stopPropagation();
 
-            const taskItem = button.closest(".task");
+            const taskItem = button.closest(DOM_SELECTORS.TASK);
             if (!taskItem) {
                 console.warn('⚠️ Task item not found for delete-when-complete button');
                 return;
@@ -492,7 +493,7 @@ export class TaskButtons {
 
         taskItem.classList.remove("recurring");
 
-        const recurringBtn = taskItem.querySelector(".recurring-btn");
+        const recurringBtn = taskItem.querySelector(DOM_SELECTORS.RECURRING_BTN);
         if (recurringBtn) {
             recurringBtn.classList.remove("active");
             recurringBtn.setAttribute("aria-pressed", "false");

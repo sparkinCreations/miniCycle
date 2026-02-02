@@ -42,6 +42,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -134,14 +135,14 @@ export class ModalManager {
     closeAllModals() {
         // Close Schema 2.5 and legacy modals
         const modalSelectors = [
-            "[data-modal]",
-            ".settings-modal",
-            ".mini-cycle-switch-modal",
-            "#feedback-modal",
-            "#about-modal",
-            "#themes-modal",
-            "#games-panel",
-            "#reminders-modal",
+            DOM_SELECTORS.DATA_MODAL,
+            DOM_SELECTORS.SETTINGS_MODAL,
+            DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL,
+            `#${DOM_IDS.FEEDBACK_MODAL}`,
+            `#${DOM_IDS.ABOUT_MODAL}`,
+            `#${DOM_IDS.THEMES_MODAL}`,
+            `#${DOM_IDS.GAMES_PANEL}`,
+            `#${DOM_IDS.REMINDERS_MODAL}`,
             "#testing-modal",
             "#recurring-panel-overlay",
             "#storage-viewer-overlay",
@@ -164,24 +165,24 @@ export class ModalManager {
         });
 
         // Close task options
-        document.querySelectorAll(".task-options").forEach(action => {
+        document.querySelectorAll(DOM_SELECTORS.TASK_OPTIONS).forEach(action => {
             action.style.opacity = "0";
             action.style.visibility = "hidden";
             action.style.pointerEvents = "none";
         });
 
         // Reset task states
-        document.querySelectorAll(".task").forEach(task => {
+        document.querySelectorAll(DOM_SELECTORS.TASK).forEach(task => {
             task.classList.remove("long-pressed", "draggable", "dragging", "selected");
         });
 
         // Clear any active selections in recurring panels
-        document.querySelectorAll(".recurring-task-item.selected").forEach(item => {
+        document.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM_SELECTED).forEach(item => {
             item.classList.remove("selected");
         });
 
         // Hide recurring settings panel if open
-        const recurringSettingsPanel = document.getElementById("recurring-settings-panel");
+        const recurringSettingsPanel = document.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
         if (recurringSettingsPanel) {
             recurringSettingsPanel.classList.add("hidden");
         }
@@ -191,13 +192,13 @@ export class ModalManager {
      * Set up feedback modal
      */
     setupFeedbackModal() {
-        const feedbackModal = document.getElementById("feedback-modal");
-        const openFeedbackBtn = document.getElementById("open-feedback-modal");
-        const closeFeedbackBtn = document.querySelector(".close-feedback-modal");
-        const feedbackForm = document.getElementById("feedback-form");
-        const feedbackText = document.getElementById("feedback-text");
-        const submitButton = document.getElementById("submit-feedback");
-        const thankYouMessage = document.getElementById("thank-you-message");
+        const feedbackModal = document.getElementById(DOM_IDS.FEEDBACK_MODAL);
+        const openFeedbackBtn = document.getElementById(DOM_IDS.OPEN_FEEDBACK_MODAL);
+        const closeFeedbackBtn = document.querySelector(DOM_SELECTORS.CLOSE_FEEDBACK_MODAL);
+        const feedbackForm = document.getElementById(DOM_IDS.FEEDBACK_FORM);
+        const feedbackText = document.getElementById(DOM_IDS.FEEDBACK_TEXT);
+        const submitButton = document.getElementById(DOM_IDS.SUBMIT_FEEDBACK);
+        const thankYouMessage = document.getElementById(DOM_IDS.THANK_YOU_MESSAGE);
 
         if (!feedbackModal || !openFeedbackBtn || !closeFeedbackBtn) {
             console.warn('⚠️ Feedback modal elements not found');
@@ -297,9 +298,9 @@ export class ModalManager {
      * Set up footer feedback button
      */
     setupFeedbackFooterButton() {
-        const openFeedbackFooter = document.getElementById("open-feedback-modal-footer");
-        const feedbackModal = document.getElementById("feedback-modal");
-        const thankYouMessage = document.getElementById("thank-you-message");
+        const openFeedbackFooter = document.getElementById(DOM_IDS.OPEN_FEEDBACK_MODAL_FOOTER);
+        const feedbackModal = document.getElementById(DOM_IDS.FEEDBACK_MODAL);
+        const thankYouMessage = document.getElementById(DOM_IDS.THANK_YOU_MESSAGE);
 
         if (openFeedbackFooter && feedbackModal) {
             const safeAdd = _deps.safeAddEventListener;
@@ -317,8 +318,8 @@ export class ModalManager {
      * Set up about modal
      */
     setupAboutModal() {
-        const aboutModal = document.getElementById("about-modal");
-        const openAboutBtn = document.getElementById("open-about-modal");
+        const aboutModal = document.getElementById(DOM_IDS.ABOUT_MODAL);
+        const openAboutBtn = document.getElementById(DOM_IDS.OPEN_ABOUT_MODAL);
 
         if (!aboutModal || !openAboutBtn) {
             console.warn('⚠️ About modal elements not found');
@@ -326,7 +327,7 @@ export class ModalManager {
         }
 
         const safeAdd = _deps.safeAddEventListener;
-        const closeAboutBtn = aboutModal.querySelector(".close-modal");
+        const closeAboutBtn = aboutModal.querySelector(DOM_SELECTORS.CLOSE_MODAL);
 
         // Open Modal
         openAboutBtn._clickHandler = () => {
@@ -357,9 +358,9 @@ export class ModalManager {
      * This only handles the click-outside-to-close logic
      */
     setupSettingsModalClickOutside() {
-        const settingsModal = document.querySelector(".settings-modal");
-        const settingsModalContent = document.querySelector(".settings-modal-content");
-        const openSettingsBtn = document.getElementById("open-settings");
+        const settingsModal = document.querySelector(DOM_SELECTORS.SETTINGS_MODAL);
+        const settingsModalContent = document.querySelector(DOM_SELECTORS.SETTINGS_MODAL_CONTENT);
+        const openSettingsBtn = document.getElementById(DOM_IDS.OPEN_SETTINGS);
 
         if (!settingsModal || !settingsModalContent || !openSettingsBtn) {
             console.warn('⚠️ Settings modal elements not found');
@@ -374,8 +375,8 @@ export class ModalManager {
      * Set up reminders modal close handlers
      */
     setupRemindersModalHandlers() {
-        const remindersModal = document.getElementById("reminders-modal");
-        const closeRemindersBtn = document.getElementById("close-reminders-btn");
+        const remindersModal = document.getElementById(DOM_IDS.REMINDERS_MODAL);
+        const closeRemindersBtn = document.getElementById(DOM_IDS.CLOSE_REMINDERS_BTN);
 
         if (!remindersModal || !closeRemindersBtn) {
             console.warn('⚠️ Reminders modal elements not found');
@@ -410,15 +411,15 @@ export class ModalManager {
                     this.closeAllModals();
 
                     // Also clear any notification focus
-                    const notifications = document.querySelectorAll(".notification");
+                    const notifications = document.querySelectorAll(DOM_SELECTORS.NOTIFICATION);
                     notifications.forEach(notification => {
-                        if (notification.querySelector(".close-btn")) {
-                            notification.querySelector(".close-btn").click();
+                        if (notification.querySelector(DOM_SELECTORS.CLOSE_BTN)) {
+                            notification.querySelector(DOM_SELECTORS.CLOSE_BTN).click();
                         }
                     });
 
                     // Return focus to task input
-                    const taskInput = document.getElementById("new-task-input");
+                    const taskInput = document.getElementById(DOM_IDS.NEW_TASK_INPUT);
                     if (taskInput) {
                         setTimeout(() => taskInput.focus(), 100);
                     }
@@ -437,13 +438,13 @@ export class ModalManager {
      */
     isModalOpen() {
         const modalSelectors = [
-            ".settings-modal[style*='display: flex']",
-            ".mini-cycle-switch-modal[style*='display: flex']",
-            "#feedback-modal[style*='display: flex']",
-            "#about-modal[style*='display: flex']",
-            "#themes-modal[style*='display: flex']",
-            "#games-panel[style*='display: flex']",
-            "#reminders-modal[style*='display: flex']",
+            `${DOM_SELECTORS.SETTINGS_MODAL}[style*='display: flex']`,
+            `${DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL}[style*='display: flex']`,
+            `#${DOM_IDS.FEEDBACK_MODAL}[style*='display: flex']`,
+            `#${DOM_IDS.ABOUT_MODAL}[style*='display: flex']`,
+            `#${DOM_IDS.THEMES_MODAL}[style*='display: flex']`,
+            `#${DOM_IDS.GAMES_PANEL}[style*='display: flex']`,
+            `#${DOM_IDS.REMINDERS_MODAL}[style*='display: flex']`,
             "#testing-modal[style*='display: flex']",
             ".mini-modal-overlay",
             ".miniCycle-overlay",

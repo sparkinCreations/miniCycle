@@ -56,6 +56,8 @@
 // NOTE: No appContext fallback - all dependencies come through initUIBoot
 // This avoids versioned/unversioned module instance mismatch issues
 
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+
 let _appContextMod = null;
 
 // Getters that use the injected appContextMod (using grouped APIs)
@@ -253,7 +255,7 @@ function handleGlobalClickForTaskButtons(event) {
 
     const threeDotsEnabled = document.body.classList.contains('show-three-dots-enabled');
 
-    document.querySelectorAll('.task-options').forEach(action => {
+    document.querySelectorAll(DOM_SELECTORS.TASK_OPTIONS).forEach(action => {
       if (threeDotsEnabled) {
         action.style.opacity = '0';
         action.style.visibility = 'hidden';
@@ -265,11 +267,11 @@ function handleGlobalClickForTaskButtons(event) {
       }
     });
 
-    document.querySelectorAll('.task').forEach(task => {
+    document.querySelectorAll(DOM_SELECTORS.TASK).forEach(task => {
       task.classList.remove('long-pressed', 'draggable', 'dragging');
 
       // Keep selections in recurring panel
-      const recurringPanel = document.getElementById('recurring-panel-overlay');
+      const recurringPanel = document.getElementById(DOM_IDS.RECURRING_PANEL_OVERLAY);
       if (!recurringPanel?.classList.contains('hidden')) {
         // Keep selections
       } else {
@@ -283,10 +285,10 @@ function handleGlobalClickForTaskButtons(event) {
  * Global click handler for deselecting in switch modal
  */
 function handleGlobalClickForSwitchModal(event) {
-  const switchModalContent = document.querySelector('.mini-cycle-switch-modal-content');
-  const selectedCycle = document.querySelector('.mini-cycle-switch-item.selected');
-  const switchItemsRow = document.getElementById('switch-items-row');
-  const previewWindow = document.querySelector('.switch-preview-window');
+  const switchModalContent = document.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT);
+  const selectedCycle = document.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
+  const switchItemsRow = document.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
+  const previewWindow = document.querySelector(DOM_SELECTORS.SWITCH_PREVIEW_WINDOW);
 
   if (
     switchModalContent?.contains(event.target) &&
@@ -358,7 +360,7 @@ function handleOpenRemindersModalClick() {
     console.warn('⚠️ Could not load reminder settings:', e);
   }
 
-  const modal = document.getElementById('reminders-modal');
+  const modal = document.getElementById(DOM_IDS.REMINDERS_MODAL);
   if (modal) {
     modal.style.display = 'flex';
   }
@@ -400,8 +402,8 @@ function handlePassiveTouchstart() {
  * Close menu when clicking outside
  */
 function closeMenuOnClickOutside(event) {
-  const menu = document.querySelector('.menu-container');
-  const menuButton = document.querySelector('.menu-button');
+  const menu = document.querySelector(DOM_SELECTORS.MENU_CONTAINER);
+  const menuButton = document.querySelector(DOM_SELECTORS.MENU_BUTTON);
 
   if (menu && !menu.contains(event.target) && !menuButton?.contains(event.target)) {
     menu.classList.remove('visible');
@@ -419,7 +421,7 @@ function closeMenuOnClickOutside(event) {
  * @returns {boolean} True if an overlay is active
  */
 export function isOverlayActive() {
-  if (document.querySelector(".menu-container.visible")) return true;
+  if (document.querySelector(DOM_SELECTORS.MENU_CONTAINER_VISIBLE)) return true;
 
   const overlaySelectors = [
     '.settings-modal[style*="display: flex"]',
@@ -445,9 +447,9 @@ export function isOverlayActive() {
  * Update navigation dots for task/stats panel switching
  */
 export function updateNavDots() {
-  const statsPanel = document.getElementById("stats-panel");
+  const statsPanel = document.getElementById(DOM_IDS.STATS_PANEL);
   const statsVisible = statsPanel && statsPanel.classList.contains("show");
-  const dots = document.querySelectorAll(".dot");
+  const dots = document.querySelectorAll(DOM_SELECTORS.DOT);
 
   if (dots.length === 2) {
     dots[0].classList.toggle("active", !statsVisible);
@@ -463,7 +465,7 @@ export function hideAppLoader() {
     // Remove app-loading class to reveal main content (prevents CLS during boot)
     document.body.classList.remove('app-loading');
 
-    const appLoader = document.getElementById('app-loader');
+    const appLoader = document.getElementById(DOM_IDS.APP_LOADER);
     if (appLoader) {
       appLoader.classList.add('fade-out');
       setTimeout(() => {
@@ -484,8 +486,8 @@ export function hideAppLoader() {
  * @param {string} message - Loading message to display
  */
 export function showLoader(message = 'Processing...') {
-  const overlay = document.getElementById('loading-overlay');
-  const textElement = overlay?.querySelector('.loading-spinner-text');
+  const overlay = document.getElementById(DOM_IDS.LOADING_OVERLAY);
+  const textElement = overlay?.querySelector(DOM_SELECTORS.LOADING_SPINNER_TEXT);
 
   if (overlay) {
     if (textElement && message) {
@@ -499,7 +501,7 @@ export function showLoader(message = 'Processing...') {
  * Hide the loading spinner
  */
 export function hideLoader() {
-  const overlay = document.getElementById('loading-overlay');
+  const overlay = document.getElementById(DOM_IDS.LOADING_OVERLAY);
   if (overlay) {
     overlay.classList.remove('active');
   }
@@ -598,7 +600,7 @@ export function handleTryLiteVersionClick(deps) {
  * @param {Object} GlobalUtils - GlobalUtils module reference
  */
 export function setupUserManual(GlobalUtils) {
-  const openUserManual = document.getElementById("open-user-manual");
+  const openUserManual = document.getElementById(DOM_IDS.OPEN_USER_MANUAL);
   if (!openUserManual) return;
 
   GlobalUtils.safeAddEventListener(openUserManual, "click", () => {
@@ -661,7 +663,7 @@ export async function finalizeUI(options) {
   } = options;
 
   // Complete All button listener
-  const completeAllButton = document.getElementById("completeAll");
+  const completeAllButton = document.getElementById(DOM_IDS.COMPLETE_ALL);
   const handleCompleteAll = getHandleCompleteAllTasks?.();
   if (completeAllButton && typeof handleCompleteAll === 'function') {
     GlobalUtils.safeAddEventListener(completeAllButton, "click", handleCompleteAll);
@@ -731,10 +733,10 @@ export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
   });
 
   // DOM elements for listeners
-  const taskInput = document.getElementById('taskInput');
-  const addTaskButton = document.getElementById('addTaskBtn');
-  const menuButton = document.querySelector('.menu-button');
-  const menu = document.querySelector('.menu-container');
+  const taskInput = document.getElementById(DOM_IDS.TASK_INPUT);
+  const addTaskButton = document.getElementById(DOM_IDS.ADD_TASK_BTN);
+  const menuButton = document.querySelector(DOM_SELECTORS.MENU_BUTTON);
+  const menu = document.querySelector(DOM_SELECTORS.MENU_CONTAINER);
 
   // Attach event listeners
   attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton, appContextMod);

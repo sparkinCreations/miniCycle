@@ -19,6 +19,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { updateThemeColor } from '../features/themeManager.js';
 
 // ============================================================================
@@ -509,7 +510,7 @@ export class PreferencesManager {
         await _deps.appInit?.waitForCore();
 
         try {
-            this.modal = document.getElementById('preferences-modal');
+            this.modal = document.getElementById(DOM_IDS.PREFERENCES_MODAL);
             if (!this.modal) {
                 console.warn('⚠️ Preferences modal not found');
                 return;
@@ -560,21 +561,21 @@ export class PreferencesManager {
         }
 
         // Open preferences button (from menu)
-        const openBtn = document.getElementById('open-preferences');
+        const openBtn = document.getElementById(DOM_IDS.OPEN_PREFERENCES);
         if (openBtn) {
             openBtn._clickHandler = () => this.openModal();
             safeAdd(openBtn, 'click', openBtn._clickHandler);
         }
 
         // Personalization button (quick access in header)
-        const personalizationBtn = document.getElementById('personalization-btn');
+        const personalizationBtn = document.getElementById(DOM_IDS.PERSONALIZATION_BTN);
         if (personalizationBtn) {
             personalizationBtn._clickHandler = () => this.openModal();
             safeAdd(personalizationBtn, 'click', personalizationBtn._clickHandler);
         }
 
         // Close button
-        const closeBtn = document.getElementById('close-preferences-btn');
+        const closeBtn = document.getElementById(DOM_IDS.CLOSE_PREFERENCES_BTN);
         if (closeBtn) {
             closeBtn._clickHandler = () => this.closeModal();
             safeAdd(closeBtn, 'click', closeBtn._clickHandler);
@@ -591,11 +592,11 @@ export class PreferencesManager {
         }
 
         // Open themes button
-        const openThemesBtn = document.getElementById('preferences-open-themes');
+        const openThemesBtn = document.getElementById(DOM_IDS.PREFERENCES_OPEN_THEMES);
         if (openThemesBtn) {
             openThemesBtn._clickHandler = () => {
                 this.closeModal();
-                const themesModal = document.getElementById('themes-modal');
+                const themesModal = document.getElementById(DOM_IDS.THEMES_MODAL);
                 if (themesModal) {
                     themesModal.style.display = 'flex';
                 }
@@ -614,7 +615,7 @@ export class PreferencesManager {
         });
 
         // Pattern color input (special handling - generates SVG dynamically)
-        const patternColorInput = document.getElementById('pref-pattern-color');
+        const patternColorInput = document.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
         if (patternColorInput) {
             this.colorInputs['pref-pattern-color'] = patternColorInput;
             patternColorInput._changeHandler = (e) => this.handlePatternColorChange(e.target.value);
@@ -622,7 +623,7 @@ export class PreferencesManager {
         }
 
         // Checkbox fill visibility toggle
-        const checkboxFillToggle = document.getElementById('toggle-checkbox-fill');
+        const checkboxFillToggle = document.getElementById(DOM_IDS.TOGGLE_CHECKBOX_FILL);
         if (checkboxFillToggle) {
             checkboxFillToggle._changeHandler = (e) => this.handleCheckboxFillToggle(e.target.checked);
             safeAdd(checkboxFillToggle, 'change', checkboxFillToggle._changeHandler);
@@ -640,7 +641,7 @@ export class PreferencesManager {
         }
 
         // Checkbox incomplete visibility toggle
-        const checkboxIncompleteToggle = document.getElementById('toggle-checkbox-incomplete');
+        const checkboxIncompleteToggle = document.getElementById(DOM_IDS.TOGGLE_CHECKBOX_INCOMPLETE);
         if (checkboxIncompleteToggle) {
             checkboxIncompleteToggle._changeHandler = (e) => this.handleCheckboxIncompleteToggle(e.target.checked);
             safeAdd(checkboxIncompleteToggle, 'change', checkboxIncompleteToggle._changeHandler);
@@ -658,7 +659,7 @@ export class PreferencesManager {
         }
 
         // Background pattern visibility toggle
-        const bgPatternToggle = document.getElementById('toggle-bg-pattern');
+        const bgPatternToggle = document.getElementById(DOM_IDS.TOGGLE_BG_PATTERN);
         if (bgPatternToggle) {
             bgPatternToggle._changeHandler = (e) => this.handleBackgroundPatternToggle(e.target.checked);
             safeAdd(bgPatternToggle, 'change', bgPatternToggle._changeHandler);
@@ -676,7 +677,7 @@ export class PreferencesManager {
         }
 
         // Background image visibility toggle
-        const bgImageVisibleToggle = document.getElementById('toggle-bg-image-visible');
+        const bgImageVisibleToggle = document.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
         if (bgImageVisibleToggle) {
             bgImageVisibleToggle._changeHandler = (e) => this.handleBgImageVisibleToggle(e.target.checked);
             safeAdd(bgImageVisibleToggle, 'change', bgImageVisibleToggle._changeHandler);
@@ -694,7 +695,7 @@ export class PreferencesManager {
         }
 
         // Reset buttons
-        document.querySelectorAll('.preferences-reset-btn').forEach(btn => {
+        document.querySelectorAll(DOM_SELECTORS.PREFERENCES_RESET_BTN).forEach(btn => {
             const targetId = btn.dataset.target;
             if (targetId) {
                 btn._clickHandler = () => this.resetColor(targetId);
@@ -703,35 +704,35 @@ export class PreferencesManager {
         });
 
         // Reset all button
-        const resetAllBtn = document.getElementById('preferences-reset-all');
+        const resetAllBtn = document.getElementById(DOM_IDS.PREFERENCES_RESET_ALL);
         if (resetAllBtn) {
             resetAllBtn._clickHandler = () => this.resetAllColors();
             safeAdd(resetAllBtn, 'click', resetAllBtn._clickHandler);
         }
 
         // Save preset button
-        const savePresetBtn = document.getElementById('pref-save-preset');
+        const savePresetBtn = document.getElementById(DOM_IDS.PREF_SAVE_PRESET);
         if (savePresetBtn) {
             savePresetBtn._clickHandler = () => this.promptSavePreset();
             safeAdd(savePresetBtn, 'click', savePresetBtn._clickHandler);
         }
 
         // Import preset button
-        const importPresetBtn = document.getElementById('pref-import-preset');
+        const importPresetBtn = document.getElementById(DOM_IDS.PREF_IMPORT_PRESET);
         if (importPresetBtn) {
             importPresetBtn._clickHandler = () => this.promptImportPreset();
             safeAdd(importPresetBtn, 'click', importPresetBtn._clickHandler);
         }
 
         // Undo button
-        const undoBtn = document.getElementById('preferences-undo');
+        const undoBtn = document.getElementById(DOM_IDS.PREFERENCES_UNDO);
         if (undoBtn) {
             undoBtn._clickHandler = () => this.undoLastChange();
             safeAdd(undoBtn, 'click', undoBtn._clickHandler);
         }
 
         // Quick preset buttons
-        document.querySelectorAll('.quick-preset-btn').forEach(btn => {
+        document.querySelectorAll(DOM_SELECTORS.QUICK_PRESET_BTN).forEach(btn => {
             const presetKey = btn.dataset.preset;
             if (presetKey) {
                 btn._clickHandler = () => this.applyQuickPreset(presetKey);
@@ -740,10 +741,10 @@ export class PreferencesManager {
         });
 
         // Background image upload
-        const bgImageUploadBtn = document.getElementById('bg-image-upload-btn');
-        const bgImageUpload = document.getElementById('bg-image-upload');
-        const bgImageRemoveBtn = document.getElementById('bg-image-remove-btn');
-        const bgImageMode = document.getElementById('bg-image-mode');
+        const bgImageUploadBtn = document.getElementById(DOM_IDS.BG_IMAGE_UPLOAD_BTN);
+        const bgImageUpload = document.getElementById(DOM_IDS.BG_IMAGE_UPLOAD);
+        const bgImageRemoveBtn = document.getElementById(DOM_IDS.BG_IMAGE_REMOVE_BTN);
+        const bgImageMode = document.getElementById(DOM_IDS.BG_IMAGE_MODE);
 
         if (bgImageUploadBtn && bgImageUpload) {
             bgImageUploadBtn._clickHandler = () => bgImageUpload.click();
@@ -764,7 +765,7 @@ export class PreferencesManager {
         }
 
         // Collapsible sections
-        document.querySelectorAll('.preferences-section-header.collapsible').forEach(header => {
+        document.querySelectorAll(DOM_SELECTORS.PREFERENCES_SECTION_HEADER_COLLAPSIBLE).forEach(header => {
             header._clickHandler = () => this.toggleSection(header);
             safeAdd(header, 'click', header._clickHandler);
         });
@@ -804,7 +805,7 @@ export class PreferencesManager {
      * Update theme notice visibility based on current theme
      */
     updateThemeNotice() {
-        const notice = document.getElementById('preferences-theme-notice');
+        const notice = document.getElementById(DOM_IDS.PREFERENCES_THEME_NOTICE);
         if (!notice) return;
 
         const isDefaultTheme = this.isDefaultTheme();
@@ -838,31 +839,31 @@ export class PreferencesManager {
         });
 
         // Load checkbox fill visibility toggle state
-        const checkboxFillToggle = document.getElementById('toggle-checkbox-fill');
+        const checkboxFillToggle = document.getElementById(DOM_IDS.TOGGLE_CHECKBOX_FILL);
         if (checkboxFillToggle) {
             const showFill = customColors.showCheckboxFill !== false; // Default to true
             checkboxFillToggle.checked = showFill;
 
-            const colorInput = document.getElementById('pref-checkbox-bg');
+            const colorInput = document.getElementById(DOM_IDS.PREF_CHECKBOX_BG);
             const resetBtn = document.querySelector('[data-target="pref-checkbox-bg"]');
             if (colorInput) colorInput.style.opacity = showFill ? '1' : '0.3';
             if (resetBtn) resetBtn.style.opacity = showFill ? '1' : '0.3';
         }
 
         // Load checkbox incomplete visibility toggle state
-        const checkboxIncompleteToggle = document.getElementById('toggle-checkbox-incomplete');
+        const checkboxIncompleteToggle = document.getElementById(DOM_IDS.TOGGLE_CHECKBOX_INCOMPLETE);
         if (checkboxIncompleteToggle) {
             const showCheckbox = customColors.showCheckboxIncomplete !== false; // Default to true
             checkboxIncompleteToggle.checked = showCheckbox;
 
-            const colorInput = document.getElementById('pref-checkbox-incomplete-bg');
+            const colorInput = document.getElementById(DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG);
             const resetBtn = document.querySelector('[data-target="pref-checkbox-incomplete-bg"]');
             if (colorInput) colorInput.style.opacity = showCheckbox ? '1' : '0.3';
             if (resetBtn) resetBtn.style.opacity = showCheckbox ? '1' : '0.3';
         }
 
         // Load background pattern visibility toggle state
-        const bgPatternToggle = document.getElementById('toggle-bg-pattern');
+        const bgPatternToggle = document.getElementById(DOM_IDS.TOGGLE_BG_PATTERN);
         if (bgPatternToggle) {
             const showPattern = customColors.showBgPattern !== false; // Default to true
             bgPatternToggle.checked = showPattern;
@@ -871,7 +872,7 @@ export class PreferencesManager {
         }
 
         // Load background image visibility toggle state
-        const bgImageVisibleToggle = document.getElementById('toggle-bg-image-visible');
+        const bgImageVisibleToggle = document.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
         if (bgImageVisibleToggle) {
             const showBgImage = customColors.showBgImage !== false; // Default to true
             bgImageVisibleToggle.checked = showBgImage;
@@ -879,7 +880,7 @@ export class PreferencesManager {
         }
 
         // Load pattern color input
-        const patternColorInput = document.getElementById('pref-pattern-color');
+        const patternColorInput = document.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
         if (patternColorInput) {
             const savedPatternColor = customColors.patternColor || DEFAULT_COLORS.patternColor;
             patternColorInput.value = savedPatternColor;
@@ -935,7 +936,7 @@ export class PreferencesManager {
         }
 
         // Update color input visibility
-        const colorInput = document.getElementById('pref-checkbox-bg');
+        const colorInput = document.getElementById(DOM_IDS.PREF_CHECKBOX_BG);
         const resetBtn = document.querySelector('[data-target="pref-checkbox-bg"]');
         if (colorInput) colorInput.style.opacity = visible ? '1' : '0.3';
         if (resetBtn) resetBtn.style.opacity = visible ? '1' : '0.3';
@@ -967,7 +968,7 @@ export class PreferencesManager {
         }
 
         // Update color input visibility
-        const colorInput = document.getElementById('pref-checkbox-incomplete-bg');
+        const colorInput = document.getElementById(DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG);
         const resetBtn = document.querySelector('[data-target="pref-checkbox-incomplete-bg"]');
         if (colorInput) colorInput.style.opacity = visible ? '1' : '0.3';
         if (resetBtn) resetBtn.style.opacity = visible ? '1' : '0.3';
@@ -1148,7 +1149,7 @@ export class PreferencesManager {
             }
 
             // Get current display mode
-            const modeSelect = document.getElementById('bg-image-mode');
+            const modeSelect = document.getElementById(DOM_IDS.BG_IMAGE_MODE);
             const mode = modeSelect?.value || 'cover';
 
             // Save to IndexedDB
@@ -1358,11 +1359,11 @@ export class PreferencesManager {
      * @param {string} mode - The display mode
      */
     updateBgImageUI(dataUrl, mode) {
-        const optionsDiv = document.getElementById('bg-image-options');
-        const removeBtn = document.getElementById('bg-image-remove-btn');
-        const preview = document.getElementById('bg-image-preview');
-        const modeSelect = document.getElementById('bg-image-mode');
-        const visibleToggle = document.getElementById('toggle-bg-image-visible');
+        const optionsDiv = document.getElementById(DOM_IDS.BG_IMAGE_OPTIONS);
+        const removeBtn = document.getElementById(DOM_IDS.BG_IMAGE_REMOVE_BTN);
+        const preview = document.getElementById(DOM_IDS.BG_IMAGE_PREVIEW);
+        const modeSelect = document.getElementById(DOM_IDS.BG_IMAGE_MODE);
+        const visibleToggle = document.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
 
         if (dataUrl) {
             // Show options and remove button
@@ -1568,7 +1569,7 @@ export class PreferencesManager {
      * Update the live preview with current colors
      */
     updatePreview() {
-        const preview = document.getElementById('preferences-preview');
+        const preview = document.getElementById(DOM_IDS.PREFERENCES_PREVIEW);
         if (!preview) return;
 
         const state = _deps.AppState?.get();
@@ -1597,7 +1598,7 @@ export class PreferencesManager {
 
             // Also update the preview section background when app background changes
             if (config.key === 'appBg') {
-                const previewSection = document.querySelector('.preferences-preview-section');
+                const previewSection = document.querySelector(DOM_SELECTORS.PREFERENCES_PREVIEW_SECTION);
                 if (previewSection) {
                     previewSection.style.setProperty('--preview-section-bg', color);
                 }
@@ -1605,23 +1606,23 @@ export class PreferencesManager {
         });
 
         // Handle checkbox fill visibility in preview
-        const checkboxFillToggle = document.getElementById('toggle-checkbox-fill');
+        const checkboxFillToggle = document.getElementById(DOM_IDS.TOGGLE_CHECKBOX_FILL);
         const showCheckboxFill = checkboxFillToggle?.checked !== false;
         if (!showCheckboxFill) {
             preview.style.setProperty('--preview-checkbox-bg', 'transparent');
         }
 
         // Handle checkbox incomplete visibility in preview
-        const checkboxIncompleteToggle = document.getElementById('toggle-checkbox-incomplete');
+        const checkboxIncompleteToggle = document.getElementById(DOM_IDS.TOGGLE_CHECKBOX_INCOMPLETE);
         const showCheckboxIncomplete = checkboxIncompleteToggle?.checked !== false;
         if (!showCheckboxIncomplete) {
             preview.style.setProperty('--preview-checkbox-incomplete-bg', 'transparent');
         }
 
         // Handle background pattern color in preview
-        const bgPatternToggle = document.getElementById('toggle-bg-pattern');
+        const bgPatternToggle = document.getElementById(DOM_IDS.TOGGLE_BG_PATTERN);
         const showPattern = bgPatternToggle?.checked !== false;
-        const patternColorInput = document.getElementById('pref-pattern-color');
+        const patternColorInput = document.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
 
         if (showPattern && patternColorInput) {
             const patternColor = patternColorInput.value || DEFAULT_COLORS.patternColor;
@@ -1632,9 +1633,9 @@ export class PreferencesManager {
         }
 
         // Handle background image in preview
-        const bgImageVisibleToggle = document.getElementById('toggle-bg-image-visible');
+        const bgImageVisibleToggle = document.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
         const showBgImage = bgImageVisibleToggle?.checked !== false;
-        const bgImagePreview = document.getElementById('bg-image-preview');
+        const bgImagePreview = document.getElementById(DOM_IDS.BG_IMAGE_PREVIEW);
 
         if (showBgImage && bgImagePreview?.src && bgImagePreview.src !== window.location.href) {
             // Show background image in live preview
@@ -1685,7 +1686,7 @@ export class PreferencesManager {
     saveCollapsedStates() {
         if (!_deps.AppState) return;
 
-        const sections = document.querySelectorAll('.preferences-section[data-section]');
+        const sections = document.querySelectorAll(DOM_SELECTORS.PREFERENCES_SECTION_BY_DATA);
         const collapsedSections = {};
 
         sections.forEach(section => {
@@ -1781,7 +1782,7 @@ export class PreferencesManager {
      * Update undo button state
      */
     updateUndoButton() {
-        const undoBtn = document.getElementById('preferences-undo');
+        const undoBtn = document.getElementById(DOM_IDS.PREFERENCES_UNDO);
         if (undoBtn) {
             undoBtn.disabled = this.undoStack.length === 0;
         }
@@ -2048,8 +2049,8 @@ export class PreferencesManager {
      * Render the saved presets list in the UI
      */
     renderPresetsList() {
-        const listContainer = document.getElementById('preferences-presets-list');
-        const noPresetsMsg = document.getElementById('preferences-no-presets');
+        const listContainer = document.getElementById(DOM_IDS.PREFERENCES_PRESETS_LIST);
+        const noPresetsMsg = document.getElementById(DOM_IDS.PREFERENCES_NO_PRESETS);
 
         if (!listContainer) return;
 
@@ -2057,7 +2058,7 @@ export class PreferencesManager {
         const presets = state?.settings?.savedColorPresets || [];
 
         // Clear existing items
-        const existingItems = listContainer.querySelectorAll('.preferences-preset-item');
+        const existingItems = listContainer.querySelectorAll(DOM_SELECTORS.PREFERENCES_PRESET_ITEM);
         existingItems.forEach(item => item.remove());
 
         // Show/hide no presets message
@@ -2085,10 +2086,10 @@ export class PreferencesManager {
             `;
 
             // Add event listeners
-            const nameSpan = item.querySelector('.preferences-preset-name');
-            const loadBtn = item.querySelector('.load-btn');
-            const exportBtn = item.querySelector('.export-btn');
-            const deleteBtn = item.querySelector('.delete-btn');
+            const nameSpan = item.querySelector(DOM_SELECTORS.PREFERENCES_PRESET_NAME);
+            const loadBtn = item.querySelector(DOM_SELECTORS.LOAD_BTN);
+            const exportBtn = item.querySelector(DOM_SELECTORS.EXPORT_BTN);
+            const deleteBtn = item.querySelector(DOM_SELECTORS.DELETE_BTN);
 
             nameSpan.addEventListener('click', () => this.startRenamePreset(preset.id, nameSpan));
             loadBtn.addEventListener('click', () => this.loadPreset(preset.id));

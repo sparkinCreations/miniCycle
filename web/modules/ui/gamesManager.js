@@ -13,6 +13,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -133,7 +134,7 @@ class GamesManager {
 
         console.log('🔍 Game unlock status:', hasGameUnlock);
 
-        const gamesMenuOption = document.getElementById("games-menu-option");
+        const gamesMenuOption = document.getElementById(DOM_IDS.GAMES_MENU_OPTION);
         if (gamesMenuOption) {
             gamesMenuOption.style.display = hasGameUnlock ? "block" : "none";
             console.log(hasGameUnlock ? '✅ Games menu displayed' : '🔒 Games still locked');
@@ -179,9 +180,9 @@ class GamesManager {
      * Set up click-outside-to-close behavior for games modal
      */
     setupGamesModalOutsideClick() {
-        const gamesPanel = document.getElementById("games-panel");
-        const gamesContent = document.querySelector(".games-modal-content");
-        const openButton = document.getElementById("open-games-panel");
+        const gamesPanel = document.getElementById(DOM_IDS.GAMES_PANEL);
+        const gamesContent = document.querySelector(DOM_SELECTORS.GAMES_MODAL_CONTENT);
+        const openButton = document.getElementById(DOM_IDS.OPEN_GAMES_PANEL);
 
         if (!gamesPanel || !gamesContent || !openButton) {
             console.warn('⚠️ Games panel elements not found');
@@ -230,10 +231,10 @@ class GamesManager {
         const safeAdd = this.deps.safeAddEventListener;
 
         // Open games panel
-        const openButton = document.getElementById("open-games-panel");
+        const openButton = document.getElementById(DOM_IDS.OPEN_GAMES_PANEL);
         if (openButton) {
             openButton._clickHandler = () => {
-                const gamesPanel = document.getElementById("games-panel");
+                const gamesPanel = document.getElementById(DOM_IDS.GAMES_PANEL);
                 if (gamesPanel) {
                     gamesPanel.style.display = "flex";
                     this.setupGamesModalOutsideClick();
@@ -243,10 +244,10 @@ class GamesManager {
         }
 
         // Close games panel
-        const closeButton = document.getElementById("close-games-panel");
+        const closeButton = document.getElementById(DOM_IDS.CLOSE_GAMES_PANEL);
         if (closeButton) {
             closeButton._clickHandler = () => {
-                const gamesPanel = document.getElementById("games-panel");
+                const gamesPanel = document.getElementById(DOM_IDS.GAMES_PANEL);
                 if (gamesPanel) {
                     gamesPanel.style.display = "none";
                 }
@@ -255,7 +256,7 @@ class GamesManager {
         }
 
         // Open task order game (redirect to game HTML)
-        const gameButton = document.getElementById("open-task-order-game");
+        const gameButton = document.getElementById(DOM_IDS.OPEN_TASK_ORDER_GAME);
         if (gameButton) {
             gameButton._clickHandler = () => {
                 window.location.href = "games/miniCycle-taskOrder.html";

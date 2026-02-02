@@ -13,6 +13,7 @@ import {
     safeAddEventListener,
     setupTestingTabs
 } from './testing-modal-core.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ==========================================
 // RESULTS AREA RESIZE FUNCTIONALITY
@@ -26,9 +27,9 @@ const MIN_RESULTS_HEIGHT = 80;
 export function applyResultsAreaSavedHeight() {
     // Wait for modal CSS transitions to complete
     setTimeout(() => {
-        const resultsArea = document.querySelector('.testing-results-area');
-        const activeTabContent = document.querySelector('.testing-tab-content.active');
-        const modalBody = document.querySelector('.testing-modal-body');
+        const resultsArea = document.querySelector(DOM_SELECTORS.TESTING_RESULTS_AREA);
+        const activeTabContent = document.querySelector(DOM_SELECTORS.TESTING_TAB_CONTENT_ACTIVE);
+        const modalBody = document.querySelector(DOM_SELECTORS.TESTING_MODAL_BODY);
 
         if (!resultsArea || !modalBody) return;
 
@@ -99,9 +100,9 @@ function saveResultsAreaHeight(height) {
  * Setup results area resize functionality
  */
 export function setupResultsAreaResize() {
-    const resultsHeader = document.querySelector('.testing-results-header');
-    const resultsArea = document.querySelector('.testing-results-area');
-    const modalBody = document.querySelector('.testing-modal-body');
+    const resultsHeader = document.querySelector(DOM_SELECTORS.TESTING_RESULTS_HEADER);
+    const resultsArea = document.querySelector(DOM_SELECTORS.TESTING_RESULTS_AREA);
+    const modalBody = document.querySelector(DOM_SELECTORS.TESTING_MODAL_BODY);
 
     if (!resultsHeader || !resultsArea || !modalBody) {
         return;
@@ -125,7 +126,7 @@ export function setupResultsAreaResize() {
     }
 
     function getActiveTabContent() {
-        return document.querySelector('.testing-tab-content.active');
+        return document.querySelector(DOM_SELECTORS.TESTING_TAB_CONTENT_ACTIVE);
     }
 
     function getEventY(e) {
@@ -239,18 +240,18 @@ export function setupResultsAreaResize() {
  * Initialize drag functionality for testing modal
  */
 export function initializeTestingModalDrag() {
-    const testingModal = document.getElementById("testing-modal");
+    const testingModal = document.getElementById(DOM_IDS.TESTING_MODAL);
     if (!testingModal) return;
 
-    const modalContent = testingModal.querySelector(".testing-modal-content");
+    const modalContent = testingModal.querySelector(DOM_SELECTORS.TESTING_MODAL_CONTENT);
     if (!modalContent) {
         console.warn("Testing modal content not found for dragging");
         return;
     }
 
-    let dragHandle = modalContent.querySelector(".testing-modal-header, .testing-modal-drag-handle");
+    let dragHandle = modalContent.querySelector(`${DOM_SELECTORS.TESTING_MODAL_HEADER}, ${DOM_SELECTORS.TESTING_MODAL_DRAG_HANDLE}`);
     if (!dragHandle) {
-        dragHandle = modalContent.querySelector("h2, .testing-tabs, .close-testing-modal")?.closest("div");
+        dragHandle = modalContent.querySelector(`h2, .testing-tabs, ${DOM_SELECTORS.CLOSE_TESTING_MODAL}`)?.closest("div");
         if (!dragHandle) {
             dragHandle = document.createElement("div");
             dragHandle.className = "testing-modal-drag-handle";
@@ -406,9 +407,9 @@ function makeTestingModalDraggable(modalContent, dragHandle) {
  * Add double-click to center modal functionality
  */
 export function addTestingModalDoubleClickToCenter() {
-    const testingModal = document.getElementById("testing-modal");
-    const modalContent = testingModal?.querySelector(".testing-modal-content");
-    const dragHandle = modalContent?.querySelector(".testing-modal-drag-handle, .testing-modal-header");
+    const testingModal = document.getElementById(DOM_IDS.TESTING_MODAL);
+    const modalContent = testingModal?.querySelector(DOM_SELECTORS.TESTING_MODAL_CONTENT);
+    const dragHandle = modalContent?.querySelector(`${DOM_SELECTORS.TESTING_MODAL_DRAG_HANDLE}, ${DOM_SELECTORS.TESTING_MODAL_HEADER}`);
 
     if (dragHandle) {
         dragHandle.addEventListener("dblclick", () => {
@@ -442,7 +443,7 @@ export function addTestingModalDoubleClickToCenter() {
  * Setup test results enhancements (double-click to expand)
  */
 export function setupTestResultsEnhancements() {
-    const testingOutput = document.getElementById("testing-output");
+    const testingOutput = document.getElementById(DOM_IDS.TESTING_OUTPUT);
     if (!testingOutput) return;
 
     testingOutput.addEventListener("dblclick", () => {
@@ -457,7 +458,7 @@ export function setupTestResultsEnhancements() {
  * Open test results in expanded modal view
  */
 export function openTestResultsInModal() {
-    const testingOutput = document.getElementById("testing-output");
+    const testingOutput = document.getElementById(DOM_IDS.TESTING_OUTPUT);
     if (!testingOutput || !testingOutput.textContent.trim()) {
         showNotification("No test results to display", "warning", 2000);
         return;
@@ -749,7 +750,7 @@ export function openTestResultsInModal() {
  * Add hint for double-click functionality
  */
 export function addTestResultsHint() {
-    const testingOutput = document.getElementById("testing-output");
+    const testingOutput = document.getElementById(DOM_IDS.TESTING_OUTPUT);
     if (!testingOutput) return;
 
     const hint = document.createElement("div");
@@ -782,7 +783,7 @@ export function initializeTestingModalEnhancements(callbacks = {}) {
     safeAddEventListener(document, "keydown", (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "j") {
             e.preventDefault();
-            const testingModal = document.getElementById("testing-modal");
+            const testingModal = document.getElementById(DOM_IDS.TESTING_MODAL);
 
             if (testingModal) {
                 const isOpen = testingModal.style.display === "flex" || testingModal.style.display === "block";

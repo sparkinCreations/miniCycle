@@ -15,6 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -206,11 +207,11 @@ export class OnboardingManager {
 
         modal.innerHTML = `
             <div class="onboarding-content theme-${safeTheme}">
-                <button id="onboarding-skip" class="onboarding-skip">Skip ✖</button>
-                <div id="onboarding-step-content"></div>
+                <button id="${DOM_IDS.ONBOARDING_SKIP}" class="onboarding-skip">Skip ✖</button>
+                <div id="${DOM_IDS.ONBOARDING_STEP_CONTENT}"></div>
                 <div class="onboarding-controls">
-                    <button id="onboarding-prev" class="hidden">⬅ Back</button>
-                    <button id="onboarding-next">Next ➡</button>
+                    <button id="${DOM_IDS.ONBOARDING_PREV}" class="hidden">⬅ Back</button>
+                    <button id="${DOM_IDS.ONBOARDING_NEXT}">Next ➡</button>
                 </div>
             </div>
         `;
@@ -225,10 +226,10 @@ export class OnboardingManager {
      * @param {string} activeCycle - Currently active cycle name
      */
     setupModalControls(modal, steps, cycles, activeCycle) {
-        const stepContent = document.getElementById("onboarding-step-content");
-        const nextBtn = document.getElementById("onboarding-next");
-        const prevBtn = document.getElementById("onboarding-prev");
-        const skipBtn = document.getElementById("onboarding-skip");
+        const stepContent = document.getElementById(DOM_IDS.ONBOARDING_STEP_CONTENT);
+        const nextBtn = document.getElementById(DOM_IDS.ONBOARDING_NEXT);
+        const prevBtn = document.getElementById(DOM_IDS.ONBOARDING_PREV);
+        const skipBtn = document.getElementById(DOM_IDS.ONBOARDING_SKIP);
 
         if (!stepContent || !nextBtn || !prevBtn || !skipBtn) {
             console.error('❌ Onboarding modal elements not found');

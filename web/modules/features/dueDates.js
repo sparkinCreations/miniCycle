@@ -14,6 +14,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -88,7 +89,7 @@ export class MiniCycleDueDates {
 
         try {
             // Get reference to toggle element
-            this.toggleAutoReset = this.deps.getElementById('toggleAutoReset');
+            this.toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
 
             if (!this.toggleAutoReset) {
                 console.warn('⚠️ toggleAutoReset element not found');
@@ -101,7 +102,7 @@ export class MiniCycleDueDates {
                 console.log('🔄 Checking overdue tasks after app ready (hook)...');
 
                 // Check if tasks exist in DOM before proceeding
-                const tasks = this.deps.querySelectorAll(".task");
+                const tasks = this.deps.querySelectorAll(DOM_SELECTORS.TASK);
                 if (tasks.length === 0) {
                     console.log('⏭️ No tasks in DOM yet, skipping (will run after loadMiniCycle)');
                     return;
@@ -192,7 +193,7 @@ export class MiniCycleDueDates {
     async checkOverdueTasks(taskToCheck = null) {
         await _deps.appInit?.waitForCore();
 
-        const tasks = taskToCheck ? [taskToCheck] : this.deps.querySelectorAll(".task");
+        const tasks = taskToCheck ? [taskToCheck] : this.deps.querySelectorAll(DOM_SELECTORS.TASK);
         let autoReset = this.toggleAutoReset?.checked || false;
 
         // ✅ Use AppState only (no localStorage fallback)
@@ -212,8 +213,8 @@ export class MiniCycleDueDates {
         tasks.forEach(task => {
             // ✅ FIX: Use task ID instead of task text for tracking (prevents issues when renaming tasks)
             const taskId = task.dataset?.assignedTaskId;
-            const taskText = task.querySelector(".task-text")?.textContent;
-            const dueDateInput = task.querySelector(".due-date");
+            const taskText = task.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent;
+            const dueDateInput = task.querySelector(DOM_SELECTORS.DUE_DATE);
             if (!dueDateInput || !taskId) return;
 
             const dueDateValue = dueDateInput.value;
@@ -328,7 +329,7 @@ export class MiniCycleDueDates {
      * @param {HTMLInputElement} dueDateInput - The due date input element
      */
     setupDueDateButtonInteraction(buttonContainer, dueDateInput) {
-        const dueDateButton = buttonContainer.querySelector(".set-due-date");
+        const dueDateButton = buttonContainer.querySelector(DOM_SELECTORS.SET_DUE_DATE);
         if (!dueDateButton) {
             console.warn('⚠️ Due date button not found in container');
             return;
@@ -543,9 +544,9 @@ export class MiniCycleDueDates {
 
         console.log('🔍 Scanning for overdue tasks...');
 
-        let overdueTasks = [...this.deps.querySelectorAll(".task")]
+        let overdueTasks = [...this.deps.querySelectorAll(DOM_SELECTORS.TASK)]
             .filter(task => task.classList.contains("overdue-task"))
-            .map(task => task.querySelector(".task-text")?.textContent)
+            .map(task => task.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent)
             .filter(Boolean);
 
         console.log('📋 Found overdue tasks:', overdueTasks.length);
@@ -563,7 +564,7 @@ export class MiniCycleDueDates {
      * @param {boolean} autoReset - Whether Auto Reset is enabled
      */
     updateDueDateVisibility(autoReset) {
-        const dueDatesRemindersOption = this.deps.getElementById("dueDatesReminders")?.parentNode;
+        const dueDatesRemindersOption = this.deps.getElementById(DOM_IDS.DUE_DATES_REMINDERS)?.parentNode;
         if (dueDatesRemindersOption) {
             dueDatesRemindersOption.style.display = autoReset ? "none" : "block";
         }
@@ -576,7 +577,7 @@ export class MiniCycleDueDates {
 
         if (autoReset) {
             // Auto Reset ON = hide all due dates
-            this.deps.querySelectorAll(".due-date").forEach(input => {
+            this.deps.querySelectorAll(DOM_SELECTORS.DUE_DATE).forEach(input => {
                 input.classList.add("hidden");
             });
 
@@ -587,7 +588,7 @@ export class MiniCycleDueDates {
 
         } else {
             // Auto Reset OFF = show due dates ONLY if they have a value
-            this.deps.querySelectorAll(".due-date").forEach(input => {
+            this.deps.querySelectorAll(DOM_SELECTORS.DUE_DATE).forEach(input => {
                 if (input.value) {
                     input.classList.remove("hidden");
                 } else {

@@ -22,6 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
 // ============================================================================
@@ -162,7 +163,7 @@ export class TaskRenderer {
     async renderTasks(tasksArray = []) {
         console.log('🔄 Rendering tasks (Schema 2.5 only)...');
 
-        const taskList = this.deps.getElementById('taskList');
+        const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
         if (!taskList) {
             console.warn('⚠️ Task list container not found');
             return;
@@ -320,7 +321,7 @@ export class TaskRenderer {
         const taskElement = document.querySelector(`.task[data-task-id="${activeTaskId}"]`);
         if (taskElement) {
             // Directly show task options (don't use revealTaskButtons to avoid toggle behavior)
-            const taskOptions = taskElement.querySelector('.task-options');
+            const taskOptions = taskElement.querySelector(DOM_SELECTORS.TASK_OPTIONS);
             if (taskOptions) {
                 taskOptions.style.opacity = '1';
                 taskOptions.style.visibility = 'visible';

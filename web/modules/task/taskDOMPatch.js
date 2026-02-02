@@ -16,6 +16,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -121,7 +122,7 @@ export class TaskDOMPatch {
     _patchHighPriority(taskElement, taskData) {
         taskElement.classList.toggle('high-priority', taskData.highPriority || false);
 
-        const priorityBtn = taskElement.querySelector('.priority-btn');
+        const priorityBtn = taskElement.querySelector(DOM_SELECTORS.PRIORITY_BTN);
         if (priorityBtn) {
             priorityBtn.classList.toggle('priority-active', taskData.highPriority || false);
             priorityBtn.setAttribute('aria-pressed', String(taskData.highPriority || false));
@@ -133,7 +134,7 @@ export class TaskDOMPatch {
      * @private
      */
     _patchDueDate(taskElement, taskData) {
-        const dueDateSpan = taskElement.querySelector('.due-date');
+        const dueDateSpan = taskElement.querySelector(DOM_SELECTORS.DUE_DATE);
         if (dueDateSpan) {
             if (taskData.dueDate) {
                 const date = new Date(taskData.dueDate);
@@ -153,7 +154,7 @@ export class TaskDOMPatch {
     _patchRecurring(taskElement, taskData) {
         taskElement.classList.toggle('recurring', taskData.recurring || false);
 
-        const recurringBtn = taskElement.querySelector('.recurring-btn');
+        const recurringBtn = taskElement.querySelector(DOM_SELECTORS.RECURRING_BTN);
         if (recurringBtn) {
             recurringBtn.classList.toggle('active', taskData.recurring || false);
             recurringBtn.setAttribute('aria-pressed', String(taskData.recurring || false));
@@ -165,7 +166,7 @@ export class TaskDOMPatch {
      * @private
      */
     _patchReminders(taskElement, taskData) {
-        const reminderBtn = taskElement.querySelector('.enable-task-reminders');
+        const reminderBtn = taskElement.querySelector(DOM_SELECTORS.ENABLE_TASK_REMINDERS);
         if (reminderBtn) {
             reminderBtn.classList.toggle('reminder-active', taskData.remindersEnabled || false);
             reminderBtn.setAttribute('aria-pressed', String(taskData.remindersEnabled || false));
@@ -177,7 +178,7 @@ export class TaskDOMPatch {
      * @private
      */
     _patchDeleteWhenComplete(taskElement, taskData) {
-        const dwcBtn = taskElement.querySelector('.delete-when-complete-btn');
+        const dwcBtn = taskElement.querySelector(DOM_SELECTORS.DELETE_WHEN_COMPLETE_BTN);
         if (dwcBtn) {
             const isActive = taskData.deleteWhenComplete || false;
             dwcBtn.classList.toggle('active', isActive);
@@ -208,7 +209,7 @@ export class TaskDOMPatch {
      * @returns {boolean} True if reordered successfully
      */
     applyTaskOrder(taskIds) {
-        const taskList = document.getElementById('taskList');
+        const taskList = document.getElementById(DOM_IDS.TASK_LIST);
         if (!taskList) {
             console.warn('🎨 applyTaskOrder: taskList not found');
             return false;
@@ -216,7 +217,7 @@ export class TaskDOMPatch {
 
         // Build a map of existing elements
         const elementMap = new Map();
-        taskList.querySelectorAll('.task[data-task-id]').forEach(el => {
+        taskList.querySelectorAll(DOM_SELECTORS.TASK_BY_ID).forEach(el => {
             elementMap.set(el.dataset.taskId, el);
         });
 
@@ -250,12 +251,12 @@ export class TaskDOMPatch {
      * Used for CSS-driven arrow visibility
      */
     syncBoundaryMarkers() {
-        const taskList = document.getElementById('taskList');
+        const taskList = document.getElementById(DOM_IDS.TASK_LIST);
         if (!taskList) return;
 
         // Remove old markers (O(1) - at most one of each)
-        taskList.querySelector('.is-first-task')?.classList.remove('is-first-task');
-        taskList.querySelector('.is-last-task')?.classList.remove('is-last-task');
+        taskList.querySelector(DOM_SELECTORS.IS_FIRST_TASK)?.classList.remove('is-first-task');
+        taskList.querySelector(DOM_SELECTORS.IS_LAST_TASK)?.classList.remove('is-last-task');
 
         // Add new markers
         const firstTask = taskList.firstElementChild;
