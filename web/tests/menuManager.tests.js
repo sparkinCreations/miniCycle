@@ -20,6 +20,7 @@
 // Import module directly for DI testing (not via appContext which may not be populated)
 let MenuManager = null;
 let setMenuManagerDependencies = null;
+let initMenuManager = null;
 
 export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>🎛️ Menu Manager Tests (DI-Pure)</h2><h3>Loading module...</h3>';
@@ -30,6 +31,7 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         const module = await import(`../modules/ui/menuManager.js?v=${cacheBuster}`);
         MenuManager = module.MenuManager;
         setMenuManagerDependencies = module.setMenuManagerDependencies;
+        initMenuManager = module.initMenuManager;
         resultsDiv.innerHTML = '<h2>🎛️ Menu Manager Tests (DI-Pure)</h2><h3>Running tests...</h3>';
     } catch (e) {
         resultsDiv.innerHTML = `<h2>🎛️ Menu Manager Tests</h2><div class="result fail">❌ Failed to import module: ${e.message}</div>`;
@@ -109,14 +111,22 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
             activeCycle: mockFullSchema.appState.activeCycleId
         };
 
+        // AppState mock: must work both as a factory function (saveMiniCycleAsNew calls this.deps.AppState())
+        // AND as a direct object (loadCollapsedStates calls this.deps.AppState?.get()).
+        const appStateMethods = {
+            isReady: () => true,
+            get: () => mockFullSchema,
+            update: (fn) => { fn(mockFullSchema); }
+        };
+        const AppStateMock = Object.assign(
+            () => appStateMethods,
+            appStateMethods
+        );
+
         return {
             AppMeta: { version: '1.0.0-test' },
             loadMiniCycleData: () => mockFlattenedData,
-            AppState: () => ({
-                isReady: () => true,
-                get: () => mockFullSchema,
-                update: (fn) => { fn(mockFullSchema); }
-            }),
+            AppState: AppStateMock,
             showNotification: () => {},
             showPromptModal: (opts) => opts.callback && opts.callback(null),
             showConfirmationModal: (opts) => opts.callback && opts.callback(false),
@@ -139,6 +149,10 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
             ...overrides
         };
     }
+
+    // Initialize MenuManager to trigger dynamic imports (loads getObjectSizeBytes, canAddToStorage, etc.)
+    // This populates module-level variables that are otherwise only set via initMenuManager at runtime.
+    await initMenuManager(createMockDeps());
 
     function test(name, testFn) {
         total.count++;

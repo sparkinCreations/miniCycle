@@ -91,7 +91,8 @@ const di = createDIModule('QuickActionsManager', {
     hideMainMenu: required(),
     isDebug: optional(() => false),
     getElementById: optional((id) => document.getElementById(id)),
-    querySelector: optional((sel) => document.querySelector(sel))
+    querySelector: optional((sel) => document.querySelector(sel)),
+    getModal: optional(null)
 });
 
 const _deps = new Proxy({}, {
@@ -123,7 +124,8 @@ export class QuickActionsManager {
             hideMainMenu: resolved.hideMainMenu,
             isDebug: resolved.isDebug,
             getElementById: resolved.getElementById,
-            querySelector: resolved.querySelector
+            querySelector: resolved.querySelector,
+            getModal: resolved.getModal
         };
 
         this._initialized = false;
@@ -434,11 +436,11 @@ export class QuickActionsManager {
                 case 'openRemindersModal': {
                     setTimeout(() => {
                         try {
-                            const modal = this.deps.getElementById(DOM_IDS.REMINDERS_MODAL);
+                            const modal = this.deps.getModal?.('reminders') || this.deps.getElementById(DOM_IDS.REMINDERS_MODAL);
                             if (modal) {
                                 modal.style.display = 'flex';
                             } else {
-                                this._warnMissingDep(DOM_IDS.REMINDERS_MODAL, actionId);
+                                this._warnMissingDep('reminders modal', actionId);
                             }
                             this.deps.hideMainMenu?.();
                         } catch (err) {

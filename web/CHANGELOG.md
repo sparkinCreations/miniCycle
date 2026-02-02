@@ -1,3 +1,7 @@
+## [1.907] - 2026-02-02
+- feat: update version to 1.906 and reflect changes across documentation and files
+
+
 ## [1.906] - 2026-02-01
 - fix: increase z-index for complete all button to improve visibility
 - feat: update version to 1.905 and reflect changes in documentation and styles

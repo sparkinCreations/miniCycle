@@ -69,6 +69,7 @@ const getUiApi = () => _appContextMod?.ui?.() || null;
 const getCycleApi = () => _appContextMod?.cycle?.() || null;
 const getReminderApi = () => _appContextMod?.reminder?.() || null;
 const getDeviceDetectionManager = () => _appContextMod?.ui?.()?.deviceDetectionManager || null;
+const getGetModal = () => _appContextMod?.ui?.()?.getModal || null;
 
 // ============================================================================
 // GLOBAL EVENT LISTENERS
@@ -271,7 +272,7 @@ function handleGlobalClickForTaskButtons(event) {
       task.classList.remove('long-pressed', 'draggable', 'dragging');
 
       // Keep selections in recurring panel
-      const recurringPanel = document.getElementById(DOM_IDS.RECURRING_PANEL_OVERLAY);
+      const recurringPanel = getGetModal()?.('recurringOverlay');
       if (!recurringPanel?.classList.contains('hidden')) {
         // Keep selections
       } else {
@@ -360,7 +361,7 @@ function handleOpenRemindersModalClick() {
     console.warn('⚠️ Could not load reminder settings:', e);
   }
 
-  const modal = document.getElementById(DOM_IDS.REMINDERS_MODAL);
+  const modal = getGetModal()?.('reminders');
   if (modal) {
     modal.style.display = 'flex';
   }

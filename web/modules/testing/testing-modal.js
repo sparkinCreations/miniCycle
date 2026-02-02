@@ -75,7 +75,8 @@ export function setTestingModalDependencies(dependencies) {
  * Setup testing modal open/close behavior
  */
 function setupTestingModal() {
-    const testingModal = document.getElementById(DOM_IDS.TESTING_MODAL);
+    const deps = getDeps();
+    const testingModal = deps.getModal('testing');
     const openTestingBtn = document.getElementById(DOM_IDS.OPEN_TESTING_MODAL);
     const closeTestingBtns = document.querySelectorAll(`${DOM_SELECTORS.CLOSE_TESTING_MODAL}, #${DOM_IDS.CLOSE_TESTING_MODAL}`);
 

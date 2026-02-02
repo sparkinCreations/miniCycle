@@ -690,6 +690,11 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         getTaskList: () => document.getElementById(DOM_IDS.TASK_LIST),
         getProgressBar: () => document.getElementById(DOM_IDS.PROGRESS_BAR),
 
+        // Modal registry
+        getModal: (...args) => deps.ui?.getModal?.(...args),
+        invalidateModal: (...args) => deps.ui?.invalidateModal?.(...args),
+        clearModalCache: (...args) => deps.ui?.clearModalCache?.(...args),
+
         // Safe storage
         safeLocalStorageGet: GlobalUtils?.safeLocalStorageGet,
         safeLocalStorageSet: GlobalUtils?.safeLocalStorageSet,

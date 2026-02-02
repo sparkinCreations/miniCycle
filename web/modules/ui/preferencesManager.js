@@ -510,7 +510,7 @@ export class PreferencesManager {
         await _deps.appInit?.waitForCore();
 
         try {
-            this.modal = document.getElementById(DOM_IDS.PREFERENCES_MODAL);
+            this.modal = _deps.getModal('preferences');
             if (!this.modal) {
                 console.warn('⚠️ Preferences modal not found');
                 return;
@@ -596,7 +596,7 @@ export class PreferencesManager {
         if (openThemesBtn) {
             openThemesBtn._clickHandler = () => {
                 this.closeModal();
-                const themesModal = document.getElementById(DOM_IDS.THEMES_MODAL);
+                const themesModal = _deps.getModal('themes');
                 if (themesModal) {
                     themesModal.style.display = 'flex';
                 }

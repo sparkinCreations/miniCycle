@@ -120,7 +120,7 @@ export const MODULE_MANIFESTS = {
     themeManager: {
         path: '../features/themeManager.js',
         phase: PHASES.THEME_VISUAL,
-        requires: ['appInit', 'showNotification'],
+        requires: ['appInit', 'showNotification', 'getModal'],
         provides: ['applyTheme', 'updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'unlockDarkOceanTheme', 'unlockGoldenGlowTheme', 'initializeThemesPanel', 'refreshThemeToggles', 'setupThemesPanel'],
         provideInstance: 'themeManager',
         api: 'features',
@@ -130,7 +130,7 @@ export const MODULE_MANIFESTS = {
     gamesManager: {
         path: '../ui/gamesManager.js',
         phase: PHASES.THEME_VISUAL,
-        requires: ['appInit', 'AppState', 'AppMeta', 'safeAddEventListener'],
+        requires: ['appInit', 'AppState', 'AppMeta', 'safeAddEventListener', 'getModal'],
         provides: [],
         provideInstance: 'gamesManager',
         api: 'ui',
@@ -147,10 +147,19 @@ export const MODULE_MANIFESTS = {
         after: ['notifications']
     },
 
+    modalRegistry: {
+        path: '../ui/modalRegistry.js',
+        phase: PHASES.THEME_VISUAL,
+        requires: [],
+        provides: ['getModal', 'invalidateModal', 'clearModalCache'],
+        api: 'ui',
+        before: ['modalManager']
+    },
+
     modalManager: {
         path: '../ui/modalManager.js',
         phase: PHASES.THEME_VISUAL,
-        requires: ['appInit', 'showNotification', 'safeAddEventListener'],
+        requires: ['appInit', 'showNotification', 'safeAddEventListener', 'getModal'],
         provides: [],
         provideInstance: 'modalManager',
         api: 'ui'
@@ -182,7 +191,7 @@ export const MODULE_MANIFESTS = {
     statsPanel: {
         path: '../features/statsPanel.js',
         phase: PHASES.TASK_MANAGEMENT,
-        requires: ['showNotification', 'AppState', 'appInit'],
+        requires: ['showNotification', 'AppState', 'appInit', 'getModal'],
         optionalDeps: ['historyManager', 'clearedTasksManager', 'achievementsManager'],
         provides: ['showStatsPanel', 'showTaskView', 'updateStatsPanel', 'openHistoryModal', 'openClearedTasksModal', 'openAchievementsModal'],
         provideInstance: 'statsPanelManager',
@@ -209,7 +218,7 @@ export const MODULE_MANIFESTS = {
     taskOptionsCustomizer: {
         path: '../ui/taskOptionsCustomizer.js',
         phase: PHASES.TASK_MANAGEMENT,
-        requires: ['appInit', 'AppState', 'showNotification', 'renderTaskList', 'updateMoveArrowsVisibility', 'startReminders', 'stopReminders', 'DEFAULT_TASK_OPTION_BUTTONS', 'safeAddEventListener'],
+        requires: ['appInit', 'AppState', 'showNotification', 'renderTaskList', 'updateMoveArrowsVisibility', 'startReminders', 'stopReminders', 'DEFAULT_TASK_OPTION_BUTTONS', 'safeAddEventListener', 'getModal'],
         // modeManager is Phase 5 (CYCLE) but taskOptionsCustomizer is Phase 3 - must be lazy
         lazyRequires: ['modeManager'],
         provides: [],
@@ -221,7 +230,7 @@ export const MODULE_MANIFESTS = {
     reminders: {
         path: '../features/reminders.js',
         phase: PHASES.TASK_MANAGEMENT,
-        requires: ['appInit', 'AppState', 'showNotification'],
+        requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
         provides: ['startReminders', 'stopReminders', 'updateReminderButtons', 'setupReminderButtonHandler', 'loadRemindersSettings'],
         api: 'features',
         provideInstance: 'reminderManager',
@@ -234,7 +243,7 @@ export const MODULE_MANIFESTS = {
     recurringIntegration: {
         path: '../recurring/recurringIntegration.js',
         phase: PHASES.RECURRING,
-        requires: ['appInit', 'AppState', 'showNotification', 'showNotificationWithTip', 'notifications', 'FeatureFlags', 'GlobalUtils', 'refreshUIFromState'],
+        requires: ['appInit', 'AppState', 'showNotification', 'showNotificationWithTip', 'notifications', 'FeatureFlags', 'GlobalUtils', 'refreshUIFromState', 'getModal'],
         // Cross-phase lazy deps: these are from later phases but only called after user interaction
         lazyRequires: ['updateProgressBar'],  // From cycleCompletion (Phase 6)
         provides: ['panel', 'core'],
@@ -267,7 +276,7 @@ export const MODULE_MANIFESTS = {
     routineSwitcher: {
         path: '../routine/routineSwitcher.js',
         phase: PHASES.CYCLE,
-        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showCycleCreationModal', 'getOnboardingManager'],
+        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showCycleCreationModal', 'getOnboardingManager', 'getModal'],
         optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched'],  // From undoRedoManager (phase 6)
         provides: ['switchMiniCycle', 'renameMiniCycle', 'deleteMiniCycle'],
         api: 'cycle',
@@ -316,7 +325,7 @@ export const MODULE_MANIFESTS = {
     settingsManager: {
         path: '../ui/settingsManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'AppState', 'showNotification'],
+        requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
         provides: ['syncCurrentSettingsToStorage'],
         provideInstance: 'settingsManager',
         api: 'ui',
@@ -326,7 +335,7 @@ export const MODULE_MANIFESTS = {
     preferencesManager: {
         path: '../ui/preferencesManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showConfirmationModal', 'safeAddEventListener', 'hideMainMenu'],
+        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showConfirmationModal', 'safeAddEventListener', 'hideMainMenu', 'getModal'],
         provides: ['applyCustomColors', 'removeCustomColors'],
         provideInstance: 'preferencesManager',
         api: 'ui',
@@ -397,7 +406,7 @@ export const MODULE_MANIFESTS = {
     quickActionsManager: {
         path: '../ui/quickActionsManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'AppState', 'showNotification'],
+        requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
         provides: ['trackAction'],
         provideInstance: 'quickActionsManager',
         api: 'ui',
@@ -407,7 +416,7 @@ export const MODULE_MANIFESTS = {
     helpWindowManager: {
         path: '../ui/helpWindowManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'AppState', 'loadMiniCycleData', 'safeAddEventListener'],
+        requires: ['appInit', 'AppState', 'loadMiniCycleData', 'safeAddEventListener', 'getModal'],
         provides: [],
         provideInstance: 'helpWindowManager',
         api: 'ui'
@@ -506,7 +515,7 @@ export const MODULE_MANIFESTS = {
     testingModal: {
         path: '../testing/testing-modal.js',
         phase: PHASES.TESTING,
-        requires: ['AppState', 'showNotification', 'notifications', 'safeAddEventListener', 'safeAddEventListenerById', 'safeLocalStorageGet', 'safeLocalStorageSet', 'safeJSONParse', 'safeJSONStringify', 'consoleCapture', 'backupManager'],
+        requires: ['AppState', 'showNotification', 'notifications', 'safeAddEventListener', 'safeAddEventListenerById', 'safeLocalStorageGet', 'safeLocalStorageSet', 'safeJSONParse', 'safeJSONStringify', 'consoleCapture', 'backupManager', 'getModal'],
         provides: ['openStorageViewer', 'closeStorageViewer'],
         api: 'testing',
         optional: true,

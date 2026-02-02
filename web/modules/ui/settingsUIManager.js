@@ -42,7 +42,8 @@ const di = createDIModule('SettingsUIManager', {
     updateStatsPanel: optional(null),
     enableDebug: optional(null),
     disableDebug: optional(null),
-    isDebug: optional(null)
+    isDebug: optional(null),
+    getModal: optional(null)
 });
 
 /** @type {{AppState: Object, loadMiniCycleData: Function, showNotification: Function, safeAddEventListener: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, organizeCompletedTasks: Function|null, resetDefaultRecurringSettings: Function|null}} */
@@ -116,7 +117,7 @@ export function setupSettingsMenu() {
         return;
     }
 
-    const settingsModal = document.querySelector(DOM_SELECTORS.SETTINGS_MODAL);
+    const settingsModal = _deps.getModal?.('settings') || document.querySelector(DOM_SELECTORS.SETTINGS_MODAL);
     const settingsModalContent = document.querySelector(DOM_SELECTORS.SETTINGS_MODAL_CONTENT);
     const openSettingsBtn = document.getElementById(DOM_IDS.OPEN_SETTINGS);
     const closeSettingsBtn = document.getElementById(DOM_IDS.CLOSE_SETTINGS);

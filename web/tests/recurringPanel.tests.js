@@ -38,7 +38,11 @@ function setupPanelDeps(overrides = {}) {
         querySelector: overrides.querySelector || ((sel) => document.querySelector(sel)),
         querySelectorAll: overrides.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
         isOverlayActive: overrides.isOverlayActive || (() => false),
-        escapeHtml: overrides.escapeHtml || ((str) => str)
+        escapeHtml: overrides.escapeHtml || ((str) => str),
+        getModal: overrides.getModal || ((name) => {
+            const map = { recurringOverlay: 'recurring-panel-overlay', recurringPanel: 'recurring-settings-panel' };
+            return document.getElementById(map[name]) || null;
+        })
     };
     setRecurringPanelDependencies(defaultDeps);
     return defaultDeps;
@@ -203,50 +207,9 @@ export async function runRecurringPanelTests(resultsDiv) {
     });
 
     // ===== FALLBACK METHODS =====
-    resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Fallback Methods</h4>';
-
-    test('fallbackDeleteTemplate logs without throwing', () => {
-        setupPanelDeps();
-        const panel = new RecurringPanelManager();
-
-        // Should not throw
-        panel.fallbackDeleteTemplate('task-1');
-    });
-
-    test('fallbackBuildSummary returns default summary', () => {
-        setupPanelDeps();
-        const panel = new RecurringPanelManager();
-
-        const summary = panel.fallbackBuildSummary({ frequency: 'weekly' });
-
-        if (!summary.includes('weekly')) {
-            throw new Error('Summary should include frequency');
-        }
-    });
-
-    test('fallbackConfirmation uses native confirm', () => {
-        setupPanelDeps();
-        const panel = new RecurringPanelManager();
-
-        let callbackCalled = false;
-
-        // Mock window.confirm
-        const originalConfirm = window.confirm;
-        window.confirm = () => true;
-
-        try {
-            panel.fallbackConfirmation({
-                message: 'Test',
-                callback: (confirmed) => { callbackCalled = confirmed; }
-            });
-
-            if (!callbackCalled) {
-                throw new Error('Callback should be called with true');
-            }
-        } finally {
-            window.confirm = originalConfirm;
-        }
-    });
+    // NOTE: fallbackDeleteTemplate, fallbackBuildSummary, fallbackConfirmation
+    // were removed from RecurringPanelManager. These functions are now handled
+    // by dependency injection (deleteTemplate, buildRecurringSummary, showConfirmationModal).
 
     // ===== STATE MANAGEMENT =====
     resultsDiv.innerHTML += '<h4 class="test-section">📊 State Management</h4>';
@@ -786,16 +749,16 @@ export async function runRecurringPanelTests(resultsDiv) {
     // ===== BUTTON VISIBILITY =====
     resultsDiv.innerHTML += '<h4 class="test-section">🔘 Button Visibility</h4>';
 
-    test('updateRecurringPanelButtonVisibility hides when no templates', () => {
-        let buttonHidden = false;
+    test('updateRecurringPanelButtonVisibility always shows button (no templates)', () => {
+        let hiddenRemoved = false;
 
         setupPanelDeps({
             getElementById: (id) => {
                 if (id === 'open-recurring-panel') {
                     return {
                         classList: {
-                            toggle: (cls, condition) => {
-                                if (cls === 'hidden') buttonHidden = condition;
+                            remove: (cls) => {
+                                if (cls === 'hidden') hiddenRemoved = true;
                             }
                         }
                     };
@@ -819,21 +782,21 @@ export async function runRecurringPanelTests(resultsDiv) {
 
         panel.updateRecurringPanelButtonVisibility();
 
-        if (!buttonHidden) {
-            throw new Error('Button should be hidden when no templates');
+        if (!hiddenRemoved) {
+            throw new Error('Button should always be visible (hidden class removed)');
         }
     });
 
-    test('updateRecurringPanelButtonVisibility shows when templates exist', () => {
-        let buttonHidden = null;
+    test('updateRecurringPanelButtonVisibility always shows button (with templates)', () => {
+        let hiddenRemoved = false;
 
         setupPanelDeps({
             getElementById: (id) => {
                 if (id === 'open-recurring-panel') {
                     return {
                         classList: {
-                            toggle: (cls, condition) => {
-                                if (cls === 'hidden') buttonHidden = condition;
+                            remove: (cls) => {
+                                if (cls === 'hidden') hiddenRemoved = true;
                             }
                         }
                     };
@@ -861,8 +824,8 @@ export async function runRecurringPanelTests(resultsDiv) {
 
         panel.updateRecurringPanelButtonVisibility();
 
-        if (buttonHidden !== false) {
-            throw new Error('Button should be shown when templates exist');
+        if (!hiddenRemoved) {
+            throw new Error('Button should always be visible (hidden class removed)');
         }
     });
 

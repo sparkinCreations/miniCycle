@@ -60,7 +60,8 @@ class GamesManager {
                 const resolvedDeps = di.resolve();
                 return {
                     AppState: resolvedDeps.AppState,
-                    safeAddEventListener: resolvedDeps.safeAddEventListener
+                    safeAddEventListener: resolvedDeps.safeAddEventListener,
+                    getModal: resolvedDeps.getModal
                 };
             }
         });
@@ -180,7 +181,7 @@ class GamesManager {
      * Set up click-outside-to-close behavior for games modal
      */
     setupGamesModalOutsideClick() {
-        const gamesPanel = document.getElementById(DOM_IDS.GAMES_PANEL);
+        const gamesPanel = this.deps.getModal('games');
         const gamesContent = document.querySelector(DOM_SELECTORS.GAMES_MODAL_CONTENT);
         const openButton = document.getElementById(DOM_IDS.OPEN_GAMES_PANEL);
 
@@ -234,7 +235,7 @@ class GamesManager {
         const openButton = document.getElementById(DOM_IDS.OPEN_GAMES_PANEL);
         if (openButton) {
             openButton._clickHandler = () => {
-                const gamesPanel = document.getElementById(DOM_IDS.GAMES_PANEL);
+                const gamesPanel = this.deps.getModal('games');
                 if (gamesPanel) {
                     gamesPanel.style.display = "flex";
                     this.setupGamesModalOutsideClick();
@@ -247,7 +248,7 @@ class GamesManager {
         const closeButton = document.getElementById(DOM_IDS.CLOSE_GAMES_PANEL);
         if (closeButton) {
             closeButton._clickHandler = () => {
-                const gamesPanel = document.getElementById(DOM_IDS.GAMES_PANEL);
+                const gamesPanel = this.deps.getModal('games');
                 if (gamesPanel) {
                     gamesPanel.style.display = "none";
                 }

@@ -40,7 +40,10 @@ let deps = {
     setupAutomatedTestingFunctions: null,
 
     // Console capture (consoleCapture object with methods)
-    consoleCapture: null
+    consoleCapture: null,
+
+    // Modal registry
+    getModal: null
 };
 
 /**

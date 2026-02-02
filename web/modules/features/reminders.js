@@ -32,7 +32,8 @@ const di = createDIModule('Reminders', {
     updateUndoRedoButtons: optional(null),
     autoSave: optional(null),
     AppGlobalState: optional(null),
-    AppMeta: optional(null)
+    AppMeta: optional(null),
+    getModal: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -83,6 +84,7 @@ export class MiniCycleReminders {
             refreshTaskListUI: _deps.refreshTaskListUI,
             updateUndoRedoButtons: _deps.updateUndoRedoButtons || (() => console.log('⏭️ updateUndoRedoButtons not available')),
             autoSave: _deps.autoSave || (() => console.warn('⚠️ autoSave not available')),
+            getModal: _deps.getModal,
             ...this._constructorDeps
         };
     }
@@ -810,7 +812,7 @@ export class MiniCycleReminders {
                         // Don't trigger if clicking the close button
                         if (e.target.classList.contains('close-btn')) return;
 
-                        const remindersModal = document.getElementById(DOM_IDS.REMINDERS_MODAL);
+                        const remindersModal = this.deps.getModal('reminders');
                         if (remindersModal) {
                             remindersModal.style.display = 'flex';
                             remindersModal.style.alignItems = 'center';
@@ -980,7 +982,7 @@ export class MiniCycleReminders {
      * (Extracted from orchestrator.js Phase 3c)
      */
     setupModalCloseListeners() {
-        const remindersModal = this.deps.getElementById(DOM_IDS.REMINDERS_MODAL);
+        const remindersModal = this.deps.getModal('reminders');
         const closeRemindersBtn = this.deps.getElementById(DOM_IDS.CLOSE_REMINDERS_BTN);
 
         if (closeRemindersBtn) {
@@ -1017,7 +1019,7 @@ export class MiniCycleReminders {
             // Load current settings from Schema 2.5 before opening
             this.loadRemindersSettings();
 
-            const remindersModal = this.deps.getElementById(DOM_IDS.REMINDERS_MODAL);
+            const remindersModal = this.deps.getModal('reminders');
             if (remindersModal) {
                 remindersModal.style.display = "flex";
             }

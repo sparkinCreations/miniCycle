@@ -26,11 +26,12 @@ let getUndoCacheSizeBytes;
 const di = createDIModule('HelpWindowManager', {
     loadMiniCycleData: optional(null),
     AppState: optional(null),
-    safeAddEventListener: optional(null)
+    safeAddEventListener: optional(null),
+    getModal: optional(null)
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
-/** @type {{loadMiniCycleData: Function|null, AppState: Object|null, safeAddEventListener: Function|null}} */
+/** @type {{loadMiniCycleData: Function|null, AppState: Object|null, safeAddEventListener: Function|null, getModal: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -51,7 +52,7 @@ export function setHelpWindowManagerDependencies(dependencies) {
  */
 export class HelpWindowManager {
     constructor() {
-        this.helpWindow = document.getElementById(DOM_IDS.HELP_WINDOW);
+        this.helpWindow = _deps.getModal('help');
         this.isVisible = false;
         this.currentMessage = null;
         this.isShowingCycleComplete = false;

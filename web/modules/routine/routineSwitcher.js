@@ -66,7 +66,8 @@ const di = createDIModule('RoutineSwitcher', {
     safeAddEventListener: optional(null),
     onCycleRenamed: optional(null),
     onCycleDeleted: optional(null),
-    onCycleSwitched: optional(null)
+    onCycleSwitched: optional(null),
+    getModal: optional(null)
 });
 
 /**
@@ -134,7 +135,7 @@ export class RoutineSwitcher {
         }
 
         const cycles = currentState.data?.cycles || {};
-        const switchModal = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL);
+        const switchModal = this.deps.getModal('routineSwitcher');
         const switchRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
         const duplicateButton = this.deps.getElementById(DOM_IDS.SWITCH_DUPLICATE);
         const renameButton = this.deps.getElementById(DOM_IDS.SWITCH_RENAME);
@@ -670,7 +671,7 @@ export class RoutineSwitcher {
     hideSwitchMiniCycleModal() {
         console.log("🔍 Hiding switch miniCycle modal (Schema 2.5 only)...");
 
-        const switchModal = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL);
+        const switchModal = this.deps.getModal('routineSwitcher');
         console.log("🔍 Modal Found?", switchModal);
 
         if (!switchModal) {
@@ -934,7 +935,7 @@ export class RoutineSwitcher {
         const safeAdd = this.deps.safeAddEventListener;
         this._clickOutsideHandler = (event) => {
             // ✅ Early return if modal not visible (avoid DOM queries on every click)
-            const switchModal = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL);
+            const switchModal = this.deps.getModal('routineSwitcher');
             if (!switchModal || switchModal.style.display !== "flex") {
                 return;
             }

@@ -488,8 +488,13 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
     // === INITIAL SETUP METHODS (Extracted from main script) ===
     resultsDiv.innerHTML += '<h4 class="test-section">🚀 Initial Setup Methods</h4>';
 
-    // Ensure appReady is true for setup method tests (singleton may need initialization)
-    // This is needed because runInitialSetup waits for waitForApp() to resolve
+    // Ensure coreReady and appReady are true for setup method tests (singleton may need initialization)
+    // runInitialSetup/runCompleteInitialSetup call waitForCore() which has a 10s timeout per call;
+    // without setting coreReady = true, each awaited call adds 10s → exceeds 30s module timeout
+    if (!appInit.coreReady) {
+        appInit.coreReady = true;
+        if (appInit._coreResolve) appInit._coreResolve();
+    }
     if (!appInit.appReady) {
         appInit.appReady = true;
         if (appInit._appResolve) appInit._appResolve();

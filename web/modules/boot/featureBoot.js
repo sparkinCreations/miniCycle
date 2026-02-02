@@ -355,7 +355,8 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     updateDueDateVisibility: deps.features?.updateDueDateVisibility,
     organizeCompletedTasks: deps.features?.organizeCompletedTasks,
     updateThemeColor: deps.features?.updateThemeColor,
-    trackAction: deps.ui?.trackAction
+    trackAction: deps.ui?.trackAction,
+    getModal: deps.ui?.getModal
   };
   appContextMod.setContextValue('uiApi', uiApiObj);
   appContextMod.registerApi('ui', uiApiObj);

@@ -40,13 +40,29 @@ export async function runModalManagerTests(resultsDiv) {
         el?.addEventListener?.(ev, fn);
     };
 
+    // Mock getModal that looks up real DOM elements by modal name → element ID
+    const mockGetModal = (name) => {
+        const idMap = {
+            feedback: 'feedback-modal', about: 'about-modal',
+            settings: 'settings-modal', reminders: 'reminders-modal',
+            recurringOverlay: 'recurring-panel-overlay',
+            recurringPanel: 'recurring-settings-panel',
+            themes: 'theme-modal', games: 'games-modal',
+            preferences: 'preferences-modal', help: 'help-window',
+            testing: 'testing-modal', routineSwitcher: 'routine-switcher-modal',
+            taskOptionsCustomizer: 'task-options-customizer-modal'
+        };
+        return document.getElementById(idMap[name]) || null;
+    };
+
     // Set dependencies at module level
     setModalManagerDependencies({
         showNotification: mockShowNotification,
         hideMainMenu: mockHideMainMenu,
         sanitizeInput: mockSanitizeInput,
         safeAddEventListener: mockSafeAddEventListener,
-        waitForCore: () => Promise.resolve()
+        waitForCore: () => Promise.resolve(),
+        getModal: mockGetModal
     });
 
     // Initialize the module-level instance
@@ -55,7 +71,8 @@ export async function runModalManagerTests(resultsDiv) {
         hideMainMenu: mockHideMainMenu,
         sanitizeInput: mockSanitizeInput,
         safeAddEventListener: mockSafeAddEventListener,
-        waitForCore: () => Promise.resolve()
+        waitForCore: () => Promise.resolve(),
+        getModal: mockGetModal
     });
 
     resultsDiv.innerHTML = '<h2>🎭 ModalManager Tests</h2><h3>Running tests...</h3>';
@@ -183,9 +200,9 @@ export async function runModalManagerTests(resultsDiv) {
     test('closeAllModals handles data-modal elements', () => {
         const mm = new ModalManager();
 
-        // Create test modal with data-modal attribute
+        // Create a registered modal (settings uses 'removeVisible' close method)
         const modal = document.createElement('div');
-        modal.setAttribute('data-modal', 'test');
+        modal.id = 'settings-modal';
         modal.classList.add('visible');
         document.body.appendChild(modal);
 
@@ -673,10 +690,10 @@ export async function runModalManagerTests(resultsDiv) {
     test('isModalOpen detects open settings modal', () => {
         const mm = new ModalManager();
 
-        // Create visible modal
+        // Create visible modal (needs ID for registry-based getModal lookup)
         const modal = document.createElement('div');
-        modal.classList.add('settings-modal');
-        modal.style.display = 'flex';
+        modal.id = 'settings-modal';
+        modal.classList.add('settings-modal', 'visible');
         document.body.appendChild(modal);
 
         const result = mm.isModalOpen();

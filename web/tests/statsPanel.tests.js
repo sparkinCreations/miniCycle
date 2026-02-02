@@ -44,6 +44,11 @@ export async function runStatsPanelTests(resultsDiv) {
     AchievementsManager = achievementsModule.AchievementsManager;
     setAchievementsManagerDependencies = achievementsModule.setAchievementsManagerDependencies;
 
+    // Initialize achievementsManager to load MILESTONES from constants.js (needed for badge theme classes)
+    if (achievementsModule.initAchievementsManager) {
+        await achievementsModule.initAchievementsManager();
+    }
+
     resultsDiv.innerHTML = '<h2>📊 StatsPanel Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };
@@ -51,7 +56,8 @@ export async function runStatsPanelTests(resultsDiv) {
 
     // ✅ Inject mock appInit via DI to avoid hanging in Playwright
     setStatsPanelDependencies({
-        appInit: createMockAppInit()
+        appInit: createMockAppInit(),
+        getModal: () => document.createElement('div')
     });
     console.log('✅ Test environment: Mock appInit injected via DI');
 

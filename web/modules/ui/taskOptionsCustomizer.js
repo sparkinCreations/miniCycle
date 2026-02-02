@@ -33,11 +33,12 @@ const di = createDIModule('TaskOptionsCustomizer', {
     modeManager: optional(null),
     appInit: optional(null),
     DEFAULT_TASK_OPTION_BUTTONS: optional(null),
-    safeAddEventListener: optional(null)
+    safeAddEventListener: optional(null),
+    getModal: optional(null)
 });
 
 // Late-binding deps via Proxy
-/** @type {{AppState: Object|null, showNotification: Function|null, renderTaskList: Function|null, updateMoveArrowsVisibility: Function|null, startReminders: Function|null, stopReminders: Function|null, modeManager: Object|null, appInit: Object|null, DEFAULT_TASK_OPTION_BUTTONS: Object|null, safeAddEventListener: Function|null}} */
+/** @type {{AppState: Object|null, showNotification: Function|null, renderTaskList: Function|null, updateMoveArrowsVisibility: Function|null, startReminders: Function|null, stopReminders: Function|null, modeManager: Object|null, appInit: Object|null, DEFAULT_TASK_OPTION_BUTTONS: Object|null, safeAddEventListener: Function|null, getModal: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -199,6 +200,7 @@ export class TaskOptionsCustomizer {
             appInit: _deps.appInit,  // DI-pure (no fallback)
             DEFAULT_TASK_OPTION_BUTTONS: _deps.DEFAULT_TASK_OPTION_BUTTONS || FALLBACK_TASK_OPTION_BUTTONS,
             safeAddEventListener: _deps.safeAddEventListener,
+            getModal: _deps.getModal,
             // DOM helpers from constructor
             ...this._constructorDeps
         };
@@ -241,7 +243,7 @@ export class TaskOptionsCustomizer {
 
                     if (currentCycleId) {
                         // Close the settings modal first
-                        const settingsModal = document.querySelector(DOM_SELECTORS.SETTINGS_MODAL);
+                        const settingsModal = this.deps.getModal?.('settings') || document.querySelector(DOM_SELECTORS.SETTINGS_MODAL);
                         if (settingsModal) {
                             settingsModal.style.display = 'none';
                         }

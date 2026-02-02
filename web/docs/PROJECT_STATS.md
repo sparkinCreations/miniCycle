@@ -5,7 +5,7 @@
 > This file contains metrics that change frequently (version, counts, etc.).
 > All other documentation should reference this file instead of hardcoding these values.
 
-**Last Updated**: February 01, 2026
+**Last Updated**: February 02, 2026
 
 ---
 
@@ -13,15 +13,15 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 1.906 |
+| **App Version** | 1.907 |
 | **Lite Version** | 2.05 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 103 |
-| **Total Tests** | 1693 |
+| **Total Modules** | 105 |
+| **Total Tests** | 1690 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 31 |
-| **JSDoc Blocks** | 923 |
-| **Documentation Files** | 156 |
+| **JSDoc Blocks** | 931 |
+| **Documentation Files** | 157 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
 
@@ -38,14 +38,14 @@
 | `task/` | 12 | Task CRUD, DOM, events, drag-drop, validation |
 | `routine/` | 5 | Routine management, switching, migration |
 | `recurring/` | 15 | Recurring task scheduling, panel, activation |
-| `ui/` | 23 | Modals, menus, settings, onboarding, gestures |
+| `ui/` | 24 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 7 | Themes, stats, achievements, history, reminders |
 | `utils/` | 12 | Notifications, device detection, utilities |
 | `storage/` | 1 | Backup manager |
 | `progress/` | 1 | Cycle completion tracking |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **103** | |
+| **Total** | **105** | |
 
 ---
 
@@ -56,9 +56,9 @@
 | `miniCycle-main.js` | ~56 | Entrypoint |
 | `modules/boot/orchestrator.js` | ~629 | Pure sequence controller |
 | `modules/boot/coreBoot.js` | ~1020 | Core state & init |
-| `modules/boot/featureBoot.js` | ~518 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~770 | UI handlers |
-| **Total** | **~2993** | |
+| `modules/boot/featureBoot.js` | ~519 | DI wiring hub |
+| `modules/boot/uiBoot.js` | ~771 | UI handlers |
+| **Total** | **~2995** | |
 
 ---
 
@@ -66,7 +66,7 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 1693 |
+| Total Tests | 1690 |
 | Test Files | 54 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |

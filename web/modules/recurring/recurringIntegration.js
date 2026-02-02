@@ -216,7 +216,8 @@ export async function initializeRecurringModules(options = {}) {
             refreshTaskButtonsForModeChange: deps.refreshTaskButtonsForModeChange,
             refreshUIFromState: () => deps.refreshUIFromState?.(),
             activateTaskRecurringState: coreFunctions.activateTaskRecurringState,
-            deactivateTaskRecurringState: coreFunctions.deactivateTaskRecurringState
+            deactivateTaskRecurringState: coreFunctions.deactivateTaskRecurringState,
+            getModal: deps.getModal
         });
 
         console.log('🎛️ Creating RecurringPanelManager instance...');

@@ -42,8 +42,15 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     const env = await setupTestEnvironment();
 
     // Set up SettingsManager module dependencies
+    // AppState mock must work both as a direct object (settingsUIManager calls _deps.AppState?.get())
+    // AND as a factory function (other code calls _deps.AppState?.()).
+    const defaultAppStateMock = Object.assign(
+        () => ({ isReady: () => true, get: () => ({ settings: {} }), update: () => {} }),
+        { isReady: () => true, get: () => ({ settings: {} }), update: () => {} }
+    );
     setSettingsManagerDependencies({
-        safeAddEventListener: env.deps.safeAddEventListener
+        safeAddEventListener: env.deps.safeAddEventListener,
+        AppState: defaultAppStateMock
     });
 
     resultsDiv.innerHTML = '<h2>⚙️ Settings Manager Tests</h2>';
@@ -640,12 +647,14 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         document.body.appendChild(closeBtn);
 
         // Set up module-level dependencies (DI-pure pattern)
+        // AppState mock works both as direct object (.get()) and factory function (AppState())
+        const appStateMethods = { isReady: () => true, get: () => ({}), update: () => {} };
         setSettingsManagerDependencies({
             safeAddEventListener: (el, event, handler) => {
                 el?.removeEventListener(event, handler);
                 el?.addEventListener(event, handler);
             },
-            AppState: () => ({ isReady: () => true, get: () => ({}) }),
+            AppState: Object.assign(() => appStateMethods, appStateMethods),
             loadMiniCycleData: () => ({ settings: {} }),
             showNotification: () => {},
             showConfirmationModal: () => {},
@@ -696,12 +705,14 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         document.body.appendChild(closeBtn);
 
         // Set up module-level dependencies (DI-pure pattern)
+        // AppState mock works both as direct object (.get()) and factory function (AppState())
+        const appStateMethods2 = { isReady: () => true, get: () => ({}), update: () => {} };
         setSettingsManagerDependencies({
             safeAddEventListener: (el, event, handler) => {
                 el?.removeEventListener(event, handler);
                 el?.addEventListener(event, handler);
             },
-            AppState: () => ({ isReady: () => true, get: () => ({}) }),
+            AppState: Object.assign(() => appStateMethods2, appStateMethods2),
             loadMiniCycleData: () => ({ settings: {} }),
             showNotification: () => {},
             showConfirmationModal: () => {},
@@ -744,12 +755,14 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
 
     await test('setupSettingsMenu completes quickly', async () => {
         // Set up module-level dependencies (DI-pure pattern)
+        // AppState mock works both as direct object (.get()) and factory function (AppState())
+        const appStateMethods3 = { isReady: () => true, get: () => ({}), update: () => {} };
         setSettingsManagerDependencies({
             safeAddEventListener: (el, event, handler) => {
                 el?.removeEventListener(event, handler);
                 el?.addEventListener(event, handler);
             },
-            AppState: () => ({ isReady: () => true, get: () => ({}) }),
+            AppState: Object.assign(() => appStateMethods3, appStateMethods3),
             loadMiniCycleData: () => ({ settings: {} }),
             showNotification: () => {},
             showConfirmationModal: () => {},
