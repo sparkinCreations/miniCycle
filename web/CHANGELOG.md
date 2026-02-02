@@ -1,3 +1,9 @@
+## [1.906] - 2026-02-01
+- fix: increase z-index for complete all button to improve visibility
+- feat: update version to 1.905 and reflect changes in documentation and styles
+- Refactor UI modules to utilize centralized DOM constants
+
+
 ## [1.905] - 2026-02-01
 - feat: enforce required dependencies for action execution in Quick Actions Manager
 - feat: update version to 1.904 and reflect changes across documentation and files
