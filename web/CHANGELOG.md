@@ -1,3 +1,7 @@
+## [1.910] - 2026-02-02
+- feat(ui): add preferences background image module for upload, compression, and storage
+
+
 ## [1.908] - 2026-02-02
 - feat: add default labels registry and modal registry for centralized UI management
 

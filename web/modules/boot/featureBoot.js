@@ -334,7 +334,7 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     check: deps.progress?.checkMiniCycle,
     updateProgress: deps.progress?.updateProgressBar,
     incrementCount: deps.progress?.incrementCycleCount,
-    initializeModeSelector: deps.cycle?.initializeModeSelector
+    initializeModeSelector: deps.cycle?.setupModeSelector
   };
   appContextMod.setContextValue('cycleApi', cycleApiObj);
   appContextMod.registerApi('cycle', cycleApiObj);
@@ -356,7 +356,8 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     organizeCompletedTasks: deps.features?.organizeCompletedTasks,
     updateThemeColor: deps.features?.updateThemeColor,
     trackAction: deps.ui?.trackAction,
-    getModal: deps.ui?.getModal
+    getModal: deps.ui?.getModal,
+    initCompletedTasksSection: () => deps.ui?.completedTasksManager?.init?.()
   };
   appContextMod.setContextValue('uiApi', uiApiObj);
   appContextMod.registerApi('ui', uiApiObj);
