@@ -71,7 +71,7 @@ async function waitForCoreWithTimeout() {
     try {
         await Promise.race([
             _deps.appInit?.waitForCore(),
-            new Promise((resolve) => setTimeout(resolve, 3000))
+            new Promise((resolve) => setTimeout(resolve, UI_TIMEOUTS.NOTIFICATION_LONG))
         ]);
     } catch (error) {
         console.warn('Core wait timeout or error:', error);

@@ -41,7 +41,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { LIMITS, DOM_SELECTORS } from '../core/constants.js';
+import { LIMITS, UI_TIMEOUTS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -114,7 +114,7 @@ async function waitForCoreWithTimeout() {
     try {
         await Promise.race([
             _deps.appInit?.waitForCore(),
-            new Promise((resolve) => setTimeout(resolve, 3000))
+            new Promise((resolve) => setTimeout(resolve, UI_TIMEOUTS.NOTIFICATION_LONG))
         ]);
     } catch (error) {
         console.warn('Core wait timeout or error:', error);

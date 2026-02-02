@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, STORAGE_KEYS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -102,7 +102,7 @@ export function setupBackupButton() {
     backupBtn._clickHandler = () => {
         console.log('Creating backup...');
 
-        const schemaData = localStorage.getItem("miniCycleData");
+        const schemaData = localStorage.getItem(STORAGE_KEYS.DATA);
         if (!schemaData) {
             console.error('Schema 2.5 data required for backup');
             _deps.showNotification?.("No Schema 2.5 data found. Cannot create backup.", "error");
@@ -294,10 +294,10 @@ async function processRestoreData(fileContent) {
             return;
         }
 
-        localStorage.setItem("miniCycleData", backupData.miniCycleData);
+        localStorage.setItem(STORAGE_KEYS.DATA, backupData.miniCycleData);
         _deps.showNotification?.("Schema 2.5 backup restored successfully!", "success", 4000);
         _deps.showNotification?.("Reloading app to apply changes...", "info", 2000);
-        setTimeout(() => location.reload(), 2500);
+        setTimeout(() => location.reload(), UI_TIMEOUTS.POST_RESTORE_RELOAD);
         return;
     }
 
@@ -312,23 +312,23 @@ async function processRestoreData(fileContent) {
         }
 
         // Remove existing Schema 2.5 data so migration will run
-        localStorage.removeItem("miniCycleData");
+        localStorage.removeItem(STORAGE_KEYS.DATA);
 
         // Restore legacy keys
-        localStorage.setItem("miniCycleStorage", backupData.miniCycleStorage);
-        localStorage.setItem("lastUsedMiniCycle", backupData.lastUsedMiniCycle || "");
+        localStorage.setItem(STORAGE_KEYS.LEGACY_DATA, backupData.miniCycleStorage);
+        localStorage.setItem(STORAGE_KEYS.LAST_USED, backupData.lastUsedMiniCycle || "");
 
         if (backupData.miniCycleReminders) {
-            localStorage.setItem("miniCycleReminders", backupData.miniCycleReminders);
+            localStorage.setItem(STORAGE_KEYS.REMINDERS, backupData.miniCycleReminders);
         }
         if (backupData.milestoneUnlocks) {
-            localStorage.setItem("milestoneUnlocks", backupData.milestoneUnlocks);
+            localStorage.setItem(STORAGE_KEYS.MILESTONE_UNLOCKS, backupData.milestoneUnlocks);
         }
         if (backupData.darkModeEnabled !== undefined) {
-            localStorage.setItem("darkModeEnabled", backupData.darkModeEnabled);
+            localStorage.setItem(STORAGE_KEYS.DARK_MODE, backupData.darkModeEnabled);
         }
         if (backupData.currentTheme) {
-            localStorage.setItem("currentTheme", backupData.currentTheme);
+            localStorage.setItem(STORAGE_KEYS.CURRENT_THEME, backupData.currentTheme);
         }
 
         // Migrate to 2.5
@@ -343,7 +343,7 @@ async function processRestoreData(fileContent) {
                 _deps.showNotification?.("Migration failed during restore", "error", 4000);
             }
 
-            setTimeout(() => location.reload(), 1000);
+            setTimeout(() => location.reload(), UI_TIMEOUTS.PAGE_RELOAD);
         }, 500);
 
         return;
@@ -386,7 +386,7 @@ export function setupFactoryResetButton() {
 
         // Local storage cleanup
         try {
-            localStorage.removeItem("miniCycleData");
+            localStorage.removeItem(STORAGE_KEYS.DATA);
 
             const legacyKeysToRemove = [
                 "miniCycleStorage",
@@ -521,7 +521,7 @@ export function setupFactoryResetButton() {
         }
 
         _deps.showNotification?.("Factory Reset Complete. Reloading...", "success", 2000);
-        setTimeout(() => location.reload(), 2000);
+        setTimeout(() => location.reload(), UI_TIMEOUTS.POST_RESTORE_RELOAD);
     };
 
     const showConfirmationModal = _deps.showConfirmationModal;

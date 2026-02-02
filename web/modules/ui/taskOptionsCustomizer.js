@@ -15,7 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -308,7 +308,7 @@ export class TaskOptionsCustomizer {
             sessionStorage.removeItem('reopenTaskCustomizer');
 
             // Wait a bit for everything to be ready
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, UI_TIMEOUTS.MODAL_ANIMATION));
 
             // Get current cycle and re-open modal
             const state = this.deps.AppState?.get();
@@ -696,7 +696,7 @@ export class TaskOptionsCustomizer {
             if (newRemindersEnabled) {
                 const startReminders = this.deps.startReminders;
                 if (typeof startReminders === 'function') {
-                    setTimeout(() => startReminders(), 200);
+                    setTimeout(() => startReminders(), UI_TIMEOUTS.ANIMATION_SHORT);
                 }
             } else {
                 const stopReminders = this.deps.stopReminders;

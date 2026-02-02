@@ -52,7 +52,8 @@ const di = createDIModule('StatsPanel', {
     clearedTasksManager: optional(null),
     achievementsManager: optional(null),
     getModal: optional(null),
-    trackAction: optional(null)
+    trackAction: optional(null),
+    gesturePanelManager: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -173,7 +174,7 @@ export class StatsPanelManager {
         }
 
         this.setupEventListeners();
-        this.initializeView();
+        this.initView();
 
         // ✅ FIX: Listen for data-ready events to update stats on session load
         this.setupDataReadyListener();
@@ -675,13 +676,17 @@ export class StatsPanelManager {
         }
         
         // Check if we've reached the swipe threshold
-        if (this.state.wheelDeltaX > this.config.SWIPE_THRESHOLD && !this.state.isStatsVisible) {
-            this.state.isStatsVisible = true;
-            this.showStatsPanel();
+        if (this.state.wheelDeltaX > this.config.SWIPE_THRESHOLD) {
+            if (!this.state.isStatsVisible) {
+                this.state.isStatsVisible = true;
+                this.showStatsPanel();
+            }
             this.state.wheelDeltaX = 0;
-        } else if (this.state.wheelDeltaX < -this.config.SWIPE_THRESHOLD && this.state.isStatsVisible) {
-            this.state.isStatsVisible = false;
-            this.showTaskView();
+        } else if (this.state.wheelDeltaX < -this.config.SWIPE_THRESHOLD) {
+            if (this.state.isStatsVisible) {
+                this.state.isStatsVisible = false;
+                this.showTaskView();
+            }
             this.state.wheelDeltaX = 0;
         }
         
@@ -786,6 +791,7 @@ export class StatsPanelManager {
         }
 
         this.state.isStatsVisible = false;
+        this._syncGestureManager(false);
         this.announceViewChange("Task view opened");
         this.updateNavDots();
     }
@@ -816,14 +822,29 @@ export class StatsPanelManager {
         }
 
         this.state.isStatsVisible = true;
+        this._syncGestureManager(true);
         this.announceViewChange("Stats panel opened");
         this.updateNavDots();
     }
 
     /**
+     * Sync gesture panel manager state when view changes externally
+     * @param {boolean} isVisible - Whether stats panel is visible
+     * @private
+     */
+    _syncGestureManager(isVisible) {
+        const gpm = _deps.gesturePanelManager;
+        // gesturePanelManager may be a getter function that returns the instance
+        const instance = typeof gpm === 'function' ? gpm() : gpm;
+        if (instance?.syncStatsVisibility) {
+            instance.syncStatsVisibility(isVisible);
+        }
+    }
+
+    /**
      * Initialize the view state
      */
-    initializeView() {
+    initView() {
         // Start with task view visible
         if (this.elements.slideLeft) {
             this.elements.slideLeft.classList.add("hide");

@@ -172,10 +172,10 @@ class PluginManager {
         this.hooks = new Map();
         
         // Initialize built-in event hooks
-        this.initializeEventHooks();
+        this.initEventHooks();
     }
 
-    initializeEventHooks() {
+    initEventHooks() {
         // These events will be triggered by the main app
         this.hooks.set('taskAdded', []);
         this.hooks.set('taskCompleted', []);

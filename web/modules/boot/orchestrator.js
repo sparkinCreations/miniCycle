@@ -460,7 +460,7 @@ async function runBootSequence() {
     (async () => {
       // Load app data - fix any task validation issues first
       appContextMod.state?.()?.fixTaskValidationIssues?.();
-      await deps.core.initializeAppWithAutoMigration({ forceMode: true });
+      await deps.core.initAppWithAutoMigration({ forceMode: true });
 
       // Initialize UI (single entrypoint - all DOM/listeners/finalization)
       await initUIBoot({ GlobalUtils, deps, appContextMod });

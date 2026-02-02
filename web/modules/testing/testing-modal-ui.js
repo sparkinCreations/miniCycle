@@ -239,7 +239,7 @@ export function setupResultsAreaResize() {
 /**
  * Initialize drag functionality for testing modal
  */
-export function initializeTestingModalDrag() {
+export function initTestingModalDrag() {
     const deps = getDeps();
     const testingModal = deps.getModal('testing');
     if (!testingModal) return;
@@ -786,7 +786,7 @@ export function addTestResultsHint() {
  * @param {Function} callbacks.setupTestButtons - Button setup function
  * @param {Function} callbacks.setupResultsControls - Results controls setup function
  */
-export function initializeTestingModalEnhancements(callbacks = {}) {
+export function initTestingModalEnhancements(callbacks = {}) {
     setupTestingTabs();
     setupTestResultsEnhancements();
     addTestResultsHint();
@@ -805,7 +805,7 @@ export function initializeTestingModalEnhancements(callbacks = {}) {
                     showNotification("Testing panel closed", "info", 1500);
                 } else {
                     testingModal.style.display = "flex";
-                    initializeTestingModalDrag();
+                    initTestingModalDrag();
                     showNotification("Testing panel opened", "success", 2000);
 
                     setTimeout(() => {

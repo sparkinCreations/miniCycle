@@ -4,7 +4,7 @@
  */
 
 import {
-    initializeRecurringModules,
+    initRecurringModules,
     testRecurringIntegration,
     setRecurringIntegrationDependencies
 } from '../modules/recurring/recurringIntegration.js';
@@ -175,7 +175,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         // Set up DI dependencies
         setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
+        const result = await initRecurringModules({ AppMeta: { version: 'test' } });
 
         if (!result) {
             throw new Error('Initialization did not return result');
@@ -208,7 +208,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         window.FeatureFlags = mockFeatureFlags;
         setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
+        const result = await initRecurringModules({ AppMeta: { version: 'test' } });
 
         // Phase 3: check returned object (no window.* exports)
         if (!result.core) {
@@ -238,7 +238,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         window.FeatureFlags = mockFeatureFlags;
         setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
+        const result = await initRecurringModules({ AppMeta: { version: 'test' } });
 
         // Phase 3: check returned object (no window.* exports)
         if (!result.panel) {
@@ -268,7 +268,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         window.FeatureFlags = mockFeatureFlags;
         setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
+        const result = await initRecurringModules({ AppMeta: { version: 'test' } });
 
         // Check coreAPI functions
         const requiredCoreFunctions = [
@@ -307,7 +307,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         setupDIDeps(null, mockShowNotification, mockFeatureFlags);
 
         try {
-            await initializeRecurringModules({ AppMeta: { version: 'test' } });
+            await initRecurringModules({ AppMeta: { version: 'test' } });
             throw new Error('Should have thrown error for missing AppState');
         } catch (error) {
             if (!error.message.includes('AppState') && !error.message.includes('missing required deps')) {
@@ -339,7 +339,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         ];
         setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        await initializeRecurringModules({ AppMeta: { version: 'test' } });
+        await initRecurringModules({ AppMeta: { version: 'test' } });
 
         if (!deferredCalled) {
             throw new Error('Deferred setup not called');
@@ -371,7 +371,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         window.FeatureFlags = mockFeatureFlags;
         setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
+        const result = await initRecurringModules({ AppMeta: { version: 'test' } });
 
         // Verify dependencies were configured by checking core is functional
         if (!result.core) {
@@ -398,7 +398,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         window.FeatureFlags = mockFeatureFlags;
         setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        await initializeRecurringModules({ AppMeta: { version: 'test' } });
+        await initRecurringModules({ AppMeta: { version: 'test' } });
 
         // Verify notification dependency works
         if (typeof window.showNotification !== 'function') {
@@ -425,7 +425,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
         // Should still initialize even if feature is disabled
-        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
+        const result = await initRecurringModules({ AppMeta: { version: 'test' } });
 
         if (!result) {
             throw new Error('Should initialize even with feature disabled');
@@ -446,7 +446,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         setupDIDeps(null, mockShowNotification, mockFeatureFlags);
 
         try {
-            await initializeRecurringModules({ AppMeta: { version: 'test' } });
+            await initRecurringModules({ AppMeta: { version: 'test' } });
             throw new Error('Should have thrown initialization error');
         } catch (error) {
             // Expected - error should be caught and rethrown
@@ -470,7 +470,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         setupDIDeps(null, mockShowNotification, mockFeatureFlags);
 
         try {
-            await initializeRecurringModules({ AppMeta: { version: 'test' } });
+            await initRecurringModules({ AppMeta: { version: 'test' } });
         } catch (error) {
             // Expected error
         }
@@ -501,7 +501,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         window.FeatureFlags = mockFeatureFlags;
         setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
+        const result = await initRecurringModules({ AppMeta: { version: 'test' } });
 
         // Phase 3: check returned coreAPI (no window.* exports)
         if (!result.coreAPI || typeof result.coreAPI.applyRecurringSettings !== 'function') {
@@ -527,7 +527,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         window.FeatureFlags = mockFeatureFlags;
         setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
+        const result = await initRecurringModules({ AppMeta: { version: 'test' } });
 
         // Phase 3: check returned coreAPI
         if (!result.coreAPI || typeof result.coreAPI.handleActivation !== 'function') {
@@ -553,7 +553,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         window.FeatureFlags = mockFeatureFlags;
         setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
+        const result = await initRecurringModules({ AppMeta: { version: 'test' } });
 
         // Phase 3: check returned panelAPI
         const panelFunctions = [

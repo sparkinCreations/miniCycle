@@ -48,6 +48,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { UI_TIMEOUTS } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -292,7 +293,7 @@ export function animateProgressBarFill() {
             progressBar.style.transition = "transform 0.2s ease-out";
             progressBar.style.transform = "scaleX(1)";
         }
-        setTimeout(resolve, 100); // Wait for animation + small buffer
+        setTimeout(resolve, UI_TIMEOUTS.STATS_UPDATE_DELAY); // Wait for animation + small buffer
     });
 }
 

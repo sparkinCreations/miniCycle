@@ -40,8 +40,8 @@ import {
 
 import {
     setupResultsAreaResize,
-    initializeTestingModalDrag,
-    initializeTestingModalEnhancements,
+    initTestingModalDrag,
+    initTestingModalEnhancements,
     addTestingModalDoubleClickToCenter,
     setupTestResultsEnhancements,
     openTestResultsInModal,
@@ -88,7 +88,7 @@ function setupTestingModal() {
     // Open testing modal
     safeAddEventListener(openTestingBtn, "click", () => {
         testingModal.style.display = "flex";
-        initializeTestingModalDrag();
+        initTestingModalDrag();
         showNotification("Testing panel opened", "info", 2000);
 
         // Setup ALL functionality AFTER modal is visible
@@ -167,7 +167,7 @@ export function initTestingModal(dependencies = {}) {
     setupTestingModal();
 
     // Initialize UI enhancements with callbacks for button setup
-    initializeTestingModalEnhancements({
+    initTestingModalEnhancements({
         setupTestButtons,
         setupResultsControls: () => setupResultsControls(setupResultsAreaResize)
     });
@@ -193,7 +193,7 @@ console.log('Testing Modal orchestrator loaded (DI-pure)');
 
 export {
     setupTestingModal,
-    initializeTestingModalEnhancements,
+    initTestingModalEnhancements,
     openStorageViewer,
     closeStorageViewer,
     appendToTestResults,

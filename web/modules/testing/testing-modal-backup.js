@@ -14,7 +14,7 @@ import {
     safeShowConfirmationModal,
     escapeHtml
 } from './testing-modal-core.js';
-import { DOM_SELECTORS } from '../core/constants.js';
+import { DOM_SELECTORS, STORAGE_KEYS } from '../core/constants.js';
 
 // ==========================================
 // BUTTON SETUP
@@ -488,11 +488,11 @@ export async function restoreFromBackup() {
                         const isSchema25 = restoredData.schemaVersion === '2.5' || restoredData.schemaVersion === 2.5;
 
                         if (isSchema25) {
-                            localStorage.setItem('miniCycleData', JSON.stringify(restoredData));
+                            localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(restoredData));
                             appendToTestResults(`Restored Schema 2.5 data to localStorage\n`);
                         } else {
                             appendToTestResults(`Detected legacy format backup\n`);
-                            localStorage.removeItem('miniCycleData');
+                            localStorage.removeItem(STORAGE_KEYS.DATA);
 
                             if (restoredData.cycles || restoredData.miniCycleStorage) {
                                 const cyclesData = restoredData.cycles || restoredData.miniCycleStorage;
@@ -522,10 +522,10 @@ export async function restoreFromBackup() {
                         const isSchema25 = parsed.schemaVersion === '2.5' || parsed.schemaVersion === 2.5;
 
                         if (isSchema25) {
-                            localStorage.setItem('miniCycleData', JSON.stringify(parsed));
+                            localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(parsed));
                             appendToTestResults(`Restored Schema 2.5 data from localStorage backup\n`);
                         } else {
-                            localStorage.removeItem('miniCycleData');
+                            localStorage.removeItem(STORAGE_KEYS.DATA);
                             const isAuto = selectedBackup.type === 'localstorage-auto';
 
                             if (isAuto) {

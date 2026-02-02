@@ -50,22 +50,25 @@
 
 | # | Severity | Issue | Location | Status |
 |---|----------|-------|----------|--------|
-| 4.1 | HIGH | Three init naming patterns: `init*` (35), `initialize*` (8), `setup*` (12) | Codebase-wide | Documented |
-| 4.2 | HIGH | Magic timeout numbers (200-3000ms) not using `constants.js` | 15+ files | Documented |
+| 4.1 | HIGH | Three init naming patterns: `init*` (35), `initialize*` (8), `setup*` (12) | Codebase-wide | Fixed ✅ |
+| 4.2 | HIGH | Magic timeout numbers (200-3000ms) not using `constants.js` | 15+ files | Fixed ✅ |
 | 4.3 | HIGH | Init functions inconsistently return: instance, Promise, or void | Various | Documented |
-| 4.4 | MEDIUM | CSS class names as magic strings (`"hidden"`, `"visible"`) — no `DOM_CLASSES` | 50+ occurrences | Documented |
-| 4.5 | MEDIUM | localStorage keys as magic strings (`"miniCycleData"`) — no `STORAGE_KEYS` | 15+ occurrences | Documented |
+| 4.4 | MEDIUM | CSS class names as magic strings (`"hidden"`, `"visible"`) — no `DOM_CLASSES` | 50+ occurrences | Partial ✅ |
+| 4.5 | MEDIUM | localStorage keys as magic strings (`"miniCycleData"`) — no `STORAGE_KEYS` | 15+ occurrences | Fixed ✅ |
 | 4.6 | MEDIUM | Three modal close methods coexist | `modalManager.js`, various | Documented |
 | 4.7 | MEDIUM | Three idempotency guard naming patterns | Various | Documented |
 
-**Note:** Items 4.1–4.7 are style/refactor scope. Documenting conventions here; large-scale rename deferred.
+**Fixes applied:**
+- 4.1: All 15 `initialize*` functions renamed to `init*` across modules, tests, archives, and docs
+- 4.2: 24 magic timeout numbers replaced with `UI_TIMEOUTS` constants across 14 files
+- 4.4: `DOM_CLASSES` constant object added to `constants.js` (34 classes); partial migration to consumers
+- 4.5: `STORAGE_KEYS` constant object added to `constants.js` (12 keys); all 12 consumer files migrated
 
-**Recommended conventions (for new code):**
-- Init functions: use `init*` (not `initialize*` or `setup*`)
+**Remaining conventions (for new code):**
 - Idempotency guards: use `_[methodName]Initialized`
-- Timeouts: add to `constants.js` `UI_TIMEOUTS` / `TASK_TIMEOUTS` objects
-- CSS classes: add `DOM_CLASSES` to `constants.js` when next touching a file
-- Storage keys: add `STORAGE_KEYS` to `constants.js` when next touching a file
+- Init return values (4.3): standardize incrementally
+- Modal close methods (4.6): addressed by modal registry centralization
+- Idempotency guard names (4.7): standardize incrementally
 
 ---
 
@@ -105,8 +108,12 @@ No `eval()`, `new Function()`, or dynamic code execution found.
 - [x] 5.5: Replace `document.write` with DOM API in testing print (testing-modal-ui.js — now uses createElement/textContent)
 - 3.1 + 3.3: moduleLoader debug exports (`getLoadedModule` etc.) — intentional inspection hooks, kept as-is
 
-### Documented Only (Style — apply incrementally)
-- 4.1–4.7: Naming conventions, magic numbers, CSS/storage constants
+### Naming & Consistency (Style)
+- [x] 4.1: Renamed 15 `initialize*` functions to `init*` across modules, tests, archives, docs
+- [x] 4.2: Replaced 24 magic timeout numbers with `UI_TIMEOUTS` constants across 14 files
+- [x] 4.4: Added `DOM_CLASSES` (34 classes) to constants.js; partial consumer migration
+- [x] 4.5: Added `STORAGE_KEYS` (12 keys) to constants.js; all 12 consumer files migrated
+- 4.3, 4.6, 4.7: Documented only — apply incrementally
 
 ---
 

@@ -10,6 +10,8 @@
  * @module utils/debugMode
  */
 
+import { STORAGE_KEYS } from '../core/constants.js';
+
 // Store original console methods
 const originalConsole = {
     log: console.log.bind(console),
@@ -49,7 +51,7 @@ function getDebugFromState() {
 
     // Fallback to localStorage for early boot (before AppState is ready)
     try {
-        const raw = localStorage.getItem('miniCycleData');
+        const raw = localStorage.getItem(STORAGE_KEYS.DATA);
         if (!raw) return false;
         const data = JSON.parse(raw);
         return data?.settings?.debugMode === true;

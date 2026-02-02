@@ -12,6 +12,8 @@
  * - updateCycleData(): Update specific cycle data
  */
 
+import { STORAGE_KEYS } from './constants.js';
+
 // ============================================================================
 // DEPENDENCY INJECTION
 // ============================================================================
@@ -84,7 +86,7 @@ export function loadMiniCycleData() {
     }
 
     // Fallback to localStorage
-    const data = localStorage.getItem("miniCycleData");
+    const data = localStorage.getItem(STORAGE_KEYS.DATA);
     if (data) {
         try {
             const parsed = JSON.parse(data);
@@ -114,7 +116,7 @@ export function loadMiniCycleData() {
 
     // CREATE INITIAL DATA IF NONE EXISTS
     // SAFETY CHECK: Verify localStorage truly has no data before creating fresh data
-    const existingData = localStorage.getItem("miniCycleData");
+    const existingData = localStorage.getItem(STORAGE_KEYS.DATA);
     if (existingData) {
         console.error('❌ Data exists in localStorage but failed to parse. NOT creating fresh data to prevent data loss.');
         console.error('❌ Existing data length:', existingData.length, 'chars');
@@ -125,7 +127,7 @@ export function loadMiniCycleData() {
     _injectedCreateInitialSchema25Data?.();
 
     // Try again after creating
-    const newData = localStorage.getItem("miniCycleData");
+    const newData = localStorage.getItem(STORAGE_KEYS.DATA);
     if (newData) {
         const parsed = JSON.parse(newData);
         const activeCycleId = parsed.appState.activeCycleId;

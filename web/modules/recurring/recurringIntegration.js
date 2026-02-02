@@ -60,7 +60,7 @@ export function setRecurringIntegrationDependencies(dependencies) {
  * @param {Object} options.AppMeta - App metadata containing version
  * @returns {Promise<Object>} Object containing core and panel instances
  */
-export async function initializeRecurringModules(options = {}) {
+export async function initRecurringModules(options = {}) {
     console.log('🔄 Initializing recurring task modules...');
 
     // Populate DI container from moduleLoader-provided dependencies
@@ -362,7 +362,7 @@ export async function initializeRecurringModules(options = {}) {
 
 /**
  * Test function to verify recurring modules are working (DI-pure)
- * @param {Object} recurringModules - The modules object returned from initializeRecurringModules
+ * @param {Object} recurringModules - The modules object returned from initRecurringModules
  * @returns {Object} Test results
  */
 export function testRecurringIntegration(recurringModules = null) {

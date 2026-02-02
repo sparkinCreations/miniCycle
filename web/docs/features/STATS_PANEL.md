@@ -357,7 +357,7 @@ const statsPanel = new StatsPanelManager();
 | `showTaskView()` | Slide back to task view |
 | `updateStatsPanel()` | Refresh all statistics |
 | `getStatistics()` | Get current stats object |
-| `initializeView()` | Reset to initial state |
+| `initView()` | Reset to initial state |
 
 ### Events Listened
 

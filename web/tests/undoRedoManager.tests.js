@@ -50,7 +50,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
     const {
         setUndoRedoManagerDependencies,
         wireUndoRedoUI,
-        initializeUndoRedoButtons,
+        initUndoRedoButtons,
         captureInitialSnapshot,
         setupStateBasedUndoRedo,
         enableUndoSystemOnFirstInteraction,
@@ -66,8 +66,8 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         onCycleCreated,
         onCycleDeleted,
         onCycleRenamed,
-        initializeUndoSystemForApp,
-        initializeUndoIndexedDB,
+        initUndoSystemForApp,
+        initUndoIndexedDB,
         saveUndoStackToIndexedDB,
         loadUndoStackFromIndexedDB,
         clearUndoCache
@@ -281,12 +281,12 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    await test('initializeUndoRedoButtons sets hidden state', async () => {
+    await test('initUndoRedoButtons sets hidden state', async () => {
         const mockDeps = createMockDependencies();
         setUndoRedoManagerDependencies(mockDeps);
 
         // Initialize buttons (creates them via mock)
-        initializeUndoRedoButtons();
+        initUndoRedoButtons();
 
         // Get the buttons that were initialized
         const undoBtn = mockDeps.getElementById('undo-btn');
@@ -300,13 +300,13 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    await test('initializeUndoRedoButtons handles missing buttons', async () => {
+    await test('initUndoRedoButtons handles missing buttons', async () => {
         const mockDeps = createMockDependencies();
         mockDeps.getElementById = () => null;
         setUndoRedoManagerDependencies(mockDeps);
 
         // Should not throw
-        initializeUndoRedoButtons();
+        initUndoRedoButtons();
     });
 
     await test('captureInitialSnapshot captures first snapshot', async () => {
@@ -1638,12 +1638,12 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
     // === 10. INDEXEDDB PERSISTENCE (4 tests) ===
     resultsDiv.innerHTML += '<h4 class="test-section">💾 IndexedDB Persistence</h4>';
 
-    await test('initializeUndoIndexedDB returns a promise', async () => {
+    await test('initUndoIndexedDB returns a promise', async () => {
         // Should return a promise (may fail in test env without full IndexedDB)
-        const result = initializeUndoIndexedDB();
+        const result = initUndoIndexedDB();
 
         if (!(result instanceof Promise)) {
-            throw new Error('initializeUndoIndexedDB should return a promise');
+            throw new Error('initUndoIndexedDB should return a promise');
         }
 
         // Wait for it to settle (may reject in test env)

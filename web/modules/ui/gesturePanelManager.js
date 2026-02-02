@@ -281,13 +281,17 @@ export class GesturePanelManager {
         }
 
         // Check if we've reached the swipe threshold
-        if (this.state.wheelDeltaX > this.config.SWIPE_THRESHOLD && !this.state.isStatsVisible) {
-            this.state.isStatsVisible = true;
-            this._triggerShowStatsPanel();
+        if (this.state.wheelDeltaX > this.config.SWIPE_THRESHOLD) {
+            if (!this.state.isStatsVisible) {
+                this.state.isStatsVisible = true;
+                this._triggerShowStatsPanel();
+            }
             this.state.wheelDeltaX = 0;
-        } else if (this.state.wheelDeltaX < -this.config.SWIPE_THRESHOLD && this.state.isStatsVisible) {
-            this.state.isStatsVisible = false;
-            this._triggerShowTaskView();
+        } else if (this.state.wheelDeltaX < -this.config.SWIPE_THRESHOLD) {
+            if (this.state.isStatsVisible) {
+                this.state.isStatsVisible = false;
+                this._triggerShowTaskView();
+            }
             this.state.wheelDeltaX = 0;
         }
 

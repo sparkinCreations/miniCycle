@@ -804,7 +804,7 @@
                 window.setRecurringCoreDependencies = mod.setRecurringCoreDependencies;
             } else if (moduleKey === 'recurringIntegration') {
                 const mod = await import(`../modules/recurring/recurringIntegration.js?v=${cacheBuster}`);
-                window.initializeRecurringModules = mod.initializeRecurringModules;
+                window.initRecurringModules = mod.initRecurringModules;
                 window.testRecurringIntegration = mod.testRecurringIntegration;
             } else if (moduleKey === 'recurringPanel') {
                 const mod = await import(`../modules/recurring/recurringPanel.js?v=${cacheBuster}`);
@@ -845,7 +845,7 @@
                 window.performSchema25Migration = mod.performSchema25Migration;
                 window.validateAllMiniCycleTasksLenient = mod.validateAllMiniCycleTasksLenient;
                 window.fixTaskValidationIssues = mod.fixTaskValidationIssues;
-                window.initializeAppWithAutoMigration = mod.initializeAppWithAutoMigration;
+                window.initAppWithAutoMigration = mod.initAppWithAutoMigration;
                 window.forceAppMigration = mod.forceAppMigration;
             } else if (moduleKey === 'dueDates') {
                 const mod = await import(`../modules/features/dueDates.js?v=${cacheBuster}`);
@@ -863,7 +863,7 @@
             } else if (moduleKey === 'routineSwitcher') {
                 const mod = await import(`../modules/routine/routineSwitcher.js?v=${cacheBuster}`);
                 window.RoutineSwitcher = mod.RoutineSwitcher;
-                window.initializeRoutineSwitcher = mod.initializeRoutineSwitcher;
+                window.initRoutineSwitcher = mod.initRoutineSwitcher;
                 window.switchMiniCycle = mod.switchMiniCycle;
                 window.renameMiniCycle = mod.renameMiniCycle;
                 window.deleteMiniCycle = mod.deleteMiniCycle;
@@ -876,13 +876,13 @@
                 const mod = await import(`../modules/routine/routineManager.js?v=${cacheBuster}`);
                 window.RoutineManager = mod.RoutineManager;
                 window.setRoutineManagerDependencies = mod.setRoutineManagerDependencies;
-                window.initializeRoutineManager = mod.initializeRoutineManager;
+                window.initRoutineManager = mod.initRoutineManager;
                 window.getRoutineManager = mod.getRoutineManager;
             } else if (moduleKey === 'undoRedoManager') {
                 const mod = await import(`../modules/ui/undoRedoManager.js?v=${cacheBuster}`);
                 window.setUndoRedoManagerDependencies = mod.setUndoRedoManagerDependencies;
                 window.wireUndoRedoUI = mod.wireUndoRedoUI;
-                window.initializeUndoRedoButtons = mod.initializeUndoRedoButtons;
+                window.initUndoRedoButtons = mod.initUndoRedoButtons;
                 window.captureInitialSnapshot = mod.captureInitialSnapshot;
                 window.setupStateBasedUndoRedo = mod.setupStateBasedUndoRedo;
                 window.enableUndoSystemOnFirstInteraction = mod.enableUndoSystemOnFirstInteraction;
@@ -890,7 +890,7 @@
                 window.performStateBasedUndo = mod.performStateBasedUndo;
                 window.performStateBasedRedo = mod.performStateBasedRedo;
                 window.updateUndoRedoButtonStates = mod.updateUndoRedoButtonStates;
-                window.initializeUndoSystemForApp = mod.initializeUndoSystemForApp;
+                window.initUndoSystemForApp = mod.initUndoSystemForApp;
             } else if (moduleKey === 'gamesManager') {
                 const mod = await import(`../modules/ui/gamesManager.js?v=${cacheBuster}`);
                 window.GamesManager = mod.default;
@@ -1152,7 +1152,7 @@
                     resultsDiv.innerHTML = '<p>✅ RecurringCore loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'recurringIntegration') {
                     const mod = await import(`../modules/recurring/recurringIntegration.js?v=${cacheBuster}`);
-                    window.initializeRecurringModules = mod.initializeRecurringModules;
+                    window.initRecurringModules = mod.initRecurringModules;
                     window.testRecurringIntegration = mod.testRecurringIntegration;
                     currentModule = 'recurringIntegration';
                     resultsDiv.innerHTML = '<p>✅ RecurringIntegration loaded. Click "Run Tests" to begin.</p>';
@@ -1204,7 +1204,7 @@
                     window.performSchema25Migration = mod.performSchema25Migration;
                     window.validateAllMiniCycleTasksLenient = mod.validateAllMiniCycleTasksLenient;
                     window.fixTaskValidationIssues = mod.fixTaskValidationIssues;
-                    window.initializeAppWithAutoMigration = mod.initializeAppWithAutoMigration;
+                    window.initAppWithAutoMigration = mod.initAppWithAutoMigration;
                     window.forceAppMigration = mod.forceAppMigration;
                     currentModule = 'migrationManager';
                     resultsDiv.innerHTML = '<p>✅ MigrationManager loaded. Click "Run Tests" to begin.</p>';
@@ -1230,7 +1230,7 @@
                 } else if (moduleName === 'routineSwitcher') {
                     const mod = await import(`../modules/routine/routineSwitcher.js?v=${cacheBuster}`);
                     window.RoutineSwitcher = mod.RoutineSwitcher;
-                    window.initializeRoutineSwitcher = mod.initializeRoutineSwitcher;
+                    window.initRoutineSwitcher = mod.initRoutineSwitcher;
                     // Expose wrapper functions as globals
                     window.switchMiniCycle = mod.switchMiniCycle;
                     window.renameMiniCycle = mod.renameMiniCycle;
@@ -1246,7 +1246,7 @@
                     const mod = await import(`../modules/routine/routineManager.js?v=${cacheBuster}`);
                     window.RoutineManager = mod.RoutineManager;
                     window.setRoutineManagerDependencies = mod.setRoutineManagerDependencies;
-                    window.initializeRoutineManager = mod.initializeRoutineManager;
+                    window.initRoutineManager = mod.initRoutineManager;
                     window.getRoutineManager = mod.getRoutineManager;
                     currentModule = 'routineManager';
                     resultsDiv.innerHTML = '<p>✅ RoutineManager loaded. Click "Run Tests" to begin.</p>';
@@ -1254,7 +1254,7 @@
                     const mod = await import(`../modules/ui/undoRedoManager.js?v=${cacheBuster}`);
                     window.setUndoRedoManagerDependencies = mod.setUndoRedoManagerDependencies;
                     window.wireUndoRedoUI = mod.wireUndoRedoUI;
-                    window.initializeUndoRedoButtons = mod.initializeUndoRedoButtons;
+                    window.initUndoRedoButtons = mod.initUndoRedoButtons;
                     window.captureInitialSnapshot = mod.captureInitialSnapshot;
                     window.setupStateBasedUndoRedo = mod.setupStateBasedUndoRedo;
                     window.enableUndoSystemOnFirstInteraction = mod.enableUndoSystemOnFirstInteraction;
@@ -1262,7 +1262,7 @@
                     window.performStateBasedUndo = mod.performStateBasedUndo;
                     window.performStateBasedRedo = mod.performStateBasedRedo;
                     window.updateUndoRedoButtonStates = mod.updateUndoRedoButtonStates;
-                    window.initializeUndoSystemForApp = mod.initializeUndoSystemForApp;
+                    window.initUndoSystemForApp = mod.initUndoSystemForApp;
                     currentModule = 'undoRedoManager';
                     resultsDiv.innerHTML = '<p>✅ UndoRedoManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'gamesManager') {

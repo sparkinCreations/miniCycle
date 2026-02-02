@@ -11,6 +11,8 @@
  * @module consoleCapture
  */
 
+import { STORAGE_KEYS } from '../core/constants.js';
+
 // Module-level deps for late injection (DI-pure, no window.* fallbacks)
 let _deps = {
     showNotification: null,
@@ -72,8 +74,8 @@ export class MiniCycleConsoleCapture {
         // 1. We have old schema data (migration might happen)
         // 2. OR we're in development/testing mode
         // 3. OR migration is explicitly enabled
-        const hasOldData = localStorage.getItem("miniCycleStorage") && !localStorage.getItem("miniCycleData");
-        const isTestingMode = localStorage.getItem("miniCycle_enableAutoConsoleCapture") === "true";
+        const hasOldData = localStorage.getItem(STORAGE_KEYS.LEGACY_DATA) && !localStorage.getItem(STORAGE_KEYS.DATA);
+        const isTestingMode = localStorage.getItem(STORAGE_KEYS.CONSOLE_CAPTURE_ENABLED) === "true";
         const migrationMode = sessionStorage.getItem('miniCycleLegacyModeActive') === 'true';
         
         return hasOldData || isTestingMode || migrationMode;
@@ -89,7 +91,7 @@ export class MiniCycleConsoleCapture {
         
         // Load any existing buffer from previous sessions
         try {
-            const storedBuffer = localStorage.getItem("miniCycle_capturedConsoleBuffer");
+            const storedBuffer = localStorage.getItem(STORAGE_KEYS.CONSOLE_CAPTURE_BUFFER);
             if (storedBuffer) {
                 const storedLogs = JSON.parse(storedBuffer);
                 this.consoleLogBuffer = Array.isArray(storedLogs) ? storedLogs : [];
@@ -180,13 +182,13 @@ export class MiniCycleConsoleCapture {
     // Save buffer to storage with error handling
     saveBufferToStorage() {
         try {
-            localStorage.setItem("miniCycle_capturedConsoleBuffer", JSON.stringify(this.consoleLogBuffer));
+            localStorage.setItem(STORAGE_KEYS.CONSOLE_CAPTURE_BUFFER, JSON.stringify(this.consoleLogBuffer));
         } catch (e) {
             // Storage might be full, remove old entries
             if (this.consoleLogBuffer.length > 100) {
                 this.consoleLogBuffer = this.consoleLogBuffer.slice(-100);
                 try {
-                    localStorage.setItem("miniCycle_capturedConsoleBuffer", JSON.stringify(this.consoleLogBuffer));
+                    localStorage.setItem(STORAGE_KEYS.CONSOLE_CAPTURE_BUFFER, JSON.stringify(this.consoleLogBuffer));
                 } catch (e2) {
                     console.warn("⚠️ Unable to save console buffer to localStorage");
                 }
@@ -236,7 +238,7 @@ export class MiniCycleConsoleCapture {
         this.autoStarted = false;
         
         // Clear the stored buffer
-        localStorage.removeItem("miniCycle_capturedConsoleBuffer");
+        localStorage.removeItem(STORAGE_KEYS.CONSOLE_CAPTURE_BUFFER);
         
         console.log("⏹️ Enhanced console capture stopped - all logging restored to normal");
     }
@@ -246,7 +248,7 @@ export class MiniCycleConsoleCapture {
         let allLogs = [...this.consoleLogBuffer];
         
         // Also try to get any stored logs from localStorage
-        const storedBuffer = localStorage.getItem("miniCycle_capturedConsoleBuffer");
+        const storedBuffer = localStorage.getItem(STORAGE_KEYS.CONSOLE_CAPTURE_BUFFER);
         if (storedBuffer) {
             try {
                 const storedLogs = JSON.parse(storedBuffer);
@@ -308,7 +310,7 @@ export class MiniCycleConsoleCapture {
 
     clearAllConsoleLogs() {
         this.consoleLogBuffer = [];
-        localStorage.removeItem("miniCycle_capturedConsoleBuffer");
+        localStorage.removeItem(STORAGE_KEYS.CONSOLE_CAPTURE_BUFFER);
         this.appendToTestResults("🧹 All console logs cleared (including stored buffer)\n");
         this.appendToTestResults("✨ Ready to capture new migration activity\n\n");
 
@@ -320,7 +322,7 @@ export class MiniCycleConsoleCapture {
         let allLogs = [...this.consoleLogBuffer];
         
         // Also get stored logs
-        const storedBuffer = localStorage.getItem("miniCycle_capturedConsoleBuffer");
+        const storedBuffer = localStorage.getItem(STORAGE_KEYS.CONSOLE_CAPTURE_BUFFER);
         if (storedBuffer) {
             try {
                 const storedLogs = JSON.parse(storedBuffer);
@@ -425,7 +427,7 @@ export class MiniCycleConsoleCapture {
             capturing: this.consoleCapturing,
             bufferSize: this.consoleLogBuffer.length,
             autoStarted: this.autoStarted,
-            hasStoredBuffer: !!localStorage.getItem("miniCycle_capturedConsoleBuffer")
+            hasStoredBuffer: !!localStorage.getItem(STORAGE_KEYS.CONSOLE_CAPTURE_BUFFER)
         };
     }
 }

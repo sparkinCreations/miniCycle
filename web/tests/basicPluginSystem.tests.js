@@ -357,7 +357,7 @@ export async function runBasicPluginSystemTests(resultsDiv, isPartOfSuite = fals
 
     await test('PluginManager initializes built-in hooks', () => {
         const manager = new PluginManager();
-        // Note: hooks are stored with camelCase keys in initializeEventHooks
+        // Note: hooks are stored with camelCase keys in initEventHooks
         const expectedHooks = ['taskAdded', 'taskCompleted', 'taskDeleted', 'cycleCompleted', 'cycleReset'];
 
         for (const hookName of expectedHooks) {

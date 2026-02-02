@@ -16,6 +16,8 @@
  * @module deviceDetection
  */
 
+import { STORAGE_KEYS } from '../core/constants.js';
+
 // ✅ appInit now injected via DI (no static import - enables versioning)
 
 // Module-level deps for late injection (DI-pure, no window.* fallbacks)
@@ -78,7 +80,7 @@ export class DeviceDetectionManager {
   }
 
   async checkManualOverride(userAgent) {
-    const manualOverride = localStorage.getItem('miniCycleForceFullVersion');
+    const manualOverride = localStorage.getItem(STORAGE_KEYS.FORCE_FULL_VERSION);
     if (manualOverride === 'true') {
       console.log('🚀 Manual override detected - user chose full version');
 
@@ -214,7 +216,7 @@ export class DeviceDetectionManager {
     
     let lastDetectionVersion = null;
     try {
-      const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+      const fullSchemaData = JSON.parse(localStorage.getItem(STORAGE_KEYS.DATA));
       lastDetectionVersion = fullSchemaData.settings?.deviceCompatibility?.lastDetectionVersion;
     } catch (error) {
       console.warn('⚠️ Error reading detection version from Schema 2.5:', error);
@@ -255,7 +257,7 @@ export class DeviceDetectionManager {
     let detectionData = null;
     
     try {
-      const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+      const fullSchemaData = JSON.parse(localStorage.getItem(STORAGE_KEYS.DATA));
       const compatibility = fullSchemaData.settings?.deviceCompatibility;
       if (compatibility) {
         storedDecision = compatibility.shouldUseLite;
@@ -350,7 +352,7 @@ export class DeviceDetectionManager {
     }
 
     // Also clear legacy keys for cleanup
-    localStorage.removeItem('miniCycleForceFullVersion');
+    localStorage.removeItem(STORAGE_KEYS.FORCE_FULL_VERSION);
     console.log('🧹 Cleared device detection cache');
   }
 }

@@ -17,7 +17,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -276,7 +276,7 @@ export class MiniCycleReminders {
             if (!wasEnabled) {
                 this.deps.showNotification("🔔 Task reminders enabled!", "success", 2500);
             }
-            setTimeout(() => this.startReminders(), 200);
+            setTimeout(() => this.startReminders(), UI_TIMEOUTS.ANIMATION_SHORT);
         } else {
             console.log("🔕 Global Reminders Disabled — Stopping reminders...");
             if (wasEnabled) {

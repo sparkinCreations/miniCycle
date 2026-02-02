@@ -50,7 +50,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { TASK_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -454,7 +454,7 @@ export async function resetTasksImpl(deps = {}) {
             void headerLogo.offsetWidth;
             headerLogo.classList.add('logo-spin');
             // Remove class after animation completes
-            setTimeout(() => headerLogo.classList.remove('logo-spin'), 600);
+            setTimeout(() => headerLogo.classList.remove('logo-spin'), UI_TIMEOUTS.CLEAR_ANIMATION);
         }
 
         // Step 4: Perform core data reset

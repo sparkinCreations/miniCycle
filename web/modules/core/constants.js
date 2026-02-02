@@ -78,7 +78,19 @@ export const TASK_TIMEOUTS = Object.freeze({
 export const UI_TIMEOUTS = Object.freeze({
     CYCLE_SWITCH_TRANSITION: 300,  // 300ms - Delay during cycle switch
     STATS_UPDATE_DELAY: 100,       // 100ms - Stats panel update delay
-    WHEEL_RESET_DELAY: 15          // 15ms - Mouse wheel reset delay
+    WHEEL_RESET_DELAY: 15,         // 15ms - Mouse wheel reset delay
+    FOCUS_DELAY: 100,              // 100ms - Focus input after action
+    RESIZE_DEBOUNCE: 150,          // 150ms - Window resize debounce
+    ANIMATION_SHORT: 200,          // 200ms - Short animation / transition delay
+    NOTIFICATION_FADE: 300,        // 300ms - Notification removal animation
+    MODAL_ANIMATION: 500,          // 500ms - Modal open/close animation
+    CLEAR_ANIMATION: 600,          // 600ms - Cycle clear animation duration
+    BG_HIGHLIGHT_RESET: 800,       // 800ms - Background highlight reset
+    PAGE_RELOAD: 1000,             // 1000ms - Page reload after data operation
+    SESSION_BACKUP_DELAY: 1000,    // 1000ms - Session backup delay after boot
+    POST_RESTORE_RELOAD: 2500,     // 2500ms - Page reload after backup restoration
+    NOTIFICATION_LONG: 3000,       // 3000ms - Long notification duration
+    TOOLTIP_HIDE: 3000             // 3000ms - Tooltip auto-hide delay
 });
 
 /**
@@ -268,6 +280,89 @@ export const TIME_UNITS = Object.freeze({
     HOURS_PER_DAY: 24,
     DAYS_PER_WEEK: 7,
     MS_PER_DAY: 24 * 60 * 60 * 1000
+});
+
+// ============================================================================
+// STORAGE KEYS — Single source of truth for localStorage key strings
+// ============================================================================
+
+/**
+ * localStorage key constants
+ * Prevents typos and enables find-all-references
+ * @constant {Object}
+ */
+export const STORAGE_KEYS = Object.freeze({
+    DATA: 'miniCycleData',
+    LEGACY_DATA: 'miniCycleStorage',
+    LAST_USED: 'lastUsedMiniCycle',
+    REMINDERS: 'miniCycleReminders',
+    MILESTONE_UNLOCKS: 'milestoneUnlocks',
+    DARK_MODE: 'darkModeEnabled',
+    CURRENT_THEME: 'currentTheme',
+    FORCE_FULL_VERSION: 'miniCycleForceFullVersion',
+    CONSOLE_CAPTURE_ENABLED: 'miniCycle_enableAutoConsoleCapture',
+    CONSOLE_CAPTURE_BUFFER: 'miniCycle_capturedConsoleBuffer',
+    TEST_RUNNING: '__miniCycle_testRunning',
+    TIME_TRACKER: 'timeTrackerData'
+});
+
+// ============================================================================
+// DOM CSS CLASSES — Single source of truth for classList operations
+// ============================================================================
+
+/**
+ * CSS class name constants for classList.add/remove/toggle/contains
+ * Prevents typos and enables find-all-references
+ * @constant {Object}
+ */
+export const DOM_CLASSES = Object.freeze({
+    // ---- Visibility ----
+    HIDDEN: 'hidden',
+    VISIBLE: 'visible',
+    SHOW: 'show',
+    HIDE: 'hide',
+    COLLAPSED: 'collapsed',
+
+    // ---- State ----
+    ACTIVE: 'active',
+    SELECTED: 'selected',
+    CHECKED: 'checked',
+    DISABLED: 'disabled',
+
+    // ---- Task State ----
+    RECURRING: 'recurring',
+    HIGH_PRIORITY: 'high-priority',
+    KEPT_TASK: 'kept-task',
+    SHOW_DELETE_INDICATOR: 'show-delete-indicator',
+    DELETE_WHEN_COMPLETE_ACTIVE: 'delete-when-complete-active',
+    REMINDER_ACTIVE: 'reminder-active',
+    OVERDUE_TASK: 'overdue-task',
+
+    // ---- Drag & Drop ----
+    DRAGGING: 'dragging',
+    DRAGGABLE: 'draggable',
+    LONG_PRESSED: 'long-pressed',
+    REARRANGING: 'rearranging',
+    DROP_TARGET: 'drop-target',
+
+    // ---- Theme ----
+    DARK_MODE: 'dark-mode',
+    DARK_OCEAN: 'dark-ocean',
+    GOLDEN_GLOW: 'golden-glow',
+    THEME_DARK_OCEAN: 'theme-dark-ocean',
+    THEME_GOLDEN_GLOW: 'theme-golden-glow',
+
+    // ---- Animation ----
+    LOGO_SPIN: 'logo-spin',
+    COMPLETE_ANIMATION: 'mini-cycle-complete-animation',
+    CLEAR_ANIMATION: 'mini-cycle-clear-animation',
+    MILESTONE_ANIMATION: 'mini-cycle-milestone',
+
+    // ---- Layout ----
+    MODE_DESCRIPTION_VISIBLE: 'mode-description-visible',
+    HELP_WINDOW_SIDE: 'help-window-side',
+    ONBOARDING_ACTIVE: 'onboarding-active',
+    DROPDOWN_OPEN: 'dropdown-open'
 });
 
 // ============================================================================

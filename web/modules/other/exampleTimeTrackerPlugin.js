@@ -17,6 +17,7 @@
  */
 
 import { MiniCyclePlugin } from './basicPluginSystem.js';
+import { STORAGE_KEYS } from '../core/constants.js';
 
 /**
  * Time Tracker Plugin - tracks time spent on tasks
@@ -176,7 +177,7 @@ class TimeTrackerPlugin extends MiniCyclePlugin {
     saveTimeData(taskId, taskText, duration) {
         let timeData;
         try {
-            timeData = JSON.parse(localStorage.getItem('timeTrackerData') || '{}');
+            timeData = JSON.parse(localStorage.getItem(STORAGE_KEYS.TIME_TRACKER) || '{}');
         } catch (e) {
             console.warn('⚠️ Corrupted time tracker data, resetting');
             timeData = {};
@@ -194,13 +195,13 @@ class TimeTrackerPlugin extends MiniCyclePlugin {
             date: new Date().toISOString()
         });
 
-        localStorage.setItem('timeTrackerData', JSON.stringify(timeData));
+        localStorage.setItem(STORAGE_KEYS.TIME_TRACKER, JSON.stringify(timeData));
     }
 
     loadSavedData() {
         let timeData;
         try {
-            timeData = JSON.parse(localStorage.getItem('timeTrackerData') || '{}');
+            timeData = JSON.parse(localStorage.getItem(STORAGE_KEYS.TIME_TRACKER) || '{}');
         } catch (e) {
             console.warn('⚠️ Corrupted time tracker data');
             timeData = {};
@@ -230,7 +231,7 @@ class TimeTrackerPlugin extends MiniCyclePlugin {
     showTimeReport() {
         let timeData;
         try {
-            timeData = JSON.parse(localStorage.getItem('timeTrackerData') || '{}');
+            timeData = JSON.parse(localStorage.getItem(STORAGE_KEYS.TIME_TRACKER) || '{}');
         } catch (e) {
             console.warn('⚠️ Corrupted time tracker data');
             timeData = {};

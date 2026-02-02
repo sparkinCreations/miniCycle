@@ -517,7 +517,7 @@ console.log('✅ RoutineManager module loaded (Phase 3 - no window.* exports)');
  * @param {Object} dependencies - Dependency injection object
  * @returns {Promise<RoutineManager>} The initialized RoutineManager instance
  */
-export async function initializeRoutineManager(dependencies) {
+export async function initRoutineManager(dependencies) {
     // Dynamically import utilities with version for cache-busting
     const version = globalThis.APP_VERSION || '1.857';
 
