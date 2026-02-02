@@ -1,141 +1,131 @@
-# 🧩 Contributing to miniCycle
+# Contributing to miniCycle
 
 Welcome to the **miniCycle developer community!**
 This guide explains how the app is structured, how modules communicate, and how to safely extend or contribute new functionality.
 
 miniCycle is built with **vanilla JavaScript (ES6 modules)** and uses a **pure dependency injection system** with zero global fallbacks.
 
-> **✅ Pure Dependency Injection**
+> **New here?** Start with the [Your First Contribution](../developer-guides/FIRST_CONTRIBUTION.md) guide for a step-by-step walkthrough.
+
+> **Pure Dependency Injection**
 >
-> miniCycle uses a custom DI framework (`diBase.js`) with zero `window.*` fallbacks. All dependencies are explicitly injected via `setXxxDependencies()` functions. Modules use `required()` for mandatory dependencies and `optional(defaultValue)` for optional ones. The boot orchestrator (`moduleLoader.js`) wires all modules at startup.
+> miniCycle uses a custom DI framework (`diBase.js`) with zero `window.*` fallbacks. All dependencies are explicitly injected via `createDIModule()` with `required()` and `optional()` markers. The boot orchestrator (`moduleLoader.js`) wires all modules at startup.
 >
-> **This enables true unit testing** - the test suite injects pure mocks without touching global state.
+> **This enables true unit testing** — the test suite injects pure mocks without touching global state.
 >
 > See [PROJECT_STATS.md](../PROJECT_STATS.md) for current module and test counts.
 
 ---
 
-## 🧱 1. Core Principles
+## 1. Core Principles
 
 | Principle | Description |
 |------------|--------------|
-| **Pure DI** | All dependencies are explicitly injected via `setXxxDependencies()`. No `window.*` fallbacks. |
+| **Pure DI** | All dependencies are explicitly injected via `createDIModule()`. No `window.*` fallbacks. |
 | **DI Framework** | Use `createDIModule()` from `diBase.js` with `required()` and `optional()` markers. |
-| **Schema Safety** | All data reads/writes must go through the `AppState` or schema-safe helpers like `loadMiniCycleData()`. |
-| **Three-Phase Boot** | Orchestrated boot: coreBoot → uiBoot → featureBoot. Modules wait for `appInit.waitForCore()`. |
+| **Schema Safety** | All data reads/writes must go through `AppState` or schema-safe helpers like `loadMiniCycleData()`. |
+| **Three-Phase Boot** | Orchestrated boot: coreBoot → featureBoot → uiBoot. Modules wait for `appInit.waitForCore()`. |
 | **Zero Frameworks** | No React/Vue. miniCycle's architecture is custom-built to stay lightweight, offline-first, and localStorage-based. |
 
 ---
 
-## ⚙️ 2. Initialization Flow
+## 2. Initialization Flow
 
 ```
-index.html
+miniCycle.html
+   ↓
+miniCycle-main.js
    ↓
 modules/boot/orchestrator.js
    ↓
-appInitialization.js  →  appInit.waitForCore()
+modules/boot/coreBoot.js    →  appInit, AppState
    ↓
-state.js              →  AppState (central store)
+modules/boot/featureBoot.js →  DI wiring, feature modules
    ↓
-routineLoader.js      →  Load saved cycles/tasks
-   ↓
-taskCore.js           →  Task CRUD logic
-   ↓
-taskDOM.js            →  DOM creation + render
-   ↓
-modeManager.js        →  Auto/Manual/To-Do mode logic
-   ↓
-notifications.js, statsPanel.js, etc.
+modules/boot/uiBoot.js      →  UI handlers, event listeners
 ```
 
-Each stage waits for the previous one’s readiness.  
-If you’re building a new feature, decide **which stage** your module should hook into.
+Each phase waits for the previous one's readiness.
+If you're building a new feature, decide **which phase** your module should hook into.
 
 ---
 
-## 🧩 3. Folder Structure
+## 3. Folder Structure
 
 ```
-/src
- ├── appInitialization.js     ← Core init and event coordination
- ├── state.js                 ← AppState data management
- ├── routineManager.js        ← Routine creation and persistence
- ├── routineLoader.js         ← Task loading and schema repair
- ├── task/
- │    ├── taskCore.js         ← Core CRUD logic
- │    ├── taskDOM.js          ← DOM creation
- │    ├── taskRenderer.js     ← Rendering + UI refresh
- │    ├── taskEvents.js       ← Event handlers
- │    ├── taskUtils.js        ← Shared helpers
- │    └── dragDropManager.js  ← Reordering logic
- ├── notifications.js         ← Toasts + educational tips
- ├── modeManager.js           ← Auto/manual/to-do switching
- ├── recurringCore.js         ← Recurring engine
- ├── reminders.js             ← Reminder scheduling
- ├── statsPanel.js            ← Completion rates, statistics
- ├── achievementsManager.js   ← Badge UI, achievements
- └── globalUtils.js           ← Cross-cutting utilities
+modules/
+ ├── boot/        ← Boot sequence, orchestrator, module loader
+ ├── core/        ← AppState, appInit, appContext, DI base, constants
+ ├── task/        ← Task CRUD, DOM, events, drag-drop, validation
+ ├── routine/     ← Routine management, switching, migration
+ ├── recurring/   ← Recurring task scheduling, panel, activation
+ ├── ui/          ← Modals, menus, settings, onboarding, gestures
+ ├── features/    ← Themes, stats, achievements, history, reminders
+ ├── utils/       ← Notifications, device detection, helpers
+ ├── labels/      ← Label system and registry
+ ├── storage/     ← Backup manager
+ ├── progress/    ← Cycle completion tracking
+ ├── testing/     ← Test infrastructure
+ └── other/       ← Plugins, experimental
 ```
 
 ---
 
-## 🧩 4. Module Patterns
+## 4. Module Patterns
 
 Each module declares its pattern in the header comment:
 
 | Pattern | Meaning |
 |----------|----------|
-| 🛡 **Resilient Constructor** | Class with fallback-safe methods (e.g. `TaskDOMManager`, `RoutineManager`) |
-| 🎯 **Simple Instance** | Stateless class for handling events or rendering (e.g. `TaskRenderer`, `TaskEvents`) |
-| 🔧 **Strict Injection** | Pure functions that must receive dependencies explicitly (e.g. `undoRedoManager`, `routineLoader`) |
+| **Resilient Constructor** | Class with fallback-safe methods (e.g. `TaskDOMManager`, `RoutineManager`) |
+| **Simple Instance** | Stateless class for handling events or rendering (e.g. `TaskRenderer`, `TaskEvents`) |
+| **Strict Injection** | Pure functions that must receive dependencies explicitly (e.g. `undoRedoManager`, `routineLoader`) |
 
 When creating a new file, include this in the header:
 
 ```js
 /**
  * @module utilities/yourModuleName
- * @version 1.337
- * @pattern Resilient Constructor 🛡️
+ * @version 1.0
+ * @pattern Resilient Constructor
  * @description Brief summary of purpose
  */
 ```
 
 ---
 
-## 🧠 5. Coding Standards
+## 5. Coding Standards
 
 | Category | Guidelines |
 |-----------|-------------|
 | **Formatting** | Use 2 spaces, no semicolons, ES6 imports/exports. |
-| **Logging** | Use emoji-coded logs for clarity (`🎯`, `⚠️`, `✅`). Keep them developer-friendly, not verbose. |
+| **Logging** | Use emoji-coded logs for clarity. Keep them developer-friendly, not verbose. |
 | **Versioning** | Increment `@version` in each module when you make meaningful internal changes. |
-| **Dependency Checks** | Always guard optional dependencies: `if (this.deps.showNotification) { ... }`. |
-| **Schema Access** | Never manipulate `localStorage` directly—always through `AppState` or helper functions. |
-| **Initialization Safety** | Wrap DOM-dependent logic in `await appInit.waitForCore()`. |
+| **Dependency Checks** | Always guard optional dependencies: `if (_deps.showNotification) { ... }`. |
+| **Schema Access** | Never manipulate `localStorage` directly — always through `AppState` or helper functions. |
+| **Initialization Safety** | Wrap DOM-dependent logic in `await _deps.appInit.waitForCore()`. |
 
 ---
 
-## 🧰 6. Adding a New Module
+## 6. Adding a New Module
 
 ### Step 1 — Create your module
 1. Place it in the appropriate folder (`/modules/task/`, `/modules/ui/`, etc.).
 2. Use `createDIModule()` from `diBase.js` for dependency management.
-3. Export a `setXxxDependencies()` function for wiring.
 
 ### Step 2 — Define dependencies
 ```js
-import { createDIModule, required, optional } from '../core/diBase.js';
+import { createDIModule, required, optional } from '../core/diBase.js'
 
 const di = createDIModule('MyModule', {
     AppState: required(),
     showNotification: required(),
     optionalDep: optional(null)
-});
+})
 
-export function setMyModuleDependencies(deps) {
-    di.setDependencies(deps);
-}
+const _deps = new Proxy({}, {
+    get(_, prop) { return di.resolve()[prop] }
+})
 ```
 
 ### Step 3 — Register in manifest
@@ -152,75 +142,155 @@ myModule: {
 
 ### Step 4 — Use dependencies
 ```js
-const _deps = new Proxy({}, {
-    get(_, prop) { return di.resolve()[prop]; }
-});
-
 export async function myFunction() {
-    await _deps.appInit?.waitForCore();
-    _deps.showNotification('Ready!', 'success');
+    await _deps.appInit?.waitForCore()
+    _deps.showNotification('Ready!', 'success')
 }
 ```
 
 ---
 
-## 🧩 7. Safe Extension Examples
+## 7. Safe Extension Examples
 
 **Example: Adding a new stats panel component**
 
 ```js
-import { appInit } from '../appInitialization.js';
+import { createDIModule, required, optional } from '../core/diBase.js'
+
+const di = createDIModule('CustomStats', {
+    appInit: required(),
+    AppState: required(),
+    showNotification: optional(null)
+})
+
+const _deps = new Proxy({}, {
+    get(_, prop) { return di.resolve()[prop] }
+})
 
 export class CustomStats {
-  constructor({ AppState, showNotification }) {
-    this.AppState = AppState;
-    this.showNotification = showNotification;
-  }
-
-  async init() {
-    await appInit.waitForCore();
-    this.showNotification('📊 Custom Stats Module Ready', 'info');
-  }
+    async init() {
+        await _deps.appInit.waitForCore()
+        _deps.showNotification?.('Custom Stats Module Ready', 'info')
+    }
 }
 ```
 
-Register it in your main script after `statsPanel.js` is loaded.
+Register it in `moduleManifests.js` with the appropriate phase and dependencies.
 
 ---
 
-## 🧪 8. Testing & Debugging
+## 8. Testing & Debugging
 
-- Run your **automated test suite** via `node run-browser-tests.js`
+```bash
+# Run automated tests
+npm test
+
+# Run in browser
+open http://localhost:8080/tests/module-test-suite.html
+```
+
 - Keep each new module testable in isolation
-- Use console logs for developer clarity — emoji prefixes are encouraged (`⚙️`, `🚀`, etc.)
-- During major refactors, temporarily enable verbose logging in `AppInit` to track initialization order
+- Copy `tests/MODULE_TEMPLATE.tests.js` as a starting point for new tests
+- Use console logs for developer clarity — emoji prefixes are encouraged
+- See [TESTING_QUICK_REFERENCE.md](../testing/TESTING_QUICK_REFERENCE.md) for the full testing guide
 
 ---
 
-## 💾 9. Versioning & Schema Migration
+## 9. Versioning & Schema Migration
 
-- Each schema upgrade is stored in `/data/schema-migrations/`
-- Always bump `schemaVersion` in `AppState` and include backward transformation logic
-- For example:
-  ```js
-  if (oldVersion < 3) migrateSchema2To3();
-  ```
+- Schema version is tracked in AppState (currently 2.5)
+- Always bump `schemaVersion` and include backward transformation logic
+- See [SCHEMA_2_5.md](../data-schema/SCHEMA_2_5.md) for the current data structure
 
 ---
 
-## 💡 10. Pro Tips for Contributors
+## 10. Pro Tips for Contributors
 
 - Use `createDIModule()` with `required()` and `optional()` — never use `window.*` fallbacks.
-- Always handle **missing DOM gracefully** (`if (!element) return;`).
+- Always handle **missing DOM gracefully** (`if (!element) return`).
 - Keep UI logic isolated from data logic.
 - Use **`AppState.update()`** to modify data, not direct object mutation.
-- Add `@pattern` and `@version` in module headers — it's part of the versioning philosophy.
+- Add `@pattern` and `@version` in module headers.
 - See [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md) to understand actual module dependencies.
-- Check [DI_PATTERNS.md](../developer-guides/DI_PATTERNS.md) for DI best practices.  
+- Check [DI_PATTERNS.md](../developer-guides/DI_PATTERNS.md) for DI best practices.
 
 ---
 
-## 📜 11. Attribution
+## 11. Finding Issues to Work On
 
-miniCycle is developed by **MJ (Maurice Joyner)** under the **Sparkin Creations** brand.  
+### Good First Issues
+
+Issues labeled **`good first issue`** are specifically scoped for newcomers. They typically involve:
+
+- **Documentation fixes** — typos, outdated examples, missing explanations
+- **Accessibility improvements** — ARIA labels, keyboard navigation, screen reader support
+- **Test coverage** — adding tests for edge cases using the existing test template
+- **Small bug fixes** — isolated issues with clear reproduction steps
+
+### Picking Up an Issue
+
+1. Check the [GitHub Issues](https://github.com/sparkinCreations/miniCycle/issues) page
+2. Look for `good first issue` or `help wanted` labels
+3. Comment on the issue to let others know you're working on it
+4. If you want to work on something not listed, **open an issue first** to discuss the approach
+
+### Proposing New Features
+
+Before writing code for a new feature:
+1. Open a GitHub issue describing the feature and your proposed approach
+2. Wait for feedback from a maintainer
+3. This prevents wasted effort if the feature doesn't align with the product direction
+
+Remember: miniCycle is a **routine manager**, not a todo app. Features should support the cycling/reset model.
+
+---
+
+## 12. Pull Request Process
+
+### Before Submitting
+
+- [ ] All tests pass (`npm test` — expect 100% pass rate)
+- [ ] New or changed behavior has test coverage
+- [ ] Code follows existing DI patterns (no `window.*` globals)
+- [ ] Module headers include `@version`, `@pattern`, `@description`
+- [ ] You've tested in a browser (and on mobile if touch/gesture related)
+
+### PR Format
+
+**Title**: Keep it under 70 characters. Use imperative mood ("Add export button", not "Added export button").
+
+**Description**:
+```markdown
+## Summary
+- What changed and why (1-3 bullet points)
+
+## Test Plan
+- [ ] All existing tests pass
+- [ ] New tests added for [specific behavior]
+- [ ] Manually tested in [browser/device]
+```
+
+### What Happens After You Submit
+
+1. **CI runs** — The automated test suite must pass. If it fails, check the logs and fix before requesting review.
+2. **Code review** — A maintainer will review your PR, usually within a few days. Expect constructive feedback.
+3. **Revisions** — You may be asked to make changes. This is normal and collaborative. Push additional commits to the same branch.
+4. **Approval and merge** — Once approved and CI passes, your PR gets merged.
+
+### Common Review Feedback
+
+| Feedback | What it means |
+|----------|---------------|
+| "Use DI for this" | You accessed something via `window.*` or a direct import instead of dependency injection |
+| "Guard the optional dep" | You called an optional dependency without checking if it exists first |
+| "Match existing pattern" | The module uses a specific pattern — follow it for consistency |
+| "Add a test for this" | Behavior changes need test coverage |
+| "Check on mobile" | Touch interactions and gestures should be tested on actual devices |
+| "Use `AppState.update()`" | You mutated state directly instead of going through the update API |
+
+---
+
+## 13. Attribution
+
+miniCycle is developed by **MJ (Maurice Joyner)** under the **Sparkin Creations** brand.
 Contributions are welcome, but all submissions must adhere to the architectural standards and modular philosophy defined in this guide.

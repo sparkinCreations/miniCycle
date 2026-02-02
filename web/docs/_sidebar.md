@@ -15,6 +15,7 @@
   * [Accessibility](project-info/ACCESSIBILITY.md)
 
 * **Developer Guides**
+  * [Your First Contribution](developer-guides/FIRST_CONTRIBUTION.md)
   * [Getting Started](developer-guides/GETTING_STARTED.md)
   * [Developer Documentation](developer-guides/DEVELOPER_DOCUMENTATION.md)
   * [Documentation Index](developer-guides/INDEX.md)
