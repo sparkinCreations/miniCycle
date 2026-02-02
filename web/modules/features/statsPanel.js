@@ -50,7 +50,9 @@ const di = createDIModule('StatsPanel', {
     // History & Achievements managers (Phase 7 features)
     historyManager: optional(null),
     clearedTasksManager: optional(null),
-    achievementsManager: optional(null)
+    achievementsManager: optional(null),
+    getModal: optional(null),
+    trackAction: optional(null)
 });
 
 // Late-binding deps via Proxy

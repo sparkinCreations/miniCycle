@@ -1,3 +1,7 @@
+## [1.908] - 2026-02-02
+- feat: add default labels registry and modal registry for centralized UI management
+
+
 ## [1.907] - 2026-02-02
 - feat: update version to 1.906 and reflect changes across documentation and files
 
