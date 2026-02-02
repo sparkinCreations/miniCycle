@@ -63,7 +63,7 @@ const di = createDIModule('RecurringCore', {
 });
 
 // Late-binding deps via Proxy
-const Deps = new Proxy({}, {
+const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
     }
@@ -273,7 +273,7 @@ export async function setRecurringCoreDependencies(overrides = {}) {
     di.setDependencies(overrides);
 
     // Get version for cache-busting
-    const version = overrides.AppMeta?.version || Deps.AppMeta?.version || globalThis.APP_VERSION;
+    const version = overrides.AppMeta?.version || _deps.AppMeta?.version || globalThis.APP_VERSION;
 
     // Load sub-modules with version
     await loadSubModules(version);

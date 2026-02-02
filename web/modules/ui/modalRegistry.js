@@ -26,8 +26,13 @@ const di = createDIModule('ModalRegistry', {
 
 export const setModalRegistryDependencies = (deps) => di.setDependencies(deps);
 
-// Resolved DI deps (set once on first call, not per-lookup)
-let _resolvedDeps = null;
+// Late-binding deps via Proxy (consistent with all other modules)
+/** @type {{getElementById: Function, querySelector: Function}} */
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 // Cache of resolved modal elements
 const _cache = new Map();
@@ -69,15 +74,6 @@ export const MODAL_DEFS = {
 };
 
 // ============================================================================
-// INTERNAL HELPERS
-// ============================================================================
-
-function _resolveDeps() {
-    if (!_resolvedDeps) _resolvedDeps = di.resolve();
-    return _resolvedDeps;
-}
-
-// ============================================================================
 // PUBLIC API
 // ============================================================================
 
@@ -103,10 +99,9 @@ export function getModal(name) {
     const cacheable = def.cacheable !== false;
     if (cacheable && _cache.has(name)) return _cache.get(name);
 
-    const deps = _resolveDeps();
     const el = def.method === 'id'
-        ? deps.getElementById(def.key)
-        : deps.querySelector(def.key);
+        ? _deps.getElementById(def.key)
+        : _deps.querySelector(def.key);
 
     if (el && cacheable) _cache.set(name, el);
     return el;
@@ -125,7 +120,6 @@ export function invalidateModal(name) {
  */
 export function clearModalCache() {
     _cache.clear();
-    _resolvedDeps = null;
 }
 
 console.log('Modal Registry module loaded');

@@ -41,11 +41,12 @@ const di = createDIModule('ThemeManager', {
     AppState: optional(null),
     showNotification: optional(null),
     hideMainMenu: optional(null),
-    safeAddEventListener: optional(null)
+    safeAddEventListener: optional(null),
+    getModal: optional(null)
 });
 
 // Late-binding deps via Proxy
-/** @type {{appInit: Object|null, AppState: Object|null, showNotification: Function|null, hideMainMenu: Function|null, safeAddEventListener: Function|null}} */
+/** @type {{appInit: Object|null, AppState: Object|null, showNotification: Function|null, hideMainMenu: Function|null, safeAddEventListener: Function|null, getModal: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -795,6 +796,14 @@ export class ThemeManager {
      */
     loadSchemaData() {
         try {
+            if (_deps.AppState?.isReady?.()) {
+                const state = _deps.AppState.get();
+                if (state && Object.keys(state).length > 0) {
+                    return state;
+                }
+                return null;
+            }
+            // Fallback to direct localStorage if AppState not ready yet
             const data = localStorage.getItem("miniCycleData");
             return data ? JSON.parse(data) : null;
         } catch (error) {

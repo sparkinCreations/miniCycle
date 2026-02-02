@@ -332,6 +332,9 @@ export const MODULE_MANIFESTS = {
         after: ['menuManager', 'themeManager']
     },
 
+    // NOTE: preferencesBgImage and preferencesPresets are loaded as
+    // sub-modules inside preferencesManager.init() - do NOT list them here
+    // to avoid duplicate initialization.
     preferencesManager: {
         path: '../ui/preferencesManager.js',
         phase: PHASES.UI_MANAGERS,
@@ -806,7 +809,7 @@ export function getModulesForApi(apiName) {
  *
  * @returns {{ valid: boolean, warnings: string[] }}
  */
-export function validateCrossPhaseDeeps() {
+export function validateCrossPhaseDeps() {
     const warnings = [];
     const providerMap = buildProviderMap();
 

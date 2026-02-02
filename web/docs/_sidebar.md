@@ -44,6 +44,8 @@
   * [Drag & Drop Architecture](architecture/DRAG_DROP_ARCHITECTURE.md)
   * [Drag & Drop Long Press](architecture/DRAG_DROP_LONG_PRESS.md)
   * [Theme Architecture](architecture/THEME_ARCHITECTURE.md)
+  * [Label System Architecture](architecture/LABEL_SYSTEM_ARCHITECTURE.md)
+  * [Label Registry Reference](architecture/LABEL_REGISTRY_REFERENCE.md)
   * [Mode Manager Architecture](architecture/MODE_MANAGER_ARCHITECTURE.md)
 
 * **Data & Schema**
@@ -87,6 +89,7 @@
 
 * **Future Work**
   * [Contextual Theme System](future-work/CONTEXTUAL_THEME_SYSTEM_PLAN.md)
+  * [Label System Integration](future-work/LABEL_SYSTEM_INTEGRATION_PLAN.md)
   * [CSS Refactor Plan](future-work/CSS_REFACTOR_PLAN.md)
   * [DI Migration Completion](future-work/DI_MIGRATION_COMPLETION_PLAN.md)
   * [Error Handling Improvements](future-work/ERROR_HANDLING_IMPROVEMENTS_PLAN.md)

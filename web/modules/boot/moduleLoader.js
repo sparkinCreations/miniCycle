@@ -32,7 +32,7 @@ let MODULE_MANIFESTS = {};
 let PHASES = {};
 let getModulesByPhase = () => [];
 let getLoadOrder = () => [];
-let validateCrossPhaseDeeps = () => ({ valid: true, warnings: [] });
+let validateCrossPhaseDeps = () => ({ valid: true, warnings: [] });
 
 // Re-export for consumers (will be populated after loadManifests())
 export { MODULE_MANIFESTS, PHASES, getLoadOrder };
@@ -80,7 +80,7 @@ export async function loadManifests(withV) {
     PHASES = manifestModule.PHASES;
     getModulesByPhase = manifestModule.getModulesByPhase;
     getLoadOrder = manifestModule.getLoadOrder;
-    validateCrossPhaseDeeps = manifestModule.validateCrossPhaseDeeps;
+    validateCrossPhaseDeps = manifestModule.validateCrossPhaseDeps;
 
     // Load shared constants from versioned manifest (single source of truth)
     CORE_DEPS = manifestModule.CORE_DEPS;
@@ -477,7 +477,7 @@ export async function loadAllModules(deps, coreResult) {
     detectCircularDeps(MODULE_MANIFESTS);
 
     // ✅ Validate cross-phase dependencies (warns about undeclared lazyRequires)
-    validateCrossPhaseDeeps();
+    validateCrossPhaseDeps();
 
     // Ensure core systems (AppState, Schema 2.5 data) are ready before loading modules
     if (appInit && !appInit.isCoreReady()) {

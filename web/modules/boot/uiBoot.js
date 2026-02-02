@@ -670,11 +670,22 @@ export async function finalizeUI(options) {
     GlobalUtils.safeAddEventListener(completeAllButton, "click", handleCompleteAll);
   }
 
-  // Final module setup
-  getInitializeModeSelector?.()?.();
-  getUpdateMoveArrowsVisibility?.()?.();
-  getInitCompletedTasksSection?.()?.();
-  getRecurringPanel?.()?.updateRecurringPanelButtonVisibility?.();
+  // Final module setup — validate getters resolve before calling
+  const initModeSelector = getInitializeModeSelector?.();
+  const updateArrows = getUpdateMoveArrowsVisibility?.();
+  const initCompleted = getInitCompletedTasksSection?.();
+  const recurringPanel = getRecurringPanel?.();
+
+  if (typeof initModeSelector === 'function') initModeSelector();
+  else console.warn('⚠️ finalizeUI: initializeModeSelector not available');
+
+  if (typeof updateArrows === 'function') updateArrows();
+  else console.warn('⚠️ finalizeUI: updateMoveArrowsVisibility not available');
+
+  if (typeof initCompleted === 'function') initCompleted();
+  else console.warn('⚠️ finalizeUI: initCompletedTasksSection not available');
+
+  recurringPanel?.updateRecurringPanelButtonVisibility?.();
 
   // Device detection
   const deviceManager = getDeviceDetectionManager?.();
