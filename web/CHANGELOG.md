@@ -1,3 +1,8 @@
+## [1.905] - 2026-02-01
+- feat: enforce required dependencies for action execution in Quick Actions Manager
+- feat: update version to 1.904 and reflect changes across documentation and files
+
+
 ## [1.904] - 2026-02-01
 - feat: add quick actions panel and related styles
 - feat: add view switching methods for Quick Actions panel, including arrow buttons, swipe gestures, and state persistence
