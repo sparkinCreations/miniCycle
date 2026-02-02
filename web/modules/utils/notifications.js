@@ -1115,7 +1115,7 @@ async setDefaultPosition(notificationContainer) {
         const currentSettingsText = notification.querySelector(`#current-settings-${taskId}`);
 
         if (currentSettingsText) {
-          currentSettingsText.innerHTML = `🔁 Recurring set to <strong>${newFrequency}</strong> (${pattern})`;
+          currentSettingsText.textContent = `🔁 Recurring set to ${newFrequency} (${pattern})`;
           currentSettingsText.style.background = "rgba(255, 255, 255, 0.2)";
           setTimeout(() => currentSettingsText.style.background = "transparent", 800);
         }

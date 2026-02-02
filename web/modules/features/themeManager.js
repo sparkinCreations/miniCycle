@@ -830,9 +830,12 @@ export class ThemeManager {
         }
 
         try {
-            // Replace entire state data
+            // Replace entire state data (filter dangerous keys to prevent prototype pollution)
+            const safeData = Object.fromEntries(
+                Object.entries(data).filter(([k]) => k !== '__proto__' && k !== 'constructor' && k !== 'prototype')
+            );
             await _deps.AppState.update(state => {
-                Object.assign(state, data);
+                Object.assign(state, safeData);
             }, true);
         } catch (error) {
             console.warn('⚠️ Schema data save failed:', error.message);

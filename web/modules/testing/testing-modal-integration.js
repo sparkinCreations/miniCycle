@@ -484,27 +484,31 @@ async function runAllAutomatedTests() {
 
             // Wait a moment to show completion, then close
             setTimeout(async () => {
-                closeTestRunnerModal(); // Also clears stored results
-                displayTestResults(event.data);
+                try {
+                    closeTestRunnerModal(); // Also clears stored results
+                    displayTestResults(event.data);
 
-                // Note: Test mode flag (IndexedDB) is cleared by module-test-suite.html
-                // which also restores localStorage from backup before sending TEST_RESULTS
+                    // Note: Test mode flag (IndexedDB) is cleared by module-test-suite.html
+                    // which also restores localStorage from backup before sending TEST_RESULTS
 
-                // 🔄 RELOAD AppState from restored localStorage
-                // This syncs the in-memory state with the restored backup data
-                const AppState = getAppState();
-                if (AppState?.reload) {
-                    AppState.reload();
-                    console.log('🔄 AppState reloaded from restored localStorage');
+                    // 🔄 RELOAD AppState from restored localStorage
+                    // This syncs the in-memory state with the restored backup data
+                    const AppState = getAppState();
+                    if (AppState?.reload) {
+                        AppState.reload();
+                        console.log('🔄 AppState reloaded from restored localStorage');
+                    }
+
+                    getShowNotification()(
+                        event.data.allPassed
+                            ? `✅ All ${event.data.totalTests} tests passed!`
+                            : `⚠️ ${event.data.totalTests - event.data.totalPassed} test(s) failed`,
+                        event.data.allPassed ? 'success' : 'warning',
+                        5000
+                    );
+                } catch (error) {
+                    console.warn('⚠️ Post-test processing failed:', error);
                 }
-
-                getShowNotification()(
-                    event.data.allPassed
-                        ? `✅ All ${event.data.totalTests} tests passed!`
-                        : `⚠️ ${event.data.totalTests - event.data.totalPassed} test(s) failed`,
-                    event.data.allPassed ? 'success' : 'warning',
-                    5000
-                );
             }, 1500);
         }
     };
@@ -561,24 +565,36 @@ async function checkForPendingResultsOnLoad() {
 
     // Wait a moment for page to settle, then open modal and show results
     setTimeout(async () => {
-        // Open testing modal
-        const testingModalBtn = document.getElementById(DOM_IDS.OPEN_TESTING_MODAL);
-        if (testingModalBtn) {
-            testingModalBtn.click();
+        try {
+            // Open testing modal
+            const testingModalBtn = document.getElementById(DOM_IDS.OPEN_TESTING_MODAL);
+            if (testingModalBtn) {
+                testingModalBtn.click();
 
-            // Switch to automated tests tab and display results
-            setTimeout(async () => {
-                const automatedTab = document.querySelector('[data-tab="automated-tests"]');
-                if (automatedTab) {
-                    automatedTab.click();
+                // Switch to automated tests tab and display results
+                setTimeout(async () => {
+                    try {
+                        const automatedTab = document.querySelector('[data-tab="automated-tests"]');
+                        if (automatedTab) {
+                            automatedTab.click();
 
-                    setTimeout(async () => {
-                        displayTestResults(resultData);
-                        await clearStoredTestResults();
-                        getShowNotification()('📊 Test results restored', 'success', 3000);
-                    }, 200);
-                }
-            }, 200);
+                            setTimeout(async () => {
+                                try {
+                                    displayTestResults(resultData);
+                                    await clearStoredTestResults();
+                                    getShowNotification()('📊 Test results restored', 'success', 3000);
+                                } catch (error) {
+                                    console.warn('⚠️ Failed to display stored test results:', error);
+                                }
+                            }, 200);
+                        }
+                    } catch (error) {
+                        console.warn('⚠️ Failed to open automated tests tab:', error);
+                    }
+                }, 200);
+            }
+        } catch (error) {
+            console.warn('⚠️ Failed to auto-open testing modal:', error);
         }
     }, 500);
 }

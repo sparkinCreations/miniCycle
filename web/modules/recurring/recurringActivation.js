@@ -137,7 +137,7 @@ export function deactivateTaskRecurringState(cycle, taskId, currentMode) {
  * @param {Object} taskContext - Context containing taskId, currentCycle, settings
  * @param {HTMLElement} button - The recurring button element (optional)
  */
-export function handleRecurringTaskActivation(task, taskContext, button = null) {
+export async function handleRecurringTaskActivation(task, taskContext, button = null) {
     const { assignedTaskId, currentCycle, settings } = taskContext;
 
     assertInjected('querySelector', Deps.querySelector);
@@ -166,7 +166,7 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
 
     // Update task AND template in AppState
     assertInjected('updateAppState', Deps.updateAppState);
-    Deps.updateAppState(draft => {
+    await Deps.updateAppState(draft => {
         const activeCycleId = draft.appState?.activeCycleId;
         const currentCycleInState = draft.data?.cycles?.[activeCycleId];
 
@@ -251,7 +251,7 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
  * @param {Object} taskContext - Context containing taskId, currentCycle
  * @param {string} assignedTaskId - The task ID
  */
-export function handleRecurringTaskDeactivation(task, taskContext, assignedTaskId) {
+export async function handleRecurringTaskDeactivation(task, taskContext, assignedTaskId) {
     assertInjected('querySelector', Deps.querySelector);
     assertInjected('updateAppState', Deps.updateAppState);
     assertInjected('AppState', Deps.AppState);
@@ -277,7 +277,7 @@ export function handleRecurringTaskDeactivation(task, taskContext, assignedTaskI
     const currentMode = isToDoMode ? 'todo' : 'cycle';
 
     // Update via AppState
-    Deps.updateAppState(draft => {
+    await Deps.updateAppState(draft => {
         const cycle = draft.data.cycles[activeCycleId];
 
         deactivateTaskRecurringState(cycle, assignedTaskId, currentMode);
@@ -334,7 +334,7 @@ export function handleRecurringTaskDeactivation(task, taskContext, assignedTaskI
  * @param {string} taskId - The task ID
  * @param {Object} newSettings - New recurring settings to apply
  */
-export function applyRecurringToTaskSchema25(taskId, newSettings) {
+export async function applyRecurringToTaskSchema25(taskId, newSettings) {
     assertInjected('AppState', Deps.AppState);
     assertInjected('updateAppState', Deps.updateAppState);
 
@@ -364,7 +364,7 @@ export function applyRecurringToTaskSchema25(taskId, newSettings) {
     }
 
     // Update via AppState
-    Deps.updateAppState(draft => {
+    await Deps.updateAppState(draft => {
         const cycle = draft.data.cycles[activeCycleId];
         const targetTask = cycle.tasks.find(t => t.id === taskId);
 
@@ -446,7 +446,7 @@ export function applyRecurringToTaskSchema25(taskId, newSettings) {
  * Delete a recurring template
  * @param {string} taskId - The task ID
  */
-export function deleteRecurringTemplate(taskId) {
+export async function deleteRecurringTemplate(taskId) {
     console.log('🗑️ Deleting recurring template (AppState-based)...');
 
     assertInjected('updateAppState', Deps.updateAppState);
@@ -476,7 +476,7 @@ export function deleteRecurringTemplate(taskId) {
         return;
     }
 
-    Deps.updateAppState(draft => {
+    await Deps.updateAppState(draft => {
         const cycle = draft.data.cycles[activeCycleId];
         if (cycle?.recurringTemplates?.[taskId]) {
             delete cycle.recurringTemplates[taskId];

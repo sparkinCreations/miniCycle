@@ -256,7 +256,12 @@ export class PreferencesManager {
      * Setup MutationObserver to watch for theme class changes
      */
     setupThemeObserver() {
-        const observer = new MutationObserver((mutations) => {
+        // Disconnect previous observer if re-initialized
+        if (this._themeObserver) {
+            this._themeObserver.disconnect();
+        }
+
+        this._themeObserver = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                     this.applyCustomColors();
@@ -264,12 +269,10 @@ export class PreferencesManager {
             });
         });
 
-        observer.observe(document.body, {
+        this._themeObserver.observe(document.body, {
             attributes: true,
             attributeFilter: ['class']
         });
-
-        this._themeObserver = observer;
     }
 
     /**
