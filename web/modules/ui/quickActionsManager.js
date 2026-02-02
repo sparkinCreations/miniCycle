@@ -81,13 +81,13 @@ const ACTION_ICONS = {
 const di = createDIModule('QuickActionsManager', {
     AppState: required(),
     appInit: optional(null),
-    showNotification: optional(null),
+    showNotification: required(),
     safeAddEventListener: optional(null),
-    showStatsPanel: optional(null),
+    showStatsPanel: required(),
     showTaskView: optional(null),
     switchMiniCycle: optional(null),
-    recurringPanel: optional(null),
-    hideMainMenu: optional(null),
+    recurringPanel: required(),
+    hideMainMenu: required(),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel))
 });
@@ -377,44 +377,94 @@ export class QuickActionsManager {
     // ACTION EXECUTION
     // ========================================================================
 
+    _warnMissingDep(depName, actionId) {
+        console.warn(`⚡ QuickActionsManager: '${depName}' is null — action '${actionId}' cannot execute`);
+        this.deps.showNotification?.('Action unavailable. Please try again later.', 'warning', 3000);
+    }
+
     executeAction(actionId) {
         const action = ACTION_REGISTRY[actionId];
         if (!action) return;
 
-        this.trackAction(actionId);
+        try {
+            this.trackAction(actionId);
 
-        switch (action.handler) {
-            case 'showStatsPanel':
-                this.deps.showStatsPanel?.();
-                break;
-            case 'switchMiniCycle': {
-                setTimeout(() => {
-                    const routineBtn = document.getElementById('routine-switcher-btn');
-                    if (routineBtn) routineBtn.click();
-                }, 0);
-                break;
+            switch (action.handler) {
+                case 'showStatsPanel':
+                    if (!this.deps.showStatsPanel) {
+                        this._warnMissingDep('showStatsPanel', actionId);
+                        break;
+                    }
+                    this.deps.showStatsPanel();
+                    break;
+                case 'switchMiniCycle': {
+                    setTimeout(() => {
+                        try {
+                            const routineBtn = document.getElementById('routine-switcher-btn');
+                            if (routineBtn) {
+                                routineBtn.click();
+                            } else {
+                                this._warnMissingDep('routine-switcher-btn', actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.('Action failed. Please try again.', 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'openRecurringPanel':
+                    if (!this.deps.recurringPanel?.openPanel) {
+                        this._warnMissingDep('recurringPanel.openPanel', actionId);
+                        break;
+                    }
+                    setTimeout(() => {
+                        try {
+                            this.deps.recurringPanel.openPanel();
+                            this.deps.hideMainMenu?.();
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.('Action failed. Please try again.', 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                case 'openRemindersModal': {
+                    setTimeout(() => {
+                        try {
+                            const modal = this.deps.getElementById('reminders-modal');
+                            if (modal) {
+                                modal.style.display = 'flex';
+                            } else {
+                                this._warnMissingDep('reminders-modal element', actionId);
+                            }
+                            this.deps.hideMainMenu?.();
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.('Action failed. Please try again.', 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'openSettings': {
+                    setTimeout(() => {
+                        try {
+                            const settingsBtn = document.getElementById('open-settings');
+                            if (settingsBtn) {
+                                settingsBtn.click();
+                            } else {
+                                this._warnMissingDep('open-settings element', actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.('Action failed. Please try again.', 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
             }
-            case 'openRecurringPanel':
-                setTimeout(() => {
-                    this.deps.recurringPanel?.openPanel?.();
-                    this.deps.hideMainMenu?.();
-                }, 0);
-                break;
-            case 'openRemindersModal': {
-                setTimeout(() => {
-                    const modal = this.deps.getElementById('reminders-modal');
-                    if (modal) modal.style.display = 'flex';
-                    this.deps.hideMainMenu?.();
-                }, 0);
-                break;
-            }
-            case 'openSettings': {
-                setTimeout(() => {
-                    const settingsBtn = document.getElementById('open-settings');
-                    if (settingsBtn) settingsBtn.click();
-                }, 0);
-                break;
-            }
+        } catch (err) {
+            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+            this.deps.showNotification?.('Action failed. Please try again.', 'error', 3000);
         }
     }
 
