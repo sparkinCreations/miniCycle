@@ -9,6 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
+import { DOM_IDS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -91,7 +92,7 @@ export function setupExportButton() {
         return;
     }
 
-    const exportBtn = document.getElementById("export-mini-cycle");
+    const exportBtn = document.getElementById(DOM_IDS.EXPORT_MINI_CYCLE);
     if (!exportBtn) return;
 
     exportBtn._clickHandler = () => {

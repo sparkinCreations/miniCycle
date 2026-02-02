@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -105,7 +105,7 @@ function resolveGetter(dep) {
  */
 export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
     try {
-        const taskItem = checkbox.closest(".task");
+        const taskItem = checkbox.closest(DOM_SELECTORS.TASK);
         const taskId = taskItem?.dataset?.taskId;
         const isCompleted = checkbox.checked;
 
@@ -208,7 +208,7 @@ export async function saveCurrentTaskOrderImpl(deps = {}) {
         const AppState = deps.AppState || _deps.AppState;
         const querySelectorAll = deps.querySelectorAll || _deps.querySelectorAll || ((sel) => document.querySelectorAll(sel));
 
-        const taskElements = querySelectorAll("#taskList .task");
+        const taskElements = querySelectorAll(`#${DOM_IDS.TASK_LIST} ${DOM_SELECTORS.TASK}`);
         const newOrderIds = Array.from(taskElements).map(task => task.dataset.taskId);
 
         // ✅ Use AppState only (no localStorage fallback) - DI-pure

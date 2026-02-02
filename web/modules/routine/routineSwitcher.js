@@ -22,6 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -133,11 +134,11 @@ export class RoutineSwitcher {
         }
 
         const cycles = currentState.data?.cycles || {};
-        const switchModal = this.deps.querySelector(".mini-cycle-switch-modal");
-        const switchRow = this.deps.querySelector(".switch-items-row");
-        const duplicateButton = this.deps.getElementById("switch-duplicate");
-        const renameButton = this.deps.getElementById("switch-rename");
-        const deleteButton = this.deps.getElementById("switch-delete");
+        const switchModal = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL);
+        const switchRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
+        const duplicateButton = this.deps.getElementById(DOM_IDS.SWITCH_DUPLICATE);
+        const renameButton = this.deps.getElementById(DOM_IDS.SWITCH_RENAME);
+        const deleteButton = this.deps.getElementById(DOM_IDS.SWITCH_DELETE);
 
         console.log('📊 Found cycles:', Object.keys(cycles).length);
 
@@ -193,13 +194,13 @@ export class RoutineSwitcher {
         }
         safeAdd(deleteButton, "click", deleteButton._clickHandler);
 
-        const confirmBtn = this.deps.getElementById("miniCycleSwitchConfirm");
+        const confirmBtn = this.deps.getElementById(DOM_IDS.MINI_CYCLE_SWITCH_CONFIRM);
         if (!confirmBtn._clickHandler) {
             confirmBtn._clickHandler = () => this.confirmMiniCycle();
         }
         safeAdd(confirmBtn, "click", confirmBtn._clickHandler);
 
-        const cancelBtn = this.deps.getElementById("miniCycleSwitchCancel");
+        const cancelBtn = this.deps.getElementById(DOM_IDS.MINI_CYCLE_SWITCH_CANCEL);
         if (!cancelBtn._clickHandler) {
             cancelBtn._clickHandler = () => this.hideSwitchMiniCycleModal();
         }
@@ -214,7 +215,7 @@ export class RoutineSwitcher {
     renameMiniCycle() {
         console.log('📝 Renaming miniCycle (inline edit)...');
 
-        const selectedCycle = this.deps.querySelector(".mini-cycle-switch-item.selected");
+        const selectedCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
 
         if (!selectedCycle) {
             console.warn('⚠️ No cycle selected for rename');
@@ -257,7 +258,7 @@ export class RoutineSwitcher {
     deleteMiniCycle() {
         console.log('🗑️ Deleting miniCycle (state-based)...');
 
-        const selectedCycle = this.deps.querySelector(".mini-cycle-switch-item.selected");
+        const selectedCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
         if (!selectedCycle) {
             console.warn('⚠️ No cycle selected for deletion');
             this.deps.showNotification("⚠ No miniCycle selected for deletion.");
@@ -352,8 +353,8 @@ export class RoutineSwitcher {
 
                 // ✅ Update storage estimate (subtract deleted routine size)
                 adjustStorageEstimate(-routineSizeBytes);
-                const barElement = this.deps.getElementById('storage-bar-fill');
-                const textElement = this.deps.getElementById('storage-bar-text');
+                const barElement = this.deps.getElementById(DOM_IDS.STORAGE_BAR_FILL);
+                const textElement = this.deps.getElementById(DOM_IDS.STORAGE_BAR_TEXT);
                 if (barElement && textElement) {
                     updateStorageBarUIEstimated(barElement, textElement);
                 }
@@ -377,8 +378,8 @@ export class RoutineSwitcher {
                         this.hideSwitchMiniCycleModal();
 
                         // ✅ FIX: Query DOM elements fresh inside setTimeout (not stale from outer scope)
-                        const taskList = this.deps.getElementById("taskList");
-                        const toggleAutoReset = this.deps.getElementById("toggleAutoReset");
+                        const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
+                        const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
 
                         if (taskList) taskList.innerHTML = "";
                         if (toggleAutoReset) toggleAutoReset.checked = false;
@@ -406,7 +407,7 @@ export class RoutineSwitcher {
 
                     // Select first remaining routine
                     setTimeout(() => {
-                        const firstCycle = this.deps.querySelector(".mini-cycle-switch-item");
+                        const firstCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
                         if (firstCycle) {
                             firstCycle.classList.add("selected");
                             firstCycle.click();
@@ -431,7 +432,7 @@ export class RoutineSwitcher {
     duplicateMiniCycle() {
         console.log('📋 Duplicating miniCycle (state-based)...');
 
-        const selectedCycle = this.deps.querySelector(".mini-cycle-switch-item.selected");
+        const selectedCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
 
         if (!selectedCycle) {
             console.warn('⚠️ No cycle selected for duplication');
@@ -499,8 +500,8 @@ export class RoutineSwitcher {
         // ✅ Update storage estimate (add duplicated routine size)
         const duplicatedSizeBytes = getObjectSizeBytes(copiedCycle);
         adjustStorageEstimate(duplicatedSizeBytes);
-        const barElement = this.deps.getElementById('storage-bar-fill');
-        const textElement = this.deps.getElementById('storage-bar-text');
+        const barElement = this.deps.getElementById(DOM_IDS.STORAGE_BAR_FILL);
+        const textElement = this.deps.getElementById(DOM_IDS.STORAGE_BAR_TEXT);
         if (barElement && textElement) {
             updateStorageBarUIEstimated(barElement, textElement);
         }
@@ -511,16 +512,16 @@ export class RoutineSwitcher {
 
         // Wait for list to render, then find and edit the new item
         setTimeout(() => {
-            const newItem = [...this.deps.querySelectorAll(".mini-cycle-switch-item")]
+            const newItem = [...this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM)]
                 .find(item => item.dataset.cycleKey === uniqueName);
 
             if (newItem) {
                 // Select the new item
-                this.deps.querySelectorAll(".mini-cycle-switch-item").forEach(item => item.classList.remove("selected"));
+                this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => item.classList.remove("selected"));
                 newItem.classList.add("selected");
 
                 // Show the switch items row
-                const switchItemsRow = this.deps.getElementById("switch-items-row");
+                const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
                 if (switchItemsRow) {
                     switchItemsRow.style.display = "block";
                 }
@@ -544,7 +545,7 @@ export class RoutineSwitcher {
      * @param {string} cycleKey - The cycle key being edited
      */
     _startInlineEdit(listItem, cycleKey) {
-        const titleSpan = listItem.querySelector('.cycle-item-title');
+        const titleSpan = listItem.querySelector(DOM_SELECTORS.CYCLE_ITEM_TITLE);
         if (!titleSpan) return;
 
         const currentName = titleSpan.textContent;
@@ -652,7 +653,7 @@ export class RoutineSwitcher {
 
         // Re-select the renamed item
         setTimeout(() => {
-            const renamedItem = [...this.deps.querySelectorAll(".mini-cycle-switch-item")]
+            const renamedItem = [...this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM)]
                 .find(item => item.dataset.cycleKey === uniqueName);
             if (renamedItem) {
                 renamedItem.classList.add("selected");
@@ -669,7 +670,7 @@ export class RoutineSwitcher {
     hideSwitchMiniCycleModal() {
         console.log("🔍 Hiding switch miniCycle modal (Schema 2.5 only)...");
 
-        const switchModal = this.deps.querySelector(".mini-cycle-switch-modal");
+        const switchModal = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL);
         console.log("🔍 Modal Found?", switchModal);
 
         if (!switchModal) {
@@ -687,7 +688,7 @@ export class RoutineSwitcher {
     confirmMiniCycle() {
         console.log("✅ Confirming miniCycle selection (state-based)...");
 
-        const selectedCycle = this.deps.querySelector(".mini-cycle-switch-item.selected");
+        const selectedCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
 
         if (!selectedCycle) {
             this.deps.showNotification("⚠️ Please select a miniCycle first.", "warning", 3000);
@@ -933,14 +934,14 @@ export class RoutineSwitcher {
         const safeAdd = this.deps.safeAddEventListener;
         this._clickOutsideHandler = (event) => {
             // ✅ Early return if modal not visible (avoid DOM queries on every click)
-            const switchModal = this.deps.querySelector(".mini-cycle-switch-modal");
+            const switchModal = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL);
             if (!switchModal || switchModal.style.display !== "flex") {
                 return;
             }
 
-            const switchModalContent = this.deps.querySelector(".mini-cycle-switch-modal-content");
-            const mainMenu = this.deps.querySelector(".menu-container");
-            const routineSwitcherBtn = this.deps.getElementById("routine-switcher-btn");
+            const switchModalContent = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT);
+            const mainMenu = this.deps.querySelector(DOM_SELECTORS.MENU_CONTAINER);
+            const routineSwitcherBtn = this.deps.getElementById(DOM_IDS.ROUTINE_SWITCHER_BTN);
 
             // ✅ Add error checking for missing elements
             if (!switchModalContent || !mainMenu) {
@@ -988,7 +989,7 @@ export class RoutineSwitcher {
 
         console.log('🔍 Preview for cycle:', cycleName);
 
-        const previewWindow = this.deps.getElementById("switch-preview-window");
+        const previewWindow = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_WINDOW);
 
         if (!previewWindow) {
             console.error('❌ Preview window element not found');
@@ -1002,7 +1003,7 @@ export class RoutineSwitcher {
         }
 
         // ✅ Get or create date display element below preview
-        let dateDisplay = this.deps.getElementById("switch-preview-date");
+        let dateDisplay = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_DATE);
         if (!dateDisplay) {
             dateDisplay = document.createElement("div");
             dateDisplay.id = "switch-preview-date";
@@ -1048,14 +1049,14 @@ export class RoutineSwitcher {
      * Setup double-click on preview window to open it in a review modal
      */
     setupPreviewPopout() {
-        const previewWindow = this.deps.getElementById("switch-preview-window");
+        const previewWindow = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_WINDOW);
         if (!previewWindow) return;
 
         const safeAdd = this.deps.safeAddEventListener;
         if (!safeAdd) return;
 
         safeAdd(previewWindow, "dblclick", () => {
-            const selected = this.deps.querySelector(".mini-cycle-switch-item.selected");
+            const selected = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
             if (!selected) return;
 
             const cycleKey = selected.dataset.cycleKey;
@@ -1081,7 +1082,7 @@ export class RoutineSwitcher {
             }).join('');
 
             // Remove existing preview modal if any
-            const existing = document.getElementById('preview-review-overlay');
+            const existing = document.getElementById(DOM_IDS.PREVIEW_REVIEW_OVERLAY);
             if (existing) existing.remove();
 
             // Create modal
@@ -1105,7 +1106,7 @@ export class RoutineSwitcher {
 
             // Close handlers
             const close = () => overlay.remove();
-            overlay.querySelector('.preview-review-close').addEventListener('click', close);
+            overlay.querySelector(DOM_SELECTORS.PREVIEW_REVIEW_CLOSE).addEventListener('click', close);
             overlay.addEventListener('click', (e) => {
                 e.stopPropagation(); // prevent routine switcher's document-level handler from closing
                 if (e.target === overlay) close();
@@ -1149,7 +1150,7 @@ export class RoutineSwitcher {
         }
 
         const cycles = currentState.data?.cycles || {};
-        const miniCycleList = this.deps.getElementById("miniCycleList");
+        const miniCycleList = this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST);
 
         if (!miniCycleList) {
             console.error('❌ miniCycleList element not found');
@@ -1237,11 +1238,11 @@ export class RoutineSwitcher {
             listItem._clickHandler = () => {
                 console.log('🎯 Cycle selected:', cycleData.title || cycleKey, 'Key:', cycleKey);
 
-                this.deps.querySelectorAll(".mini-cycle-switch-item").forEach(item => item.classList.remove("selected"));
+                this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => item.classList.remove("selected"));
                 listItem.classList.add("selected");
 
                 // Show preview & buttons
-                const switchItemsRow = this.deps.getElementById("switch-items-row");
+                const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
                 if (switchItemsRow) {
                     switchItemsRow.style.display = "block";
                 }
@@ -1253,7 +1254,7 @@ export class RoutineSwitcher {
 
             // Double-click to open immediately
             listItem._dblClickHandler = () => {
-                this.deps.querySelectorAll(".mini-cycle-switch-item").forEach(item => item.classList.remove("selected"));
+                this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => item.classList.remove("selected"));
                 listItem.classList.add("selected");
                 this.confirmMiniCycle();
             };
@@ -1271,8 +1272,8 @@ export class RoutineSwitcher {
      * Update the storage bar UI with current localStorage usage
      */
     updateStorageBar() {
-        const barElement = this.deps.getElementById('storage-bar-fill');
-        const textElement = this.deps.getElementById('storage-bar-text');
+        const barElement = this.deps.getElementById(DOM_IDS.STORAGE_BAR_FILL);
+        const textElement = this.deps.getElementById(DOM_IDS.STORAGE_BAR_TEXT);
 
         if (barElement && textElement) {
             // Reset estimate to actual measurement when modal opens
@@ -1292,7 +1293,7 @@ export class RoutineSwitcher {
      * Setup storage refresh button handler
      */
     setupStorageRefreshButton() {
-        const refreshBtn = this.deps.getElementById('storage-refresh-btn');
+        const refreshBtn = this.deps.getElementById(DOM_IDS.STORAGE_REFRESH_BTN);
         if (!refreshBtn) return;
 
         const safeAdd = this.deps.safeAddEventListener;
@@ -1314,8 +1315,8 @@ export class RoutineSwitcher {
                 forceQuotaRedetection();
 
                 // Update the storage bar with fresh actual values
-                const barElement = this.deps.getElementById('storage-bar-fill');
-                const textElement = this.deps.getElementById('storage-bar-text');
+                const barElement = this.deps.getElementById(DOM_IDS.STORAGE_BAR_FILL);
+                const textElement = this.deps.getElementById(DOM_IDS.STORAGE_BAR_TEXT);
                 if (barElement && textElement) {
                     updateStorageBarUI(barElement, textElement, this.deps.showNotification);
                 }
@@ -1336,7 +1337,7 @@ export class RoutineSwitcher {
      * Setup search input for filtering routines
      */
     setupSearchInput() {
-        const searchInput = this.deps.getElementById('routine-search-input');
+        const searchInput = this.deps.getElementById(DOM_IDS.ROUTINE_SEARCH_INPUT);
         if (!searchInput) {
             console.warn('⚠️ Search input not found');
             return;
@@ -1362,10 +1363,10 @@ export class RoutineSwitcher {
      * @param {string} query - Search query
      */
     filterRoutineList(query) {
-        const miniCycleList = this.deps.getElementById('miniCycleList');
+        const miniCycleList = this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST);
         if (!miniCycleList) return;
 
-        const items = miniCycleList.querySelectorAll('.mini-cycle-switch-item');
+        const items = miniCycleList.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
         const lowerQuery = query.toLowerCase().trim();
 
         items.forEach(item => {
@@ -1375,8 +1376,8 @@ export class RoutineSwitcher {
         });
 
         // Hide switch-items-row if no item is selected or visible
-        const switchRow = this.deps.getElementById('switch-items-row');
-        const selectedItem = miniCycleList.querySelector('.mini-cycle-switch-item.selected');
+        const switchRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
+        const selectedItem = miniCycleList.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
         if (switchRow && selectedItem && selectedItem.style.display === 'none') {
             // Selected item is now hidden, deselect it
             selectedItem.classList.remove('selected');
@@ -1388,9 +1389,9 @@ export class RoutineSwitcher {
      * Setup sort control buttons
      */
     setupSortControls() {
-        const sortAlpha = this.deps.getElementById('sort-alpha');
-        const sortRecent = this.deps.getElementById('sort-recent');
-        const sortSize = this.deps.getElementById('sort-size');
+        const sortAlpha = this.deps.getElementById(DOM_IDS.SORT_ALPHA);
+        const sortRecent = this.deps.getElementById(DOM_IDS.SORT_RECENT);
+        const sortSize = this.deps.getElementById(DOM_IDS.SORT_SIZE);
 
         if (!sortAlpha || !sortRecent || !sortSize) {
             console.warn('⚠️ Sort controls not found');
@@ -1451,9 +1452,9 @@ export class RoutineSwitcher {
      * Update sort button active states and labels
      */
     _updateSortButtonStates() {
-        const sortAlpha = this.deps.getElementById('sort-alpha');
-        const sortRecent = this.deps.getElementById('sort-recent');
-        const sortSize = this.deps.getElementById('sort-size');
+        const sortAlpha = this.deps.getElementById(DOM_IDS.SORT_ALPHA);
+        const sortRecent = this.deps.getElementById(DOM_IDS.SORT_RECENT);
+        const sortSize = this.deps.getElementById(DOM_IDS.SORT_SIZE);
 
         if (sortAlpha) {
             sortAlpha.classList.toggle('active', this._sortMode === 'alpha');
@@ -1520,7 +1521,7 @@ export class RoutineSwitcher {
      * Setup filter dropdown
      */
     setupFilterControls() {
-        const filterSelect = this.deps.getElementById('routine-filter-select');
+        const filterSelect = this.deps.getElementById(DOM_IDS.ROUTINE_FILTER_SELECT);
 
         if (!filterSelect) {
             console.warn('⚠️ Filter dropdown not found');

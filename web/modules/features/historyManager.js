@@ -8,6 +8,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
+import { DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // CONSTANTS
@@ -378,7 +379,7 @@ export class HistoryManager {
         // Animate in
         requestAnimationFrame(() => {
             this.modalOverlay.style.opacity = '1';
-            this.modalOverlay.querySelector('.history-modal').style.transform = 'translateY(0)';
+            this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_MODAL).style.transform = 'translateY(0)';
         });
     }
 
@@ -389,7 +390,7 @@ export class HistoryManager {
         if (!this.modalOverlay) return;
 
         this.modalOverlay.style.opacity = '0';
-        this.modalOverlay.querySelector('.history-modal').style.transform = 'translateY(20px)';
+        this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_MODAL).style.transform = 'translateY(20px)';
 
         setTimeout(() => {
             this.modalOverlay?.remove();
@@ -407,7 +408,7 @@ export class HistoryManager {
         if (!this.modalOverlay) return;
 
         // Back button
-        const backBtn = this.modalOverlay.querySelector('.history-back-btn');
+        const backBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_BACK_BTN);
         backBtn?.addEventListener('click', () => {
             if (this.isRecreateMode) {
                 this.isRecreateMode = false;
@@ -421,7 +422,7 @@ export class HistoryManager {
         });
 
         // Action button (Clear All / Recreate)
-        const actionBtn = this.modalOverlay.querySelector('.history-action-btn');
+        const actionBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_ACTION_BTN);
         actionBtn?.addEventListener('click', () => {
             if (this.activeTab === 'events') {
                 // Clear history
@@ -451,7 +452,7 @@ export class HistoryManager {
         });
 
         // Tab buttons
-        this.modalOverlay.querySelectorAll('.history-tab').forEach(tab => {
+        this.modalOverlay.querySelectorAll(DOM_SELECTORS.HISTORY_TAB).forEach(tab => {
             tab.addEventListener('click', () => {
                 const newTab = tab.dataset.tab;
                 if (newTab !== this.activeTab) {
@@ -467,7 +468,7 @@ export class HistoryManager {
         });
 
         // Footer cancel button
-        const cancelBtn = this.modalOverlay.querySelector('.history-cancel-btn');
+        const cancelBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_CANCEL_BTN);
         cancelBtn?.addEventListener('click', () => {
             this.isRecreateMode = false;
             this.selectedTasks.clear();
@@ -477,13 +478,13 @@ export class HistoryManager {
         });
 
         // Footer confirm button
-        const confirmBtn = this.modalOverlay.querySelector('.history-confirm-btn');
+        const confirmBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_CONFIRM_BTN);
         confirmBtn?.addEventListener('click', () => {
             this._recreateSelectedTasks();
         });
 
         // Reset routine progress button
-        const resetProgressBtn = this.modalOverlay.querySelector('.history-reset-progress-btn');
+        const resetProgressBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_RESET_PROGRESS_BTN);
         if (resetProgressBtn) {
             const safeAdd = this.deps.safeAddEventListener || ((el, evt, fn) => el.addEventListener(evt, fn));
             safeAdd(resetProgressBtn, 'click', () => {
@@ -521,7 +522,7 @@ export class HistoryManager {
      * @private
      */
     _renderModalContent() {
-        const content = this.modalOverlay?.querySelector('.history-modal-content');
+        const content = this.modalOverlay?.querySelector(DOM_SELECTORS.HISTORY_MODAL_CONTENT);
         if (!content) return;
 
         if (this.activeTab === 'cleared') {
@@ -605,7 +606,7 @@ export class HistoryManager {
 
         // Setup click handlers for entries in recreate mode
         if (this.isRecreateMode) {
-            content.querySelectorAll('.cleared-entry').forEach(el => {
+            content.querySelectorAll(DOM_SELECTORS.CLEARED_ENTRY).forEach(el => {
                 el.addEventListener('click', () => {
                     const id = el.dataset.id;
                     const checkbox = el.querySelector('span');
@@ -838,7 +839,7 @@ export class HistoryManager {
     _updateTabStyles() {
         if (!this.modalOverlay) return;
 
-        this.modalOverlay.querySelectorAll('.history-tab').forEach(tab => {
+        this.modalOverlay.querySelectorAll(DOM_SELECTORS.HISTORY_TAB).forEach(tab => {
             const isActive = tab.dataset.tab === this.activeTab;
             tab.style.fontWeight = isActive ? '600' : '400';
             tab.style.borderBottomColor = isActive ? 'var(--primary-color, #4c79ff)' : 'transparent';
@@ -853,7 +854,7 @@ export class HistoryManager {
     _updateFooterVisibility() {
         if (!this.modalOverlay) return;
 
-        const footer = this.modalOverlay.querySelector('.history-footer');
+        const footer = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_FOOTER);
         if (footer) {
             footer.style.display = this.isRecreateMode ? 'flex' : 'none';
         }
@@ -866,7 +867,7 @@ export class HistoryManager {
     _updateActionButton() {
         if (!this.modalOverlay) return;
 
-        const actionBtn = this.modalOverlay.querySelector('.history-action-btn');
+        const actionBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_ACTION_BTN);
         if (!actionBtn) return;
 
         if (this.activeTab === 'events') {
@@ -891,7 +892,7 @@ export class HistoryManager {
     _updateConfirmButton() {
         if (!this.modalOverlay) return;
 
-        const confirmBtn = this.modalOverlay.querySelector('.history-confirm-btn');
+        const confirmBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_CONFIRM_BTN);
         if (confirmBtn) {
             const count = this.selectedTasks.size;
             confirmBtn.textContent = `Recreate Selected (${count})`;

@@ -28,7 +28,9 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
-    DEFAULT_RECURRING_DELETE_SETTINGS
+    DEFAULT_RECURRING_DELETE_SETTINGS,
+    DOM_IDS,
+    DOM_SELECTORS
 } from '../core/constants.js';
 
 // ============================================================================
@@ -108,7 +110,7 @@ export class TaskUtils {
             const currentCycle = state.data?.cycles?.[activeCycleId];
             if (!currentCycle) return null;
 
-            const taskText = taskItem.querySelector('.task-text')?.textContent?.trim() || '';
+            const taskText = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent?.trim() || '';
 
             return {
                 taskTextTrimmed: taskText,
@@ -133,14 +135,14 @@ export class TaskUtils {
      * @returns {Array} - Array of task objects
      */
     static extractTaskDataFromDOM(getElementById = (id) => document.getElementById(id)) {
-        const taskListElement = getElementById('taskList');
+        const taskListElement = getElementById(DOM_IDS.TASK_LIST);
         if (!taskListElement) {
             console.warn('⚠️ Task list element not found');
             return [];
         }
 
         return [...taskListElement.children].map(taskElement => {
-            const taskTextElement = taskElement.querySelector(".task-text");
+            const taskTextElement = taskElement.querySelector(DOM_SELECTORS.TASK_TEXT);
             const taskId = taskElement.dataset.taskId;
 
             if (!taskTextElement || !taskId) {
@@ -174,10 +176,10 @@ export class TaskUtils {
                 id: taskId,
                 text: taskTextElement.textContent,
                 completed: taskElement.querySelector("input[type='checkbox']")?.checked || false,
-                dueDate: taskElement.querySelector(".due-date")?.value || null,
+                dueDate: taskElement.querySelector(DOM_SELECTORS.DUE_DATE)?.value || null,
                 highPriority: taskElement.classList.contains("high-priority"),
-                remindersEnabled: taskElement.querySelector(".enable-task-reminders")?.classList.contains("reminder-active") || false,
-                recurring: taskElement.querySelector(".recurring-btn")?.classList.contains("active") || false,
+                remindersEnabled: taskElement.querySelector(DOM_SELECTORS.ENABLE_TASK_REMINDERS)?.classList.contains("reminder-active") || false,
+                recurring: taskElement.querySelector(DOM_SELECTORS.RECURRING_BTN)?.classList.contains("active") || false,
                 recurringSettings,
                 deleteWhenComplete: taskElement.dataset.deleteWhenComplete === "true" || false,
                 deleteWhenCompleteSettings: deleteWhenCompleteSettings,
@@ -332,7 +334,7 @@ export class TaskUtils {
      * @param {Function} querySelector - Function to query DOM
      */
     static scrollToNewTask(taskList, querySelector = (sel) => document.querySelector(sel)) {
-        const taskListContainer = querySelector(".task-list-container");
+        const taskListContainer = querySelector(DOM_SELECTORS.TASK_LIST_CONTAINER);
         if (taskListContainer && taskList) {
             taskListContainer.scrollTo({
                 top: taskList.scrollHeight,

@@ -8,7 +8,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { LIMITS } from '../core/constants.js';
+import { LIMITS, DOM_IDS } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -98,7 +98,7 @@ function scheduleIdleSave() {
  * Validates and saves the new title, updating storage key to match.
  */
 async function handleMiniCycleTitleBlur() {
-    const titleElement = document.getElementById("mini-cycle-title");
+    const titleElement = document.getElementById(DOM_IDS.MINI_CYCLE_TITLE);
     if (!titleElement) return;
 
     const AppState = _deps.AppState;
@@ -230,7 +230,7 @@ export function setupMiniCycleTitleListener() {
         return;
     }
 
-    const titleElement = document.getElementById("mini-cycle-title");
+    const titleElement = document.getElementById(DOM_IDS.MINI_CYCLE_TITLE);
     if (!titleElement) return;
 
     _titleListenerInitialized = true;

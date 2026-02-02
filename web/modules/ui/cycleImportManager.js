@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { LIMITS } from '../core/constants.js';
+import { LIMITS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -241,7 +241,7 @@ export function setupDragDropImport() {
         z-index: 10000;
         pointer-events: none;
     `;
-    overlay.querySelector('.mcyc-drop-content').style.cssText = `
+    overlay.querySelector(DOM_SELECTORS.MCYC_DROP_CONTENT).style.cssText = `
         background: var(--bg-color, #1a1a2e);
         border: 3px dashed var(--accent-color, #4a9eff);
         border-radius: 16px;
@@ -249,12 +249,12 @@ export function setupDragDropImport() {
         text-align: center;
         color: var(--text-color, #fff);
     `;
-    overlay.querySelector('.mcyc-drop-icon').style.cssText = `
+    overlay.querySelector(DOM_SELECTORS.MCYC_DROP_ICON).style.cssText = `
         font-size: 48px;
         margin-bottom: 16px;
         color: var(--accent-color, #4a9eff);
     `;
-    overlay.querySelector('.mcyc-drop-text').style.cssText = `
+    overlay.querySelector(DOM_SELECTORS.MCYC_DROP_TEXT).style.cssText = `
         font-size: 18px;
         font-weight: 500;
     `;

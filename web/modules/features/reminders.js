@@ -17,6 +17,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -154,7 +155,7 @@ export class MiniCycleReminders {
                 console.log('🔄 Updating reminder buttons after app ready (hook)...');
 
                 // Check if tasks exist in DOM before proceeding
-                const tasks = this.deps.querySelectorAll(".task");
+                const tasks = this.deps.querySelectorAll(DOM_SELECTORS.TASK);
                 if (tasks.length === 0) {
                     console.log('⏭️ No tasks in DOM yet, skipping (will run after loadMiniCycle)');
                     return;
@@ -198,7 +199,7 @@ export class MiniCycleReminders {
             await appInitModule.waitForCore();
         }
 
-        const enableReminders = this.deps.getElementById('enableReminders');
+        const enableReminders = this.deps.getElementById(DOM_IDS.ENABLE_REMINDERS);
         if (!enableReminders) {
             console.warn('⚠️ enableReminders checkbox not found');
             return;
@@ -223,7 +224,7 @@ export class MiniCycleReminders {
         });
 
         // Update the visibility of the frequency section
-        const frequencySection = this.deps.getElementById('frequency-section');
+        const frequencySection = this.deps.getElementById(DOM_IDS.FREQUENCY_SECTION);
         if (frequencySection) {
             frequencySection.classList.toggle("hidden", !isEnabled);
         }
@@ -232,7 +233,7 @@ export class MiniCycleReminders {
         const globalReminderState = this.autoSaveReminders();
 
         // ✅ Sync with customizer modal if it's open
-        const customizerModal = document.getElementById('task-options-customizer-modal');
+        const customizerModal = document.getElementById(DOM_IDS.TASK_OPTIONS_CUSTOMIZER_MODAL);
         if (customizerModal) {
             const remindersCheckbox = customizerModal.querySelector('[data-option="reminders"]');
             if (remindersCheckbox) {
@@ -292,7 +293,7 @@ export class MiniCycleReminders {
     setupReminderToggle() {
         console.log('⚙️ Setting up reminder toggle (Schema 2.5 only)...');
 
-        const enableReminders = this.deps.getElementById('enableReminders');
+        const enableReminders = this.deps.getElementById(DOM_IDS.ENABLE_REMINDERS);
         if (!enableReminders) {
             console.warn('⚠️ enableReminders checkbox not found');
             return;
@@ -321,7 +322,7 @@ export class MiniCycleReminders {
         // Apply settings to UI elements
         enableReminders.checked = reminderSettings.enabled === true;
 
-        const frequencySection = this.deps.getElementById('frequency-section');
+        const frequencySection = this.deps.getElementById(DOM_IDS.FREQUENCY_SECTION);
         if (frequencySection) {
             frequencySection.classList.toggle("hidden", !reminderSettings.enabled);
         }
@@ -361,16 +362,16 @@ export class MiniCycleReminders {
             throw new Error('Schema 2.5 data not found');
         }
 
-        const enabled = this.deps.getElementById("enableReminders")?.checked || false;
+        const enabled = this.deps.getElementById(DOM_IDS.ENABLE_REMINDERS)?.checked || false;
         const previousSettings = schemaData.reminders || {};
 
         const remindersToSave = {
             enabled,
-            indefinite: this.deps.getElementById("indefiniteCheckbox")?.checked || true,
-            dueDatesReminders: this.deps.getElementById("dueDatesReminders")?.checked || false,
-            repeatCount: parseInt(this.deps.getElementById("repeatCount")?.value) || 0,
-            frequencyValue: parseInt(this.deps.getElementById("frequencyValue")?.value) || 0,
-            frequencyUnit: this.deps.getElementById("frequencyUnit")?.value || "hours"
+            indefinite: this.deps.getElementById(DOM_IDS.INDEFINITE_CHECKBOX)?.checked || true,
+            dueDatesReminders: this.deps.getElementById(DOM_IDS.DUE_DATES_REMINDERS)?.checked || false,
+            repeatCount: parseInt(this.deps.getElementById(DOM_IDS.REPEAT_COUNT)?.value) || 0,
+            frequencyValue: parseInt(this.deps.getElementById(DOM_IDS.FREQUENCY_VALUE)?.value) || 0,
+            frequencyUnit: this.deps.getElementById(DOM_IDS.FREQUENCY_UNIT)?.value || "hours"
         };
 
         // If enabling for first time or settings changed, reset timers
@@ -440,12 +441,12 @@ export class MiniCycleReminders {
         console.log('📊 Loading reminder settings from Schema 2.5:', reminders);
 
         // Apply settings to UI
-        const enableReminders = this.deps.getElementById("enableReminders");
-        const indefiniteCheckbox = this.deps.getElementById("indefiniteCheckbox");
-        const dueDatesReminders = this.deps.getElementById("dueDatesReminders");
-        const repeatCount = this.deps.getElementById("repeatCount");
-        const frequencyValue = this.deps.getElementById("frequencyValue");
-        const frequencyUnit = this.deps.getElementById("frequencyUnit");
+        const enableReminders = this.deps.getElementById(DOM_IDS.ENABLE_REMINDERS);
+        const indefiniteCheckbox = this.deps.getElementById(DOM_IDS.INDEFINITE_CHECKBOX);
+        const dueDatesReminders = this.deps.getElementById(DOM_IDS.DUE_DATES_REMINDERS);
+        const repeatCount = this.deps.getElementById(DOM_IDS.REPEAT_COUNT);
+        const frequencyValue = this.deps.getElementById(DOM_IDS.FREQUENCY_VALUE);
+        const frequencyUnit = this.deps.getElementById(DOM_IDS.FREQUENCY_UNIT);
 
         if (enableReminders) enableReminders.checked = reminders.enabled;
         if (indefiniteCheckbox) indefiniteCheckbox.checked = reminders.indefinite;
@@ -455,12 +456,12 @@ export class MiniCycleReminders {
         if (frequencyUnit) frequencyUnit.value = reminders.frequencyUnit;
 
         // Show/hide frequency settings dynamically
-        const frequencySection = this.deps.getElementById("frequency-section");
+        const frequencySection = this.deps.getElementById(DOM_IDS.FREQUENCY_SECTION);
         if (frequencySection) {
             frequencySection.classList.toggle("hidden", !reminders.enabled);
         }
 
-        const repeatCountRow = this.deps.getElementById("repeat-count-row");
+        const repeatCountRow = this.deps.getElementById(DOM_IDS.REPEAT_COUNT_ROW);
         if (repeatCountRow) {
             repeatCountRow.style.display = reminders.indefinite ? "none" : "block";
         }
@@ -559,14 +560,14 @@ export class MiniCycleReminders {
 
         console.log('📊 Reminder settings:', remindersSettings);
 
-        let tasksWithReminders = [...this.deps.querySelectorAll(".task")]
+        let tasksWithReminders = [...this.deps.querySelectorAll(DOM_SELECTORS.TASK)]
             .filter(task => task.querySelector(".enable-task-reminders.reminder-active"));
 
         console.log("🔍 Tasks With Active Reminders:", tasksWithReminders.length);
 
         let incompleteTasks = tasksWithReminders
             .filter(task => !task.querySelector("input[type='checkbox']").checked)
-            .map(task => task.querySelector(".task-text").textContent);
+            .map(task => task.querySelector(DOM_SELECTORS.TASK_TEXT).textContent);
 
         if (incompleteTasks.length === 0) {
             console.log("✅ All tasks complete. Stopping reminders.");
@@ -809,7 +810,7 @@ export class MiniCycleReminders {
                         // Don't trigger if clicking the close button
                         if (e.target.classList.contains('close-btn')) return;
 
-                        const remindersModal = document.getElementById('reminders-modal');
+                        const remindersModal = document.getElementById(DOM_IDS.REMINDERS_MODAL);
                         if (remindersModal) {
                             remindersModal.style.display = 'flex';
                             remindersModal.style.alignItems = 'center';
@@ -826,7 +827,7 @@ export class MiniCycleReminders {
                     notificationElement.title = 'Click to configure reminder settings';
 
                     // ✅ Enable line breaks in notification
-                    const notificationContent = notificationElement.querySelector('.notification-content');
+                    const notificationContent = notificationElement.querySelector(DOM_SELECTORS.NOTIFICATION_CONTENT);
                     if (notificationContent) {
                         notificationContent.style.whiteSpace = 'pre-line';
                     }
@@ -868,9 +869,9 @@ export class MiniCycleReminders {
             hasCycle: !!currentCycle
         });
 
-        this.deps.querySelectorAll(".task").forEach(taskItem => {
-          const buttonContainer = taskItem.querySelector(".task-options");
-          let reminderButton = buttonContainer?.querySelector(".enable-task-reminders");
+        this.deps.querySelectorAll(DOM_SELECTORS.TASK).forEach(taskItem => {
+          const buttonContainer = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
+          let reminderButton = buttonContainer?.querySelector(DOM_SELECTORS.ENABLE_TASK_REMINDERS);
 
           const taskId = taskItem.dataset.taskId;
           if (!taskId) {
@@ -905,12 +906,12 @@ export class MiniCycleReminders {
         console.log('⚙️ Setting up reminder input listeners...');
 
         // Indefinite checkbox listener
-        const indefiniteCheckbox = this.deps.getElementById("indefiniteCheckbox");
+        const indefiniteCheckbox = this.deps.getElementById(DOM_IDS.INDEFINITE_CHECKBOX);
         if (indefiniteCheckbox) {
             this.deps.safeAddEventListener(indefiniteCheckbox, "change", () => {
                 console.log('🔄 Indefinite checkbox changed (Schema 2.5 only)');
 
-                const repeatCountRow = this.deps.getElementById("repeat-count-row");
+                const repeatCountRow = this.deps.getElementById(DOM_IDS.REPEAT_COUNT_ROW);
                 if (repeatCountRow) {
                     repeatCountRow.style.display = indefiniteCheckbox.checked ? "none" : "block";
                 }
@@ -921,7 +922,7 @@ export class MiniCycleReminders {
         }
 
         // Due dates reminders listener
-        const dueDatesReminders = this.deps.getElementById("dueDatesReminders");
+        const dueDatesReminders = this.deps.getElementById(DOM_IDS.DUE_DATES_REMINDERS);
         if (dueDatesReminders) {
             this.deps.safeAddEventListener(dueDatesReminders, "change", () => {
                 console.log('📅 Due dates reminders changed (Schema 2.5 only)');
@@ -979,8 +980,8 @@ export class MiniCycleReminders {
      * (Extracted from orchestrator.js Phase 3c)
      */
     setupModalCloseListeners() {
-        const remindersModal = this.deps.getElementById("reminders-modal");
-        const closeRemindersBtn = this.deps.getElementById("close-reminders-btn");
+        const remindersModal = this.deps.getElementById(DOM_IDS.REMINDERS_MODAL);
+        const closeRemindersBtn = this.deps.getElementById(DOM_IDS.CLOSE_REMINDERS_BTN);
 
         if (closeRemindersBtn) {
             this.deps.safeAddEventListener(closeRemindersBtn, "click", () => {
@@ -1003,7 +1004,7 @@ export class MiniCycleReminders {
      * Moved from orchestrator.js for proper module ownership
      */
     wireOpenRemindersModalListener() {
-        const openBtn = this.deps.getElementById("open-reminders-modal");
+        const openBtn = this.deps.getElementById(DOM_IDS.OPEN_REMINDERS_MODAL);
         if (!openBtn) {
             console.warn('⚠️ open-reminders-modal button not found');
             return;
@@ -1016,7 +1017,7 @@ export class MiniCycleReminders {
             // Load current settings from Schema 2.5 before opening
             this.loadRemindersSettings();
 
-            const remindersModal = this.deps.getElementById("reminders-modal");
+            const remindersModal = this.deps.getElementById(DOM_IDS.REMINDERS_MODAL);
             if (remindersModal) {
                 remindersModal.style.display = "flex";
             }

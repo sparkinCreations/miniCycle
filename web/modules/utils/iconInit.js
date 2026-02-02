@@ -5,6 +5,7 @@
  */
 
 import { ICONS, FA_MAP, getIcon } from './icons.js';
+import { DOM_SELECTORS } from '../core/constants.js';
 
 /**
  * Parse SVG string and return the SVG element
@@ -77,7 +78,7 @@ export function replaceFAIcon(element) {
  * @returns {number} Number of icons replaced
  */
 export function replaceAllFAIcons(container = document.body) {
-    const faIcons = container.querySelectorAll('i.fas, i.far, i.fab, i.fa');
+    const faIcons = container.querySelectorAll(DOM_SELECTORS.ICON_FONTAWESOME);
     let count = 0;
 
     faIcons.forEach(icon => {

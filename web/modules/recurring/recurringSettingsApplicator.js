@@ -9,6 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -71,7 +72,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
             return;
         }
 
-        const checkedEls = _deps.querySelectorAll(".recurring-check:checked");
+        const checkedEls = _deps.querySelectorAll(DOM_SELECTORS.RECURRING_CHECK_CHECKED);
 
         if (!checkedEls.length) {
             _deps.showNotification("⚠ No tasks checked to apply settings.");
@@ -89,7 +90,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
         if (_deps.updateAppState) {
             await _deps.updateAppState(draft => {
                 // Save default recurring settings if requested
-                if (_deps.getElementById("set-default-recurring")?.checked) {
+                if (_deps.getElementById(DOM_IDS.SET_DEFAULT_RECURRING)?.checked) {
                     if (!draft.settings) draft.settings = {};
                     draft.settings.defaultRecurringSettings = settings;
                 }
@@ -118,7 +119,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                     const existingTemplate = cycle.recurringTemplates[taskId];
                     const templateText = task?.text ||
                                        existingTemplate?.text ||
-                                       taskEl.querySelector(".recurring-task-text")?.textContent ||
+                                       taskEl.querySelector(DOM_SELECTORS.RECURRING_TASK_TEXT)?.textContent ||
                                        "Untitled Task";
 
                     cycle.recurringTemplates[taskId] = {
@@ -143,7 +144,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                 if (!taskEl) return;
                 taskEl.classList.add("recurring");
                 taskEl.setAttribute("data-recurring-settings", JSON.stringify(settings));
-                const recurringBtn = taskEl.querySelector(".recurring-btn");
+                const recurringBtn = taskEl.querySelector(DOM_SELECTORS.RECURRING_BTN);
                 if (recurringBtn) {
                     recurringBtn.classList.add("active");
                     recurringBtn.setAttribute("aria-pressed", "true");
@@ -153,7 +154,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
         }
 
         // Show success notifications
-        if (_deps.getElementById("set-default-recurring")?.checked) {
+        if (_deps.getElementById(DOM_IDS.SET_DEFAULT_RECURRING)?.checked) {
             _deps.showNotification("✅ Default recurring settings saved!", "success", 1500);
         }
 
@@ -168,16 +169,16 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
         }, 10);
 
         // Hide settings panel and reset form
-        const settingsPanel = _deps.getElementById("recurring-settings-panel");
+        const settingsPanel = _deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
         settingsPanel?.classList.add("hidden");
 
         // Hide checkboxes
-        _deps.querySelectorAll(".recurring-check").forEach(cb => {
+        _deps.querySelectorAll(DOM_SELECTORS.RECURRING_CHECK).forEach(cb => {
             cb.classList.add("hidden");
             cb.checked = false;
         });
 
-        const toggleContainer = _deps.getElementById("recurring-toggle-actions");
+        const toggleContainer = _deps.getElementById(DOM_IDS.RECURRING_TOGGLE_ACTIONS);
         toggleContainer?.classList.add("hidden");
 
         panel.updateRecurringPanelButtonVisibility();
@@ -193,12 +194,12 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
         _deps.showNotification('❌ Failed to apply settings. Please try again.', 'error', 5000);
 
         // Cleanup on error
-        const settingsPanel = _deps.getElementById("recurring-settings-panel");
+        const settingsPanel = _deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
         if (settingsPanel) {
             settingsPanel.classList.add("hidden");
         }
 
-        _deps.querySelectorAll(".recurring-check").forEach(cb => {
+        _deps.querySelectorAll(DOM_SELECTORS.RECURRING_CHECK).forEach(cb => {
             cb.classList.add("hidden");
             cb.checked = false;
         });
@@ -212,7 +213,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
  * @param {Object} panel - The RecurringPanel instance
  */
 function updateUIAfterApply(panel) {
-    const checkedTasks = _deps.querySelectorAll(".recurring-task-item.checked");
+    const checkedTasks = _deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM_CHECKED);
     let firstCheckedTask = null;
 
     console.log('🔍 Looking for checked tasks after apply:', checkedTasks.length);
@@ -221,7 +222,7 @@ function updateUIAfterApply(panel) {
         firstCheckedTask = checkedTasks[0];
 
         // Keep first task selected, clear the rest
-        _deps.querySelectorAll(".recurring-task-item").forEach(el => {
+        _deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
             if (el !== firstCheckedTask) {
                 el.classList.remove("selected", "checked");
             }
@@ -239,7 +240,7 @@ function updateUIAfterApply(panel) {
         }
     } else {
         // No checked tasks - clear all selections
-        _deps.querySelectorAll(".recurring-task-item").forEach(el => {
+        _deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
             el.classList.remove("selected", "checked");
         });
         console.log('⚠️ No checked tasks found after apply settings');

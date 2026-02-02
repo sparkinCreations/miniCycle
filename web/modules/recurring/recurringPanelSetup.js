@@ -8,6 +8,8 @@
  * @version 1.0.0
  */
 
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+
 // ============================================================================
 // FREQUENCY SELECTOR
 // ============================================================================
@@ -18,18 +20,18 @@
  * @param {Function} onUpdate - Callback when frequency changes
  */
 export function setupFrequencySelector(deps, onUpdate) {
-    const frequencySelect = deps.getElementById("recur-frequency");
+    const frequencySelect = deps.getElementById(DOM_IDS.RECUR_FREQUENCY);
     if (!frequencySelect) return;
 
     deps.safeAddEventListener(frequencySelect, "change", () => {
         const selectedFrequency = frequencySelect.value;
         const frequencyMap = {
-            hourly: deps.getElementById("hourly-options"),
-            daily: deps.getElementById("daily-options"),
-            weekly: deps.getElementById("weekly-options"),
-            biweekly: deps.getElementById("biweekly-options"),
-            monthly: deps.getElementById("monthly-options"),
-            yearly: deps.getElementById("yearly-options")
+            hourly: deps.getElementById(DOM_IDS.HOURLY_OPTIONS),
+            daily: deps.getElementById(DOM_IDS.DAILY_OPTIONS),
+            weekly: deps.getElementById(DOM_IDS.WEEKLY_OPTIONS),
+            biweekly: deps.getElementById(DOM_IDS.BIWEEKLY_OPTIONS),
+            monthly: deps.getElementById(DOM_IDS.MONTHLY_OPTIONS),
+            yearly: deps.getElementById(DOM_IDS.YEARLY_OPTIONS)
         };
 
         // Hide all frequency option sections
@@ -65,16 +67,16 @@ export function setupToggleVisibility(deps) {
         }
     };
 
-    toggleVisibility("hourly-specific-time", "hourly-minute-container");
+    toggleVisibility(DOM_IDS.HOURLY_SPECIFIC_TIME, "hourly-minute-container");
     toggleVisibility("daily-specific-time", "daily-time-container");
     toggleVisibility("weekly-specific-days", "weekly-day-container");
     toggleVisibility("weekly-specific-time", "weekly-time-container");
-    toggleVisibility("biweekly-specific-days", "biweekly-day-container");
+    toggleVisibility(DOM_IDS.BIWEEKLY_SPECIFIC_DAYS, "biweekly-day-container");
     toggleVisibility("biweekly-specific-time", "biweekly-time-container");
-    toggleVisibility("monthly-specific-days", "monthly-day-container");
-    toggleVisibility("monthly-week-of-month", "monthly-week-container");
+    toggleVisibility(DOM_IDS.MONTHLY_SPECIFIC_DAYS, DOM_IDS.MONTHLY_DAY_CONTAINER);
+    toggleVisibility(DOM_IDS.MONTHLY_WEEK_OF_MONTH, DOM_IDS.MONTHLY_WEEK_CONTAINER);
     toggleVisibility("monthly-specific-time", "monthly-time-container");
-    toggleVisibility("yearly-specific-months", "yearly-month-container");
+    toggleVisibility(DOM_IDS.YEARLY_SPECIFIC_MONTHS, "yearly-month-container");
     toggleVisibility("yearly-specific-time", "yearly-time-container");
 }
 
@@ -88,7 +90,7 @@ export function setupToggleVisibility(deps) {
  * @param {Function} onUpdate - Callback when selection changes
  */
 export function setupToggleCheckAll(deps, onUpdate) {
-    const toggleBtn = deps.getElementById("toggle-check-all");
+    const toggleBtn = deps.getElementById(DOM_IDS.TOGGLE_CHECK_ALL);
     if (!toggleBtn) return;
 
     deps.safeAddEventListener(toggleBtn, "click", () => {
@@ -97,7 +99,7 @@ export function setupToggleCheckAll(deps, onUpdate) {
 
         checkboxes.forEach(cb => {
             cb.checked = anyUnchecked;
-            const item = cb.closest(".recurring-task-item");
+            const item = cb.closest(DOM_SELECTORS.RECURRING_TASK_ITEM);
             if (item) {
                 item.classList.toggle("checked", anyUnchecked);
             }
@@ -119,7 +121,7 @@ export function setupToggleCheckAll(deps, onUpdate) {
  * @param {Object} deps - Dependencies (getElementById, querySelectorAll, safeAddEventListener)
  */
 export function setupAdvancedToggle(deps) {
-    const toggleBtn = deps.getElementById("toggle-advanced-settings");
+    const toggleBtn = deps.getElementById(DOM_IDS.TOGGLE_ADVANCED_SETTINGS);
     if (!toggleBtn) return;
 
     let advancedVisible = false;
@@ -128,18 +130,18 @@ export function setupAdvancedToggle(deps) {
         toggleBtn.textContent = visible ? "Hide Advanced Options" : "Show Advanced Options";
 
         // Show/hide all `.frequency-options` panels
-        deps.querySelectorAll(".frequency-options").forEach(option => {
+        deps.querySelectorAll(DOM_SELECTORS.FREQUENCY_OPTIONS).forEach(option => {
             option.style.display = visible ? "block" : "none";
         });
 
         // Always show frequency dropdown container
-        const frequencyContainer = deps.getElementById("recur-frequency-container");
+        const frequencyContainer = deps.getElementById(DOM_IDS.RECUR_FREQUENCY_CONTAINER);
         if (frequencyContainer) frequencyContainer.style.display = "block";
 
         // Handle extras like 'Recur indefinitely' and 'Specific Dates'
         const advancedControls = [
-            { checkboxId: "recur-indefinitely" },
-            { checkboxId: "recur-specific-dates" }
+            { checkboxId: DOM_IDS.RECUR_INDEFINITELY },
+            { checkboxId: DOM_IDS.RECUR_SPECIFIC_DATES }
         ];
 
         advancedControls.forEach(({ checkboxId }) => {
@@ -152,7 +154,7 @@ export function setupAdvancedToggle(deps) {
             }
         });
 
-        const defaultBoxContainer = deps.getElementById("set-default-recurring-container");
+        const defaultBoxContainer = deps.getElementById(DOM_IDS.SET_DEFAULT_RECURRING_CONTAINER);
         if (defaultBoxContainer) {
             defaultBoxContainer.style.display = visible ? "block" : "none";
         }
@@ -257,15 +259,15 @@ export function setupMilitaryTimeToggle(deps, prefix, onUpdate) {
  * @param {Object} deps - Dependencies (getElementById, safeAddEventListener)
  */
 export function setupMonthlyMutualExclusion(deps) {
-    const specificDays = deps.getElementById("monthly-specific-days");
-    const weekOfMonth = deps.getElementById("monthly-week-of-month");
+    const specificDays = deps.getElementById(DOM_IDS.MONTHLY_SPECIFIC_DAYS);
+    const weekOfMonth = deps.getElementById(DOM_IDS.MONTHLY_WEEK_OF_MONTH);
 
     if (!specificDays || !weekOfMonth) return;
 
     deps.safeAddEventListener(specificDays, "change", () => {
         if (specificDays.checked && weekOfMonth.checked) {
             weekOfMonth.checked = false;
-            const weekContainer = deps.getElementById("monthly-week-container");
+            const weekContainer = deps.getElementById(DOM_IDS.MONTHLY_WEEK_CONTAINER);
             if (weekContainer) weekContainer.classList.add("hidden");
         }
     });
@@ -273,7 +275,7 @@ export function setupMonthlyMutualExclusion(deps) {
     deps.safeAddEventListener(weekOfMonth, "change", () => {
         if (weekOfMonth.checked && specificDays.checked) {
             specificDays.checked = false;
-            const dayContainer = deps.getElementById("monthly-day-container");
+            const dayContainer = deps.getElementById(DOM_IDS.MONTHLY_DAY_CONTAINER);
             if (dayContainer) dayContainer.classList.add("hidden");
         }
     });
@@ -290,10 +292,10 @@ export function setupMonthlyMutualExclusion(deps) {
  */
 export function setupAdditionalListeners(deps, callbacks) {
     // Specific date time checkbox
-    const specificDateTime = deps.getElementById("specific-date-specific-time");
+    const specificDateTime = deps.getElementById(DOM_IDS.SPECIFIC_DATE_SPECIFIC_TIME);
     if (specificDateTime) {
         deps.safeAddEventListener(specificDateTime, "change", (e) => {
-            const timeContainer = deps.getElementById("specific-date-time-container");
+            const timeContainer = deps.getElementById(DOM_IDS.SPECIFIC_DATE_TIME_CONTAINER);
             if (timeContainer) {
                 timeContainer.classList.toggle("hidden", !e.target.checked);
             }
@@ -302,7 +304,7 @@ export function setupAdditionalListeners(deps, callbacks) {
     }
 
     // Duration radio buttons summary update
-    ['recur-indefinitely', 'recur-count-radio', 'recur-until-radio'].forEach(id => {
+    [DOM_IDS.RECUR_INDEFINITELY, DOM_IDS.RECUR_COUNT_RADIO, DOM_IDS.RECUR_UNTIL_RADIO].forEach(id => {
         const radio = deps.getElementById(id);
         if (radio) {
             deps.safeAddEventListener(radio, "change", () => {
@@ -314,19 +316,19 @@ export function setupAdditionalListeners(deps, callbacks) {
 
     // Document click handler for hiding preview when clicking outside
     deps.safeAddEventListener(document, "click", (e) => {
-        const overlay = deps.getElementById("recurring-panel-overlay");
+        const overlay = deps.getElementById(DOM_IDS.RECURRING_PANEL_OVERLAY);
         if (!overlay || overlay.classList.contains("hidden")) return;
 
-        const taskList = deps.getElementById("recurring-task-list");
-        const settingsPanel = deps.getElementById("recurring-settings-panel");
-        const summaryPreview = deps.getElementById("recurring-summary-preview");
+        const taskList = deps.getElementById(DOM_IDS.RECURRING_TASK_LIST);
+        const settingsPanel = deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
+        const summaryPreview = deps.getElementById(DOM_IDS.RECURRING_SUMMARY_PREVIEW);
 
         if (taskList?.contains(e.target) || settingsPanel?.contains(e.target)) return;
 
         // Hide summary preview when clicking outside
         if (summaryPreview && !summaryPreview.contains(e.target) && !taskList?.contains(e.target)) {
             summaryPreview.classList.add("hidden");
-            deps.querySelectorAll(".recurring-task-item").forEach(el => {
+            deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
                 el.classList.remove("selected");
             });
         }

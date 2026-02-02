@@ -14,6 +14,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -129,7 +130,7 @@ export class ModeManager {
             // Wait for core if needed
             await this.deps.appInit?.waitForCore();
 
-            const tasks = this.deps.querySelectorAll('.task');
+            const tasks = this.deps.querySelectorAll(DOM_SELECTORS.TASK);
             if (tasks.length === 0) {
                 console.log('⚠️ ModeManager: No tasks found to refresh');
                 return;
@@ -140,8 +141,8 @@ export class ModeManager {
         let successCount = 0;
 
         // Get current mode settings
-        const toggleAutoReset = this.deps.getElementById('toggleAutoReset');
-        const deleteCheckedTasks = this.deps.getElementById('deleteCheckedTasks');
+        const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
+        const deleteCheckedTasks = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
         const autoResetEnabled = toggleAutoReset?.checked || false;
         const deleteCheckedEnabled = deleteCheckedTasks?.checked || false;
 
@@ -164,7 +165,7 @@ export class ModeManager {
 
         tasks.forEach(task => {
             const taskId = task.dataset.taskId;
-            const oldButtonContainer = task.querySelector('.task-options');
+            const oldButtonContainer = task.querySelector(DOM_SELECTORS.TASK_OPTIONS);
 
             if (!oldButtonContainer) {
                 // Task buttons not yet rendered - this is normal during initial load
@@ -181,7 +182,7 @@ export class ModeManager {
                 autoResetEnabled,
                 deleteCheckedEnabled,
                 settings,
-                remindersEnabled: task.querySelector('.enable-task-reminders')?.classList.contains('reminder-active') || false,
+                remindersEnabled: task.querySelector(DOM_SELECTORS.ENABLE_TASK_REMINDERS)?.classList.contains('reminder-active') || false,
                 remindersEnabledGlobal,
                 assignedTaskId: taskId,
                 currentCycle, // ✅ Required for recurring button handler
@@ -216,10 +217,10 @@ export class ModeManager {
             oldButtonContainer.replaceWith(newButtonContainer);
 
             // ✅ CRITICAL: Attach due date button listener to newly created buttons
-            const dueDateInput = task.querySelector('.due-date');
+            const dueDateInput = task.querySelector(DOM_SELECTORS.DUE_DATE);
             if (dueDateInput && this.deps.setupDueDateButtonInteraction) {
                 // Remove the guard flag first to allow re-attaching
-                const dueDateButton = newButtonContainer.querySelector('.set-due-date');
+                const dueDateButton = newButtonContainer.querySelector(DOM_SELECTORS.SET_DUE_DATE);
                 if (dueDateButton) {
                     delete dueDateButton.dataset.listenerAttached;
                 }
@@ -275,9 +276,9 @@ export class ModeManager {
         const activeCycle = appState.activeCycleId;
         const currentCycle = data.cycles[activeCycle];
 
-        const toggleAutoReset = this.deps.getElementById('toggleAutoReset');
-        const deleteCheckedTasks = this.deps.getElementById('deleteCheckedTasks');
-        const modeSelector = this.deps.getElementById('mode-selector');
+        const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
+        const deleteCheckedTasks = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
+        const modeSelector = this.deps.getElementById(DOM_IDS.MODE_SELECTOR);
 
         if (!toggleAutoReset || !deleteCheckedTasks || !modeSelector) {
             console.warn('⚠️ ModeManager: Required DOM elements not found');
@@ -331,8 +332,8 @@ export class ModeManager {
         document.body.classList.add(mode + '-mode');
 
         // ✅ FIXED: Update container visibility based on mode, not just autoReset
-        const deleteContainer = this.deps.getElementById('deleteCheckedTasksContainer');
-        const autoResetContainer = this.deps.getElementById('autoResetContainer');
+        const deleteContainer = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS_CONTAINER);
+        const autoResetContainer = this.deps.getElementById(DOM_IDS.AUTO_RESET_CONTAINER);
 
         // Hide both individual toggle containers since mode selector controls this functionality
         if (deleteContainer) {
@@ -370,8 +371,8 @@ export class ModeManager {
             return;
         }
 
-        const toggleAutoReset = this.deps.getElementById('toggleAutoReset');
-        const deleteCheckedTasks = this.deps.getElementById('deleteCheckedTasks');
+        const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
+        const deleteCheckedTasks = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
 
         // ✅ Update through state system
         AppState.update(state => {
@@ -421,7 +422,7 @@ export class ModeManager {
 
         console.log('📊 ModeManager: Mode settings:', { autoReset, deleteChecked });
 
-        const descriptionBox = this.deps.getElementById("mode-description");
+        const descriptionBox = this.deps.getElementById(DOM_IDS.MODE_DESCRIPTION);
         if (!descriptionBox) {
             console.warn('⚠️ ModeManager: Mode description box not found');
             return;
@@ -466,9 +467,9 @@ export class ModeManager {
         // Wait for core
         await this.deps.appInit?.waitForCore();
 
-        const modeSelector = this.deps.getElementById('mode-selector');
-        const toggleAutoReset = this.deps.getElementById('toggleAutoReset');
-        const deleteCheckedTasks = this.deps.getElementById('deleteCheckedTasks');
+        const modeSelector = this.deps.getElementById(DOM_IDS.MODE_SELECTOR);
+        const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
+        const deleteCheckedTasks = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
 
         console.log('🔍 ModeManager: Element detection:', {
             modeSelector: !!modeSelector,
@@ -626,7 +627,7 @@ export class ModeManager {
 
             // Small delay to ensure DOM is ready
             setTimeout(() => {
-                const freshModeSelector = this.deps.getElementById("mode-selector");
+                const freshModeSelector = this.deps.getElementById(DOM_IDS.MODE_SELECTOR);
                 if (freshModeSelector) freshModeSelector.value = modeToRestore;
                 this.syncModeFromToggles();
                 this.updateCycleModeDescription();
@@ -638,7 +639,7 @@ export class ModeManager {
         }
 
         // ✅ Setup routine switcher button (folder icon in mode selector banner)
-        const routineSwitcherBtn = this.deps.getElementById('routine-switcher-btn');
+        const routineSwitcherBtn = this.deps.getElementById(DOM_IDS.ROUTINE_SWITCHER_BTN);
         if (routineSwitcherBtn && this.deps.switchMiniCycle) {
             this.deps.safeAddEventListener(routineSwitcherBtn, 'click', () => {
                 this.deps.switchMiniCycle();
@@ -659,8 +660,8 @@ export class ModeManager {
      * Allows users to collapse/expand the mode description with persistence
      */
     setupModeDescriptionToggle() {
-        const toggleBtn = this.deps.getElementById('mode-description-toggle');
-        const modeDescription = this.deps.getElementById('mode-description');
+        const toggleBtn = this.deps.getElementById(DOM_IDS.MODE_DESCRIPTION_TOGGLE);
+        const modeDescription = this.deps.getElementById(DOM_IDS.MODE_DESCRIPTION);
 
         if (!toggleBtn || !modeDescription) {
             console.warn('⚠️ ModeManager: Mode description toggle elements not found');
@@ -712,11 +713,11 @@ export class ModeManager {
      * Handles toggle task input and create new routine actions
      */
     setupQuickActionsButton() {
-        const quickActionsBtn = this.deps.getElementById('quick-actions-btn');
-        const quickActionsMenu = this.deps.getElementById('quick-actions-menu');
-        const toggleTaskInputBtn = this.deps.getElementById('toggle-task-input-btn');
-        const createRoutineBtn = this.deps.getElementById('create-routine-btn');
-        const taskInput = this.deps.querySelectorAll('.task-input')[0];
+        const quickActionsBtn = this.deps.getElementById(DOM_IDS.QUICK_ACTIONS_BTN);
+        const quickActionsMenu = this.deps.getElementById(DOM_IDS.QUICK_ACTIONS_MENU);
+        const toggleTaskInputBtn = this.deps.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_BTN);
+        const createRoutineBtn = this.deps.getElementById(DOM_IDS.CREATE_ROUTINE_BTN);
+        const taskInput = this.deps.querySelectorAll(DOM_SELECTORS.TASK_INPUT)[0];
 
         if (!quickActionsBtn || !quickActionsMenu) {
             console.warn('⚠️ ModeManager: Quick actions elements not found');
@@ -739,7 +740,7 @@ export class ModeManager {
 
         // Toggle task input visibility
         if (toggleTaskInputBtn && taskInput) {
-            const toggleText = this.deps.getElementById('toggle-task-input-text');
+            const toggleText = this.deps.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_TEXT);
 
             // Update button text and visibility based on state
             // Use CSS class toggle (visibility:hidden) instead of display:none to prevent CLS
@@ -809,9 +810,9 @@ export class ModeManager {
     setupToggleAutoReset() {
         console.log('⚙️ ModeManager: Setting up toggle auto reset (state-based)...');
 
-        const toggleAutoReset = this.deps.getElementById("toggleAutoReset");
-        const deleteCheckedTasksContainer = this.deps.getElementById("deleteCheckedTasksContainer");
-        const deleteCheckedTasks = this.deps.getElementById("deleteCheckedTasks");
+        const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
+        const deleteCheckedTasksContainer = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS_CONTAINER);
+        const deleteCheckedTasks = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
 
         if (!toggleAutoReset || !deleteCheckedTasks) {
             console.warn('⚠️ ModeManager: Toggle elements not found for setupToggleAutoReset');
@@ -949,7 +950,7 @@ export class ModeManager {
      * Handles mode-specific behavior when toggling between cycle and todo mode
      */
     setupDeleteCheckedTasksModeListener() {
-        const deleteCheckedTasks = this.deps.getElementById("deleteCheckedTasks");
+        const deleteCheckedTasks = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
         if (!deleteCheckedTasks) {
             console.warn('⚠️ ModeManager: deleteCheckedTasks element not found');
             return;
@@ -1091,9 +1092,9 @@ export class ModeManager {
         }
 
         // Get DOM elements
-        const toggleAutoReset = this.deps.getElementById('toggleAutoReset');
-        const deleteCheckedTasks = this.deps.getElementById('deleteCheckedTasks');
-        const modeSelector = this.deps.getElementById('mode-selector');
+        const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
+        const deleteCheckedTasks = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
+        const modeSelector = this.deps.getElementById(DOM_IDS.MODE_SELECTOR);
 
         if (!toggleAutoReset || !deleteCheckedTasks) {
             console.warn('⚠️ ModeManager: Toggle elements not found for validation');

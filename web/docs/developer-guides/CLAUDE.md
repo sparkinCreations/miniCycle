@@ -14,6 +14,12 @@ Read [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md) first to unders
 - Gamification rewards consistent routine completion
 - .mcyc files enable sharing routines with others
 
+## Search Rules
+
+- **Exclude `archive` folders** when grepping/searching. These contain outdated docs and generated files — not relevant to current development.
+
+---
+
 ## Essential Commands
 
 ```bash

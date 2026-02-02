@@ -17,6 +17,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -115,15 +116,15 @@ export class PullToRefresh {
      */
     createIndicator() {
         // Check if already exists
-        if (document.getElementById('pull-refresh-indicator')) {
-            this.indicator = document.getElementById('pull-refresh-indicator');
-            this.spinnerIcon = this.indicator.querySelector('.pull-refresh-icon');
-            this.statusText = this.indicator.querySelector('.pull-refresh-text');
+        if (document.getElementById(DOM_IDS.PULL_REFRESH_INDICATOR)) {
+            this.indicator = document.getElementById(DOM_IDS.PULL_REFRESH_INDICATOR);
+            this.spinnerIcon = this.indicator.querySelector(DOM_SELECTORS.PULL_REFRESH_ICON);
+            this.statusText = this.indicator.querySelector(DOM_SELECTORS.PULL_REFRESH_TEXT);
             return;
         }
 
         this.indicator = document.createElement('div');
-        this.indicator.id = 'pull-refresh-indicator';
+        this.indicator.id = DOM_IDS.PULL_REFRESH_INDICATOR;
         this.indicator.className = 'pull-refresh-indicator';
         this.indicator.innerHTML = `
             <div class="pull-refresh-content">
@@ -134,8 +135,8 @@ export class PullToRefresh {
 
         document.body.insertBefore(this.indicator, document.body.firstChild);
 
-        this.spinnerIcon = this.indicator.querySelector('.pull-refresh-icon');
-        this.statusText = this.indicator.querySelector('.pull-refresh-text');
+        this.spinnerIcon = this.indicator.querySelector(DOM_SELECTORS.PULL_REFRESH_ICON);
+        this.statusText = this.indicator.querySelector(DOM_SELECTORS.PULL_REFRESH_TEXT);
     }
 
     /**
@@ -215,13 +216,13 @@ export class PullToRefresh {
         if (this.deps.isModalOpen?.()) return false;
 
         // Check for stats view being active
-        const statsPanel = document.querySelector('.stats-panel');
+        const statsPanel = document.querySelector(DOM_SELECTORS.STATS_PANEL);
         if (statsPanel && (statsPanel.classList.contains('active') || statsPanel.classList.contains('show'))) {
             return false;
         }
 
         // Check for any visible modal (using data-modal attribute or common modal classes)
-        const modals = document.querySelectorAll('[data-modal], .modal, .settings-modal, .mini-cycle-switch-modal, .preferences-modal, .themes-modal, .testing-modal, .feedback-modal');
+        const modals = document.querySelectorAll(`${DOM_SELECTORS.DATA_MODAL}, .modal, ${DOM_SELECTORS.SETTINGS_MODAL}, ${DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL}, .preferences-modal, .themes-modal, .testing-modal, ${DOM_SELECTORS.FEEDBACK_MODAL}`);
         for (const modal of modals) {
             const style = window.getComputedStyle(modal);
             if (style.display !== 'none' && (modal.classList.contains('active') || modal.classList.contains('show') || style.display === 'flex')) {
@@ -230,13 +231,13 @@ export class PullToRefresh {
         }
 
         // Check if main menu is open
-        const mainMenu = document.querySelector('.main-menu');
+        const mainMenu = document.querySelector(DOM_SELECTORS.MAIN_MENU);
         if (mainMenu && (mainMenu.classList.contains('active') || mainMenu.classList.contains('show'))) {
             return false;
         }
 
         // Check for hamburger menu open
-        const hamburgerMenu = document.querySelector('.hamburger-menu');
+        const hamburgerMenu = document.querySelector(DOM_SELECTORS.HAMBURGER_MENU);
         if (hamburgerMenu && hamburgerMenu.classList.contains('open')) {
             return false;
         }

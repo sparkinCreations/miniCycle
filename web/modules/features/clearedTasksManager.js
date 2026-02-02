@@ -9,6 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
+import { DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // CONSTANTS
@@ -421,7 +422,7 @@ export class ClearedTasksManager {
         // Animate in
         requestAnimationFrame(() => {
             this.modalOverlay.style.opacity = '1';
-            this.modalOverlay.querySelector('.cleared-tasks-modal').style.transform = 'translateY(0)';
+            this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_TASKS_MODAL).style.transform = 'translateY(0)';
         });
     }
 
@@ -432,7 +433,7 @@ export class ClearedTasksManager {
         if (!this.modalOverlay) return;
 
         this.modalOverlay.style.opacity = '0';
-        this.modalOverlay.querySelector('.cleared-tasks-modal').style.transform = 'translateY(20px)';
+        this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_TASKS_MODAL).style.transform = 'translateY(20px)';
 
         setTimeout(() => {
             this.modalOverlay?.remove();
@@ -450,7 +451,7 @@ export class ClearedTasksManager {
         if (!this.modalOverlay) return;
 
         // Back button
-        const backBtn = this.modalOverlay.querySelector('.cleared-back-btn');
+        const backBtn = this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_BACK_BTN);
         backBtn?.addEventListener('click', () => {
             if (this.isRecreateMode) {
                 this.isRecreateMode = false;
@@ -463,7 +464,7 @@ export class ClearedTasksManager {
         });
 
         // Recreate button (enters recreate mode)
-        const recreateBtn = this.modalOverlay.querySelector('.cleared-recreate-btn');
+        const recreateBtn = this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_RECREATE_BTN);
         recreateBtn?.addEventListener('click', () => {
             this.isRecreateMode = true;
             this._renderModalContent();
@@ -471,7 +472,7 @@ export class ClearedTasksManager {
         });
 
         // Cancel button in footer
-        const cancelBtn = this.modalOverlay.querySelector('.cleared-cancel-btn');
+        const cancelBtn = this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_CANCEL_BTN);
         cancelBtn?.addEventListener('click', () => {
             this.isRecreateMode = false;
             this.selectedTasks.clear();
@@ -480,7 +481,7 @@ export class ClearedTasksManager {
         });
 
         // Confirm recreate button
-        const confirmBtn = this.modalOverlay.querySelector('.cleared-confirm-btn');
+        const confirmBtn = this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_CONFIRM_BTN);
         confirmBtn?.addEventListener('click', () => {
             this.recreateSelectedTasks();
         });
@@ -514,8 +515,8 @@ export class ClearedTasksManager {
      * @private
      */
     _updateFooterVisibility() {
-        const footer = this.modalOverlay?.querySelector('.cleared-tasks-footer');
-        const recreateBtn = this.modalOverlay?.querySelector('.cleared-recreate-btn');
+        const footer = this.modalOverlay?.querySelector(DOM_SELECTORS.CLEARED_TASKS_FOOTER);
+        const recreateBtn = this.modalOverlay?.querySelector(DOM_SELECTORS.CLEARED_RECREATE_BTN);
 
         if (footer && recreateBtn) {
             footer.style.display = this.isRecreateMode ? 'flex' : 'none';
@@ -528,8 +529,8 @@ export class ClearedTasksManager {
      * @private
      */
     _renderModalContent() {
-        const content = this.modalOverlay?.querySelector('.cleared-tasks-modal-content');
-        const summary = this.modalOverlay?.querySelector('.cleared-tasks-summary');
+        const content = this.modalOverlay?.querySelector(DOM_SELECTORS.CLEARED_TASKS_MODAL_CONTENT);
+        const summary = this.modalOverlay?.querySelector(DOM_SELECTORS.CLEARED_TASKS_SUMMARY);
         if (!content || !summary) return;
 
         const { entries, totalCleared } = this.getClearedTasks();
@@ -560,7 +561,7 @@ export class ClearedTasksManager {
 
         // Setup click handlers for entries in recreate mode
         if (this.isRecreateMode) {
-            content.querySelectorAll('.cleared-entry').forEach(el => {
+            content.querySelectorAll(DOM_SELECTORS.CLEARED_ENTRY).forEach(el => {
                 el.addEventListener('click', () => {
                     const id = el.dataset.id;
                     const checkbox = el.querySelector('span');
@@ -599,7 +600,7 @@ export class ClearedTasksManager {
      * @private
      */
     _updateConfirmButton() {
-        const btn = this.modalOverlay?.querySelector('.cleared-confirm-btn');
+        const btn = this.modalOverlay?.querySelector(DOM_SELECTORS.CLEARED_CONFIRM_BTN);
         if (btn) {
             btn.textContent = `Recreate Selected (${this.selectedTasks.size})`;
             btn.disabled = this.selectedTasks.size === 0;

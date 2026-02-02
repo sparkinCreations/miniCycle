@@ -7,6 +7,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -50,7 +51,7 @@ export function setHelpWindowManagerDependencies(dependencies) {
  */
 export class HelpWindowManager {
     constructor() {
-        this.helpWindow = document.getElementById('help-window');
+        this.helpWindow = document.getElementById(DOM_IDS.HELP_WINDOW);
         this.isVisible = false;
         this.currentMessage = null;
         this.isShowingCycleComplete = false;
@@ -68,8 +69,8 @@ export class HelpWindowManager {
      * to give more vertical space to the task list
      */
     updateSideLayout() {
-        const taskView = document.getElementById('task-view');
-        const taskListContainer = document.querySelector('.task-list-container');
+        const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
+        const taskListContainer = document.querySelector(DOM_SELECTORS.TASK_LIST_CONTAINER);
 
         if (!taskView || !taskListContainer) return;
 
@@ -173,7 +174,7 @@ export class HelpWindowManager {
         safeAdd(document, 'click', this._clickHandler);
 
         // Listen for task list mutations (task additions/deletions)
-        const taskList = document.getElementById('taskList');
+        const taskList = document.getElementById(DOM_IDS.TASK_LIST);
         if (taskList) {
             const observer = new MutationObserver((mutations) => {
                 let shouldUpdate = false;
@@ -263,7 +264,7 @@ export class HelpWindowManager {
         this.isShowingModeDescription = true;
 
         // Add class to task-view for CSS to reduce task card height
-        const taskView = document.getElementById('task-view');
+        const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
         taskView?.classList.add('mode-description-visible');
 
         const modeDescriptions = {
@@ -300,7 +301,7 @@ export class HelpWindowManager {
             this.isShowingModeDescription = false;
             this.modeDescriptionTimeout = null;
             // Remove class from task-view
-            const taskView = document.getElementById('task-view');
+            const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
             taskView?.classList.remove('mode-description-visible');
             this.updateConstantMessage();
         }, 30000);
@@ -320,7 +321,7 @@ export class HelpWindowManager {
             this.modeDescriptionTimeout = null;
             this.isShowingModeDescription = false;
             // Remove class from task-view
-            const taskView = document.getElementById('task-view');
+            const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
             taskView?.classList.remove('mode-description-visible');
         }
 
@@ -348,7 +349,7 @@ export class HelpWindowManager {
             clearTimeout(this.modeDescriptionTimeout);
             this.modeDescriptionTimeout = null;
             this.isShowingModeDescription = false;
-            const taskView = document.getElementById('task-view');
+            const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
             taskView?.classList.remove('mode-description-visible');
         }
 
@@ -366,7 +367,7 @@ export class HelpWindowManager {
     }
 
     getCurrentStatusMessage() {
-        const totalTasks = document.querySelectorAll('.task').length;
+        const totalTasks = document.querySelectorAll(DOM_SELECTORS.TASK).length;
         const completedTasks = document.querySelectorAll('.task input:checked').length;
         const remaining = totalTasks - completedTasks;
 
@@ -481,7 +482,7 @@ export class HelpWindowManager {
         }
 
         // Remove layout classes from task-view
-        const taskView = document.getElementById('task-view');
+        const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
         if (taskView) {
             taskView.classList.remove('mode-description-visible');
             taskView.classList.remove('help-window-side');

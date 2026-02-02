@@ -28,7 +28,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { LIMITS, DEBOUNCE } from '../core/constants.js';
+import { LIMITS, DEBOUNCE, DOM_IDS } from '../core/constants.js';
 
 // ============ CONSTANTS (from centralized constants.js) ============
 const UNDO_LIMIT = LIMITS.UNDO_STACK;
@@ -284,8 +284,8 @@ export function wireUndoRedoUI() {
 
   initializeUndoRedoButtons();
 
-  const undoBtn = _deps.getElementById('undo-btn');
-  const redoBtn = _deps.getElementById('redo-btn');
+  const undoBtn = _deps.getElementById(DOM_IDS.UNDO_BTN);
+  const redoBtn = _deps.getElementById(DOM_IDS.REDO_BTN);
 
   if (!undoBtn || !redoBtn) {
     console.warn('⚠️ Undo/redo buttons not found in DOM - keyboard shortcuts will still work');
@@ -332,8 +332,8 @@ export function wireUndoRedoKeyboardShortcuts() {
  * Initialize undo/redo buttons to hidden state
  */
 export function initializeUndoRedoButtons() {
-  const undoBtn = _deps.getElementById('undo-btn');
-  const redoBtn = _deps.getElementById('redo-btn');
+  const undoBtn = _deps.getElementById(DOM_IDS.UNDO_BTN);
+  const redoBtn = _deps.getElementById(DOM_IDS.REDO_BTN);
 
   if (undoBtn) {
     undoBtn.hidden = true;
@@ -1124,8 +1124,8 @@ export async function performStateBasedRedo() {
 export function updateUndoRedoButtonStates() {
   assertInjected('AppGlobalState', _deps.AppGlobalState);
 
-  const undoBtn = _deps.getElementById('undo-btn');
-  const redoBtn = _deps.getElementById('redo-btn');
+  const undoBtn = _deps.getElementById(DOM_IDS.UNDO_BTN);
+  const redoBtn = _deps.getElementById(DOM_IDS.REDO_BTN);
 
   // Use actual stack lengths (instant with localStorage cache)
   const hasUndo = _deps.AppGlobalState.activeUndoStack.length > 0;
@@ -1149,8 +1149,8 @@ export function updateUndoRedoButtonStates() {
 export function updateUndoRedoButtonVisibility() {
   assertInjected('AppGlobalState', _deps.AppGlobalState);
 
-  const undoBtn = _deps.getElementById('undo-btn');
-  const redoBtn = _deps.getElementById('redo-btn');
+  const undoBtn = _deps.getElementById(DOM_IDS.UNDO_BTN);
+  const redoBtn = _deps.getElementById(DOM_IDS.REDO_BTN);
 
   // Use actual stack lengths (instant with localStorage cache)
   const hasUndo = _deps.AppGlobalState.activeUndoStack.length > 0;

@@ -23,7 +23,8 @@
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS,
-    DEBOUNCE
+    DEBOUNCE,
+    DOM_IDS
 } from './constants.js';
 
 // ============================================================================
@@ -225,7 +226,7 @@ class MiniCycleState {
 
     // ✅ Show saving indicator (subtle UI feedback)
     _showSavingIndicator() {
-        const indicator = document.getElementById('saving-indicator');
+        const indicator = document.getElementById(DOM_IDS.SAVING_INDICATOR);
         if (indicator) {
             // Clear any pending hide timeout
             if (this._savingIndicatorTimeout) {
@@ -237,7 +238,7 @@ class MiniCycleState {
 
     // ✅ Hide saving indicator with brief delay (so it's visible even on fast saves)
     _hideSavingIndicator() {
-        const indicator = document.getElementById('saving-indicator');
+        const indicator = document.getElementById(DOM_IDS.SAVING_INDICATOR);
         if (indicator) {
             // Keep visible for minimum 300ms so user can see it
             this._savingIndicatorTimeout = setTimeout(() => {

@@ -11,6 +11,7 @@ import {
     getDeps,
     safeAddEventListenerById
 } from './testing-modal-core.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ==========================================
 // BUTTON SETUP
@@ -36,8 +37,8 @@ let handleOutsideClickRef = null;
  */
 export function openStorageViewer() {
     const deps = getDeps();
-    const overlay = document.getElementById("storage-viewer-overlay");
-    const contentEl = document.getElementById("storage-content");
+    const overlay = document.getElementById(DOM_IDS.STORAGE_VIEWER_OVERLAY);
+    const contentEl = document.getElementById(DOM_IDS.STORAGE_CONTENT);
 
     if (!overlay || !contentEl) {
         console.error("Storage viewer elements not found");
@@ -173,7 +174,7 @@ export function openStorageViewer() {
  * Initialize storage modal drag and resize
  */
 function initializeStorageModal() {
-    const modal = document.querySelector(".storage-modal-box");
+    const modal = document.querySelector(DOM_SELECTORS.STORAGE_MODAL_BOX);
     if (!modal) return;
 
     if (!modal.dataset.initialized) {
@@ -202,9 +203,9 @@ function setupStorageViewerEventListeners() {
  * Handle click outside modal to close
  */
 function handleOutsideClick(event) {
-    const overlay = document.getElementById("storage-viewer-overlay");
-    const stayOpenCheckbox = document.getElementById("stay-open-toggle");
-    const modalBox = document.querySelector(".storage-modal-box");
+    const overlay = document.getElementById(DOM_IDS.STORAGE_VIEWER_OVERLAY);
+    const stayOpenCheckbox = document.getElementById(DOM_IDS.STAY_OPEN_TOGGLE);
+    const modalBox = document.querySelector(DOM_SELECTORS.STORAGE_MODAL_BOX);
 
     if (!overlay || overlay.classList.contains("hidden")) return;
 
@@ -219,7 +220,7 @@ function handleOutsideClick(event) {
  * Make storage modal draggable
  */
 function makeStorageModalDraggable() {
-    const modal = document.querySelector(".storage-modal-box");
+    const modal = document.querySelector(DOM_SELECTORS.STORAGE_MODAL_BOX);
     const header = modal?.querySelector(".storage-modal-header");
 
     if (!modal || !header) return;
@@ -276,7 +277,7 @@ function makeStorageModalDraggable() {
  * Make storage modal resizable
  */
 function makeStorageModalResizable() {
-    const modal = document.querySelector(".storage-modal-box");
+    const modal = document.querySelector(DOM_SELECTORS.STORAGE_MODAL_BOX);
     if (!modal) return;
 
     let isResizing = false;
@@ -439,7 +440,7 @@ function renderExpandableJSON(data, deps, depth = 0) {
  * Close the storage viewer modal
  */
 export function closeStorageViewer() {
-    const overlay = document.getElementById("storage-viewer-overlay");
+    const overlay = document.getElementById(DOM_IDS.STORAGE_VIEWER_OVERLAY);
     if (overlay) {
         overlay.classList.add("hidden");
 
@@ -447,7 +448,7 @@ export function closeStorageViewer() {
             document.removeEventListener("click", handleOutsideClickRef);
         }
 
-        const modal = document.querySelector(".storage-modal-box");
+        const modal = document.querySelector(DOM_SELECTORS.STORAGE_MODAL_BOX);
         if (modal) {
             modal.style.position = "relative";
             modal.style.left = "0";

@@ -10,6 +10,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // CONSTANTS
@@ -52,11 +53,11 @@ export function initTaskSearch() {
 
     const deps = di.resolve();
 
-    const container = deps.getElementById('task-search-container');
-    const searchBtn = deps.getElementById('task-search-btn');
-    const searchInput = deps.getElementById('task-search-input');
-    const clearBtn = deps.getElementById('task-search-clear');
-    const inputRow = deps.getElementById('task-search-input-row');
+    const container = deps.getElementById(DOM_IDS.TASK_SEARCH_CONTAINER);
+    const searchBtn = deps.getElementById(DOM_IDS.TASK_SEARCH_BTN);
+    const searchInput = deps.getElementById(DOM_IDS.TASK_SEARCH_INPUT);
+    const clearBtn = deps.getElementById(DOM_IDS.TASK_SEARCH_CLEAR);
+    const inputRow = deps.getElementById(DOM_IDS.TASK_SEARCH_INPUT_ROW);
 
     if (!container || !searchBtn || !searchInput || !clearBtn || !inputRow) {
         console.warn('⚠️ TaskSearch: Required DOM elements not found');
@@ -114,9 +115,9 @@ function toggleSearchInput() {
  */
 function expandSearch() {
     const deps = di.resolve();
-    const searchBtn = deps.getElementById('task-search-btn');
-    const searchInput = deps.getElementById('task-search-input');
-    const inputRow = deps.getElementById('task-search-input-row');
+    const searchBtn = deps.getElementById(DOM_IDS.TASK_SEARCH_BTN);
+    const searchInput = deps.getElementById(DOM_IDS.TASK_SEARCH_INPUT);
+    const inputRow = deps.getElementById(DOM_IDS.TASK_SEARCH_INPUT_ROW);
 
     if (inputRow && searchBtn) {
         inputRow.classList.remove('hidden');
@@ -131,8 +132,8 @@ function expandSearch() {
  */
 function collapseSearch() {
     const deps = di.resolve();
-    const searchBtn = deps.getElementById('task-search-btn');
-    const inputRow = deps.getElementById('task-search-input-row');
+    const searchBtn = deps.getElementById(DOM_IDS.TASK_SEARCH_BTN);
+    const inputRow = deps.getElementById(DOM_IDS.TASK_SEARCH_INPUT_ROW);
 
     if (inputRow && searchBtn) {
         inputRow.classList.add('hidden');
@@ -146,7 +147,7 @@ function collapseSearch() {
  */
 function clearSearch() {
     const deps = di.resolve();
-    const searchInput = deps.getElementById('task-search-input');
+    const searchInput = deps.getElementById(DOM_IDS.TASK_SEARCH_INPUT);
 
     if (searchInput) {
         searchInput.value = '';
@@ -160,11 +161,11 @@ function clearSearch() {
  */
 function filterTasks(query) {
     const deps = di.resolve();
-    const tasks = deps.querySelectorAll('#taskList .task');
+    const tasks = deps.querySelectorAll(`#${DOM_IDS.TASK_LIST} ${DOM_SELECTORS.TASK}`);
     const lowerQuery = query.toLowerCase().trim();
 
     tasks.forEach(task => {
-        const taskText = task.querySelector('.task-text')?.textContent?.toLowerCase() || '';
+        const taskText = task.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent?.toLowerCase() || '';
         const matches = lowerQuery === '' || taskText.includes(lowerQuery);
         task.style.display = matches ? '' : 'none';
     });
@@ -177,7 +178,7 @@ function filterTasks(query) {
  */
 export function updateSearchVisibility(taskCount) {
     const deps = di.resolve();
-    const container = deps.getElementById('task-search-container');
+    const container = deps.getElementById(DOM_IDS.TASK_SEARCH_CONTAINER);
 
     if (!container) return;
 
@@ -199,7 +200,7 @@ export function updateSearchVisibility(taskCount) {
  */
 export function getTaskCount() {
     const deps = di.resolve();
-    const tasks = deps.querySelectorAll('#taskList .task');
+    const tasks = deps.querySelectorAll(`#${DOM_IDS.TASK_LIST} ${DOM_SELECTORS.TASK}`);
     return tasks.length;
 }
 

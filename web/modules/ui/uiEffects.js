@@ -9,6 +9,7 @@
  */
 
 import { createDIModule, required, optional, createFallback } from '../core/diBase.js';
+import { DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -48,7 +49,7 @@ export function triggerLogoBackground(color = 'green', duration = 300) {
     const deps = di.resolve();
 
     // Target the specific logo image (not the app name)
-    const logo = deps.querySelector('.header-branding .header-logo');
+    const logo = deps.querySelector(DOM_SELECTORS.HEADER_BRANDING_LOGO);
 
     if (logo) {
         // Clear any existing timeout
@@ -88,7 +89,7 @@ export function triggerLogoBackground(color = 'green', duration = 300) {
  */
 export function triggerLogoScan(duration = 400) {
     const deps = di.resolve();
-    const logo = deps.querySelector('.header-branding .header-logo');
+    const logo = deps.querySelector(DOM_SELECTORS.HEADER_BRANDING_LOGO);
 
     if (logo) {
         // Get logo's exact screen position

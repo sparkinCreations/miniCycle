@@ -13,6 +13,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -469,13 +470,13 @@ export class RoutineManager {
                 console.log('🔄 Updating UI elements...');
 
                 // ✅ Clear UI & Load new miniCycle
-                const taskList = this.deps.getElementById("taskList");
-                const toggleAutoReset = this.deps.getElementById("toggleAutoReset");
-                const deleteCheckedTasks = this.deps.getElementById("deleteCheckedTasks");
+                const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
+                const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
+                const deleteCheckedTasks = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
 
                 if (taskList) taskList.innerHTML = "";
 
-                const titleElement = this.deps.getElementById("mini-cycle-title");
+                const titleElement = this.deps.getElementById(DOM_IDS.MINI_CYCLE_TITLE);
                 if (titleElement && finalResult) titleElement.textContent = finalResult.finalTitle;
 
                 if (toggleAutoReset) toggleAutoReset.checked = true;

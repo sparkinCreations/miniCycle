@@ -10,7 +10,8 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
-    DEFAULT_RECURRING_DELETE_SETTINGS
+    DEFAULT_RECURRING_DELETE_SETTINGS,
+    DOM_SELECTORS
 } from '../core/constants.js';
 
 // ============================================================================
@@ -411,7 +412,7 @@ export function applyRecurringToTaskSchema25(taskId, newSettings) {
     if (taskElement) {
         taskElement.classList.add("recurring");
         taskElement.setAttribute("data-recurring-settings", JSON.stringify(task.recurringSettings));
-        const recurringBtn = taskElement.querySelector(".recurring-btn");
+        const recurringBtn = taskElement.querySelector(DOM_SELECTORS.RECURRING_BTN);
         if (recurringBtn) {
             recurringBtn.classList.add("active");
             recurringBtn.setAttribute("aria-pressed", "true");

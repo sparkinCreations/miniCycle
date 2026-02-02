@@ -21,6 +21,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -65,8 +66,8 @@ export class CompletedTasksManager {
 
         console.log('🎯 CompletedTasksManager: Initializing completed tasks section...');
 
-        const header = this.deps.getElementById('completed-tasks-header');
-        const completedList = this.deps.getElementById('completedTaskList');
+        const header = this.deps.getElementById(DOM_IDS.COMPLETED_TASKS_HEADER);
+        const completedList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
 
         if (!header || !completedList) {
             console.warn('⚠️ CompletedTasksManager: Completed tasks elements not found');
@@ -90,7 +91,7 @@ export class CompletedTasksManager {
      * Toggle the completed tasks section visibility
      */
     toggle() {
-        const completedList = this.deps.getElementById('completedTaskList');
+        const completedList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
         const toggleIcon = this.deps.querySelector('#completed-tasks-header .toggle-icon');
 
         if (!completedList || !toggleIcon) return;
@@ -120,7 +121,7 @@ export class CompletedTasksManager {
         const state = AppState.get();
         const isExpanded = state?.settings?.completedTasksExpanded || false;
 
-        const completedList = this.deps.getElementById('completedTaskList');
+        const completedList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
         const toggleIcon = this.deps.querySelector('#completed-tasks-header .toggle-icon');
 
         if (completedList && toggleIcon) {
@@ -139,8 +140,8 @@ export class CompletedTasksManager {
      * @param {HTMLElement} taskElement - The task element to move
      */
     moveToCompleted(taskElement) {
-        const completedList = this.deps.getElementById('completedTaskList');
-        const completedSection = this.deps.getElementById('completed-tasks-section');
+        const completedList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
+        const completedSection = this.deps.getElementById(DOM_IDS.COMPLETED_TASKS_SECTION);
 
         if (!completedList || !completedSection || !taskElement) return;
 
@@ -161,7 +162,7 @@ export class CompletedTasksManager {
      * @param {HTMLElement} taskElement - The task element to move
      */
     moveToActive(taskElement) {
-        const taskList = this.deps.getElementById('taskList');
+        const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
 
         if (!taskList || !taskElement) return;
 
@@ -178,9 +179,9 @@ export class CompletedTasksManager {
      * Update the completed tasks count display
      */
     updateCount() {
-        const completedList = this.deps.getElementById('completedTaskList');
-        const completedCount = this.deps.getElementById('completed-count');
-        const completedSection = this.deps.getElementById('completed-tasks-section');
+        const completedList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
+        const completedCount = this.deps.getElementById(DOM_IDS.COMPLETED_COUNT);
+        const completedSection = this.deps.getElementById(DOM_IDS.COMPLETED_TASKS_SECTION);
 
         if (!completedList || !completedCount || !completedSection) return;
 
@@ -229,7 +230,7 @@ export class CompletedTasksManager {
         }
 
         // Fallback to checkbox state
-        const toggle = this.deps.getElementById('toggle-completed-dropdown');
+        const toggle = this.deps.getElementById(DOM_IDS.TOGGLE_COMPLETED_DROPDOWN);
         return toggle ? toggle.checked : false;
     }
 
@@ -244,13 +245,13 @@ export class CompletedTasksManager {
             return;
         }
 
-        const taskList = this.deps.getElementById('taskList');
+        const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
         if (!taskList) return;
 
         console.log('🔄 CompletedTasksManager: Organizing completed tasks on load...');
 
         // Get all tasks in the main list
-        const tasks = Array.from(taskList.querySelectorAll('.task'));
+        const tasks = Array.from(taskList.querySelectorAll(DOM_SELECTORS.TASK));
 
         // Move each completed task to the completed section
         tasks.forEach(taskElement => {
@@ -260,7 +261,7 @@ export class CompletedTasksManager {
             }
         });
 
-        console.log(`✅ CompletedTasksManager: Organized ${taskList.querySelectorAll('.task').length} active and completed tasks`);
+        console.log(`✅ CompletedTasksManager: Organized ${taskList.querySelectorAll(DOM_SELECTORS.TASK).length} active and completed tasks`);
     }
 }
 

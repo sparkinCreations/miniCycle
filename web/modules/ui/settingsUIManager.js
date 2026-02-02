@@ -19,6 +19,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -115,10 +116,10 @@ export function setupSettingsMenu() {
         return;
     }
 
-    const settingsModal = document.querySelector(".settings-modal");
-    const settingsModalContent = document.querySelector(".settings-modal-content");
-    const openSettingsBtn = document.getElementById("open-settings");
-    const closeSettingsBtn = document.getElementById("close-settings");
+    const settingsModal = document.querySelector(DOM_SELECTORS.SETTINGS_MODAL);
+    const settingsModalContent = document.querySelector(DOM_SELECTORS.SETTINGS_MODAL_CONTENT);
+    const openSettingsBtn = document.getElementById(DOM_IDS.OPEN_SETTINGS);
+    const closeSettingsBtn = document.getElementById(DOM_IDS.CLOSE_SETTINGS);
 
     const openSettings = (event) => {
         event.stopPropagation();
@@ -165,7 +166,7 @@ export function setupSettingsMenu() {
  * @param {Function} safeAddEventListener - Event listener helper
  */
 function setupSettingsCollapsibleSections(safeAddEventListener) {
-    const sectionHeaders = document.querySelectorAll('.settings-section-header');
+    const sectionHeaders = document.querySelectorAll(DOM_SELECTORS.SETTINGS_SECTION_HEADER);
 
     // Load saved collapsed states
     loadSettingsCollapsedStates();
@@ -191,7 +192,7 @@ function loadSettingsCollapsedStates() {
 
     if (!collapsedStates) return;
 
-    const sections = document.querySelectorAll('.settings-section.collapsible[data-section]');
+    const sections = document.querySelectorAll(DOM_SELECTORS.SETTINGS_SECTION_COLLAPSIBLE);
     sections.forEach(section => {
         const sectionName = section.dataset.section;
         if (sectionName && collapsedStates[sectionName] !== undefined) {
@@ -208,7 +209,7 @@ function loadSettingsCollapsedStates() {
  * Save collapsed states to AppState
  */
 function saveSettingsCollapsedStates() {
-    const sections = document.querySelectorAll('.settings-section.collapsible[data-section]');
+    const sections = document.querySelectorAll(DOM_SELECTORS.SETTINGS_SECTION_COLLAPSIBLE);
     const collapsedStates = {};
 
     sections.forEach(section => {
@@ -229,7 +230,7 @@ function saveSettingsCollapsedStates() {
  * Uses globalThis.APP_VERSION from version.js (single source of truth)
  */
 function updateVersionDisplay() {
-    const versionDisplay = document.getElementById('settings-version-display');
+    const versionDisplay = document.getElementById(DOM_IDS.SETTINGS_VERSION_DISPLAY);
     // Use globalThis.APP_VERSION directly (set by version.js, updated by update-version.sh)
     const version = globalThis.APP_VERSION;
     if (versionDisplay && version) {
@@ -262,7 +263,7 @@ export function setupMoveArrowsToggle() {
         return;
     }
 
-    const moveArrowsToggle = document.getElementById("toggle-move-arrows");
+    const moveArrowsToggle = document.getElementById(DOM_IDS.TOGGLE_MOVE_ARROWS);
     if (!moveArrowsToggle) return;
 
     console.log('Setting up move arrows toggle...');
@@ -301,7 +302,7 @@ export function setupMoveArrowsToggle() {
         _deps.updateMoveArrowsVisibility?.();
 
         // Sync with customizer modal if open
-        const customizerModal = document.getElementById('task-options-customizer-modal');
+        const customizerModal = document.getElementById(DOM_IDS.TASK_OPTIONS_CUSTOMIZER_MODAL);
         if (customizerModal) {
             const moveArrowsCheckbox = customizerModal.querySelector('[data-option="moveArrows"]');
             if (moveArrowsCheckbox) {
@@ -331,7 +332,7 @@ export function setupThreeDotsToggle() {
         return;
     }
 
-    const threeDotsToggle = document.getElementById("toggle-three-dots");
+    const threeDotsToggle = document.getElementById(DOM_IDS.TOGGLE_THREE_DOTS);
     if (!threeDotsToggle) return;
 
     console.log('Setting up three dots toggle...');
@@ -390,7 +391,7 @@ export function setupCompletedDropdownToggle() {
         return;
     }
 
-    const completedDropdownToggle = document.getElementById("toggle-completed-dropdown");
+    const completedDropdownToggle = document.getElementById(DOM_IDS.TOGGLE_COMPLETED_DROPDOWN);
     if (!completedDropdownToggle) return;
 
     console.log('Setting up completed dropdown toggle...');
@@ -426,14 +427,14 @@ export function setupCompletedDropdownToggle() {
             _deps.organizeCompletedTasks?.();
         } else {
             // Move completed tasks back to main list
-            const completedList = document.getElementById('completedTaskList');
-            const taskList = document.getElementById('taskList');
+            const completedList = document.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
+            const taskList = document.getElementById(DOM_IDS.TASK_LIST);
             if (completedList && taskList) {
-                const completedTasks = Array.from(completedList.querySelectorAll('.task'));
+                const completedTasks = Array.from(completedList.querySelectorAll(DOM_SELECTORS.TASK));
                 completedTasks.forEach(task => {
                     taskList.appendChild(task);
                 });
-                const completedSection = document.getElementById('completed-tasks-section');
+                const completedSection = document.getElementById(DOM_IDS.COMPLETED_TASKS_SECTION);
                 if (completedSection) {
                     completedSection.classList.remove('show');
                 }
@@ -455,7 +456,7 @@ export function setupScrollToNewTaskToggle() {
         return;
     }
 
-    const scrollToggle = document.getElementById("toggle-scroll-to-new-task");
+    const scrollToggle = document.getElementById(DOM_IDS.TOGGLE_SCROLL_TO_NEW_TASK);
     if (!scrollToggle) return;
 
     console.log('Setting up scroll to new task toggle...');
@@ -504,7 +505,7 @@ export function setupScrollOnLoadToggle() {
         return;
     }
 
-    const scrollToggle = document.getElementById("toggle-scroll-on-load");
+    const scrollToggle = document.getElementById(DOM_IDS.TOGGLE_SCROLL_ON_LOAD);
     if (!scrollToggle) return;
 
     console.log('Setting up scroll on load toggle...');
@@ -559,7 +560,7 @@ export function setupDebugModeToggle() {
         return;
     }
 
-    const debugModeToggle = document.getElementById("toggle-debug-mode");
+    const debugModeToggle = document.getElementById(DOM_IDS.TOGGLE_DEBUG_MODE);
     if (!debugModeToggle) return;
 
     console.log('Setting up debug mode toggle...');
@@ -601,7 +602,7 @@ export function setupResetRecurringButton() {
         return;
     }
 
-    const resetRecurringBtn = document.getElementById("reset-recurring-default");
+    const resetRecurringBtn = document.getElementById(DOM_IDS.RESET_RECURRING_DEFAULT);
     if (!resetRecurringBtn) return;
 
     resetRecurringBtn._clickHandler = async () => {
@@ -648,7 +649,7 @@ export function setupResetAchievementProgressButton() {
         return;
     }
 
-    const resetBtn = document.getElementById("reset-achievement-progress");
+    const resetBtn = document.getElementById(DOM_IDS.RESET_ACHIEVEMENT_PROGRESS);
     if (!resetBtn) return;
 
     resetBtn._clickHandler = async () => {
@@ -729,8 +730,8 @@ export async function syncCurrentSettingsToStorage() {
     }
 
     const { cycles, activeCycle } = schemaData;
-    const toggleAutoReset = document.getElementById("toggleAutoReset");
-    const deleteCheckedTasks = document.getElementById("deleteCheckedTasks");
+    const toggleAutoReset = document.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
+    const deleteCheckedTasks = document.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
 
     if (!activeCycle || !cycles[activeCycle]) {
         console.warn('No active cycle found for settings sync');

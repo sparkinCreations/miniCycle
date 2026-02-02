@@ -14,6 +14,7 @@ import {
     safeShowConfirmationModal,
     escapeHtml
 } from './testing-modal-core.js';
+import { DOM_SELECTORS } from '../core/constants.js';
 
 // ==========================================
 // BUTTON SETUP
@@ -352,7 +353,7 @@ export async function restoreFromBackup() {
         `;
 
         backupItem.addEventListener("click", () => {
-            document.querySelectorAll(".backup-item").forEach(item => {
+            document.querySelectorAll(DOM_SELECTORS.BACKUP_ITEM).forEach(item => {
                 item.style.border = "2px solid transparent";
                 item.style.background = "rgba(255, 255, 255, 0.05)";
             });

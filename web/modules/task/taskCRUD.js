@@ -41,7 +41,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { LIMITS } from '../core/constants.js';
+import { LIMITS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -330,7 +330,7 @@ export async function editTaskImpl(taskItem, deps = {}) {
     try {
         await waitForCoreWithTimeout();
 
-        const taskLabel = taskItem.querySelector(".task-text");
+        const taskLabel = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT);
         const oldText = taskLabel.textContent.trim();
 
         const showPromptModal = deps.showPromptModal || _deps.showPromptModal || fallbackPromptModal;
@@ -412,7 +412,7 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
         await waitForCoreWithTimeout();
 
         const taskId = taskItem.dataset.taskId;
-        const taskName = taskItem.querySelector(".task-text")?.textContent || "Task";
+        const taskName = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent || "Task";
 
         const showConfirmationModal = deps.showConfirmationModal || _deps.showConfirmationModal || fallbackConfirmModal;
         const AppState = deps.AppState || _deps.AppState;
@@ -543,7 +543,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
 
         // Update DOM based on calculated state
         taskItem.classList.toggle("high-priority", newHighPriority);
-        const button = taskItem.querySelector(".priority-btn");
+        const button = taskItem.querySelector(DOM_SELECTORS.PRIORITY_BTN);
         if (button) {
             button.classList.toggle("active", newHighPriority);
             button.classList.toggle("priority-active", newHighPriority);

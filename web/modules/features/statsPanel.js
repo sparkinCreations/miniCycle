@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { GESTURE, UI_TIMEOUTS, CHART, INTERVALS } from '../core/constants.js';
+import { GESTURE, UI_TIMEOUTS, CHART, INTERVALS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -202,8 +202,8 @@ export class StatsPanelManager {
 
         // === HISTORY BUTTON (inside Current Routine dropdown) ===
         // Note: Cleared Tasks is now a tab within the History modal
-        const currentRoutineCycleCount = statsPanel.querySelector('#current-routine-cycle-count');
-        const currentRoutineClearedCount = statsPanel.querySelector('#current-routine-cleared-count');
+        const currentRoutineCycleCount = statsPanel.querySelector(`#${DOM_IDS.CURRENT_ROUTINE_CYCLE_COUNT}`);
+        const currentRoutineClearedCount = statsPanel.querySelector(`#${DOM_IDS.CURRENT_ROUTINE_CLEARED_COUNT}`);
         if (currentRoutineCycleCount) {
             const routineButtonsContainer = document.createElement('div');
             // Note: 'visible' class will be added by restoreCollapsiblePreferences() based on user preference
@@ -239,7 +239,7 @@ export class StatsPanelManager {
         }
 
         // === ACHIEVEMENT BADGES BUTTON (clickable to open modal) ===
-        const achievementBadgesBtn = statsPanel.querySelector('#achievement-badges-btn');
+        const achievementBadgesBtn = statsPanel.querySelector(`#${DOM_IDS.ACHIEVEMENT_BADGES_BTN}`);
         if (achievementBadgesBtn) {
             this.elements.achievementBadgesBtn = achievementBadgesBtn;
             this.elements.achievementCountBadge = achievementBadgesBtn.querySelector('#achievement-count-badge');
@@ -301,42 +301,42 @@ export class StatsPanelManager {
      */
     cacheElements() {
         this.elements = {
-            statsPanel: document.getElementById("stats-panel"),
-            taskView: document.getElementById("task-view"),
-            liveRegion: document.getElementById("live-region"),
-            slideLeft: document.getElementById("slide-left"),
-            slideRight: document.getElementById("slide-right"),
-            navDotsContainer: document.getElementById("nav-dots"),
-            dots: document.querySelectorAll(".dot"),
-            taskList: document.getElementById("taskList"),
-            addTaskButton: document.getElementById("addTaskBtn"),
+            statsPanel: document.getElementById(DOM_IDS.STATS_PANEL),
+            taskView: document.getElementById(DOM_IDS.TASK_VIEW),
+            liveRegion: document.getElementById(DOM_IDS.LIVE_REGION),
+            slideLeft: document.getElementById(DOM_IDS.SLIDE_LEFT),
+            slideRight: document.getElementById(DOM_IDS.SLIDE_RIGHT),
+            navDotsContainer: document.getElementById(DOM_IDS.NAV_DOTS),
+            dots: document.querySelectorAll(DOM_SELECTORS.DOT),
+            taskList: document.getElementById(DOM_IDS.TASK_LIST),
+            addTaskButton: document.getElementById(DOM_IDS.ADD_TASK_BTN),
             // Stats display elements
-            totalTasks: document.getElementById("total-tasks"),
-            completedTasks: document.getElementById("completed-tasks"),
-            completionRate: document.getElementById("completion-rate"),
-            miniCycleCount: document.getElementById("mini-cycle-count"),
-            perCycleCount: document.getElementById("per-cycle-count"),
-            milestoneProgressText: document.getElementById("milestone-progress-text"),
-            statsProgressBar: document.getElementById("stats-progress-bar"),
+            totalTasks: document.getElementById(DOM_IDS.TOTAL_TASKS),
+            completedTasks: document.getElementById(DOM_IDS.COMPLETED_TASKS),
+            completionRate: document.getElementById(DOM_IDS.COMPLETION_RATE),
+            miniCycleCount: document.getElementById(DOM_IDS.MINI_CYCLE_COUNT),
+            perCycleCount: document.getElementById(DOM_IDS.PER_CYCLE_COUNT),
+            milestoneProgressText: document.getElementById(DOM_IDS.MILESTONE_PROGRESS_TEXT),
+            statsProgressBar: document.getElementById(DOM_IDS.STATS_PROGRESS_BAR),
             // Current Routine collapsible elements
-            currentRoutineStatus: document.getElementById("current-routine-status"),
-            currentCycleDoughnutContainer: document.getElementById("current-cycle-doughnut-container"),
-            currentCycleDoughnutProgress: document.getElementById("current-cycle-doughnut-progress"),
-            currentCycleDoughnutText: document.getElementById("current-cycle-doughnut-text"),
-            currentCycleProgressText: document.getElementById("current-cycle-progress-text"),
-            currentRoutineCycleCount: document.getElementById("current-routine-cycle-count"),
-            currentRoutineClearedCount: document.getElementById("current-routine-cleared-count"),
-            perRoutineCleared: document.getElementById("per-routine-cleared"),
+            currentRoutineStatus: document.getElementById(DOM_IDS.CURRENT_ROUTINE_STATUS),
+            currentCycleDoughnutContainer: document.getElementById(DOM_IDS.CURRENT_CYCLE_DOUGHNUT_CONTAINER),
+            currentCycleDoughnutProgress: document.getElementById(DOM_IDS.CURRENT_CYCLE_DOUGHNUT_PROGRESS),
+            currentCycleDoughnutText: document.getElementById(DOM_IDS.CURRENT_CYCLE_DOUGHNUT_TEXT),
+            currentCycleProgressText: document.getElementById(DOM_IDS.CURRENT_CYCLE_PROGRESS_TEXT),
+            currentRoutineCycleCount: document.getElementById(DOM_IDS.CURRENT_ROUTINE_CYCLE_COUNT),
+            currentRoutineClearedCount: document.getElementById(DOM_IDS.CURRENT_ROUTINE_CLEARED_COUNT),
+            perRoutineCleared: document.getElementById(DOM_IDS.PER_ROUTINE_CLEARED),
             // Theme elements
-            themeUnlockMessage: document.getElementById("theme-unlock-message"),
-            goldenUnlockMessage: document.getElementById("golden-unlock-message"),
-            gameUnlockMessage: document.getElementById("game-unlock-message"),
-            themeUnlockStatus: document.getElementById("theme-unlock-status"),
+            themeUnlockMessage: document.getElementById(DOM_IDS.THEME_UNLOCK_MESSAGE),
+            goldenUnlockMessage: document.getElementById(DOM_IDS.GOLDEN_UNLOCK_MESSAGE),
+            gameUnlockMessage: document.getElementById(DOM_IDS.GAME_UNLOCK_MESSAGE),
+            themeUnlockStatus: document.getElementById(DOM_IDS.THEME_UNLOCK_STATUS),
             // Theme panel elements
-            openThemesPanel: document.getElementById("open-themes-panel"),
-            themesModal: document.getElementById("themes-modal"),
-            closeThemesBtn: document.getElementById("close-themes-btn"),
-            quickDarkToggle: document.getElementById("quick-dark-toggle")
+            openThemesPanel: document.getElementById(DOM_IDS.OPEN_THEMES_PANEL),
+            themesModal: document.getElementById(DOM_IDS.THEMES_MODAL),
+            closeThemesBtn: document.getElementById(DOM_IDS.CLOSE_THEMES_BTN),
+            quickDarkToggle: document.getElementById(DOM_IDS.QUICK_DARK_TOGGLE)
         };
 
         // Validate critical elements
@@ -546,7 +546,7 @@ export class StatsPanelManager {
         }
 
         // Listen for mode changes to update milestone text dynamically
-        const modeSelector = document.getElementById('mode-selector');
+        const modeSelector = document.getElementById(DOM_IDS.MODE_SELECTOR);
         if (modeSelector) {
             safeAdd(modeSelector, 'change', () => {
                 console.log('📊 Stats panel detected mode change - updating stats...');
@@ -1339,7 +1339,7 @@ export class StatsPanelManager {
         }
 
         // Update toggle arrow
-        const toggleIcon = themeUnlockStatus?.querySelector(".toggle-icon");
+        const toggleIcon = themeUnlockStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);
         if (toggleIcon) {
             const anyVisible =
                 themeUnlockMessage.classList.contains("visible") ||
@@ -1377,7 +1377,7 @@ export class StatsPanelManager {
         if (routineButtonsContainer) routineButtonsContainer.classList.toggle("visible");
 
         // Update toggle arrow
-        const toggleIcon = currentRoutineStatus?.querySelector(".toggle-icon");
+        const toggleIcon = currentRoutineStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);
         if (toggleIcon) {
             const anyVisible = currentRoutineCycleCount.classList.contains("visible");
             toggleIcon.textContent = anyVisible ? "▲" : "▼";
@@ -1448,7 +1448,7 @@ export class StatsPanelManager {
                 // Don't add visible to cleared count here - let updateStats() handle it based on content
                 if (routineButtonsContainer) routineButtonsContainer.classList.add("visible");
 
-                const toggleIcon = currentRoutineStatus?.querySelector(".toggle-icon");
+                const toggleIcon = currentRoutineStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);
                 if (toggleIcon) toggleIcon.textContent = "▲";
             }
 
@@ -1460,7 +1460,7 @@ export class StatsPanelManager {
                 if (goldenUnlockMessage) goldenUnlockMessage.classList.add("visible");
                 if (gameUnlockMessage) gameUnlockMessage.classList.add("visible");
 
-                const toggleIcon = themeUnlockStatus?.querySelector(".toggle-icon");
+                const toggleIcon = themeUnlockStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);
                 if (toggleIcon) toggleIcon.textContent = "▲";
             }
 
@@ -1495,8 +1495,8 @@ export class StatsPanelManager {
         this.dependencies.updateThemeColor();
 
         // Sync toggle states in settings panel
-        const settingsToggle = document.getElementById("darkModeToggle");
-        const themeToggle = document.getElementById("darkModeToggleThemes");
+        const settingsToggle = document.getElementById(DOM_IDS.DARK_MODE_TOGGLE);
+        const themeToggle = document.getElementById(DOM_IDS.DARK_MODE_TOGGLE_THEMES);
         if (settingsToggle) settingsToggle.checked = isDark;
         if (themeToggle) themeToggle.checked = isDark;
 
@@ -1616,7 +1616,7 @@ export class StatsPanelManager {
         const CACHE_TTL = INTERVALS.STATS_CACHE_TTL; // 5 seconds
 
         if (!this._taskStatsCache || this._taskStatsCacheTime < now - CACHE_TTL) {
-            const tasks = document.querySelectorAll(".task");
+            const tasks = document.querySelectorAll(DOM_SELECTORS.TASK);
             const checked = document.querySelectorAll(".task input:checked");
             this._taskStatsCache = {
                 total: tasks.length,
