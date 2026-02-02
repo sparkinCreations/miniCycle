@@ -538,7 +538,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     animation: fadeOutScale 1.5s ease-in-out;
-    z-index: 2;
+    z-index: 1000;
 }
 
 /* =============================================================================
@@ -558,5 +558,5 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     animation: fadeOutScale 1.5s ease-in-out;
-    z-index: 2;
+    z-index: 1000;
 }
