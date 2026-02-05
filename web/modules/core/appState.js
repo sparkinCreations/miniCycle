@@ -870,14 +870,20 @@ class MiniCycleState {
 
     /**
      * Update tasks in the active cycle
-     * @param {Object} taskUpdates - Updates to apply to tasks
+     * @param {Array} taskUpdates - New tasks array to replace existing tasks
      * @deprecated Use update() with direct task manipulation instead
      */
     updateActiveTasks(taskUpdates) {
         this.update(state => {
             const activeCycle = state.appState.activeCycleId;
             if (activeCycle && state.data.cycles[activeCycle]) {
-                Object.assign(state.data.cycles[activeCycle].tasks, taskUpdates);
+                // Fix #1: Use array assignment instead of Object.assign which corrupts arrays
+                if (Array.isArray(taskUpdates)) {
+                    state.data.cycles[activeCycle].tasks = taskUpdates;
+                } else {
+                    console.warn('updateActiveTasks: taskUpdates should be an array, received:', typeof taskUpdates);
+                    state.data.cycles[activeCycle].tasks = Object.values(taskUpdates);
+                }
             }
         });
     }

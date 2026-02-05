@@ -645,7 +645,10 @@ function buildModuleDependencies(manifest, deps, coreResult) {
                 appState[prop] = value;
                 return true;
             }
-            return false;
+            // Fix #46: Return true to avoid TypeError in strict mode
+            // Log warning since AppState isn't ready yet
+            console.warn(`⚠️ AppState proxy: Cannot set "${prop}" - AppState not initialized yet`);
+            return true;
         },
         apply(target, thisArg, args) {
             // Allow function call: this.deps.AppState()
@@ -744,14 +747,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         finalizeTaskCreation: (...args) => deps.task?.finalizeTaskCreation?.(...args),
         refreshTaskListUI: (...args) => deps.task?.refreshTaskListUI?.(...args),
         renderTasks: (...args) => deps.task?.renderTasks?.(...args),
-        addTask: (...args) => {
-            console.log('🔗 moduleLoader addTask wrapper called:', args);
-            console.log('🔗 deps.task:', deps.task);
-            console.log('🔗 deps.task?.addTask:', deps.task?.addTask);
-            const result = deps.task?.addTask?.(...args);
-            console.log('🔗 addTask wrapper result:', result);
-            return result;
-        },
+        addTask: (...args) => deps.task?.addTask?.(...args),
         resetTasks: (...args) => deps.task?.resetTasks?.(...args),
         handleTaskCompletionChange: (...args) => deps.task?.handleTaskCompletionChange?.(...args),
         saveTaskToSchema25: (...args) => deps.task?.saveTaskToSchema25?.(...args),

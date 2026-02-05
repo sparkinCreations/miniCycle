@@ -303,6 +303,12 @@ export class AchievementsManager {
     closeModal() {
         if (!this.modalOverlay) return;
 
+        // Fix #63: Remove escape handler when modal closes by any means
+        if (this._escHandler) {
+            document.removeEventListener('keydown', this._escHandler);
+            this._escHandler = null;
+        }
+
         this.modalOverlay.style.opacity = '0';
         this.modalOverlay.querySelector(DOM_SELECTORS.ACHIEVEMENTS_MODAL).style.transform = 'translateY(20px)';
 
@@ -330,14 +336,13 @@ export class AchievementsManager {
             }
         });
 
-        // Escape key to close
-        const escHandler = (e) => {
+        // Fix #63: Store escape handler reference for proper cleanup
+        this._escHandler = (e) => {
             if (e.key === 'Escape' && this.modalOverlay) {
                 this.closeModal();
-                document.removeEventListener('keydown', escHandler);
             }
         };
-        document.addEventListener('keydown', escHandler);
+        document.addEventListener('keydown', this._escHandler);
     }
 
     /**

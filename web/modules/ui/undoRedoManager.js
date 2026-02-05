@@ -1433,7 +1433,7 @@ export async function initUndoSystemForApp() {
             undoStack,
             redoStack,
             lastUpdated: Date.now(),
-            version: "1.344"
+            version: globalThis.APP_VERSION || "dev"
           };
 
           objectStore.put(data);
@@ -1612,7 +1612,7 @@ export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack, options 
         undoStack: undoStack || [],
         redoStack: redoStack || [],
         lastUpdated: Date.now(),
-        version: "1.344"
+        version: globalThis.APP_VERSION || "dev"
       };
 
       const request = objectStore.put(data);
@@ -1753,7 +1753,7 @@ export async function renameUndoStackInIndexedDB(oldCycleId, newCycleId) {
       undoStack: oldData.undoStack,
       redoStack: oldData.redoStack,
       lastUpdated: Date.now(),
-      version: "1.344"
+      version: globalThis.APP_VERSION || "dev"
     };
 
     // ✅ FIX #11: Properly await IndexedDB operations

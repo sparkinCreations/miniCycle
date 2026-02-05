@@ -903,12 +903,18 @@ export class PreferencesManager {
                     titleBg: null,
                     titleText: null,
                     checkboxBg: null,
+                    checkboxIncompleteBg: null, // Fix #36: missing key
                     checkmark: null,
                     completeBtn: null,
                     clearBtn: null,
                     progressBar: null,
                     statsBg: null,
-                    statsText: null
+                    statsText: null,
+                    patternColor: null, // Fix #36: missing key
+                    showCheckboxFill: true, // Fix #36: reset to default
+                    showCheckboxIncomplete: true, // Fix #36: reset to default
+                    showBgPattern: true, // Fix #36: reset to default
+                    showBgImage: true // Fix #36: reset to default (if user has image set)
                 };
             });
         }

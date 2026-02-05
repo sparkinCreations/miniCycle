@@ -381,26 +381,32 @@ export class TaskButtons {
                 return;
             }
 
-            let state = this.deps.AppState.get();
-            let activeCycleId = state.appState.activeCycleId;
-            let cycle = state.data.cycles[activeCycleId];
-            let isToDoMode = cycle?.deleteCheckedTasks === true;
-            const currentMode = isToDoMode ? 'todo' : 'cycle';
+            // Fix #52: Read state inside update callback to avoid TOCTOU race
+            let currentMode;
 
             await this.deps.AppState.update(state => {
+                const activeCycleId = state.appState.activeCycleId;
                 const cycle = state.data.cycles[activeCycleId];
                 const task = cycle?.tasks?.find(t => t.id === assignedTaskId);
 
-                if (task) {
-                    const isValid = this.deps.GlobalUtils?.validateDeleteSettings(task.deleteWhenCompleteSettings);
-                    if (!isValid) {
-                        task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-                    }
+                if (!task) return;
 
-                    task.deleteWhenComplete = newState;
-                    task.deleteWhenCompleteSettings[currentMode] = newState;
+                // Determine mode inside callback with fresh state
+                const isToDoMode = cycle?.deleteCheckedTasks === true;
+                currentMode = isToDoMode ? 'todo' : 'cycle';
+
+                const isValid = this.deps.GlobalUtils?.validateDeleteSettings(task.deleteWhenCompleteSettings);
+                if (!isValid) {
+                    task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
                 }
+
+                task.deleteWhenComplete = newState;
+                task.deleteWhenCompleteSettings[currentMode] = newState;
             }, true);
+
+            // Re-read for DOM sync
+            const state = this.deps.AppState.get();
+            const activeCycleId = state.appState.activeCycleId;
 
             state = this.deps.AppState.get();
             const task = state.data.cycles[activeCycleId]?.tasks?.find(t => t.id === assignedTaskId);

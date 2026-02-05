@@ -32,7 +32,7 @@
 // CONFIGURATION
 // ============================================================================
 
-const DEV_MODE = true; // Set to false in production builds
+const DEV_MODE = false; // Production mode - set to true for development
 
 // ============================================================================
 // GROUPED API STORAGE

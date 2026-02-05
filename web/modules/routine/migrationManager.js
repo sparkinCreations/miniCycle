@@ -1552,9 +1552,15 @@ function showCriticalError(message) {
     const errorContainer = _deps.document.createElement('div');
     errorContainer.style.cssText = `position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ff4444; color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; max-width: 400px; text-align: center; font-family: Inter, sans-serif; line-height: 1.5;`;
 
+    // Fix #38: Escape message to prevent XSS
+    const escapeHtml = (str) => {
+        if (typeof str !== 'string') return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    };
+
     errorContainer.innerHTML = `
         <h3 style="margin-top: 0;">⚠️ App Error</h3>
-        <p style="margin-bottom: 20px;">${message}</p>
+        <p style="margin-bottom: 20px;">${escapeHtml(message)}</p>
         <div style="display: flex; gap: 10px; justify-content: center;">
             <button onclick="location.reload()" style="
                 background: white;

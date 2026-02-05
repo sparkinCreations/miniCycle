@@ -135,11 +135,17 @@ class TimeTrackerPlugin extends MiniCyclePlugin {
             return;
         }
 
+        // Fix #44: Escape task text to prevent XSS
+        const escapeHtml = (str) => {
+            if (typeof str !== 'string') return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        };
+
         let html = '';
         this.startTimes.forEach((startTime, taskId) => {
             const elapsed = Date.now() - startTime;
             const task = this.getCurrentTasks().find(t => t.id === taskId);
-            const taskText = task ? task.text.substring(0, 20) + '...' : 'Unknown task';
+            const taskText = task ? escapeHtml(task.text.substring(0, 20)) + '...' : 'Unknown task';
             html += `<div>${taskText}: ${this.formatDuration(elapsed)}</div>`;
         });
 

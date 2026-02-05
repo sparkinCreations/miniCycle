@@ -862,14 +862,19 @@ export class ModeManager {
         function handleAutoResetChange(event) {
             console.log('🔄 Auto reset toggle changed (state-based):', event.target.checked);
 
-            if (!activeCycle || !currentCycle) {
+            // Fix #34: Read current activeCycleId inside handler, not from closure
+            const currentState = AppState?.get?.();
+            const currentActiveCycle = currentState?.appState?.activeCycleId;
+            const currentCycleData = currentState?.data?.cycles?.[currentActiveCycle];
+
+            if (!currentActiveCycle || !currentCycleData) {
                 console.warn('⚠️ No active cycle available for auto reset change');
                 return;
             }
 
             // ✅ Update through state system
             AppState.update(state => {
-                const cycle = state.data.cycles[activeCycle];
+                const cycle = state.data.cycles[currentActiveCycle];
                 if (cycle) {
                     cycle.autoReset = event.target.checked;
 

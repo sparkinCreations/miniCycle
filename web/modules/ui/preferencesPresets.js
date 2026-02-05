@@ -416,7 +416,9 @@ export function exportPreset(presetId, deps) {
         version: 1
     };
 
-    const code = btoa(JSON.stringify(exportData));
+    // Fix #42: Handle Unicode characters that btoa can't encode
+    const jsonStr = JSON.stringify(exportData);
+    const code = btoa(unescape(encodeURIComponent(jsonStr)));
 
     // Try to copy to clipboard
     navigator.clipboard.writeText(code).then(() => {
@@ -580,9 +582,13 @@ export function createPresetSwatch(colors) {
         colors.completeBtn || DEFAULT_COLORS.completeBtn
     ];
 
+    // Fix #41: Validate colors to prevent CSS injection
+    const isValidColor = (c) => /^#[0-9A-Fa-f]{3,8}$|^rgb\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\)$|^[a-zA-Z]+$/.test(c);
+    const safeColors = swatchColors.map(color => isValidColor(color) ? color : '#cccccc');
+
     return `
         <div class="preferences-preset-swatch">
-            ${swatchColors.map(color =>
+            ${safeColors.map(color =>
                 `<span class="preferences-preset-swatch-color" style="background: ${color}"></span>`
             ).join('')}
         </div>

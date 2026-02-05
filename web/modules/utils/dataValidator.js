@@ -36,6 +36,12 @@ export const setDataValidatorDependencies = (dependencies) => di.setDependencies
 
 export class DataValidator {
     /**
+     * Dangerous keys that could cause prototype pollution
+     * @private
+     */
+    static _DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype'];
+
+    /**
      * Get sanitizeInput from DI container
      * @private
      * @returns {Function}
@@ -46,6 +52,26 @@ export class DataValidator {
             throw new Error('DataValidator: sanitizeInput not injected. Call setDataValidatorDependencies first.');
         }
         return deps.sanitizeInput;
+    }
+
+    /**
+     * Fix #7: Check object for prototype pollution keys
+     * @private
+     * @param {object} obj - Object to check
+     * @param {string} path - Current path for error messages
+     * @throws {Error} If dangerous keys are found
+     */
+    static _checkForPrototypePollution(obj, path = 'root') {
+        if (typeof obj !== 'object' || obj === null) return;
+
+        for (const key of Object.keys(obj)) {
+            if (this._DANGEROUS_KEYS.includes(key)) {
+                throw new Error(`Prototype pollution attempt detected: "${key}" at ${path}`);
+            }
+            if (typeof obj[key] === 'object' && obj[key] !== null) {
+                this._checkForPrototypePollution(obj[key], `${path}.${key}`);
+            }
+        }
     }
 
     /**
@@ -223,6 +249,9 @@ export class DataValidator {
         if (typeof importedData !== 'object' || importedData === null) {
             throw new TypeError('Imported data must be an object');
         }
+
+        // Fix #7: Check for prototype pollution before processing
+        this._checkForPrototypePollution(importedData, 'importedData');
 
         // Validate schema version
         if (!importedData.schemaVersion) {

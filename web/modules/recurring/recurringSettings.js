@@ -39,8 +39,13 @@ export function normalizeRecurringSettings(settings = {}) {
     const cacheKey = JSON.stringify(settings);
 
     // Return cached result if available
+    // Fix #29: Return deep clone to prevent cache corruption from caller mutations
     if (normalizationCache.has(cacheKey)) {
-        return normalizationCache.get(cacheKey);
+        const cached = normalizationCache.get(cacheKey);
+        // Use structuredClone if available, otherwise JSON round-trip
+        return typeof structuredClone === 'function'
+            ? structuredClone(cached)
+            : JSON.parse(JSON.stringify(cached));
     }
 
     const normalized = {

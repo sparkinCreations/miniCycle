@@ -386,7 +386,12 @@ export class MenuManager {
         if (menu && menuButton) {
             if (!menu.contains(event.target) && !menuButton.contains(event.target)) {
                 menu.classList.remove("visible"); // Hide the menu
-                document.removeEventListener("click", (e) => this.closeMenuOnClickOutside(e)); // ✅ Remove listener after closing
+                // Fix #3: Use bound handler reference for proper removal
+                // Note: This method is likely unused - uiBoot.js handles menu close via named function
+                if (this._boundCloseMenuHandler) {
+                    document.removeEventListener("click", this._boundCloseMenuHandler);
+                    this._boundCloseMenuHandler = null;
+                }
             }
         }
     }
@@ -657,7 +662,7 @@ export class MenuManager {
                 // ✅ Clear UI & update progress
                 const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
                 if (taskList) {
-                    taskList.innerHTML = "";
+                    taskList.replaceChildren(); // Fix #19: preserves event listeners on parent
                 }
 
                 this.deps.updateProgressBar();

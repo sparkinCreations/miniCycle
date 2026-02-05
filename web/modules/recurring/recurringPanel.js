@@ -546,38 +546,8 @@ export class RecurringPanelManager {
         _updateRecurCountVisibility(this.deps);
     }
 
-    /**
-     * Update recurring settings panel visibility
-     */
-    updateRecurringSettingsVisibility() {
-        const anySelected = this.deps.querySelector(DOM_SELECTORS.RECURRING_TASK_ITEM_SELECTED);
-        const settingsPanel = this.deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
-        const checkboxes = this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_CHECK);
-        const changeBtns = this.deps.querySelectorAll(DOM_SELECTORS.CHANGE_RECURRING_BTN);
-        const toggleContainer = this.deps.getElementById(DOM_IDS.RECURRING_TOGGLE_ACTIONS);
-        const taskCount = this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).length;
-
-        const show = !!anySelected;
-
-        if (settingsPanel) {
-            settingsPanel.classList.toggle("hidden", !show);
-
-            // Show or hide checkboxes
-            checkboxes.forEach(box => {
-                box.classList.toggle("hidden", !show);
-            });
-
-            // Hide change buttons when panel is open
-            changeBtns.forEach(btn => {
-                btn.classList.toggle("hidden", show);
-            });
-        }
-
-        // Only show toggle if panel is open AND checkboxes are visible AND more than one task
-        const checkboxesVisible = Array.from(checkboxes).some(cb => !cb.classList.contains("hidden"));
-        const shouldShowToggle = show && taskCount > 1 && checkboxesVisible;
-        toggleContainer?.classList.toggle("hidden", !shouldShowToggle);
-    }
+    // Fix #48: Removed duplicate updateRecurringSettingsVisibility() definition
+    // The complete implementation is defined later in the class (with error handling)
 
     /**
      * Setup Apply and Cancel button handlers

@@ -48,9 +48,22 @@ import { STORAGE_KEYS } from '../core/constants.js';
 // ============================================================================
 
 // structuredClone polyfill for Safari < 15.4 (March 2022)
-// Falls back to JSON round-trip which handles most cases
+// Fix #61: Improved polyfill that handles Date, RegExp, Map, Set
 if (typeof structuredClone === 'undefined') {
-    globalThis.structuredClone = (obj) => JSON.parse(JSON.stringify(obj));
+    globalThis.structuredClone = (obj) => {
+        if (obj === null || typeof obj !== 'object') return obj;
+        if (obj instanceof Date) return new Date(obj.getTime());
+        if (obj instanceof RegExp) return new RegExp(obj.source, obj.flags);
+        if (obj instanceof Map) return new Map(Array.from(obj.entries()).map(([k, v]) => [structuredClone(k), structuredClone(v)]));
+        if (obj instanceof Set) return new Set(Array.from(obj).map(v => structuredClone(v)));
+        if (Array.isArray(obj)) return obj.map(v => structuredClone(v));
+        // Plain object
+        const clone = {};
+        for (const key of Object.keys(obj)) {
+            clone[key] = structuredClone(obj[key]);
+        }
+        return clone;
+    };
     console.log('🔧 structuredClone polyfill installed (Safari < 15.4)');
 }
 
@@ -333,8 +346,14 @@ async function recoverFromInterruptedTests() {
                 return false;
             }
         } else {
-            console.warn('⚠️ No backup found - clearing potentially corrupted test data');
-            localStorage.removeItem(STORAGE_KEYS.DATA);
+            // Fix #71: Don't delete user data without backup - this could delete valid data
+            // If testModeActive flag is set but no backup exists, the flag may be stale
+            // Log warning but preserve any existing data
+            console.warn('⚠️ No backup found - test mode flag may be stale, preserving existing data');
+            const existingData = localStorage.getItem(STORAGE_KEYS.DATA);
+            if (existingData) {
+                console.log('📦 Existing data found, keeping it intact');
+            }
             await clearTestModeFlags();
             return true;
         }
@@ -358,10 +377,11 @@ let appInit = null;
 let AppState = null;
 let DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = null;
 let DEFAULT_RECURRING_DELETE_SETTINGS = null;
-let TASK_LIMIT = 500;
+let TASK_LIMIT = 150; // Fix #37: use consistent value with LIMITS.TASKS_PER_CYCLE
 
-// Version helper for cache-busted imports
-let withV = (path) => `${path}?v=${effectiveVersion}`;
+// Fix #47: Use APP_VERSION directly since effectiveVersion is defined inside initCoreBoot
+// This will be updated inside initCoreBoot with the actual version
+let withV = (path) => `${path}?v=${APP_VERSION}`;
 
 // ============================================================================
 // SECTION 1: Core Initialization
@@ -486,7 +506,7 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   const constantsModule = await import(`../core/constants.js?v=${effectiveVersion}`);
   DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = constantsModule.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
   DEFAULT_RECURRING_DELETE_SETTINGS = constantsModule.DEFAULT_RECURRING_DELETE_SETTINGS;
-  TASK_LIMIT = constantsModule.TASK_LIMIT || 500;
+  TASK_LIMIT = constantsModule.LIMITS?.TASKS_PER_CYCLE || constantsModule.TASK_LIMIT || 150; // Fix #37: use LIMITS constant
 
   // Validate constants loaded
   if (typeof DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS === 'undefined') {
@@ -880,7 +900,10 @@ async function handleStaleCacheRecovery() {
  * Show a user-friendly banner for manual refresh
  */
 function showStaleCacheBanner() {
-  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  // Fix #62: Use modern API with fallback for deprecated navigator.platform
+  const isMac = navigator.userAgentData?.platform === 'macOS' ||
+                /Mac/.test(navigator.userAgent) ||
+                (navigator.platform?.toUpperCase().indexOf('MAC') >= 0);
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isAndroid = /Android/.test(navigator.userAgent);
 

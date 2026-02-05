@@ -218,12 +218,16 @@ export async function saveCurrentTaskOrderImpl(deps = {}) {
                 const cycle = state.data.cycles[cid];
                 if (!cycle?.tasks) return;
 
+                // Fix #28: Preserve tasks not visible in DOM (e.g., completed tasks in dropdown)
                 // Reorder tasks based on DOM order
                 const reorderedTasks = newOrderIds.map(id =>
                     cycle.tasks.find(task => task.id === id)
                 ).filter(Boolean);
 
-                cycle.tasks = reorderedTasks;
+                // Preserve any tasks that weren't in the DOM (completed tasks, etc.)
+                const missingTasks = cycle.tasks.filter(task => !newOrderIds.includes(task.id));
+
+                cycle.tasks = [...reorderedTasks, ...missingTasks];
             }, true);
         } else {
             console.warn('⚠️ AppState not ready for saveCurrentTaskOrder - order may be lost');

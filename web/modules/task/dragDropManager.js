@@ -294,7 +294,6 @@ export class DragDropManager {
             const transparentPixel = new Image();
             transparentPixel.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
 
-            let readyToDrag = false;
             let touchStartX = 0;
             let touchStartY = 0;
             let holdTimeout = null;
@@ -319,6 +318,9 @@ export class DragDropManager {
             if (taskElement._touchendHandler) {
                 taskElement.removeEventListener("touchend", taskElement._touchendHandler);
             }
+            if (taskElement._touchcancelHandler) {
+                taskElement.removeEventListener("touchcancel", taskElement._touchcancelHandler);
+            }
             if (taskElement._dragstartHandler) {
                 taskElement.removeEventListener("dragstart", taskElement._dragstartHandler);
             }
@@ -329,7 +331,6 @@ export class DragDropManager {
                 isLongPress = false;
                 isDragging = false;
                 isTap = true;
-                readyToDrag = false;
                 touchStartX = event.touches[0].clientX;
                 touchStartY = event.touches[0].clientY;
                 preventClick = false;
@@ -381,14 +382,8 @@ export class DragDropManager {
                     return;
                 }
 
-                if (isLongPress && readyToDrag && !isDragging) {
-                    // draggable already set in enableDragAndDrop()
-                    isDragging = true;
-
-                    if (event.cancelable) {
-                        event.preventDefault();
-                    }
-                }
+                // Fix #32: Removed dead code - readyToDrag was never set to true
+                // The isDragging flag is already set in the long-press timeout handler
 
                 if (isDragging && this.draggedTask) {
                     if (event.cancelable) {
@@ -428,6 +423,23 @@ export class DragDropManager {
                 taskElement.classList.remove("long-pressed");
             };
             safeAdd(taskElement, "touchend", taskElement._touchendHandler, { passive: true });
+
+            // Fix #72: Handle touchcancel (system alert, gesture takeover, etc.)
+            taskElement._touchcancelHandler = () => {
+                clearTimeout(holdTimeout);
+
+                if (this.draggedTask) {
+                    this.draggedTask.classList.remove("dragging", "rearranging");
+                    this.draggedTask = null;
+                }
+
+                isDragging = false;
+                isLongPress = false;
+                isTap = false;
+                taskElement.classList.remove("long-pressed");
+                console.log("🚫 Touch cancelled - cleaned up drag state");
+            };
+            safeAdd(taskElement, "touchcancel", taskElement._touchcancelHandler, { passive: true });
 
             // 🖱️ **Mouse-based Drag for Desktop**
             taskElement._dragstartHandler = (event) => {
@@ -473,7 +485,9 @@ export class DragDropManager {
             if (!parent || !target.parentNode) return;
 
             const bounding = target.getBoundingClientRect();
-            const offset = event.clientY - bounding.top;
+            // Fix #33: Handle both mouse events (clientY) and touch events (touches[0].clientY)
+            const clientY = event.clientY ?? event.touches?.[0]?.clientY ?? event.changedTouches?.[0]?.clientY;
+            const offset = clientY - bounding.top;
 
             // ✅ ALWAYS mark that a reorder occurred (for save on drop)
             this.didDragReorderOccur = true;
