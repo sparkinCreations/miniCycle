@@ -238,7 +238,8 @@ export async function bootFeatures(deps, coreResult) {
       // Also inject into routineLoader for boot-time rendering
       if (features.modules.routineLoader?.setRoutineLoaderDependencies) {
         features.modules.routineLoader.setRoutineLoaderDependencies({
-          updateSearchVisibility: taskSearchMod.updateSearchVisibility
+          updateSearchVisibility: taskSearchMod.updateSearchVisibility,
+          completedTasksManager: deps.ui?.completedTasksManager
         });
       }
 

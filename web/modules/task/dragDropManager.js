@@ -234,7 +234,10 @@ export class DragDropManager {
                                     const reorderedTasks = newTaskOrder
                                         .map(id => taskMap.get(id))
                                         .filter(Boolean);
-                                    state.data.cycles[activeCycleId].tasks = reorderedTasks;
+
+                                    // Preserve tasks not in DOM (e.g., completed tasks in dropdown)
+                                    const missingTasks = tasks.filter(t => !newTaskOrder.includes(t.id));
+                                    state.data.cycles[activeCycleId].tasks = [...reorderedTasks, ...missingTasks];
                                     state.metadata.lastModified = Date.now();
                                 }
                             }

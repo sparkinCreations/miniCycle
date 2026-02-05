@@ -125,25 +125,11 @@ export class TaskEvents {
     }
 
     /**
-     * Initialize event delegation for task clicks
-     * ✅ MEMORY LEAK FIX: Uses ONE listener for all tasks instead of one per task
-     * This prevents listener accumulation when tasks are re-rendered
+     * Create the task click handler function
+     * @returns {Function} The click handler
      */
-    initEventDelegation() {
-        if (this._eventDelegationInitialized) {
-            console.log('⚠️ Task click event delegation already initialized');
-            return;
-        }
-
-        const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
-        if (!taskList) {
-            console.warn('⚠️ Cannot initialize task click delegation - #taskList not found');
-            return;
-        }
-
-        // ✅ ONE listener for ALL tasks (current and future)
-        const safeAdd = this.deps.safeAddEventListener;
-        taskList._taskClickHandler = (event) => {
+    _createTaskClickHandler() {
+        return (event) => {
             // Find the closest .task element
             const taskItem = event.target.closest(".task");
             if (!taskItem) return;
@@ -202,7 +188,38 @@ export class TaskEvents {
                 }
             }
         };
+    }
+
+    /**
+     * Initialize event delegation for task clicks
+     * ✅ MEMORY LEAK FIX: Uses ONE listener for all tasks instead of one per task
+     * This prevents listener accumulation when tasks are re-rendered
+     */
+    initEventDelegation() {
+        if (this._eventDelegationInitialized) {
+            console.log('⚠️ Task click event delegation already initialized');
+            return;
+        }
+
+        const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
+        if (!taskList) {
+            console.warn('⚠️ Cannot initialize task click delegation - #taskList not found');
+            return;
+        }
+
+        const safeAdd = this.deps.safeAddEventListener;
+
+        // ✅ ONE listener for main task list (current and future tasks)
+        taskList._taskClickHandler = this._createTaskClickHandler();
         safeAdd(taskList, "click", taskList._taskClickHandler);
+
+        // ✅ Also add listener to completed tasks dropdown list
+        const completedTaskList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
+        if (completedTaskList) {
+            completedTaskList._taskClickHandler = this._createTaskClickHandler();
+            safeAdd(completedTaskList, "click", completedTaskList._taskClickHandler);
+            console.log('✅ Task click delegation also added to completed tasks list');
+        }
 
         this._eventDelegationInitialized = true;
         console.log('✅ Task click event delegation initialized (memory leak fix applied)');
