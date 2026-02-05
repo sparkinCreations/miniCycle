@@ -389,6 +389,12 @@ export class HistoryManager {
     closeModal() {
         if (!this.modalOverlay) return;
 
+        // Clean up escape handler to prevent leak
+        if (this._escHandler) {
+            document.removeEventListener('keydown', this._escHandler);
+            this._escHandler = null;
+        }
+
         this.modalOverlay.style.opacity = '0';
         this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_MODAL).style.transform = 'translateY(20px)';
 
@@ -499,8 +505,8 @@ export class HistoryManager {
             }
         });
 
-        // Escape key to close
-        const escHandler = (e) => {
+        // Escape key to close - store handler for cleanup in closeModal
+        this._escHandler = (e) => {
             if (e.key === 'Escape' && this.modalOverlay) {
                 if (this.isRecreateMode) {
                     this.isRecreateMode = false;
@@ -510,11 +516,10 @@ export class HistoryManager {
                     this._updateActionButton();
                 } else {
                     this.closeModal();
-                    document.removeEventListener('keydown', escHandler);
                 }
             }
         };
-        document.addEventListener('keydown', escHandler);
+        document.addEventListener('keydown', this._escHandler);
     }
 
     /**

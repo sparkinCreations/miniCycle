@@ -483,9 +483,10 @@ export class RoutineSwitcher {
 
         // ✅ Generate new IDs for all tasks to avoid conflicts
         if (Array.isArray(copiedCycle.tasks)) {
-            copiedCycle.tasks = copiedCycle.tasks.map(task => ({
+            const now = Date.now();
+            copiedCycle.tasks = copiedCycle.tasks.map((task, index) => ({
                 ...task,
-                id: `task-${Date.now()}-${Math.floor(Math.random() * 10000)}`
+                id: `task-${now}-${index}-${Math.floor(Math.random() * 10000)}` // Fix #74: add index to prevent collision
             }));
         }
 

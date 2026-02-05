@@ -232,7 +232,8 @@ export class MiniCycleReminders {
         }
 
         // Save updated settings and get the current global state
-        const globalReminderState = this.autoSaveReminders();
+        // Fix #30: autoSaveReminders is async, must await to get actual boolean
+        const globalReminderState = await this.autoSaveReminders();
 
         // ✅ Sync with customizer modal if it's open
         const customizerModal = document.getElementById(DOM_IDS.TASK_OPTIONS_CUSTOMIZER_MODAL);
@@ -369,8 +370,9 @@ export class MiniCycleReminders {
 
         const remindersToSave = {
             enabled,
-            indefinite: this.deps.getElementById(DOM_IDS.INDEFINITE_CHECKBOX)?.checked || true,
-            dueDatesReminders: this.deps.getElementById(DOM_IDS.DUE_DATES_REMINDERS)?.checked || false,
+            // Fix #31: Use ?? instead of || so false doesn't become true
+            indefinite: this.deps.getElementById(DOM_IDS.INDEFINITE_CHECKBOX)?.checked ?? true,
+            dueDatesReminders: this.deps.getElementById(DOM_IDS.DUE_DATES_REMINDERS)?.checked ?? false,
             repeatCount: parseInt(this.deps.getElementById(DOM_IDS.REPEAT_COUNT)?.value) || 0,
             frequencyValue: parseInt(this.deps.getElementById(DOM_IDS.FREQUENCY_VALUE)?.value) || 0,
             frequencyUnit: this.deps.getElementById(DOM_IDS.FREQUENCY_UNIT)?.value || "hours"

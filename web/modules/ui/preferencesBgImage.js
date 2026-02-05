@@ -216,7 +216,10 @@ export async function saveBgImage(dataUrl, mode) {
 
         const request = store.put(data);
         request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
+        request.onerror = () => {
+            db.close(); // Fix #70: Close on error to prevent leak
+            reject(request.error);
+        };
 
         transaction.oncomplete = () => db.close();
     });
@@ -238,7 +241,10 @@ export async function loadBgImage() {
                 const result = request.result;
                 resolve(result ? { dataUrl: result.dataUrl, mode: result.mode } : null);
             };
-            request.onerror = () => reject(request.error);
+            request.onerror = () => {
+                db.close(); // Fix #70: Close on error to prevent leak
+                reject(request.error);
+            };
 
             transaction.oncomplete = () => db.close();
         });
@@ -314,7 +320,10 @@ export async function removeBgImage(deps) {
             const request = store.delete('background');
 
             request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
+            request.onerror = () => {
+                db.close(); // Fix #70: Close on error to prevent leak
+                reject(request.error);
+            };
 
             transaction.oncomplete = () => db.close();
         });

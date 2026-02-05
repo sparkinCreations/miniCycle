@@ -313,9 +313,9 @@ function resetTasksData(context, deps) {
         const checkbox = taskEl.querySelector("input[type='checkbox']");
         const dueDateInput = taskEl.querySelector(DOM_SELECTORS.DUE_DATE);
 
-        // Apply staggered reset animation
+        // Apply staggered reset animation - Fix #58: wrap with trackTimeout
         const delay = animationIndex * STAGGER_DELAY;
-        setTimeout(() => {
+        trackTimeout(setTimeout(() => {
             taskEl.classList.add("task-resetting");
             if (checkbox) checkbox.checked = false;
             taskEl.classList.remove("overdue-task");
@@ -324,10 +324,10 @@ function resetTasksData(context, deps) {
                 dueDateInput.classList.add("hidden");
             }
             // Remove animation class after it completes
-            setTimeout(() => {
+            trackTimeout(setTimeout(() => {
                 taskEl.classList.remove("task-resetting");
-            }, 400);
-        }, delay);
+            }, 400));
+        }, delay));
 
         animationIndex++;
     });

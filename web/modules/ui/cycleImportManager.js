@@ -603,24 +603,29 @@ export function processImportedData(fileContent) {
     const recurringCount = Object.keys(recurringTemplates).length;
     console.log(`Import completed successfully to Schema 2.5${recurringCount > 0 ? ` (${recurringCount} recurring templates created)` : ''}`);
 
-    // Show appropriate notification based on truncation, name collision, and recurring status
+    // Fix #50-51: Store notification message in sessionStorage so it survives reload
+    // The notification will be shown after the page reloads
+    let importMessage = '';
+    let messageType = 'success';
+
     if (tasksTruncated) {
         const truncatedCount = originalTaskCount - MAX_TASK_COUNT;
-        _deps.showNotification?.(
-            `"${finalCycleTitle}" imported but exceeded ${MAX_TASK_COUNT} task limit.\n${truncatedCount} task${truncatedCount > 1 ? 's were' : ' was'} not imported.`,
-            "warning",
-            6000
-        );
+        importMessage = `"${finalCycleTitle}" imported but exceeded ${MAX_TASK_COUNT} task limit. ${truncatedCount} task${truncatedCount > 1 ? 's were' : ' was'} not imported.`;
+        messageType = 'warning';
     } else if (titleWasModified) {
-        _deps.showNotification?.(
-            `Name "${cycleTitle}" already exists. Imported as "${finalCycleTitle}".`,
-            "warning",
-            4000
-        );
+        importMessage = `Name "${cycleTitle}" already exists. Imported as "${finalCycleTitle}".`;
+        messageType = 'warning';
     } else if (recurringCount > 0) {
-        _deps.showNotification?.(`"${finalCycleTitle}" imported with ${recurringCount} recurring task${recurringCount > 1 ? 's' : ''}!`, "success", 4000);
+        importMessage = `"${finalCycleTitle}" imported with ${recurringCount} recurring task${recurringCount > 1 ? 's' : ''}!`;
     } else {
-        _deps.showNotification?.(`"${finalCycleTitle}" imported successfully!`, "success");
+        importMessage = `"${finalCycleTitle}" imported successfully!`;
+    }
+
+    // Store for display after reload
+    try {
+        sessionStorage.setItem('miniCycle_importNotification', JSON.stringify({ message: importMessage, type: messageType }));
+    } catch (e) {
+        console.warn('Could not store import notification:', e);
     }
 
     location.reload();

@@ -264,7 +264,8 @@ function matchYearly(settings, now, day, month) {
         return false;
     }
 
-    if (settings.yearly.useSpecificDays) {
+    // Fix #73: Add optional chaining to prevent null dereference
+    if (settings.yearly?.useSpecificDays) {
         const daysByMonth = settings.yearly.daysByMonth || {};
         const days = settings.yearly.applyDaysToAll
             ? daysByMonth.all || []

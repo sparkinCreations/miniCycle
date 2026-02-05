@@ -1303,7 +1303,7 @@ export class StatsPanelManager {
                     needsUpdate = true;
                 }
             }
-        }, needsUpdate); // ✅ Only immediate save if themes were actually unlocked
+        }, true); // Fix #35: needsUpdate evaluated before callback - always save immediately
 
         if (needsUpdate) {
             console.log('✅ Themes/features unlocked via state system (global cycles)');

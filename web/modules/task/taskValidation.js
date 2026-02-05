@@ -140,9 +140,16 @@ export async function initTaskValidator(dependencies = {}) {
 function validateAndSanitizeTaskInput(taskText) {
     if (!taskValidator) {
         console.warn('⚠️ TaskValidator not initialized - using fallback');
-        // Fallback validation
+        // Fallback validation with sanitization
         if (typeof taskText !== 'string' || !taskText.trim()) return null;
-        return taskText.trim();
+        // Fix #43: Add sanitization to fallback path (escape HTML entities)
+        const trimmed = taskText.trim();
+        return trimmed
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
     return taskValidator.validateAndSanitizeTaskInput(taskText);
 }

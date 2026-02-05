@@ -376,13 +376,20 @@ export class TaskOptionsCustomizer {
         const modal = document.createElement('div');
         modal.id = DOM_IDS.TASK_OPTIONS_CUSTOMIZER_MODAL;
         modal.className = 'modal-overlay';
+
+        // Fix #39: Escape cycleTitle to prevent XSS
+        const escapeHtml = (str) => {
+            if (typeof str !== 'string') return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        };
+
         modal.innerHTML = `
             <div class="modal-content task-options-modal">
                 <div class="modal-header">
                     <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="miniCycle Logo" class="modal-logo">
                     <div class="modal-header-text">
                         <h2>⚙️ Customize Task Options</h2>
-                        <p class="modal-subtitle">Choose which buttons appear for tasks in "${cycleTitle}"</p>
+                        <p class="modal-subtitle">Choose which buttons appear for tasks in "${escapeHtml(cycleTitle)}"</p>
                     </div>
                 </div>
 
@@ -574,11 +581,10 @@ export class TaskOptionsCustomizer {
         };
         safeAdd(modal, 'click', modal._overlayClickHandler);
 
-        // Close on ESC key
+        // Close on ESC key - handler cleanup happens in closeModal
         modal._escHandler = (e) => {
             if (e.key === 'Escape') {
                 this.closeModal(modal);
-                document.removeEventListener('keydown', modal._escHandler);
             }
         };
         safeAdd(document, 'keydown', modal._escHandler);
@@ -732,6 +738,12 @@ export class TaskOptionsCustomizer {
      * @param {HTMLElement} modal - The modal element
      */
     closeModal(modal) {
+        // Clean up escape handler to prevent leak
+        if (modal._escHandler) {
+            document.removeEventListener('keydown', modal._escHandler);
+            modal._escHandler = null;
+        }
+
         modal.classList.remove('show');
         setTimeout(() => {
             modal.remove();

@@ -447,8 +447,14 @@ export class HelpWindowManager {
     updateContent(message) {
         if (!this.helpWindow) return;
 
+        // Fix #40: Escape message to prevent XSS
+        const escapeHtml = (str) => {
+            if (typeof str !== 'string') return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        };
+
         this.helpWindow.innerHTML = `
-            <p>${message}</p>
+            <p>${escapeHtml(message)}</p>
         `;
     }
 

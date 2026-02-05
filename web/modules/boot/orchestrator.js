@@ -144,12 +144,15 @@ function updateLoaderProgress(message, percent = 0) {
  * @returns {Promise} - Resolves with original value or rejects on timeout
  */
 function withTimeout(promise, ms, phaseName) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(`${phaseName} timed out after ${ms}ms`)), ms)
-    )
-  ]);
+  // Fix #12: Clear timeout when main promise resolves to prevent lingering timers
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`${phaseName} timed out after ${ms}ms`)), ms);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    clearTimeout(timeoutId);
+  });
 }
 
 /**
