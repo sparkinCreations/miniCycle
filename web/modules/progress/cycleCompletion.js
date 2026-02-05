@@ -315,6 +315,7 @@ export function animateProgressBarEmpty() {
 /**
  * Updates the progress bar to reflect current task completion.
  * Animates the width transition smoothly.
+ * Counts tasks from both main list AND completed dropdown.
  */
 export function updateProgressBar() {
     const taskList = deps.getTaskList?.();
@@ -325,8 +326,20 @@ export function updateProgressBar() {
         return;
     }
 
-    const totalTasks = taskList.children.length;
-    const completedTasks = [...taskList.children].filter(task => task.querySelector("input")?.checked).length;
+    // Count tasks from main list
+    const mainTasks = [...taskList.children];
+    const mainTotal = mainTasks.length;
+    const mainCompleted = mainTasks.filter(task => task.querySelector("input")?.checked).length;
+
+    // Also count tasks from completed dropdown (if enabled)
+    const completedTaskList = document.getElementById('completedTaskList');
+    const dropdownTasks = completedTaskList ? [...completedTaskList.children] : [];
+    const dropdownTotal = dropdownTasks.length;
+    const dropdownCompleted = dropdownTasks.filter(task => task.querySelector("input")?.checked).length;
+
+    // Total from both lists
+    const totalTasks = mainTotal + dropdownTotal;
+    const completedTasks = mainCompleted + dropdownCompleted;
     const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
     // Add consistent animation for all progress updates
@@ -343,6 +356,7 @@ export function updateProgressBar() {
  * Checks if all tasks in the miniCycle are completed.
  * If auto-reset is enabled, resets tasks after completion.
  * Updates progress bar and stats panel.
+ * Checks tasks from both main list AND completed dropdown.
  */
 export function checkMiniCycle() {
     // Early return if AppState not ready to prevent initialization race conditions
@@ -357,7 +371,14 @@ export function checkMiniCycle() {
         return;
     }
 
-    const allCompleted = [...taskList.children].every(task => task.querySelector("input")?.checked);
+    // Get tasks from both main list and completed dropdown
+    const mainTasks = [...taskList.children];
+    const completedTaskList = document.getElementById('completedTaskList');
+    const dropdownTasks = completedTaskList ? [...completedTaskList.children] : [];
+    const allTasks = [...mainTasks, ...dropdownTasks];
+
+    // Check if ALL tasks (from both lists) are completed
+    const allCompleted = allTasks.length > 0 && allTasks.every(task => task.querySelector("input")?.checked);
 
     // Retrieve miniCycle variables
     const cycleVars = deps.assignCycleVariables?.();
@@ -377,7 +398,8 @@ export function checkMiniCycle() {
     updateProgressBar();
 
     // Only trigger reset if ALL tasks are completed AND autoReset is enabled
-    if (allCompleted && taskList.children.length > 0) {
+    // Use allTasks.length which includes both main list and completed dropdown
+    if (allCompleted && allTasks.length > 0) {
         console.log(`✅ All tasks completed for "${lastUsedMiniCycle}"`);
 
         // ✅ FIX: Read autoReset from FRESH AppState, not potentially stale cycleVars

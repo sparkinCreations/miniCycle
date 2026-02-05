@@ -1,3 +1,7 @@
+## [1.918] - 2026-02-05
+- fix: address critical issues including XSS vulnerabilities, Unicode handling, and prototype pollution
+
+
 ## [1.917] - 2026-02-05
 - feat(audit): enhance accessibility, data integrity, and performance across the application
 

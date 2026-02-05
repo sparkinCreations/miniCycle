@@ -41,11 +41,12 @@ const di = createDIModule('RoutineLoader', {
   syncAllTasksWithMode: optional(null),
   taskToAddTaskOptions: optional(null),  // From taskUtils - injected to avoid duplicate module loading
   updateSearchVisibility: optional(null),  // Task search visibility based on count
-  syncModeFromToggles: optional(null)  // Sync mode selector with routine's saved mode
+  syncModeFromToggles: optional(null),  // Sync mode selector with routine's saved mode
+  completedTasksManager: optional(null)  // For organizing completed tasks into dropdown
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
-/** @type {{appInit: Object|null, AppState: Object|null, loadMiniCycleData: Function|null, createInitialSchema25Data: Function|null, addTask: Function|null, updateThemeColor: Function|null, startReminders: Function|null, catchUpMissedRecurringTasks: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, updateMainMenuHeader: Function|null, updateStatsPanel: Function|null, syncAllTasksWithMode: Function|null, taskToAddTaskOptions: Function|null, updateSearchVisibility: Function|null, syncModeFromToggles: Function|null}} */
+/** @type {{appInit: Object|null, AppState: Object|null, loadMiniCycleData: Function|null, createInitialSchema25Data: Function|null, addTask: Function|null, updateThemeColor: Function|null, startReminders: Function|null, catchUpMissedRecurringTasks: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, updateMainMenuHeader: Function|null, updateStatsPanel: Function|null, syncAllTasksWithMode: Function|null, taskToAddTaskOptions: Function|null, updateSearchVisibility: Function|null, syncModeFromToggles: Function|null, completedTasksManager: Object|null}} */
 const _deps = new Proxy({}, {
   get(_, prop) {
     return di.resolve()[prop];
@@ -162,6 +163,9 @@ async function loadMiniCycle() {
 
   // 5) Dependent UI components
   updateDependentComponents();
+
+  // 6) Organize completed tasks into dropdown (if feature enabled)
+  _deps.completedTasksManager?.organize?.();
 
   console.log('✅ Cycle loading completed');
 }

@@ -140,10 +140,20 @@ export class CompletedTasksManager {
      * @param {HTMLElement} taskElement - The task element to move
      */
     moveToCompleted(taskElement) {
+        const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
         const completedList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
         const completedSection = this.deps.getElementById(DOM_IDS.COMPLETED_TASKS_SECTION);
 
         if (!completedList || !completedSection || !taskElement) return;
+
+        // Store original position before moving (for restoration on uncomplete)
+        if (taskList) {
+            const siblings = Array.from(taskList.querySelectorAll(DOM_SELECTORS.TASK));
+            const currentIndex = siblings.indexOf(taskElement);
+            if (currentIndex !== -1) {
+                taskElement.dataset.originalIndex = currentIndex;
+            }
+        }
 
         // Move the task element
         completedList.appendChild(taskElement);
@@ -158,7 +168,7 @@ export class CompletedTasksManager {
     }
 
     /**
-     * Move a task back to the active list
+     * Move a task back to the active list at its original position
      * @param {HTMLElement} taskElement - The task element to move
      */
     moveToActive(taskElement) {
@@ -166,13 +176,32 @@ export class CompletedTasksManager {
 
         if (!taskList || !taskElement) return;
 
-        // Move the task element back to the top of active list
-        taskList.insertBefore(taskElement, taskList.firstChild);
+        // Try to restore to original position (saved when task was completed)
+        const originalIndex = parseInt(taskElement.dataset.originalIndex, 10);
+        const currentTaskEls = Array.from(taskList.querySelectorAll(DOM_SELECTORS.TASK));
 
-        // Update count
+        if (!isNaN(originalIndex) && originalIndex >= 0) {
+            // Clamp to valid range (list may have fewer tasks now)
+            const insertIndex = Math.min(originalIndex, currentTaskEls.length);
+
+            if (insertIndex < currentTaskEls.length) {
+                taskList.insertBefore(taskElement, currentTaskEls[insertIndex]);
+            } else {
+                taskList.appendChild(taskElement);
+            }
+
+            // Clean up the stored index
+            delete taskElement.dataset.originalIndex;
+
+            this.updateCount();
+            console.log(`✅ CompletedTasksManager: Task restored to position ${insertIndex}`);
+            return;
+        }
+
+        // Fallback: append to end if no original position stored
+        taskList.appendChild(taskElement);
         this.updateCount();
-
-        console.log('✅ CompletedTasksManager: Task moved back to active list');
+        console.log('✅ CompletedTasksManager: Task moved back to active list (end)');
     }
 
     /**

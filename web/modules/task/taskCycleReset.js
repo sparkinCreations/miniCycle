@@ -357,16 +357,18 @@ function resetTasksData(context, deps) {
 }
 
 /**
- * Move completed tasks back to active list
+ * Move completed tasks back to active list and restore original order
  * @param {Object} context - Reset context
  * @param {Object} deps - Resolved dependencies
  */
 function moveCompletedTasksBack(context, deps) {
-    const { taskList, completedTaskList } = context;
+    const { taskList, completedTaskList, activeCycle } = context;
     const updateCompletedTasksCount = deps.updateCompletedTasksCount || _deps.updateCompletedTasksCount;
+    const AppState = deps.AppState || _deps.AppState;
 
     if (!completedTaskList || !taskList) return;
 
+    // Move completed tasks back to main list first
     const completedTaskElements = completedTaskList.querySelectorAll(DOM_SELECTORS.TASK);
     completedTaskElements.forEach(taskEl => {
         if (!taskEl.classList.contains('recurring')) {
@@ -376,6 +378,28 @@ function moveCompletedTasksBack(context, deps) {
 
     if (completedTaskElements.length > 0) {
         console.log(`Moved ${completedTaskElements.length} task(s) back to active list`);
+    }
+
+    // Restore original task order from AppState
+    if (AppState?.isReady?.()) {
+        const state = AppState.get();
+        const cycleData = state?.data?.cycles?.[activeCycle];
+        const stateTaskOrder = cycleData?.tasks?.map(t => t.id) || [];
+
+        if (stateTaskOrder.length > 0) {
+            // Get all task elements and sort by state order
+            const allTaskEls = Array.from(taskList.querySelectorAll(DOM_SELECTORS.TASK));
+            const taskMap = new Map(allTaskEls.map(el => [el.dataset.taskId, el]));
+
+            // Reorder DOM to match state order
+            stateTaskOrder.forEach(taskId => {
+                const taskEl = taskMap.get(taskId);
+                if (taskEl) {
+                    taskList.appendChild(taskEl);
+                }
+            });
+            console.log('✅ Restored original task order after reset');
+        }
     }
 
     if (typeof updateCompletedTasksCount === 'function') {
