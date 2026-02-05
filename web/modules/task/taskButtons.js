@@ -427,7 +427,7 @@ export class TaskButtons {
                     button.classList.toggle("delete-when-complete-active", newState);
                     button.setAttribute("aria-pressed", newState.toString());
 
-                    if (isToDoMode) {
+                    if (currentMode === 'todo') {
                         taskItem.classList.remove('show-delete-indicator');
                         taskItem.classList.toggle('kept-task', !newState);
                     } else {
@@ -450,7 +450,7 @@ export class TaskButtons {
             if (newState) {
                 message = "Task will be removed on auto-reset";
             } else {
-                message = isToDoMode
+                message = currentMode === 'todo'
                     ? "📌 Task will be kept on complete (pinned)"
                     : "Task will remain in list on auto-reset";
             }
