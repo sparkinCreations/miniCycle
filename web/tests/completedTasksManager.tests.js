@@ -337,7 +337,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
-    await test('moveToActive inserts at top of list', async () => {
+    await test('moveToActive appends to end when no original position stored', async () => {
         createTestDOM();
         setCompletedTasksManagerDependencies(createMockDeps());
         const manager = new CompletedTasksManager();
@@ -352,8 +352,35 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
 
         manager.moveToActive(movedTask);
 
-        if (taskList.firstChild !== movedTask) {
-            throw new Error('Moved task should be at top of list');
+        if (taskList.lastChild !== movedTask) {
+            throw new Error('Moved task should be at end of list when no original position');
+        }
+    });
+
+    await test('moveToActive restores to original position when stored', async () => {
+        createTestDOM();
+        setCompletedTasksManagerDependencies(createMockDeps());
+        const manager = new CompletedTasksManager();
+
+        const taskList = document.getElementById('taskList');
+        const task1 = createMockTask('task1');
+        const task2 = createMockTask('task2');
+        taskList.appendChild(task1);
+        taskList.appendChild(task2);
+
+        const completedList = document.getElementById('completedTaskList');
+        const movedTask = createMockTask('moved');
+        movedTask.dataset.originalIndex = '1'; // Was between task1 and task2
+        completedList.appendChild(movedTask);
+
+        manager.moveToActive(movedTask);
+
+        const children = Array.from(taskList.children);
+        if (children[1] !== movedTask) {
+            throw new Error('Moved task should be at original position (index 1)');
+        }
+        if (movedTask.dataset.originalIndex !== undefined) {
+            throw new Error('Original index should be cleaned up after restore');
         }
     });
 

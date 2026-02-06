@@ -278,6 +278,7 @@ export async function bootFeatures(deps, coreResult) {
 export function createDepsContainer() {
   return {
     utils: {},
+    labels: {},
     features: {},
     ui: {},
     core: {},
@@ -407,6 +408,20 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
   };
   appContextMod.setContextValue('utilsApi', utilsApiObj);
   appContextMod.registerApi('utils', utilsApiObj);
+
+  // Labels API (pure module, no DI needed - loads synchronously from defaultLabels)
+  const labelsApiObj = {
+    getLabel: deps.labels?.getLabel,
+    getLabelOrFallback: deps.labels?.getLabelOrFallback,
+    hasLabel: deps.labels?.hasLabel,
+    isLensSensitive: deps.labels?.isLensSensitive,
+    getLabels: deps.labels?.getLabels,
+    getCategoryLabels: deps.labels?.getCategoryLabels,
+    getLensSensitiveKeys: deps.labels?.getLensSensitiveKeys,
+    getLabelDiagnostics: deps.labels?.getLabelDiagnostics
+  };
+  appContextMod.setContextValue('labelsApi', labelsApiObj);
+  appContextMod.registerApi('labels', labelsApiObj);
 
   // Register legacy context values needed by appInit and other modules
   // onboardingManager has api: 'ui' so it's in deps.ui

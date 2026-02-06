@@ -97,6 +97,16 @@ export const MODULE_MANIFESTS = {
         optional: true
     },
 
+    labelResolver: {
+        path: '../labels/labelResolver.js',
+        phase: PHASES.CORE_UTILS,
+        requires: [],
+        provides: ['getLabel', 'getLabelOrFallback', 'hasLabel', 'isLensSensitive', 'getLabels', 'getCategoryLabels', 'getLensSensitiveKeys', 'getLabelDiagnostics'],
+        api: 'labels',
+        optional: false,
+        singleton: true
+    },
+
     notifications: {
         path: '../utils/notifications.js',
         phase: PHASES.CORE_UTILS,

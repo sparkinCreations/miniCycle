@@ -14,6 +14,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // CONSTANTS
@@ -23,10 +24,10 @@ const SLOT_COUNT = 5;
 const MAX_RECENT = 10;
 const FREQUENT_MIN_USES = 3;
 const VIEWS = ['pinned', 'recent', 'frequent'];
-const VIEW_TITLES = {
-    pinned: 'Quick Actions',
-    recent: 'Recently Used',
-    frequent: 'Frequently Used'
+const VIEW_TITLE_KEYS = {
+    pinned: 'nav.quickActions',
+    recent: 'quickAction.recentlyUsed',
+    frequent: 'quickAction.frequentlyUsed'
 };
 
 // ============================================================================
@@ -35,31 +36,31 @@ const VIEW_TITLES = {
 
 const ACTION_REGISTRY = {
     'stats': {
-        label: 'Stats',
+        labelKey: 'quickAction.stats',
         icon: 'stats',
         section: 'Navigation',
         handler: 'showStatsPanel'
     },
     'open-routine': {
-        label: 'Open Routine',
+        labelKey: 'quickAction.openRoutine',
         icon: 'folder-open',
         section: 'Routine Actions',
         handler: 'switchMiniCycle'
     },
     'recurring': {
-        label: 'Recurring',
+        labelKey: 'quickAction.recurring',
         icon: 'repeat',
         section: 'Task Actions & Features',
         handler: 'openRecurringPanel'
     },
     'reminders': {
-        label: 'Reminders',
+        labelKey: 'quickAction.reminders',
         icon: 'bell',
         section: 'Task Actions & Features',
         handler: 'openRemindersModal'
     },
     'settings': {
-        label: 'Settings',
+        labelKey: 'quickAction.settings',
         icon: 'cog',
         section: 'Settings',
         handler: 'openSettings'
@@ -150,6 +151,9 @@ export class QuickActionsManager {
         // Render mobile menu row
         this._renderPanel(DOM_IDS.QUICK_ACTIONS_MENU_SLOTS);
 
+        // Update titles to match active view
+        this._updateTitles();
+
         // Bind events for desktop panel
         this._bindPanelEvents(DOM_IDS.QUICK_ACTIONS_WINDOW);
 
@@ -179,7 +183,7 @@ export class QuickActionsManager {
                     pinned: ['stats', null, null, null, null],
                     counts: {},
                     recent: [],
-                    activeView: 'pinned'
+                    activeView: 'recent'
                 };
             });
         }
@@ -191,7 +195,7 @@ export class QuickActionsManager {
             pinned: ['stats', null, null, null, null],
             counts: {},
             recent: [],
-            activeView: 'pinned'
+            activeView: 'recent'
         };
     }
 
@@ -279,7 +283,7 @@ export class QuickActionsManager {
         if (recent.length === 0) {
             const msg = document.createElement('div');
             msg.className = 'quick-actions-empty-msg';
-            msg.textContent = 'No recent actions';
+            msg.textContent = getLabel('empty.noRecentActions');
             container.appendChild(msg);
             return;
         }
@@ -306,7 +310,7 @@ export class QuickActionsManager {
         if (qualifying.length === 0) {
             const msg = document.createElement('div');
             msg.className = 'quick-actions-empty-msg';
-            msg.textContent = 'No frequent actions yet';
+            msg.textContent = getLabel('empty.noFrequentActions');
             container.appendChild(msg);
             return;
         }
@@ -322,7 +326,8 @@ export class QuickActionsManager {
 
     _updateTitles() {
         const view = this._getActiveView();
-        const title = VIEW_TITLES[view] || 'Quick Actions';
+        const titleKey = VIEW_TITLE_KEYS[view] || 'nav.quickActions';
+        const title = getLabel(titleKey);
         document.querySelectorAll(DOM_SELECTORS.QUICK_ACTIONS_TITLE).forEach(el => {
             el.textContent = title;
         });
@@ -334,10 +339,11 @@ export class QuickActionsManager {
 
     _createFilledSlot(actionId, slotIndex, isAutoView = false) {
         const action = ACTION_REGISTRY[actionId];
+        const label = getLabel(action.labelKey);
         const btn = document.createElement('button');
         btn.className = 'quick-actions-slot filled';
-        btn.title = action.label;
-        btn.setAttribute('aria-label', action.label);
+        btn.title = label;
+        btn.setAttribute('aria-label', label);
         btn.dataset.actionId = actionId;
         btn.dataset.slotIndex = slotIndex;
 
@@ -352,7 +358,7 @@ export class QuickActionsManager {
             const removeBadge = document.createElement('span');
             removeBadge.className = 'remove-badge';
             removeBadge.setAttribute('role', 'button');
-            removeBadge.setAttribute('aria-label', `Unpin ${action.label}`);
+            removeBadge.setAttribute('aria-label', getLabel('quickAction.unpinAria', { vars: { name: label } }));
             removeBadge.textContent = '×';
             removeBadge.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -373,10 +379,11 @@ export class QuickActionsManager {
     }
 
     _createEmptySlot(slotIndex) {
+        const addActionLabel = getLabel('quickAction.addAction');
         const btn = document.createElement('button');
         btn.className = 'quick-actions-slot empty';
-        btn.title = 'Add action';
-        btn.setAttribute('aria-label', 'Add action');
+        btn.title = addActionLabel;
+        btn.setAttribute('aria-label', addActionLabel);
         btn.dataset.slotIndex = slotIndex;
         btn.textContent = '+';
 
@@ -393,7 +400,7 @@ export class QuickActionsManager {
 
     _warnMissingDep(depName, actionId) {
         console.warn(`⚡ QuickActionsManager: '${depName}' is null — action '${actionId}' cannot execute`);
-        this.deps.showNotification?.('Action unavailable. Please try again later.', 'warning', 3000);
+        this.deps.showNotification?.(getLabel('notify.actionUnavailable'), 'warning', 3000);
     }
 
     executeAction(actionId) {
@@ -422,7 +429,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.('Action failed. Please try again.', 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
                         }
                     }, 0);
                     break;
@@ -438,7 +445,7 @@ export class QuickActionsManager {
                             this.deps.hideMainMenu?.();
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.('Action failed. Please try again.', 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
                         }
                     }, 0);
                     break;
@@ -454,7 +461,7 @@ export class QuickActionsManager {
                             this.deps.hideMainMenu?.();
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.('Action failed. Please try again.', 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
                         }
                     }, 0);
                     break;
@@ -470,7 +477,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.('Action failed. Please try again.', 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
                         }
                     }, 0);
                     break;
@@ -478,7 +485,7 @@ export class QuickActionsManager {
             }
         } catch (err) {
             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-            this.deps.showNotification?.('Action failed. Please try again.', 'error', 3000);
+            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
         }
     }
 
@@ -519,7 +526,7 @@ export class QuickActionsManager {
                     pinned: ['stats', null, null, null, null],
                     counts: {},
                     recent: [],
-                    activeView: 'pinned'
+                    activeView: 'recent'
                 };
             }
             const qa = s.settings.quickActions;
@@ -595,7 +602,7 @@ export class QuickActionsManager {
                 item.appendChild(iconSpan);
 
                 const labelSpan = document.createElement('span');
-                labelSpan.textContent = action.label;
+                labelSpan.textContent = getLabel(action.labelKey);
                 item.appendChild(labelSpan);
 
                 item.addEventListener('click', () => {
@@ -630,7 +637,7 @@ export class QuickActionsManager {
         picker.className = 'quick-actions-picker';
 
         const title = document.createElement('h3');
-        title.textContent = 'Add Quick Action';
+        title.textContent = getLabel('quickAction.pickerTitle');
         picker.appendChild(title);
 
         const grid = document.createElement('div');
@@ -639,7 +646,7 @@ export class QuickActionsManager {
 
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'quick-actions-picker-cancel';
-        cancelBtn.textContent = 'Cancel';
+        cancelBtn.textContent = getLabel('button.cancel');
         cancelBtn.addEventListener('click', () => this._hidePickerOverlay());
         picker.appendChild(cancelBtn);
 
@@ -771,20 +778,21 @@ export class QuickActionsManager {
         const action = ACTION_REGISTRY[actionId];
         if (!action || !this._tooltip) return;
 
+        const actionLabel = getLabel(action.labelKey);
         const rect = element.getBoundingClientRect();
 
         this._tooltip.innerHTML = '';
 
         const label = document.createElement('div');
-        label.textContent = action.label;
+        label.textContent = actionLabel;
         this._tooltip.appendChild(label);
 
         // Add remove button for pinned view
         if (!isAutoView && slotIndex >= 0) {
             const removeBtn = document.createElement('button');
             removeBtn.className = DOM_SELECTORS.TOOLTIP_REMOVE;
-            removeBtn.setAttribute('aria-label', `Remove ${action.label} from quick actions`);
-            removeBtn.textContent = 'Remove';
+            removeBtn.setAttribute('aria-label', getLabel('quickAction.unpinAria', { vars: { name: actionLabel } }));
+            removeBtn.textContent = getLabel('button.remove');
             removeBtn.addEventListener('click', () => {
                 this.unpinAction(slotIndex);
                 this._hideTooltip();

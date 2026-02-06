@@ -126,7 +126,8 @@ const apis = {
     undo: null,
     reminder: null,
     recurring: null,
-    utils: null
+    utils: null,
+    labels: null
 };
 
 // ============================================================================
@@ -240,7 +241,7 @@ let isInitialized = false;
 
 /**
  * Register a grouped API
- * @param {string} name - API name (state, task, cycle, ui, undo, reminder, recurring, utils)
+ * @param {string} name - API name (state, task, cycle, ui, undo, reminder, recurring, utils, labels)
  * @param {Object} api - API object with methods
  */
 export function registerApi(name, api) {
