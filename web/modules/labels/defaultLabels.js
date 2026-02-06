@@ -273,7 +273,11 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Title notifications
         titleEmpty:             'Title cannot be empty. Reverting to previous title.',
-        titleSaveFailed:        'Failed to save title change'
+        titleSaveFailed:        'Failed to save title change',
+
+        // Quick action notifications
+        actionUnavailable:      'Action unavailable. Please try again later.',
+        actionFailed:           'Action failed. Please try again.'
     },
 
     // ========================================================================
@@ -308,7 +312,9 @@ export const DEFAULT_LABELS = deepFreeze({
         noRecurringSettings:  'No recurring settings configured',
         noRoutineTasks:       'No tasks in this routine. Add tasks first!',
         noSavedPresets:       'No saved presets yet',
-        loadingTasks:         'Loading tasks...'
+        loadingTasks:         'Loading tasks...',
+        noRecentActions:      'No recent actions',
+        noFrequentActions:    'No frequent actions yet'
     },
 
     // ========================================================================
@@ -470,7 +476,10 @@ export const DEFAULT_LABELS = deepFreeze({
         reminders:      'Reminders',
         settings:       'Settings',
         recentlyUsed:   'Recently Used',
-        frequentlyUsed: 'Frequently Used'
+        frequentlyUsed: 'Frequently Used',
+        addAction:      'Add action',
+        pickerTitle:    'Add Quick Action',
+        unpinAria:      'Unpin {name}'
     },
 
     // ========================================================================

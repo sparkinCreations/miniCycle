@@ -1122,6 +1122,7 @@ function getDepsCategoryForModule(manifest) {
         features: 'features',
         recurring: 'recurring',
         utils: 'utils',
+        labels: 'labels',
         testing: 'testing',
         storage: 'storage',
         plugins: 'plugins',
