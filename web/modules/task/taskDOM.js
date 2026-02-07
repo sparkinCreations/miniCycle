@@ -31,6 +31,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -532,7 +533,7 @@ export class TaskDOMManager {
     showPlaceholderTasks() {
         const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
         if (taskList) {
-            taskList.innerHTML = '<li class="task placeholder" style="padding: 20px; text-align: center; color: #888;">Loading tasks...</li>';
+            taskList.innerHTML = `<li class="task placeholder" style="padding: 20px; text-align: center; color: #888;">${getLabel('empty.loadingTasks')}</li>`;
         }
     }
 
@@ -731,8 +732,8 @@ export class TaskDOMManager {
             const threeDotsButton = document.createElement("button");
             threeDotsButton.classList.add("three-dots-btn");
             threeDotsButton.textContent = "⋮";
-            threeDotsButton.setAttribute("title", "Show task options");
-            threeDotsButton.setAttribute("aria-label", "Show task options");
+            threeDotsButton.setAttribute("title", getLabel('taskOption.showOptions'));
+            threeDotsButton.setAttribute("aria-label", getLabel('taskOption.showOptions'));
 
             // ✅ MEMORY LEAK FIX: Create named handler bound to taskItem
             const handler = (event) => this.handleThreeDotsClick(taskItem, event);
@@ -842,7 +843,7 @@ export class TaskDOMManager {
         checkbox.setAttribute("id", `checkbox-${assignedTaskId}`);
         checkbox.setAttribute("name", `task-complete-${assignedTaskId}`);
         checkbox.checked = completed;
-        checkbox.setAttribute("aria-label", `Mark task "${taskTextTrimmed}" as complete`);
+        checkbox.setAttribute("aria-label", getLabel('action.markTaskComplete', { vars: { name: taskTextTrimmed } }));
         checkbox.setAttribute("role", "checkbox");
         checkbox.setAttribute("aria-checked", checkbox.checked);
 

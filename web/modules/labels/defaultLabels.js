@@ -66,6 +66,12 @@ export const DEFAULT_LABELS = deepFreeze({
         todo:               'To-Do Mode',
         todoEmoji:          '📋',
         todoDescription:    'Simple To-Do list mode',
+        autoTitle:          'Auto Cycle Mode',
+        autoDetail:         'Tasks will automatically reset to incomplete when all are completed. This is the traditional miniCycle experience.',
+        manualTitle:        'Manual Cycle Mode',
+        manualDetail:       'Tasks will only reset when you manually press the complete button. The complete button will complete any remaining tasks and then reset all tasks to incomplete.',
+        todoTitle:          'To-Do Mode',
+        todoDetail:         'This mode will not complete any cycles. Instead, it will delete all tasks when you hit the complete button.',
         autoToggle:         'Auto Reset',
         deleteChecked:      'Delete Checked Tasks after Complete',
         info:               'Mode Info'
@@ -93,6 +99,8 @@ export const DEFAULT_LABELS = deepFreeze({
         clearAllTitle:        'Uncheck all tasks in this routine',
         deleteAllMenu:        'Delete All',
         deleteAllTitle:       'Delete all tasks in this routine',
+        clearCompletedTasks:  'Clear Completed Tasks',
+        markTaskComplete:     'Mark task "{name}" as complete',
         searchTasks:          'Search tasks',
         searchTasksPlaceholder: 'Search tasks...',
         clearSearch:          'Clear search'
@@ -461,6 +469,8 @@ export const DEFAULT_LABELS = deepFreeze({
         nextView:       'Next view',
         completed:      'Completed',
         saving:         'Saving...',
+        hideTaskInput:  'Hide Task Input',
+        addTaskToggle:  'Add Task',
         darkModeAria:   'Toggle dark mode',
         personalizationAria: 'Personalization'
     },
@@ -708,6 +718,12 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'mode.manualDescription',
     'mode.todo',
     'mode.todoDescription',
+    'mode.autoTitle',
+    'mode.autoDetail',
+    'mode.manualTitle',
+    'mode.manualDetail',
+    'mode.todoTitle',
+    'mode.todoDetail',
     'mode.autoToggle',
     'mode.deleteChecked',
     'mode.info',
@@ -727,6 +743,8 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'action.completeCycle',
     'action.clearAllTitle',
     'action.deleteAllTitle',
+    'action.clearCompletedTasks',
+    'action.markTaskComplete',
     'action.searchTasks',
     'action.searchTasksPlaceholder',
 
@@ -854,6 +872,8 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'nav.tasksView',
     'nav.tasksTab',
     'nav.showTasks',
+    'nav.hideTaskInput',
+    'nav.addTaskToggle',
 
     // Quick actions
     'quickAction.openRoutine',

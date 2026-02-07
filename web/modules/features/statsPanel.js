@@ -24,6 +24,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { GESTURE, UI_TIMEOUTS, CHART, INTERVALS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -970,18 +971,18 @@ export class StatsPanelManager {
 
         // ✅ Update current cycle progress text with proper singular/plural
         if (this.elements.currentCycleProgressText) {
-            const taskText = totalTasks === 1 ? 'Task' : 'Tasks';
             this.elements.currentCycleProgressText.textContent =
-                `${completedTasks} of ${totalTasks} ${taskText} Completed`;
+                getLabel('stats.completion', { vars: { completed: completedTasks, total: totalTasks } });
         }
 
         // ✅ Show global cycles count (primary metric for rewards) with proper singular/plural
         // Also show cleared tasks if user has cleared any in To-Do mode
         if (this.elements.miniCycleCount) {
-            const cycleText = globalCyclesCompleted === 1 ? 'Cycle' : 'Cycles';
+            const cycleText = getLabel('noun.cycle', { count: globalCyclesCompleted });
             if (globalTasksCleared > 0) {
-                const taskText = globalTasksCleared === 1 ? 'Cleared Task' : 'Cleared Tasks';
-                this.elements.miniCycleCount.textContent = `${globalCyclesCompleted} ${cycleText} / ${globalTasksCleared} ${taskText}`;
+                const clearedText = 'Cleared ' + getLabel('noun.task', { count: globalTasksCleared });
+                this.elements.miniCycleCount.textContent =
+                    getLabel('stats.globalDisplay', { vars: { cycles: globalCyclesCompleted, cycleText, cleared: globalTasksCleared, clearedText } });
             } else {
                 this.elements.miniCycleCount.textContent = `${globalCyclesCompleted} ${cycleText}`;
             }
@@ -989,16 +990,16 @@ export class StatsPanelManager {
 
         // ✅ Show per-cycle count (this specific routine) with proper singular/plural
         if (this.elements.perCycleCount) {
-            const cycleText = perCycleCount === 1 ? 'Cycle Completed' : 'Cycles Completed';
-            this.elements.perCycleCount.textContent = `${perCycleCount} ${cycleText}`;
+            this.elements.perCycleCount.textContent =
+                getLabel('stats.cyclesCompleted', { vars: { count: perCycleCount } });
         }
 
         // ✅ Show per-routine cleared tasks count (regardless of mode, if at least 1 cleared)
         const perRoutineCleared = activeCycleData?.clearedTasks?.totalCleared || 0;
         if (this.elements.currentRoutineClearedCount && this.elements.perRoutineCleared) {
             if (perRoutineCleared > 0) {
-                const clearedText = perRoutineCleared === 1 ? 'Cleared Task' : 'Cleared Tasks';
-                this.elements.perRoutineCleared.textContent = `${perRoutineCleared} ${clearedText}`;
+                this.elements.perRoutineCleared.textContent =
+                    getLabel('stats.clearedTasks', { vars: { count: perRoutineCleared } });
                 // Mark as having content - visibility is controlled by .visible class from dropdown toggle
                 this.elements.currentRoutineClearedCount.classList.add('has-content');
                 // Sync with dropdown expanded state (check if cycle count has .visible)

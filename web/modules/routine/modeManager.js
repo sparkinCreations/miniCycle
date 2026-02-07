@@ -15,6 +15,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -102,12 +103,12 @@ export class ModeManager {
      */
     getModeName(mode) {
         const modeNames = {
-            'auto-cycle': 'Auto Cycle ↻',
-            'manual-cycle': 'Manual Cycle ✋',
-            'todo-mode': 'To-Do Mode 📋'
+            'auto-cycle': getLabel('mode.auto') + ' ' + getLabel('mode.autoEmoji'),
+            'manual-cycle': getLabel('mode.manual') + ' ' + getLabel('mode.manualEmoji'),
+            'todo-mode': getLabel('mode.todo') + ' ' + getLabel('mode.todoEmoji')
         };
 
-        const result = modeNames[mode] || 'Auto Cycle ↻';
+        const result = modeNames[mode] || getLabel('mode.auto') + ' ' + getLabel('mode.autoEmoji');
         console.log('📝 ModeManager: Getting mode name:', { input: mode, output: result });
         return result;
     }
@@ -434,16 +435,16 @@ export class ModeManager {
 
         if (deleteChecked) {
             currentMode = "todo-mode";
-            modeTitle = "To-Do Mode";
-            modeDetail = `This mode will not complete any cycles. Instead, it will delete all tasks when you hit the complete button.`;
+            modeTitle = getLabel('mode.todoTitle');
+            modeDetail = getLabel('mode.todoDetail');
         } else if (autoReset) {
             currentMode = "auto-cycle";
-            modeTitle = "Auto Cycle Mode";
-            modeDetail = `Tasks will automatically reset to incomplete when all are completed. This is the traditional miniCycle experience.`;
+            modeTitle = getLabel('mode.autoTitle');
+            modeDetail = getLabel('mode.autoDetail');
         } else {
             currentMode = "manual-cycle";
-            modeTitle = "Manual Cycle Mode";
-            modeDetail = `Tasks will only reset when you manually press the complete button. The complete button will complete any remaining tasks and then reset all tasks to incomplete.`;
+            modeTitle = getLabel('mode.manualTitle');
+            modeDetail = getLabel('mode.manualDetail');
         }
 
         descriptionBox.innerHTML = `<strong>${modeTitle}:</strong><br>${modeDetail}`;
@@ -746,7 +747,7 @@ export class ModeManager {
             // Use CSS class toggle (visibility:hidden) instead of display:none to prevent CLS
             const updateToggleText = (isVisible) => {
                 if (toggleText) {
-                    toggleText.textContent = isVisible ? 'Hide Task Input' : 'Add Task';
+                    toggleText.textContent = isVisible ? getLabel('nav.hideTaskInput') : getLabel('nav.addTaskToggle');
                 }
                 // Remove inline display style if present (from initial HTML)
                 if (taskInput.style.display) {
