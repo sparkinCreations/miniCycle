@@ -15,6 +15,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
 // ============================================================================
@@ -346,11 +347,11 @@ export function checkCompleteAllButton() {
 
     // Update button text and styling based on mode
     if (isToDoMode) {
-        completeAllButton.textContent = '🧹 Clear Completed Tasks';
+        completeAllButton.textContent = '🧹 ' + getLabel('action.clearCompletedTasks');
         completeAllButton.classList.add('todo-mode-btn');
         completeAllButton.classList.remove('cycle-mode-btn');
     } else {
-        completeAllButton.textContent = '🔄 Complete Cycle';
+        completeAllButton.textContent = '🔄 ' + getLabel('action.completeCycle');
         completeAllButton.classList.add('cycle-mode-btn');
         completeAllButton.classList.remove('todo-mode-btn');
     }

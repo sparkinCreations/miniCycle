@@ -224,8 +224,8 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         setModeManagerDependencies(createMockDeps());
         const manager = new ModeManager();
         const result = manager.getModeName('manual-cycle');
-        if (result !== 'Manual Cycle ✋') {
-            throw new Error(`Expected 'Manual Cycle ✋', got '${result}'`);
+        if (result !== 'Manual Cycle ✋↻') {
+            throw new Error(`Expected 'Manual Cycle ✋↻', got '${result}'`);
         }
     });
 

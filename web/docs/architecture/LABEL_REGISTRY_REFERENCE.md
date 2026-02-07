@@ -8,7 +8,7 @@
 
 ## How to Read This File
 
-- **Key**: Proposed label key for `defaultLabels.js`
+- **Key**: Label key for `defaultLabels.js` (always 2-level: `category.key`)
 - **Current Value**: The string as it appears today
 - **Source(s)**: File(s) where this string lives
 - **Lens-Sensitive**: Would this string change with a contextual lens? (e.g., "task" becomes "habit" in Habit Tracker lens)
@@ -17,19 +17,48 @@ Strings marked lens-sensitive are the primary targets for the contextual theme s
 
 ---
 
+## Usage API
+
+All labels use **2-level keys** (`category.key`) with options for pluralization and interpolation:
+
+```javascript
+import { getLabel } from '../labels/labelResolver.js';
+
+// Simple string
+getLabel('action.addTask')                    // → 'Add task'
+
+// Pluralization (nouns with { one, other })
+getLabel('noun.task', { count: 1 })           // → 'task'
+getLabel('noun.task', { count: 5 })           // → 'tasks'
+
+// Variable interpolation
+getLabel('notify.taskRenamed', { vars: { name: 'Buy milk' } })
+                                              // → 'Task renamed to "Buy milk"'
+
+// Combined
+getLabel('stats.completion', { count: 3, vars: { completed: 3, total: 5 } })
+                                              // → '3 of 5 Tasks Completed'
+```
+
+**Important:** Keys are always 2-level. Pluralization is handled via `{ count }` option, NOT via `.one`/`.other` suffixes in the key.
+
+---
+
 ## 1. Core Nouns (Lens-Sensitive)
 
 These are the foundational terms that define the app's vocabulary. A contextual lens primarily swaps these.
 
-| Key | Current Value | Source(s) | Notes |
-|-----|--------------|-----------|-------|
-| `noun.task.one` | task | Throughout | Singular |
-| `noun.task.other` | tasks | Throughout | Plural |
-| `noun.cycle.one` | cycle | Throughout | Singular |
-| `noun.cycle.other` | cycles | Throughout | Plural |
-| `noun.routine.one` | routine | Throughout | Singular — used in UI labels |
-| `noun.routine.other` | routines | Throughout | Plural |
-| `noun.miniCycle` | miniCycle | miniCycle.html, routineSwitcher.js | Product/brand name in certain contexts |
+| Key | Type | Usage | Result | Source(s) |
+|-----|------|-------|--------|-----------|
+| `noun.task` | Plural | `getLabel('noun.task', { count: 1 })` | 'task' | Throughout |
+| `noun.task` | Plural | `getLabel('noun.task', { count: 5 })` | 'tasks' | Throughout |
+| `noun.cycle` | Plural | `getLabel('noun.cycle', { count: 1 })` | 'cycle' | Throughout |
+| `noun.cycle` | Plural | `getLabel('noun.cycle', { count: 5 })` | 'cycles' | Throughout |
+| `noun.routine` | Plural | `getLabel('noun.routine', { count: 1 })` | 'routine' | Throughout |
+| `noun.routine` | Plural | `getLabel('noun.routine', { count: 5 })` | 'routines' | Throughout |
+| `noun.miniCycle` | String | `getLabel('noun.miniCycle')` | 'miniCycle' | miniCycle.html, routineSwitcher.js |
+
+**Note:** Plural nouns are stored as `{ one: 'task', other: 'tasks' }` in `defaultLabels.js`. The resolver handles pluralization via the `count` option.
 
 ---
 
@@ -38,15 +67,21 @@ These are the foundational terms that define the app's vocabulary. A contextual 
 | Key | Current Value | Source(s) | Notes |
 |-----|--------------|-----------|-------|
 | `mode.auto` | Auto Cycle | miniCycle.html:1185 | Mode selector dropdown |
-| `mode.auto.emoji` | ↻ | miniCycle.html:1185 | Mode emoji |
-| `mode.auto.description` | Automatically cycle tasks | miniCycle.html:1185 (title) | Tooltip description |
+| `mode.autoEmoji` | ↻ | miniCycle.html:1185 | Mode emoji |
+| `mode.autoDescription` | Automatically cycle tasks | miniCycle.html:1185 (title) | Tooltip description |
 | `mode.manual` | Manual Cycle | miniCycle.html:1186 | Mode selector dropdown |
-| `mode.manual.emoji` | ✋↻ | miniCycle.html:1186 | Mode emoji |
-| `mode.manual.description` | Manually cycle through tasks | miniCycle.html:1186 (title) | Tooltip description |
+| `mode.manualEmoji` | ✋↻ | miniCycle.html:1186 | Mode emoji |
+| `mode.manualDescription` | Manually cycle through tasks | miniCycle.html:1186 (title) | Tooltip description |
 | `mode.todo` | To-Do Mode | miniCycle.html:1187 | Mode selector dropdown |
-| `mode.todo.emoji` | 📋 | miniCycle.html:1187 | Mode emoji |
-| `mode.todo.description` | Simple To-Do list mode | miniCycle.html:1187 (title) | Tooltip description |
-| `mode.auto.toggle` | Auto Reset | miniCycle.html:1352 | Auto reset toggle label |
+| `mode.todoEmoji` | 📋 | miniCycle.html:1187 | Mode emoji |
+| `mode.todoDescription` | Simple To-Do list mode | miniCycle.html:1187 (title) | Tooltip description |
+| `mode.autoTitle` | Auto Cycle Mode | modeManager.js | Mode info box title |
+| `mode.autoDetail` | Tasks will automatically reset to incomplete... | modeManager.js | Mode info box description |
+| `mode.manualTitle` | Manual Cycle Mode | modeManager.js | Mode info box title |
+| `mode.manualDetail` | Tasks will only reset when you manually... | modeManager.js | Mode info box description |
+| `mode.todoTitle` | To-Do Mode | modeManager.js | Mode info box title |
+| `mode.todoDetail` | This mode will not complete any cycles... | modeManager.js | Mode info box description |
+| `mode.autoToggle` | Auto Reset | miniCycle.html:1352 | Auto reset toggle label |
 | `mode.deleteChecked` | Delete Checked Tasks after Complete | miniCycle.html:1364 | Delete checked toggle label |
 | `mode.info` | Mode Info | miniCycle.html:1342 | Mode description toggle |
 
@@ -73,6 +108,8 @@ These are the foundational terms that define the app's vocabulary. A contextual 
 | `action.clearAll.title` | Uncheck all tasks in this routine | miniCycle.html:1287 (title) | Yes | Menu tooltip |
 | `action.deleteAll.menu` | Delete All | miniCycle.html:1288 | No | Menu button |
 | `action.deleteAll.title` | Delete all tasks in this routine | miniCycle.html:1288 (title) | Yes | Menu tooltip |
+| `action.clearCompletedTasks` | Clear Completed Tasks | taskUI.js | Yes | Todo-mode button text |
+| `action.markTaskComplete` | Mark task "{name}" as complete | taskDOM.js | Yes | Checkbox ARIA label |
 | `action.searchTasks` | Search tasks | miniCycle.html:2599 (title) | Yes | Search button tooltip |
 | `action.searchTasks.placeholder` | Search tasks... | miniCycle.html:2610 | Yes | Search input placeholder |
 | `action.clearSearch` | Clear search | miniCycle.html:2611 (title) | No | Clear search tooltip |
@@ -460,6 +497,8 @@ These are the foundational terms that define the app's vocabulary. A contextual 
 | `nav.nextView` | Next view | miniCycle.html:2651 (title) | No | Arrow tooltip |
 | `nav.completed` | Completed | miniCycle.html:2633 | No | Collapsible header |
 | `nav.saving` | Saving... | miniCycle.html:1197 | No | Save indicator |
+| `nav.hideTaskInput` | Hide Task Input | modeManager.js | Yes | Toggle button text |
+| `nav.addTaskToggle` | Add Task | modeManager.js | Yes | Toggle button text |
 
 ---
 
