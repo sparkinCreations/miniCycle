@@ -18,6 +18,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // SVG icons for task buttons (Font Awesome style)
 // Colors controlled by CSS via fill="currentColor" - see task-options.css
@@ -139,9 +140,9 @@ export class TaskButtons {
         button.classList.add("task-btn", "customize-btn");
         button.textContent = "-/+";
         button.setAttribute("type", "button");
-        button.setAttribute("title", "Customize task options");
+        button.setAttribute("title", getLabel('taskOption.customize'));
         button.setAttribute("tabindex", "0");
-        button.setAttribute("aria-label", "Customize which task option buttons are visible");
+        button.setAttribute("aria-label", getLabel('taskOption.customizeAria'));
 
         const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => el.addEventListener(ev, fn));
 
@@ -265,18 +266,18 @@ export class TaskButtons {
         };
         safeAdd(button, "keydown", button._accessibilityKeydownHandler);
 
-        const ariaLabels = {
-            "move-up": "Move task up",
-            "move-down": "Move task down",
-            "recurring-btn": "Toggle recurring task",
-            "set-due-date": "Set due date",
-            "enable-task-reminders": "Toggle reminders for this task",
-            "priority-btn": "Mark task as high priority",
-            "edit-btn": "Edit task",
-            "delete-btn": "Delete task",
-            "delete-when-complete-btn": "Marked for removal (removes task on reset or clear)"
+        const ariaLabelKeys = {
+            "move-up": 'taskOption.moveUp',
+            "move-down": 'taskOption.moveDown',
+            "recurring-btn": 'taskOption.recurring',
+            "set-due-date": 'taskOption.dueDate',
+            "enable-task-reminders": 'taskOption.reminders',
+            "priority-btn": 'taskOption.priority',
+            "edit-btn": 'taskOption.edit',
+            "delete-btn": 'taskOption.delete',
+            "delete-when-complete-btn": 'taskOption.deleteOnComplete'
         };
-        const label = ariaLabels[btnClass] || "Task action";
+        const label = ariaLabelKeys[btnClass] ? getLabel(ariaLabelKeys[btnClass]) : getLabel('taskOption.showOptions');
         button.setAttribute("aria-label", label);
         button.setAttribute("title", label);
     }

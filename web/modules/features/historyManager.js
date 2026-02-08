@@ -9,6 +9,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // CONSTANTS
@@ -218,7 +219,7 @@ export class HistoryManager {
         this.modalOverlay.className = 'history-modal-overlay';
         this.modalOverlay.setAttribute('role', 'dialog');
         this.modalOverlay.setAttribute('aria-modal', 'true');
-        this.modalOverlay.setAttribute('aria-label', 'History');
+        this.modalOverlay.setAttribute('aria-label', getLabel('history.title'));
         this.modalOverlay.style.cssText = `
             position: fixed;
             top: 0;
@@ -257,7 +258,7 @@ export class HistoryManager {
                     border-bottom: 1px solid var(--border-color, #e0e0e0);
                     gap: 12px;
                 ">
-                    <button class="history-back-btn" aria-label="Close" style="
+                    <button class="history-back-btn" aria-label="${getLabel('button.close')}" style="
                         background: none;
                         border: none;
                         font-size: 20px;

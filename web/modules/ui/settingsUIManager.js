@@ -20,6 +20,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -300,7 +301,7 @@ export function setupMoveArrowsToggle() {
             console.log('Move arrows setting saved to state:', enabled);
         } else {
             console.error('AppState not ready - setting not saved');
-            _deps.showNotification?.('Failed to save setting', 'error');
+            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
             moveArrowsToggle.checked = !enabled;
             return;
         }
@@ -366,7 +367,7 @@ export function setupThreeDotsToggle() {
             console.log('Three dots setting saved to AppState:', enabled);
         } else {
             console.error('AppState not ready - setting not saved');
-            _deps.showNotification?.('Failed to save setting', 'error');
+            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
             threeDotsToggle.checked = !enabled;
             return;
         }
@@ -424,7 +425,7 @@ export function setupCompletedDropdownToggle() {
             console.log('Completed dropdown setting saved to state:', enabled);
         } else {
             console.error('AppState not ready - setting not saved');
-            _deps.showNotification?.('Failed to save setting', 'error');
+            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
             completedDropdownToggle.checked = !enabled;
             return;
         }
@@ -491,7 +492,7 @@ export function setupScrollToNewTaskToggle() {
             console.log('Scroll to new task setting saved to state:', enabled);
         } else {
             console.error('AppState not ready - setting not saved');
-            _deps.showNotification?.('Failed to save setting', 'error');
+            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
             scrollToggle.checked = !enabled;
             return;
         }
@@ -539,7 +540,7 @@ export function setupScrollOnLoadToggle() {
             console.log('Scroll on load setting saved to state:', enabled);
         } else {
             console.error('AppState not ready - setting not saved');
-            _deps.showNotification?.('Failed to save setting', 'error');
+            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
             scrollToggle.checked = !enabled;
             return;
         }
@@ -580,10 +581,10 @@ export function setupDebugModeToggle() {
 
         if (enabled) {
             _deps.enableDebug?.();
-            _deps.showNotification?.('Debug mode enabled - console.log output visible', 'success', 3000);
+            _deps.showNotification?.(getLabel('notify.debugEnabled'), 'success', 3000);
         } else {
             _deps.disableDebug?.();
-            _deps.showNotification?.('Debug mode disabled - console.log output suppressed', 'info', 3000);
+            _deps.showNotification?.(getLabel('notify.debugDisabled'), 'info', 3000);
         }
     };
 
@@ -626,10 +627,10 @@ export function setupResetRecurringButton() {
                 if (!state.settings) state.settings = {};
                 state.settings.defaultRecurringSettings = defaultSettings;
             }, true);
-            _deps.showNotification?.("Recurring default reset to Daily Indefinitely.", "success");
+            _deps.showNotification?.(getLabel('notify.recurringDefaultReset'), "success");
         } else {
             console.error('AppState not ready - settings not saved');
-            _deps.showNotification?.("Failed to reset defaults.", "error");
+            _deps.showNotification?.(getLabel('notify.resetDefaultsFailed'), "error");
         }
     };
 
@@ -688,31 +689,31 @@ export function setupResetAchievementProgressButton() {
                 // Refresh stats panel to reflect changes
                 _deps.updateStatsPanel?.();
 
-                _deps.showNotification?.("Achievement progress reset. Badges are now locked.", "success");
+                _deps.showNotification?.(getLabel('notify.achievementReset'), "success");
                 console.log('✅ Achievement progress reset complete');
             } else {
                 console.error('AppState not ready - achievement reset failed');
-                _deps.showNotification?.("Failed to reset achievements.", "error");
+                _deps.showNotification?.(getLabel('notify.achievementResetFailed'), "error");
             }
         };
 
         if (showConfirmationModal) {
             showConfirmationModal({
-                title: "Reset Achievement Progress",
-                message: "This will reset all achievement badges and global progress to 0. Your individual routine stats and history will NOT be affected. Are you sure?",
-                confirmText: "Reset Achievements",
-                cancelText: "Cancel",
+                title: getLabel('modal.resetAchievementsTitle'),
+                message: getLabel('modal.resetAchievementsMessage'),
+                confirmText: getLabel('modal.resetAchievementsConfirm'),
+                cancelText: getLabel('button.cancel'),
                 callback: async (confirmed) => {
                     if (confirmed) {
                         await doReset();
                     } else {
-                        _deps.showNotification?.("Achievement reset cancelled.", "info", 2000);
+                        _deps.showNotification?.(getLabel('notify.achievementResetCancelled'), "info", 2000);
                     }
                 }
             });
         } else {
             // Fallback to browser confirm
-            const confirmed = confirm("This will reset all achievement badges and global progress to 0. Your individual routine stats and history will NOT be affected. Are you sure?");
+            const confirmed = confirm(getLabel('modal.resetAchievementsMessage'));
             if (confirmed) {
                 await doReset();
             }

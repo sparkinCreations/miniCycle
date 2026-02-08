@@ -568,7 +568,7 @@ class MiniCycleState {
      */
     async update(updateFn, immediate = false) {
         if (!this.isInitialized) {
-            console.warn('⚠️ State not initialized yet, initializing first...');
+            console.log('ℹ️ State not initialized yet, initializing first...');
             await this.init();
         }
         

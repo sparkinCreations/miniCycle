@@ -424,7 +424,7 @@ export function setupStateBasedUndoRedo() {
   assertInjected('AppState', _deps.AppState);
 
   if (!_deps.AppState.isReady?.()) {
-    console.warn('⚠️ State module not ready for undo/redo setup');
+    console.log('ℹ️ State module not ready for undo/redo setup — will initialize when data loads');
     return;
   }
 

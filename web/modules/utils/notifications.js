@@ -36,6 +36,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -206,12 +207,12 @@ class EducationalTipManager {
         <div class="tip-content">
           <span class="tip-icon">${icon}</span>
           <span class="tip-text">${tipText}</span>
-          <button class="tip-close" aria-label="Dismiss tip">✕</button>
+          <button class="tip-close" aria-label="${getLabel('notify.dismissTip')}">✕</button>
         </div>
       </div>
-      <button class="tip-toggle ${isDismissed ? 'show' : 'hide'}" 
-              data-tip-id="${tipId}" 
-              aria-label="Show educational tip">
+      <button class="tip-toggle ${isDismissed ? 'show' : 'hide'}"
+              data-tip-id="${tipId}"
+              aria-label="${getLabel('notify.showTip')}">
         💡
       </button>
     `;
@@ -353,7 +354,7 @@ export class MiniCycleNotifications {
 
       if (typeof message !== "string" || message.trim() === "") {
         console.warn("⚠️ Invalid or empty message passed to show().");
-        message = "⚠️ Unknown notification";
+        message = "⚠️ " + getLabel('notify.unknownNotification');
       }
 
       // Generate unique ID (DI-pure) - use simple hash fallback for duplicate detection
@@ -381,7 +382,7 @@ export class MiniCycleNotifications {
       // Always escape user content, regardless of structure
       notification.innerHTML = `
         <div class="notification-content">${escapedMessage}</div>
-        <button class="close-btn" title="Close" aria-label="Close notification">✖</button>
+        <button class="close-btn" title="${getLabel('button.close')}" aria-label="${getLabel('notify.closeNotification')}">✖</button>
       `;
 
       // ✅ FIX #7: Track cleanup function for timeouts
@@ -464,7 +465,7 @@ export class MiniCycleNotifications {
 
       if (typeof content !== "string" || content.trim() === "") {
         console.warn("⚠️ Invalid or empty message passed to showWithTip().");
-        content = "⚠️ Unknown notification";
+        content = "⚠️ " + getLabel('notify.unknownNotification');
       }
 
       // ✅ XSS PROTECTION: Escape content by default unless explicitly trusted
@@ -501,7 +502,7 @@ export class MiniCycleNotifications {
       } else {
         notification.innerHTML = `
           <div class="notification-content">${safeContent}</div>
-          <button class="notification-close" aria-label="Close notification">✖</button>
+          <button class="notification-close" aria-label="${getLabel('notify.closeNotification')}">✖</button>
         `;
       }
 
@@ -955,14 +956,14 @@ async setDefaultPosition(notificationContainer) {
    */
   createRecurringNotificationWithTip(assignedTaskId, frequency, pattern, taskText = '') {
     const tipId = 'recurring-cycle-explanation';
-    const tipText = 'Recurring tasks are deleted on cycle reset and reappear based on their schedule';
+    const tipText = getLabel('notify.recurringTipExplanation');
 
     const educationalTipHTML = `
       <div class="educational-tip recurring-tip" id="tip-${tipId}" data-tip-id="${tipId}" style="display: none;">
         <div class="tip-content">
           <span class="tip-icon">📍</span>
           <span class="tip-text">${tipText}</span>
-          <button class="tip-close" aria-label="Dismiss tip">✕</button>
+          <button class="tip-close" aria-label="${getLabel('notify.dismissTip')}">✕</button>
         </div>
       </div>
     `;
@@ -978,13 +979,13 @@ async setDefaultPosition(notificationContainer) {
            style="position: relative; display: block; padding: 12px 42px 12px 16px; border-radius: 6px;">
 
         <button class="close-btn"
-                title="Close"
-                aria-label="Close notification"
+                title="${getLabel('button.close')}"
+                aria-label="${getLabel('notify.closeNotification')}"
                 style="position: absolute; top: -7px; right: -7px; background: transparent; border: none; font-size: 16px; cursor: pointer; color: #fff; line-height: 1; padding: 0; z-index: 10;">✖</button>
 
         <button class="tip-toggle-btn"
                 data-tip-id="${tipId}"
-                aria-label="Show educational tip"
+                aria-label="${getLabel('notify.showTip')}"
                 style="position: absolute; bottom: 8px; right: 8px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 14px; padding: 0; display: flex; align-items: center; justify-content: center; z-index: 5;">💡</button>
 
         ${educationalTipHTML}
@@ -992,13 +993,13 @@ async setDefaultPosition(notificationContainer) {
         ${taskText ? `<div style="margin-bottom: 8px; font-size: 0.95em; opacity: 0.9;">"${escapedTaskText}"</div>` : ''}
 
         <span id="current-settings-${assignedTaskId}">
-          🔁 Recurring set to <strong>${frequency}</strong> (${pattern})
+          🔁 ${getLabel('notify.recurringStatus', { vars: { frequency: '<strong>' + frequency + '</strong>', pattern } })}
         </span><br>
 
         <button class="show-quick-actions"
                 data-task-id="${assignedTaskId}"
                 style="margin-top: 8px; padding: 6px 12px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 4px; color: #fff; cursor: pointer; font-size: 0.9em;">
-          Change Settings
+          ${getLabel('notify.changeSettings')}
         </button>
 
         <div class="quick-recurring-container"
@@ -1008,25 +1009,25 @@ async setDefaultPosition(notificationContainer) {
           <div class="quick-recurring-options" data-task-id="${assignedTaskId}">
             <div class="quick-option">
               <span class="radio-circle ${frequency === 'hourly' ? 'selected' : ''}" data-freq="hourly"></span>
-              <span class="option-label">Hourly</span>
+              <span class="option-label">${getLabel('freq.hourly')}</span>
             </div>
             <div class="quick-option">
               <span class="radio-circle ${frequency === 'daily' ? 'selected' : ''}" data-freq="daily"></span>
-              <span class="option-label">Daily</span>
+              <span class="option-label">${getLabel('freq.daily')}</span>
             </div>
             <div class="quick-option">
               <span class="radio-circle ${frequency === 'weekly' ? 'selected' : ''}" data-freq="weekly"></span>
-              <span class="option-label">Weekly</span>
+              <span class="option-label">${getLabel('freq.weekly')}</span>
             </div>
             <div class="quick-option">
               <span class="radio-circle ${frequency === 'monthly' ? 'selected' : ''}" data-freq="monthly"></span>
-              <span class="option-label">Monthly</span>
+              <span class="option-label">${getLabel('freq.monthly')}</span>
             </div>
           </div>
 
           <div class="quick-actions">
-            <button class="apply-quick-recurring" data-task-id="${assignedTaskId}" style="display: none;">Apply</button>
-            <button class="open-recurring-settings" data-task-id="${assignedTaskId}">⚙ More Options</button>
+            <button class="apply-quick-recurring" data-task-id="${assignedTaskId}" style="display: none;">${getLabel('button.apply')}</button>
+            <button class="open-recurring-settings" data-task-id="${assignedTaskId}">⚙ ${getLabel('notify.moreOptions')}</button>
           </div>
         </div>
       </div>
@@ -1115,7 +1116,7 @@ async setDefaultPosition(notificationContainer) {
         const currentSettingsText = notification.querySelector(`#current-settings-${taskId}`);
 
         if (currentSettingsText) {
-          currentSettingsText.textContent = `🔁 Recurring set to ${newFrequency} (${pattern})`;
+          currentSettingsText.textContent = `🔁 ${getLabel('notify.recurringStatus', { vars: { frequency: newFrequency, pattern } })}`;
           currentSettingsText.style.background = "rgba(255, 255, 255, 0.2)";
           setTimeout(() => currentSettingsText.style.background = "transparent", UI_TIMEOUTS.BG_HIGHLIGHT_RESET);
         }
@@ -1174,7 +1175,7 @@ async setDefaultPosition(notificationContainer) {
    */
   showApplyConfirmation(targetElement) {
     const tempConfirm = document.createElement("span");
-    tempConfirm.textContent = "✨  Applied!";
+    tempConfirm.textContent = "✨  " + getLabel('notify.applied');
     tempConfirm.style.color = "#209b17ff";
     tempConfirm.style.fontWeight = "bold";
     tempConfirm.style.marginLeft = "8px";
@@ -1206,10 +1207,10 @@ async setDefaultPosition(notificationContainer) {
    * Set trustedHTML: true ONLY if you're passing pre-escaped content.
    */
   showConfirmationModal({
-    title = "Confirm Action",
-    message = "Are you sure?",
-    confirmText = "Yes",
-    cancelText = "Cancel",
+    title = getLabel('notify.confirmAction'),
+    message = getLabel('notify.areYouSure'),
+    confirmText = getLabel('button.yes'),
+    cancelText = getLabel('button.cancel'),
     callback = () => {},
     trustedHTML = false,  // Set to true to skip escaping (DANGEROUS - only for pre-escaped content)
     destructive = false   // Set to true for delete/remove actions (red confirm button)
@@ -1282,12 +1283,12 @@ async setDefaultPosition(notificationContainer) {
    * Set trustedHTML: true ONLY if you're passing pre-escaped content.
    */
   showPromptModal({
-    title = "Enter a value",
+    title = getLabel('notify.enterValue'),
     message = "",
     placeholder = "",
     defaultValue = "",
-    confirmText = "OK",
-    cancelText = "Cancel",
+    confirmText = getLabel('button.ok'),
+    cancelText = getLabel('button.cancel'),
     required = false,
     callback = () => {},
     trustedHTML = false  // Set to true to skip escaping (DANGEROUS - only for pre-escaped content)

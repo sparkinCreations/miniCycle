@@ -16,6 +16,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -207,11 +208,11 @@ export class OnboardingManager {
 
         modal.innerHTML = `
             <div class="onboarding-content theme-${safeTheme}">
-                <button id="${DOM_IDS.ONBOARDING_SKIP}" class="onboarding-skip">Skip ✖</button>
+                <button id="${DOM_IDS.ONBOARDING_SKIP}" class="onboarding-skip">${getLabel('onboarding.skip')} ✖</button>
                 <div id="${DOM_IDS.ONBOARDING_STEP_CONTENT}"></div>
                 <div class="onboarding-controls">
-                    <button id="${DOM_IDS.ONBOARDING_PREV}" class="hidden">⬅ Back</button>
-                    <button id="${DOM_IDS.ONBOARDING_NEXT}">Next ➡</button>
+                    <button id="${DOM_IDS.ONBOARDING_PREV}" class="hidden">⬅ ${getLabel('onboarding.back')}</button>
+                    <button id="${DOM_IDS.ONBOARDING_NEXT}">${getLabel('onboarding.next')} ➡</button>
                 </div>
             </div>
         `;
@@ -241,7 +242,7 @@ export class OnboardingManager {
         const renderStep = (index) => {
             stepContent.innerHTML = steps[index];
             prevBtn.classList.toggle("hidden", index === 0);
-            nextBtn.textContent = index === steps.length - 1 ? "Start 🚀" : "Next ➡";
+            nextBtn.textContent = index === steps.length - 1 ? getLabel('onboarding.start') + " 🚀" : getLabel('onboarding.next') + " ➡";
         };
 
         const completeOnboardingHandler = () => {
@@ -338,7 +339,7 @@ export class OnboardingManager {
 
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for reset onboarding');
-            this.deps.showNotification("❌ AppState not ready.", "error", 2000);
+            this.deps.showNotification("❌ " + getLabel('notify.appStateNotReady'), "error", 2000);
             return;
         }
 
@@ -350,7 +351,7 @@ export class OnboardingManager {
         console.log('✅ Onboarding flag reset in AppState');
 
         this.deps.showNotification(
-            "✅ Onboarding will show again next time you open the app (Schema 2.5).",
+            "✅ " + getLabel('notify.onboardingReset'),
             "success",
             3000
         );

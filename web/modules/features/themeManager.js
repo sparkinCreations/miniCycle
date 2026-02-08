@@ -558,7 +558,7 @@ export class ThemeManager {
 
             const schemaData = this.loadSchemaData();
             if (!schemaData) {
-                console.warn('⚠️ Schema 2.5 data not available for refreshThemeToggles');
+                console.log('ℹ️ Schema data not yet loaded for refreshThemeToggles — will populate when settings open');
                 return;
             }
 
@@ -651,7 +651,7 @@ export class ThemeManager {
             
             const schemaData = this.loadSchemaData();
             if (!schemaData) {
-                console.warn('⚠️ Schema 2.5 data not yet available for setupThemesPanel - deferring setup');
+                console.log('ℹ️ Schema data not yet loaded for setupThemesPanel — deferring setup');
                 setTimeout(() => {
                     const retryData = this.loadSchemaData();
                     if (retryData) {

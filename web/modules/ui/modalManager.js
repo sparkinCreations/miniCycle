@@ -44,6 +44,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -260,7 +261,7 @@ export class ModalManager {
                 // Disable button while sending
                 if (submitButton) {
                     submitButton.disabled = true;
-                    submitButton.textContent = "Sending...";
+                    submitButton.textContent = getLabel('feedback.sending');
                 }
 
                 // Prepare Form Data
@@ -293,16 +294,16 @@ export class ModalManager {
                             this._restoreFocus();
                         }, 2000);
                     } else {
-                        this.deps.showNotification("❌ Error sending feedback. Please try again.", "error");
+                        this.deps.showNotification("❌ " + getLabel('feedback.errorSend'), "error");
                     }
                 })
                 .catch(error => {
-                    this.deps.showNotification("❌ Network error. Please try again later.", "error");
+                    this.deps.showNotification("❌ " + getLabel('feedback.errorNetwork'), "error");
                 })
                 .finally(() => {
                     if (submitButton) {
                         submitButton.disabled = false;
-                        submitButton.textContent = "Submit";
+                        submitButton.textContent = getLabel('feedback.submit');
                     }
                 });
             };

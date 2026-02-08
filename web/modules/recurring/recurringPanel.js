@@ -25,6 +25,7 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -443,7 +444,7 @@ export class RecurringPanelManager {
             const inputId = `specific-date-input-${Date.now()}-${index}`;
             input.id = inputId;
             input.name = `specificDate${index}`;
-            input.setAttribute("aria-label", isFirst ? "First specific date" : `Specific date ${index + 1}`);
+            input.setAttribute("aria-label", isFirst ? getLabel('recurring.firstSpecificDate') : getLabel('recurring.specificDate', { vars: { index: index + 1 } }));
             input.required = true;
 
             try {
@@ -874,7 +875,7 @@ export class RecurringPanelManager {
         checkbox.className = "recurring-check hidden";
         checkbox.id = `recurring-check-${task.id}`;
         checkbox.name = `recurring-check-${task.id}`;
-        checkbox.setAttribute("aria-label", "Mark this task temporarily");
+        checkbox.setAttribute("aria-label", getLabel('recurring.markTaskTemporarily'));
 
         const textSpan = document.createElement("span");
         textSpan.className = "recurring-task-text";
@@ -1473,7 +1474,7 @@ export class RecurringPanelManager {
                 const checkbox = document.createElement("input");
                 checkbox.type = "checkbox";
                 checkbox.id = `add-recurring-${task.id}`;
-                checkbox.setAttribute("aria-label", `Select ${task.text} to make recurring`);
+                checkbox.setAttribute("aria-label", getLabel('recurring.selectTask', { vars: { name: task.text } }));
 
                 const textSpan = document.createElement("span");
                 textSpan.className = "task-text";
