@@ -10,6 +10,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -67,11 +68,11 @@ export function exportMiniCycleData(miniCycleData, cycleName) {
         URL.revokeObjectURL(link.href);
 
         console.log('Export completed successfully');
-        _deps.showNotification?.(`"${cycleName}" exported successfully!`, "success", 3000);
+        _deps.showNotification?.("✅ " + getLabel('notify.exportSuccess', { vars: { name: cycleName } }), "success", 3000);
 
     } catch (error) {
         console.error('Export failed:', error);
-        _deps.showNotification?.("Export failed. Please try again.", "error", 3000);
+        _deps.showNotification?.(getLabel('notify.exportFailed'), "error", 3000);
     }
 }
 
@@ -103,7 +104,7 @@ export function setupExportButton() {
 
         if (!schemaData) {
             console.error('Schema 2.5 data required for export');
-            _deps.showNotification?.("No Schema 2.5 data found. Cannot export.", "error");
+            _deps.showNotification?.(getLabel('notify.exportNoData'), "error");
             return;
         }
 
@@ -111,7 +112,7 @@ export function setupExportButton() {
         const cycle = cycles[activeCycle];
 
         if (!activeCycle || !cycle) {
-            _deps.showNotification?.("No active miniCycle to export.");
+            _deps.showNotification?.(getLabel('notify.exportNoActiveCycle'));
             return;
         }
 

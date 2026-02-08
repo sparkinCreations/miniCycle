@@ -10,6 +10,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, STORAGE_KEYS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -105,7 +106,7 @@ export function setupBackupButton() {
         const schemaData = localStorage.getItem(STORAGE_KEYS.DATA);
         if (!schemaData) {
             console.error('Schema 2.5 data required for backup');
-            _deps.showNotification?.("No Schema 2.5 data found. Cannot create backup.", "error");
+            _deps.showNotification?.(getLabel('notify.backupNoData'), "error");
             return;
         }
 
@@ -127,7 +128,7 @@ export function setupBackupButton() {
         a.click();
         URL.revokeObjectURL(backupUrl);
 
-        _deps.showNotification?.("Schema 2.5 backup created successfully!", "success", 3000);
+        _deps.showNotification?.("✅ " + getLabel('notify.backupCreated'), "success", 3000);
     };
 
     safeAddEventListener(backupBtn, "click", backupBtn._clickHandler);
@@ -208,7 +209,7 @@ export function setupRestoreButton() {
                     await processRestoreData(e.target.result);
                 } catch (error) {
                     console.error("Backup restore error:", error);
-                    _deps.showNotification?.("Error restoring backup - file may be corrupted.", "error", 4000);
+                    _deps.showNotification?.(getLabel('notify.backupRestoreError'), "error", 4000);
                 } finally {
                     if (fileInput) {
                         fileInput.remove();
@@ -241,7 +242,7 @@ async function processRestoreData(fileContent) {
     const maxSize = 10 * 1024 * 1024;
     if (fileContent.length > maxSize) {
         console.error('File too large:', fileContent.length, 'bytes');
-        _deps.showNotification?.("File too large (max 10MB)", "error");
+        _deps.showNotification?.(getLabel('notify.fileTooLarge'), "error");
         return;
     }
 
@@ -250,14 +251,14 @@ async function processRestoreData(fileContent) {
         backupData = JSON.parse(fileContent);
     } catch (parseErr) {
         console.error('JSON parse failed:', parseErr.message);
-        _deps.showNotification?.("Invalid file — not valid JSON.", "error", 4000);
+        _deps.showNotification?.(getLabel('notify.invalidJson'), "error", 4000);
         return;
     }
 
     // Validate backup data is an object
     if (typeof backupData !== 'object' || backupData === null) {
         console.error('Invalid backup data type:', typeof backupData);
-        _deps.showNotification?.("Invalid backup file format", "error");
+        _deps.showNotification?.(getLabel('notify.invalidFormat'), "error");
         return;
     }
 
@@ -290,13 +291,13 @@ async function processRestoreData(fileContent) {
             JSON.parse(backupData.miniCycleData);
         } catch (dataErr) {
             console.error('miniCycleData is not valid JSON:', dataErr.message);
-            _deps.showNotification?.("Backup data is corrupt — miniCycleData is invalid.", "error", 4000);
+            _deps.showNotification?.(getLabel('notify.backupCorruptData'), "error", 4000);
             return;
         }
 
         localStorage.setItem(STORAGE_KEYS.DATA, backupData.miniCycleData);
-        _deps.showNotification?.("Schema 2.5 backup restored successfully!", "success", 4000);
-        _deps.showNotification?.("Reloading app to apply changes...", "info", 2000);
+        _deps.showNotification?.("✅ " + getLabel('notify.backupRestored'), "success", 4000);
+        _deps.showNotification?.(getLabel('notify.backupReloading'), "info", 2000);
         setTimeout(() => location.reload(), UI_TIMEOUTS.POST_RESTORE_RELOAD);
         return;
     }
@@ -304,10 +305,10 @@ async function processRestoreData(fileContent) {
     // Handle legacy backup - convert to Schema 2.5
     if (backupData.schemaVersion === "legacy" || backupData.miniCycleStorage) {
         console.log('Detected legacy backup format');
-        _deps.showNotification?.("Auto-converting legacy backup to Schema 2.5...", "info", 3000);
+        _deps.showNotification?.(getLabel('notify.backupConvertingLegacy'), "info", 3000);
 
         if (!backupData.miniCycleStorage) {
-            _deps.showNotification?.("Invalid legacy backup file format.", "error", 3000);
+            _deps.showNotification?.(getLabel('notify.backupInvalidLegacy'), "error", 3000);
             return;
         }
 
@@ -338,9 +339,9 @@ async function processRestoreData(fileContent) {
             const migrationResults = performSchema25Migration?.() || { success: false };
 
             if (migrationResults.success) {
-                _deps.showNotification?.("Legacy backup restored and converted to Schema 2.5!", "success", 4000);
+                _deps.showNotification?.("✅ " + getLabel('notify.backupLegacyRestored'), "success", 4000);
             } else {
-                _deps.showNotification?.("Migration failed during restore", "error", 4000);
+                _deps.showNotification?.(getLabel('notify.backupMigrationFailed'), "error", 4000);
             }
 
             setTimeout(() => location.reload(), UI_TIMEOUTS.PAGE_RELOAD);
@@ -350,7 +351,7 @@ async function processRestoreData(fileContent) {
     }
 
     console.error('Unrecognized backup format');
-    _deps.showNotification?.("Invalid backup file format.", "error", 3000);
+    _deps.showNotification?.(getLabel('notify.invalidFormat'), "error", 3000);
 }
 
 // ============================================================================
@@ -520,7 +521,7 @@ export function setupFactoryResetButton() {
             console.warn('IndexedDB cleanup failed:', e);
         }
 
-        _deps.showNotification?.("Factory Reset Complete. Reloading...", "success", 2000);
+        _deps.showNotification?.("✅ " + getLabel('notify.factoryResetComplete'), "success", 2000);
         setTimeout(() => location.reload(), UI_TIMEOUTS.POST_RESTORE_RELOAD);
     };
 
@@ -532,14 +533,14 @@ export function setupFactoryResetButton() {
 
     resetBtn._clickHandler = () => {
         showConfirmationModal({
-            title: "Factory Reset",
-            message: "This will DELETE ALL miniCycle data, settings, and progress. Are you sure?",
-            confirmText: "Delete Everything",
-            cancelText: "Cancel",
+            title: getLabel('modal.factoryResetTitle'),
+            message: getLabel('modal.factoryResetMessage'),
+            confirmText: getLabel('modal.factoryResetConfirm'),
+            cancelText: getLabel('button.cancel'),
             destructive: true,
             callback: async (confirmed) => {
                 if (!confirmed) {
-                    _deps.showNotification?.("Factory reset cancelled.", "info", 2000);
+                    _deps.showNotification?.(getLabel('notify.factoryResetCancelled'), "info", 2000);
                     return;
                 }
 

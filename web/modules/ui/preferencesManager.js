@@ -25,6 +25,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
 import { updateThemeColor } from '../features/themeManager.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEFAULT COLORS
@@ -945,7 +946,7 @@ export class PreferencesManager {
             this.applyPatternWithCurrentSettings();
             this.updatePreview();
             this.updateUndoButton();
-            _deps.showNotification?.('Pattern color reset to default', 'info', 2000);
+            _deps.showNotification?.(getLabel('notify.patternColorReset'), 'info', 2000);
             return;
         }
 
@@ -972,7 +973,7 @@ export class PreferencesManager {
             this.applyPatternWithCurrentSettings();
             this.updatePreview();
             this.updateUndoButton();
-            _deps.showNotification?.('Pattern opacity reset to default', 'info', 2000);
+            _deps.showNotification?.(getLabel('notify.patternOpacityReset'), 'info', 2000);
             return;
         }
 
@@ -995,7 +996,7 @@ export class PreferencesManager {
         }
 
         this.updateUndoButton();
-        _deps.showNotification?.('Color reset to default', 'info', 2000);
+        _deps.showNotification?.(getLabel('notify.colorReset'), 'info', 2000);
     }
 
     /**
@@ -1056,7 +1057,7 @@ export class PreferencesManager {
         }
 
         this.updateUndoButton();
-        _deps.showNotification?.('All colors reset to defaults', 'success', 2000);
+        _deps.showNotification?.(getLabel('notify.allColorsReset'), 'success', 2000);
     }
 
     /**
@@ -1291,7 +1292,7 @@ export class PreferencesManager {
         }
 
         this.updateUndoButton();
-        _deps.showNotification?.('Undone', 'info', 1500);
+        _deps.showNotification?.(getLabel('notify.undone'), 'info', 1500);
     }
 
     /**
