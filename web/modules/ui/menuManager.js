@@ -23,6 +23,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -148,7 +149,7 @@ export class MenuManager {
             console.log('🎛️ Menu Manager initialized');
         } catch (error) {
             console.warn('Menu Manager initialization failed:', error);
-            this.deps.showNotification('Menu may have limited functionality', 'warning');
+            this.deps.showNotification(getLabel('notify.menuLimited'), 'warning');
         }
     }
 
@@ -315,7 +316,7 @@ export class MenuManager {
         }
 
         const { cycles, activeCycle } = schemaData;
-        let activeCycleTitle = "No miniCycle Selected";
+        let activeCycleTitle = getLabel('routine.noSelected');
 
         console.log('📊 Looking up active cycle:', activeCycle);
 
@@ -408,14 +409,14 @@ export class MenuManager {
         const AppState = this.deps.AppState();
         if (!AppState?.isReady?.()) {
             console.error('❌ AppState not ready for saveMiniCycleAsNew');
-            this.deps.showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+            this.deps.showNotification("⚠️ " + getLabel('notify.appNotReady'), "warning", 3000);
             return;
         }
 
         const currentState = AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for saveMiniCycleAsNew');
-            this.deps.showNotification("⚠️ No data available. Please try again.", "error", 3000);
+            this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), "error", 3000);
             return;
         }
 
@@ -427,7 +428,7 @@ export class MenuManager {
 
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active miniCycle found to save');
-            this.deps.showNotification("⚠ No miniCycle found to save.");
+            this.deps.showNotification("⚠ " + getLabel('notify.noRoutineToSave'));
             return;
         }
 
@@ -450,17 +451,17 @@ export class MenuManager {
         const { name: suggestedName } = getUniqueCycleName(currentCycle.title, data.cycles || {});
 
         this.deps.showPromptModal({
-            title: "Duplicate Routine",
-            message: `Enter a new name for your copy of "${currentCycle.title}":`,
-            placeholder: "e.g., My Custom Routine",
+            title: getLabel('modal.duplicateRoutine'),
+            message: getLabel('modal.duplicateMessage', { vars: { name: currentCycle.title } }),
+            placeholder: getLabel('modal.duplicatePlaceholder'),
             defaultValue: suggestedName,
-            confirmText: "Save Copy",
-            cancelText: "Cancel",
+            confirmText: getLabel('modal.saveCopy'),
+            cancelText: getLabel('button.cancel'),
             required: true,
             callback: (input) => {
                 if (!input) {
                     console.log('❌ User cancelled save operation');
-                    this.deps.showNotification("❌ Save cancelled.");
+                    this.deps.showNotification("❌ " + getLabel('notify.saveCancelled'));
                     return;
                 }
 
@@ -469,7 +470,7 @@ export class MenuManager {
 
                 if (!sanitizedName) {
                     console.warn('⚠️ Invalid cycle name provided');
-                    this.deps.showNotification("⚠ Please enter a valid name.");
+                    this.deps.showNotification("⚠ " + getLabel('notify.invalidName'));
                     return;
                 }
 
@@ -478,7 +479,7 @@ export class MenuManager {
 
                 if (wasModified) {
                     console.log(`⚠️ Name collision: "${sanitizedName}" → "${finalCycleName}"`);
-                    this.deps.showNotification(`Name already exists. Using "${finalCycleName}" instead.`, "warning", 3000);
+                    this.deps.showNotification(getLabel('notify.nameExists', { vars: { name: finalCycleName } }), "warning", 3000);
                 }
 
                 // ✅ Update through state system
@@ -511,7 +512,7 @@ export class MenuManager {
                 }, true); // immediate save
 
                 if (!wasModified) {
-                    this.deps.showNotification(`✅ miniCycle "${currentCycle.title}" was copied as "${finalCycleName}"!`);
+                    this.deps.showNotification("✅ " + getLabel('notify.routineCopied', { vars: { original: currentCycle.title, copy: finalCycleName } }));
                 }
                 this.hideMainMenu();
 
@@ -538,7 +539,7 @@ export class MenuManager {
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
             console.error('❌ Schema 2.5 data required for clearAllTasks');
-            this.deps.showNotification('⚠️ Data not available. Please try again.', 'error', 3000);
+            this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), 'error', 3000);
             return;
         }
 
@@ -547,7 +548,7 @@ export class MenuManager {
 
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active miniCycle to clear tasks');
-            this.deps.showNotification("⚠ No active miniCycle to clear tasks.");
+            this.deps.showNotification("⚠ " + getLabel('notify.noActiveCycleClear'));
             return;
         }
 
@@ -563,7 +564,7 @@ export class MenuManager {
 
         if (!updateSuccess) {
             console.error('❌ Failed to update cycle data');
-            this.deps.showNotification("❌ Failed to clear tasks. Please try again.", "error");
+            this.deps.showNotification("❌ " + getLabel('notify.clearTasksFailed'), "error");
             return;
         }
 
@@ -593,7 +594,7 @@ export class MenuManager {
         this.deps.updateUndoRedoButtons();
 
         console.log(`✅ All tasks unchecked for miniCycle: "${currentCycle.title}"`);
-        this.deps.showNotification(`✅ All tasks unchecked for "${currentCycle.title}"`, "success", 2000);
+        this.deps.showNotification("✅ " + getLabel('notify.allTasksUnchecked', { vars: { name: currentCycle.title } }), "success", 2000);
     }
 
     /**
@@ -608,7 +609,7 @@ export class MenuManager {
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
             console.error('❌ Schema 2.5 data required for deleteAllTasks');
-            this.deps.showNotification('⚠️ Data not available. Please try again.', 'error', 3000);
+            this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), 'error', 3000);
             return;
         }
 
@@ -617,7 +618,7 @@ export class MenuManager {
 
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active miniCycle to delete tasks from');
-            this.deps.showNotification("⚠ No active miniCycle to delete tasks from.");
+            this.deps.showNotification("⚠ " + getLabel('notify.noActiveCycleDelete'));
             return;
         }
 
@@ -625,15 +626,15 @@ export class MenuManager {
 
         // ✅ Use callback pattern with showConfirmationModal
         this.deps.showConfirmationModal({
-            title: "Delete All Tasks",
-            message: `⚠ Are you sure you want to permanently delete all tasks in "${currentCycle.title}"? This action cannot be undone.`,
-            confirmText: "Delete All",
-            cancelText: "Cancel",
+            title: getLabel('modal.deleteAllTasks'),
+            message: "⚠ " + getLabel('modal.deleteAllMessage', { vars: { name: currentCycle.title } }),
+            confirmText: getLabel('action.deleteAllMenu'),
+            cancelText: getLabel('button.cancel'),
             destructive: true,
             callback: async (confirmed) => {
                 if (!confirmed) {
                     console.log('❌ User cancelled deletion');
-                    this.deps.showNotification("❌ Deletion cancelled.");
+                    this.deps.showNotification("❌ " + getLabel('notify.deletionCancelled'));
                     return;
                 }
 
@@ -653,7 +654,7 @@ export class MenuManager {
 
                 if (!updateSuccess) {
                     console.error('❌ Failed to delete tasks');
-                    this.deps.showNotification("❌ Failed to delete tasks. Please try again.", "error");
+                    this.deps.showNotification("❌ " + getLabel('notify.deleteTasksFailed'), "error");
                     return;
                 }
 
@@ -677,7 +678,7 @@ export class MenuManager {
                 this.deps.updateUndoRedoButtons();
 
                 console.log(`✅ All tasks deleted for miniCycle: "${currentCycle.title}"`);
-                this.deps.showNotification(`✅ All tasks deleted from "${currentCycle.title}"`, "success", 3000);
+                this.deps.showNotification("✅ " + getLabel('notify.allTasksDeleted', { vars: { name: currentCycle.title } }), "success", 3000);
             }
         });
     }

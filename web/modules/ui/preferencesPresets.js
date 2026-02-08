@@ -10,6 +10,7 @@
  */
 
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEFAULT COLORS (needed for reset-to-default in quick presets)
@@ -231,7 +232,7 @@ export function applyQuickPreset(presetKey, callbacks) {
     }
 
     callbacks.updateUndoButton();
-    callbacks.showNotification?.(`Applied "${preset.name}" theme`, 'success', 2000);
+    callbacks.showNotification?.(getLabel('notify.themeApplied', { vars: { name: preset.name } }), 'success', 2000);
 }
 
 // ============================================================================
@@ -295,7 +296,7 @@ export function savePreset(name, deps, renderPresetsList) {
     });
 
     renderPresetsList();
-    deps.showNotification?.(`Preset "${name}" saved`, 'success', 2000);
+    deps.showNotification?.(getLabel('notify.presetSaved', { vars: { name } }), 'success', 2000);
 }
 
 /**
@@ -312,7 +313,7 @@ export function loadPreset(presetId, deps, callbacks) {
     const preset = presets.find(p => p.id === presetId);
 
     if (!preset) {
-        deps.showNotification?.('Preset not found', 'error', 2000);
+        deps.showNotification?.(getLabel('notify.presetNotFound'), 'error', 2000);
         return;
     }
 
@@ -327,7 +328,7 @@ export function loadPreset(presetId, deps, callbacks) {
     callbacks.applyCustomColors();
     callbacks.updateUndoButton();
 
-    deps.showNotification?.(`Loaded "${preset.name}"`, 'success', 2000);
+    deps.showNotification?.(getLabel('notify.presetLoaded', { vars: { name: preset.name } }), 'success', 2000);
 }
 
 /**
@@ -349,7 +350,7 @@ export function renamePreset(presetId, newName, deps, renderPresetsList) {
     });
 
     renderPresetsList();
-    deps.showNotification?.('Preset renamed', 'success', 2000);
+    deps.showNotification?.(getLabel('notify.presetRenamed'), 'success', 2000);
 }
 
 /**
@@ -374,7 +375,7 @@ export function deletePreset(presetId, deps, renderPresetsList) {
         });
 
         renderPresetsList();
-        deps.showNotification?.('Preset deleted', 'info', 2000);
+        deps.showNotification?.(getLabel('notify.presetDeleted'), 'info', 2000);
     };
 
     if (deps.showConfirmationModal) {
@@ -422,7 +423,7 @@ export function exportPreset(presetId, deps) {
 
     // Try to copy to clipboard
     navigator.clipboard.writeText(code).then(() => {
-        deps.showNotification?.('Preset code copied to clipboard!', 'success', 3000);
+        deps.showNotification?.(getLabel('notify.presetCopied'), 'success', 3000);
     }).catch(() => {
         // Fallback: show code in a modal for manual copying
         if (deps.showPromptModal) {
@@ -501,10 +502,10 @@ export function importPreset(code, deps, renderPresetsList) {
         });
 
         renderPresetsList();
-        deps.showNotification?.(`Imported "${data.name}"`, 'success', 2000);
+        deps.showNotification?.(getLabel('notify.presetImported', { vars: { name: data.name } }), 'success', 2000);
 
     } catch (error) {
-        deps.showNotification?.('Invalid preset code', 'error', 2000);
+        deps.showNotification?.(getLabel('notify.invalidPreset'), 'error', 2000);
     }
 }
 

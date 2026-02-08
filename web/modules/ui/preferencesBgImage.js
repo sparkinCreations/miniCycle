@@ -11,6 +11,7 @@
 
 import { DOM_IDS } from '../core/constants.js';
 import { updateThemeColor } from '../features/themeManager.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // BACKGROUND IMAGE CONSTANTS
@@ -336,11 +337,11 @@ export async function removeBgImage(deps) {
         // Update status bar color (back to blue for default view)
         updateThemeColor();
 
-        deps.showNotification?.('Background image removed', 'info', 2000);
+        deps.showNotification?.(getLabel('notify.bgImageRemoved'), 'info', 2000);
         return true;
     } catch (error) {
         console.error('Failed to remove background image:', error);
-        deps.showNotification?.('Failed to remove background image', 'error', 3000);
+        deps.showNotification?.(getLabel('notify.bgImageRemoveFailed'), 'error', 3000);
         return false;
     }
 }
@@ -416,7 +417,7 @@ export async function handleBgImageUpload(event, deps) {
                 3000
             );
         } else {
-            deps.showNotification?.('Background image set', 'success', 2000);
+            deps.showNotification?.(getLabel('notify.bgImageSet'), 'success', 2000);
         }
 
         console.log('✅ Background image uploaded successfully');

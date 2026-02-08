@@ -11,6 +11,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // MODULE-LEVEL STORAGE (populated by dynamic imports)
@@ -256,7 +257,7 @@ export class SettingsManager {
             console.log('✅ Settings Manager initialized');
         } catch (error) {
             console.warn('Settings Manager initialization failed:', error);
-            _deps.showNotification?.('Settings may have limited functionality', 'warning');
+            _deps.showNotification?.(getLabel('notify.settingsLimited'), 'warning');
         }
     }
 
@@ -304,10 +305,10 @@ export class SettingsManager {
                 if (!state.settings) state.settings = {};
                 state.settings.defaultRecurringSettings = defaultSettings;
             }, true);
-            _deps.showNotification?.("Recurring default reset to Daily Indefinitely.", "success");
+            _deps.showNotification?.(getLabel('notify.recurringDefaultReset'), "success");
         } else {
             console.error('AppState not ready - settings not saved');
-            _deps.showNotification?.("Failed to reset defaults.", "error");
+            _deps.showNotification?.(getLabel('notify.resetDefaultsFailed'), "error");
         }
     }
 }

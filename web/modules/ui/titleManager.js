@@ -9,6 +9,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { LIMITS, DOM_IDS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -127,7 +128,7 @@ async function handleMiniCycleTitleBlur() {
     // Handle empty title - revert
     if (newTitle === "") {
         console.log('Empty title detected, reverting...');
-        showNotification?.("Title cannot be empty. Reverting to previous title.");
+        showNotification?.(getLabel('notify.titleEmpty'));
         titleElement.textContent = oldTitle;
         return;
     }
@@ -152,7 +153,7 @@ async function handleMiniCycleTitleBlur() {
     // Check AppState readiness
     if (!AppState?.isReady?.()) {
         console.error('Title update failed: AppState not ready');
-        showNotification?.('Failed to save title change', 'error');
+        showNotification?.(getLabel('notify.titleSaveFailed'), 'error');
         titleElement.textContent = oldTitle;
         return;
     }
