@@ -1,3 +1,7 @@
+## [1.924] - 2026-02-08
+- feat: update notifications to use localized labels across various modules
+
+
 ## [1.923] - 2026-02-08
 - feat: Update accessibility labels and notifications across various modules
 

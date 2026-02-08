@@ -117,7 +117,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: var(--z-modal);
 }
 
 .storage-modal-overlay.hidden {
@@ -261,7 +261,7 @@
     position: absolute;
     top: 60px;
     left: 60px;
-    z-index: 2000;
+    z-index: var(--z-modal-high);
     pointer-events: none;
 }
 

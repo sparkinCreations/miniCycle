@@ -1324,10 +1324,10 @@ export class RoutineSwitcher {
                     updateStorageBarUI(barElement, textElement, this.deps.showNotification);
                 }
 
-                this.deps.showNotification?.('Storage refreshed', 'success', 2000);
+                this.deps.showNotification?.(getLabel('notify.storageRefreshed'), 'success', 2000);
             } catch (error) {
                 console.error('Failed to refresh storage quota:', error);
-                this.deps.showNotification?.('Failed to refresh storage', 'error', 3000);
+                this.deps.showNotification?.(getLabel('notify.storageRefreshFailed'), 'error', 3000);
             } finally {
                 // Remove spinning animation
                 refreshBtn.classList.remove('refreshing');

@@ -139,7 +139,7 @@ async function handleMiniCycleTitleBlur() {
         console.log(`Title exceeds ${maxLength} chars, truncating...`);
         newTitle = newTitle.substring(0, maxLength);
         titleElement.textContent = newTitle;
-        showNotification?.(`Title truncated to ${maxLength} characters.`, "warning", 2000);
+        showNotification?.(getLabel('notify.titleTruncated', { vars: { limit: maxLength } }), "warning", 2000);
     }
 
     // No change - exit early
@@ -164,7 +164,7 @@ async function handleMiniCycleTitleBlur() {
 
     if (wasModified) {
         console.log(`⚠️ Name collision: "${newTitle}" → "${finalTitle}"`);
-        showNotification?.(`Name already exists. Using "${finalTitle}" instead.`, "warning", 3000);
+        showNotification?.(getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", 3000);
         titleElement.textContent = finalTitle; // Update UI to show final name
     }
 
@@ -212,7 +212,7 @@ async function handleMiniCycleTitleBlur() {
 
     console.log(`✅ Title updated: "${oldTitle}" → "${finalTitle}"`);
     if (!wasModified) {
-        showNotification?.(`Renamed to "${finalTitle}"`, "success", 1500);
+        showNotification?.(getLabel('notify.renamedTo', { vars: { name: finalTitle } }), "success", 1500);
     }
 }
 

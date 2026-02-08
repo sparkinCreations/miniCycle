@@ -23,6 +23,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -261,7 +262,7 @@ class UIOrchestrator {
 
         } catch (error) {
             console.error('🎭 UIOrchestrator flush error:', error);
-            _deps.showNotification?.('UI update failed', 'error');
+            _deps.showNotification?.(getLabel('notify.uiUpdateFailed'), 'error');
         }
 
         this._stats.lastFlushTime = performance.now() - startTime;

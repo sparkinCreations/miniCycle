@@ -15,7 +15,7 @@
     text-align: center;
     font-size: 10px;
     font-family: 'Poppins', sans-serif;
-    z-index: 0;
+    z-index: var(--z-base);
     width: 100%;
 }
 
@@ -56,7 +56,7 @@
     transition: opacity 0.3s ease-in-out;
     align-items: center;
     color: white;
-    z-index: 2;
+    z-index: var(--z-content);
 }
 
 .footer-item:hover {

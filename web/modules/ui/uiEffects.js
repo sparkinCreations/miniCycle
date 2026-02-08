@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional, createFallback } from '../core/diBase.js';
-import { DOM_SELECTORS } from '../core/constants.js';
+import { DOM_SELECTORS, Z_INDEX } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -111,7 +111,7 @@ export function triggerLogoScan(duration = 400) {
             background: linear-gradient(90deg, transparent, ${clearBtnColor}, ${clearBtnColor}, ${clearBtnColor}, transparent);
             box-shadow: 0 0 8px ${clearBtnColor}, 0 0 15px ${clearBtnColor}99;
             border-radius: 2px;
-            z-index: 1000;
+            z-index: ${Z_INDEX.MODAL};
             pointer-events: none;
         `;
 

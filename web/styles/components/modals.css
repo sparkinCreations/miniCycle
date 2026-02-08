@@ -10,7 +10,7 @@
 .modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: var(--z-modal);
     left: 0;
     top: 0;
     width: 100%;
@@ -40,7 +40,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 999;
+    z-index: var(--z-modal-backdrop);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
 }
@@ -187,7 +187,7 @@
     color: var(--theme-modal-text, #333);
     border-radius: 15px;
     padding: 20px 25px;
-    z-index: 1000;
+    z-index: var(--z-modal);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
     text-align: center;
     font-family: var(--font-family);
@@ -286,7 +286,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2500;
+    z-index: var(--z-modal-high);
     animation: fadeIn 0.2s ease;
 }
 
@@ -394,7 +394,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 .feedback-modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: var(--z-modal);
     left: 0;
     top: 0;
     width: 100%;
@@ -469,7 +469,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: 9999;
+    z-index: var(--z-notification);
     justify-content: center;
     align-items: center;
     overflow: auto;
@@ -542,7 +542,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 .themes-modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: var(--z-modal);
     left: 0;
     top: 0;
     width: 100%;
@@ -745,7 +745,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 .preferences-modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: var(--z-modal);
     left: 0;
     top: 0;
     width: 100%;
@@ -834,7 +834,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 .preferences-preview-section {
     position: sticky;
     top: -12px;
-    z-index: 10;
+    z-index: var(--z-elevated);
     background: var(--preview-section-bg, linear-gradient(135deg, #4c79ff, #74c0fc));
     margin: 0 -16px 14px -16px;
     padding: 12px 16px 14px 16px;
@@ -1769,7 +1769,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     position: fixed;
     bottom: 30px;
     right: 10px;
-    z-index: 1;
+    z-index: var(--z-content);
     background: none;
     color: white;
     border: none;
@@ -1789,7 +1789,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     position: fixed;
     bottom: 30px;
     left: 10px;
-    z-index: 1;
+    z-index: var(--z-content);
     background: none;
     color: white;
     border: none;
@@ -1832,7 +1832,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 .testing-modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: var(--z-modal);
     left: 0;
     top: 0;
     width: 100%;
@@ -2128,7 +2128,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: var(--z-modal);
 }
 
 .storage-modal-overlay.hidden {
@@ -2210,7 +2210,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
    ============================================================================= */
 
 #preview-review-overlay {
-    z-index: 1010; /* must sit above routine switcher modal (1000) */
+    z-index: calc(var(--z-modal) + 10); /* must sit above routine switcher modal */
 }
 
 .preview-review-modal {

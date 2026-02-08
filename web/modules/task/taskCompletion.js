@@ -24,6 +24,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -193,7 +194,7 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
         }
     } catch (error) {
         console.warn('Task completion change failed:', error);
-        _deps.showNotification?.('Could not update task', 'warning');
+        _deps.showNotification?.(getLabel('notify.taskUpdateFailed'), 'warning');
     }
 }
 
@@ -235,7 +236,7 @@ export async function saveCurrentTaskOrderImpl(deps = {}) {
 
     } catch (error) {
         console.warn('Save task order failed:', error);
-        _deps.showNotification?.('Could not save task order', 'warning');
+        _deps.showNotification?.(getLabel('notify.taskOrderFailed'), 'warning');
     }
 }
 

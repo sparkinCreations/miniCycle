@@ -8,7 +8,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_SELECTORS } from '../core/constants.js';
+import { DOM_SELECTORS, Z_INDEX } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -16,7 +16,7 @@ import { getLabel } from '../labels/labelResolver.js';
 // ============================================================================
 
 const MAX_EVENTS = 100;
-const MODAL_Z_INDEX = 10000;
+
 
 // ============================================================================
 // DEPENDENCY INJECTION
@@ -227,7 +227,7 @@ export class HistoryManager {
             right: 0;
             bottom: 0;
             background: rgba(0, 0, 0, 0.5);
-            z-index: ${MODAL_Z_INDEX};
+            z-index: ${Z_INDEX.OVERLAY_CRITICAL};
             display: flex;
             align-items: center;
             justify-content: center;

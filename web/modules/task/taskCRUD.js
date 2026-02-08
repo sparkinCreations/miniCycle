@@ -42,6 +42,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { LIMITS, UI_TIMEOUTS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -242,7 +243,7 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
                 console.warn(`Task limit reached (${LIMITS.TASKS_PER_CYCLE}). Cannot add more tasks.`);
                 const showNotification = deps.showNotification || _deps.showNotification;
                 showNotification?.(
-                    `Cannot add task - limit of ${LIMITS.TASKS_PER_CYCLE} tasks reached.\nComplete or delete tasks to add more.`,
+                    getLabel('notify.taskLimitReached', { vars: { limit: LIMITS.TASKS_PER_CYCLE } }),
                     'warning',
                     5000
                 );
@@ -312,7 +313,7 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
 
     } catch (error) {
         console.warn('Task creation failed:', error);
-        _deps.showNotification?.('Could not add task - please try again', 'warning');
+        _deps.showNotification?.(getLabel('notify.taskAddFailed'), 'warning');
     }
 }
 
@@ -377,7 +378,7 @@ export async function editTaskImpl(taskItem, deps = {}) {
                         console.warn('⚠️ AppState not ready for task edit - state may be lost');
                     }
 
-                    _deps.showNotification?.(`Task renamed to "${cleanText}"`, "info", 1500);
+                    _deps.showNotification?.(getLabel('notify.taskRenamed', { vars: { name: cleanText } }), "info", 1500);
 
                     // Request UI updates via UIOrchestrator
                     const requestUIUpdate = deps.requestUIUpdate || _deps.requestUIUpdate;
@@ -392,7 +393,7 @@ export async function editTaskImpl(taskItem, deps = {}) {
 
     } catch (error) {
         console.warn('Task edit failed:', error);
-        _deps.showNotification?.('Could not edit task', 'warning');
+        _deps.showNotification?.(getLabel('notify.taskEditFailed'), 'warning');
     }
 }
 
@@ -427,7 +428,7 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
             destructive: true,
             callback: async (confirmDelete) => {
                 if (!confirmDelete) {
-                    _deps.showNotification?.(`"${taskName}" has not been deleted.`, "show", 2500);
+                    _deps.showNotification?.(getLabel('notify.taskDeleteCancelled', { vars: { name: taskName } }), "show", 2500);
                     return;
                 }
 
@@ -461,7 +462,7 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
                     // Remove from DOM
                     taskItem.remove();
 
-                    _deps.showNotification?.(`Task "${taskName}" deleted.`, "show", 2500);
+                    _deps.showNotification?.(getLabel('notify.taskDeleted', { vars: { name: taskName } }), "show", 2500);
 
                     // Request UI updates via UIOrchestrator
                     const requestUIUpdate = deps.requestUIUpdate || _deps.requestUIUpdate;
@@ -476,14 +477,14 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
                     _deps.updateSearchVisibility?.(_deps.getTaskCount?.() ?? 0);
                 } else {
                     console.warn('⚠️ AppState not ready for task deletion - state may be lost');
-                    _deps.showNotification?.('Could not delete task - please try again', 'warning');
+                    _deps.showNotification?.(getLabel('notify.taskDeleteFailed'), 'warning');
                 }
             }
         });
 
     } catch (error) {
         console.warn('Task deletion failed:', error);
-        _deps.showNotification?.('Could not delete task', 'warning');
+        _deps.showNotification?.(getLabel('notify.taskDeleteFailed'), 'warning');
     }
 }
 
@@ -560,7 +561,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
             }, true);
 
             _deps.showNotification?.(
-                `Priority ${newHighPriority ? "enabled" : "removed"}.`,
+                getLabel(newHighPriority ? 'notify.priorityEnabled' : 'notify.priorityRemoved'),
                 newHighPriority ? "error" : "info",
                 1500
             );
@@ -570,7 +571,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
 
     } catch (error) {
         console.warn('Priority toggle failed:', error);
-        _deps.showNotification?.('Could not toggle priority', 'warning');
+        _deps.showNotification?.(getLabel('notify.taskPriorityFailed'), 'warning');
     }
 }
 

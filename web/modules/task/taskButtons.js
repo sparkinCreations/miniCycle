@@ -378,7 +378,7 @@ export class TaskButtons {
 
             if (!this.deps.AppState?.isReady?.()) {
                 console.error('❌ AppState not available for delete-when-complete toggle');
-                this.deps.showNotification?.('Feature temporarily unavailable', 'error', 3000);
+                this.deps.showNotification?.(getLabel('notify.featureUnavailable'), 'error', 3000);
                 return;
             }
 
@@ -515,7 +515,7 @@ export class TaskButtons {
             );
         }
 
-        this.deps.showNotification?.("Recurring disabled for this task", "info", 2000);
+        this.deps.showNotification?.(getLabel('notify.recurringDisabled'), "info", 2000);
     }
 }
 

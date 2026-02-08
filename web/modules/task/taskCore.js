@@ -42,6 +42,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { TASK_TIMEOUTS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // MODULE-LEVEL STORAGE (populated by dynamic imports)
@@ -325,7 +326,7 @@ export class TaskCore {
             console.log('Task core system initialized successfully');
         } catch (error) {
             console.warn('Task core system initialization failed:', error);
-            _deps.showNotification?.('Task system initialized with limited functionality', 'warning');
+            _deps.showNotification?.(getLabel('notify.taskSystemLimited'), 'warning');
         }
     }
 
