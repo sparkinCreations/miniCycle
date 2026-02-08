@@ -16,6 +16,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -77,78 +78,79 @@ const CUSTOMIZER_ICONS = {
     'bell': '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 448 512" fill="currentColor"><path d="M224 0c-17.7 0-32 14.3-32 32V51.2C119 66 64 130.6 64 208v18.8c0 47-17.3 92.4-48.5 127.6l-7.4 8.3c-8.4 9.4-10.4 22.9-5.3 34.4S19.4 416 32 416H416c12.6 0 24-7.4 29.2-18.9s3.1-25-5.3-34.4l-7.4-8.3C401.3 319.2 384 273.9 384 226.8V208c0-77.4-55-142-128-156.8V32c0-17.7-14.3-32-32-32zm45.3 493.3c12-12 18.7-28.3 18.7-45.3H224 160c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7z"/></svg>'
 };
 
-// Button configuration with labels, icons, descriptions, and scope
+// Button configuration with label keys, icons, and scope
+// Labels and descriptions are resolved via getLabel() at render time
 const BUTTON_CONFIG = [
     {
         key: 'customize',
-        label: 'Customize Options',
+        labelKey: 'taskOptions.customizeLabel',
         icon: '-/+',
         disabled: true,
         scope: 'global',
-        description: 'Always visible - opens this customization menu'
+        descriptionKey: 'taskOptions.customizeDescription'
     },
     {
         key: 'moveArrows',
-        label: 'Move Task Arrows',
+        labelKey: 'taskOptions.moveArrowsLabel',
         icon: '▲▼',
         scope: 'global',
-        description: 'Reorder tasks up or down in list'
+        descriptionKey: 'taskOptions.moveArrowsDescription'
     },
     {
         key: 'threeDots',
-        label: 'Three Dots Menu',
+        labelKey: 'taskOptions.threeDotsLabel',
         icon: '⋮',
         scope: 'global',
-        description: 'Show three dots button to reveal task options on click (instead of hover)'
+        descriptionKey: 'taskOptions.threeDotsDescription'
     },
     {
         key: 'highPriority',
-        label: 'High Priority Toggle',
+        labelKey: 'taskOptions.highPriority',
         icon: CUSTOMIZER_ICONS['exclamation-triangle'],
         scope: 'cycle',
-        description: 'Mark task as high priority'
+        descriptionKey: 'taskOptions.highPriorityDescription'
     },
     {
         key: 'rename',
-        label: 'Rename Task',
+        labelKey: 'taskOptions.renameTask',
         icon: CUSTOMIZER_ICONS['edit'],
         scope: 'cycle',
-        description: 'Edit task text'
+        descriptionKey: 'taskOptions.renameDescription'
     },
     {
         key: 'delete',
-        label: 'Delete Task',
+        labelKey: 'taskOptions.deleteTask',
         icon: CUSTOMIZER_ICONS['trash'],
         scope: 'cycle',
-        description: 'Remove task from list'
+        descriptionKey: 'taskOptions.deleteDescription'
     },
     {
         key: 'recurring',
-        label: 'Recurring Task',
+        labelKey: 'taskOptions.recurringTask',
         icon: CUSTOMIZER_ICONS['repeat'],
         scope: 'cycle',
-        description: 'Schedule task to repeat automatically'
+        descriptionKey: 'taskOptions.recurringDescription'
     },
     {
         key: 'dueDate',
-        label: 'Set Due Date',
+        labelKey: 'taskOptions.setDueDate',
         icon: CUSTOMIZER_ICONS['calendar-alt'],
         scope: 'cycle',
-        description: 'Add deadline to task'
+        descriptionKey: 'taskOptions.dueDateDescription'
     },
     {
         key: 'reminders',
-        label: 'Task Reminders',
+        labelKey: 'taskOptions.taskReminders',
         icon: CUSTOMIZER_ICONS['bell'],
         scope: 'cycle',
-        description: 'Set notification reminders'
+        descriptionKey: 'taskOptions.remindersDescription'
     },
     {
         key: 'deleteWhenComplete',
-        label: 'Marked for Removal',
+        labelKey: 'taskOptions.markedForRemoval',
         icon: '❌',
         scope: 'cycle',
-        description: 'When enabled, removes this task on cycle reset or task clearing'
+        descriptionKey: 'taskOptions.markedForRemovalDescription'
     }
 ];
 
@@ -251,7 +253,7 @@ export class TaskOptionsCustomizer {
                         // Then open the customization modal
                         this.showCustomizationModal(currentCycleId);
                     } else {
-                        this.deps.showNotification?.('Please select a cycle first', 'warning');
+                        this.deps.showNotification?.(getLabel('notify.selectCycleFirst'), 'warning');
                     }
                 };
                 safeAdd(openButton, 'click', openButton._clickHandler);
@@ -277,7 +279,7 @@ export class TaskOptionsCustomizer {
                         // Then open the customization modal
                         this.showCustomizationModal(currentCycleId);
                     } else {
-                        this.deps.showNotification?.('Please select a routine first', 'warning');
+                        this.deps.showNotification?.(getLabel('notify.selectRoutineFirst'), 'warning');
                     }
                 };
                 safeAdd(menuButton, 'click', menuButton._clickHandler);
@@ -388,8 +390,8 @@ export class TaskOptionsCustomizer {
                 <div class="modal-header">
                     <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="miniCycle Logo" class="modal-logo">
                     <div class="modal-header-text">
-                        <h2>⚙️ Customize Task Options</h2>
-                        <p class="modal-subtitle">Choose which buttons appear for tasks in "${escapeHtml(cycleTitle)}"</p>
+                        <h2>⚙️ ${getLabel('taskOptions.title')}</h2>
+                        <p class="modal-subtitle">${getLabel('taskOptions.subtitle', { vars: { name: escapeHtml(cycleTitle) } })}</p>
                     </div>
                 </div>
 
@@ -401,10 +403,10 @@ export class TaskOptionsCustomizer {
                         <div class="task-option-preview">
                             <div class="preview-header">
                                 <span class="preview-icon">ℹ️</span>
-                                <h3>Option Details</h3>
+                                <h3>${getLabel('taskOptions.optionDetails')}</h3>
                             </div>
                             <div id="${DOM_IDS.OPTION_PREVIEW_CONTENT}" class="preview-content">
-                                <p class="preview-placeholder"><span class="desktop-text">Hover over</span><span class="mobile-text">Tap</span> an option to see details</p>
+                                <p class="preview-placeholder"><span class="desktop-text">${getLabel('taskOptions.previewHover')}</span><span class="mobile-text">${getLabel('taskOptions.previewTap')}</span> ${getLabel('taskOptions.previewInstruction')}</p>
                             </div>
                         </div>
                     </div>
@@ -412,13 +414,13 @@ export class TaskOptionsCustomizer {
 
                 <div class="modal-footer">
                     <div class="modal-footer-row">
-                        <p class="modal-footer-note">Changes apply immediately</p>
+                        <p class="modal-footer-note">${getLabel('taskOptions.changesApply')}</p>
                         <button id="${DOM_IDS.RESET_TASK_OPTIONS_BTN}">
-                            🔄 Reset to Default
+                            🔄 ${getLabel('taskOptions.resetDefault')}
                         </button>
                     </div>
                     <button id="${DOM_IDS.CLOSE_TASK_OPTIONS_BTN}" class="close-button-fullwidth">
-                        Close
+                        ${getLabel('button.close')}
                     </button>
                 </div>
             </div>
@@ -448,6 +450,8 @@ export class TaskOptionsCustomizer {
         const buildOption = (option) => {
             const isChecked = currentOptions[option.key] ?? defaultButtons[option.key];
             const isDisabled = option.disabled || false;
+            const label = getLabel(option.labelKey);
+            const description = getLabel(option.descriptionKey);
 
             // Store the icon index instead of HTML to avoid escaping issues
             const iconIndex = BUTTON_CONFIG.findIndex(cfg => cfg.key === option.key);
@@ -456,8 +460,8 @@ export class TaskOptionsCustomizer {
                 <label class="task-option-item ${isDisabled ? 'disabled' : ''}"
                        data-option-key="${option.key}"
                        data-option-index="${iconIndex}"
-                       data-option-label="${option.label}"
-                       data-option-description="${option.description}">
+                       data-option-label="${label}"
+                       data-option-description="${description}">
                     <div class="option-checkbox-container">
                         <input
                             type="checkbox"
@@ -472,8 +476,8 @@ export class TaskOptionsCustomizer {
                     </div>
                     <div class="option-compact-content">
                         <span class="option-icon">${option.icon}</span>
-                        <span class="option-label">${option.label}</span>
-                        ${isDisabled ? '<span class="always-visible-badge">Always</span>' : ''}
+                        <span class="option-label">${label}</span>
+                        ${isDisabled ? `<span class="always-visible-badge">${getLabel('taskOptions.alwaysBadge')}</span>` : ''}
                     </div>
                 </label>
             `;
@@ -482,7 +486,7 @@ export class TaskOptionsCustomizer {
         return `
             <div class="options-section">
                 <div class="section-header">
-                    <h3>📋 This Cycle</h3>
+                    <h3>📋 ${getLabel('taskOptions.thisCycle')}</h3>
                 </div>
                 <div class="section-options">
                     ${cycleOptions.map(buildOption).join('')}
@@ -490,7 +494,7 @@ export class TaskOptionsCustomizer {
             </div>
             <div class="options-section">
                 <div class="section-header">
-                    <h3>🌐 Global</h3>
+                    <h3>🌐 ${getLabel('taskOptions.global')}</h3>
                 </div>
                 <div class="section-options">
                     ${globalOptions.map(buildOption).join('')}
@@ -539,7 +543,7 @@ export class TaskOptionsCustomizer {
         };
 
         const hidePreview = () => {
-            previewContent.innerHTML = '<p class="preview-placeholder"><span class="desktop-text">Hover over</span><span class="mobile-text">Tap</span> an option to see details</p>';
+            previewContent.innerHTML = `<p class="preview-placeholder"><span class="desktop-text">${getLabel('taskOptions.previewHover')}</span><span class="mobile-text">${getLabel('taskOptions.previewTap')}</span> ${getLabel('taskOptions.previewInstruction')}</p>`;
         };
 
         optionItems.forEach(item => {
@@ -715,7 +719,7 @@ export class TaskOptionsCustomizer {
         // ✅ Refresh task list UI (debounced)
         this.scheduleRefresh();
 
-        this.deps.showNotification?.('✅ Task options updated', 'success', 2000);
+        this.deps.showNotification?.('✅ ' + getLabel('notify.taskOptionsUpdated'), 'success', 2000);
         console.log(`✅ Saved task options for cycle: ${cycleId}`, { cycleOnlyOptions, moveArrows: newMoveArrows, threeDots: newThreeDots });
     }
 
@@ -730,7 +734,7 @@ export class TaskOptionsCustomizer {
             cb.checked = defaultValue ?? false;
         });
 
-        this.deps.showNotification?.('🔄 Reset to defaults', 'info', 2000);
+        this.deps.showNotification?.('🔄 ' + getLabel('notify.taskOptionsReset'), 'info', 2000);
     }
 
     /**

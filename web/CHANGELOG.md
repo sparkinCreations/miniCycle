@@ -1,3 +1,7 @@
+## [1.922] - 2026-02-08
+- feat: add pattern opacity control and refactor background handling
+
+
 ## [1.921] - 2026-02-07
 - feat(labels): integrate label resolver for dynamic string management and pluralization across the application
 

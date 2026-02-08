@@ -10,6 +10,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -222,7 +223,7 @@ export class AchievementsManager {
         this.modalOverlay.className = 'achievements-modal-overlay';
         this.modalOverlay.setAttribute('role', 'dialog');
         this.modalOverlay.setAttribute('aria-modal', 'true');
-        this.modalOverlay.setAttribute('aria-label', 'Achievements');
+        this.modalOverlay.setAttribute('aria-label', getLabel('history.achievements'));
         this.modalOverlay.style.cssText = `
             position: fixed;
             top: 0;
@@ -258,7 +259,7 @@ export class AchievementsManager {
                     border-bottom: 1px solid var(--border-color, #e0e0e0);
                     gap: 12px;
                 ">
-                    <button class="achievements-back-btn" aria-label="Close" style="
+                    <button class="achievements-back-btn" aria-label="${getLabel('button.close')}" style="
                         background: none;
                         border: none;
                         font-size: 20px;

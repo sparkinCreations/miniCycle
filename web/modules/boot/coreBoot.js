@@ -86,7 +86,7 @@ document.documentElement.dataset.bootStartTime = Date.now().toString();
 
 const TEST_MODE_DB = 'miniCycleTestResultsDB';
 const TEST_MODE_STORE = 'results';
-const IDB_TIMEOUT_MS = 500; // 500ms timeout for IndexedDB operations (fail fast, minimal boot delay)
+const IDB_TIMEOUT_MS = 1000; // 1s timeout for IndexedDB operations (fail fast, minimal boot delay)
 
 /**
  * Wrap a Promise with a timeout to prevent indefinite hanging
@@ -99,7 +99,7 @@ function withTimeout(promise, timeoutMs, defaultValue) {
     return Promise.race([
         promise,
         new Promise((resolve) => setTimeout(() => {
-            console.warn(`⏱️ IndexedDB operation timed out after ${timeoutMs}ms`);
+            console.log(`⏱️ IndexedDB operation timed out after ${timeoutMs}ms — continuing without IDB`);
             resolve(defaultValue);
         }, timeoutMs))
     ]);

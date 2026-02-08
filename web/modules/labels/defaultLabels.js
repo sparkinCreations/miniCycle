@@ -130,18 +130,37 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     taskOptions: {
-        title:          'Customize Task Options',
-        subtitle:       'Choose which buttons appear for tasks in "{name}"',
-        thisCycle:      'THIS CYCLE',
-        optionDetails:  'OPTION DETAILS',
-        highPriority:   'High Priority Toggle',
-        renameTask:     'Rename Task',
-        deleteTask:     'Delete Task',
-        recurringTask:  'Recurring Task',
-        setDueDate:     'Set Due Date',
-        taskReminders:  'Task Reminders',
-        changesApply:   'Changes apply immediately',
-        resetDefault:   'Reset to Default'
+        title:                    'Customize Task Options',
+        subtitle:                 'Choose which buttons appear for tasks in "{name}"',
+        thisCycle:                'This Cycle',
+        optionDetails:            'Option Details',
+        highPriority:             'High Priority Toggle',
+        renameTask:               'Rename Task',
+        deleteTask:               'Delete Task',
+        recurringTask:            'Recurring Task',
+        setDueDate:               'Set Due Date',
+        taskReminders:            'Task Reminders',
+        changesApply:             'Changes apply immediately',
+        resetDefault:             'Reset to Default',
+        customizeLabel:           'Customize Options',
+        customizeDescription:     'Always visible - opens this customization menu',
+        moveArrowsLabel:          'Move Task Arrows',
+        moveArrowsDescription:    'Reorder tasks up or down in list',
+        threeDotsLabel:           'Three Dots Menu',
+        threeDotsDescription:     'Show three dots button to reveal task options on click (instead of hover)',
+        highPriorityDescription:  'Mark task as high priority',
+        renameDescription:        'Edit task text',
+        deleteDescription:        'Remove task from list',
+        recurringDescription:     'Schedule task to repeat automatically',
+        dueDateDescription:       'Add deadline to task',
+        remindersDescription:     'Set notification reminders',
+        markedForRemoval:         'Marked for Removal',
+        markedForRemovalDescription: 'When enabled, removes this task on cycle reset or task clearing',
+        global:                   'Global',
+        previewHover:             'Hover over',
+        previewTap:               'Tap',
+        previewInstruction:       'an option to see details',
+        alwaysBadge:              'Always'
     },
 
     // ========================================================================
@@ -285,7 +304,38 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Quick action notifications
         actionUnavailable:      'Action unavailable. Please try again later.',
-        actionFailed:           'Action failed. Please try again.'
+        actionFailed:           'Action failed. Please try again.',
+
+        // Notification UI
+        closeNotification:      'Close notification',
+        dismissTip:             'Dismiss tip',
+        showTip:                'Show educational tip',
+        unknownNotification:    'Unknown notification',
+
+        // Recurring notification
+        recurringTipExplanation: 'Recurring tasks are deleted on cycle reset and reappear based on their schedule',
+        recurringStatus:         'Recurring set to {frequency} ({pattern})',
+        changeSettings:          'Change Settings',
+        moreOptions:             'More Options',
+        applied:                 'Applied!',
+
+        // Modal defaults
+        confirmAction:           'Confirm Action',
+        areYouSure:              'Are you sure?',
+        enterValue:              'Enter a value',
+
+        // Settings notifications
+        settingSaveFailed:       'Failed to save setting',
+        debugEnabled:            'Debug mode enabled - console.log output visible',
+        debugDisabled:           'Debug mode disabled - console.log output suppressed',
+        recurringDefaultReset:   'Recurring default reset to Daily Indefinitely.',
+        resetDefaultsFailed:     'Failed to reset defaults.',
+        achievementReset:        'Achievement progress reset. Badges are now locked.',
+        achievementResetFailed:  'Failed to reset achievements.',
+        achievementResetCancelled: 'Achievement reset cancelled.',
+        taskOptionsUpdated:      'Task options updated',
+        appStateNotReady:        'AppState not ready.',
+        onboardingReset:         'Onboarding will show again next time you open the app.'
     },
 
     // ========================================================================
@@ -304,7 +354,10 @@ export const DEFAULT_LABELS = deepFreeze({
         removeRecurringConfirm: 'Remove',
         liteVersionTitle:   'Switch to Lite Version',
         liteVersionConfirm: 'Try Lite Version',
-        liteVersionCancel:  'Stay Here'
+        liteVersionCancel:  'Stay Here',
+        resetAchievementsTitle:   'Reset Achievement Progress',
+        resetAchievementsMessage: 'This will reset all achievement badges and global progress to 0. Your individual routine stats and history will NOT be affected. Are you sure?',
+        resetAchievementsConfirm: 'Reset Achievements'
     },
 
     // ========================================================================
@@ -348,7 +401,10 @@ export const DEFAULT_LABELS = deepFreeze({
         repeat:               'Repeat:',
         setAsDefault:         'Set these recurring settings as default',
         removeFromRecurring:  'Remove from Recurring',
-        selectTask:           'Select {name} to make recurring'
+        selectTask:           'Select {name} to make recurring',
+        markTaskTemporarily:  'Mark this task temporarily',
+        firstSpecificDate:    'First specific date',
+        specificDate:         'Specific date {index}'
     },
 
     // ========================================================================
@@ -449,7 +505,9 @@ export const DEFAULT_LABELS = deepFreeze({
         apply:    'Apply',
         open:     'Open',
         remove:   'Remove',
-        reset:    'Reset'
+        reset:    'Reset',
+        yes:      'Yes',
+        ok:       'OK'
     },
 
     // ========================================================================
@@ -618,12 +676,15 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     feedback: {
-        title:       'Provide Feedback',
-        description: 'We appreciate your feedback! Let us know how we can improve miniCycle.',
-        placeholder: 'Write your feedback here...',
-        email:       'Your Email (optional)',
-        submit:      'Submit',
-        thanks:      'Thank you for your feedback!'
+        title:        'Provide Feedback',
+        description:  'We appreciate your feedback! Let us know how we can improve miniCycle.',
+        placeholder:  'Write your feedback here...',
+        email:        'Your Email (optional)',
+        submit:       'Submit',
+        thanks:       'Thank you for your feedback!',
+        sending:      'Sending...',
+        errorSend:    'Error sending feedback. Please try again.',
+        errorNetwork: 'Network error. Please try again later.'
     },
 
     // ========================================================================
@@ -695,6 +756,17 @@ export const DEFAULT_LABELS = deepFreeze({
         termsOfService: 'Terms of Service',
         feedback:       'Feedback',
         productName:    'miniCycle'
+    },
+
+    // ========================================================================
+    // 32. ONBOARDING
+    // ========================================================================
+
+    onboarding: {
+        skip:    'Skip',
+        back:    'Back',
+        next:    'Next',
+        start:   'Start'
     }
 });
 
@@ -828,6 +900,25 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.selectCycleFirst',
     'notify.selectRoutineFirst',
     'notify.imported',
+    'notify.closeNotification',
+    'notify.dismissTip',
+    'notify.showTip',
+    'notify.recurringTipExplanation',
+    'notify.recurringStatus',
+    'notify.changeSettings',
+    'notify.moreOptions',
+    'notify.applied',
+    'notify.confirmAction',
+    'notify.areYouSure',
+    'notify.enterValue',
+    'notify.settingSaveFailed',
+    'notify.debugEnabled',
+    'notify.debugDisabled',
+    'notify.recurringDefaultReset',
+    'notify.achievementReset',
+    'notify.achievementResetCancelled',
+    'notify.taskOptionsUpdated',
+    'notify.onboardingReset',
 
     // Confirmation modals
     'modal.resetTasksTitle',
@@ -835,6 +926,27 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'modal.resetTasksConfirm',
     'modal.resetProgressTitle',
     'modal.removeRecurringTitle',
+    'modal.resetAchievementsTitle',
+    'modal.resetAchievementsMessage',
+    'modal.resetAchievementsConfirm',
+
+    // Task options customizer
+    'taskOptions.customizeLabel',
+    'taskOptions.moveArrowsLabel',
+    'taskOptions.threeDotsLabel',
+    'taskOptions.markedForRemoval',
+    'taskOptions.global',
+
+    // Feedback
+    'feedback.sending',
+    'feedback.errorSend',
+    'feedback.errorNetwork',
+
+    // Onboarding
+    'onboarding.skip',
+    'onboarding.back',
+    'onboarding.next',
+    'onboarding.start',
 
     // Empty states
     'empty.noTasks',
@@ -848,6 +960,9 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'recurring.title',
     'recurring.addToRecurring',
     'recurring.selectTask',
+    'recurring.markTaskTemporarily',
+    'recurring.firstSpecificDate',
+    'recurring.specificDate',
 
     // Menu sections
     'menu.routineActions',
@@ -867,6 +982,10 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'undo.taskCompletedOther',
     'undo.taskUncompletedOne',
     'undo.taskUncompletedOther',
+
+    // Universal buttons
+    'button.yes',
+    'button.ok',
 
     // Navigation
     'nav.tasksView',

@@ -23,6 +23,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -1095,7 +1096,7 @@ export class RoutineSwitcher {
             overlay.setAttribute('aria-modal', 'true');
             overlay.innerHTML = `
                 <div class="modal-content preview-review-modal">
-                    <span class="close-modal preview-review-close" role="button" tabindex="0" aria-label="Close">&times;</span>
+                    <span class="close-modal preview-review-close" role="button" tabindex="0" aria-label="${getLabel('button.close')}">&times;</span>
                     <h3 class="preview-review-title">${escapeText(cycleName)}</h3>
                     <div class="preview-review-meta">
                         ${cycleData.tasks.length} task${cycleData.tasks.length !== 1 ? 's' : ''} &middot; ${completedCount} completed${dateStr ? ` &middot; ${dateLabel}: ${dateStr}` : ''}
