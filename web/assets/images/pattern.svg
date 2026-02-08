@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    miniCycle Background Pattern
+    200x200 repeating tile with stationery icons
+    Stroke color/opacity is set here for the default theme.
+    Custom colors are applied dynamically via preferencesManager.js
+  -->
+  <g fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1.2"
+     stroke-linecap="round" stroke-linejoin="round">
+
+    <!-- Pencil (top-left) -->
+    <g transform="rotate(-12 20 28)">
+      <path d="M15 5 L15 28 L18 32 L21 28 L21 5 L18 2 Z"/>
+      <path d="M15 5 L21 5"/>
+      <path d="M15.5 7 L20.5 7"/>
+      <rect x="15" y="28" width="6" height="2" rx="0.5"/>
+      <line x1="18" y1="32" x2="18" y2="35"/>
+      <path d="M16 8 L16 26 M18 8 L18 26 M20 8 L20 26" stroke-width="0.5"/>
+    </g>
+
+    <!-- Paperclip (top-right) -->
+    <g transform="rotate(18 155 22)">
+      <path d="M148 6 C146 6 145 8 145 10 L145 14 C145 18 149 18 149 14 L149 10 C149 8 151 8 151 10 L151 22 C151 26 145 26 145 22 L145 12"/>
+    </g>
+
+    <!-- Notepad (top-center) -->
+    <g transform="rotate(-6 95 32)">
+      <rect x="78" y="12" width="28" height="36" rx="2"/>
+      <circle cx="82" cy="16" r="1.5"/>
+      <circle cx="82" cy="22" r="1.5"/>
+      <circle cx="82" cy="28" r="1.5"/>
+      <circle cx="82" cy="34" r="1.5"/>
+      <circle cx="82" cy="40" r="1.5"/>
+      <line x1="86" y1="18" x2="102" y2="18"/>
+      <line x1="86" y1="24" x2="102" y2="24"/>
+      <line x1="86" y1="30" x2="98" y2="30"/>
+      <line x1="86" y1="36" x2="100" y2="36"/>
+      <line x1="86" y1="42" x2="94" y2="42"/>
+    </g>
+
+    <!-- Crayon (right) -->
+    <g transform="rotate(15 175 95)">
+      <path d="M168 70 L168 103 L171 107 L174 103 L174 70 L171 67 Z"/>
+      <path d="M168 70 L174 70"/>
+      <rect x="168" y="72" width="6" height="4" rx="0.5"/>
+      <path d="M167 77 L167 87 M167 82 L165 82" stroke-width="1"/>
+      <line x1="171" y1="107" x2="171" y2="111"/>
+    </g>
+
+    <!-- Eraser (left) -->
+    <g transform="rotate(-18 18 125)">
+      <rect x="8" y="100" width="10" height="32" rx="2"/>
+      <rect x="9" y="130" width="8" height="6" rx="1"/>
+      <rect x="10" y="132" width="6" height="4"/>
+      <path d="M11 104 L11 112 M15 104 L15 112" stroke-width="0.8"/>
+      <rect x="8" y="98" width="10" height="3" rx="1"/>
+    </g>
+
+    <!-- Notebook (center) -->
+    <g transform="rotate(8 90 135)">
+      <path d="M65 115 Q65 112 68 112 L98 112 Q101 112 101 115 L101 145 Q101 148 98 148 L68 148 Q65 148 65 145 Z"/>
+      <path d="M65 115 L65 145 Q65 148 68 148" stroke-width="2"/>
+      <path d="M68 112 L68 148"/>
+      <line x1="72" y1="119" x2="97" y2="119"/>
+      <line x1="72" y1="125" x2="97" y2="125"/>
+      <line x1="72" y1="131" x2="91" y2="131"/>
+      <line x1="72" y1="137" x2="95" y2="137"/>
+    </g>
+
+    <!-- Checkbox (bottom-right) -->
+    <g transform="rotate(-8 160 150)">
+      <rect x="148" y="138" width="18" height="18" rx="3"/>
+      <rect x="150" y="140" width="14" height="14" rx="2" stroke-width="0.8"/>
+      <path d="M153 148 L156 151 L162 143" stroke-width="1.8"/>
+    </g>
+
+    <!-- Coffee mug (bottom-left) -->
+    <g transform="rotate(5 42 175)">
+      <ellipse cx="42" cy="190" rx="12" ry="3"/>
+      <path d="M32 190 L32 173 Q32 168 37 168 L47 168 Q52 168 52 173 L52 190"/>
+      <path d="M52 178 Q58 178 58 183 Q58 188 52 186"/>
+      <path d="M38 165 Q42 162 46 165" stroke-width="0.8"/>
+      <path d="M36 162 Q42 158 48 162" stroke-width="0.8"/>
+      <path d="M39 159 Q42 156 45 159" stroke-width="0.8"/>
+    </g>
+
+  </g>
+</svg>

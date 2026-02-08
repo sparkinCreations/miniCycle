@@ -48,9 +48,9 @@ const DEFAULT_COLORS = {
     patternColor: '#ffffff'
 };
 
-// Default pattern color (white with 12% opacity)
+// Default pattern color (white with 7% opacity)
 const DEFAULT_PATTERN_COLOR = '#ffffff';
-const DEFAULT_PATTERN_OPACITY = 0.12;
+const DEFAULT_PATTERN_OPACITY = 0.07;
 
 /**
  * Generate the background pattern SVG with a custom color
@@ -347,6 +347,18 @@ export class PreferencesManager {
             safeAdd(patternColorInput, 'input', patternColorInput._changeHandler);
         }
 
+        // Pattern opacity slider
+        const patternOpacitySlider = document.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
+        if (patternOpacitySlider) {
+            const opacityDisplay = document.getElementById('pref-pattern-opacity-value');
+            patternOpacitySlider._inputHandler = (e) => {
+                const percent = parseInt(e.target.value, 10);
+                if (opacityDisplay) opacityDisplay.textContent = `${percent}%`;
+                this.handlePatternOpacityChange(percent);
+            };
+            safeAdd(patternOpacitySlider, 'input', patternOpacitySlider._inputHandler);
+        }
+
         // Checkbox fill visibility toggle
         const checkboxFillToggle = document.getElementById(DOM_IDS.TOGGLE_CHECKBOX_FILL);
         if (checkboxFillToggle) {
@@ -629,6 +641,8 @@ export class PreferencesManager {
             bgPatternToggle.checked = showPattern;
             // Apply body class immediately
             document.body.classList.toggle('no-bg-pattern', !showPattern);
+            // Dim pattern controls if pattern is hidden
+            this.updatePatternControlsVisibility(showPattern);
         }
 
         // Load background image visibility toggle state
@@ -644,11 +658,23 @@ export class PreferencesManager {
         if (patternColorInput) {
             const savedPatternColor = customColors.patternColor || DEFAULT_COLORS.patternColor;
             patternColorInput.value = savedPatternColor;
+        }
 
-            // Apply pattern color if not default and in default theme
-            if (savedPatternColor !== DEFAULT_COLORS.patternColor && this.isDefaultTheme()) {
-                this.applyPatternColor(savedPatternColor);
-            }
+        // Load pattern opacity slider
+        const patternOpacitySlider = document.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
+        if (patternOpacitySlider) {
+            const defaultPercent = Math.round(DEFAULT_PATTERN_OPACITY * 100);
+            const savedOpacity = customColors.patternOpacity != null
+                ? customColors.patternOpacity
+                : defaultPercent;
+            patternOpacitySlider.value = savedOpacity;
+            const opacityDisplay = document.getElementById('pref-pattern-opacity-value');
+            if (opacityDisplay) opacityDisplay.textContent = `${savedOpacity}%`;
+        }
+
+        // Apply pattern if color or opacity differs from defaults
+        if (this.isDefaultTheme()) {
+            this.applyPatternWithCurrentSettings();
         }
     }
 
@@ -762,8 +788,30 @@ export class PreferencesManager {
         // Toggle body class to show/hide pattern
         document.body.classList.toggle('no-bg-pattern', !visible);
 
+        // Dim/enable pattern color and opacity controls
+        this.updatePatternControlsVisibility(visible);
+
         // Update live preview
         this.updatePreview();
+    }
+
+    /**
+     * Dim or enable pattern color and opacity controls based on pattern visibility
+     * @param {boolean} visible - Whether the pattern is visible
+     */
+    updatePatternControlsVisibility(visible) {
+        const dimOpacity = visible ? '1' : '0.3';
+        const colorInput = document.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
+        const colorResetBtn = document.querySelector(`[data-target="${DOM_IDS.PREF_PATTERN_COLOR}"]`);
+        const opacitySlider = document.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
+        const opacityDisplay = document.getElementById('pref-pattern-opacity-value');
+        const opacityResetBtn = document.querySelector(`[data-target="${DOM_IDS.PREF_PATTERN_OPACITY}"]`);
+
+        if (colorInput) colorInput.style.opacity = dimOpacity;
+        if (colorResetBtn) colorResetBtn.style.opacity = dimOpacity;
+        if (opacitySlider) opacitySlider.style.opacity = dimOpacity;
+        if (opacityDisplay) opacityDisplay.style.opacity = dimOpacity;
+        if (opacityResetBtn) opacityResetBtn.style.opacity = dimOpacity;
     }
 
     /**
@@ -783,9 +831,9 @@ export class PreferencesManager {
             });
         }
 
-        // Apply the pattern with the new color (only if in default theme)
+        // Apply the pattern with current settings (only if in default theme)
         if (this.isDefaultTheme()) {
-            this.applyPatternColor(color);
+            this.applyPatternWithCurrentSettings();
         }
 
         // Update live preview
@@ -793,17 +841,60 @@ export class PreferencesManager {
     }
 
     /**
-     * Apply pattern color to the body background
-     * @param {string} hexColor - The hex color value
+     * Handle background pattern opacity change
+     * @param {number} percent - Opacity percentage (1-25)
      */
-    applyPatternColor(hexColor) {
-        const patternUrl = generatePatternSvg(hexColor, DEFAULT_PATTERN_OPACITY);
-        document.documentElement.style.setProperty('--custom-pattern-bg', patternUrl);
-        document.body.classList.add('custom-pattern');
+    handlePatternOpacityChange(percent) {
+        console.log('🎨 Pattern opacity change:', percent + '%');
+
+        // Save to appState
+        if (_deps.AppState) {
+            _deps.AppState.update(state => {
+                if (!state.settings.customColors) {
+                    state.settings.customColors = {};
+                }
+                state.settings.customColors.patternOpacity = percent;
+            });
+        }
+
+        // Apply the pattern with current settings (only if in default theme)
+        if (this.isDefaultTheme()) {
+            this.applyPatternWithCurrentSettings();
+        }
+
+        // Update live preview
+        this.updatePreview();
     }
 
     /**
-     * Remove custom pattern color
+     * Apply pattern with current color and opacity settings.
+     * Uses inline SVG generation when color or opacity differs from defaults,
+     * falls back to external pattern.svg when both are default.
+     */
+    applyPatternWithCurrentSettings() {
+        const customColors = _deps.AppState?.get()?.settings?.customColors || {};
+        const color = customColors.patternColor || DEFAULT_COLORS.patternColor;
+        const opacity = customColors.patternOpacity != null
+            ? customColors.patternOpacity / 100
+            : DEFAULT_PATTERN_OPACITY;
+
+        const isDefaultColor = color === DEFAULT_COLORS.patternColor;
+        const isDefaultOpacity = customColors.patternOpacity == null ||
+            customColors.patternOpacity === Math.round(DEFAULT_PATTERN_OPACITY * 100);
+
+        if (isDefaultColor && isDefaultOpacity) {
+            // Both defaults — use external SVG
+            this.removePatternColor();
+        } else {
+            // Custom color or opacity — generate inline SVG
+            const patternUrl = generatePatternSvg(color, opacity);
+            document.documentElement.style.setProperty('--custom-pattern-bg', patternUrl);
+            document.body.classList.add('custom-pattern');
+        }
+    }
+
+    /**
+     * Remove custom pattern (revert to external SVG)
      */
     removePatternColor() {
         document.documentElement.style.removeProperty('--custom-pattern-bg');
@@ -850,11 +941,38 @@ export class PreferencesManager {
                 });
             }
 
-            // Remove custom pattern
-            this.removePatternColor();
+            // Reapply pattern with current settings (opacity may still be custom)
+            this.applyPatternWithCurrentSettings();
             this.updatePreview();
             this.updateUndoButton();
             _deps.showNotification?.('Pattern color reset to default', 'info', 2000);
+            return;
+        }
+
+        // Special handling for pattern opacity (not in COLOR_MAP)
+        if (inputId === 'pref-pattern-opacity') {
+            this.pushToUndoStack();
+
+            const defaultPercent = Math.round(DEFAULT_PATTERN_OPACITY * 100);
+            const slider = document.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
+            if (slider) slider.value = defaultPercent;
+            const display = document.getElementById('pref-pattern-opacity-value');
+            if (display) display.textContent = `${defaultPercent}%`;
+
+            // Save to appState
+            if (_deps.AppState) {
+                _deps.AppState.update(state => {
+                    if (state.settings.customColors) {
+                        delete state.settings.customColors.patternOpacity;
+                    }
+                });
+            }
+
+            // Reapply pattern with current settings (color may still be custom)
+            this.applyPatternWithCurrentSettings();
+            this.updatePreview();
+            this.updateUndoButton();
+            _deps.showNotification?.('Pattern opacity reset to default', 'info', 2000);
             return;
         }
 
@@ -911,6 +1029,7 @@ export class PreferencesManager {
                     statsBg: null,
                     statsText: null,
                     patternColor: null, // Fix #36: missing key
+                    patternOpacity: null,
                     showCheckboxFill: true, // Fix #36: reset to default
                     showCheckboxIncomplete: true, // Fix #36: reset to default
                     showBgPattern: true, // Fix #36: reset to default
@@ -918,6 +1037,17 @@ export class PreferencesManager {
                 };
             });
         }
+
+        // Reset pattern opacity slider UI
+        const defaultPercent = Math.round(DEFAULT_PATTERN_OPACITY * 100);
+        const opacitySlider = document.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
+        if (opacitySlider) opacitySlider.value = defaultPercent;
+        const opacityDisplay = document.getElementById('pref-pattern-opacity-value');
+        if (opacityDisplay) opacityDisplay.textContent = `${defaultPercent}%`;
+
+        // Reset pattern color input UI
+        const patternColorInput = document.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
+        if (patternColorInput) patternColorInput.value = DEFAULT_COLORS.patternColor;
 
         this.updatePreview();
 
@@ -1034,14 +1164,18 @@ export class PreferencesManager {
             preview.style.setProperty('--preview-checkbox-incomplete-bg', 'transparent');
         }
 
-        // Handle background pattern color in preview
+        // Handle background pattern color and opacity in preview
         const bgPatternToggle = document.getElementById(DOM_IDS.TOGGLE_BG_PATTERN);
         const showPattern = bgPatternToggle?.checked !== false;
         const patternColorInput = document.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
+        const patternOpacitySlider = document.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
 
         if (showPattern && patternColorInput) {
             const patternColor = patternColorInput.value || DEFAULT_COLORS.patternColor;
-            const patternUrl = generatePatternSvg(patternColor, DEFAULT_PATTERN_OPACITY);
+            const opacityPercent = patternOpacitySlider
+                ? parseInt(patternOpacitySlider.value, 10)
+                : Math.round(DEFAULT_PATTERN_OPACITY * 100);
+            const patternUrl = generatePatternSvg(patternColor, opacityPercent / 100);
             preview.style.setProperty('--preview-pattern-bg', patternUrl);
         } else {
             preview.style.removeProperty('--preview-pattern-bg');

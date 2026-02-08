@@ -1,3 +1,7 @@
+## [1.921] - 2026-02-07
+- feat(labels): integrate label resolver for dynamic string management and pluralization across the application
+
+
 ## [1.920] - 2026-02-07
 - chore: update version to 1.919 across all relevant files and documentation
 

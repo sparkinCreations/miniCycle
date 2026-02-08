@@ -563,7 +563,7 @@ applyBgImage(dataUrl, mode) {
 ```
 
 ```css
-/* Background pattern CSS (reset.css) */
+/* Background pattern CSS (background.css) */
 body.no-bg-pattern { background: var(--theme-bg-gradient); }
 
 /* Background image display modes */

@@ -466,6 +466,7 @@ export const DOM_IDS = Object.freeze({
     PREFERENCES_UNDO: 'preferences-undo',
     PREFERENCES_THEME_NOTICE: 'preferences-theme-notice',
     PREF_PATTERN_COLOR: 'pref-pattern-color',
+    PREF_PATTERN_OPACITY: 'pref-pattern-opacity',
     PREF_CHECKBOX_BG: 'pref-checkbox-bg',
     PREF_CHECKBOX_INCOMPLETE_BG: 'pref-checkbox-incomplete-bg',
     BG_IMAGE_OPTIONS: 'bg-image-options',
