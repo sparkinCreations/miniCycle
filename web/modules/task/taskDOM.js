@@ -422,7 +422,7 @@ export class TaskDOMManager {
         } catch (error) {
             console.error('❌ TaskDOMManager initialization failed:', error);
             console.error('❌ Error stack:', error.stack);
-            _deps.showNotification?.('Task display may not work properly', 'warning');
+            _deps.showNotification?.(getLabel('notify.taskDisplayLimited'), 'warning');
 
             // ✅ Rethrow error so initTaskDOMManager() knows initialization failed
             throw error;

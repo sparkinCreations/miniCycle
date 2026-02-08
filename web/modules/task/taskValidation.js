@@ -17,6 +17,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -100,7 +101,7 @@ export class TaskValidator {
 
         // Character limit check
         if (taskTextTrimmed.length > this.TASK_LIMIT) {
-            this.deps.showNotification?.(`Task must be ${this.TASK_LIMIT} characters or less.`, 'warning');
+            this.deps.showNotification?.(getLabel('notify.taskCharLimit', { vars: { limit: this.TASK_LIMIT } }), 'warning');
             return null;
         }
 

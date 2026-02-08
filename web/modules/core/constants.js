@@ -266,6 +266,33 @@ export const CACHE_CONFIG = Object.freeze({
 });
 
 // ============================================================================
+// Z-INDEX LAYERS
+// ============================================================================
+
+/**
+ * Z-index stacking layers — single source of truth for JS usage.
+ * Values mirror CSS custom properties in styles/base/variables.css.
+ * @constant {Object}
+ */
+export const Z_INDEX = Object.freeze({
+    BACKGROUND: -2,          // Background patterns
+    BASE: 0,                 // Normal document flow
+    CONTENT: 1,              // Minor elevation within components
+    ELEVATED: 5,             // Progress bars, internal stacking
+    HEADER: 100,             // Fixed header
+    MENU: 500,               // Main menu overlay
+    MODAL_BACKDROP: 999,     // Modal backdrops
+    MODAL: 1000,             // Standard modals
+    MODAL_HIGH: 2000,        // High-priority modals (storage, onboarding)
+    NOTIFICATION: 9999,      // Notification container
+    NOTIFICATION_ACTIVE: 10000,  // Dragging notification
+    NOTIFICATION_BTN: 10001,     // Notification interactive buttons
+    OVERLAY_CRITICAL: 10000, // Import/migration error overlays
+    DEBUG: 99999,            // Debug utilities
+    CRITICAL: 999999         // Boot critical errors only
+});
+
+// ============================================================================
 // TIME CONSTANTS
 // ============================================================================
 

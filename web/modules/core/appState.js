@@ -283,8 +283,15 @@ class MiniCycleState {
                 try {
                     parsed = JSON.parse(stored);
                 } catch (parseError) {
-                    console.warn('⚠️ Corrupted data in localStorage — returning null', parseError);
-                    return null;
+                    console.warn('⚠️ Corrupted data in localStorage — creating fallback state', parseError);
+                    this.data = this.createMinimalFallbackState();
+                    this.isInitialized = true;
+                    this.deps.showNotification(
+                        'Data was corrupted and has been reset. Your previous data could not be recovered.',
+                        'error',
+                        10000
+                    );
+                    return this.data;
                 }
                 if (this.validateSchema25Structure(parsed)) {
                     this.data = parsed;
@@ -354,7 +361,13 @@ class MiniCycleState {
                     }
                 }
             } catch (parseError) {
-                console.warn('⚠️ Could not parse existing data:', parseError);
+                console.warn('⚠️ Could not parse existing data — creating fallback state:', parseError);
+                existingData = this.createMinimalFallbackState();
+                this.deps.showNotification(
+                    'Data was corrupted and has been reset. Your previous data could not be recovered.',
+                    'error',
+                    10000
+                );
             }
 
             // Use existing data or create initial data
@@ -712,6 +725,11 @@ class MiniCycleState {
                     storageError?.code === 22 ||
                     storageError?.code === 1014) {
                     console.warn('⚠️ localStorage quota exceeded — continuing with in-memory state', storageError);
+                    this.deps.showNotification(
+                        'Storage full — changes are kept in memory but may be lost on refresh. Try removing unused routines.',
+                        'warning',
+                        8000
+                    );
                     this._hideSavingIndicator();
                     return;
                 }

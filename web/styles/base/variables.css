@@ -235,18 +235,24 @@
   --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 
   /* ═══════════════════════════════════════════════════════════════════════════
-     Z-INDEX LAYERS
+     Z-INDEX LAYERS — Single source of truth for stacking order
+     Values mirror Z_INDEX in modules/core/constants.js for JS usage
      ═══════════════════════════════════════════════════════════════════════════ */
-  --z-background: -1;
-  --z-base: 0;
-  --z-content: 1;
-  --z-header: 10;
-  --z-dropdown: 50;
-  --z-modal-backdrop: 90;
-  --z-modal: 100;
-  --z-notification: 200;
-  --z-tooltip: 300;
-  --z-loader: 9999;
+  --z-background: -2;                /* Background patterns */
+  --z-base: 0;                       /* Normal document flow */
+  --z-content: 1;                    /* Minor elevation within components */
+  --z-elevated: 5;                   /* Progress bars, internal stacking */
+  --z-header: 100;                   /* Fixed header */
+  --z-menu: 500;                     /* Main menu overlay */
+  --z-modal-backdrop: 999;           /* Modal backdrops */
+  --z-modal: 1000;                   /* Standard modals */
+  --z-modal-high: 2000;              /* High-priority modals (storage, onboarding) */
+  --z-notification: 9999;            /* Notification container */
+  --z-notification-active: 10000;    /* Dragging notification */
+  --z-notification-btn: 10001;       /* Notification interactive buttons */
+  --z-overlay-critical: 10000;       /* Import/migration error overlays */
+  --z-debug: 99999;                  /* Debug utilities */
+  --z-critical: 999999;              /* Boot critical errors only */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      LAYOUT

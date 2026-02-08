@@ -57,6 +57,7 @@
 // This avoids versioned/unversioned module instance mismatch issues
 
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 let _appContextMod = null;
 
@@ -319,7 +320,7 @@ async function handleResetNotificationPosition() {
 
   if (!AppState?.isReady?.()) {
     console.error('❌ AppState not ready for reset notification position');
-    showNotification?.('❌ Unable to reset position.', 'error', 2000);
+    showNotification?.('❌ ' + getLabel('notify.positionResetFailed'), 'error', 2000);
     return;
   }
 
@@ -341,10 +342,10 @@ async function handleResetNotificationPosition() {
       console.warn('⚠️ Could not reset notification position UI:', e);
     }
 
-    showNotification?.('🔄 Notification position reset.', 'success', 2000);
+    showNotification?.('🔄 ' + getLabel('notify.positionReset'), 'success', 2000);
   } catch (error) {
     console.error('❌ Failed to reset notification position:', error);
-    showNotification?.('❌ Failed to reset position.', 'error', 2000);
+    showNotification?.('❌ ' + getLabel('notify.positionResetFailed'), 'error', 2000);
   }
 }
 

@@ -15,7 +15,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    z-index: 9999;
+    z-index: var(--z-notification);
     cursor: grab;
     user-select: none;
 }
@@ -23,7 +23,7 @@
 #notification-container.dragging {
     cursor: grabbing;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-    z-index: 10000;
+    z-index: var(--z-notification-active);
 }
 
 /* Interactive elements should NOT be draggable */
@@ -36,7 +36,7 @@
     cursor: pointer;
     user-select: none;
     position: relative;
-    z-index: 10001;
+    z-index: var(--z-notification-btn);
 }
 
 /* =============================================================================
@@ -153,7 +153,7 @@
     line-height: 28px;
     text-align: center;
     padding: 0;
-    z-index: 2;
+    z-index: var(--z-content);
     transition: background 0.2s ease, transform 0.15s ease;
     touch-action: manipulation;
 }

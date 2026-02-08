@@ -41,7 +41,7 @@
  * @property {Object} utils.GlobalUtils - Global utility methods
  */
 
-import { STORAGE_KEYS } from '../core/constants.js';
+import { STORAGE_KEYS, Z_INDEX } from '../core/constants.js';
 
 // ============================================================================
 // POLYFILLS: Must run before any other code
@@ -921,7 +921,7 @@ function showStaleCacheBanner() {
   const banner = document.createElement('div');
   banner.id = 'stale-cache-banner';
   banner.style.cssText = `
-    position: fixed; top: 0; left: 0; right: 0; z-index: 999999;
+    position: fixed; top: 0; left: 0; right: 0; z-index: ${Z_INDEX.CRITICAL};
     background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white;
     padding: 12px 16px; font-family: -apple-system, system-ui, sans-serif;
     font-size: 14px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);

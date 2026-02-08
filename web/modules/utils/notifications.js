@@ -35,7 +35,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, Z_INDEX } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -981,12 +981,12 @@ async setDefaultPosition(notificationContainer) {
         <button class="close-btn"
                 title="${getLabel('button.close')}"
                 aria-label="${getLabel('notify.closeNotification')}"
-                style="position: absolute; top: -7px; right: -7px; background: transparent; border: none; font-size: 16px; cursor: pointer; color: #fff; line-height: 1; padding: 0; z-index: 10;">✖</button>
+                style="position: absolute; top: -7px; right: -7px; background: transparent; border: none; font-size: 16px; cursor: pointer; color: #fff; line-height: 1; padding: 0; z-index: ${Z_INDEX.ELEVATED};">✖</button>
 
         <button class="tip-toggle-btn"
                 data-tip-id="${tipId}"
                 aria-label="${getLabel('notify.showTip')}"
-                style="position: absolute; bottom: 8px; right: 8px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 14px; padding: 0; display: flex; align-items: center; justify-content: center; z-index: 5;">💡</button>
+                style="position: absolute; bottom: 8px; right: 8px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 14px; padding: 0; display: flex; align-items: center; justify-content: center; z-index: ${Z_INDEX.ELEVATED};">💡</button>
 
         ${educationalTipHTML}
 

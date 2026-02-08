@@ -20,7 +20,7 @@
     display: none;
     flex-direction: column;
     gap: 10px;
-    z-index: 500;
+    z-index: var(--z-menu);
     min-width: 280px;
     max-width: 380px;
     max-height: calc(100vh - 80px);
@@ -446,7 +446,7 @@
     border-radius: 5px;
     cursor: pointer;
     transition: background 0.3s ease-in-out, opacity 0.3s;
-    z-index: 2;
+    z-index: var(--z-content);
     border: none;
     background: transparent;
     font-family: inherit;

@@ -213,14 +213,17 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('handles corrupted localStorage data', async () => {
+    await test('handles corrupted localStorage data with fallback state', async () => {
         localStorage.setItem('miniCycleData', 'invalid json{{{');
 
         const state = createStateManager();
         const result = await state.init();
 
-        if (result !== null) {
-            throw new Error('Should return null for corrupted data');
+        if (!result || result.schemaVersion !== '2.5') {
+            throw new Error('Should create fallback Schema 2.5 state for corrupted data');
+        }
+        if (!state.isReady()) {
+            throw new Error('State should be ready after fallback creation');
         }
     });
 

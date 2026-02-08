@@ -51,6 +51,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -534,7 +535,7 @@ export async function resetTasksImpl(deps = {}) {
     } catch (error) {
         console.warn('Reset tasks failed:', error);
         isResetting = false;
-        _deps.showNotification?.('Could not reset tasks', 'warning');
+        _deps.showNotification?.(getLabel('notify.taskResetFailed'), 'warning');
     }
 }
 
@@ -575,7 +576,7 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     completedTaskElements.forEach(processTaskElement);
 
     if (tasksToDelete.length === 0) {
-        _deps.showNotification?.("No completed tasks to delete.", "default", 3000);
+        _deps.showNotification?.(getLabel('notify.noCompletedToDelete'), "default", 3000);
         return { aborted: true, reason: 'no_tasks' };
     }
 
@@ -808,7 +809,7 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
 
     } catch (error) {
         console.warn('Complete all tasks failed:', error);
-        _deps.showNotification?.('Could not complete all tasks', 'warning');
+        _deps.showNotification?.(getLabel('notify.completeAllFailed'), 'warning');
     }
 }
 

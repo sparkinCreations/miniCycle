@@ -594,6 +594,7 @@ export class QuickActionsManager {
                 // Disable if already pinned
                 if (pinned.includes(action.id)) {
                     item.classList.add('disabled');
+                    item.setAttribute('aria-disabled', 'true');
                 }
 
                 const iconSpan = document.createElement('span');

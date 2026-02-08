@@ -25,6 +25,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -268,7 +269,7 @@ export class TaskEvents {
                 this.deps.taskCore.editTask(taskItem);
             } else {
                 console.warn('⚠️ TaskCore not injected, edit operation skipped');
-                _deps.showNotification?.('Edit feature temporarily unavailable', 'warning');
+                _deps.showNotification?.(getLabel('notify.editUnavailable'), 'warning');
             }
             shouldSave = false;
         } else if (button.classList.contains("delete-btn")) {
@@ -276,7 +277,7 @@ export class TaskEvents {
                 this.deps.taskCore.deleteTask(taskItem);
             } else {
                 console.warn('⚠️ TaskCore not injected, delete operation skipped');
-                _deps.showNotification?.('Delete feature temporarily unavailable', 'warning');
+                _deps.showNotification?.(getLabel('notify.deleteUnavailable'), 'warning');
             }
             shouldSave = false;
         } else if (button.classList.contains("priority-btn")) {
@@ -284,7 +285,7 @@ export class TaskEvents {
                 this.deps.taskCore.toggleTaskPriority(taskItem);
             } else {
                 console.warn('⚠️ TaskCore not injected, priority toggle skipped');
-                _deps.showNotification?.('Priority toggle feature temporarily unavailable', 'warning');
+                _deps.showNotification?.(getLabel('notify.priorityUnavailable'), 'warning');
             }
             shouldSave = false;
         } else if (button.classList.contains("set-due-date")) {

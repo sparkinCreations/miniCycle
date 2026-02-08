@@ -31,6 +31,7 @@
 import { DOM_IDS, DOM_SELECTORS, STORAGE_KEYS } from '../core/constants.js';
 import { createDIModule, optional } from '../core/diBase.js';
 import { JSONThemeManager } from '../../styles/themes/theme-manager.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -419,7 +420,7 @@ export class ThemeManager {
                 this.showThemeContainer();
                 this.showThemeButton();
                 
-                this.showNotification?.('🎉 New theme unlocked: Dark Ocean! Check the menu to activate it.', 'success', 5000);
+                this.showNotification?.('🎉 ' + getLabel('notify.themeUnlocked', { vars: { name: 'Dark Ocean' } }), 'success', 5000);
             } else {
                 console.log('ℹ️ Dark Ocean theme already unlocked');
             }
@@ -466,7 +467,7 @@ export class ThemeManager {
                 this.showThemeContainer();
                 this.showThemeButton();
 
-                this.showNotification?.("🌟 New theme unlocked: Golden Glow! Check the themes menu to activate it.", "success", 5000);
+                this.showNotification?.("🌟 " + getLabel('notify.themeUnlocked', { vars: { name: 'Golden Glow' } }), "success", 5000);
             } else {
                 console.log('ℹ️ Golden Glow theme already unlocked');
             }

@@ -30,7 +30,7 @@
     text-align: center;
     opacity: 0;
     pointer-events: none;
-    z-index: 1;
+    z-index: var(--z-content);
 }
 
 /* =============================================================================
@@ -96,7 +96,7 @@
     font-size: 32px;
     color: black;
     cursor: pointer;
-    z-index: 50;
+    z-index: var(--z-elevated);
     opacity: 0.6;
     transition: opacity var(--transition-fast);
     transition-delay: 0.8s; /* Delay before fading in after view switch */
