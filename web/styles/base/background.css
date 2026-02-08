@@ -1,0 +1,118 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Background & Theming
+   SVG pattern, custom backgrounds, image display modes, and theme overlays
+   Pattern SVG source: assets/images/pattern.svg
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* SVG stationery pattern background */
+body {
+    background:
+        url("../../assets/images/pattern.svg") repeat,
+        var(--theme-bg-gradient);
+    z-index: -2;
+    padding-top: 0; /* Header handles safe area */
+    padding-bottom: env(safe-area-inset-bottom);
+    background-size: 400px 400px, cover;
+}
+
+/* Custom app background color (Preferences - Default theme only) */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
+    background:
+        url("../../assets/images/pattern.svg") repeat,
+        var(--pref-app-bg, var(--theme-bg-gradient));
+    background-size: 400px 400px, cover;
+}
+
+/* Custom pattern color (Preferences - Default theme only) */
+body.custom-pattern:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow):not(.no-bg-pattern) {
+    background:
+        var(--custom-pattern-bg) repeat,
+        var(--pref-app-bg, var(--theme-bg-gradient));
+    background-size: 400px 400px, cover;
+}
+
+/* Hide background pattern when toggle is off */
+body.no-bg-pattern {
+    background: var(--theme-bg-gradient);
+    background-color: var(--theme-bg-solid);
+}
+
+/* Match specificity of the pattern rule above (0,3,1) + .no-bg-pattern = (0,4,1) */
+body.no-bg-pattern:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
+    background: var(--pref-app-bg, var(--theme-bg-gradient));
+    background-size: cover;
+}
+
+/* Custom background image (from personalization) */
+/* Use high specificity to override pattern rules */
+body.has-bg-image,
+body.has-bg-image:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
+    background: var(--custom-bg-image);
+    background-color: var(--theme-bg-solid);
+}
+
+/* Background image display modes - specificity (0,4,1) to override pattern rules */
+body.has-bg-image.bg-mode-cover,
+body.has-bg-image.bg-mode-cover:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
+    background: var(--custom-bg-image) center/cover no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.has-bg-image.bg-mode-center,
+body.has-bg-image.bg-mode-center:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
+    background: var(--custom-bg-image) center/auto no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.has-bg-image.bg-mode-tile,
+body.has-bg-image.bg-mode-tile:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
+    background: var(--custom-bg-image) top left/auto repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+/* Dark mode overlay for custom background images */
+body.dark-mode.has-bg-image.bg-mode-cover,
+body.theme-dark-ocean.has-bg-image.bg-mode-cover {
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+        var(--custom-bg-image) center/cover no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.dark-mode.has-bg-image.bg-mode-center,
+body.theme-dark-ocean.has-bg-image.bg-mode-center {
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+        var(--custom-bg-image) center/auto no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.dark-mode.has-bg-image.bg-mode-tile,
+body.theme-dark-ocean.has-bg-image.bg-mode-tile {
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+        var(--custom-bg-image) top left/auto repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+/* Golden Glow theme - lighter overlay to preserve warm tones */
+body.theme-golden-glow.has-bg-image.bg-mode-cover {
+    background:
+        linear-gradient(rgba(30, 20, 0, 0.4), rgba(30, 20, 0, 0.4)),
+        var(--custom-bg-image) center/cover no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.theme-golden-glow.has-bg-image.bg-mode-center {
+    background:
+        linear-gradient(rgba(30, 20, 0, 0.4), rgba(30, 20, 0, 0.4)),
+        var(--custom-bg-image) center/auto no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.theme-golden-glow.has-bg-image.bg-mode-tile {
+    background:
+        linear-gradient(rgba(30, 20, 0, 0.4), rgba(30, 20, 0, 0.4)),
+        var(--custom-bg-image) top left/auto repeat;
+    background-color: var(--theme-bg-solid);
+}

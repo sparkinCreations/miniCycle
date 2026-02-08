@@ -10,7 +10,7 @@ The stationery-themed background pattern in miniCycle (pencils, notebooks, coffe
 
 ### Change the pattern opacity (visibility)
 
-**File:** `styles/base/reset.css`
+**File:** `styles/base/background.css`
 
 1. Search for `rgba(255,255,255,0.07)`
 2. Change `0.07` to your desired value:
@@ -27,7 +27,7 @@ In code, the `body.no-bg-pattern` class hides it.
 
 ### Change tile size (how spread out elements are)
 
-**File:** `styles/base/reset.css`
+**File:** `styles/base/background.css`
 
 1. Search for `background-size: 400px 400px`
 2. Change both values:
@@ -78,7 +78,7 @@ The pattern is an SVG stored as a URL-encoded string. Here's the workflow:
 
 ### Step 1: Decode the SVG
 
-The pattern in `reset.css` looks like this (unreadable):
+The pattern in `background.css` looks like this (unreadable):
 ```
 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org...
 ```
@@ -119,7 +119,7 @@ const svg = `<svg>...</svg>`;  // your edited SVG
 console.log(encodeURIComponent(svg));
 ```
 
-### Step 4: Update reset.css
+### Step 4: Update background.css
 
 1. Replace the old encoded string with your new one
 2. **Update BOTH occurrences** (lines ~25 and ~36)
@@ -251,7 +251,7 @@ Each element below shows the decoded SVG code. Copy and modify as needed.
    ```
 3. **Position** it by choosing X, Y coordinates that don't overlap existing elements (see layout diagram above)
 4. **Rotate** it slightly (5-20 degrees) for visual variety
-5. **Re-encode** and update both occurrences in reset.css
+5. **Re-encode** and update both occurrences in background.css
 
 ### Transform Explained
 
@@ -359,7 +359,7 @@ Copy this for major edits:
 | Problem | Solution |
 |---------|----------|
 | Pattern not showing | Check if `body.no-bg-pattern` class is set, or if a background image overrides it |
-| Pattern looks broken after edit | Make sure you updated **both** occurrences in reset.css |
+| Pattern looks broken after edit | Make sure you updated **both** occurrences in background.css |
 | Encoding errors | Check for unescaped `<`, `>`, or `#` characters |
 | Elements overlapping | Adjust the X, Y values in the transform |
 
@@ -378,7 +378,7 @@ Copy this for major edits:
 
 | What | Where |
 |------|-------|
-| Pattern definition | `styles/base/reset.css` (lines ~25 and ~36) |
+| Pattern definition | `styles/base/background.css` (lines ~25 and ~36) |
 | Pattern toggle | `modules/ui/preferencesManager.js` |
 | User docs | `docs/features/FEATURE_LIST.md` |
 

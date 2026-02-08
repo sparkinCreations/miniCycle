@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '1.920';
-var CACHE_VERSION = 'v715';
+var APP_VERSION = '1.921';
+var CACHE_VERSION = 'v716';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -40,7 +40,8 @@ var CORE = [
   './',
   './manifest.json',
   './manifest-lite.json',
-  // Essential logos only
+  // Essential images
+  './assets/images/pattern.svg',
   './assets/images/logo/minicycle_logo_icon.png',
   './assets/images/logo/logo.png',
   // Self-hosted fonts
@@ -168,6 +169,7 @@ var BOOT_CRITICAL = [
 var CSS_FILES = [
   './styles/base/variables.css',
   './styles/base/reset.css',
+  './styles/base/background.css',
   './styles/base/typography.css',
   './styles/base/animations.css',
   './styles/layout/app-container.css',

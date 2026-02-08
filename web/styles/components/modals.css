@@ -1360,6 +1360,50 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     color: var(--theme-modal-text, #333);
 }
 
+/* Range slider in preferences */
+.preferences-color-row input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100px;
+    height: 6px;
+    background: var(--theme-border, #ddd);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.preferences-color-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--theme-btn-primary-bg, #4c79ff);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.preferences-color-row input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--theme-btn-primary-bg, #4c79ff);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.pref-range-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--theme-modal-text, #333);
+    min-width: 32px;
+    text-align: center;
+    transition: opacity 0.2s ease;
+}
+
 /* =============================================================================
    BACKGROUND IMAGE UPLOAD
    ============================================================================= */
@@ -1610,6 +1654,10 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     .preferences-color-row input[type="color"] {
         width: 40px;
         height: 32px;
+    }
+
+    .preferences-color-row input[type="range"] {
+        width: 80px;
     }
 
     .pref-color-icon {

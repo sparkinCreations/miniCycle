@@ -411,7 +411,7 @@ header {
   color: var(--theme-header-text);
 }
 
-/* styles/base/reset.css */
+/* styles/base/background.css */
 body {
   background: var(--theme-backgrounds-body);
   color: var(--theme-text-primary);

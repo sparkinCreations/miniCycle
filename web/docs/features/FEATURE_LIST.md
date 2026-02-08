@@ -375,8 +375,8 @@ Customize app colors and visual appearance.
 | Feature | Description | Module |
 |---------|-------------|--------|
 | Pattern Toggle | Show/hide decorative stationery pattern on background | `ui/preferencesManager.js` |
-| SVG Pattern | Tiled stationery elements (pencils, notebooks, paperclips) | `styles/base/reset.css` |
-| Subtle Design | 4% opacity for non-intrusive aesthetic | `styles/base/reset.css` |
+| SVG Pattern | Tiled stationery elements (pencils, notebooks, paperclips) | `styles/base/background.css` |
+| Subtle Design | 4% opacity for non-intrusive aesthetic | `styles/base/background.css` |
 
 ### Background Image
 | Feature | Description | Module |

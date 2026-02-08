@@ -263,6 +263,7 @@ styles/
 ├── base/                    # Foundation styles
 │   ├── variables.css        # CSS custom properties
 │   ├── reset.css            # CSS reset
+│   ├── background.css       # Background patterns & images
 │   ├── typography.css       # Font styles
 │   └── animations.css       # Keyframe animations
 ├── layout/                  # Page structure

@@ -81,11 +81,12 @@ web/
 ├── 📄 miniCycle-main.js                 # Entrypoint (~56 lines) - loads orchestrator
 ├── 📄 service-worker.js                 # PWA service worker
 │
-├── 📁 styles/                           # Modular CSS architecture (30 files)
+├── 📁 styles/                           # Modular CSS architecture (31 files)
 │   ├── main.css                         # Entry point - imports all modules
 │   ├── base/                            # Foundation styles
 │   │   ├── variables.css                # CSS custom properties & theme variables
 │   │   ├── reset.css                    # CSS reset & normalization
+│   │   ├── background.css               # Background patterns, images & overlays
 │   │   ├── typography.css               # Font styles & text utilities
 │   │   └── animations.css               # Keyframe animations
 │   ├── layout/                          # Page structure
@@ -216,7 +217,7 @@ web/
 **Why this matters:** Finding "task list styles" is easier than searching 8,000 lines
 
 **Structure:**
-- `base/` - Foundation (variables, reset, typography, animations)
+- `base/` - Foundation (variables, reset, background, typography, animations)
 - `layout/` - Page structure (app container, header, safe areas)
 - `components/` - UI components (18 files for specific features)
 - `utilities/` - Dark mode, helpers, responsive breakpoints
@@ -594,8 +595,8 @@ miniCycle-main.js (entrypoint)
 
 ### Phase 6: CSS Modularization (Jan 9, 2026)
 - **Before:** 8,000+ line monolithic `miniCycle-styles.css`
-- **After:** 29 focused CSS files in `styles/` folder:
-  - `base/` (4 files) - Variables, reset, typography, animations
+- **After:** 30 focused CSS files in `styles/` folder:
+  - `base/` (5 files) - Variables, reset, background, typography, animations
   - `layout/` (3 files) - App container, header, safe areas
   - `components/` (18 files) - UI component styles
   - `utilities/` (3 files) - Dark mode, helpers, responsive
