@@ -164,6 +164,23 @@ Only standard browser API event handlers remain (`window.onload`, `window.onerro
 
 ## Key Systems
 
+### Label System (`modules/labels/`)
+
+Centralizes all user-facing strings into a single registry with resolver support:
+
+- **`defaultLabels.js`** — Pure data module with 566 keys across 32 categories. No DI, no imports — importable anywhere.
+- **`labelResolver.js`** — DI-wired module providing `getLabel(key, options)` with pluralization and variable interpolation.
+
+```javascript
+import { getLabel } from '../labels/labelResolver.js';
+
+getLabel('action.addTask');                                    // 'Add task'
+getLabel('noun.task', { count: 3 });                           // 'tasks'
+getLabel('notify.taskRenamed', { vars: { name: 'Buy milk' } }); // 'Task renamed to "Buy milk"'
+```
+
+All notification messages, modal text, ARIA labels, and button text should use `getLabel()`. Keep emojis separate from label text. See [Label System Architecture](../architecture/LABEL_SYSTEM_ARCHITECTURE.md) for full details.
+
 ### State Management (`modules/core/appState.js`)
 - Centralized state with `AppState.get()` and `AppState.update()`
 - Subscriber system for reactive updates
@@ -362,6 +379,7 @@ AppState.reload();  // Critical! Syncs in-memory state with restored localStorag
 | `recurring/` | Recurring task scheduling, activation, panel |
 | `ui/` | Modals, menus, settings, onboarding, gestures |
 | `features/` | Themes, stats, achievements, history, reminders |
+| `labels/` | Label registry (566 keys), resolver with getLabel() |
 | `utils/` | Notifications, device detection, utilities |
 | `storage/` | Backup manager |
 | `progress/` | Cycle completion tracking |
@@ -408,6 +426,7 @@ Every DI module follows this pattern:
 - **Product vision**: [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md)
 - **DI patterns & pitfalls**: [DI_PATTERNS.md](./DI_PATTERNS.md)
 - **Architecture overview**: [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md)
+- **Label system**: [LABEL_SYSTEM_ARCHITECTURE.md](../architecture/LABEL_SYSTEM_ARCHITECTURE.md)
 - **Folder structure**: [FOLDER_STRUCTURE.md](./FOLDER_STRUCTURE.md)
 - **Testing guide**: [TESTING_GUIDE.md](./TESTING_GUIDE.md)
 - **Version management**: [UPDATE-VERSION-GUIDE.md](../deployment/UPDATE-VERSION-GUIDE.md)

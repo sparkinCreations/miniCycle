@@ -757,8 +757,11 @@ These are the foundational terms that define the app's vocabulary. A contextual 
 | Boot & System | 22 | 1 |
 | Page Metadata | 2 | 0 |
 | Footer | 4 | 0 |
-| **TOTAL** | **~397** | **~142** |
+| Onboarding | 4 | 2 |
+| **TOTAL** | **~566** | **~142** |
 
 ---
 
-**~397 total label keys identified. ~142 are lens-sensitive (would change with contextual themes).**
+**~566 total label keys identified across 32 categories. ~142 are lens-sensitive (would change with contextual themes).**
+
+> **Note:** This reference was originally created during the Phase 1 audit. The key counts per category above reflect the original audit. The actual `defaultLabels.js` file has grown to 566 keys as the `notify` category expanded significantly during Tier 2-6 migrations. See `defaultLabels.js` for the authoritative count.

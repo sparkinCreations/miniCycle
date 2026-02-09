@@ -138,6 +138,9 @@ web/
 │   ├── recurring/                       # Recurring task scheduling, panel, activation
 │   ├── ui/                              # Modals, menus, settings, onboarding, gestures
 │   ├── features/                        # Themes, stats, achievements, history, reminders
+│   ├── labels/                          # Label system (566 keys, resolver)
+│   │   ├── defaultLabels.js             # Pure data: all user-facing strings
+│   │   └── labelResolver.js             # getLabel() with pluralization & interpolation
 │   ├── utils/                           # Notifications, device detection, utilities
 │   ├── storage/                         # Backup manager
 │   ├── progress/                        # Cycle completion tracking
@@ -456,6 +459,19 @@ miniCycle-main.js (entrypoint)
 **Philosophy:** Features should be optional and independently testable. The app works without them.
 
 **Reasoning:** Not all users need due dates or themes. Keeping them optional reduces bundle size for minimal installs.
+
+---
+
+### `labels/` - Label System (2 modules)
+**Purpose:** Centralized user-facing string management
+**When to add here:** Label data, resolver logic, future contextual lenses
+
+- `defaultLabels.js` (566 keys) - Pure data module with all user-facing strings across 32 categories
+- `labelResolver.js` - `getLabel()` function with DI, pluralization, and interpolation
+
+**Philosophy:** Centralizing strings enables future contextual lenses (e.g., "task" becomes "habit" in a Habit Tracker lens) and provides a single source of truth for all user-facing text.
+
+**Reasoning:** `defaultLabels.js` is a pure data module (no DI, no imports) — importable anywhere at any boot phase. `labelResolver.js` has DI wiring for future lens support.
 
 ---
 

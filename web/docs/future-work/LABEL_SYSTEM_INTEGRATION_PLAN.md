@@ -1,8 +1,8 @@
 # Label System Integration Plan
 
-**Status:** In Progress
-**Priority:** Medium
-**Prerequisites:** `modules/labels/defaultLabels.js` (complete)
+**Status:** Phase 2 Complete (Tiers 1-6 Migrated)
+**Priority:** Complete
+**Prerequisites:** `modules/labels/defaultLabels.js` (complete), `modules/labels/labelResolver.js` (complete)
 **Breaking Changes:** No (gradual migration, backward compatible)
 
 ---
@@ -14,15 +14,39 @@
 - [x] Wired into boot sequence via `moduleManifests.js` and `featureBoot.js`
 - [x] Registered as `labels` API in `appContext.js`
 
-### Phase 2B: Module Migrations
+### Phase 2B: Module Migrations (All 6 Tiers Complete)
 
-| Module | Strings Migrated | Date |
-|--------|------------------|------|
-| `quickActionsManager.js` | 15+ (view titles, action labels, empty states, notifications, ARIA) | Feb 2026 |
-| `taskDOM.js` | 4 (placeholder, three-dots ARIA, checkbox ARIA) | Feb 2026 |
-| `taskUI.js` | 2 (complete/clear button text) | Feb 2026 |
-| `modeManager.js` | 10 (mode names, descriptions, toggle text) | Feb 2026 |
-| `statsPanel.js` | 4 (completion text, global display, cycle/cleared counts) | Feb 2026 |
+| Module | Strings Migrated | Tier | Date |
+|--------|------------------|------|------|
+| `quickActionsManager.js` | 15+ (view titles, action labels, empty states, notifications, ARIA) | 1 | Feb 2026 |
+| `taskDOM.js` | 4 (placeholder, three-dots ARIA, checkbox ARIA) | 1 | Feb 2026 |
+| `taskUI.js` | 2 (complete/clear button text) | 1 | Feb 2026 |
+| `modeManager.js` | 10 (mode names, descriptions, toggle text) | 1 | Feb 2026 |
+| `statsPanel.js` | 4 (completion text, global display, cycle/cleared counts) | 1 | Feb 2026 |
+| `taskCRUD.js` | 6 (rename, delete modals, notifications) | 2 | Feb 2026 |
+| `menuManager.js` | 8+ (routine save, clear, delete notifications) | 2 | Feb 2026 |
+| `recurringPanel.js` | 10+ (recurring toggle, add, remove notifications) | 2 | Feb 2026 |
+| `recurringSettingsApplicator.js` | 5 (settings save, validation notifications) | 2 | Feb 2026 |
+| `preferencesManager.js` | 8 (color reset, theme applied, preset saved) | 2 | Feb 2026 |
+| `taskOptionsCustomizer.js` | 4 (reset, select cycle/routine notifications) | 2 | Feb 2026 |
+| `historyManager.js` | 6 (clear, reset modals and notifications) | 3 | Feb 2026 |
+| `clearedTasksManager.js` | 5 (empty, recreate notifications) | 3 | Feb 2026 |
+| `taskCycleReset.js` | 3 (reset modal title, message, confirm) | 3 | Feb 2026 |
+| `recurringPanel.js` | 3 (remove recurring modal) | 3 | Feb 2026 |
+| `taskButtons.js` | 12 (all task option ARIA labels) | 4 | Feb 2026 |
+| `achievementsManager.js` | 3 (panel ARIA, achievement notifications) | 4 | Feb 2026 |
+| `taskCompletion.js` | 4 (task update/order failed notifications) | 6 | Feb 2026 |
+| `taskCore.js` | 2 (task validation notifications) | 6 | Feb 2026 |
+| `taskDOM.js` | 2 (loading placeholder, checkbox ARIA) | 6 | Feb 2026 |
+| `taskButtons.js` | 3 (customize button tooltip/ARIA) | 6 | Feb 2026 |
+| `taskEvents.js` | 2 (event handling notifications) | 6 | Feb 2026 |
+| `taskCycleReset.js` | 2 (cycle reset notifications) | 6 | Feb 2026 |
+| `taskValidation.js` | 2 (validation error notifications) | 6 | Feb 2026 |
+| `themeManager.js` | 4 (theme unlock, applied notifications) | 6 | Feb 2026 |
+| `appInit.js` | 3 (init error notifications) | 6 | Feb 2026 |
+| `uiBoot.js` | 4 (boot notifications, lite version modal) | 6 | Feb 2026 |
+| `uiOrchestrator.js` | 2 (UI orchestration notifications) | 6 | Feb 2026 |
+| `routineSwitcher.js` | 6 (delete, rename, switch notifications) | 6 | Feb 2026 |
 
 ---
 
@@ -235,19 +259,42 @@ Add to test suite:
 
 - [x] `labelResolver.js` created, DI-wired, and registered in appContext
 - [x] Tier 1 strings migrated (high-visibility)
-- [ ] Tier 2 strings migrated (notifications)
-- [ ] Tier 3 strings migrated (modals)
-- [ ] Tier 4 strings migrated (ARIA)
-- [ ] Tier 5 strings migrated (menus, settings, panels)
-- [ ] Tier 6 strings migrated (boot, meta, footer)
+- [x] Tier 2 strings migrated (notifications)
+- [x] Tier 3 strings migrated (modals)
+- [x] Tier 4 strings migrated (ARIA)
+- [x] Tier 5 strings migrated (menus, settings, panels)
+- [x] Tier 6 strings migrated (boot, meta, footer)
 - [x] All 1,612 tests still pass at 100%
 - [x] App renders identically before and after migration (no visual diff)
+
+---
+
+## Remaining Hardcoded Strings (~39)
+
+The following modules still have hardcoded notification strings outside the original tier scope. These can be migrated incrementally as the modules are touched:
+
+| Module | ~Strings | Notes |
+|--------|----------|-------|
+| `undoRedoManager.js` | 6 | Undo/redo feedback messages |
+| `pullToRefresh.js` | 3 | Refresh status messages |
+| `gesturePanelManager.js` | 4 | Keyboard shortcut notifications |
+| `statsPanel.js` | 7 | Keyboard shortcut and feature notifications |
+| `appState.js` | 2 | State update/save failure |
+| `routineManager.js` | 8 | Routine creation and management |
+| `routineSwitcher.js` | 19 | Switch, delete, validation messages |
+| `dueDates.js` | 5 | Due date initialization and warnings |
+| `reminders.js` | 6 | Reminder enable/disable messages |
+| `dragDropManager.js` | 4 | Reorder failure warnings |
+| `consoleCapture.js` | 5 | Console logging messages |
+| `deviceDetection.js` | 6 | Device detection messages |
+| `globalUtils.js` | 3 | Storage access warnings |
+| `preferencesBgImage.js` | 1 | Compression progress (intentionally skipped — dynamic %) |
 
 ---
 
 ## Related Documentation
 
 - **[Label System Architecture](../architecture/LABEL_SYSTEM_ARCHITECTURE.md)** — Architecture overview and module design
-- **[Label Registry Reference](../architecture/LABEL_REGISTRY_REFERENCE.md)** — Complete audit of all 403 keys with source locations
+- **[Label Registry Reference](../architecture/LABEL_REGISTRY_REFERENCE.md)** — Complete audit of all 566 keys with source locations
 - **[Contextual Theme System Plan](./CONTEXTUAL_THEME_SYSTEM_PLAN.md)** — The feature this infrastructure enables
 - **[DI Patterns](../developer-guides/DI_PATTERNS.md)** — How `labelResolver.js` will wire dependencies

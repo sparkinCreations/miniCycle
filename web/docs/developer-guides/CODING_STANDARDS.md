@@ -368,3 +368,56 @@ Each component file should follow this structure:
 - Hard-code colors that should be themeable
 - Create overly specific selectors (avoid `.parent .child .grandchild`)
 - Duplicate styles across components (extract to variables or utilities)
+
+---
+
+## 9. Label System
+
+### Standard: Use `getLabel()` for User-Facing Strings
+
+All user-facing strings (notifications, modal text, ARIA labels, button text) should use the centralized label system via `getLabel()`.
+
+```javascript
+import { getLabel } from '../labels/labelResolver.js';
+
+// Simple string
+showNotification(getLabel('notify.taskDeleted', { vars: { name: taskName } }), 'success');
+
+// Pluralized noun
+const taskWord = getLabel('noun.task', { count: tasks.length });
+
+// With fallback
+const label = getLabelOrFallback('custom.key', 'Default text');
+```
+
+### When to Use Labels
+
+| Situation | Use `getLabel()`? | Example |
+|-----------|-------------------|---------|
+| Notification messages | Yes | `getLabel('notify.taskRenamed', { vars: { name } })` |
+| Modal titles/messages | Yes | `getLabel('modal.resetTasks.title')` |
+| ARIA labels | Yes | `getLabel('taskOption.edit')` |
+| Button text | Yes | `getLabel('action.addTask')` |
+| Console logs | No | `console.log('Debug info...')` |
+| Error messages for developers | No | `throw new Error('Invalid input')` |
+
+### Adding New Labels
+
+1. Add the key to `modules/labels/defaultLabels.js` in the appropriate category
+2. If lens-sensitive, add to `LENS_SENSITIVE_KEYS`
+3. Use `{varName}` syntax for dynamic content
+4. Import and use `getLabel()` in your module
+
+### Emoji Convention
+
+Keep emojis **separate** from label text. Emojis are prepended in the calling code, not stored in labels:
+
+```javascript
+// DO: Emoji separate from label
+showNotification(`✅ ${getLabel('notify.taskDeleted', { vars: { name } })}`, 'success');
+
+// DON'T: Emoji embedded in label
+// defaultLabels: { notify: { taskDeleted: '✅ Task deleted' } }
+```
+
+This matches the existing `mode.autoEmoji` / `mode.auto` pattern.
