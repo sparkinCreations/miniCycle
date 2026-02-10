@@ -34,7 +34,7 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    transition: all 0.3s ease;
+    transition: all var(--transition-normal) ease;
     /* Dropdown arrow */
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%232c3270' viewBox='0 0 16 16'%3e%3cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3e%3c/svg%3e");
     background-repeat: no-repeat;
@@ -56,7 +56,7 @@
     padding: 5px 12px;
     height: 28px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all var(--transition-normal) ease;
     z-index: var(--z-content);
     font-size: 12px;
     font-weight: bold;
@@ -96,7 +96,7 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.mode-selector:focus {
+.mode-selector:focus-visible {
     background: rgba(255, 255, 255, 0.5);
     border-color: #0c2091;
     box-shadow: 0 0 0 2px rgba(12, 32, 145, 0.2);
@@ -145,7 +145,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all var(--transition-normal) ease;
 }
 
 .quick-actions-btn:hover {
@@ -199,7 +199,7 @@
     text-align: left;
     font-size: 13px;
     color: rgb(44, 50, 112);
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 .quick-action-item:hover {

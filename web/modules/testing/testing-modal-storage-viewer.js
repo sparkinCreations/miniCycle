@@ -145,10 +145,12 @@ export function openStorageViewer() {
                 if (!isVisible) {
                     valueContainer.style.opacity = "0";
                     valueContainer.style.maxHeight = "0";
+                    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+                    const expandDuration = reducedMotion ? '0ms' : '0.3s';
                     setTimeout(() => {
                         valueContainer.style.opacity = "1";
                         valueContainer.style.maxHeight = "none";
-                        valueContainer.style.transition = "opacity 0.3s ease";
+                        valueContainer.style.transition = `opacity ${expandDuration} ease`;
                     }, 50);
                 }
             });

@@ -145,7 +145,7 @@ body.dark-mode .modal-panel {
     color: #fff;
     border: 2px solid rgba(255, 255, 255, 0.15);
     border-bottom: 3px solid rgba(0, 0, 0, 0.3);
-    transition: background 0.3s ease;
+    transition: background var(--transition-normal) ease;
 }
 
 .dark-mode .complete-all-btn.todo-mode-btn {

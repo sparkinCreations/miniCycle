@@ -30,7 +30,7 @@
     user-select: none;
     gap: 8px;
     box-shadow: inset 0 0 0 1px #989898;
-    transition: background-color 0.3s ease, box-shadow 0.2s ease;
+    transition: background-color var(--transition-normal) ease, box-shadow var(--transition-fast) ease;
 }
 
 .recurring-task-item.checked {
@@ -143,7 +143,7 @@
     border-radius: 6px;
     cursor: pointer;
     margin-top: 12px;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    transition: background-color var(--transition-fast) ease, transform var(--transition-fast) ease;
 }
 
 #apply-recurring-settings:hover {
@@ -174,7 +174,7 @@
     color: #333;
     box-shadow: none;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: background-color var(--transition-normal) ease;
     width: auto;
     margin: 10px auto;
 }
@@ -230,7 +230,7 @@
     margin: 10px -25px -20px;
     width: calc(100% + 50px);
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
     display: block;
     text-align: center;
 }
@@ -252,7 +252,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all var(--transition-normal) ease;
     position: relative;
     flex-shrink: 0;
 }
@@ -307,7 +307,7 @@
     font-weight: bold;
     cursor: pointer;
     position: relative;
-    transition: background 0.2s, border-color 0.2s;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 
 .monthly-day-box.selected {
@@ -339,7 +339,7 @@
     border-radius: 8px;
     font-weight: bold;
     cursor: pointer;
-    transition: background 0.2s, border-color 0.2s;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 
 .weekly-day-box.selected {
@@ -380,7 +380,7 @@
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 6px;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 .change-recurring-btn:hover {
@@ -408,7 +408,7 @@
 .recurring-date-trash-icon,
 .recurring-trash-icon {
     color: #999;
-    transition: color 0.2s ease;
+    transition: color var(--transition-fast) ease;
 }
 
 .trash-btn:hover .recurring-date-trash-icon,
@@ -512,7 +512,7 @@
     width: 70px;
     text-align: center;
     appearance: none;
-    transition: border-color 0.2s;
+    transition: border-color var(--transition-fast);
 }
 
 .time-picker-group input[type="number"]:focus,
@@ -574,7 +574,7 @@ select.hidden {
     font-weight: bold;
     cursor: pointer;
     position: relative;
-    transition: background 0.2s, border-color 0.2s;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
     width: 60px;
 }
 
@@ -607,7 +607,7 @@ select.hidden {
     border-radius: 8px;
     font-weight: bold;
     cursor: pointer;
-    transition: background 0.2s, border-color 0.2s;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 
 .biweekly-day-box.selected {
@@ -671,7 +671,7 @@ select.hidden {
     border: 1px dashed rgba(0, 0, 0, 0.2);
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
 }
 
 .add-recurring-task-btn:hover {
@@ -719,7 +719,7 @@ select.hidden {
     border-radius: 6px;
     cursor: pointer;
     font-size: 13px;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
 }
 
 #non-recurring-tasks li:hover {
@@ -764,7 +764,7 @@ select.hidden {
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
 }
 
 .confirm-add-recurring-btn:hover {

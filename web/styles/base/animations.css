@@ -218,23 +218,23 @@
 }
 
 .animate-pop-in {
-    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: popIn var(--animation-pop) cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .animate-spin {
-    animation: spin 1s linear infinite;
+    animation: spin var(--animation-spin) linear infinite;
 }
 
 .animate-pulse {
-    animation: pulse 2s ease-in-out infinite;
+    animation: pulse var(--animation-pulse) ease-in-out infinite;
 }
 
 .animate-bounce {
-    animation: bounce 0.5s ease-in-out;
+    animation: bounce var(--transition-slow) ease-in-out;
 }
 
 .animate-shake {
-    animation: shake 0.5s ease-in-out;
+    animation: shake var(--transition-slow) ease-in-out;
 }
 
 /* Animation delay utilities */
@@ -271,7 +271,7 @@
 
 /* Class applied to tasks during reset */
 .task-resetting {
-    animation: taskResetFlash 0.4s ease-out;
+    animation: taskResetFlash var(--animation-pop) ease-out;
 }
 
 /* Task clear/delete - fade out and shrink when task is removed */
@@ -296,6 +296,6 @@
 
 /* Class applied to tasks being cleared/deleted */
 .task-clearing {
-    animation: taskClearOut 0.35s ease-in forwards;
+    animation: taskClearOut var(--transition-normal) ease-in forwards;
     overflow: hidden;
 }

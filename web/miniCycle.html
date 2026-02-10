@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.924">
+<meta name="app-version" content="1.925">
 
 <!-- Content Security Policy -->
 <meta http-equiv="Content-Security-Policy" content="
@@ -40,19 +40,19 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.924"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.925"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=1.924" as="style">
-<link rel="preload" href="styles/base/variables.css?v=1.924" as="style">
-<link rel="preload" href="styles/base/reset.css?v=1.924" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=1.924" as="style">
-<link rel="preload" href="styles/layout/header.css?v=1.924" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=1.924" as="style">
+<link rel="preload" href="styles/main.css?v=1.925" as="style">
+<link rel="preload" href="styles/base/variables.css?v=1.925" as="style">
+<link rel="preload" href="styles/base/reset.css?v=1.925" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=1.925" as="style">
+<link rel="preload" href="styles/layout/header.css?v=1.925" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=1.925" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=1.924" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="styles/main.css?v=1.924"></noscript>
+<link rel="stylesheet" href="styles/main.css?v=1.925" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="styles/main.css?v=1.925"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -63,7 +63,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.924"></script>
+<script src="./version.js?v=1.925"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -218,21 +218,21 @@
      3. Or accepting slightly slower initial load without preloads
      ═══════════════════════════════════════════════════════════════════════════ -->
 <!--
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.924">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.924">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.924">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.924">
-<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.924">
-<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.924">
-<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.924">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.924">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.924">
-<link rel="modulepreload" href="./modules/core/appInit.js?v=1.924">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.924">
-<link rel="modulepreload" href="./modules/core/diBase.js?v=1.924">
-<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.924">
-<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.924">
-<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.924">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.925">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.925">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.925">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.925">
+<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.925">
+<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.925">
+<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.925">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.925">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.925">
+<link rel="modulepreload" href="./modules/core/appInit.js?v=1.925">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.925">
+<link rel="modulepreload" href="./modules/core/diBase.js?v=1.925">
+<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.925">
+<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.925">
+<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.925">
 -->
 
 <style>
@@ -1126,6 +1126,7 @@ window.installApp = () => {
 </head>
 
 <body class="app-loading">
+  <a href="#app-container" class="skip-to-content">Skip to main content</a>
   <!-- Initial App Loader -->
   <div id="app-loader">
     <img src="assets/images/logo/minicycle_logo_icon.png" alt="Loading..." class="loader-logo" width="120" height="96" fetchpriority="high">
@@ -1264,7 +1265,7 @@ window.installApp = () => {
             </div>
             <!-- Routines Section -->
             <div class="menu-section collapsed" data-section="routines">
-                <div class="menu-section-header collapsible" data-toggle="routines">
+                <div class="menu-section-header collapsible" data-toggle="routines" aria-expanded="false">
                     <span>Routine Actions</span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
@@ -1279,7 +1280,7 @@ window.installApp = () => {
 
             <!-- Tasks Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="tasks">
-                <div class="menu-section-header collapsible" data-toggle="tasks">
+                <div class="menu-section-header collapsible" data-toggle="tasks" aria-expanded="false">
                     <span>Task Actions & Features</span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
@@ -1296,7 +1297,7 @@ window.installApp = () => {
 
             <!-- Rewards Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="rewards">
-                <div class="menu-section-header collapsible" data-toggle="rewards">
+                <div class="menu-section-header collapsible" data-toggle="rewards" aria-expanded="false">
                     <span>Rewards & Extras</span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
@@ -1312,7 +1313,7 @@ window.installApp = () => {
 
             <!-- Help Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="help">
-                <div class="menu-section-header collapsible" data-toggle="help">
+                <div class="menu-section-header collapsible" data-toggle="help" aria-expanded="false">
                     <span>Help & Support</span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
@@ -1325,7 +1326,7 @@ window.installApp = () => {
 
                     <!-- App Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="app">
-                <div class="menu-section-header collapsible" data-toggle="app">
+                <div class="menu-section-header collapsible" data-toggle="app" aria-expanded="false">
                     <span>Settings & Personalization</span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
@@ -1793,9 +1794,9 @@ window.installApp = () => {
 </div>
 
 
-    <div id="games-panel" class="games-modal" data-modal>
+    <div id="games-panel" class="games-modal" data-modal role="dialog" aria-modal="true" aria-labelledby="games-panel-title">
         <div class="games-modal-content">
-          <h2>🎮 Games</h2>
+          <h2 id="games-panel-title">🎮 Games</h2>
           <p>Try to complete tasks in the correct order as fast as you can!</p>
           <button id="open-task-order-game">Play Task Order</button>
           <button id="close-games-panel" class="close-btn">Close</button>
@@ -1805,9 +1806,9 @@ window.installApp = () => {
       </div>
 
         <!-- Reminders Modal -->
-        <div id="reminders-modal" class="reminders-modal" data-modal>
+        <div id="reminders-modal" class="reminders-modal" data-modal role="dialog" aria-modal="true" aria-labelledby="reminders-modal-title">
             <div class="reminders-modal-content">
-                <h2>Reminders & Notifications</h2>
+                <h2 id="reminders-modal-title">Reminders & Notifications</h2>
         
                 <!-- Toggle On/Off -->
                 <label class="settings-option">
@@ -1851,13 +1852,13 @@ window.installApp = () => {
   
 
             <!-- Settings Modal -->
-        <div id="settings-modal" class="settings-modal" data-modal>
+        <div id="settings-modal" class="settings-modal" data-modal role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
             <div class="settings-modal-content">
-                <h2>Settings</h2>
+                <h2 id="settings-modal-title">Settings</h2>
 
                 <!-- Display Section -->
                 <div class="settings-section collapsible collapsed" data-section="display">
-                    <div class="settings-section-header" data-toggle="display">
+                    <div class="settings-section-header" data-toggle="display" aria-expanded="false">
                         <span>Display</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -1902,7 +1903,7 @@ window.installApp = () => {
 
                 <!-- Behavior Section -->
                 <div class="settings-section collapsible collapsed" data-section="behavior">
-                    <div class="settings-section-header" data-toggle="behavior">
+                    <div class="settings-section-header" data-toggle="behavior" aria-expanded="false">
                         <span>Behavior</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -1926,7 +1927,7 @@ window.installApp = () => {
 
                 <!-- Data Management Section -->
                 <div class="settings-section collapsible collapsed" data-section="data">
-                    <div class="settings-section-header" data-toggle="data">
+                    <div class="settings-section-header" data-toggle="data" aria-expanded="false">
                         <span>Data Management</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -1939,7 +1940,7 @@ window.installApp = () => {
 
                 <!-- Reset Options Section -->
                 <div class="settings-section collapsible collapsed" data-section="reset">
-                    <div class="settings-section-header" data-toggle="reset">
+                    <div class="settings-section-header" data-toggle="reset" aria-expanded="false">
                         <span>Reset Options</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -1953,7 +1954,7 @@ window.installApp = () => {
 
                 <!-- Advanced Section -->
                 <div class="settings-section collapsible collapsed" data-section="advanced">
-                    <div class="settings-section-header" data-toggle="advanced">
+                    <div class="settings-section-header" data-toggle="advanced" aria-expanded="false">
                         <span>Advanced</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -2117,9 +2118,9 @@ window.installApp = () => {
 
 
 <!-- Local Storage Viewer Modal -->
-<div id="storage-viewer-overlay" class="storage-modal-overlay hidden">
+<div id="storage-viewer-overlay" class="storage-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="storage-viewer-title">
   <div class="storage-modal-box">
-    <div class="storage-modal-header">📦 Local Storage Viewer</div>
+    <div class="storage-modal-header" id="storage-viewer-title">📦 Local Storage Viewer</div>
     <div class="storage-modal-body scrollable" id="storage-content">
       <!-- Content injected here -->
     </div>
@@ -2134,9 +2135,9 @@ window.installApp = () => {
 </div>
 
 <!-- 🎨 Themes Panel Modal -->
-<div class="themes-modal" data-modal id="themes-modal">
+<div class="themes-modal" data-modal id="themes-modal" role="dialog" aria-modal="true" aria-labelledby="themes-modal-title">
     <div class="themes-modal-content">
-      <h2>🎨 Theme Settings</h2>
+      <h2 id="themes-modal-title">🎨 Theme Settings</h2>
   
       <!-- 🎨 THEME OPTIONS -->
       <div id="theme-options-section">
@@ -2160,9 +2161,9 @@ window.installApp = () => {
   </div>
 
 <!-- Preferences Modal -->
-<div class="preferences-modal" data-modal id="preferences-modal">
+<div class="preferences-modal" data-modal id="preferences-modal" role="dialog" aria-modal="true" aria-labelledby="preferences-modal-title">
     <div class="preferences-modal-content">
-        <h2>Personalization</h2>
+        <h2 id="preferences-modal-title">Personalization</h2>
 
         <!-- Theme Notice -->
         <div class="preferences-theme-notice" id="preferences-theme-notice">
@@ -2469,10 +2470,10 @@ window.installApp = () => {
 
 
 <!-- miniCycle Switch Modal -->
-<div id="routine-switcher-modal" class="mini-cycle-switch-modal" data-modal>
+<div id="routine-switcher-modal" class="mini-cycle-switch-modal" data-modal role="dialog" aria-modal="true" aria-labelledby="routine-switcher-title">
     <div class="mini-cycle-switch-modal-content">
         <div class="mini-cycle-switch-title-logo"><img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="Task Cycle Logo" /></div>
-        <div class="mini-cycle-switch-title">Open Routine</div>
+        <div class="mini-cycle-switch-title" id="routine-switcher-title">Open Routine</div>
         <!-- Search input for filtering routines -->
         <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off">
         <!-- Sort and Filter controls -->
@@ -2805,7 +2806,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.924"></script>
+ <script type="module" src="miniCycle-main.js?v=1.925"></script>
 
 <script>
 // Sync About modal version with meta app-version

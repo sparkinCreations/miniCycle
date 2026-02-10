@@ -73,7 +73,7 @@
     font-weight: 600;
     font-size: 14px;
     user-select: none;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 .settings-section-header:hover {
@@ -82,7 +82,7 @@
 
 .settings-section-toggle {
     font-size: 10px;
-    transition: transform 0.2s ease;
+    transition: transform var(--transition-fast) ease;
     opacity: 0.6;
 }
 
@@ -92,7 +92,7 @@
 
 .settings-section-content {
     padding: 12px 14px;
-    transition: max-height 0.3s ease, padding 0.3s ease;
+    transition: max-height var(--transition-normal) ease, padding var(--transition-normal) ease;
 }
 
 .settings-section.collapsed .settings-section-content {
@@ -125,7 +125,7 @@
     right: 0;
     bottom: 0;
     background-color: #ccc;
-    transition: 0.3s;
+    transition: var(--transition-normal);
     border-radius: 24px;
 }
 
@@ -137,7 +137,7 @@
     left: 3px;
     bottom: 3px;
     background-color: white;
-    transition: 0.3s;
+    transition: var(--transition-normal);
     border-radius: 50%;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
@@ -150,7 +150,7 @@
     transform: translateX(20px);
 }
 
-.toggle-switch input:focus + .toggle-slider {
+.toggle-switch input:focus-visible + .toggle-slider {
     box-shadow: 0 0 0 2px rgba(71, 144, 223, 0.3);
 }
 
@@ -187,7 +187,7 @@
     background: #4790df;
     color: #fff;
     cursor: pointer;
-    transition: background 0.2s ease, transform 0.1s ease;
+    transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
     display: flex;
     align-items: center;
     justify-content: center;

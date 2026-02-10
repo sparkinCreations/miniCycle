@@ -206,6 +206,10 @@ export class OnboardingManager {
         // ✅ XSS PROTECTION: Sanitize theme value (allow only alphanumeric and hyphens)
         const safeTheme = typeof theme === 'string' ? theme.replace(/[^a-zA-Z0-9-]/g, '') : 'default';
 
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-label', getLabel('onboarding.title'));
+
         modal.innerHTML = `
             <div class="onboarding-content theme-${safeTheme}">
                 <button id="${DOM_IDS.ONBOARDING_SKIP}" class="onboarding-skip">${getLabel('onboarding.skip')} ✖</button>

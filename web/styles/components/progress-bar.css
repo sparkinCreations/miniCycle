@@ -33,7 +33,7 @@
     background: var(--theme-success, #82db8c);
     transform: scaleX(0);
     transform-origin: left;
-    transition: transform 0.3s ease-in-out;
+    transition: transform var(--transition-normal) ease-in-out;
 }
 
 /* =============================================================================

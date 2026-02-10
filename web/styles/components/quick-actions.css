@@ -35,7 +35,7 @@
     padding: 4px 8px;
     border-radius: 6px;
     cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease;
+    transition: background var(--transition-fast) ease, color var(--transition-fast) ease;
     line-height: 1;
 }
 
@@ -67,7 +67,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background 0.2s ease, transform 0.15s ease;
+    transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
     position: relative;
     border: none;
     padding: 0;
@@ -135,7 +135,7 @@
     text-align: center;
     cursor: pointer;
     opacity: 0;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--transition-fast) ease;
     border: none;
     padding: 0;
     pointer-events: none;
@@ -181,7 +181,7 @@
         z-index: var(--z-content);
         backdrop-filter: blur(2px);
         -webkit-backdrop-filter: blur(2px);
-        transition: opacity 0.3s ease;
+        transition: opacity var(--transition-normal) ease;
     }
       .quick-actions-window .quick-actions-header {                                                                                                            
       flex-wrap: wrap;                                                                                                                                     
@@ -319,7 +319,7 @@
     display: grid;
     place-items: center;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: opacity var(--transition-fast) ease;
     pointer-events: none;
 }
 
@@ -379,7 +379,7 @@
     color: rgba(0, 0, 0, 0.75);
     font-size: 13px;
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: background var(--transition-fast) ease;
     white-space: nowrap;
 }
 
@@ -416,7 +416,7 @@
     color: rgba(0, 0, 0, 0.6);
     font-size: 14px;
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: background var(--transition-fast) ease;
     text-align: center;
 }
 
@@ -438,7 +438,7 @@
     z-index: calc(var(--z-modal) + 1);
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--transition-fast) ease;
     white-space: nowrap;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }

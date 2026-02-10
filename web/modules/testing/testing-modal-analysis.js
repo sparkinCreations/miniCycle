@@ -162,7 +162,11 @@ export function exportDebugData() {
         appVersion: "1.0",
         userAgent: navigator.userAgent,
         viewport: `${window.innerWidth}x${window.innerHeight}`,
-        localStorage: { ...localStorage },
+        localStorage: Object.fromEntries(
+            Object.entries({ ...localStorage }).filter(([key]) =>
+                key.startsWith('miniCycle') || key.startsWith('__miniCycle')
+            )
+        ),
         performanceData: performance.getEntriesByType("navigation")[0],
         memoryInfo: performance.memory || "Not available"
     };

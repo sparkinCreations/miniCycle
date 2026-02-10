@@ -34,7 +34,7 @@
     gap: 4px;
     visibility: hidden;
     opacity: 0;
-    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    transition: opacity var(--transition-normal) ease-in-out, visibility var(--transition-normal) ease-in-out;
     z-index: var(--z-elevated);
     will-change: transform;
     white-space: nowrap;
@@ -62,7 +62,7 @@
     font-size: 14px;
     cursor: pointer;
     box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
-    transition: background 0.2s, transform 0.1s;
+    transition: background var(--transition-fast), transform var(--transition-fast);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -186,7 +186,7 @@
     color: #666;
     cursor: pointer;
     padding: 5px;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
     width: 30px;
 }
 
@@ -381,7 +381,7 @@
     padding: 8px 10px;
     border-radius: 6px;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 .option-item:hover {
@@ -413,7 +413,7 @@
     border-radius: 6px;
     cursor: pointer;
     font-size: 13px;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 #reset-task-options-btn:hover {
@@ -525,7 +525,7 @@
     border: 1px solid transparent;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
     gap: 10px;
 }
 
@@ -563,7 +563,7 @@
     border: 2px solid #adb5bd;
     border-radius: 4px;
     background: #fff;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
 }
 
 .option-checkbox:checked + .custom-checkbox {
@@ -713,7 +713,7 @@
     cursor: pointer;
     font-size: 0.85em;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
     white-space: nowrap;
 }
 
@@ -732,7 +732,7 @@
     font-size: 1em;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 .task-options-modal .close-button-fullwidth:hover {

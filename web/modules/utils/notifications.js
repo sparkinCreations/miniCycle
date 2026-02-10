@@ -307,7 +307,7 @@ class EducationalTipManager {
 function getEscapeHtml(deps) {
   return deps.GlobalUtils?.escapeHtml
     || deps.escapeHtml
-    || ((s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'));
+    || ((s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g, '&#x2F;'));
 }
 
 /**
@@ -1180,7 +1180,9 @@ async setDefaultPosition(notificationContainer) {
     tempConfirm.style.fontWeight = "bold";
     tempConfirm.style.marginLeft = "8px";
     tempConfirm.style.opacity = "0";
-    tempConfirm.style.transition = "opacity 0.3s ease";
+    const reducedMotion = this.deps.GlobalUtils?.prefersReducedMotion?.() ?? window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const fadeDuration = reducedMotion ? '0ms' : '0.3s';
+    tempConfirm.style.transition = `opacity ${fadeDuration} ease`;
     
     if (targetElement) {
       targetElement.appendChild(tempConfirm);

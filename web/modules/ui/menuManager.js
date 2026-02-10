@@ -242,6 +242,7 @@ export class MenuManager {
                 const section = header.closest('.menu-section');
                 if (section) {
                     section.classList.toggle('collapsed');
+                    header.setAttribute('aria-expanded', String(!section.classList.contains('collapsed')));
                     this.saveCollapsedStates();
                 }
             });
@@ -265,6 +266,11 @@ export class MenuManager {
                     section.classList.add('collapsed');
                 } else {
                     section.classList.remove('collapsed');
+                }
+                // Sync aria-expanded on the header
+                const sectionHeader = section.querySelector('.menu-section-header.collapsible');
+                if (sectionHeader) {
+                    sectionHeader.setAttribute('aria-expanded', String(!isCollapsed));
                 }
             }
         });

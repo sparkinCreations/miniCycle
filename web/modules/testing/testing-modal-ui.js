@@ -419,7 +419,9 @@ export function addTestingModalDoubleClickToCenter() {
             const centerX = (window.innerWidth - rect.width) / 2;
             const centerY = (window.innerHeight - rect.height) / 2;
 
-            modalContent.style.transition = "left 0.3s ease, top 0.3s ease";
+            const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+            const duration = reducedMotion ? '0ms' : '0.3s';
+            modalContent.style.transition = `left ${duration} ease, top ${duration} ease`;
             modalContent.style.left = `${centerX}px`;
             modalContent.style.top = `${centerY}px`;
             modalContent.style.right = "auto";

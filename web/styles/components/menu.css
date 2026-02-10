@@ -130,7 +130,7 @@
     padding: 6px 8px;
     margin: -8px -10px 6px -10px;
     border-radius: 6px 6px 0 0;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
     user-select: none;
 }
 
@@ -141,7 +141,7 @@
 .menu-section-toggle {
     font-size: 8px;
     color: var(--menu-section-header, #555);
-    transition: transform 0.2s ease;
+    transition: transform var(--transition-fast) ease;
     opacity: 0.7;
 }
 
@@ -179,7 +179,7 @@
     border: none;
     border-radius: 20px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
     white-space: nowrap;
 }
 
@@ -285,7 +285,7 @@
     color: black;
     border: none;
     border-radius: 5px;
-    transition: background 0.2s ease-in-out, transform 0.1s;
+    transition: background var(--transition-fast) ease-in-out, transform var(--transition-fast);
     display: flex;
     align-items: center;
     flex-direction: column;
@@ -332,7 +332,7 @@
     font-weight: 600;
     color: #555;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 .mode-description-toggle:hover {
@@ -341,7 +341,7 @@
 
 .mode-description-toggle .toggle-icon {
     font-size: 10px;
-    transition: transform 0.2s ease;
+    transition: transform var(--transition-fast) ease;
 }
 
 .mode-description-toggle[aria-expanded="false"] .toggle-icon {
@@ -366,7 +366,7 @@
     display: block;
     white-space: normal;
     overflow: hidden;
-    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    transition: max-height var(--transition-normal) ease, opacity var(--transition-normal) ease, padding var(--transition-normal) ease, margin var(--transition-normal) ease;
 }
 
 .mode-description.collapsed {
@@ -389,7 +389,7 @@
     text-align: left;
     font-size: 14px;
     border-radius: 6px;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 .menu-container button:hover,
@@ -416,7 +416,7 @@
     background: rgba(255, 255, 255, 0.3);
     border-radius: 8px;
     font-size: 12px;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 .menu-grid button:hover {
@@ -445,7 +445,7 @@
     padding: 10px 15px;
     border-radius: 5px;
     cursor: pointer;
-    transition: background 0.3s ease-in-out, opacity 0.3s;
+    transition: background var(--transition-normal) ease-in-out, opacity var(--transition-normal);
     z-index: var(--z-content);
     border: none;
     background: transparent;
@@ -457,7 +457,7 @@
     background-color: white;
 }
 
-.slide-arrow:focus {
+.slide-arrow:focus-visible {
     outline: 2px solid #007BFF;
     outline-offset: 2px;
     background-color: rgba(255, 255, 255, 0.9);
@@ -491,7 +491,7 @@
 #slide-left.hide {
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--transition-normal) ease;
     transition-delay: 0s; /* Fade out immediately */
 }
 
@@ -499,7 +499,7 @@
 #slide-right.hide {
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--transition-normal) ease;
     transition-delay: 0s; /* Fade out immediately */
 }
 
@@ -508,15 +508,15 @@
     #slide-left.show {
         opacity: 0.6;
         pointer-events: auto;
-        transition: opacity 0.3s ease;
-        transition-delay: 0.8s; /* Wait before fading in */
+        transition: opacity var(--transition-normal) ease;
+        transition-delay: var(--transition-stagger); /* Wait before fading in */
     }
 
     #slide-right.show {
         opacity: 0.6;
         pointer-events: auto;
-        transition: opacity 0.3s ease;
-        transition-delay: 0.8s; /* Wait before fading in */
+        transition: opacity var(--transition-normal) ease;
+        transition-delay: var(--transition-stagger); /* Wait before fading in */
     }
 }
 
@@ -538,7 +538,7 @@
     font-size: 17px;
     font-weight: 700;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
     flex-shrink: 0;
     text-align: center;
 }
@@ -577,7 +577,7 @@
         border: 2px solid currentColor;
     }
 
-    .slide-arrow:focus {
+    .slide-arrow:focus-visible {
         outline: 3px solid #007BFF;
     }
 }
