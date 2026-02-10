@@ -1,3 +1,8 @@
+## [1.925] - 2026-02-10
+- feat: update label system documentation and integration plan with new key counts and module details
+- feat: update notification messages to use label resolver for better localization
+
+
 ## [1.924] - 2026-02-08
 - feat: update notifications to use localized labels across various modules
 
