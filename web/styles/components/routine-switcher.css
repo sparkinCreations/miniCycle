@@ -21,7 +21,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all var(--transition-normal) ease;
 }
 
 .routine-switcher-btn:hover {
@@ -112,7 +112,7 @@
     font-size: 14px;
     font-family: var(--font-family);
     box-sizing: border-box;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: border-color var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
 }
 
 .routine-search-input:focus {
@@ -156,7 +156,7 @@
     background: #f5f5f5;
     border-radius: 4px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all var(--transition-fast) ease;
     color: #555;
 }
 
@@ -229,7 +229,7 @@
     color: black;
     font-weight: bold;
     cursor: pointer;
-    transition: background 0.2s ease-in-out, transform 0.1s;
+    transition: background var(--transition-fast) ease-in-out, transform var(--transition-fast);
     text-align: left;
     border-radius: 3px;
     font-size: 0.9rem;
@@ -363,7 +363,7 @@
     border-radius: 8px;
     border: none;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     display: inline-flex;
     align-items: center;
@@ -416,7 +416,7 @@
     cursor: pointer;
     background: #2d3748;
     color: white;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
 }
 
 .mini-cycle-upload-btn:hover {
@@ -442,7 +442,7 @@
     padding: 8px 12px;
     font-size: 1rem;
     cursor: pointer;
-    transition: color 0.2s ease, transform 0.15s ease;
+    transition: color var(--transition-fast) ease, transform var(--transition-fast) ease;
     border-radius: 6px;
 }
 

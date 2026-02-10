@@ -73,7 +73,7 @@ body.onboarding-active .onboarding-placeholder {
     justify-content: center;
     align-items: center;
     pointer-events: none;
-    animation: fadeInUp 0.4s ease-out;
+    animation: fadeInUp var(--animation-pop) ease-out;
 }
 
 .onboarding-modal.active,
@@ -234,7 +234,7 @@ body.onboarding-active .onboarding-placeholder {
     margin-top: 10px;
     cursor: pointer;
     border-radius: 5px;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 #start-mini-cycle:hover {
@@ -310,7 +310,7 @@ body.onboarding-active .onboarding-placeholder {
     border-radius: 8px;
     font-size: 1rem;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 .miniCycle-btn-cancel {

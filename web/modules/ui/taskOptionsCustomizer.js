@@ -382,15 +382,19 @@ export class TaskOptionsCustomizer {
         // Fix #39: Escape cycleTitle to prevent XSS
         const escapeHtml = (str) => {
             if (typeof str !== 'string') return '';
-            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g, '&#x2F;');
         };
+
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-labelledby', 'task-options-customizer-title');
 
         modal.innerHTML = `
             <div class="modal-content task-options-modal">
                 <div class="modal-header">
                     <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="miniCycle Logo" class="modal-logo">
                     <div class="modal-header-text">
-                        <h2>⚙️ ${getLabel('taskOptions.title')}</h2>
+                        <h2 id="task-options-customizer-title">⚙️ ${getLabel('taskOptions.title')}</h2>
                         <p class="modal-subtitle">${getLabel('taskOptions.subtitle', { vars: { name: escapeHtml(cycleTitle) } })}</p>
                     </div>
                 </div>

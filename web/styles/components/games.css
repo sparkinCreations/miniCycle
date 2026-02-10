@@ -18,7 +18,7 @@
     background: rgba(0, 0, 0, 0.6);
     justify-content: center;
     align-items: center;
-    animation: fadeIn 0.3s ease-in-out;
+    animation: fadeIn var(--transition-normal) ease-in-out;
 }
 
 .games-modal.active,
@@ -67,7 +67,7 @@
     font-size: 16px;
     margin-bottom: 16px;
     cursor: pointer;
-    transition: background 0.3s ease;
+    transition: background var(--transition-normal) ease;
 }
 
 #open-task-order-game:hover {
@@ -81,7 +81,7 @@
 .badge.unlocked.game-unlocked {
     background: linear-gradient(135deg, #4ecdc4 0%, #44a8a0 100%);
     color: white;
-    animation: pulse 2s ease-in-out infinite;
+    animation: pulse var(--animation-pulse) ease-in-out infinite;
 }
 
 /* =============================================================================
@@ -102,7 +102,7 @@
     border-radius: 12px;
     padding: 16px;
     margin-bottom: 12px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
 }
 
 .game-card:hover {
@@ -131,7 +131,7 @@
     border-radius: 6px;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 .game-card-btn:hover {

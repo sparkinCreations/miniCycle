@@ -142,7 +142,7 @@ button.icon-only i {
     letter-spacing: 0.3px;
     border-radius: 12px;
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: all var(--transition-fast) ease;
     color: white;
     position: relative;
     z-index: var(--z-content);
@@ -220,7 +220,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
     color: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
-    transition: opacity 0.3s ease;
+    transition: opacity var(--transition-normal) ease;
     opacity: 1;
     margin-top: 10px;
     margin-bottom: 100px;
@@ -364,7 +364,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
     cursor: pointer;
     padding: 2px 6px;
     opacity: .8;
-    transition: color 0.2s ease;
+    transition: color var(--transition-fast) ease;
     min-width: 50px;
     position: absolute;
 }
@@ -537,7 +537,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
     font-weight: bold;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    animation: fadeOutScale 1.5s ease-in-out;
+    animation: fadeOutScale var(--animation-exit) ease-in-out;
     z-index: var(--z-modal);
 }
 
@@ -557,6 +557,6 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
     font-weight: bold;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    animation: fadeOutScale 1.5s ease-in-out;
+    animation: fadeOutScale var(--animation-exit) ease-in-out;
     z-index: var(--z-modal);
 }

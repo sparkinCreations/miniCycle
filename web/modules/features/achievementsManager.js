@@ -867,7 +867,9 @@ export class AchievementsManager {
                             animationFrame = requestAnimationFrame(spinWithMomentum);
                         } else {
                             // Ease back to flat
-                            coin.style.transition = 'transform 0.3s ease-out';
+                            const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+                            const easeDuration = reducedMotion ? '0ms' : '0.3s';
+                            coin.style.transition = `transform ${easeDuration} ease-out`;
                             const nearestFlat = Math.round(currentRotation / 360) * 360;
                             coin.style.transform = `rotateY(${nearestFlat}deg)`;
                             currentRotation = nearestFlat;
@@ -880,7 +882,9 @@ export class AchievementsManager {
                         spinWithMomentum();
                     } else {
                         // Ease back to flat
-                        coin.style.transition = 'transform 0.3s ease-out';
+                        const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+                        const easeDuration = reducedMotion ? '0ms' : '0.3s';
+                        coin.style.transition = `transform ${easeDuration} ease-out`;
                         coin.style.transform = 'rotateY(0deg)';
                         currentRotation = 0;
                         triggerHaptic(8); // Settle haptic

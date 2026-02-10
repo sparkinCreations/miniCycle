@@ -18,7 +18,7 @@
     background: var(--theme-modal-overlay, rgba(0, 0, 0, 0.6));
     justify-content: center;
     align-items: center;
-    animation: fadeIn 0.3s ease;
+    animation: fadeIn var(--transition-normal) ease;
 }
 
 .modal.active,
@@ -64,7 +64,7 @@
     max-width: 400px;
     text-align: center;
     position: relative;
-    animation: slideUp 0.3s ease;
+    animation: slideUp var(--transition-normal) ease;
 }
 
 .modal-content a {
@@ -191,7 +191,7 @@
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
     text-align: center;
     font-family: var(--font-family);
-    animation: fadeInScale 0.3s ease;
+    animation: fadeInScale var(--transition-normal) ease;
 }
 
 .modal-panel h2 {
@@ -265,7 +265,7 @@
     padding: 10px 20px;
     margin-top: 16px;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: background-color var(--transition-fast) ease;
 }
 
 .modal-close-button:hover {
@@ -287,7 +287,7 @@
     align-items: center;
     justify-content: center;
     z-index: var(--z-modal-high);
-    animation: fadeIn 0.2s ease;
+    animation: fadeIn var(--transition-fast) ease;
 }
 
 .mini-modal-box {
@@ -299,7 +299,7 @@
     width: 90%;
     text-align: center;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    animation: popIn 0.3s ease;
+    animation: popIn var(--transition-normal) ease;
 }
 
 .mini-modal-header {
@@ -338,7 +338,7 @@
     cursor: pointer;
     flex: 1;
     font-size: 1rem;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 .mini-modal-buttons .btn-cancel {
@@ -346,7 +346,7 @@
     color: #2d3748;
     flex: 1;
     font-size: 1rem;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 .mini-modal-buttons .btn-confirm.btn-destructive {
@@ -357,13 +357,13 @@
     opacity: 0.85;
 }
 
-.mini-modal-buttons .btn-confirm:focus,
-.mini-modal-buttons .btn-cancel:focus {
+.mini-modal-buttons .btn-confirm:focus-visible,
+.mini-modal-buttons .btn-cancel:focus-visible {
     outline: 2px solid #38a169;
     outline-offset: 2px;
 }
 
-.mini-modal-buttons .btn-confirm.btn-destructive:focus {
+.mini-modal-buttons .btn-confirm.btn-destructive:focus-visible {
     outline-color: #e53e3e;
 }
 
@@ -450,7 +450,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     border-radius: 6px;
     cursor: pointer;
     margin-top: 10px;
-    transition: background 0.3s ease-in-out;
+    transition: background var(--transition-normal) ease-in-out;
 }
 
 #submit-feedback:hover {
@@ -593,7 +593,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     margin-bottom: 6px;
     background: var(--theme-input-bg, rgba(0, 0, 0, 0.03));
     border-radius: 10px;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
     border: 2px solid transparent;
     cursor: pointer;
 }
@@ -650,7 +650,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     margin-bottom: 6px;
     background: var(--theme-input-bg, rgba(0, 0, 0, 0.03));
     border-radius: 10px;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
     border: 2px solid transparent;
 }
 
@@ -682,7 +682,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     padding: 12px 14px;
     background: var(--theme-input-bg, rgba(0, 0, 0, 0.03));
     border-radius: 10px;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
 }
 
 #dark-mode-section .custom-checkbox:hover {
@@ -723,7 +723,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
 }
 
 .themes-modal .close-btn:hover {
@@ -813,7 +813,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 .preferences-theme-btn:hover {
@@ -866,7 +866,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
                 var(--preview-app-bg, linear-gradient(135deg, #4c79ff, #74c0fc))));
     background-size: cover, 100px 100px, cover;
     background-position: center;
-    transition: background 0.3s ease;
+    transition: background var(--transition-normal) ease;
 }
 
 .preview-title {
@@ -878,7 +878,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     font-weight: 600;
     margin-bottom: 8px;
     text-align: left;
-    transition: all 0.3s ease;
+    transition: all var(--transition-normal) ease;
 }
 
 .preview-task-list {
@@ -886,7 +886,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     border-radius: 6px;
     padding: 6px;
     margin-bottom: 8px;
-    transition: background 0.3s ease;
+    transition: background var(--transition-normal) ease;
 }
 
 .preview-task {
@@ -897,7 +897,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     background: var(--preview-task-bg, #ffffff);
     border-radius: 4px;
     margin-bottom: 4px;
-    transition: background 0.3s ease;
+    transition: background var(--transition-normal) ease;
 }
 
 .preview-task:last-child {
@@ -912,7 +912,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     background: var(--preview-checkbox-incomplete-bg, rgba(200, 200, 200, 0.25));
     flex-shrink: 0;
     position: relative;
-    transition: all 0.3s ease;
+    transition: all var(--transition-normal) ease;
 }
 
 .preview-checkbox.checked {
@@ -935,7 +935,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 .preview-task-text {
     font-size: 11px;
     color: var(--preview-task-text, #333333);
-    transition: color 0.3s ease;
+    transition: color var(--transition-normal) ease;
 }
 
 .preview-progress-bar {
@@ -951,7 +951,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     height: 100%;
     background: var(--preview-progress-bar, #82db8c);
     border-radius: 3px;
-    transition: background 0.3s ease;
+    transition: background var(--transition-normal) ease;
 }
 
 .preview-button {
@@ -962,7 +962,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     font-size: 10px;
     font-weight: 600;
     text-align: center;
-    transition: background 0.3s ease;
+    transition: background var(--transition-normal) ease;
 }
 
 /* =============================================================================
@@ -1007,7 +1007,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     border: 1px solid var(--theme-border, #ddd);
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
 }
 
 .quick-preset-btn:hover {
@@ -1076,7 +1076,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
 }
 
 .preferences-import-btn:hover {
@@ -1093,7 +1093,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 .preferences-save-btn:hover {
@@ -1121,7 +1121,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     background: var(--theme-modal-bg, #fff);
     border: 1px solid var(--theme-border, #ddd);
     border-radius: 6px;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
 }
 
 .preferences-preset-item:last-child {
@@ -1161,7 +1161,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     cursor: pointer;
     padding: 3px 6px;
     border-radius: 4px;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
     text-align: left;
     white-space: nowrap;
     overflow: hidden;
@@ -1185,7 +1185,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     border-radius: 4px;
     font-size: 10px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
     color: var(--theme-modal-text, #555);
 }
 
@@ -1246,7 +1246,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     padding: 12px 14px;
     cursor: pointer;
     user-select: none;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 .preferences-section-header.collapsible:hover {
@@ -1257,7 +1257,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     margin-left: auto;
     font-size: 10px;
     color: var(--theme-text-muted, #888);
-    transition: transform 0.3s ease;
+    transition: transform var(--transition-normal) ease;
 }
 
 .preferences-section.collapsed .preferences-section-toggle {
@@ -1266,7 +1266,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 
 .preferences-section-content {
     padding: 0 12px 12px;
-    transition: all 0.3s ease;
+    transition: all var(--transition-normal) ease;
 }
 
 .preferences-section.collapsed .preferences-section-content {
@@ -1285,7 +1285,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     margin-bottom: 6px;
     background: var(--theme-modal-bg, #fff);
     border-radius: 8px;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
     border: 1px solid transparent;
 }
 
@@ -1321,7 +1321,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     border-radius: 8px;
     cursor: pointer;
     background: transparent;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
 }
 
 .preferences-color-row input[type="color"]:hover {
@@ -1352,7 +1352,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     border-radius: 4px;
     font-size: 10px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
 }
 
 .preferences-reset-btn:hover {
@@ -1370,7 +1370,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     border-radius: 3px;
     outline: none;
     cursor: pointer;
-    transition: opacity 0.2s ease;
+    transition: opacity var(--transition-fast) ease;
 }
 
 .preferences-color-row input[type="range"]::-webkit-slider-thumb {
@@ -1401,7 +1401,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     color: var(--theme-modal-text, #333);
     min-width: 32px;
     text-align: center;
-    transition: opacity 0.2s ease;
+    transition: opacity var(--transition-fast) ease;
 }
 
 /* =============================================================================
@@ -1422,7 +1422,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
 }
 
 .preferences-upload-btn {
@@ -1519,7 +1519,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
 }
 
 .preferences-undo-btn:hover:not(:disabled) {
@@ -1546,7 +1546,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
 }
 
 .preferences-reset-all-btn:hover {
@@ -1566,7 +1566,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
     flex-shrink: 0;
 }
 
@@ -1706,7 +1706,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     margin-right: 10px;
     border-radius: 4px;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: background var(--transition-normal);
 }
 
 .settings-btn:hover {
@@ -1725,7 +1725,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     margin: 12px -20px -20px;
     width: calc(100% + 40px);
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
     display: block;
     text-align: center;
 }
@@ -1756,7 +1756,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 #open-themes-panel:hover,
@@ -1892,7 +1892,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
     line-height: 1;
 }
 
@@ -1926,7 +1926,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     cursor: pointer;
     font-size: 0.85rem;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
 }
 
 .testing-tab:hover {
@@ -1986,7 +1986,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
     background: var(--theme-button-secondary-bg, #6c757d);
     color: white;
 }

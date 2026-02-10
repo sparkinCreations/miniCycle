@@ -775,7 +775,7 @@ export class HistoryManager {
             } else if (event.details.tasksCleared !== undefined) {
                 detailText = `${event.details.tasksCleared} task${event.details.tasksCleared !== 1 ? 's' : ''}`;
             } else if (event.details.achievementId) {
-                 detailText = event.details.achievementName || event.details.achievementId;
+                 detailText = this._escapeHtml(event.details.achievementName || event.details.achievementId);
 
             }
         }
@@ -795,7 +795,7 @@ export class HistoryManager {
                     <div style="
                         font-weight: 500;
                         color: var(--text-primary, #333);
-                    ">${labels[event.type] || event.type}</div>
+                    ">${labels[event.type] || this._escapeHtml(event.type)}</div>
                     ${detailText ? `<div style="
                         font-size: 13px;
                         color: var(--text-secondary, #666);

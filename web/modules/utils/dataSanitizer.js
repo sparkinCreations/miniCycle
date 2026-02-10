@@ -34,6 +34,23 @@ export function setDataSanitizerDependencies(dependencies) {
 // ============================================================================
 
 /**
+ * Validate that a date string is a safe ISO date format (YYYY-MM-DD) or null
+ * Prevents injection via malformed date strings
+ * @param {*} dateValue - Value to validate
+ * @returns {string|null} Valid date string or null
+ */
+function validateDateString(dateValue) {
+    if (dateValue === null || dateValue === undefined) return null;
+    if (typeof dateValue !== 'string') return null;
+    // Only allow ISO date format YYYY-MM-DD
+    if (!/^\d{4}-\d{2}-\d{2}(T[\d:.Z+-]+)?$/.test(dateValue)) return null;
+    // Verify it's actually a valid date
+    const d = new Date(dateValue);
+    if (isNaN(d.getTime())) return null;
+    return dateValue;
+}
+
+/**
  * Sanitize text content to prevent XSS
  * @param {string} text - Text to sanitize
  * @param {number} maxLength - Maximum length
@@ -68,21 +85,42 @@ export function sanitizeImportedData(backupData) {
                 Object.values(data.cycles).forEach(cycle => {
                     if (!cycle || typeof cycle !== 'object') return;
 
-                    // Sanitize cycle title
+                    // Sanitize cycle title and name
                     if (cycle.title) {
                         cycle.title = sanitizeText(cycle.title, 100);
                     }
+                    if (cycle.name) {
+                        cycle.name = sanitizeText(cycle.name, 100);
+                    }
 
-                    // Sanitize all task text
+                    // Sanitize all task text and related fields
                     if (Array.isArray(cycle.tasks)) {
                         cycle.tasks.forEach(task => {
                             if (task && typeof task === 'object') {
                                 if (task.text) {
                                     task.text = sanitizeText(task.text, 500);
                                 }
+                                // Validate due date format
+                                if (task.dueDate !== undefined) {
+                                    task.dueDate = validateDateString(task.dueDate);
+                                }
                                 // Sanitize recurring task template text if present
                                 if (task.recurringTemplate?.text) {
                                     task.recurringTemplate.text = sanitizeText(task.recurringTemplate.text, 500);
+                                }
+                            }
+                        });
+                    }
+
+                    // Sanitize cycle-level recurring templates
+                    if (cycle.recurringTemplates && typeof cycle.recurringTemplates === 'object') {
+                        Object.values(cycle.recurringTemplates).forEach(template => {
+                            if (template && typeof template === 'object') {
+                                if (template.text) {
+                                    template.text = sanitizeText(template.text, 500);
+                                }
+                                if (template.dueDate !== undefined) {
+                                    template.dueDate = validateDateString(template.dueDate);
                                 }
                             }
                         });

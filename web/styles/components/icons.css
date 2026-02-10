@@ -108,7 +108,7 @@ button .icon:only-child,
    ============================================================================= */
 
 .icon-spin {
-    animation: icon-spin 1s linear infinite;
+    animation: icon-spin var(--animation-spin) linear infinite;
 }
 
 @keyframes icon-spin {

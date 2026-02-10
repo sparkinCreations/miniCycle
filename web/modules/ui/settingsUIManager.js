@@ -182,6 +182,7 @@ function setupSettingsCollapsibleSections(safeAddEventListener) {
             const section = header.closest('.settings-section');
             if (section) {
                 section.classList.toggle('collapsed');
+                header.setAttribute('aria-expanded', String(!section.classList.contains('collapsed')));
                 saveSettingsCollapsedStates(collapsibleSections);
             }
         });
@@ -202,10 +203,16 @@ function loadSettingsCollapsedStates(sections) {
     sectionElements.forEach(section => {
         const sectionName = section.dataset.section;
         if (sectionName && collapsedStates[sectionName] !== undefined) {
-            if (collapsedStates[sectionName]) {
+            const isCollapsed = collapsedStates[sectionName];
+            if (isCollapsed) {
                 section.classList.add('collapsed');
             } else {
                 section.classList.remove('collapsed');
+            }
+            // Sync aria-expanded on the header
+            const sectionHeader = section.querySelector('.settings-section-header.collapsible');
+            if (sectionHeader) {
+                sectionHeader.setAttribute('aria-expanded', String(!isCollapsed));
             }
         }
     });

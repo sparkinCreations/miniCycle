@@ -118,6 +118,12 @@ export function triggerLogoScan(duration = 400) {
         // Add scan line to body for reliable positioning
         document.body.appendChild(scanLine);
 
+        // Skip animation frames if user prefers reduced motion
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+            scanLine.remove();
+            return;
+        }
+
         // Animate from top to bottom
         const startTime = performance.now();
         const animate = (currentTime) => {

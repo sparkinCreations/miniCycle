@@ -869,7 +869,16 @@ export const DEFAULT_LABELS = deepFreeze({
         skip:    'Skip',
         back:    'Back',
         next:    'Next',
-        start:   'Start'
+        start:   'Start',
+        title:   'Welcome to miniCycle'
+    },
+
+    // ========================================================================
+    // 33. ACCESSIBILITY
+    // ========================================================================
+
+    accessibility: {
+        skipToContent: 'Skip to main content'
     }
 });
 
@@ -1138,6 +1147,10 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'onboarding.back',
     'onboarding.next',
     'onboarding.start',
+    'onboarding.title',
+
+    // Accessibility
+    'accessibility.skipToContent',
 
     // Empty states
     'empty.noTasks',

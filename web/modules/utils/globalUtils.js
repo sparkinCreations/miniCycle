@@ -525,6 +525,17 @@ export class GlobalUtils {
     }
 
     /**
+     * Check if the user prefers reduced motion.
+     * Respects OS-level motion preferences (WCAG 2.1 SC 2.3.3).
+     * Use this before setting inline style.transition or style.animation in JS.
+     *
+     * @returns {boolean} True if user prefers reduced motion.
+     */
+    static prefersReducedMotion() {
+        return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    }
+
+    /**
      * Get module version and statistics.
      *
      * @returns {Object} Module information.

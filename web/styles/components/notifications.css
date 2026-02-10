@@ -59,7 +59,7 @@
     display: block;
     line-height: var(--line-height-normal);
     position: relative;
-    animation: notificationSlideIn 0.3s ease forwards;
+    animation: notificationSlideIn var(--transition-normal) ease forwards;
 }
 
 .notification.show {
@@ -68,7 +68,7 @@
 }
 
 .notification.hide {
-    animation: notificationSlideOut 0.3s ease forwards;
+    animation: notificationSlideOut var(--transition-normal) ease forwards;
 }
 
 /* =============================================================================
@@ -106,7 +106,7 @@
     font-weight: 500;
     letter-spacing: 0.3px;
     padding: 14px 18px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
 }
 
 .notification.recurring:hover {
@@ -154,7 +154,7 @@
     text-align: center;
     padding: 0;
     z-index: var(--z-content);
-    transition: background 0.2s ease, transform 0.15s ease;
+    transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
     touch-action: manipulation;
 }
 
@@ -184,7 +184,7 @@
     font-weight: bold;
     margin-left: 10px;
     cursor: pointer;
-    transition: opacity 0.2s ease;
+    transition: opacity var(--transition-fast) ease;
 }
 
 .notification button:hover {
@@ -200,7 +200,7 @@
     border-radius: 6px;
     font-size: 12px;
     font-weight: 600;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
     backdrop-filter: blur(4px);
 }
 
@@ -230,7 +230,7 @@
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
 }
 
 .notification .apply-quick-recurring:hover {

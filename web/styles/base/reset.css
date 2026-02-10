@@ -89,3 +89,36 @@ button, label, .checkbox-container {
 :focus:not(:focus-visible) {
     outline: none;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Skip-to-content link (Accessibility)
+   Visually hidden until focused, then appears centered at top of viewport.
+   First focusable element in the DOM for keyboard navigation.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.skip-to-content {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    z-index: var(--z-critical);
+    background: var(--theme-bg-surface-elevated, #ffffff);
+    color: var(--theme-text-on-surface, #333333);
+    padding: 12px 24px;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    text-decoration: none;
+}
+
+.skip-to-content:focus {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    height: auto;
+    overflow: visible;
+}

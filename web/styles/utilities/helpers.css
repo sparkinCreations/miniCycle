@@ -301,7 +301,7 @@
     padding: 4px 8px;
     border: 1px solid rgba(220, 231, 252, 0.2);
     border-radius: 20px;
-    transition: background-color 0.2s ease;
+    transition: background-color var(--transition-fast) ease;
 }
 
 .navigation-dots:hover {
@@ -313,7 +313,7 @@
     height: 7px;
     background-color: rgba(68, 82, 124, 1);
     border-radius: 50%;
-    transition: background-color 0.3s ease;
+    transition: background-color var(--transition-normal) ease;
     pointer-events: auto;
     cursor: pointer;
     position: relative;
@@ -327,7 +327,7 @@
     background-color: #aaa;
 }
 
-.dot:focus {
+.dot:focus-visible {
     outline: 2px solid #007BFF;
     outline-offset: -16px;
 }
@@ -386,7 +386,7 @@
     align-items: center;
     z-index: var(--z-debug);
     opacity: 1;
-    transition: opacity 0.5s ease-out;
+    transition: opacity var(--transition-slow) ease-out;
 }
 
 #app-loader.fade-out {
@@ -426,7 +426,7 @@
     border-radius: 3px;
     transform: scaleX(0);
     transform-origin: left;
-    transition: transform 0.3s ease-out;
+    transition: transform var(--transition-normal) ease-out;
 }
 
 /* Loading overlay for operations */
@@ -458,7 +458,7 @@
 .loading-spinner img {
     width: 80px;
     height: 80px;
-    animation: spin 2s linear infinite;
+    animation: spin var(--animation-pulse) linear infinite;
     filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
 }
 
@@ -485,7 +485,7 @@
     z-index: var(--z-notification);
     pointer-events: none;
     transform: translateY(-60px);
-    transition: transform 0.2s ease-out;
+    transition: transform var(--transition-fast) ease-out;
 }
 
 .pull-refresh-indicator.visible {
@@ -504,7 +504,7 @@
 
 .pull-refresh-icon {
     font-size: 1.4em;
-    transition: transform 0.1s ease-out;
+    transition: transform var(--transition-fast) ease-out;
     color: var(--primary-color, #4a90d9);
 }
 

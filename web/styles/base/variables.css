@@ -215,6 +215,14 @@
   --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 
+  /* Animation-specific timing (longer durations for deliberate visual effects) */
+  --animation-pop: 400ms;        /* popIn, taskResetFlash, fadeInUp, taskClearOut */
+  --animation-slow: 600ms;       /* header coin-flip, SVG stroke transitions */
+  --animation-exit: 1500ms;      /* cycle completion fadeOutScale */
+  --animation-spin: 1s;          /* infinite spin animations */
+  --animation-pulse: 2s;         /* infinite pulse animations */
+  --transition-stagger: 800ms;   /* sequential reveal delays */
+
   /* ═══════════════════════════════════════════════════════════════════════════
      BORDERS & RADIUS
      ═══════════════════════════════════════════════════════════════════════════ */
@@ -263,4 +271,24 @@
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-left: env(safe-area-inset-left, 0px);
   --safe-area-right: env(safe-area-inset-right, 0px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REDUCED MOTION SUPPORT
+   Respects user's OS-level motion preferences (WCAG 2.1 SC 2.3.3)
+   Overrides all timing variables to 0ms so all components using them
+   will have instant transitions/animations.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+    --transition-normal: 0ms;
+    --transition-slow: 0ms;
+    --animation-pop: 0ms;
+    --animation-slow: 0ms;
+    --animation-exit: 0ms;
+    --animation-spin: 0ms;
+    --animation-pulse: 0ms;
+    --transition-stagger: 0ms;
+  }
 }

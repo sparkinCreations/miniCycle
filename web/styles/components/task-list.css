@@ -129,7 +129,7 @@
     color: var(--theme-text-secondary, rgba(80, 80, 80, 0.85));
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.15s ease-out, visibility 0.15s ease-out;
+    transition: opacity var(--transition-fast) ease-out, visibility var(--transition-fast) ease-out;
     pointer-events: none;
     padding: 2px 0;
 }
@@ -182,7 +182,7 @@ body.onboarding-active .complete-all-and-help-window-container {
     background-color: rgba(255, 255, 255, 0.05);
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast) ease;
     user-select: none;
     text-align: center;
     display: flex;
@@ -199,7 +199,7 @@ body.onboarding-active .complete-all-and-help-window-container {
 .completed-tasks-header .toggle-icon {
     margin-left: 5px;
     font-size: 0.9em;
-    transition: transform 0.2s ease;
+    transition: transform var(--transition-fast) ease;
 }
 
 #completed-count {
@@ -221,7 +221,7 @@ body.onboarding-active .complete-all-and-help-window-container {
 /* Completed tasks have slightly reduced opacity */
 .completed-task-list .task {
     opacity: 0.75;
-    transition: opacity 0.2s ease;
+    transition: opacity var(--transition-fast) ease;
 }
 
 .completed-task-list .task:hover {
@@ -382,7 +382,7 @@ body.onboarding-active .complete-all-and-help-window-container {
     cursor: text;
     top: 0;
     border-radius: 12px 12px 0 0;
-    transition: background 0.2s ease-in-out, color 0.2s ease-in-out;
+    transition: background var(--transition-fast) ease-in-out, color var(--transition-fast) ease-in-out;
     box-shadow:
         0 2px 8px rgba(0, 100, 180, 0.1),
         inset 0 1px 2px rgba(255, 255, 255, 0.5),
@@ -424,7 +424,7 @@ body.onboarding-active .complete-all-and-help-window-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: color 0.2s ease;
+    transition: color var(--transition-fast) ease;
 }
 
 .task-search-btn:hover {
@@ -468,7 +468,7 @@ body.onboarding-active .complete-all-and-help-window-container {
     font-size: 16px;
     line-height: 1;
     border-radius: 4px;
-    transition: color 0.2s ease;
+    transition: color var(--transition-fast) ease;
 }
 
 .task-search-clear:hover {
@@ -532,7 +532,7 @@ body.onboarding-active .complete-all-and-help-window-container {
     cursor: pointer;
     outline: none;
     box-sizing: border-box;
-    transition: all 0.3s ease;
+    transition: all var(--transition-normal) ease;
 }
 
 .task input[type="checkbox"]:hover {
@@ -559,7 +559,7 @@ body.onboarding-active .complete-all-and-help-window-container {
     display: block;
 }
 
-.task input[type="checkbox"]:focus {
+.task input[type="checkbox"]:focus-visible {
     outline: 2px solid var(--accent-color, #007BFF);
     outline-offset: 2px;
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
@@ -611,7 +611,7 @@ body.onboarding-active .complete-all-and-help-window-container {
     border: 1px solid var(--theme-task-border, #666);
     border-radius: 4px;
     margin-right: 8px;
-    transition: background 0.2s ease;
+    transition: background var(--transition-fast) ease;
 }
 
 /* Checked state */

@@ -290,7 +290,9 @@ export function animateProgressBarFill() {
     return new Promise(resolve => {
         const progressBar = deps.getProgressBar?.();
         if (progressBar) {
-            progressBar.style.transition = "transform 0.2s ease-out";
+            const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+            const duration = reducedMotion ? '0ms' : '0.2s';
+            progressBar.style.transition = `transform ${duration} ease-out`;
             progressBar.style.transform = "scaleX(1)";
         }
         setTimeout(resolve, UI_TIMEOUTS.STATS_UPDATE_DELAY); // Wait for animation + small buffer
@@ -303,7 +305,9 @@ export function animateProgressBarFill() {
 export function animateProgressBarEmpty() {
     const progressBar = deps.getProgressBar?.();
     if (progressBar) {
-        progressBar.style.transition = "transform 0.3s ease-in";
+        const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        const duration = reducedMotion ? '0ms' : '0.3s';
+        progressBar.style.transition = `transform ${duration} ease-in`;
         progressBar.style.transform = "scaleX(0)";
         // Clear transition after animation completes (300ms + buffer)
         setTimeout(() => {
@@ -343,7 +347,9 @@ export function updateProgressBar() {
     const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
     // Add consistent animation for all progress updates
-    progressBar.style.transition = "transform 0.2s ease-out";
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const duration = reducedMotion ? '0ms' : '0.2s';
+    progressBar.style.transition = `transform ${duration} ease-out`;
     progressBar.style.transform = `scaleX(${progress / 100})`;
 
     // Clear transition after animation

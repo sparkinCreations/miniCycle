@@ -366,7 +366,9 @@ export class PullToRefresh {
         this.indicator.classList.add('refreshing');
         this.indicator.style.transform = 'translateY(10px)';
         this.statusText.textContent = 'Refreshing...';
-        this.spinnerIcon.style.animation = 'pull-refresh-spin 1s linear infinite';
+        if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+            this.spinnerIcon.style.animation = 'pull-refresh-spin 1s linear infinite';
+        }
 
         try {
             // Execute refresh callback
