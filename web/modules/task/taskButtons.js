@@ -449,7 +449,7 @@ export class TaskButtons {
             if (newState) {
                 message = "Task will be removed on auto-reset";
             } else {
-                message = isToDoMode
+                message = currentMode === 'todo'
                     ? "📌 Task will be kept on complete (pinned)"
                     : "Task will remain in list on auto-reset";
             }
