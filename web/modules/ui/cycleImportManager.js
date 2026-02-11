@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { LIMITS, DOM_SELECTORS, Z_INDEX } from '../core/constants.js';
+import { LIMITS, DOM_SELECTORS, Z_INDEX, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -643,7 +643,7 @@ export function processImportedData(fileContent) {
  */
 export async function initCycleImportManager() {
     // Dynamically import utilities with version for cache-busting
-    const version = globalThis.APP_VERSION || '1.857';
+    const version = APP_VERSION;
 
     console.log(`📦 CycleImportManager: Loading utilities with version ${version}...`);
 

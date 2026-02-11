@@ -13,7 +13,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS } from '../core/constants.js';
+import { DOM_IDS, APP_VERSION } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -133,6 +133,24 @@ export class RoutineManager {
     }
 
     /**
+     * Ensure AppState is ready, attempting reload if needed
+     * @param {string} operation - Description of the operation (for error logging)
+     * @returns {boolean} True if AppState is ready, false otherwise
+     * @private
+     */
+    _ensureAppStateReady(operation) {
+        const appState = this.deps.AppState;
+        if (!appState?.isReady?.()) {
+            appState?.reload?.();
+        }
+        if (!appState?.isReady?.()) {
+            console.error(`❌ AppState not ready for ${operation}`);
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Fallback notification for when showNotification isn't available
      */
     fallbackNotification(message, type, duration) {
@@ -167,13 +185,7 @@ export class RoutineManager {
                     // ✅ Use AppState as source of truth
                     const appState = this.deps.AppState;
 
-                    // Ensure AppState is ready (reload from localStorage if needed)
-                    if (!appState?.isReady?.()) {
-                        appState?.reload?.();
-                    }
-
-                    if (!appState?.isReady?.()) {
-                        console.error('❌ AppState not ready for cycle creation');
+                    if (!this._ensureAppStateReady('cycle creation')) {
                         this.deps.showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
                         return;
                     }
@@ -245,13 +257,7 @@ export class RoutineManager {
             // ✅ Use AppState as source of truth
             const appState = this.deps.AppState;
 
-            // Ensure AppState is ready (reload from localStorage if needed)
-            if (!appState?.isReady?.()) {
-                appState?.reload?.();
-            }
-
-            if (!appState?.isReady?.()) {
-                console.error('❌ AppState not ready for sample cycle creation');
+            if (!this._ensureAppStateReady('sample cycle creation')) {
                 throw new Error('AppState not ready');
             }
 
@@ -325,13 +331,7 @@ export class RoutineManager {
         // ✅ Use AppState as source of truth
         const appState = this.deps.AppState;
 
-        // Ensure AppState is ready (reload from localStorage if needed)
-        if (!appState?.isReady?.()) {
-            appState?.reload?.();
-        }
-
-        if (!appState?.isReady?.()) {
-            console.error('❌ AppState not ready for fallback cycle creation');
+        if (!this._ensureAppStateReady('fallback cycle creation')) {
             this.deps.showNotification("⚠️ Failed to create cycle. Please refresh.", "error", 5000);
             return;
         }
@@ -519,7 +519,7 @@ console.log('✅ RoutineManager module loaded (Phase 3 - no window.* exports)');
  */
 export async function initRoutineManager(dependencies) {
     // Dynamically import utilities with version for cache-busting
-    const version = globalThis.APP_VERSION || '1.857';
+    const version = APP_VERSION;
 
     console.log(`📦 RoutineManager: Loading utilities with version ${version}...`);
 

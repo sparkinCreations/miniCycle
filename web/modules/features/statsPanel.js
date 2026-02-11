@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { GESTURE, UI_TIMEOUTS, CHART, INTERVALS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { GESTURE, UI_TIMEOUTS, CHART, INTERVALS, DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -886,7 +886,7 @@ export class StatsPanelManager {
         if (!MILESTONES) {
             console.warn('⚠️ MILESTONES not loaded yet - skipping milestone calculations');
             // Early return or load it now
-            const version = globalThis.APP_VERSION || '1.860';
+            const version = APP_VERSION;
             console.log(`📦 StatsPanel: Loading MILESTONES with version ${version}...`);
             const constantsMod = await import(`../core/constants.js?v=${version}`);
             MILESTONES = constantsMod.MILESTONES;
@@ -1753,7 +1753,7 @@ let statsPanelManager = null;
 export async function initStatsPanel(dependencies = {}) {
     // Load MILESTONES from constants.js dynamically on first init
     if (!MILESTONES) {
-        const version = globalThis.APP_VERSION || '1.860';
+        const version = APP_VERSION;
         console.log(`📦 StatsPanel: Loading MILESTONES with version ${version}...`);
 
         const constantsMod = await import(`../core/constants.js?v=${version}`);

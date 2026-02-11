@@ -8,7 +8,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { LIMITS, DOM_IDS } from '../core/constants.js';
+import { LIMITS, DOM_IDS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -255,7 +255,7 @@ export function setupMiniCycleTitleListener() {
  */
 export async function initTitleManager(dependencies = {}) {
     // Dynamically import utilities with version for cache-busting
-    const version = globalThis.APP_VERSION || '1.857';
+    const version = APP_VERSION;
 
     console.log(`📦 TitleManager: Loading utilities with version ${version}...`);
 

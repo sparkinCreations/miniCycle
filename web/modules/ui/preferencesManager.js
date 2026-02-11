@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { updateThemeColor } from '../features/themeManager.js';
 import { getLabel } from '../labels/labelResolver.js';
 
@@ -230,7 +230,7 @@ export class PreferencesManager {
 
         try {
             // Load sub-modules with version cache-busting
-            const version = globalThis.APP_VERSION || 'dev-local';
+            const version = APP_VERSION;
             await loadPreferencesSubModules(version);
 
             this.modal = _deps.getModal('preferences');

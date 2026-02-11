@@ -298,11 +298,11 @@ function showBootError(phase, error, willRetry = false) {
           🗑️ Clear Cache & Reload
         </button>
         ` : `
-        <button onclick="location.reload()" style="padding: 12px 24px; cursor: pointer; border: 2px solid white; background: transparent; color: white; border-radius: 8px; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; transition: all 0.2s;">
+        <button id="try-again-btn" style="padding: 12px 24px; cursor: pointer; border: 2px solid white; background: transparent; color: white; border-radius: 8px; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; transition: all 0.2s;">
           Try Again
         </button>
         `}
-        <button onclick="window.location.href='${LITE_VERSION_PATH}'" style="padding: 12px 24px; cursor: pointer; border: none; background: white; color: #4c79ff; border-radius: 8px; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; transition: all 0.2s;">
+        <button id="lite-version-btn" style="padding: 12px 24px; cursor: pointer; border: none; background: white; color: #4c79ff; border-radius: 8px; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; transition: all 0.2s;">
           Use Lite Version
         </button>
       </div>
@@ -310,6 +310,13 @@ function showBootError(phase, error, willRetry = false) {
         Failed at: ${safePhase} (attempt ${bootAttempt})
       </div>
     `;
+
+    // Add button handlers (uses addEventListener instead of inline onclick)
+    const tryAgainBtn = document.getElementById('try-again-btn');
+    tryAgainBtn?.addEventListener('click', () => location.reload());
+
+    const liteBtn = document.getElementById('lite-version-btn');
+    liteBtn?.addEventListener('click', () => { window.location.href = LITE_VERSION_PATH; });
 
     // Add clear cache handler (uses shared utility)
     const clearCacheBtn = document.getElementById(DOM_IDS.CLEAR_CACHE_BTN);

@@ -87,6 +87,18 @@ export async function isTestModeActive() {
 }
 
 /**
+ * Cached wrapper for isTestModeActive() — avoids opening IndexedDB on every save.
+ * Test mode is set before tests start and cleared after, so caching once per session is safe.
+ * @returns {Promise<boolean>}
+ */
+let _testModeCached = null;
+async function getCachedTestMode() {
+    if (_testModeCached !== null) return _testModeCached;
+    _testModeCached = await isTestModeActive();
+    return _testModeCached;
+}
+
+/**
  * Get backed up real data (stored before tests ran)
  * Retrieves backup from IndexedDB - single source of truth
  * Exported for use by coreBoot.js for interrupted test recovery
@@ -628,7 +640,7 @@ class MiniCycleState {
         const isTestIframe = window.location.search.includes('embedded=true') ||
                              window.location.pathname.includes('module-test-suite');
         if (!isTestIframe) {
-            const testMode = await isTestModeActive();
+            const testMode = await getCachedTestMode();
             if (testMode) {
                 console.log('⏭️ Save skipped - tests running in iframe (testModeActive flag in IndexedDB)');
                 return;

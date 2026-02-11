@@ -22,7 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -1645,7 +1645,7 @@ let routineSwitcher = null;
 export async function initRoutineSwitcher(dependencies) {
     // Dynamically import utilities with version for cache-busting
     // This prevents ES module cache from serving stale versions
-    const version = globalThis.APP_VERSION || '1.857';
+    const version = APP_VERSION;
 
     console.log(`📦 RoutineSwitcher: Loading utilities with version ${version}...`);
 

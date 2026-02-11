@@ -5,7 +5,7 @@
 > This file contains metrics that change frequently (version, counts, etc.).
 > All other documentation should reference this file instead of hardcoding these values.
 
-**Last Updated**: February 10, 2026
+**Last Updated**: February 11, 2026
 
 ---
 
@@ -13,14 +13,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 1.925 |
+| **App Version** | 1.926 |
 | **Lite Version** | 2.05 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 108 |
 | **Total Tests** | 1691 |
 | **Test Pass Rate** | 100% |
-| **CSS Files** | 32 |
-| **JSDoc Blocks** | 976 |
+| **CSS Files** | 33 |
+| **JSDoc Blocks** | 978 |
 | **Documentation Files** | 166 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -54,11 +54,11 @@
 | File | Lines | Purpose |
 |------|-------|---------|
 | `miniCycle-main.js` | ~56 | Entrypoint |
-| `modules/boot/orchestrator.js` | ~632 | Pure sequence controller |
+| `modules/boot/orchestrator.js` | ~639 | Pure sequence controller |
 | `modules/boot/coreBoot.js` | ~1045 | Core state & init |
 | `modules/boot/featureBoot.js` | ~536 | DI wiring hub |
 | `modules/boot/uiBoot.js` | ~783 | UI handlers |
-| **Total** | **~3052** | |
+| **Total** | **~3059** | |
 
 ---
 

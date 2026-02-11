@@ -942,6 +942,9 @@ export const DATA_SELECTORS = Object.freeze({
 // VERSION
 // ============================================================================
 
+// Centralized APP_VERSION — import this instead of repeating globalThis fallbacks
+export const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
+
 // Version marker for cache debugging (derives from Single Source of Truth)
 export const CONSTANTS_VERSION = globalThis.APP_VERSION;
 

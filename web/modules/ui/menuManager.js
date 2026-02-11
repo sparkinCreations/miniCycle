@@ -22,7 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -715,7 +715,7 @@ let menuManager = null;
 // Export initialization function
 export async function initMenuManager(dependencies) {
     // Dynamically import utilities with version for cache-busting
-    const version = globalThis.APP_VERSION || '1.857';
+    const version = APP_VERSION;
 
     console.log(`📦 MenuManager: Loading utilities with version ${version}...`);
 

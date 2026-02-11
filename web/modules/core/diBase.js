@@ -42,7 +42,7 @@
  */
 
 // Version marker for cache debugging (derives from Single Source of Truth)
-export const DIBASE_VERSION = globalThis.APP_VERSION;
+export const DIBASE_VERSION = globalThis.APP_VERSION || 'dev-local';
 
 // ============================================================================
 // DEPENDENCY MARKERS
@@ -148,6 +148,9 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
     // Track what's been set for debugging
     let _setKeys = new Set();
 
+    // Cache for resolve() — invalidated on any mutation
+    let _resolveCache = null;
+
     return {
         /**
          * Module name for logging
@@ -181,6 +184,9 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
             // Track what was set
             Object.keys(dependencies).forEach(k => _setKeys.add(k));
 
+            // Invalidate resolve cache — deps changed
+            _resolveCache = null;
+
             console.log(`✅ ${moduleName} deps set:`, Object.keys(dependencies));
         },
 
@@ -191,6 +197,7 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
         reset() {
             _injected = {};
             _setKeys.clear();
+            _resolveCache = null;
             console.log(`🔄 ${moduleName} deps reset`);
         },
 
@@ -201,6 +208,7 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
         clear(key) {
             delete _injected[key];
             _setKeys.delete(key);
+            _resolveCache = null;
         },
 
         /**
@@ -212,6 +220,12 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
          * @throws {Error} If strict mode is enabled and required dependencies are missing
          */
         resolve(overrides = {}) {
+            // Return cached result when no overrides are provided
+            const hasOverrides = Object.keys(overrides).length > 0;
+            if (_resolveCache && !hasOverrides) {
+                return _resolveCache;
+            }
+
             const resolved = {};
             const missing = [];
 
@@ -262,6 +276,11 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
                 console.log(`🔧 ${moduleName} resolved:`, Object.keys(resolved));
             }
 
+            // Cache result only when no overrides (standard Proxy access path)
+            if (!hasOverrides) {
+                _resolveCache = resolved;
+            }
+
             return resolved;
         },
 
@@ -292,6 +311,7 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
         update(key, value) {
             _injected[key] = value;
             _setKeys.add(key);
+            _resolveCache = null;
         },
 
         /**

@@ -1,0 +1,230 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   CRITICAL CSS - Loaded first to prevent flash of unstyled content
+   Covers: loading screen, error states, retry buttons, basic page setup
+
+   Extracted from inline <style> in miniCycle.html to eliminate
+   'unsafe-inline' from CSP style-src directive.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Base - prevents flash of unstyled content */
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* CRITICAL: Start black for loading screen, updateThemeColor() sets proper color after load */
+  background-color: #000000;
+  background-image: linear-gradient(135deg, #4c79ff, #74c0fc);
+  color: white;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Loading screen */
+#app-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(135deg, rgba(76, 121, 255, 0.5), rgba(116, 192, 252, 0.45)),
+    url('../../assets/images/Stock/Routine_Lists.webp') center/cover no-repeat;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  opacity: 1;
+  transition: opacity 0.5s ease-out;
+}
+#app-loader.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+.loader-logo {
+  width: 120px;
+  height: 96px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+}
+.loader-text {
+  margin-top: 20px;
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  opacity: 0.9;
+}
+.loader-bar-container {
+  margin-top: 24px;
+  width: 200px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.loader-bar {
+  width: 100%;
+  height: 100%;
+  background: white;
+  border-radius: 3px;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease-out;
+}
+
+/* Mobile loading screen optimizations */
+@media (max-width: 768px) {
+  #app-loader {
+    background:
+      linear-gradient(135deg, rgba(76, 121, 255, 0.55), rgba(116, 192, 252, 0.5)),
+      url('../../assets/images/Stock/Routine_Lists.webp') left center/cover no-repeat;
+  }
+  .loader-logo {
+    width: 100px;
+    height: 80px;
+  }
+  .loader-text {
+    font-size: 14px;
+  }
+  .loader-bar-container {
+    width: 160px;
+  }
+}
+
+/* Notification styles */
+#notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 300px;
+  cursor: move;
+}
+#notification-container.dragging {
+  opacity: 0.8;
+  cursor: grabbing;
+}
+.notification {
+  background-color: #333;
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  position: relative;
+  overflow-wrap: anywhere;
+}
+.notification.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+.notification.error { background-color: #e74c3c; }
+.notification.success { background-color: #27ae60; }
+.notification.info { background-color: #2980b9; }
+.notification.warning { background-color: #f39c12; }
+/* .notification.recurring is defined in notifications.css - not needed in critical CSS
+   since recurring notifications don't appear on initial page load */
+
+.notification .notification-content {
+  margin-right: 24px; /* Space for close button */
+}
+
+/* Critical header styles - reserve space to prevent CLS */
+.fixed-header-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.header-branding {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* iOS PWA standalone mode - blur extends to top, content pushed with padding */
+/* Requires .ios-pwa class added by JavaScript detection */
+.ios-pwa .fixed-header-container {
+  top: 0;
+}
+.ios-pwa .mini-cycle-header-row {
+  padding-top: 59px;
+}
+.ios-pwa .header-branding {
+  top: calc(50% + 27px);
+}
+.header-logo {
+  height: 25px;
+  width: auto;
+}
+.app-name {
+  height: 35px;
+  width: auto;
+}
+.mode-selector-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 28px;
+  padding: 2px 0;
+  background: linear-gradient(135deg, #f1f1f172, #ffffff10);
+}
+
+/* Reserve space for task list to prevent CLS when data loads from IndexedDB */
+.task-list-container {
+  min-height: 200px;
+}
+.mini-cycle-title {
+  min-height: 32px;
+}
+/* Task input: use visibility:hidden to reserve space and prevent CLS */
+.task-input.hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Onboarding state - critical CSS to prevent CLS when onboarding is shown */
+body.onboarding-active .title-row,
+body.onboarding-active .task-list,
+body.onboarding-active .empty-state,
+body.onboarding-active .completed-tasks-section,
+body.onboarding-active .task-search-input-row,
+body.onboarding-active .progress-container,
+body.onboarding-active .complete-all-and-help-window-container {
+  display: none;
+}
+.onboarding-placeholder {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.9);
+  min-height: 200px;
+}
+body.onboarding-active .onboarding-placeholder {
+  display: flex;
+}
+
+/* App loading state - hide main content to prevent CLS measurement during boot */
+body.app-loading #app-container,
+body.app-loading .fixed-header-container {
+  visibility: hidden;
+}
+
+/* Footer mobile layout is defined in miniCycle-styles.css */
