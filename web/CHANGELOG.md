@@ -1,3 +1,7 @@
+## [1.928] - 2026-02-11
+- task option buttons updated
+
+
 ## [1.927] - 2026-02-11
 - fix: address code review findings — DI caching, CSP hardening, APP_VERSION consolidation, and DRY refactors
 
