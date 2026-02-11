@@ -1,14 +1,14 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '1.927';
-var CACHE_VERSION = 'v722';
+var APP_VERSION = '1.928';
+var CACHE_VERSION = 'v723';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
-// ✅ ONLINE-ONLY MODE: Caching disabled due to version mismatch issues
-// Re-enable after implementing forced cache clear for existing users
-var DISABLE_CACHING = true;
+// ✅ Service worker caching for offline support and faster loading
+// Version mismatch issues resolved via boot failsafe + forced cache clear on version change
+var DISABLE_CACHING = false;
 
 // ✅ Cache expiration configuration
 var MAX_DYNAMIC_ENTRIES = 300;  // Maximum entries in dynamic cache (app has 100+ modules)
