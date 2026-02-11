@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, Z_INDEX } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, Z_INDEX, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -1000,7 +1000,7 @@ let instance = null;
 export async function initAchievementsManager(deps = {}) {
     // Load MILESTONES from constants.js dynamically on first init
     if (!MILESTONES) {
-        const version = globalThis.APP_VERSION || '1.859';
+        const version = APP_VERSION;
         console.log(`📦 AchievementsManager: Loading MILESTONES with version ${version}...`);
 
         const constantsMod = await import(`../core/constants.js?v=${version}`);

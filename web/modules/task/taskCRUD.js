@@ -41,7 +41,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { LIMITS, UI_TIMEOUTS, DOM_SELECTORS } from '../core/constants.js';
+import { LIMITS, UI_TIMEOUTS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -586,7 +586,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
  */
 export async function initTaskCRUD() {
     // Dynamically import utilities with version for cache-busting
-    const version = globalThis.APP_VERSION || '1.857';
+    const version = APP_VERSION;
 
     console.log(`📦 TaskCRUD: Loading utilities with version ${version}...`);
 

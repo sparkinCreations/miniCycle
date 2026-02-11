@@ -28,7 +28,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { LIMITS, DEBOUNCE, DOM_IDS } from '../core/constants.js';
+import { LIMITS, DEBOUNCE, DOM_IDS, APP_VERSION } from '../core/constants.js';
 
 // ============ CONSTANTS (from centralized constants.js) ============
 const UNDO_LIMIT = LIMITS.UNDO_STACK;
@@ -1433,7 +1433,7 @@ export async function initUndoSystemForApp() {
             undoStack,
             redoStack,
             lastUpdated: Date.now(),
-            version: globalThis.APP_VERSION || "dev"
+            version: APP_VERSION
           };
 
           objectStore.put(data);
@@ -1612,7 +1612,7 @@ export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack, options 
         undoStack: undoStack || [],
         redoStack: redoStack || [],
         lastUpdated: Date.now(),
-        version: globalThis.APP_VERSION || "dev"
+        version: APP_VERSION
       };
 
       const request = objectStore.put(data);
@@ -1753,7 +1753,7 @@ export async function renameUndoStackInIndexedDB(oldCycleId, newCycleId) {
       undoStack: oldData.undoStack,
       redoStack: oldData.redoStack,
       lastUpdated: Date.now(),
-      version: globalThis.APP_VERSION || "dev"
+      version: APP_VERSION
     };
 
     // ✅ FIX #11: Properly await IndexedDB operations

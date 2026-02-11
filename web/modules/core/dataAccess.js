@@ -14,6 +14,19 @@
 
 import { STORAGE_KEYS } from './constants.js';
 
+/**
+ * Default reminders configuration — single source of truth
+ * Frozen to prevent accidental mutation; spread when assigning to create fresh copy
+ */
+const DEFAULT_REMINDERS = Object.freeze({
+    enabled: false,
+    indefinite: false,
+    dueDatesReminders: false,
+    repeatCount: 0,
+    frequencyValue: 30,
+    frequencyUnit: "minutes"
+});
+
 // ============================================================================
 // DEPENDENCY INJECTION
 // ============================================================================
@@ -64,14 +77,7 @@ export function loadMiniCycleData() {
             if (state) {
                 // Load reminders from root customReminders (where reminders.js saves)
                 const activeCycleId = state.appState.activeCycleId;
-                const reminders = state.customReminders || {
-                    enabled: false,
-                    indefinite: false,
-                    dueDatesReminders: false,
-                    repeatCount: 0,
-                    frequencyValue: 30,
-                    frequencyUnit: "minutes"
-                };
+                const reminders = state.customReminders || { ...DEFAULT_REMINDERS };
 
                 return {
                     cycles: state.data.cycles,
@@ -92,14 +98,7 @@ export function loadMiniCycleData() {
             const parsed = JSON.parse(data);
             const activeCycleId = parsed.appState.activeCycleId;
             // Read from root customReminders (where reminders.js saves)
-            const reminders = parsed.customReminders || {
-                enabled: false,
-                indefinite: false,
-                dueDatesReminders: false,
-                repeatCount: 0,
-                frequencyValue: 30,
-                frequencyUnit: "minutes"
-            };
+            const reminders = parsed.customReminders || { ...DEFAULT_REMINDERS };
 
             return {
                 cycles: parsed.data.cycles,

@@ -408,8 +408,6 @@ export class TaskButtons {
             // Re-read for DOM sync
             const state = this.deps.AppState.get();
             const activeCycleId = state.appState.activeCycleId;
-
-            state = this.deps.AppState.get();
             const task = state.data.cycles[activeCycleId]?.tasks?.find(t => t.id === assignedTaskId);
 
             if (task) {

@@ -35,6 +35,8 @@
  * @property {number} percentUsed - Usage percentage
  */
 
+import { APP_VERSION } from '../core/constants.js';
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -110,7 +112,7 @@ function saveCachedQuotaToState(bytes) {
             data.metadata.storageQuota = {
                 detectedBytes: bytes,
                 detectedAt: Date.now(),
-                detectedVersion: globalThis.APP_VERSION || 'unknown'
+                detectedVersion: APP_VERSION
             };
         });
         console.log(`📊 Quota cached to AppState: ${formatBytes(bytes)}`);
@@ -131,7 +133,7 @@ function isCachedQuotaValid(cached) {
 
     const now = Date.now();
     const age = now - cached.detectedAt;
-    const currentVersion = globalThis.APP_VERSION || 'unknown';
+    const currentVersion = APP_VERSION;
 
     // Invalid if older than 14 days
     if (age > QUOTA_CACHE_VALIDITY_MS) {

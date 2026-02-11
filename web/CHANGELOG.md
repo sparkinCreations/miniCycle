@@ -1,3 +1,8 @@
+## [1.926] - 2026-02-11
+- feat: add new entries to CHANGELOG for label system updates and notification localization improvements
+- Refactor transition properties across multiple CSS components to utilize CSS variables for improved maintainability and consistency. Updated transition durations for various elements in mode-selector, notifications, onboarding, progress-bar, quick-actions, recurring, routine-switcher, settings, stats-panel, storage, task-list, task-options, app-container, header, dark-mode, and helpers stylesheets.
+
+
 ## [1.925] - 2026-02-10
 - feat: update label system documentation and integration plan with new key counts and module details
 - feat: update notification messages to use label resolver for better localization

@@ -48,7 +48,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS } from '../core/constants.js';
+import { UI_TIMEOUTS, APP_VERSION } from '../core/constants.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -470,7 +470,7 @@ export function checkMiniCycle() {
 export async function initCycleCompletion(dependencies = {}) {
     // Dynamically import MILESTONES with version for cache-busting
     if (!MILESTONES) {
-        const version = globalThis.APP_VERSION || '1.860';
+        const version = APP_VERSION;
         console.log(`📦 CycleCompletion: Loading MILESTONES with version ${version}...`);
 
         const constantsMod = await import(`../core/constants.js?v=${version}`);
