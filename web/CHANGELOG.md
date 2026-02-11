@@ -1,3 +1,7 @@
+## [1.927] - 2026-02-11
+- fix: address code review findings — DI caching, CSP hardening, APP_VERSION consolidation, and DRY refactors
+
+
 ## [1.926] - 2026-02-11
 - feat: add new entries to CHANGELOG for label system updates and notification localization improvements
 - Refactor transition properties across multiple CSS components to utilize CSS variables for improved maintainability and consistency. Updated transition durations for various elements in mode-selector, notifications, onboarding, progress-bar, quick-actions, recurring, routine-switcher, settings, stats-panel, storage, task-list, task-options, app-container, header, dark-mode, and helpers stylesheets.
