@@ -1,3 +1,7 @@
+## [1.929] - 2026-02-12
+- ``` feat: enable service worker caching for offline support and faster loading ```
+
+
 ## [1.928] - 2026-02-11
 - task option buttons updated
 

@@ -631,6 +631,7 @@ export function setupUserManual(GlobalUtils) {
  */
 export function setupTryLiteVersionButton(GlobalUtils, deps) {
   GlobalUtils.safeAddEventListenerById('try-lite-version', 'click', () => handleTryLiteVersionClick(deps));
+  GlobalUtils.safeAddEventListenerById('menu-lite-version', 'click', () => handleTryLiteVersionClick(deps));
 }
 
 // ============================================================================
