@@ -1,3 +1,7 @@
+## [1.933] - 2026-02-13
+- chore: update version to 1.932 across all relevant files
+
+
 ## [1.932] - 2026-02-13
 - chore: update version to 1.931 across all relevant files and enhance CSP script-src directives
 
