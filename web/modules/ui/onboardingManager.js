@@ -295,6 +295,9 @@ export class OnboardingManager {
     completeOnboarding(modal, cycles, activeCycle) {
         console.log('✅ Onboarding completed, transitioning...');
 
+        // Remove onboarding body class to restore normal UI
+        document.body.classList.remove('onboarding-active');
+
         // ✅ Use AppState as source of truth
         const appState = this.deps.AppState;
 

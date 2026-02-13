@@ -360,11 +360,7 @@ export function simulateMigrationToSchema25(dryRun = true) {
         results.changes.push(`✅ Themes unlocked: ${newData.settings.unlockedThemes.length}`);
 
         if (!dryRun) {
-            // Actually perform migration
-            _deps.storage.setItem("miniCycleData", JSON.stringify(newData));
-            results.changes.push("🚀 Migration completed - data saved to miniCycleData");
-
-            // Optionally backup old data
+            // Backup old data BEFORE writing new data (prevents data loss if migration fails mid-write)
             const backupKey = `migration_backup_${_deps.now()}`;
             const oldData = {
                 miniCycleStorage: oldCycles,
@@ -376,6 +372,10 @@ export function simulateMigrationToSchema25(dryRun = true) {
             };
             _deps.storage.setItem(backupKey, JSON.stringify(oldData));
             results.changes.push(`💾 Old data backed up to ${backupKey}`);
+
+            // Now perform migration
+            _deps.storage.setItem("miniCycleData", JSON.stringify(newData));
+            results.changes.push("🚀 Migration completed - data saved to miniCycleData");
         }
 
         results.dataPreview = newData;

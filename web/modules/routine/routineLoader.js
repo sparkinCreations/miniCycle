@@ -236,7 +236,7 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
 
     // ✅ Repair missing ID
     if (!task.id || typeof task.id !== 'string') {
-      task.id = `task-${Date.now()}-${index}-${Math.floor(Math.random() * 1000)}`;
+      task.id = `task-${Date.now()}-${index}-${(task.text || '').length}`;
       tasksModified = true;
       console.warn('⚠️ Repaired task with missing ID:', task.id);
     }

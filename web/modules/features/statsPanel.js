@@ -338,7 +338,7 @@ export class StatsPanelManager {
             themeUnlockStatus: document.getElementById(DOM_IDS.THEME_UNLOCK_STATUS),
             // Theme panel elements
             openThemesPanel: document.getElementById(DOM_IDS.OPEN_THEMES_PANEL),
-            themesModal: _deps.getModal('themes'),
+            get themesModal() { return _deps.getModal('themes'); },
             closeThemesBtn: document.getElementById(DOM_IDS.CLOSE_THEMES_BTN),
             quickDarkToggle: document.getElementById(DOM_IDS.QUICK_DARK_TOGGLE)
         };
@@ -400,56 +400,9 @@ export class StatsPanelManager {
         this.setupThemeEvents();
     }
 
-    /**
-     * Setup touch event listeners for mobile devices
-     */
-    setupTouchEvents() {
-        const safeAdd = _deps.safeAddEventListener;
-        if (!safeAdd) return; // Guard: dependency not injected (e.g., in tests)
-        safeAdd(document, "touchstart", this.boundHandlers.handleTouchStart, { passive: true });
-        safeAdd(document, "touchmove", this.boundHandlers.handleTouchMove, { passive: true });
-        safeAdd(document, "touchend", this.boundHandlers.handleTouchEnd, { passive: true });
-    }
-
-    /**
-     * Setup mouse event listeners for desktop
-     */
-    setupMouseEvents() {
-        const safeAdd = _deps.safeAddEventListener;
-        if (!safeAdd) return; // Guard: dependency not injected (e.g., in tests)
-        safeAdd(document, "mousedown", this.boundHandlers.handleMouseDown);
-        safeAdd(document, "mousemove", this.boundHandlers.handleMouseMove);
-        safeAdd(document, "mouseup", this.boundHandlers.handleMouseUp);
-    }
-
-    /**
-     * Setup wheel event listeners for trackpad/mouse wheel
-     */
-    setupWheelEvents() {
-        const safeAdd = _deps.safeAddEventListener;
-        if (!safeAdd) return; // Guard: dependency not injected (e.g., in tests)
-        safeAdd(document, "wheel", this.boundHandlers.handleWheel, { passive: false });
-    }
-
-    /**
-     * Setup pointer event listeners for modern devices
-     */
-    setupPointerEvents() {
-        const safeAdd = _deps.safeAddEventListener;
-        if (!safeAdd) return; // Guard: dependency not injected (e.g., in tests)
-        safeAdd(document, "pointerdown", this.boundHandlers.handlePointerDown);
-        safeAdd(document, "pointermove", this.boundHandlers.handlePointerMove);
-        safeAdd(document, "pointerup", this.boundHandlers.handlePointerUp);
-    }
-
-    /**
-     * Setup keyboard event listeners
-     */
-    setupKeyboardEvents() {
-        const safeAdd = _deps.safeAddEventListener;
-        if (!safeAdd) return; // Guard: dependency not injected (e.g., in tests)
-        safeAdd(document, "keydown", this.boundHandlers.handleKeydown);
-    }
+    // NOTE: setupTouchEvents, setupMouseEvents, setupWheelEvents, setupPointerEvents,
+    // and setupKeyboardEvents were removed — gesture registration is now handled by
+    // GesturePanelManager. Handler methods are kept for the cleanup path.
 
     /**
      * Setup UI interaction event listeners

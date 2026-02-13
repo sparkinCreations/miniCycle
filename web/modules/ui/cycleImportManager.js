@@ -96,6 +96,20 @@ export function setupImportButtons() {
     }
     _importButtonsInitialized = true;
 
+    // Display pending import notification from previous reload
+    try {
+        const pending = localStorage.getItem('miniCycle_importNotification');
+        if (pending) {
+            localStorage.removeItem('miniCycle_importNotification');
+            const { message, type } = JSON.parse(pending);
+            if (message) {
+                _deps.showNotification?.(message, type || 'success', 4000);
+            }
+        }
+    } catch (e) {
+        localStorage.removeItem('miniCycle_importNotification');
+    }
+
     const safeAddEventListener = _deps.safeAddEventListener;
     if (!safeAddEventListener) {
         console.error('CycleImportManager: safeAddEventListener dependency not injected');
@@ -557,7 +571,8 @@ export function processImportedData(fileContent) {
         safeTaskOptionButtons = {};
         for (const key of allowedBtnKeys) {
             if (key in importedData.taskOptionButtons) {
-                safeTaskOptionButtons[key] = !!importedData.taskOptionButtons[key];
+                const val = importedData.taskOptionButtons[key];
+                safeTaskOptionButtons[key] = typeof val === 'boolean' ? val : false;
             }
         }
     }
@@ -622,9 +637,9 @@ export function processImportedData(fileContent) {
         importMessage = getLabel('notify.importSuccess', { vars: { name: finalCycleTitle } });
     }
 
-    // Store for display after reload
+    // Store for display after reload (use localStorage since sessionStorage can be lost on iOS PWA reload)
     try {
-        sessionStorage.setItem('miniCycle_importNotification', JSON.stringify({ message: importMessage, type: messageType }));
+        localStorage.setItem('miniCycle_importNotification', JSON.stringify({ message: importMessage, type: messageType }));
     } catch (e) {
         console.warn('Could not store import notification:', e);
     }

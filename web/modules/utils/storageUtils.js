@@ -151,6 +151,11 @@ function isCachedQuotaValid(cached) {
 }
 
 /**
+ * Cached quota value (used by forceQuotaRedetection and getLocalStorageQuota below)
+ */
+let _cachedQuota = null;
+
+/**
  * Force re-detection of storage quota (clears cache)
  * @returns {number} Newly detected quota in bytes
  */
@@ -187,11 +192,6 @@ export function getLocalStorageUsedBytes() {
 
     return totalBytes;
 }
-
-/**
- * Cached quota value
- */
-let _cachedQuota = null;
 
 /**
  * Get localStorage quota - uses conservative default until detection is triggered

@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.929">
+<meta name="app-version" content="1.930">
 
 <!-- Content Security Policy -->
 <!-- NOTE: SHA-256 hashes must be recomputed if ANY inline script content changes -->
@@ -28,6 +28,7 @@
   connect-src 'self' https://api.web3forms.com;
   form-action 'self' https://api.web3forms.com;
   base-uri 'self';
+  upgrade-insecure-requests;
 ">
 
 <title>miniCycle - Turn Your Routine Into Progress</title>
@@ -42,20 +43,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.929"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.930"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=1.929" as="style">
-<link rel="preload" href="styles/base/variables.css?v=1.929" as="style">
-<link rel="preload" href="styles/base/reset.css?v=1.929" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=1.929" as="style">
-<link rel="preload" href="styles/layout/header.css?v=1.929" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=1.929" as="style">
+<link rel="preload" href="styles/main.css?v=1.930" as="style">
+<link rel="preload" href="styles/base/variables.css?v=1.930" as="style">
+<link rel="preload" href="styles/base/reset.css?v=1.930" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=1.930" as="style">
+<link rel="preload" href="styles/layout/header.css?v=1.930" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=1.930" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=1.929" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=1.930" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=1.929"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=1.930"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -66,7 +67,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.929"></script>
+<script src="./version.js?v=1.930"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -192,13 +193,16 @@
     // Mark that we're clearing THIS version to prevent loops
     sessionStorage.setItem('__miniCycle_justCleared', currentVersion);
 
+    // Sanitize version string before interpolating into document.write JS
+    var safeVersion = currentVersion.replace(/['"\\<>]/g, '');
+
     // Use document.write to STOP further HTML parsing immediately
     // This prevents modulepreload hints from being processed with stale caches
     document.write('<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body{margin:0;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(135deg,#4c79ff,#74c0fc);font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:white;}.loader{width:40px;height:40px;border:3px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 1s linear infinite;}@keyframes spin{to{transform:rotate(360deg)}}</style></head><body><div class="loader"></div><p style="margin-top:20px;font-size:16px;">Updating miniCycle...</p><script>');
     document.write('var clearPromises = [];');
     document.write('if ("caches" in window) { clearPromises.push(caches.keys().then(function(n) { console.log("Deleting caches:", n); return Promise.all(n.map(function(c) { return caches.delete(c); })); })); }');
     document.write('if ("serviceWorker" in navigator) { clearPromises.push(navigator.serviceWorker.getRegistrations().then(function(r) { console.log("Unregistering", r.length, "service workers"); return Promise.all(r.map(function(reg) { return reg.unregister(); })); })); }');
-    document.write('Promise.all(clearPromises).then(function() { localStorage.setItem("__miniCycle_lastVersion", "' + currentVersion + '"); console.log("Cache cleared, reloading with cache buster..."); window.location.href = window.location.pathname + "?_cb=" + Date.now(); }).catch(function(e) { console.error("Clear failed:", e); localStorage.setItem("__miniCycle_lastVersion", "' + currentVersion + '"); window.location.href = window.location.pathname + "?_cb=" + Date.now(); });');
+    document.write('Promise.all(clearPromises).then(function() { localStorage.setItem("__miniCycle_lastVersion", "' + safeVersion + '"); console.log("Cache cleared, reloading with cache buster..."); window.location.href = window.location.pathname + "?_cb=" + Date.now(); }).catch(function(e) { console.error("Clear failed:", e); localStorage.setItem("__miniCycle_lastVersion", "' + safeVersion + '"); window.location.href = window.location.pathname + "?_cb=" + Date.now(); });');
     document.write('</' + 'script></body></html>');
     document.close();
     return; // Stop - document.write replaced the page
@@ -221,21 +225,21 @@
      3. Or accepting slightly slower initial load without preloads
      ═══════════════════════════════════════════════════════════════════════════ -->
 <!--
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.929">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.929">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.929">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.929">
-<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.929">
-<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.929">
-<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.929">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.929">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.929">
-<link rel="modulepreload" href="./modules/core/appInit.js?v=1.929">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.929">
-<link rel="modulepreload" href="./modules/core/diBase.js?v=1.929">
-<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.929">
-<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.929">
-<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.929">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.930">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.930">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.930">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.930">
+<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.930">
+<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.930">
+<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.930">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.930">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.930">
+<link rel="modulepreload" href="./modules/core/appInit.js?v=1.930">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.930">
+<link rel="modulepreload" href="./modules/core/diBase.js?v=1.930">
+<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.930">
+<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.930">
+<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.930">
 -->
 
 <!-- Critical CSS - extracted to external file for CSP compliance (no 'unsafe-inline' needed) -->
@@ -2582,7 +2586,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.929"></script>
+ <script type="module" src="miniCycle-main.js?v=1.930"></script>
 
 <script>
 // Sync About modal version with meta app-version

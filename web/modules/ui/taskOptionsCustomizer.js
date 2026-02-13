@@ -752,6 +752,17 @@ export class TaskOptionsCustomizer {
             modal._escHandler = null;
         }
 
+        // Clean up stored handlers on child elements before removal
+        modal.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            if (cb._changeHandler) { cb.removeEventListener('change', cb._changeHandler); cb._changeHandler = null; }
+        });
+        modal.querySelectorAll('.option-item').forEach(item => {
+            if (item._mouseenterHandler) { item.removeEventListener('mouseenter', item._mouseenterHandler); item._mouseenterHandler = null; }
+            if (item._mouseleaveHandler) { item.removeEventListener('mouseleave', item._mouseleaveHandler); item._mouseleaveHandler = null; }
+            if (item._clickHandler) { item.removeEventListener('click', item._clickHandler); item._clickHandler = null; }
+        });
+        if (modal._overlayClickHandler) { modal.removeEventListener('click', modal._overlayClickHandler); modal._overlayClickHandler = null; }
+
         modal.classList.remove('show');
         setTimeout(() => {
             modal.remove();

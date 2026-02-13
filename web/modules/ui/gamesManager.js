@@ -23,7 +23,8 @@ const di = createDIModule('GamesManager', {
     appInit: optional(null),
     AppState: optional(null),
     safeAddEventListener: optional(null),
-    AppMeta: optional(null)
+    AppMeta: optional(null),
+    getModal: optional(null),
 });
 
 // Late-binding deps via Proxy
