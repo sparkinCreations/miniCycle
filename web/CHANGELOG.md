@@ -1,3 +1,7 @@
+## [1.931] - 2026-02-13
+- feat: Enhance cycle import manager with localStorage notifications and improve task option button handling
+
+
 ## [1.930] - 2026-02-13
 - added lite version to main menu
 
