@@ -47,6 +47,7 @@ export class ClearedTasksManager {
         this.modalOverlay = null;
         this.isRecreateMode = false;
         this.selectedTasks = new Set();
+        this._idCounter = 0;
         console.log('ClearedTasksManager initialized');
     }
 
@@ -73,7 +74,7 @@ export class ClearedTasksManager {
         }
 
         const entry = {
-            id: `clr-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+            id: `clr-${Date.now()}-${this._idCounter++}-${Math.random().toString(36).substr(2, 5)}`,
             taskText: task.text,
             clearedAt: Date.now(),
             wasHighPriority: task.highPriority || false,
@@ -124,7 +125,7 @@ export class ClearedTasksManager {
         if (!activeCycleId) return;
 
         const entries = tasks.map(task => ({
-            id: `clr-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+            id: `clr-${Date.now()}-${this._idCounter++}-${Math.random().toString(36).substr(2, 5)}`,
             taskText: task.text,
             clearedAt: Date.now(),
             wasHighPriority: task.highPriority || false,
@@ -439,6 +440,12 @@ export class ClearedTasksManager {
             this._escHandler = null;
         }
 
+        // Clean up overlay click handler
+        if (this._overlayClickHandler) {
+            this.modalOverlay.removeEventListener('click', this._overlayClickHandler);
+            this._overlayClickHandler = null;
+        }
+
         this.modalOverlay.style.opacity = '0';
         this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_TASKS_MODAL).style.transform = 'translateY(20px)';
 
@@ -493,12 +500,13 @@ export class ClearedTasksManager {
             this.recreateSelectedTasks();
         });
 
-        // Click outside to close
-        this.modalOverlay.addEventListener('click', (e) => {
+        // Click outside to close (store handler for cleanup in closeModal)
+        this._overlayClickHandler = (e) => {
             if (e.target === this.modalOverlay) {
                 this.closeModal();
             }
-        });
+        };
+        this.modalOverlay.addEventListener('click', this._overlayClickHandler);
 
         // Fix #63: Store escape handler reference for proper cleanup
         this._escHandler = (e) => {

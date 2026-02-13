@@ -304,6 +304,9 @@ export class AchievementsManager {
     closeModal() {
         if (!this.modalOverlay) return;
 
+        // Clean up badge detail if open (prevents coin spin listener leak)
+        this.hideBadgeDetail();
+
         // Fix #63: Remove escape handler when modal closes by any means
         if (this._escHandler) {
             document.removeEventListener('keydown', this._escHandler);

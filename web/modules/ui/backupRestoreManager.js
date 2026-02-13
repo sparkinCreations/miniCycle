@@ -266,7 +266,13 @@ async function processRestoreData(fileContent) {
     console.log('Sanitizing imported data...');
     const version = _deps.AppMeta?.version;
     const { sanitizeImportedData } = await import(`../utils/dataSanitizer.js?v=${version}`);
-    sanitizeImportedData(backupData);
+    try {
+        sanitizeImportedData(backupData);
+    } catch (err) {
+        console.error('Sanitization failed:', err);
+        _deps.showNotification?.(getLabel('notify.invalidFormat'), 'error');
+        return;
+    }
 
     // Create safety backup before restore
     try {
@@ -315,15 +321,30 @@ async function processRestoreData(fileContent) {
         // Remove existing Schema 2.5 data so migration will run
         localStorage.removeItem(STORAGE_KEYS.DATA);
 
-        // Restore legacy keys
-        localStorage.setItem(STORAGE_KEYS.LEGACY_DATA, backupData.miniCycleStorage);
+        // Restore legacy keys (validate JSON strings before writing to localStorage)
+        if (typeof backupData.miniCycleStorage === 'string') {
+            try { JSON.parse(backupData.miniCycleStorage); } catch {
+                console.error('Invalid legacy miniCycleStorage data');
+                _deps.showNotification?.(getLabel('notify.backupCorruptData'), 'error', 4000);
+                return;
+            }
+            localStorage.setItem(STORAGE_KEYS.LEGACY_DATA, backupData.miniCycleStorage);
+        } else {
+            console.error('Legacy backup missing miniCycleStorage string');
+            _deps.showNotification?.(getLabel('notify.backupInvalidLegacy'), 'error', 3000);
+            return;
+        }
         localStorage.setItem(STORAGE_KEYS.LAST_USED, backupData.lastUsedMiniCycle || "");
 
         if (backupData.miniCycleReminders) {
-            localStorage.setItem(STORAGE_KEYS.REMINDERS, backupData.miniCycleReminders);
+            const remVal = typeof backupData.miniCycleReminders === 'string'
+                ? backupData.miniCycleReminders : JSON.stringify(backupData.miniCycleReminders);
+            localStorage.setItem(STORAGE_KEYS.REMINDERS, remVal);
         }
         if (backupData.milestoneUnlocks) {
-            localStorage.setItem(STORAGE_KEYS.MILESTONE_UNLOCKS, backupData.milestoneUnlocks);
+            const milVal = typeof backupData.milestoneUnlocks === 'string'
+                ? backupData.milestoneUnlocks : JSON.stringify(backupData.milestoneUnlocks);
+            localStorage.setItem(STORAGE_KEYS.MILESTONE_UNLOCKS, milVal);
         }
         if (backupData.darkModeEnabled !== undefined) {
             localStorage.setItem(STORAGE_KEYS.DARK_MODE, backupData.darkModeEnabled);

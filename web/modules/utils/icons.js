@@ -100,7 +100,8 @@ export function getIcon(name, className = '') {
 
     // Add class to SVG if provided
     if (className) {
-        return svg.replace('<svg', `<svg class="${className}"`);
+        const safeClass = className.replace(/[^a-zA-Z0-9\s\-_]/g, '');
+        return svg.replace('<svg', `<svg class="${safeClass}"`);
     }
     return svg;
 }

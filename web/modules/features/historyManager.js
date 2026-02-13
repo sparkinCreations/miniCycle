@@ -396,6 +396,12 @@ export class HistoryManager {
             this._escHandler = null;
         }
 
+        // Clean up overlay click handler
+        if (this._overlayClickHandler) {
+            this.modalOverlay.removeEventListener('click', this._overlayClickHandler);
+            this._overlayClickHandler = null;
+        }
+
         this.modalOverlay.style.opacity = '0';
         this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_MODAL).style.transform = 'translateY(20px)';
 
@@ -499,12 +505,13 @@ export class HistoryManager {
             });
         }
 
-        // Click outside to close
-        this.modalOverlay.addEventListener('click', (e) => {
+        // Click outside to close (store handler for cleanup in closeModal)
+        this._overlayClickHandler = (e) => {
             if (e.target === this.modalOverlay) {
                 this.closeModal();
             }
-        });
+        };
+        this.modalOverlay.addEventListener('click', this._overlayClickHandler);
 
         // Escape key to close - store handler for cleanup in closeModal
         this._escHandler = (e) => {

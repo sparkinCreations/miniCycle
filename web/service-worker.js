@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '1.929';
-var CACHE_VERSION = 'v724';
+var APP_VERSION = '1.930';
+var CACHE_VERSION = 'v725';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -240,17 +240,20 @@ self.addEventListener('install', function (event) {
       console.warn('⚠️ addAll failed, retrying individually:', err);
       var ok = 0, fail = 0, failed = [];
 
-      // Chain sequentially to avoid creating too many requests at once
+      // Cache in parallel batches for better performance
+      var BATCH_SIZE = 10;
       var p = Promise.resolve();
-      for (var i = 0; i < urls.length; i++) {
-        (function (u) {
+      for (var b = 0; b < urls.length; b += BATCH_SIZE) {
+        (function (batch) {
           p = p.then(function () {
-            return cache.add(u).then(function () { ok++; }).catch(function (e) {
-              fail++; failed.push({ url: u, error: String(e && e.message || e) });
-              console.warn('❌ Failed to cache:', u, e);
-            });
+            return Promise.all(batch.map(function (u) {
+              return cache.add(u).then(function () { ok++; }).catch(function (e) {
+                fail++; failed.push({ url: u, error: String(e && e.message || e) });
+                console.warn('❌ Failed to cache:', u, e);
+              });
+            }));
           });
-        })(urls[i]);
+        })(urls.slice(b, b + BATCH_SIZE));
       }
       return p.then(function () { return { ok: ok, fail: fail, failed: failed }; });
     });
@@ -353,7 +356,10 @@ function fetchWithTimeout(request, timeoutMs) {
  */
 function isNetworkFirstFile(urlPath) {
   for (var i = 0; i < NETWORK_FIRST_PATTERNS.length; i++) {
-    if (urlPath.indexOf(NETWORK_FIRST_PATTERNS[i]) !== -1) {
+    var pattern = NETWORK_FIRST_PATTERNS[i];
+    var idx = urlPath.indexOf(pattern);
+    // Ensure match is at a path boundary (not a substring of another filename)
+    if (idx !== -1 && (idx === 0 || urlPath.charAt(idx - 1) === '/')) {
       return true;
     }
   }
@@ -418,14 +424,14 @@ function cleanExpiredEntries() {
               if (now - cacheTime > MAX_CACHE_AGE_MS) {
                 cache.delete(request).then(function() {
                   console.log('🗑️ Expired cache entry removed:', request.url);
-                });
+                }).catch(function(e) { console.warn('Cache delete error:', e); });
               }
             }
           }
-        });
+        }).catch(function(e) { console.warn('Cache match error:', e); });
       });
-    });
-  });
+    }).catch(function(e) { console.warn('Cache keys error:', e); });
+  }).catch(function(e) { console.warn('Cache open error:', e); });
 }
 
 function pickShell(urlObj) {
@@ -613,7 +619,8 @@ self.addEventListener('fetch', function (event) {
               // Return a response that will cause the import to fail with a clear error
               // rather than silently returning an empty module
               console.error('❌ Module not in cache and network failed:', request.url);
-              return new Response('throw new Error("Module not available offline: ' + url.pathname + '");', {
+              var safePath = url.pathname.replace(/[\\'"<>]/g, '');
+              return new Response('throw new Error("Module not available offline: ' + safePath + '");', {
                 status: 504,
                 statusText: 'Gateway Timeout',
                 headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }

@@ -1,3 +1,7 @@
+## [1.930] - 2026-02-13
+- added lite version to main menu
+
+
 ## [1.929] - 2026-02-12
 - ``` feat: enable service worker caching for offline support and faster loading ```
 
