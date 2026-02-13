@@ -1,3 +1,7 @@
+## [1.932] - 2026-02-13
+- chore: update version to 1.931 across all relevant files and enhance CSP script-src directives
+
+
 ## [1.931] - 2026-02-13
 - feat: Enhance cycle import manager with localStorage notifications and improve task option button handling
 
