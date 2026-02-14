@@ -27,6 +27,7 @@ import {
     DOM_IDS,
     STORAGE_KEYS
 } from './constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // TEST MODE DETECTION - Detect interrupted tests and restore real data
@@ -299,7 +300,7 @@ class MiniCycleState {
                     this.data = this.createMinimalFallbackState();
                     this.isInitialized = true;
                     this.deps.showNotification(
-                        'Data was corrupted and has been reset. Your previous data could not be recovered.',
+                        getLabel('notify.dataCorrupted'),
                         'error',
                         10000
                     );
@@ -488,7 +489,7 @@ class MiniCycleState {
                             console.warn('⚠️ Multi-tab conflict: Local unsaved changes will be overwritten');
                             if (this.deps.showNotification) {
                                 this.deps.showNotification(
-                                    'Data updated from another tab. Your unsaved changes were overwritten.',
+                                    getLabel('notify.multiTabConflict'),
                                     'warning',
                                     5000
                                 );
@@ -621,7 +622,7 @@ class MiniCycleState {
         } catch (error) {
             console.error('❌ State update failed:', error);
             this.data = oldData;
-            this.deps.showNotification('State update failed', 'error');
+            this.deps.showNotification(getLabel('notify.stateUpdateFailed'), 'error');
             throw error; // Re-throw so caller knows update failed
         }
     }
@@ -738,7 +739,7 @@ class MiniCycleState {
                     storageError?.code === 1014) {
                     console.warn('⚠️ localStorage quota exceeded — continuing with in-memory state', storageError);
                     this.deps.showNotification(
-                        'Storage full — changes are kept in memory but may be lost on refresh. Try removing unused routines.',
+                        getLabel('notify.storageFull'),
                         'warning',
                         8000
                     );
@@ -754,7 +755,7 @@ class MiniCycleState {
             this._hideSavingIndicator();
         } catch (error) {
             console.error('❌ Save failed:', error);
-            this.deps.showNotification('Failed to save data', 'error');
+            this.deps.showNotification(getLabel('notify.saveFailed'), 'error');
             this._hideSavingIndicator();
         }
     }

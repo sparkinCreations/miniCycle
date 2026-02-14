@@ -130,7 +130,7 @@ export class HistoryManager {
             }
         }, true);
 
-        this.deps.showNotification('History cleared', 'success');
+        this.deps.showNotification(getLabel('notify.historyCleared'), 'success');
 
         // Refresh modal if open
         if (this.modalOverlay) {
@@ -165,7 +165,7 @@ export class HistoryManager {
                 }
             }, true);
 
-            this.deps.showNotification('Routine progress reset to 0', 'success');
+            this.deps.showNotification(getLabel('notify.progressReset'), 'success');
 
             // Refresh stats panel if available
             if (this.deps.updateStatsPanel) {
@@ -179,10 +179,10 @@ export class HistoryManager {
             this.closeModal();
 
             confirmModal({
-                title: 'Reset Routine Progress',
-                message: 'This will reset this routine\'s cycle count and cleared tasks count to 0. History and cleared task entries will NOT be deleted. Global achievement progress will NOT be affected.',
-                confirmText: 'Reset',
-                cancelText: 'Cancel',
+                title: getLabel('modal.resetProgressTitle'),
+                message: getLabel('modal.resetProgressMessage'),
+                confirmText: getLabel('modal.resetProgressConfirm'),
+                cancelText: getLabel('button.cancel'),
                 callback: (confirmed) => {
                     if (confirmed) {
                         doReset();
@@ -192,7 +192,7 @@ export class HistoryManager {
                 }
             });
         } else {
-            if (confirm('Reset this routine\'s progress to 0? History will not be affected.')) {
+            if (confirm(getLabel('modal.resetProgressMessage'))) {
                 doReset();
             }
         }
@@ -272,7 +272,7 @@ export class HistoryManager {
                         font-size: 18px;
                         font-weight: 600;
                         color: var(--text-primary, #333);
-                    ">History</h2>
+                    ">${getLabel('history.title')}</h2>
                     <button class="history-action-btn" style="
                         background: none;
                         border: none;
@@ -280,7 +280,7 @@ export class HistoryManager {
                         cursor: pointer;
                         padding: 4px 12px;
                         color: var(--danger-color, #dc3545);
-                    ">Clear All</button>
+                    ">${getLabel('history.clearAll')}</button>
                 </header>
                 ${clearedCount > 0 ? `
                 <div class="history-tabs" style="
@@ -297,7 +297,7 @@ export class HistoryManager {
                         color: var(--text-primary, #333);
                         border-bottom: 2px solid transparent;
                         transition: all 0.15s ease;
-                    ">📜 Events</button>
+                    ">📜 ${getLabel('history.events')}</button>
                     <button class="history-tab" data-tab="cleared" style="
                         flex: 1;
                         padding: 12px;
@@ -308,7 +308,7 @@ export class HistoryManager {
                         color: var(--text-primary, #333);
                         border-bottom: 2px solid transparent;
                         transition: all 0.15s ease;
-                    ">✓ Cleared Tasks <span style="
+                    ">✓ ${getLabel('history.clearedTasks')} <span style="
                         background: var(--primary-color, #4c79ff);
                         color: white;
                         border-radius: 10px;
@@ -336,7 +336,7 @@ export class HistoryManager {
                         padding: 8px 16px;
                         color: var(--text-secondary, #666);
                         text-decoration: underline;
-                    ">Reset Routine Progress</button>
+                    ">${getLabel('history.resetRoutineProgress')}</button>
                 </div>
                 <footer class="history-footer" style="
                     display: none;
@@ -352,7 +352,7 @@ export class HistoryManager {
                         background: none;
                         cursor: pointer;
                         color: var(--text-primary, #333);
-                    ">Cancel</button>
+                    ">${getLabel('button.cancel')}</button>
                     <button class="history-confirm-btn" style="
                         flex: 1;
                         padding: 10px;
@@ -361,7 +361,7 @@ export class HistoryManager {
                         background: var(--primary-color, #4c79ff);
                         cursor: pointer;
                         color: white;
-                    ">Recreate Selected (0)</button>
+                    ">${getLabel('history.recreateSelected', { vars: { count: 0 } })}</button>
                 </footer>
             </div>
         `;
@@ -442,16 +442,16 @@ export class HistoryManager {
                 const confirmModal = this.deps.showConfirmationModal;
                 if (confirmModal) {
                     confirmModal({
-                        title: 'Clear History',
-                        message: 'Are you sure you want to clear all history for this routine?',
-                        confirmText: 'Clear',
-                        cancelText: 'Cancel',
+                        title: getLabel('modal.clearHistoryTitle'),
+                        message: getLabel('modal.clearHistoryMessage'),
+                        confirmText: getLabel('modal.clearHistoryConfirm'),
+                        cancelText: getLabel('button.cancel'),
                         callback: (confirmed) => {
                             if (confirmed) this.clearHistory();
                         }
                     });
                 } else {
-                    if (confirm('Clear all history for this routine?')) {
+                    if (confirm(getLabel('modal.clearHistoryMessage'))) {
                         this.clearHistory();
                     }
                 }
@@ -560,8 +560,8 @@ export class HistoryManager {
                     color: var(--text-secondary, #666);
                 ">
                     <div style="font-size: 48px; margin-bottom: 16px;">📜</div>
-                    <p style="margin: 0;">No history yet</p>
-                    <p style="margin: 8px 0 0; font-size: 14px;">Complete cycles or clear tasks to see history here</p>
+                    <p style="margin: 0;">${getLabel('history.noHistoryYet')}</p>
+                    <p style="margin: 8px 0 0; font-size: 14px;">${getLabel('history.noHistoryHint')}</p>
                 </div>
             `;
             return;
@@ -607,8 +607,8 @@ export class HistoryManager {
                     color: var(--text-secondary, #666);
                 ">
                     <div style="font-size: 48px; margin-bottom: 16px;">✓</div>
-                    <p style="margin: 0;">No cleared tasks</p>
-                    <p style="margin: 8px 0 0; font-size: 14px;">Tasks you clear in To-Do mode will appear here</p>
+                    <p style="margin: 0;">${getLabel('history.noClearedTasks')}</p>
+                    <p style="margin: 8px 0 0; font-size: 14px;">${getLabel('history.noClearedHint')}</p>
                 </div>
             `;
             return;
@@ -706,7 +706,7 @@ export class HistoryManager {
                         gap: 8px;
                     ">
                         <span>${dateStr} ${timeStr}</span>
-                        ${entry.wasHighPriority ? '<span style="color: var(--danger-color, #dc3545);">High Priority</span>' : ''}
+                        ${entry.wasHighPriority ? `<span style="color: var(--danger-color, #dc3545);">${getLabel('history.highPriority')}</span>` : ''}
                     </div>
                 </div>
             </div>
@@ -723,21 +723,24 @@ export class HistoryManager {
         const yesterday = today - 86400000;
 
         const groups = {
-            'Today': [],
-            'Yesterday': [],
-            'Earlier': []
+            [getLabel('history.dateToday')]: [],
+            [getLabel('history.dateYesterday')]: [],
+            [getLabel('history.dateEarlier')]: []
         };
+        const todayKey = getLabel('history.dateToday');
+        const yesterdayKey = getLabel('history.dateYesterday');
+        const earlierKey = getLabel('history.dateEarlier');
 
         for (const event of events) {
             const eventDate = new Date(event.timestamp);
             const eventDay = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate()).getTime();
 
             if (eventDay >= today) {
-                groups['Today'].push(event);
+                groups[todayKey].push(event);
             } else if (eventDay >= yesterday) {
-                groups['Yesterday'].push(event);
+                groups[yesterdayKey].push(event);
             } else {
-                groups['Earlier'].push(event);
+                groups[earlierKey].push(event);
             }
         }
 
@@ -764,10 +767,10 @@ export class HistoryManager {
         };
 
         const labels = {
-            'cycle_completed': 'Cycle Completed',
-            'tasks_cleared': 'Tasks Cleared',
-            'cycle_reset': 'Cycle Reset',
-            'achievement_unlocked': 'Achievement Unlocked'
+            'cycle_completed': getLabel('history.cycleCompleted'),
+            'tasks_cleared': getLabel('history.tasksCleared'),
+            'cycle_reset': getLabel('history.cycleReset'),
+            'achievement_unlocked': getLabel('history.achievementUnlocked')
         };
 
         const time = new Date(event.timestamp).toLocaleTimeString([], {
@@ -884,14 +887,14 @@ export class HistoryManager {
         if (!actionBtn) return;
 
         if (this.activeTab === 'events') {
-            actionBtn.textContent = 'Clear All';
+            actionBtn.textContent = getLabel('history.clearAll');
             actionBtn.style.color = 'var(--danger-color, #dc3545)';
             actionBtn.style.display = '';
         } else if (this.activeTab === 'cleared') {
             if (this.isRecreateMode) {
                 actionBtn.style.display = 'none';
             } else {
-                actionBtn.textContent = 'Recreate Tasks';
+                actionBtn.textContent = getLabel('history.recreateTasks');
                 actionBtn.style.color = 'var(--primary-color, #4c79ff)';
                 actionBtn.style.display = '';
             }
@@ -908,7 +911,7 @@ export class HistoryManager {
         const confirmBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_CONFIRM_BTN);
         if (confirmBtn) {
             const count = this.selectedTasks.size;
-            confirmBtn.textContent = `Recreate Selected (${count})`;
+            confirmBtn.textContent = getLabel('history.recreateSelected', { vars: { count } });
             confirmBtn.disabled = count === 0;
             confirmBtn.style.opacity = count === 0 ? '0.5' : '1';
         }
@@ -926,7 +929,7 @@ export class HistoryManager {
 
         if (!addTask || typeof addTask !== 'function') {
             console.error('❌ HistoryManager: addTask not available');
-            this.deps.showNotification('Cannot recreate tasks - addTask not available', 'error');
+            this.deps.showNotification(getLabel('notify.recreateUnavailable'), 'error');
             return;
         }
 
@@ -958,11 +961,11 @@ export class HistoryManager {
 
         if (created > 0) {
             this.deps.showNotification(
-                `Recreated ${created} task${created !== 1 ? 's' : ''}`,
+                getLabel('notify.tasksRecreated', { vars: { count: created } }),
                 'success'
             );
         } else {
-            this.deps.showNotification('Failed to recreate tasks - check console for details', 'warning');
+            this.deps.showNotification(getLabel('notify.clearedRecreateFailed'), 'warning');
         }
 
         // Reset state and refresh

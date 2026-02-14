@@ -1,10 +1,10 @@
 # Code Audit #6 — Full Code Review with Blind Pass (130+ Findings)
 
 **Date:** February 13, 2026
-**Status:** P0 + P1 Fixes Applied (23 of 30 items fixed, 4 false alarms/already handled, 3 deferred)
+**Status:** P0 + P1 Fixes COMPLETE (24 fixed, 6 false alarms/already handled, 0 remaining)
 **Scope:** Full codebase review (initial pass on core modules + blind pass on 40 under-examined modules)
 **Method:** Two-phase review. Phase 1 used project memory context. Phase 2 was a blind pass with no memory context on modules that Phase 1 underexplored.
-**Last Updated:** February 13, 2026
+**Last Updated:** February 14, 2026
 
 ---
 
@@ -38,7 +38,7 @@
 | 7 | backupRestoreManager.js | Race condition between neutralize and debounced save | 283-301 | `neutralizeAppState()` clears AppState, but if `saveTimeout` fires before the page reload, partial/null data gets saved to localStorage. | **ALREADY HANDLED** — `neutralizeAppState()` already clears `saveTimeout` at line 66-68 |
 | 8 | backupRestoreManager.js | Legacy backup restoration has zero sanitization | 319-334 | Writes legacy data directly to localStorage without any validation or sanitization. | **FIXED** — added JSON validation for `miniCycleStorage`, type coercion for reminders/milestones |
 | 9 | service-worker.js | Substring-based cache version matching | 539 | `!name.includes('v724')` also matches `v7249`. Should use exact match like `!name.endsWith('-v724')`. | **ALREADY HANDLED** — activate handler uses exact `!== STATIC_CACHE && !== DYNAMIC_CACHE` comparison, not substring |
-| 10 | orchestrator.js | deps container clearing on retry is incomplete | 386-420 | Modules may hold closure references to OLD deps objects after properties are deleted. Second boot has stale dependency references. | **DEFERRED** — touches boot retry path, needs dedicated regression testing |
+| 10 | orchestrator.js | deps container clearing on retry is incomplete | 386-420 | Modules may hold closure references to OLD deps objects after properties are deleted. Second boot has stale dependency references. | **ALREADY HANDLED** — code already deletes nested properties (preserving proxy closures) and calls `clearLoadedModules()` + `appInit.reset()` |
 | 11 | cycleImportManager.js | `!!value` coercion enables unintended features | 554-562 | `safeTaskOptionButtons[key] = !!importedData.taskOptionButtons[key]` converts any truthy string to `true`, potentially enabling features the user never intended. Check `typeof value === 'boolean'`. | **FIXED** — changed to strict `typeof val === 'boolean' ? val : false` |
 
 ---
@@ -62,8 +62,8 @@
 | 24 | onboardingManager.js | Body class never removed | 152 | `document.body.classList.add('onboarding-active')` — never removed if user cancels. Layout leak. | **FIXED** — added `classList.remove('onboarding-active')` in `completeOnboarding()` |
 | 25 | cycleImportManager.js | Shared closure variable for file input | 108-122 | Two import buttons share the same `fileInput` closure. Wrong button's file input could be used. | **FALSE ALARM** — code creates fresh input each call, old one removed; `isPickerOpen` guard prevents concurrent use |
 | 26 | cycleImportManager.js | sessionStorage for post-reload notification | 627 | Many browsers clear sessionStorage on reload, so notification may never display. Use localStorage with flag. | **FIXED** — changed to localStorage; also added the missing read-and-display side (was a dead write) |
-| 27 | coreBoot.js | AppState creation-to-registration gap | 638-759 | Between `AppState.init()` completing (711) and registration in appContext (718), modules could access `appContext.state().AppState` and get null. | **DEFERRED** — touches AppState init order, needs careful sequencing and regression testing |
-| 28 | appContext.js | Multiple versioned imports risk module duplication | orchestrator:461, coreBoot:584, moduleLoader:61 | `appContext.js` loaded 3+ times with different `?v=` suffixes. Each could create a separate module instance. | **DEFERRED** — module caching behavior needs investigation |
+| 27 | coreBoot.js | AppState creation-to-registration gap | 638-759 | Between `AppState.init()` completing (711) and registration in appContext (718), modules could access `appContext.state().AppState` and get null. | **FALSE ALARM** — gap is harmless; boot phases are strictly ordered and all consumers use lazy getters that resolve at call-time |
+| 28 | appContext.js | Multiple versioned imports risk module duplication | orchestrator:461, coreBoot:584, moduleLoader:61 | `appContext.js` loaded 3+ times with different `?v=` suffixes. Each could create a separate module instance. | **FIXED** — orchestrator.js now uses `versionSuffix` instead of `APP_VERSION` for appContext import, matching coreBoot/featureBoot |
 | 29 | icons.js | XSS in className injection | 103 | `svg.replace('<svg', '<svg class="${className}"')` doesn't escape className. Attacker-controlled className could inject attributes. | **FIXED** — sanitized className with allowlist regex before interpolation |
 | 30 | storageUtils.js | `_cachedQuota` scoping bug | 159, 194 | Variable declared at line 194 but assigned at line 159 inside a function, creating a new local variable. Cached quota state is lost. | **FIXED** — moved `_cachedQuota` declaration before first use |
 
@@ -255,15 +255,10 @@ These modules use plain `_deps` objects instead of `diBase.js`:
 ## Recommended Fix Priority
 
 ### Phase 1 — Critical (Do Now) — COMPLETE
-All P0 items resolved: 7 fixed, 2 already handled, 1 false alarm, 1 deferred.
+All P0 items resolved: 7 fixed, 3 already handled, 1 false alarm.
 
 ### Phase 2 — High (This Sprint) — COMPLETE
-All P1 items resolved: 16 fixed, 1 false alarm, 2 deferred.
-
-### Remaining Deferred Items (Need Dedicated Testing Session)
-- #10 — orchestrator.js deps container clearing on retry (boot retry path)
-- #27 — coreBoot.js AppState creation-to-registration gap (init ordering)
-- #28 — appContext.js multiple versioned imports (module caching)
+All P1 items resolved: 17 fixed, 2 false alarms.
 
 ### Phase 3 — Medium (This Month)
 1. Add modal focus trapping and restoration (A1, A2)

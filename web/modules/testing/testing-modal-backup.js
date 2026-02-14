@@ -15,6 +15,7 @@ import {
     escapeHtml
 } from './testing-modal-core.js';
 import { DOM_SELECTORS, STORAGE_KEYS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ==========================================
 // BUTTON SETUP
@@ -143,9 +144,9 @@ export async function listAvailableBackups() {
 
     if (totalBackups === 0) {
         appendToTestResults("No backups found\n\n");
-        showNotification("No backups available", "info", 2000);
+        showNotification(getLabel('notify.noBackupsAvailable'), "info", 2000);
     } else {
-        showNotification(`Found ${totalBackups} backups`, "info", 2000);
+        showNotification(getLabel('notify.backupsFoundCount', { vars: { count: totalBackups } }), "info", 2000);
     }
 }
 
@@ -240,7 +241,7 @@ export async function restoreFromBackup() {
 
     if (allBackups.length === 0) {
         appendToTestResults("No backups available to restore\n\n");
-        showNotification("No backups available to restore", "error", 3000);
+        showNotification(getLabel('notify.noBackupsRestore'), "error", 3000);
         return;
     }
 
@@ -557,13 +558,13 @@ export async function restoreFromBackup() {
                     appendToTestResults(`Reloading application...\n\n`);
 
                     modal.remove();
-                    showNotification("Backup restored successfully! Reloading...", "success", 3000);
+                    showNotification(getLabel('notify.testRestoreSuccess'), "success", 3000);
 
                     setTimeout(() => location.reload(), 1500);
 
                 } catch (error) {
                     appendToTestResults(`Restore failed: ${error.message}\n\n`);
-                    showNotification("Failed to restore backup", "error", 3000);
+                    showNotification(getLabel('notify.testRestoreFailed'), "error", 3000);
                     console.error("Backup restore error:", error);
                 }
             }
@@ -593,7 +594,7 @@ export async function restoreFromBackup() {
     appendToTestResults(`Found ${allBackups.length} available backups (${autoCount} auto, ${manualCount} manual)\n`);
     appendToTestResults("Select a backup above to restore\n\n");
 
-    showNotification(`Found ${allBackups.length} backups - select one to restore`, "info", 3000);
+    showNotification(getLabel('notify.selectBackupRestore', { vars: { count: allBackups.length } }), "info", 3000);
 }
 
 /**
@@ -605,7 +606,7 @@ export async function createManualBackup() {
 
     if (!deps.backupManager) {
         appendToTestResults("BackupManager not available\n\n");
-        showNotification("Backup system not loaded", "error", 3000);
+        showNotification(getLabel('notify.backupSystemNotLoaded'), "error", 3000);
         return;
     }
 
@@ -614,7 +615,7 @@ export async function createManualBackup() {
 
     if (!backupName) {
         appendToTestResults("Backup cancelled - no name provided\n\n");
-        showNotification("Backup cancelled", "info", 2000);
+        showNotification(getLabel('notify.backupCancelled'), "info", 2000);
         return;
     }
 
@@ -629,14 +630,14 @@ export async function createManualBackup() {
             appendToTestResults(`Name: ${backupName}\n`);
             appendToTestResults(`Total backups: ${totalBackups}\n\n`);
 
-            showNotification(`Backup created: "${backupName}"`, "success", 3000);
+            showNotification(getLabel('notify.testBackupCreated', { vars: { name: backupName } }), "success", 3000);
         } else {
             throw new Error('Backup creation returned false');
         }
 
     } catch (error) {
         appendToTestResults(`Backup failed: ${error.message}\n\n`);
-        showNotification("Failed to create backup", "error", 3000);
+        showNotification(getLabel('notify.testBackupFailed'), "error", 3000);
         console.error('Manual backup error:', error);
     }
 }
@@ -661,7 +662,7 @@ export function cleanOldBackups() {
 
     appendToTestResults(`Cleaned ${cleaned} old backups\n`);
     appendToTestResults(`Remaining backups: ${backupKeys.length - cleaned}\n\n`);
-    showNotification(`Cleaned ${cleaned} old backups`, "success", 2000);
+    showNotification(getLabel('notify.backupsCleaned', { vars: { count: cleaned } }), "success", 2000);
 }
 
 console.log('Testing Modal Backup loaded (DI-pure)');

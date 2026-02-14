@@ -25,6 +25,7 @@
  */
 
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ✅ Single source of truth: Read version from globalThis (set by version.js)
 // Falls back to 'dev-local' for local development without version.js
@@ -189,39 +190,39 @@ function getErrorDetails(error, phase) {
   // Cache/import errors
   if (msg.includes('Importing') || msg.includes('module') || msg.includes('binding name')) {
     return {
-      description: 'A cached file is outdated',
-      suggestion: 'Clear browser cache and reload'
+      description: getLabel('boot.errorCachedFile'),
+      suggestion: getLabel('boot.suggestClearCache')
     };
   }
 
   // Network errors
   if (msg.includes('fetch') || msg.includes('network') || msg.includes('Failed to load')) {
     return {
-      description: 'Network connection issue',
-      suggestion: 'Check your internet connection'
+      description: getLabel('boot.errorNetwork'),
+      suggestion: getLabel('boot.suggestCheckInternet')
     };
   }
 
   // Timeout errors
   if (msg.includes('timed out') || msg.includes('timeout')) {
     return {
-      description: `${phase} took too long`,
-      suggestion: 'Try again or use Lite version'
+      description: getLabel('boot.errorTimeout', { vars: { phase } }),
+      suggestion: getLabel('boot.suggestRetryOrLite')
     };
   }
 
   // Storage errors
   if (msg.includes('localStorage') || msg.includes('storage') || msg.includes('quota')) {
     return {
-      description: 'Storage access problem',
-      suggestion: 'Clear site data in browser settings'
+      description: getLabel('boot.errorStorage'),
+      suggestion: getLabel('boot.suggestClearSiteData')
     };
   }
 
   // Default
   return {
-    description: 'Something went wrong during startup',
-    suggestion: 'Try refreshing or clearing cache'
+    description: getLabel('boot.errorGeneric'),
+    suggestion: getLabel('boot.suggestRefresh')
   };
 }
 
@@ -267,14 +268,13 @@ function showBootError(phase, error, willRetry = false) {
   const safeDescription = escapeHtml(description);
   const safeSuggestion = escapeHtml(suggestion);
   const safeShortError = escapeHtml(shortError);
-  const safePhase = escapeHtml(phase);
 
   if (willRetry) {
     loader.innerHTML = `
       <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle" class="loader-logo" width="120" height="96">
-      <div class="loader-text" style="animation: none;">Having trouble loading...</div>
+      <div class="loader-text" style="animation: none;">${escapeHtml(getLabel('boot.havingTrouble'))}</div>
       <div style="margin-top: 8px; color: rgba(255,255,255,0.9); font-size: 13px;">${safeDescription}</div>
-      <div style="margin-top: 10px; color: rgba(255,255,255,0.7); font-size: 14px;">Retrying automatically...</div>
+      <div style="margin-top: 10px; color: rgba(255,255,255,0.7); font-size: 14px;">${escapeHtml(getLabel('boot.retrying'))}</div>
     `;
   } else {
     // Check if this looks like a cache error
@@ -282,7 +282,7 @@ function showBootError(phase, error, willRetry = false) {
 
     loader.innerHTML = `
       <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle" width="120" height="96" style="object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2)); animation: none;">
-      <div style="margin-top: 20px; color: white; font-size: 18px; font-weight: 500; font-family: 'Inter', sans-serif;">Unable to Load</div>
+      <div style="margin-top: 20px; color: white; font-size: 18px; font-weight: 500; font-family: 'Inter', sans-serif;">${escapeHtml(getLabel('boot.unableToLoad'))}</div>
       <div style="margin-top: 8px; color: rgba(255,255,255,0.9); font-size: 14px; max-width: 300px; text-align: center;">
         ${safeDescription}
       </div>
@@ -295,19 +295,19 @@ function showBootError(phase, error, willRetry = false) {
       <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
         ${isCacheErrorMatch ? `
         <button id="clear-cache-btn" style="padding: 12px 24px; cursor: pointer; border: none; background: #ff9800; color: white; border-radius: 8px; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; transition: all 0.2s;">
-          🗑️ Clear Cache & Reload
+          🗑️ ${escapeHtml(getLabel('boot.clearCache'))}
         </button>
         ` : `
         <button id="try-again-btn" style="padding: 12px 24px; cursor: pointer; border: 2px solid white; background: transparent; color: white; border-radius: 8px; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; transition: all 0.2s;">
-          Try Again
+          ${escapeHtml(getLabel('boot.tryAgain'))}
         </button>
         `}
         <button id="lite-version-btn" style="padding: 12px 24px; cursor: pointer; border: none; background: white; color: #4c79ff; border-radius: 8px; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; transition: all 0.2s;">
-          Use Lite Version
+          ${escapeHtml(getLabel('boot.useLite'))}
         </button>
       </div>
       <div style="margin-top: 12px; color: rgba(255,255,255,0.5); font-size: 11px;">
-        Failed at: ${safePhase} (attempt ${bootAttempt})
+        ${escapeHtml(getLabel('boot.failedAt', { vars: { phase: phase, number: bootAttempt } }))}
       </div>
     `;
 
@@ -322,7 +322,7 @@ function showBootError(phase, error, willRetry = false) {
     const clearCacheBtn = document.getElementById(DOM_IDS.CLEAR_CACHE_BTN);
     if (clearCacheBtn) {
       clearCacheBtn.addEventListener('click', async () => {
-        clearCacheBtn.textContent = 'Clearing...';
+        clearCacheBtn.textContent = getLabel('boot.clearing');
         clearCacheBtn.disabled = true;
 
         try {
@@ -357,12 +357,12 @@ async function runBootSequence() {
   const versionSuffix = isRetry ? `${APP_VERSION}.r${bootAttempt}` : APP_VERSION;
 
   // ========== CHECK FOR UPDATES ==========
-  updateLoaderProgress('Checking for updates...', 5);
+  updateLoaderProgress(getLabel('boot.checkingUpdates'), 5);
   // Service worker handles actual update check asynchronously
   // This step ensures version.js is loaded and ready
 
   // ========== LOAD BOOT MODULES (with timeout) ==========
-  updateLoaderProgress('Loading core...', 15);
+  updateLoaderProgress(getLabel('boot.loadingCore'), 15);
   const [coreBoot, featureBoot, uiBoot] = await withTimeout(
     Promise.all([
       import(`./coreBoot.js?v=${versionSuffix}`),
@@ -420,7 +420,7 @@ async function runBootSequence() {
   }
 
   // ========== PHASE 1: CORE (with timeout) ==========
-  updateLoaderProgress('Starting systems...', 30);
+  updateLoaderProgress(getLabel('boot.startingSystems'), 30);
   console.log('🔧 Phase 1: Core systems...');
   const coreResult = await withTimeout(
     initCoreBoot(deps, versionSuffix),
@@ -449,7 +449,7 @@ async function runBootSequence() {
   console.log(`✅ Phase 1 complete (${Date.now() - bootStart}ms)`);
 
   // ========== PHASE 2: FEATURES (with timeout) ==========
-  updateLoaderProgress('Loading features...', 55);
+  updateLoaderProgress(getLabel('boot.loadingFeatures'), 55);
   console.log('🔌 Phase 2: Feature modules...');
   await withTimeout(
     bootFeatures(deps, coreResult),
@@ -458,12 +458,12 @@ async function runBootSequence() {
   );
 
   // ✅ Use version param for cache-busting (like appInit pattern)
-  const appContextMod = await import(`../core/appContext.js?v=${APP_VERSION}`);
+  const appContextMod = await import(`../core/appContext.js?v=${versionSuffix}`);
   appContextMod.validateAllApisRegistered();
   console.log(`✅ Phase 2 complete (${Date.now() - bootStart}ms)`);
 
   // ========== PHASE 3: DATA & UI (with timeout) ==========
-  updateLoaderProgress('Starting up...', 85);
+  updateLoaderProgress(getLabel('boot.startingUp'), 85);
   console.log('🎨 Phase 3: Data & UI...');
 
   await withTimeout(
@@ -479,7 +479,7 @@ async function runBootSequence() {
     'Phase 3 (UI)'
   );
 
-  updateLoaderProgress('Ready!', 100);
+  updateLoaderProgress(getLabel('boot.ready'), 100);
   const totalTime = Date.now() - bootStart;
   console.log(`✅ miniCycle initialization complete (${totalTime}ms)`);
 
@@ -618,11 +618,11 @@ async function waitForServiceWorker(timeoutMs = 3000) {
 async function startOrchestrator() {
   try {
     // Show initial progress immediately
-    updateLoaderProgress('Connecting...', 2);
+    updateLoaderProgress(getLabel('boot.connecting'), 2);
 
     // Wait for SW to be ready before importing modules
     await waitForServiceWorker();
-    updateLoaderProgress('Loading modules...', 4);
+    updateLoaderProgress(getLabel('boot.loadingModules'), 4);
 
     await loadDependencies();
     await initApp();

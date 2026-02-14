@@ -23,6 +23,7 @@
  */
 
 import { DOM_IDS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // Module-level deps for late injection (static class pattern)
 let _deps = {};
@@ -430,7 +431,7 @@ export class GlobalUtils {
             console.error(`[GlobalUtils] Failed to read localStorage key "${key}":`, error);
             // DI-pure (no window.* fallback)
             if (typeof _deps.showNotification === 'function') {
-                _deps.showNotification('Storage access error. Some data may not load.', 'error');
+                _deps.showNotification(getLabel('notify.storageAccessError'), 'error');
             }
             return defaultValue;
         }
@@ -455,9 +456,9 @@ export class GlobalUtils {
             // DI-pure (no window.* fallback)
             if (!silent && typeof _deps.showNotification === 'function') {
                 if (error.name === 'QuotaExceededError') {
-                    _deps.showNotification('Storage quota exceeded. Please export your data and clear some space.', 'error');
+                    _deps.showNotification(getLabel('notify.storageExceeded'), 'error');
                 } else {
-                    _deps.showNotification('Failed to save data. Your changes may not be preserved.', 'error');
+                    _deps.showNotification(getLabel('notify.saveFailed'), 'error');
                 }
             }
             return false;

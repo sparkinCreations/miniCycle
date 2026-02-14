@@ -22,6 +22,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { Z_INDEX } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -722,7 +723,7 @@ async function performAutoMigration(options = {}) {
             const migrationResult = performSchema25Migration();
 
             if (migrationResult.success || migrationResult.partialSuccess) {
-                _deps.showNotification('✅ Force migration completed! Some data may need manual review.', 'success', 6000);
+                _deps.showNotification('✅ ' + getLabel('notify.forceMigrationComplete'), 'success', 6000);
                 return {
                     success: true,
                     forced: true,
@@ -752,7 +753,7 @@ async function performAutoMigration(options = {}) {
 
         // Step 2: Show user notification
         console.log('📢 Showing migration notification to user...');
-        _deps.showNotification('🔄 Updating your data format... This will take a moment.', 'info', 200);
+        _deps.showNotification('🔄 ' + getLabel('notify.dataFormatUpdating'), 'info', 200);
 
         // Step 3: Create automatic backup before migration
         console.log('📥 Creating automatic backup before migration...');
@@ -784,7 +785,7 @@ async function performAutoMigration(options = {}) {
         if (fixResult.success && fixResult.fixedCount > 0) {
             console.log(`✅ Successfully fixed ${fixResult.fixedCount} data issues:`);
             fixResult.details?.forEach(detail => console.log(`   - ${detail}`));
-            _deps.showNotification(`🔧 Fixed ${fixResult.fixedCount} data compatibility issues`, 'info', 3000);
+            _deps.showNotification(`🔧 ${getLabel('notify.dataIssuesFixed', { vars: { count: fixResult.fixedCount } })}`, 'info', 3000);
         } else if (!fixResult.success) {
             console.warn('⚠️ Data fixing encountered issues, but continuing with migration');
             console.warn('🔧 Fix error:', fixResult.message);
@@ -898,8 +899,8 @@ async function performAutoMigration(options = {}) {
 
         // ✅ Enhanced success notification with fix details
         const successMessage = fixResult.fixedCount > 0
-            ? `✅ Data updated successfully! Fixed ${fixResult.fixedCount} compatibility issues.`
-            : '✅ Data format updated successfully!';
+            ? '✅ ' + getLabel('notify.dataUpdatedWithFixes', { vars: { count: fixResult.fixedCount } })
+            : '✅ ' + getLabel('notify.dataFormatUpdated');
         _deps.showNotification(successMessage, 'success', 4000);
 
         // Step 8: Store migration completion info
@@ -1006,7 +1007,7 @@ function createMinimalSchema25() {
 
     _deps.storage.setItem("miniCycleData", JSON.stringify(minimalData));
 
-    _deps.showNotification('⚠️ Created fresh miniCycle. Previous data may have been incompatible.', 'warning', 8000);
+    _deps.showNotification('⚠️ ' + getLabel('notify.freshCycleCreated'), 'warning', 8000);
 
     return {
         success: true,
@@ -1081,7 +1082,7 @@ async function handleMigrationFailure(reason, backupKey) {
 
             // Step 4: Show user-friendly notification
             _deps.showNotification(
-                '⚠️ Unable to update data format. Using existing data until next app reload. Your data is safe!',
+                '⚠️ ' + getLabel('notify.migrationFailed'),
                 'warning',
                 8000
             );

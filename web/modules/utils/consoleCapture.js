@@ -12,6 +12,7 @@
  */
 
 import { STORAGE_KEYS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // Module-level deps for late injection (DI-pure, no window.* fallbacks)
 let _deps = {
@@ -305,7 +306,7 @@ export class MiniCycleConsoleCapture {
         this.appendToTestResults("\n==========================================\n");
         this.appendToTestResults(`📊 Console capture complete - ${allLogs.length} messages displayed\n\n`);
 
-        this.deps.showNotification(`📊 Displayed ${allLogs.length} console messages with enhanced migration logging`, "success", 4000);
+        this.deps.showNotification(`📊 ${getLabel('notify.consoleCaptureDisplayed', { vars: { count: allLogs.length } })}`, "success", 4000);
     }
 
     clearAllConsoleLogs() {
@@ -314,7 +315,7 @@ export class MiniCycleConsoleCapture {
         this.appendToTestResults("🧹 All console logs cleared (including stored buffer)\n");
         this.appendToTestResults("✨ Ready to capture new migration activity\n\n");
 
-        this.deps.showNotification("🧹 Console logs cleared - ready for new capture", "info", 2000);
+        this.deps.showNotification(`🧹 ${getLabel('notify.logsCleared')}`, "info", 2000);
     }
 
     // Enhanced error filtering with more sophisticated detection
@@ -402,13 +403,13 @@ export class MiniCycleConsoleCapture {
         
         if (categories['Critical Errors'].length > 0) {
             this.appendToTestResults("🚨 ATTENTION: Critical errors detected! Review the error messages above.\n\n");
-            this.deps.showNotification(`🚨 Found ${errorMessages.length} migration messages including ${categories['Critical Errors'].length} critical errors`, "error", 6000);
+            this.deps.showNotification(`🚨 ${getLabel('notify.migrationErrorsFound', { vars: { count: errorMessages.length, errorCount: categories['Critical Errors'].length } })}`, "error", 6000);
         } else if (categories['Warnings'].length > 0) {
             this.appendToTestResults("⚠️ Warnings found but no critical errors detected.\n\n");
-            this.deps.showNotification(`⚠️ Found ${errorMessages.length} migration messages with ${categories['Warnings'].length} warnings`, "warning", 4000);
+            this.deps.showNotification(`⚠️ ${getLabel('notify.migrationWarningsFound', { vars: { count: errorMessages.length, warningCount: categories['Warnings'].length } })}`, "warning", 4000);
         } else {
             this.appendToTestResults("✅ No critical errors found in migration messages.\n\n");
-            this.deps.showNotification(`📊 Found ${errorMessages.length} migration messages - no critical errors`, "success", 4000);
+            this.deps.showNotification(`📊 ${getLabel('notify.migrationNoErrors', { vars: { count: errorMessages.length } })}`, "success", 4000);
         }
     }
 

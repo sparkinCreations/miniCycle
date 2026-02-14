@@ -232,7 +232,10 @@ export const DEFAULT_LABELS = deepFreeze({
         progressCleared:    '{current} of {next} cleared tasks to next milestone',
         progressCycles:     '{current} of {next} cycles to next milestone',
         globalDisplay:      '{cycles} {cycleText} / {cleared} {clearedText}',
-        progressCircleAria: 'Current cycle task completion'
+        progressCircleAria: 'Current cycle task completion',
+        allBadgesUnlocked:  'All badges unlocked!',
+        clearedToMilestone: '{remaining} more cleared task(s) to next badge',
+        cyclesToMilestone:  '{remaining} more cycle(s) to next badge'
     },
 
     // ========================================================================
@@ -429,7 +432,99 @@ export const DEFAULT_LABELS = deepFreeze({
         importSuccess:           '"{name}" imported successfully!',
         importTruncated:         '"{name}" imported but exceeded {limit} task limit. {count} task(s) not imported.',
         importNameCollision:     'Name "{original}" already exists. Imported as "{name}".',
-        importWithRecurring:     '"{name}" imported with {count} recurring task(s)!'
+        importWithRecurring:     '"{name}" imported with {count} recurring task(s)!',
+
+        // Storage (additional)
+        storageAccessError:      'Storage access error. Some data may not load.',
+        storageFull:             'Storage full — changes are kept in memory but may be lost on refresh. Try removing unused routines.',
+
+        // State/data notifications
+        dataCorrupted:           'Data was corrupted and has been reset. Your previous data could not be recovered.',
+        multiTabConflict:        'Data updated from another tab. Your unsaved changes were overwritten.',
+        stateUpdateFailed:       'State update failed',
+
+        // Task system notifications
+        taskSystemInitFailed:    'Task system failed to initialize',
+        dragDropWarning:         'Drag & drop may not work properly',
+        arrowToggleFailed:       'Failed to toggle arrow visibility',
+
+        // Recurring (additional)
+        taskSetRecurring:        'Task set to recurring ({frequency})',
+
+        // Milestone/unlock notifications
+        milestoneAchieved:       'You\'ve completed {count} cycles for "{name}"! Keep going!',
+        gameUnlocked:            'Game Unlocked! \'Task Order\' is now available in the Games menu.',
+
+        // Keyboard shortcut notifications
+        keyboardStatsOpened:     'Keyboard shortcut - Stats Panel opened',
+        keyboardTaskOpened:      'Keyboard shortcut - Task View opened',
+        quickToggleTask:         'Quick toggle - Task View',
+        quickToggleStats:        'Quick toggle - Stats Panel',
+
+        // Migration notifications
+        forceMigrationComplete:  'Force migration completed! Some data may need manual review.',
+        dataFormatUpdating:      'Updating your data format... This will take a moment.',
+        dataIssuesFixed:         'Fixed {count} data compatibility issues',
+        dataUpdatedWithFixes:    'Data updated successfully! Fixed {count} compatibility issues.',
+        dataFormatUpdated:       'Data format updated successfully!',
+        freshCycleCreated:       'Created fresh miniCycle. Previous data may have been incompatible.',
+        migrationFailed:         'Unable to update data format. Using existing data until next app reload. Your data is safe!',
+
+        // Device detection notifications
+        deviceDetectionComplete: 'Device detection complete - using full version by user choice',
+        redirectingToLite:       'Redirecting to optimized lite version...',
+        reportRequiresSchema:    'Cannot generate report - Schema 2.5 data required',
+        deviceConfiguredLite:    'Device configured for lite version',
+        deviceConfiguredFull:    'Device configured for full version',
+        noDevicePreference:      'No device preference stored',
+        startingDetectionTest:   'Starting manual device detection test (Schema 2.5 only)...',
+        detectionTestFailed:     'Cannot test - Schema 2.5 data required',
+
+        // Recurring panel notifications
+        taskLoadFailed:          'Unable to load tasks. Please try again.',
+        noRoutineLoaded:         'No routine loaded.',
+        allTasksRecurring:       'All tasks are already recurring.',
+        taskLoadError:           'Error loading tasks.',
+
+        // History panel notifications
+        recreateUnavailable:     'Cannot recreate tasks - addTask not available',
+        tasksRecreated:          'Recreated {count} task(s)',
+
+        // Testing panel notifications
+        resultsCleared:          'Test results cleared',
+        noResultsToExport:       'No test results to export',
+        resultsExported:         'Test results exported to downloads',
+        noResultsToCopy:         'No test results to copy',
+        resultsCopied:           'Test results copied to clipboard',
+        copyFailed:              'Failed to copy test results',
+        testingPanelOpened:      'Testing panel opened',
+        testingPanelClosed:      'Testing panel closed',
+        consoleCaptureDisplayed: 'Displayed {count} console messages with enhanced migration logging',
+        logsCleared:             'Console logs cleared - ready for new capture',
+        migrationErrorsFound:    'Found {count} migration messages including {errorCount} critical errors',
+        migrationWarningsFound:  'Found {count} migration messages with {warningCount} warnings',
+        migrationNoErrors:       'Found {count} migration messages - no critical errors',
+        noBackupsAvailable:      'No backups available',
+        backupsFoundCount:       'Found {count} backups',
+        noBackupsRestore:        'No backups available to restore',
+        selectBackupRestore:     'Found {count} backups - select one to restore',
+        backupSystemNotLoaded:   'Backup system not loaded',
+        backupCancelled:         'Backup cancelled',
+        testBackupCreated:       'Backup created: "{name}"',
+        testBackupFailed:        'Failed to create backup',
+        testRestoreSuccess:      'Backup restored successfully! Reloading...',
+        testRestoreFailed:       'Failed to restore backup',
+        backupsCleaned:          'Cleaned {count} old backups',
+
+        // Stats panel notifications
+        historyNotAvailable:     'History not available',
+        clearedTasksNotAvailable:'Cleared tasks not available',
+        achievementsNotAvailable:'Achievements not available',
+
+        // Recurring panel notifications (additional)
+        panelSetupFailed:        'Panel setup failed - using degraded mode',
+        panelOpenFailed:         'Failed to open panel',
+        panelUpdateFailed:       'Panel update failed'
     },
 
     // ========================================================================
@@ -460,7 +555,10 @@ export const DEFAULT_LABELS = deepFreeze({
         deleteAllMessage:         'Are you sure you want to permanently delete all tasks in "{name}"? This action cannot be undone.',
         factoryResetTitle:        'Factory Reset',
         factoryResetMessage:      'This will DELETE ALL data, settings, and progress. Are you sure?',
-        factoryResetConfirm:      'Delete Everything'
+        factoryResetConfirm:      'Delete Everything',
+        resetProgressMessage:     'This will reset this routine\'s cycle count and cleared tasks count to 0. History and cleared task entries will NOT be deleted. Global achievement progress will NOT be affected.',
+        clearHistoryMessage:      'Are you sure you want to clear all history for this routine?',
+        removeRecurringMessage:   'Are you sure you want to remove "{name}" from recurring tasks?'
     },
 
     // ========================================================================
@@ -507,7 +605,9 @@ export const DEFAULT_LABELS = deepFreeze({
         selectTask:           'Select {name} to make recurring',
         markTaskTemporarily:  'Mark this task temporarily',
         firstSpecificDate:    'First specific date',
-        specificDate:         'Specific date {index}'
+        specificDate:         'Specific date {index}',
+        removeDate:           'Remove this date',
+        addTasksToRecurring:  'Add {count} Tasks to Recurring'
     },
 
     // ========================================================================
@@ -658,9 +758,15 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     unlock: {
-        darkOcean:  '{count} more cleared task(s) to unlock Dark Ocean Theme!',
-        goldenGlow: '{count} more cleared task(s) to unlock Golden Glow Theme!',
-        game:       '{count} more cleared task(s) to unlock Whack-a-Order Game!'
+        darkOcean:          '{count} more cleared task(s) to unlock Dark Ocean Theme!',
+        darkOceanUnlocked:  'Dark Ocean Theme unlocked!',
+        darkOceanCycles:    '{count} more cycle(s) to unlock Dark Ocean Theme!',
+        goldenGlow:         '{count} more cleared task(s) to unlock Golden Glow Theme!',
+        goldenGlowUnlocked: 'Golden Glow Theme unlocked!',
+        goldenGlowCycles:   '{count} more cycle(s) to unlock Golden Glow Theme!',
+        game:               '{count} more cleared task(s) to unlock Whack-a-Order Game!',
+        gameUnlocked:       'Whack-a-Order Game unlocked!',
+        gameCycles:         '{count} more cycle(s) to unlock Whack-a-Order Game!'
     },
 
     // ========================================================================
@@ -804,9 +910,26 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     history: {
-        title:        'History',
-        clearedTasks: 'Cleared Tasks',
-        achievements: 'Achievements'
+        title:                'History',
+        clearedTasks:         'Cleared Tasks',
+        achievements:         'Achievements',
+        events:               'Events',
+        clearAll:             'Clear All',
+        resetRoutineProgress: 'Reset Routine Progress',
+        recreateSelected:     'Recreate Selected ({count})',
+        recreateTasks:        'Recreate Tasks',
+        noHistoryYet:         'No history yet',
+        noHistoryHint:        'Complete cycles or clear tasks to see history here',
+        noClearedTasks:       'No cleared tasks',
+        noClearedHint:        'Tasks you clear in To-Do mode will appear here',
+        highPriority:         'High Priority',
+        dateToday:            'Today',
+        dateYesterday:        'Yesterday',
+        dateEarlier:          'Earlier',
+        cycleCompleted:       'Cycle Completed',
+        tasksCleared:         'Tasks Cleared',
+        cycleReset:           'Cycle Reset',
+        achievementUnlocked:  'Achievement Unlocked'
     },
 
     // ========================================================================
@@ -825,6 +948,7 @@ export const DEFAULT_LABELS = deepFreeze({
         unableToLoad:     'Unable to Load',
         havingTrouble:    'Having trouble loading...',
         retrying:         'Retrying automatically...',
+        clearing:         'Clearing...',
         clearCache:       'Clear Cache & Reload',
         tryAgain:         'Try Again',
         useLite:          'Use Lite Version',
@@ -838,7 +962,19 @@ export const DEFAULT_LABELS = deepFreeze({
         refreshAndroid:   'Pull down to refresh, or clear browser data in Settings.',
         refreshMac:       'Press Cmd+Shift+R to hard refresh.',
         refreshOther:     'Press Ctrl+Shift+R to hard refresh.',
-        previewSelect:    'Select a miniCycle to preview'
+        previewSelect:    'Select a miniCycle to preview',
+
+        // Error descriptions (orchestrator boot failures)
+        errorCachedFile:    'A cached file is outdated',
+        suggestClearCache:  'Clear browser cache and reload',
+        errorNetwork:       'Network connection issue',
+        suggestCheckInternet: 'Check your internet connection',
+        errorTimeout:       '{phase} took too long',
+        suggestRetryOrLite: 'Try again or use Lite version',
+        errorStorage:       'Storage access problem',
+        suggestClearSiteData: 'Clear site data in browser settings',
+        errorGeneric:       'Something went wrong during startup',
+        suggestRefresh:     'Try refreshing or clearing cache'
     },
 
     // ========================================================================
@@ -1224,7 +1360,50 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'history.clearedTasks',
 
     // Boot
-    'boot.previewSelect'
+    'boot.previewSelect',
+
+    // New notify keys
+    'notify.storageAccessError',
+    'notify.storageFull',
+    'notify.dataCorrupted',
+    'notify.stateUpdateFailed',
+    'notify.taskSystemInitFailed',
+    'notify.dragDropWarning',
+    'notify.milestoneAchieved',
+    'notify.gameUnlocked',
+    'notify.taskSetRecurring',
+    'notify.forceMigrationComplete',
+    'notify.dataFormatUpdating',
+    'notify.dataFormatUpdated',
+    'notify.migrationFailed',
+    'notify.taskLoadFailed',
+    'notify.noRoutineLoaded',
+    'notify.allTasksRecurring',
+    'notify.recreateUnavailable',
+    'notify.tasksRecreated',
+
+    // New history keys
+    'history.events',
+    'history.clearAll',
+    'history.resetRoutineProgress',
+    'history.recreateSelected',
+    'history.noHistoryYet',
+    'history.noHistoryHint',
+    'history.noClearedTasks',
+    'history.noClearedHint',
+    'history.cycleCompleted',
+    'history.tasksCleared',
+    'history.cycleReset',
+    'history.achievementUnlocked',
+
+    // New modal keys
+    'modal.resetProgressMessage',
+    'modal.clearHistoryMessage',
+    'modal.removeRecurringMessage',
+
+    // New recurring keys
+    'recurring.removeDate',
+    'recurring.addTasksToRecurring'
 ]));
 
 // ============================================================================

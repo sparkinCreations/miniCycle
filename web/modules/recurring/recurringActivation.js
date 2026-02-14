@@ -14,6 +14,7 @@ import {
     DOM_SELECTORS,
     DATA_SELECTORS
 } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -226,7 +227,7 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
         }
     } else {
         assertInjected('showNotification', Deps.showNotification);
-        Deps.showNotification(`✅ Task set to recurring (${frequency})`, "success", 5000);
+        Deps.showNotification(`✅ ${getLabel('notify.taskSetRecurring', { vars: { frequency } })}`, "success", 5000);
     }
 
     console.log('✅ Task activated as recurring:', assignedTaskId);
@@ -317,7 +318,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
     }
 
     assertInjected('showNotification', Deps.showNotification);
-    Deps.showNotification("↩️ Recurring turned off for this task.", "info", 2000);
+    Deps.showNotification(`↩️ ${getLabel('notify.recurringTurnedOff')}`, "info", 2000);
 
     console.log('✅ Task deactivated from recurring:', assignedTaskId);
 

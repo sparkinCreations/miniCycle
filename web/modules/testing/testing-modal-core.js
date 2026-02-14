@@ -8,6 +8,7 @@
  */
 
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ==========================================
 // DEPENDENCY INJECTION (DI-Pure Pattern)
@@ -222,7 +223,7 @@ export function clearTestResults() {
     const testingOutput = document.getElementById(DOM_IDS.TESTING_OUTPUT);
     if (testingOutput) {
         testingOutput.textContent = "";
-        showNotification("Test results cleared", "info", 1500);
+        showNotification(getLabel('notify.resultsCleared'), "info", 1500);
     }
 }
 
@@ -232,7 +233,7 @@ export function clearTestResults() {
 export function exportTestResults() {
     const testingOutput = document.getElementById(DOM_IDS.TESTING_OUTPUT);
     if (!testingOutput || !testingOutput.textContent.trim()) {
-        showNotification("No test results to export", "warning", 2000);
+        showNotification(getLabel('notify.noResultsToExport'), "warning", 2000);
         return;
     }
 
@@ -249,7 +250,7 @@ export function exportTestResults() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    showNotification("Test results exported to downloads", "success", 3000);
+    showNotification(getLabel('notify.resultsExported'), "success", 3000);
 }
 
 /**
@@ -258,15 +259,15 @@ export function exportTestResults() {
 export function copyTestResults() {
     const testingOutput = document.getElementById(DOM_IDS.TESTING_OUTPUT);
     if (!testingOutput || !testingOutput.textContent.trim()) {
-        showNotification("No test results to copy", "warning", 2000);
+        showNotification(getLabel('notify.noResultsToCopy'), "warning", 2000);
         return;
     }
 
     navigator.clipboard.writeText(testingOutput.textContent).then(() => {
-        showNotification("Test results copied to clipboard", "success", 2000);
+        showNotification(getLabel('notify.resultsCopied'), "success", 2000);
     }).catch(err => {
         console.error('Failed to copy test results:', err);
-        showNotification("Failed to copy test results", "error", 2000);
+        showNotification(getLabel('notify.copyFailed'), "error", 2000);
     });
 }
 
