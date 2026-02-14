@@ -382,6 +382,13 @@ export function setupThreeDotsToggle() {
         document.body.classList.toggle("show-three-dots-enabled", enabled);
         _deps.toggleHoverTaskOptions?.(!enabled);
         _deps.refreshTaskListUI?.();
+
+        // Show tip when disabling on touch devices
+        if (!enabled && ('ontouchstart' in window)) {
+            setTimeout(() => {
+                _deps.showNotification?.('💡 ' + getLabel('notify.threeDotsDisabledTip'), 'info', 4000);
+            }, 300);
+        }
     };
 
     safeAddEventListener(threeDotsToggle, "change", threeDotsToggle._changeHandler);

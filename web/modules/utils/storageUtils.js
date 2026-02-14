@@ -36,6 +36,7 @@
  */
 
 import { APP_VERSION } from '../core/constants.js';
+import { createDIModule, optional } from '../core/diBase.js';
 
 // ============================================================================
 // CONSTANTS
@@ -60,23 +61,11 @@ let _quotaDetectionRequested = false;
 let _lastMeasuredUsedBytes = null;
 let _storageDeltaBytes = 0;
 
-// Dependency injection for AppState (set via setStorageDependencies)
-let _deps = { AppState: null };
+const di = createDIModule('StorageUtils', {
+    AppState: optional(null)
+});
 
-// ============================================================================
-// DEPENDENCY INJECTION
-// ============================================================================
-
-/**
- * Set dependencies for storage utilities (called during boot)
- * @param {Object} deps - Dependencies { AppState }
- */
-export function setStorageDependencies(deps) {
-    if (deps.AppState) {
-        _deps.AppState = deps.AppState;
-        console.log('📊 Storage utilities: AppState connected');
-    }
-}
+export const setStorageDependencies = di.setDependencies;
 
 // ============================================================================
 // QUOTA CACHE FUNCTIONS
@@ -88,7 +77,7 @@ export function setStorageDependencies(deps) {
  */
 function getCachedQuotaFromState() {
     try {
-        const state = _deps.AppState?.get?.();
+        const state = di.resolve().AppState?.get?.();
         return state?.metadata?.storageQuota || null;
     } catch (error) {
         console.warn('Could not read cached quota from state:', error);
@@ -102,12 +91,12 @@ function getCachedQuotaFromState() {
  */
 function saveCachedQuotaToState(bytes) {
     try {
-        if (!_deps.AppState?.isReady?.()) {
+        if (!di.resolve().AppState?.isReady?.()) {
             console.log('📊 AppState not ready, quota will only be cached in session');
             return;
         }
 
-        _deps.AppState.update(data => {
+        di.resolve().AppState.update(data => {
             if (!data.metadata) data.metadata = {};
             data.metadata.storageQuota = {
                 detectedBytes: bytes,

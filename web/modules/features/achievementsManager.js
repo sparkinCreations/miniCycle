@@ -313,6 +313,17 @@ export class AchievementsManager {
             this._escHandler = null;
         }
 
+        // Clean up button and overlay handlers
+        if (this._overlayClickHandler) {
+            this.modalOverlay.removeEventListener('click', this._overlayClickHandler);
+            this._overlayClickHandler = null;
+        }
+        if (this._backBtnHandler) {
+            const backBtn = this.modalOverlay.querySelector(DOM_SELECTORS.ACHIEVEMENTS_BACK_BTN);
+            backBtn?.removeEventListener('click', this._backBtnHandler);
+            this._backBtnHandler = null;
+        }
+
         this.modalOverlay.style.opacity = '0';
         this.modalOverlay.querySelector(DOM_SELECTORS.ACHIEVEMENTS_MODAL).style.transform = 'translateY(20px)';
 
@@ -329,16 +340,18 @@ export class AchievementsManager {
     _setupModalHandlers() {
         if (!this.modalOverlay) return;
 
-        // Back button
+        // Back button (store handler for cleanup)
         const backBtn = this.modalOverlay.querySelector(DOM_SELECTORS.ACHIEVEMENTS_BACK_BTN);
-        backBtn?.addEventListener('click', () => this.closeModal());
+        this._backBtnHandler = () => this.closeModal();
+        backBtn?.addEventListener('click', this._backBtnHandler);
 
-        // Click outside to close
-        this.modalOverlay.addEventListener('click', (e) => {
+        // Click outside to close (store handler for cleanup)
+        this._overlayClickHandler = (e) => {
             if (e.target === this.modalOverlay) {
                 this.closeModal();
             }
-        });
+        };
+        this.modalOverlay.addEventListener('click', this._overlayClickHandler);
 
         // Fix #63: Store escape handler reference for proper cleanup
         this._escHandler = (e) => {
@@ -915,12 +928,13 @@ export class AchievementsManager {
             }
         }
 
-        // Close on overlay click
-        overlay.addEventListener('click', (e) => {
+        // Close on overlay click (store handler for cleanup)
+        this._badgeOverlayClickHandler = (e) => {
             if (e.target === overlay) {
                 this.hideBadgeDetail();
             }
-        });
+        };
+        overlay.addEventListener('click', this._badgeOverlayClickHandler);
 
         // Close on escape
         this._badgeDetailEscHandler = (e) => {
@@ -948,6 +962,12 @@ export class AchievementsManager {
         if (this._badgeCoinCleanup) {
             this._badgeCoinCleanup();
             this._badgeCoinCleanup = null;
+        }
+
+        // Cleanup overlay click handler
+        if (this._badgeOverlayClickHandler && overlay) {
+            overlay.removeEventListener('click', this._badgeOverlayClickHandler);
+            this._badgeOverlayClickHandler = null;
         }
 
         if (this._badgeDetailEscHandler) {

@@ -9,21 +9,15 @@
  * @module pluginIntegrationGuide
  */
 
-// Module-level dependencies (DI-pure, no window.* fallbacks)
-let _deps = {
-    pluginManager: null,
-    TimeTrackerPlugin: null,
-    showNotification: null
-};
+import { createDIModule, optional } from '../core/diBase.js';
 
-/**
- * Set dependencies for PluginIntegrationGuide module
- * @param {Object} dependencies - Injected dependencies
- */
-export function setPluginIntegrationDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
-    console.log('🔌 PluginIntegrationGuide dependencies set:', Object.keys(dependencies));
-}
+const di = createDIModule('PluginIntegrationGuide', {
+    pluginManager: optional(null),
+    TimeTrackerPlugin: optional(null),
+    showNotification: optional(null)
+});
+
+export const setPluginIntegrationDependencies = di.setDependencies;
 
 /*
  * ==========================================
@@ -99,16 +93,17 @@ export function setPluginIntegrationDependencies(dependencies) {
 export const pluginIntegrationHelpers = {
     // Quick setup function (DI-pure)
     async setupBasicPlugins() {
-        if (!_deps.pluginManager) {
+        const deps = di.resolve();
+        if (!deps.pluginManager) {
             console.error('❌ Plugin manager not injected via setPluginIntegrationDependencies');
             return false;
         }
 
         // Register time tracker if available
-        if (_deps.TimeTrackerPlugin) {
-            const timeTracker = new _deps.TimeTrackerPlugin();
-            await _deps.pluginManager.register(timeTracker);
-            await _deps.pluginManager.enable('TimeTracker');
+        if (deps.TimeTrackerPlugin) {
+            const timeTracker = new deps.TimeTrackerPlugin();
+            await deps.pluginManager.register(timeTracker);
+            await deps.pluginManager.enable('TimeTracker');
             console.log('✅ Time Tracker plugin enabled');
         }
 
@@ -123,19 +118,21 @@ export const pluginIntegrationHelpers = {
 
     // Get plugin status (DI-pure)
     getPluginStatus() {
-        if (!_deps.pluginManager) {
+        const deps = di.resolve();
+        if (!deps.pluginManager) {
             console.warn('⚠️ Plugin manager not available');
             return [];
         }
-        return _deps.pluginManager.getPluginStatus();
+        return deps.pluginManager.getPluginStatus();
     },
 
     // Trigger a plugin hook (DI-pure)
     triggerHook(hookName, data) {
-        if (!_deps.pluginManager) {
+        const deps = di.resolve();
+        if (!deps.pluginManager) {
             return;
         }
-        _deps.pluginManager.triggerHook(hookName, data);
+        deps.pluginManager.triggerHook(hookName, data);
     }
 };
 

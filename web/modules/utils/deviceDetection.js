@@ -18,51 +18,39 @@
 
 import { STORAGE_KEYS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { createDIModule, required, optional } from '../core/diBase.js';
 
 // ✅ appInit now injected via DI (no static import - enables versioning)
 
-// Module-level deps for late injection (DI-pure, no window.* fallbacks)
-let _deps = {
-    loadMiniCycleData: null,
-    showNotification: null,
-    AppState: null,
-    appInit: null,
-    AppMeta: null
-};
+const di = createDIModule('DeviceDetection', {
+    loadMiniCycleData: optional(() => { console.warn('loadMiniCycleData not available'); return null; }),
+    showNotification: optional((msg) => console.warn('showNotification not available:', msg)),
+    AppState: required(),
+    appInit: required(),
+    AppMeta: optional(null)
+});
 
-/**
- * Set dependencies for DeviceDetectionManager
- * @param {Object} dependencies - { loadMiniCycleData, showNotification, AppState, appInit, AppMeta }
- */
-export function setDeviceDetectionDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
-    console.log('📱 DeviceDetection dependencies set:', Object.keys(dependencies));
-}
+export const setDeviceDetectionDependencies = di.setDependencies;
 
 export class DeviceDetectionManager {
   constructor(dependencies = {}) {
-    // Store constructor-provided version (can be overridden by _deps.AppMeta)
+    // Store constructor-provided version (can be overridden by DI-injected AppMeta)
     this._constructorVersion = dependencies.AppMeta?.version;
     console.log('[DeviceDetection] Constructor: set version =', this._constructorVersion);
   }
 
   /**
-   * Getter for dependencies - always reads from current module-level _deps
+   * Getter for dependencies - resolves from DI container
    */
   get deps() {
-    return {
-      loadMiniCycleData: _deps.loadMiniCycleData || (() => { console.warn('loadMiniCycleData not available'); return null; }),
-      showNotification: _deps.showNotification || ((msg) => console.warn('showNotification not available:', msg)),
-      AppState: _deps.AppState,
-      appInit: _deps.appInit  // DI-pure (no fallback)
-    };
+    return di.resolve();
   }
 
   /**
    * Get current version from deps or constructor
    */
   get currentVersion() {
-    return _deps.AppMeta?.version || this._constructorVersion;
+    return di.resolve().AppMeta?.version || this._constructorVersion;
   }
 
   // Main detection function

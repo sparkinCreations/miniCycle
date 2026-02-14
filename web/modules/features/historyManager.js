@@ -402,6 +402,20 @@ export class HistoryManager {
             this._overlayClickHandler = null;
         }
 
+        // Clean up button handlers
+        const backBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_BACK_BTN);
+        const actionBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_ACTION_BTN);
+        const cancelBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_CANCEL_BTN);
+        const confirmBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_CONFIRM_BTN);
+        if (this._backBtnHandler) { backBtn?.removeEventListener('click', this._backBtnHandler); this._backBtnHandler = null; }
+        if (this._actionBtnHandler) { actionBtn?.removeEventListener('click', this._actionBtnHandler); this._actionBtnHandler = null; }
+        if (this._cancelBtnHandler) { cancelBtn?.removeEventListener('click', this._cancelBtnHandler); this._cancelBtnHandler = null; }
+        if (this._confirmBtnHandler) { confirmBtn?.removeEventListener('click', this._confirmBtnHandler); this._confirmBtnHandler = null; }
+        if (this._tabHandlers) {
+            this._tabHandlers.forEach(({ element, handler }) => element.removeEventListener('click', handler));
+            this._tabHandlers = null;
+        }
+
         this.modalOverlay.style.opacity = '0';
         this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_MODAL).style.transform = 'translateY(20px)';
 
@@ -420,9 +434,9 @@ export class HistoryManager {
     _setupModalHandlers() {
         if (!this.modalOverlay) return;
 
-        // Back button
+        // Back button (store handler for cleanup)
         const backBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_BACK_BTN);
-        backBtn?.addEventListener('click', () => {
+        this._backBtnHandler = () => {
             if (this.isRecreateMode) {
                 this.isRecreateMode = false;
                 this.selectedTasks.clear();
@@ -432,11 +446,12 @@ export class HistoryManager {
             } else {
                 this.closeModal();
             }
-        });
+        };
+        backBtn?.addEventListener('click', this._backBtnHandler);
 
-        // Action button (Clear All / Recreate)
+        // Action button (Clear All / Recreate) - store handler for cleanup
         const actionBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_ACTION_BTN);
-        actionBtn?.addEventListener('click', () => {
+        this._actionBtnHandler = () => {
             if (this.activeTab === 'events') {
                 // Clear history
                 const confirmModal = this.deps.showConfirmationModal;
@@ -462,11 +477,13 @@ export class HistoryManager {
                 this._updateFooterVisibility();
                 this._updateActionButton();
             }
-        });
+        };
+        actionBtn?.addEventListener('click', this._actionBtnHandler);
 
-        // Tab buttons
+        // Tab buttons - store handlers for cleanup
+        this._tabHandlers = [];
         this.modalOverlay.querySelectorAll(DOM_SELECTORS.HISTORY_TAB).forEach(tab => {
-            tab.addEventListener('click', () => {
+            const handler = () => {
                 const newTab = tab.dataset.tab;
                 if (newTab !== this.activeTab) {
                     this.activeTab = newTab;
@@ -477,24 +494,28 @@ export class HistoryManager {
                     this._updateFooterVisibility();
                     this._updateActionButton();
                 }
-            });
+            };
+            this._tabHandlers.push({ element: tab, handler });
+            tab.addEventListener('click', handler);
         });
 
-        // Footer cancel button
+        // Footer cancel button - store handler for cleanup
         const cancelBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_CANCEL_BTN);
-        cancelBtn?.addEventListener('click', () => {
+        this._cancelBtnHandler = () => {
             this.isRecreateMode = false;
             this.selectedTasks.clear();
             this._renderModalContent();
             this._updateFooterVisibility();
             this._updateActionButton();
-        });
+        };
+        cancelBtn?.addEventListener('click', this._cancelBtnHandler);
 
-        // Footer confirm button
+        // Footer confirm button - store handler for cleanup
         const confirmBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_CONFIRM_BTN);
-        confirmBtn?.addEventListener('click', () => {
+        this._confirmBtnHandler = () => {
             this._recreateSelectedTasks();
-        });
+        };
+        confirmBtn?.addEventListener('click', this._confirmBtnHandler);
 
         // Reset routine progress button
         const resetProgressBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_RESET_PROGRESS_BTN);

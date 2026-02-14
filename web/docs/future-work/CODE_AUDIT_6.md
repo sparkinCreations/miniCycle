@@ -1,7 +1,7 @@
 # Code Audit #6 — Full Code Review with Blind Pass (130+ Findings)
 
 **Date:** February 13, 2026
-**Status:** P0 + P1 Fixes COMPLETE (24 fixed, 6 false alarms/already handled, 0 remaining)
+**Status:** P0 + P1 Fixes COMPLETE (24 fixed, 6 false alarms/already handled, 0 remaining). Additional P2 fixes: DI migration (6 modules), missing await (2), timer cleanup (1), listener leaks (4 modules).
 **Scope:** Full codebase review (initial pass on core modules + blind pass on 40 under-examined modules)
 **Method:** Two-phase review. Phase 1 used project memory context. Phase 2 was a blind pass with no memory context on modules that Phase 1 underexplored.
 **Last Updated:** February 14, 2026
@@ -108,7 +108,7 @@
 | 63 | consoleCapture.js | setInterval without cleanup if module reloads | 168-172 |
 | 64 | deviceDetection.js | Safari returns 0 for `hardwareConcurrency`, forcing all Safari to lite version | 124-128 |
 | 65 | deviceDetection.js | Hardcoded redirect URL — breaks if app in subdirectory | 197 |
-| 66 | basicPluginSystem.js | Non-standard DI pattern — plain `_deps` instead of `diBase.js` | 13-19 |
+| 66 | basicPluginSystem.js | ~~Non-standard DI pattern — plain `_deps` instead of `diBase.js`~~ | 13-19 | **FIXED** — migrated to createDIModule |
 | 67 | basicPluginSystem.js | No validation of plugin data written to localStorage | — |
 | 68 | pluginIntegrationGuide.js | Documentation bug: `'taskadded'` should be `'taskAdded'` (camelCase) | 58-59 |
 
@@ -197,21 +197,27 @@ Handlers attached in modal open / init but never removed on close / destroy:
 | achievementsManager.js | 804-912 | Document-level coin spin listeners | **FIXED** — closeModal calls hideBadgeDetail for cleanup |
 | historyManager.js | 462-475, 615 | Tab click + entry click handlers | **FIXED** — overlay handler stored and cleaned in closeModal |
 | clearedTasksManager.js | 462-492 | Back button + entry handlers | **FIXED** — overlay handler stored and cleaned in closeModal |
-| statsPanel.js | 267-279, 476 | Feature buttons + navigation dots | Open (P2) |
-| helpWindowManager.js | 215 | Resize handler recreated inline each time |
+| statsPanel.js | 267-279, 476 | Feature buttons + navigation dots | Open (P2) — timer cleanup FIXED |
+| helpWindowManager.js | 215 | Resize handler recreated inline each time | Open (P2) |
 
 ---
 
 ## Non-Standard DI Pattern (Cross-Cutting)
 
-These modules use plain `_deps` objects instead of `diBase.js`:
+6 of 8 non-standard DI modules have been migrated to `createDIModule()`. 2 remain with non-standard patterns (acceptable). 2 Phase 1 boot modules (appState.js, globalUtils.js) are documented exemptions.
 
-| Module | Lines | Pattern Used |
-|--------|-------|-------------|
-| basicPluginSystem.js | 13-19 | Plain `_deps` object with spread |
-| pluginIntegrationGuide.js | 13-17 | Plain `_deps` object with spread |
-| gamesManager.js | 30-35 | Proxy-based, not diBase |
-| taskSearch.js | 26-27 | Default fallback functions in DI |
+| Module | Lines | Pattern Used | Status |
+|--------|-------|-------------|--------|
+| basicPluginSystem.js | 13-19 | Plain `_deps` object with spread | **MIGRATED** to createDIModule |
+| pluginIntegrationGuide.js | 13-17 | Plain `_deps` object with spread | **MIGRATED** to createDIModule |
+| testing-modal-integration.js | — | Plain `_deps` object with spread | **MIGRATED** to createDIModule |
+| consoleCapture.js | — | Object.defineProperties (safe, but not diBase) | **MIGRATED** to createDIModule |
+| storageUtils.js | — | Direct assignment setter | **MIGRATED** to createDIModule |
+| deviceDetection.js | — | Plain `_deps` object with dangerous spread | **MIGRATED** to createDIModule |
+| gamesManager.js | 30-35 | Proxy-based, not diBase | Open — unique pattern, functional |
+| taskSearch.js | 26-27 | Default fallback functions in DI | Open — functional |
+| appState.js | — | Plain `_deps` via constructor injection | **EXEMPT** — Phase 1 boot, loads before diBase (documented in code) |
+| globalUtils.js | — | Plain `_deps` static class | **EXEMPT** — Phase 1 boot, static class incompatible with diBase (documented in code) |
 
 ---
 
@@ -267,8 +273,8 @@ All P1 items resolved: 17 fixed, 2 false alarms.
 4. Fix concurrent mod detection — use content hash, not just timestamp (#31)
 5. Complete fallback state with all sub-structures (#32)
 6. Fix yearly month-12 recurring edge case (#34)
-7. Standardize DI pattern in plugin/games/search modules (#66)
-8. Break up oversized modules (migrationManager, statsPanel)
+7. ~~Standardize DI pattern in plugin/games/search modules (#66)~~ — **DONE** (6 migrated, 2 remaining are acceptable, 2 exemptions documented)
+8. Fix remaining listener leaks: gamesManager, onboardingManager, statsPanel, helpWindowManager
 
 ### Phase 4 — Polish (Next Month)
 9. Migrate remaining hardcoded strings to label system

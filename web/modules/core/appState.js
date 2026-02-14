@@ -174,7 +174,9 @@ export async function clearTestModeAndBackup() {
     console.log('🧹 Cleared all test mode flags and backups');
 }
 
-// Module-level deps for late injection (must be set before createStateManager)
+// NOTE: Uses plain _deps instead of createDIModule() because AppState is Phase 1 core
+// infrastructure loaded in coreBoot before the manifest/moduleLoader system runs.
+// DI is handled via constructor injection in createStateManager(), not setDependencies.
 let _deps = {};
 
 /**

@@ -125,10 +125,17 @@ export class TaskOptionsVisibilityController {
             return false;
         }
 
+        // Clear any inline styles so CSS classes take effect
+        taskOptions.style.visibility = '';
+        taskOptions.style.opacity = '';
+        taskOptions.style.pointerEvents = '';
+
         // Apply visibility state via CSS class toggle
         if (visible) {
             taskOptions.classList.remove(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
+            taskOptions.classList.add(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
         } else {
+            taskOptions.classList.remove(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
             taskOptions.classList.add(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
         }
 

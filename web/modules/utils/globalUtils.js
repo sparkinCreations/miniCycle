@@ -25,7 +25,9 @@
 import { DOM_IDS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
-// Module-level deps for late injection (static class pattern)
+// NOTE: Uses plain _deps instead of createDIModule() because GlobalUtils is a Phase 1
+// static class loaded in coreBoot before the manifest system. The static class pattern
+// is incompatible with diBase's instance-based resolve(). Only needs 1 dependency.
 let _deps = {};
 
 /**
