@@ -169,6 +169,7 @@ http://localhost:8080/tests/module-test-suite.html # Tests
 ```
 
 192.168.4.87:5502/minicycle.html
+192.168.4.94:5502/miniCycle.html
 
 ---
 
