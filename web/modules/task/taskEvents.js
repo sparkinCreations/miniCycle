@@ -253,7 +253,7 @@ export class TaskEvents {
         if (!taskItem) return;
 
         const taskOptions = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
-        if (taskOptions) taskOptions.style.pointerEvents = "auto";
+        // pointer-events handled by CSS .task-options-visible class
 
         let shouldSave = false;
 
@@ -350,14 +350,14 @@ export class TaskEvents {
             return;
         }
 
-        // Check current visibility state
-        const isCurrentlyVisible = taskOptions.style.visibility === "visible";
+        // Check current visibility state (use CSS class, not inline style)
+        const isCurrentlyVisible = taskOptions.classList.contains('task-options-visible');
         const taskId = taskItem.dataset.taskId || taskItem.dataset.id;
 
         console.log('🔍 revealTaskButtons called:', {
             taskId: taskId || 'unknown',
             caller,
-            inlineVisibility: taskOptions.style.visibility || '(not set)',
+            hasVisibleClass: taskOptions.classList.contains('task-options-visible'),
             isCurrentlyVisible,
             willToggle: isCurrentlyVisible ? 'OFF' : 'ON'
         });

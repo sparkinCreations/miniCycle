@@ -121,7 +121,7 @@ export function createInitialSchema25Data() {
             darkMode: false,
             alwaysShowRecurring: false,
             autoSave: true,
-            showThreeDots: false,
+            showThreeDots: ('ontouchstart' in window && !(window.matchMedia?.('(pointer: fine)')?.matches)) || false,
             onboardingCompleted: false,
             dismissedEducationalTips: {},
             defaultRecurringSettings: {

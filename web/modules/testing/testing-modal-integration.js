@@ -11,42 +11,35 @@
  */
 
 import { DOM_IDS } from '../core/constants.js';
+import { createDIModule, required, optional } from '../core/diBase.js';
 
-// Module-level deps for late injection (DI-pure, no window.* fallbacks)
-let _deps = {
-    safeAddEventListenerById: null,
-    showNotification: null,
-    AppState: null,
-    backupManager: null
-};
+const di = createDIModule('TestingModalIntegration', {
+    safeAddEventListenerById: required(),
+    showNotification: optional(fallbackShowNotification),
+    AppState: optional(null),
+    backupManager: optional(null)
+});
 
-/**
- * Set dependencies for testing modal integration
- * @param {Object} dependencies - { safeAddEventListenerById, showNotification }
- */
-export function setTestingModalDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
-    console.log('🧪 TestingModal dependencies set:', Object.keys(dependencies));
-}
+export const setTestingModalDependencies = di.setDependencies;
 
 function fallbackShowNotification(message, type, duration) {
     console.log(`[Notification ${type}] ${message}`);
 }
 
 function getSafeAddEventListenerById() {
-    return _deps.safeAddEventListenerById;
+    return di.resolve().safeAddEventListenerById;
 }
 
 function getShowNotification() {
-    return _deps.showNotification || fallbackShowNotification;
+    return di.resolve().showNotification;
 }
 
 function getAppState() {
-    return _deps.AppState;
+    return di.resolve().AppState;
 }
 
 function getBackupManager() {
-    return _deps.backupManager;
+    return di.resolve().backupManager;
 }
 
 // Setup automated testing event listeners

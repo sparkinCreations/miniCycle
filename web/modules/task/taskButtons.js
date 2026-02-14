@@ -17,7 +17,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_SELECTORS } from '../core/constants.js';
+import { DOM_CLASSES, DOM_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // SVG icons for task buttons (Font Awesome style)
@@ -95,12 +95,11 @@ export class TaskButtons {
         const buttonContainer = document.createElement("div");
         buttonContainer.classList.add("task-options");
 
-        // If three dots mode is enabled, ensure buttons start explicitly HIDDEN
+        // If three dots mode is enabled, ensure buttons start explicitly HIDDEN via CSS class
+        // (base .task-options CSS already has visibility: hidden; this adds explicit force-hidden)
         const threeDotsEnabled = settings.showThreeDots || false;
         if (threeDotsEnabled) {
-            buttonContainer.style.visibility = "hidden";
-            buttonContainer.style.opacity = "0";
-            buttonContainer.style.pointerEvents = "none";
+            buttonContainer.classList.add(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
         }
 
         // Get button visibility settings for this cycle

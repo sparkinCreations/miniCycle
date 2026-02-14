@@ -1108,7 +1108,7 @@ async setDefaultPosition(notificationContainer) {
 
         // Apply recurring settings (DI-pure)
         if (this.deps.applyRecurringToTaskSchema25) {
-          this.deps.applyRecurringToTaskSchema25(taskId, { frequency: newFrequency });
+          await this.deps.applyRecurringToTaskSchema25(taskId, { frequency: newFrequency });
         }
 
         const targetTask = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);

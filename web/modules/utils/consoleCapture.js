@@ -13,42 +13,32 @@
 
 import { STORAGE_KEYS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { createDIModule, optional } from '../core/diBase.js';
 
-// Module-level deps for late injection (DI-pure, no window.* fallbacks)
-let _deps = {
-    showNotification: null,
-    appendToTestResults: null
-};
+const di = createDIModule('ConsoleCapture', {
+    showNotification: optional(null),
+    appendToTestResults: optional(null)
+});
 
-/**
- * Set dependencies for ConsoleCapture
- * @param {Object} dependencies - { showNotification, appendToTestResults }
- */
-export function setConsoleCaptureDependencies(dependencies) {
-    // Use Object.defineProperties to preserve getters (for lazy binding)
-    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
-    Object.defineProperties(_deps, descriptors);
-    console.log('🔍 ConsoleCapture dependencies set:', Object.keys(dependencies));
-}
+export const setConsoleCaptureDependencies = di.setDependencies;
 
 export class MiniCycleConsoleCapture {
-    constructor(dependencies = {}) {
+    constructor() {
         this.consoleLogBuffer = [];
         this.originalConsole = {};
         this.consoleCapturing = false;
         this.autoStarted = false;
         this.captureInterval = null;
 
-        // Store injected dependencies
-        this._injectedDeps = dependencies;
-
-        // Dependency injection - getter pattern for late injection (DI-pure)
-        // Reads from _deps at access time, not construction time
+        // Dependency injection - resolves from DI container with instance fallback
         Object.defineProperty(this, 'deps', {
-            get: () => ({
-                showNotification: this._injectedDeps.showNotification || _deps.showNotification || this.fallbackNotification.bind(this),
-                appendToTestResults: this._injectedDeps.appendToTestResults || _deps.appendToTestResults || null
-            })
+            get: () => {
+                const resolved = di.resolve();
+                return {
+                    showNotification: resolved.showNotification || this.fallbackNotification.bind(this),
+                    appendToTestResults: resolved.appendToTestResults
+                };
+            }
         });
 
         // Auto-start if conditions are met

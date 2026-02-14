@@ -9,23 +9,17 @@
  * @module basicPluginSystem
  */
 
-// Module-level dependencies (DI-pure, no window.* fallbacks)
-let _deps = {
-    appInit: null,
-    showNotification: null,
-    getTaskList: null,
-    getCurrentCycle: null,
-    AppState: null
-};
+import { createDIModule, optional } from '../core/diBase.js';
 
-/**
- * Set dependencies for BasicPluginSystem module
- * @param {Object} dependencies - Injected dependencies
- */
-export function setBasicPluginSystemDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
-    console.log('🔌 BasicPluginSystem dependencies set:', Object.keys(dependencies));
-}
+const di = createDIModule('BasicPluginSystem', {
+    appInit: optional(null),
+    showNotification: optional(null),
+    getTaskList: optional(null),
+    getCurrentCycle: optional(null),
+    AppState: optional(null)
+});
+
+export const setBasicPluginSystemDependencies = di.setDependencies;
 
 /**
  * Simple Event Bus for Plugin Communication
@@ -70,7 +64,7 @@ class EventBus {
  *
  * Integrated with AppInit for proper initialization timing.
  * All plugins automatically wait for core systems before loading.
- * Uses module-level _deps for dependency access.
+ * Uses DI container for dependency access.
  */
 class MiniCyclePlugin {
     constructor(name, version = '1.0.0') {
@@ -80,9 +74,9 @@ class MiniCyclePlugin {
         this.initialized = false;
     }
 
-    // Getter for accessing module-level deps
+    // Getter for accessing module-level deps via DI container
     get deps() {
-        return _deps;
+        return di.resolve();
     }
 
     /**

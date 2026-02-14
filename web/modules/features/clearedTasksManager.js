@@ -446,6 +446,16 @@ export class ClearedTasksManager {
             this._overlayClickHandler = null;
         }
 
+        // Clean up button handlers
+        const backBtn = this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_BACK_BTN);
+        const recreateBtn = this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_RECREATE_BTN);
+        const cancelBtn = this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_CANCEL_BTN);
+        const confirmBtn = this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_CONFIRM_BTN);
+        if (this._backBtnHandler) { backBtn?.removeEventListener('click', this._backBtnHandler); this._backBtnHandler = null; }
+        if (this._recreateBtnHandler) { recreateBtn?.removeEventListener('click', this._recreateBtnHandler); this._recreateBtnHandler = null; }
+        if (this._cancelBtnHandler) { cancelBtn?.removeEventListener('click', this._cancelBtnHandler); this._cancelBtnHandler = null; }
+        if (this._confirmBtnHandler) { confirmBtn?.removeEventListener('click', this._confirmBtnHandler); this._confirmBtnHandler = null; }
+
         this.modalOverlay.style.opacity = '0';
         this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_TASKS_MODAL).style.transform = 'translateY(20px)';
 
@@ -464,9 +474,9 @@ export class ClearedTasksManager {
     _setupModalHandlers() {
         if (!this.modalOverlay) return;
 
-        // Back button
+        // Back button (store handler for cleanup)
         const backBtn = this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_BACK_BTN);
-        backBtn?.addEventListener('click', () => {
+        this._backBtnHandler = () => {
             if (this.isRecreateMode) {
                 this.isRecreateMode = false;
                 this.selectedTasks.clear();
@@ -475,30 +485,34 @@ export class ClearedTasksManager {
             } else {
                 this.closeModal();
             }
-        });
+        };
+        backBtn?.addEventListener('click', this._backBtnHandler);
 
-        // Recreate button (enters recreate mode)
+        // Recreate button (enters recreate mode) - store handler for cleanup
         const recreateBtn = this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_RECREATE_BTN);
-        recreateBtn?.addEventListener('click', () => {
+        this._recreateBtnHandler = () => {
             this.isRecreateMode = true;
             this._renderModalContent();
             this._updateFooterVisibility();
-        });
+        };
+        recreateBtn?.addEventListener('click', this._recreateBtnHandler);
 
-        // Cancel button in footer
+        // Cancel button in footer - store handler for cleanup
         const cancelBtn = this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_CANCEL_BTN);
-        cancelBtn?.addEventListener('click', () => {
+        this._cancelBtnHandler = () => {
             this.isRecreateMode = false;
             this.selectedTasks.clear();
             this._renderModalContent();
             this._updateFooterVisibility();
-        });
+        };
+        cancelBtn?.addEventListener('click', this._cancelBtnHandler);
 
-        // Confirm recreate button
+        // Confirm recreate button - store handler for cleanup
         const confirmBtn = this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_CONFIRM_BTN);
-        confirmBtn?.addEventListener('click', () => {
+        this._confirmBtnHandler = () => {
             this.recreateSelectedTasks();
-        });
+        };
+        confirmBtn?.addEventListener('click', this._confirmBtnHandler);
 
         // Click outside to close (store handler for cleanup in closeModal)
         this._overlayClickHandler = (e) => {

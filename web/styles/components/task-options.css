@@ -25,6 +25,13 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     pointer-events: none;
 }
 
+/* Explicitly visible: set by TaskOptionsVisibilityController.show() */
+.task-options.task-options-visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+}
+
 .task-options {
     position: absolute;
     top: -20px;
@@ -180,8 +187,9 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
 
 .three-dots-btn {
     position: absolute;
-    top: 8px;
+    top: 50%;
     right: 8px;
+    transform: translateY(-50%);
     background: none;
     border: none;
     font-size: 25px;

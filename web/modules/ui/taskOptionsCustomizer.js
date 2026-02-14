@@ -693,6 +693,13 @@ export class TaskOptionsCustomizer {
                 settingsThreeDotsToggle.checked = newThreeDots;
             }
             document.body.classList.toggle('show-three-dots-enabled', newThreeDots);
+
+            // Show tip when disabling on touch devices
+            if (!newThreeDots && ('ontouchstart' in window)) {
+                setTimeout(() => {
+                    this.deps.showNotification?.('💡 ' + getLabel('notify.threeDotsDisabledTip'), 'info', 4000);
+                }, 300);
+            }
         }
 
         // Reminders DOM updates and system start/stop

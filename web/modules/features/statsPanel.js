@@ -114,6 +114,7 @@ export class StatsPanelManager {
 
         // Timers
         this.wheelTimeout = null;
+        this._pendingTimers = [];
 
         // Task stats cache (performance optimization)
         this._taskStatsCache = null;
@@ -486,7 +487,7 @@ export class StatsPanelManager {
             this.boundHandlers.handleCycleReady = () => {
                 console.log('Stats panel detected data ready - updating stats...');
                 // Delay slightly to ensure DOM is fully updated
-                setTimeout(() => this.updateStatsPanel(), UI_TIMEOUTS.STATS_UPDATE_DELAY);
+                this._pendingTimers.push(setTimeout(() => this.updateStatsPanel(), UI_TIMEOUTS.STATS_UPDATE_DELAY));
             };
         }
 
@@ -498,7 +499,7 @@ export class StatsPanelManager {
         if (appInitModule && typeof appInitModule.onReady === 'function') {
             appInitModule.onReady(() => {
                 console.log('📊 Stats panel detected AppInit ready - updating stats...');
-                setTimeout(() => this.updateStatsPanel(), UI_TIMEOUTS.STATS_UPDATE_DELAY);
+                this._pendingTimers.push(setTimeout(() => this.updateStatsPanel(), UI_TIMEOUTS.STATS_UPDATE_DELAY));
             });
         }
 
@@ -507,7 +508,7 @@ export class StatsPanelManager {
         if (modeSelector) {
             safeAdd(modeSelector, 'change', () => {
                 console.log('📊 Stats panel detected mode change - updating stats...');
-                setTimeout(() => this.updateStatsPanel(), UI_TIMEOUTS.STATS_UPDATE_DELAY);
+                this._pendingTimers.push(setTimeout(() => this.updateStatsPanel(), UI_TIMEOUTS.STATS_UPDATE_DELAY));
             });
         }
     }
@@ -1079,10 +1080,10 @@ export class StatsPanelManager {
      */
     handleAddTaskClick() {
         // Small delay to allow DOM to update
-        setTimeout(() => {
+        this._pendingTimers.push(setTimeout(() => {
             this.invalidateTaskStatsCache();
             this.updateStatsPanel();
-        }, UI_TIMEOUTS.STATS_UPDATE_DELAY);
+        }, UI_TIMEOUTS.STATS_UPDATE_DELAY));
     }
 
     // ==========================================
@@ -1650,6 +1651,10 @@ export class StatsPanelManager {
             clearTimeout(this.wheelTimeout);
             this.wheelTimeout = null;
         }
+        for (const id of this._pendingTimers) {
+            clearTimeout(id);
+        }
+        this._pendingTimers = [];
 
         console.log('✅ StatsPanelManager cleanup completed');
     }

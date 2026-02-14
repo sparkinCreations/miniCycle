@@ -392,7 +392,8 @@ export const DOM_CLASSES = Object.freeze({
     DROPDOWN_OPEN: 'dropdown-open',
 
     // ---- Task Options Visibility ----
-    TASK_OPTIONS_FORCE_HIDDEN: 'task-options-force-hidden'
+    TASK_OPTIONS_FORCE_HIDDEN: 'task-options-force-hidden',
+    TASK_OPTIONS_VISIBLE: 'task-options-visible'
 });
 
 // ============================================================================

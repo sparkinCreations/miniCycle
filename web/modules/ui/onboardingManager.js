@@ -181,7 +181,7 @@ export class OnboardingManager {
              </ul>`,
             `<h3>Tips</h3>
              <ul>
-               <li>📱 On mobile, long press a task for options or to reorder</li>
+               <li>📱 Tap ⋮ on any task for quick options</li>
                <li>➕ Tap the <strong>-/+</strong> button to customize task options</li>
                <li>📱 Swipe left for the Stats Panel</li>
              </ul>`

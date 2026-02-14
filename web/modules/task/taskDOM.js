@@ -928,7 +928,7 @@ export class TaskDOMManager {
         button.dataset.handlerAttached = 'true';
 
         const safeAdd = this.deps.safeAddEventListener;
-        button._recurringClickHandler = (event) => {
+        button._recurringClickHandler = async (event) => {
             // ✅ Prevent event from bubbling to checkbox
             event.stopPropagation();
             event.preventDefault();
@@ -1000,7 +1000,7 @@ export class TaskDOMManager {
 
             if (isNowRecurring) {
                 if (this.deps.handleRecurringTaskActivation) {
-                    this.deps.handleRecurringTaskActivation(task, freshTaskContext, button);
+                    await this.deps.handleRecurringTaskActivation(task, freshTaskContext, button);
                 }
                 // ✅ Immediately sync delete-on-complete button to show active (recurring = delete on complete)
                 const deleteBtn = taskItem?.querySelector(DOM_SELECTORS.DELETE_WHEN_COMPLETE_BTN);

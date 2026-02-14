@@ -323,9 +323,8 @@ export class TaskRenderer {
             // Directly show task options (don't use revealTaskButtons to avoid toggle behavior)
             const taskOptions = taskElement.querySelector(DOM_SELECTORS.TASK_OPTIONS);
             if (taskOptions) {
-                taskOptions.style.opacity = '1';
-                taskOptions.style.visibility = 'visible';
-                taskOptions.style.pointerEvents = 'auto';
+                taskOptions.classList.add('task-options-visible');
+                taskOptions.classList.remove('task-options-force-hidden');
                 console.log(`✅ Restored active task options for: ${activeTaskId}`);
             }
         }

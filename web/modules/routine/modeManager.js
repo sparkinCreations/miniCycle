@@ -208,10 +208,10 @@ export class ModeManager {
             }
 
             // Preserve visibility state
-            const wasVisible = oldButtonContainer.style.visibility === 'visible' || oldButtonContainer.style.opacity === '1';
+            const wasVisible = oldButtonContainer.classList.contains('task-options-visible');
             if (wasVisible) {
-                newButtonContainer.style.visibility = 'visible';
-                newButtonContainer.style.opacity = '1';
+                newButtonContainer.classList.add('task-options-visible');
+                newButtonContainer.classList.remove('task-options-force-hidden');
             }
 
             // Replace old container with new one
