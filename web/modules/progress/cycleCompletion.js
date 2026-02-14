@@ -49,6 +49,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, APP_VERSION } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -145,7 +146,7 @@ function checkForMilestone(miniCycleName, cycleCount) {
  * @param {number} cycleCount - The number of cycles completed
  */
 function showMilestoneMessage(miniCycleName, cycleCount) {
-    const message = `🎉 You've completed ${cycleCount} cycles for "${miniCycleName}"! Keep going! 🚀`;
+    const message = `🎉 ${getLabel('notify.milestoneAchieved', { vars: { count: cycleCount, name: miniCycleName } })} 🚀`;
 
     const milestonePopup = document.createElement("div");
     milestonePopup.classList.add("mini-cycle-milestone");
@@ -197,7 +198,7 @@ function handleMilestoneUnlocks(miniCycleName, globalCyclesCompleted) {
 
         if (!hasGameUnlock) {
             if (typeof deps.showNotification === 'function') {
-                deps.showNotification("🎮 Game Unlocked! 'Task Order' is now available in the Games menu.", "success", 6000);
+                deps.showNotification(`🎮 ${getLabel('notify.gameUnlocked')}`, "success", 6000);
             }
             if (typeof deps.unlockMiniGame === 'function') {
                 deps.unlockMiniGame();

@@ -292,7 +292,7 @@ export class RecurringPanelManager {
 
         } catch (error) {
             console.error('❌ Error setting up recurring panel:', error);
-            this.deps.showNotification('Panel setup failed - using degraded mode', 'warning');
+            this.deps.showNotification(getLabel('notify.panelSetupFailed'), 'warning');
         }
     }
 
@@ -475,7 +475,7 @@ export class RecurringPanelManager {
                 trash.type = "button";
                 trash.className = "trash-btn";
                 trash.innerHTML = `<span class="icon recurring-date-trash-icon" aria-hidden="true">${ICONS['trash']}</span>`;
-                trash.title = "Remove this date";
+                trash.title = getLabel('recurring.removeDate');
 
                 this.deps.safeAddEventListener(trash, "click", () => {
                     wrapper.remove();
@@ -715,7 +715,7 @@ export class RecurringPanelManager {
 
         } catch (error) {
             console.error('❌ Error opening recurring panel:', error);
-            this.deps.showNotification('Failed to open panel', 'error');
+            this.deps.showNotification(getLabel('notify.panelOpenFailed'), 'error');
         }
     }
 
@@ -854,7 +854,7 @@ export class RecurringPanelManager {
 
         } catch (error) {
             console.error('❌ Error updating recurring panel:', error);
-            this.deps.showNotification('Panel update failed', 'warning');
+            this.deps.showNotification(getLabel('notify.panelUpdateFailed'), 'warning');
         }
     }
 
@@ -882,7 +882,7 @@ export class RecurringPanelManager {
         textSpan.textContent = task.text;  // textContent auto-escapes HTML
 
         const removeBtn = document.createElement("button");
-        removeBtn.title = "Remove from Recurring";
+        removeBtn.title = getLabel('recurring.removeFromRecurring');
         removeBtn.className = "recurring-remove-btn";
         removeBtn.innerHTML = `<span class="icon recurring-trash-icon" aria-hidden="true">${ICONS['trash']}</span>`;
 
@@ -902,10 +902,10 @@ export class RecurringPanelManager {
      */
     handleRemoveTask(task, item) {
         this.deps.showConfirmationModal({
-            title: "Remove Recurring Task",
-            message: `Are you sure you want to remove "${task.text}" from recurring tasks?`,
-            confirmText: "Remove",
-            cancelText: "Cancel",
+            title: getLabel('modal.removeRecurringTitle'),
+            message: getLabel('modal.removeRecurringMessage', { vars: { name: task.text } }),
+            confirmText: getLabel('modal.removeRecurringConfirm'),
+            cancelText: getLabel('button.cancel'),
             destructive: true,
             callback: async (confirmed) => {
                 if (!confirmed) return;
@@ -914,7 +914,7 @@ export class RecurringPanelManager {
                     // ✅ Use AppState instead of direct localStorage manipulation
                     if (!this.deps.AppState?.isReady?.()) {
                         console.error('❌ AppState not ready for task removal');
-                        this.deps.showNotification('App not ready, please try again', 'error');
+                        this.deps.showNotification(getLabel('notify.appNotReady'), 'error');
                         return;
                     }
 
@@ -923,7 +923,7 @@ export class RecurringPanelManager {
 
                     if (!activeCycleId) {
                         console.error('❌ No active cycle found for task removal');
-                        this.deps.showNotification('No active cycle found', 'error');
+                        this.deps.showNotification(getLabel('notify.recurringNoActiveCycle'), 'error');
                         return;
                     }
 
@@ -938,7 +938,7 @@ export class RecurringPanelManager {
                         this.deps.deactivateTaskRecurringState(cycle, task.id, currentMode);
                     }, true); // ✅ Immediate save when removing recurring from panel
 
-                    this.deps.showNotification("↩️ Recurring turned off for this task.", "info", 5000);
+                    this.deps.showNotification(`↩️ ${getLabel('notify.recurringTurnedOff')}`, "info", 5000);
 
                     // Remove recurring visual state
                     const matchingTaskItem = this.deps.querySelector(DATA_SELECTORS.taskById(task.id));
@@ -1000,7 +1000,7 @@ export class RecurringPanelManager {
 
                 } catch (error) {
                     console.error('❌ Error removing recurring task:', error);
-                    this.deps.showNotification('Failed to remove task', 'error');
+                    this.deps.showNotification(getLabel('notify.recurringRemoveFailed'), 'error');
                 }
             }
         });
@@ -1050,7 +1050,7 @@ export class RecurringPanelManager {
             // Update button label
             if (toggleBtn && shouldShowToggle) {
                 const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked && !cb.classList.contains("hidden"));
-                toggleBtn.textContent = anyUnchecked ? "Check All" : "Uncheck All";
+                toggleBtn.textContent = anyUnchecked ? getLabel('recurring.checkAll') : getLabel('recurring.uncheckAll');
             }
 
             this.updateRecurringSummary();
@@ -1128,7 +1128,7 @@ export class RecurringPanelManager {
 
             if (!recurringSettings) {
                 const noSettingsEm = document.createElement('em');
-                noSettingsEm.textContent = 'No recurring settings configured';
+                noSettingsEm.textContent = getLabel('empty.noRecurringSettings');
                 previewText.appendChild(noSettingsEm);
                 return;
             }
@@ -1194,7 +1194,7 @@ export class RecurringPanelManager {
         const changeBtn = document.createElement('button');
         changeBtn.id = 'change-recurring-settings';
         changeBtn.className = 'change-recurring-btn';
-        changeBtn.textContent = 'Change Recurring Settings';
+        changeBtn.textContent = getLabel('recurring.changeSettings');
 
         // Attach click listener to button (guard for tests)
         if (this.deps.safeAddEventListener) {
@@ -1340,11 +1340,11 @@ export class RecurringPanelManager {
                 // Populate and show the list
                 this.populateAvailableTasks();
                 availableTasksList.classList.remove("hidden");
-                addTaskBtn.innerHTML = '<i class="fas fa-times"></i> Cancel';
+                addTaskBtn.innerHTML = `<i class="fas fa-times"></i> ${getLabel('button.cancel')}`;
             } else {
                 // Hide the list and reset
                 availableTasksList.classList.add("hidden");
-                addTaskBtn.textContent = 'Add Task to Recurring';
+                addTaskBtn.textContent = getLabel('recurring.addToRecurring');
                 if (confirmBtn) confirmBtn.classList.add("hidden");
             }
         });
@@ -1400,8 +1400,8 @@ export class RecurringPanelManager {
             if (selectedCount > 0) {
                 confirmBtn.classList.remove("hidden");
                 confirmBtn.textContent = selectedCount === 1
-                    ? "Add to Recurring"
-                    : `Add ${selectedCount} Tasks to Recurring`;
+                    ? getLabel('recurring.addToRecurringShort')
+                    : getLabel('recurring.addTasksToRecurring', { vars: { count: selectedCount } });
             } else {
                 confirmBtn.classList.add("hidden");
             }
@@ -1429,7 +1429,7 @@ export class RecurringPanelManager {
             if (!this.deps.AppState?.isReady?.()) {
                 console.warn('⚠️ AppState not ready for populating available tasks');
                 noTasksMessage.classList.remove("hidden");
-                noTasksMessage.textContent = "Unable to load tasks. Please try again.";
+                noTasksMessage.textContent = getLabel('notify.taskLoadFailed');
                 return;
             }
 
@@ -1440,7 +1440,7 @@ export class RecurringPanelManager {
             if (!currentCycle) {
                 console.warn('⚠️ No active cycle found');
                 noTasksMessage.classList.remove("hidden");
-                noTasksMessage.textContent = "No routine loaded.";
+                noTasksMessage.textContent = getLabel('notify.noRoutineLoaded');
                 return;
             }
 
@@ -1455,9 +1455,9 @@ export class RecurringPanelManager {
             if (nonRecurringTasks.length === 0) {
                 // Check if there are no tasks at all vs all are recurring
                 if (allTasks.length === 0) {
-                    noTasksMessage.textContent = "No tasks in this routine. Add tasks first!";
+                    noTasksMessage.textContent = getLabel('empty.noRoutineTasks');
                 } else {
-                    noTasksMessage.textContent = "All tasks are already recurring.";
+                    noTasksMessage.textContent = getLabel('notify.allTasksRecurring');
                 }
                 noTasksMessage.classList.remove("hidden");
                 return;
@@ -1490,7 +1490,7 @@ export class RecurringPanelManager {
         } catch (error) {
             console.error('❌ Error populating available tasks:', error);
             noTasksMessage.classList.remove("hidden");
-            noTasksMessage.textContent = "Error loading tasks.";
+            noTasksMessage.textContent = getLabel('notify.taskLoadError');
         }
     }
 
@@ -1504,7 +1504,7 @@ export class RecurringPanelManager {
         try {
             if (!this.deps.AppState?.isReady?.()) {
                 console.error('❌ AppState not ready');
-                this.deps.showNotification('App not ready, please try again', 'error');
+                this.deps.showNotification(getLabel('notify.appNotReady'), 'error');
                 return;
             }
 
@@ -1513,7 +1513,7 @@ export class RecurringPanelManager {
             const selectedTaskIds = Array.from(selectedItems).map(li => li.dataset.taskId);
 
             if (selectedTaskIds.length === 0) {
-                this.deps.showNotification('No tasks selected', 'warning');
+                this.deps.showNotification(getLabel('notify.recurringNoTasksSelected'), 'warning');
                 return;
             }
 
@@ -1522,7 +1522,7 @@ export class RecurringPanelManager {
 
             if (!activeCycleId) {
                 console.error('❌ No active cycle');
-                this.deps.showNotification('No active routine', 'error');
+                this.deps.showNotification(getLabel('notify.recurringNoActiveCycle'), 'error');
                 return;
             }
 
@@ -1552,7 +1552,7 @@ export class RecurringPanelManager {
             const confirmBtn = this.deps.getElementById(DOM_IDS.CONFIRM_ADD_RECURRING);
 
             if (availableTasksList) availableTasksList.classList.add("hidden");
-            if (addTaskBtn) addTaskBtn.textContent = 'Add Task to Recurring';
+            if (addTaskBtn) addTaskBtn.textContent = getLabel('recurring.addToRecurring');
             if (confirmBtn) confirmBtn.classList.add("hidden");
 
             // Refresh the panel to show new recurring tasks
@@ -1564,13 +1564,13 @@ export class RecurringPanelManager {
             }, 0);
 
             const taskWord = selectedTaskIds.length === 1 ? 'task' : 'tasks';
-            this.deps.showNotification(`🔁 Added ${selectedTaskIds.length} ${taskWord} to recurring (daily by default)`, 'success');
+            this.deps.showNotification(`🔁 ${getLabel('notify.recurringAdded', { vars: { count: selectedTaskIds.length, taskWord } })}`, 'success');
 
             console.log(`✅ Added ${selectedTaskIds.length} tasks as recurring`);
 
         } catch (error) {
             console.error('❌ Error adding tasks as recurring:', error);
-            this.deps.showNotification('Failed to add tasks', 'error');
+            this.deps.showNotification(getLabel('notify.recurringAddFailed'), 'error');
         }
     }
 

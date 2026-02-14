@@ -10,6 +10,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { GESTURE, UI_TIMEOUTS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -348,11 +349,11 @@ export class GesturePanelManager {
         if (event.key === "ArrowRight" && !this.state.isStatsVisible) {
             event.preventDefault();
             this._triggerShowStatsPanel();
-            showNotification("⌨️ Keyboard shortcut - Stats Panel opened", "info", 1500);
+            showNotification(`⌨️ ${getLabel('notify.keyboardStatsOpened')}`, "info", 1500);
         } else if (event.key === "ArrowLeft" && this.state.isStatsVisible) {
             event.preventDefault();
             this._triggerShowTaskView();
-            showNotification("⌨️ Keyboard shortcut - Task View opened", "info", 1500);
+            showNotification(`⌨️ ${getLabel('notify.keyboardTaskOpened')}`, "info", 1500);
         }
 
         // Shift+Tab for quick toggle
@@ -360,10 +361,10 @@ export class GesturePanelManager {
             event.preventDefault();
             if (this.state.isStatsVisible) {
                 this._triggerShowTaskView();
-                showNotification("⌨️ Quick toggle - Task View", "info", 1500);
+                showNotification(`⌨️ ${getLabel('notify.quickToggleTask')}`, "info", 1500);
             } else {
                 this._triggerShowStatsPanel();
-                showNotification("⌨️ Quick toggle - Stats Panel", "info", 1500);
+                showNotification(`⌨️ ${getLabel('notify.quickToggleStats')}`, "info", 1500);
             }
         }
     }

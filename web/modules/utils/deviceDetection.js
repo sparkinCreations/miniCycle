@@ -17,6 +17,7 @@
  */
 
 import { STORAGE_KEYS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ✅ appInit now injected via DI (no static import - enables versioning)
 
@@ -103,7 +104,7 @@ export class DeviceDetectionManager {
       });
 
       console.log('✅ Manual override saved to Schema 2.5');
-      this.deps.showNotification('✅ Device detection complete - using full version by user choice', 'success', 3000);
+      this.deps.showNotification('✅ ' + getLabel('notify.deviceDetectionComplete'), 'success', 3000);
       return true;
     }
     return false;
@@ -192,7 +193,7 @@ export class DeviceDetectionManager {
     const cacheBuster = `?redirect=auto&v=${this.currentVersion}&t=${Date.now()}`;
     console.log('📱 Redirecting to lite version:', 'lite/miniCycle-lite.html' + cacheBuster);
 
-    this.deps.showNotification('📱 Redirecting to optimized lite version...', 'info', 2000);
+    this.deps.showNotification('📱 ' + getLabel('notify.redirectingToLite'), 'info', 2000);
     setTimeout(() => {
       window.location.href = 'lite/miniCycle-lite.html' + cacheBuster;
     }, 1000);
@@ -248,7 +249,7 @@ export class DeviceDetectionManager {
     const schemaData = this.deps.loadMiniCycleData();
     if (!schemaData) {
       console.error('❌ Schema 2.5 data required for compatibility report');
-      this.deps.showNotification('❌ Cannot generate report - Schema 2.5 data required', 'error', 3000);
+      this.deps.showNotification('❌ ' + getLabel('notify.reportRequiresSchema'), 'error', 3000);
       return null;
     }
     
@@ -290,13 +291,13 @@ export class DeviceDetectionManager {
     let statusType = 'info';
 
     if (storedDecision === true) {
-      statusMessage = '📱 Device configured for lite version';
+      statusMessage = '📱 ' + getLabel('notify.deviceConfiguredLite');
       statusType = 'info';
     } else if (storedDecision === false) {
-      statusMessage = '💻 Device configured for full version';
+      statusMessage = '💻 ' + getLabel('notify.deviceConfiguredFull');
       statusType = 'success';
     } else {
-      statusMessage = '❓ No device preference stored';
+      statusMessage = '❓ ' + getLabel('notify.noDevicePreference');
       statusType = 'warning';
     }
 
@@ -312,7 +313,7 @@ export class DeviceDetectionManager {
 
   // Test function for manual testing
   async testDeviceDetection() {
-    this.deps.showNotification('🧪 Starting manual device detection test (Schema 2.5 only)...', 'info', 2000);
+    this.deps.showNotification('🧪 ' + getLabel('notify.startingDetectionTest'), 'info', 2000);
 
     // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
     const appInitModule = this.deps.appInit;
@@ -323,7 +324,7 @@ export class DeviceDetectionManager {
     const schemaData = this.deps.loadMiniCycleData();
     if (!schemaData) {
       console.error('❌ Schema 2.5 data required for device detection test');
-      this.deps.showNotification('❌ Cannot test - Schema 2.5 data required', 'error', 3000);
+      this.deps.showNotification('❌ ' + getLabel('notify.detectionTestFailed'), 'error', 3000);
       return;
     }
 

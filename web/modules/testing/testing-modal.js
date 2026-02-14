@@ -51,6 +51,7 @@ import {
 import { setupDiagnosticsButtons } from './testing-modal-diagnostics.js';
 import { setupBackupButtons } from './testing-modal-backup.js';
 import { setupAnalysisButtons } from './testing-modal-analysis.js';
+import { getLabel } from '../labels/labelResolver.js';
 import { openStorageViewer, closeStorageViewer, setupStorageViewerButton } from './testing-modal-storage-viewer.js';
 import { setupDebugButtons, setupConsoleCaptureButtons } from './testing-modal-debug.js';
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
@@ -89,7 +90,7 @@ function setupTestingModal() {
     safeAddEventListener(openTestingBtn, "click", () => {
         testingModal.style.display = "flex";
         initTestingModalDrag();
-        showNotification("Testing panel opened", "info", 2000);
+        showNotification(getLabel('notify.testingPanelOpened'), "info", 2000);
 
         // Setup ALL functionality AFTER modal is visible
         setTimeout(() => {
@@ -110,7 +111,7 @@ function setupTestingModal() {
     closeTestingBtns.forEach(btn => {
         safeAddEventListener(btn, "click", () => {
             testingModal.style.display = "none";
-            showNotification("Testing panel closed", "default", 2000);
+            showNotification(getLabel('notify.testingPanelClosed'), "default", 2000);
         });
     });
 
@@ -118,7 +119,7 @@ function setupTestingModal() {
     safeAddEventListener(testingModal, "click", (e) => {
         if (e.target === testingModal) {
             testingModal.style.display = "none";
-            showNotification("Testing panel closed", "default", 2000);
+            showNotification(getLabel('notify.testingPanelClosed'), "default", 2000);
         }
     });
 }

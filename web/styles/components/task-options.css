@@ -17,10 +17,12 @@
 }
 
 /* Force-hidden utility: replaces inline visibility/opacity/pointer-events triple-write */
-.task-options-force-hidden {
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
+/* Specificity matches hover rule above so no !important needed */
+body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-hidden,
+.task-options.task-options-force-hidden {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .task-options {

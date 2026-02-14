@@ -8,6 +8,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -124,7 +125,7 @@ export class DragDropManager {
             console.log('✅ DragDropManager initialized successfully');
         } catch (error) {
             console.warn('⚠️ DragDropManager initialization failed:', error);
-            this.deps.showNotification('Drag & drop may not work properly', 'warning');
+            this.deps.showNotification(getLabel('notify.dragDropWarning'), 'warning');
         }
     }
 
@@ -643,11 +644,11 @@ export class DragDropManager {
                 console.log(`✅ Task moved from position ${currentIndex} to ${newIndex} via arrows`);
             } else {
                 console.warn('⚠️ AppState not ready for arrow reordering');
-                this.deps.showNotification('Unable to reorder tasks right now', 'warning');
+                this.deps.showNotification(getLabel('notify.reorderFailed'), 'warning');
             }
         } catch (error) {
             console.warn('⚠️ Arrow click handler failed:', error);
-            this.deps.showNotification('Failed to reorder task', 'warning');
+            this.deps.showNotification(getLabel('notify.reorderError'), 'warning');
         }
     }
 
@@ -761,7 +762,7 @@ export class DragDropManager {
             console.log(`✅ Move arrows toggled to ${newVisibility ? "visible" : "hidden"} via state system`);
         } catch (error) {
             console.warn('⚠️ Failed to toggle arrow visibility:', error);
-            this.deps.showNotification('Failed to toggle arrow visibility', 'warning');
+            this.deps.showNotification(getLabel('notify.arrowToggleFailed'), 'warning');
         }
     }
 

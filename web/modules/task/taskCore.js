@@ -572,7 +572,7 @@ export async function initTaskCore(dependencies = {}) {
             taskCoreInstance = null;
 
             if (dependencies.showNotification) {
-                dependencies.showNotification('Task system failed to initialize', 'error', 5000);
+                dependencies.showNotification(getLabel('notify.taskSystemInitFailed'), 'error', 5000);
             }
             throw e;
         }

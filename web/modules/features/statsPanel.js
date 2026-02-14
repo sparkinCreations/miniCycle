@@ -695,22 +695,22 @@ export class StatsPanelManager {
         if (event.key === "ArrowRight" && !this.state.isStatsVisible) {
             event.preventDefault();
             this.showStatsPanel();
-            this.dependencies.showNotification("⌨️ Keyboard shortcut - Stats Panel opened", "info", 1500);
+            this.dependencies.showNotification(`⌨️ ${getLabel('notify.keyboardStatsOpened')}`, "info", 1500);
         } else if (event.key === "ArrowLeft" && this.state.isStatsVisible) {
             event.preventDefault();
             this.showTaskView();
-            this.dependencies.showNotification("⌨️ Keyboard shortcut - Task View opened", "info", 1500);
+            this.dependencies.showNotification(`⌨️ ${getLabel('notify.keyboardTaskOpened')}`, "info", 1500);
         }
-        
+
         // Shift+Tab for quick toggle
         if (event.key === "Tab") {
             event.preventDefault();
             if (this.state.isStatsVisible) {
                 this.showTaskView();
-                this.dependencies.showNotification("⌨️ Quick toggle - Task View", "info", 1500);
+                this.dependencies.showNotification(`⌨️ ${getLabel('notify.quickToggleTask')}`, "info", 1500);
             } else {
                 this.showStatsPanel();
-                this.dependencies.showNotification("⌨️ Quick toggle - Stats Panel", "info", 1500);
+                this.dependencies.showNotification(`⌨️ ${getLabel('notify.quickToggleStats')}`, "info", 1500);
             }
         }
     }
@@ -983,21 +983,21 @@ export class StatsPanelManager {
             const allUnlocked = globalCyclesCompleted >= maxCycleMilestone || globalTasksCleared >= maxTaskMilestone;
 
             if (allUnlocked) {
-                this.elements.milestoneProgressText.textContent = "🎉 All badges unlocked!";
+                this.elements.milestoneProgressText.textContent = `🎉 ${getLabel('stats.allBadgesUnlocked')}`;
                 this.elements.milestoneProgressText.style.color = "#4caf50";
                 this.elements.milestoneProgressText.style.fontWeight = "normal";
             } else if (isToDoMode) {
                 // To-Do mode: show cleared tasks progress
                 const remaining = nextMilestone - globalTasksCleared;
                 this.elements.milestoneProgressText.textContent =
-                    `${remaining} more cleared task${remaining !== 1 ? 's' : ''} to next badge`;
+                    getLabel('stats.clearedToMilestone', { vars: { remaining } });
                 this.elements.milestoneProgressText.style.color = "var(--text-secondary, #888)";
                 this.elements.milestoneProgressText.style.fontWeight = "normal";
             } else {
                 // Cycle mode: show cycles progress
                 const remaining = nextMilestone - globalCyclesCompleted;
                 this.elements.milestoneProgressText.textContent =
-                    `${remaining} more cycle${remaining !== 1 ? 's' : ''} to next badge`;
+                    getLabel('stats.cyclesToMilestone', { vars: { remaining } });
                 this.elements.milestoneProgressText.style.color = "var(--text-secondary, #888)";
                 this.elements.milestoneProgressText.style.fontWeight = "normal";
             }
@@ -1157,15 +1157,15 @@ export class StatsPanelManager {
         // Dark Ocean Theme (5 cycles OR 5 tasks)
         if (themeUnlockMessage) {
             if (milestoneUnlocks.darkOcean) {
-                themeUnlockMessage.textContent = "🌊 Dark Ocean Theme unlocked! 🔓";
+                themeUnlockMessage.textContent = `🌊 ${getLabel('unlock.darkOceanUnlocked')} 🔓`;
                 themeUnlockMessage.classList.add("unlocked-message");
             } else {
                 if (isToDoMode) {
                     const tasksNeeded = Math.max(0, 5 - totalTasksCleared);
-                    themeUnlockMessage.textContent = `🔒 ${tasksNeeded} more cleared task${tasksNeeded !== 1 ? "s" : ""} to unlock 🌊 Dark Ocean Theme!`;
+                    themeUnlockMessage.textContent = `🔒 ${getLabel('unlock.darkOcean', { vars: { count: tasksNeeded } })}`;
                 } else {
                     const cyclesNeeded = Math.max(0, 5 - globalCyclesCompleted);
-                    themeUnlockMessage.textContent = `🔒 ${cyclesNeeded} more cycle${cyclesNeeded !== 1 ? "s" : ""} to unlock 🌊 Dark Ocean Theme!`;
+                    themeUnlockMessage.textContent = `🔒 ${getLabel('unlock.darkOceanCycles', { vars: { count: cyclesNeeded } })}`;
                 }
                 themeUnlockMessage.classList.remove("unlocked-message");
             }
@@ -1175,15 +1175,15 @@ export class StatsPanelManager {
         if (goldenUnlockMessage) {
             if (milestoneUnlocks.darkOcean) {
                 if (globalCyclesCompleted >= 50 || totalTasksCleared >= 250) {
-                    goldenUnlockMessage.textContent = "🌟 Golden Glow Theme unlocked! 🔓";
+                    goldenUnlockMessage.textContent = `🌟 ${getLabel('unlock.goldenGlowUnlocked')} 🔓`;
                     goldenUnlockMessage.classList.add("unlocked-message");
                 } else {
                     if (isToDoMode) {
                         const tasksNeeded = Math.max(0, 250 - totalTasksCleared);
-                        goldenUnlockMessage.textContent = `🔒 ${tasksNeeded} more cleared task${tasksNeeded !== 1 ? "s" : ""} to unlock 🌟 Golden Glow Theme!`;
+                        goldenUnlockMessage.textContent = `🔒 ${getLabel('unlock.goldenGlow', { vars: { count: tasksNeeded } })}`;
                     } else {
                         const cyclesNeeded = Math.max(0, 50 - globalCyclesCompleted);
-                        goldenUnlockMessage.textContent = `🔒 ${cyclesNeeded} more cycle${cyclesNeeded !== 1 ? "s" : ""} to unlock 🌟 Golden Glow Theme!`;
+                        goldenUnlockMessage.textContent = `🔒 ${getLabel('unlock.goldenGlowCycles', { vars: { count: cyclesNeeded } })}`;
                     }
                     goldenUnlockMessage.classList.remove("unlocked-message");
                 }
@@ -1198,15 +1198,15 @@ export class StatsPanelManager {
             const showGameHint = milestoneUnlocks.goldenGlow;
             if (showGameHint) {
                 if (milestoneUnlocks.taskOrderGame) {
-                    gameUnlockMessage.textContent = "🎮 Whack-a-Order Game unlocked! 🔓";
+                    gameUnlockMessage.textContent = `🎮 ${getLabel('unlock.gameUnlocked')} 🔓`;
                     gameUnlockMessage.classList.add("unlocked-message");
                 } else {
                     if (isToDoMode) {
                         const tasksNeeded = Math.max(0, 500 - totalTasksCleared);
-                        gameUnlockMessage.textContent = `🔒 ${tasksNeeded} more cleared task${tasksNeeded !== 1 ? "s" : ""} to unlock 🎮 Whack-a-Order Game!`;
+                        gameUnlockMessage.textContent = `🔒 ${getLabel('unlock.game', { vars: { count: tasksNeeded } })}`;
                     } else {
                         const cyclesNeeded = Math.max(0, 100 - globalCyclesCompleted);
-                        gameUnlockMessage.textContent = `🔒 ${cyclesNeeded} more cycle${cyclesNeeded !== 1 ? "s" : ""} to unlock 🎮 Whack-a-Order Game!`;
+                        gameUnlockMessage.textContent = `🔒 ${getLabel('unlock.gameCycles', { vars: { count: cyclesNeeded } })}`;
                     }
                     gameUnlockMessage.classList.remove("unlocked-message");
                 }
@@ -1517,7 +1517,7 @@ export class StatsPanelManager {
             historyManager.openModal();
         } else {
             console.warn('HistoryManager not available');
-            this.dependencies.showNotification('History not available', 'warning');
+            this.dependencies.showNotification(getLabel('notify.historyNotAvailable'), 'warning');
         }
     }
 
@@ -1531,7 +1531,7 @@ export class StatsPanelManager {
             historyManager.openModal('cleared');
         } else {
             console.warn('HistoryManager not available');
-            this.dependencies.showNotification('Cleared tasks not available', 'warning');
+            this.dependencies.showNotification(getLabel('notify.clearedTasksNotAvailable'), 'warning');
         }
     }
 
@@ -1544,7 +1544,7 @@ export class StatsPanelManager {
             achievementsManager.openModal();
         } else {
             console.warn('AchievementsManager not available');
-            this.dependencies.showNotification('Achievements not available', 'warning');
+            this.dependencies.showNotification(getLabel('notify.achievementsNotAvailable'), 'warning');
         }
     }
 
