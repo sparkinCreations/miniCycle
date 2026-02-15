@@ -754,6 +754,12 @@ export class ModeManager {
                     taskInput.style.display = '';
                 }
                 taskInput.classList.toggle('hidden', !isVisible);
+
+                // Fix tab order: remove hidden inputs from focus sequence
+                const focusableChildren = taskInput.querySelectorAll('input, button');
+                focusableChildren.forEach(el => {
+                    el.tabIndex = isVisible ? 0 : -1;
+                });
             };
 
             // Set initial state from settings (default: false = hidden)

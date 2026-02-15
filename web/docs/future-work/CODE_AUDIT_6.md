@@ -1,7 +1,7 @@
 # Code Audit #6 — Full Code Review with Blind Pass (130+ Findings)
 
 **Date:** February 13, 2026
-**Status:** P0 + P1 Fixes COMPLETE (24 fixed, 6 false alarms/already handled, 0 remaining). P2: 21 open, 15 fixed, 2 reclassified. P3: 27 open, 2 fixed, 1 partially confirmed. Accessibility: 5.5 open, 1.5 fixed. Hardcoded strings: COMPLETE (all 10 modules migrated).
+**Status:** P0 + P1 Fixes COMPLETE (24 fixed, 6 false alarms/already handled, 0 remaining). P2: 16 open, 20 fixed, 2 reclassified. P3: 27 open, 2 fixed, 1 partially confirmed. Accessibility: COMPLETE (all 8 fixed). Hardcoded strings: COMPLETE. Listener leaks: COMPLETE (all 8 fixed).
 **Scope:** Full codebase review (initial pass on core modules + blind pass on 40 under-examined modules)
 **Method:** Two-phase review. Phase 1 used project memory context. Phase 2 was a blind pass with no memory context on modules that Phase 1 underexplored.
 **Last Updated:** February 14, 2026 (verified against actual codebase)
@@ -107,7 +107,7 @@
 | 62 | consoleCapture.js | ~~Duplicate detection is O(n) with reference equality~~ | 256-259 | **FIXED** — detection removed/refactored |
 | 63 | consoleCapture.js | ~~setInterval without cleanup if module reloads~~ | 168-172 | **FIXED** — cleanup added in destroy |
 | 64 | deviceDetection.js | ~~Safari returns 0 for `hardwareConcurrency`, forcing all Safari to lite version~~ | 124-128 | **NOT AN ISSUE** — Safari returning 0 makes `hasLowMemory = false`, does NOT redirect |
-| 65 | deviceDetection.js | Hardcoded redirect URL — breaks if app in subdirectory | 197 | Open |
+| 65 | deviceDetection.js | Hardcoded redirect URL — breaks if app in subdirectory | 197 | **FIXED** — uses LITE_VERSION_PATH constant from constants.js |
 | 66 | basicPluginSystem.js | ~~Non-standard DI pattern — plain `_deps` instead of `diBase.js`~~ | 13-19 | **FIXED** — migrated to createDIModule |
 | 67 | basicPluginSystem.js | ~~No validation of plugin data written to localStorage~~ | — | **NOT AN ISSUE** — no localStorage plugin writes exist in current code |
 | 68 | pluginIntegrationGuide.js | Documentation bug: `'taskadded'` should be `'taskAdded'` (camelCase) | 58-59 | Open |
@@ -155,14 +155,14 @@
 
 | # | Issue | Modules Affected | Status |
 |---|-------|-----------------|--------|
-| A1 | No focus trap in modals — keyboard users can tab into background content | All modal-based modules | Open |
-| A2 | No focus restoration after modal close | All modal-based modules | Open |
+| A1 | ~~No focus trap in modals — keyboard users can tab into background content~~ | All modal-based modules | **FIXED** — _trapFocus()/_releaseFocusTrap() in modalManager.js, Tab wraps between first/last focusable |
+| A2 | ~~No focus restoration after modal close~~ | All modal-based modules | **FIXED** — _restoreFocus() already existed, now also releases focus trap |
 | A3 | ~~Icon-only buttons lack accessible text alternatives~~ | taskButtons.js, taskDOM.js | **FIXED** — aria-labels added, icon spans have aria-hidden="true" |
-| A4 | Missing `<label>` associations for form inputs | taskDOM.js, onboardingManager.js | Open |
-| A5 | Inconsistent `aria-hidden` on decorative elements | taskDOM.js, various | Partially fixed — some icons fixed, onboarding emojis still bare |
-| A6 | No `aria-live` regions for dynamic notifications | notifications.js | Open |
-| A7 | 3D coin spin has no keyboard equivalent | achievementsManager.js | Open |
-| A8 | Shift+Tab hijacked for gesture navigation | gesturePanelManager.js | Open |
+| A4 | ~~Missing `<label>` associations for form inputs~~ | notifications.js, dueDates.js | **FIXED** — prompt input has aria-labelledby, due date input has aria-label |
+| A5 | ~~Inconsistent `aria-hidden` on decorative elements~~ | taskDOM.js, onboardingManager.js | **FIXED** — all 10 onboarding emojis wrapped with `<span aria-hidden="true">` |
+| A6 | ~~No `aria-live` regions for dynamic notifications~~ | notifications.js | **FIXED** — container already had aria-live="polite"; individual notifications now have role="alert"/"status" |
+| A7 | ~~3D coin spin has no keyboard equivalent~~ | achievementsManager.js | **FIXED** — spinArea has tabindex="0", role="img", aria-label; ArrowLeft/Right rotates ±90° |
+| A8 | ~~Shift+Tab hijacked for gesture navigation~~ | gesturePanelManager.js, statsPanel.js | **FIXED** — guarded: skips when form field focused or overlay active |
 
 ---
 
@@ -191,14 +191,14 @@ Handlers attached in modal open / init but never removed on close / destroy:
 
 | Module | Lines | Leak Type | Status |
 |--------|-------|-----------|--------|
-| gamesManager.js | 182-219 | Document listener, no destroy() method | Open (P2) |
-| onboardingManager.js | 295-296 | Modal button handlers, no cleanup on close | Open (P2) |
+| gamesManager.js | 182-219 | Document listener, no destroy() method | **FIXED** — added destroy() method that removes all handlers |
+| onboardingManager.js | 295-296 | Modal button handlers, no cleanup on close | **FIXED** — completeOnboarding() removes stored handlers before modal.remove() |
 | taskOptionsCustomizer.js | 530-598 | Multiple handlers, only escape key cleaned up | **FIXED** — closeModal now removes all stored handlers |
 | achievementsManager.js | 804-912 | Document-level coin spin listeners | **FIXED** — closeModal calls hideBadgeDetail for cleanup |
 | historyManager.js | 462-475, 615 | Tab click + entry click handlers | **FIXED** — overlay handler stored and cleaned in closeModal |
 | clearedTasksManager.js | 462-492 | Back button + entry handlers | **FIXED** — overlay handler stored and cleaned in closeModal |
-| statsPanel.js | 267-279, 476 | Feature buttons + navigation dots | Open (P2) — timer cleanup FIXED |
-| helpWindowManager.js | 215 | Resize handler recreated inline each time | Open (P2) |
+| statsPanel.js | 267-279, 476 | Feature buttons + navigation dots | **FIXED** — stored handler refs, cleanup in destroy() |
+| helpWindowManager.js | 215 | Resize handler recreated inline each time | **FIXED** — stored debounced wrapper as _debouncedResizeHandler, full cleanup in destroy() |
 
 ---
 
@@ -267,14 +267,14 @@ All P0 items resolved: 7 fixed, 3 already handled, 1 false alarm.
 All P1 items resolved: 17 fixed, 2 false alarms.
 
 ### Phase 3 — Medium (This Month)
-1. Add modal focus trapping and restoration (A1, A2)
-2. ~~Add `<label>` elements and button text (A3, A4)~~ — A3 **DONE** (aria-labels added). A4 still open.
+1. ~~Add modal focus trapping and restoration (A1, A2)~~ — **DONE** (focus trap in modalManager.js)
+2. ~~Add `<label>` elements and button text (A3, A4)~~ — **DONE** (A3 aria-labels, A4 aria-labelledby/aria-label)
 3. Test core DI infrastructure — appContext, diBase, labelResolver
 4. ~~Fix concurrent mod detection — use content hash, not just timestamp (#31)~~ — **DONE** (uses DEBOUNCE constant)
 5. Complete fallback state with all sub-structures (#32)
 6. ~~Fix yearly month-12 recurring edge case (#34)~~ — **DONE**
 7. ~~Standardize DI pattern in plugin/games/search modules (#66)~~ — **DONE** (6 migrated, 2 remaining are acceptable, 2 exemptions documented)
-8. Fix remaining listener leaks: gamesManager, onboardingManager, statsPanel, helpWindowManager
+8. ~~Fix remaining listener leaks: gamesManager, onboardingManager, statsPanel, helpWindowManager~~ — **DONE** (all 4 fixed: destroy methods added, handlers stored and cleaned)
 
 ### Phase 4 — Polish (Next Month)
 9. ~~Migrate remaining hardcoded strings to label system~~ — **DONE** (all 10 modules migrated)

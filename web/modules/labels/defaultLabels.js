@@ -1035,7 +1035,8 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     accessibility: {
-        skipToContent: 'Skip to main content'
+        skipToContent: 'Skip to main content',
+        badgeCoinSpin: 'Achievement badge coin, use arrow keys to spin'
     },
 
     // ========================================================================
@@ -1339,6 +1340,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
 
     // Accessibility
     'accessibility.skipToContent',
+    'accessibility.badgeCoinSpin',
 
     // Empty states
     'empty.noTasks',

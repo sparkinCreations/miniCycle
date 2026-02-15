@@ -46,6 +46,9 @@ import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/consta
 import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
 import { getLabel } from '../labels/labelResolver.js';
 
+// Selector for all focusable elements (used by focus trapping and initial focus)
+const FOCUSABLE_SELECTOR = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
@@ -104,17 +107,16 @@ export class ModalManager {
     }
 
     /**
-     * Save the currently focused element and move focus into the modal.
+     * Save the currently focused element, move focus into the modal, and trap focus.
      * Call this immediately before showing a modal.
      * @param {HTMLElement} modalElement - The modal container to focus
      */
     _saveFocus(modalElement) {
         _previouslyFocusedElement = document.activeElement;
         if (modalElement) {
+            this._trapFocus(modalElement);
             // Try the first focusable element inside the modal, fall back to the modal itself
-            const focusable = modalElement.querySelector(
-                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            );
+            const focusable = modalElement.querySelector(FOCUSABLE_SELECTOR);
             const target = focusable || modalElement;
             // Delay focus so the modal is visible when focus moves
             setTimeout(() => target.focus(), UI_TIMEOUTS.FOCUS_DELAY);
@@ -122,9 +124,52 @@ export class ModalManager {
     }
 
     /**
+     * Trap Tab/Shift+Tab within a modal element so focus cannot escape.
+     * @param {HTMLElement} modalElement - The modal to trap focus within
+     */
+    _trapFocus(modalElement) {
+        this._releaseFocusTrap();
+
+        _focusTrapHandler = (e) => {
+            if (e.key !== 'Tab') return;
+
+            const focusableElements = modalElement.querySelectorAll(FOCUSABLE_SELECTOR);
+            if (focusableElements.length === 0) return;
+
+            const firstFocusable = focusableElements[0];
+            const lastFocusable = focusableElements[focusableElements.length - 1];
+
+            if (e.shiftKey) {
+                if (document.activeElement === firstFocusable) {
+                    e.preventDefault();
+                    lastFocusable.focus();
+                }
+            } else {
+                if (document.activeElement === lastFocusable) {
+                    e.preventDefault();
+                    firstFocusable.focus();
+                }
+            }
+        };
+
+        document.addEventListener('keydown', _focusTrapHandler);
+    }
+
+    /**
+     * Release focus trap by removing the Tab keydown listener.
+     */
+    _releaseFocusTrap() {
+        if (_focusTrapHandler) {
+            document.removeEventListener('keydown', _focusTrapHandler);
+            _focusTrapHandler = null;
+        }
+    }
+
+    /**
      * Restore focus to the element that was focused before the modal opened.
      */
     _restoreFocus() {
+        this._releaseFocusTrap();
         if (_previouslyFocusedElement && typeof _previouslyFocusedElement.focus === 'function') {
             _previouslyFocusedElement.focus();
         }
@@ -485,6 +530,12 @@ let modalManager = null;
  * @type {HTMLElement|null}
  */
 let _previouslyFocusedElement = null;
+
+/**
+ * Active focus trap keydown handler (removed when trap is released).
+ * @type {Function|null}
+ */
+let _focusTrapHandler = null;
 
 /**
  * Initialize the ModalManager module

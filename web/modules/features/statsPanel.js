@@ -265,19 +265,23 @@ export class StatsPanelManager {
     setupFeatureButtonHandlers() {
         const safeAdd = _deps.safeAddEventListener;
 
+        // Store handler references for cleanup
+        this._historyClickHandler = () => this.openHistoryModal();
+        this._achievementsClickHandler = () => this.openAchievementsModal();
+
         if (this.elements.historyBtn) {
             if (safeAdd) {
-                safeAdd(this.elements.historyBtn, 'click', () => this.openHistoryModal());
+                safeAdd(this.elements.historyBtn, 'click', this._historyClickHandler);
             } else {
-                this.elements.historyBtn.addEventListener('click', () => this.openHistoryModal());
+                this.elements.historyBtn.addEventListener('click', this._historyClickHandler);
             }
         }
 
         if (this.elements.achievementBadgesBtn) {
             if (safeAdd) {
-                safeAdd(this.elements.achievementBadgesBtn, 'click', () => this.openAchievementsModal());
+                safeAdd(this.elements.achievementBadgesBtn, 'click', this._achievementsClickHandler);
             } else {
-                this.elements.achievementBadgesBtn.addEventListener('click', () => this.openAchievementsModal());
+                this.elements.achievementBadgesBtn.addEventListener('click', this._achievementsClickHandler);
             }
         }
     }
@@ -703,8 +707,12 @@ export class StatsPanelManager {
             this.dependencies.showNotification(`⌨️ ${getLabel('notify.keyboardTaskOpened')}`, "info", 1500);
         }
 
-        // Shift+Tab for quick toggle
+        // Shift+Tab for quick toggle (guarded to preserve standard tab in modals/forms)
         if (event.key === "Tab") {
+            const activeEl = document.activeElement;
+            const isInFormField = activeEl && ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeEl.tagName);
+            if (isInFormField || this.dependencies.isOverlayActive()) return;
+
             event.preventDefault();
             if (this.state.isStatsVisible) {
                 this.showTaskView();
@@ -1632,7 +1640,17 @@ export class StatsPanelManager {
      */
     destroy() {
         console.log('🧹 Cleaning up StatsPanelManager...');
-        
+
+        // Remove feature button listeners
+        if (this._historyClickHandler && this.elements.historyBtn) {
+            this.elements.historyBtn.removeEventListener('click', this._historyClickHandler);
+            this._historyClickHandler = null;
+        }
+        if (this._achievementsClickHandler && this.elements.achievementBadgesBtn) {
+            this.elements.achievementBadgesBtn.removeEventListener('click', this._achievementsClickHandler);
+            this._achievementsClickHandler = null;
+        }
+
         // Remove event listeners
         document.removeEventListener("touchstart", this.boundHandlers.handleTouchStart);
         document.removeEventListener("touchmove", this.boundHandlers.handleTouchMove);

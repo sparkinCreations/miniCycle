@@ -917,12 +917,31 @@ export class AchievementsManager {
                 document.addEventListener('touchmove', onMove, { passive: true });
                 document.addEventListener('touchend', onEnd);
 
+                // Keyboard support (accessibility A7)
+                spinArea.setAttribute('tabindex', '0');
+                spinArea.setAttribute('role', 'img');
+                spinArea.setAttribute('aria-label', getLabel('accessibility.badgeCoinSpin'));
+
+                const onKeydown = (e) => {
+                    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        const direction = e.key === 'ArrowRight' ? 1 : -1;
+                        currentRotation += direction * 90;
+                        const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+                        coin.style.transition = reducedMotion ? 'none' : 'transform 0.3s ease-out';
+                        coin.style.transform = `rotateY(${currentRotation}deg)`;
+                        triggerHaptic(5);
+                    }
+                };
+                spinArea.addEventListener('keydown', onKeydown);
+
                 // Store cleanup function
                 this._badgeCoinCleanup = () => {
                     document.removeEventListener('mousemove', onMove);
                     document.removeEventListener('mouseup', onEnd);
                     document.removeEventListener('touchmove', onMove);
                     document.removeEventListener('touchend', onEnd);
+                    spinArea.removeEventListener('keydown', onKeydown);
                     if (animationFrame) cancelAnimationFrame(animationFrame);
                 };
             }
