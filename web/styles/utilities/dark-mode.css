@@ -274,7 +274,8 @@ body.dark-mode .current-routine-status .clickable {
     border: 1px solid var(--dark-button-hover-bg);
 }
 
-body.dark-mode .current-routine-status .clickable:hover {
+body.dark-mode .current-routine-status .clickable:hover,
+body.dark-mode .current-routine-status .clickable:focus-visible {
     background-color: var(--theme-bg-surface-elevated);
     transform: scale(1.02);
     color: var(--dark-accent-green);
@@ -304,7 +305,8 @@ body.dark-mode .theme-unlock-status .clickable {
     border: 1px solid var(--dark-button-hover-bg);
 }
 
-body.dark-mode .theme-unlock-status .clickable:hover {
+body.dark-mode .theme-unlock-status .clickable:hover,
+body.dark-mode .theme-unlock-status .clickable:focus-visible {
     background-color: var(--theme-bg-surface-elevated);
     transform: scale(1.02);
     color: var(--dark-accent-green);

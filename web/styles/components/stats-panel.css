@@ -200,9 +200,15 @@
     transition: background-color var(--transition-normal) ease, transform var(--transition-normal) ease;
 }
 
-.current-routine-status .clickable:hover {
+.current-routine-status .clickable:hover,
+.current-routine-status .clickable:focus-visible {
     background-color: var(--theme-bg-surface-elevated, #e8e8e8);
     transform: scale(1.02);
+}
+
+.current-routine-status .clickable:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
 }
 
 /* =============================================================================
@@ -314,9 +320,15 @@
     transition: background-color var(--transition-normal) ease, transform var(--transition-normal) ease;
 }
 
-.theme-unlock-status .clickable:hover {
+.theme-unlock-status .clickable:hover,
+.theme-unlock-status .clickable:focus-visible {
     background-color: var(--theme-bg-surface-elevated, #e8e8e8);
     transform: scale(1.02);
+}
+
+.theme-unlock-status .clickable:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
 }
 
 #theme-unlock-message,
@@ -397,6 +409,12 @@
     color: var(--theme-text-muted, #888);
     transition: all var(--transition-normal) ease;
     box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+}
+
+.badge:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
 }
 
 .badge.unlocked {

@@ -1206,6 +1206,8 @@ export class RoutineSwitcher {
 
             const listItem = document.createElement("div");
             listItem.classList.add("mini-cycle-switch-item");
+            listItem.setAttribute("tabindex", "0");
+            listItem.setAttribute("role", "option");
             listItem.dataset.cycleName = cycleData.title || cycleKey; // Use title for compatibility
             listItem.dataset.cycleKey = cycleKey; // ✅ Store the storage key
 
@@ -1252,8 +1254,12 @@ export class RoutineSwitcher {
             listItem._clickHandler = () => {
                 console.log('🎯 Cycle selected:', cycleData.title || cycleKey, 'Key:', cycleKey);
 
-                this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => item.classList.remove("selected"));
+                this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => {
+                    item.classList.remove("selected");
+                    item.setAttribute("aria-selected", "false");
+                });
                 listItem.classList.add("selected");
+                listItem.setAttribute("aria-selected", "true");
 
                 // Show preview & buttons
                 const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
@@ -1265,6 +1271,28 @@ export class RoutineSwitcher {
                 this.updatePreview(cycleKey);
             };
             safeAdd(listItem, "click", listItem._clickHandler);
+
+            // Keyboard activation: Enter/Space to select, Enter on selected to confirm
+            listItem._keyHandler = (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (listItem.classList.contains('selected')) {
+                        // Already selected — confirm (like double-click)
+                        this.confirmMiniCycle();
+                    } else {
+                        listItem._clickHandler();
+                    }
+                } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const items = [...this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM)];
+                    const currentIndex = items.indexOf(listItem);
+                    const nextIndex = e.key === 'ArrowDown'
+                        ? Math.min(currentIndex + 1, items.length - 1)
+                        : Math.max(currentIndex - 1, 0);
+                    items[nextIndex]?.focus();
+                }
+            };
+            safeAdd(listItem, "keydown", listItem._keyHandler);
 
             // Double-click to open immediately
             listItem._dblClickHandler = () => {
