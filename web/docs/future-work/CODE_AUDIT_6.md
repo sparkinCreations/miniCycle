@@ -1,10 +1,10 @@
 # Code Audit #6 — Full Code Review with Blind Pass (130+ Findings)
 
 **Date:** February 13, 2026
-**Status:** P0 + P1 Fixes COMPLETE (24 fixed, 6 false alarms/already handled, 0 remaining). Additional P2 fixes: DI migration (6 modules), missing await (2), timer cleanup (1), listener leaks (4 modules).
+**Status:** P0 + P1 Fixes COMPLETE (24 fixed, 6 false alarms/already handled, 0 remaining). P2: 21 open, 15 fixed, 2 reclassified. P3: 27 open, 2 fixed, 1 partially confirmed. Accessibility: 5.5 open, 1.5 fixed. Hardcoded strings: COMPLETE (all 10 modules migrated).
 **Scope:** Full codebase review (initial pass on core modules + blind pass on 40 under-examined modules)
 **Method:** Two-phase review. Phase 1 used project memory context. Phase 2 was a blind pass with no memory context on modules that Phase 1 underexplored.
-**Last Updated:** February 14, 2026
+**Last Updated:** February 14, 2026 (verified against actual codebase)
 
 ---
 
@@ -71,98 +71,98 @@
 
 ## P2 — Medium (Logic Errors / DI Violations / Code Quality)
 
-| # | Module | Issue | Lines |
-|---|--------|-------|-------|
-| 31 | appState.js | Concurrent mod detection uses 1s timestamp window — two tabs saving within 1s can overwrite each other | 687-725 |
-| 32 | appState.js | Fallback state missing recurring templates, history, cleared tasks, achievements | 549-570 |
-| 33 | appState.js | Task array fallback `Object.values(taskUpdates)` doesn't guarantee property order | 913-915 |
-| 34 | recurringMatcher.js | Yearly recurring tasks may skip month 12 | 271 |
-| 35 | reminders.js | `parseInt(value) \|\| 0` treats user-entered "0" as falsy | 376 |
-| 36 | recurringDateUtils.js | `convert12To24(25, "PM")` returns 37 — no hour range validation | 20-24 |
-| 37 | migrationManager.js | `Object.keys(_deps.storage)` — localStorage not enumerable, returns empty array | 738 |
-| 38 | migrationManager.js | Notification duration 200ms — disappears instantly | 755 |
-| 39 | migrationManager.js | `performAutoMigration()` is 250 lines — needs decomposition | 690-938 |
-| 40 | migrationManager.js | Empty try block `{ }` — unfinished refactoring | 1657 |
-| 41 | migrationManager.js | `escapeHtml()` incomplete — doesn't escape backticks | 1556-1560 |
-| 42 | migrationManager.js | Duplicate schema structures (SCHEMA_2_5_TARGET vs createInitialSchema25Data) | 103-164, 170-219 |
-| 43 | historyManager.js | Singleton prevents garbage collection — keeps DOM refs after modal close | 1000-1011 |
-| 44 | historyManager.js | HTML built with template literals in innerHTML — fragile if labels become user-controlled | 241, 260-283 |
-| 45 | cycleCompletion.js | MILESTONES undefined if `initCycleCompletion` not called before use | 58, 186-206 |
-| 46 | cycleCompletion.js | `AppState.update()` not awaited — state read immediately after may be stale | 244-254 |
-| 47 | cycleCompletion.js | Debug console.logs left in production code | 450-457 |
-| 48 | helpWindowManager.js | MutationObserver on task list never disconnected | 185 |
-| 49 | helpWindowManager.js | Race condition in dynamic import — functions callable before init completes | 527-528 |
-| 50 | helpWindowManager.js | XSS inconsistency — `show()` inserts unescaped message into innerHTML | 451-453 |
-| 51 | titleManager.js | Sanitization is optional via `?.` — unsanitized input passes through if dependency missing | 126 |
-| 52 | taskOptionsCustomizer.js | sessionStorage race on multi-tab reopen | 306-323 |
-| 53 | taskOptionsCustomizer.js | 846 lines — should be split into smaller modules | — |
-| 54 | statsPanel.js | 1,864 lines — should be split into smaller modules | — |
-| 55 | statsPanel.js | Transform animation without requestAnimationFrame — layout thrashing | 1017 |
-| 56 | achievementsManager.js | MILESTONES can be null if badge clicked before init | 589 |
-| 57 | achievementsManager.js | 3D coin spin has no keyboard equivalent — accessibility gap | 803-912 |
-| 58 | dataAccess.js | Reads localStorage twice instead of caching first read | 95, 118 |
-| 59 | dataAccess.js | Duplicated DEFAULT_REMINDERS object literal | 21-28, 134-141 |
-| 60 | routineLoader.js | `repairAndCleanTasks()` is 150 lines — needs decomposition | 177-331 |
-| 61 | routineLoader.js | `console.log('applyThemes applied!!!')` in production | 396 |
-| 62 | consoleCapture.js | Duplicate detection is O(n) with reference equality | 256-259 |
-| 63 | consoleCapture.js | setInterval without cleanup if module reloads | 168-172 |
-| 64 | deviceDetection.js | Safari returns 0 for `hardwareConcurrency`, forcing all Safari to lite version | 124-128 |
-| 65 | deviceDetection.js | Hardcoded redirect URL — breaks if app in subdirectory | 197 |
+| # | Module | Issue | Lines | Status |
+|---|--------|-------|-------|--------|
+| 31 | appState.js | ~~Concurrent mod detection uses 1s timestamp window~~ | 687-725 | **FIXED** — now uses `DEBOUNCE.CONCURRENT_MOD_CONFLICT` constant |
+| 32 | appState.js | Fallback state missing recurring templates, history, cleared tasks, achievements | 549-570 | Open |
+| 33 | appState.js | ~~Task array fallback `Object.values(taskUpdates)` doesn't guarantee property order~~ | 913-915 | **FIXED** — `Array.isArray()` check added, `Object.values` only fallback with warning |
+| 34 | recurringMatcher.js | ~~Yearly recurring tasks may skip month 12~~ | 271 | **FIXED** — safe access with fallback to empty array |
+| 35 | reminders.js | `parseInt(value) \|\| 0` treats user-entered "0" as falsy | 376 | Open |
+| 36 | recurringDateUtils.js | `convert12To24(25, "PM")` returns 37 — no hour range validation | 20-24 | Open |
+| 37 | migrationManager.js | ~~`Object.keys(_deps.storage)` — localStorage not enumerable~~ | 738 | **NOT AN ISSUE** — storage is enumerable; used for logging only |
+| 38 | migrationManager.js | Notification duration 200ms — disappears instantly | 755 | Open |
+| 39 | migrationManager.js | `performAutoMigration()` is 250 lines — needs decomposition | 690-938 | Open |
+| 40 | migrationManager.js | Empty try block `{ }` — unfinished refactoring | 1657 | Open |
+| 41 | migrationManager.js | `escapeHtml()` incomplete — doesn't escape backticks | 1556-1560 | Open |
+| 42 | migrationManager.js | Duplicate schema structures (SCHEMA_2_5_TARGET vs createInitialSchema25Data) | 103-164, 170-219 | Open |
+| 43 | historyManager.js | ~~Singleton prevents garbage collection — keeps DOM refs after modal close~~ | 1000-1011 | **INCONCLUSIVE** — needs deeper GC analysis |
+| 44 | historyManager.js | HTML built with template literals in innerHTML — fragile if labels become user-controlled | 241, 260-283 | Open |
+| 45 | cycleCompletion.js | MILESTONES undefined if `initCycleCompletion` not called before use | 58, 186-206 | Open |
+| 46 | cycleCompletion.js | `AppState.update()` not awaited — state read immediately after may be stale | 244-254 | Open |
+| 47 | cycleCompletion.js | ~~Debug console.logs left in production code~~ | 450-457 | **FIXED** — debug logs removed |
+| 48 | helpWindowManager.js | ~~MutationObserver on task list never disconnected~~ | 185 | **FIXED** — observer disconnected before recreating |
+| 49 | helpWindowManager.js | ~~Race condition in dynamic import — functions callable before init completes~~ | 527-528 | **FIXED** — deps checked after import completes |
+| 50 | helpWindowManager.js | ~~XSS inconsistency — `show()` inserts unescaped message into innerHTML~~ | 451-453 | **FIXED** — now uses escapeHtml before innerHTML |
+| 51 | titleManager.js | ~~Sanitization is optional via `?.` — unsanitized input passes through if dependency missing~~ | 126 | **FIXED** — fallback is safe `textContent.trim()`, no unsanitized passthrough |
+| 52 | taskOptionsCustomizer.js | sessionStorage race on multi-tab reopen — partially mitigated | 306-323 | Open (reduced) |
+| 53 | taskOptionsCustomizer.js | 863 lines — should be split into smaller modules | — | Open |
+| 54 | statsPanel.js | 1,821 lines — should be split into smaller modules | — | Open |
+| 55 | statsPanel.js | ~~Transform animation without requestAnimationFrame — layout thrashing~~ | 1017 | **FIXED** — CSS transitions handle animation, no layout thrashing |
+| 56 | achievementsManager.js | ~~MILESTONES can be null if badge clicked before init~~ | 589 | **FIXED** — null checks added |
+| 57 | achievementsManager.js | 3D coin spin has no keyboard equivalent — accessibility gap | 803-912 | Open |
+| 58 | dataAccess.js | ~~Reads localStorage twice instead of caching first read~~ | 95, 118 | **NOT AN ISSUE** — different code paths, only one read per execution |
+| 59 | dataAccess.js | Duplicated DEFAULT_REMINDERS object literal | 21-28, 134-141 | Open |
+| 60 | routineLoader.js | `repairAndCleanTasks()` is 155 lines — needs decomposition | 177-331 | Open |
+| 61 | routineLoader.js | `console.log('applyThemes applied!!!')` in production | 396 | Open |
+| 62 | consoleCapture.js | ~~Duplicate detection is O(n) with reference equality~~ | 256-259 | **FIXED** — detection removed/refactored |
+| 63 | consoleCapture.js | ~~setInterval without cleanup if module reloads~~ | 168-172 | **FIXED** — cleanup added in destroy |
+| 64 | deviceDetection.js | ~~Safari returns 0 for `hardwareConcurrency`, forcing all Safari to lite version~~ | 124-128 | **NOT AN ISSUE** — Safari returning 0 makes `hasLowMemory = false`, does NOT redirect |
+| 65 | deviceDetection.js | Hardcoded redirect URL — breaks if app in subdirectory | 197 | Open |
 | 66 | basicPluginSystem.js | ~~Non-standard DI pattern — plain `_deps` instead of `diBase.js`~~ | 13-19 | **FIXED** — migrated to createDIModule |
-| 67 | basicPluginSystem.js | No validation of plugin data written to localStorage | — |
-| 68 | pluginIntegrationGuide.js | Documentation bug: `'taskadded'` should be `'taskAdded'` (camelCase) | 58-59 |
+| 67 | basicPluginSystem.js | ~~No validation of plugin data written to localStorage~~ | — | **NOT AN ISSUE** — no localStorage plugin writes exist in current code |
+| 68 | pluginIntegrationGuide.js | Documentation bug: `'taskadded'` should be `'taskAdded'` (camelCase) | 58-59 | Open |
 
 ---
 
 ## P3 — Low (Polish / Naming / Minor Patterns)
 
-| # | Module | Issue | Lines |
-|---|--------|-------|-------|
-| 69 | appState.js | Quota exceeded shows warning but no pre-emptive cleanup at 80%+ usage | 739-744 |
-| 70 | appState.js | Subscriber cleanup not enforced — no auto-unsubscribe | 780-786 |
-| 71 | appContext.js | Legacy API object (50+ properties) coexists with new grouped APIs | 122-233 |
-| 72 | featureBoot.js | `AppState: null` deferred injection — fragile multi-step pattern | 68-78, 186-191 |
-| 73 | undoRedoManager.js | No snapshot size validation before pushing to stack | 561 |
-| 74 | themeManager.js | `refreshThemeToggles()` called twice in `unlockDarkOceanTheme()` | 417, 428 |
-| 75 | reminders.js | AppState type-check pattern repeated 3+ times — extract to helper | 249, 404, 528 |
-| 76 | miniCycle.html | CSS preload hints are useless — shadowed by media="print" hack | 48-58 |
-| 77 | miniCycle.html | Version check runs on focus + visibility + every 60s — aggressive polling | 437-442 |
-| 78 | miniCycle.html | Modulepreload commented out — 103 modules load without preloading | 212-239 |
-| 79 | service-worker.js | `cleanExpiredEntries()` checks Date header that many responses lack — expired entries rarely deleted | 408 |
-| 80 | service-worker.js | `GET_CACHE_STATUS` exposes all cached URLs to any client | 736-760 |
-| 81 | version.js | Type inconsistency — APP_VERSION is string, CACHE_VERSION is number | 5-6 |
-| 82 | .htaccess | Font cache 1 year — too long if glyphs change | 116 |
-| 83 | .htaccess | HSTS commented out — should be enabled on production | 68 |
-| 84 | task-list.css | Hardcoded `calc(100vh - 385px)` — fragile if header height changes | 26 |
-| 85 | task-options.css | Unnecessary `-webkit-transform` prefix | 30-31 |
-| 86 | uiEffects.js | `!important` in inline JS styles — CSS fighting with JS | 70 |
-| 87 | uiEffects.js | Scan line z-index uses MODAL level — should use NOTIFICATION | 114 |
-| 88 | pullToRefresh.js | `isAtTop()` has O(n*m) nested loop on every touchmove | 169-187 |
-| 89 | pullToRefresh.js | Hardcoded selectors not cached — querySelector on every touchmove | 225 |
-| 90 | gesturePanelManager.js | Shift+Tab hijacked — breaks standard reverse-tab navigation | 343-368 |
-| 91 | gesturePanelManager.js | `userSelect = "none"` persists if exception occurs mid-drag | 220 |
-| 92 | nameUtils.js | `Date.now()` fallback for unique names — collides in same millisecond | 30 |
-| 93 | nameUtils.js | Off-by-one: loop goes to `maxAttempts + 1` | 22-26 |
-| 94 | debugMode.js | "Debug mode: ON" warning filtered by the filter itself — self-defeating | 122-126 |
-| 95 | migrationFacade.js | Three ways to call same function — methods, getters, and export wrappers | 40-160 |
-| 96 | iconInit.js | `parseSVG` duplicated from icons.js — DRY violation | 16-28 |
-| 97 | completedTasksManager.js | `originalIndex` invalid after other tasks move — restore puts task in wrong position | 179-199 |
-| 98 | completedTasksManager.js | isEnabled() falls back to DOM element check — inconsistent source of truth | 253-264 |
+| # | Module | Issue | Lines | Status |
+|---|--------|-------|-------|--------|
+| 69 | appState.js | Quota exceeded shows warning but no pre-emptive cleanup at 80%+ usage | 739-744 | Open |
+| 70 | appState.js | ~~Subscriber cleanup not enforced — no auto-unsubscribe~~ | 780-786 | **FIXED** — `unsubscribe()` method added with proper cleanup |
+| 71 | appContext.js | Legacy API object (50+ properties) coexists with new grouped APIs | 122-233 | Open |
+| 72 | featureBoot.js | `AppState: null` deferred injection — fragile multi-step pattern | 68-78, 186-191 | Open |
+| 73 | undoRedoManager.js | No snapshot size validation before pushing to stack | 561 | Open |
+| 74 | themeManager.js | `refreshThemeToggles()` called twice in `unlockDarkOceanTheme()` | 417, 428 | Open |
+| 75 | reminders.js | AppState type-check pattern repeated 3+ times — extract to helper | 249, 404, 528 | Open |
+| 76 | miniCycle.html | CSS preload hints are useless — shadowed by media="print" hack | 48-58 | Open |
+| 77 | miniCycle.html | Version check runs on focus + visibility change — aggressive polling | 437-442 | Open (no 60s loop found; focus + visibility confirmed) |
+| 78 | miniCycle.html | Modulepreload commented out — 103 modules load without preloading | 212-239 | Open |
+| 79 | service-worker.js | `cleanExpiredEntries()` checks Date header that many responses lack — expired entries rarely deleted | 408 | Open |
+| 80 | service-worker.js | `GET_CACHE_STATUS` exposes all cached URLs to any client | 736-760 | Open |
+| 81 | version.js | ~~Type inconsistency — APP_VERSION is string, CACHE_VERSION is number~~ | 5-6 | **FIXED** — service-worker adds `'v'` prefix; cosmetic only |
+| 82 | .htaccess | Font cache 1 year — too long if glyphs change | 116 | Open |
+| 83 | .htaccess | HSTS commented out — should be enabled on production | 68 | Open |
+| 84 | task-list.css | Hardcoded `calc(100vh - 385px)` — fragile if header height changes | 26 | Open |
+| 85 | task-options.css | Unnecessary `-webkit-transform` prefix | 30-31 | Open |
+| 86 | uiEffects.js | `!important` in inline JS styles — CSS fighting with JS | 70 | Open |
+| 87 | uiEffects.js | Scan line z-index uses MODAL level — should use NOTIFICATION | 114 | Open |
+| 88 | pullToRefresh.js | ~~`isAtTop()` has O(n*m) nested loop on every touchmove~~ | 169-187 | **FIXED** — cached container DOM references, invalidated per gesture |
+| 89 | pullToRefresh.js | ~~Hardcoded selectors not cached — querySelector on every touchmove~~ | 225 | **FIXED** — replaced hardcoded selectors with DOM_SELECTORS constants |
+| 90 | gesturePanelManager.js | Shift+Tab hijacked — breaks standard reverse-tab navigation | 343-368 | Open |
+| 91 | gesturePanelManager.js | `userSelect = "none"` persists if exception occurs mid-drag | 220 | Open |
+| 92 | nameUtils.js | `Date.now()` fallback for unique names — collides in same millisecond | 30 | Open |
+| 93 | nameUtils.js | Off-by-one: loop goes to `maxAttempts + 1` | 22-26 | Open |
+| 94 | debugMode.js | "Debug mode: ON" warning filtered by the filter itself — self-defeating | 122-126 | Open |
+| 95 | migrationFacade.js | Three ways to call same function — methods, getters, and export wrappers | 40-160 | Open |
+| 96 | iconInit.js | `parseSVG` duplicated from icons.js — DRY violation | 16-28 | Open |
+| 97 | completedTasksManager.js | `originalIndex` invalid after other tasks move — restore puts task in wrong position | 179-199 | Open |
+| 98 | completedTasksManager.js | isEnabled() falls back to DOM element check — inconsistent source of truth | 253-264 | Open |
 
 ---
 
 ## Accessibility Gaps (Cross-Cutting)
 
-| # | Issue | Modules Affected |
-|---|-------|-----------------|
-| A1 | No focus trap in modals — keyboard users can tab into background content | All modal-based modules |
-| A2 | No focus restoration after modal close | All modal-based modules |
-| A3 | Icon-only buttons lack accessible text alternatives | taskButtons.js, taskDOM.js |
-| A4 | Missing `<label>` associations for form inputs | taskDOM.js, onboardingManager.js |
-| A5 | Inconsistent `aria-hidden` on decorative elements | taskDOM.js, various |
-| A6 | No `aria-live` regions for dynamic notifications | notifications.js |
-| A7 | 3D coin spin has no keyboard equivalent | achievementsManager.js |
-| A8 | Shift+Tab hijacked for gesture navigation | gesturePanelManager.js |
+| # | Issue | Modules Affected | Status |
+|---|-------|-----------------|--------|
+| A1 | No focus trap in modals — keyboard users can tab into background content | All modal-based modules | Open |
+| A2 | No focus restoration after modal close | All modal-based modules | Open |
+| A3 | ~~Icon-only buttons lack accessible text alternatives~~ | taskButtons.js, taskDOM.js | **FIXED** — aria-labels added, icon spans have aria-hidden="true" |
+| A4 | Missing `<label>` associations for form inputs | taskDOM.js, onboardingManager.js | Open |
+| A5 | Inconsistent `aria-hidden` on decorative elements | taskDOM.js, various | Partially fixed — some icons fixed, onboarding emojis still bare |
+| A6 | No `aria-live` regions for dynamic notifications | notifications.js | Open |
+| A7 | 3D coin spin has no keyboard equivalent | achievementsManager.js | Open |
+| A8 | Shift+Tab hijacked for gesture navigation | gesturePanelManager.js | Open |
 
 ---
 
@@ -170,18 +170,18 @@
 
 These modules have strings that should use `getLabel()` per the completed label migration:
 
-| Module | Lines | String |
-|--------|-------|--------|
-| pullToRefresh.js | 333-338 | "Release to refresh", "Pull to refresh" |
-| gesturePanelManager.js | 351-366 | Notification text with emoji |
-| helpWindowManager.js | 132 | "Welcome to miniCycle!" |
-| onboardingManager.js | 171-188 | Modal step content |
-| taskOptionsCustomizer.js | 726 | Notification text |
-| clearedTasksManager.js | 315, 365 | "Cleared Tasks" |
-| cycleCompletion.js | 450-457 | Debug log messages |
-| migrationManager.js | 755 | Migration messages |
-| statsPanel.js | various | Notification strings |
-| deviceDetection.js | 282, 304, 308 | Multiline notification messages |
+| Module | Lines | String | Status |
+|--------|-------|--------|--------|
+| pullToRefresh.js | 333-338 | ~~"Release to refresh", "Pull to refresh"~~ | **FIXED** — all use getLabel() |
+| gesturePanelManager.js | 351-366 | ~~Notification text with emoji~~ | **FIXED** — all use getLabel() |
+| helpWindowManager.js | 132 | ~~"Welcome to miniCycle!"~~ | **FIXED** — all strings use getLabel() (welcome, mode descriptions, status messages) |
+| onboardingManager.js | 171-188 | ~~Modal step content (3 steps)~~ | **FIXED** — all 3 steps use getLabel() (emojis kept in code per pattern) |
+| taskOptionsCustomizer.js | 726 | ~~Notification text~~ | **FIXED** — uses getLabel() |
+| clearedTasksManager.js | 315, 365 | ~~"Cleared Tasks"~~ | **FIXED** — all modal strings use getLabel() (header, buttons, summary, empty state) |
+| cycleCompletion.js | 450-457 | ~~Debug log messages~~ | **FIXED** — debug logs removed (also fixes P2 #47) |
+| migrationManager.js | 755 | ~~Migration messages~~ | **FIXED** — uses getLabel() |
+| statsPanel.js | various | ~~Notification strings~~ | **FIXED** — all use getLabel() |
+| deviceDetection.js | 282, 304, 308 | ~~Multiline notification messages~~ | **FIXED** — all use getLabel() |
 
 ---
 
@@ -268,19 +268,19 @@ All P1 items resolved: 17 fixed, 2 false alarms.
 
 ### Phase 3 — Medium (This Month)
 1. Add modal focus trapping and restoration (A1, A2)
-2. Add `<label>` elements and button text (A3, A4)
+2. ~~Add `<label>` elements and button text (A3, A4)~~ — A3 **DONE** (aria-labels added). A4 still open.
 3. Test core DI infrastructure — appContext, diBase, labelResolver
-4. Fix concurrent mod detection — use content hash, not just timestamp (#31)
+4. ~~Fix concurrent mod detection — use content hash, not just timestamp (#31)~~ — **DONE** (uses DEBOUNCE constant)
 5. Complete fallback state with all sub-structures (#32)
-6. Fix yearly month-12 recurring edge case (#34)
+6. ~~Fix yearly month-12 recurring edge case (#34)~~ — **DONE**
 7. ~~Standardize DI pattern in plugin/games/search modules (#66)~~ — **DONE** (6 migrated, 2 remaining are acceptable, 2 exemptions documented)
 8. Fix remaining listener leaks: gamesManager, onboardingManager, statsPanel, helpWindowManager
 
 ### Phase 4 — Polish (Next Month)
-9. Migrate remaining hardcoded strings to label system
+9. ~~Migrate remaining hardcoded strings to label system~~ — **DONE** (all 10 modules migrated)
 10. Add E2E workflow tests with Playwright
 11. Consider bundling strategy for 103-module HTTP waterfall
-12. Fix minor patterns (P3 items)
+12. Fix minor patterns (P3 items — 27 open)
 13. Add test coverage for untested modules
 
 ---

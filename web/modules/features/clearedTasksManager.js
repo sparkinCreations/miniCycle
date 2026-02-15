@@ -195,7 +195,7 @@ export class ClearedTasksManager {
             }
         }, true);
 
-        this.deps.showNotification('Cleared tasks list emptied', 'success');
+        this.deps.showNotification(getLabel('notify.clearedTasksEmptied'), 'success');
 
         // Refresh modal if open
         if (this.modalOverlay) {
@@ -247,7 +247,7 @@ export class ClearedTasksManager {
      */
     async recreateSelectedTasks() {
         if (this.selectedTasks.size === 0) {
-            this.deps.showNotification('No tasks selected', 'warning');
+            this.deps.showNotification(getLabel('notify.clearedNoSelected'), 'warning');
             return;
         }
 
@@ -256,7 +256,7 @@ export class ClearedTasksManager {
 
         if (!addTask || typeof addTask !== 'function') {
             console.error('❌ ClearedTasksManager: addTask not available or not a function');
-            this.deps.showNotification('Cannot recreate tasks - addTask not available', 'error');
+            this.deps.showNotification(getLabel('notify.recreateUnavailable'), 'error');
             return;
         }
 
@@ -283,9 +283,9 @@ export class ClearedTasksManager {
         }
 
         if (created > 0) {
-            this.deps.showNotification(`Recreated ${created} task${created !== 1 ? 's' : ''}`, 'success');
+            this.deps.showNotification(getLabel('notify.tasksRecreated', { vars: { count: created } }), 'success');
         } else {
-            this.deps.showNotification('Failed to recreate tasks - check console for details', 'warning');
+            this.deps.showNotification(getLabel('notify.clearedRecreateFailed'), 'warning');
         }
 
         // Exit recreate mode
@@ -363,7 +363,7 @@ export class ClearedTasksManager {
                         font-size: 18px;
                         font-weight: 600;
                         color: var(--text-primary, #333);
-                    ">Cleared Tasks</h2>
+                    ">${getLabel('history.clearedTasks')}</h2>
                     <button class="cleared-recreate-btn" style="
                         background: var(--primary-color, #4c79ff);
                         border: none;
@@ -372,7 +372,7 @@ export class ClearedTasksManager {
                         cursor: pointer;
                         padding: 6px 12px;
                         color: white;
-                    ">Recreate</button>
+                    ">${getLabel('history.recreate')}</button>
                 </header>
                 <div class="cleared-tasks-summary" style="
                     padding: 12px 16px;
@@ -399,7 +399,7 @@ export class ClearedTasksManager {
                         background: none;
                         cursor: pointer;
                         color: var(--text-primary, #333);
-                    ">Cancel</button>
+                    ">${getLabel('button.cancel')}</button>
                     <button class="cleared-confirm-btn" style="
                         flex: 1;
                         padding: 10px;
@@ -408,7 +408,7 @@ export class ClearedTasksManager {
                         background: var(--primary-color, #4c79ff);
                         cursor: pointer;
                         color: white;
-                    ">Recreate Selected</button>
+                    ">${getLabel('history.recreateTasks')}</button>
                 </footer>
             </div>
         `;
@@ -564,9 +564,10 @@ export class ClearedTasksManager {
         const { entries, totalCleared } = this.getClearedTasks();
 
         // Update summary
+        const taskWord = getLabel('noun.task', { count: totalCleared });
         summary.innerHTML = `
-            <strong>${totalCleared}</strong> task${totalCleared !== 1 ? 's' : ''} cleared total
-            ${entries.length > 0 ? ` &bull; Showing last ${entries.length} (90 days)` : ''}
+            <strong>${totalCleared}</strong> ${taskWord} ${getLabel('history.clearedTotal')}
+            ${entries.length > 0 ? ` &bull; ${getLabel('history.showingRecent', { vars: { count: entries.length, days: PRUNE_DAYS } })}` : ''}
         `;
 
         if (entries.length === 0) {
@@ -577,8 +578,8 @@ export class ClearedTasksManager {
                     color: var(--text-secondary, #666);
                 ">
                     <div style="font-size: 48px; margin-bottom: 16px;">✓</div>
-                    <p style="margin: 0;">No cleared tasks</p>
-                    <p style="margin: 8px 0 0; font-size: 14px;">Tasks you clear in To-Do mode will appear here</p>
+                    <p style="margin: 0;">${getLabel('history.noClearedTasks')}</p>
+                    <p style="margin: 8px 0 0; font-size: 14px;">${getLabel('history.noClearedHint')}</p>
                 </div>
             `;
             return;
@@ -630,7 +631,7 @@ export class ClearedTasksManager {
     _updateConfirmButton() {
         const btn = this.modalOverlay?.querySelector(DOM_SELECTORS.CLEARED_CONFIRM_BTN);
         if (btn) {
-            btn.textContent = `Recreate Selected (${this.selectedTasks.size})`;
+            btn.textContent = getLabel('history.recreateSelected', { vars: { count: this.selectedTasks.size } });
             btn.disabled = this.selectedTasks.size === 0;
             btn.style.opacity = this.selectedTasks.size === 0 ? '0.5' : '1';
         }
@@ -689,7 +690,7 @@ export class ClearedTasksManager {
                         gap: 8px;
                     ">
                         <span>${dateStr} ${timeStr}</span>
-                        ${entry.wasHighPriority ? '<span style="color: var(--danger-color, #dc3545);">High Priority</span>' : ''}
+                        ${entry.wasHighPriority ? `<span style="color: var(--danger-color, #dc3545);">${getLabel('history.highPriority')}</span>` : ''}
                     </div>
                 </div>
             </div>

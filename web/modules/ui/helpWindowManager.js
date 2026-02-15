@@ -8,6 +8,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -128,7 +129,7 @@ export class HelpWindowManager {
         this.initialized = true;
 
         // Show welcome message immediately
-        this.currentMessage = 'Welcome to miniCycle!';
+        this.currentMessage = getLabel('help.welcome');
         this.updateContent(this.currentMessage);
         this.helpWindow.classList.add('show');
         this.isVisible = true;
@@ -274,16 +275,16 @@ export class HelpWindowManager {
 
         const modeDescriptions = {
             'auto-cycle': {
-                title: "🔄 Auto Cycle Mode",
-                description: "Tasks automatically reset when all are completed."
+                title: "🔄 " + getLabel('mode.autoTitle'),
+                description: getLabel('help.modeAutoShort')
             },
             'manual-cycle': {
-                title: "✋ Manual Cycle Mode",
-                description: "Tasks only reset when you click the Complete button."
+                title: "✋ " + getLabel('mode.manualTitle'),
+                description: getLabel('help.modeManualShort')
             },
             'todo-mode': {
-                title: "📋 To-Do Mode",
-                description: "Completed tasks are removed when you click Complete."
+                title: "📋 " + getLabel('mode.todoTitle'),
+                description: getLabel('help.modeTodoShort')
             }
         };
 
@@ -332,7 +333,7 @@ export class HelpWindowManager {
 
         this.isShowingCycleComplete = true;
         this.helpWindow.innerHTML = `
-            <p>✅ Cycle Complete! Tasks reset.</p>
+            <p>✅ ${getLabel('help.cycleComplete')}</p>
         `;
 
         // Auto-hide after 2 seconds and return to normal message
@@ -359,9 +360,9 @@ export class HelpWindowManager {
         }
 
         this.isShowingCycleComplete = true; // Reuse flag to prevent updates
-        const taskText = count === 1 ? 'task' : 'tasks';
+        const taskWord = getLabel('noun.task', { count });
         this.helpWindow.innerHTML = `
-            <p>🧹 ${count} ${taskText} cleared!</p>
+            <p>🧹 ${getLabel('help.tasksCleared', { vars: { count, taskWord } })}</p>
         `;
 
         // Auto-hide after 2 seconds and return to normal message
@@ -420,28 +421,30 @@ export class HelpWindowManager {
 
         // Mode-aware progress text: show cleared tasks in To-Do mode, cycles in other modes
         const progressText = isToDoMode
-            ? `${clearedTasksCount} completed task${clearedTasksCount === 1 ? '' : 's'} cleared`
-            : `${cycleCount} cycle${cycleCount === 1 ? '' : 's'} completed`;
+            ? getLabel('help.progressCleared', { vars: { count: clearedTasksCount, taskWord: getLabel('noun.task', { count: clearedTasksCount }) } })
+            : getLabel('help.progressCycles', { vars: { count: cycleCount, cycleWord: getLabel('noun.cycle', { count: cycleCount }) } });
 
         // Return different constant messages based on state
         if (totalTasks === 0) {
-            return `📝 Add your first task to get started! • ${progressText}${sizeSuffix}`;
+            return `📝 ${getLabel('help.addFirstTask')} • ${progressText}${sizeSuffix}`;
         }
 
         if (remaining === 0 && totalTasks > 0) {
-            return `🎉 All tasks complete! • ${progressText}${sizeSuffix}`;
+            return `🎉 ${getLabel('help.allComplete')} • ${progressText}${sizeSuffix}`;
         }
+
+        const remainingText = getLabel('help.tasksRemaining', { vars: { remaining, taskWord: getLabel('noun.task', { count: remaining }) } });
 
         // First-time message for either mode
         if (isToDoMode && clearedTasksCount === 0) {
-            return `📋 ${remaining} task${remaining === 1 ? '' : 's'} remaining • Clear your first completed task!${sizeSuffix}`;
+            return `📋 ${remainingText} • ${getLabel('help.clearFirst')}${sizeSuffix}`;
         }
         if (!isToDoMode && cycleCount === 0) {
-            return `📋 ${remaining} task${remaining === 1 ? '' : 's'} remaining • Complete your first cycle!${sizeSuffix}`;
+            return `📋 ${remainingText} • ${getLabel('help.completeFirst')}${sizeSuffix}`;
         }
 
         // Show progress and cycle count or cleared tasks
-        return `📋 ${remaining} task${remaining === 1 ? '' : 's'} remaining • ${progressText}${sizeSuffix}`;
+        return `📋 ${remainingText} • ${progressText}${sizeSuffix}`;
     }
 
     updateContent(message) {

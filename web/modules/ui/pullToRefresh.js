@@ -18,6 +18,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -76,6 +77,10 @@ export class PullToRefresh {
 
         // Scrollable containers to check (task list, etc.)
         this.scrollableContainers = options.scrollableContainers || ['.task-list-container'];
+        this._cachedContainers = null; // cached DOM references for scrollable containers
+
+        // Timer tracking
+        this._resetTimerId = null;
 
         // Bind methods
         this.handleTouchStart = this.handleTouchStart.bind(this);
@@ -90,17 +95,13 @@ export class PullToRefresh {
     }
 
     /**
-     * Getter for dependencies - always reads from current module-level _deps
-     * This ensures late-injected dependencies are available
+     * Getter for dependencies - resolves from DI module
      */
     get deps() {
+        const resolved = di.resolve();
         return {
-            refreshUIFromState: _deps.refreshUIFromState,
-            checkRecurringTasksNow: _deps.checkRecurringTasksNow,
-            watchRecurringTasks: _deps.watchRecurringTasks,
-            promptServiceWorkerUpdate: _deps.promptServiceWorkerUpdate,
-            showNotification: _deps.showNotification || this.fallbackNotification,
-            isModalOpen: _deps.isModalOpen
+            ...resolved,
+            showNotification: resolved.showNotification || this.fallbackNotification
         };
     }
 
@@ -129,7 +130,7 @@ export class PullToRefresh {
         this.indicator.innerHTML = `
             <div class="pull-refresh-content">
                 <span class="pull-refresh-icon">&#8635;</span>
-                <span class="pull-refresh-text">Pull to refresh</span>
+                <span class="pull-refresh-text">${getLabel('pullRefresh.pull')}</span>
             </div>
         `;
 
@@ -171,11 +172,15 @@ export class PullToRefresh {
 
         // If touch started inside a scrollable container, that container must also be at top
         if (this.touchStartTarget) {
-            for (const selector of this.scrollableContainers) {
-                const container = document.querySelector(selector);
-                if (container && container.contains(this.touchStartTarget)) {
-                    // Touch started inside this scrollable container
-                    // Only allow pull-to-refresh if container is scrolled to top
+            // Cache container DOM references (re-query if cache is stale)
+            if (!this._cachedContainers) {
+                this._cachedContainers = this.scrollableContainers
+                    .map(selector => document.querySelector(selector))
+                    .filter(Boolean);
+            }
+
+            for (const container of this._cachedContainers) {
+                if (container.contains(this.touchStartTarget)) {
                     if (container.scrollTop > 0) {
                         return false;
                     }
@@ -197,6 +202,8 @@ export class PullToRefresh {
 
         // Store the touch target to check scrollable containers
         this.touchStartTarget = e.target;
+        // Invalidate cached containers in case DOM changed since last gesture
+        this._cachedContainers = null;
 
         if (!this.isAtTop()) {
             this.touchStartTarget = null;
@@ -221,8 +228,8 @@ export class PullToRefresh {
             return false;
         }
 
-        // Check for any visible modal (using data-modal attribute or common modal classes)
-        const modals = document.querySelectorAll(`${DOM_SELECTORS.DATA_MODAL}, .modal, ${DOM_SELECTORS.SETTINGS_MODAL}, ${DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL}, .preferences-modal, .themes-modal, .testing-modal, ${DOM_SELECTORS.FEEDBACK_MODAL}`);
+        // Check for any visible modal (data-modal covers most; specific selectors catch the rest)
+        const modals = document.querySelectorAll(`${DOM_SELECTORS.DATA_MODAL}, ${DOM_SELECTORS.SETTINGS_MODAL}, ${DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL}, ${DOM_SELECTORS.PREFERENCES_MODAL}, ${DOM_SELECTORS.TESTING_MODAL}, ${DOM_SELECTORS.FEEDBACK_MODAL}`);
         for (const modal of modals) {
             const style = window.getComputedStyle(modal);
             if (style.display !== 'none' && (modal.classList.contains('active') || modal.classList.contains('show') || style.display === 'flex')) {
@@ -330,10 +337,10 @@ export class PullToRefresh {
 
         // Update text based on threshold
         if (distance >= this.threshold) {
-            this.statusText.textContent = 'Release to refresh';
+            this.statusText.textContent = getLabel('pullRefresh.release');
             this.indicator.classList.add('ready');
         } else {
-            this.statusText.textContent = 'Pull to refresh';
+            this.statusText.textContent = getLabel('pullRefresh.pull');
             this.indicator.classList.remove('ready');
         }
     }
@@ -347,7 +354,7 @@ export class PullToRefresh {
         this.indicator.classList.remove('visible', 'ready', 'refreshing');
         this.indicator.style.transform = 'translateY(-60px)';
         this.spinnerIcon.style.transform = 'rotate(0deg)';
-        this.statusText.textContent = 'Pull to refresh';
+        this.statusText.textContent = getLabel('pullRefresh.pull');
 
         // Reset activation state
         this.isActivated = false;
@@ -365,7 +372,7 @@ export class PullToRefresh {
         // Update UI to show refreshing state
         this.indicator.classList.add('refreshing');
         this.indicator.style.transform = 'translateY(10px)';
-        this.statusText.textContent = 'Refreshing...';
+        this.statusText.textContent = getLabel('pullRefresh.refreshing');
         if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
             this.spinnerIcon.style.animation = 'pull-refresh-spin 1s linear infinite';
         }
@@ -375,10 +382,11 @@ export class PullToRefresh {
             await this.onRefresh();
         } catch (error) {
             console.error('Pull-to-refresh error:', error);
-            this.deps.showNotification('Refresh failed', 'error', 3000);
+            this.deps.showNotification(getLabel('notify.refreshFailed'), 'error', 3000);
         } finally {
             // Small delay for visual feedback
-            setTimeout(() => {
+            this._resetTimerId = setTimeout(() => {
+                this._resetTimerId = null;
                 this.isRefreshing = false;
                 this.spinnerIcon.style.animation = '';
                 this.resetIndicator();
@@ -412,7 +420,7 @@ export class PullToRefresh {
                         if (this.deps.promptServiceWorkerUpdate) {
                             this.deps.promptServiceWorkerUpdate();
                         } else {
-                            this.deps.showNotification('App update available! Reload to update.', 'info', 5000);
+                            this.deps.showNotification(getLabel('notify.updateAvailableReload'), 'info', 5000);
                         }
                     }
                 }
@@ -452,7 +460,7 @@ export class PullToRefresh {
         if (results.swUpdate) {
             // Already showed update notification
         } else if (results.uiRefreshed || results.recurringChecked) {
-            this.deps.showNotification('Refreshed', 'success', 2000);
+            this.deps.showNotification(getLabel('notify.refreshed'), 'success', 2000);
         }
 
         return results;
@@ -478,6 +486,11 @@ export class PullToRefresh {
      */
     destroy() {
         this.detachEventListeners();
+        if (this._resetTimerId) {
+            clearTimeout(this._resetTimerId);
+            this._resetTimerId = null;
+        }
+        this._cachedContainers = null;
         if (this.indicator && this.indicator.parentNode) {
             this.indicator.parentNode.removeChild(this.indicator);
         }

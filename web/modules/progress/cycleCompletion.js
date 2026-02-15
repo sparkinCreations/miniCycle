@@ -448,14 +448,11 @@ export function checkMiniCycle() {
         }
     }
 
-    console.log("ran check MiniCycle function");
     updateProgressBar();
 
     if (typeof deps.updateStatsPanel === 'function') {
         deps.updateStatsPanel();
     }
-
-    console.log("ran check MiniCycle function2");
 }
 
 // ============================================================================

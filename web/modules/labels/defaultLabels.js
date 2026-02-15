@@ -525,7 +525,12 @@ export const DEFAULT_LABELS = deepFreeze({
         // Recurring panel notifications (additional)
         panelSetupFailed:        'Panel setup failed - using degraded mode',
         panelOpenFailed:         'Failed to open panel',
-        panelUpdateFailed:       'Panel update failed'
+        panelUpdateFailed:       'Panel update failed',
+
+        // Pull-to-refresh notifications
+        refreshFailed:           'Refresh failed',
+        updateAvailableReload:   'App update available! Reload to update.',
+        refreshed:               'Refreshed'
     },
 
     // ========================================================================
@@ -930,7 +935,10 @@ export const DEFAULT_LABELS = deepFreeze({
         cycleCompleted:       'Cycle Completed',
         tasksCleared:         'Tasks Cleared',
         cycleReset:           'Cycle Reset',
-        achievementUnlocked:  'Achievement Unlocked'
+        achievementUnlocked:  'Achievement Unlocked',
+        recreate:             'Recreate',
+        clearedTotal:         'cleared total',
+        showingRecent:        'Showing last {count} ({days} days)'
     },
 
     // ========================================================================
@@ -1007,7 +1015,19 @@ export const DEFAULT_LABELS = deepFreeze({
         back:    'Back',
         next:    'Next',
         start:   'Start',
-        title:   'Welcome to miniCycle'
+        title:   'Welcome to miniCycle',
+        step1Title:  'Welcome to miniCycle!',
+        step1Desc1:  'A routine manager for tasks you do repeatedly - whether that\'s once a day, once a week, or multiple times a day.',
+        step1Desc2:  'Build your routine, complete it, and watch your cycle count grow!',
+        step2Title:  'How Cycles Work',
+        step2Item1:  'Add tasks to build your routine',
+        step2Item2:  'Complete all tasks in your routine',
+        step2Item3:  'Tasks reset and you complete a cycle',
+        step2Item4:  'Track how many cycles you\'ve completed',
+        step3Title:  'Tips',
+        step3Item1:  'Tap \u22EE on any task for quick options',
+        step3Item2:  'Tap the -/+ button to customize task options',
+        step3Item3:  'Swipe left for the Stats Panel'
     },
 
     // ========================================================================
@@ -1016,6 +1036,36 @@ export const DEFAULT_LABELS = deepFreeze({
 
     accessibility: {
         skipToContent: 'Skip to main content'
+    },
+
+    // ========================================================================
+    // 34. PULL TO REFRESH
+    // ========================================================================
+
+    pullRefresh: {
+        pull:    'Pull to refresh',
+        release: 'Release to refresh',
+        refreshing: 'Refreshing...'
+    },
+
+    // ========================================================================
+    // 35. HELP WINDOW
+    // ========================================================================
+
+    help: {
+        welcome:           'Welcome to miniCycle!',
+        modeAutoShort:     'Tasks automatically reset when all are completed.',
+        modeManualShort:   'Tasks only reset when you click the Complete button.',
+        modeTodoShort:     'Completed tasks are removed when you click Complete.',
+        cycleComplete:     'Cycle Complete! Tasks reset.',
+        tasksCleared:      '{count} {taskWord} cleared!',
+        addFirstTask:      'Add your first task to get started!',
+        allComplete:       'All tasks complete!',
+        tasksRemaining:    '{remaining} {taskWord} remaining',
+        clearFirst:        'Clear your first completed task!',
+        completeFirst:     'Complete your first cycle!',
+        progressCycles:    '{count} {cycleWord} completed',
+        progressCleared:   '{count} completed {taskWord} cleared'
     }
 });
 
@@ -1405,7 +1455,49 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
 
     // New recurring keys
     'recurring.removeDate',
-    'recurring.addTasksToRecurring'
+    'recurring.addTasksToRecurring',
+
+    // Pull-to-refresh
+    'pullRefresh.pull',
+    'pullRefresh.release',
+    'pullRefresh.refreshing',
+    'notify.refreshFailed',
+    'notify.updateAvailableReload',
+    'notify.refreshed',
+
+    // Help window
+    'help.welcome',
+    'help.modeAutoShort',
+    'help.modeManualShort',
+    'help.modeTodoShort',
+    'help.cycleComplete',
+    'help.tasksCleared',
+    'help.addFirstTask',
+    'help.allComplete',
+    'help.tasksRemaining',
+    'help.clearFirst',
+    'help.completeFirst',
+    'help.progressCycles',
+    'help.progressCleared',
+
+    // Onboarding steps
+    'onboarding.step1Title',
+    'onboarding.step1Desc1',
+    'onboarding.step1Desc2',
+    'onboarding.step2Title',
+    'onboarding.step2Item1',
+    'onboarding.step2Item2',
+    'onboarding.step2Item3',
+    'onboarding.step2Item4',
+    'onboarding.step3Title',
+    'onboarding.step3Item1',
+    'onboarding.step3Item2',
+    'onboarding.step3Item3',
+
+    // History (additional)
+    'history.recreate',
+    'history.clearedTotal',
+    'history.showingRecent'
 ]));
 
 // ============================================================================
