@@ -629,6 +629,9 @@ export class DragDropManager {
                     state.ui.activeTaskId = taskId || null;
                 }, true); // immediate save
 
+                // Remember which arrow was pressed for focus restoration
+                const arrowClass = button.classList.contains('move-up') ? 'move-up' : 'move-down';
+
                 // Re-render from state (await to ensure DOM is ready)
                 await this.deps.refreshUIFromState?.();
 
@@ -639,7 +642,13 @@ export class DragDropManager {
                 this.deps.updateUndoRedoButtons?.();
 
                 // Task options are now restored automatically by _restoreActiveTaskOptions in renderTasks
-                // No setTimeout hack needed!
+
+                // Restore focus to the same arrow button on the moved task (a11y)
+                if (taskId) {
+                    const movedTask = document.querySelector(`[data-task-id="${taskId}"]`);
+                    const arrowBtn = movedTask?.querySelector(`.${arrowClass}`);
+                    arrowBtn?.focus();
+                }
 
                 console.log(`✅ Task moved from position ${currentIndex} to ${newIndex} via arrows`);
             } else {

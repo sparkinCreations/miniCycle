@@ -139,6 +139,12 @@ export class TaskOptionsVisibilityController {
             taskOptions.classList.add(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
         }
 
+        // Sync button tabindex so hidden buttons can't steal keyboard focus
+        const buttons = taskOptions.querySelectorAll('button.task-btn');
+        buttons.forEach(btn => {
+            btn.tabIndex = visible ? 0 : -1;
+        });
+
         console.log(`${caller}: visibility -> ${visible ? 'visible' : 'hidden'} (mode: ${this.getMode()})`);
         return true;
     }

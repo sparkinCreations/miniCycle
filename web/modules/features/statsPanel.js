@@ -391,6 +391,12 @@ export class StatsPanelManager {
                 _deps.trackAction?.('stats');
                 this.showStatsPanel();
             },
+            handleSlideArrowKeydown: (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.target.click();
+                }
+            },
             // Theme event handlers
             handleCurrentRoutineToggle: () => this.handleCurrentRoutineToggle(),
             handleThemeToggleClick: () => this.handleThemeToggleClick(),
@@ -416,12 +422,14 @@ export class StatsPanelManager {
         const safeAdd = _deps.safeAddEventListener;
         if (!safeAdd) return; // Guard: dependency not injected (e.g., in tests)
 
-        // Slide buttons
+        // Slide buttons (click + keyboard Enter/Space for a11y)
         if (this.elements.slideLeft) {
             safeAdd(this.elements.slideLeft, "click", this.boundHandlers.handleSlideLeftClick);
+            safeAdd(this.elements.slideLeft, "keydown", this.boundHandlers.handleSlideArrowKeydown);
         }
         if (this.elements.slideRight) {
             safeAdd(this.elements.slideRight, "click", this.boundHandlers.handleSlideRightClick);
+            safeAdd(this.elements.slideRight, "keydown", this.boundHandlers.handleSlideArrowKeydown);
         }
 
         // Navigation pill container - click anywhere to toggle views
@@ -743,14 +751,20 @@ export class StatsPanelManager {
         this.elements.taskView.classList.add("show");
         this.elements.taskView.classList.remove("hide");
 
-        // Update slide indicators
+        // Remove hidden panel from tab order / screen readers
+        this.elements.statsPanel.inert = true;
+        this.elements.taskView.inert = false;
+
+        // Update slide indicators + tabindex
         if (this.elements.slideRight) {
             this.elements.slideRight.classList.add("show");
             this.elements.slideRight.classList.remove("hide");
+            this.elements.slideRight.tabIndex = 0;
         }
         if (this.elements.slideLeft) {
             this.elements.slideLeft.classList.add("hide");
             this.elements.slideLeft.classList.remove("show");
+            this.elements.slideLeft.tabIndex = -1;
         }
 
         this.state.isStatsVisible = false;
@@ -774,14 +788,20 @@ export class StatsPanelManager {
         this.elements.taskView.classList.add("hide");
         this.elements.taskView.classList.remove("show");
 
-        // Update slide indicators
+        // Remove hidden panel from tab order / screen readers
+        this.elements.statsPanel.inert = false;
+        this.elements.taskView.inert = true;
+
+        // Update slide indicators + tabindex
         if (this.elements.slideRight) {
             this.elements.slideRight.classList.add("hide");
             this.elements.slideRight.classList.remove("show");
+            this.elements.slideRight.tabIndex = -1;
         }
         if (this.elements.slideLeft) {
             this.elements.slideLeft.classList.add("show");
             this.elements.slideLeft.classList.remove("hide");
+            this.elements.slideLeft.tabIndex = 0;
         }
 
         this.state.isStatsVisible = true;
@@ -808,12 +828,16 @@ export class StatsPanelManager {
      * Initialize the view state
      */
     initView() {
-        // Start with task view visible
+        // Start with task view visible, stats panel hidden from tab order
+        if (this.elements.statsPanel) {
+            this.elements.statsPanel.inert = true;
+        }
         if (this.elements.slideLeft) {
             this.elements.slideLeft.classList.add("hide");
             this.elements.slideLeft.classList.remove("show");
+            this.elements.slideLeft.tabIndex = -1;
         }
-        
+
         this.updateNavDots();
     }
 

@@ -1,3 +1,7 @@
+## [1.938] - 2026-02-14
+- feat: Enhance accessibility and cleanup across various modules
+
+
 ## [1.937] - 2026-02-14
 - Refactor notifications and labels in ClearedTasksManager, HelpWindowManager, and PullToRefresh
 

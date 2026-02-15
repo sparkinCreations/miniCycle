@@ -60,19 +60,26 @@ export function attachKeyboardTaskOptionToggle(taskItem) {
     }
 
     /**
-     * Show task buttons only when focus is inside a real action element.
-     * Prevent buttons from appearing when clicking the checkbox or task text.
+     * Show task buttons when focus is inside a task.
+     * Mouse/touch clicks on checkbox or task text are skipped (safe elements),
+     * but keyboard focus (:focus-visible) on ANY element reveals options —
+     * this gives keyboard-only users the same access as mouse hover.
      */
     safeAddEventListener(taskItem, "focusin", (e) => {
         const target = e.target;
 
-        // Skip if focusing on safe elements that shouldn't trigger button reveal
-        if (
-            target.classList.contains("task-text") ||
-            target.type === "checkbox" ||
-            target.closest(".focus-safe")
-        ) {
-            return;
+        // Keyboard focus on any task element should reveal options (a11y parity with hover)
+        const isKeyboardFocus = target.matches?.(':focus-visible');
+
+        // Skip safe elements only for mouse/touch — keyboard always reveals
+        if (!isKeyboardFocus) {
+            if (
+                target.classList.contains("task-text") ||
+                target.type === "checkbox" ||
+                target.closest(".focus-safe")
+            ) {
+                return;
+            }
         }
 
         // Use centralized controller (handles mode checking automatically)
