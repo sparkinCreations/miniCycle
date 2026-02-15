@@ -1257,20 +1257,28 @@ async setDefaultPosition(notificationContainer) {
 
     setTimeout(() => cancelBtn.focus(), 20);
 
+    let handleKeydown = null;
+
     const cleanup = () => {
-      document.removeEventListener("keydown", handleKeydown);
+      if (handleKeydown) document.removeEventListener("keydown", handleKeydown);
       overlay.close();
       overlay.remove();
     };
 
-    const handleKeydown = (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        confirmBtn.click();
-      }
-    };
-
-    _safeAddEventListener(document, "keydown", handleKeydown);
+    // For non-destructive modals, Enter anywhere confirms (after a delay to avoid
+    // catching the same keypress that opened the modal). For destructive modals,
+    // skip this — user must explicitly Tab to Confirm and press Enter.
+    if (!destructive) {
+      handleKeydown = (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          confirmBtn.click();
+        }
+      };
+      setTimeout(() => {
+        _safeAddEventListener(document, "keydown", handleKeydown);
+      }, 100);
+    }
 
     overlay.addEventListener('cancel', (e) => {
       e.preventDefault();
