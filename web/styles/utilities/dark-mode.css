@@ -761,7 +761,7 @@ body.dark-mode .quick-action-item:not(:last-child) {
 body.dark-mode .help-window {
     background: rgba(50, 60, 80, 0.85);
     border-color: rgba(255, 255, 255, 0.2);
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--pref-panel-text, rgba(255, 255, 255, 0.9));
 }
 
 /* =============================================================================

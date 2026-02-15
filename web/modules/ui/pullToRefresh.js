@@ -223,9 +223,14 @@ export class PullToRefresh {
         // Check for any visible modal (data-modal covers most; specific selectors catch the rest)
         const modals = document.querySelectorAll(`${DOM_SELECTORS.DATA_MODAL}, ${DOM_SELECTORS.SETTINGS_MODAL}, ${DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL}, ${DOM_SELECTORS.PREFERENCES_MODAL}, ${DOM_SELECTORS.TESTING_MODAL}, ${DOM_SELECTORS.FEEDBACK_MODAL}`);
         for (const modal of modals) {
-            const style = window.getComputedStyle(modal);
-            if (style.display !== 'none' && (modal.classList.contains('active') || modal.classList.contains('show') || style.display === 'flex')) {
-                return false;
+            // Native <dialog> elements use .open property
+            if (typeof modal.showModal === 'function') {
+                if (modal.open) return false;
+            } else {
+                const style = window.getComputedStyle(modal);
+                if (style.display !== 'none' && (modal.classList.contains('active') || modal.classList.contains('show') || style.display === 'flex')) {
+                    return false;
+                }
             }
         }
 

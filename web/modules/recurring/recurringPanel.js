@@ -165,6 +165,11 @@ export class RecurringPanelManager {
                 }
             });
 
+            // Restore focus when dialog closes (including native ESC)
+            this.deps.safeAddEventListener(overlay, "close", () => {
+                overlay._previousFocus?.focus();
+            });
+
             // Setup change recurring settings button
             const changeSettingsBtn = this.deps.getElementById(DOM_IDS.CHANGE_RECURRING_SETTINGS);
             if (changeSettingsBtn) {
@@ -699,7 +704,8 @@ export class RecurringPanelManager {
             // Show overlay
             const overlay = this.deps.getModal('recurringOverlay');
             if (overlay) {
-                overlay.classList.remove("hidden");
+                overlay._previousFocus = document.activeElement;
+                if (!overlay.open) overlay.showModal();
             }
 
             // Hide settings panel initially
@@ -728,7 +734,8 @@ export class RecurringPanelManager {
         try {
             const overlay = this.deps.getModal('recurringOverlay');
             if (overlay) {
-                overlay.classList.add("hidden");
+                overlay.close();
+                overlay._previousFocus?.focus();
             }
 
             // ✅ Hide the preview when panel closes
@@ -992,7 +999,10 @@ export class RecurringPanelManager {
                     const remaining = Object.values(updatedCycle?.recurringTemplates || {});
                     if (remaining.length === 0) {
                         const overlay = this.deps.getModal('recurringOverlay');
-                        if (overlay) overlay.classList.add("hidden");
+                        if (overlay) {
+                            overlay.close();
+                            overlay._previousFocus?.focus();
+                        }
                     }
 
                     // Undo/redo buttons are updated automatically via the undo system
@@ -1758,7 +1768,10 @@ export class RecurringPanelManager {
 
             // Show panel
             const overlay = this.deps.getModal('recurringOverlay');
-            if (overlay) overlay.classList.remove("hidden");
+            if (overlay) {
+                overlay._previousFocus = document.activeElement;
+                if (!overlay.open) overlay.showModal();
+            }
 
             // Make sure checkboxes and toggle show correctly
             this.updateRecurringSettingsVisibility();

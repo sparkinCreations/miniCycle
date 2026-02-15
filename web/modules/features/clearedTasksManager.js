@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_SELECTORS, Z_INDEX } from '../core/constants.js';
+import { DOM_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -309,22 +309,9 @@ export class ClearedTasksManager {
         this.isRecreateMode = false;
         this.selectedTasks.clear();
 
-        this.modalOverlay = document.createElement('div');
-        this.modalOverlay.className = 'cleared-tasks-modal-overlay';
-        this.modalOverlay.setAttribute('role', 'dialog');
-        this.modalOverlay.setAttribute('aria-modal', 'true');
+        this.modalOverlay = document.createElement('dialog');
         this.modalOverlay.setAttribute('aria-label', getLabel('history.clearedTasks'));
         this.modalOverlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: ${Z_INDEX.OVERLAY_CRITICAL};
-            display: flex;
-            align-items: center;
-            justify-content: center;
             opacity: 0;
             transition: opacity 0.2s ease;
         `;
@@ -414,6 +401,8 @@ export class ClearedTasksManager {
         `;
 
         document.body.appendChild(this.modalOverlay);
+        this.modalOverlay._previousFocus = document.activeElement;
+        this.modalOverlay.showModal();
 
         // Setup event handlers
         this._setupModalHandlers();
@@ -434,11 +423,8 @@ export class ClearedTasksManager {
     closeModal() {
         if (!this.modalOverlay) return;
 
-        // Fix #63: Remove escape handler when modal closes by any means
-        if (this._escHandler) {
-            document.removeEventListener('keydown', this._escHandler);
-            this._escHandler = null;
-        }
+        // Restore focus to previously focused element
+        this.modalOverlay._previousFocus?.focus();
 
         // Clean up overlay click handler
         if (this._overlayClickHandler) {
@@ -522,20 +508,18 @@ export class ClearedTasksManager {
         };
         this.modalOverlay.addEventListener('click', this._overlayClickHandler);
 
-        // Fix #63: Store escape handler reference for proper cleanup
-        this._escHandler = (e) => {
-            if (e.key === 'Escape' && this.modalOverlay) {
-                if (this.isRecreateMode) {
-                    this.isRecreateMode = false;
-                    this.selectedTasks.clear();
-                    this._renderModalContent();
-                    this._updateFooterVisibility();
-                } else {
-                    this.closeModal();
-                }
+        // Native dialog cancel event (ESC key)
+        this.modalOverlay.addEventListener('cancel', (e) => {
+            e.preventDefault();
+            if (this.isRecreateMode) {
+                this.isRecreateMode = false;
+                this.selectedTasks.clear();
+                this._renderModalContent();
+                this._updateFooterVisibility();
+            } else {
+                this.closeModal();
             }
-        };
-        document.addEventListener('keydown', this._escHandler);
+        });
     }
 
     /**

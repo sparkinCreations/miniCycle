@@ -715,11 +715,11 @@ export class StatsPanelManager {
             this.dependencies.showNotification(`⌨️ ${getLabel('notify.keyboardTaskOpened')}`, "info", 1500);
         }
 
-        // Shift+Tab for quick toggle (guarded to preserve standard tab in modals/forms)
+        // Shift+Tab for quick toggle (only when nothing is focused — preserve normal tab navigation)
         if (event.key === "Tab") {
             const activeEl = document.activeElement;
-            const isInFormField = activeEl && ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeEl.tagName);
-            if (isInFormField || this.dependencies.isOverlayActive()) return;
+            const hasFocusedElement = activeEl && activeEl !== document.body;
+            if (hasFocusedElement || this.dependencies.isOverlayActive()) return;
 
             event.preventDefault();
             if (this.state.isStatsVisible) {
@@ -1523,7 +1523,8 @@ export class StatsPanelManager {
      */
     openThemesPanel() {
         if (this.elements.themesModal) {
-            this.elements.themesModal.style.display = "flex";
+            this.elements.themesModal._previousFocus = document.activeElement;
+            if (!this.elements.themesModal.open) this.elements.themesModal.showModal();
             this.dependencies.hideMainMenu();
         }
     }
@@ -1532,8 +1533,9 @@ export class StatsPanelManager {
      * Close themes panel
      */
     closeThemesPanel() {
-        if (this.elements.themesModal) {
-            this.elements.themesModal.style.display = "none";
+        if (this.elements.themesModal?.open) {
+            this.elements.themesModal.close();
+            this.elements.themesModal._previousFocus?.focus();
         }
     }
 
@@ -1718,7 +1720,7 @@ export class StatsPanelManager {
         // Basic overlay check
         const overlaySelectors = [
             '.menu-container.visible',
-            '.modal[style*="display: flex"]',
+            'dialog.modal[open]',
             '.notification-container .notification'
         ];
         return overlaySelectors.some(selector => document.querySelector(selector));

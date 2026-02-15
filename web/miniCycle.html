@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.938">
+<meta name="app-version" content="1.939">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -32,20 +32,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.938"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.939"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=1.938" as="style">
-<link rel="preload" href="styles/base/variables.css?v=1.938" as="style">
-<link rel="preload" href="styles/base/reset.css?v=1.938" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=1.938" as="style">
-<link rel="preload" href="styles/layout/header.css?v=1.938" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=1.938" as="style">
+<link rel="preload" href="styles/main.css?v=1.939" as="style">
+<link rel="preload" href="styles/base/variables.css?v=1.939" as="style">
+<link rel="preload" href="styles/base/reset.css?v=1.939" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=1.939" as="style">
+<link rel="preload" href="styles/layout/header.css?v=1.939" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=1.939" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=1.938" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=1.939" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=1.938"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=1.939"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -56,7 +56,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.938"></script>
+<script src="./version.js?v=1.939"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -215,21 +215,21 @@
      3. Or accepting slightly slower initial load without preloads
      ═══════════════════════════════════════════════════════════════════════════ -->
 <!--
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.938">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.938">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.938">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.938">
-<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.938">
-<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.938">
-<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.938">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.938">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.938">
-<link rel="modulepreload" href="./modules/core/appInit.js?v=1.938">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.938">
-<link rel="modulepreload" href="./modules/core/diBase.js?v=1.938">
-<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.938">
-<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.938">
-<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.938">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.939">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.939">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.939">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.939">
+<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.939">
+<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.939">
+<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.939">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.939">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.939">
+<link rel="modulepreload" href="./modules/core/appInit.js?v=1.939">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.939">
+<link rel="modulepreload" href="./modules/core/diBase.js?v=1.939">
+<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.939">
+<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.939">
+<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.939">
 -->
 
 <!-- Critical CSS - extracted to external file for CSP compliance (no 'unsafe-inline' needed) -->
@@ -990,7 +990,7 @@ window.installApp = () => {
        
 
             <!-- About Modal -->
-            <div id="about-modal" class="modal" data-modal role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
+            <dialog id="about-modal" class="modal" data-modal aria-labelledby="about-modal-title">
                 <div class="modal-content about-modal-content">
                     <span class="close-modal" role="button" tabindex="0" aria-label="Close about modal">&times;</span>
 
@@ -1018,7 +1018,7 @@ window.installApp = () => {
                         <p class="about-cache">Cache: <span id="about-sw-version">—</span></p>
                     </div>
                 </div>
-            </div>
+            </dialog>
 
 
             <!--Main Menu-->
@@ -1145,7 +1145,7 @@ window.installApp = () => {
 
 
 <!-- Recurring Panel Modal w/ Overlay -->
-<div id="recurring-panel-overlay" class="modal-overlay hidden" role="dialog" aria-labelledby="recurring-panel-title" aria-modal="true">
+<dialog id="recurring-panel-overlay" class="modal-overlay" aria-labelledby="recurring-panel-title">
   <div id="recurring-panel" class="modal-panel">
     <h3 id="recurring-panel-title">Recurring Tasks</h3>
     <div id="recurring-toggle-actions" class="hidden">
@@ -1561,10 +1561,10 @@ window.installApp = () => {
       <button id="close-recurring-panel" class="close-recurring-panel">Close</button>
     </div>
   </div>
-</div>
+</dialog>
 
 
-    <div id="games-panel" class="games-modal" data-modal role="dialog" aria-modal="true" aria-labelledby="games-panel-title">
+    <dialog id="games-panel" class="games-modal" data-modal aria-labelledby="games-panel-title">
         <div class="games-modal-content">
           <h2 id="games-panel-title">🎮 Games</h2>
           <p>Try to complete tasks in the correct order as fast as you can!</p>
@@ -1573,10 +1573,10 @@ window.installApp = () => {
         </div>
          <!-- 🎮 Game Container (initially hidden) -->
  <div id="taskOrderGameContainer" style="display: none;"></div>
-      </div>
+      </dialog>
 
         <!-- Reminders Modal -->
-        <div id="reminders-modal" class="reminders-modal" data-modal role="dialog" aria-modal="true" aria-labelledby="reminders-modal-title">
+        <dialog id="reminders-modal" class="reminders-modal" data-modal aria-labelledby="reminders-modal-title">
             <div class="reminders-modal-content">
                 <h2 id="reminders-modal-title">Reminders & Notifications</h2>
         
@@ -1617,12 +1617,12 @@ window.installApp = () => {
                 <!-- Close Button -->
                 <button id="close-reminders-btn" class="settings-btn">Close</button>
             </div>
-        </div>
-        
-  
+        </dialog>
+
+
 
             <!-- Settings Modal -->
-        <div id="settings-modal" class="settings-modal" data-modal role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+        <dialog id="settings-modal" class="settings-modal" data-modal aria-labelledby="settings-modal-title">
             <div class="settings-modal-content">
                 <h2 id="settings-modal-title">Settings</h2>
 
@@ -1749,7 +1749,7 @@ window.installApp = () => {
                     <button id="close-settings" class="settings-btn close-btn">Close</button>
                 </div>
             </div>
-        </div>
+        </dialog>
 
         <!-- Testing Modal -->
 <div id="testing-modal" class="testing-modal" data-modal role="dialog" aria-modal="true" aria-labelledby="testing-modal-title">
@@ -1905,7 +1905,7 @@ window.installApp = () => {
 </div>
 
 <!-- 🎨 Themes Panel Modal -->
-<div class="themes-modal" data-modal id="themes-modal" role="dialog" aria-modal="true" aria-labelledby="themes-modal-title">
+<dialog class="themes-modal" data-modal id="themes-modal" aria-labelledby="themes-modal-title">
     <div class="themes-modal-content">
       <h2 id="themes-modal-title">🎨 Theme Settings</h2>
   
@@ -1928,10 +1928,10 @@ window.installApp = () => {
   
       <button id="close-themes-btn" class="close-btn">Close</button>
     </div>
-  </div>
+  </dialog>
 
 <!-- Preferences Modal -->
-<div class="preferences-modal" data-modal id="preferences-modal" role="dialog" aria-modal="true" aria-labelledby="preferences-modal-title">
+<dialog class="preferences-modal" data-modal id="preferences-modal" aria-labelledby="preferences-modal-title">
     <div class="preferences-modal-content">
         <h2 id="preferences-modal-title">Personalization</h2>
 
@@ -2224,6 +2224,23 @@ window.installApp = () => {
                 </div>
             </div>
 
+            <!-- Desktop Panels Section -->
+            <div class="preferences-section collapsed" data-section="panels">
+                <div class="preferences-section-header collapsible" data-toggle="panels">
+                    <span class="preferences-section-icon">&#x1F5A5;</span>
+                    <span>Desktop Panels</span>
+                    <span class="preferences-section-toggle">&#x25BC;</span>
+                </div>
+                <div class="preferences-section-content" id="pref-section-panels">
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F524;</span>
+                        <label for="pref-panel-text">Panel Text</label>
+                        <input type="color" id="pref-panel-text" value="#ffffff" />
+                        <button class="preferences-reset-btn" data-target="pref-panel-text" title="Reset to default">Reset</button>
+                    </div>
+                </div>
+            </div>
+
         </div><!-- End scroll area -->
 
         <!-- Footer Actions -->
@@ -2236,11 +2253,11 @@ window.installApp = () => {
 
         <button id="close-preferences-btn" class="close-btn">Close</button>
     </div>
-</div>
+</dialog>
 
 
 <!-- miniCycle Switch Modal -->
-<div id="routine-switcher-modal" class="mini-cycle-switch-modal" data-modal role="dialog" aria-modal="true" aria-labelledby="routine-switcher-title">
+<dialog id="routine-switcher-modal" class="mini-cycle-switch-modal" data-modal aria-labelledby="routine-switcher-title">
     <div class="mini-cycle-switch-modal-content">
         <div class="mini-cycle-switch-title-logo"><img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="Task Cycle Logo" /></div>
         <div class="mini-cycle-switch-title" id="routine-switcher-title">Open Routine</div>
@@ -2296,13 +2313,13 @@ window.installApp = () => {
             <div id="storage-bar-text" class="storage-bar-text">Calculating...</div>
         </div>
     </div>
-</div>
+</dialog>
 
 
 
 
 <!-- Feedback Modal -->
-<div id="feedback-modal" class="feedback-modal" role="dialog" aria-modal="true" aria-labelledby="feedback-modal-title" data-modal>
+<dialog id="feedback-modal" class="feedback-modal" aria-labelledby="feedback-modal-title" data-modal>
     <div class="feedback-modal-content">
         <button class="close-feedback-modal" aria-label="Close feedback modal">&times;</button>
         <h2 id="feedback-modal-title">Provide Feedback</h2>
@@ -2336,7 +2353,7 @@ window.installApp = () => {
             ✅ Thank you for your feedback!
         </p>
     </div>
-</div>
+</dialog>
 
 
 
@@ -2576,7 +2593,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.938"></script>
+ <script type="module" src="miniCycle-main.js?v=1.939"></script>
 
 <script>
 // Sync About modal version with meta app-version

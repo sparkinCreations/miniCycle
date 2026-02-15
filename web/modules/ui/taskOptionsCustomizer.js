@@ -38,14 +38,6 @@ const di = createDIModule('TaskOptionsCustomizer', {
     getModal: optional(null)
 });
 
-// Late-binding deps via Proxy
-/** @type {{AppState: Object|null, showNotification: Function|null, renderTaskList: Function|null, updateMoveArrowsVisibility: Function|null, startReminders: Function|null, stopReminders: Function|null, modeManager: Object|null, appInit: Object|null, DEFAULT_TASK_OPTION_BUTTONS: Object|null, safeAddEventListener: Function|null, getModal: Function|null}} */
-const _deps = new Proxy({}, {
-    get(_, prop) {
-        return di.resolve()[prop];
-    }
-});
-
 /**
  * Set dependencies for TaskOptionsCustomizer (call before creating instance)
  * @param {Object} dependencies - { AppState, showNotification, renderTaskList, etc. }
@@ -155,19 +147,10 @@ const BUTTON_CONFIG = [
 ];
 
 export class TaskOptionsCustomizer {
-    constructor(deps = {}) {
-        // Store constructor-only deps (DOM helpers that don't change)
-        this._constructorDeps = {
-            getElementById: deps.getElementById || ((id) => document.getElementById(id)),
-            querySelector: deps.querySelector || ((sel) => document.querySelector(sel))
-        };
-
-        // ✅ Debounce state for refresh
+    constructor() {
         this._refreshTimeout = null;
         this._refreshDebounceMs = 150;
-
-        // Validate required dependencies
-        this._validateDependencies();
+        this._modalRemoveTimerId = null;
 
         console.log('✅ TaskOptionsCustomizer initialized');
     }
@@ -186,39 +169,12 @@ export class TaskOptionsCustomizer {
         }, this._refreshDebounceMs);
     }
 
-    /**
-     * Getter for dependencies - always reads from current module-level _deps
-     * This allows late injection via setTaskOptionsCustomizerDependencies() to work
-     */
     get deps() {
+        const resolved = di.resolve();
         return {
-            AppState: _deps.AppState,
-            showNotification: _deps.showNotification,
-            renderTaskList: _deps.renderTaskList,
-            updateMoveArrowsVisibility: _deps.updateMoveArrowsVisibility,
-            startReminders: _deps.startReminders,
-            stopReminders: _deps.stopReminders,
-            modeManager: _deps.modeManager,
-            appInit: _deps.appInit,  // DI-pure (no fallback)
-            DEFAULT_TASK_OPTION_BUTTONS: _deps.DEFAULT_TASK_OPTION_BUTTONS || FALLBACK_TASK_OPTION_BUTTONS,
-            safeAddEventListener: _deps.safeAddEventListener,
-            getModal: _deps.getModal,
-            // DOM helpers from constructor
-            ...this._constructorDeps
+            ...resolved,
+            DEFAULT_TASK_OPTION_BUTTONS: resolved.DEFAULT_TASK_OPTION_BUTTONS || FALLBACK_TASK_OPTION_BUTTONS
         };
-    }
-
-    /**
-     * Validate dependencies and warn about missing ones
-     * @private
-     */
-    _validateDependencies() {
-        const required = ['AppState', 'showNotification'];
-        const missing = required.filter(dep => !this.deps[dep]);
-
-        if (missing.length > 0) {
-            console.warn('⚠️ TaskOptionsCustomizer missing dependencies:', missing);
-        }
     }
 
     /**
@@ -246,8 +202,8 @@ export class TaskOptionsCustomizer {
                     if (currentCycleId) {
                         // Close the settings modal first
                         const settingsModal = this.deps.getModal?.('settings') || document.querySelector(DOM_SELECTORS.SETTINGS_MODAL);
-                        if (settingsModal) {
-                            settingsModal.style.display = 'none';
+                        if (settingsModal?.open) {
+                            settingsModal.close();
                         }
 
                         // Then open the customization modal
@@ -371,13 +327,12 @@ export class TaskOptionsCustomizer {
      */
     createModal(cycleId, cycleTitle, currentOptions) {
         // Remove any existing modal
-        const existing = this.deps.getElementById(DOM_IDS.TASK_OPTIONS_CUSTOMIZER_MODAL);
+        const existing = document.getElementById(DOM_IDS.TASK_OPTIONS_CUSTOMIZER_MODAL);
         if (existing) existing.remove();
 
         // Create modal HTML
-        const modal = document.createElement('div');
+        const modal = document.createElement('dialog');
         modal.id = DOM_IDS.TASK_OPTIONS_CUSTOMIZER_MODAL;
-        modal.className = 'modal-overlay';
 
         // Fix #39: Escape cycleTitle to prevent XSS
         const escapeHtml = (str) => {
@@ -385,8 +340,6 @@ export class TaskOptionsCustomizer {
             return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g, '&#x2F;');
         };
 
-        modal.setAttribute('role', 'dialog');
-        modal.setAttribute('aria-modal', 'true');
         modal.setAttribute('aria-labelledby', 'task-options-customizer-title');
 
         modal.innerHTML = `
@@ -435,10 +388,12 @@ export class TaskOptionsCustomizer {
         // Attach event listeners
         this.attachModalListeners(modal, cycleId);
 
-        // Show modal with animation
-        requestAnimationFrame(() => {
-            modal.classList.add('show');
-        });
+        // Show modal using native dialog API
+        modal._previousFocus = document.activeElement;
+        modal.showModal();
+        // Focus first interactive element
+        const firstFocusable = modal.querySelector('input:not([disabled]), button');
+        if (firstFocusable) setTimeout(() => firstFocusable.focus(), 100);
     }
 
     /**
@@ -451,6 +406,7 @@ export class TaskOptionsCustomizer {
         const cycleOptions = BUTTON_CONFIG.filter(opt => opt.scope === 'cycle');
 
         const defaultButtons = this.deps.DEFAULT_TASK_OPTION_BUTTONS;
+        const escapeAttr = (str) => String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
         const buildOption = (option) => {
             const isChecked = currentOptions[option.key] ?? defaultButtons[option.key];
             const isDisabled = option.disabled || false;
@@ -464,8 +420,8 @@ export class TaskOptionsCustomizer {
                 <label class="task-option-item ${isDisabled ? 'disabled' : ''}"
                        data-option-key="${option.key}"
                        data-option-index="${iconIndex}"
-                       data-option-label="${label}"
-                       data-option-description="${description}">
+                       data-option-label="${escapeAttr(label)}"
+                       data-option-description="${escapeAttr(description)}">
                     <div class="option-checkbox-container">
                         <input
                             type="checkbox"
@@ -557,6 +513,13 @@ export class TaskOptionsCustomizer {
             safeAdd(item, 'mouseenter', item._mouseenterHandler);
             safeAdd(item, 'mouseleave', item._mouseleaveHandler);
 
+            // Keyboard: show preview when checkbox receives focus
+            const checkbox = item.querySelector('.option-checkbox');
+            if (checkbox) {
+                checkbox._focusHandler = () => showPreview(item);
+                safeAdd(checkbox, 'focus', checkbox._focusHandler);
+            }
+
             // Mobile: tap
             item._clickHandler = (e) => {
                 // Only show preview on tap, don't prevent checkbox toggle
@@ -589,13 +552,11 @@ export class TaskOptionsCustomizer {
         };
         safeAdd(modal, 'click', modal._overlayClickHandler);
 
-        // Close on ESC key - handler cleanup happens in closeModal
-        modal._escHandler = (e) => {
-            if (e.key === 'Escape') {
-                this.closeModal(modal);
-            }
-        };
-        safeAdd(document, 'keydown', modal._escHandler);
+        // Handle ESC via native dialog cancel event
+        safeAdd(modal, 'cancel', (e) => {
+            e.preventDefault(); // Prevent native close to do our cleanup
+            this.closeModal(modal);
+        });
     }
 
     /**
@@ -753,27 +714,38 @@ export class TaskOptionsCustomizer {
      * @param {HTMLElement} modal - The modal element
      */
     closeModal(modal) {
-        // Clean up escape handler to prevent leak
-        if (modal._escHandler) {
-            document.removeEventListener('keydown', modal._escHandler);
-            modal._escHandler = null;
+        // Restore focus to previously focused element
+        modal._previousFocus?.focus();
+
+        // Clear pending debounced refresh
+        if (this._refreshTimeout) {
+            clearTimeout(this._refreshTimeout);
+            this._refreshTimeout = null;
+        }
+
+        // Clear any pending modal removal from a previous close
+        if (this._modalRemoveTimerId) {
+            clearTimeout(this._modalRemoveTimerId);
+            this._modalRemoveTimerId = null;
         }
 
         // Clean up stored handlers on child elements before removal
         modal.querySelectorAll('input[type="checkbox"]').forEach(cb => {
             if (cb._changeHandler) { cb.removeEventListener('change', cb._changeHandler); cb._changeHandler = null; }
+            if (cb._focusHandler) { cb.removeEventListener('focus', cb._focusHandler); cb._focusHandler = null; }
         });
-        modal.querySelectorAll('.option-item').forEach(item => {
+        modal.querySelectorAll('.task-option-item').forEach(item => {
             if (item._mouseenterHandler) { item.removeEventListener('mouseenter', item._mouseenterHandler); item._mouseenterHandler = null; }
             if (item._mouseleaveHandler) { item.removeEventListener('mouseleave', item._mouseleaveHandler); item._mouseleaveHandler = null; }
             if (item._clickHandler) { item.removeEventListener('click', item._clickHandler); item._clickHandler = null; }
         });
         if (modal._overlayClickHandler) { modal.removeEventListener('click', modal._overlayClickHandler); modal._overlayClickHandler = null; }
 
-        modal.classList.remove('show');
-        setTimeout(() => {
+        modal.close();
+        this._modalRemoveTimerId = setTimeout(() => {
+            this._modalRemoveTimerId = null;
             modal.remove();
-        }, 300); // Wait for fade-out animation
+        }, 300);
     }
 
     /**
@@ -842,13 +814,13 @@ let taskOptionsCustomizer = null;
  * @param {Object} dependencies - Dependency injection object
  * @returns {TaskOptionsCustomizer} The initialized instance
  */
-export async function initTaskOptionsCustomizer(dependencies = {}) {
+export async function initTaskOptionsCustomizer() {
     if (taskOptionsCustomizer) {
         console.warn('⚠️ TaskOptionsCustomizer already initialized');
         return taskOptionsCustomizer;
     }
 
-    taskOptionsCustomizer = new TaskOptionsCustomizer(dependencies);
+    taskOptionsCustomizer = new TaskOptionsCustomizer();
 
     // Setup event listeners for settings button
     taskOptionsCustomizer.setupEventListeners();

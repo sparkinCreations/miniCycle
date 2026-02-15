@@ -153,7 +153,8 @@ export class RoutineSwitcher {
         }
 
         console.log('📂 Showing switch modal...');
-        switchModal.style.display = "flex";
+        switchModal._previousFocus = document.activeElement;
+        if (!switchModal.open) switchModal.showModal();
         switchRow.style.display = "none";
 
         // ✅ Let loadMiniCycleList() handle all the population logic
@@ -681,7 +682,8 @@ export class RoutineSwitcher {
             return;
         }
 
-        switchModal.style.display = "none";
+        if (switchModal.open) switchModal.close();
+        switchModal._previousFocus?.focus();
         console.log("✅ Modal hidden successfully");
     }
 
@@ -938,7 +940,7 @@ export class RoutineSwitcher {
         this._clickOutsideHandler = (event) => {
             // ✅ Early return if modal not visible (avoid DOM queries on every click)
             const switchModal = this.deps.getModal('routineSwitcher');
-            if (!switchModal || switchModal.style.display !== "flex") {
+            if (!switchModal || !switchModal.open) {
                 return;
             }
 
@@ -952,8 +954,8 @@ export class RoutineSwitcher {
                 return;
             }
 
-            // ✅ Check if click is inside a confirmation/prompt modal overlay
-            const modalOverlay = event.target.closest('.mini-modal-overlay');
+            // ✅ Check if click is inside a confirmation/prompt modal dialog
+            const modalOverlay = event.target.closest('.mini-modal-dialog');
 
             // ✅ If clicked area is NOT inside the modal, main menu, routine switcher button, or confirmation modal, close it
             if (
@@ -963,10 +965,19 @@ export class RoutineSwitcher {
                 !routineSwitcherBtn?.contains(event.target) &&
                 !modalOverlay
             ) {
-                switchModal.style.display = "none";
+                if (switchModal.open) switchModal.close();
+                switchModal._previousFocus?.focus();
             }
         };
         safeAdd(document, "click", this._clickOutsideHandler);
+
+        // Restore focus when dialog closes (including native ESC)
+        const switchModal = this.deps.getModal('routineSwitcher');
+        if (switchModal) {
+            safeAdd(switchModal, "close", () => {
+                switchModal._previousFocus?.focus();
+            });
+        }
     }
 
     /**

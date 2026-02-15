@@ -26,6 +26,18 @@
     display: flex;
 }
 
+dialog.games-modal {
+    background: transparent;
+}
+
+dialog.games-modal[open] {
+    display: flex;
+}
+
+dialog.games-modal::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+}
+
 /* =============================================================================
    GAMES MODAL CONTENT
    ============================================================================= */

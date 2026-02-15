@@ -5,7 +5,7 @@
 > This file contains metrics that change frequently (version, counts, etc.).
 > All other documentation should reference this file instead of hardcoding these values.
 
-**Last Updated**: February 14, 2026
+**Last Updated**: February 15, 2026
 
 ---
 
@@ -13,14 +13,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 1.938 |
+| **App Version** | 1.939 |
 | **Lite Version** | 2.05 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 108 |
 | **Total Tests** | 1691 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 33 |
-| **JSDoc Blocks** | 972 |
+| **JSDoc Blocks** | 969 |
 | **Documentation Files** | 167 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -57,8 +57,8 @@
 | `modules/boot/orchestrator.js` | ~639 | Pure sequence controller |
 | `modules/boot/coreBoot.js` | ~1045 | Core state & init |
 | `modules/boot/featureBoot.js` | ~536 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~784 | UI handlers |
-| **Total** | **~3060** | |
+| `modules/boot/uiBoot.js` | ~785 | UI handlers |
+| **Total** | **~3061** | |
 
 ---
 

@@ -300,8 +300,8 @@ export class RoutineManager {
             console.log('📈 Total cycles created:', appState.get().metadata.totalCyclesCreated);
 
             // ✅ CLOSE ANY OPEN MODALS
-            const existingModals = this.deps.querySelectorAll('.miniCycle-overlay, .mini-modal-overlay');
-            existingModals.forEach(modal => modal.remove());
+            const existingModals = this.deps.querySelectorAll('dialog.miniCycle-prompt-dialog, dialog.mini-modal-dialog');
+            existingModals.forEach(modal => { if (modal.open) modal.close(); modal.remove(); });
 
             this.deps.showNotification("✨ A sample miniCycle has been preloaded to help you get started!", "success", 5000);
 
@@ -312,8 +312,8 @@ export class RoutineManager {
             console.error('❌ Failed to load sample miniCycle:', err);
 
             // ✅ CLOSE MODAL ON ERROR TOO
-            const existingModals = this.deps.querySelectorAll('.miniCycle-overlay, .mini-modal-overlay');
-            existingModals.forEach(modal => modal.remove());
+            const existingModals = this.deps.querySelectorAll('dialog.miniCycle-prompt-dialog, dialog.mini-modal-dialog');
+            existingModals.forEach(modal => { if (modal.open) modal.close(); modal.remove(); });
 
             this.deps.showNotification("❌ Failed to load sample miniCycle. Creating a basic cycle instead.", "error");
 

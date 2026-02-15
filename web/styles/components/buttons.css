@@ -217,7 +217,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
     justify-content: center;
     text-align: center;
     font-size: 16px;
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--pref-panel-text, rgba(255, 255, 255, 0.95));
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
     transition: opacity var(--transition-normal) ease;

@@ -1,3 +1,7 @@
+## [1.939] - 2026-02-15
+- feat: Improve accessibility features across task and stats panels
+
+
 ## [1.938] - 2026-02-14
 - feat: Enhance accessibility and cleanup across various modules
 

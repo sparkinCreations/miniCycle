@@ -539,7 +539,8 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     gap: 10px;
 }
 
-.task-option-item:hover:not(.disabled) {
+.task-option-item:hover:not(.disabled),
+.task-option-item:focus-within:not(.disabled) {
     background: rgba(74, 144, 226, 0.08);
     border-color: rgba(74, 144, 226, 0.3);
 }
@@ -589,6 +590,12 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
     margin-bottom: 2px;
+}
+
+/* Show focus ring on custom checkbox when hidden input is keyboard-focused */
+.option-checkbox:focus-visible + .custom-checkbox {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
 }
 
 .option-checkbox:disabled + .custom-checkbox {
@@ -824,7 +831,8 @@ body.dark-mode .task-option-item {
     background: rgba(255, 255, 255, 0.03);
 }
 
-body.dark-mode .task-option-item:hover:not(.disabled) {
+body.dark-mode .task-option-item:hover:not(.disabled),
+body.dark-mode .task-option-item:focus-within:not(.disabled) {
     background: rgba(74, 144, 226, 0.15);
     border-color: rgba(74, 144, 226, 0.4);
 }

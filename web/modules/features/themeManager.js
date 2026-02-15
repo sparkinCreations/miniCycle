@@ -694,8 +694,9 @@ export class ThemeManager {
             const safeAdd = _deps.safeAddEventListener;
             if (themeButton) {
                 themeButton._clickHandler = () => {
-                    if (themesModal) {
-                        themesModal.style.display = "flex";
+                    if (themesModal && !themesModal.open) {
+                        themesModal._previousFocus = document.activeElement;
+                        themesModal.showModal();
                         _deps.hideMainMenu?.();
                     }
                 };
@@ -705,8 +706,9 @@ export class ThemeManager {
             // Close modal on button click
             if (closeThemesBtn) {
                 closeThemesBtn._clickHandler = () => {
-                    if (themesModal) {
-                        themesModal.style.display = "none";
+                    if (themesModal?.open) {
+                        themesModal.close();
+                        themesModal._previousFocus?.focus();
                     }
                 };
                 safeAdd(closeThemesBtn, "click", closeThemesBtn._clickHandler);
@@ -717,10 +719,16 @@ export class ThemeManager {
                 themesModal._backdropClickHandler = (e) => {
                     // Only close if clicking on the backdrop itself, not the content
                     if (e.target === themesModal) {
-                        themesModal.style.display = "none";
+                        themesModal.close();
+                        themesModal._previousFocus?.focus();
                     }
                 };
                 safeAdd(themesModal, "click", themesModal._backdropClickHandler);
+
+                // Restore focus when dialog closes (including native ESC)
+                safeAdd(themesModal, "close", () => {
+                    themesModal._previousFocus?.focus();
+                });
             }
 
             // Prevent clicks inside modal content from closing

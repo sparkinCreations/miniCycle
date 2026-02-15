@@ -1230,8 +1230,8 @@ async setDefaultPosition(notificationContainer) {
     const safeConfirmText = trustedHTML ? confirmText : escape(confirmText);
     const safeCancelText = trustedHTML ? cancelText : escape(cancelText);
 
-    const overlay = document.createElement("div");
-    overlay.className = "mini-modal-overlay";
+    const overlay = document.createElement("dialog");
+    overlay.className = "mini-modal-dialog";
 
     const modal = document.createElement("div");
     modal.className = "mini-modal-box";
@@ -1250,6 +1250,7 @@ async setDefaultPosition(notificationContainer) {
 
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
+    overlay.showModal();
 
     const confirmBtn = modal.querySelector(DOM_SELECTORS.BTN_CONFIRM);
     const cancelBtn = modal.querySelector(DOM_SELECTORS.BTN_CANCEL);
@@ -1258,20 +1259,23 @@ async setDefaultPosition(notificationContainer) {
 
     const cleanup = () => {
       document.removeEventListener("keydown", handleKeydown);
-      document.body.removeChild(overlay);
+      overlay.close();
+      overlay.remove();
     };
 
     const handleKeydown = (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
         confirmBtn.click();
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        cancelBtn.click();
       }
     };
 
     _safeAddEventListener(document, "keydown", handleKeydown);
+
+    overlay.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      cancelBtn.click();
+    });
 
     confirmBtn.onclick = () => {
       cleanup();
@@ -1310,8 +1314,8 @@ async setDefaultPosition(notificationContainer) {
     const safeConfirmText = trustedHTML ? confirmText : escape(confirmText);
     const safeCancelText = trustedHTML ? cancelText : escape(cancelText);
 
-    const overlay = document.createElement("div");
-    overlay.className = "miniCycle-overlay";
+    const overlay = document.createElement("dialog");
+    overlay.className = "miniCycle-prompt-dialog";
 
     overlay.innerHTML = `
       <div class="miniCycle-prompt-box">
@@ -1326,6 +1330,7 @@ async setDefaultPosition(notificationContainer) {
     `;
 
     document.body.appendChild(overlay);
+    overlay.showModal();
 
     const input = overlay.querySelector(DOM_SELECTORS.MINI_CYCLE_PROMPT_INPUT);
     const cancelBtn = overlay.querySelector(DOM_SELECTORS.MINI_CYCLE_BTN_CANCEL);
@@ -1334,7 +1339,8 @@ async setDefaultPosition(notificationContainer) {
     setTimeout(() => input.focus(), 50);
 
     cancelBtn._clickHandler = () => {
-      document.body.removeChild(overlay);
+      overlay.close();
+      overlay.remove();
       callback(null);
     };
     _safeAddEventListener(cancelBtn, "click", cancelBtn._clickHandler);
@@ -1346,14 +1352,19 @@ async setDefaultPosition(notificationContainer) {
         input.focus();
         return;
       }
-      document.body.removeChild(overlay);
+      overlay.close();
+      overlay.remove();
       callback(value);
     };
     _safeAddEventListener(confirmBtn, "click", confirmBtn._clickHandler);
 
+    overlay.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      cancelBtn.click();
+    });
+
     overlay._keydownHandler = (e) => {
       if (e.key === "Enter") confirmBtn.click();
-      if (e.key === "Escape") cancelBtn.click();
     };
     _safeAddEventListener(overlay, "keydown", overlay._keydownHandler);
   }
