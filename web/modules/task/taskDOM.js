@@ -590,10 +590,11 @@ export class TaskDOMManager {
         taskContent.appendChild(checkbox);
         taskContent.appendChild(taskLabel);
 
-        // Assemble the task item
-        taskItem.appendChild(buttonContainer);
+        // Assemble the task item (content first for correct tab order)
         taskItem.appendChild(taskContent);
         taskItem.appendChild(dueDateInput);
+        if (threeDotsButton) taskItem.appendChild(threeDotsButton);
+        taskItem.appendChild(buttonContainer);
 
         return {
             taskItem,
@@ -749,7 +750,6 @@ export class TaskDOMManager {
                 threeDotsButton.addEventListener("click", handler);
             }
 
-            taskItem.appendChild(threeDotsButton);
             return threeDotsButton;
         }
 
@@ -905,6 +905,19 @@ export class TaskDOMManager {
         taskLabel.setAttribute("tabindex", "0");
         taskLabel.setAttribute("role", "text");
         taskLabel.id = `task-desc-${assignedTaskId}`;
+
+        // Enter key toggles completion (a11y parity with checkbox)
+        const addListener = this.deps.safeAddEventListener;
+        addListener(taskLabel, "keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                const checkbox = taskLabel.closest('.task-content')?.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event("change"));
+                }
+            }
+        });
 
         // Add recurring icon if needed
         if (recurring) {

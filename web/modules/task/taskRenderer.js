@@ -325,6 +325,10 @@ export class TaskRenderer {
             if (taskOptions) {
                 taskOptions.classList.add('task-options-visible');
                 taskOptions.classList.remove('task-options-force-hidden');
+                // Sync tabindex so restored buttons are keyboard-reachable
+                taskOptions.querySelectorAll('button.task-btn').forEach(btn => {
+                    btn.tabIndex = 0;
+                });
                 console.log(`✅ Restored active task options for: ${activeTaskId}`);
             }
         }

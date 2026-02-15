@@ -140,7 +140,7 @@ export class TaskButtons {
         button.textContent = "-/+";
         button.setAttribute("type", "button");
         button.setAttribute("title", getLabel('taskOption.customize'));
-        button.setAttribute("tabindex", "0");
+        button.setAttribute("tabindex", "-1");
         button.setAttribute("aria-label", getLabel('taskOption.customizeAria'));
 
         const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => el.addEventListener(ev, fn));
@@ -243,7 +243,7 @@ export class TaskButtons {
      * @param {HTMLElement} buttonContainer - Parent container
      */
     setupButtonAccessibility(button, btnClass, buttonContainer) {
-        button.setAttribute("tabindex", "0");
+        button.setAttribute("tabindex", "-1");
 
         const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => el.addEventListener(ev, fn));
 
@@ -261,6 +261,20 @@ export class TaskButtons {
                     : (currentIndex - 1 + focusable.length) % focusable.length;
                 focusable[nextIndex].focus();
                 e.preventDefault();
+            }
+
+            if (e.key === "Escape") {
+                e.preventDefault();
+                // Hide options (mirrors TaskOptionsVisibilityController.hide)
+                buttonContainer.classList.remove(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
+                buttonContainer.classList.add(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
+                buttonContainer.querySelectorAll('button.task-btn').forEach(btn => {
+                    btn.tabIndex = -1;
+                });
+                // Return focus to task label
+                const taskItem = button.closest('.task');
+                const label = taskItem?.querySelector('.task-text');
+                label?.focus();
             }
         };
         safeAdd(button, "keydown", button._accessibilityKeydownHandler);
