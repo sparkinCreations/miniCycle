@@ -169,21 +169,21 @@ export class OnboardingManager {
         const currentTheme = currentState.settings?.theme || 'default';
 
         const steps = [
-            `<h2>Welcome to miniCycle!</h2>
-             <p>A routine manager for tasks you do repeatedly - whether that's once a day, once a week, or multiple times a day.</p>
-             <p>Build your routine, complete it, and watch your <strong>cycle count</strong> grow!</p>`,
-            `<h3>How Cycles Work</h3>
+            `<h2>${getLabel('onboarding.step1Title')}</h2>
+             <p>${getLabel('onboarding.step1Desc1')}</p>
+             <p>${getLabel('onboarding.step1Desc2')}</p>`,
+            `<h3>${getLabel('onboarding.step2Title')}</h3>
              <ul>
-               <li>📝 Add tasks to build your routine</li>
-               <li>✅ Complete all tasks in your routine</li>
-               <li>🔄 Tasks reset and you complete a <strong>cycle</strong></li>
-               <li>📊 Track how many cycles you've completed</li>
+               <li>📝 ${getLabel('onboarding.step2Item1')}</li>
+               <li>✅ ${getLabel('onboarding.step2Item2')}</li>
+               <li>🔄 ${getLabel('onboarding.step2Item3')}</li>
+               <li>📊 ${getLabel('onboarding.step2Item4')}</li>
              </ul>`,
-            `<h3>Tips</h3>
+            `<h3>${getLabel('onboarding.step3Title')}</h3>
              <ul>
-               <li>📱 Tap ⋮ on any task for quick options</li>
-               <li>➕ Tap the <strong>-/+</strong> button to customize task options</li>
-               <li>📱 Swipe left for the Stats Panel</li>
+               <li>📱 ${getLabel('onboarding.step3Item1')}</li>
+               <li>➕ ${getLabel('onboarding.step3Item2')}</li>
+               <li>📱 ${getLabel('onboarding.step3Item3')}</li>
              </ul>`
         ];
 
