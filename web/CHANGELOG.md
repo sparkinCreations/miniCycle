@@ -1,3 +1,7 @@
+## [1.941] - 2026-02-15
+- feat: Enhance accessibility features and keyboard navigation across various components
+
+
 ## [1.940] - 2026-02-15
 - Refactor modal handling to utilize native <dialog> elements
 

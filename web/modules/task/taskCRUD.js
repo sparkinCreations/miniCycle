@@ -154,22 +154,6 @@ function safeCaptureSnapshot(captureStateSnapshot, state, context) {
 }
 
 /**
- * Fallback prompt modal using browser prompt
- * Used when showPromptModal dependency is not available
- * @param {Object} config - Modal configuration
- * @param {string} config.message - Prompt message
- * @param {string} [config.defaultValue] - Default input value
- * @param {Function} [config.callback] - Callback with result
- * @private
- */
-function fallbackPromptModal(config) {
-    const result = prompt(config.message, config.defaultValue || '');
-    if (result !== null && config.callback) {
-        config.callback(result);
-    }
-}
-
-/**
  * Fallback confirmation modal using browser confirm
  * Used when showConfirmationModal dependency is not available
  * @param {Object} config - Modal configuration
@@ -318,9 +302,10 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
 }
 
 /**
- * Edit an existing task's text
+ * Edit an existing task's text inline
  *
- * Shows a prompt modal for the user to enter new task text.
+ * Replaces the task text with an editable input field.
+ * Enter saves, Escape cancels, blur saves.
  * Captures undo snapshot before making changes.
  *
  * @param {HTMLElement} taskItem - The task DOM element to edit
@@ -332,63 +317,82 @@ export async function editTaskImpl(taskItem, deps = {}) {
         await waitForCoreWithTimeout();
 
         const taskLabel = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT);
+        if (!taskLabel) return;
         const oldText = taskLabel.textContent.trim();
 
-        const showPromptModal = deps.showPromptModal || _deps.showPromptModal || fallbackPromptModal;
         const sanitizeInput = deps.sanitizeInput || _deps.sanitizeInput || ((text) => text);
         const AppState = deps.AppState || _deps.AppState;
         const captureStateSnapshot = deps.captureStateSnapshot || _deps.captureStateSnapshot;
         const enableUndoSystemOnFirstInteraction = deps.enableUndoSystemOnFirstInteraction || _deps.enableUndoSystemOnFirstInteraction;
 
-        showPromptModal({
-            title: "Edit Task Name",
-            message: "Rename this task:",
-            placeholder: "Enter new task name",
-            defaultValue: oldText,
-            confirmText: "Save",
-            cancelText: "Cancel",
-            required: true,
-            callback: async (newText) => {
-                if (newText && newText.trim() !== oldText) {
-                    const cleanText = sanitizeInput(newText.trim());
+        // Hide task text, insert inline input
+        taskLabel.style.display = 'none';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'task-edit-input';
+        input.value = oldText;
+        input.setAttribute('aria-label', 'Edit task name');
+        taskLabel.parentNode.insertBefore(input, taskLabel.nextSibling);
 
-                    // Enable undo system
-                    enableUndoSystemOnFirstInteraction?.();
+        input.focus();
+        input.select();
 
-                    // Capture snapshot BEFORE changing text
-                    if (AppState?.isReady?.()) {
-                        const currentState = AppState.get();
-                        if (currentState) safeCaptureSnapshot(captureStateSnapshot, currentState, 'task edit');
-                    }
+        // Hide task option buttons while editing
+        const taskOptions = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
+        if (taskOptions) taskOptions.style.visibility = 'hidden';
 
-                    // Update DOM
-                    taskLabel.textContent = cleanText;
+        let finished = false;
 
-                    const taskId = taskItem.dataset.taskId;
+        const finishEdit = async (cancelled) => {
+            if (finished) return;
+            finished = true;
 
-                    // ✅ Use AppState only (no localStorage fallback) - DI-pure
-                    if (AppState?.isReady?.()) {
-                        await AppState.update(state => {
-                            const cid = state.appState.activeCycleId;
-                            const cycle = state.data.cycles[cid];
-                            const t = cycle?.tasks?.find(t => t.id === taskId);
-                            if (t) t.text = cleanText;
-                        }, true);
-                    } else {
-                        console.warn('⚠️ AppState not ready for task edit - state may be lost');
-                    }
+            const newText = cancelled ? oldText : sanitizeInput(input.value.trim());
+            input.remove();
+            taskLabel.style.display = '';
+            if (taskOptions) taskOptions.style.visibility = '';
 
-                    _deps.showNotification?.(getLabel('notify.taskRenamed', { vars: { name: cleanText } }), "info", 1500);
+            if (!newText || newText === oldText) return;
 
-                    // Request UI updates via UIOrchestrator
-                    const requestUIUpdate = deps.requestUIUpdate || _deps.requestUIUpdate;
-                    requestUIUpdate?.({
-                        stats: true,
-                        progress: true,
-                        completeAllButton: true
-                    });
-                }
+            // Enable undo system
+            enableUndoSystemOnFirstInteraction?.();
+
+            // Capture snapshot BEFORE changing text
+            if (AppState?.isReady?.()) {
+                const currentState = AppState.get();
+                if (currentState) safeCaptureSnapshot(captureStateSnapshot, currentState, 'task edit');
             }
+
+            // Update DOM
+            taskLabel.textContent = newText;
+
+            const taskId = taskItem.dataset.taskId;
+
+            if (AppState?.isReady?.()) {
+                await AppState.update(state => {
+                    const cid = state.appState.activeCycleId;
+                    const cycle = state.data.cycles[cid];
+                    const t = cycle?.tasks?.find(t => t.id === taskId);
+                    if (t) t.text = newText;
+                }, true);
+            } else {
+                console.warn('⚠️ AppState not ready for task edit - state may be lost');
+            }
+
+            _deps.showNotification?.(getLabel('notify.taskRenamed', { vars: { name: newText } }), "info", 1500);
+
+            const requestUIUpdate = deps.requestUIUpdate || _deps.requestUIUpdate;
+            requestUIUpdate?.({
+                stats: true,
+                progress: true,
+                completeAllButton: true
+            });
+        };
+
+        input.addEventListener('blur', () => finishEdit(false), { once: true });
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+            if (e.key === 'Escape') { e.preventDefault(); finishEdit(true); }
         });
 
     } catch (error) {

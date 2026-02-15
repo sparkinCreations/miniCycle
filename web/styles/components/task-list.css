@@ -658,6 +658,26 @@ body.onboarding-active .complete-all-and-help-window-container {
 }
 
 /* =============================================================================
+   INLINE TASK EDIT INPUT
+   ============================================================================= */
+
+.task-edit-input {
+    flex: 1;
+    font-size: 16px;
+    font-family: inherit;
+    padding: 2px 6px;
+    border: 1px solid var(--theme-input-focus-border, #4c79ff);
+    border-radius: 4px;
+    background: var(--theme-input-bg, #fff);
+    color: var(--theme-task-text, #333);
+    outline: none;
+    min-width: 0;
+    max-width: calc(100% - 120px);
+    margin-right: 120px;
+    box-shadow: 0 0 0 2px rgba(76, 121, 255, 0.25);
+}
+
+/* =============================================================================
    MOVE ARROWS (Accessibility)
    ============================================================================= */
 
