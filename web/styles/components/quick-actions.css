@@ -21,7 +21,7 @@
 .quick-actions-title {
     font-size: 12px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--pref-panel-text, rgba(255, 255, 255, 0.85));
     white-space: nowrap;
     min-width: 100px;
     text-align: center;
@@ -30,7 +30,7 @@
 .quick-actions-nav {
     background: rgba(255, 255, 255, 0.1);
     border: none;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--pref-panel-text, rgba(255, 255, 255, 0.7));
     font-size: 10px;
     padding: 4px 8px;
     border-radius: 6px;
@@ -41,7 +41,7 @@
 
 .quick-actions-nav:hover {
     background: rgba(255, 255, 255, 0.2);
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--pref-panel-text, rgba(255, 255, 255, 0.95));
 }
 
 .quick-actions-nav:active {
@@ -78,7 +78,7 @@
 /* Filled action slot */
 .quick-actions-slot.filled {
     background: rgba(255, 255, 255, 0.12);
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--pref-panel-text, rgba(255, 255, 255, 0.9));
 }
 
 .quick-actions-slot.filled:hover {
@@ -149,7 +149,7 @@
 /* Empty view message */
 .quick-actions-empty-msg {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--pref-panel-text, rgba(255, 255, 255, 0.45));
     text-align: center;
     padding: 8px 4px;
     white-space: nowrap;

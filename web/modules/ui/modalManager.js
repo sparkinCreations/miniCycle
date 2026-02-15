@@ -4,10 +4,13 @@
  * Centralized modal management and coordination.
  * Handles all modal dialogs in the application.
  *
+ * Uses native <dialog> API (.showModal()/.close()) for modals that have been
+ * converted to <dialog> elements, with legacy fallbacks for non-dialog elements.
+ * Focus trapping and ESC handling are provided natively by the <dialog> element.
+ *
  * Features:
  * - Global modal close functionality
- * - ESC key handling for all modals
- * - Click-outside-to-close behavior
+ * - Click-outside-to-close behavior (via backdrop click on <dialog>)
  * - Individual modal setup (feedback, about, settings, reminders)
  * - Modal state tracking
  * - Prompt and confirmation modal APIs
@@ -42,12 +45,9 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
 import { getLabel } from '../labels/labelResolver.js';
-
-// Selector for all focusable elements (used by focus trapping and initial focus)
-const FOCUSABLE_SELECTOR = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -106,76 +106,6 @@ export class ModalManager {
         console.log(`[ModalManager] ${type.toUpperCase()}: ${message}`);
     }
 
-    /**
-     * Save the currently focused element, move focus into the modal, and trap focus.
-     * Call this immediately before showing a modal.
-     * @param {HTMLElement} modalElement - The modal container to focus
-     */
-    _saveFocus(modalElement) {
-        _previouslyFocusedElement = document.activeElement;
-        if (modalElement) {
-            this._trapFocus(modalElement);
-            // Try the first focusable element inside the modal, fall back to the modal itself
-            const focusable = modalElement.querySelector(FOCUSABLE_SELECTOR);
-            const target = focusable || modalElement;
-            // Delay focus so the modal is visible when focus moves
-            setTimeout(() => target.focus(), UI_TIMEOUTS.FOCUS_DELAY);
-        }
-    }
-
-    /**
-     * Trap Tab/Shift+Tab within a modal element so focus cannot escape.
-     * @param {HTMLElement} modalElement - The modal to trap focus within
-     */
-    _trapFocus(modalElement) {
-        this._releaseFocusTrap();
-
-        _focusTrapHandler = (e) => {
-            if (e.key !== 'Tab') return;
-
-            const focusableElements = modalElement.querySelectorAll(FOCUSABLE_SELECTOR);
-            if (focusableElements.length === 0) return;
-
-            const firstFocusable = focusableElements[0];
-            const lastFocusable = focusableElements[focusableElements.length - 1];
-
-            if (e.shiftKey) {
-                if (document.activeElement === firstFocusable) {
-                    e.preventDefault();
-                    lastFocusable.focus();
-                }
-            } else {
-                if (document.activeElement === lastFocusable) {
-                    e.preventDefault();
-                    firstFocusable.focus();
-                }
-            }
-        };
-
-        document.addEventListener('keydown', _focusTrapHandler);
-    }
-
-    /**
-     * Release focus trap by removing the Tab keydown listener.
-     */
-    _releaseFocusTrap() {
-        if (_focusTrapHandler) {
-            document.removeEventListener('keydown', _focusTrapHandler);
-            _focusTrapHandler = null;
-        }
-    }
-
-    /**
-     * Restore focus to the element that was focused before the modal opened.
-     */
-    _restoreFocus() {
-        this._releaseFocusTrap();
-        if (_previouslyFocusedElement && typeof _previouslyFocusedElement.focus === 'function') {
-            _previouslyFocusedElement.focus();
-        }
-        _previouslyFocusedElement = null;
-    }
-
     async init() {
         await this.deps.waitForCore();
 
@@ -209,22 +139,29 @@ export class ModalManager {
      * Close all modals and overlays in the app
      */
     closeAllModals() {
-        // Restore focus to the element that triggered the modal
-        this._restoreFocus();
-
-        // Close all registry-managed modals using their defined close method
+        // Close all registry-managed modals
         for (const name of MODAL_NAMES) {
             const modal = _deps.getModal(name);
             if (!modal) continue;
-            const def = MODAL_DEFS[name];
-            if (def.closeMethod === 'removeVisible') modal.classList.remove('visible');
-            else if (def.closeMethod === 'addHidden') modal.classList.add('hidden');
-            else modal.style.display = 'none';
+
+            // Native <dialog> elements use .close(); restore focus from the dialog that was open
+            if (typeof modal.showModal === 'function') {
+                if (modal.open) {
+                    modal.close();
+                    modal._previousFocus?.focus();
+                }
+            } else {
+                // Non-dialog elements: use legacy close methods
+                const def = MODAL_DEFS[name];
+                if (def.closeMethod === 'removeVisible') modal.classList.remove('visible');
+                else if (def.closeMethod === 'addHidden') modal.classList.add('hidden');
+                else modal.style.display = 'none';
+            }
         }
 
-        // Close ephemeral overlays (not in registry — created/destroyed per use)
-        document.querySelectorAll('.mini-modal-overlay').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.miniCycle-overlay').forEach(el => el.style.display = 'none');
+        // Close ephemeral dialog overlays (not in registry — created/destroyed per use)
+        document.querySelectorAll('dialog.mini-modal-dialog[open]').forEach(el => el.close());
+        document.querySelectorAll('dialog.miniCycle-prompt-dialog[open]').forEach(el => el.close());
         document.querySelectorAll('.onboarding-modal').forEach(el => el.style.display = 'none');
 
         // Close task options
@@ -271,8 +208,8 @@ export class ModalManager {
 
         // Open Modal
         openFeedbackBtn._clickHandler = () => {
-            this._saveFocus(feedbackModal);
-            feedbackModal.style.display = "flex";
+            feedbackModal._previousFocus = document.activeElement;
+            if (!feedbackModal.open) feedbackModal.showModal();
             if (this.deps.hideMainMenu) {
                 this.deps.hideMainMenu();
             }
@@ -284,19 +221,24 @@ export class ModalManager {
 
         // Close Modal
         closeFeedbackBtn._clickHandler = () => {
-            feedbackModal.style.display = "none";
-            this._restoreFocus();
+            feedbackModal.close();
+            feedbackModal._previousFocus?.focus();
         };
         safeAdd(closeFeedbackBtn, "click", closeFeedbackBtn._clickHandler);
 
-        // Close Modal on Outside Click
+        // Close Modal on Outside Click (backdrop click fires on the dialog element)
         feedbackModal._outsideClickHandler = (event) => {
             if (event.target === feedbackModal) {
-                feedbackModal.style.display = "none";
-                this._restoreFocus();
+                feedbackModal.close();
+                feedbackModal._previousFocus?.focus();
             }
         };
-        safeAdd(window, "click", feedbackModal._outsideClickHandler);
+        safeAdd(feedbackModal, "click", feedbackModal._outsideClickHandler);
+
+        // Restore focus when dialog closes (including native ESC)
+        safeAdd(feedbackModal, "close", () => {
+            feedbackModal._previousFocus?.focus();
+        });
 
         // Handle Form Submission via AJAX (Prevent Page Refresh)
         if (feedbackForm) {
@@ -335,8 +277,8 @@ export class ModalManager {
                             if (thankYouMessage) {
                                 thankYouMessage.style.display = "none";
                             }
-                            feedbackModal.style.display = "none";
-                            this._restoreFocus();
+                            feedbackModal.close();
+                            feedbackModal._previousFocus?.focus();
                         }, 2000);
                     } else {
                         this.deps.showNotification("❌ " + getLabel('feedback.errorSend'), "error");
@@ -370,8 +312,8 @@ export class ModalManager {
         if (openFeedbackFooter && feedbackModal) {
             const safeAdd = _deps.safeAddEventListener;
             openFeedbackFooter._clickHandler = () => {
-                this._saveFocus(feedbackModal);
-                feedbackModal.style.display = "flex";
+                feedbackModal._previousFocus = document.activeElement;
+                if (!feedbackModal.open) feedbackModal.showModal();
                 if (thankYouMessage) {
                     thankYouMessage.style.display = "none";
                 }
@@ -397,28 +339,33 @@ export class ModalManager {
 
         // Open Modal
         openAboutBtn._clickHandler = () => {
-            this._saveFocus(aboutModal);
-            aboutModal.style.display = "flex";
+            aboutModal._previousFocus = document.activeElement;
+            if (!aboutModal.open) aboutModal.showModal();
         };
         safeAdd(openAboutBtn, "click", openAboutBtn._clickHandler);
 
         // Close Modal
         if (closeAboutBtn) {
             closeAboutBtn._clickHandler = () => {
-                aboutModal.style.display = "none";
-                this._restoreFocus();
+                aboutModal.close();
+                aboutModal._previousFocus?.focus();
             };
             safeAdd(closeAboutBtn, "click", closeAboutBtn._clickHandler);
         }
 
-        // Close Modal on Outside Click
+        // Close Modal on Outside Click (backdrop click fires on the dialog element)
         aboutModal._outsideClickHandler = (event) => {
             if (event.target === aboutModal) {
-                aboutModal.style.display = "none";
-                this._restoreFocus();
+                aboutModal.close();
+                aboutModal._previousFocus?.focus();
             }
         };
-        safeAdd(window, "click", aboutModal._outsideClickHandler);
+        safeAdd(aboutModal, "click", aboutModal._outsideClickHandler);
+
+        // Restore focus when dialog closes (including native ESC)
+        safeAdd(aboutModal, "close", () => {
+            aboutModal._previousFocus?.focus();
+        });
     }
 
     /**
@@ -456,19 +403,19 @@ export class ModalManager {
 
         // Close button
         closeRemindersBtn._clickHandler = () => {
-            remindersModal.style.display = "none";
-            this._restoreFocus();
+            remindersModal.close();
+            remindersModal._previousFocus?.focus();
         };
         safeAdd(closeRemindersBtn, "click", closeRemindersBtn._clickHandler);
 
-        // Click outside to close
+        // Click outside to close (backdrop click fires on the dialog element)
         remindersModal._outsideClickHandler = (event) => {
             if (event.target === remindersModal) {
-                remindersModal.style.display = "none";
-                this._restoreFocus();
+                remindersModal.close();
+                remindersModal._previousFocus?.focus();
             }
         };
-        safeAdd(window, "click", remindersModal._outsideClickHandler);
+        safeAdd(remindersModal, "click", remindersModal._outsideClickHandler);
     }
 
     /**
@@ -478,7 +425,8 @@ export class ModalManager {
         if (this.deps.safeAddEventListener) {
             this.deps.safeAddEventListener(document, "keydown", (e) => {
                 if (e.key === "Escape") {
-                    e.preventDefault();
+                    // Native <dialog> elements handle their own ESC (close event fires automatically).
+                    // This handler covers non-dialog cleanup: task options, recurring panels, notifications, etc.
                     this.closeAllModals();
 
                     // Also clear any notification focus
@@ -506,15 +454,22 @@ export class ModalManager {
         for (const name of MODAL_NAMES) {
             const modal = _deps.getModal(name);
             if (!modal) continue;
-            const def = MODAL_DEFS[name];
-            if (def.closeMethod === 'removeVisible' && modal.classList.contains('visible')) return true;
-            if (def.closeMethod === 'addHidden' && !modal.classList.contains('hidden')) return true;
-            if (modal.style.display === 'flex' || modal.style.display === 'block') return true;
+
+            // Native <dialog> elements expose the .open property
+            if (typeof modal.showModal === 'function') {
+                if (modal.open) return true;
+            } else {
+                // Non-dialog elements: use legacy checks
+                const def = MODAL_DEFS[name];
+                if (def.closeMethod === 'removeVisible' && modal.classList.contains('visible')) return true;
+                if (def.closeMethod === 'addHidden' && !modal.classList.contains('hidden')) return true;
+                if (modal.style.display === 'flex' || modal.style.display === 'block') return true;
+            }
         }
 
-        // Check ephemeral overlays (not in registry)
-        if (document.querySelector('.mini-modal-overlay')) return true;
-        if (document.querySelector('.miniCycle-overlay')) return true;
+        // Check ephemeral dialog overlays (not in registry)
+        if (document.querySelector('dialog.mini-modal-dialog[open]')) return true;
+        if (document.querySelector('dialog.miniCycle-prompt-dialog[open]')) return true;
         if (document.querySelector('.onboarding-modal:not([style*="display: none"])')) return true;
 
         return false;
@@ -523,19 +478,6 @@ export class ModalManager {
 
 // Module-level instance (created but NOT auto-initialized)
 let modalManager = null;
-
-/**
- * Stores the element that had focus before a modal was opened,
- * so focus can be restored when the modal closes.
- * @type {HTMLElement|null}
- */
-let _previouslyFocusedElement = null;
-
-/**
- * Active focus trap keydown handler (removed when trap is released).
- * @type {Function|null}
- */
-let _focusTrapHandler = null;
 
 /**
  * Initialize the ModalManager module

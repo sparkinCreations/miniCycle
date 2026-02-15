@@ -815,10 +815,9 @@ export class MiniCycleReminders {
                         if (e.target.classList.contains('close-btn')) return;
 
                         const remindersModal = this.deps.getModal('reminders');
-                        if (remindersModal) {
-                            remindersModal.style.display = 'flex';
-                            remindersModal.style.alignItems = 'center';
-                            remindersModal.style.justifyContent = 'center';
+                        if (remindersModal && !remindersModal.open) {
+                            remindersModal._previousFocus = document.activeElement;
+                            remindersModal.showModal();
                         }
 
                         // Remove notification after clicking
@@ -989,15 +988,23 @@ export class MiniCycleReminders {
 
         if (closeRemindersBtn) {
             this.deps.safeAddEventListener(closeRemindersBtn, "click", () => {
-                if (remindersModal) remindersModal.style.display = "none";
+                if (remindersModal?.open) {
+                    remindersModal.close();
+                    remindersModal._previousFocus?.focus();
+                }
             });
         }
 
-        // Close on outside click
-        this.deps.safeAddEventListener(window, "click", (event) => {
+        // Close on outside click (::backdrop fires click on dialog element)
+        this.deps.safeAddEventListener(remindersModal, "click", (event) => {
             if (event.target === remindersModal) {
-                remindersModal.style.display = "none";
+                remindersModal.close();
             }
+        });
+
+        // Restore focus when dialog closes (including native ESC)
+        this.deps.safeAddEventListener(remindersModal, "close", () => {
+            remindersModal._previousFocus?.focus();
         });
 
         console.log('✅ Reminder modal close listeners set up');
@@ -1022,8 +1029,9 @@ export class MiniCycleReminders {
             this.loadRemindersSettings();
 
             const remindersModal = this.deps.getModal('reminders');
-            if (remindersModal) {
-                remindersModal.style.display = "flex";
+            if (remindersModal && !remindersModal.open) {
+                remindersModal._previousFocus = document.activeElement;
+                remindersModal.showModal();
             }
 
             // Hide main menu if available

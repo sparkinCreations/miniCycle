@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, Z_INDEX, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -219,22 +219,9 @@ export class AchievementsManager {
             this.closeModal();
         }
 
-        this.modalOverlay = document.createElement('div');
-        this.modalOverlay.className = 'achievements-modal-overlay';
-        this.modalOverlay.setAttribute('role', 'dialog');
-        this.modalOverlay.setAttribute('aria-modal', 'true');
+        this.modalOverlay = document.createElement('dialog');
         this.modalOverlay.setAttribute('aria-label', getLabel('history.achievements'));
         this.modalOverlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: ${Z_INDEX.OVERLAY_CRITICAL};
-            display: flex;
-            align-items: center;
-            justify-content: center;
             opacity: 0;
             transition: opacity 0.2s ease;
         `;
@@ -284,6 +271,8 @@ export class AchievementsManager {
         `;
 
         document.body.appendChild(this.modalOverlay);
+        this.modalOverlay._previousFocus = document.activeElement;
+        this.modalOverlay.showModal();
 
         // Setup event handlers
         this._setupModalHandlers();
@@ -307,10 +296,10 @@ export class AchievementsManager {
         // Clean up badge detail if open (prevents coin spin listener leak)
         this.hideBadgeDetail();
 
-        // Fix #63: Remove escape handler when modal closes by any means
-        if (this._escHandler) {
-            document.removeEventListener('keydown', this._escHandler);
-            this._escHandler = null;
+        // Clean up cancel handler
+        if (this._cancelHandler) {
+            this.modalOverlay.removeEventListener('cancel', this._cancelHandler);
+            this._cancelHandler = null;
         }
 
         // Clean up button and overlay handlers
@@ -327,8 +316,11 @@ export class AchievementsManager {
         this.modalOverlay.style.opacity = '0';
         this.modalOverlay.querySelector(DOM_SELECTORS.ACHIEVEMENTS_MODAL).style.transform = 'translateY(20px)';
 
+        const previousFocus = this.modalOverlay._previousFocus;
+
         setTimeout(() => {
             this.modalOverlay?.remove();
+            previousFocus?.focus();
             this.modalOverlay = null;
         }, 200);
     }
@@ -353,13 +345,12 @@ export class AchievementsManager {
         };
         this.modalOverlay.addEventListener('click', this._overlayClickHandler);
 
-        // Fix #63: Store escape handler reference for proper cleanup
-        this._escHandler = (e) => {
-            if (e.key === 'Escape' && this.modalOverlay) {
-                this.closeModal();
-            }
+        // Native dialog handles ESC — use cancel event for cleanup
+        this._cancelHandler = (e) => {
+            e.preventDefault();
+            this.closeModal();
         };
-        document.addEventListener('keydown', this._escHandler);
+        this.modalOverlay.addEventListener('cancel', this._cancelHandler);
     }
 
     /**
@@ -667,19 +658,9 @@ export class AchievementsManager {
         }
 
         // Create overlay
-        const overlay = document.createElement('div');
+        const overlay = document.createElement('dialog');
         overlay.id = 'badge-detail-overlay';
         overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: ${Z_INDEX.NOTIFICATION};
-            display: flex;
-            align-items: center;
-            justify-content: center;
             opacity: 0;
             transition: opacity 0.2s ease;
         `;
@@ -808,6 +789,7 @@ export class AchievementsManager {
         `;
 
         document.body.appendChild(overlay);
+        overlay.showModal();
 
         // Animate in
         requestAnimationFrame(() => {
@@ -955,13 +937,12 @@ export class AchievementsManager {
         };
         overlay.addEventListener('click', this._badgeOverlayClickHandler);
 
-        // Close on escape
-        this._badgeDetailEscHandler = (e) => {
-            if (e.key === 'Escape') {
-                this.hideBadgeDetail();
-            }
+        // Native dialog handles ESC — use cancel event for cleanup
+        this._badgeDetailCancelHandler = (e) => {
+            e.preventDefault();
+            this.hideBadgeDetail();
         };
-        document.addEventListener('keydown', this._badgeDetailEscHandler);
+        overlay.addEventListener('cancel', this._badgeDetailCancelHandler);
     }
 
     /**
@@ -989,9 +970,9 @@ export class AchievementsManager {
             this._badgeOverlayClickHandler = null;
         }
 
-        if (this._badgeDetailEscHandler) {
-            document.removeEventListener('keydown', this._badgeDetailEscHandler);
-            this._badgeDetailEscHandler = null;
+        if (this._badgeDetailCancelHandler && overlay) {
+            overlay.removeEventListener('cancel', this._badgeDetailCancelHandler);
+            this._badgeDetailCancelHandler = null;
         }
     }
 

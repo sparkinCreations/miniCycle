@@ -453,9 +453,10 @@ export class QuickActionsManager {
                     setTimeout(() => {
                         try {
                             const modal = this.deps.getModal?.('reminders') || this.deps.getElementById(DOM_IDS.REMINDERS_MODAL);
-                            if (modal) {
-                                modal.style.display = 'flex';
-                            } else {
+                            if (modal && !modal.open) {
+                                modal._previousFocus = document.activeElement;
+                                modal.showModal();
+                            } else if (!modal) {
                                 this._warnMissingDep('reminders modal', actionId);
                             }
                             this.deps.hideMainMenu?.();

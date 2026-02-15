@@ -31,7 +31,8 @@ const DEFAULT_COLORS = {
     progressBar: '#82db8c',
     statsBg: '#ffffff',
     statsText: '#333333',
-    patternColor: '#ffffff'
+    patternColor: '#ffffff',
+    panelText: '#ffffff'
 };
 
 // ============================================================================
@@ -59,7 +60,8 @@ const QUICK_PRESETS = {
             clearBtn: '#fdcb6e',
             progressBar: '#f8b739',
             statsBg: '#fff9e6',
-            statsText: '#5c4033'
+            statsText: '#5c4033',
+            panelText: '#ffffff'
         }
     },
     cool: {
@@ -78,7 +80,8 @@ const QUICK_PRESETS = {
             clearBtn: '#6c5ce7',
             progressBar: '#81ecec',
             statsBg: '#e8f8f5',
-            statsText: '#2c3e50'
+            statsText: '#2c3e50',
+            panelText: '#ffffff'
         }
     },
     forest: {
@@ -97,7 +100,8 @@ const QUICK_PRESETS = {
             clearBtn: '#558b2f',
             progressBar: '#66bb6a',
             statsBg: '#d4edda',
-            statsText: '#1b4332'
+            statsText: '#1b4332',
+            panelText: '#ffffff'
         }
     },
     monochrome: {
@@ -116,7 +120,8 @@ const QUICK_PRESETS = {
             clearBtn: '#636e72',
             progressBar: '#95a5a6',
             statsBg: '#dfe6e9',
-            statsText: '#2d3436'
+            statsText: '#2d3436',
+            panelText: '#ffffff'
         }
     },
     professional: {
@@ -135,7 +140,8 @@ const QUICK_PRESETS = {
             clearBtn: '#007aff',
             progressBar: '#007aff',
             statsBg: '#ffffff',
-            statsText: '#1d1d1f'
+            statsText: '#1d1d1f',
+            panelText: '#ffffff'
         }
     },
     goldenGlow: {
@@ -154,7 +160,8 @@ const QUICK_PRESETS = {
             clearBtn: '#e6b800',
             progressBar: '#ffd700',
             statsBg: '#fffef5',
-            statsText: '#5c4a1f'
+            statsText: '#5c4a1f',
+            panelText: '#ffffff'
         }
     },
     darkOcean: {
@@ -173,7 +180,8 @@ const QUICK_PRESETS = {
             clearBtn: '#38bdf8',
             progressBar: '#22d3ee',
             statsBg: '#1a3a5c',
-            statsText: '#e0f0ff'
+            statsText: '#e0f0ff',
+            panelText: '#e0f0ff'
         }
     },
     berry: {
@@ -192,7 +200,8 @@ const QUICK_PRESETS = {
             clearBtn: '#7c3aed',
             progressBar: '#c084fc',
             statsBg: '#faf5ff',
-            statsText: '#4c1d95'
+            statsText: '#4c1d95',
+            panelText: '#ffffff'
         }
     }
 };

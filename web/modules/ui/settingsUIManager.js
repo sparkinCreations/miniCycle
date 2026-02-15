@@ -126,23 +126,17 @@ export function setupSettingsMenu() {
     const openSettings = (event) => {
         event.stopPropagation();
         _deps.trackAction?.('settings');
-        if (settingsModal) {
-            settingsModal.style.display = "flex";
+        if (settingsModal && !settingsModal.open) {
+            settingsModal._previousFocus = document.activeElement;
+            settingsModal.showModal();
         }
         _deps.hideMainMenu?.();
     };
 
     const closeSettings = () => {
-        if (settingsModal) {
-            settingsModal.style.display = "none";
-        }
-    };
-
-    const closeOnClickOutside = (event) => {
-        if (settingsModal && settingsModal.style.display === "flex" &&
-            settingsModalContent && !settingsModalContent.contains(event.target) &&
-            event.target !== openSettingsBtn) {
-            settingsModal.style.display = "none";
+        if (settingsModal && settingsModal.open) {
+            settingsModal.close();
+            settingsModal._previousFocus?.focus();
         }
     };
 
@@ -154,7 +148,17 @@ export function setupSettingsMenu() {
         safeAddEventListener(closeSettingsBtn, "click", closeSettings);
     }
 
-    safeAddEventListener(document, "click", closeOnClickOutside);
+    // Click outside to close — clicking ::backdrop fires click on dialog element
+    safeAddEventListener(settingsModal, "click", (event) => {
+        if (event.target === settingsModal) {
+            closeSettings();
+        }
+    });
+
+    // Restore focus when dialog closes (including native ESC)
+    safeAddEventListener(settingsModal, "close", () => {
+        settingsModal._previousFocus?.focus();
+    });
 
     // Setup collapsible sections
     setupSettingsCollapsibleSections(safeAddEventListener);

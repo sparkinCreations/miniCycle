@@ -61,6 +61,19 @@
     display: flex;
 }
 
+/* Native <dialog> override — showModal() handles display, ::backdrop handles overlay */
+dialog.mini-cycle-switch-modal {
+    background: transparent;
+}
+
+dialog.mini-cycle-switch-modal[open] {
+    display: flex;
+}
+
+dialog.mini-cycle-switch-modal::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+}
+
 /* =============================================================================
    MODAL CONTENT
    ============================================================================= */

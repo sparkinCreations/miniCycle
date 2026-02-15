@@ -249,7 +249,7 @@ function handleGlobalKeydown(e) {
  */
 function handleGlobalClickForTaskButtons(event) {
   const isTaskOrOptionsClick = event.target.closest('.task, .task-options');
-  const isModalClick = event.target.closest('.modal, .mini-modal-overlay, .settings-modal, .notification');
+  const isModalClick = event.target.closest('.modal, .mini-modal-dialog, .settings-modal, .notification');
   const isUndoRedoClick = event.target.closest('#undo-btn, #redo-btn, .undo-btn, .redo-btn');
 
   if (!isTaskOrOptionsClick && !isModalClick && !isUndoRedoClick) {
@@ -363,8 +363,9 @@ function handleOpenRemindersModalClick() {
   }
 
   const modal = getGetModal()?.('reminders');
-  if (modal) {
-    modal.style.display = 'flex';
+  if (modal && !modal.open) {
+    modal._previousFocus = document.activeElement;
+    modal.showModal();
   }
 
   try {
@@ -426,19 +427,19 @@ export function isOverlayActive() {
   if (document.querySelector(DOM_SELECTORS.MENU_CONTAINER_VISIBLE)) return true;
 
   const overlaySelectors = [
-    '.settings-modal[style*="display: flex"]',
-    '.mini-cycle-switch-modal[style*="display: flex"]',
-    '#feedback-modal[style*="display: flex"]',
-    '#about-modal[style*="display: flex"]',
-    '#themes-modal[style*="display: flex"]',
-    '#games-panel[style*="display: flex"]',
-    '#reminders-modal[style*="display: flex"]',
+    'dialog.settings-modal[open]',
+    'dialog.mini-cycle-switch-modal[open]',
+    'dialog#feedback-modal[open]',
+    'dialog#about-modal[open]',
+    'dialog#themes-modal[open]',
+    'dialog#games-panel[open]',
+    'dialog#reminders-modal[open]',
     '#testing-modal[style*="display: flex"]',
-    '#recurring-panel-overlay:not(.hidden)',
+    'dialog#recurring-panel-overlay[open]',
     '.notification-container .notification',
     '#storage-viewer-overlay:not(.hidden)',
-    '.mini-modal-overlay',
-    '.miniCycle-overlay',
+    'dialog.mini-modal-dialog[open]',
+    'dialog.miniCycle-prompt-dialog[open]',
     '.onboarding-modal:not([style*="display: none"])'
   ];
 

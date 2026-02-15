@@ -201,13 +201,14 @@ class GamesManager {
 
         // ✅ FIX: Store handler as instance property for reuse
         this._gamesOutsideClickHandler = (event) => {
-            const isOpen = gamesPanel.style.display === "flex";
+            const isOpen = gamesPanel.open;
             const clickedOutside =
                 !gamesContent.contains(event.target) &&
                 event.target !== openButton;
 
             if (isOpen && clickedOutside) {
-                gamesPanel.style.display = "none";
+                gamesPanel.close();
+                gamesPanel._previousFocus?.focus();
             }
         };
 
@@ -238,7 +239,8 @@ class GamesManager {
             openButton._clickHandler = () => {
                 const gamesPanel = this.deps.getModal('games');
                 if (gamesPanel) {
-                    gamesPanel.style.display = "flex";
+                    gamesPanel._previousFocus = document.activeElement;
+                    if (!gamesPanel.open) gamesPanel.showModal();
                     this.setupGamesModalOutsideClick();
                 }
             };
@@ -251,10 +253,19 @@ class GamesManager {
             closeButton._clickHandler = () => {
                 const gamesPanel = this.deps.getModal('games');
                 if (gamesPanel) {
-                    gamesPanel.style.display = "none";
+                    gamesPanel.close();
+                    gamesPanel._previousFocus?.focus();
                 }
             };
             safeAdd(closeButton, "click", closeButton._clickHandler);
+        }
+
+        // Restore focus when dialog closes (including native ESC)
+        const gamesPanel = this.deps.getModal('games');
+        if (gamesPanel) {
+            safeAdd(gamesPanel, "close", () => {
+                gamesPanel._previousFocus?.focus();
+            });
         }
 
         // Open task order game (redirect to game HTML)

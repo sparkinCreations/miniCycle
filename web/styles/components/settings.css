@@ -25,6 +25,23 @@
     display: flex;
 }
 
+/* Native <dialog> override — showModal() handles display, ::backdrop handles overlay */
+dialog.settings-modal {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+dialog.settings-modal[open] {
+    display: flex;
+}
+
+dialog.settings-modal::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
 /* =============================================================================
    SETTINGS MODAL CONTENT
    ============================================================================= */

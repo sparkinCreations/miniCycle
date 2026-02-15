@@ -4,6 +4,49 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* =============================================================================
+   NATIVE DIALOG RESET — showModal() handles centering, top layer, inertness
+   ============================================================================= */
+
+dialog {
+    border: none;
+    padding: 0;
+    background: transparent;
+    max-width: none;
+    max-height: none;
+    overflow: visible;
+}
+
+dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+/* Override legacy overlay/backdrop styles for <dialog> — ::backdrop handles these */
+dialog.modal,
+dialog.modal-overlay,
+dialog.preferences-modal {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* Ensure all dialog modals respect open/closed state correctly.
+   Legacy classes may set display:flex or display:none which conflicts
+   with the UA dialog[open]/dialog:not([open]) rules. */
+dialog.modal:not([open]),
+dialog.modal-overlay:not([open]),
+dialog.preferences-modal:not([open]) {
+    display: none;
+}
+
+dialog.modal[open],
+dialog.modal-overlay[open],
+dialog.preferences-modal[open] {
+    display: flex;
+}
+
+/* =============================================================================
    MODAL BASE
    ============================================================================= */
 
@@ -288,6 +331,10 @@
     justify-content: center;
     z-index: var(--z-modal-high);
     animation: fadeIn var(--transition-fast) ease;
+}
+
+dialog.mini-modal-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.5);
 }
 
 .mini-modal-box {
@@ -756,6 +803,12 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     justify-content: center;
     align-items: center;
     cursor: pointer;
+}
+
+dialog.preferences-modal::backdrop {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 .preferences-modal-content {

@@ -768,8 +768,8 @@ export const DOM_SELECTORS = Object.freeze({
     MINI_CYCLE_SWITCH_ITEM: '.mini-cycle-switch-item',
     MINI_CYCLE_SWITCH_ITEM_SELECTED: '.mini-cycle-switch-item.selected',
     CYCLE_ITEM_TITLE: '.cycle-item-title',
-    MINI_CYCLE_OVERLAY: '.miniCycle-overlay',
-    MINI_MODAL_OVERLAY: '.mini-modal-overlay',
+    MINI_CYCLE_OVERLAY: '.miniCycle-prompt-dialog',
+    MINI_MODAL_OVERLAY: '.mini-modal-dialog',
     SWITCH_PREVIEW_WINDOW: '.switch-preview-window',
     PREVIEW_REVIEW_CLOSE: '.preview-review-close',
 

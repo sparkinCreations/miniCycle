@@ -46,7 +46,8 @@ const DEFAULT_COLORS = {
     progressBar: '#82db8c',
     statsBg: '#ffffff',
     statsText: '#333333',
-    patternColor: '#ffffff'
+    patternColor: '#ffffff',
+    panelText: '#ffffff'
 };
 
 // Default pattern color (white with 7% opacity)
@@ -142,6 +143,11 @@ const COLOR_MAP = {
         key: 'statsText',
         cssVar: '--pref-stats-text',
         previewVar: '--preview-stats-text'
+    },
+    'pref-panel-text': {
+        key: 'panelText',
+        cssVar: '--pref-panel-text',
+        previewVar: '--preview-panel-text'
     }
 };
 
@@ -315,6 +321,11 @@ export class PreferencesManager {
                 }
             };
             safeAdd(this.modal, 'click', this.modal._backdropClickHandler);
+
+            // Restore focus when dialog closes (including native ESC)
+            safeAdd(this.modal, 'close', () => {
+                this.modal._previousFocus?.focus();
+            });
         }
 
         // Open themes button
@@ -324,7 +335,7 @@ export class PreferencesManager {
                 this.closeModal();
                 const themesModal = _deps.getModal('themes');
                 if (themesModal) {
-                    themesModal.style.display = 'flex';
+                    if (!themesModal.open) themesModal.showModal();
                 }
             };
             safeAdd(openThemesBtn, 'click', openThemesBtn._clickHandler);
@@ -561,7 +572,8 @@ export class PreferencesManager {
             const bgData = await _bgImageModule.loadBgImage();
             _bgImageModule.updateBgImageUI(bgData?.dataUrl || null, bgData?.mode || 'cover', _deps.AppState);
 
-            this.modal.style.display = 'flex';
+            this.modal._previousFocus = document.activeElement;
+            if (!this.modal.open) this.modal.showModal();
         }
     }
 
@@ -570,7 +582,8 @@ export class PreferencesManager {
      */
     closeModal() {
         if (this.modal) {
-            this.modal.style.display = 'none';
+            this.modal.close();
+            this.modal._previousFocus?.focus();
         }
     }
 

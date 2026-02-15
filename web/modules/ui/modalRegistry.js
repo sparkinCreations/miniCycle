@@ -46,31 +46,31 @@ const _cache = new Map();
  * Single source of truth for which method + selector to use per modal.
  *
  * closeMethod values:
- * - 'display': style.display = 'none'
- * - 'removeVisible': classList.remove('visible')
- * - 'addHidden': classList.add('hidden')
+ * - 'close': dialog.close() (native dialog)
+ * - 'display': style.display = 'none' (legacy div modals)
+ * - 'addHidden': classList.add('hidden') (legacy div modals)
  *
  * cacheable: false means the element is destroyed and recreated at runtime,
  * so the cache must be bypassed (always re-query the DOM).
  */
 export const MODAL_DEFS = {
     // ---- Static modals (pre-existing in HTML, safe to cache) ----
-    feedback:           { method: 'id', key: DOM_IDS.FEEDBACK_MODAL, closeMethod: 'display' },
-    about:              { method: 'id', key: DOM_IDS.ABOUT_MODAL, closeMethod: 'display' },
-    reminders:          { method: 'id', key: DOM_IDS.REMINDERS_MODAL, closeMethod: 'display' },
-    themes:             { method: 'id', key: DOM_IDS.THEMES_MODAL, closeMethod: 'display' },
-    games:              { method: 'id', key: DOM_IDS.GAMES_PANEL, closeMethod: 'display' },
-    preferences:        { method: 'id', key: DOM_IDS.PREFERENCES_MODAL, closeMethod: 'display' },
+    feedback:           { method: 'id', key: DOM_IDS.FEEDBACK_MODAL, closeMethod: 'close' },
+    about:              { method: 'id', key: DOM_IDS.ABOUT_MODAL, closeMethod: 'close' },
+    reminders:          { method: 'id', key: DOM_IDS.REMINDERS_MODAL, closeMethod: 'close' },
+    themes:             { method: 'id', key: DOM_IDS.THEMES_MODAL, closeMethod: 'close' },
+    games:              { method: 'id', key: DOM_IDS.GAMES_PANEL, closeMethod: 'close' },
+    preferences:        { method: 'id', key: DOM_IDS.PREFERENCES_MODAL, closeMethod: 'close' },
     testing:            { method: 'id', key: DOM_IDS.TESTING_MODAL, closeMethod: 'display' },
     help:               { method: 'id', key: DOM_IDS.HELP_WINDOW, closeMethod: 'display' },
-    recurringOverlay:   { method: 'id', key: DOM_IDS.RECURRING_PANEL_OVERLAY, closeMethod: 'addHidden' },
-    recurringPanel:     { method: 'id', key: DOM_IDS.RECURRING_PANEL, closeMethod: 'display' },
+    recurringOverlay:   { method: 'id', key: DOM_IDS.RECURRING_PANEL_OVERLAY, closeMethod: 'close' },
+    recurringPanel:     { method: 'id', key: DOM_IDS.RECURRING_PANEL, closeMethod: 'close' },
     storageViewer:      { method: 'id', key: DOM_IDS.STORAGE_VIEWER_OVERLAY, closeMethod: 'addHidden' },
-    routineSwitcher:    { method: 'id', key: DOM_IDS.ROUTINE_SWITCHER_MODAL, closeMethod: 'display' },
-    settings:           { method: 'id', key: DOM_IDS.SETTINGS_MODAL, closeMethod: 'removeVisible' },
+    routineSwitcher:    { method: 'id', key: DOM_IDS.ROUTINE_SWITCHER_MODAL, closeMethod: 'close' },
+    settings:           { method: 'id', key: DOM_IDS.SETTINGS_MODAL, closeMethod: 'close' },
 
     // ---- Dynamic modals (destroyed + recreated, NOT safe to cache) ----
-    taskOptionsCustomizer: { method: 'id', key: DOM_IDS.TASK_OPTIONS_CUSTOMIZER_MODAL, cacheable: false, closeMethod: 'display' },
+    taskOptionsCustomizer: { method: 'id', key: DOM_IDS.TASK_OPTIONS_CUSTOMIZER_MODAL, cacheable: false, closeMethod: 'close' },
 };
 
 // ============================================================================
