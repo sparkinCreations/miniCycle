@@ -252,8 +252,14 @@ dialog.mini-cycle-switch-modal::backdrop {
     pointer-events: none;
 }
 
-.mini-cycle-switch-item:hover {
+.mini-cycle-switch-item:hover,
+.mini-cycle-switch-item:focus-visible {
     background: rgba(0, 0, 0, 0.1);
+}
+
+.mini-cycle-switch-item:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: -2px;
 }
 
 .mini-cycle-switch-item.selected {

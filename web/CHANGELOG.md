@@ -1,3 +1,7 @@
+## [1.940] - 2026-02-15
+- Refactor modal handling to utilize native <dialog> elements
+
+
 ## [1.939] - 2026-02-15
 - feat: Improve accessibility features across task and stats panels
 

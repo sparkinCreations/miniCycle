@@ -602,16 +602,23 @@ export class AchievementsManager {
                 }
                 badge.title = tooltip;
 
-                // Make badge clickable
-                badge.style.cursor = 'pointer';
-
                 // Store handler reference for safeAddEventListener
                 badge._badgeClickHandler = () => this.showBadgeDetail(milestone);
 
+                // Keyboard activation (Enter/Space)
+                badge._badgeKeyHandler = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.showBadgeDetail(milestone);
+                    }
+                };
+
                 if (safeAddEventListener) {
                     safeAddEventListener(badge, 'click', badge._badgeClickHandler);
+                    safeAddEventListener(badge, 'keydown', badge._badgeKeyHandler);
                 } else {
                     badge.addEventListener('click', badge._badgeClickHandler);
+                    badge.addEventListener('keydown', badge._badgeKeyHandler);
                 }
             }
         });

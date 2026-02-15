@@ -462,14 +462,32 @@ export class StatsPanelManager {
         const safeAdd = _deps.safeAddEventListener;
         if (!safeAdd) return; // Guard: dependency not injected (e.g., in tests)
 
-        // Current Routine status click
+        // Current Routine status click + keyboard activation
         if (this.elements.currentRoutineStatus) {
             safeAdd(this.elements.currentRoutineStatus, "click", this.boundHandlers.handleCurrentRoutineToggle);
+            const routineHeader = this.elements.currentRoutineStatus.querySelector('.clickable');
+            if (routineHeader) {
+                safeAdd(routineHeader, "keydown", (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.boundHandlers.handleCurrentRoutineToggle(e);
+                    }
+                });
+            }
         }
 
-        // Theme unlock status click
+        // Theme unlock status click + keyboard activation
         if (this.elements.themeUnlockStatus) {
             safeAdd(this.elements.themeUnlockStatus, "click", this.boundHandlers.handleThemeToggleClick);
+            const milestoneHeader = this.elements.themeUnlockStatus.querySelector('.clickable');
+            if (milestoneHeader) {
+                safeAdd(milestoneHeader, "keydown", (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.boundHandlers.handleThemeToggleClick(e);
+                    }
+                });
+            }
         }
 
         /* Quick dark toggle
@@ -1358,6 +1376,9 @@ export class StatsPanelManager {
 
             toggleIcon.textContent = anyVisible ? "▲" : "▼";
 
+            const clickableHeader = themeUnlockStatus?.querySelector('.clickable');
+            if (clickableHeader) clickableHeader.setAttribute('aria-expanded', String(anyVisible));
+
             // ✅ Save preference to localStorage
             this.saveCollapsiblePreference('milestonesExpanded', anyVisible);
         }
@@ -1386,11 +1407,14 @@ export class StatsPanelManager {
         }
         if (routineButtonsContainer) routineButtonsContainer.classList.toggle("visible");
 
-        // Update toggle arrow
+        // Update toggle arrow and aria-expanded
         const toggleIcon = currentRoutineStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);
         if (toggleIcon) {
             const anyVisible = currentRoutineCycleCount.classList.contains("visible");
             toggleIcon.textContent = anyVisible ? "▲" : "▼";
+
+            const clickableHeader = currentRoutineStatus?.querySelector('.clickable');
+            if (clickableHeader) clickableHeader.setAttribute('aria-expanded', String(anyVisible));
 
             // ✅ Save preference to localStorage
             this.saveCollapsiblePreference('currentRoutineExpanded', anyVisible);
