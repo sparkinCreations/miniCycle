@@ -373,6 +373,9 @@ export class MiniCycleNotifications {
         notification.classList.add(type);
       }
 
+      // Accessibility: role="alert" for urgent types, role="status" for others
+      notification.setAttribute('role', (type === 'error' || type === 'warning') ? 'alert' : 'status');
+
       // ✅ XSS PROTECTION: Always escape HTML in message content (DI-pure)
       // Security fix (v1.353): Remove bypass condition to prevent XSS
       const escapedMessage = this.deps.GlobalUtils?.escapeHtml
@@ -491,6 +494,9 @@ export class MiniCycleNotifications {
       if (type === "info") notification.classList.add("info");
       if (type === "warning") notification.classList.add("warning");
       if (type === "recurring") notification.classList.add("recurring");
+
+      // Accessibility: role="alert" for urgent types, role="status" for others
+      notification.setAttribute('role', (type === 'error' || type === 'warning') ? 'alert' : 'status');
 
       // Check if HTML already has a close button before adding one (only for trusted content)
       const tempDiv = document.createElement("div");
@@ -1309,9 +1315,9 @@ async setDefaultPosition(notificationContainer) {
 
     overlay.innerHTML = `
       <div class="miniCycle-prompt-box">
-        <h2 class="miniCycle-prompt-title">${safeTitle}</h2>
+        <h2 id="miniCycle-prompt-title" class="miniCycle-prompt-title">${safeTitle}</h2>
         <p class="miniCycle-prompt-message">${safeMessage}</p>
-        <input type="text" id="miniCycle-prompt-input" name="miniCycle-prompt-input" class="miniCycle-prompt-input" placeholder="${safePlaceholder}" value="${safeDefaultValue}" />
+        <input type="text" id="miniCycle-prompt-input" name="miniCycle-prompt-input" class="miniCycle-prompt-input" aria-labelledby="miniCycle-prompt-title" placeholder="${safePlaceholder}" value="${safeDefaultValue}" />
         <div class="miniCycle-prompt-buttons">
           <button class="miniCycle-btn-cancel">${safeCancelText}</button>
           <button class="miniCycle-btn-confirm">${safeConfirmText}</button>

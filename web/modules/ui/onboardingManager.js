@@ -174,16 +174,16 @@ export class OnboardingManager {
              <p>${getLabel('onboarding.step1Desc2')}</p>`,
             `<h3>${getLabel('onboarding.step2Title')}</h3>
              <ul>
-               <li>📝 ${getLabel('onboarding.step2Item1')}</li>
-               <li>✅ ${getLabel('onboarding.step2Item2')}</li>
-               <li>🔄 ${getLabel('onboarding.step2Item3')}</li>
-               <li>📊 ${getLabel('onboarding.step2Item4')}</li>
+               <li><span aria-hidden="true">📝</span> ${getLabel('onboarding.step2Item1')}</li>
+               <li><span aria-hidden="true">✅</span> ${getLabel('onboarding.step2Item2')}</li>
+               <li><span aria-hidden="true">🔄</span> ${getLabel('onboarding.step2Item3')}</li>
+               <li><span aria-hidden="true">📊</span> ${getLabel('onboarding.step2Item4')}</li>
              </ul>`,
             `<h3>${getLabel('onboarding.step3Title')}</h3>
              <ul>
-               <li>📱 ${getLabel('onboarding.step3Item1')}</li>
-               <li>➕ ${getLabel('onboarding.step3Item2')}</li>
-               <li>📱 ${getLabel('onboarding.step3Item3')}</li>
+               <li><span aria-hidden="true">📱</span> ${getLabel('onboarding.step3Item1')}</li>
+               <li><span aria-hidden="true">➕</span> ${getLabel('onboarding.step3Item2')}</li>
+               <li><span aria-hidden="true">📱</span> ${getLabel('onboarding.step3Item3')}</li>
              </ul>`
         ];
 
@@ -212,11 +212,11 @@ export class OnboardingManager {
 
         modal.innerHTML = `
             <div class="onboarding-content theme-${safeTheme}">
-                <button id="${DOM_IDS.ONBOARDING_SKIP}" class="onboarding-skip">${getLabel('onboarding.skip')} ✖</button>
+                <button id="${DOM_IDS.ONBOARDING_SKIP}" class="onboarding-skip">${getLabel('onboarding.skip')} <span aria-hidden="true">✖</span></button>
                 <div id="${DOM_IDS.ONBOARDING_STEP_CONTENT}"></div>
                 <div class="onboarding-controls">
-                    <button id="${DOM_IDS.ONBOARDING_PREV}" class="hidden">⬅ ${getLabel('onboarding.back')}</button>
-                    <button id="${DOM_IDS.ONBOARDING_NEXT}">${getLabel('onboarding.next')} ➡</button>
+                    <button id="${DOM_IDS.ONBOARDING_PREV}" class="hidden"><span aria-hidden="true">⬅</span> ${getLabel('onboarding.back')}</button>
+                    <button id="${DOM_IDS.ONBOARDING_NEXT}">${getLabel('onboarding.next')} <span aria-hidden="true">➡</span></button>
                 </div>
             </div>
         `;
@@ -246,7 +246,9 @@ export class OnboardingManager {
         const renderStep = (index) => {
             stepContent.innerHTML = steps[index];
             prevBtn.classList.toggle("hidden", index === 0);
-            nextBtn.textContent = index === steps.length - 1 ? getLabel('onboarding.start') + " 🚀" : getLabel('onboarding.next') + " ➡";
+            nextBtn.innerHTML = index === steps.length - 1
+                ? `${getLabel('onboarding.start')} <span aria-hidden="true">🚀</span>`
+                : `${getLabel('onboarding.next')} <span aria-hidden="true">➡</span>`;
         };
 
         const completeOnboardingHandler = () => {
@@ -314,6 +316,16 @@ export class OnboardingManager {
         } else {
             console.warn('⚠️ AppState not ready - onboarding flag not persisted');
         }
+
+        // ✅ Clean up modal button listeners before removing DOM
+        const nextBtn = document.getElementById(DOM_IDS.ONBOARDING_NEXT);
+        const prevBtn = document.getElementById(DOM_IDS.ONBOARDING_PREV);
+        const skipBtn = document.getElementById(DOM_IDS.ONBOARDING_SKIP);
+
+        if (nextBtn?._clickHandler) nextBtn.removeEventListener('click', nextBtn._clickHandler);
+        if (prevBtn?._clickHandler) prevBtn.removeEventListener('click', prevBtn._clickHandler);
+        if (skipBtn?._clickHandler) skipBtn.removeEventListener('click', skipBtn._clickHandler);
+        if (modal?._clickHandler) modal.removeEventListener('click', modal._clickHandler);
 
         modal.remove();
 

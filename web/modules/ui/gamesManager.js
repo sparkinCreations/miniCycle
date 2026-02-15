@@ -268,6 +268,39 @@ class GamesManager {
 
         console.log('✅ Games event listeners attached');
     }
+
+    /**
+     * Clean up event listeners and timers
+     */
+    destroy() {
+        // Remove document-level outside-click handler
+        if (this._gamesOutsideClickHandler) {
+            document.removeEventListener('click', this._gamesOutsideClickHandler);
+            this._gamesOutsideClickHandler = null;
+        }
+
+        // Remove button click handlers
+        const openButton = document.getElementById(DOM_IDS.OPEN_GAMES_PANEL);
+        if (openButton?._clickHandler) {
+            openButton.removeEventListener('click', openButton._clickHandler);
+            openButton._clickHandler = null;
+        }
+
+        const closeButton = document.getElementById(DOM_IDS.CLOSE_GAMES_PANEL);
+        if (closeButton?._clickHandler) {
+            closeButton.removeEventListener('click', closeButton._clickHandler);
+            closeButton._clickHandler = null;
+        }
+
+        const gameButton = document.getElementById(DOM_IDS.OPEN_TASK_ORDER_GAME);
+        if (gameButton?._clickHandler) {
+            gameButton.removeEventListener('click', gameButton._clickHandler);
+            gameButton._clickHandler = null;
+        }
+
+        this._eventListenersInitialized = false;
+        console.log('🧹 GamesManager cleanup completed');
+    }
 }
 
 // Create single instance

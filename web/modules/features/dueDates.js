@@ -15,6 +15,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -279,6 +280,7 @@ export class MiniCycleDueDates {
         dueDateInput.name = `taskDueDate-${assignedTaskId}`;
         dueDateInput.classList.add("due-date");
         dueDateInput.setAttribute("aria-describedby", `task-desc-${assignedTaskId}`);
+        dueDateInput.setAttribute("aria-label", getLabel('taskOption.dueDate'));
 
         if (dueDate) {
             dueDateInput.value = dueDate;

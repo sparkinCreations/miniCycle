@@ -1,3 +1,7 @@
+## [1.937] - 2026-02-14
+- Refactor notifications and labels in ClearedTasksManager, HelpWindowManager, and PullToRefresh
+
+
 ## [1.936] - 2026-02-14
 - feat: Complete Code Audit #6 with P0 + P1 fixes and additional P2 improvements
 

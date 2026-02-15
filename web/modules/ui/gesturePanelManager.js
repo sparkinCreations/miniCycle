@@ -356,8 +356,12 @@ export class GesturePanelManager {
             showNotification(`⌨️ ${getLabel('notify.keyboardTaskOpened')}`, "info", 1500);
         }
 
-        // Shift+Tab for quick toggle
+        // Shift+Tab for quick toggle (guarded to preserve standard tab in modals/forms)
         if (event.key === "Tab") {
+            const activeEl = document.activeElement;
+            const isInFormField = activeEl && ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeEl.tagName);
+            if (isInFormField || this.deps.isOverlayActive()) return;
+
             event.preventDefault();
             if (this.state.isStatsVisible) {
                 this._triggerShowTaskView();

@@ -213,10 +213,11 @@ export class HelpWindowManager {
             this.updateSideLayout();
         };
         // Debounce resize handler — stored as instance property for cleanup
-        window.addEventListener('resize', () => {
+        this._debouncedResizeHandler = () => {
             clearTimeout(this._resizeTimeout);
             this._resizeTimeout = setTimeout(this._resizeHandler, UI_TIMEOUTS.RESIZE_DEBOUNCE);
-        });
+        };
+        window.addEventListener('resize', this._debouncedResizeHandler);
 
         // Initial side layout check after a delay (tasks may still be loading)
         setTimeout(() => {
@@ -494,6 +495,38 @@ export class HelpWindowManager {
             this.modeDescriptionTimeout = null;
             this.isShowingModeDescription = false;
         }
+        if (this._resizeTimeout) {
+            clearTimeout(this._resizeTimeout);
+            this._resizeTimeout = null;
+        }
+
+        // Remove event listeners
+        if (this._debouncedResizeHandler) {
+            window.removeEventListener('resize', this._debouncedResizeHandler);
+            this._debouncedResizeHandler = null;
+        }
+        if (this._changeHandler) {
+            document.removeEventListener('change', this._changeHandler);
+            this._changeHandler = null;
+        }
+        if (this._clickHandler) {
+            document.removeEventListener('click', this._clickHandler);
+            this._clickHandler = null;
+        }
+        if (this._taskCompletedHandler) {
+            document.removeEventListener('taskCompleted', this._taskCompletedHandler);
+            this._taskCompletedHandler = null;
+        }
+        if (this._tasksResetHandler) {
+            document.removeEventListener('tasksReset', this._tasksResetHandler);
+            this._tasksResetHandler = null;
+        }
+
+        // Disconnect mutation observer
+        if (this._taskListObserver) {
+            this._taskListObserver.disconnect();
+            this._taskListObserver = null;
+        }
 
         // Remove layout classes from task-view
         const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
@@ -503,6 +536,7 @@ export class HelpWindowManager {
         }
 
         this.sideLayoutEnabled = false;
+        this._eventListenersInitialized = false;
     }
 }
 

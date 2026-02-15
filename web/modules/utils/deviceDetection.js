@@ -16,7 +16,7 @@
  * @module deviceDetection
  */
 
-import { STORAGE_KEYS } from '../core/constants.js';
+import { STORAGE_KEYS, LITE_VERSION_PATH } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { createDIModule, required, optional } from '../core/diBase.js';
 
@@ -179,11 +179,11 @@ export class DeviceDetectionManager {
 
   redirectToLite() {
     const cacheBuster = `?redirect=auto&v=${this.currentVersion}&t=${Date.now()}`;
-    console.log('📱 Redirecting to lite version:', 'lite/miniCycle-lite.html' + cacheBuster);
+    console.log('📱 Redirecting to lite version:', LITE_VERSION_PATH + cacheBuster);
 
     this.deps.showNotification('📱 ' + getLabel('notify.redirectingToLite'), 'info', 2000);
     setTimeout(() => {
-      window.location.href = 'lite/miniCycle-lite.html' + cacheBuster;
+      window.location.href = LITE_VERSION_PATH + cacheBuster;
     }, 1000);
   }
 
