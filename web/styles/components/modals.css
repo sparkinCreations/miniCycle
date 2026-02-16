@@ -27,7 +27,8 @@ dialog.modal,
 dialog.modal-overlay,
 dialog.preferences-modal,
 dialog.themes-modal,
-dialog.games-modal {
+dialog.games-modal,
+dialog.settings-modal {
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -40,7 +41,8 @@ dialog.modal:not([open]),
 dialog.modal-overlay:not([open]),
 dialog.preferences-modal:not([open]),
 dialog.themes-modal:not([open]),
-dialog.games-modal:not([open]) {
+dialog.games-modal:not([open]),
+dialog.settings-modal:not([open]) {
     display: none;
 }
 
@@ -48,7 +50,8 @@ dialog.modal[open],
 dialog.modal-overlay[open],
 dialog.preferences-modal[open],
 dialog.themes-modal[open],
-dialog.games-modal[open] {
+dialog.games-modal[open],
+dialog.settings-modal[open] {
     display: flex;
 }
 
