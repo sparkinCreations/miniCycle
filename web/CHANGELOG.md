@@ -1,3 +1,7 @@
+## [1.947] - 2026-02-15
+- feat: Refactor settings modal styles for improved layout and centralized dialog management
+
+
 ## [1.946] - 2026-02-15
 - feat: Update modal dimensions for improved layout consistency across components
 
