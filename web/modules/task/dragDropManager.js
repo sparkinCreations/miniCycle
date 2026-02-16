@@ -300,15 +300,18 @@ export class DragDropManager {
                     isTap = false;
                     this.draggedTask = taskElement;
                     isDragging = true;
-                    taskElement.classList.add("dragging", "long-pressed");
+                    taskElement.classList.add("dragging");
 
                     event.preventDefault();
 
-                    console.log("📱 Long Press Detected - Showing Task Options", taskElement);
-
-                    // Ensure task options remain visible
-                    // Pass 'long-press' as caller so controller allows it in both modes
-                    this.deps.revealTaskButtons?.(taskElement, 'long-press');
+                    // Only reveal task option buttons if three-dots mode is NOT enabled.
+                    // When three-dots is on, the dedicated button handles visibility;
+                    // long press should only activate drag mode.
+                    const threeDotsEnabled = document.body.classList.contains('show-three-dots-enabled');
+                    if (!threeDotsEnabled) {
+                        taskElement.classList.add("long-pressed");
+                        this.deps.revealTaskButtons?.(taskElement, 'long-press');
+                    }
                 }, 500); // Long-press delay (500ms)
             };
             safeAdd(taskElement, "touchstart", taskElement._touchstartHandler, { passive: false }); // Must be non-passive - calls preventDefault()
@@ -324,9 +327,10 @@ export class DragDropManager {
                     if (event.cancelable) {
                         event.preventDefault();
                     }
-                    const movingTask = document.elementFromPoint(touchMoveX, touchMoveY);
-                    if (movingTask) {
-                        this.handleRearrange(movingTask, event);
+                    const elementAtPoint = document.elementFromPoint(touchMoveX, touchMoveY);
+                    const targetTask = elementAtPoint?.closest('.task');
+                    if (targetTask) {
+                        this.handleRearrange(targetTask, event);
                     }
                     return;
                 }
@@ -371,8 +375,9 @@ export class DragDropManager {
                 isDragging = false;
                 this.lastReorderTime = 0;
 
-                // Keep task options open after a long press (no drag occurred)
-                if (isLongPress) {
+                // Keep task options open after a long press (only when buttons were revealed)
+                const threeDotsEnabled = document.body.classList.contains('show-three-dots-enabled');
+                if (isLongPress && !threeDotsEnabled) {
                     return;
                 }
 

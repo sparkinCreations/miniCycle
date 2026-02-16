@@ -1,3 +1,7 @@
+## [1.951] - 2026-02-16
+- chore: update version to 1.950 across all relevant files and changelog
+
+
 ## [1.950] - 2026-02-16
 - feat: enhance recurring panel styles for improved visibility and interaction
 - feat: unify logo integration across modals and menus with has-corner-logo class
