@@ -163,6 +163,27 @@ export function setupSettingsMenu() {
     // Setup collapsible sections
     setupSettingsCollapsibleSections(safeAddEventListener);
 
+    // Keyboard: Enter toggles, Arrow Up/Down navigates between checkboxes
+    settingsModal.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        safeAddEventListener(checkbox, 'keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                const visible = [...settingsModal.querySelectorAll('input[type="checkbox"]')]
+                    .filter(cb => !cb.disabled && cb.offsetParent !== null);
+                const idx = visible.indexOf(checkbox);
+                if (idx === -1) return;
+                const next = e.key === 'ArrowDown'
+                    ? (idx + 1) % visible.length
+                    : (idx - 1 + visible.length) % visible.length;
+                visible[next].focus();
+            }
+        });
+    });
+
     // Display version number
     updateVersionDisplay();
 }
@@ -188,6 +209,18 @@ function setupSettingsCollapsibleSections(safeAddEventListener) {
                 section.classList.toggle('collapsed');
                 header.setAttribute('aria-expanded', String(!section.classList.contains('collapsed')));
                 saveSettingsCollapsedStates(collapsibleSections);
+            }
+        });
+
+        safeAddEventListener(header, 'keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const section = header.closest('.settings-section');
+                if (section) {
+                    section.classList.toggle('collapsed');
+                    header.setAttribute('aria-expanded', String(!section.classList.contains('collapsed')));
+                    saveSettingsCollapsedStates(collapsibleSections);
+                }
             }
         });
     });

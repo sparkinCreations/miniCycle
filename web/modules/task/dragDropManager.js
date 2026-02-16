@@ -585,6 +585,10 @@ export class DragDropManager {
      * @param {HTMLElement} button - The arrow button that was clicked
      */
     async handleArrowClick(button) {
+        // Guard against double execution (Enter key can fire both synthetic and native click in some browsers)
+        if (this._arrowMoveInProgress) return;
+        this._arrowMoveInProgress = true;
+
         try {
             const taskItem = button.closest('.task');
             if (!taskItem) return;
@@ -644,10 +648,36 @@ export class DragDropManager {
                 // Task options are now restored automatically by _restoreActiveTaskOptions in renderTasks
 
                 // Restore focus to the same arrow button on the moved task (a11y)
+                // Use rAF to ensure the browser has completed layout before focusing
                 if (taskId) {
-                    const movedTask = document.querySelector(`[data-task-id="${taskId}"]`);
-                    const arrowBtn = movedTask?.querySelector(`.${arrowClass}`);
-                    arrowBtn?.focus();
+                    requestAnimationFrame(() => {
+                        const movedTask = document.querySelector(`[data-task-id="${taskId}"]`);
+                        if (!movedTask) return;
+
+                        // Ensure task options are visible on the moved task
+                        const taskOptions = movedTask.querySelector(DOM_SELECTORS.TASK_OPTIONS);
+                        if (taskOptions) {
+                            taskOptions.classList.add('task-options-visible');
+                            taskOptions.classList.remove('task-options-force-hidden');
+                            taskOptions.querySelectorAll('button.task-btn').forEach(btn => {
+                                btn.tabIndex = 0;
+                            });
+                        }
+
+                        // Try the same arrow first; if hidden (first/last boundary), fall back to opposite arrow
+                        const arrowBtn = movedTask.querySelector(`.${arrowClass}`);
+                        const oppositeClass = arrowClass === 'move-up' ? 'move-down' : 'move-up';
+                        const oppositeBtn = movedTask.querySelector(`.${oppositeClass}`);
+
+                        if (arrowBtn && getComputedStyle(arrowBtn).visibility !== 'hidden') {
+                            arrowBtn.focus();
+                        } else if (oppositeBtn && getComputedStyle(oppositeBtn).visibility !== 'hidden') {
+                            oppositeBtn.focus();
+                        } else {
+                            // All arrows hidden — focus task text as fallback
+                            movedTask.querySelector('.task-text')?.focus();
+                        }
+                    });
                 }
 
                 console.log(`✅ Task moved from position ${currentIndex} to ${newIndex} via arrows`);
@@ -658,6 +688,9 @@ export class DragDropManager {
         } catch (error) {
             console.warn('⚠️ Arrow click handler failed:', error);
             this.deps.showNotification(getLabel('notify.reorderError'), 'warning');
+        } finally {
+            // Release guard after a brief delay to absorb any duplicate events
+            setTimeout(() => { this._arrowMoveInProgress = false; }, 200);
         }
     }
 

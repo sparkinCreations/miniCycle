@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.941">
+<meta name="app-version" content="1.942">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -32,20 +32,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.941"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.942"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=1.941" as="style">
-<link rel="preload" href="styles/base/variables.css?v=1.941" as="style">
-<link rel="preload" href="styles/base/reset.css?v=1.941" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=1.941" as="style">
-<link rel="preload" href="styles/layout/header.css?v=1.941" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=1.941" as="style">
+<link rel="preload" href="styles/main.css?v=1.942" as="style">
+<link rel="preload" href="styles/base/variables.css?v=1.942" as="style">
+<link rel="preload" href="styles/base/reset.css?v=1.942" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=1.942" as="style">
+<link rel="preload" href="styles/layout/header.css?v=1.942" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=1.942" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=1.941" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=1.942" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=1.941"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=1.942"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -56,7 +56,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.941"></script>
+<script src="./version.js?v=1.942"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -215,21 +215,21 @@
      3. Or accepting slightly slower initial load without preloads
      ═══════════════════════════════════════════════════════════════════════════ -->
 <!--
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.941">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.941">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.941">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.941">
-<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.941">
-<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.941">
-<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.941">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.941">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.941">
-<link rel="modulepreload" href="./modules/core/appInit.js?v=1.941">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.941">
-<link rel="modulepreload" href="./modules/core/diBase.js?v=1.941">
-<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.941">
-<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.941">
-<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.941">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.942">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.942">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.942">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.942">
+<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.942">
+<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.942">
+<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.942">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.942">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.942">
+<link rel="modulepreload" href="./modules/core/appInit.js?v=1.942">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.942">
+<link rel="modulepreload" href="./modules/core/diBase.js?v=1.942">
+<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.942">
+<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.942">
+<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.942">
 -->
 
 <!-- Critical CSS - extracted to external file for CSP compliance (no 'unsafe-inline' needed) -->
@@ -1034,7 +1034,7 @@ window.installApp = () => {
             </div>
             <!-- Routines Section -->
             <div class="menu-section collapsed" data-section="routines">
-                <div class="menu-section-header collapsible" data-toggle="routines" aria-expanded="false">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="routines" aria-expanded="false">
                     <span>Routine Actions</span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
@@ -1049,7 +1049,7 @@ window.installApp = () => {
 
             <!-- Tasks Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="tasks">
-                <div class="menu-section-header collapsible" data-toggle="tasks" aria-expanded="false">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="tasks" aria-expanded="false">
                     <span>Task Actions & Features</span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
@@ -1066,7 +1066,7 @@ window.installApp = () => {
 
             <!-- Rewards Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="rewards">
-                <div class="menu-section-header collapsible" data-toggle="rewards" aria-expanded="false">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="rewards" aria-expanded="false">
                     <span>Rewards & Extras</span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
@@ -1082,7 +1082,7 @@ window.installApp = () => {
 
             <!-- Help Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="help">
-                <div class="menu-section-header collapsible" data-toggle="help" aria-expanded="false">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="help" aria-expanded="false">
                     <span>Help & Support</span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
@@ -1096,7 +1096,7 @@ window.installApp = () => {
 
                     <!-- App Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="app">
-                <div class="menu-section-header collapsible" data-toggle="app" aria-expanded="false">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="app" aria-expanded="false">
                     <span>Settings & Personalization</span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
@@ -1628,7 +1628,7 @@ window.installApp = () => {
 
                 <!-- Display Section -->
                 <div class="settings-section collapsible collapsed" data-section="display">
-                    <div class="settings-section-header" data-toggle="display" aria-expanded="false">
+                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="display" aria-expanded="false">
                         <span>Display</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -1673,7 +1673,7 @@ window.installApp = () => {
 
                 <!-- Behavior Section -->
                 <div class="settings-section collapsible collapsed" data-section="behavior">
-                    <div class="settings-section-header" data-toggle="behavior" aria-expanded="false">
+                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="behavior" aria-expanded="false">
                         <span>Behavior</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -1697,7 +1697,7 @@ window.installApp = () => {
 
                 <!-- Data Management Section -->
                 <div class="settings-section collapsible collapsed" data-section="data">
-                    <div class="settings-section-header" data-toggle="data" aria-expanded="false">
+                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="data" aria-expanded="false">
                         <span>Data Management</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -1710,7 +1710,7 @@ window.installApp = () => {
 
                 <!-- Reset Options Section -->
                 <div class="settings-section collapsible collapsed" data-section="reset">
-                    <div class="settings-section-header" data-toggle="reset" aria-expanded="false">
+                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="reset" aria-expanded="false">
                         <span>Reset Options</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -1724,7 +1724,7 @@ window.installApp = () => {
 
                 <!-- Advanced Section -->
                 <div class="settings-section collapsible collapsed" data-section="advanced">
-                    <div class="settings-section-header" data-toggle="advanced" aria-expanded="false">
+                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="advanced" aria-expanded="false">
                         <span>Advanced</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -1970,7 +1970,7 @@ window.installApp = () => {
 
             <!-- Quick Presets Section -->
             <div class="preferences-section collapsed" data-section="quick-themes">
-                <div class="preferences-section-header collapsible" data-toggle="quick-themes">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="quick-themes">
                     <span class="preferences-section-icon">&#x1F3A8;</span>
                     <span>Quick Themes</span>
                     <span class="preferences-section-toggle">&#x25BC;</span>
@@ -2036,7 +2036,7 @@ window.installApp = () => {
 
             <!-- App & Task List Section -->
             <div class="preferences-section collapsed" data-section="app">
-                <div class="preferences-section-header collapsible" data-toggle="app">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="app">
                     <span class="preferences-section-icon">&#x1F4F1;</span>
                     <span>App & Task List</span>
                     <span class="preferences-section-toggle">&#x25BC;</span>
@@ -2120,12 +2120,18 @@ window.installApp = () => {
                         <input type="color" id="pref-title-text" value="#2b2b2b" />
                         <button class="preferences-reset-btn" data-target="pref-title-text" title="Reset to default">Reset</button>
                     </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F524;</span>
+                        <label for="pref-panel-text">Panel Text</label>
+                        <input type="color" id="pref-panel-text" value="#ffffff" />
+                        <button class="preferences-reset-btn" data-target="pref-panel-text" title="Reset to default">Reset</button>
+                    </div>
                 </div>
             </div>
 
             <!-- Tasks Section -->
             <div class="preferences-section collapsed" data-section="tasks">
-                <div class="preferences-section-header collapsible" data-toggle="tasks">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="tasks">
                     <span class="preferences-section-icon">&#x2705;</span>
                     <span>Tasks & Checkboxes</span>
                     <span class="preferences-section-toggle">&#x25BC;</span>
@@ -2174,7 +2180,7 @@ window.installApp = () => {
 
             <!-- Buttons & Progress Section -->
             <div class="preferences-section collapsed" data-section="buttons">
-                <div class="preferences-section-header collapsible" data-toggle="buttons">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="buttons">
                     <span class="preferences-section-icon">&#x1F518;</span>
                     <span>Buttons & Progress</span>
                     <span class="preferences-section-toggle">&#x25BC;</span>
@@ -2203,7 +2209,7 @@ window.installApp = () => {
 
             <!-- Stats Panel Section -->
             <div class="preferences-section collapsed" data-section="stats">
-                <div class="preferences-section-header collapsible" data-toggle="stats">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="stats">
                     <span class="preferences-section-icon">&#x1F4CA;</span>
                     <span>Stats Panel</span>
                     <span class="preferences-section-toggle">&#x25BC;</span>
@@ -2220,23 +2226,6 @@ window.installApp = () => {
                         <label for="pref-stats-text">Text Color</label>
                         <input type="color" id="pref-stats-text" value="#333333" />
                         <button class="preferences-reset-btn" data-target="pref-stats-text" title="Reset to default">Reset</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Desktop Panels Section -->
-            <div class="preferences-section collapsed" data-section="panels">
-                <div class="preferences-section-header collapsible" data-toggle="panels">
-                    <span class="preferences-section-icon">&#x1F5A5;</span>
-                    <span>Desktop Panels</span>
-                    <span class="preferences-section-toggle">&#x25BC;</span>
-                </div>
-                <div class="preferences-section-content" id="pref-section-panels">
-                    <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F524;</span>
-                        <label for="pref-panel-text">Panel Text</label>
-                        <input type="color" id="pref-panel-text" value="#ffffff" />
-                        <button class="preferences-reset-btn" data-target="pref-panel-text" title="Reset to default">Reset</button>
                     </div>
                 </div>
             </div>
@@ -2593,7 +2582,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.941"></script>
+ <script type="module" src="miniCycle-main.js?v=1.942"></script>
 
 <script>
 // Sync About modal version with meta app-version

@@ -138,6 +138,18 @@
     background: rgba(0, 0, 0, 0.05);
 }
 
+.menu-section-header.collapsible:focus-visible {
+    outline: 2px solid var(--accent-color, #007bff);
+    outline-offset: -2px;
+    border-radius: 6px;
+}
+
+.menu-section-grid button:focus-visible {
+    outline: 2px solid var(--accent-color, #007bff);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
 .menu-section-toggle {
     font-size: 8px;
     color: var(--menu-section-header, #555);

@@ -484,6 +484,28 @@ export class TaskOptionsCustomizer {
                 this.saveCustomization(cycleId, checkboxes);
             };
             safeAdd(checkbox, 'change', checkbox._changeHandler);
+
+            // Keyboard: Enter toggles, Arrow Up/Down navigates between options
+            checkbox._keydownHandler = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (!checkbox.disabled) {
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const visible = [...modal.querySelectorAll('input[type="checkbox"]:not(:disabled)')]
+                        .filter(cb => cb.offsetParent !== null);
+                    const idx = visible.indexOf(checkbox);
+                    if (idx === -1) return;
+                    const next = e.key === 'ArrowDown'
+                        ? (idx + 1) % visible.length
+                        : (idx - 1 + visible.length) % visible.length;
+                    visible[next].focus();
+                }
+            };
+            safeAdd(checkbox, 'keydown', checkbox._keydownHandler);
         });
 
         // ✅ Preview panel: Update on hover/tap
@@ -733,6 +755,7 @@ export class TaskOptionsCustomizer {
         modal.querySelectorAll('input[type="checkbox"]').forEach(cb => {
             if (cb._changeHandler) { cb.removeEventListener('change', cb._changeHandler); cb._changeHandler = null; }
             if (cb._focusHandler) { cb.removeEventListener('focus', cb._focusHandler); cb._focusHandler = null; }
+            if (cb._keydownHandler) { cb.removeEventListener('keydown', cb._keydownHandler); cb._keydownHandler = null; }
         });
         modal.querySelectorAll('.task-option-item').forEach(item => {
             if (item._mouseenterHandler) { item.removeEventListener('mouseenter', item._mouseenterHandler); item._mouseenterHandler = null; }

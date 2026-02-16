@@ -13,14 +13,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 1.941 |
+| **App Version** | 1.942 |
 | **Lite Version** | 2.05 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 108 |
 | **Total Tests** | 1691 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 33 |
-| **JSDoc Blocks** | 968 |
+| **JSDoc Blocks** | 970 |
 | **Documentation Files** | 167 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -57,8 +57,8 @@
 | `modules/boot/orchestrator.js` | ~639 | Pure sequence controller |
 | `modules/boot/coreBoot.js` | ~1045 | Core state & init |
 | `modules/boot/featureBoot.js` | ~536 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~785 | UI handlers |
-| **Total** | **~3061** | |
+| `modules/boot/uiBoot.js` | ~809 | UI handlers |
+| **Total** | **~3085** | |
 
 ---
 
