@@ -365,18 +365,19 @@ body.dark-mode .menu-container .menu-grid button:hover {
 
 /* =============================================================================
    DARK MODE ABOUT MODAL
+   (background/color/border handled by --theme-stats-* variables)
    ============================================================================= */
 
-body.dark-mode #about-modal .modal-content {
-    background-color: var(--dark-surface-primary);
-    color: var(--theme-text-primary);
-    border: 1px solid var(--dark-button-hover-bg);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+body.dark-mode #about-modal .about-links {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode #about-modal .about-version-badge {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 body.dark-mode #about-modal a {
     color: var(--dark-link-color);
-    text-decoration: underline;
 }
 
 body.dark-mode #about-modal a:hover {

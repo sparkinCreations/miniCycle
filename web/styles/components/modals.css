@@ -132,95 +132,120 @@ dialog.feedback-modal[open] {
 }
 
 /* =============================================================================
-   ABOUT MODAL
+   ABOUT MODAL (glassmorphism style, matches stats panel)
    ============================================================================= */
 
 .about-modal-content {
-    max-width: 280px;
-    padding: 20px 20px;
+    max-width: 340px;
+    padding: 28px 24px;
+    background: var(--theme-stats-bg);
+    color: var(--theme-stats-text);
+    border: 1px solid var(--theme-stats-border, rgba(255, 255, 255, 0.25));
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.08),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+}
+
+/* Suppress corner logo — the centered about-logo serves as branding */
+.about-modal-content.has-corner-logo::before {
+    display: none;
 }
 
 .about-header {
-    margin-bottom: 10px;
+    margin-bottom: 14px;
 }
 
 .about-logo {
-    width: 32px;
-    height: 32px;
-    margin-bottom: 8px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, #7ec8e3 0%, #4aa3df 100%);
+    border-radius: 10px;
+    padding: 6px;
+    box-shadow: 0 2px 8px rgba(74, 163, 223, 0.3);
 }
 
 .about-modal-content h2 {
-    margin: 0 0 2px 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: #1a1a2e;
+    margin: 0 0 4px 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: inherit;
 }
 
 .about-tagline {
     margin: 0;
-    font-size: 10px;
-    color: #888;
+    font-size: 11px;
+    color: inherit;
+    opacity: 0.6;
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.5px;
 }
 
 .about-version-badge {
     display: inline-block;
-    background: #e8f4f8;
-    color: #2980b9;
-    padding: 3px 10px;
-    border-radius: 10px;
-    font-size: 12px;
-    font-weight: 600;
-    margin-bottom: 12px;
-}
-
-.about-description {
+    background: rgba(255, 255, 255, 0.5);
+    color: inherit;
+    padding: 4px 12px;
+    border-radius: 12px;
     font-size: 13px;
-    line-height: 1.5;
-    color: #555;
-    margin: 0 0 14px 0;
-}
-
-.about-links {
+    font-weight: 600;
     margin-bottom: 14px;
 }
 
+.about-description {
+    font-size: 14px;
+    line-height: 1.6;
+    color: inherit;
+    opacity: 0.8;
+    margin: 0 0 16px 0;
+}
+
+.about-links {
+    background: rgba(255, 255, 255, 0.45);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
 .about-links a {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
 }
 
 .about-link-divider {
-    margin: 0 8px;
-    color: #ccc;
+    margin: 0 10px;
+    opacity: 0.4;
 }
 
 .about-footer {
-    border-top: 1px solid #eee;
-    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    padding-top: 14px;
 }
 
 .about-footer p {
-    margin: 0 0 4px 0;
+    margin: 0 0 8px 0;
     font-size: 12px;
-    color: #777;
+    color: inherit;
+    opacity: 0.6;
 }
 
 .about-footer a {
     font-weight: 600;
+    opacity: 1;
 }
 
 .about-modal-content .about-footer .about-copyright {
     font-size: 11px;
-    color: #999;
+    opacity: 0.5;
 }
 
 .about-modal-content .about-footer .about-cache {
     font-size: 10px;
-    color: #bbb;
+    opacity: 0.4;
     margin-top: 6px;
 }
 
@@ -260,8 +285,15 @@ dialog.feedback-modal[open] {
    Add .has-corner-logo to any positioned container to show the logo.
    ============================================================================= */
 
+/* Note: Only adds position:relative to elements that aren't already positioned.
+   Elements with position:fixed (e.g. .modal-panel) or position:absolute are
+   already positioned ancestors, so ::before works without this override. */
 .has-corner-logo {
     position: relative;
+}
+
+.modal-panel.has-corner-logo {
+    position: fixed;
 }
 
 .has-corner-logo::before {
