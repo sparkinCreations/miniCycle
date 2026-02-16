@@ -1,3 +1,7 @@
+## [1.952] - 2026-02-16
+- feat: enhance about modal styles and functionality for improved user experience
+
+
 ## [1.951] - 2026-02-16
 - chore: update version to 1.950 across all relevant files and changelog
 
