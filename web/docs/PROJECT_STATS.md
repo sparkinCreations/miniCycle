@@ -13,7 +13,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 1.948 |
+| **App Version** | 1.949 |
 | **Lite Version** | 2.05 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 109 |
@@ -57,8 +57,8 @@
 | `modules/boot/orchestrator.js` | ~639 | Pure sequence controller |
 | `modules/boot/coreBoot.js` | ~1045 | Core state & init |
 | `modules/boot/featureBoot.js` | ~536 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~801 | UI handlers |
-| **Total** | **~3077** | |
+| `modules/boot/uiBoot.js` | ~807 | UI handlers |
+| **Total** | **~3083** | |
 
 ---
 

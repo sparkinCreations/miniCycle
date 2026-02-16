@@ -343,9 +343,8 @@ export class TaskOptionsCustomizer {
         modal.setAttribute('aria-labelledby', 'task-options-customizer-title');
 
         modal.innerHTML = `
-            <div class="modal-content task-options-modal">
+            <div class="modal-content task-options-modal has-corner-logo">
                 <div class="modal-header">
-                    <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="miniCycle Logo" class="modal-logo">
                     <div class="modal-header-text">
                         <h2 id="task-options-customizer-title">⚙️ ${getLabel('taskOptions.title')}</h2>
                         <p class="modal-subtitle">${getLabel('taskOptions.subtitle', { vars: { name: escapeHtml(cycleTitle) } })}</p>
