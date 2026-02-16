@@ -11,7 +11,8 @@
 /* ── Gradient background on body ── */
 body {
     background: var(--theme-bg-gradient);
-    z-index: var(--z-background);
+    position: relative;
+    z-index: 0; /* Creates stacking context so ::before renders above gradient */
     padding-top: 0; /* Header handles safe area */
     padding-bottom: env(safe-area-inset-bottom);
 }
@@ -21,7 +22,7 @@ body::before {
     content: '';
     position: fixed;
     inset: 0;
-    z-index: var(--z-background);
+    z-index: -1; /* Above body's gradient background, below body's content */
     background: url("../../assets/images/pattern.svg") repeat;
     background-size: 400px 400px;
     pointer-events: none;
