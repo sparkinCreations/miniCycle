@@ -141,6 +141,10 @@ export class ModalManager {
     closeAllModals() {
         // Close all registry-managed modals
         for (const name of MODAL_NAMES) {
+            const def = MODAL_DEFS[name];
+            // Skip persistent UI elements (e.g., help window) — not closeable via close-all
+            if (def.persistent) continue;
+
             const modal = _deps.getModal(name);
             if (!modal) continue;
 
@@ -152,7 +156,6 @@ export class ModalManager {
                 }
             } else {
                 // Non-dialog elements: use legacy close methods
-                const def = MODAL_DEFS[name];
                 if (def.closeMethod === 'removeVisible') modal.classList.remove('visible');
                 else if (def.closeMethod === 'addHidden') modal.classList.add('hidden');
                 else modal.style.display = 'none';
@@ -425,12 +428,20 @@ export class ModalManager {
         if (this.deps.safeAddEventListener) {
             this.deps.safeAddEventListener(document, "keydown", (e) => {
                 if (e.key === "Escape") {
+                    const hasOpenModal = this.isModalOpen();
+                    const notifications = document.querySelectorAll(DOM_SELECTORS.NOTIFICATION);
+                    const hasNotification = notifications.length > 0;
+
+                    // Only act if there's something to close
+                    if (!hasOpenModal && !hasNotification) return;
+
                     // Native <dialog> elements handle their own ESC (close event fires automatically).
                     // This handler covers non-dialog cleanup: task options, recurring panels, notifications, etc.
-                    this.closeAllModals();
+                    if (hasOpenModal) {
+                        this.closeAllModals();
+                    }
 
-                    // Also clear any notification focus
-                    const notifications = document.querySelectorAll(DOM_SELECTORS.NOTIFICATION);
+                    // Dismiss notifications
                     notifications.forEach(notification => {
                         if (notification.querySelector(DOM_SELECTORS.CLOSE_BTN)) {
                             notification.querySelector(DOM_SELECTORS.CLOSE_BTN).click();

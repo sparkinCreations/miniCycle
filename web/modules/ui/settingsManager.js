@@ -99,6 +99,10 @@ async function loadSubModules(version) {
         await cycleImportModule.initCycleImportManager();
     }
 
+    // New settings toggles: add them ONLY in settingsUIManager.initAllToggles().
+    // init() below calls initAllToggles() as a single batch — no per-toggle
+    // registration needed here. Non-toggle sub-module functions (export,
+    // import, backup) still need individual registration below.
     _subModules = {
         // Settings UI
         setSettingsUIManagerDependencies: settingsUIModule.setSettingsUIManagerDependencies,
@@ -108,6 +112,8 @@ async function loadSubModules(version) {
         setupMoveArrowsToggle: settingsUIModule.setupMoveArrowsToggle,
         setupThreeDotsToggle: settingsUIModule.setupThreeDotsToggle,
         setupCompletedDropdownToggle: settingsUIModule.setupCompletedDropdownToggle,
+        setupHelpWindowToggle: settingsUIModule.setupHelpWindowToggle,
+        setupQuickActionsToggle: settingsUIModule.setupQuickActionsToggle,
         setupScrollToNewTaskToggle: settingsUIModule.setupScrollToNewTaskToggle,
         setupScrollOnLoadToggle: settingsUIModule.setupScrollOnLoadToggle,
         setupDebugModeToggle: settingsUIModule.setupDebugModeToggle,
@@ -234,17 +240,11 @@ export class SettingsManager {
             // Wire dependencies to sub-modules
             wireSubModuleDependencies(di.resolve());
 
-            // Initialize all sub-modules (defensive - one failure shouldn't block the rest)
-            _subModules.setupSettingsMenu?.();
-            _subModules.setupDarkModeToggle?.();
-            _subModules.setupMoveArrowsToggle?.();
-            _subModules.setupThreeDotsToggle?.();
-            _subModules.setupCompletedDropdownToggle?.();
-            _subModules.setupScrollToNewTaskToggle?.();
-            _subModules.setupScrollOnLoadToggle?.();
-            _subModules.setupDebugModeToggle?.();
-            _subModules.setupResetRecurringButton?.();
-            _subModules.setupResetAchievementProgressButton?.();
+            // Initialize all settings UI toggles via batch function.
+            // New toggles only need to be added in settingsUIManager.initAllToggles().
+            _subModules.initAllToggles?.();
+
+            // Initialize non-toggle sub-modules (export, import, backup)
             _subModules.setupExportButton?.();
             _subModules.setupImportButtons?.();
             _subModules.setupDragDropImport?.();

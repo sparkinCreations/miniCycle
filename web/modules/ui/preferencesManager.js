@@ -26,6 +26,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { updateThemeColor } from '../features/themeManager.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { applyHelpWindowVisibility, applyQuickActionsVisibility, loadPanelVisibility, resetPanelVisibility } from './panelVisibilityHelpers.js';
 
 // ============================================================================
 // DEFAULT COLORS
@@ -447,6 +448,42 @@ export class PreferencesManager {
             }
         }
 
+        // Help window visibility toggle (desktop only)
+        const helpWindowToggle = document.getElementById(DOM_IDS.TOGGLE_HELP_WINDOW);
+        if (helpWindowToggle) {
+            helpWindowToggle._changeHandler = (e) => this.handleHelpWindowToggle(e.target.checked);
+            safeAdd(helpWindowToggle, 'change', helpWindowToggle._changeHandler);
+
+            const toggleSwitch = helpWindowToggle.closest('.toggle-switch');
+            if (toggleSwitch) {
+                toggleSwitch._clickHandler = (e) => {
+                    if (e.target !== helpWindowToggle) {
+                        helpWindowToggle.checked = !helpWindowToggle.checked;
+                        this.handleHelpWindowToggle(helpWindowToggle.checked);
+                    }
+                };
+                safeAdd(toggleSwitch, 'click', toggleSwitch._clickHandler);
+            }
+        }
+
+        // Quick actions visibility toggle (desktop only)
+        const quickActionsToggle = document.getElementById(DOM_IDS.TOGGLE_QUICK_ACTIONS);
+        if (quickActionsToggle) {
+            quickActionsToggle._changeHandler = (e) => this.handleQuickActionsToggle(e.target.checked);
+            safeAdd(quickActionsToggle, 'change', quickActionsToggle._changeHandler);
+
+            const toggleSwitch = quickActionsToggle.closest('.toggle-switch');
+            if (toggleSwitch) {
+                toggleSwitch._clickHandler = (e) => {
+                    if (e.target !== quickActionsToggle) {
+                        quickActionsToggle.checked = !quickActionsToggle.checked;
+                        this.handleQuickActionsToggle(quickActionsToggle.checked);
+                    }
+                };
+                safeAdd(toggleSwitch, 'click', toggleSwitch._clickHandler);
+            }
+        }
+
         // Reset buttons
         document.querySelectorAll(DOM_SELECTORS.PREFERENCES_RESET_BTN).forEach(btn => {
             const targetId = btn.dataset.target;
@@ -674,6 +711,9 @@ export class PreferencesManager {
             // Note: The has-bg-image class is handled by applyBgImage based on this setting
         }
 
+        // Load panel visibility toggle states (help window + quick actions)
+        loadPanelVisibility(customColors);
+
         // Load pattern color input
         const patternColorInput = document.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
         if (patternColorInput) {
@@ -814,6 +854,22 @@ export class PreferencesManager {
 
         // Update live preview
         this.updatePreview();
+    }
+
+    /**
+     * Handle help window visibility toggle
+     * @param {boolean} visible - Whether the help window should be visible
+     */
+    handleHelpWindowToggle(visible) {
+        applyHelpWindowVisibility(visible, _deps.AppState);
+    }
+
+    /**
+     * Handle quick actions visibility toggle
+     * @param {boolean} visible - Whether the quick actions panel should be visible
+     */
+    handleQuickActionsToggle(visible) {
+        applyQuickActionsVisibility(visible, _deps.AppState);
     }
 
     /**
@@ -1054,10 +1110,15 @@ export class PreferencesManager {
                     showCheckboxFill: true, // Fix #36: reset to default
                     showCheckboxIncomplete: true, // Fix #36: reset to default
                     showBgPattern: true, // Fix #36: reset to default
-                    showBgImage: true // Fix #36: reset to default (if user has image set)
+                    showBgImage: true, // Fix #36: reset to default (if user has image set)
+                    showHelpWindow: true,
+                    showQuickActions: true
                 };
             });
         }
+
+        // Reset panel visibility (both visible, sync all checkboxes)
+        resetPanelVisibility();
 
         // Reset pattern opacity slider UI
         const defaultPercent = Math.round(DEFAULT_PATTERN_OPACITY * 100);

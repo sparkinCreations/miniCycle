@@ -360,6 +360,25 @@
     transform: rotate(-90deg);
 }
 
+/* Mode badge: shows current mode name when collapsed */
+.mode-description-toggle .mode-badge {
+    font-size: 11px;
+    font-weight: 500;
+    opacity: 0;
+    margin-left: auto;
+    margin-right: 6px;
+    color: inherit;
+    opacity: 0.5;
+    transition: opacity var(--transition-fast) ease;
+    pointer-events: none;
+    display: none;
+}
+
+.mode-description-toggle[aria-expanded="false"] .mode-badge {
+    display: inline;
+    opacity: 0.5;
+}
+
 .mode-description {
     margin-top: 8px;
     padding: 12px;

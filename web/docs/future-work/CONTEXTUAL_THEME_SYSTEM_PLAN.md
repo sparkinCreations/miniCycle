@@ -824,6 +824,27 @@ const COLOR_PRESETS = {
 - **Lens suggestions** - AI suggests lens based on routine names
 - **Lens statistics** - Which lenses are most popular?
 
+### Internationalization (i18n)
+
+The lens system is designed to be compatible with a future language pack system. When i18n ships, the label resolution order becomes: **locale → lens → default (English)**. Lens JSON files will support an optional locale-keyed structure:
+
+```javascript
+// Current (English only, works today)
+"labels": { "task": { "one": "exercise", "other": "exercises" } }
+
+// Future (with locale support)
+"labels": {
+  "en": { "task": { "one": "exercise", "other": "exercises" } },
+  "ja": { "task": "エクササイズ" },
+  "zh": { "task": "锻炼" },
+  "es": { "task": { "one": "ejercicio", "other": "ejercicios" } }
+}
+```
+
+The resolver will detect whether a lens uses the flat (English-only) or locale-keyed structure and handle both. This means existing lenses work unchanged when i18n launches.
+
+See: **[I18N_LANGUAGE_PACK_PLAN.md](./I18N_LANGUAGE_PACK_PLAN.md)** for the full internationalization plan.
+
 ---
 
 ## Open Questions
@@ -844,6 +865,7 @@ const COLOR_PRESETS = {
 - [THEME_ARCHITECTURE.md](./THEME_ARCHITECTURE.md) - Existing theme system
 - [SCHEMA_2_6_PLAN.md](./SCHEMA_2_6_PLAN.md) - Schema evolution plans
 - [HISTORY_AND_ACHIEVEMENTS_PLAN.md](./HISTORY_AND_ACHIEVEMENTS_PLAN.md) - Achievement system
+- [I18N_LANGUAGE_PACK_PLAN.md](./I18N_LANGUAGE_PACK_PLAN.md) - Internationalization plan
 
 ---
 

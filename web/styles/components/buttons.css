@@ -236,6 +236,11 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
     visibility: hidden;
 }
 
+/* Hide help window when user preference is off */
+body.hide-help-window .help-window {
+    display: none;
+}
+
 .help-window h4 {
     margin: 0 0 8px 0;
     font-size: 16px;

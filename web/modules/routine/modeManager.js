@@ -449,6 +449,15 @@ export class ModeManager {
 
         descriptionBox.innerHTML = `<strong>${modeTitle}:</strong><br>${modeDetail}`;
 
+        // Update the mode badge on the toggle button (visible when collapsed)
+        const toggleBtn = this.deps.getElementById(DOM_IDS.MODE_DESCRIPTION_TOGGLE);
+        if (toggleBtn) {
+            const badge = toggleBtn.querySelector('.mode-badge');
+            if (badge) {
+                badge.textContent = this.getModeName(currentMode);
+            }
+        }
+
         console.log('✅ ModeManager: Mode description updated:', currentMode);
     }
 
