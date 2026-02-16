@@ -317,25 +317,25 @@ body.hide-quick-actions .quick-actions-menu-row {
    ACTION PICKER MODAL
    ============================================================================= */
 
-.quick-actions-picker-overlay {
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
+/* Native <dialog> — showModal() handles top layer, ::backdrop handles overlay */
+dialog.quick-actions-picker-overlay {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+dialog.quick-actions-picker-overlay::backdrop {
     background: rgba(0, 0, 0, 0.6);
-    z-index: var(--z-modal);
+}
+
+dialog.quick-actions-picker-overlay:not([open]) {
+    display: none;
+}
+
+dialog.quick-actions-picker-overlay[open] {
     display: flex;
     justify-content: center;
     align-items: center;
-    opacity: 0;
-    transition: opacity var(--transition-fast) ease;
-    pointer-events: none;
-}
-
-.quick-actions-picker-overlay.visible {
-    opacity: 1;
-    pointer-events: all;
 }
 
 .quick-actions-picker {

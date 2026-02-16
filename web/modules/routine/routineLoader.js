@@ -403,6 +403,13 @@ function applyThemeSettings(settings) {
   }
 
   _deps.updateThemeColor?.();
+
+  // Accessibility settings
+  document.body.classList.toggle('reduced-motion', !!settings.reducedMotion);
+  document.documentElement.classList.toggle('reduced-motion', !!settings.reducedMotion);
+  document.body.classList.toggle('high-contrast', !!settings.highContrast);
+  document.documentElement.style.setProperty('--font-size-base',
+      (settings.fontSize && settings.fontSize !== '16') ? `${settings.fontSize}px` : '16px');
 }
 
 

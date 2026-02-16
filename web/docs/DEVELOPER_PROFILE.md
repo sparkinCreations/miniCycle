@@ -1,6 +1,6 @@
 # Developer Profile
 
-**Last Updated:** February 1, 2026
+**Last Updated:** February 16, 2026
 
 This document captures insights about the developer behind miniCycle to help with future collaboration and context continuity.
 
@@ -279,6 +279,13 @@ Before JavaScript, MJ was already building automated systems in spreadsheets:
 - **Visual consistency sweeps** - Doesn't fix one instance of a visual problem. Immediately scans for every other place the same inconsistency exists and fixes them all. Example: fixed settings close button style, then immediately asked about reminders and recurring panel close buttons. Thinks in systems, not individual screens.
 - **Fast decision loop on aesthetics** - Evaluates visual changes instantly and knows what's wrong without deliberating. Cancel button went through three iterations (ghost → gray gradient → dark slate) and each round the feedback was immediate and specific. Doesn't overthink visual decisions — looks, reacts, adjusts.
 - **Accepts contrary advice, then improves anyway** - When told "don't change X," doesn't argue — accepts the reasoning, then finds a different way to improve X. Example: accepted advice not to restyle the Open Routine modal's close button, then immediately improved the modal by swapping button positions and fixing the color hierarchy.
+- **Data perimeter thinking** - Has a mental model of the app as having a trust boundary. Any feature that pushes data outside that boundary (browser notifications, exports, feedback) gets explicit user consent and transparent disclosure. Traces implications through code, UI warnings, and legal documents. Not just "security" — it's a privacy-by-design instinct.
+- **Treats legal docs as maintained code** - Privacy policy and terms of service aren't one-time artifacts. After feature changes that affect data flow, checks and updates legal documents the same way they'd update a constants file. Most developers never revisit legal docs after initial creation.
+- **Pre-builds vocabulary before migration** - Adds all label keys, constants, and infrastructure before writing the code that uses them. Feedback modal had all 10 label keys sitting in defaultLabels.js before any code called them. Builds the runway before takeoff, not during.
+- **Layered migration strategy** - Doesn't do big-bang rewrites. Converts structural layer first (HTML element type, JS event handling), then comes back in a separate pass for cosmetic layer (CSS modernization, string migration). Reduces risk by changing one layer at a time. Feedback modal: dialog conversion in one session, CSS + labels in the next.
+- **Validates AI independently before sharing context** - Asks for insights *before* asking AI to read the developer profile. Compares independent observations against documented record. If observations match, profile is confirmed accurate. If new, record extends. QA instinct applied to self-knowledge.
+- **Boring middle persistence** - Doesn't slow down when novelty fades. Architectural decisions are made, patterns established — what's left is migration work (modal-by-modal modernization, string-by-string label migration). Applies same rigor to the 8th modal as the 1st. Most solo developers abandon projects at this stage.
+- **Product-minded priority ordering** - Sequences work as: functionality → accessibility → correctness → polish. Fixes critical mobile bug first, then converts modals to dialog (focus/accessibility), then migrates strings (i18n readiness), then modernizes CSS (visual polish). Not developer-minded ordering (which would start with the most visible change).
 
 ### Weaknesses / Blind Spots
 
@@ -300,6 +307,8 @@ Before JavaScript, MJ was already building automated systems in spreadsheets:
 6. **Likely to underprice freelance work** - Skills are senior-level (architecture, testing, production-grade code) but positioning and confidence are catching up. Should push rates higher than initial instinct suggests. The work quality already justifies premium rates.
 
 7. **Fear of failing clients as freelance barrier** - Initial hesitation about freelancing centers on "what if I mess up a project?" Reality check: already handles production issues (user-facing bugs, caching problems) without spiraling. The January 2026 caching revert is evidence — identified problem, reverted quickly, no drama. This fear is unfounded given demonstrated ability to handle real problems calmly.
+
+8. **Layers outside own code** - Occasionally forgets about intermediary layers between code and user: macOS notification settings blocking browser notifications, incognito mode auto-denying permissions. Accepts and moves on instantly when pointed out. Worth maintaining a mental checklist: "what sits between my code and the user?" (OS settings, browser policies, network, permissions).
 
 ---
 
@@ -399,6 +408,19 @@ The user-facing simplicity masks engineering depth:
 ## Session Insights
 
 *Behavioral observations only — technical changelogs belong in git history.*
+
+### February 16, 2026
+- **Data perimeter thinking:** When adding browser notifications, immediately recognized that task names leaving the app crosses a trust boundary — insisted on a privacy warning before the feature was even built. This isn't security awareness (adversarial inputs) — it's a mental model about where data flows and what crossing a boundary means for user trust.
+- **Legal docs as maintained code:** After shipping browser notifications, unprompted asked to read the privacy policy and terms of service to update them. Treated legal documents as code that must stay in sync with features — most indie developers never touch legal docs after initial creation.
+- **Micro-persistence instinct:** Asked "can the app remember it?" for a collapsible privacy notice's open/closed state. No user preference is too small to persist. Every interaction detail matters.
+- **Subtraction in UX (continued):** Privacy warning went from always-visible paragraph → collapsible `<details>` element. Information available but doesn't clutter the interface. Same "what can I remove" instinct documented in earlier sessions.
+- **Layers-outside-code blind spot:** Forgot that macOS has its own notification permission layer above the browser's — notifications were sending successfully in code but invisible at the OS level. Accepted immediately and moved on. Worth noting as a debugging checklist item: "what sits between my code and the user?"
+- **Traces implications end-to-end:** One checkbox (browser notifications) triggered updates across: confirmation modal, static HTML warning, CSS, labels, privacy policy, AND terms of service. Six files updated for user-facing transparency on a single toggle. Didn't stop at "feature works."
+- **Layered migration in practice:** Feedback modal was already converted to `<dialog>` with focus management in a previous pass. Came back in a separate session for CSS modernization and label migration. One layer at a time — structural, then cosmetic. Reduces blast radius per change.
+- **Pre-built infrastructure validated:** All 10 feedback label keys existed in defaultLabels.js before any code referenced them. When the migration finally happened, it was pure wiring — no label creation needed. Forward investment paid off.
+- **Validates AI observations independently:** Asked "any new insights about me?" before asking AI to read the developer profile. Compared independent observations against 500+ lines of documented patterns. Uses AI as a calibration instrument, not just a work tool.
+- **Confidence evolution:** Questions have shifted from "how does my code compare to industry?" (external benchmark, Jan 2026) to "any insights about me?" (self-knowledge, Feb 2026). Past needing to know if they're good enough — now interested in understanding their own patterns. The imposter syndrome entry may need revisiting.
+- **Systematic modal modernization:** Not fixing what's broken — proactively bringing every modal to the same standard. Quick actions picker → dialog conversion. Feedback modal → labels + CSS. Methodical, not reactive. Engineering management of own codebase.
 
 ### February 1, 2026
 - **Audit-driven development:** Unprompted requests to audit restore/reset and import/export paths — actively searching for problems that haven't manifested yet

@@ -224,6 +224,14 @@ export class MenuManager {
 
         // Setup collapsible menu sections
         this.setupCollapsibleSections();
+
+        // Close menu when legal links are clicked on mobile
+        const legalLinks = this.deps.querySelectorAll('.menu-link-button');
+        legalLinks.forEach(link => {
+            this.deps.safeAddEventListener(link, 'click', () => {
+                this.hideMainMenu();
+            });
+        });
     }
 
     /**

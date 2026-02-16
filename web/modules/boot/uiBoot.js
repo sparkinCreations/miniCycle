@@ -607,6 +607,12 @@ export function isTouchDevice() {
 export function handleTryLiteVersionClick(deps) {
   const showConfirmationModal = deps?.showConfirmationModal || getUiApi()?.showConfirmationModal;
 
+  try {
+    getUiApi()?.hideMainMenu?.();
+  } catch (e) {
+    // Menu API not ready - ok
+  }
+
   showConfirmationModal?.({
     title: "Switch to Lite Version",
     message: "Try the Lite version? It works great on older devices and slower connections.",

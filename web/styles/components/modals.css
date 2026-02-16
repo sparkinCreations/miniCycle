@@ -28,7 +28,9 @@ dialog.modal-overlay,
 dialog.preferences-modal,
 dialog.themes-modal,
 dialog.games-modal,
-dialog.settings-modal {
+dialog.settings-modal,
+dialog.feedback-modal,
+dialog.quick-actions-picker-overlay {
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -43,7 +45,8 @@ dialog.preferences-modal:not([open]),
 dialog.themes-modal:not([open]),
 dialog.games-modal:not([open]),
 dialog.settings-modal:not([open]),
-dialog.feedback-modal:not([open]) {
+dialog.feedback-modal:not([open]),
+dialog.quick-actions-picker-overlay:not([open]) {
     display: none;
 }
 
@@ -53,7 +56,8 @@ dialog.preferences-modal[open],
 dialog.themes-modal[open],
 dialog.games-modal[open],
 dialog.settings-modal[open],
-dialog.feedback-modal[open] {
+dialog.feedback-modal[open],
+dialog.quick-actions-picker-overlay[open] {
     display: flex;
 }
 
@@ -504,27 +508,37 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
    ============================================================================= */
 
 .feedback-modal {
-    display: none;
-    position: fixed;
-    z-index: var(--z-modal);
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
     justify-content: center;
     align-items: center;
 }
 
 .feedback-modal-content {
-    background: var(--theme-modal-bg, rgb(203, 203, 203));
+    background: var(--theme-modal-bg, #ffffff);
     color: var(--theme-modal-text, #333);
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-    width: 80%;
-    max-width: 300px;
+    padding: 24px 20px 0;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
+    width: 420px;
+    max-width: 95%;
     text-align: center;
+    position: relative;
+    animation: slideUp var(--transition-normal) ease;
+}
+
+.feedback-modal-content h2 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--theme-modal-text, #333);
+}
+
+.feedback-modal-content p {
+    font-size: 13px;
+    color: var(--theme-modal-text, #666);
+    opacity: 0.7;
+    margin: 0 0 16px 0;
+    line-height: 1.5;
 }
 
 .close-feedback-modal {
@@ -540,6 +554,10 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     line-height: 1;
 }
 
+.close-feedback-modal:hover {
+    opacity: 0.7;
+}
+
 #feedback-text {
     width: 90%;
     height: 100px;
@@ -553,20 +571,49 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     color: var(--theme-input-text, #333);
 }
 
+#feedback-email {
+    width: 90%;
+    border: 1px solid var(--theme-input-border, #ccc);
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 14px;
+    margin-top: 8px;
+    background: var(--theme-input-bg, white);
+    color: var(--theme-input-text, #333);
+}
+
 #submit-feedback {
-    background: #007BFF;
-    color: white;
-    border: none;
-    padding: 10px 15px;
+    display: block;
+    background: var(--menu-close-bg, #3d7ab5);
+    color: var(--menu-close-text, white);
     font-size: 16px;
-    border-radius: 6px;
+    font-weight: 700;
+    padding: 14px;
+    margin-top: 16px;
+    margin-left: -20px;
+    margin-right: -20px;
+    margin-bottom: 0;
+    width: calc(100% + 40px);
+    border: none;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     cursor: pointer;
-    margin-top: 10px;
-    transition: background var(--transition-normal) ease-in-out;
+    transition: background var(--transition-fast) ease;
+    text-align: center;
 }
 
 #submit-feedback:hover {
-    background: #0056b3;
+    background: var(--menu-close-hover-bg, #326a9e);
+}
+
+#submit-feedback:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#thank-you-message {
+    color: var(--theme-success, green);
+    font-weight: bold;
+    padding: 16px 0;
 }
 
 /* =============================================================================
@@ -587,21 +634,15 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     overflow: auto;
 }
 
-/* Native <dialog> override — showModal() handles display, ::backdrop handles overlay */
+/* Uses show() instead of showModal() so notifications (z-notification) layer above */
 dialog.reminders-modal {
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 dialog.reminders-modal[open] {
     display: flex;
-}
-
-dialog.reminders-modal::backdrop {
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
 }
 
 .reminders-modal-content {
@@ -659,6 +700,41 @@ dialog.reminders-modal::backdrop {
 #frequencyValue {
     width: 60px;
     margin-right: 6px;
+}
+
+/* Collapsible privacy notice */
+.settings-warning-details {
+    margin: -2px 0 10px 0;
+    padding-left: 34px;
+}
+
+.settings-warning-summary {
+    font-size: 0.78rem;
+    opacity: 0.6;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+}
+
+.settings-warning-summary::-webkit-details-marker {
+    display: none;
+}
+
+.settings-warning-summary::before {
+    content: '▸ ';
+}
+
+.settings-warning-details[open] .settings-warning-summary::before {
+    content: '▾ ';
+}
+
+/* Privacy/info warning text below settings toggles */
+.settings-warning {
+    font-size: 0.78rem;
+    opacity: 0.6;
+    margin: 4px 0 0 0;
+    padding: 0;
+    line-height: 1.4;
 }
 
 /* NOTE: Onboarding modal styles are defined in onboarding.css */

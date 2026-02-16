@@ -1,3 +1,7 @@
+## [1.954] - 2026-02-16
+- chore: update version to 1.953 across all relevant files and changelog
+
+
 ## [1.953] - 2026-02-16
 - feat: enhance drag-and-drop functionality for iOS native support and improve touch handling
 - feat: prevent browser scrolling during drag operations with touch-action styles

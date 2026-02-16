@@ -363,6 +363,11 @@ export const DEFAULT_LABELS = deepFreeze({
         settingSaveFailed:       'Failed to save setting',
         debugEnabled:            'Debug mode enabled - console.log output visible',
         debugDisabled:           'Debug mode disabled - console.log output suppressed',
+        reducedMotionEnabled:    'Reduced motion enabled',
+        reducedMotionDisabled:   'Reduced motion disabled',
+        highContrastEnabled:     'High contrast mode enabled',
+        highContrastDisabled:    'High contrast mode disabled',
+        fontSizeChanged:         'Font size changed to {size}',
         recurringDefaultReset:   'Recurring default reset to Daily Indefinitely.',
         resetDefaultsFailed:     'Failed to reset defaults.',
         achievementReset:        'Achievement progress reset. Badges are now locked.',
@@ -685,7 +690,15 @@ export const DEFAULT_LABELS = deepFreeze({
         diagnostics:          'App Diagnostics',
         checkUpdates:         'Check for Updates',
         tryLite:              'Try Lite Version',
-        factoryReset:         'Factory Reset'
+        factoryReset:         'Factory Reset',
+        accessibility:        'Accessibility',
+        reducedMotion:        'Reduced Motion',
+        highContrast:         'High Contrast',
+        fontSize:             'Font Size',
+        fontSizeSmall:        'Small',
+        fontSizeDefault:      'Default',
+        fontSizeLarge:        'Large',
+        fontSizeExtraLarge:   'Extra Large'
     },
 
     // ========================================================================
@@ -878,6 +891,14 @@ export const DEFAULT_LABELS = deepFreeze({
         title:           'Reminders & Notifications',
         enable:          'Enable Reminders',
         enableDueDate:   'Enable Due Date Notifications',
+        browserNotifications:        'Browser Notifications',
+        browserNotificationsWarning: 'Enabling browser notifications will allow your task names to appear in your device\'s notification center. This data will be visible outside this app. Ensure notifications are enabled for your browser in your OS settings.',
+        permissionGranted:           'Browser notifications enabled',
+        permissionDenied:            'Notification permission was denied. You can change this in browser settings.',
+        permissionBlocked:           'Browser notifications are blocked for this site. To enable, click the lock icon in the address bar and allow notifications.',
+        permissionUnsupported:       'Browser notifications are not supported on this device',
+        permissionTestFailed:        'Permission was granted but the test notification failed. Your browser may be blocking notifications.',
+        browserNotificationsDisabled: 'Browser notifications disabled',
         indefinitely:    'Remind Indefinitely?',
         count:           'Number of Times:',
         every:           'Every:',
@@ -901,15 +922,18 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     feedback: {
-        title:        'Provide Feedback',
-        description:  'We appreciate your feedback! Let us know how we can improve miniCycle.',
-        placeholder:  'Write your feedback here...',
-        email:        'Your Email (optional)',
-        submit:       'Submit',
-        thanks:       'Thank you for your feedback!',
-        sending:      'Sending...',
-        errorSend:    'Error sending feedback. Please try again.',
-        errorNetwork: 'Network error. Please try again later.'
+        title:         'Provide Feedback',
+        description:   'We appreciate your feedback! Let us know how we can improve miniCycle.',
+        placeholder:   'Write your feedback here...',
+        email:         'Your Email (optional)',
+        emailLabel:    'Your email (optional)',
+        feedbackLabel: 'Your feedback',
+        closeAria:     'Close feedback modal',
+        submit:        'Submit',
+        thanks:        'Thank you for your feedback!',
+        sending:       'Sending...',
+        errorSend:     'Error sending feedback. Please try again.',
+        errorNetwork:  'Network error. Please try again later.'
     },
 
     // ========================================================================
@@ -1252,6 +1276,11 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.settingSaveFailed',
     'notify.debugEnabled',
     'notify.debugDisabled',
+    'notify.reducedMotionEnabled',
+    'notify.reducedMotionDisabled',
+    'notify.highContrastEnabled',
+    'notify.highContrastDisabled',
+    'notify.fontSizeChanged',
     'notify.recurringDefaultReset',
     'notify.achievementReset',
     'notify.achievementResetCancelled',
@@ -1381,6 +1410,14 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'settings.scrollToLast',
     'settings.backupAll',
     'settings.restoreAll',
+    'settings.accessibility',
+    'settings.reducedMotion',
+    'settings.highContrast',
+    'settings.fontSize',
+    'settings.fontSizeSmall',
+    'settings.fontSizeDefault',
+    'settings.fontSizeLarge',
+    'settings.fontSizeExtraLarge',
 
     // Undo/redo
     'undo.taskCompletedOne',

@@ -74,7 +74,9 @@ const di = createDIModule('TaskCRUD', {
     requestUIUpdate: optional(null),
     // Task search visibility
     updateSearchVisibility: optional(null),
-    getTaskCount: optional(null)
+    getTaskCount: optional(null),
+    // Reminders restart after task deletion
+    startReminders: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -479,6 +481,9 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
 
                     // Update search visibility after deleting task
                     _deps.updateSearchVisibility?.(_deps.getTaskCount?.() ?? 0);
+
+                    // Restart reminders in case deleted task had reminders enabled
+                    _deps.startReminders?.();
                 } else {
                     console.warn('⚠️ AppState not ready for task deletion - state may be lost');
                     _deps.showNotification?.(getLabel('notify.taskDeleteFailed'), 'warning');

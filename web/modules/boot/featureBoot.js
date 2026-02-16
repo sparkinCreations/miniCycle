@@ -248,7 +248,8 @@ export async function bootFeatures(deps, coreResult) {
       await initTaskCRUD(); // Load utilities with version cache-busting
       setTaskCRUDDependencies({
         updateSearchVisibility: taskSearchMod.updateSearchVisibility,
-        getTaskCount: taskSearchMod.getTaskCount
+        getTaskCount: taskSearchMod.getTaskCount,
+        startReminders: deps.features?.startReminders
       });
 
       console.log('✅ TaskSearch module loaded');

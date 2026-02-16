@@ -40,7 +40,7 @@ input[type="text"] {
     background: var(--theme-input-bg);
     color: var(--theme-input-text);
     padding: 7px;
-    font-size: 16px;
+    font-size: var(--font-size-base);
     border: none;
     border-radius: var(--radius-sm);
     outline: none;
@@ -60,7 +60,7 @@ input[type="text"]:focus {
     background: rgb(255, 255, 255);
     color: #333;
     padding: 7px 0 7px 7px;
-    font-size: 16px;
+    font-size: var(--font-size-base);
     border: none;
     border-radius: 6px;
     outline: none;

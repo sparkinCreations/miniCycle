@@ -417,8 +417,10 @@ export class QuickActionsManager {
                         break;
                     }
                     this.deps.showStatsPanel();
+                    this.deps.hideMainMenu?.();
                     break;
                 case 'switchMiniCycle': {
+                    this.deps.hideMainMenu?.();
                     setTimeout(() => {
                         try {
                             const routineBtn = document.getElementById(DOM_IDS.ROUTINE_SWITCHER_BTN);
@@ -468,6 +470,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openSettings': {
+                    this.deps.hideMainMenu?.();
                     setTimeout(() => {
                         try {
                             const settingsBtn = document.getElementById(DOM_IDS.OPEN_SETTINGS);
@@ -620,8 +623,11 @@ export class QuickActionsManager {
             grid.appendChild(sectionDiv);
         }
 
-        // Show overlay
-        this._pickerOverlay.classList.add('visible');
+        // Show dialog with focus management
+        this._pickerOverlay._previousFocus = document.activeElement;
+        if (!this._pickerOverlay.open) {
+            this._pickerOverlay.showModal();
+        }
     }
 
     _createPickerOverlay() {
@@ -631,9 +637,10 @@ export class QuickActionsManager {
             return;
         }
 
-        const overlay = document.createElement('div');
-        overlay.id = DOM_IDS.QUICK_ACTIONS_PICKER_OVERLAY;
-        overlay.className = 'quick-actions-picker-overlay';
+        const dialog = document.createElement('dialog');
+        dialog.id = DOM_IDS.QUICK_ACTIONS_PICKER_OVERLAY;
+        dialog.className = 'quick-actions-picker-overlay';
+        dialog.setAttribute('data-modal', '');
 
         const picker = document.createElement('div');
         picker.className = 'quick-actions-picker has-corner-logo';
@@ -643,7 +650,7 @@ export class QuickActionsManager {
         picker.appendChild(title);
 
         const grid = document.createElement('div');
-        grid.className = 'quick-actions-picker-grid';  // matches DOM_SELECTORS.QUICK_ACTIONS_PICKER_GRID (without dot)
+        grid.className = 'quick-actions-picker-grid';
         picker.appendChild(grid);
 
         const cancelBtn = document.createElement('button');
@@ -652,22 +659,27 @@ export class QuickActionsManager {
         cancelBtn.addEventListener('click', () => this._hidePickerOverlay());
         picker.appendChild(cancelBtn);
 
-        overlay.appendChild(picker);
+        dialog.appendChild(picker);
 
-        // Close on overlay click (not picker itself)
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
+        // Close on backdrop click (click on dialog element itself, outside picker)
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) {
                 this._hidePickerOverlay();
             }
         });
 
-        document.body.appendChild(overlay);
-        this._pickerOverlay = overlay;
+        // Restore focus when dialog closes (covers native ESC + programmatic close)
+        dialog.addEventListener('close', () => {
+            dialog._previousFocus?.focus({ focusVisible: false });
+        });
+
+        document.body.appendChild(dialog);
+        this._pickerOverlay = dialog;
     }
 
     _hidePickerOverlay() {
-        if (this._pickerOverlay) {
-            this._pickerOverlay.classList.remove('visible');
+        if (this._pickerOverlay?.open) {
+            this._pickerOverlay.close();
         }
         this._pendingSlotIndex = null;
     }
@@ -687,10 +699,10 @@ export class QuickActionsManager {
         const nextBtn = panel.querySelector(DOM_SELECTORS.QUICK_ACTIONS_NEXT);
 
         if (prevBtn) {
-            prevBtn.addEventListener('click', () => this.cycleView('prev'));
+            prevBtn.addEventListener('click', () => this._animatedCycleView('prev', panel));
         }
         if (nextBtn) {
-            nextBtn.addEventListener('click', () => this.cycleView('next'));
+            nextBtn.addEventListener('click', () => this._animatedCycleView('next', panel));
         }
 
         // Swipe gesture on header
@@ -700,25 +712,140 @@ export class QuickActionsManager {
         }
     }
 
+    _animatedCycleView(direction, panel) {
+        const isReducedMotion =
+            document.body.classList.contains('reduced-motion') ||
+            document.documentElement.classList.contains('reduced-motion');
+
+        if (isReducedMotion) {
+            this.cycleView(direction);
+            return;
+        }
+
+        const slots = panel?.querySelector('.quick-actions-slots');
+        if (!slots) {
+            this.cycleView(direction);
+            return;
+        }
+
+        const offset = direction === 'next' ? -80 : 80;
+
+        // Slide out
+        slots.style.transition = 'transform var(--transition-fast) ease-in, opacity var(--transition-fast) ease-in';
+        slots.style.transform = `translateX(${offset}px)`;
+        slots.style.opacity = '0';
+
+        let fired = false;
+        const onEnd = () => {
+            if (fired) return;
+            fired = true;
+            slots.removeEventListener('transitionend', onEnd);
+            this.cycleView(direction);
+            // Slide in from opposite side
+            requestAnimationFrame(() => {
+                slots.style.transition = 'none';
+                slots.style.transform = `translateX(${-offset}px)`;
+                slots.style.opacity = '0';
+                requestAnimationFrame(() => {
+                    slots.style.transition = 'transform var(--transition-normal) ease-out, opacity var(--transition-normal) ease-out';
+                    slots.style.transform = 'translateX(0)';
+                    slots.style.opacity = '1';
+                });
+            });
+        };
+        slots.addEventListener('transitionend', onEnd, { once: true });
+        setTimeout(onEnd, 300);
+    }
+
     _setupSwipeGesture(element) {
         let startX = 0;
         const threshold = 40;
+        const maxDrag = 80;
 
+        // Find the slots container that is a sibling of the header
+        const getSlotsContainer = () => {
+            const panel = element.closest('.quick-actions-panel, .quick-actions-menu-row');
+            return panel?.querySelector('.quick-actions-slots');
+        };
+
+        const isReducedMotion = () =>
+            document.body.classList.contains('reduced-motion') ||
+            document.documentElement.classList.contains('reduced-motion');
+
+        const applyDragOffset = (diff) => {
+            if (isReducedMotion()) return;
+            const slots = getSlotsContainer();
+            if (!slots) return;
+            // Clamp and apply rubber-band feel
+            const clamped = Math.max(-maxDrag, Math.min(maxDrag, diff));
+            const dampened = clamped * 0.5;
+            slots.style.transition = 'none';
+            slots.style.transform = `translateX(${dampened}px)`;
+            slots.style.opacity = String(1 - Math.abs(dampened) / (maxDrag * 1.5));
+        };
+
+        const releaseDrag = (diff) => {
+            const slots = getSlotsContainer();
+            if (!slots) return;
+
+            if (isReducedMotion()) {
+                // No animation, just cycle
+                if (Math.abs(diff) >= threshold) {
+                    this.cycleView(diff > 0 ? 'prev' : 'next');
+                }
+                return;
+            }
+
+            const swiped = Math.abs(diff) >= threshold;
+            if (swiped) {
+                // Slide out in swipe direction, then cycle and reset
+                const direction = diff > 0 ? 1 : -1;
+                slots.style.transition = 'transform var(--transition-fast) ease-in, opacity var(--transition-fast) ease-in';
+                slots.style.transform = `translateX(${direction * maxDrag}px)`;
+                slots.style.opacity = '0';
+
+                let fired = false;
+                const onEnd = () => {
+                    if (fired) return;
+                    fired = true;
+                    slots.removeEventListener('transitionend', onEnd);
+                    this.cycleView(diff > 0 ? 'prev' : 'next');
+                    // After render, slide in from opposite side
+                    requestAnimationFrame(() => {
+                        slots.style.transition = 'none';
+                        slots.style.transform = `translateX(${-direction * maxDrag}px)`;
+                        slots.style.opacity = '0';
+                        requestAnimationFrame(() => {
+                            slots.style.transition = 'transform var(--transition-normal) ease-out, opacity var(--transition-normal) ease-out';
+                            slots.style.transform = 'translateX(0)';
+                            slots.style.opacity = '1';
+                        });
+                    });
+                };
+                slots.addEventListener('transitionend', onEnd, { once: true });
+                // Safety fallback in case transitionend doesn't fire
+                setTimeout(onEnd, 300);
+            } else {
+                // Snap back
+                slots.style.transition = 'transform var(--transition-fast) ease-out, opacity var(--transition-fast) ease-out';
+                slots.style.transform = 'translateX(0)';
+                slots.style.opacity = '1';
+            }
+        };
+
+        // Touch events
         element.addEventListener('touchstart', (e) => {
             startX = e.touches[0].clientX;
         }, { passive: true });
 
-        element.addEventListener('touchend', (e) => {
-            const endX = e.changedTouches[0].clientX;
-            const diff = endX - startX;
+        element.addEventListener('touchmove', (e) => {
+            const diff = e.touches[0].clientX - startX;
+            applyDragOffset(diff);
+        }, { passive: true });
 
-            if (Math.abs(diff) >= threshold) {
-                if (diff > 0) {
-                    this.cycleView('prev');
-                } else {
-                    this.cycleView('next');
-                }
-            }
+        element.addEventListener('touchend', (e) => {
+            const diff = e.changedTouches[0].clientX - startX;
+            releaseDrag(diff);
         }, { passive: true });
 
         // Desktop: mouse drag on header
@@ -726,16 +853,17 @@ export class QuickActionsManager {
             this._swipeStartX = e.clientX;
         });
 
+        element.addEventListener('mousemove', (e) => {
+            if (this._swipeStartX !== null) {
+                const diff = e.clientX - this._swipeStartX;
+                applyDragOffset(diff);
+            }
+        });
+
         element.addEventListener('mouseup', (e) => {
             if (this._swipeStartX !== null) {
                 const diff = e.clientX - this._swipeStartX;
-                if (Math.abs(diff) >= threshold) {
-                    if (diff > 0) {
-                        this.cycleView('prev');
-                    } else {
-                        this.cycleView('next');
-                    }
-                }
+                releaseDrag(diff);
                 this._swipeStartX = null;
             }
         });

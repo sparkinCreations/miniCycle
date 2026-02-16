@@ -51,8 +51,9 @@ if (isTouchDevice) {
 #### 1. Long Press Menu Access
 
 - **Trigger**: 500ms+ touch hold on task
-- **Behavior**: Three-dot menu equivalent appears
-- **Visual Feedback**: Task highlights during press
+- **Behavior**: Task enters drag mode + shows task buttons (if three-dots mode is disabled)
+- **Three-dots mode**: Long press activates drag only — dedicated button handles menu visibility
+- **Visual Feedback**: Task highlights during press, iOS shows native drag preview
 - **Haptic**: Vibration feedback (if supported)
 
 #### 2. Gesture-Based Navigation
@@ -70,21 +71,29 @@ The system prevents interaction conflicts through careful event management:
 
 ```javascript
 // Prevents swipe during active long press
-let longPressActive = false;
-let swipeGestureEnabled = true;
+// isDragging is a closure variable per task element
 
 taskElement.addEventListener('touchstart', (e) => {
-    longPressTimer = setTimeout(() => {
-        longPressActive = true;
-        swipeGestureEnabled = false;
-        showTaskMenu();
+    holdTimeout = setTimeout(() => {
+        isLongPress = true;
+        this.draggedTask = taskElement;
+        isDragging = true;
+        taskElement.classList.add("dragging");
+        // Three-dots check: only show task buttons if three-dots mode is OFF
+        const threeDotsEnabled = document.body.classList.contains('show-three-dots-enabled');
+        if (!threeDotsEnabled) {
+            this.deps.revealTaskButtons?.(taskElement, 'long-press');
+        }
     }, 500);
 });
 
 taskElement.addEventListener('touchmove', (e) => {
-    if (longPressActive) {
+    // PRIORITY: If already dragging, process drag FIRST
+    if (isDragging && this.draggedTask) {
         e.preventDefault(); // Block swipe navigation
-        return false;
+        const targetTask = document.elementFromPoint(x, y)?.closest('.task');
+        if (targetTask) this.handleRearrange(targetTask, e);
+        return;
     }
     // Allow normal swipe for stats panel
 });
@@ -104,9 +113,13 @@ taskElement.addEventListener('touchmove', (e) => {
 
 ```javascript
 taskElement.addEventListener('dragstart', (e) => {
-    e.dataTransfer.setData("text/plain", taskElement.id);
-    draggedElement = taskElement;
-    document.body.style.cursor = 'move';
+    this._nativeDragActive = true;  // iOS native DnD handoff flag
+    this.draggedTask = taskElement;
+    e.dataTransfer.setData("text/plain", "");
+    taskElement.classList.add("dragging");
+    // Desktop only: hide ghost image. Mobile: let iOS show native preview.
+    const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (!isMobile) e.dataTransfer.setDragImage(transparentPixel, 0, 0);
 });
 ```
 
@@ -122,22 +135,31 @@ taskElement.addEventListener('dragstart', (e) => {
 - **Visual State**: Tasks show move arrows and drag handles
 - **Completion**: Click outside or explicit exit
 
-### Mobile Touch Drag Alternative
+### Mobile Touch Drag
 
-Since mobile drag-and-drop is unreliable across browsers:
+Mobile rearranging uses **iOS native HTML5 Drag and Drop** triggered by long press:
 
-#### 1. Arrow-Based Reordering
+#### 1. iOS Native DnD (Primary)
 
-- **Trigger**: Long press → Rearrange mode
-- **Interface**: Up/down arrow buttons appear
+- **Trigger**: Long press (500ms) on `draggable="true"` element
+- **Visual**: iOS shows native drag preview (dark semi-transparent element with content)
+- **Events**: `touchstart → dragstart → touchcancel → dragover... → drop`
+- **Critical**: `touchcancel` must NOT clear `draggedTask` — the `drop` handler needs it
+- **Save**: `saveDragReorder()` in `drop` handler persists new order to AppState
+
+#### 2. Custom Touch Drag (Fallback)
+
+- **When**: Devices where native DnD doesn't trigger (non-iOS touch devices)
+- **Events**: `touchstart → touchmove → touchend`
+- **Visual**: `elementFromPoint().closest('.task')` + `handleRearrange()`
+- **Save**: `saveDragReorder()` in `touchend` handler
+
+#### 3. Arrow-Based Reordering (Accessibility)
+
+- **Trigger**: Toggle arrows visible in settings
+- **Interface**: Up/down arrow buttons on each task
 - **Action**: Tap arrows to move tasks incrementally
-- **Visual**: Clear position indicators
-
-#### 2. Touch Drag (Progressive Enhancement)
-
-- **Feature Detection**: Check for reliable touch drag support
-- **Fallback**: Automatically show arrow interface if drag fails
-- **Hybrid**: Allow both methods simultaneously
+- **Visual**: Clear position indicators, focus management after move
 
 ## Fallback Systems
 
@@ -255,7 +277,7 @@ const throttledDragMove = throttle((e) => {
 ### Legacy Support
 
 - **IE11**: Basic click/tap interactions only
-- **iOS Safari**: Touch events with gesture detection
+- **iOS Safari**: Touch events + native HTML5 DnD (via `draggable="true"` long-press)
 - **Android Browser**: Simplified interaction model
 
 ## Debugging and Monitoring

@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.953">
+<meta name="app-version" content="1.954">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -32,20 +32,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.953"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.954"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=1.953" as="style">
-<link rel="preload" href="styles/base/variables.css?v=1.953" as="style">
-<link rel="preload" href="styles/base/reset.css?v=1.953" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=1.953" as="style">
-<link rel="preload" href="styles/layout/header.css?v=1.953" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=1.953" as="style">
+<link rel="preload" href="styles/main.css?v=1.954" as="style">
+<link rel="preload" href="styles/base/variables.css?v=1.954" as="style">
+<link rel="preload" href="styles/base/reset.css?v=1.954" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=1.954" as="style">
+<link rel="preload" href="styles/layout/header.css?v=1.954" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=1.954" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=1.953" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=1.954" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=1.953"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=1.954"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -56,7 +56,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.953"></script>
+<script src="./version.js?v=1.954"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -215,21 +215,21 @@
      3. Or accepting slightly slower initial load without preloads
      ═══════════════════════════════════════════════════════════════════════════ -->
 <!--
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.953">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.953">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.953">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.953">
-<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.953">
-<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.953">
-<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.953">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.953">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.953">
-<link rel="modulepreload" href="./modules/core/appInit.js?v=1.953">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.953">
-<link rel="modulepreload" href="./modules/core/diBase.js?v=1.953">
-<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.953">
-<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.953">
-<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.953">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.954">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.954">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.954">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.954">
+<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.954">
+<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.954">
+<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.954">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.954">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.954">
+<link rel="modulepreload" href="./modules/core/appInit.js?v=1.954">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.954">
+<link rel="modulepreload" href="./modules/core/diBase.js?v=1.954">
+<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.954">
+<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.954">
+<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.954">
 -->
 
 <!-- Critical CSS - extracted to external file for CSP compliance (no 'unsafe-inline' needed) -->
@@ -260,6 +260,37 @@
       }
     } catch (e) {
       // Silently fail - dark mode will be applied later by JS
+    }
+  })();
+</script>
+
+<!-- Early accessibility settings - prevents animation/contrast flash -->
+<script>
+  (function() {
+    try {
+      var data = localStorage.getItem('miniCycleData');
+      if (data) {
+        var s = JSON.parse(data).settings;
+        if (s) {
+          if (s.reducedMotion) {
+            document.documentElement.classList.add('reduced-motion');
+            document.addEventListener('DOMContentLoaded', function() {
+              document.body.classList.add('reduced-motion');
+            });
+          }
+          if (s.highContrast) {
+            document.documentElement.classList.add('high-contrast');
+            document.addEventListener('DOMContentLoaded', function() {
+              document.body.classList.add('high-contrast');
+            });
+          }
+          if (s.fontSize && s.fontSize !== '16') {
+            document.documentElement.style.setProperty('--font-size-base', s.fontSize + 'px');
+          }
+        }
+      }
+    } catch (e) {
+      // Silently fail - accessibility settings will be applied later by JS
     }
   })();
 </script>
@@ -924,7 +955,10 @@ window.installApp = () => {
     <!-- Logo and App Name -->
     <div class="header-branding">
       <img src="assets/images/logo/logo.png" alt="miniCycle" class="header-logo" width="40" height="36">
-      <img src="assets/images/logo/miniCycle_name.png" alt="miniCycle App Name" class="app-name" width="100" height="21">
+      <div class="app-name-group">
+        <img src="assets/images/logo/App_Name_miniCycle.png" alt="miniCycle App Name" class="app-name" width="100" height="21">
+        <span class="app-subtitle">ROUTINE MANAGER</span>
+      </div>
     </div>
 
     <!-- Menu Button -->
@@ -1090,6 +1124,20 @@ window.installApp = () => {
                 </div>
             </div>
       
+
+            <!-- Legal Section (collapsed by default) -->
+            <div class="menu-section collapsed" data-section="legal">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="legal" aria-expanded="false">
+                    <span>Legal & Info</span>
+                    <span class="menu-section-toggle">&#x25BC;</span>
+                </div>
+                <div class="menu-section-grid">
+                    <a href="legal/privacy.html" target="_blank" rel="noopener noreferrer" class="menu-link-button" title="Read the Privacy Policy"><i class="fas fa-shield-alt"></i>Privacy Policy</a>
+                    <a href="legal/terms.html" target="_blank" rel="noopener noreferrer" class="menu-link-button" title="Read the Terms of Service"><i class="fas fa-file-alt"></i>Terms of Service</a>
+                    <a href="legal/accessibility.html" target="_blank" rel="noopener noreferrer" class="menu-link-button" title="Read the Accessibility Statement"><i class="fas fa-universal-access"></i>Accessibility</a>
+                    <a href="legal/security.html" target="_blank" rel="noopener noreferrer" class="menu-link-button" title="Read the Security Policy"><i class="fas fa-lock"></i>Security</a>
+                </div>
+            </div>
 
                     <!-- App Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="app">
@@ -1588,7 +1636,16 @@ window.installApp = () => {
                         <input type="checkbox" id="dueDatesReminders" name="dueDatesReminders" />
                         Enable Due Date Notifications
                     </label>
-                    
+                </div>
+                <div>
+                    <label class="settings-option">
+                        <input type="checkbox" id="browserNotifications" name="browserNotifications" />
+                        Browser Notifications
+                    </label>
+                    <details id="privacyNoticeDetails" class="settings-warning-details">
+                        <summary class="settings-warning-summary">Privacy Notice</summary>
+                        <p class="settings-warning">Task names will appear in your device&#39;s notification center and may be visible to others. Ensure notifications are enabled for your browser in your OS settings.</p>
+                    </details>
                 </div>
         
                 <!-- Frequency Section (only show if enabled) -->
@@ -1633,20 +1690,6 @@ window.installApp = () => {
                     <div class="settings-section-content">
                         <label class="settings-option">
                             <span class="toggle-switch">
-                                <input type="checkbox" id="toggle-move-arrows" name="toggle-move-arrows">
-                                <span class="toggle-slider"></span>
-                            </span>
-                            <span>Show Move Arrows</span>
-                        </label>
-                        <label class="settings-option">
-                            <span class="toggle-switch">
-                                <input type="checkbox" id="toggle-three-dots" name="toggle-three-dots">
-                                <span class="toggle-slider"></span>
-                            </span>
-                            <span>Show Three Dots Menu</span>
-                        </label>
-                        <label class="settings-option">
-                            <span class="toggle-switch">
                                 <input type="checkbox" id="always-show-recurring" name="always-show-recurring">
                                 <span class="toggle-slider"></span>
                             </span>
@@ -1681,6 +1724,53 @@ window.installApp = () => {
                             <span>Show Quick Actions</span>
                         </label>
                         <button id="open-task-options-customizer" class="settings-btn"><span class="icon-text">-/+</span> Customize Task Options</button>
+                    </div>
+                </div>
+
+                <!-- Accessibility Section -->
+                <div class="settings-section collapsible collapsed" data-section="accessibility">
+                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="accessibility" aria-expanded="false">
+                        <span>Accessibility</span>
+                        <span class="settings-section-toggle">&#9660;</span>
+                    </div>
+                    <div class="settings-section-content">
+                        <label class="settings-option">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="toggle-move-arrows" name="toggle-move-arrows">
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span>Show Move Arrows</span>
+                        </label>
+                        <label class="settings-option">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="toggle-three-dots" name="toggle-three-dots">
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span>Show Three Dots Menu</span>
+                        </label>
+                        <label class="settings-option">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="toggle-reduced-motion" name="toggle-reduced-motion">
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span>Reduced Motion</span>
+                        </label>
+                        <label class="settings-option">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="toggle-high-contrast" name="toggle-high-contrast">
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span>High Contrast</span>
+                        </label>
+                        <div class="settings-option settings-option-vertical">
+                            <span>Font Size</span>
+                            <select id="font-size-select" class="settings-select">
+                                <option value="14">Small</option>
+                                <option value="16" selected>Default</option>
+                                <option value="18">Large</option>
+                                <option value="20">Extra Large</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -2636,6 +2726,8 @@ window.installApp = () => {
 </li>
 <li class="footer-item"><a href="legal/privacy.html" target="_blank" rel="noopener noreferrer" title="Read the Privacy Policy">Privacy Policy</a></li>
 <li class="footer-item"><a href="legal/terms.html" target="_blank" rel="noopener noreferrer" title="Read the Terms of Service">Terms of Service</a></li>
+<li class="footer-item"><a href="legal/accessibility.html" target="_blank" rel="noopener noreferrer" title="Read the Accessibility Statement">Accessibility</a></li>
+<li class="footer-item"><a href="legal/security.html" target="_blank" rel="noopener noreferrer" title="Read the Security Policy">Security</a></li>
 <li class="footer-item"><a href="#" id="open-feedback-modal-footer" class="open-feedback-modal-footer" role="button" aria-label="Open feedback modal" title="Send us feedback">Feedback</a></li>
 </ul>
 </footer>
@@ -2649,7 +2741,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.953"></script>
+ <script type="module" src="miniCycle-main.js?v=1.954"></script>
 
 <script>
 // Sync About modal version with meta app-version

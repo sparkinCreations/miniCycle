@@ -100,6 +100,10 @@
         order: 0;
     }
 
+    #footer-container .footer-links > .footer-item {
+        display: none;
+    }
+
     #footer-container #copyright {
         order: 99;
         flex-basis: 100%;

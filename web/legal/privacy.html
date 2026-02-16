@@ -15,9 +15,9 @@
     <h1>🔒 Privacy Policy for miniCycle</h1>
     
     <div class="section">
-      <p><strong>Last Updated:</strong> October 2, 2025</p>
+      <p><strong>Last Updated:</strong> February 16, 2026</p>
       <p><strong>Effective Date:</strong> October 2, 2025</p>
-      <p><strong>Policy Version:</strong> 2.0</p>
+      <p><strong>Policy Version:</strong> 2.1</p>
     </div>
 
     <div class="section">
@@ -58,6 +58,7 @@
       <h2>Optional Features</h2>
       <p>miniCycle may include optional features that allow you to share limited data if you choose. Examples include:</p>
       <ul>
+        <li><strong>Browser notifications</strong> - If enabled, task names will appear in your device's notification center (managed by your operating system). This means task data becomes visible outside the app and may be seen by others with access to your device. You can enable or disable this at any time in the Reminders settings</li>
         <li><strong>Submitting feedback or bug reports</strong> - May include your comments and optional contact information</li>
         <li><strong>Exporting task lists or cycles</strong> - You control where exported files are saved</li>
         <li><strong>Participating in beta features</strong> - Some new features may require limited data sharing to function</li>
@@ -161,9 +162,12 @@
         <li>You will always know what data is being used, why it's used, and how to opt in or opt out</li>
       </ul>
       <p>sparkinCreations believes in transparency. We will always be clear about what data we handle and give you complete control over your privacy.</p>
-      <p style="margin-top: 20px; text-align: center;"><strong>© 2026 sparkinCreations • miniCycle™</strong><br>
+      <p style="margin-top: 20px; text-align: center;"><strong>© <span id="year"></span> sparkinCreations • miniCycle™</strong><br>
       <em>Built with privacy as a core principle.</em></p>
     </div>
   </main>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>

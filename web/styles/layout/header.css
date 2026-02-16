@@ -222,12 +222,32 @@
    APP NAME
    ============================================================================= */
 
-.app-name {
-    height: 35px;
-    width: auto;
+.app-name-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    order: 2;
     position: relative;
     z-index: var(--z-content);
-    order: 2;
+    margin-left: 8px;
+}
+
+.app-name {
+    height: 18px;
+    width: auto;
+}
+
+.app-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 0.25em;
+    color: #000;
+    margin-top: 1px;
+}
+
+body.dark-mode .app-subtitle {
+    color: #999;
 }
 
 /* =============================================================================
@@ -247,7 +267,11 @@
 
     .app-name {
         width: auto;
-        height: 40px;
+        height: 18px;
+    }
+
+    .app-subtitle {
+        font-size: 0.5rem;
     }
 
     .menu-button {
