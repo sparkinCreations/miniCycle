@@ -302,6 +302,10 @@ export class DragDropManager {
                     isDragging = true;
                     taskElement.classList.add("dragging");
 
+                    // Prevent browser from stealing touch for scrolling during drag.
+                    // Set via JS in addition to CSS for browsers that need it early.
+                    taskElement.style.touchAction = 'none';
+
                     event.preventDefault();
 
                     // Only reveal task option buttons if three-dots mode is NOT enabled.
@@ -372,6 +376,8 @@ export class DragDropManager {
                     this.draggedTask = null;
                 }
 
+                // Restore touch-action
+                taskElement.style.touchAction = '';
                 isDragging = false;
                 this.lastReorderTime = 0;
 
@@ -385,20 +391,27 @@ export class DragDropManager {
             };
             safeAdd(taskElement, "touchend", taskElement._touchendHandler, { passive: true });
 
-            // Fix #72: Handle touchcancel (system alert, gesture takeover, etc.)
+            // Handle touchcancel (browser gesture takeover, system alert, etc.)
             taskElement._touchcancelHandler = () => {
                 clearTimeout(holdTimeout);
+
+                // Save any rearrangement that happened before the cancel
+                if (isDragging && this.didDragReorderOccur) {
+                    this.saveDragReorder();
+                }
 
                 if (this.draggedTask) {
                     this.draggedTask.classList.remove("dragging", "rearranging");
                     this.draggedTask = null;
                 }
 
+                // Restore touch-action
+                taskElement.style.touchAction = '';
                 isDragging = false;
                 isLongPress = false;
                 isTap = false;
+                this.lastReorderTime = 0;
                 taskElement.classList.remove("long-pressed");
-                console.log("🚫 Touch cancelled - cleaned up drag state");
             };
             safeAdd(taskElement, "touchcancel", taskElement._touchcancelHandler, { passive: true });
 
