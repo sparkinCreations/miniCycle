@@ -51,8 +51,8 @@ dialog.settings-modal::backdrop {
     color: var(--theme-modal-text, #333);
     border-radius: 16px;
     padding: 24px 20px;
-    width: 90%;
-    max-width: 400px;
+    width: 420px;
+    max-width: 95%;
     text-align: left;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
     font-family: var(--font-family);
@@ -308,7 +308,6 @@ dialog.settings-modal::backdrop {
 @media (max-width: 768px) {
     .settings-modal-content {
         padding: 18px 14px;
-        width: 95%;
     }
 
     .settings-btn {

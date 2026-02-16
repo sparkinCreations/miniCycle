@@ -1,3 +1,7 @@
+## [1.945] - 2026-02-15
+- feat: Enhance focus management by adding focusVisible option for improved accessibility
+
+
 ## [1.944] - 2026-02-15
 - feat: Implement Help Window and Quick Actions toggles
 

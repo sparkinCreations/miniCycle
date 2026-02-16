@@ -25,7 +25,9 @@ dialog::backdrop {
 /* Override legacy overlay/backdrop styles for <dialog> — ::backdrop handles these */
 dialog.modal,
 dialog.modal-overlay,
-dialog.preferences-modal {
+dialog.preferences-modal,
+dialog.themes-modal,
+dialog.games-modal {
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -36,13 +38,17 @@ dialog.preferences-modal {
    with the UA dialog[open]/dialog:not([open]) rules. */
 dialog.modal:not([open]),
 dialog.modal-overlay:not([open]),
-dialog.preferences-modal:not([open]) {
+dialog.preferences-modal:not([open]),
+dialog.themes-modal:not([open]),
+dialog.games-modal:not([open]) {
     display: none;
 }
 
 dialog.modal[open],
 dialog.modal-overlay[open],
-dialog.preferences-modal[open] {
+dialog.preferences-modal[open],
+dialog.themes-modal[open],
+dialog.games-modal[open] {
     display: flex;
 }
 
@@ -103,8 +109,8 @@ dialog.preferences-modal[open] {
     padding: 20px;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
-    width: 90%;
-    max-width: 400px;
+    width: 420px;
+    max-width: 95%;
     text-align: center;
     position: relative;
     animation: slideUp var(--transition-normal) ease;
@@ -611,9 +617,6 @@ dialog.reminders-modal::backdrop {
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
     justify-content: center;
     align-items: center;
     cursor: pointer;
@@ -624,8 +627,8 @@ dialog.reminders-modal::backdrop {
     color: var(--theme-modal-text, #333);
     padding: 0;
     border-radius: 16px;
-    width: 340px;
-    max-width: 90%;
+    width: 420px;
+    max-width: 95%;
     text-align: center;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
     overflow: hidden;
