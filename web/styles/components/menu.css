@@ -210,16 +210,7 @@
     color: #c0392b;
 }
 
-/* Recurring button - no background, blue icon */
-.menu-section-grid #open-recurring-panel {
-    background: none;
-}
-
-.menu-section-grid #open-recurring-panel:hover {
-    background: rgba(0, 0, 0, 0.1);
-    transform: translateY(-1px);
-}
-
+/* Recurring button - blue icon */
 .menu-section-grid #open-recurring-panel i,
 .menu-section-grid #open-recurring-panel .icon {
     color: #2980b9;

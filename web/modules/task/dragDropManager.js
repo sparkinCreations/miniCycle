@@ -202,66 +202,14 @@ export class DragDropManager {
             };
             safeAdd(document, "dragover", this._dragoverHandler);
 
-            // Setup drop handler (state-first pattern)
+            // Setup drop handler (desktop HTML5 drag-and-drop)
             this._dropHandler = (event) => {
                 event.preventDefault();
                 if (!this.draggedTask) return;
 
-                if (this.didDragReorderOccur) {
-                    // State-first: Read new order from DOM and update AppState directly
-                    const AppState = this._getAppState();
-                    if (AppState?.isReady?.()) {
-                        // Capture undo snapshot BEFORE saving new order
-                        const currentState = AppState.get();
-                        if (currentState) this.deps.captureStateSnapshot?.(currentState);
-
-                        // Read task order from DOM
-                        const taskList = document.getElementById(DOM_IDS.TASK_LIST);
-                        const taskElements = taskList?.querySelectorAll(DOM_SELECTORS.TASK);
-                        const newTaskOrder = [];
-                        taskElements?.forEach(taskEl => {
-                            const taskId = taskEl.dataset.taskId;
-                            if (taskId) newTaskOrder.push(taskId);
-                        });
-
-                        // Update AppState with new order
-                        AppState.update(state => {
-                            const activeCycleId = state.appState.activeCycleId;
-                            if (activeCycleId && state.data.cycles[activeCycleId]) {
-                                const tasks = state.data.cycles[activeCycleId].tasks;
-                                if (tasks && newTaskOrder.length > 0) {
-                                    // Reorder tasks array to match DOM order
-                                    const taskMap = new Map(tasks.map(t => [t.id, t]));
-                                    const reorderedTasks = newTaskOrder
-                                        .map(id => taskMap.get(id))
-                                        .filter(Boolean);
-
-                                    // Preserve tasks not in DOM (e.g., completed tasks in dropdown)
-                                    const missingTasks = tasks.filter(t => !newTaskOrder.includes(t.id));
-                                    state.data.cycles[activeCycleId].tasks = [...reorderedTasks, ...missingTasks];
-                                    state.metadata.lastModified = Date.now();
-                                }
-                            }
-                        }, true); // immediate save
-
-                        console.log("🔁 Drag reorder: state updated with new order");
-                    }
-
-                    // Update UI elements
-                    this.deps.updateProgressBar?.();
-                    this.deps.updateStatsPanel?.();
-                    this.deps.checkCompleteAllButton?.();
-                    this.deps.updateUndoRedoButtons?.();
-
-                    // Update first/last markers (O(1) - CSS handles arrow visibility)
-                    this.updateFirstLastMarkers();
-
-                    console.log("🔁 Drag reorder completed and saved.");
-                }
-
+                this.saveDragReorder();
                 this.cleanupDragState();
                 this.lastReorderTime = 0;
-                this.didDragReorderOccur = false;
             };
             safeAdd(document, "drop", this._dropHandler);
 
@@ -371,7 +319,19 @@ export class DragDropManager {
                 const deltaX = Math.abs(touchMoveX - touchStartX);
                 const deltaY = Math.abs(touchMoveY - touchStartY);
 
-                // Cancel long press if moving too much
+                // If long press already activated and dragging, process the drag move
+                if (isDragging && this.draggedTask) {
+                    if (event.cancelable) {
+                        event.preventDefault();
+                    }
+                    const movingTask = document.elementFromPoint(touchMoveX, touchMoveY);
+                    if (movingTask) {
+                        this.handleRearrange(movingTask, event);
+                    }
+                    return;
+                }
+
+                // Before long press activates: cancel if moving too much
                 if (deltaX > moveThreshold || deltaY > moveThreshold) {
                     clearTimeout(holdTimeout);
                     isLongPress = false;
@@ -384,19 +344,6 @@ export class DragDropManager {
                     clearTimeout(holdTimeout);
                     isTap = false;
                     return;
-                }
-
-                // Fix #32: Removed dead code - readyToDrag was never set to true
-                // The isDragging flag is already set in the long-press timeout handler
-
-                if (isDragging && this.draggedTask) {
-                    if (event.cancelable) {
-                        event.preventDefault();
-                    }
-                    const movingTask = document.elementFromPoint(event.touches[0].clientX, event.touches[0].clientY);
-                    if (movingTask) {
-                        this.handleRearrange(movingTask, event);
-                    }
                 }
             };
             safeAdd(taskElement, "touchmove", taskElement._touchmoveHandler, { passive: false }); // Must be non-passive - calls preventDefault()
@@ -411,16 +358,21 @@ export class DragDropManager {
                     }, 100);
                 }
 
+                // Save reordered state before clearing drag references
+                if (isDragging && this.didDragReorderOccur) {
+                    this.saveDragReorder();
+                }
+
                 if (this.draggedTask) {
                     this.draggedTask.classList.remove("dragging", "rearranging");
                     this.draggedTask = null;
                 }
 
                 isDragging = false;
+                this.lastReorderTime = 0;
 
-                // Ensure task options remain open only when a long press is detected
+                // Keep task options open after a long press (no drag occurred)
                 if (isLongPress) {
-                    console.log("✅ Long Press Completed - Keeping Task Options Open", taskElement);
                     return;
                 }
 
@@ -692,6 +644,60 @@ export class DragDropManager {
             // Release guard after a brief delay to absorb any duplicate events
             setTimeout(() => { this._arrowMoveInProgress = false; }, 200);
         }
+    }
+
+    /**
+     * Persist the current DOM task order to AppState after a drag reorder.
+     * Called from both the HTML5 drop handler (desktop) and touchend (mobile).
+     */
+    saveDragReorder() {
+        if (!this.didDragReorderOccur) return;
+
+        const AppState = this._getAppState();
+        if (AppState?.isReady?.()) {
+            // Capture undo snapshot BEFORE saving new order
+            const currentState = AppState.get();
+            if (currentState) this.deps.captureStateSnapshot?.(currentState);
+
+            // Read task order from DOM
+            const taskList = document.getElementById(DOM_IDS.TASK_LIST);
+            const taskElements = taskList?.querySelectorAll(DOM_SELECTORS.TASK);
+            const newTaskOrder = [];
+            taskElements?.forEach(taskEl => {
+                const taskId = taskEl.dataset.taskId;
+                if (taskId) newTaskOrder.push(taskId);
+            });
+
+            // Update AppState with new order
+            AppState.update(state => {
+                const activeCycleId = state.appState.activeCycleId;
+                if (activeCycleId && state.data.cycles[activeCycleId]) {
+                    const tasks = state.data.cycles[activeCycleId].tasks;
+                    if (tasks && newTaskOrder.length > 0) {
+                        const taskMap = new Map(tasks.map(t => [t.id, t]));
+                        const reorderedTasks = newTaskOrder
+                            .map(id => taskMap.get(id))
+                            .filter(Boolean);
+
+                        // Preserve tasks not in DOM (e.g., completed tasks in dropdown)
+                        const missingTasks = tasks.filter(t => !newTaskOrder.includes(t.id));
+                        state.data.cycles[activeCycleId].tasks = [...reorderedTasks, ...missingTasks];
+                        state.metadata.lastModified = Date.now();
+                    }
+                }
+            }, true); // immediate save
+
+            console.log("🔁 Drag reorder: state updated with new order");
+        }
+
+        // Update UI elements
+        this.deps.updateProgressBar?.();
+        this.deps.updateStatsPanel?.();
+        this.deps.checkCompleteAllButton?.();
+        this.deps.updateUndoRedoButtons?.();
+        this.updateFirstLastMarkers();
+
+        this.didDragReorderOccur = false;
     }
 
     /**
