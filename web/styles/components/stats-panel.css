@@ -20,8 +20,11 @@
     overflow-y: auto;
     color: var(--theme-stats-text);
     background: var(--theme-stats-bg);
-    border: 1px solid var(--theme-stats-border);
-    box-shadow: var(--theme-card-shadow);
+    border: 1px solid var(--theme-stats-border, rgba(255, 255, 255, 0.25));
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.08),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
     padding: 20px 24px;
     border-radius: var(--radius-lg);
     display: flex;
@@ -31,6 +34,8 @@
     opacity: 0;
     pointer-events: none;
     z-index: var(--z-content);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
 }
 
 /* =============================================================================
@@ -94,7 +99,7 @@
     top: 50%;
     transform: translateY(-50%);
     font-size: 32px;
-    color: black;
+    color: var(--theme-stats-text, #333);
     cursor: pointer;
     z-index: var(--z-elevated);
     opacity: 0.6;
@@ -176,6 +181,14 @@
     text-align: center;
     cursor: pointer;
     width: 100%;
+    background: transparent;
+    border-radius: 12px;
+    padding: 12px;
+    transition: background var(--transition-normal) ease;
+}
+
+.current-routine-status:has(.visible) {
+    background: rgba(255, 255, 255, 0.45);
 }
 
 .current-routine-status h3 {
@@ -193,16 +206,16 @@
 
 .current-routine-status .clickable {
     cursor: pointer;
-    background-color: var(--theme-bg-surface, #f5f5f5);
+    background: rgba(255, 255, 255, 0.5);
     padding: 10px 18px;
     border-radius: 8px;
     display: inline-block;
-    transition: background-color var(--transition-normal) ease, transform var(--transition-normal) ease;
+    transition: background var(--transition-normal) ease, transform var(--transition-normal) ease;
 }
 
 .current-routine-status .clickable:hover,
 .current-routine-status .clickable:focus-visible {
-    background-color: var(--theme-bg-surface-elevated, #e8e8e8);
+    background: rgba(255, 255, 255, 0.7);
     transform: scale(1.02);
 }
 
@@ -280,10 +293,33 @@
 
 .routine-buttons-container {
     display: none;
+    gap: 8px;
+    padding: 8px 0;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
 .routine-buttons-container.visible {
     display: flex;
+}
+
+.history-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: 1px solid var(--theme-stats-border, rgba(0, 0, 0, 0.1));
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--theme-stats-text, #333);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background var(--transition-fast) ease, transform var(--transition-fast);
+}
+
+.history-btn:hover {
+    background: rgba(255, 255, 255, 0.7);
+    transform: scale(1.02);
 }
 
 /* =============================================================================
@@ -297,6 +333,14 @@
     text-align: center;
     cursor: pointer;
     width: 100%;
+    background: transparent;
+    border-radius: 12px;
+    padding: 12px;
+    transition: background var(--transition-normal) ease;
+}
+
+.theme-unlock-status:has(.visible) {
+    background: rgba(255, 255, 255, 0.45);
 }
 
 .theme-unlock-status h3 {
@@ -313,16 +357,16 @@
 
 .theme-unlock-status .clickable {
     cursor: pointer;
-    background-color: var(--theme-bg-surface, #f5f5f5);
+    background: rgba(255, 255, 255, 0.5);
     padding: 10px 18px;
     border-radius: 8px;
     display: inline-block;
-    transition: background-color var(--transition-normal) ease, transform var(--transition-normal) ease;
+    transition: background var(--transition-normal) ease, transform var(--transition-normal) ease;
 }
 
 .theme-unlock-status .clickable:hover,
 .theme-unlock-status .clickable:focus-visible {
-    background-color: var(--theme-bg-surface-elevated, #e8e8e8);
+    background: rgba(255, 255, 255, 0.7);
     transform: scale(1.02);
 }
 
@@ -370,8 +414,8 @@
     margin-bottom: 16px;
     width: 100%;
     padding: 12px;
-    background-color: var(--theme-bg-surface, #f5f5f5);
-    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.45);
+    border-radius: 12px;
 }
 
 .badge-container h3 {
@@ -390,25 +434,92 @@
 }
 
 #all-routines-count {
-    margin-top: 12px;
+    margin: 0 0 6px 0;
+    text-align: center;
     font-size: 13px;
     font-weight: 400;
-    color: var(--theme-text-muted, #888);
-    opacity: 0.8;
+    color: var(--theme-stats-text, #888);
+    opacity: 0.7;
+}
+
+/* =============================================================================
+   ACHIEVEMENT BADGES BUTTON
+   ============================================================================= */
+
+.achievement-badges-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    margin: 0 auto 8px;
+    border: 1px solid var(--theme-stats-border, rgba(0, 0, 0, 0.1));
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--theme-stats-text, #333);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition-fast) ease, transform var(--transition-fast);
+}
+
+.achievement-badges-btn:hover {
+    background: rgba(255, 255, 255, 0.7);
+    transform: scale(1.02);
+}
+
+.achievement-count-badge {
+    background: var(--color-primary, #4c79ff);
+    color: white;
+    border-radius: 10px;
+    padding: 1px 6px;
+    font-size: 12px;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* =============================================================================
+   GLOBAL STATS (All Routines count, milestone progress)
+   ============================================================================= */
+
+.global-stats-container {
+    margin-top: 12px;
+    padding: 8px 12px;
+}
+
+#milestone-progress-text {
+    font-size: 0.85em;
+    color: var(--theme-stats-text, #333);
+    opacity: 0.6;
+    margin: 0 0 8px 0;
+    text-align: center;
+}
+
+.progress-container {
+    background: var(--theme-progress-track-bg, #d0d0d0);
+    border-radius: 6px;
+    overflow: hidden;
+    height: 10px;
+    max-width: 85%;
+    margin: 0 auto;
+}
+
+#stats-progress-bar {
+    background: linear-gradient(90deg, var(--color-primary, #4c79ff), var(--color-primary-light, #6b93ff));
 }
 
 .badge {
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    background-color: var(--theme-bg-surface, #ddd);
+    background: rgba(0, 0, 0, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 20px;
     color: var(--theme-text-muted, #888);
     transition: all var(--transition-normal) ease;
-    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.15);
     cursor: pointer;
 }
 
@@ -460,6 +571,76 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #current-rou
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #theme-unlock-message,
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #golden-unlock-message,
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #game-unlock-message,
-body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #all-routines-count {
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #all-routines-count,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #milestone-progress-text,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .achievement-badges-btn,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .history-btn {
     color: var(--pref-stats-text, var(--theme-stats-text, #333));
+}
+
+/* Stats progress bar — pref override (gradient from chosen color to lighter tint) */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #stats-progress-bar {
+    background: linear-gradient(90deg,
+        var(--pref-stats-progress, var(--color-primary, #4c79ff)),
+        color-mix(in srgb, var(--pref-stats-progress, var(--color-primary, #4c79ff)), white 30%)
+    );
+}
+
+/* Doughnut chart — pref override (solid color replaces gradient when set) */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .doughnut-progress {
+    stroke: var(--pref-stats-doughnut, url(#gradient));
+}
+
+/* =============================================================================
+   DARK MODE ADJUSTMENTS
+   ============================================================================= */
+
+body.dark-mode .stats-panel,
+body.theme-dark-ocean .stats-panel {
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .current-routine-status:has(.visible),
+body.dark-mode .theme-unlock-status:has(.visible),
+body.theme-dark-ocean .current-routine-status:has(.visible),
+body.theme-dark-ocean .theme-unlock-status:has(.visible) {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .current-routine-status .clickable,
+body.dark-mode .theme-unlock-status .clickable,
+body.theme-dark-ocean .current-routine-status .clickable,
+body.theme-dark-ocean .theme-unlock-status .clickable {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .current-routine-status .clickable:hover,
+body.dark-mode .theme-unlock-status .clickable:hover,
+body.theme-dark-ocean .current-routine-status .clickable:hover,
+body.theme-dark-ocean .theme-unlock-status .clickable:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .achievement-badges-btn,
+body.dark-mode .history-btn,
+body.theme-dark-ocean .achievement-badges-btn,
+body.theme-dark-ocean .history-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .achievement-badges-btn:hover,
+body.dark-mode .history-btn:hover,
+body.theme-dark-ocean .achievement-badges-btn:hover,
+body.theme-dark-ocean .history-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .badge-container,
+body.theme-dark-ocean .badge-container {
+    background: rgba(255, 255, 255, 0.08);
 }

@@ -172,6 +172,14 @@ export class GesturePanelManager {
         if (this.deps.isDraggingNotification()) return;
         if (this.deps.isOverlayActive()) return;
 
+        // Exclude interactive elements (match mouse handler)
+        if (
+            event.target.closest("button, input, select, textarea, .task-options, .notification, a[href], .quick-actions-window, .quick-actions-header") ||
+            ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)
+        ) {
+            return;
+        }
+
         this.state.startX = event.touches[0].clientX;
         this.state.isSwiping = true;
     }
@@ -210,7 +218,7 @@ export class GesturePanelManager {
         // Exclude interactive elements
         if (
             this.deps.isDraggingNotification() ||
-            event.target.closest("button, input, select, textarea, .task-options, .notification, a[href]") ||
+            event.target.closest("button, input, select, textarea, .task-options, .notification, a[href], .quick-actions-window, .quick-actions-header") ||
             ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)
         ) {
             return;
@@ -309,6 +317,17 @@ export class GesturePanelManager {
     handlePointerDown(event) {
         // Only track if it's a touch or pen input
         if (event.pointerType === "touch" || event.pointerType === "pen") {
+            if (this.deps.isDraggingNotification()) return;
+            if (this.deps.isOverlayActive()) return;
+
+            // Exclude interactive elements (match mouse handler)
+            if (
+                event.target.closest("button, input, select, textarea, .task-options, .notification, a[href], .quick-actions-window, .quick-actions-header") ||
+                ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)
+            ) {
+                return;
+            }
+
             this.state.isPointerSwiping = true;
             this.state.pointerStartX = event.clientX;
         }

@@ -47,6 +47,8 @@ const DEFAULT_COLORS = {
     progressBar: '#82db8c',
     statsBg: '#ffffff',
     statsText: '#333333',
+    statsProgress: '#4c79ff',
+    statsDoughnut: '#4caf50',
     patternColor: '#ffffff',
     panelText: '#ffffff'
 };
@@ -54,6 +56,28 @@ const DEFAULT_COLORS = {
 // Default pattern color (white with 7% opacity)
 const DEFAULT_PATTERN_COLOR = '#ffffff';
 const DEFAULT_PATTERN_OPACITY = 0.07;
+
+/**
+ * Background keys that should preserve translucency when customized.
+ * Maps settings key → alpha value to apply over the user's chosen color.
+ */
+const TRANSLUCENT_BG_ALPHA = {
+    statsBg: 0.45,
+    taskListBg: 0.15,
+};
+
+/**
+ * Convert a hex color to rgba with a given alpha.
+ * @param {string} hex - Hex color (e.g., "#ff5e5e")
+ * @param {number} alpha - Alpha value (0–1)
+ * @returns {string} rgba string
+ */
+function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 /**
  * Generate the background pattern SVG with a custom color
@@ -144,6 +168,16 @@ const COLOR_MAP = {
         key: 'statsText',
         cssVar: '--pref-stats-text',
         previewVar: '--preview-stats-text'
+    },
+    'pref-stats-progress': {
+        key: 'statsProgress',
+        cssVar: '--pref-stats-progress',
+        previewVar: '--preview-stats-progress'
+    },
+    'pref-stats-doughnut': {
+        key: 'statsDoughnut',
+        cssVar: '--pref-stats-doughnut',
+        previewVar: '--preview-stats-doughnut'
     },
     'pref-panel-text': {
         key: 'panelText',
@@ -420,6 +454,42 @@ export class PreferencesManager {
                     if (e.target !== bgPatternToggle) {
                         bgPatternToggle.checked = !bgPatternToggle.checked;
                         this.handleBackgroundPatternToggle(bgPatternToggle.checked);
+                    }
+                };
+                safeAdd(toggleSwitch, 'click', toggleSwitch._clickHandler);
+            }
+        }
+
+        // Solid list background toggle
+        const solidListBgToggle = document.getElementById(DOM_IDS.TOGGLE_SOLID_LIST_BG);
+        if (solidListBgToggle) {
+            solidListBgToggle._changeHandler = (e) => this.handleSolidBgToggle('solidListBg', e.target.checked);
+            safeAdd(solidListBgToggle, 'change', solidListBgToggle._changeHandler);
+
+            const toggleSwitch = solidListBgToggle.closest('.toggle-switch');
+            if (toggleSwitch) {
+                toggleSwitch._clickHandler = (e) => {
+                    if (e.target !== solidListBgToggle) {
+                        solidListBgToggle.checked = !solidListBgToggle.checked;
+                        this.handleSolidBgToggle('solidListBg', solidListBgToggle.checked);
+                    }
+                };
+                safeAdd(toggleSwitch, 'click', toggleSwitch._clickHandler);
+            }
+        }
+
+        // Solid stats background toggle
+        const solidStatsBgToggle = document.getElementById(DOM_IDS.TOGGLE_SOLID_STATS_BG);
+        if (solidStatsBgToggle) {
+            solidStatsBgToggle._changeHandler = (e) => this.handleSolidBgToggle('solidStatsBg', e.target.checked);
+            safeAdd(solidStatsBgToggle, 'change', solidStatsBgToggle._changeHandler);
+
+            const toggleSwitch = solidStatsBgToggle.closest('.toggle-switch');
+            if (toggleSwitch) {
+                toggleSwitch._clickHandler = (e) => {
+                    if (e.target !== solidStatsBgToggle) {
+                        solidStatsBgToggle.checked = !solidStatsBgToggle.checked;
+                        this.handleSolidBgToggle('solidStatsBg', solidStatsBgToggle.checked);
                     }
                 };
                 safeAdd(toggleSwitch, 'click', toggleSwitch._clickHandler);
@@ -714,6 +784,16 @@ export class PreferencesManager {
         // Load panel visibility toggle states (help window + quick actions)
         loadPanelVisibility(customColors);
 
+        // Load solid background toggle states
+        const solidListBgToggle = document.getElementById(DOM_IDS.TOGGLE_SOLID_LIST_BG);
+        if (solidListBgToggle) {
+            solidListBgToggle.checked = customColors.solidListBg === true; // Default false
+        }
+        const solidStatsBgToggle = document.getElementById(DOM_IDS.TOGGLE_SOLID_STATS_BG);
+        if (solidStatsBgToggle) {
+            solidStatsBgToggle.checked = customColors.solidStatsBg === true; // Default false
+        }
+
         // Load pattern color input
         const patternColorInput = document.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
         if (patternColorInput) {
@@ -857,11 +937,32 @@ export class PreferencesManager {
     }
 
     /**
+     * Handle solid background toggle for list or stats panel
+     * @param {string} key - State key ('solidListBg' or 'solidStatsBg')
+     * @param {boolean} solid - Whether the background should be solid
+     */
+    handleSolidBgToggle(key, solid) {
+        if (_deps.AppState) {
+            _deps.AppState.update(state => {
+                if (!state.settings.customColors) {
+                    state.settings.customColors = {};
+                }
+                state.settings.customColors[key] = solid;
+            });
+        }
+
+        // Re-apply colors to update translucency
+        this.applyCustomColors();
+        this.updatePreview();
+    }
+
+    /**
      * Handle help window visibility toggle
      * @param {boolean} visible - Whether the help window should be visible
      */
     handleHelpWindowToggle(visible) {
         applyHelpWindowVisibility(visible, _deps.AppState);
+        this.updatePreview();
     }
 
     /**
@@ -870,6 +971,7 @@ export class PreferencesManager {
      */
     handleQuickActionsToggle(visible) {
         applyQuickActionsVisibility(visible, _deps.AppState);
+        this.updatePreview();
     }
 
     /**
@@ -1065,6 +1167,26 @@ export class PreferencesManager {
         }
 
         this.saveColor(config.key, null);
+
+        // If resetting a translucent background, also turn off its solid toggle
+        if (config.key === 'taskListBg') {
+            const toggle = document.getElementById(DOM_IDS.TOGGLE_SOLID_LIST_BG);
+            if (toggle) toggle.checked = false;
+            if (_deps.AppState) {
+                _deps.AppState.update(state => {
+                    if (state.settings.customColors) state.settings.customColors.solidListBg = false;
+                });
+            }
+        } else if (config.key === 'statsBg') {
+            const toggle = document.getElementById(DOM_IDS.TOGGLE_SOLID_STATS_BG);
+            if (toggle) toggle.checked = false;
+            if (_deps.AppState) {
+                _deps.AppState.update(state => {
+                    if (state.settings.customColors) state.settings.customColors.solidStatsBg = false;
+                });
+            }
+        }
+
         this.updatePreview();
 
         if (this.isDefaultTheme()) {
@@ -1081,6 +1203,7 @@ export class PreferencesManager {
     resetAllColors() {
         this.pushToUndoStack();
 
+        // Reset all color picker inputs to defaults
         Object.entries(COLOR_MAP).forEach(([inputId, config]) => {
             const input = this.colorInputs[inputId];
             if (input) {
@@ -1088,6 +1211,7 @@ export class PreferencesManager {
             }
         });
 
+        // Reset state — nullify all colors, restore toggle defaults
         if (_deps.AppState) {
             _deps.AppState.update(state => {
                 state.settings.customColors = {
@@ -1098,27 +1222,47 @@ export class PreferencesManager {
                     titleBg: null,
                     titleText: null,
                     checkboxBg: null,
-                    checkboxIncompleteBg: null, // Fix #36: missing key
+                    checkboxIncompleteBg: null,
                     checkmark: null,
                     completeBtn: null,
                     clearBtn: null,
                     progressBar: null,
                     statsBg: null,
                     statsText: null,
-                    patternColor: null, // Fix #36: missing key
+                    statsProgress: null,
+                    statsDoughnut: null,
+                    panelText: null,
+                    patternColor: null,
                     patternOpacity: null,
-                    showCheckboxFill: true, // Fix #36: reset to default
-                    showCheckboxIncomplete: true, // Fix #36: reset to default
-                    showBgPattern: true, // Fix #36: reset to default
-                    showBgImage: true, // Fix #36: reset to default (if user has image set)
+                    showCheckboxFill: true,
+                    showCheckboxIncomplete: true,
+                    showBgPattern: true,
+                    showBgImage: false,
+                    solidListBg: false,
+                    solidStatsBg: false,
                     showHelpWindow: true,
                     showQuickActions: true
                 };
             });
         }
 
+        // Reset solid background toggles
+        const solidListBgToggle = document.getElementById(DOM_IDS.TOGGLE_SOLID_LIST_BG);
+        if (solidListBgToggle) solidListBgToggle.checked = false;
+        const solidStatsBgToggle = document.getElementById(DOM_IDS.TOGGLE_SOLID_STATS_BG);
+        if (solidStatsBgToggle) solidStatsBgToggle.checked = false;
+
         // Reset panel visibility (both visible, sync all checkboxes)
         resetPanelVisibility();
+
+        // Reset background pattern toggle + body class + controls
+        const bgPatternToggle = document.getElementById(DOM_IDS.TOGGLE_BG_PATTERN);
+        if (bgPatternToggle) bgPatternToggle.checked = true;
+        document.body.classList.remove('no-bg-pattern');
+        this.updatePatternControlsVisibility(true);
+
+        // Reset custom pattern (revert to external SVG)
+        this.removePatternColor();
 
         // Reset pattern opacity slider UI
         const defaultPercent = Math.round(DEFAULT_PATTERN_OPACITY * 100);
@@ -1130,6 +1274,26 @@ export class PreferencesManager {
         // Reset pattern color input UI
         const patternColorInput = document.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
         if (patternColorInput) patternColorInput.value = DEFAULT_COLORS.patternColor;
+
+        // Reset checkbox toggles
+        const checkboxFillToggle = document.getElementById(DOM_IDS.TOGGLE_CHECKBOX_FILL);
+        if (checkboxFillToggle) checkboxFillToggle.checked = true;
+        const checkboxFillInput = document.getElementById(DOM_IDS.PREF_CHECKBOX_BG);
+        const checkboxFillResetBtn = document.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_BG}"]`);
+        if (checkboxFillInput) checkboxFillInput.style.opacity = '1';
+        if (checkboxFillResetBtn) checkboxFillResetBtn.style.opacity = '1';
+
+        const checkboxIncompleteToggle = document.getElementById(DOM_IDS.TOGGLE_CHECKBOX_INCOMPLETE);
+        if (checkboxIncompleteToggle) checkboxIncompleteToggle.checked = true;
+        const checkboxIncompleteInput = document.getElementById(DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG);
+        const checkboxIncompleteResetBtn = document.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG}"]`);
+        if (checkboxIncompleteInput) checkboxIncompleteInput.style.opacity = '1';
+        if (checkboxIncompleteResetBtn) checkboxIncompleteResetBtn.style.opacity = '1';
+
+        // Hide background image (keep image data, just toggle off)
+        const bgImageVisibleToggle = document.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
+        if (bgImageVisibleToggle) bgImageVisibleToggle.checked = false;
+        document.body.classList.remove('has-bg-image', 'bg-mode-cover', 'bg-mode-center', 'bg-mode-tile');
 
         this.updatePreview();
 
@@ -1154,10 +1318,22 @@ export class PreferencesManager {
             return;
         }
 
+        // Check solid background toggles to skip alpha conversion
+        const solidOverrides = {
+            taskListBg: customColors.solidListBg === true,
+            statsBg: customColors.solidStatsBg === true,
+        };
+
         Object.entries(COLOR_MAP).forEach(([inputId, config]) => {
             const color = customColors[config.key];
+            const alpha = TRANSLUCENT_BG_ALPHA[config.key];
+            const useSolid = solidOverrides[config.key];
+
             if (color) {
-                root.style.setProperty(config.cssVar, color);
+                root.style.setProperty(config.cssVar, (alpha && !useSolid) ? hexToRgba(color, alpha) : color);
+            } else if (useSolid && alpha) {
+                // No custom color but solid toggle is on — override translucent theme default
+                root.style.setProperty(config.cssVar, DEFAULT_COLORS[config.key]);
             } else {
                 root.style.removeProperty(config.cssVar);
             }
@@ -1202,6 +1378,12 @@ export class PreferencesManager {
         const state = _deps.AppState?.get();
         const customColors = state?.settings?.customColors || {};
 
+        // Check solid background toggles for preview
+        const solidOverrides = {
+            taskListBg: customColors.solidListBg === true,
+            statsBg: customColors.solidStatsBg === true,
+        };
+
         Object.entries(COLOR_MAP).forEach(([inputId, config]) => {
             const input = this.colorInputs[inputId];
             // Use saved custom color, or input value if different from black (default for color inputs), or default
@@ -1220,7 +1402,9 @@ export class PreferencesManager {
             }
 
             if (config.previewVar) {
-                preview.style.setProperty(config.previewVar, color);
+                const alpha = TRANSLUCENT_BG_ALPHA[config.key];
+                const useSolid = solidOverrides[config.key];
+                preview.style.setProperty(config.previewVar, (alpha && !useSolid) ? hexToRgba(color, alpha) : color);
             }
 
             // Also update the preview section background when app background changes
@@ -1274,6 +1458,19 @@ export class PreferencesManager {
         } else {
             // Remove background image, fall back to color
             preview.style.removeProperty('--preview-bg-image');
+        }
+
+        // Handle Help Window and Quick Actions visibility in preview
+        const helpToggle = document.getElementById(DOM_IDS.TOGGLE_HELP_WINDOW);
+        const quickActionsToggle = document.getElementById(DOM_IDS.TOGGLE_QUICK_ACTIONS);
+        const previewHelp = preview.querySelector('.preview-help-window');
+        const previewQuickActions = preview.querySelector('.preview-quick-actions');
+
+        if (previewHelp) {
+            previewHelp.classList.toggle('hidden', helpToggle?.checked === false);
+        }
+        if (previewQuickActions) {
+            previewQuickActions.classList.toggle('hidden', quickActionsToggle?.checked === false);
         }
     }
 

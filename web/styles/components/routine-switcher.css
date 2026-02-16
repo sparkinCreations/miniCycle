@@ -79,6 +79,7 @@ dialog.mini-cycle-switch-modal::backdrop {
    ============================================================================= */
 
 .mini-cycle-switch-modal-content {
+    position: relative;
     background: var(--theme-modal-bg, rgb(237, 239, 246));
     color: var(--theme-modal-text, #333);
     padding: 15px;
@@ -101,16 +102,7 @@ dialog.mini-cycle-switch-modal::backdrop {
     margin-bottom: 10px;
 }
 
-.mini-cycle-switch-title-logo {
-    font-weight: bold;
-    margin-bottom: -30px;
-}
-
-.mini-cycle-switch-title-logo img {
-    width: 22px;
-    padding: 3px;
-    margin-left: -300px;
-}
+/* Legacy .mini-cycle-switch-title-logo removed — now uses .modal-corner-logo */
 
 /* =============================================================================
    ROUTINE SEARCH

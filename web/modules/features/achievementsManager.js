@@ -751,6 +751,8 @@ export class AchievementsManager {
                 flex-direction: column;
                 align-items: center;
                 text-align: center;
+                user-select: text;
+                -webkit-user-select: text;
                 transform: scale(0.9);
                 transition: transform 0.2s ease;
             ">
@@ -759,6 +761,8 @@ export class AchievementsManager {
                     padding: 20px;
                     margin: -20px;
                     perspective: 300px;
+                    user-select: none;
+                    -webkit-user-select: none;
                     ${isUnlocked ? 'cursor: grab;' : ''}
                 ">
                     <div id="badge-coin" style="
@@ -774,7 +778,7 @@ export class AchievementsManager {
                         transition: transform 0.1s ease-out;
                         ${!isUnlocked ? 'filter: grayscale(0.8);' : ''}
                     ">
-                        <span style="font-size: 40px; pointer-events: none;">${tierConfig.emoji}</span>
+                        <span style="font-size: 40px;">${tierConfig.emoji}</span>
                     </div>
                 </div>
                 ${dragHintHtml}
@@ -936,11 +940,16 @@ export class AchievementsManager {
             }
         }
 
-        // Close on overlay click (store handler for cleanup)
+        // Close on backdrop click — require both mousedown and click on overlay
+        // (prevents close when dragging badge spin beyond modal content)
+        overlay.addEventListener('mousedown', (e) => {
+            overlay._backdropMouseDown = e.target === overlay;
+        });
         this._badgeOverlayClickHandler = (e) => {
-            if (e.target === overlay) {
+            if (e.target === overlay && overlay._backdropMouseDown) {
                 this.hideBadgeDetail();
             }
+            overlay._backdropMouseDown = false;
         };
         overlay.addEventListener('click', this._badgeOverlayClickHandler);
 

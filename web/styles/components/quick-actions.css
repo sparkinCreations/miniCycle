@@ -93,7 +93,8 @@
 /* Empty "+" placeholder slot */
 .quick-actions-slot.empty {
     background: rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.35);
+    color: var(--pref-panel-text, rgba(255, 255, 255, 0.35));
+    opacity: 0.4;
     border: 1.5px dashed rgba(255, 255, 255, 0.2);
     font-size: 20px;
     font-weight: 300;
@@ -101,7 +102,8 @@
 
 .quick-actions-slot.empty:hover {
     background: rgba(255, 255, 255, 0.12);
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--pref-panel-text, rgba(255, 255, 255, 0.6));
+    opacity: 0.7;
     border-color: rgba(255, 255, 255, 0.35);
 }
 
@@ -317,14 +319,15 @@ body.hide-quick-actions .quick-actions-menu-row {
 
 .quick-actions-picker-overlay {
     position: fixed;
-    top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
     background: rgba(0, 0, 0, 0.6);
     z-index: var(--z-modal);
-    display: grid;
-    place-items: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     opacity: 0;
     transition: opacity var(--transition-fast) ease;
     pointer-events: none;
@@ -336,22 +339,25 @@ body.hide-quick-actions .quick-actions-menu-row {
 }
 
 .quick-actions-picker {
-    background: var(--theme-modal-bg, white);
+    position: relative;
+    background: var(--theme-modal-bg, #ffffff);
+    color: var(--theme-modal-text, #333);
     border-radius: 16px;
     padding: 20px;
-    width: 90%;
-    max-width: 340px;
+    width: 420px;
+    max-width: 95%;
     max-height: 80vh;
     overflow-y: auto;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.25));
+    border: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
+    margin: auto;
 }
 
 .quick-actions-picker h3 {
     margin: 0 0 16px 0;
     font-size: 16px;
     font-weight: 600;
-    color: rgba(0, 0, 0, 0.8);
+    color: var(--theme-modal-text, #333);
     text-align: center;
 }
 
@@ -364,7 +370,8 @@ body.hide-quick-actions .quick-actions-menu-row {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    color: rgba(0, 0, 0, 0.4);
+    color: var(--theme-modal-text, rgba(0, 0, 0, 0.4));
+    opacity: 0.5;
     margin-bottom: 8px;
     padding-left: 4px;
 }
@@ -381,9 +388,9 @@ body.hide-quick-actions .quick-actions-menu-row {
     gap: 8px;
     padding: 8px 12px;
     border-radius: 10px;
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    color: rgba(0, 0, 0, 0.75);
+    background: var(--theme-input-bg, rgba(0, 0, 0, 0.05));
+    border: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
+    color: var(--theme-modal-text, #333);
     font-size: 13px;
     cursor: pointer;
     transition: background var(--transition-fast) ease;
@@ -412,23 +419,28 @@ body.hide-quick-actions .quick-actions-menu-row {
     height: 16px;
 }
 
+/* Close button — matches settings modal close-btn pattern */
 .quick-actions-picker-cancel {
     display: block;
-    width: 100%;
-    padding: 10px;
+    background: var(--menu-close-bg, #3d7ab5);
+    color: var(--menu-close-text, white);
+    font-size: 17px;
+    font-weight: 700;
+    padding: 14px;
     margin-top: 12px;
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-    color: rgba(0, 0, 0, 0.6);
-    font-size: 14px;
+    margin-left: -20px;
+    margin-right: -20px;
+    margin-bottom: -20px;
+    width: calc(100% + 40px);
+    border: none;
+    border-radius: 0 0 16px 16px;
     cursor: pointer;
     transition: background var(--transition-fast) ease;
     text-align: center;
 }
 
 .quick-actions-picker-cancel:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--menu-close-hover-bg, #326a9e);
 }
 
 /* =============================================================================

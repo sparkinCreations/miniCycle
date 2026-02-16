@@ -164,7 +164,7 @@
 }
 
 .toggle-switch input:focus-visible + .toggle-slider {
-    box-shadow: 0 0 0 2px rgba(71, 144, 223, 0.3);
+    box-shadow: 0 0 0 2px var(--accent-color, #007bff);
 }
 
 /* =============================================================================

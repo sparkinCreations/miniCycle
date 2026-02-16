@@ -235,7 +235,8 @@ export const DEFAULT_LABELS = deepFreeze({
         progressCircleAria: 'Current cycle task completion',
         allBadgesUnlocked:  'All badges unlocked!',
         clearedToMilestone: '{remaining} more cleared task(s) to next badge',
-        cyclesToMilestone:  '{remaining} more cycle(s) to next badge'
+        cyclesToMilestone:  '{remaining} more cycle(s) to next badge',
+        history:            'History'
     },
 
     // ========================================================================
@@ -823,13 +824,17 @@ export const DEFAULT_LABELS = deepFreeze({
         checkboxFill:       'Checkbox Fill',
         checkboxEmpty:      'Checkbox Empty',
         checkmark:          'Checkmark',
-        buttonsProgress:    'Buttons & Progress',
+        buttonsProgress:    'Task Buttons & Progress',
         completeCycle:      'Complete Cycle',
         clearCompleted:     'Clear Completed',
         progressBar:        'Progress Bar',
+        routineList:        'Routine List',
         statsPanel:         'Stats Panel',
         background:         'Background',
         textColor:          'Text Color',
+        statsProgress:      'Progress Bar',
+        statsDoughnut:      'Doughnut Chart',
+        solidColor:         'Solid Color',
         undoButton:         'Undo',
         undoTitle:          'Undo last color change',
         resetAll:           'Reset All',
@@ -1174,6 +1179,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'stats.completion',
     'stats.cyclesCompleted',
     'stats.clearedTasks',
+    'stats.history',
     'stats.allRoutines',
     'stats.allRoutinesValue',
     'stats.progressCleared',

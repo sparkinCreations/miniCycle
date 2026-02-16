@@ -143,9 +143,9 @@
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Stats Panel
      ═══════════════════════════════════════════════════════════════════════════ */
-  --theme-stats-bg: rgba(255, 255, 255, 0.95);
+  --theme-stats-bg: rgba(255, 255, 255, 0.45);
   --theme-stats-text: #333333;
-  --theme-stats-border: transparent;
+  --theme-stats-border: rgba(255, 255, 255, 0.3);
 
   /* ═══════════════════════════════════════════════════════════════════════════
      LEGACY VARIABLES (for backward compatibility)

@@ -638,6 +638,13 @@ export class QuickActionsManager {
         const picker = document.createElement('div');
         picker.className = 'quick-actions-picker';
 
+        const logo = document.createElement('img');
+        logo.src = 'assets/images/logo/taskcycle_logo_blackandwhite_transparent.png';
+        logo.className = 'modal-corner-logo';
+        logo.alt = '';
+        logo.setAttribute('aria-hidden', 'true');
+        picker.appendChild(logo);
+
         const title = document.createElement('h3');
         title.textContent = getLabel('quickAction.pickerTitle');
         picker.appendChild(title);
@@ -648,7 +655,7 @@ export class QuickActionsManager {
 
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'quick-actions-picker-cancel';
-        cancelBtn.textContent = getLabel('button.cancel');
+        cancelBtn.textContent = getLabel('button.close');
         cancelBtn.addEventListener('click', () => this._hidePickerOverlay());
         picker.appendChild(cancelBtn);
 

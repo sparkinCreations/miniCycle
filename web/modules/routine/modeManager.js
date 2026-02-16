@@ -589,6 +589,14 @@ export class ModeManager {
         };
         safeAdd(modeSelector, 'change', modeSelector._changeHandler);
 
+        // Allow Enter key to open the mode selector dropdown
+        safeAdd(modeSelector, 'keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                modeSelector.showPicker?.();
+            }
+        });
+
         toggleAutoReset._modeChangeHandler = (e) => {
             console.log('🔘 ModeManager: Auto Reset toggle changed:', e.target.checked);
             this.syncModeFromToggles();

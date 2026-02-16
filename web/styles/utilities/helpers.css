@@ -12,7 +12,9 @@
 }
 
 .visible {
-    display: block;
+    /* No display property — each element's compound selector (.foo.visible)
+       sets the correct display type (flex, block, etc.).
+       A generic display: block here would silently break flex/grid overlays. */
 }
 
 .invisible {

@@ -61,31 +61,7 @@
     transform: translate(-50%, -50%);
 }
 
-/* Stats panel container - base styles only, sizing in stats-panel.css */
-.stats-panel,
-#stats-panel {
-    position: fixed;
-    top: 54%;
-    left: 50%;
-    transform: translate(200%, -50%);
-    transition: transform var(--animation-pop) ease-in-out, opacity var(--animation-pop) ease-in-out;
-    height: auto;
-    overflow-y: auto;
-    color: var(--theme-stats-text);
-    background: var(--theme-stats-bg);
-    border: 1px solid var(--theme-stats-border);
-    box-shadow: var(--theme-card-shadow);
-    border-radius: var(--radius-lg);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    opacity: 0;
-    pointer-events: none;
-    z-index: var(--z-content); /* Match #task-view z-index */
-}
-
-/* Stats panel visible state */
+/* Stats panel container - layout only, visual styles in stats-panel.css */
 #stats-panel.show {
     opacity: 1;
     pointer-events: all;
