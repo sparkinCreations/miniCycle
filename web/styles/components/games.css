@@ -10,7 +10,7 @@
 .games-modal {
     display: none;
     position: fixed;
-    z-index: calc(var(--z-modal-high) + 1000);
+    z-index: var(--z-modal);
     left: 0;
     top: 0;
     width: 100%;
@@ -26,17 +26,7 @@
     display: flex;
 }
 
-dialog.games-modal {
-    background: transparent;
-}
-
-dialog.games-modal[open] {
-    display: flex;
-}
-
-dialog.games-modal::backdrop {
-    background: rgba(0, 0, 0, 0.6);
-}
+/* Dialog open/close + backdrop rules are centralized in modals.css */
 
 /* =============================================================================
    GAMES MODAL CONTENT
@@ -47,8 +37,8 @@ dialog.games-modal::backdrop {
     color: var(--theme-modal-text, #333);
     padding: 24px;
     border-radius: 12px;
-    width: 90%;
-    max-width: 400px;
+    width: 420px;
+    max-width: 95%;
     text-align: center;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
