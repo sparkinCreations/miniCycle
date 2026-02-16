@@ -1,3 +1,8 @@
+## [1.950] - 2026-02-16
+- feat: enhance recurring panel styles for improved visibility and interaction
+- feat: unify logo integration across modals and menus with has-corner-logo class
+
+
 ## [1.949] - 2026-02-16
 - feat: enhance UI with new color presets and logo integration
 
