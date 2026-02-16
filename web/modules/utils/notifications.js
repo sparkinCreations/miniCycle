@@ -1313,13 +1313,12 @@ async setDefaultPosition(notificationContainer) {
     overlay.className = "mini-modal-dialog";
 
     const modal = document.createElement("div");
-    modal.className = "mini-modal-box";
+    modal.className = "mini-modal-box has-corner-logo";
     modal.setAttribute("role", "dialog");
     modal.setAttribute("aria-modal", "true");
     modal.setAttribute("tabindex", "-1");
 
     modal.innerHTML = `
-      <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="" class="modal-corner-logo" aria-hidden="true">
       <div class="mini-modal-header">${safeTitle}</div>
       <div class="mini-modal-body">${safeMessage}</div>
       <div class="mini-modal-buttons">
@@ -1406,8 +1405,7 @@ async setDefaultPosition(notificationContainer) {
     overlay.className = "miniCycle-prompt-dialog";
 
     overlay.innerHTML = `
-      <div class="miniCycle-prompt-box">
-        <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="" class="modal-corner-logo" aria-hidden="true">
+      <div class="miniCycle-prompt-box has-corner-logo">
         <h2 id="miniCycle-prompt-title" class="miniCycle-prompt-title">${safeTitle}</h2>
         <p class="miniCycle-prompt-message">${safeMessage}</p>
         <input type="text" id="miniCycle-prompt-input" name="miniCycle-prompt-input" class="miniCycle-prompt-input" aria-labelledby="miniCycle-prompt-title" placeholder="${safePlaceholder}" value="${safeDefaultValue}" />

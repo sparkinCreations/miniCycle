@@ -264,7 +264,6 @@ dialog.miniCycle-prompt-dialog::backdrop {
 }
 
 .miniCycle-prompt-box {
-    position: relative;
     background: rgb(50, 50, 50);
     padding: 25px;
     border-radius: 16px;

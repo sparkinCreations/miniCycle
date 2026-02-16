@@ -265,42 +265,48 @@ function handleGlobalKeydown(e) {
 }
 
 /**
- * Global click handler for hiding task option buttons
+ * Global click handler — "light dismiss" for task UI states.
+ * Clicking empty background clears lingering hover, drag, selection,
+ * and task option button states. Excludes modals, menus, and panels.
  */
 function handleGlobalClickForTaskButtons(event) {
-  const isTaskOrOptionsClick = event.target.closest('.task, .task-options');
-  const isModalClick = event.target.closest('.modal, .mini-modal-dialog, .settings-modal, .notification');
-  const isUndoRedoClick = event.target.closest('#undo-btn, #redo-btn, .undo-btn, .redo-btn');
+  const target = event.target;
 
-  if (!isTaskOrOptionsClick && !isModalClick && !isUndoRedoClick) {
-    console.log('✅ Clicking outside - closing task buttons');
+  // Ignore clicks on interactive surfaces that shouldn't trigger a dismiss
+  const isIgnored =
+    target.closest('.task, .task-options') ||
+    target.closest('[data-modal], dialog, .notification') ||
+    target.closest('#undo-btn, #redo-btn, .undo-btn, .redo-btn') ||
+    target.closest('.menu-container, .quick-actions-window, .help-window');
 
-    const threeDotsEnabled = document.body.classList.contains('show-three-dots-enabled');
+  if (isIgnored) return;
 
-    document.querySelectorAll(DOM_SELECTORS.TASK_OPTIONS).forEach(action => {
-      if (threeDotsEnabled) {
-        action.style.opacity = '0';
-        action.style.visibility = 'hidden';
-        action.style.pointerEvents = 'none';
-      } else {
-        action.style.opacity = '';
-        action.style.visibility = '';
-        action.style.pointerEvents = '';
-      }
-    });
+  const threeDotsEnabled = document.body.classList.contains('show-three-dots-enabled');
 
-    document.querySelectorAll(DOM_SELECTORS.TASK).forEach(task => {
-      task.classList.remove('long-pressed', 'draggable', 'dragging');
+  // Reset task option button visibility using CSS classes (not inline styles)
+  document.querySelectorAll(DOM_SELECTORS.TASK_OPTIONS).forEach(action => {
+    action.classList.remove('task-options-visible');
+    if (threeDotsEnabled) {
+      action.classList.add('task-options-force-hidden');
+    }
+    // Clear any lingering inline styles from legacy code paths
+    action.style.opacity = '';
+    action.style.visibility = '';
+    action.style.pointerEvents = '';
+  });
 
-      // Keep selections in recurring panel
-      const recurringPanel = getGetModal()?.('recurringOverlay');
-      if (!recurringPanel?.classList.contains('hidden')) {
-        // Keep selections
-      } else {
-        task.classList.remove('selected');
-      }
-    });
-  }
+  // Hoist recurring panel check outside the loop
+  const recurringPanel = getGetModal()?.('recurringOverlay');
+  const recurringPanelOpen = recurringPanel && !recurringPanel.classList.contains('hidden');
+
+  document.querySelectorAll(DOM_SELECTORS.TASK).forEach(task => {
+    task.classList.remove('long-pressed', 'draggable', 'dragging');
+
+    // Keep selections while recurring panel is open
+    if (!recurringPanelOpen) {
+      task.classList.remove('selected');
+    }
+  });
 }
 
 /**

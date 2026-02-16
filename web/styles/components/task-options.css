@@ -219,19 +219,9 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     display: flex;
     align-items: center;
     gap: 12px;
-    position: relative;
     background: var(--theme-modal-bg, #ffffff);
-    padding: 16px 20px 16px 54px;
+    padding: 16px 20px 16px 40px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.task-options-modal .modal-logo {
-    position: absolute;
-    top: 14px;
-    left: 14px;
-    width: 30px;
-    height: 30px;
-    flex-shrink: 0;
 }
 
 .task-options-modal .modal-header-text {
@@ -464,11 +454,6 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
 
     .task-options-modal .modal-header {
         padding-left: 40px;
-    }
-
-    .task-options-modal .modal-logo {
-        width: 24px;
-        height: 24px;
     }
 
     .task-options-modal .modal-header h2 {

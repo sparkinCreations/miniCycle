@@ -33,7 +33,6 @@
    ============================================================================= */
 
 .games-modal-content {
-    position: relative;
     background: var(--theme-modal-bg, #ffffff);
     color: var(--theme-modal-text, #333);
     padding: 24px;

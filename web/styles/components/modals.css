@@ -256,17 +256,24 @@ dialog.feedback-modal[open] {
 }
 
 /* =============================================================================
-   MODAL CORNER LOGO (reusable across modals)
+   MODAL CORNER LOGO (reusable across modals via pseudo-element)
+   Add .has-corner-logo to any positioned container to show the logo.
    ============================================================================= */
 
-.modal-corner-logo {
+.has-corner-logo {
+    position: relative;
+}
+
+.has-corner-logo::before {
+    content: '';
     position: absolute;
     top: 10px;
     left: 12px;
     width: 20px;
-    height: auto;
-    opacity: 1;
+    height: 20px;
+    background: url('../../assets/images/logo/taskcycle_logo_blackandwhite_transparent.png') no-repeat center/contain;
     pointer-events: none;
+    z-index: 1;
 }
 
 /* =============================================================================
@@ -363,7 +370,6 @@ dialog.mini-modal-dialog::backdrop {
 }
 
 .mini-modal-box {
-    position: relative;
     background: var(--theme-modal-bg, #ffffff);
     color: var(--theme-modal-text, #333);
     border-radius: var(--radius-lg);
@@ -479,7 +485,6 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 }
 
 .feedback-modal-content {
-    position: relative;
     background: var(--theme-modal-bg, rgb(203, 203, 203));
     color: var(--theme-modal-text, #333);
     padding: 20px;
