@@ -393,7 +393,7 @@ export class TaskOptionsCustomizer {
         modal.showModal();
         // Focus first interactive element
         const firstFocusable = modal.querySelector('input:not([disabled]), button');
-        if (firstFocusable) setTimeout(() => firstFocusable.focus(), 100);
+        if (firstFocusable) setTimeout(() => firstFocusable.focus({ focusVisible: false }), 100);
     }
 
     /**
@@ -737,7 +737,7 @@ export class TaskOptionsCustomizer {
      */
     closeModal(modal) {
         // Restore focus to previously focused element
-        modal._previousFocus?.focus();
+        modal._previousFocus?.focus({ focusVisible: false });
 
         // Clear pending debounced refresh
         if (this._refreshTimeout) {

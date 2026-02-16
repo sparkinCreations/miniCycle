@@ -152,7 +152,7 @@ export class ModalManager {
             if (typeof modal.showModal === 'function') {
                 if (modal.open) {
                     modal.close();
-                    modal._previousFocus?.focus();
+                    modal._previousFocus?.focus({ focusVisible: false });
                 }
             } else {
                 // Non-dialog elements: use legacy close methods
@@ -225,7 +225,7 @@ export class ModalManager {
         // Close Modal
         closeFeedbackBtn._clickHandler = () => {
             feedbackModal.close();
-            feedbackModal._previousFocus?.focus();
+            feedbackModal._previousFocus?.focus({ focusVisible: false });
         };
         safeAdd(closeFeedbackBtn, "click", closeFeedbackBtn._clickHandler);
 
@@ -233,14 +233,14 @@ export class ModalManager {
         feedbackModal._outsideClickHandler = (event) => {
             if (event.target === feedbackModal) {
                 feedbackModal.close();
-                feedbackModal._previousFocus?.focus();
+                feedbackModal._previousFocus?.focus({ focusVisible: false });
             }
         };
         safeAdd(feedbackModal, "click", feedbackModal._outsideClickHandler);
 
         // Restore focus when dialog closes (including native ESC)
         safeAdd(feedbackModal, "close", () => {
-            feedbackModal._previousFocus?.focus();
+            feedbackModal._previousFocus?.focus({ focusVisible: false });
         });
 
         // Handle Form Submission via AJAX (Prevent Page Refresh)
@@ -281,7 +281,7 @@ export class ModalManager {
                                 thankYouMessage.style.display = "none";
                             }
                             feedbackModal.close();
-                            feedbackModal._previousFocus?.focus();
+                            feedbackModal._previousFocus?.focus({ focusVisible: false });
                         }, 2000);
                     } else {
                         this.deps.showNotification("❌ " + getLabel('feedback.errorSend'), "error");
@@ -351,7 +351,7 @@ export class ModalManager {
         if (closeAboutBtn) {
             closeAboutBtn._clickHandler = () => {
                 aboutModal.close();
-                aboutModal._previousFocus?.focus();
+                aboutModal._previousFocus?.focus({ focusVisible: false });
             };
             safeAdd(closeAboutBtn, "click", closeAboutBtn._clickHandler);
         }
@@ -360,14 +360,14 @@ export class ModalManager {
         aboutModal._outsideClickHandler = (event) => {
             if (event.target === aboutModal) {
                 aboutModal.close();
-                aboutModal._previousFocus?.focus();
+                aboutModal._previousFocus?.focus({ focusVisible: false });
             }
         };
         safeAdd(aboutModal, "click", aboutModal._outsideClickHandler);
 
         // Restore focus when dialog closes (including native ESC)
         safeAdd(aboutModal, "close", () => {
-            aboutModal._previousFocus?.focus();
+            aboutModal._previousFocus?.focus({ focusVisible: false });
         });
     }
 
@@ -407,7 +407,7 @@ export class ModalManager {
         // Close button
         closeRemindersBtn._clickHandler = () => {
             remindersModal.close();
-            remindersModal._previousFocus?.focus();
+            remindersModal._previousFocus?.focus({ focusVisible: false });
         };
         safeAdd(closeRemindersBtn, "click", closeRemindersBtn._clickHandler);
 
@@ -415,7 +415,7 @@ export class ModalManager {
         remindersModal._outsideClickHandler = (event) => {
             if (event.target === remindersModal) {
                 remindersModal.close();
-                remindersModal._previousFocus?.focus();
+                remindersModal._previousFocus?.focus({ focusVisible: false });
             }
         };
         safeAdd(remindersModal, "click", remindersModal._outsideClickHandler);

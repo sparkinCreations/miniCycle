@@ -380,7 +380,7 @@ export class HistoryManager {
         if (!this.modalOverlay) return;
 
         // Restore focus to previously focused element
-        this.modalOverlay._previousFocus?.focus();
+        this.modalOverlay._previousFocus?.focus({ focusVisible: false });
 
         // Clean up overlay click handler
         if (this._overlayClickHandler) {

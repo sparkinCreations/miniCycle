@@ -141,7 +141,7 @@ export function setupSettingsMenu() {
     const closeSettings = () => {
         if (settingsModal && settingsModal.open) {
             settingsModal.close();
-            settingsModal._previousFocus?.focus();
+            settingsModal._previousFocus?.focus({ focusVisible: false });
         }
     };
 
@@ -162,7 +162,7 @@ export function setupSettingsMenu() {
 
     // Restore focus when dialog closes (including native ESC)
     safeAddEventListener(settingsModal, "close", () => {
-        settingsModal._previousFocus?.focus();
+        settingsModal._previousFocus?.focus({ focusVisible: false });
     });
 
     // Setup collapsible sections

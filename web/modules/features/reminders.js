@@ -990,7 +990,7 @@ export class MiniCycleReminders {
             this.deps.safeAddEventListener(closeRemindersBtn, "click", () => {
                 if (remindersModal?.open) {
                     remindersModal.close();
-                    remindersModal._previousFocus?.focus();
+                    remindersModal._previousFocus?.focus({ focusVisible: false });
                 }
             });
         }
@@ -1004,7 +1004,7 @@ export class MiniCycleReminders {
 
         // Restore focus when dialog closes (including native ESC)
         this.deps.safeAddEventListener(remindersModal, "close", () => {
-            remindersModal._previousFocus?.focus();
+            remindersModal._previousFocus?.focus({ focusVisible: false });
         });
 
         console.log('✅ Reminder modal close listeners set up');

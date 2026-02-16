@@ -1559,7 +1559,7 @@ export class StatsPanelManager {
     closeThemesPanel() {
         if (this.elements.themesModal?.open) {
             this.elements.themesModal.close();
-            this.elements.themesModal._previousFocus?.focus();
+            this.elements.themesModal._previousFocus?.focus({ focusVisible: false });
         }
     }
 

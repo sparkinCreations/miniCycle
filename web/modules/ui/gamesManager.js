@@ -208,7 +208,7 @@ class GamesManager {
 
             if (isOpen && clickedOutside) {
                 gamesPanel.close();
-                gamesPanel._previousFocus?.focus();
+                gamesPanel._previousFocus?.focus({ focusVisible: false });
             }
         };
 
@@ -254,7 +254,7 @@ class GamesManager {
                 const gamesPanel = this.deps.getModal('games');
                 if (gamesPanel) {
                     gamesPanel.close();
-                    gamesPanel._previousFocus?.focus();
+                    gamesPanel._previousFocus?.focus({ focusVisible: false });
                 }
             };
             safeAdd(closeButton, "click", closeButton._clickHandler);
@@ -264,7 +264,7 @@ class GamesManager {
         const gamesPanel = this.deps.getModal('games');
         if (gamesPanel) {
             safeAdd(gamesPanel, "close", () => {
-                gamesPanel._previousFocus?.focus();
+                gamesPanel._previousFocus?.focus({ focusVisible: false });
             });
         }
 

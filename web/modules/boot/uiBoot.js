@@ -212,14 +212,14 @@ export function attachMenuButtonListener(GlobalUtils, menuButton, menu) {
         menu._previousFocus = document.activeElement;
         // Focus first focusable element in menu
         const firstFocusable = menu.querySelector('button, [tabindex="0"]');
-        if (firstFocusable) setTimeout(() => firstFocusable.focus(), 50);
+        if (firstFocusable) setTimeout(() => firstFocusable.focus({ focusVisible: false }), 50);
         // Escape key handler
         menu._escHandler = (e) => {
           if (e.key === 'Escape') {
             menu.classList.remove('visible');
             document.removeEventListener('keydown', menu._escHandler);
             document.removeEventListener('click', closeMenuOnClickOutside);
-            menu._previousFocus?.focus();
+            menu._previousFocus?.focus({ focusVisible: false });
           }
         };
         document.addEventListener('keydown', menu._escHandler);
@@ -229,7 +229,7 @@ export function attachMenuButtonListener(GlobalUtils, menuButton, menu) {
         if (menu._escHandler) {
           document.removeEventListener('keydown', menu._escHandler);
         }
-        menu._previousFocus?.focus();
+        menu._previousFocus?.focus({ focusVisible: false });
       }
     });
   }
@@ -434,7 +434,7 @@ function closeMenuOnClickOutside(event) {
     if (menu._escHandler) {
       document.removeEventListener('keydown', menu._escHandler);
     }
-    menu._previousFocus?.focus();
+    menu._previousFocus?.focus({ focusVisible: false });
   }
 }
 
@@ -784,7 +784,7 @@ export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
 
   // Hide loader and focus input
   hideAppLoader();
-  requestAnimationFrame(() => taskInput?.focus());
+  requestAnimationFrame(() => taskInput?.focus({ focusVisible: false }));
 
   console.log('✅ UI boot complete');
 

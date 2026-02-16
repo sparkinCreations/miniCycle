@@ -167,7 +167,7 @@ export class RecurringPanelManager {
 
             // Restore focus when dialog closes (including native ESC)
             this.deps.safeAddEventListener(overlay, "close", () => {
-                overlay._previousFocus?.focus();
+                overlay._previousFocus?.focus({ focusVisible: false });
             });
 
             // Setup change recurring settings button
@@ -764,7 +764,7 @@ export class RecurringPanelManager {
             const overlay = this.deps.getModal('recurringOverlay');
             if (overlay) {
                 overlay.close();
-                overlay._previousFocus?.focus();
+                overlay._previousFocus?.focus({ focusVisible: false });
             }
 
             // ✅ Hide the preview when panel closes
@@ -1030,7 +1030,7 @@ export class RecurringPanelManager {
                         const overlay = this.deps.getModal('recurringOverlay');
                         if (overlay) {
                             overlay.close();
-                            overlay._previousFocus?.focus();
+                            overlay._previousFocus?.focus({ focusVisible: false });
                         }
                     }
 
