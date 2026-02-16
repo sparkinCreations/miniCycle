@@ -11,10 +11,10 @@
     display: none;
     position: fixed;
     z-index: var(--z-modal);
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
     justify-content: center;
     align-items: center;
     padding: 20px;
@@ -25,22 +25,7 @@
     display: flex;
 }
 
-/* Native <dialog> override — showModal() handles display, ::backdrop handles overlay */
-dialog.settings-modal {
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-}
-
-dialog.settings-modal[open] {
-    display: flex;
-}
-
-dialog.settings-modal::backdrop {
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-}
+/* Dialog open/close + backdrop rules are centralized in modals.css */
 
 /* =============================================================================
    SETTINGS MODAL CONTENT

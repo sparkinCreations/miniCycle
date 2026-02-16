@@ -1,3 +1,7 @@
+## [1.946] - 2026-02-15
+- feat: Update modal dimensions for improved layout consistency across components
+
+
 ## [1.945] - 2026-02-15
 - feat: Enhance focus management by adding focusVisible option for improved accessibility
 
