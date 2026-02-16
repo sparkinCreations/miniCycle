@@ -507,6 +507,10 @@ export const DOM_IDS = Object.freeze({
     BG_IMAGE_MODE: 'bg-image-mode',
     BG_IMAGE_UPLOAD_BTN: 'bg-image-upload-btn',
     BG_IMAGE_UPLOAD: 'bg-image-upload',
+    PREF_STATS_PROGRESS: 'pref-stats-progress',
+    PREF_STATS_DOUGHNUT: 'pref-stats-doughnut',
+    TOGGLE_SOLID_LIST_BG: 'toggle-solid-list-bg',
+    TOGGLE_SOLID_STATS_BG: 'toggle-solid-stats-bg',
 
     // ---- Reminders Form ----
     ENABLE_REMINDERS: 'enableReminders',
@@ -570,6 +574,7 @@ export const DOM_IDS = Object.freeze({
     CURRENT_CYCLE_PROGRESS_TEXT: 'current-cycle-progress-text',
     CURRENT_ROUTINE_CYCLE_COUNT: 'current-routine-cycle-count',
     CURRENT_ROUTINE_CLEARED_COUNT: 'current-routine-cleared-count',
+    HISTORY_BTN: 'history-btn',
     PER_ROUTINE_CLEARED: 'per-routine-cleared',
     THEME_UNLOCK_MESSAGE: 'theme-unlock-message',
     GOLDEN_UNLOCK_MESSAGE: 'golden-unlock-message',

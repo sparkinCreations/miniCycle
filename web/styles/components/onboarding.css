@@ -88,7 +88,7 @@ body.onboarding-active .onboarding-placeholder {
 .onboarding-content {
     background: var(--theme-modal-bg, white);
     color: var(--theme-modal-text, #333);
-    padding: 20px;
+    padding: 36px 20px 20px;
     width: 420px;
     max-width: 95%;
     border-radius: 10px;
@@ -101,6 +101,8 @@ body.onboarding-active .onboarding-placeholder {
     color: inherit;
     font-size: 24px;
     margin-bottom: 15px;
+    padding-left: 28px;
+    padding-right: 50px;
 }
 
 .onboarding-content ul {
@@ -262,6 +264,7 @@ dialog.miniCycle-prompt-dialog::backdrop {
 }
 
 .miniCycle-prompt-box {
+    position: relative;
     background: rgb(50, 50, 50);
     padding: 25px;
     border-radius: 16px;
@@ -277,6 +280,7 @@ dialog.miniCycle-prompt-dialog::backdrop {
     font-weight: bold;
     margin-bottom: 10px;
     color: #fff;
+    padding-left: 28px;
 }
 
 .miniCycle-prompt-message {

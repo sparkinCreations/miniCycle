@@ -1396,8 +1396,7 @@ export class RoutineSwitcher {
             searchInput.addEventListener('input', searchInput._searchHandler);
         }
 
-        // Focus the search input for immediate typing
-        setTimeout(() => searchInput.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_DELAY);
+        // Don't auto-focus search — let the user tap it if they want to search
     }
 
     /**

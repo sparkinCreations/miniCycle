@@ -31,6 +31,8 @@ const DEFAULT_COLORS = {
     progressBar: '#82db8c',
     statsBg: '#ffffff',
     statsText: '#333333',
+    statsProgress: '#4c79ff',
+    statsDoughnut: '#4caf50',
     patternColor: '#ffffff',
     panelText: '#ffffff'
 };
@@ -61,6 +63,8 @@ const QUICK_PRESETS = {
             progressBar: '#f8b739',
             statsBg: '#fff9e6',
             statsText: '#5c4033',
+            statsProgress: '#e17055',
+            statsDoughnut: '#fd79a8',
             panelText: '#ffffff'
         }
     },
@@ -81,6 +85,8 @@ const QUICK_PRESETS = {
             progressBar: '#81ecec',
             statsBg: '#e8f8f5',
             statsText: '#2c3e50',
+            statsProgress: '#0984e3',
+            statsDoughnut: '#00cec9',
             panelText: '#ffffff'
         }
     },
@@ -101,6 +107,8 @@ const QUICK_PRESETS = {
             progressBar: '#66bb6a',
             statsBg: '#d4edda',
             statsText: '#1b4332',
+            statsProgress: '#2e7d32',
+            statsDoughnut: '#388e3c',
             panelText: '#ffffff'
         }
     },
@@ -121,6 +129,8 @@ const QUICK_PRESETS = {
             progressBar: '#95a5a6',
             statsBg: '#dfe6e9',
             statsText: '#2d3436',
+            statsProgress: '#636e72',
+            statsDoughnut: '#636e72',
             panelText: '#ffffff'
         }
     },
@@ -141,6 +151,8 @@ const QUICK_PRESETS = {
             progressBar: '#007aff',
             statsBg: '#ffffff',
             statsText: '#1d1d1f',
+            statsProgress: '#007aff',
+            statsDoughnut: '#34c759',
             panelText: '#ffffff'
         }
     },
@@ -161,6 +173,8 @@ const QUICK_PRESETS = {
             progressBar: '#ffd700',
             statsBg: '#fffef5',
             statsText: '#5c4a1f',
+            statsProgress: '#daa520',
+            statsDoughnut: '#c9a227',
             panelText: '#ffffff'
         }
     },
@@ -181,6 +195,8 @@ const QUICK_PRESETS = {
             progressBar: '#22d3ee',
             statsBg: '#1a3a5c',
             statsText: '#e0f0ff',
+            statsProgress: '#0ea5e9',
+            statsDoughnut: '#06b6d4',
             panelText: '#e0f0ff'
         }
     },
@@ -201,6 +217,8 @@ const QUICK_PRESETS = {
             progressBar: '#c084fc',
             statsBg: '#faf5ff',
             statsText: '#4c1d95',
+            statsProgress: '#8b5cf6',
+            statsDoughnut: '#a855f7',
             panelText: '#ffffff'
         }
     }

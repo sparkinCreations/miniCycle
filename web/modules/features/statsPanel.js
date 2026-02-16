@@ -213,33 +213,15 @@ export class StatsPanelManager {
             const routineButtonsContainer = document.createElement('div');
             // Note: 'visible' class will be added by restoreCollapsiblePreferences() based on user preference
             routineButtonsContainer.className = 'routine-buttons-container';
-            routineButtonsContainer.style.cssText = `
-                gap: 8px;
-                padding: 8px 0;
-                justify-content: center;
-                flex-wrap: wrap;
-            `;
             routineButtonsContainer.innerHTML = `
-                <button class="stats-feature-btn" id="history-btn" style="
-                    display: none;
-                    align-items: center;
-                    gap: 6px;
-                    padding: 8px 14px;
-                    border: 1px solid var(--border-color, #e0e0e0);
-                    border-radius: 20px;
-                    background: var(--bg-secondary, #f5f5f5);
-                    color: var(--text-primary, #333);
-                    font-size: 14px;
-                    cursor: pointer;
-                    transition: all 0.15s ease;
-                ">
-                    <span>📜</span> History
+                <button class="stats-feature-btn history-btn" id="${DOM_IDS.HISTORY_BTN}">
+                    <span>📜</span> ${getLabel('stats.history')}
                 </button>
             `;
             // Insert after cleared count (if exists) so order is: Cycles > Cleared Tasks > History
             const insertAfterElement = currentRoutineClearedCount || currentRoutineCycleCount;
             insertAfterElement.insertAdjacentElement('afterend', routineButtonsContainer);
-            this.elements.historyBtn = routineButtonsContainer.querySelector('#history-btn');
+            this.elements.historyBtn = routineButtonsContainer.querySelector(`#${DOM_IDS.HISTORY_BTN}`);
             this.elements.routineButtonsContainer = routineButtonsContainer;
         }
 
@@ -550,7 +532,15 @@ export class StatsPanelManager {
     handleTouchStart(event) {
         if (this.dependencies.isDraggingNotification()) return;
         if (this.dependencies.isOverlayActive()) return;
-        
+
+        // Exclude interactive elements (match mouse handler)
+        if (
+            event.target.closest("button, input, select, textarea, .task-options, .notification, a[href], .quick-actions-window, .quick-actions-header") ||
+            ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)
+        ) {
+            return;
+        }
+
         this.state.startX = event.touches[0].clientX;
         this.state.isSwiping = true;
     }
@@ -589,7 +579,7 @@ export class StatsPanelManager {
         // Exclude interactive elements
         if (
             this.dependencies.isDraggingNotification() ||
-            event.target.closest("button, input, select, textarea, .task-options, .notification, a[href]") ||
+            event.target.closest("button, input, select, textarea, .task-options, .notification, a[href], .quick-actions-window, .quick-actions-header") ||
             ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)
         ) {
             return;
@@ -688,6 +678,17 @@ export class StatsPanelManager {
     handlePointerDown(event) {
         // Only track if it's a touch or pen input
         if (event.pointerType === "touch" || event.pointerType === "pen") {
+            if (this.dependencies.isDraggingNotification()) return;
+            if (this.dependencies.isOverlayActive()) return;
+
+            // Exclude interactive elements (match mouse handler)
+            if (
+                event.target.closest("button, input, select, textarea, .task-options, .notification, a[href], .quick-actions-window, .quick-actions-header") ||
+                ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)
+            ) {
+                return;
+            }
+
             this.state.isPointerSwiping = true;
             this.state.pointerStartX = event.clientX;
         }
@@ -1035,22 +1036,22 @@ export class StatsPanelManager {
 
             if (allUnlocked) {
                 this.elements.milestoneProgressText.textContent = `🎉 ${getLabel('stats.allBadgesUnlocked')}`;
-                this.elements.milestoneProgressText.style.color = "#4caf50";
-                this.elements.milestoneProgressText.style.fontWeight = "normal";
+                this.elements.milestoneProgressText.style.color = "var(--theme-color-success, #4caf50)";
+                this.elements.milestoneProgressText.style.fontWeight = "";
             } else if (isToDoMode) {
                 // To-Do mode: show cleared tasks progress
                 const remaining = nextMilestone - globalTasksCleared;
                 this.elements.milestoneProgressText.textContent =
                     getLabel('stats.clearedToMilestone', { vars: { remaining } });
-                this.elements.milestoneProgressText.style.color = "var(--text-secondary, #888)";
-                this.elements.milestoneProgressText.style.fontWeight = "normal";
+                this.elements.milestoneProgressText.style.color = "";
+                this.elements.milestoneProgressText.style.fontWeight = "";
             } else {
                 // Cycle mode: show cycles progress
                 const remaining = nextMilestone - globalCyclesCompleted;
                 this.elements.milestoneProgressText.textContent =
                     getLabel('stats.cyclesToMilestone', { vars: { remaining } });
-                this.elements.milestoneProgressText.style.color = "var(--text-secondary, #888)";
-                this.elements.milestoneProgressText.style.fontWeight = "normal";
+                this.elements.milestoneProgressText.style.color = "";
+                this.elements.milestoneProgressText.style.fontWeight = "";
             }
         }
 

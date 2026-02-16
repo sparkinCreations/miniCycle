@@ -42,7 +42,8 @@ dialog.modal-overlay:not([open]),
 dialog.preferences-modal:not([open]),
 dialog.themes-modal:not([open]),
 dialog.games-modal:not([open]),
-dialog.settings-modal:not([open]) {
+dialog.settings-modal:not([open]),
+dialog.feedback-modal:not([open]) {
     display: none;
 }
 
@@ -51,7 +52,8 @@ dialog.modal-overlay[open],
 dialog.preferences-modal[open],
 dialog.themes-modal[open],
 dialog.games-modal[open],
-dialog.settings-modal[open] {
+dialog.settings-modal[open],
+dialog.feedback-modal[open] {
     display: flex;
 }
 
@@ -254,6 +256,20 @@ dialog.settings-modal[open] {
 }
 
 /* =============================================================================
+   MODAL CORNER LOGO (reusable across modals)
+   ============================================================================= */
+
+.modal-corner-logo {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    width: 20px;
+    height: auto;
+    opacity: 1;
+    pointer-events: none;
+}
+
+/* =============================================================================
    MODAL HEADER
    ============================================================================= */
 
@@ -347,6 +363,7 @@ dialog.mini-modal-dialog::backdrop {
 }
 
 .mini-modal-box {
+    position: relative;
     background: var(--theme-modal-bg, #ffffff);
     color: var(--theme-modal-text, #333);
     border-radius: var(--radius-lg);
@@ -362,6 +379,7 @@ dialog.mini-modal-dialog::backdrop {
     font-size: 1.1rem;
     font-weight: 600;
     margin-bottom: 10px;
+    padding-left: 28px;
 }
 
 .mini-modal-body {
@@ -461,6 +479,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 }
 
 .feedback-modal-content {
+    position: relative;
     background: var(--theme-modal-bg, rgb(203, 203, 203));
     color: var(--theme-modal-text, #333);
     padding: 20px;
@@ -561,6 +580,7 @@ dialog.reminders-modal::backdrop {
 
 .reminders-modal-content h2 {
     margin-top: 0;
+    padding-left: 28px;
 }
 
 .reminders-modal-content .close-btn {
@@ -626,6 +646,7 @@ dialog.reminders-modal::backdrop {
 }
 
 .themes-modal-content {
+    position: relative;
     background: var(--theme-modal-bg, #ffffff);
     color: var(--theme-modal-text, #333);
     padding: 0;
@@ -835,6 +856,7 @@ dialog.preferences-modal::backdrop {
 }
 
 .preferences-modal-content {
+    position: relative;
     background: var(--theme-modal-bg, #ffffff);
     color: var(--theme-modal-text, #333);
     padding: 0;
@@ -901,6 +923,11 @@ dialog.preferences-modal::backdrop {
     flex: 1;
     overflow-y: auto;
     padding: 12px 16px;
+}
+
+/* Sections column wrapper — transparent in block flow, becomes flex child on desktop */
+.preferences-sections-column {
+    min-width: 0;
 }
 
 /* =============================================================================
@@ -1030,15 +1057,109 @@ dialog.preferences-modal::backdrop {
     transition: background var(--transition-normal) ease;
 }
 
+.preview-buttons-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 0;
+}
+
 .preview-button {
-    background: var(--preview-complete-btn, #08c352);
     color: white;
-    padding: 6px 10px;
+    padding: 5px 0;
     border-radius: 5px;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
     text-align: center;
     transition: background var(--transition-normal) ease;
+}
+
+.preview-complete-btn {
+    background: var(--preview-complete-btn, #08c352);
+    flex: 1;
+}
+
+.preview-clear-btn {
+    background: var(--preview-clear-btn, #3b82f6);
+    flex: 1;
+}
+
+.preview-stats-panel {
+    background: var(--preview-stats-bg, rgba(255, 255, 255, 0.45));
+    border-radius: 6px;
+    padding: 6px 8px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background var(--transition-normal) ease;
+}
+
+.preview-doughnut {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.preview-doughnut-fill {
+    stroke: var(--preview-stats-doughnut, #4caf50);
+    transition: stroke var(--transition-normal) ease;
+}
+
+.preview-stats-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.preview-stats-label {
+    font-size: 9px;
+    color: var(--preview-stats-text, #333);
+    margin-bottom: 3px;
+    transition: color var(--transition-normal) ease;
+}
+
+.preview-stats-bar {
+    height: 4px;
+    background: rgba(200, 200, 200, 0.3);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.preview-stats-bar-fill {
+    width: 62%;
+    height: 100%;
+    background: linear-gradient(90deg,
+        var(--preview-stats-progress, #4c79ff),
+        color-mix(in srgb, var(--preview-stats-progress, #4c79ff), white 30%)
+    );
+    border-radius: 2px;
+    transition: background var(--transition-normal) ease;
+}
+
+.preview-panels-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.preview-panel {
+    font-size: 8px;
+    font-weight: 600;
+    color: var(--preview-panel-text, #ffffff);
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: color var(--transition-normal) ease, opacity var(--transition-normal) ease;
+}
+
+.preview-help-window {
+    margin-left: auto;
+}
+
+.preview-panel.hidden {
+    display: none;
 }
 
 /* =============================================================================
@@ -1660,6 +1781,37 @@ dialog.preferences-modal::backdrop {
    PREFERENCES MODAL RESPONSIVE
    ============================================================================= */
 
+/* Desktop: sidebar preview + sections column */
+@media (min-width: 1024px) {
+    .preferences-modal-content {
+        width: 680px;
+        max-width: 95%;
+    }
+
+    .preferences-scroll-area {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    .preferences-preview-section {
+        flex: 0 0 220px;
+        position: sticky;
+        top: 0;
+        align-self: flex-start;
+        margin: 0;
+        border-radius: 12px;
+    }
+
+    .preferences-sections-column {
+        flex: 1;
+    }
+
+    .preferences-quick-presets-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
 @media (max-width: 768px) {
     .preferences-modal-content {
         width: 92%;
@@ -1758,6 +1910,77 @@ dialog.preferences-modal::backdrop {
     .preferences-modal .close-btn {
         padding: 12px;
         font-size: 13px;
+    }
+
+    /* Compact preview on mobile */
+    .preferences-preview-section {
+        margin: 0 -10px 10px -10px;
+        padding: 8px 10px 10px 10px;
+    }
+
+    .preferences-preview-label {
+        font-size: 10px;
+        margin-bottom: 6px;
+    }
+
+    .preview-app-bg {
+        padding: 8px;
+    }
+
+    .preview-title {
+        padding: 5px 8px;
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+
+    .preview-task-list {
+        padding: 4px;
+        margin-bottom: 6px;
+    }
+
+    .preview-task {
+        padding: 4px 6px;
+        gap: 6px;
+        margin-bottom: 2px;
+    }
+
+    .preview-checkbox {
+        width: 12px;
+        height: 12px;
+    }
+
+    .preview-task-text {
+        font-size: 10px;
+    }
+
+    .preview-progress-bar {
+        height: 4px;
+        margin-bottom: 6px;
+    }
+
+    .preview-buttons-row { gap: 4px; }
+    .preview-button { padding: 3px 0; font-size: 8px; }
+
+    .preview-stats-panel {
+        padding: 4px 6px;
+        margin-top: 6px;
+        gap: 6px;
+    }
+    .preview-doughnut { width: 24px; height: 24px; }
+    .preview-stats-label { font-size: 8px; margin-bottom: 2px; }
+    .preview-stats-bar { height: 3px; }
+
+    .preview-panels-row { margin-top: 6px; gap: 4px; }
+    .preview-panel { font-size: 7px; padding: 2px 6px; }
+
+    /* Tighter section spacing on mobile */
+    .preferences-section {
+        margin-bottom: 6px;
+    }
+
+    .preferences-quick-presets {
+        margin-bottom: 10px;
+        padding: 8px;
     }
 }
 

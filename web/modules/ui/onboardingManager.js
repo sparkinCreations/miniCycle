@@ -212,6 +212,7 @@ export class OnboardingManager {
 
         modal.innerHTML = `
             <div class="onboarding-content theme-${safeTheme}">
+                <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="" class="modal-corner-logo" aria-hidden="true">
                 <button id="${DOM_IDS.ONBOARDING_SKIP}" class="onboarding-skip">${getLabel('onboarding.skip')} <span aria-hidden="true">✖</span></button>
                 <div id="${DOM_IDS.ONBOARDING_STEP_CONTENT}"></div>
                 <div class="onboarding-controls">

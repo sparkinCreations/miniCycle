@@ -448,22 +448,14 @@ function closeMenuOnClickOutside(event) {
  * @returns {boolean} True if an overlay is active
  */
 export function isOverlayActive() {
+  // Catch-all for any open dialog (covers dynamically created dialogs like #badge-detail-overlay)
+  if (document.querySelector('dialog[open]')) return true;
   if (document.querySelector(DOM_SELECTORS.MENU_CONTAINER_VISIBLE)) return true;
 
   const overlaySelectors = [
-    'dialog.settings-modal[open]',
-    'dialog.mini-cycle-switch-modal[open]',
-    'dialog#feedback-modal[open]',
-    'dialog#about-modal[open]',
-    'dialog#themes-modal[open]',
-    'dialog#games-panel[open]',
-    'dialog#reminders-modal[open]',
     '#testing-modal[style*="display: flex"]',
-    'dialog#recurring-panel-overlay[open]',
     '.notification-container .notification',
     '#storage-viewer-overlay:not(.hidden)',
-    'dialog.mini-modal-dialog[open]',
-    'dialog.miniCycle-prompt-dialog[open]',
     '.onboarding-modal:not([style*="display: none"])'
   ];
 

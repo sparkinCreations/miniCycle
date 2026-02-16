@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.947">
+<meta name="app-version" content="1.948">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -32,20 +32,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.947"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.948"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=1.947" as="style">
-<link rel="preload" href="styles/base/variables.css?v=1.947" as="style">
-<link rel="preload" href="styles/base/reset.css?v=1.947" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=1.947" as="style">
-<link rel="preload" href="styles/layout/header.css?v=1.947" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=1.947" as="style">
+<link rel="preload" href="styles/main.css?v=1.948" as="style">
+<link rel="preload" href="styles/base/variables.css?v=1.948" as="style">
+<link rel="preload" href="styles/base/reset.css?v=1.948" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=1.948" as="style">
+<link rel="preload" href="styles/layout/header.css?v=1.948" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=1.948" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=1.947" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=1.948" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=1.947"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=1.948"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -56,7 +56,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.947"></script>
+<script src="./version.js?v=1.948"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -215,21 +215,21 @@
      3. Or accepting slightly slower initial load without preloads
      ═══════════════════════════════════════════════════════════════════════════ -->
 <!--
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.947">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.947">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.947">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.947">
-<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.947">
-<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.947">
-<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.947">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.947">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.947">
-<link rel="modulepreload" href="./modules/core/appInit.js?v=1.947">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.947">
-<link rel="modulepreload" href="./modules/core/diBase.js?v=1.947">
-<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.947">
-<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.947">
-<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.947">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.948">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.948">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.948">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.948">
+<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.948">
+<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.948">
+<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.948">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.948">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.948">
+<link rel="modulepreload" href="./modules/core/appInit.js?v=1.948">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.948">
+<link rel="modulepreload" href="./modules/core/diBase.js?v=1.948">
+<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.948">
+<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.948">
+<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.948">
 -->
 
 <!-- Critical CSS - extracted to external file for CSP compliance (no 'unsafe-inline' needed) -->
@@ -970,10 +970,8 @@ window.installApp = () => {
 
     <!-- Main Menu -->
     <nav class="menu-container" data-modal data-menu>
+        <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="" class="modal-corner-logo" aria-hidden="true">
         <div id="main-menu-header-row" class="main-menu-header-row">
-            <div class="main-menu-header-logo">
-                <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="Task Cycle Logo" />
-            </div> 
             <div id="main-menu-header" class="main-menu-header">
                 <span id="main-menu-mini-cycle-title"></span>  <!-- miniCycle Title -->
                 <span id="current-date"></span>  <!-- Date will be inserted here -->
@@ -1148,6 +1146,7 @@ window.installApp = () => {
 <!-- Recurring Panel Modal w/ Overlay -->
 <dialog id="recurring-panel-overlay" class="modal-overlay" aria-labelledby="recurring-panel-title">
   <div id="recurring-panel" class="modal-panel">
+    <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="" class="modal-corner-logo" aria-hidden="true">
     <h3 id="recurring-panel-title">Recurring Tasks</h3>
     <div id="recurring-toggle-actions" class="hidden">
       <button id="toggle-check-all" class="toggle-check-btn">Check All</button>
@@ -1567,6 +1566,7 @@ window.installApp = () => {
 
     <dialog id="games-panel" class="games-modal" data-modal aria-labelledby="games-panel-title">
         <div class="games-modal-content">
+          <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="" class="modal-corner-logo" aria-hidden="true">
           <h2 id="games-panel-title">🎮 Games</h2>
           <p>Try to complete tasks in the correct order as fast as you can!</p>
           <button id="open-task-order-game">Play Task Order</button>
@@ -1579,6 +1579,7 @@ window.installApp = () => {
         <!-- Reminders Modal -->
         <dialog id="reminders-modal" class="reminders-modal" data-modal aria-labelledby="reminders-modal-title">
             <div class="reminders-modal-content">
+                <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="" class="modal-corner-logo" aria-hidden="true">
                 <h2 id="reminders-modal-title">Reminders & Notifications</h2>
         
                 <!-- Toggle On/Off -->
@@ -1625,6 +1626,7 @@ window.installApp = () => {
             <!-- Settings Modal -->
         <dialog id="settings-modal" class="settings-modal" data-modal aria-labelledby="settings-modal-title">
             <div class="settings-modal-content">
+                <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="" class="modal-corner-logo" aria-hidden="true">
                 <h2 id="settings-modal-title">Settings</h2>
 
                 <!-- Display Section -->
@@ -1683,6 +1685,7 @@ window.installApp = () => {
                             </span>
                             <span>Show Quick Actions</span>
                         </label>
+                        <button id="open-task-options-customizer" class="settings-btn"><span class="icon-text">-/+</span> Customize Task Options</button>
                     </div>
                 </div>
 
@@ -1719,7 +1722,6 @@ window.installApp = () => {
                     <div class="settings-section-content">
                         <button id="backup-mini-cycles" class="settings-btn settings-btn-primary"><i class="fas fa-download"></i> Backup All Routines</button>
                         <button id="restore-mini-cycles" class="settings-btn settings-btn-primary"><i class="fas fa-upload"></i> Restore All Routines</button>
-                        <button id="open-task-options-customizer" class="settings-btn"><span class="icon-text">-/+</span> Customize Task Options</button>
                     </div>
                 </div>
 
@@ -1922,6 +1924,7 @@ window.installApp = () => {
 <!-- 🎨 Themes Panel Modal -->
 <dialog class="themes-modal" data-modal id="themes-modal" aria-labelledby="themes-modal-title">
     <div class="themes-modal-content">
+      <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="" class="modal-corner-logo" aria-hidden="true">
       <h2 id="themes-modal-title">🎨 Theme Settings</h2>
   
       <!-- 🎨 THEME OPTIONS -->
@@ -1948,6 +1951,7 @@ window.installApp = () => {
 <!-- Preferences Modal -->
 <dialog class="preferences-modal" data-modal id="preferences-modal" aria-labelledby="preferences-modal-title">
     <div class="preferences-modal-content">
+        <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="" class="modal-corner-logo" aria-hidden="true">
         <h2 id="preferences-modal-title">Personalization</h2>
 
         <!-- Theme Notice -->
@@ -1978,10 +1982,31 @@ window.installApp = () => {
                         <div class="preview-progress-bar">
                             <div class="preview-progress-fill"></div>
                         </div>
-                        <div class="preview-button">Complete Cycle</div>
+                        <div class="preview-buttons-row">
+                            <div class="preview-button preview-complete-btn">Complete</div>
+                            <div class="preview-button preview-clear-btn">Clear</div>
+                        </div>
+                        <div class="preview-stats-panel">
+                            <svg class="preview-doughnut" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(200,200,200,0.3)" stroke-width="12"/>
+                                <circle class="preview-doughnut-fill" cx="50" cy="50" r="40" fill="none" stroke-width="12" stroke-linecap="round" transform="rotate(-90 50 50)" stroke-dasharray="155 96"/>
+                            </svg>
+                            <div class="preview-stats-info">
+                                <div class="preview-stats-label">5 of 8 Tasks</div>
+                                <div class="preview-stats-bar">
+                                    <div class="preview-stats-bar-fill"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="preview-panels-row">
+                            <div class="preview-panel preview-quick-actions" title="Quick Actions">&#x26A1; Quick</div>
+                            <div class="preview-panel preview-help-window" title="Help Window">&#x2753; Help</div>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <div class="preferences-sections-column">
 
             <!-- Quick Presets Section -->
             <div class="preferences-section collapsed" data-section="quick-themes">
@@ -2082,14 +2107,14 @@ window.installApp = () => {
 
             <!-- Collapsible Color Sections -->
 
-            <!-- App & Task List Section -->
-            <div class="preferences-section collapsed" data-section="app">
-                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="app">
+            <!-- App Background Section -->
+            <div class="preferences-section collapsed" data-section="app-bg">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="app-bg">
                     <span class="preferences-section-icon">&#x1F4F1;</span>
-                    <span>App & Task List</span>
+                    <span>App Background</span>
                     <span class="preferences-section-toggle">&#x25BC;</span>
                 </div>
-                <div class="preferences-section-content" id="pref-section-app">
+                <div class="preferences-section-content" id="pref-section-app-bg">
                     <div class="preferences-color-row">
                         <span class="pref-color-icon">&#x1F3A8;</span>
                         <label for="pref-app-bg">App Background</label>
@@ -2150,11 +2175,30 @@ window.installApp = () => {
                         </div>
                         <div class="preferences-bg-image-hint">Images over 2MB are compressed automatically.</div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Routine List Section -->
+            <div class="preferences-section collapsed" data-section="routine-list">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="routine-list">
+                    <span class="preferences-section-icon">&#x1F4CB;</span>
+                    <span>Routine List</span>
+                    <span class="preferences-section-toggle">&#x25BC;</span>
+                </div>
+                <div class="preferences-section-content" id="pref-section-routine-list">
                     <div class="preferences-color-row">
                         <span class="pref-color-icon">&#x1F4CB;</span>
                         <label for="pref-task-list-bg">List Background</label>
                         <input type="color" id="pref-task-list-bg" value="#ffffff" />
                         <button class="preferences-reset-btn" data-target="pref-task-list-bg" title="Reset to default">Reset</button>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F532;</span>
+                        <label for="toggle-solid-list-bg">Solid Color</label>
+                        <span class="toggle-switch pref-toggle">
+                            <input type="checkbox" id="toggle-solid-list-bg" name="toggle-solid-list-bg">
+                            <span class="toggle-slider"></span>
+                        </span>
                     </div>
                     <div class="preferences-color-row">
                         <span class="pref-color-icon">&#x1F516;</span>
@@ -2224,7 +2268,7 @@ window.installApp = () => {
             <div class="preferences-section collapsed" data-section="buttons">
                 <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="buttons">
                     <span class="preferences-section-icon">&#x1F518;</span>
-                    <span>Buttons & Progress</span>
+                    <span>Task Buttons & Progress</span>
                     <span class="preferences-section-toggle">&#x25BC;</span>
                 </div>
                 <div class="preferences-section-content" id="pref-section-buttons">
@@ -2264,13 +2308,35 @@ window.installApp = () => {
                         <button class="preferences-reset-btn" data-target="pref-stats-bg" title="Reset to default">Reset</button>
                     </div>
                     <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F532;</span>
+                        <label for="toggle-solid-stats-bg">Solid Color</label>
+                        <span class="toggle-switch pref-toggle">
+                            <input type="checkbox" id="toggle-solid-stats-bg" name="toggle-solid-stats-bg">
+                            <span class="toggle-slider"></span>
+                        </span>
+                    </div>
+                    <div class="preferences-color-row">
                         <span class="pref-color-icon">&#x1F4DD;</span>
                         <label for="pref-stats-text">Text Color</label>
                         <input type="color" id="pref-stats-text" value="#333333" />
                         <button class="preferences-reset-btn" data-target="pref-stats-text" title="Reset to default">Reset</button>
                     </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F4CA;</span>
+                        <label for="pref-stats-progress">Progress Bar</label>
+                        <input type="color" id="pref-stats-progress" value="#4c79ff" />
+                        <button class="preferences-reset-btn" data-target="pref-stats-progress" title="Reset to default">Reset</button>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F369;</span>
+                        <label for="pref-stats-doughnut">Doughnut Chart</label>
+                        <input type="color" id="pref-stats-doughnut" value="#4caf50" />
+                        <button class="preferences-reset-btn" data-target="pref-stats-doughnut" title="Reset to default">Reset</button>
+                    </div>
                 </div>
             </div>
+
+            </div><!-- End sections column -->
 
         </div><!-- End scroll area -->
 
@@ -2290,7 +2356,7 @@ window.installApp = () => {
 <!-- miniCycle Switch Modal -->
 <dialog id="routine-switcher-modal" class="mini-cycle-switch-modal" data-modal aria-labelledby="routine-switcher-title">
     <div class="mini-cycle-switch-modal-content">
-        <div class="mini-cycle-switch-title-logo"><img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="Task Cycle Logo" /></div>
+        <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="" class="modal-corner-logo" aria-hidden="true">
         <div class="mini-cycle-switch-title" id="routine-switcher-title">Open Routine</div>
         <!-- Search input for filtering routines -->
         <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off">
@@ -2352,6 +2418,7 @@ window.installApp = () => {
 <!-- Feedback Modal -->
 <dialog id="feedback-modal" class="feedback-modal" aria-labelledby="feedback-modal-title" data-modal>
     <div class="feedback-modal-content">
+        <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="" class="modal-corner-logo" aria-hidden="true">
         <button class="close-feedback-modal" aria-label="Close feedback modal">&times;</button>
         <h2 id="feedback-modal-title">Provide Feedback</h2>
         <p>We appreciate your feedback! Let us know how we can improve miniCycle.</p>
@@ -2523,39 +2590,9 @@ window.installApp = () => {
             <p id="golden-unlock-message">Loading...</p>
             <p id="game-unlock-message">Loading game unlock info...</p>
           </div>
-        <div class="badge-container" style="
-            position: relative;
-            margin-top: 16px;
-            padding: 12px;
-            background: var(--bg-secondary, #f5f5f5);
-            border-radius: 12px;
-            border: 1px solid var(--border-color, #e0e0e0);
-        ">
-            <button id="achievement-badges-btn" class="stats-feature-btn" style="
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 6px;
-                padding: 8px 14px;
-                margin: 0 auto 8px;
-                border: 1px solid var(--border-color, #e0e0e0);
-                border-radius: 20px;
-                background: var(--bg-primary, #fff);
-                color: var(--text-primary, #333);
-                font-size: 14px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.15s ease;
-            ">
-                🏅 Achievement Badges <span id="achievement-count-badge" style="
-                    background: var(--primary-color, #4c79ff);
-                    color: white;
-                    border-radius: 10px;
-                    padding: 1px 6px;
-                    font-size: 12px;
-                    min-width: 18px;
-                    text-align: center;
-                ">0</span>
+        <div class="badge-container">
+            <button id="achievement-badges-btn" class="stats-feature-btn achievement-badges-btn">
+                🏅 Achievement Badges <span id="achievement-count-badge" class="achievement-count-badge">0</span>
             </button>
             <!-- Badge tooltips set dynamically from MILESTONES constant in statsPanel.js -->
             <div class="badges">
@@ -2567,14 +2604,11 @@ window.installApp = () => {
             </div>
           </div>
 
-        <div class="global-stats-container" style="
-            margin-top: 12px;
-            padding: 8px 12px;
-        ">
-            <p id="all-routines-count" style="margin: 0 0 6px 0; text-align: center; opacity: 0.7;">All Routines: <span id="mini-cycle-count">0 Cycles</span></p>
-            <p id="milestone-progress-text" style="font-size: 0.85em; color: var(--text-secondary, #666); margin: 0 0 8px 0; text-align: center;">Loading...</p>
-            <div class="progress-container" style="background: var(--border-color, #d0d0d0); border-radius: 6px; overflow: hidden; height: 10px; max-width: 85%; margin: 0 auto;">
-                <div id="stats-progress-bar" class="progress-bar" role="progressbar" aria-label="Progress to next milestone" style="background: linear-gradient(90deg, #4c79ff, #6b93ff);"></div>
+        <div class="global-stats-container">
+            <p id="all-routines-count">All Routines: <span id="mini-cycle-count">0 Cycles</span></p>
+            <p id="milestone-progress-text">Loading...</p>
+            <div class="progress-container">
+                <div id="stats-progress-bar" class="progress-bar" role="progressbar" aria-label="Progress to next milestone"></div>
             </div>
         </div>
     </section>
@@ -2624,7 +2658,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.947"></script>
+ <script type="module" src="miniCycle-main.js?v=1.948"></script>
 
 <script>
 // Sync About modal version with meta app-version

@@ -1,3 +1,7 @@
+## [1.948] - 2026-02-16
+- fix: Adjust z-index and position for body background to ensure proper layering of gradient and pattern
+
+
 ## [1.947] - 2026-02-15
 - feat: Refactor settings modal styles for improved layout and centralized dialog management
 
