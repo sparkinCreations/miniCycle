@@ -206,6 +206,23 @@ export class ModalManager {
             return;
         }
 
+        // Populate labels from label system (replacing hardcoded HTML strings)
+        const titleEl = feedbackModal.querySelector('#feedback-modal-title');
+        const descEl = feedbackModal.querySelector('#feedback-modal-title + p');
+        const textareaLabel = feedbackModal.querySelector('label[for="feedback-text"]');
+        const emailLabel = feedbackModal.querySelector('label[for="feedback-email"]');
+        const emailInput = document.getElementById(DOM_IDS.FEEDBACK_EMAIL);
+
+        if (titleEl) titleEl.textContent = getLabel('feedback.title');
+        if (descEl) descEl.textContent = getLabel('feedback.description');
+        if (closeFeedbackBtn) closeFeedbackBtn.setAttribute('aria-label', getLabel('feedback.closeAria'));
+        if (feedbackText) feedbackText.placeholder = getLabel('feedback.placeholder');
+        if (textareaLabel) textareaLabel.textContent = getLabel('feedback.feedbackLabel');
+        if (emailLabel) emailLabel.textContent = getLabel('feedback.emailLabel');
+        if (emailInput) emailInput.placeholder = getLabel('feedback.email');
+        if (submitButton) submitButton.textContent = getLabel('feedback.submit');
+        if (thankYouMessage) thankYouMessage.textContent = '\u2705 ' + getLabel('feedback.thanks');
+
         // Use safeAddEventListener to prevent duplicate listeners
         const safeAdd = _deps.safeAddEventListener;
 

@@ -19,7 +19,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { loadPanelVisibility } from './panelVisibilityHelpers.js';
 
@@ -84,6 +84,9 @@ export function _resetForTesting() {
     _initialized.debugToggle = false;
     _initialized.resetRecurringDefaults = false;
     _initialized.resetAchievementProgress = false;
+    _initialized.reducedMotionToggle = false;
+    _initialized.highContrastToggle = false;
+    _initialized.fontSizeSelect = false;
 }
 
 // ============================================================================
@@ -99,7 +102,10 @@ const _initialized = {
     quickActionsToggle: false,
     debugToggle: false,
     resetRecurringDefaults: false,
-    resetAchievementProgress: false
+    resetAchievementProgress: false,
+    reducedMotionToggle: false,
+    highContrastToggle: false,
+    fontSizeSelect: false
 };
 
 // ============================================================================
@@ -926,6 +932,199 @@ export async function syncCurrentSettingsToStorage() {
 }
 
 /**
+ * Font size label map for notification messages
+ */
+const FONT_SIZE_LABELS = {
+    '14': 'settings.fontSizeSmall',
+    '16': 'settings.fontSizeDefault',
+    '18': 'settings.fontSizeLarge',
+    '20': 'settings.fontSizeExtraLarge',
+};
+
+/**
+ * Setup reduced motion toggle
+ * Manual override for CSS animations/transitions.
+ * Stacks with OS prefers-reduced-motion preference.
+ */
+export function setupReducedMotionToggle() {
+    // ✅ Idempotency guard
+    if (_initialized.reducedMotionToggle) {
+        console.log('✅ Reduced motion toggle already set up');
+        return;
+    }
+    _initialized.reducedMotionToggle = true;
+
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('SettingsUIManager: safeAddEventListener dependency not injected');
+        return;
+    }
+
+    const toggle = document.getElementById(DOM_IDS.TOGGLE_REDUCED_MOTION);
+    if (!toggle) return;
+
+    console.log('Setting up reduced motion toggle...');
+
+    const schemaData = _deps.loadMiniCycleData?.();
+    const enabled = schemaData?.settings?.reducedMotion || false;
+    toggle.checked = enabled;
+    document.body.classList.toggle(DOM_CLASSES.REDUCED_MOTION, enabled);
+    document.documentElement.classList.toggle(DOM_CLASSES.REDUCED_MOTION, enabled);
+
+    toggle._changeHandler = async () => {
+        const enabled = toggle.checked;
+        console.log('Reduced motion toggle changed:', enabled);
+
+        const AppState = _deps.AppState?.();
+        if (AppState?.isReady?.()) {
+            await AppState.update(state => {
+                if (!state.settings) state.settings = {};
+                state.settings.reducedMotion = enabled;
+            }, true);
+            console.log('Reduced motion setting saved to AppState:', enabled);
+        } else {
+            console.error('AppState not ready - setting not saved');
+            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
+            toggle.checked = !enabled;
+            return;
+        }
+
+        document.body.classList.toggle(DOM_CLASSES.REDUCED_MOTION, enabled);
+        document.documentElement.classList.toggle(DOM_CLASSES.REDUCED_MOTION, enabled);
+
+        _deps.showNotification?.(
+            enabled ? getLabel('notify.reducedMotionEnabled') : getLabel('notify.reducedMotionDisabled'),
+            'info',
+            2000
+        );
+    };
+
+    safeAddEventListener(toggle, "change", toggle._changeHandler);
+    console.log('Reduced motion toggle setup completed');
+}
+
+/**
+ * Setup high contrast mode toggle
+ * Adds body.high-contrast class for enhanced visual contrast.
+ */
+export function setupHighContrastToggle() {
+    // ✅ Idempotency guard
+    if (_initialized.highContrastToggle) {
+        console.log('✅ High contrast toggle already set up');
+        return;
+    }
+    _initialized.highContrastToggle = true;
+
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('SettingsUIManager: safeAddEventListener dependency not injected');
+        return;
+    }
+
+    const toggle = document.getElementById(DOM_IDS.TOGGLE_HIGH_CONTRAST);
+    if (!toggle) return;
+
+    console.log('Setting up high contrast toggle...');
+
+    const schemaData = _deps.loadMiniCycleData?.();
+    const enabled = schemaData?.settings?.highContrast || false;
+    toggle.checked = enabled;
+    document.body.classList.toggle(DOM_CLASSES.HIGH_CONTRAST, enabled);
+
+    toggle._changeHandler = async () => {
+        const enabled = toggle.checked;
+        console.log('High contrast toggle changed:', enabled);
+
+        const AppState = _deps.AppState?.();
+        if (AppState?.isReady?.()) {
+            await AppState.update(state => {
+                if (!state.settings) state.settings = {};
+                state.settings.highContrast = enabled;
+            }, true);
+            console.log('High contrast setting saved to AppState:', enabled);
+        } else {
+            console.error('AppState not ready - setting not saved');
+            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
+            toggle.checked = !enabled;
+            return;
+        }
+
+        document.body.classList.toggle(DOM_CLASSES.HIGH_CONTRAST, enabled);
+
+        _deps.showNotification?.(
+            enabled ? getLabel('notify.highContrastEnabled') : getLabel('notify.highContrastDisabled'),
+            'info',
+            2000
+        );
+    };
+
+    safeAddEventListener(toggle, "change", toggle._changeHandler);
+    console.log('High contrast toggle setup completed');
+}
+
+/**
+ * Setup font size select control
+ * Sets --font-size-base CSS custom property on :root.
+ */
+export function setupFontSizeSelect() {
+    // ✅ Idempotency guard
+    if (_initialized.fontSizeSelect) {
+        console.log('✅ Font size select already set up');
+        return;
+    }
+    _initialized.fontSizeSelect = true;
+
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('SettingsUIManager: safeAddEventListener dependency not injected');
+        return;
+    }
+
+    const select = document.getElementById(DOM_IDS.FONT_SIZE_SELECT);
+    if (!select) return;
+
+    console.log('Setting up font size select...');
+
+    const schemaData = _deps.loadMiniCycleData?.();
+    const savedSize = schemaData?.settings?.fontSize || '16';
+    select.value = savedSize;
+    if (savedSize !== '16') {
+        document.documentElement.style.setProperty('--font-size-base', `${savedSize}px`);
+    }
+
+    select._changeHandler = async () => {
+        const size = select.value;
+        console.log('Font size changed:', size);
+
+        const AppState = _deps.AppState?.();
+        if (AppState?.isReady?.()) {
+            await AppState.update(state => {
+                if (!state.settings) state.settings = {};
+                state.settings.fontSize = size;
+            }, true);
+            console.log('Font size setting saved to AppState:', size);
+        } else {
+            console.error('AppState not ready - setting not saved');
+            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
+            select.value = '16';
+            return;
+        }
+
+        document.documentElement.style.setProperty('--font-size-base', `${size}px`);
+
+        const labelKey = FONT_SIZE_LABELS[size] || 'settings.fontSizeDefault';
+        _deps.showNotification?.(
+            getLabel('notify.fontSizeChanged', { vars: { size: getLabel(labelKey) } }),
+            'info',
+            2000
+        );
+    };
+
+    safeAddEventListener(select, "change", select._changeHandler);
+    console.log('Font size select setup completed');
+}
+
+/**
  * Initialize all settings UI components
  */
 export function initAllToggles() {
@@ -941,6 +1140,9 @@ export function initAllToggles() {
     setupDebugModeToggle();
     setupResetRecurringButton();
     setupResetAchievementProgressButton();
+    setupReducedMotionToggle();
+    setupHighContrastToggle();
+    setupFontSizeSelect();
 }
 
 console.log('Settings UI Manager loaded');

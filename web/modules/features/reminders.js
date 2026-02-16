@@ -17,7 +17,8 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, FREQUENCY_MS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -33,7 +34,8 @@ const di = createDIModule('Reminders', {
     autoSave: optional(null),
     AppGlobalState: optional(null),
     AppMeta: optional(null),
-    getModal: optional(null)
+    getModal: optional(null),
+    showConfirmationModal: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -69,6 +71,9 @@ export class MiniCycleReminders {
         // Store constructor-provided version (can be overridden by _deps.AppMeta)
         this._constructorVersion = dependencies.AppMeta?.version;
 
+        // Track active reminder notification to prevent stacking
+        this._activeReminderNotification = null;
+
         console.log('🔔 MiniCycle Reminders module initialized');
     }
 
@@ -85,6 +90,7 @@ export class MiniCycleReminders {
             updateUndoRedoButtons: _deps.updateUndoRedoButtons || (() => console.log('⏭️ updateUndoRedoButtons not available')),
             autoSave: _deps.autoSave || (() => console.warn('⚠️ autoSave not available')),
             getModal: _deps.getModal,
+            showConfirmationModal: _deps.showConfirmationModal,
             ...this._constructorDeps
         };
     }
@@ -373,6 +379,8 @@ export class MiniCycleReminders {
             // Fix #31: Use ?? instead of || so false doesn't become true
             indefinite: this.deps.getElementById(DOM_IDS.INDEFINITE_CHECKBOX)?.checked ?? true,
             dueDatesReminders: this.deps.getElementById(DOM_IDS.DUE_DATES_REMINDERS)?.checked ?? false,
+            browserNotifications: this.deps.getElementById(DOM_IDS.BROWSER_NOTIFICATIONS)?.checked ?? false,
+            privacyNoticeOpen: this.deps.getElementById(DOM_IDS.PRIVACY_NOTICE_DETAILS)?.open ?? false,
             repeatCount: parseInt(this.deps.getElementById(DOM_IDS.REPEAT_COUNT)?.value) || 0,
             frequencyValue: parseInt(this.deps.getElementById(DOM_IDS.FREQUENCY_VALUE)?.value) || 0,
             frequencyUnit: this.deps.getElementById(DOM_IDS.FREQUENCY_UNIT)?.value || "hours"
@@ -386,8 +394,7 @@ export class MiniCycleReminders {
         if (enabled && (!previousSettings.enabled || settingsChanged)) {
             // First enable or settings changed - reset everything
             const now = Date.now();
-            const multiplier = remindersToSave.frequencyUnit === "hours" ? 3600000 :
-                             remindersToSave.frequencyUnit === "days" ? 86400000 : 60000;
+            const multiplier = FREQUENCY_MS[remindersToSave.frequencyUnit] || FREQUENCY_MS.minutes;
             const intervalMs = remindersToSave.frequencyValue * multiplier;
 
             remindersToSave.nextReminderTime = now + intervalMs;
@@ -452,9 +459,18 @@ export class MiniCycleReminders {
         const frequencyValue = this.deps.getElementById(DOM_IDS.FREQUENCY_VALUE);
         const frequencyUnit = this.deps.getElementById(DOM_IDS.FREQUENCY_UNIT);
 
+        const browserNotifications = this.deps.getElementById(DOM_IDS.BROWSER_NOTIFICATIONS);
+
         if (enableReminders) enableReminders.checked = reminders.enabled;
         if (indefiniteCheckbox) indefiniteCheckbox.checked = reminders.indefinite;
         if (dueDatesReminders) dueDatesReminders.checked = reminders.dueDatesReminders;
+        // Only check browser notifications if permission is still granted
+        if (browserNotifications) {
+            browserNotifications.checked = reminders.browserNotifications &&
+                typeof Notification !== 'undefined' && Notification.permission === 'granted';
+        }
+        const privacyNotice = this.deps.getElementById(DOM_IDS.PRIVACY_NOTICE_DETAILS);
+        if (privacyNotice) privacyNotice.open = reminders.privacyNoticeOpen ?? false;
         if (repeatCount) repeatCount.value = reminders.repeatCount;
         if (frequencyValue) frequencyValue.value = reminders.frequencyValue;
         if (frequencyUnit) frequencyUnit.value = reminders.frequencyUnit;
@@ -589,13 +605,47 @@ export class MiniCycleReminders {
 
         // Send notification
         console.log('📢 Showing reminder notification for tasks:', incompleteTasks);
-        // No duration = requires manual dismissal (reminders should persist until user acknowledges)
+        // Dismiss previous reminder notification to prevent stacking
+        if (this._activeReminderNotification?.parentNode) {
+            this._activeReminderNotification.remove();
+        }
+        // No duration = requires manual dismissal (user may be away from app)
         // Use \n instead of <br> - CSS white-space: pre-line renders newlines (XSS-safe)
-        this.deps.showNotification(`🔔 You have tasks to complete:\n~ ${incompleteTasks.join("\n~ ")}`, "info");
+        this._activeReminderNotification = this.deps.showNotification(`🔔 You have tasks to complete:\n~ ${incompleteTasks.join("\n~ ")}`, "info");
+
+        // Send browser notification if enabled and permission granted
+        console.log('🔔 Browser notification check:', {
+            settingEnabled: remindersSettings.browserNotifications,
+            apiAvailable: typeof Notification !== 'undefined',
+            permission: typeof Notification !== 'undefined' ? Notification.permission : 'N/A'
+        });
+        if (remindersSettings.browserNotifications && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            const notificationBody = incompleteTasks.map(t => `~ ${t}`).join('\n');
+            try {
+                // Try ServiceWorker notification first (more reliable, works when tab is in background)
+                const registration = await navigator.serviceWorker?.getRegistration();
+                if (registration) {
+                    await registration.showNotification('miniCycle Reminder', {
+                        body: notificationBody,
+                        icon: './assets/images/logo/taskcycle_logo_blackandwhite_transparent.png',
+                        tag: 'minicycle-reminder'
+                    });
+                    console.log('✅ Browser notification sent via ServiceWorker');
+                } else {
+                    // Fallback to basic Notification API
+                    new Notification('miniCycle Reminder', {
+                        body: notificationBody,
+                        icon: './assets/images/logo/taskcycle_logo_blackandwhite_transparent.png'
+                    });
+                    console.log('✅ Browser notification sent via Notification API');
+                }
+            } catch (e) {
+                console.warn('⚠️ Browser notification failed:', e);
+            }
+        }
 
         // Update counter and next reminder time
-        const multiplier = remindersSettings.frequencyUnit === "hours" ? 3600000 :
-                         remindersSettings.frequencyUnit === "days" ? 86400000 : 60000;
+        const multiplier = FREQUENCY_MS[remindersSettings.frequencyUnit] || FREQUENCY_MS.minutes;
         const intervalMs = remindersSettings.frequencyValue * multiplier;
         const now = Date.now();
 
@@ -603,10 +653,11 @@ export class MiniCycleReminders {
         const AppStateNotify = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
         if (AppStateNotify?.isReady?.()) {
             await AppStateNotify.update(state => {
-                const activeCycleId = state?.appState?.activeCycleId;
-                if (activeCycleId && state?.data?.cycles?.[activeCycleId]?.reminders) {
-                    state.data.cycles[activeCycleId].reminders.timesReminded = timesReminded + 1;
-                    state.data.cycles[activeCycleId].reminders.nextReminderTime = now + intervalMs;
+                // Fix: Write to customReminders (where loadMiniCycleData reads from)
+                // Previously wrote to cycles[id].reminders which was never read back
+                if (state.customReminders) {
+                    state.customReminders.timesReminded = timesReminded + 1;
+                    state.customReminders.nextReminderTime = now + intervalMs;
                 }
             }, true); // immediate save for reminders
         } else {
@@ -720,8 +771,7 @@ export class MiniCycleReminders {
         // ✅ If no future reminder time is set, calculate it from frequency settings
         if (timeUntilNext <= 0) {
             console.log("⏰ No future reminder time set, calculating from frequency settings");
-            const multiplier = remindersSettings.frequencyUnit === "hours" ? 3600000 :
-                             remindersSettings.frequencyUnit === "days" ? 86400000 : 60000;
+            const multiplier = FREQUENCY_MS[remindersSettings.frequencyUnit] || FREQUENCY_MS.minutes;
             const intervalMs = (remindersSettings.frequencyValue || 1) * multiplier;
             nextReminderTime = now + intervalMs;
             timeUntilNext = intervalMs;
@@ -817,7 +867,7 @@ export class MiniCycleReminders {
                         const remindersModal = this.deps.getModal('reminders');
                         if (remindersModal && !remindersModal.open) {
                             remindersModal._previousFocus = document.activeElement;
-                            remindersModal.showModal();
+                            remindersModal.show();
                         }
 
                         // Remove notification after clicking
@@ -940,9 +990,9 @@ export class MiniCycleReminders {
                 const AppStateDueDates = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
                 if (AppStateDueDates?.update) {
                     AppStateDueDates.update(state => {
-                        const activeCycleId = state.appState.activeCycleId;
-                        if (activeCycleId && state.data.cycles[activeCycleId]?.reminders) {
-                            state.data.cycles[activeCycleId].reminders.dueDatesReminders = dueDatesReminders.checked;
+                        // Fix: Write to customReminders (where loadMiniCycleData reads from)
+                        if (state.customReminders) {
+                            state.customReminders.dueDatesReminders = dueDatesReminders.checked;
                         }
                         state.metadata.lastModified = Date.now();
                     }, true); // immediate save
@@ -975,6 +1025,91 @@ export class MiniCycleReminders {
             }
         });
 
+        // Browser notifications toggle listener
+        const browserNotificationsCheckbox = this.deps.getElementById(DOM_IDS.BROWSER_NOTIFICATIONS);
+        if (browserNotificationsCheckbox) {
+            this.deps.safeAddEventListener(browserNotificationsCheckbox, "change", () => {
+                if (browserNotificationsCheckbox.checked) {
+                    // Uncheck immediately — only re-check after confirmation + permission
+                    browserNotificationsCheckbox.checked = false;
+
+                    // Case 1: Browser doesn't support Notification API
+                    if (typeof Notification === 'undefined') {
+                        this.deps.showNotification(getLabel('reminders.permissionUnsupported'), 'warning', 3000);
+                        return;
+                    }
+
+                    // Case 2: Permission was previously denied/blocked — can't re-prompt
+                    if (Notification.permission === 'denied') {
+                        this.deps.showNotification(getLabel('reminders.permissionBlocked'), 'warning', 5000);
+                        return;
+                    }
+
+                    // Case 3: Permission already granted — skip confirmation, just enable
+                    if (Notification.permission === 'granted') {
+                        browserNotificationsCheckbox.checked = true;
+                        this.autoSaveReminders();
+                        this.deps.showNotification(getLabel('reminders.permissionGranted'), 'success', 2500);
+                        return;
+                    }
+
+                    // Case 4: Permission is "default" — show privacy warning then request
+                    const showConfirm = this.deps.showConfirmationModal;
+                    if (!showConfirm) {
+                        console.warn('⚠️ showConfirmationModal not available');
+                        return;
+                    }
+
+                    showConfirm({
+                        title: getLabel('reminders.browserNotifications'),
+                        message: getLabel('reminders.browserNotificationsWarning'),
+                        confirmText: 'Enable',
+                        cancelText: 'Cancel',
+                        callback: async (confirmed) => {
+                            if (!confirmed) return;
+
+                            try {
+                                const permission = await Notification.requestPermission();
+                                if (permission === 'granted') {
+                                    // Verify with a test notification
+                                    try {
+                                        const test = new Notification('miniCycle', { body: 'Browser notifications enabled!', silent: true });
+                                        test.close();
+                                        browserNotificationsCheckbox.checked = true;
+                                        this.autoSaveReminders();
+                                        this.deps.showNotification(getLabel('reminders.permissionGranted'), 'success', 2500);
+                                    } catch (testErr) {
+                                        console.warn('⚠️ Test notification failed:', testErr);
+                                        this.deps.showNotification(getLabel('reminders.permissionTestFailed'), 'warning', 5000);
+                                    }
+                                } else if (permission === 'denied') {
+                                    this.deps.showNotification(getLabel('reminders.permissionDenied'), 'info', 4000);
+                                } else {
+                                    // "default" — user dismissed the prompt without choosing
+                                    this.deps.showNotification(getLabel('reminders.permissionDenied'), 'info', 4000);
+                                }
+                            } catch (e) {
+                                console.warn('⚠️ Notification permission request failed:', e);
+                                this.deps.showNotification(getLabel('reminders.permissionUnsupported'), 'warning', 3000);
+                            }
+                        }
+                    });
+                } else {
+                    // Toggling OFF — save and confirm
+                    this.autoSaveReminders();
+                    this.deps.showNotification(getLabel('reminders.browserNotificationsDisabled'), 'info', 2000);
+                }
+            });
+        }
+
+        // Privacy notice toggle — remember open/closed state
+        const privacyNoticeDetails = this.deps.getElementById(DOM_IDS.PRIVACY_NOTICE_DETAILS);
+        if (privacyNoticeDetails) {
+            this.deps.safeAddEventListener(privacyNoticeDetails, "toggle", () => {
+                this.autoSaveReminders();
+            });
+        }
+
         console.log('✅ Reminder input listeners set up');
     }
 
@@ -995,14 +1130,21 @@ export class MiniCycleReminders {
             });
         }
 
-        // Close on outside click (::backdrop fires click on dialog element)
+        // Close on outside click (overlay area of the dialog)
         this.deps.safeAddEventListener(remindersModal, "click", (event) => {
             if (event.target === remindersModal) {
                 remindersModal.close();
             }
         });
 
-        // Restore focus when dialog closes (including native ESC)
+        // ESC to close (manual — show() doesn't provide automatic ESC like showModal())
+        this.deps.safeAddEventListener(remindersModal, "keydown", (event) => {
+            if (event.key === 'Escape' && remindersModal.open) {
+                remindersModal.close();
+            }
+        });
+
+        // Restore focus when dialog closes
         this.deps.safeAddEventListener(remindersModal, "close", () => {
             remindersModal._previousFocus?.focus({ focusVisible: false });
         });
@@ -1031,7 +1173,7 @@ export class MiniCycleReminders {
             const remindersModal = this.deps.getModal('reminders');
             if (remindersModal && !remindersModal.open) {
                 remindersModal._previousFocus = document.activeElement;
-                remindersModal.showModal();
+                remindersModal.show();
             }
 
             // Hide main menu if available

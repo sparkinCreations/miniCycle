@@ -85,7 +85,7 @@ input[type="date"] {
     padding: 6px 10px;
     border: 1px solid #ccc;
     border-radius: var(--radius-sm);
-    font-size: 14px;
+    font-size: var(--font-size-sm);
 }
 
 .time-picker-group input[type="number"]:focus,
@@ -121,7 +121,7 @@ input[type="checkbox"] {
 }
 
 .input-group label {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     color: var(--theme-text-secondary, #666);
 }
 

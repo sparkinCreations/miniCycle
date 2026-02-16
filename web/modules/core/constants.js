@@ -128,6 +128,17 @@ export const INTERVALS = Object.freeze({
     STATS_CACHE_TTL: 5000               // 5s - Task stats cache time-to-live
 });
 
+/**
+ * Frequency unit to milliseconds conversion
+ * Used by reminders system for scheduling intervals
+ * @constant {Object}
+ */
+export const FREQUENCY_MS = Object.freeze({
+    minutes: 60000,
+    hours: 3600000,
+    days: 86400000
+});
+
 // ============================================================================
 // SIZE LIMITS
 // ============================================================================
@@ -393,7 +404,11 @@ export const DOM_CLASSES = Object.freeze({
 
     // ---- Task Options Visibility ----
     TASK_OPTIONS_FORCE_HIDDEN: 'task-options-force-hidden',
-    TASK_OPTIONS_VISIBLE: 'task-options-visible'
+    TASK_OPTIONS_VISIBLE: 'task-options-visible',
+
+    // ---- Accessibility ----
+    REDUCED_MOTION: 'reduced-motion',
+    HIGH_CONTRAST: 'high-contrast'
 });
 
 // ============================================================================
@@ -456,6 +471,11 @@ export const DOM_IDS = Object.freeze({
     SETTINGS_TOGGLE_HELP_WINDOW: 'settings-toggle-help-window',
     SETTINGS_TOGGLE_QUICK_ACTIONS: 'settings-toggle-quick-actions',
 
+    // ---- Accessibility Settings ----
+    TOGGLE_REDUCED_MOTION: 'toggle-reduced-motion',
+    TOGGLE_HIGH_CONTRAST: 'toggle-high-contrast',
+    FONT_SIZE_SELECT: 'font-size-select',
+
     // ---- Backup & Recovery ----
     BACKUP_MINI_CYCLES: 'backup-mini-cycles',
     RESTORE_MINI_CYCLES: 'restore-mini-cycles',
@@ -473,6 +493,7 @@ export const DOM_IDS = Object.freeze({
     OPEN_FEEDBACK_MODAL_FOOTER: 'open-feedback-modal-footer',
     FEEDBACK_FORM: 'feedback-form',
     FEEDBACK_TEXT: 'feedback-text',
+    FEEDBACK_EMAIL: 'feedback-email',
     SUBMIT_FEEDBACK: 'submit-feedback',
     THANK_YOU_MESSAGE: 'thank-you-message',
     ABOUT_MODAL: 'about-modal',
@@ -521,6 +542,8 @@ export const DOM_IDS = Object.freeze({
     FREQUENCY_UNIT: 'frequencyUnit',
     FREQUENCY_SECTION: 'frequency-section',
     REPEAT_COUNT_ROW: 'repeat-count-row',
+    BROWSER_NOTIFICATIONS: 'browserNotifications',
+    PRIVACY_NOTICE_DETAILS: 'privacyNoticeDetails',
 
     // ---- Routine / Cycle ----
     MINI_CYCLE_TITLE: 'mini-cycle-title',

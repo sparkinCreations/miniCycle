@@ -188,13 +188,13 @@
   --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-family-mono: 'SF Mono', 'Monaco', 'Consolas', monospace;
 
-  --font-size-xs: 12px;
-  --font-size-sm: 14px;
   --font-size-base: 16px;
-  --font-size-lg: 18px;
-  --font-size-xl: 20px;
-  --font-size-2xl: 24px;
-  --font-size-3xl: 30px;
+  --font-size-xs: calc(var(--font-size-base) - 4px);
+  --font-size-sm: calc(var(--font-size-base) - 2px);
+  --font-size-lg: calc(var(--font-size-base) + 2px);
+  --font-size-xl: calc(var(--font-size-base) + 4px);
+  --font-size-2xl: calc(var(--font-size-base) + 8px);
+  --font-size-3xl: calc(var(--font-size-base) + 14px);
 
   --font-weight-normal: 400;
   --font-weight-medium: 500;
@@ -291,4 +291,19 @@
     --animation-pulse: 0ms;
     --transition-stagger: 0ms;
   }
+}
+
+/* Manual reduced motion override (settings toggle).
+   Stacks with OS preference — either one active = motion disabled. */
+body.reduced-motion,
+html.reduced-motion {
+    --transition-fast: 0ms;
+    --transition-normal: 0ms;
+    --transition-slow: 0ms;
+    --animation-pop: 0ms;
+    --animation-slow: 0ms;
+    --animation-exit: 0ms;
+    --animation-spin: 0ms;
+    --animation-pulse: 0ms;
+    --transition-stagger: 0ms;
 }

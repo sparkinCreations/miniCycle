@@ -2,9 +2,9 @@
 ## Custom Implementation for miniCycle Task Rearrangement
 
 **Author:** miniCycle Team
-**Last Updated:** December 2025
+**Last Updated:** February 2026
 **Status:** Production Ready
-**Test Coverage:** 45 tests (100% passing)
+**Test Coverage:** 76 tests (100% passing)
 
 ---
 
@@ -132,20 +132,25 @@ Libraries focus on drag-and-drop but we needed:
 - Provides fallback methods
 - Logs helpful warnings
 
-#### 2. **AppGlobalState (Runtime)**
-**Location:** `modules/boot/orchestrator.js`
+#### 2. **DragDropManager Instance State (Runtime)**
+**Location:** `modules/task/dragDropManager.js` (constructor)
 
-**Properties:**
+Drag state lives on the DragDropManager instance (not `window.AppGlobalState`):
 ```javascript
-window.AppGlobalState = {
-  draggedTask: null,           // Current element being dragged
-  isDragging: false,           // Boolean drag state
-  lastReorderTime: 0,          // Timestamp for snapshot debouncing
-  didDragReorderOccur: false,  // Flag for save operations
-  lastRearrangeTarget: null,   // Previous rearrange target
-  rearrangeInitialized: false  // Prevents double setup
-};
+// Instance properties (this.*)
+this.draggedTask = null;           // Current element being dragged
+this.rearrangeInitialized = false; // Prevents double setup
+this.didDragReorderOccur = false;  // Flag for save operations
+this.lastReorderTime = 0;         // Timestamp for snapshot debouncing
+this.lastRearrangeTarget = null;   // Previous rearrange target
+this._nativeDragActive = false;   // True when iOS native DnD has fired dragstart
+this._currentDropTarget = null;   // O(1) drop target tracking
 ```
+
+**Why `_nativeDragActive`?** (February 2026 Fix)
+On iOS, when the user long-presses a `draggable="true"` element, iOS fires `dragstart`
+then `touchcancel` (taking over the touch). Without this flag, `touchcancel` would clear
+`this.draggedTask`, breaking the subsequent `dragover` and `drop` handlers.
 
 #### 3. **AppState (Persistent)**
 **Location:** `utilities/state.js`
@@ -610,6 +615,20 @@ if (!isMobileDevice) {
 - Native iOS drag preview gives smooth visual feedback
 - Works on all iOS versions back to iOS 11
 
+**Critical: iOS Native DnD Event Sequence** (February 2026 Fix)
+
+When iOS recognizes a long-press on `draggable="true"`, it fires HTML5 drag events:
+```
+touchstart → (500ms timer) → dragstart → touchcancel → dragover... → drop
+                                  ↑              ↑                      ↑
+                          _nativeDragActive    DON'T clear         Save reorder
+                             = true          draggedTask!          + cleanup
+```
+
+The `touchcancel` is NOT an error — it's iOS handing control to its native DnD system.
+The `_nativeDragActive` flag prevents `touchcancel` from clearing `this.draggedTask`,
+which the `drop` handler needs to persist the reorder to AppState.
+
 ---
 
 ## 🔬 Deep Dive: How The Code Actually Works
@@ -637,7 +656,6 @@ enableDragAndDrop(taskElement) {
     transparentPixel.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
 
     // 3. CLOSURE VARIABLES (private to THIS task)
-    let readyToDrag = false;      // Touch drag ready state
     let touchStartX = 0;          // Starting X position
     let touchStartY = 0;          // Starting Y position
     let holdTimeout = null;       // Long-press timer reference
@@ -649,6 +667,11 @@ enableDragAndDrop(taskElement) {
 
     // These variables are captured in the closures below
     // Each task gets its OWN copy
+
+    // INSTANCE PROPERTIES (shared across all tasks, on DragDropManager):
+    // this.draggedTask            — current dragged element
+    // this.didDragReorderOccur    — flag for save operations
+    // this._nativeDragActive      — iOS native DnD handoff flag
 }
 ```
 
@@ -676,7 +699,7 @@ taskElement.addEventListener("touchstart", () => {
 ```
 IDLE
   ↓ touchstart
-  ├─→ isTap = true
+  ├─→ isTap = true, _nativeDragActive = false
   ├─→ Start 500ms timer
   │
   ├──→ touchmove (> 15px) → CANCEL
@@ -685,68 +708,82 @@ IDLE
   │
   ├──→ 500ms elapsed → LONG_PRESS
   │     ├─→ isLongPress = true
-  │     ├─→ isDragging = true
-  │     ├─→ Add .long-pressed class
-  │     └─→ Reveal task buttons
+  │     ├─→ isDragging = true, this.draggedTask = taskElement
+  │     ├─→ Add .dragging class
+  │     ├─→ If three-dots disabled: Add .long-pressed + reveal task buttons
+  │     └─→ If three-dots enabled: drag mode only (no task buttons)
   │
-  └──→ touchmove (horizontal + long-press) → DRAGGING
-        ├─→ preventDefault()
-        ├─→ Calculate finger position
-        └─→ Call handleRearrange()
+  ├──→ touchmove (isDragging) → CUSTOM TOUCH DRAG
+  │     ├─→ preventDefault()
+  │     ├─→ elementFromPoint().closest('.task')
+  │     └─→ Call handleRearrange()
+  │
+  ├──→ dragstart fires (iOS native DnD) → NATIVE HANDOFF
+  │     ├─→ _nativeDragActive = true
+  │     └─→ iOS shows native drag preview
+  │
+  ├──→ touchcancel
+  │     ├─→ If _nativeDragActive: reset local state ONLY (preserve draggedTask!)
+  │     └─→ If NOT _nativeDragActive: full cleanup (real cancel)
+  │
+  └──→ (iOS native) dragover → NATIVE DRAGGING
+        └─→ handleRearrange() (same as desktop)
 
-touchend → CLEANUP
+touchend → CLEANUP (custom touch drag path)
   ├─→ clearTimeout(holdTimeout)
-  ├─→ Remove .dragging class
-  ├─→ Clear AppGlobalState.draggedTask
-  └─→ Keep .long-pressed if isLongPress
+  ├─→ If _nativeDragActive: defer to drop handler, return
+  ├─→ saveDragReorder() if reorder occurred
+  ├─→ Clear this.draggedTask
+  └─→ Keep .long-pressed if isLongPress (and three-dots disabled)
+
+drop → SAVE (desktop + iOS native DnD path)
+  ├─→ saveDragReorder()
+  ├─→ cleanupDragState()
+  └─→ _nativeDragActive = false
 ```
 
 #### Line-by-Line: touchstart Handler
 
 ```javascript
 taskElement.addEventListener("touchstart", (event) => {
-    // Line 170: Ignore if touching task buttons (edit, delete, etc.)
     if (event.target.closest(".task-options")) return;
 
-    // Lines 171-177: Reset all state variables
-    isLongPress = false;       // Not a long-press yet
-    isDragging = false;        // Not dragging yet
-    isTap = true;              // Assume it's a tap (until proven otherwise)
-    readyToDrag = false;       // Not ready to drag
-    touchStartX = event.touches[0].clientX;  // Remember where finger started
-    touchStartY = event.touches[0].clientY;  // (for movement detection)
-    preventClick = false;      // Don't prevent clicks yet
+    // Reset all state variables for new touch sequence
+    isLongPress = false;
+    isDragging = false;
+    isTap = true;
+    touchStartX = event.touches[0].clientX;
+    touchStartY = event.touches[0].clientY;
+    preventClick = false;
+    this._nativeDragActive = false;  // Reset for new touch sequence
 
-    // Lines 179-185: Hide task buttons on OTHER tasks
-    // This ensures only ONE task shows buttons at a time
-    document.querySelectorAll(".task").forEach(task => {
-        if (task !== taskElement) {  // NOT this task
+    // Hide task buttons on OTHER tasks (only one task shows buttons at a time)
+    document.querySelectorAll(DOM_SELECTORS.TASK).forEach(task => {
+        if (task !== taskElement) {
             task.classList.remove("long-pressed");
-            this.deps.hideTaskButtons(task);
+            this.deps.hideTaskButtons?.(task);
         }
     });
 
-    // Lines 187-202: Start long-press timer (500ms)
+    // Start long-press timer (500ms)
     holdTimeout = setTimeout(() => {
-        // This runs ONLY if user holds for 500ms without moving
+        isLongPress = true;
+        isTap = false;
+        this.draggedTask = taskElement;  // Instance property (not AppGlobalState)
+        isDragging = true;
+        taskElement.classList.add("dragging");
 
-        isLongPress = true;    // Officially a long-press now
-        isTap = false;         // Definitely not a tap
+        event.preventDefault();
 
-        // Set global drag state (for handleRearrange to access)
-        if (window.AppGlobalState) {
-            window.AppGlobalState.draggedTask = taskElement;
+        // Only reveal task buttons if three-dots mode is NOT enabled.
+        // When three-dots is on, long press activates drag mode only.
+        const threeDotsEnabled = document.body.classList.contains('show-three-dots-enabled');
+        if (!threeDotsEnabled) {
+            taskElement.classList.add("long-pressed");
+            this.deps.revealTaskButtons?.(taskElement, 'long-press');
         }
-
-        isDragging = true;     // Ready to drag
-        taskElement.classList.add("dragging", "long-pressed");
-
-        event.preventDefault(); // Prevent default long-press actions
-
-        // Show task buttons (edit, delete, etc.)
-        this.deps.revealTaskButtons(taskElement);
-    }, 500); // Wait 500ms
-});
+    }, 500);
+}, { passive: false });
 ```
 
 **Why 500ms?**
@@ -760,56 +797,41 @@ taskElement.addEventListener("touchstart", (event) => {
 
 ```javascript
 taskElement.addEventListener("touchmove", (event) => {
-    // Lines 206-209: Calculate how far finger moved
     const touchMoveX = event.touches[0].clientX;
     const touchMoveY = event.touches[0].clientY;
-    const deltaX = Math.abs(touchMoveX - touchStartX);  // Horizontal movement
-    const deltaY = Math.abs(touchMoveY - touchStartY);  // Vertical movement
+    const deltaX = Math.abs(touchMoveX - touchStartX);
+    const deltaY = Math.abs(touchMoveY - touchStartY);
 
-    // Lines 211-217: CANCEL long-press if moved too much
-    // This prevents accidental activation from shaky hands
+    // PRIORITY: If already dragging, process drag move FIRST
+    // (before threshold check, which would incorrectly cancel an active drag)
+    if (isDragging && this.draggedTask) {
+        if (event.cancelable) {
+            event.preventDefault();
+        }
+        // elementFromPoint returns child elements — .closest('.task') resolves to container
+        const elementAtPoint = document.elementFromPoint(touchMoveX, touchMoveY);
+        const targetTask = elementAtPoint?.closest('.task');
+        if (targetTask) {
+            this.handleRearrange(targetTask, event);
+        }
+        return;
+    }
+
+    // Before long press activates: cancel if moved too much
     if (deltaX > moveThreshold || deltaY > moveThreshold) {
-        clearTimeout(holdTimeout);  // Stop the 500ms timer
-        isLongPress = false;        // Not a long-press anymore
-        isTap = false;              // Not a tap either
-        return;                     // Exit early
+        clearTimeout(holdTimeout);
+        isLongPress = false;
+        isTap = false;
+        return;
     }
 
-    // Lines 219-224: CANCEL if scrolling vertically
-    // If user is scrolling the page, don't interfere
-    if (deltaY > deltaX) {          // More vertical than horizontal?
-        clearTimeout(holdTimeout);  // Stop the timer
-        isTap = false;              // Not a tap
-        return;                     // Allow normal scrolling
+    // Allow normal scrolling if moving vertically
+    if (deltaY > deltaX) {
+        clearTimeout(holdTimeout);
+        isTap = false;
+        return;
     }
-
-    // Lines 226-233: Transition to dragging (if long-press completed)
-    if (isLongPress && readyToDrag && !isDragging) {
-        isDragging = true;          // Now officially dragging
-
-        if (event.cancelable) {
-            event.preventDefault();  // Prevent scrolling
-        }
-    }
-
-    // Lines 235-243: Handle continuous dragging
-    if (isDragging && window.AppGlobalState?.draggedTask) {
-        if (event.cancelable) {
-            event.preventDefault();  // Keep preventing scroll
-        }
-
-        // Find which element is under the finger
-        const movingTask = document.elementFromPoint(
-            event.touches[0].clientX,
-            event.touches[0].clientY
-        );
-
-        if (movingTask) {
-            // Call rearrange logic to reorder tasks
-            this.handleRearrange(movingTask, event);
-        }
-    }
-});
+}, { passive: false });
 ```
 
 **Key Insight: Movement Threshold**
@@ -839,37 +861,94 @@ if (8 > 15 || 3 > 15) { // FALSE
 
 ```javascript
 taskElement.addEventListener("touchend", () => {
-    // Line 247: Always clear the timer (whether it fired or not)
     clearTimeout(holdTimeout);
 
-    // Lines 249-254: Handle tap detection
     if (isTap) {
-        // This was just a tap (no long-press, no drag)
-        preventClick = true;  // Prevent click events for 100ms
-        setTimeout(() => {
-            preventClick = false;  // Allow clicks again
-        }, 100);
+        preventClick = true;
+        setTimeout(() => { preventClick = false; }, 100);
     }
 
-    // Lines 256-259: Clean up global drag state
-    if (window.AppGlobalState?.draggedTask) {
-        window.AppGlobalState.draggedTask.classList.remove("dragging", "rearranging");
-        window.AppGlobalState.draggedTask = null;  // Clear reference
+    // If native DnD took over (iOS), let the drop handler save.
+    // touchend won't fire after touchcancel, but handle both for safety.
+    if (this._nativeDragActive) {
+        isDragging = false;
+        return;
     }
 
-    isDragging = false;  // Not dragging anymore
-
-    // Lines 263-269: Keep buttons visible if long-press
-    if (isLongPress) {
-        // User long-pressed, so keep buttons visible
-        // (Don't remove .long-pressed class)
-        console.log("✅ Long Press Completed - Keeping Task Options Open");
-        return;  // Exit early
+    // Custom touch drag path: save reorder before clearing references
+    if (isDragging && this.didDragReorderOccur) {
+        this.saveDragReorder();
     }
 
-    // If we get here, it was NOT a long-press
+    if (this.draggedTask) {
+        this.draggedTask.classList.remove("dragging", "rearranging");
+        this.draggedTask = null;
+    }
+
+    isDragging = false;
+    this.lastReorderTime = 0;
+
+    // Keep task options open after long-press (only when buttons were revealed)
+    const threeDotsEnabled = document.body.classList.contains('show-three-dots-enabled');
+    if (isLongPress && !threeDotsEnabled) {
+        return;
+    }
+
     taskElement.classList.remove("long-pressed");
 });
+```
+
+---
+
+#### Line-by-Line: touchcancel Handler (February 2026)
+
+This handler is critical for iOS native DnD support. When iOS takes over a touch
+sequence for its native drag-and-drop, it fires `touchcancel`. The handler must
+distinguish between iOS native DnD handoff vs. a real cancellation (system alert, etc.).
+
+```javascript
+taskElement.addEventListener("touchcancel", () => {
+    clearTimeout(holdTimeout);
+
+    if (this._nativeDragActive) {
+        // iOS native DnD took over — DON'T clear this.draggedTask!
+        // The drop handler needs it to save the reorder.
+        // Only reset local touch state.
+        isDragging = false;
+        isLongPress = false;
+        isTap = false;
+        return;
+    }
+
+    // Real cancel (system alert, etc.) — clean up everything
+    if (isDragging && this.didDragReorderOccur) {
+        this.saveDragReorder();
+    }
+
+    if (this.draggedTask) {
+        this.draggedTask.classList.remove("dragging", "rearranging");
+        this.draggedTask = null;
+    }
+
+    isDragging = false;
+    isLongPress = false;
+    isTap = false;
+    this.lastReorderTime = 0;
+    taskElement.classList.remove("long-pressed");
+});
+```
+
+**Why This Matters:**
+
+Without the `_nativeDragActive` guard, the iOS flow breaks:
+```
+1. touchstart → timer starts
+2. Timer fires → this.draggedTask = taskElement
+3. iOS fires dragstart → _nativeDragActive = true
+4. iOS fires touchcancel → ❌ OLD: clears this.draggedTask (BUG!)
+                           ✅ NEW: preserves this.draggedTask
+5. dragover fires → handleRearrange needs this.draggedTask
+6. drop fires → saveDragReorder needs this.draggedTask
 ```
 
 ---
@@ -880,30 +959,24 @@ taskElement.addEventListener("touchend", () => {
 
 ```javascript
 taskElement.addEventListener("dragstart", (event) => {
-    // Line 274: Ignore if dragging from task buttons
     if (event.target.closest(".task-options")) return;
 
-    // Line 277: Enable undo system on first user interaction
-    this.deps.enableUndoSystemOnFirstInteraction();
+    // Mark that native HTML5 DnD has started.
+    // On iOS, touchcancel will fire next — this flag tells that handler
+    // to preserve this.draggedTask so the drop handler can save the reorder.
+    this._nativeDragActive = true;
 
-    // Lines 279-281: Set global drag state
-    if (window.AppGlobalState) {
-        window.AppGlobalState.draggedTask = taskElement;
-    }
+    this.deps.enableUndoSystemOnFirstInteraction?.();
 
-    // Line 282: Required for HTML5 drag API
-    // (Some browsers need this, even if empty)
+    this.draggedTask = taskElement;  // Instance property (not AppGlobalState)
     event.dataTransfer.setData("text/plain", "");
 
-    // Line 285: Add visual feedback
     taskElement.classList.add("dragging");
 
-    // Lines 332-336: Hide drag ghost image on DESKTOP ONLY
+    // Hide drag ghost image on DESKTOP ONLY
     // Use inline detection - more reliable than dependency injection
     const isMobileDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     if (!isMobileDevice) {
-        // Use the image we created OUTSIDE this handler
-        // (Safari requirement - must exist before dragstart fires)
         event.dataTransfer.setDragImage(transparentPixel, 0, 0);
     }
     // On mobile: skip setDragImage → iOS shows its native drag preview!
@@ -1446,34 +1519,67 @@ cleanupDragState() {
 **Location:** `dragDropManager.js:103-123`
 
 ```javascript
+// Setup in setupRearrange() — document-level handler (event delegation)
 document.addEventListener("drop", (event) => {
-    event.preventDefault();  // Prevent browser default (like opening file)
+    event.preventDefault();
 
-    // Line 105: Guard clause - was anything actually dragged?
-    if (!window.AppGlobalState?.draggedTask) return;
+    if (!this.draggedTask) return;  // Instance property (not AppGlobalState)
 
-    // Lines 107-116: Save if reorder occurred
-    if (window.AppGlobalState.didDragReorderOccur) {
-        // Call ALL the update functions (dependency injection!)
-        this.deps.saveCurrentTaskOrder();      // Persist to AppState
-        this.deps.autoSave();                  // Trigger localStorage save
-        this.deps.updateProgressBar();         // Update progress %
-        this.deps.updateStatsPanel();          // Update cycle stats
-        this.deps.checkCompleteAllButton();    // Enable/disable "Complete All"
-        this.deps.updateUndoRedoButtons();     // Update undo/redo state
-
-        console.log("🔁 Drag reorder completed and saved with undo snapshot.");
-    }
-
-    // Line 118: Clean up visual state
+    // saveDragReorder() reads DOM task order, updates AppState, and refreshes UI.
+    // Works for both desktop HTML5 DnD and iOS native DnD (via touchcancel → drop path).
+    this.saveDragReorder();
     this.cleanupDragState();
-
-    // Lines 119-122: Reset timing flags
-    if (window.AppGlobalState) {
-        window.AppGlobalState.lastReorderTime = 0;         // Reset snapshot timer
-        window.AppGlobalState.didDragReorderOccur = false; // Reset reorder flag
-    }
+    this.lastReorderTime = 0;
+    this._nativeDragActive = false;  // Reset iOS native DnD flag
 });
+```
+
+**`saveDragReorder()` — State-First Save Pattern (February 2026)**
+
+Extracted shared method used by both `drop` (desktop + iOS native) and `touchend` (custom touch drag):
+```javascript
+saveDragReorder() {
+    if (!this.didDragReorderOccur) return;
+
+    const AppState = this._getAppState();
+    if (AppState?.isReady?.()) {
+        // Capture undo snapshot BEFORE saving new order
+        const currentState = AppState.get();
+        if (currentState) this.deps.captureStateSnapshot?.(currentState);
+
+        // Read task order from DOM and update AppState
+        const taskList = document.getElementById(DOM_IDS.TASK_LIST);
+        const taskElements = taskList?.querySelectorAll(DOM_SELECTORS.TASK);
+        const newTaskOrder = [];
+        taskElements?.forEach(taskEl => {
+            const taskId = taskEl.dataset.taskId;
+            if (taskId) newTaskOrder.push(taskId);
+        });
+
+        AppState.update(state => {
+            const activeCycleId = state.appState.activeCycleId;
+            if (activeCycleId && state.data.cycles[activeCycleId]) {
+                const tasks = state.data.cycles[activeCycleId].tasks;
+                if (tasks && newTaskOrder.length > 0) {
+                    const taskMap = new Map(tasks.map(t => [t.id, t]));
+                    const reorderedTasks = newTaskOrder.map(id => taskMap.get(id)).filter(Boolean);
+                    const missingTasks = tasks.filter(t => !newTaskOrder.includes(t.id));
+                    state.data.cycles[activeCycleId].tasks = [...reorderedTasks, ...missingTasks];
+                    state.metadata.lastModified = Date.now();
+                }
+            }
+        }, true); // immediate save
+    }
+
+    // Update UI elements
+    this.deps.updateProgressBar?.();
+    this.deps.updateStatsPanel?.();
+    this.deps.checkCompleteAllButton?.();
+    this.deps.updateUndoRedoButtons?.();
+    this.updateFirstLastMarkers();
+
+    this.didDragReorderOccur = false;
+}
 ```
 
 **Why Check didDragReorderOccur?**
@@ -1935,26 +2041,57 @@ For critical device-specific checks, prefer inline detection over dependency inj
 
 **Diagnosis:**
 ```javascript
-// Check if drag handlers are connected
+// Check if drag state is intact (use browser console)
+// Access the DragDropManager instance via appContext or module export
 console.log({
-  draggedTask: window.AppGlobalState.draggedTask,
-  didReorder: window.AppGlobalState.didDragReorderOccur
-});
-
-// Check if save is called
-window.saveCurrentTaskOrder = new Proxy(window.saveCurrentTaskOrder, {
-  apply(target, thisArg, args) {
-    console.log('💾 saveCurrentTaskOrder called');
-    return target.apply(thisArg, args);
-  }
+  draggedTask: dragDropManager.draggedTask,
+  didReorder: dragDropManager.didDragReorderOccur,
+  nativeDragActive: dragDropManager._nativeDragActive
 });
 ```
 
+**Common Root Causes:**
+1. **`touchcancel` clearing `draggedTask` on iOS** (February 2026 fix) — iOS fires `touchcancel` when native DnD takes over. If `touchcancel` clears `this.draggedTask`, the `drop` handler can't save. Fix: check `_nativeDragActive` flag in `touchcancel`.
+2. **`didDragReorderOccur` not set** — `handleRearrange()` must set this flag during drag.
+3. **`saveDragReorder()` not called** — Verify it's called from both `drop` and `touchend`.
+4. **`AppState.update()` not triggered** — Check AppState is ready (`AppState.isReady()`).
+
 **Solutions:**
-1. ✅ Verify `didDragReorderOccur` flag is set during drag
-2. ✅ Check `saveCurrentTaskOrder` is called on drop
-3. ✅ Ensure `AppState.update()` is triggered
-4. ✅ Review save logic in `dragDropManager.js:103-116` (drop handler)
+1. ✅ Verify `_nativeDragActive` flag is set in `dragstart` and checked in `touchcancel`
+2. ✅ Verify `didDragReorderOccur` flag is set during drag
+3. ✅ Check `saveDragReorder()` is called on drop (desktop + iOS) and touchend (custom touch)
+4. ✅ Ensure `AppState.update()` is triggered
+5. ✅ Review save logic in `saveDragReorder()` method
+
+---
+
+### Issue: iOS drag shows native preview but doesn't persist (February 2026)
+
+**Symptoms:**
+- Long-press shows iOS native drag preview (dark rectangle with content)
+- Tasks visually reorder during drag
+- But dropping doesn't save — order resets on refresh
+- Console shows `touchcancel` events
+
+**Root Cause:**
+iOS fires `touchcancel` when it takes over the touch for native DnD. The old
+`touchcancel` handler was clearing `this.draggedTask`, which the `drop` handler
+needs to persist the reorder.
+
+**Event sequence:**
+```
+touchstart → timer (500ms) → dragstart → touchcancel → dragover... → drop
+                                               ↑
+                              OLD: cleared draggedTask (BUG!)
+                              NEW: checks _nativeDragActive, preserves draggedTask
+```
+
+**Solution:**
+Track whether `dragstart` has fired via `this._nativeDragActive`. In `touchcancel`,
+if the flag is true, only reset local closure state — don't touch `this.draggedTask`.
+
+**Also important:** Do NOT add `touch-action: none` to dragging elements on mobile.
+This can prevent iOS from recognizing the drag gesture in the first place.
 
 ---
 
@@ -2136,7 +2273,18 @@ const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
 This fixed a bug where iOS native drag preview was hidden because `deps.utils.isTouchDevice` wasn't wired up.
 
-### 6. Documentation is Worth It
+### 6. Cooperate with the Browser, Don't Fight It
+iOS native DnD provides a polished, familiar drag preview for free. Fighting it
+(with `touch-action: none` or custom touch overrides) breaks the experience.
+Instead, detect when the browser takes over (`_nativeDragActive` flag) and
+preserve the state it needs (`draggedTask`) for the save path.
+
+**Example (February 2026 fix):**
+The `touchcancel` event isn't an error on iOS — it's the browser saying
+"I've got this." The fix was to stop cleaning up state that the `drop` handler
+still needs.
+
+### 7. Documentation is Worth It
 This document took 2 hours to write.
 It will save **20+ hours** over the life of this feature:
 - Onboarding new developers
@@ -2159,6 +2307,7 @@ When adding new drag-related functionality:
 - [ ] Check performance with Chrome DevTools Performance tab
 - [ ] Verify undo/redo still works
 - [ ] Test on actual mobile device (not just DevTools)
+- [ ] Verify iOS native DnD flow: long-press → native preview → drop saves
 - [ ] Update this document with new behavior
 - [ ] Add to "Future Enhancements" if not fully implemented
 - [ ] Create git commit with descriptive message
@@ -2176,7 +2325,7 @@ If something in this document is unclear:
 
 ---
 
-**Document Version:** 1.0
-**Last Updated:** December 2025
+**Document Version:** 1.1
+**Last Updated:** February 2026
 **Maintained By:** miniCycle Team
 **License:** Part of miniCycle project

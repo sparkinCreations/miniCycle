@@ -553,6 +553,21 @@ class AppInit {
 
 		_deps.updateThemeColor?.();
 
+		// Accessibility settings
+		if (settings.reducedMotion) {
+			console.log('♿ Applying reduced motion...');
+			_deps.addBodyClass?.('reduced-motion');
+			document.documentElement?.classList.add('reduced-motion');
+		}
+		if (settings.highContrast) {
+			console.log('♿ Applying high contrast...');
+			_deps.addBodyClass?.('high-contrast');
+		}
+		if (settings.fontSize && settings.fontSize !== '16') {
+			console.log('♿ Applying custom font size:', settings.fontSize);
+			document.documentElement.style.setProperty('--font-size-base', `${settings.fontSize}px`);
+		}
+
 		console.log('✅ miniCycle app is fully initialized and ready (Schema 2.5).');
 		console.log('🎉 Initialization sequence completed successfully!');
 		console.log('✅ Initial setup completed successfully');

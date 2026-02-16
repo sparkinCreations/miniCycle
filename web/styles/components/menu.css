@@ -141,7 +141,8 @@
     border-radius: 6px;
 }
 
-.menu-section-grid button:focus-visible {
+.menu-section-grid button:focus-visible,
+.menu-section-grid .menu-link-button:focus-visible {
     outline: 2px solid var(--accent-color, #007bff);
     outline-offset: 2px;
     border-radius: 6px;
@@ -175,6 +176,7 @@
 }
 
 .menu-section-grid button,
+.menu-section-grid .menu-link-button,
 .menu-section-grid .themes-menu-option button,
 .menu-section-grid .games-menu-option button {
     display: flex;
@@ -190,15 +192,19 @@
     cursor: pointer;
     transition: all var(--transition-fast) ease;
     white-space: nowrap;
+    text-decoration: none;
 }
 
-.menu-section-grid button:hover {
+.menu-section-grid button:hover,
+.menu-section-grid .menu-link-button:hover {
     background: var(--menu-button-hover-bg, rgba(0, 0, 0, 0.1));
     transform: translateY(-1px);
 }
 
 .menu-section-grid button i,
-.menu-section-grid button .icon {
+.menu-section-grid button .icon,
+.menu-section-grid .menu-link-button i,
+.menu-section-grid .menu-link-button .icon {
     font-size: 14px;
     width: 14px;
     height: 14px;
@@ -250,6 +256,14 @@
     font-weight: 900;
     color: #555;
     min-width: 18px;
+}
+
+/* Legal section link icons */
+.menu-section-grid .menu-link-button i,
+.menu-section-grid .menu-link-button .icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
 }
 
 /* =============================================================================
@@ -664,7 +678,9 @@ body.dark-mode .menu-container.has-corner-logo::before {
 }
 
 body.dark-mode .menu-section-grid button i,
-body.dark-mode .menu-section-grid button .icon {
+body.dark-mode .menu-section-grid button .icon,
+body.dark-mode .menu-section-grid .menu-link-button i,
+body.dark-mode .menu-section-grid .menu-link-button .icon {
     opacity: 0.9;
 }
 

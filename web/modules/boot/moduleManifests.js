@@ -240,7 +240,7 @@ export const MODULE_MANIFESTS = {
     reminders: {
         path: '../features/reminders.js',
         phase: PHASES.TASK_MANAGEMENT,
-        requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
+        requires: ['appInit', 'AppState', 'showNotification', 'showConfirmationModal', 'getModal'],
         provides: ['startReminders', 'stopReminders', 'updateReminderButtons', 'setupReminderButtonHandler', 'loadRemindersSettings'],
         api: 'features',
         provideInstance: 'reminderManager',
