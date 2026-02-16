@@ -330,7 +330,6 @@ body.onboarding-active .complete-all-and-help-window-container {
     background-color: var(--theme-bg-surface-elevated, #e0e0e0);
     transform: scale(1.05);
     transition: none;
-    touch-action: none; /* Prevent browser from stealing touch for scroll/gestures during drag */
 }
 
 /* Prevent scrolling past the last task */

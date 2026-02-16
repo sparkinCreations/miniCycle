@@ -89,6 +89,11 @@ export class DragDropManager {
         // Track current drop target to avoid querySelectorAll in hot paths
         this._currentDropTarget = null;
 
+        // Track if native HTML5 dragstart fired (iOS native DnD).
+        // When true, touchcancel should NOT clear this.draggedTask
+        // because the drop handler needs it to persist the reorder.
+        this._nativeDragActive = false;
+
         // Initialization flag
         this.initialized = false;
 
@@ -202,7 +207,7 @@ export class DragDropManager {
             };
             safeAdd(document, "dragover", this._dragoverHandler);
 
-            // Setup drop handler (desktop HTML5 drag-and-drop)
+            // Setup drop handler (desktop HTML5 drag-and-drop + iOS native DnD)
             this._dropHandler = (event) => {
                 event.preventDefault();
                 if (!this.draggedTask) return;
@@ -210,6 +215,7 @@ export class DragDropManager {
                 this.saveDragReorder();
                 this.cleanupDragState();
                 this.lastReorderTime = 0;
+                this._nativeDragActive = false;
             };
             safeAdd(document, "drop", this._dropHandler);
 
@@ -286,6 +292,7 @@ export class DragDropManager {
                 touchStartX = event.touches[0].clientX;
                 touchStartY = event.touches[0].clientY;
                 preventClick = false;
+                this._nativeDragActive = false; // Reset for new touch sequence
 
                 // Remove .long-pressed from all other tasks before long press starts
                 document.querySelectorAll(DOM_SELECTORS.TASK).forEach(task => {
@@ -301,10 +308,6 @@ export class DragDropManager {
                     this.draggedTask = taskElement;
                     isDragging = true;
                     taskElement.classList.add("dragging");
-
-                    // Prevent browser from stealing touch for scrolling during drag.
-                    // Set via JS in addition to CSS for browsers that need it early.
-                    taskElement.style.touchAction = 'none';
 
                     event.preventDefault();
 
@@ -366,7 +369,14 @@ export class DragDropManager {
                     }, 100);
                 }
 
-                // Save reordered state before clearing drag references
+                // If native DnD took over (iOS), let the drop handler save.
+                // touchend won't fire after touchcancel, but handle both for safety.
+                if (this._nativeDragActive) {
+                    isDragging = false;
+                    return;
+                }
+
+                // Save reordered state before clearing drag references (custom touch drag)
                 if (isDragging && this.didDragReorderOccur) {
                     this.saveDragReorder();
                 }
@@ -376,8 +386,6 @@ export class DragDropManager {
                     this.draggedTask = null;
                 }
 
-                // Restore touch-action
-                taskElement.style.touchAction = '';
                 isDragging = false;
                 this.lastReorderTime = 0;
 
@@ -395,7 +403,17 @@ export class DragDropManager {
             taskElement._touchcancelHandler = () => {
                 clearTimeout(holdTimeout);
 
-                // Save any rearrangement that happened before the cancel
+                if (this._nativeDragActive) {
+                    // iOS native DnD took over — DON'T clear this.draggedTask!
+                    // The drop handler needs it to save the reorder.
+                    // Only reset local touch state.
+                    isDragging = false;
+                    isLongPress = false;
+                    isTap = false;
+                    return;
+                }
+
+                // Real cancel (system alert, etc.) — clean up everything
                 if (isDragging && this.didDragReorderOccur) {
                     this.saveDragReorder();
                 }
@@ -405,8 +423,6 @@ export class DragDropManager {
                     this.draggedTask = null;
                 }
 
-                // Restore touch-action
-                taskElement.style.touchAction = '';
                 isDragging = false;
                 isLongPress = false;
                 isTap = false;
@@ -415,9 +431,14 @@ export class DragDropManager {
             };
             safeAdd(taskElement, "touchcancel", taskElement._touchcancelHandler, { passive: true });
 
-            // 🖱️ **Mouse-based Drag for Desktop**
+            // 🖱️ **Mouse-based Drag for Desktop (also fires on iOS native DnD)**
             taskElement._dragstartHandler = (event) => {
                 if (event.target.closest(".task-options")) return;
+
+                // Mark that native HTML5 DnD has started.
+                // On iOS, touchcancel will fire next — this flag tells that handler
+                // to preserve this.draggedTask so the drop handler can save the reorder.
+                this._nativeDragActive = true;
 
                 // Enable undo system on first user interaction
                 this.deps.enableUndoSystemOnFirstInteraction?.();
@@ -729,6 +750,7 @@ export class DragDropManager {
             }
 
             this.lastRearrangeTarget = null;
+            this._nativeDragActive = false;
 
             // O(1) cleanup instead of querySelectorAll
             if (this._currentDropTarget) {
