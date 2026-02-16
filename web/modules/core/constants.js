@@ -451,6 +451,10 @@ export const DOM_IDS = Object.freeze({
     TOGGLE_CHECKBOX_INCOMPLETE: 'toggle-checkbox-incomplete',
     TOGGLE_BG_PATTERN: 'toggle-bg-pattern',
     TOGGLE_BG_IMAGE_VISIBLE: 'toggle-bg-image-visible',
+    TOGGLE_HELP_WINDOW: 'toggle-help-window',
+    TOGGLE_QUICK_ACTIONS: 'toggle-quick-actions',
+    SETTINGS_TOGGLE_HELP_WINDOW: 'settings-toggle-help-window',
+    SETTINGS_TOGGLE_QUICK_ACTIONS: 'settings-toggle-quick-actions',
 
     // ---- Backup & Recovery ----
     BACKUP_MINI_CYCLES: 'backup-mini-cycles',

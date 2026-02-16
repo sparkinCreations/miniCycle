@@ -251,7 +251,7 @@ Add to test suite:
 - **Creating contextual lenses** — that's the [Contextual Theme System Plan](./CONTEXTUAL_THEME_SYSTEM_PLAN.md)
 - **Lens unlock system** — depends on the achievement system integration
 - **Custom Lens Builder UI** — future feature, requires lens system first
-- **Internationalization (i18n)** — the resolver could support it later, but it's not a goal of this plan
+- **Internationalization (i18n)** — the resolver supports it structurally, but it's a separate effort. See [I18N_LANGUAGE_PACK_PLAN.md](./I18N_LANGUAGE_PACK_PLAN.md)
 
 ---
 

@@ -21,6 +21,7 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { loadPanelVisibility } from './panelVisibilityHelpers.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -78,6 +79,8 @@ export function _resetForTesting() {
     _initialized.moveArrowsToggle = false;
     _initialized.threeDotsToggle = false;
     _initialized.completedDropdownToggle = false;
+    _initialized.helpWindowToggle = false;
+    _initialized.quickActionsToggle = false;
     _initialized.debugToggle = false;
     _initialized.resetRecurringDefaults = false;
     _initialized.resetAchievementProgress = false;
@@ -92,6 +95,8 @@ const _initialized = {
     moveArrowsToggle: false,
     threeDotsToggle: false,
     completedDropdownToggle: false,
+    helpWindowToggle: false,
+    quickActionsToggle: false,
     debugToggle: false,
     resetRecurringDefaults: false,
     resetAchievementProgress: false
@@ -505,6 +510,104 @@ export function setupCompletedDropdownToggle() {
 }
 
 /**
+ * Setup help window visibility toggle (syncs with personalization modal toggle)
+ */
+export function setupHelpWindowToggle() {
+    if (_initialized.helpWindowToggle) {
+        console.log('✅ Help window toggle already set up');
+        return;
+    }
+    _initialized.helpWindowToggle = true;
+
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) return;
+
+    const toggle = document.getElementById(DOM_IDS.SETTINGS_TOGGLE_HELP_WINDOW);
+    if (!toggle) return;
+
+    // Load current state
+    const AppState = _deps.AppState?.();
+    if (AppState?.isReady?.()) {
+        const currentState = AppState.get();
+        loadPanelVisibility(currentState?.settings?.customColors);
+    }
+
+    toggle._changeHandler = async () => {
+        const visible = toggle.checked;
+
+        const AppState = _deps.AppState?.();
+        if (AppState?.isReady?.()) {
+            await AppState.update(state => {
+                if (!state.settings) state.settings = {};
+                if (!state.settings.customColors) state.settings.customColors = {};
+                state.settings.customColors.showHelpWindow = visible;
+            }, true);
+        } else {
+            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
+            toggle.checked = !visible;
+            return;
+        }
+
+        document.body.classList.toggle('hide-help-window', !visible);
+
+        // Sync personalization modal toggle
+        const prefToggle = document.getElementById(DOM_IDS.TOGGLE_HELP_WINDOW);
+        if (prefToggle) prefToggle.checked = visible;
+    };
+
+    safeAddEventListener(toggle, "change", toggle._changeHandler);
+}
+
+/**
+ * Setup quick actions visibility toggle (syncs with personalization modal toggle)
+ */
+export function setupQuickActionsToggle() {
+    if (_initialized.quickActionsToggle) {
+        console.log('✅ Quick actions toggle already set up');
+        return;
+    }
+    _initialized.quickActionsToggle = true;
+
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) return;
+
+    const toggle = document.getElementById(DOM_IDS.SETTINGS_TOGGLE_QUICK_ACTIONS);
+    if (!toggle) return;
+
+    // Load current state
+    const AppState = _deps.AppState?.();
+    if (AppState?.isReady?.()) {
+        const currentState = AppState.get();
+        loadPanelVisibility(currentState?.settings?.customColors);
+    }
+
+    toggle._changeHandler = async () => {
+        const visible = toggle.checked;
+
+        const AppState = _deps.AppState?.();
+        if (AppState?.isReady?.()) {
+            await AppState.update(state => {
+                if (!state.settings) state.settings = {};
+                if (!state.settings.customColors) state.settings.customColors = {};
+                state.settings.customColors.showQuickActions = visible;
+            }, true);
+        } else {
+            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
+            toggle.checked = !visible;
+            return;
+        }
+
+        document.body.classList.toggle('hide-quick-actions', !visible);
+
+        // Sync personalization modal toggle
+        const prefToggle = document.getElementById(DOM_IDS.TOGGLE_QUICK_ACTIONS);
+        if (prefToggle) prefToggle.checked = visible;
+    };
+
+    safeAddEventListener(toggle, "change", toggle._changeHandler);
+}
+
+/**
  * Setup scroll to new task toggle
  */
 export function setupScrollToNewTaskToggle() {
@@ -831,6 +934,8 @@ export function initAllToggles() {
     setupMoveArrowsToggle();
     setupThreeDotsToggle();
     setupCompletedDropdownToggle();
+    setupHelpWindowToggle();
+    setupQuickActionsToggle();
     setupScrollToNewTaskToggle();
     setupScrollOnLoadToggle();
     setupDebugModeToggle();

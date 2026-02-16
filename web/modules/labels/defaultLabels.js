@@ -833,7 +833,11 @@ export const DEFAULT_LABELS = deepFreeze({
         undoButton:         'Undo',
         undoTitle:          'Undo last color change',
         resetAll:           'Reset All',
-        resetDefault:       'Reset to default'
+        resetDefault:       'Reset to default',
+        layout:             'Layout',
+        showHelpWindow:     'Help Window',
+        showQuickActions:   'Quick Actions',
+        panelText:          'Panel Text'
     },
 
     // ========================================================================

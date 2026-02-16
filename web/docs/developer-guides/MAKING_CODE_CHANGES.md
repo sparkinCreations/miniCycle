@@ -393,6 +393,26 @@ The browser treats `debugMode.js` and `debugMode.js?v=1.894` as **different modu
 2. If a module has state that's wired via DI (like `debugMode.js` with its `_AppState`), always access its functions through the DI chain — not through a direct import
 3. When debugging a "function runs but nothing happens" issue, check whether the module has two instances by logging `import.meta.url` or checking if the DI-wired state is null
 
+### Pitfall 7: The Facade Registration Gap (settingsManager) — RESOLVED
+
+**What happened:** Two new toggle setup functions were added to `settingsUIManager.js` and its `initAllToggles()` function. But the toggles never worked because `settingsManager.js` called each setup function individually in `init()` instead of using `initAllToggles()`, and the new functions were never added to that list.
+
+**Resolution:** `settingsManager.init()` now calls `_subModules.initAllToggles?.()` as a single batch. New toggles only need to be added in **one place**: `settingsUIManager.initAllToggles()`.
+
+```javascript
+// settingsManager.js — BEFORE (required 3-place registration)
+_subModules.setupMoveArrowsToggle?.();
+_subModules.setupHelpWindowToggle?.();   // easy to forget
+// ...12 more individual calls
+
+// settingsManager.js — AFTER (single batch call)
+_subModules.initAllToggles?.();          // delegates to settingsUIManager
+```
+
+**Lesson:** When a sub-module already provides a batch init function, the facade should call that instead of duplicating the individual call list.
+
+**Still applies to non-toggle sub-modules:** Export, import, and backup setup functions are from separate sub-modules and still need individual registration in `_subModules` and calls in `init()`.
+
 ---
 
 ## Quick Reference Checklist
@@ -403,6 +423,7 @@ The browser treats `debugMode.js` and `debugMode.js?v=1.894` as **different modu
 |------|----------------|
 | **Call an existing function from a different module** | 1. Module DI schema (`createDIModule` or `_deps`)<br>2. Integration file (`set*Dependencies` call)<br>3. Manifest `requires`/`lazyRequires`<br>4. Verify `depMappings` in `moduleLoader.js`<br>5. Constructor mapping (if Approach B) |
 | **Add a new exported function** | 1. Write the function in the source module<br>2. Register it via `provides` in the manifest<br>3. Add a `depMappings` entry in `moduleLoader.js`<br>4. Wire it wherever it's needed (see row above) |
+| **Add a new settings toggle** | 1. Create `setupMyToggle()` in `settingsUIManager.js` with idempotency guard<br>2. Add to `_initialized` object in `settingsUIManager.js`<br>3. Add call to `initAllToggles()` in `settingsUIManager.js`<br>4. If toggle needs new deps, add to `wireSubModuleDependencies()` in `settingsManager.js` |
 | **Fix a bug in a UI action** | 1. Start from the button/event, not the function name<br>2. Trace the handler chain to the actual code path<br>3. Check for parallel code paths doing the same thing<br>4. Fix all paths, not just the first one you find |
 | **Add a new optional dependency** | 1. `optional(null)` in DI schema<br>2. Wire with `?.()` in integration<br>3. Call with `this.deps.X?.()` (optional chaining)<br>4. Add to manifest `requires` (or `lazyRequires` if cross-phase) |
 | **Change how a dependency resolves** | 1. Find its entry in `moduleLoader.js` `depMappings`<br>2. Update the getter/wrapper there<br>3. Check if integration files override it |

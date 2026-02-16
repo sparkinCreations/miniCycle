@@ -1,3 +1,7 @@
+## [1.943] - 2026-02-15
+- Enhance accessibility and keyboard navigation across UI components
+
+
 ## [1.942] - 2026-02-15
 - feat: Implement inline editing for task names with improved accessibility
 
