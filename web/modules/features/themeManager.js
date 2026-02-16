@@ -708,7 +708,7 @@ export class ThemeManager {
                 closeThemesBtn._clickHandler = () => {
                     if (themesModal?.open) {
                         themesModal.close();
-                        themesModal._previousFocus?.focus();
+                        themesModal._previousFocus?.focus({ focusVisible: false });
                     }
                 };
                 safeAdd(closeThemesBtn, "click", closeThemesBtn._clickHandler);
@@ -720,14 +720,14 @@ export class ThemeManager {
                     // Only close if clicking on the backdrop itself, not the content
                     if (e.target === themesModal) {
                         themesModal.close();
-                        themesModal._previousFocus?.focus();
+                        themesModal._previousFocus?.focus({ focusVisible: false });
                     }
                 };
                 safeAdd(themesModal, "click", themesModal._backdropClickHandler);
 
                 // Restore focus when dialog closes (including native ESC)
                 safeAdd(themesModal, "close", () => {
-                    themesModal._previousFocus?.focus();
+                    themesModal._previousFocus?.focus({ focusVisible: false });
                 });
             }
 

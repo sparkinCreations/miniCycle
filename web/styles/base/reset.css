@@ -85,8 +85,13 @@ button, label, .checkbox-container {
     outline-offset: 2px;
 }
 
-/* Remove focus outline for mouse users */
+/* Remove focus outline for mouse/touch users */
 :focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Dialogs don't need focus rings — focus moves inside them */
+dialog:focus-visible {
     outline: none;
 }
 

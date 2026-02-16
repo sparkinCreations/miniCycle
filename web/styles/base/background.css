@@ -2,36 +2,48 @@
    Background & Theming
    SVG pattern, custom backgrounds, image display modes, and theme overlays
    Pattern SVG source: assets/images/pattern.svg
+
+   The SVG pattern lives on body::before (position:fixed) so it stays locked
+   in place on mobile touch-drag. The gradient/color/image backgrounds stay
+   on body itself.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* SVG stationery pattern background */
+/* ── Gradient background on body ── */
 body {
-    background:
-        url("../../assets/images/pattern.svg") repeat,
-        var(--theme-bg-gradient);
+    background: var(--theme-bg-gradient);
     z-index: var(--z-background);
     padding-top: 0; /* Header handles safe area */
     padding-bottom: env(safe-area-inset-bottom);
-    background-size: 400px 400px, cover;
+}
+
+/* ── SVG pattern overlay (fixed, doesn't move on mobile touch) ── */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-background);
+    background: url("../../assets/images/pattern.svg") repeat;
+    background-size: 400px 400px;
+    pointer-events: none;
 }
 
 /* Custom app background color (Preferences - Default theme only) */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
-    background:
-        url("../../assets/images/pattern.svg") repeat,
-        var(--pref-app-bg, var(--theme-bg-gradient));
-    background-size: 400px 400px, cover;
+    background: var(--pref-app-bg, var(--theme-bg-gradient));
+    background-size: cover;
 }
 
 /* Custom pattern color (Preferences - Default theme only) */
-body.custom-pattern:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow):not(.no-bg-pattern) {
-    background:
-        var(--custom-pattern-bg) repeat,
-        var(--pref-app-bg, var(--theme-bg-gradient));
-    background-size: 400px 400px, cover;
+body.custom-pattern:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow):not(.no-bg-pattern)::before {
+    background: var(--custom-pattern-bg) repeat;
+    background-size: 400px 400px;
 }
 
 /* Hide background pattern when toggle is off */
+body.no-bg-pattern::before {
+    display: none;
+}
+
 body.no-bg-pattern {
     background: var(--theme-bg-gradient);
     background-color: var(--theme-bg-solid);
@@ -49,6 +61,11 @@ body.has-bg-image,
 body.has-bg-image:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
     background: var(--custom-bg-image);
     background-color: var(--theme-bg-solid);
+}
+
+/* Hide pattern over custom background images */
+body.has-bg-image::before {
+    display: none;
 }
 
 /* Background image display modes - specificity (0,4,1) to override pattern rules */

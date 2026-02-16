@@ -125,7 +125,7 @@ function expandSearch() {
     if (inputRow && searchBtn) {
         inputRow.classList.remove('hidden');
         searchBtn.classList.add('active');
-        searchInput?.focus();
+        searchInput?.focus({ focusVisible: false });
         isSearchExpanded = true;
     }
 }

@@ -1,3 +1,7 @@
+## [1.944] - 2026-02-15
+- feat: Implement Help Window and Quick Actions toggles
+
+
 ## [1.943] - 2026-02-15
 - Enhance accessibility and keyboard navigation across UI components
 

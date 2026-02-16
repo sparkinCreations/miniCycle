@@ -320,7 +320,7 @@ export class AchievementsManager {
 
         setTimeout(() => {
             this.modalOverlay?.remove();
-            previousFocus?.focus();
+            previousFocus?.focus({ focusVisible: false });
             this.modalOverlay = null;
         }, 200);
     }

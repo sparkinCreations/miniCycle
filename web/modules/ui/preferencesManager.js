@@ -325,7 +325,7 @@ export class PreferencesManager {
 
             // Restore focus when dialog closes (including native ESC)
             safeAdd(this.modal, 'close', () => {
-                this.modal._previousFocus?.focus();
+                this.modal._previousFocus?.focus({ focusVisible: false });
             });
         }
 
@@ -627,7 +627,7 @@ export class PreferencesManager {
     closeModal() {
         if (this.modal) {
             this.modal.close();
-            this.modal._previousFocus?.focus();
+            this.modal._previousFocus?.focus({ focusVisible: false });
         }
     }
 

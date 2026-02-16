@@ -1115,7 +1115,7 @@ async setDefaultPosition(notificationContainer) {
           // Focus the currently-selected option (or first) for keyboard users
           const selectedOption = quickContainer.querySelector('.quick-option[aria-checked="true"]')
             || quickContainer.querySelector('.quick-option');
-          selectedOption?.focus();
+          selectedOption?.focus({ focusVisible: false });
         }
       }
 
@@ -1334,7 +1334,7 @@ async setDefaultPosition(notificationContainer) {
     const confirmBtn = modal.querySelector(DOM_SELECTORS.BTN_CONFIRM);
     const cancelBtn = modal.querySelector(DOM_SELECTORS.BTN_CANCEL);
 
-    setTimeout(() => cancelBtn.focus(), 20);
+    setTimeout(() => cancelBtn.focus({ focusVisible: false }), 20);
 
     let handleKeydown = null;
 
@@ -1423,7 +1423,7 @@ async setDefaultPosition(notificationContainer) {
     const cancelBtn = overlay.querySelector(DOM_SELECTORS.MINI_CYCLE_BTN_CANCEL);
     const confirmBtn = overlay.querySelector(DOM_SELECTORS.MINI_CYCLE_BTN_CONFIRM);
 
-    setTimeout(() => input.focus(), 50);
+    setTimeout(() => input.focus({ focusVisible: false }), 50);
 
     cancelBtn._clickHandler = () => {
       overlay.close();

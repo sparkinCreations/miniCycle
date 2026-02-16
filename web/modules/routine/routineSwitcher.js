@@ -683,7 +683,7 @@ export class RoutineSwitcher {
         }
 
         if (switchModal.open) switchModal.close();
-        switchModal._previousFocus?.focus();
+        switchModal._previousFocus?.focus({ focusVisible: false });
         console.log("✅ Modal hidden successfully");
     }
 
@@ -966,7 +966,7 @@ export class RoutineSwitcher {
                 !modalOverlay
             ) {
                 if (switchModal.open) switchModal.close();
-                switchModal._previousFocus?.focus();
+                switchModal._previousFocus?.focus({ focusVisible: false });
             }
         };
         safeAdd(document, "click", this._clickOutsideHandler);
@@ -975,7 +975,7 @@ export class RoutineSwitcher {
         const switchModal = this.deps.getModal('routineSwitcher');
         if (switchModal) {
             safeAdd(switchModal, "close", () => {
-                switchModal._previousFocus?.focus();
+                switchModal._previousFocus?.focus({ focusVisible: false });
             });
         }
     }
@@ -1397,7 +1397,7 @@ export class RoutineSwitcher {
         }
 
         // Focus the search input for immediate typing
-        setTimeout(() => searchInput.focus(), UI_TIMEOUTS.FOCUS_DELAY);
+        setTimeout(() => searchInput.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_DELAY);
     }
 
     /**
