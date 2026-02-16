@@ -621,6 +621,7 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     freq: {
+        frequency: 'Frequency',
         hourly:   'Hourly',
         daily:    'Daily',
         weekly:   'Weekly',

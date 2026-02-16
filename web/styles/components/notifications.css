@@ -222,6 +222,17 @@
     margin-top: 12px;
 }
 
+.quick-option:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.notification button:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
+}
+
 .notification .apply-quick-recurring {
     padding: 8px 12px;
     background: rgba(255, 255, 255, 0.2);

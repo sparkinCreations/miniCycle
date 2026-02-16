@@ -672,6 +672,7 @@ async setDefaultPosition(notificationContainer) {
   setupAutoRemove(notification, duration) {
     console.log(`🔧 setupAutoRemove called with duration: ${duration} (type: ${typeof duration})`);
     let hoverPaused = false;
+    let focusPaused = false;
     let remaining = duration;
     let removeTimeout;
     let removeDelayTimeout; // ✅ FIX #7: Track fade-out delay timeout
@@ -684,26 +685,54 @@ async setDefaultPosition(notificationContainer) {
     };
 
     const startTimer = () => {
+      startTime = Date.now();
       removeTimeout = setTimeout(() => {
-        if (!hoverPaused) clearNotification();
+        if (!hoverPaused && !focusPaused) clearNotification();
       }, remaining);
     };
 
-    const pauseTimer = () => {
-      hoverPaused = true;
-      clearTimeout(removeTimeout);
-      remaining -= (Date.now() - startTime);
+    // Only capture remaining time if the timer is actually running (neither source paused)
+    const pauseIfRunning = () => {
+      if (!hoverPaused && !focusPaused) {
+        clearTimeout(removeTimeout);
+        remaining -= (Date.now() - startTime);
+        if (remaining < 0) remaining = 0;
+      }
     };
 
-    const resumeTimer = () => {
-      hoverPaused = false;
-      startTime = Date.now();
-      startTimer();
+    // Only restart the timer if both sources are unpaused
+    const resumeIfUnpaused = () => {
+      if (!hoverPaused && !focusPaused) {
+        startTimer();
+      }
     };
 
     startTimer();
-    _safeAddEventListener(notification, "mouseenter", pauseTimer);
-    _safeAddEventListener(notification, "mouseleave", resumeTimer);
+
+    // Mouse hover pause
+    _safeAddEventListener(notification, "mouseenter", () => {
+      pauseIfRunning();
+      hoverPaused = true;
+    });
+    _safeAddEventListener(notification, "mouseleave", () => {
+      hoverPaused = false;
+      resumeIfUnpaused();
+    });
+
+    // Keyboard focus pause: keep notification alive while user is tabbing through
+    _safeAddEventListener(notification, "focusin", () => {
+      pauseIfRunning();
+      focusPaused = true;
+    });
+    _safeAddEventListener(notification, "focusout", () => {
+      // Delay check: focusout fires before the new element receives focus
+      requestAnimationFrame(() => {
+        if (!notification.contains(document.activeElement)) {
+          focusPaused = false;
+          resumeIfUnpaused();
+        }
+      });
+    });
 
     // ✅ FIX #7: Return cleanup function to clear all timeouts
     return () => {
@@ -982,17 +1011,8 @@ async setDefaultPosition(notificationContainer) {
 
     return `
       <div class="main-notification-content"
+           data-task-id="${assignedTaskId}"
            style="position: relative; display: block; padding: 12px 42px 12px 16px; border-radius: 6px;">
-
-        <button class="close-btn"
-                title="${getLabel('button.close')}"
-                aria-label="${getLabel('notify.closeNotification')}"
-                style="position: absolute; top: -7px; right: -7px; background: transparent; border: none; font-size: 16px; cursor: pointer; color: #fff; line-height: 1; padding: 0; z-index: ${Z_INDEX.ELEVATED};">✖</button>
-
-        <button class="tip-toggle-btn"
-                data-tip-id="${tipId}"
-                aria-label="${getLabel('notify.showTip')}"
-                style="position: absolute; bottom: 8px; right: 8px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 14px; padding: 0; display: flex; align-items: center; justify-content: center; z-index: ${Z_INDEX.ELEVATED};">💡</button>
 
         ${educationalTipHTML}
 
@@ -1012,21 +1032,21 @@ async setDefaultPosition(notificationContainer) {
              data-task-id="${assignedTaskId}"
              style="display: none; margin-top: 12px; opacity: 0; transform: translateY(-10px); transition: opacity 0.3s ease, transform 0.3s ease;">
 
-          <div class="quick-recurring-options" data-task-id="${assignedTaskId}">
-            <div class="quick-option">
-              <span class="radio-circle ${frequency === 'hourly' ? 'selected' : ''}" data-freq="hourly"></span>
+          <div class="quick-recurring-options" data-task-id="${assignedTaskId}" role="radiogroup" aria-label="${getLabel('freq.frequency')}">
+            <div class="quick-option" role="radio" tabindex="0" aria-checked="${frequency === 'hourly'}" data-freq="hourly">
+              <span class="radio-circle ${frequency === 'hourly' ? 'selected' : ''}" data-freq="hourly" aria-hidden="true"></span>
               <span class="option-label">${getLabel('freq.hourly')}</span>
             </div>
-            <div class="quick-option">
-              <span class="radio-circle ${frequency === 'daily' ? 'selected' : ''}" data-freq="daily"></span>
+            <div class="quick-option" role="radio" tabindex="0" aria-checked="${frequency === 'daily'}" data-freq="daily">
+              <span class="radio-circle ${frequency === 'daily' ? 'selected' : ''}" data-freq="daily" aria-hidden="true"></span>
               <span class="option-label">${getLabel('freq.daily')}</span>
             </div>
-            <div class="quick-option">
-              <span class="radio-circle ${frequency === 'weekly' ? 'selected' : ''}" data-freq="weekly"></span>
+            <div class="quick-option" role="radio" tabindex="0" aria-checked="${frequency === 'weekly'}" data-freq="weekly">
+              <span class="radio-circle ${frequency === 'weekly' ? 'selected' : ''}" data-freq="weekly" aria-hidden="true"></span>
               <span class="option-label">${getLabel('freq.weekly')}</span>
             </div>
-            <div class="quick-option">
-              <span class="radio-circle ${frequency === 'monthly' ? 'selected' : ''}" data-freq="monthly"></span>
+            <div class="quick-option" role="radio" tabindex="0" aria-checked="${frequency === 'monthly'}" data-freq="monthly">
+              <span class="radio-circle ${frequency === 'monthly' ? 'selected' : ''}" data-freq="monthly" aria-hidden="true"></span>
               <span class="option-label">${getLabel('freq.monthly')}</span>
             </div>
           </div>
@@ -1036,6 +1056,17 @@ async setDefaultPosition(notificationContainer) {
             <button class="open-recurring-settings" data-task-id="${assignedTaskId}">⚙ ${getLabel('notify.moreOptions')}</button>
           </div>
         </div>
+
+        <button class="tip-toggle-btn"
+                data-tip-id="${tipId}"
+                aria-label="${getLabel('notify.showTip')}"
+                style="position: absolute; bottom: 8px; right: 8px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 14px; padding: 0; display: flex; align-items: center; justify-content: center; z-index: ${Z_INDEX.ELEVATED};">💡</button>
+
+        <button class="close-btn"
+                data-task-id="${assignedTaskId}"
+                title="${getLabel('button.close')}"
+                aria-label="${getLabel('notify.closeNotification')}"
+                style="position: absolute; top: -7px; right: -7px; background: transparent; border: none; font-size: 16px; cursor: pointer; color: #fff; line-height: 1; padding: 0; z-index: ${Z_INDEX.ELEVATED};">✖</button>
       </div>
     `;
   }
@@ -1080,23 +1111,17 @@ async setDefaultPosition(notificationContainer) {
           // Trigger animation
           quickContainer.style.opacity = "1";
           quickContainer.style.transform = "translateY(0)";
+
+          // Focus the currently-selected option (or first) for keyboard users
+          const selectedOption = quickContainer.querySelector('.quick-option[aria-checked="true"]')
+            || quickContainer.querySelector('.quick-option');
+          selectedOption?.focus();
         }
       }
 
       // Handle quick option clicks
       if (e.target.closest(".quick-option")) {
-        const quickOption = e.target.closest(".quick-option");
-        const radioCircle = quickOption.querySelector(DOM_SELECTORS.RADIO_CIRCLE);
-        const quickOptions = quickOption.closest(".quick-recurring-options");
-        const applyButton = notification.querySelector(DOM_SELECTORS.APPLY_QUICK_RECURRING);
-
-        quickOptions.querySelectorAll(DOM_SELECTORS.RADIO_CIRCLE).forEach(circle => {
-          circle.classList.remove("selected");
-        });
-
-        radioCircle.classList.add("selected");
-        applyButton.style.display = "inline-block";
-        applyButton.classList.add("show");
+        this._selectQuickOption(notification, e.target.closest(".quick-option"));
       }
 
       // Handle apply button clicks
@@ -1174,6 +1199,60 @@ async setDefaultPosition(notificationContainer) {
       }
     };
     _safeAddEventListener(notification, "click", notification._clickHandler);
+
+    // Keyboard handler: Enter/Space selects radio, Arrow Up/Down navigates all interactive elements
+    notification._keyHandler = (e) => {
+      // Enter/Space selects a quick option radio
+      if (e.key === 'Enter' || e.key === ' ') {
+        const quickOption = e.target.closest('.quick-option');
+        if (quickOption) {
+          e.preventDefault();
+          this._selectQuickOption(notification, quickOption);
+        }
+        return;
+      }
+
+      // Arrow Up/Down navigates between all visible interactive elements
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        const focusable = [...notification.querySelectorAll(
+          'button, [role="radio"][tabindex="0"]'
+        )].filter(el => el.offsetParent !== null && getComputedStyle(el).display !== 'none');
+        if (focusable.length === 0) return;
+        const idx = focusable.indexOf(document.activeElement);
+        const next = e.key === 'ArrowDown'
+          ? (idx + 1) % focusable.length
+          : (idx - 1 + focusable.length) % focusable.length;
+        focusable[next].focus();
+      }
+    };
+    _safeAddEventListener(notification, "keydown", notification._keyHandler);
+  }
+
+  /**
+   * Select a quick option radio in the recurring notification
+   * @param {HTMLElement} notification - The notification element
+   * @param {HTMLElement} quickOption - The .quick-option element to select
+   * @private
+   */
+  _selectQuickOption(notification, quickOption) {
+    const radioCircle = quickOption.querySelector(DOM_SELECTORS.RADIO_CIRCLE);
+    const quickOptions = quickOption.closest(".quick-recurring-options");
+    const applyButton = notification.querySelector(DOM_SELECTORS.APPLY_QUICK_RECURRING);
+
+    // Update radio circles
+    quickOptions.querySelectorAll(DOM_SELECTORS.RADIO_CIRCLE).forEach(circle => {
+      circle.classList.remove("selected");
+    });
+    radioCircle.classList.add("selected");
+
+    // Update aria-checked on all options
+    quickOptions.querySelectorAll('.quick-option').forEach(opt => {
+      opt.setAttribute('aria-checked', (opt === quickOption).toString());
+    });
+
+    applyButton.style.display = "inline-block";
+    applyButton.classList.add("show");
   }
 
   /**

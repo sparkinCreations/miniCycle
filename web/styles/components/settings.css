@@ -97,6 +97,17 @@ dialog.settings-modal::backdrop {
     background: var(--theme-input-hover-bg, #ebebeb);
 }
 
+.settings-section-header:focus-visible {
+    outline: 2px solid var(--accent-color, #007bff);
+    outline-offset: -2px;
+    border-radius: 6px;
+}
+
+.settings-btn:focus-visible {
+    outline: 2px solid var(--accent-color, #007bff);
+    outline-offset: 2px;
+}
+
 .settings-section-toggle {
     font-size: 10px;
     transition: transform var(--transition-fast) ease;

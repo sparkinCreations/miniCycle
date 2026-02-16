@@ -946,6 +946,9 @@ export class TaskDOMManager {
             event.stopPropagation();
             event.preventDefault();
 
+            // Capture keyboard state before any async work (detail=0 means keyboard/programmatic)
+            const wasKeyboardActivated = event.detail === 0;
+
             // ✅ Read fresh state from AppState to avoid stale closure data
             const currentState = this.deps.AppState?.get();
             if (!currentState) {
@@ -1025,6 +1028,77 @@ export class TaskDOMManager {
                     taskItem.dataset.deleteWhenComplete = 'true';
                     // Remove any kept-task or show-delete-indicator (recurring has its own indicator)
                     taskItem.classList.remove('kept-task', 'show-delete-indicator');
+                }
+
+                // Keyboard focus flow: stay on recurring button, Tab → notification → next task option
+                if (wasKeyboardActivated) {
+                    const notification = document.querySelector('.notification.recurring.show');
+                    if (notification) {
+                        const changeSettingsBtn = notification.querySelector('.show-quick-actions');
+                        if (changeSettingsBtn) {
+                            // Store return-focus context on the notification
+                            notification._focusReturnContext = {
+                                taskId: assignedTaskId,
+                                sourceButtonClass: 'recurring-btn'
+                            };
+
+                            // Intercept next Tab on the recurring button to jump to "Change Settings"
+                            const recurringBtn = button;
+                            recurringBtn._notifTabHandler = (e) => {
+                                if (e.key !== 'Tab' || e.shiftKey) return;
+                                // Only redirect if notification is still visible
+                                if (document.contains(notification) && notification.classList.contains('show')) {
+                                    e.preventDefault();
+                                    changeSettingsBtn.focus();
+                                }
+                                // One-shot: remove after first Tab press
+                                recurringBtn.removeEventListener('keydown', recurringBtn._notifTabHandler);
+                                recurringBtn._notifTabHandler = null;
+                            };
+                            recurringBtn.addEventListener('keydown', recurringBtn._notifTabHandler);
+
+                            // Tab boundary handler: redirect focus when leaving notification
+                            notification._focusTabHandler = (e) => {
+                                if (e.key !== 'Tab') return;
+
+                                const focusable = [...notification.querySelectorAll(
+                                    'button, [role="radio"][tabindex="0"]'
+                                )].filter(el => el.offsetParent !== null && getComputedStyle(el).display !== 'none');
+
+                                if (focusable.length === 0) return;
+
+                                const first = focusable[0];
+                                const last = focusable[focusable.length - 1];
+
+                                if (!e.shiftKey && document.activeElement === last) {
+                                    e.preventDefault();
+                                    restoreFocusToNextTaskOption(notification._focusReturnContext);
+                                } else if (e.shiftKey && document.activeElement === first) {
+                                    e.preventDefault();
+                                    restoreFocusToTaskOptionButton(notification._focusReturnContext);
+                                }
+                            };
+                            notification.addEventListener('keydown', notification._focusTabHandler);
+
+                            // Handle notification removal while user is focused inside
+                            const observer = new MutationObserver(() => {
+                                if (!document.contains(notification)) {
+                                    observer.disconnect();
+                                    // Clean up the one-shot Tab handler if notification dismissed before Tab
+                                    if (recurringBtn._notifTabHandler) {
+                                        recurringBtn.removeEventListener('keydown', recurringBtn._notifTabHandler);
+                                        recurringBtn._notifTabHandler = null;
+                                    }
+                                    if (!document.activeElement || document.activeElement === document.body) {
+                                        restoreFocusToNextTaskOption(notification._focusReturnContext);
+                                    }
+                                }
+                            });
+                            if (notification.parentNode) {
+                                observer.observe(notification.parentNode, { childList: true });
+                            }
+                        }
+                    }
                 }
             } else {
                 if (this.deps.handleRecurringTaskDeactivation) {
@@ -1379,6 +1453,70 @@ function createOrUpdateTaskData(taskContext) {
         return null;
     }
     return _createOrUpdateTaskDataFn(taskContext);
+}
+
+// ============================================
+// Focus Restoration Helpers (Recurring Notification)
+// ============================================
+
+/**
+ * Restore focus to the next visible task option button after the source button.
+ * Re-shows task options if they were hidden.
+ */
+function restoreFocusToNextTaskOption(context) {
+    if (!context) return;
+    const { taskId, sourceButtonClass } = context;
+    const taskItem = document.querySelector(DATA_SELECTORS.taskById(taskId));
+    if (!taskItem) return;
+
+    // Re-show task options if hidden
+    const taskOptions = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
+    if (taskOptions) {
+        taskOptions.classList.add('task-options-visible');
+        taskOptions.classList.remove('task-options-force-hidden');
+        taskOptions.querySelectorAll('button.task-btn').forEach(btn => {
+            btn.tabIndex = 0;
+        });
+    }
+
+    // Find the next visible button after the source
+    const buttons = [...taskItem.querySelectorAll('button.task-btn')];
+    const srcIndex = buttons.findIndex(btn => btn.classList.contains(sourceButtonClass));
+
+    for (let i = srcIndex + 1; i < buttons.length; i++) {
+        if (buttons[i].offsetParent !== null && !buttons[i].classList.contains('hidden')) {
+            buttons[i].focus();
+            return;
+        }
+    }
+
+    // Fallback: focus task text
+    taskItem.querySelector(DOM_SELECTORS.TASK_TEXT)?.focus();
+}
+
+/**
+ * Restore focus to the source task option button itself (for Shift+Tab).
+ * Re-shows task options if they were hidden.
+ */
+function restoreFocusToTaskOptionButton(context) {
+    if (!context) return;
+    const { taskId, sourceButtonClass } = context;
+    const taskItem = document.querySelector(DATA_SELECTORS.taskById(taskId));
+    if (!taskItem) return;
+
+    const taskOptions = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
+    if (taskOptions) {
+        taskOptions.classList.add('task-options-visible');
+        taskOptions.classList.remove('task-options-force-hidden');
+        taskOptions.querySelectorAll('button.task-btn').forEach(btn => {
+            btn.tabIndex = 0;
+        });
+    }
+
+    const sourceBtn = taskItem.querySelector(`.${sourceButtonClass}`);
+    if (sourceBtn) {
+        sourceBtn.focus();
+    }
 }
 
 // ============================================

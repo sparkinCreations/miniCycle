@@ -209,7 +209,27 @@ export function attachMenuButtonListener(GlobalUtils, menuButton, menu) {
       menu.classList.toggle('visible');
 
       if (menu.classList.contains('visible')) {
+        menu._previousFocus = document.activeElement;
+        // Focus first focusable element in menu
+        const firstFocusable = menu.querySelector('button, [tabindex="0"]');
+        if (firstFocusable) setTimeout(() => firstFocusable.focus(), 50);
+        // Escape key handler
+        menu._escHandler = (e) => {
+          if (e.key === 'Escape') {
+            menu.classList.remove('visible');
+            document.removeEventListener('keydown', menu._escHandler);
+            document.removeEventListener('click', closeMenuOnClickOutside);
+            menu._previousFocus?.focus();
+          }
+        };
+        document.addEventListener('keydown', menu._escHandler);
         safeAddEventListener(document, 'click', closeMenuOnClickOutside);
+      } else {
+        // Menu closing — clean up and restore focus
+        if (menu._escHandler) {
+          document.removeEventListener('keydown', menu._escHandler);
+        }
+        menu._previousFocus?.focus();
       }
     });
   }
@@ -411,6 +431,10 @@ function closeMenuOnClickOutside(event) {
   if (menu && !menu.contains(event.target) && !menuButton?.contains(event.target)) {
     menu.classList.remove('visible');
     document.removeEventListener('click', closeMenuOnClickOutside);
+    if (menu._escHandler) {
+      document.removeEventListener('keydown', menu._escHandler);
+    }
+    menu._previousFocus?.focus();
   }
 }
 

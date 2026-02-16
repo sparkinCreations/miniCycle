@@ -552,6 +552,13 @@ export class PreferencesManager {
         document.querySelectorAll(DOM_SELECTORS.PREFERENCES_SECTION_HEADER_COLLAPSIBLE).forEach(header => {
             header._clickHandler = () => this.toggleSection(header);
             safeAdd(header, 'click', header._clickHandler);
+            header._keydownHandler = (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.toggleSection(header);
+                }
+            };
+            safeAdd(header, 'keydown', header._keydownHandler);
         });
     }
 

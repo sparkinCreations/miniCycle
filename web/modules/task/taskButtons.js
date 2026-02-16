@@ -248,10 +248,13 @@ export class TaskButtons {
         const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => el.addEventListener(ev, fn));
 
         button._accessibilityKeydownHandler = (e) => {
-            if (e.key === "Enter" || e.key === " ") {
+            if (e.key === " ") {
+                // Space: prevent scroll and trigger click immediately
+                // (native Space activation fires on keyup — too late for user feedback)
                 e.preventDefault();
                 button.click();
             }
+            // Enter: native <button> activation handles the click — no manual trigger needed
 
             if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
                 const focusable = Array.from(buttonContainer.querySelectorAll("button.task-btn"));

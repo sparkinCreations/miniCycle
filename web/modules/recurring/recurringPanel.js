@@ -292,6 +292,35 @@ export class RecurringPanelManager {
             // Setup add task section
             this.setupAddTaskSection();
 
+            // Keyboard: Enter toggles checkboxes, Arrow Up/Down navigates
+            this.deps.safeAddEventListener(overlay, 'keydown', (e) => {
+                const active = document.activeElement;
+
+                // Enter toggles checkboxes (native checkboxes only respond to Space)
+                if (e.key === 'Enter' && active?.type === 'checkbox' && !active.disabled) {
+                    e.preventDefault();
+                    active.checked = !active.checked;
+                    active.dispatchEvent(new Event('change', { bubbles: true }));
+                    return;
+                }
+
+                // Arrow Up/Down navigates between visible interactive elements
+                if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+                // Skip if focused on a text/number input (arrows adjust value)
+                if (active?.tagName === 'INPUT' && (active.type === 'text' || active.type === 'number')) return;
+                e.preventDefault();
+                const focusable = [...overlay.querySelectorAll(
+                    'button, input, select, [tabindex="0"]'
+                )].filter(el => el.offsetParent !== null && !el.disabled
+                    && getComputedStyle(el).display !== 'none');
+                if (focusable.length === 0) return;
+                const idx = focusable.indexOf(active);
+                const next = e.key === 'ArrowDown'
+                    ? (idx + 1) % focusable.length
+                    : (idx - 1 + focusable.length) % focusable.length;
+                focusable[next].focus();
+            });
+
             this.state.isInitialized = true;
             console.log('✅ Recurring panel setup complete');
 

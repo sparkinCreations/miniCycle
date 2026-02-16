@@ -246,6 +246,18 @@ export class MenuManager {
                     this.saveCollapsedStates();
                 }
             });
+
+            this.deps.safeAddEventListener(header, 'keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    const section = header.closest('.menu-section');
+                    if (section) {
+                        section.classList.toggle('collapsed');
+                        header.setAttribute('aria-expanded', String(!section.classList.contains('collapsed')));
+                        this.saveCollapsedStates();
+                    }
+                }
+            });
         });
     }
 
