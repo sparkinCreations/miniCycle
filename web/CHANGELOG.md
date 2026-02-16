@@ -1,3 +1,8 @@
+## [1.953] - 2026-02-16
+- feat: enhance drag-and-drop functionality for iOS native support and improve touch handling
+- feat: prevent browser scrolling during drag operations with touch-action styles
+
+
 ## [1.952] - 2026-02-16
 - feat: enhance about modal styles and functionality for improved user experience
 
