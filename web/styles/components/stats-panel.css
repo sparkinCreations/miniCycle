@@ -60,13 +60,13 @@
 
 #stats-panel p {
     margin: 8px 0;
-    font-size: 15px;
+    font-size: var(--font-size-sm);
 }
 
 #stats-header {
     margin-top: 0;
     margin-bottom: 16px;
-    font-size: 22px;
+    font-size: var(--font-size-xl);
     font-weight: 700;
 }
 
@@ -166,7 +166,7 @@
     .badge {
         width: 40px;
         height: 40px;
-        font-size: 18px;
+        font-size: var(--font-size-lg);
     }
 }
 
@@ -177,7 +177,7 @@
 .current-routine-status {
     margin-top: 12px;
     margin-bottom: 12px;
-    font-size: 15px;
+    font-size: var(--font-size-sm);
     text-align: center;
     cursor: pointer;
     width: 100%;
@@ -194,7 +194,7 @@
 .current-routine-status h3 {
     cursor: pointer;
     transition: color var(--transition-normal) ease, transform var(--transition-normal) ease;
-    font-size: 17px;
+    font-size: var(--font-size-lg);
     color: #2e8b57;
     font-weight: 600;
 }
@@ -257,7 +257,7 @@
 }
 
 .doughnut-text {
-    font-size: 16px;
+    font-size: var(--font-size-base);
     font-weight: bold;
     fill: var(--theme-stats-text, #333);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -312,7 +312,7 @@
     border-radius: 20px;
     background: rgba(255, 255, 255, 0.5);
     color: var(--theme-stats-text, #333);
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     cursor: pointer;
     transition: background var(--transition-fast) ease, transform var(--transition-fast);
 }
@@ -329,7 +329,7 @@
 .theme-unlock-status {
     margin-top: 12px;
     margin-bottom: 8px;
-    font-size: 15px;
+    font-size: var(--font-size-sm);
     text-align: center;
     cursor: pointer;
     width: 100%;
@@ -346,7 +346,7 @@
 .theme-unlock-status h3 {
     cursor: pointer;
     transition: color var(--transition-normal) ease, transform var(--transition-normal) ease;
-    font-size: 17px;
+    font-size: var(--font-size-lg);
     font-weight: 600;
 }
 
@@ -419,7 +419,7 @@
 }
 
 .badge-container h3 {
-    font-size: 17px;
+    font-size: var(--font-size-lg);
     font-weight: 600;
     margin-bottom: 12px;
 }
@@ -436,7 +436,7 @@
 #all-routines-count {
     margin: 0 0 6px 0;
     text-align: center;
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     font-weight: 400;
     color: var(--theme-stats-text, #888);
     opacity: 0.7;
@@ -457,7 +457,7 @@
     border-radius: 20px;
     background: rgba(255, 255, 255, 0.5);
     color: var(--theme-stats-text, #333);
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
     transition: background var(--transition-fast) ease, transform var(--transition-fast);
@@ -473,7 +473,7 @@
     color: white;
     border-radius: 10px;
     padding: 1px 6px;
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     min-width: 18px;
     text-align: center;
 }
@@ -516,7 +516,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: var(--font-size-xl);
     color: var(--theme-text-muted, #888);
     transition: all var(--transition-normal) ease;
     box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.15);

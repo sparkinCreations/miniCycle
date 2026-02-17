@@ -114,7 +114,7 @@ dialog.mini-cycle-switch-modal::backdrop {
     margin-bottom: 8px;
     border: 1px solid #ccc;
     border-radius: 5px;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     font-family: var(--font-family);
     box-sizing: border-box;
     transition: border-color var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
@@ -191,6 +191,10 @@ dialog.mini-cycle-switch-modal::backdrop {
     color: #555;
     outline: none;
     max-width: 100px;
+}
+
+.routine-filter-select:focus-visible {
+    box-shadow: 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
 }
 
 .routine-filter-select:hover {
@@ -283,6 +287,14 @@ dialog.mini-cycle-switch-modal::backdrop {
     text-overflow: ellipsis;
     cursor: text;
     pointer-events: auto;
+}
+
+/* Relax truncation at high zoom / narrow viewports (WCAG 1.4.4) */
+@media (max-width: 640px) {
+    .cycle-item-left {
+        white-space: normal;
+        text-overflow: clip;
+    }
 }
 
 .cycle-item-edit-input {

@@ -45,14 +45,14 @@
 
 .games-modal-content h2 {
     margin-bottom: 12px;
-    font-size: 24px;
+    font-size: var(--font-size-2xl);
     color: inherit;
 }
 
 .games-modal-content p {
     margin-bottom: 20px;
     color: var(--theme-text-secondary, #444);
-    font-size: 16px;
+    font-size: var(--font-size-base);
 }
 
 /* =============================================================================
@@ -66,7 +66,7 @@
     border: none;
     padding: 10px 16px;
     border-radius: 8px;
-    font-size: 16px;
+    font-size: var(--font-size-base);
     margin-bottom: 16px;
     cursor: pointer;
     transition: background var(--transition-normal) ease;
@@ -113,14 +113,14 @@
 }
 
 .game-card-title {
-    font-size: 18px;
+    font-size: var(--font-size-lg);
     font-weight: 600;
     margin-bottom: 8px;
     color: inherit;
 }
 
 .game-card-description {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     color: var(--theme-text-secondary, #666);
     margin-bottom: 12px;
 }
@@ -154,13 +154,13 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     color: var(--theme-text-secondary, #666);
     margin-top: 8px;
 }
 
 .game-score-icon {
-    font-size: 16px;
+    font-size: var(--font-size-base);
 }
 
 .game-high-score {
@@ -179,11 +179,11 @@
     }
 
     .games-modal-content h2 {
-        font-size: 20px;
+        font-size: var(--font-size-xl);
     }
 
     #open-task-order-game {
         padding: 8px 14px;
-        font-size: 14px;
+        font-size: var(--font-size-sm);
     }
 }

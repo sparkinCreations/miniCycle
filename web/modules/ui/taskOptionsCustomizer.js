@@ -508,7 +508,18 @@ export class TaskOptionsCustomizer {
         });
 
         // ✅ Preview panel: Update on hover/tap
+        // Debounce hidePreview to prevent flicker when moving between adjacent items.
+        // Touch guard suppresses simulated mouse events after a tap to avoid double-fire.
+        let hidePreviewTimer = null;
+        let recentTouch = false;
+
         const showPreview = (item) => {
+            // Cancel any pending hide — user moved to another item
+            if (hidePreviewTimer) {
+                clearTimeout(hidePreviewTimer);
+                hidePreviewTimer = null;
+            }
+
             const optionIndex = parseInt(item.dataset.optionIndex);
             const label = item.dataset.optionLabel;
             const description = item.dataset.optionDescription;
@@ -524,13 +535,16 @@ export class TaskOptionsCustomizer {
         };
 
         const hidePreview = () => {
-            previewContent.innerHTML = `<p class="preview-placeholder"><span class="desktop-text">${getLabel('taskOptions.previewHover')}</span><span class="mobile-text">${getLabel('taskOptions.previewTap')}</span> ${getLabel('taskOptions.previewInstruction')}</p>`;
+            hidePreviewTimer = setTimeout(() => {
+                hidePreviewTimer = null;
+                previewContent.innerHTML = `<p class="preview-placeholder"><span class="desktop-text">${getLabel('taskOptions.previewHover')}</span><span class="mobile-text">${getLabel('taskOptions.previewTap')}</span> ${getLabel('taskOptions.previewInstruction')}</p>`;
+            }, 80);
         };
 
         optionItems.forEach(item => {
-            // Desktop: hover
-            item._mouseenterHandler = () => showPreview(item);
-            item._mouseleaveHandler = hidePreview;
+            // Desktop: hover (suppressed after touch to prevent simulated mouse events)
+            item._mouseenterHandler = () => { if (!recentTouch) showPreview(item); };
+            item._mouseleaveHandler = () => { if (!recentTouch) hidePreview(); };
             safeAdd(item, 'mouseenter', item._mouseenterHandler);
             safeAdd(item, 'mouseleave', item._mouseleaveHandler);
 
@@ -541,9 +555,14 @@ export class TaskOptionsCustomizer {
                 safeAdd(checkbox, 'focus', checkbox._focusHandler);
             }
 
-            // Mobile: tap
+            // Touch/click: show preview on tap (touch guard prevents mouse echo)
+            item._touchstartHandler = () => {
+                recentTouch = true;
+                setTimeout(() => { recentTouch = false; }, 400);
+            };
+            safeAdd(item, 'touchstart', item._touchstartHandler, { passive: true });
+
             item._clickHandler = (e) => {
-                // Only show preview on tap, don't prevent checkbox toggle
                 if (!e.target.classList.contains('option-checkbox')) {
                     showPreview(item);
                 }
@@ -759,6 +778,7 @@ export class TaskOptionsCustomizer {
         modal.querySelectorAll('.task-option-item').forEach(item => {
             if (item._mouseenterHandler) { item.removeEventListener('mouseenter', item._mouseenterHandler); item._mouseenterHandler = null; }
             if (item._mouseleaveHandler) { item.removeEventListener('mouseleave', item._mouseleaveHandler); item._mouseleaveHandler = null; }
+            if (item._touchstartHandler) { item.removeEventListener('touchstart', item._touchstartHandler); item._touchstartHandler = null; }
             if (item._clickHandler) { item.removeEventListener('click', item._clickHandler); item._clickHandler = null; }
         });
         if (modal._overlayClickHandler) { modal.removeEventListener('click', modal._overlayClickHandler); modal._overlayClickHandler = null; }

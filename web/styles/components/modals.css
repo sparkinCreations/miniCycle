@@ -1478,6 +1478,14 @@ dialog.preferences-modal::backdrop {
     text-overflow: ellipsis;
 }
 
+/* Relax truncation at high zoom / narrow viewports (WCAG 1.4.4) */
+@media (max-width: 640px) {
+    .preferences-preset-name {
+        white-space: normal;
+        text-overflow: clip;
+    }
+}
+
 .preferences-preset-name:hover {
     background: var(--theme-hover-bg, rgba(0, 0, 0, 0.05));
 }
@@ -2248,23 +2256,43 @@ dialog.preferences-modal::backdrop {
    ============================================================================= */
 
 .testing-modal {
-    display: none;
     position: fixed;
-    z-index: var(--z-modal);
-    left: 0;
-    top: 0;
+    inset: 0;
+    margin: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: transparent;
     justify-content: center;
     align-items: center;
 }
 
-.testing-modal.active,
-.testing-modal.show {
+.testing-modal[open] {
     display: flex;
+}
+
+.testing-modal::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* Backup restore selection dialog (opened from testing modal) */
+.backup-restore-dialog {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.backup-restore-dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
 }
 
 .testing-modal-content {
@@ -2538,18 +2566,24 @@ dialog.preferences-modal::backdrop {
 
 .storage-modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
+    inset: 0;
+    margin: 0;
+    border: none;
+    padding: 0;
+    max-width: none;
+    max-height: none;
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    display: flex;
     align-items: center;
     justify-content: center;
-    z-index: var(--z-modal);
 }
 
-.storage-modal-overlay.hidden {
+.storage-modal-overlay[open] {
+    display: flex;
+}
+
+.storage-modal-overlay::backdrop {
     display: none;
 }
 
@@ -2627,8 +2661,23 @@ dialog.preferences-modal::backdrop {
    PREVIEW REVIEW MODAL (double-click preview popout)
    ============================================================================= */
 
-#preview-review-overlay {
-    z-index: calc(var(--z-modal) + 10); /* must sit above routine switcher modal */
+/* Preview is now a native <dialog> — showModal() handles top-layer stacking */
+.preview-review-dialog {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-review-dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 .preview-review-modal {

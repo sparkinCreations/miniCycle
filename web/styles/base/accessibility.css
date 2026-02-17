@@ -1160,3 +1160,335 @@ body.high-contrast *:focus-visible {
     outline: 2px solid var(--accent-color, #007bff);
     outline-offset: 2px;
 }
+
+/* =============================================================================
+   HIGH CONTRAST — RECURRING PANEL (Light Mode)
+   ============================================================================= */
+
+body.high-contrast:not(.dark-mode) #recurring-settings-panel {
+    background: #e8e8e8;
+    border-top: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) #recur-frequency {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .recurring-task-item {
+    border: 2px solid #333;
+    box-shadow: none;
+}
+
+body.high-contrast:not(.dark-mode) .monthly-days,
+body.high-contrast:not(.dark-mode) .yearly-months,
+body.high-contrast:not(.dark-mode) .yearly-days {
+    background: #c8c8c8;
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .monthly-day-box,
+body.high-contrast:not(.dark-mode) .weekly-day-box,
+body.high-contrast:not(.dark-mode) .biweekly-day-box,
+body.high-contrast:not(.dark-mode) .yearly-month-box,
+body.high-contrast:not(.dark-mode) .yearly-day-box {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .time-picker-wrapper {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .time-picker-group input[type="number"],
+body.high-contrast:not(.dark-mode) .time-picker-group select {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) #specific-dates-panel {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .specific-date-entry input[type="date"] {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) #non-recurring-tasks li {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .available-tasks-list {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .available-tasks-header {
+    color: #333;
+}
+
+body.high-contrast:not(.dark-mode) .no-available-tasks {
+    color: #333;
+}
+
+body.high-contrast:not(.dark-mode) .recurring-empty-state {
+    color: #333;
+}
+
+body.high-contrast:not(.dark-mode) .confirm-add-recurring-btn:disabled {
+    background: #999;
+    color: #333;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — RECURRING PANEL (Dark Mode)
+   ============================================================================= */
+
+body.high-contrast.dark-mode #recurring-settings-panel {
+    background: #2a2a2a;
+    border-top: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode #recur-frequency {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .recurring-task-item {
+    border: 2px solid #aaa;
+    box-shadow: none;
+}
+
+body.high-contrast.dark-mode .monthly-days,
+body.high-contrast.dark-mode .yearly-months,
+body.high-contrast.dark-mode .yearly-days {
+    background: #3a3a3a;
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .monthly-day-box,
+body.high-contrast.dark-mode .weekly-day-box,
+body.high-contrast.dark-mode .biweekly-day-box,
+body.high-contrast.dark-mode .yearly-month-box,
+body.high-contrast.dark-mode .yearly-day-box {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .time-picker-wrapper {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .time-picker-group input[type="number"],
+body.high-contrast.dark-mode .time-picker-group select {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode #specific-dates-panel {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .specific-date-entry input[type="date"] {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode #non-recurring-tasks li {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .available-tasks-list {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .available-tasks-header {
+    color: #ccc;
+}
+
+body.high-contrast.dark-mode .no-available-tasks {
+    color: #ccc;
+}
+
+body.high-contrast.dark-mode .recurring-empty-state {
+    color: #ccc;
+}
+
+body.high-contrast.dark-mode .confirm-add-recurring-btn:disabled {
+    background: #555;
+    color: #ccc;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — STATS PANEL (Light Mode)
+   ============================================================================= */
+
+body.high-contrast:not(.dark-mode) .stats-panel {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .stats-feature-btn {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .history-btn {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .achievement-badges-btn {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) #all-routines-count {
+    color: #333;
+    opacity: 1;
+}
+
+body.high-contrast:not(.dark-mode) #milestone-progress-text {
+    color: #333;
+    opacity: 1;
+}
+
+body.high-contrast:not(.dark-mode) .badge {
+    border: 2px solid #333;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — STATS PANEL (Dark Mode)
+   ============================================================================= */
+
+body.high-contrast.dark-mode .stats-panel {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .stats-feature-btn {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .history-btn {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .achievement-badges-btn {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode #all-routines-count {
+    color: #ccc;
+    opacity: 1;
+}
+
+body.high-contrast.dark-mode #milestone-progress-text {
+    color: #ccc;
+    opacity: 1;
+}
+
+body.high-contrast.dark-mode .badge {
+    border: 2px solid #aaa;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — QUICK ACTIONS (Light Mode)
+   ============================================================================= */
+
+body.high-contrast:not(.dark-mode) .quick-actions-picker {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .quick-actions-picker-item {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .quick-actions-slot.empty {
+    border: 2px dashed #333;
+    opacity: 0.7;
+}
+
+body.high-contrast:not(.dark-mode) .quick-actions-picker-section-title {
+    color: #333;
+    opacity: 1;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — QUICK ACTIONS (Dark Mode)
+   ============================================================================= */
+
+body.high-contrast.dark-mode .quick-actions-picker {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .quick-actions-picker-item {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .quick-actions-slot.empty {
+    border: 2px dashed #aaa;
+    opacity: 0.7;
+}
+
+body.high-contrast.dark-mode .quick-actions-picker-section-title {
+    color: #ccc;
+    opacity: 1;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — ONBOARDING (Light Mode)
+   ============================================================================= */
+
+body.high-contrast:not(.dark-mode) .onboarding-content {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .onboarding-skip {
+    color: #333;
+}
+
+body.high-contrast:not(.dark-mode) .onboarding-step-indicator {
+    color: #333;
+}
+
+body.high-contrast:not(.dark-mode) .onboarding-dot {
+    background: #999;
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .onboarding-dot.active {
+    background: var(--theme-button-primary-bg, #4c79ff);
+}
+
+body.high-contrast:not(.dark-mode) .miniCycle-prompt-input {
+    border: 2px solid #333;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — ONBOARDING (Dark Mode)
+   ============================================================================= */
+
+body.high-contrast.dark-mode .onboarding-content {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .onboarding-skip {
+    color: #ccc;
+}
+
+body.high-contrast.dark-mode .onboarding-step-indicator {
+    color: #ccc;
+}
+
+body.high-contrast.dark-mode .onboarding-dot {
+    background: #555;
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .onboarding-dot.active {
+    background: var(--theme-button-primary-bg, #4c79ff);
+}
+
+body.high-contrast.dark-mode .miniCycle-prompt-input {
+    border: 2px solid #aaa;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — NOTIFICATIONS (Light + Dark Mode)
+   ============================================================================= */
+
+body.high-contrast .notification.recurring {
+    border: 3px solid #333;
+}
+
+body.high-contrast.dark-mode .notification.recurring {
+    border: 3px solid #aaa;
+}

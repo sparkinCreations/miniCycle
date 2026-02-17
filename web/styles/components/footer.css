@@ -69,8 +69,19 @@
     text-decoration: none;
 }
 
-.footer-item a:hover {
+.footer-item a:hover,
+.footer-item button:hover {
     text-decoration: underline;
+}
+
+.footer-item button {
+    background: none;
+    border: none;
+    color: white;
+    text-decoration: none;
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
 }
 
 #footer-container:hover .footer-item {

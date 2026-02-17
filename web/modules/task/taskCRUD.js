@@ -41,7 +41,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { LIMITS, UI_TIMEOUTS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
+import { LIMITS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -253,11 +253,14 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
 
         // Input validation and sanitization
         const validateFn = deps.validateAndSanitizeTaskInput || _deps.validateAndSanitizeTaskInput;
+        const taskInputEl = document.getElementById(DOM_IDS.TASK_INPUT);
         const validatedInput = validateFn?.(taskText);
         if (!validatedInput) {
+            if (taskInputEl) taskInputEl.setAttribute('aria-invalid', 'true');
             console.warn('Task validation failed');
             return;
         }
+        if (taskInputEl) taskInputEl.removeAttribute('aria-invalid');
 
         // Load and validate data context
         const loadContextFn = deps.loadTaskContext || _deps.loadTaskContext;

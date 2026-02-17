@@ -126,6 +126,23 @@ small, .text-sm {
     overflow: hidden;
 }
 
+/* Relax truncation at high zoom / narrow viewports (WCAG 1.4.4) */
+@media (max-width: 640px) {
+    .truncate,
+    .text-truncate {
+        white-space: normal;
+        text-overflow: clip;
+    }
+
+    .line-clamp-2 {
+        -webkit-line-clamp: 4;
+    }
+
+    .line-clamp-3 {
+        -webkit-line-clamp: 6;
+    }
+}
+
 /* Word break */
 .break-word {
     word-wrap: break-word;

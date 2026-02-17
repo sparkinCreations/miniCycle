@@ -1099,12 +1099,10 @@ export class RoutineSwitcher {
             const existing = document.getElementById(DOM_IDS.PREVIEW_REVIEW_OVERLAY);
             if (existing) existing.remove();
 
-            // Create modal
-            const overlay = document.createElement('div');
+            // Create modal as native dialog for proper top-layer stacking
+            const overlay = document.createElement('dialog');
             overlay.id = 'preview-review-overlay';
-            overlay.className = 'modal-overlay';
-            overlay.setAttribute('role', 'dialog');
-            overlay.setAttribute('aria-modal', 'true');
+            overlay.className = 'preview-review-dialog';
             overlay.innerHTML = `
                 <div class="modal-content preview-review-modal">
                     <span class="close-modal preview-review-close" role="button" tabindex="0" aria-label="${getLabel('button.close')}">&times;</span>
@@ -1117,16 +1115,15 @@ export class RoutineSwitcher {
             `;
 
             document.body.appendChild(overlay);
+            overlay.showModal();
 
             // Close handlers
-            const close = () => overlay.remove();
+            const close = () => { if (overlay.open) overlay.close(); overlay.remove(); };
             overlay.querySelector(DOM_SELECTORS.PREVIEW_REVIEW_CLOSE).addEventListener('click', close);
             overlay.addEventListener('click', (e) => {
                 e.stopPropagation(); // prevent routine switcher's document-level handler from closing
                 if (e.target === overlay) close();
             });
-            const onEsc = (e) => { if (e.key === 'Escape') { e.stopImmediatePropagation(); close(); document.removeEventListener('keydown', onEsc); } };
-            document.addEventListener('keydown', onEsc);
         });
     }
 

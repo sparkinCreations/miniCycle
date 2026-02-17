@@ -12,7 +12,7 @@ button {
     color: var(--theme-button-secondary-text);
     border: none;
     padding: 10px 13px;
-    font-size: 16px;
+    font-size: var(--font-size-base);
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: background var(--transition-normal), transform var(--transition-fast);
@@ -124,7 +124,7 @@ button.icon-only {
 
 .btn-icon i,
 button.icon-only i {
-    font-size: 16px;
+    font-size: var(--font-size-base);
 }
 
 /* =============================================================================
@@ -137,7 +137,7 @@ button.icon-only i {
     border-bottom: 3px solid rgba(0, 0, 0, 0.25);
     margin-top: 10px;
     padding: 14px 32px;
-    font-size: 17px;
+    font-size: var(--font-size-lg);
     font-weight: 700;
     letter-spacing: 0.3px;
     border-radius: 12px;
@@ -216,7 +216,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
     align-items: center;
     justify-content: center;
     text-align: center;
-    font-size: 16px;
+    font-size: var(--font-size-base);
     color: var(--pref-panel-text, rgba(255, 255, 255, 0.95));
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
@@ -243,7 +243,7 @@ body.hide-help-window .help-window {
 
 .help-window h4 {
     margin: 0 0 8px 0;
-    font-size: 16px;
+    font-size: var(--font-size-base);
     font-weight: 600;
 }
 
@@ -260,7 +260,7 @@ body.hide-help-window .help-window {
 @media (max-width: 768px) {
     .help-window {
         margin-bottom: 60px;
-        font-size: 14px;
+        font-size: var(--font-size-sm);
         padding: 8px 10px;
     }
 }
@@ -273,7 +273,7 @@ body.hide-help-window .help-window {
 
     .help-window {
         margin-bottom: 80px;
-        font-size: 14px;
+        font-size: var(--font-size-sm);
         padding: 10px;
     }
 }
@@ -297,7 +297,7 @@ body.hide-help-window .help-window {
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 14px;
+        font-size: var(--font-size-sm);
         padding: 5px 15px;
         margin: 0;
     }
@@ -315,7 +315,7 @@ body.hide-help-window .help-window {
         min-height: 125px;
         min-width: 250px;
         max-width: 295px;
-        font-size: 15px;
+        font-size: var(--font-size-sm);
         padding: 5px 15px;
     }
 }
@@ -327,7 +327,7 @@ body.hide-help-window .help-window {
         min-height: 125px;
         min-width: 300px;
         max-width: 400px;
-        font-size: 15px;
+        font-size: var(--font-size-sm);
         padding: 5px 20px;
     }
 }
@@ -363,7 +363,7 @@ body.hide-help-window .help-window {
 .undo-redo-btn {
     background: none;
     border: none;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     color: #2d2c45;
     cursor: pointer;
@@ -401,7 +401,7 @@ body.hide-help-window .help-window {
     background: transparent;
     color: inherit;
     padding: 4px 8px;
-    font-size: 20px;
+    font-size: var(--font-size-xl);
     line-height: 1;
     opacity: 0.7;
     transition: opacity var(--transition-fast);
@@ -456,12 +456,12 @@ body.hide-help-window .help-window {
 
 .btn-sm {
     padding: 6px 12px;
-    font-size: 12px;
+    font-size: var(--font-size-xs);
 }
 
 .btn-lg {
     padding: 14px 28px;
-    font-size: 18px;
+    font-size: var(--font-size-lg);
 }
 
 /* =============================================================================
@@ -471,12 +471,12 @@ body.hide-help-window .help-window {
 @media (max-width: 768px) {
     button {
         padding: 8px 12px;
-        font-size: 14px;
+        font-size: var(--font-size-sm);
     }
 
     .complete-all-btn {
         padding: 10px 20px;
-        font-size: 13px;
+        font-size: var(--font-size-sm);
     }
 
     .title-header-inner {

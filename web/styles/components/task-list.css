@@ -125,7 +125,7 @@
     width: 100%;
     text-align: center;
     font-family: 'Inter', sans-serif;
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     color: var(--theme-text-secondary, rgba(80, 80, 80, 0.85));
     opacity: 0;
     visibility: hidden;
@@ -251,7 +251,7 @@ body.onboarding-active .complete-all-and-help-window-container {
    ============================================================================= */
 
 .due-date {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     border: 1px solid var(--theme-input-border, #ccc);
     border-radius: 5px;
     margin-left: 15%;
@@ -298,7 +298,7 @@ body.onboarding-active .complete-all-and-help-window-container {
     right: 40px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 16px;
+    font-size: var(--font-size-base);
     opacity: 0.7;
     pointer-events: none;
 }
@@ -310,7 +310,7 @@ body.onboarding-active .complete-all-and-help-window-container {
     right: 40px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     opacity: 0.7;
     pointer-events: none;
 }
@@ -355,7 +355,7 @@ body.onboarding-active .complete-all-and-help-window-container {
     font-family: 'Inter', sans-serif;
     text-decoration: underline;
     font-weight: 600;
-    font-size: 18px;
+    font-size: var(--font-size-lg);
     text-align: center;
     min-height: 32px; /* Reserve space to prevent CLS when title loads from IndexedDB */
     letter-spacing: 0.5px;
@@ -449,10 +449,14 @@ body.onboarding-active .complete-all-and-help-window-container {
     border: none;
     background: transparent;
     padding: 4px 0;
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     color: var(--theme-input-text, #333);
     width: 140px;
     outline: none;
+}
+
+.task-search-input:focus-visible {
+    box-shadow: 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
 }
 
 .task-search-input::placeholder {
@@ -465,7 +469,7 @@ body.onboarding-active .complete-all-and-help-window-container {
     color: var(--theme-text-muted, rgba(60, 60, 60, 0.4));
     cursor: pointer;
     padding: 2px 4px;
-    font-size: 16px;
+    font-size: var(--font-size-base);
     line-height: 1;
     border-radius: 4px;
     transition: color var(--transition-fast) ease;

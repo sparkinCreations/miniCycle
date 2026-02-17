@@ -800,13 +800,13 @@ export function initTestingModalEnhancements(callbacks = {}) {
             const testingModal = getDeps().getModal('testing');
 
             if (testingModal) {
-                const isOpen = testingModal.style.display === "flex" || testingModal.style.display === "block";
-
-                if (isOpen) {
-                    testingModal.style.display = "none";
+                if (testingModal.open) {
+                    testingModal.close();
+                    testingModal._previousFocus?.focus({ focusVisible: false });
                     showNotification("Testing panel closed", "info", 1500);
                 } else {
-                    testingModal.style.display = "flex";
+                    testingModal._previousFocus = document.activeElement;
+                    testingModal.showModal();
                     initTestingModalDrag();
                     showNotification("Testing panel opened", "success", 2000);
 

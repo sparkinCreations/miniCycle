@@ -247,22 +247,10 @@ export async function restoreFromBackup() {
 
     allBackups.sort((a, b) => b.timestamp - a.timestamp);
 
-    // Create backup selection modal
-    const modal = document.createElement("div");
+    // Create backup selection modal as native <dialog> for top-layer stacking
+    const modal = document.createElement("dialog");
     modal.id = "backup-restore-modal";
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        z-index: 2020;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        backdrop-filter: blur(3px);
-    `;
+    modal.className = "backup-restore-dialog";
 
     const modalContent = document.createElement("div");
     modalContent.style.cssText = `
@@ -419,6 +407,7 @@ export async function restoreFromBackup() {
     `;
 
     cancelBtn.addEventListener("click", () => {
+        if (modal.open) modal.close();
         modal.remove();
         appendToTestResults("Backup restore cancelled\n\n");
     });
@@ -557,6 +546,7 @@ export async function restoreFromBackup() {
                     appendToTestResults(`Backup restored successfully!\n`);
                     appendToTestResults(`Reloading application...\n\n`);
 
+                    if (modal.open) modal.close();
                     modal.remove();
                     showNotification(getLabel('notify.testRestoreSuccess'), "success", 3000);
 
@@ -581,12 +571,22 @@ export async function restoreFromBackup() {
 
     modal.addEventListener("click", (e) => {
         if (e.target === modal) {
+            if (modal.open) modal.close();
             modal.remove();
             appendToTestResults("Backup restore cancelled\n\n");
         }
     });
 
+    // Handle ESC key via native dialog cancel event
+    modal.addEventListener("cancel", (e) => {
+        e.preventDefault();
+        if (modal.open) modal.close();
+        modal.remove();
+        appendToTestResults("Backup restore cancelled\n\n");
+    });
+
     document.body.appendChild(modal);
+    modal.showModal();
 
     const autoCount = allBackups.filter(b => b.type.includes('auto')).length;
     const manualCount = allBackups.filter(b => b.type.includes('manual')).length;

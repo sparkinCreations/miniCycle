@@ -88,7 +88,14 @@ function setupTestingModal() {
 
     // Open testing modal
     safeAddEventListener(openTestingBtn, "click", () => {
-        testingModal.style.display = "flex";
+        if (!testingModal.open) {
+            testingModal._previousFocus = document.activeElement;
+            testingModal.showModal();
+        }
+        // Move notification container into dialog so toasts appear above the top-layer
+        const notifContainer = document.getElementById(DOM_IDS.NOTIFICATION_CONTAINER);
+        if (notifContainer) testingModal.appendChild(notifContainer);
+
         initTestingModalDrag();
         showNotification(getLabel('notify.testingPanelOpened'), "info", 2000);
 
@@ -108,18 +115,24 @@ function setupTestingModal() {
     });
 
     // Close testing modal
+    const closeTesting = () => {
+        // Move notification container back to body before closing
+        const notifContainer = document.getElementById(DOM_IDS.NOTIFICATION_CONTAINER);
+        if (notifContainer) document.body.appendChild(notifContainer);
+
+        if (testingModal.open) testingModal.close();
+        testingModal._previousFocus?.focus({ focusVisible: false });
+        showNotification(getLabel('notify.testingPanelClosed'), "default", 2000);
+    };
+
     closeTestingBtns.forEach(btn => {
-        safeAddEventListener(btn, "click", () => {
-            testingModal.style.display = "none";
-            showNotification(getLabel('notify.testingPanelClosed'), "default", 2000);
-        });
+        safeAddEventListener(btn, "click", closeTesting);
     });
 
-    // Close on outside click
+    // Close on backdrop click (native dialog: click on dialog element itself = backdrop)
     safeAddEventListener(testingModal, "click", (e) => {
         if (e.target === testingModal) {
-            testingModal.style.display = "none";
-            showNotification(getLabel('notify.testingPanelClosed'), "default", 2000);
+            closeTesting();
         }
     });
 }

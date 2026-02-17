@@ -207,8 +207,10 @@ export function attachMenuButtonListener(GlobalUtils, menuButton, menu) {
       }
 
       menu.classList.toggle('visible');
+      const isVisible = menu.classList.contains('visible');
+      menuButton.setAttribute('aria-expanded', String(isVisible));
 
-      if (menu.classList.contains('visible')) {
+      if (isVisible) {
         menu._previousFocus = document.activeElement;
         // Focus first focusable element in menu
         const firstFocusable = menu.querySelector('button, [tabindex="0"]');
@@ -217,6 +219,7 @@ export function attachMenuButtonListener(GlobalUtils, menuButton, menu) {
         menu._escHandler = (e) => {
           if (e.key === 'Escape') {
             menu.classList.remove('visible');
+            menuButton.setAttribute('aria-expanded', 'false');
             document.removeEventListener('keydown', menu._escHandler);
             document.removeEventListener('click', closeMenuOnClickOutside);
             menu._previousFocus?.focus({ focusVisible: false });
@@ -436,6 +439,7 @@ function closeMenuOnClickOutside(event) {
 
   if (menu && !menu.contains(event.target) && !menuButton?.contains(event.target)) {
     menu.classList.remove('visible');
+    menuButton?.setAttribute('aria-expanded', 'false');
     document.removeEventListener('click', closeMenuOnClickOutside);
     if (menu._escHandler) {
       document.removeEventListener('keydown', menu._escHandler);
