@@ -236,6 +236,9 @@ export function setupMiniCycleTitleListener() {
 
     _titleListenerInitialized = true;
     titleElement.contentEditable = true;
+    titleElement.setAttribute('role', 'textbox');
+    titleElement.setAttribute('aria-label', getLabel('accessibility.routineTitle'));
+    titleElement.setAttribute('aria-multiline', 'false');
 
     const GlobalUtils = _deps.GlobalUtils;
     if (GlobalUtils?.safeAddEventListener) {

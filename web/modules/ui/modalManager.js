@@ -371,6 +371,14 @@ export class ModalManager {
                 aboutModal._previousFocus?.focus({ focusVisible: false });
             };
             safeAdd(closeAboutBtn, "click", closeAboutBtn._clickHandler);
+            // Keyboard activation for role="button" span (Enter/Space)
+            closeAboutBtn._keydownHandler = (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    closeAboutBtn.click();
+                }
+            };
+            safeAdd(closeAboutBtn, "keydown", closeAboutBtn._keydownHandler);
         }
 
         // Close Modal on Outside Click (backdrop click fires on the dialog element)

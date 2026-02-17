@@ -317,7 +317,7 @@ export function setupAdditionalListeners(deps, callbacks) {
     // Document click handler for hiding preview when clicking outside
     deps.safeAddEventListener(document, "click", (e) => {
         const overlay = deps.getModal('recurringOverlay');
-        if (!overlay || overlay.classList.contains("hidden")) return;
+        if (!overlay || !overlay.open) return;
 
         const taskList = deps.getElementById(DOM_IDS.RECURRING_TASK_LIST);
         const settingsPanel = deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);

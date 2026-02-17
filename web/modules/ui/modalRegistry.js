@@ -61,11 +61,11 @@ export const MODAL_DEFS = {
     themes:             { method: 'id', key: DOM_IDS.THEMES_MODAL, closeMethod: 'close' },
     games:              { method: 'id', key: DOM_IDS.GAMES_PANEL, closeMethod: 'close' },
     preferences:        { method: 'id', key: DOM_IDS.PREFERENCES_MODAL, closeMethod: 'close' },
-    testing:            { method: 'id', key: DOM_IDS.TESTING_MODAL, closeMethod: 'display' },
+    testing:            { method: 'id', key: DOM_IDS.TESTING_MODAL, closeMethod: 'close' },
     help:               { method: 'id', key: DOM_IDS.HELP_WINDOW, closeMethod: 'display', persistent: true },
     recurringOverlay:   { method: 'id', key: DOM_IDS.RECURRING_PANEL_OVERLAY, closeMethod: 'close' },
     recurringPanel:     { method: 'id', key: DOM_IDS.RECURRING_PANEL, closeMethod: 'close' },
-    storageViewer:      { method: 'id', key: DOM_IDS.STORAGE_VIEWER_OVERLAY, closeMethod: 'addHidden' },
+    storageViewer:      { method: 'id', key: DOM_IDS.STORAGE_VIEWER_OVERLAY, closeMethod: 'close' },
     routineSwitcher:    { method: 'id', key: DOM_IDS.ROUTINE_SWITCHER_MODAL, closeMethod: 'close' },
     settings:           { method: 'id', key: DOM_IDS.SETTINGS_MODAL, closeMethod: 'close' },
 

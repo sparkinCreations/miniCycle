@@ -520,7 +520,12 @@ export class AchievementsManager {
                         margin-top: 2px;
                     ">${milestone.description}</div>
                     <!-- Combined progress bar -->
-                    <div style="
+                    <div role="progressbar"
+                        aria-valuenow="${Math.round(Math.max(cycleProgress, taskProgress))}"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-label="${milestone.name} progress"
+                        style="
                         position: relative;
                         background: var(--border-color, #e0e0e0);
                         border-radius: 4px;

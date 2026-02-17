@@ -48,7 +48,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -101,9 +101,15 @@ export function setCycleCompletionDependencies(dependencies) {
 export function showCompletionAnimation() {
     const animation = document.createElement("div");
     animation.classList.add("mini-cycle-complete-animation");
+    animation.setAttribute('role', 'status');
+    animation.setAttribute('aria-live', 'assertive');
     animation.innerHTML = "✔";
 
     document.body.appendChild(animation);
+
+    // Announce to screen readers
+    const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
+    if (liveRegion) liveRegion.textContent = getLabel('accessibility.cycleCompleted');
 
     // Remove the animation after 1.5 seconds
     setTimeout(() => {
@@ -117,9 +123,15 @@ export function showCompletionAnimation() {
 export function showClearAnimation() {
     const animation = document.createElement("div");
     animation.classList.add("mini-cycle-clear-animation");
+    animation.setAttribute('role', 'status');
+    animation.setAttribute('aria-live', 'assertive');
     animation.innerHTML = "🧹";
 
     document.body.appendChild(animation);
+
+    // Announce to screen readers
+    const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
+    if (liveRegion) liveRegion.textContent = getLabel('accessibility.tasksCleared');
 
     // Remove the animation after 1.5 seconds
     setTimeout(() => {
@@ -150,6 +162,8 @@ function showMilestoneMessage(miniCycleName, cycleCount) {
 
     const milestonePopup = document.createElement("div");
     milestonePopup.classList.add("mini-cycle-milestone");
+    milestonePopup.setAttribute('role', 'status');
+    milestonePopup.setAttribute('aria-live', 'assertive');
     milestonePopup.textContent = message;
 
     document.body.appendChild(milestonePopup);

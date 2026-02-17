@@ -167,7 +167,10 @@ export function openStorageViewer() {
         }
     }
 
-    overlay.classList.remove("hidden");
+    if (!overlay.open) {
+        overlay._previousFocus = document.activeElement;
+        overlay.showModal();
+    }
     initializeStorageModal();
     setupStorageViewerEventListeners();
 }
@@ -209,7 +212,7 @@ function handleOutsideClick(event) {
     const stayOpenCheckbox = document.getElementById(DOM_IDS.STAY_OPEN_TOGGLE);
     const modalBox = document.querySelector(DOM_SELECTORS.STORAGE_MODAL_BOX);
 
-    if (!overlay || overlay.classList.contains("hidden")) return;
+    if (!overlay || !overlay.open) return;
 
     const stayOpenChecked = stayOpenCheckbox ? stayOpenCheckbox.checked : false;
 
@@ -444,7 +447,8 @@ function renderExpandableJSON(data, deps, depth = 0) {
 export function closeStorageViewer() {
     const overlay = getDeps().getModal('storageViewer');
     if (overlay) {
-        overlay.classList.add("hidden");
+        if (overlay.open) overlay.close();
+        overlay._previousFocus?.focus({ focusVisible: false });
 
         if (handleOutsideClickRef) {
             document.removeEventListener("click", handleOutsideClickRef);

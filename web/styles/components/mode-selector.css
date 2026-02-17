@@ -75,6 +75,10 @@
     background-size: 12px;
 }
 
+.mode-selector:focus-visible {
+    box-shadow: 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+}
+
 .mode-selector::after {
     content: '';
     position: absolute;
@@ -197,7 +201,7 @@
     border: none;
     cursor: pointer;
     text-align: left;
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     color: rgb(44, 50, 112);
     transition: background var(--transition-fast) ease;
 }

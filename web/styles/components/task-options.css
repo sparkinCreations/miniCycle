@@ -68,7 +68,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     border-radius: 50% 50% 0 0;
     width: 32px;
     height: 24px;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     cursor: pointer;
     box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
     transition: background var(--transition-fast), transform var(--transition-fast);
@@ -80,7 +80,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
 
 .task-btn {
     color: #333;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
 }
 
 .task-btn:hover {
@@ -237,7 +237,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
 
 .task-options-modal .modal-subtitle {
     margin: 4px 0 0 0;
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     color: var(--theme-text-muted, #666);
     line-height: 1.4;
 }
@@ -397,7 +397,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
 .option-item label {
     flex: 1;
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
 }
 
 /* =============================================================================
@@ -412,7 +412,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 6px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     transition: background var(--transition-fast) ease;
 }
 
@@ -461,7 +461,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     }
 
     .task-options-modal .modal-subtitle {
-        font-size: 12px;
+        font-size: var(--font-size-xs);
     }
 
     .task-options-container {

@@ -370,7 +370,9 @@ export class PullToRefresh {
         this.indicator.classList.add('refreshing');
         this.indicator.style.transform = 'translateY(10px)';
         this.statusText.textContent = getLabel('pullRefresh.refreshing');
-        if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+        const isReducedMotion = document.body.classList.contains('reduced-motion') ||
+            window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        if (!isReducedMotion) {
             this.spinnerIcon.style.animation = 'pull-refresh-spin 1s linear infinite';
         }
 

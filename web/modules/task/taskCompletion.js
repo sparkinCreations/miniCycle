@@ -163,6 +163,15 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
             if (typeof handleTaskListMovement === 'function') {
                 handleTaskListMovement(taskItem, isCompleted);
             }
+
+            // Announce completion state to screen readers via live region
+            const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
+            if (liveRegion) {
+                const taskText = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent || '';
+                liveRegion.textContent = isCompleted
+                    ? getLabel('accessibility.taskCompleted', { vars: { name: taskText } })
+                    : getLabel('accessibility.taskUncompleted', { vars: { name: taskText } });
+            }
         }
 
         // Update help window if available (DI-pure, no window.* fallback)

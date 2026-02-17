@@ -49,7 +49,7 @@
 .settings-modal-content h2 {
     margin-bottom: 16px;
     text-align: center;
-    font-size: 22px;
+    font-size: var(--font-size-xl);
     color: inherit;
 }
 
@@ -121,6 +121,7 @@
     display: inline-block;
     width: 44px;
     height: 24px;
+    min-height: 44px; /* WCAG 2.5.8 touch target */
     flex-shrink: 0;
 }
 
@@ -253,7 +254,7 @@
 .settings-btn.close-btn {
     background: var(--menu-close-bg, #3d7ab5);
     color: var(--menu-close-text, white);
-    font-size: 17px;
+    font-size: var(--font-size-lg);
     font-weight: 700;
     padding: 14px;
     margin-top: 0;
@@ -281,7 +282,7 @@
 
 .settings-version {
     text-align: center;
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     color: #888;
     margin-bottom: 10px;
 }
@@ -297,7 +298,7 @@
 
     .settings-btn {
         padding: 10px 12px;
-        font-size: 13px;
+        font-size: var(--font-size-sm);
     }
 
     .settings-btn.close-btn {
@@ -305,13 +306,13 @@
         margin-right: -14px;
         margin-bottom: -18px;
         width: calc(100% + 28px);
-        font-size: 16px;
+        font-size: var(--font-size-base);
         padding: 12px;
     }
 
     .settings-section-header {
         padding: 10px 12px;
-        font-size: 13px;
+        font-size: var(--font-size-sm);
     }
 
     .settings-section-content {
@@ -319,7 +320,7 @@
     }
 
     .settings-option {
-        font-size: 13px;
+        font-size: var(--font-size-sm);
     }
 
     .toggle-switch {

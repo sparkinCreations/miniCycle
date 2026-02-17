@@ -56,6 +56,7 @@
     flex-grow: 1;
     overflow: hidden;
     text-overflow: ellipsis;
+    overflow-wrap: break-word;
 }
 
 /* =============================================================================
@@ -94,7 +95,7 @@
 #recurring-settings-panel label {
     display: block;
     margin-bottom: 8px;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
 }
 
 #recur-count-input {
@@ -117,7 +118,7 @@
 #recur-frequency-container label {
     display: block;
     margin-bottom: 4px;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
 }
 
 #recur-frequency {
@@ -125,7 +126,7 @@
     padding: 6px;
     border-radius: 6px;
     border: 1px solid #ccc;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
 }
 
 /* =============================================================================
@@ -137,7 +138,7 @@
     padding: 8px 16px;
     background-color: var(--theme-success, #4CAF50);
     color: white;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     border: none;
     border-radius: 6px;
@@ -166,7 +167,7 @@
     justify-content: center;
     gap: 10px;
     padding: 10px 20px;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     font-weight: 500;
     border: none;
     border-radius: 20px;
@@ -222,7 +223,7 @@
 .close-recurring-panel {
     background: var(--menu-close-bg, #3d7ab5);
     color: var(--menu-close-text, white);
-    font-size: 17px;
+    font-size: var(--font-size-lg);
     font-weight: 700;
     padding: 14px;
     border: none;
@@ -278,7 +279,7 @@
 
 .option-label {
     color: #001748;
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     user-select: none;
     flex: 1;
@@ -364,7 +365,7 @@
 }
 
 #recurring-summary-preview {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     color: var(--theme-text-secondary, #666);
 }
 
@@ -375,7 +376,7 @@
 .change-recurring-btn {
     margin-top: 8px;
     padding: 6px 12px;
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     background: var(--theme-button-secondary-bg);
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 6px;
@@ -458,7 +459,7 @@
 
     .monthly-day-box {
         padding: 8px 0;
-        font-size: 12px;
+        font-size: var(--font-size-xs);
     }
 
     #open-recurring-panel:not(.menu-section-grid *) {
@@ -486,7 +487,7 @@
     gap: 12px;
     padding: 10px 0;
     align-items: center;
-    font-size: 16px;
+    font-size: var(--font-size-base);
 }
 
 .time-picker-wrapper {
@@ -506,7 +507,7 @@
 .time-picker-group input[type="number"],
 .time-picker-group select {
     padding: 4px 4px;
-    font-size: 16px;
+    font-size: var(--font-size-base);
     border-radius: 8px;
     border: 2px solid #ccc;
     width: 70px;
@@ -526,7 +527,7 @@ select.hidden {
 }
 
 .time-format-toggle {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -547,7 +548,7 @@ select.hidden {
 .time-picker-group input::placeholder {
     color: #aaa;
     font-style: italic;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
 }
 
 /* =============================================================================
@@ -664,7 +665,7 @@ select.hidden {
     gap: 8px;
     width: 100%;
     padding: 10px 16px;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     font-weight: 500;
     color: #333;
     background: rgba(0, 0, 0, 0.05);
@@ -694,7 +695,7 @@ select.hidden {
 }
 
 .available-tasks-header {
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     font-weight: 600;
     color: #555;
     margin-bottom: 8px;
@@ -718,7 +719,7 @@ select.hidden {
     border: 1px solid #ddd;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     transition: all var(--transition-fast) ease;
 }
 
@@ -757,7 +758,7 @@ select.hidden {
     width: 100%;
     margin-top: 10px;
     padding: 10px 16px;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     color: white;
     background: var(--theme-success, #4CAF50);
@@ -777,7 +778,7 @@ select.hidden {
 }
 
 .no-available-tasks {
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     color: #666;
     font-style: italic;
     text-align: center;

@@ -1,7 +1,7 @@
 # Accessibility Settings Section
 
-**Date:** February 16, 2026
-**Status:** Phase 1 Complete — Core features implemented, refinement remaining
+**Date:** February 17, 2026
+**Status:** Phase 1 + Font Size + HC Additional + Reduced Motion Complete — Core features, CSS variable conversion, extended HC coverage, and motion verification done
 **Priority:** Enhancement
 **Breaking Changes:** None (new settings default to disabled/default values, no migration needed)
 
@@ -103,30 +103,17 @@ Added a dedicated "Accessibility" collapsible section to the Settings modal with
 
 ## What Remains (Phase 2 — Future Work)
 
-### Font Size: Remaining Hardcoded px Values
-~170 `font-size: Npx` values remain across component CSS files. The most visible content scales (tasks, inputs, settings), but smaller UI elements don't. Converting these would be a separate CSS variable migration pass.
+### Font Size: Hardcoded px Value Migration — COMPLETE
+All readable text `font-size` values across 20 CSS files have been converted to CSS custom property variables (`--font-size-xs` through `--font-size-2xl`). 168 total `var(--font-size-*)` usages now exist across 23 files.
 
-**Files with most remaining hardcoded font sizes:**
+**86 values intentionally kept hardcoded** (should NOT scale with font size setting):
+- Icons and emoji: close buttons (24px ×), emoji icons (32-60px), three-dots (25px), slide arrows (32px), checkboxes (28px), empty-state icons (48-56px)
+- Preview miniatures: theme/layout previews in preferences modal (7-12px)
+- Tiny UI chrome: section toggles (8-10px), mode badges (11px), nav arrows (10px), footer copyright (10px), educational hints (11px)
+- Compact controls: mode selector (11-12px), menu grid buttons (12px), preset UI (9-12px)
 
-| File | Count | Key Elements |
-|------|-------|--------------|
-| `modals.css` | ~50 | Modal headers, body text, preview elements, about modal |
-| `menu.css` | ~25 | Menu buttons, section headers, date, icons |
-| `buttons.css` | ~20 | Various button sizes, undo/redo |
-| `stats-panel.css` | ~18 | Stats numbers, labels, section headers |
-| `recurring.css` | ~20 | Panel text, form labels, badges |
-| `task-options.css` | ~8 | Option labels, section headers |
-| `quick-actions.css` | ~12 | Action labels, category headers |
-| `notifications.css` | ~8 | Close button, educational text |
-| `task-list.css` | ~5 | Due date, emoji indicators, search clear |
-| `onboarding.css` | ~10 | Welcome screen text |
-| `games.css` | ~8 | Card text, button sizes |
-| `mode-selector.css` | ~6 | Mode labels |
-| `header.css` | ~4 | Menu button, logo |
-| `storage.css` | ~3 | Modal text |
-| `routine-switcher.css` | ~2 | Search input, sort buttons |
-
-**Recommended approach:** Convert in batches by component priority (modals → menu → buttons → stats), replacing `Npx` with the nearest CSS variable (`--font-size-xs` through `--font-size-3xl`). Some values (like 60px emoji icons or 32px decorative text) should stay hardcoded — only scale readable text.
+**Files modified (20):**
+modals.css (30), recurring.css (19), buttons.css (16), stats-panel.css (14), task-list.css (12), settings.css (10), games.css (9), onboarding.css (7), quick-actions.css (7), notifications.css (6), task-options.css (6), menu.css (5), forms.css (4), task-input.css (3), critical.css (2), helpers.css (2), storage.css (2), routine-switcher.css (1), mode-selector.css (1), header.css (1)
 
 ### High Contrast: Visual Verification
 - [ ] Test every modal in both light + dark HC mode on actual screen
@@ -134,18 +121,25 @@ Added a dedicated "Accessibility" collapsible section to the Settings modal with
 - [ ] Adjust specific values where visual testing reveals issues
 - [ ] Test with actual users who need high contrast
 
-### High Contrast: Additional Elements
-- [ ] Recurring panel internal elements (schedule badges, frequency controls, template cards)
-- [ ] Onboarding screens (if still active)
+### High Contrast: Additional Elements — COMPLETE
+Added ~200 lines to `accessibility.css` covering both light and dark mode HC overrides:
+- [x] Recurring panel: settings panel, frequency select, task items, monthly/weekly/biweekly/yearly day boxes, time pickers, specific dates panel, available tasks list, empty states, disabled buttons
+- [x] Stats panel: container border, feature buttons, history/achievement buttons, badges, muted text opacity boost
+- [x] Quick actions: picker border, picker items, empty slot dashed borders, section titles opacity boost
+- [x] Onboarding: content border, skip button, step indicator, navigation dots, prompt input
+- [x] Notifications: recurring notification border visibility boost
+
+Still remaining (low priority):
 - [ ] Achievement unlock toast styling
-- [ ] Quick actions panel buttons and categories
-- [ ] Stats panel internal cards and numbers
 - [ ] Custom theme interactions (themes may override HC variables)
 
-### Reduced Motion: Verify Coverage
-- [ ] Confirm all CSS animations use the timing variables (not hardcoded `animation-duration`)
-- [ ] Check for JS-driven animations (e.g., `requestAnimationFrame`, `setTimeout` transitions) that won't respond to CSS variable zeroing
-- [ ] Test drag-and-drop behavior with reduced motion enabled
+### Reduced Motion: Verify Coverage — COMPLETE
+- [x] CSS timing variables confirmed — all `@keyframes` use `var()` durations
+- [x] Fixed 3 hardcoded transitions in `critical.css` (0.5s/0.3s → CSS variables)
+- [x] Fixed `pullToRefresh.js` spinner — now checks `reduced-motion` class + media query
+- [x] Fixed `recurringPanel.js` smooth scroll — now uses `'auto'` when reduced motion active
+- [x] Drag-and-drop verified — no animation issues
+- [x] `achievementsManager.js` and `cycleCompletion.js` already check reduced motion correctly
 
 ### Testing
 - [ ] Playwright tests for Reduced Motion toggle (persists, applies class, removes class)
@@ -181,7 +175,7 @@ No migration needed — undefined values handled by `|| false` / `|| '16'` fallb
 ## CSS Architecture
 
 ```
-styles/base/accessibility.css (1,162 lines)
+styles/base/accessibility.css (~1,370 lines)
 ├── Light Mode HC — Variable Overrides (text, borders, backgrounds, completed tasks, progress)
 ├── Light Mode HC — Element Overrides
 │   ├── Tasks, checkboxes, settings, stats panel
@@ -194,7 +188,12 @@ styles/base/accessibility.css (1,162 lines)
 ├── Dark Mode HC — Variable Overrides (mirrored with lighter values)
 ├── Dark Mode HC — Element Overrides (mirrors light mode structure)
 ├── Enhanced Focus Indicators (both modes)
-└── Font Size Select (settings control styles)
+├── Font Size Select (settings control styles)
+├── Recurring Panel HC — Light + Dark (settings, frequency, day selectors, time pickers, task lists)
+├── Stats Panel HC — Light + Dark (container, buttons, badges, text opacity)
+├── Quick Actions HC — Light + Dark (picker, items, empty slots, section titles)
+├── Onboarding HC — Light + Dark (content, skip, dots, step indicator, prompt input)
+└── Notifications HC — recurring border boost
 
 styles/base/variables.css
 ├── --font-size-base: 16px (settable via JS)

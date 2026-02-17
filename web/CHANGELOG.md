@@ -1,3 +1,7 @@
+## [1.955] - 2026-02-17
+- Add security policy page and enhance accessibility styles for high contrast mode
+
+
 ## [1.954] - 2026-02-16
 - chore: update version to 1.953 across all relevant files and changelog
 

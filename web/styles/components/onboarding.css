@@ -43,14 +43,14 @@ body.onboarding-active .onboarding-placeholder {
 }
 
 .onboarding-placeholder-title {
-    font-size: 20px;
+    font-size: var(--font-size-xl);
     font-weight: 600;
     margin-bottom: 12px;
     color: rgba(255, 255, 255, 0.95);
 }
 
 .onboarding-placeholder-text {
-    font-size: 15px;
+    font-size: var(--font-size-sm);
     color: rgba(255, 255, 255, 0.75);
     max-width: 280px;
     line-height: 1.5;
@@ -99,7 +99,7 @@ body.onboarding-active .onboarding-placeholder {
 
 .onboarding-content h2 {
     color: inherit;
-    font-size: 24px;
+    font-size: var(--font-size-2xl);
     margin-bottom: 15px;
     padding-left: 28px;
     padding-right: 50px;
@@ -189,7 +189,7 @@ body.onboarding-active .onboarding-placeholder {
    ============================================================================= */
 
 .onboarding-step-indicator {
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     color: #888;
     margin-top: 10px;
 }
@@ -204,7 +204,7 @@ body.onboarding-active .onboarding-placeholder {
     }
 
     .onboarding-content h2 {
-        font-size: 20px;
+        font-size: var(--font-size-xl);
     }
 
     .onboarding-placeholder {
@@ -216,7 +216,7 @@ body.onboarding-active .onboarding-placeholder {
     }
 
     .onboarding-placeholder-title {
-        font-size: 18px;
+        font-size: var(--font-size-lg);
     }
 }
 
@@ -231,7 +231,7 @@ body.onboarding-active .onboarding-placeholder {
     background: #007bff;
     color: white;
     border: none;
-    font-size: 16px;
+    font-size: var(--font-size-base);
     margin-top: 10px;
     cursor: pointer;
     border-radius: 5px;

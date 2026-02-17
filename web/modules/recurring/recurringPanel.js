@@ -1780,7 +1780,9 @@ export class RecurringPanelManager {
 
                 // Scroll the selected task into view within the list
                 requestAnimationFrame(() => {
-                    itemToSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    const scrollBehavior = document.body.classList.contains('reduced-motion') ||
+                        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+                    itemToSelect.scrollIntoView({ behavior: scrollBehavior, block: 'center' });
                 });
 
                 // Show task preview
