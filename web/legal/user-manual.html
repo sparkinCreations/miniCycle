@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" role="document">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,12 +8,12 @@
 </head>
 <body>
     <a href="../miniCycle.html" class="back-button" aria-label="Go back to miniCycle">← Back to miniCycle</a>
-    <main role="main">
+    <main>
         <h1>miniCycle User Manual</h1>
 
-        <nav class="table-of-contents" aria-label="Table of Contents" style="background: rgba(255,255,255,0.7); padding: 1rem 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
-            <h2 style="margin: 0 0 0.5rem 0; font-size: 1.1rem;">Contents</h2>
-            <ul style="list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.25rem 1rem;">
+        <nav class="table-of-contents" aria-label="Table of Contents">
+            <h2>Contents</h2>
+            <ul>
                 <li><a href="#getting-started">Getting Started</a></li>
                 <li><a href="#navigation">Navigation & Interface</a></li>
                 <li><a href="#managing-tasks">Managing Tasks</a></li>
@@ -39,7 +39,7 @@
                 When you complete all your tasks, the cycle is completed and they automatically reset so you can tackle them again.
                 It's perfect for daily routines, weekly goals, and recurring habits.</p>
             <ul>
-                <li>Click the <strong>+ button</strong> to add a task or create a new routine</li>
+                <li>Tap the <strong>+ button</strong> to add a task or create a new routine</li>
                 <li>Check off tasks as you complete them</li>
                 <li>When all tasks are completed, the routine automatically resets (in Auto Cycle mode)</li>
                 <li>Swipe left/right to switch between Task View and Stats Panel</li>
@@ -49,7 +49,7 @@
         <div class="section" id="navigation">
             <h2>Navigation & Interface</h2>
             <h3>Main Views</h3>
-            <img src="../assets/images/screenshots/Example/user-manual/IMG_1239.PNG" alt="The Stats panel in dark mode showing a progress ring at 75% with 3 of 4 tasks completed and 1 cycle completed. The Milestone Rewards section displays Achievement Badges for 5, 25, 50, 75, and 100 milestones. Navigation dots at the bottom indicate this is the second view." width="280" style="display: block; margin: 1rem auto;">
+            <img src="../assets/images/screenshots/Example/user-manual/IMG_1239.PNG" alt="The Stats panel in dark mode showing a progress ring at 75% with 3 of 4 tasks completed and 1 cycle completed. The Milestone Rewards section displays Achievement Badges for 5, 25, 50, 75, and 100 milestones. Navigation dots at the bottom indicate this is the second view." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
             <ul>
                 <li><strong>Task View:</strong> Your main task list and controls</li>
                 <li><strong>Stats Panel:</strong> Analytics, milestones, and performance tracking (shown above)</li>
@@ -61,23 +61,37 @@
             <h3>Mobile Controls</h3>
             <ul>
                 <li><strong>Swipe left/right:</strong> Switch between Task View and Stats Panel</li>
+                <li><strong>Pull down:</strong> Pull-to-refresh checks for updates and refreshes your task list</li>
                 <li><strong>Long press task:</strong> Access task options (edit, delete, priority)</li>
                 <li><strong>Drag tasks:</strong> Reorder your task list</li>
             </ul>
+
+            <h3>Desktop Controls</h3>
+            <ul>
+                <li><strong>Click and drag:</strong> Drag horizontally to switch between Task View and Stats Panel</li>
+                <li><strong>Mouse wheel:</strong> Scroll horizontally to switch views</li>
+                <li><strong>Shift+Arrow keys:</strong> Use Shift+Left/Right arrow keys to switch views (see <a href="#keyboard-shortcuts">Keyboard Shortcuts</a>)</li>
+            </ul>
+
+            <h3>Quick Actions</h3>
+            <p>The + button in the toolbar provides quick access to common actions like adding tasks and creating new routines. Tap it to see available options.</p>
         </div>
 
         <div class="section" id="managing-tasks">
             <h2>Managing Tasks</h2>
-            <img src="../assets/images/screenshots/Example/user-manual/IMG_1235.PNG" alt="A Morning Routine with 4 tasks: Wake Up, Make Breakfast, Drink Coffee, and Take Shower. The status bar shows 4 tasks remaining, 1 cycle completed, and approximately 3 KB storage used." width="280" style="display: block; margin: 1rem auto;">
+            <img src="../assets/images/screenshots/Example/user-manual/IMG_1235.PNG" alt="A Morning Routine with 4 tasks: Wake Up, Make Breakfast, Drink Coffee, and Take Shower. The status bar shows 4 tasks remaining, 1 cycle completed, and approximately 3 KB storage used." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
             <h3>Adding Tasks</h3>
-            <img src="../assets/images/screenshots/Example/user-manual/IMG_1203.PNG" alt="The + button dropdown menu expanded, showing two options: Add Task with a notepad icon, and Create New Routine with a sparkle icon. The menu appears below the red + button in the top toolbar." width="280" style="display: block; margin: 1rem auto;">
-            <p>Click the + button and select "Add Task" from the menu. Enter your task name and it will appear at the bottom of your list.</p>
+            <img src="../assets/images/screenshots/Example/user-manual/IMG_1203.PNG" alt="The + button dropdown menu expanded, showing two options: Add Task with a notepad icon, and Create New Routine with a sparkle icon. The menu appears below the red + button in the top toolbar." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
+            <p>Tap the + button and select "Add Task" from the menu. Enter your task name and it will appear at the bottom of your list.</p>
+
+            <h3>Completing Tasks</h3>
+            <p>Tap the checkbox next to a task to mark it as complete. You can also undo a completion by tapping the checkbox again. Undo/redo is available for recent actions.</p>
 
             <h3>Reordering Tasks</h3>
-            <p>Drag and drop tasks to reorder them, or use the move arrows if enabled. Your preferred order is saved automatically.</p>
+            <p>Drag and drop tasks to reorder them, or use the move arrows if enabled in Settings. Your preferred order is saved automatically.</p>
 
             <h3>High Priority Tasks</h3>
-            <img src="../assets/images/screenshots/Example/user-manual/IMG_1188.PNG" alt="A task with a red left border indicating high priority. The task option buttons are visible below, showing customize, priority (with red warning icon), edit, and delete buttons. A green notification banner confirms Priority enabled." width="280" style="display: block; margin: 1rem auto;">
+            <img src="../assets/images/screenshots/Example/user-manual/IMG_1188.PNG" alt="A task with a red left border indicating high priority. The task option buttons are visible below, showing customize, priority (with red warning icon), edit, and delete buttons. A green notification banner confirms Priority enabled." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
             <p>Mark important tasks with the priority button. Priority tasks display a red left border to help you focus on what matters most.</p>
 
             <h3>Due Dates</h3>
@@ -88,11 +102,11 @@
             </ul>
 
             <h3>Reminders</h3>
-            <img src="../assets/images/screenshots/Example/user-manual/IMG_1293.PNG" alt="The Reminders and Notifications modal with Enable Reminders checkbox checked, Remind Indefinitely option selected, and interval set to every 30 minutes. A blue Close button appears at the bottom." width="280" style="display: block; margin: 1rem auto;">
+            <img src="../assets/images/screenshots/Example/user-manual/IMG_1293.PNG" alt="The Reminders and Notifications modal with Enable Reminders checkbox checked, Remind Indefinitely option selected, and interval set to every 30 minutes. A blue Close button appears at the bottom." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
             <p>Enable reminders to get browser notifications about pending tasks. Make sure your browser allows notifications from miniCycle.</p>
 
             <h3>Recurring Tasks</h3>
-            <img src="../assets/images/screenshots/Example/user-manual/IMG_1261.PNG" alt="A purple recurring task popup showing the task Long press on a task to rearrange it is set to repeat daily indefinitely. The popup includes a Change Settings button and displays task option buttons including customize, priority, edit, delete, and recurring icons." width="280" style="display: block; margin: 1rem auto;">
+            <img src="../assets/images/screenshots/Example/user-manual/IMG_1261.PNG" alt="A purple recurring task popup showing the task Long press on a task to rearrange it is set to repeat daily indefinitely. The popup includes a Change Settings button and displays task option buttons including customize, priority, edit, delete, and recurring icons." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
             <p>Set up tasks that repeat automatically:</p>
             <ul>
                 <li><strong>Hourly:</strong> Reappears every hour</li>
@@ -103,28 +117,34 @@
                 <li><strong>Yearly:</strong> Reappears every year</li>
                 <li><strong>Specific dates:</strong> Choose exact dates for the task to appear</li>
             </ul>
+
+            <h3>Completed Tasks</h3>
+            <p>In Settings, you can choose to collapse completed tasks into a separate section at the bottom of your task list. This keeps your active tasks front and center while still showing what you've accomplished.</p>
         </div>
 
         <div class="section" id="cycle-modes">
             <h2>Cycle Modes</h2>
             <p>miniCycle offers three different modes for how your routines behave:</p>
-            <img src="../assets/images/screenshots/Example/user-manual/IMG_1183.PNG" alt="The cycle mode selector dropdown in the top toolbar, currently showing Auto Cycle with a circular arrow icon. Users can tap this to switch between Auto Cycle, Manual Cycle, and To-Do Mode." width="280" style="display: block; margin: 1rem auto;">
+            <img src="../assets/images/screenshots/Example/user-manual/IMG_1183.PNG" alt="The cycle mode selector dropdown in the top toolbar, currently showing Auto Cycle with a circular arrow icon. Users can tap this to switch between Auto Cycle, Manual Cycle, and To-Do Mode." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
 
             <h3>Auto Cycle Mode</h3>
             <p>When enabled, all tasks automatically reset to incomplete once you finish everything. This is perfect for daily routines and recurring habits. Your cycle count increases with each completion.</p>
 
             <h3>Manual Cycle Mode</h3>
-            <img src="../assets/images/screenshots/Example/user-manual/IMG_1191.PNG" alt="Manual Cycle Mode interface showing completed tasks with green checkmarks and a large green Complete button at the bottom. A blue banner explains that tasks only reset when you click the Complete button. The progress bar shows the routine is partially complete." width="280" style="display: block; margin: 1rem auto;">
-            <p>Complete all tasks, then click the "Complete" button when you're ready to reset. This gives you time to review before starting a new cycle.</p>
+            <img src="../assets/images/screenshots/Example/user-manual/IMG_1191.PNG" alt="Manual Cycle Mode interface showing completed tasks with green checkmarks and a large green Complete button at the bottom. A blue banner explains that tasks only reset when you click the Complete button. The progress bar shows the routine is partially complete." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
+            <p>Complete all tasks, then tap the "Complete" button when you're ready to reset. This gives you time to review before starting a new cycle.</p>
 
             <h3>To-Do Mode</h3>
-            <img src="../assets/images/screenshots/Example/user-manual/IMG_1200.PNG" alt="To-Do Mode interface showing the mode selector set to To-Do Mode with a checkmark icon. A blue banner at the bottom explains that completed tasks are removed when you click Complete. The Complete button is visible for manually triggering task deletion." width="280" style="display: block; margin: 1rem auto;">
-            <p>Completed tasks are deleted instead of reset. Works like a traditional to-do list — perfect for one-time tasks, shopping lists, or projects.</p>
+            <img src="../assets/images/screenshots/Example/user-manual/IMG_1200.PNG" alt="To-Do Mode interface showing the mode selector set to To-Do Mode with a checkmark icon. A blue banner at the bottom explains that completed tasks are removed when you click Complete. The Complete button is visible for manually triggering task deletion." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
+            <p>Completed tasks are removed instead of reset. Works like a traditional to-do list — perfect for one-time tasks, shopping lists, or projects.</p>
+
+            <h3>Cleared Tasks</h3>
+            <p>In To-Do Mode, tasks that are cleared aren't gone forever. You can view your cleared tasks history and restore any task you need back into your routine.</p>
         </div>
 
         <div class="section" id="managing-routines">
             <h2>Managing Routines</h2>
-            <img src="../assets/images/screenshots/Example/user-manual/IMG_1284.PNG" alt="The hamburger menu expanded showing routine management options: New Routine, Open Existing Routine, and Duplicate Routine at the top. Below are additional options including Import, Export, Theme selector, and Manage Recurring Tasks. A Recurring Tasks popup is also visible listing tasks with their schedules." width="280" style="display: block; margin: 1rem auto;">
+            <img src="../assets/images/screenshots/Example/user-manual/IMG_1284.PNG" alt="The hamburger menu expanded showing routine management options: New Routine, Open Existing Routine, and Duplicate Routine at the top. Below are additional options including Import, Export, Theme selector, and Manage Recurring Tasks. A Recurring Tasks popup is also visible listing tasks with their schedules." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
             <p>Create different routines for different areas of your life:</p>
             <ul>
                 <li><strong>Work Tasks:</strong> Professional to-dos and projects</li>
@@ -134,19 +154,19 @@
             </ul>
 
             <h3>Routine Switcher</h3>
-            <img src="../assets/images/screenshots/Example/user-manual/IMG_1241.PNG" alt="The Open Routine modal displaying a list of saved routines including Getting Started Update and Morning Routine, each showing their storage size. The modal includes a search field, Open and Cancel buttons, an Import From External option, and a storage usage indicator showing 9 KB of 9.91 MB used." width="280" style="display: block; margin: 1rem auto;">
+            <img src="../assets/images/screenshots/Example/user-manual/IMG_1241.PNG" alt="The Open Routine modal displaying a list of saved routines including Getting Started Update and Morning Routine, each showing their storage size. The modal includes a search field, Open and Cancel buttons, an Import From External option, and a storage usage indicator showing 9 KB of 9.91 MB used." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
             <p>Access the routine switcher through the folder icon or hamburger menu (☰) → "Open Existing Routine":</p>
             <ul>
                 <li>Browse and select from your existing routines</li>
                 <li>Preview routine contents before switching — tasks appear in a preview window when you select a routine</li>
-                <li><strong>Double-click a routine</strong> to open it immediately without pressing the Open button</li>
-                <li><strong>Double-click the preview pane</strong> to pop it out as a full review modal showing all tasks and completion status</li>
+                <li><strong>Double-tap a routine</strong> to open it immediately without pressing the Open button</li>
+                <li><strong>Double-tap the preview pane</strong> to pop it out as a full review modal showing all tasks and completion status</li>
                 <li>Rename or delete routines using the action buttons</li>
                 <li>See storage usage for each routine</li>
             </ul>
 
             <h3>Creating New Routines</h3>
-            <p>Click the + button and select "Create New Routine", or use the hamburger menu (☰) → "New Routine". Give your routine a name and start adding tasks.</p>
+            <p>Tap the + button and select "Create New Routine", or use the hamburger menu (☰) → "New Routine". Give your routine a name and start adding tasks.</p>
 
             <h3>Importing Routines</h3>
             <p>Import .mcyc files from other devices or users using the "Import Routine" option from the main menu. You can also drag and drop .mcyc files directly into the app window.</p>
@@ -155,7 +175,7 @@
 
         <div class="section" id="statistics">
             <h2>Statistics & Achievements</h2>
-            <img src="../assets/images/screenshots/Example/user-manual/IMG_1229.PNG" alt="The Stats panel showing Current Routine statistics and Milestone Rewards. Achievement Badges display circles for 5, 25, 50, 75, and 100 milestones, with the 5 badge highlighted in teal indicating it has been earned. A message shows Dark Ocean Theme unlocked, and progress text reads 5 of 25 cycles with 20 more to unlock next reward." width="280" style="display: block; margin: 1rem auto;">
+            <img src="../assets/images/screenshots/Example/user-manual/IMG_1229.PNG" alt="The Stats panel showing Current Routine statistics and Milestone Rewards. Achievement Badges display circles for 5, 25, 50, 75, and 100 milestones, with the 5 badge highlighted in teal indicating it has been earned. A message shows Dark Ocean Theme unlocked, and progress text reads 5 of 25 cycles with 20 more to unlock next reward." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
             <h3>Performance Tracking</h3>
             <ul>
                 <li><strong>Cycle Count:</strong> How many times you've completed this routine</li>
@@ -164,23 +184,23 @@
             </ul>
 
             <h3>Milestone Badges</h3>
-            <p>Earn badges as you complete more tasks:</p>
+            <p>Earn badges by completing cycles or clearing tasks — whichever milestone you reach first unlocks the badge:</p>
             <ul>
-                <li><strong>5 tasks:</strong> First milestone</li>
-                <li><strong>25 tasks:</strong> Getting consistent</li>
-                <li><strong>50 tasks:</strong> Building momentum</li>
-                <li><strong>75 tasks:</strong> Dedicated user</li>
-                <li><strong>100 tasks:</strong> Champion status</li>
+                <li><strong>Making Waves (5 cycles / 5 tasks):</strong> First milestone — unlocks Dark Ocean theme</li>
+                <li><strong>Diamond (25 cycles / 125 tasks):</strong> Getting consistent</li>
+                <li><strong>Radiant (50 cycles / 250 tasks):</strong> Building momentum — unlocks Golden Glow theme</li>
+                <li><strong>Stellar (75 cycles / 375 tasks):</strong> Dedicated user</li>
+                <li><strong>Crowned (100 cycles / 500 tasks):</strong> Champion status — unlocks a mini-game</li>
             </ul>
 
             <h3>Theme Unlocks</h3>
-            <p>Completing milestones unlocks new themes like Dark Ocean. Check the Stats Panel to see your progress toward the next unlock.</p>
+            <p>Reaching milestones unlocks new themes: Dark Ocean at the first milestone and Golden Glow at the third. Check the Stats Panel to see your progress toward the next unlock.</p>
 
             <h3>Gamification & Motivation</h3>
             <p>miniCycle includes motivational features to help maintain consistency:</p>
             <ul>
                 <li><strong>Cycle Counts:</strong> Track how many times you've completed each routine</li>
-                <li><strong>Milestone Badges:</strong> Earn achievements for completing tasks</li>
+                <li><strong>Milestone Badges:</strong> Earn achievements for completing cycles and tasks</li>
                 <li><strong>Progress Ring:</strong> Visual feedback on your current cycle</li>
                 <li><strong>Theme Rewards:</strong> Unlock new themes through consistent use</li>
             </ul>
@@ -189,11 +209,22 @@
         <div class="section" id="customization">
             <h2>Customization</h2>
             <h3>Dark Mode</h3>
-            <img src="../assets/images/screenshots/Example/user-manual/IMG_1237.PNG" alt="miniCycle default theme with dark mode enabled. The interface shows dark gray backgrounds with white text and lighter gray task cards. The sun icon in the lower right corner indicates dark mode is active - tap it to switch back to light mode." width="280" style="display: block; margin: 1rem auto;">
+            <img src="../assets/images/screenshots/Example/user-manual/IMG_1237.PNG" alt="miniCycle default theme with dark mode enabled. The interface shows dark gray backgrounds with white text and lighter gray task cards. The sun icon in the lower right corner indicates dark mode is active - tap it to switch back to light mode." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
             <p>Toggle dark mode using the moon/sun icon in the lower right corner, or through Settings. Each theme has its own dark mode variant.</p>
 
             <h3>Themes</h3>
-            <p>Choose from available themes in Settings → Theme. Unlock additional themes by reaching milestones.</p>
+            <p>Choose from available themes via the hamburger menu (☰) → "Themes". Some themes are unlocked by reaching milestones (see <a href="#statistics">Statistics & Achievements</a>).</p>
+
+            <h3>Personalization</h3>
+            <p>For deeper customization, open the hamburger menu (☰) → "Personalization" to access the color picker panel. This lets you:</p>
+            <ul>
+                <li>Customize colors for individual UI elements (task background, title, checkboxes, and more)</li>
+                <li>Upload a custom background image</li>
+                <li>Apply quick preset color schemes</li>
+                <li>Save, load, export, and import your custom color presets</li>
+                <li>Undo color changes or reset to defaults</li>
+            </ul>
+            <p>Custom colors only apply when using the Default theme.</p>
 
             <h3>Task Option Buttons</h3>
             <p>Customize which buttons appear on your tasks through the Customize (-/+) button:</p>
@@ -203,13 +234,24 @@
                 <li>Simplify the interface by hiding features you don't use</li>
             </ul>
 
+            <h3>Settings</h3>
+            <p>Access Settings from the hamburger menu (☰) to configure additional options:</p>
+            <ul>
+                <li><strong>Show Move Arrows:</strong> Display up/down arrow buttons on tasks for reordering</li>
+                <li><strong>Three-Dots Menu:</strong> Show a menu icon on tasks as an alternative to long-press</li>
+                <li><strong>Help Window:</strong> Show or hide the help/status panel</li>
+                <li><strong>Scroll to New Task:</strong> Automatically scroll to newly added tasks</li>
+                <li><strong>Scroll on Load:</strong> Scroll to the first incomplete task when opening a routine</li>
+                <li><strong>Completed Tasks:</strong> Choose how completed tasks are displayed (inline or collapsed)</li>
+            </ul>
+
             <h3>Responsive Design</h3>
             <p>miniCycle works seamlessly across devices — phone, tablet, or desktop. Your experience adapts to whatever screen you're using.</p>
         </div>
 
         <div class="section" id="data-management">
             <h2>Data Management</h2>
-            <img src="../assets/images/screenshots/Example/user-manual/IMG_1289.PNG" alt="Settings panel showing options including Reset Notification Position, Reset Recurring Default, Customize Task Options, Backup All Routines, Restore All Routines, Open App Diagnostics and Testing, Check for Updates, Try Lite Version, Factory Reset, and Close button." width="280" style="display: block; margin: 1rem auto;">
+            <img src="../assets/images/screenshots/Example/user-manual/IMG_1289.PNG" alt="Settings panel showing options including Reset Notification Position, Reset Recurring Default, Customize Task Options, Backup All Routines, Restore All Routines, Open App Diagnostics and Testing, Check for Updates, Try Lite Version, Factory Reset, and Close button." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
             <h3>Privacy & Local Storage</h3>
             <p>All your data stays on your device. Nothing is sent to external servers, so your tasks and information remain completely private.</p>
 
@@ -252,18 +294,21 @@
         <div class="section" id="advanced-features">
             <h2>Advanced Features</h2>
             <h3>Undo/Redo</h3>
-            <p>Made a mistake? Use the undo button to reverse recent actions. Your undo history is preserved per routine.</p>
+            <p>Made a mistake? Use the undo button to reverse recent actions, or use <strong>Ctrl+Z</strong> / <strong>Cmd+Z</strong> on your keyboard. Redo with <strong>Ctrl+Y</strong> / <strong>Cmd+Y</strong>. Your undo history is preserved per routine.</p>
 
             <h3>Search & Filter</h3>
-            <img src="../assets/images/screenshots/Example/user-manual/IMG_1196.PNG" alt="Search filter active with the text Here typed in the search field. The task list is filtered to show only matching tasks. An X button allows clearing the filter to show all tasks again." width="280" style="display: block; margin: 1rem auto;">
+            <img src="../assets/images/screenshots/Example/user-manual/IMG_1196.PNG" alt="Search filter active with the text Here typed in the search field. The task list is filtered to show only matching tasks. An X button allows clearing the filter to show all tasks again." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
             <p>Use the search icon to filter tasks by name. A red indicator shows when a filter is active.</p>
 
             <h3>Three Dots Menu</h3>
-            <img src="../assets/images/screenshots/Example/user-manual/IMG_1253.PNG" alt="Task list with three-dots menu icons visible on the right side of each task card. The vertical three-dots provide an alternative to long-press for accessing task options like edit, delete, priority, and recurring settings." width="280" style="display: block; margin: 1rem auto;">
+            <img src="../assets/images/screenshots/Example/user-manual/IMG_1253.PNG" alt="Task list with three-dots menu icons visible on the right side of each task card. The vertical three-dots provide an alternative to long-press for accessing task options like edit, delete, priority, and recurring settings." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
             <p>An alternative to long-press for accessing task options. Enable it in Settings or through Customize Task Options.</p>
 
+            <h3>About</h3>
+            <p>View app version and information through the hamburger menu (☰) → "About miniCycle".</p>
+
             <h3>App Diagnostics</h3>
-            <p>Run app health checks and view debug information through Settings → Open App Diagnostics & Testing.</p>
+            <p>Run app health checks, verify data integrity, and view debug information through Settings → Open App Diagnostics & Testing. This includes tools for backup management, data repair, and generating debug reports if you need to troubleshoot an issue.</p>
         </div>
 
         <div class="section" id="keyboard-shortcuts">
@@ -335,9 +380,15 @@
 
             <h3>What's the difference between routines and cycles?</h3>
             <p>A <strong>routine</strong> is the persistent checklist you create. A <strong>cycle</strong> is one complete run-through of that routine. Your cycle count tracks how many times you've completed the routine.</p>
+
+            <h3>Where did my cleared tasks go?</h3>
+            <p>In To-Do Mode, cleared tasks are saved in a history. You can view and restore them from the cleared tasks panel.</p>
+
+            <h3>How do I reset the onboarding tutorial?</h3>
+            <p>Go to Settings → Reset Onboarding to see the welcome tutorial again.</p>
         </div>
 
-        <div class="section" id="support">
+        <footer class="section" id="support">
             <h2>Support</h2>
             <h3>Found a Bug?</h3>
             <p>Use the feedback form in the app (hamburger menu → Send Feedback) to report issues or suggest improvements.</p>
@@ -350,7 +401,9 @@
 
             <h3>More Information</h3>
             <p>Visit <a href="https://minicycleapp.com">minicycleapp.com</a> for the latest updates and documentation.</p>
-        </div>
+
+            <p class="last-updated">Last updated: February 2026 (v1.955)</p>
+        </footer>
     </main>
 </body>
 </html>
