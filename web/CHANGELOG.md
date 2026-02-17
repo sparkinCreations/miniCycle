@@ -1,3 +1,7 @@
+## [1.956] - 2026-02-17
+- Enhance accessibility and styling across components
+
+
 ## [1.955] - 2026-02-17
 - Add security policy page and enhance accessibility styles for high contrast mode
 
