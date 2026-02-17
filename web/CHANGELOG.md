@@ -1,3 +1,7 @@
+## [1.958] - 2026-02-17
+- added photos for user manual in assets
+
+
 ## [1.957] - 2026-02-17
 - Enhance user manual and styles
 
