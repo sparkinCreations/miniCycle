@@ -1,3 +1,7 @@
+## [1.957] - 2026-02-17
+- Enhance user manual and styles
+
+
 ## [1.956] - 2026-02-17
 - Enhance accessibility and styling across components
 
