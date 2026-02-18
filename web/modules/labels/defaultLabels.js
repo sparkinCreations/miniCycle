@@ -101,6 +101,8 @@ export const DEFAULT_LABELS = deepFreeze({
         deleteAllTitle:       'Delete all tasks in this routine',
         clearCompletedTasks:  'Clear Completed Tasks',
         markTaskComplete:     'Mark task "{name}" as complete',
+        taskItemLabel:        '{name}, {status}',
+        taskItemRecurring:    '{name}, {status}, recurring',
         searchTasks:          'Search tasks',
         searchTasksPlaceholder: 'Search tasks...',
         clearSearch:          'Clear search'
@@ -750,6 +752,7 @@ export const DEFAULT_LABELS = deepFreeze({
         previousView:   'Previous view',
         nextView:       'Next view',
         completed:      'Completed',
+        notCompleted:   'Not completed',
         saving:         'Saving...',
         hideTaskInput:  'Hide Task Input',
         addTaskToggle:  'Add Task',
@@ -1156,6 +1159,8 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'action.deleteAllTitle',
     'action.clearCompletedTasks',
     'action.markTaskComplete',
+    'action.taskItemLabel',
+    'action.taskItemRecurring',
     'action.searchTasks',
     'action.searchTasksPlaceholder',
 
@@ -1445,6 +1450,8 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'nav.showTasks',
     'nav.hideTaskInput',
     'nav.addTaskToggle',
+    'nav.completed',
+    'nav.notCompleted',
 
     // Quick actions
     'quickAction.openRoutine',

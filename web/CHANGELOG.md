@@ -1,3 +1,7 @@
+## [1.959] - 2026-02-18
+- Refactor code structure for improved readability and maintainability
+
+
 ## [1.958] - 2026-02-17
 - added photos for user manual in assets
 

@@ -373,6 +373,8 @@ export class TaskEvents {
             if (task !== taskItem) {
                 // Use controller for consistency (use same caller for hide)
                 controller?.hide(task, caller);
+                const otherDotsBtn = task.querySelector('.three-dots-btn');
+                if (otherDotsBtn) otherDotsBtn.setAttribute('aria-expanded', 'false');
                 hiddenCount++;
             }
         });
@@ -390,11 +392,15 @@ export class TaskEvents {
             console.log('👆 TOGGLING OFF (same task clicked twice)');
             controller?.hide(taskItem, caller);
             newActiveTaskId = null;
+            const dotsBtn = taskItem.querySelector('.three-dots-btn');
+            if (dotsBtn) dotsBtn.setAttribute('aria-expanded', 'false');
         } else {
             // Show if hidden (first click or switching tasks)
             console.log('✨ TOGGLING ON (first click or switching tasks)');
             controller?.show(taskItem, caller);
             newActiveTaskId = taskId || null;
+            const dotsBtn = taskItem.querySelector('.three-dots-btn');
+            if (dotsBtn) dotsBtn.setAttribute('aria-expanded', 'true');
         }
 
         // Update activeTaskId in AppState (state-driven UI)

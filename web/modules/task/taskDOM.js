@@ -575,6 +575,12 @@ export class TaskDOMManager {
         // Create main task element
         const taskItem = this.createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle, deleteWhenComplete, deleteWhenCompleteSettings);
 
+        // Accessibility: descriptive aria-label for screen readers
+        const completed = taskContext.completed || false;
+        const statusText = completed ? getLabel('nav.completed') : getLabel('nav.notCompleted');
+        const labelKey = recurring ? 'action.taskItemRecurring' : 'action.taskItemLabel';
+        taskItem.setAttribute('aria-label', getLabel(labelKey, { vars: { name: taskTextTrimmed, status: statusText } }));
+
         // Create three dots button if needed
         const threeDotsButton = this.createThreeDotsButton(taskItem, settings);
 
@@ -735,6 +741,7 @@ export class TaskDOMManager {
             threeDotsButton.textContent = "⋮";
             threeDotsButton.setAttribute("title", getLabel('taskOption.showOptions'));
             threeDotsButton.setAttribute("aria-label", getLabel('taskOption.showOptions'));
+            threeDotsButton.setAttribute("aria-expanded", "false");
 
             // ✅ MEMORY LEAK FIX: Create named handler bound to taskItem
             const handler = (event) => this.handleThreeDotsClick(taskItem, event);

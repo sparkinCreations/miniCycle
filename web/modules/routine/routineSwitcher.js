@@ -1105,7 +1105,7 @@ export class RoutineSwitcher {
             overlay.className = 'preview-review-dialog';
             overlay.innerHTML = `
                 <div class="modal-content preview-review-modal">
-                    <span class="close-modal preview-review-close" role="button" tabindex="0" aria-label="${getLabel('button.close')}">&times;</span>
+                    <button class="close-modal preview-review-close" aria-label="${getLabel('button.close')}">&times;</button>
                     <h3 class="preview-review-title">${escapeText(cycleName)}</h3>
                     <div class="preview-review-meta">
                         ${cycleData.tasks.length} task${cycleData.tasks.length !== 1 ? 's' : ''} &middot; ${completedCount} completed${dateStr ? ` &middot; ${dateLabel}: ${dateStr}` : ''}
@@ -1203,6 +1203,7 @@ export class RoutineSwitcher {
 
             const listItem = document.createElement("div");
             listItem.classList.add("mini-cycle-switch-item");
+            listItem.id = `routine-option-${index}`;
             listItem.setAttribute("tabindex", "0");
             listItem.setAttribute("role", "option");
             listItem.dataset.cycleName = cycleData.title || cycleKey; // Use title for compatibility
@@ -1257,6 +1258,12 @@ export class RoutineSwitcher {
                 });
                 listItem.classList.add("selected");
                 listItem.setAttribute("aria-selected", "true");
+
+                // Update aria-activedescendant on the listbox
+                const listbox = this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST);
+                if (listbox && listItem.id) {
+                    listbox.setAttribute('aria-activedescendant', listItem.id);
+                }
 
                 // Show preview & buttons
                 const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);

@@ -164,10 +164,19 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
                 handleTaskListMovement(taskItem, isCompleted);
             }
 
+            // Update aria-checked on checkbox
+            checkbox.setAttribute('aria-checked', isCompleted.toString());
+
+            // Update task item aria-label to reflect new status
+            const taskText = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent || '';
+            const statusText = isCompleted ? getLabel('nav.completed') : getLabel('nav.notCompleted');
+            const isRecurring = taskItem.classList.contains('recurring');
+            const labelKey = isRecurring ? 'action.taskItemRecurring' : 'action.taskItemLabel';
+            taskItem.setAttribute('aria-label', getLabel(labelKey, { vars: { name: taskText, status: statusText } }));
+
             // Announce completion state to screen readers via live region
             const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
             if (liveRegion) {
-                const taskText = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent || '';
                 liveRegion.textContent = isCompleted
                     ? getLabel('accessibility.taskCompleted', { vars: { name: taskText } })
                     : getLabel('accessibility.taskUncompleted', { vars: { name: taskText } });
