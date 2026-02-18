@@ -1033,19 +1033,19 @@ async setDefaultPosition(notificationContainer) {
              style="display: none; margin-top: 12px; opacity: 0; transform: translateY(-10px); transition: opacity 0.3s ease, transform 0.3s ease;">
 
           <div class="quick-recurring-options" data-task-id="${assignedTaskId}" role="radiogroup" aria-label="${getLabel('freq.frequency')}">
-            <div class="quick-option" role="radio" tabindex="0" aria-checked="${frequency === 'hourly'}" data-freq="hourly">
+            <div class="quick-option" role="radio" tabindex="${frequency === 'hourly' ? '0' : '-1'}" aria-checked="${frequency === 'hourly'}" data-freq="hourly">
               <span class="radio-circle ${frequency === 'hourly' ? 'selected' : ''}" data-freq="hourly" aria-hidden="true"></span>
               <span class="option-label">${getLabel('freq.hourly')}</span>
             </div>
-            <div class="quick-option" role="radio" tabindex="0" aria-checked="${frequency === 'daily'}" data-freq="daily">
+            <div class="quick-option" role="radio" tabindex="${frequency === 'daily' ? '0' : '-1'}" aria-checked="${frequency === 'daily'}" data-freq="daily">
               <span class="radio-circle ${frequency === 'daily' ? 'selected' : ''}" data-freq="daily" aria-hidden="true"></span>
               <span class="option-label">${getLabel('freq.daily')}</span>
             </div>
-            <div class="quick-option" role="radio" tabindex="0" aria-checked="${frequency === 'weekly'}" data-freq="weekly">
+            <div class="quick-option" role="radio" tabindex="${frequency === 'weekly' ? '0' : '-1'}" aria-checked="${frequency === 'weekly'}" data-freq="weekly">
               <span class="radio-circle ${frequency === 'weekly' ? 'selected' : ''}" data-freq="weekly" aria-hidden="true"></span>
               <span class="option-label">${getLabel('freq.weekly')}</span>
             </div>
-            <div class="quick-option" role="radio" tabindex="0" aria-checked="${frequency === 'monthly'}" data-freq="monthly">
+            <div class="quick-option" role="radio" tabindex="${frequency === 'monthly' ? '0' : '-1'}" aria-checked="${frequency === 'monthly'}" data-freq="monthly">
               <span class="radio-circle ${frequency === 'monthly' ? 'selected' : ''}" data-freq="monthly" aria-hidden="true"></span>
               <span class="option-label">${getLabel('freq.monthly')}</span>
             </div>
@@ -1200,7 +1200,7 @@ async setDefaultPosition(notificationContainer) {
     };
     _safeAddEventListener(notification, "click", notification._clickHandler);
 
-    // Keyboard handler: Enter/Space selects radio, Arrow Up/Down navigates all interactive elements
+    // Keyboard handler: Enter/Space selects radio, Arrow keys navigate radio group
     notification._keyHandler = (e) => {
       // Enter/Space selects a quick option radio
       if (e.key === 'Enter' || e.key === ' ') {
@@ -1212,18 +1212,35 @@ async setDefaultPosition(notificationContainer) {
         return;
       }
 
-      // Arrow Up/Down navigates between all visible interactive elements
-      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        e.preventDefault();
-        const focusable = [...notification.querySelectorAll(
-          'button, [role="radio"][tabindex="0"]'
-        )].filter(el => el.offsetParent !== null && getComputedStyle(el).display !== 'none');
-        if (focusable.length === 0) return;
-        const idx = focusable.indexOf(document.activeElement);
-        const next = e.key === 'ArrowDown'
-          ? (idx + 1) % focusable.length
-          : (idx - 1 + focusable.length) % focusable.length;
-        focusable[next].focus();
+      // Arrow keys within radiogroup: move focus AND select (ARIA APG radio pattern)
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        const currentRadio = e.target.closest('.quick-option');
+        if (currentRadio) {
+          e.preventDefault();
+          const radios = [...currentRadio.closest('.quick-recurring-options').querySelectorAll('.quick-option')];
+          const idx = radios.indexOf(currentRadio);
+          const isForward = e.key === 'ArrowDown' || e.key === 'ArrowRight';
+          const next = isForward
+            ? (idx + 1) % radios.length
+            : (idx - 1 + radios.length) % radios.length;
+          this._selectQuickOption(notification, radios[next]);
+          radios[next].focus();
+          return;
+        }
+
+        // Outside radiogroup: Arrow Up/Down navigates between buttons
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          const focusable = [...notification.querySelectorAll(
+            'button, [role="radio"][tabindex="0"]'
+          )].filter(el => el.offsetParent !== null && getComputedStyle(el).display !== 'none');
+          if (focusable.length === 0) return;
+          const idx = focusable.indexOf(document.activeElement);
+          const next = e.key === 'ArrowDown'
+            ? (idx + 1) % focusable.length
+            : (idx - 1 + focusable.length) % focusable.length;
+          focusable[next].focus();
+        }
       }
     };
     _safeAddEventListener(notification, "keydown", notification._keyHandler);
@@ -1246,9 +1263,11 @@ async setDefaultPosition(notificationContainer) {
     });
     radioCircle.classList.add("selected");
 
-    // Update aria-checked on all options
+    // Update aria-checked and roving tabindex on all options
     quickOptions.querySelectorAll('.quick-option').forEach(opt => {
-      opt.setAttribute('aria-checked', (opt === quickOption).toString());
+      const isSelected = opt === quickOption;
+      opt.setAttribute('aria-checked', isSelected.toString());
+      opt.setAttribute('tabindex', isSelected ? '0' : '-1');
     });
 
     applyButton.style.display = "inline-block";

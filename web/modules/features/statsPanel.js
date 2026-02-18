@@ -1024,6 +1024,7 @@ export class StatsPanelManager {
                 ? `${globalTasksCleared} of ${nextMilestone} cleared tasks to next milestone`
                 : `${globalCyclesCompleted} of ${nextMilestone} cycles to next milestone`;
             this.elements.statsProgressBar.setAttribute('aria-label', ariaLabel);
+            this.elements.statsProgressBar.setAttribute('aria-valuenow', Math.round(milestoneProgress));
         }
 
         // ✅ Update progress text label - dynamic based on mode

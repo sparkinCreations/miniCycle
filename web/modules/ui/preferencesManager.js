@@ -401,6 +401,7 @@ export class PreferencesManager {
             patternOpacitySlider._inputHandler = (e) => {
                 const percent = parseInt(e.target.value, 10);
                 if (opacityDisplay) opacityDisplay.textContent = `${percent}%`;
+                e.target.setAttribute('aria-valuetext', `Opacity: ${percent}%`);
                 this.handlePatternOpacityChange(percent);
             };
             safeAdd(patternOpacitySlider, 'input', patternOpacitySlider._inputHandler);
@@ -809,6 +810,7 @@ export class PreferencesManager {
                 ? customColors.patternOpacity
                 : defaultPercent;
             patternOpacitySlider.value = savedOpacity;
+            patternOpacitySlider.setAttribute('aria-valuetext', `Opacity: ${savedOpacity}%`);
             const opacityDisplay = document.getElementById('pref-pattern-opacity-value');
             if (opacityDisplay) opacityDisplay.textContent = `${savedOpacity}%`;
         }
@@ -1134,7 +1136,10 @@ export class PreferencesManager {
 
             const defaultPercent = Math.round(DEFAULT_PATTERN_OPACITY * 100);
             const slider = document.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
-            if (slider) slider.value = defaultPercent;
+            if (slider) {
+                slider.value = defaultPercent;
+                slider.setAttribute('aria-valuetext', `Opacity: ${defaultPercent}%`);
+            }
             const display = document.getElementById('pref-pattern-opacity-value');
             if (display) display.textContent = `${defaultPercent}%`;
 
@@ -1267,7 +1272,10 @@ export class PreferencesManager {
         // Reset pattern opacity slider UI
         const defaultPercent = Math.round(DEFAULT_PATTERN_OPACITY * 100);
         const opacitySlider = document.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
-        if (opacitySlider) opacitySlider.value = defaultPercent;
+        if (opacitySlider) {
+            opacitySlider.value = defaultPercent;
+            opacitySlider.setAttribute('aria-valuetext', `Opacity: ${defaultPercent}%`);
+        }
         const opacityDisplay = document.getElementById('pref-pattern-opacity-value');
         if (opacityDisplay) opacityDisplay.textContent = `${defaultPercent}%`;
 
@@ -1482,6 +1490,8 @@ export class PreferencesManager {
         const section = header.closest('.preferences-section');
         if (section) {
             section.classList.toggle('collapsed');
+            const isCollapsed = section.classList.contains('collapsed');
+            header.setAttribute('aria-expanded', (!isCollapsed).toString());
             this.saveCollapsedStates();
         }
     }
@@ -1503,6 +1513,10 @@ export class PreferencesManager {
                     section.classList.add('collapsed');
                 } else {
                     section.classList.remove('collapsed');
+                }
+                const header = section.querySelector('.preferences-section-header');
+                if (header) {
+                    header.setAttribute('aria-expanded', (!isCollapsed).toString());
                 }
             }
         });

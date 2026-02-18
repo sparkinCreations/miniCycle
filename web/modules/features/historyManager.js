@@ -217,6 +217,7 @@ export class HistoryManager {
 
         this.modalOverlay = document.createElement('dialog');
         this.modalOverlay.setAttribute('aria-label', getLabel('history.title'));
+        this.modalOverlay.setAttribute('aria-modal', 'true');
         this.modalOverlay.style.cssText = `
             opacity: 0;
             transition: opacity 0.2s ease;
