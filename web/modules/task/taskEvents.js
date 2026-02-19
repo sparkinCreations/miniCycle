@@ -294,6 +294,7 @@ export class TaskEvents {
             if (dueDateInput) {
                 const isHidden = dueDateInput.classList.contains("hidden");
                 dueDateInput.classList.toggle("hidden", !isHidden);
+                button.setAttribute("aria-expanded", isHidden.toString());
                 if (isHidden) {
                     // Focus the input when showing
                     dueDateInput.focus();

@@ -48,6 +48,28 @@ export function initEventDelegation(deps, state, callbacks) {
 }
 
 /**
+ * Toggle a day/month box selection and sync aria-checked
+ * @param {HTMLElement} box - The day or month box element
+ */
+function toggleDayBox(box) {
+    box.classList.toggle("selected");
+    box.setAttribute("aria-checked", box.classList.contains("selected") ? "true" : "false");
+}
+
+/**
+ * Keyboard handler for day/month box containers — Enter/Space toggles selection
+ * @param {KeyboardEvent} event - The keydown event
+ * @param {string} selector - CSS selector for the box elements
+ */
+function handleDayBoxKeydown(event, selector) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const box = event.target.closest(selector);
+    if (!box) return;
+    event.preventDefault();
+    return box;
+}
+
+/**
  * Event delegation for monthly day boxes
  * Replaces 31 listeners with 1
  * @param {Object} deps - Dependencies
@@ -60,7 +82,14 @@ export function setupMonthlyDayDelegation(deps) {
         const dayBox = event.target.closest(".monthly-day-box");
         if (!dayBox) return;
 
-        dayBox.classList.toggle("selected");
+        toggleDayBox(dayBox);
+    });
+
+    deps.safeAddEventListener(container, "keydown", (event) => {
+        const dayBox = handleDayBoxKeydown(event, ".monthly-day-box");
+        if (!dayBox) return;
+
+        toggleDayBox(dayBox);
     });
 }
 
@@ -77,7 +106,14 @@ export function setupWeeklyDayDelegation(deps) {
         const dayBox = event.target.closest(".weekly-day-box");
         if (!dayBox) return;
 
-        dayBox.classList.toggle("selected");
+        toggleDayBox(dayBox);
+    });
+
+    deps.safeAddEventListener(container, "keydown", (event) => {
+        const dayBox = handleDayBoxKeydown(event, ".weekly-day-box");
+        if (!dayBox) return;
+
+        toggleDayBox(dayBox);
     });
 }
 
@@ -92,12 +128,8 @@ export function setupYearlyMonthDelegation(deps, state, callbacks) {
     const container = deps.querySelector(DOM_SELECTORS.YEARLY_MONTHS);
     if (!container) return;
 
-    deps.safeAddEventListener(container, "click", (event) => {
-        const monthBox = event.target.closest(".yearly-month-box");
-        if (!monthBox) return;
-
-        // Toggle selection
-        monthBox.classList.toggle("selected");
+    function handleMonthToggle(monthBox) {
+        toggleDayBox(monthBox);
 
         const selectedMonths = callbacks.getSelectedYearlyMonths();
 
@@ -134,6 +166,20 @@ export function setupYearlyMonthDelegation(deps, state, callbacks) {
                 yearlyMonthSelect.dispatchEvent(new Event("change"));
             }
         }
+    }
+
+    deps.safeAddEventListener(container, "click", (event) => {
+        const monthBox = event.target.closest(".yearly-month-box");
+        if (!monthBox) return;
+
+        handleMonthToggle(monthBox);
+    });
+
+    deps.safeAddEventListener(container, "keydown", (event) => {
+        const monthBox = handleDayBoxKeydown(event, ".yearly-month-box");
+        if (!monthBox) return;
+
+        handleMonthToggle(monthBox);
     });
 }
 
@@ -148,14 +194,11 @@ export function setupYearlyDayDelegation(deps, state, callbacks) {
     const container = deps.getElementById(DOM_IDS.YEARLY_DAY_CONTAINER);
     if (!container) return;
 
-    deps.safeAddEventListener(container, "click", (event) => {
-        const dayBox = event.target.closest(".yearly-day-box");
-        if (!dayBox) return;
-
+    function handleYearlyDayToggle(dayBox) {
         const day = parseInt(dayBox.getAttribute("data-day"));
         if (isNaN(day)) return;
 
-        dayBox.classList.toggle("selected");
+        toggleDayBox(dayBox);
         const isNowSelected = dayBox.classList.contains("selected");
 
         // Get current state
@@ -190,6 +233,20 @@ export function setupYearlyDayDelegation(deps, state, callbacks) {
             }
             state.selectedYearlyDays[monthNumber] = current;
         }
+    }
+
+    deps.safeAddEventListener(container, "click", (event) => {
+        const dayBox = event.target.closest(".yearly-day-box");
+        if (!dayBox) return;
+
+        handleYearlyDayToggle(dayBox);
+    });
+
+    deps.safeAddEventListener(container, "keydown", (event) => {
+        const dayBox = handleDayBoxKeydown(event, ".yearly-day-box");
+        if (!dayBox) return;
+
+        handleYearlyDayToggle(dayBox);
     });
 }
 

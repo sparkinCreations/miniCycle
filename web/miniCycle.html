@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.959">
+<meta name="app-version" content="1.960">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -32,20 +32,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.959"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.960"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=1.959" as="style">
-<link rel="preload" href="styles/base/variables.css?v=1.959" as="style">
-<link rel="preload" href="styles/base/reset.css?v=1.959" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=1.959" as="style">
-<link rel="preload" href="styles/layout/header.css?v=1.959" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=1.959" as="style">
+<link rel="preload" href="styles/main.css?v=1.960" as="style">
+<link rel="preload" href="styles/base/variables.css?v=1.960" as="style">
+<link rel="preload" href="styles/base/reset.css?v=1.960" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=1.960" as="style">
+<link rel="preload" href="styles/layout/header.css?v=1.960" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=1.960" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=1.959" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=1.960" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=1.959"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=1.960"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -56,7 +56,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.959"></script>
+<script src="./version.js?v=1.960"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -215,21 +215,21 @@
      3. Or accepting slightly slower initial load without preloads
      ═══════════════════════════════════════════════════════════════════════════ -->
 <!--
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.959">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.959">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.959">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.959">
-<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.959">
-<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.959">
-<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.959">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.959">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.959">
-<link rel="modulepreload" href="./modules/core/appInit.js?v=1.959">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.959">
-<link rel="modulepreload" href="./modules/core/diBase.js?v=1.959">
-<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.959">
-<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.959">
-<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.959">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.960">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.960">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.960">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.960">
+<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.960">
+<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.960">
+<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.960">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.960">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.960">
+<link rel="modulepreload" href="./modules/core/appInit.js?v=1.960">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.960">
+<link rel="modulepreload" href="./modules/core/diBase.js?v=1.960">
+<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.960">
+<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.960">
+<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.960">
 -->
 
 <!-- Critical CSS - extracted to external file for CSP compliance (no 'unsafe-inline' needed) -->
@@ -952,6 +952,7 @@ window.installApp = () => {
 <!-- Fixed Header Container - wraps header and mode selector -->
 <div class="fixed-header-container">
   <header class="mini-cycle-header-row">
+    <h1 class="visually-hidden">miniCycle Routine Manager</h1>
     <!-- Logo and App Name -->
     <div class="header-branding">
       <img src="assets/images/logo/logo.png" alt="miniCycle" class="header-logo" width="40" height="36">
@@ -1252,7 +1253,7 @@ window.installApp = () => {
                 <label for="specific-date-minute" class="visually-hidden">Minute</label>
                 <input type="number" id="specific-date-minute" name="specific-date-minute" min="0" max="59" placeholder="Minutes">
       
-                <select id="specific-date-meridiem">
+                <select id="specific-date-meridiem" aria-label="AM or PM">
                   <option value="AM">AM</option>
                   <option value="PM">PM</option>
                 </select>
@@ -1337,7 +1338,7 @@ window.installApp = () => {
               <label for="daily-minute" class="visually-hidden">Minute</label>
               <input type="number" id="daily-minute" name="daily-minute" min="0" max="59" placeholder="Minutes">
               
-              <select id="daily-meridiem">
+              <select id="daily-meridiem" aria-label="AM or PM">
                 <option value="AM">AM</option>
                 <option value="PM">PM</option>
               </select>
@@ -1356,13 +1357,13 @@ window.installApp = () => {
   <div id="weekly-day-container" class="hidden">
     <p class="section-label">Select days:</p>
     <div class="weekly-days" role="group" aria-label="Select days">
-      <div class="weekly-day-box" data-day="Sun">Sun</div>
-      <div class="weekly-day-box" data-day="Mon">Mon</div>
-      <div class="weekly-day-box" data-day="Tue">Tue</div>
-      <div class="weekly-day-box" data-day="Wed">Wed</div>
-      <div class="weekly-day-box" data-day="Thu">Thu</div>
-      <div class="weekly-day-box" data-day="Fri">Fri</div>
-      <div class="weekly-day-box" data-day="Sat">Sat</div>
+      <div class="weekly-day-box" data-day="Sun" role="checkbox" tabindex="0" aria-checked="false">Sun</div>
+      <div class="weekly-day-box" data-day="Mon" role="checkbox" tabindex="0" aria-checked="false">Mon</div>
+      <div class="weekly-day-box" data-day="Tue" role="checkbox" tabindex="0" aria-checked="false">Tue</div>
+      <div class="weekly-day-box" data-day="Wed" role="checkbox" tabindex="0" aria-checked="false">Wed</div>
+      <div class="weekly-day-box" data-day="Thu" role="checkbox" tabindex="0" aria-checked="false">Thu</div>
+      <div class="weekly-day-box" data-day="Fri" role="checkbox" tabindex="0" aria-checked="false">Fri</div>
+      <div class="weekly-day-box" data-day="Sat" role="checkbox" tabindex="0" aria-checked="false">Sat</div>
     </div>
   </div>
 
@@ -1377,7 +1378,7 @@ window.installApp = () => {
         <label for="weekly-minute" class="visually-hidden">Minute</label>
         <input type="number" id="weekly-minute" name="weekly-minute" min="0" max="59" placeholder="Minutes">
 
-        <select id="weekly-meridiem">
+        <select id="weekly-meridiem" aria-label="AM or PM">
           <option value="AM">AM</option>
           <option value="PM">PM</option>
         </select>
@@ -1395,25 +1396,25 @@ window.installApp = () => {
   <label><input type="checkbox" id="biweekly-specific-days" name="biweekly-specific-days"> Choose specific day(s) of the week</label>
   <div id="biweekly-day-container" class="hidden">
     <p class="section-label">Week 1:</p>
-    <div class="biweekly-days">
-      <div class="biweekly-day-box" data-day="Sun" data-week="1">Sun</div>
-      <div class="biweekly-day-box" data-day="Mon" data-week="1">Mon</div>
-      <div class="biweekly-day-box" data-day="Tue" data-week="1">Tue</div>
-      <div class="biweekly-day-box" data-day="Wed" data-week="1">Wed</div>
-      <div class="biweekly-day-box" data-day="Thu" data-week="1">Thu</div>
-      <div class="biweekly-day-box" data-day="Fri" data-week="1">Fri</div>
-      <div class="biweekly-day-box" data-day="Sat" data-week="1">Sat</div>
+    <div class="biweekly-days" role="group" aria-label="Week 1 days">
+      <div class="biweekly-day-box" data-day="Sun" data-week="1" role="checkbox" tabindex="0" aria-checked="false">Sun</div>
+      <div class="biweekly-day-box" data-day="Mon" data-week="1" role="checkbox" tabindex="0" aria-checked="false">Mon</div>
+      <div class="biweekly-day-box" data-day="Tue" data-week="1" role="checkbox" tabindex="0" aria-checked="false">Tue</div>
+      <div class="biweekly-day-box" data-day="Wed" data-week="1" role="checkbox" tabindex="0" aria-checked="false">Wed</div>
+      <div class="biweekly-day-box" data-day="Thu" data-week="1" role="checkbox" tabindex="0" aria-checked="false">Thu</div>
+      <div class="biweekly-day-box" data-day="Fri" data-week="1" role="checkbox" tabindex="0" aria-checked="false">Fri</div>
+      <div class="biweekly-day-box" data-day="Sat" data-week="1" role="checkbox" tabindex="0" aria-checked="false">Sat</div>
     </div>
 
     <p class="section-label" style="margin-top: 16px;">Week 2:</p>
-    <div class="biweekly-days">
-      <div class="biweekly-day-box" data-day="Sun" data-week="2">Sun</div>
-      <div class="biweekly-day-box" data-day="Mon" data-week="2">Mon</div>
-      <div class="biweekly-day-box" data-day="Tue" data-week="2">Tue</div>
-      <div class="biweekly-day-box" data-day="Wed" data-week="2">Wed</div>
-      <div class="biweekly-day-box" data-day="Thu" data-week="2">Thu</div>
-      <div class="biweekly-day-box" data-day="Fri" data-week="2">Fri</div>
-      <div class="biweekly-day-box" data-day="Sat" data-week="2">Sat</div>
+    <div class="biweekly-days" role="group" aria-label="Week 2 days">
+      <div class="biweekly-day-box" data-day="Sun" data-week="2" role="checkbox" tabindex="0" aria-checked="false">Sun</div>
+      <div class="biweekly-day-box" data-day="Mon" data-week="2" role="checkbox" tabindex="0" aria-checked="false">Mon</div>
+      <div class="biweekly-day-box" data-day="Tue" data-week="2" role="checkbox" tabindex="0" aria-checked="false">Tue</div>
+      <div class="biweekly-day-box" data-day="Wed" data-week="2" role="checkbox" tabindex="0" aria-checked="false">Wed</div>
+      <div class="biweekly-day-box" data-day="Thu" data-week="2" role="checkbox" tabindex="0" aria-checked="false">Thu</div>
+      <div class="biweekly-day-box" data-day="Fri" data-week="2" role="checkbox" tabindex="0" aria-checked="false">Fri</div>
+      <div class="biweekly-day-box" data-day="Sat" data-week="2" role="checkbox" tabindex="0" aria-checked="false">Sat</div>
     </div>
   </div>
 
@@ -1433,7 +1434,7 @@ window.installApp = () => {
           <input type="number" id="biweekly-hour" name="biweekly-hour" min="1" max="12" placeholder="Hours"> :
           <label for="biweekly-minute" class="visually-hidden">Minute</label>
           <input type="number" id="biweekly-minute" name="biweekly-minute" min="0" max="59" placeholder="Minutes">
-          <select id="biweekly-meridiem">
+          <select id="biweekly-meridiem" aria-label="AM or PM">
             <option value="AM">AM</option>
             <option value="PM">PM</option>
           </select>
@@ -1452,7 +1453,7 @@ window.installApp = () => {
           <label><input type="checkbox" id="monthly-specific-days" name="monthly-specific-days"> Choose specific day(s) of the month</label>
           <div id="monthly-day-container" class="hidden">
             <p class="section-label">Select days (1-31):</p>
-            <div class="monthly-days">
+            <div class="monthly-days" role="group" aria-label="Select days of the month">
               <!-- Dynamically filled with JS (1 to 31) -->
             </div>
             <label style="margin-top: 10px;">
@@ -1494,7 +1495,7 @@ window.installApp = () => {
               <label for="monthly-minute" class="visually-hidden">Minute</label>
               <input type="number" id="monthly-minute" name="monthly-minute" min="0" max="59" placeholder="Minutes">
           
-              <select id="monthly-meridiem">
+              <select id="monthly-meridiem" aria-label="AM or PM">
                 <option value="AM">AM</option>
                 <option value="PM">PM</option>
               </select>
@@ -2565,6 +2566,7 @@ window.installApp = () => {
 <div id="task-view">
     <div class="task-card">
         <div class="task-input hidden">
+            <label for="taskInput" class="visually-hidden">Add a new task</label>
             <input type="text" id="taskInput" name="taskInput" class="taskInput" placeholder="Enter a task..." title="Type a task and press Add or Enter" tabindex="-1">
             <button id="addTaskBtn" title="Add task" tabindex="-1">Add</button>
         </div>
@@ -2629,7 +2631,7 @@ window.installApp = () => {
         <div class="quick-actions-slots" id="quick-actions-slots"></div>
     </div>
     <!-- Help Window - Inside task-view, positioned to right on desktop -->
-    <div id="help-window" class="help-window">
+    <div id="help-window" class="help-window" role="status" aria-label="Help information">
         <p></p>
     </div>
 </div>
@@ -2677,11 +2679,11 @@ window.installApp = () => {
             </button>
             <!-- Badge tooltips set dynamically from MILESTONES constant in statsPanel.js -->
             <div class="badges">
-                <div class="badge" data-milestone="5" tabindex="0" role="button" aria-haspopup="dialog">🌊</div>
-                <div class="badge" data-milestone="25" tabindex="0" role="button" aria-haspopup="dialog">💎</div>
-                <div class="badge" data-milestone="50" tabindex="0" role="button" aria-haspopup="dialog">🌞</div>
-                <div class="badge" data-milestone="75" tabindex="0" role="button" aria-haspopup="dialog">💫</div>
-                <div class="badge" data-milestone="100" tabindex="0" role="button" aria-haspopup="dialog">👑</div>
+                <div class="badge" data-milestone="5" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="5 cycles milestone">🌊</div>
+                <div class="badge" data-milestone="25" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="25 cycles milestone">💎</div>
+                <div class="badge" data-milestone="50" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="50 cycles milestone">🌞</div>
+                <div class="badge" data-milestone="75" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="75 cycles milestone">💫</div>
+                <div class="badge" data-milestone="100" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="100 cycles milestone">👑</div>
             </div>
           </div>
 
@@ -2741,7 +2743,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.959"></script>
+ <script type="module" src="miniCycle-main.js?v=1.960"></script>
 
 <script>
 // Sync About modal version with meta app-version

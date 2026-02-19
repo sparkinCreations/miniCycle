@@ -49,7 +49,7 @@ export function openStorageViewer() {
 
     if (localStorage.length === 0) {
         contentEl.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: #666; font-style: italic;">
+            <div class="storage-empty-state">
                 No data found in localStorage
             </div>
         `;
@@ -66,49 +66,19 @@ export function openStorageViewer() {
 
             const keyHeader = document.createElement("div");
             keyHeader.className = "storage-key-header";
-            keyHeader.style.cssText = `
-                display: flex;
-                align-items: center;
-                cursor: pointer;
-                padding: 8px 0;
-                border-bottom: 1px solid #444;
-                margin-bottom: 8px;
-            `;
 
             const keyToggle = document.createElement("button");
             keyToggle.textContent = "[+]";
-            keyToggle.className = "json-toggle main-key-toggle";
-            keyToggle.style.cssText = `
-                margin-right: 8px;
-                background: #28a745;
-                color: white;
-                border: none;
-                border-radius: 3px;
-                padding: 4px 8px;
-                cursor: pointer;
-                font-size: 12px;
-                font-weight: bold;
-                transition: background 0.2s ease;
-            `;
+            keyToggle.className = "storage-key-toggle";
 
             const keyTitle = document.createElement("div");
             keyTitle.className = "storage-key-title";
             keyTitle.textContent = key;
-            keyTitle.style.cssText = `
-                font-weight: bold;
-                font-size: 14px;
-                color: #fff;
-                flex: 1;
-            `;
 
             const sizeIndicator = document.createElement("small");
             const sizeKB = (rawValue.length / 1024).toFixed(2);
             sizeIndicator.textContent = `(${sizeKB} KB)`;
-            sizeIndicator.style.cssText = `
-                color: #888;
-                font-size: 11px;
-                margin-left: 8px;
-            `;
+            sizeIndicator.className = "storage-key-size";
 
             keyHeader.appendChild(keyToggle);
             keyHeader.appendChild(keyTitle);
@@ -125,11 +95,11 @@ export function openStorageViewer() {
             } else if (parsed !== null) {
                 valueEl = document.createElement("pre");
                 valueEl.textContent = String(parsed);
-                valueEl.style.cssText = "background: #f8f9fa; padding: 8px; border-radius: 4px; font-size: 12px; overflow-x: auto; word-wrap: break-word;";
+                valueEl.className = "storage-value-parsed";
             } else {
                 valueEl = document.createElement("pre");
                 valueEl.textContent = rawValue;
-                valueEl.style.cssText = "background: #e8f4f8; padding: 8px; border-radius: 4px; font-size: 12px; overflow-x: auto; word-wrap: break-word; border-left: 4px solid #17a2b8; color: #0c5460;";
+                valueEl.className = "storage-value-raw";
             }
 
             valueContainer.appendChild(valueEl);
@@ -140,7 +110,7 @@ export function openStorageViewer() {
 
                 valueContainer.style.display = isVisible ? "none" : "block";
                 keyToggle.textContent = isVisible ? "[+]" : "[-]";
-                keyToggle.style.backgroundColor = isVisible ? "#28a745" : "#dc3545";
+                keyToggle.classList.toggle("open", !isVisible);
 
                 if (!isVisible) {
                     valueContainer.style.opacity = "0";
@@ -340,17 +310,14 @@ function renderExpandableJSON(data, deps, depth = 0) {
 
     if (depth > 10) {
         container.textContent = "[Maximum depth exceeded]";
-        container.style.color = "#999";
-        container.style.fontStyle = "italic";
+        container.className = "json-container json-depth-exceeded";
         return container;
     }
 
     try {
         if (Array.isArray(data)) {
             const arrayInfo = document.createElement("div");
-            arrayInfo.style.color = "#666";
-            arrayInfo.style.fontSize = "12px";
-            arrayInfo.style.marginBottom = "4px";
+            arrayInfo.className = "json-array-info";
             arrayInfo.textContent = `Array (${data.length} items)`;
             container.appendChild(arrayInfo);
         }
@@ -362,8 +329,6 @@ function renderExpandableJSON(data, deps, depth = 0) {
             const label = document.createElement("span");
             label.className = "json-key";
             label.textContent = `"${key}": `;
-            label.style.color = "#0066cc";
-            label.style.fontWeight = "bold";
 
             const valueEl = document.createElement("span");
 
@@ -371,17 +336,6 @@ function renderExpandableJSON(data, deps, depth = 0) {
                 const toggle = document.createElement("button");
                 toggle.textContent = "[+]";
                 toggle.className = "json-toggle";
-                toggle.style.cssText = `
-                    margin-right: 6px;
-                    background: #007bff;
-                    color: white;
-                    border: none;
-                    border-radius: 3px;
-                    padding: 2px 6px;
-                    cursor: pointer;
-                    font-size: 11px;
-                    transition: background 0.2s ease;
-                `;
 
                 const child = renderExpandableJSON(value, deps, depth + 1);
                 child.style.display = "none";
@@ -392,14 +346,11 @@ function renderExpandableJSON(data, deps, depth = 0) {
                         const visible = child.style.display === "block";
                         child.style.display = visible ? "none" : "block";
                         toggle.textContent = visible ? "[+]" : "[-]";
-                        toggle.style.backgroundColor = visible ? "#007bff" : "#28a745";
+                        toggle.classList.toggle("open", !visible);
                     } catch (error) {
                         console.error("Toggle error:", error);
                     }
                 };
-
-                toggle.onmouseover = () => toggle.style.backgroundColor = "#0056b3";
-                toggle.onmouseout = () => toggle.style.backgroundColor = child.style.display === "block" ? "#28a745" : "#007bff";
 
                 valueEl.appendChild(toggle);
 
@@ -416,13 +367,13 @@ function renderExpandableJSON(data, deps, depth = 0) {
                 valueEl.textContent = valueText;
 
                 if (typeof value === "string") {
-                    valueEl.style.color = "#008000";
+                    valueEl.className = "json-value-string";
                 } else if (typeof value === "number") {
-                    valueEl.style.color = "#0000ff";
+                    valueEl.className = "json-value-number";
                 } else if (typeof value === "boolean") {
-                    valueEl.style.color = "#ff6600";
+                    valueEl.className = "json-value-boolean";
                 } else if (value === null) {
-                    valueEl.style.color = "#999";
+                    valueEl.className = "json-value-null";
                 }
 
                 entry.appendChild(label);
@@ -433,7 +384,7 @@ function renderExpandableJSON(data, deps, depth = 0) {
         }
     } catch (error) {
         const errorEl = document.createElement("div");
-        errorEl.style.cssText = "color: #dc3545; font-style: italic; padding: 8px; background: #f8d7da; border-radius: 4px; margin: 4px 0;";
+        errorEl.className = "json-render-error";
         errorEl.textContent = `Error rendering object: ${error.message}`;
         container.appendChild(errorEl);
     }

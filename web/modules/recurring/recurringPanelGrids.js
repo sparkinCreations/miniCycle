@@ -28,6 +28,9 @@ export function generateMonthlyDayGrid(deps) {
         const dayBox = document.createElement("div");
         dayBox.className = "monthly-day-box";
         dayBox.setAttribute("data-day", i);
+        dayBox.setAttribute("role", "checkbox");
+        dayBox.setAttribute("tabindex", "0");
+        dayBox.setAttribute("aria-checked", "false");
         dayBox.textContent = i;
 
         // No listener added - handled by setupMonthlyDayDelegation()
@@ -53,6 +56,9 @@ export function generateYearlyMonthGrid(deps) {
         const monthBox = document.createElement("div");
         monthBox.className = "yearly-month-box";
         monthBox.setAttribute("data-month", index + 1);
+        monthBox.setAttribute("role", "checkbox");
+        monthBox.setAttribute("tabindex", "0");
+        monthBox.setAttribute("aria-checked", "false");
         monthBox.textContent = name;
 
         // No listener added - handled by setupYearlyMonthDelegation()
@@ -85,6 +91,8 @@ export function generateYearlyDayGrid(deps, state, monthNumber) {
         const dayBox = document.createElement("div");
         dayBox.className = "yearly-day-box";
         dayBox.setAttribute("data-day", i);
+        dayBox.setAttribute("role", "checkbox");
+        dayBox.setAttribute("tabindex", "0");
         dayBox.textContent = i;
 
         const isSelected = applyToAll
@@ -94,6 +102,7 @@ export function generateYearlyDayGrid(deps, state, monthNumber) {
         if (isSelected) {
             dayBox.classList.add("selected");
         }
+        dayBox.setAttribute("aria-checked", isSelected ? "true" : "false");
 
         // No listener added - handled by setupYearlyDayDelegation()
 

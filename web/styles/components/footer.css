@@ -70,7 +70,9 @@
 }
 
 .footer-item a:hover,
-.footer-item button:hover {
+.footer-item a:focus-visible,
+.footer-item button:hover,
+.footer-item button:focus-visible {
     text-decoration: underline;
 }
 

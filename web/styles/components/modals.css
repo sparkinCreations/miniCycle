@@ -127,11 +127,12 @@ dialog.quick-actions-picker-overlay[open] {
 
 .modal-content a {
     color: var(--theme-info, #007BFF);
-    text-decoration: none;
+    text-decoration: underline;
     font-weight: bold;
 }
 
-.modal-content a:hover {
+.modal-content a:hover,
+.modal-content a:focus-visible {
     text-decoration: underline;
 }
 
@@ -220,6 +221,11 @@ dialog.quick-actions-picker-overlay[open] {
     font-weight: 600;
 }
 
+.about-links a:hover,
+.about-links a:focus-visible {
+    text-decoration: underline;
+}
+
 .about-link-divider {
     margin: 0 10px;
     opacity: 0.4;
@@ -240,6 +246,11 @@ dialog.quick-actions-picker-overlay[open] {
 .about-footer a {
     font-weight: 600;
     opacity: 1;
+}
+
+.about-footer a:hover,
+.about-footer a:focus-visible {
+    text-decoration: underline;
 }
 
 .about-modal-content .about-footer .about-copyright {
@@ -1546,6 +1557,10 @@ dialog.preferences-modal::backdrop {
     color: var(--theme-modal-text, #333);
 }
 
+.preferences-preset-name-input:focus-visible {
+    box-shadow: 0 0 0 2px var(--theme-input-focus-border, #4c79ff);
+}
+
 /* =============================================================================
    COLLAPSIBLE COLOR SECTIONS
    ============================================================================= */
@@ -1695,6 +1710,11 @@ dialog.preferences-modal::backdrop {
     outline: none;
     cursor: pointer;
     transition: opacity var(--transition-fast) ease;
+}
+
+.preferences-color-row input[type="range"]:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
 }
 
 .preferences-color-row input[type="range"]::-webkit-slider-thumb {
@@ -2552,7 +2572,7 @@ dialog.preferences-modal::backdrop {
 
 .testing-output .welcome-message {
     text-align: center;
-    color: #888;
+    color: #555;
     font-family: var(--font-family);
 }
 

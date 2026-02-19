@@ -1,3 +1,7 @@
+## [1.960] - 2026-02-19
+-  Improve accessibility and update user manual with new screenshots
+
+
 ## [1.959] - 2026-02-18
 - Refactor code structure for improved readability and maintainability
 

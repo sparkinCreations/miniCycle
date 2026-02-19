@@ -151,7 +151,7 @@ body.onboarding-active .onboarding-placeholder {
     background: none;
     border: none;
     font-size: 0.9rem;
-    color: #888;
+    color: #555;
     cursor: pointer;
     transition: color var(--transition-fast);
 }

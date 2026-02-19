@@ -103,7 +103,7 @@ export function showCompletionAnimation() {
     animation.classList.add("mini-cycle-complete-animation");
     animation.setAttribute('role', 'status');
     animation.setAttribute('aria-live', 'assertive');
-    animation.innerHTML = "✔";
+    animation.innerHTML = '<span aria-hidden="true">✔</span>';
 
     document.body.appendChild(animation);
 
@@ -125,7 +125,7 @@ export function showClearAnimation() {
     animation.classList.add("mini-cycle-clear-animation");
     animation.setAttribute('role', 'status');
     animation.setAttribute('aria-live', 'assertive');
-    animation.innerHTML = "🧹";
+    animation.innerHTML = '<span aria-hidden="true">🧹</span>';
 
     document.body.appendChild(animation);
 
@@ -158,13 +158,23 @@ function checkForMilestone(miniCycleName, cycleCount) {
  * @param {number} cycleCount - The number of cycles completed
  */
 function showMilestoneMessage(miniCycleName, cycleCount) {
-    const message = `🎉 ${getLabel('notify.milestoneAchieved', { vars: { count: cycleCount, name: miniCycleName } })} 🚀`;
+    const labelText = getLabel('notify.milestoneAchieved', { vars: { count: cycleCount, name: miniCycleName } });
 
     const milestonePopup = document.createElement("div");
     milestonePopup.classList.add("mini-cycle-milestone");
     milestonePopup.setAttribute('role', 'status');
     milestonePopup.setAttribute('aria-live', 'assertive');
-    milestonePopup.textContent = message;
+
+    // Separate emojis from screen-reader text (use DOM methods to avoid XSS from routine name)
+    const leadEmoji = document.createElement('span');
+    leadEmoji.setAttribute('aria-hidden', 'true');
+    leadEmoji.textContent = '🎉 ';
+    const trailEmoji = document.createElement('span');
+    trailEmoji.setAttribute('aria-hidden', 'true');
+    trailEmoji.textContent = ' 🚀';
+    milestonePopup.appendChild(leadEmoji);
+    milestonePopup.appendChild(document.createTextNode(labelText));
+    milestonePopup.appendChild(trailEmoji);
 
     document.body.appendChild(milestonePopup);
 

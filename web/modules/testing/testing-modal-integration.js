@@ -204,90 +204,35 @@ function createTestRunnerModal() {
 
     const modal = document.createElement('div');
     modal.id = 'test-runner-modal';
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.85);
-        z-index: 100000;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        box-sizing: border-box;
-    `;
+    modal.className = 'test-runner-overlay';
 
     const container = document.createElement('div');
-    container.style.cssText = `
-        width: 90%;
-        max-width: 450px;
-        background: #1a1a2e;
-        border-radius: 16px;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-        position: relative;
-    `;
+    container.className = 'test-runner-content';
 
     const header = document.createElement('div');
-    header.style.cssText = `
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 16px;
-        background: linear-gradient(135deg, #4c79ff, #74c0fc);
-        color: white;
-        font-family: 'Inter', sans-serif;
-    `;
+    header.className = 'test-runner-header';
     header.innerHTML = `
-        <span id="test-runner-title" style="font-weight: 600; font-size: 1.1rem;">🧪 Running Tests...</span>
-        <button id="close-test-runner" style="
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
-        ">✕ Close</button>
+        <span id="test-runner-title" class="test-runner-title">🧪 Running Tests...</span>
+        <button id="close-test-runner" class="test-runner-close-btn">✕ Close</button>
     `;
 
     // Progress section - main content area
     const progressSection = document.createElement('div');
     progressSection.id = 'test-progress-section';
-    progressSection.style.cssText = `
-        padding: 40px 32px;
-        background: #1a1a2e;
-        font-family: 'Inter', sans-serif;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-    `;
+    progressSection.className = 'test-runner-progress';
     progressSection.innerHTML = `
-        <div style="font-size: 4rem; margin-bottom: 24px;">🧪</div>
-        <div id="test-status-text" style="color: #74c0fc; font-size: 1.2rem; margin-bottom: 8px; font-weight: 500;">
+        <div class="test-runner-emoji">🧪</div>
+        <div id="test-status-text" class="test-runner-status">
             ⏳ Initializing tests...
         </div>
-        <div id="test-time-estimate" style="color: rgba(255,255,255,0.6); font-size: 0.95rem; margin-bottom: 24px;">
+        <div id="test-time-estimate" class="test-runner-time">
             Estimating time...
         </div>
-        <div style="width: 100%; max-width: 400px; background: rgba(0,0,0,0.3); border-radius: 10px; height: 12px; overflow: hidden; margin-bottom: 32px;">
-            <div id="test-progress-bar" style="
-                width: 0%;
-                height: 100%;
-                background: linear-gradient(90deg, #4c79ff, #74c0fc);
-                border-radius: 10px;
-                transition: width 0.3s ease;
-            "></div>
+        <div class="test-runner-bar-track">
+            <div id="test-progress-bar" class="test-runner-bar-fill"></div>
         </div>
-        <div style="padding: 14px 20px; background: rgba(255,107,107,0.1); border-radius: 8px; border: 1px solid rgba(255,107,107,0.3);">
-            <span style="color: #ff6b6b; font-size: 0.9rem;">
+        <div class="test-runner-warning">
+            <span class="test-runner-warning-text">
                 ⚠️ Please do not close this window while tests are running
             </span>
         </div>
@@ -297,14 +242,7 @@ function createTestRunnerModal() {
     // Use reasonable dimensions to avoid test failures due to element sizing
     const iframe = document.createElement('iframe');
     iframe.id = 'test-runner-iframe';
-    iframe.style.cssText = `
-        position: absolute;
-        width: 800px;
-        height: 600px;
-        opacity: 0;
-        pointer-events: none;
-        left: -9999px;
-    `;
+    iframe.className = 'test-runner-iframe';
     iframe.src = 'tests/module-test-suite.html?autorun=true&embedded=true';
 
     container.appendChild(header);

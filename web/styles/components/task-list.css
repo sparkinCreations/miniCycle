@@ -539,6 +539,11 @@ body.onboarding-active .complete-all-and-help-window-container {
     transition: all var(--transition-normal) ease;
 }
 
+.task input[type="checkbox"]:focus-visible {
+    border-color: var(--theme-input-focus-border, #4c79ff);
+    box-shadow: 0 0 0 2px var(--theme-input-focus-border, #4c79ff);
+}
+
 .task input[type="checkbox"]:hover {
     border-color: #40af4d;
 }

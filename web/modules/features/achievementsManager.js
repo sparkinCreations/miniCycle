@@ -125,7 +125,7 @@ export class AchievementsManager {
 
                 // Show notification
                 this.deps.showNotification(
-                    `Achievement Unlocked: ${milestone.name}!`,
+                    getLabel('notify.achievementUnlocked', { vars: { name: milestone.name } }),
                     'success',
                     5000
                 );
@@ -319,9 +319,11 @@ export class AchievementsManager {
 
         const previousFocus = this.modalOverlay._previousFocus;
 
+        // Restore focus before removal to avoid timing issues
+        previousFocus?.focus({ focusVisible: false });
+
         setTimeout(() => {
             this.modalOverlay?.remove();
-            previousFocus?.focus({ focusVisible: false });
             this.modalOverlay = null;
         }, 200);
     }
@@ -641,6 +643,10 @@ export class AchievementsManager {
 
         // Close any existing popup
         this.hideBadgeDetail();
+
+        // Set aria-expanded on the triggering badge
+        const triggerBadge = document.querySelector(`.badge[data-milestone="${milestone}"]`);
+        if (triggerBadge) triggerBadge.setAttribute('aria-expanded', 'true');
 
         // Get achievement data
         const achievements = this.getAchievements();
@@ -973,6 +979,11 @@ export class AchievementsManager {
     hideBadgeDetail() {
         const overlay = document.getElementById(DOM_IDS.BADGE_DETAIL_OVERLAY);
         if (!overlay) return;
+
+        // Reset aria-expanded on all badges
+        document.querySelectorAll(DOM_SELECTORS.BADGE).forEach(badge => {
+            badge.setAttribute('aria-expanded', 'false');
+        });
 
         overlay.style.opacity = '0';
         const popup = overlay.querySelector('div');

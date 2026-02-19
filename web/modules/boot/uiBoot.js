@@ -522,6 +522,7 @@ export function showLoader(message = 'Processing...') {
     if (textElement && message) {
       textElement.textContent = message;
     }
+    overlay.setAttribute('aria-busy', 'true');
     overlay.classList.add('active');
   }
 }
@@ -532,6 +533,7 @@ export function showLoader(message = 'Processing...') {
 export function hideLoader() {
   const overlay = document.getElementById(DOM_IDS.LOADING_OVERLAY);
   if (overlay) {
+    overlay.setAttribute('aria-busy', 'false');
     overlay.classList.remove('active');
   }
 }

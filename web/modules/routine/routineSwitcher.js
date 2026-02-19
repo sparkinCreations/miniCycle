@@ -559,6 +559,7 @@ export class RoutineSwitcher {
         input.type = 'text';
         input.className = 'cycle-item-edit-input';
         input.value = currentName;
+        input.setAttribute('aria-label', getLabel('accessibility.editRoutineName'));
 
         // Replace title span with input
         titleSpan.style.display = 'none';

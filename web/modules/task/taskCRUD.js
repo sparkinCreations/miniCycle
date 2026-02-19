@@ -295,6 +295,14 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
 
         console.log('Task creation completed (Schema 2.5)');
 
+        // Announce task addition to screen readers (skip during bulk loading)
+        if (!isLoading) {
+            const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
+            if (liveRegion) {
+                liveRegion.textContent = getLabel('accessibility.taskAdded', { vars: { name: validatedInput } });
+            }
+        }
+
         // Update search visibility after adding task
         _deps.updateSearchVisibility?.(_deps.getTaskCount?.() ?? 0);
 
