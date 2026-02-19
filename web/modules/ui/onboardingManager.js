@@ -105,9 +105,8 @@ export class OnboardingManager {
         this._eventListenersInitialized = true;
 
         if (this.deps.safeAddEventListenerById) {
-            this.deps.safeAddEventListenerById("reset-onboarding", "click", () => {
-                this.resetOnboarding();
-            });
+            this._resetOnboardingHandler = () => this.resetOnboarding();
+            this.deps.safeAddEventListenerById("reset-onboarding", "click", this._resetOnboardingHandler);
             console.log('✅ Onboarding event listeners attached');
         } else {
             console.warn('⚠️ safeAddEventListenerById not available yet');
@@ -374,6 +373,19 @@ export class OnboardingManager {
             "success",
             3000
         );
+    }
+
+    /**
+     * Clean up event listeners
+     */
+    destroy() {
+        const resetBtn = document.getElementById('reset-onboarding');
+        if (resetBtn && this._resetOnboardingHandler) {
+            resetBtn.removeEventListener('click', this._resetOnboardingHandler);
+            this._resetOnboardingHandler = null;
+        }
+        this._eventListenersInitialized = false;
+        this.initialized = false;
     }
 }
 

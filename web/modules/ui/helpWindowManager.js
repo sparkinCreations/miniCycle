@@ -61,6 +61,7 @@ export class HelpWindowManager {
         this.modeDescriptionTimeout = null;
         this.initialized = false;
         this.sideLayoutEnabled = false;
+        this._pendingTimeouts = [];
 
         this.init();
     }
@@ -135,9 +136,9 @@ export class HelpWindowManager {
         this.isVisible = true;
 
         // Switch to normal help message after delay
-        setTimeout(() => {
+        this._pendingTimeouts.push(setTimeout(() => {
             this.showConstantMessage();
-        }, 3000);
+        }, 3000));
 
         this.setupEventListeners();
     }
@@ -157,9 +158,9 @@ export class HelpWindowManager {
         this._changeHandler = (e) => {
             // Guard: e.target may not have closest() if event dispatched on document
             if (e.target?.type === 'checkbox' && e.target?.closest?.('.task')) {
-                setTimeout(() => {
+                this._pendingTimeouts.push(setTimeout(() => {
                     this.updateConstantMessage();
-                }, 50);
+                }, 50));
             }
         };
         safeAdd(document, 'change', this._changeHandler);
@@ -168,9 +169,9 @@ export class HelpWindowManager {
         this._clickHandler = (e) => {
             // Guard: e.target may not have closest() if event dispatched on document
             if (e.target?.closest?.('.task')) {
-                setTimeout(() => {
+                this._pendingTimeouts.push(setTimeout(() => {
                     this.updateConstantMessage();
-                }, 100);
+                }, 100));
             }
         };
         safeAdd(document, 'click', this._clickHandler);
@@ -195,10 +196,10 @@ export class HelpWindowManager {
 
                 if (shouldUpdate) {
                     console.log('📝 Help window: Task list changed');
-                    setTimeout(() => {
+                    this._pendingTimeouts.push(setTimeout(() => {
                         this.updateConstantMessage();
                         this.updateSideLayout();
-                    }, 200);
+                    }, 200));
                 }
             });
 
@@ -220,9 +221,9 @@ export class HelpWindowManager {
         window.addEventListener('resize', this._debouncedResizeHandler);
 
         // Initial side layout check after a delay (tasks may still be loading)
-        setTimeout(() => {
+        this._pendingTimeouts.push(setTimeout(() => {
             this.updateSideLayout();
-        }, 500);
+        }, 500));
 
         // Listen for custom events
         this._taskCompletedHandler = () => {
@@ -499,6 +500,10 @@ export class HelpWindowManager {
             clearTimeout(this._resizeTimeout);
             this._resizeTimeout = null;
         }
+        for (const id of this._pendingTimeouts) {
+            clearTimeout(id);
+        }
+        this._pendingTimeouts = [];
 
         // Remove event listeners
         if (this._debouncedResizeHandler) {
