@@ -21,6 +21,13 @@ textarea:focus {
     box-shadow: 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
 }
 
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
+}
+
 /* =============================================================================
    SELECT INPUTS
    ============================================================================= */

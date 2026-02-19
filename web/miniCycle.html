@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.961">
+<meta name="app-version" content="1.962">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -32,20 +32,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.961"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.962"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=1.961" as="style">
-<link rel="preload" href="styles/base/variables.css?v=1.961" as="style">
-<link rel="preload" href="styles/base/reset.css?v=1.961" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=1.961" as="style">
-<link rel="preload" href="styles/layout/header.css?v=1.961" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=1.961" as="style">
+<link rel="preload" href="styles/main.css?v=1.962" as="style">
+<link rel="preload" href="styles/base/variables.css?v=1.962" as="style">
+<link rel="preload" href="styles/base/reset.css?v=1.962" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=1.962" as="style">
+<link rel="preload" href="styles/layout/header.css?v=1.962" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=1.962" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=1.961" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=1.962" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=1.961"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=1.962"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -56,7 +56,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.961"></script>
+<script src="./version.js?v=1.962"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -215,21 +215,21 @@
      3. Or accepting slightly slower initial load without preloads
      ═══════════════════════════════════════════════════════════════════════════ -->
 <!--
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.961">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.961">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.961">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.961">
-<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.961">
-<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.961">
-<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.961">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.961">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.961">
-<link rel="modulepreload" href="./modules/core/appInit.js?v=1.961">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.961">
-<link rel="modulepreload" href="./modules/core/diBase.js?v=1.961">
-<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.961">
-<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.961">
-<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.961">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.962">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.962">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.962">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.962">
+<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.962">
+<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.962">
+<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.962">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.962">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.962">
+<link rel="modulepreload" href="./modules/core/appInit.js?v=1.962">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.962">
+<link rel="modulepreload" href="./modules/core/diBase.js?v=1.962">
+<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.962">
+<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.962">
+<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.962">
 -->
 
 <!-- Critical CSS - extracted to external file for CSP compliance (no 'unsafe-inline' needed) -->
@@ -1066,7 +1066,7 @@ window.installApp = () => {
             </div>
             <!-- Routines Section -->
             <div class="menu-section collapsed" data-section="routines">
-                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="routines" aria-expanded="false">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="routines" aria-expanded="false" aria-label="Toggle Routine Actions section">
                     <span>Routine Actions</span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
@@ -1081,7 +1081,7 @@ window.installApp = () => {
 
             <!-- Tasks Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="tasks">
-                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="tasks" aria-expanded="false">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="tasks" aria-expanded="false" aria-label="Toggle Task Actions section">
                     <span>Task Actions & Features</span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
@@ -1098,7 +1098,7 @@ window.installApp = () => {
 
             <!-- Rewards Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="rewards">
-                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="rewards" aria-expanded="false">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="rewards" aria-expanded="false" aria-label="Toggle Rewards section">
                     <span>Rewards & Extras</span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
@@ -1114,7 +1114,7 @@ window.installApp = () => {
 
             <!-- Help Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="help">
-                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="help" aria-expanded="false">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="help" aria-expanded="false" aria-label="Toggle Help section">
                     <span>Help & Support</span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
@@ -1128,7 +1128,7 @@ window.installApp = () => {
 
             <!-- Legal Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="legal">
-                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="legal" aria-expanded="false">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="legal" aria-expanded="false" aria-label="Toggle Legal section">
                     <span>Legal & Info</span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
@@ -1142,7 +1142,7 @@ window.installApp = () => {
 
                     <!-- App Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="app">
-                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="app" aria-expanded="false">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="app" aria-expanded="false" aria-label="Toggle Settings section">
                     <span>Settings & Personalization</span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
@@ -1684,7 +1684,7 @@ window.installApp = () => {
 
                 <!-- Display Section -->
                 <div class="settings-section collapsible collapsed" data-section="display">
-                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="display" aria-expanded="false">
+                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="display" aria-expanded="false" aria-label="Toggle Display settings">
                         <span>Display</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -1730,7 +1730,7 @@ window.installApp = () => {
 
                 <!-- Accessibility Section -->
                 <div class="settings-section collapsible collapsed" data-section="accessibility">
-                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="accessibility" aria-expanded="false">
+                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="accessibility" aria-expanded="false" aria-label="Toggle Accessibility settings">
                         <span>Accessibility</span>
                         <span class="settings-section-toggle">&#9660;</span>
                     </div>
@@ -1777,7 +1777,7 @@ window.installApp = () => {
 
                 <!-- Behavior Section -->
                 <div class="settings-section collapsible collapsed" data-section="behavior">
-                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="behavior" aria-expanded="false">
+                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="behavior" aria-expanded="false" aria-label="Toggle Behavior settings">
                         <span>Behavior</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -1801,7 +1801,7 @@ window.installApp = () => {
 
                 <!-- Data Management Section -->
                 <div class="settings-section collapsible collapsed" data-section="data">
-                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="data" aria-expanded="false">
+                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="data" aria-expanded="false" aria-label="Toggle Data Management settings">
                         <span>Data Management</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -1813,7 +1813,7 @@ window.installApp = () => {
 
                 <!-- Reset Options Section -->
                 <div class="settings-section collapsible collapsed" data-section="reset">
-                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="reset" aria-expanded="false">
+                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="reset" aria-expanded="false" aria-label="Toggle Reset Options settings">
                         <span>Reset Options</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -1827,7 +1827,7 @@ window.installApp = () => {
 
                 <!-- Advanced Section -->
                 <div class="settings-section collapsible collapsed" data-section="advanced">
-                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="advanced" aria-expanded="false">
+                    <div class="settings-section-header" role="button" tabindex="0" data-toggle="advanced" aria-expanded="false" aria-label="Toggle Advanced settings">
                         <span>Advanced</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -2094,7 +2094,7 @@ window.installApp = () => {
 
             <!-- Quick Presets Section -->
             <div class="preferences-section collapsed" data-section="quick-themes">
-                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="quick-themes" aria-expanded="false">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="quick-themes" aria-expanded="false" aria-label="Toggle Quick Themes section">
                     <span class="preferences-section-icon">&#x1F3A8;</span>
                     <span>Quick Themes</span>
                     <span class="preferences-section-toggle">&#x25BC;</span>
@@ -2158,7 +2158,7 @@ window.installApp = () => {
 
             <!-- Layout Section -->
             <div class="preferences-section collapsed" data-section="desktop-layout">
-                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="desktop-layout" aria-expanded="false">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="desktop-layout" aria-expanded="false" aria-label="Toggle Layout section">
                     <span class="preferences-section-icon">&#x1F5A5;</span>
                     <span>Layout</span>
                     <span class="preferences-section-toggle">&#x25BC;</span>
@@ -2193,7 +2193,7 @@ window.installApp = () => {
 
             <!-- App Background Section -->
             <div class="preferences-section collapsed" data-section="app-bg">
-                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="app-bg" aria-expanded="false">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="app-bg" aria-expanded="false" aria-label="Toggle App Background section">
                     <span class="preferences-section-icon">&#x1F4F1;</span>
                     <span>App Background</span>
                     <span class="preferences-section-toggle">&#x25BC;</span>
@@ -2264,7 +2264,7 @@ window.installApp = () => {
 
             <!-- Routine List Section -->
             <div class="preferences-section collapsed" data-section="routine-list">
-                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="routine-list" aria-expanded="false">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="routine-list" aria-expanded="false" aria-label="Toggle Routine List section">
                     <span class="preferences-section-icon">&#x1F4CB;</span>
                     <span>Routine List</span>
                     <span class="preferences-section-toggle">&#x25BC;</span>
@@ -2301,7 +2301,7 @@ window.installApp = () => {
 
             <!-- Tasks Section -->
             <div class="preferences-section collapsed" data-section="tasks">
-                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="tasks" aria-expanded="false">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="tasks" aria-expanded="false" aria-label="Toggle Tasks section">
                     <span class="preferences-section-icon">&#x2705;</span>
                     <span>Tasks & Checkboxes</span>
                     <span class="preferences-section-toggle">&#x25BC;</span>
@@ -2350,7 +2350,7 @@ window.installApp = () => {
 
             <!-- Buttons & Progress Section -->
             <div class="preferences-section collapsed" data-section="buttons">
-                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="buttons" aria-expanded="false">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="buttons" aria-expanded="false" aria-label="Toggle Task Buttons section">
                     <span class="preferences-section-icon">&#x1F518;</span>
                     <span>Task Buttons & Progress</span>
                     <span class="preferences-section-toggle">&#x25BC;</span>
@@ -2379,7 +2379,7 @@ window.installApp = () => {
 
             <!-- Stats Panel Section -->
             <div class="preferences-section collapsed" data-section="stats">
-                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="stats" aria-expanded="false">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="stats" aria-expanded="false" aria-label="Toggle Stats Panel section">
                     <span class="preferences-section-icon">&#x1F4CA;</span>
                     <span>Stats Panel</span>
                     <span class="preferences-section-toggle">&#x25BC;</span>
@@ -2607,7 +2607,7 @@ window.installApp = () => {
 
         <!-- Completed Tasks Collapsible Section -->
         <div class="completed-tasks-section" id="completed-tasks-section">
-            <h3 class="completed-tasks-header clickable" id="completed-tasks-header">
+            <h3 class="completed-tasks-header clickable" id="completed-tasks-header" role="button" tabindex="0" aria-expanded="false" aria-label="Toggle completed tasks">
                 ✓ Completed (<span id="completed-count">0</span>) <span class="toggle-icon">▼</span>
             </h3>
             <ul id="completedTaskList" class="completed-task-list"></ul>
@@ -2640,7 +2640,7 @@ window.installApp = () => {
     <section id="stats-panel" class="stats-panel" role="region" aria-labelledby="stats-header" inert>
         <h2 id="stats-header">📊 Stats</h2>
         <div class="current-routine-status" id="current-routine-status">
-            <h3 class="clickable" tabindex="0" role="button" aria-expanded="true">
+            <h3 class="clickable" tabindex="0" role="button" aria-expanded="true" aria-label="Toggle current routine details">
                 📋 Current Routine <span class="toggle-icon">▼</span>
             </h3>
             <!-- Collapsible Details -->
@@ -2666,7 +2666,7 @@ window.installApp = () => {
             <p id="current-routine-cleared-count"><span id="per-routine-cleared">0 Cleared Tasks</span></p>
         </div>
                   <div class="theme-unlock-status" id="theme-unlock-status">
-            <h3 class="clickable" tabindex="0" role="button" aria-expanded="false">
+            <h3 class="clickable" tabindex="0" role="button" aria-expanded="false" aria-label="Toggle milestone rewards">
                 🎯 Milestone Rewards <span class="toggle-icon">▼</span>
               </h3>
             <p id="theme-unlock-message">Loading...</p>
@@ -2743,7 +2743,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.961"></script>
+ <script type="module" src="miniCycle-main.js?v=1.962"></script>
 
 <script>
 // Sync About modal version with meta app-version

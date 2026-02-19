@@ -311,6 +311,11 @@ dialog.mini-cycle-switch-modal::backdrop {
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
+.cycle-item-edit-input:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
+}
+
 .cycle-item-size {
     font-size: 0.75rem;
     font-weight: normal;

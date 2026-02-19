@@ -281,10 +281,14 @@ export class AchievementsManager {
         // Render content
         this._renderModalContent();
 
-        // Animate in
+        // Animate in and move focus to first focusable element
         requestAnimationFrame(() => {
             this.modalOverlay.style.opacity = '1';
             this.modalOverlay.querySelector(DOM_SELECTORS.ACHIEVEMENTS_MODAL).style.transform = 'translateY(0)';
+            const firstFocusable = this.modalOverlay.querySelector(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            );
+            if (firstFocusable) firstFocusable.focus({ focusVisible: false });
         });
     }
 
