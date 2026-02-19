@@ -1,3 +1,7 @@
+## [1.965] - 2026-02-19
+- Enhance accessibility by adjusting touch target styles and outline offsets for improved user interaction
+
+
 ## [1.964] - 2026-02-19
 - Enhance accessibility by updating Content Security Policy and adding invisible touch target styles for improved user interaction
 
