@@ -314,6 +314,7 @@
     width: 7px;
     height: 7px;
     background-color: rgba(68, 82, 124, 1);
+    background-clip: content-box;
     border-radius: 50%;
     transition: background-color var(--transition-normal) ease;
     pointer-events: auto;
@@ -321,20 +322,8 @@
     position: relative;
     border: none;
     outline: none;
-    padding: 0;
-    margin: 0;
-}
-
-/* Invisible touch target — meets 48x48px minimum without changing dot size */
-.dot::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
+    padding: 21px;
+    margin: -21px;
 }
 
 .dot:hover {
@@ -343,7 +332,7 @@
 
 .dot:focus-visible {
     outline: 2px solid #007BFF;
-    outline-offset: -16px;
+    outline-offset: -22px;
 }
 
 .dot.active {
