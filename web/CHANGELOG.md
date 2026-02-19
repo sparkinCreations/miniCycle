@@ -1,3 +1,7 @@
+## [1.964] - 2026-02-19
+- Enhance accessibility by updating Content Security Policy and adding invisible touch target styles for improved user interaction
+
+
 ## [1.963] - 2026-02-19
 - Enhance accessibility by adding ARIA labels to collapsible sections and updating focus management for modals; improve focus styles for various input elements
 
