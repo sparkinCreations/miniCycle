@@ -263,9 +263,10 @@ class GamesManager {
         // Restore focus when dialog closes (including native ESC)
         const gamesPanel = this.deps.getModal('games');
         if (gamesPanel) {
-            safeAdd(gamesPanel, "close", () => {
+            this._gamesPanelCloseHandler = () => {
                 gamesPanel._previousFocus?.focus({ focusVisible: false });
-            });
+            };
+            safeAdd(gamesPanel, "close", this._gamesPanelCloseHandler);
         }
 
         // Open task order game (redirect to game HTML)
@@ -307,6 +308,13 @@ class GamesManager {
         if (gameButton?._clickHandler) {
             gameButton.removeEventListener('click', gameButton._clickHandler);
             gameButton._clickHandler = null;
+        }
+
+        // Remove games panel close handler
+        const gamesPanel = this.deps.getModal('games');
+        if (gamesPanel && this._gamesPanelCloseHandler) {
+            gamesPanel.removeEventListener('close', this._gamesPanelCloseHandler);
+            this._gamesPanelCloseHandler = null;
         }
 
         this._eventListenersInitialized = false;

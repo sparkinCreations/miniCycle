@@ -1,3 +1,8 @@
+## [1.961] - 2026-02-19
+- Add comprehensive accessibility review ratings and compliance summary
+- Refactor testing modal styles and improve accessibility
+
+
 ## [1.960] - 2026-02-19
 -  Improve accessibility and update user manual with new screenshots
 

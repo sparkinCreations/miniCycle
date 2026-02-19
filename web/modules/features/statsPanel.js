@@ -421,11 +421,14 @@ export class StatsPanelManager {
 
         // Navigation dots - also toggle on click (for tooltip support)
         // stopPropagation prevents double-firing with container
-        this.elements.dots.forEach((dot) => {
-            safeAdd(dot, "click", (event) => {
+        if (!this.boundHandlers.handleDotClickWithStop) {
+            this.boundHandlers.handleDotClickWithStop = (event) => {
                 event.stopPropagation();
                 this.handleNavPillClick();
-            });
+            };
+        }
+        this.elements.dots.forEach((dot) => {
+            safeAdd(dot, "click", this.boundHandlers.handleDotClickWithStop);
         });
 
         // Task list changes
@@ -447,28 +450,30 @@ export class StatsPanelManager {
         // Current Routine status click + keyboard activation
         if (this.elements.currentRoutineStatus) {
             safeAdd(this.elements.currentRoutineStatus, "click", this.boundHandlers.handleCurrentRoutineToggle);
-            const routineHeader = this.elements.currentRoutineStatus.querySelector('.clickable');
-            if (routineHeader) {
-                safeAdd(routineHeader, "keydown", (e) => {
+            this._routineHeaderEl = this.elements.currentRoutineStatus.querySelector('.clickable');
+            if (this._routineHeaderEl) {
+                this._routineHeaderKeydownHandler = (e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
                         this.boundHandlers.handleCurrentRoutineToggle(e);
                     }
-                });
+                };
+                safeAdd(this._routineHeaderEl, "keydown", this._routineHeaderKeydownHandler);
             }
         }
 
         // Theme unlock status click + keyboard activation
         if (this.elements.themeUnlockStatus) {
             safeAdd(this.elements.themeUnlockStatus, "click", this.boundHandlers.handleThemeToggleClick);
-            const milestoneHeader = this.elements.themeUnlockStatus.querySelector('.clickable');
-            if (milestoneHeader) {
-                safeAdd(milestoneHeader, "keydown", (e) => {
+            this._milestoneHeaderEl = this.elements.themeUnlockStatus.querySelector('.clickable');
+            if (this._milestoneHeaderEl) {
+                this._milestoneHeaderKeydownHandler = (e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
                         this.boundHandlers.handleThemeToggleClick(e);
                     }
-                });
+                };
+                safeAdd(this._milestoneHeaderEl, "keydown", this._milestoneHeaderKeydownHandler);
             }
         }
 
@@ -516,12 +521,13 @@ export class StatsPanelManager {
         }
 
         // Listen for mode changes to update milestone text dynamically
-        const modeSelector = document.getElementById(DOM_IDS.MODE_SELECTOR);
-        if (modeSelector) {
-            safeAdd(modeSelector, 'change', () => {
+        this._modeSelectorEl = document.getElementById(DOM_IDS.MODE_SELECTOR);
+        if (this._modeSelectorEl) {
+            this.boundHandlers.handleModeSelectorChange = () => {
                 console.log('📊 Stats panel detected mode change - updating stats...');
                 this._pendingTimers.push(setTimeout(() => this.updateStatsPanel(), UI_TIMEOUTS.STATS_UPDATE_DELAY));
-            });
+            };
+            safeAdd(this._modeSelectorEl, 'change', this.boundHandlers.handleModeSelectorChange);
         }
     }
 
@@ -1703,7 +1709,7 @@ export class StatsPanelManager {
             this._achievementsClickHandler = null;
         }
 
-        // Remove event listeners
+        // Remove gesture event listeners
         document.removeEventListener("touchstart", this.boundHandlers.handleTouchStart);
         document.removeEventListener("touchmove", this.boundHandlers.handleTouchMove);
         document.removeEventListener("touchend", this.boundHandlers.handleTouchEnd);
@@ -1715,6 +1721,63 @@ export class StatsPanelManager {
         document.removeEventListener("pointermove", this.boundHandlers.handlePointerMove);
         document.removeEventListener("pointerup", this.boundHandlers.handlePointerUp);
         document.removeEventListener("keydown", this.boundHandlers.handleKeydown);
+
+        // Remove setupUIEvents listeners
+        if (this.elements.slideLeft) {
+            this.elements.slideLeft.removeEventListener("click", this.boundHandlers.handleSlideLeftClick);
+            this.elements.slideLeft.removeEventListener("keydown", this.boundHandlers.handleSlideArrowKeydown);
+        }
+        if (this.elements.slideRight) {
+            this.elements.slideRight.removeEventListener("click", this.boundHandlers.handleSlideRightClick);
+            this.elements.slideRight.removeEventListener("keydown", this.boundHandlers.handleSlideArrowKeydown);
+        }
+        if (this.elements.navDotsContainer) {
+            this.elements.navDotsContainer.removeEventListener("click", this.boundHandlers.handleNavPillClick);
+        }
+        if (this.boundHandlers.handleDotClickWithStop) {
+            this.elements.dots.forEach((dot) => {
+                dot.removeEventListener("click", this.boundHandlers.handleDotClickWithStop);
+            });
+        }
+        if (this.elements.taskList) {
+            this.elements.taskList.removeEventListener("change", this.boundHandlers.handleTaskListChange);
+        }
+        if (this.elements.addTaskButton) {
+            this.elements.addTaskButton.removeEventListener("click", this.boundHandlers.handleAddTaskClick);
+        }
+
+        // Remove setupThemeEvents listeners
+        if (this.elements.currentRoutineStatus) {
+            this.elements.currentRoutineStatus.removeEventListener("click", this.boundHandlers.handleCurrentRoutineToggle);
+        }
+        if (this._routineHeaderEl && this._routineHeaderKeydownHandler) {
+            this._routineHeaderEl.removeEventListener("keydown", this._routineHeaderKeydownHandler);
+            this._routineHeaderKeydownHandler = null;
+            this._routineHeaderEl = null;
+        }
+        if (this.elements.themeUnlockStatus) {
+            this.elements.themeUnlockStatus.removeEventListener("click", this.boundHandlers.handleThemeToggleClick);
+        }
+        if (this._milestoneHeaderEl && this._milestoneHeaderKeydownHandler) {
+            this._milestoneHeaderEl.removeEventListener("keydown", this._milestoneHeaderKeydownHandler);
+            this._milestoneHeaderKeydownHandler = null;
+            this._milestoneHeaderEl = null;
+        }
+        if (this.elements.openThemesPanel) {
+            this.elements.openThemesPanel.removeEventListener("click", this.boundHandlers.handleOpenThemesPanel);
+        }
+        if (this.elements.closeThemesBtn) {
+            this.elements.closeThemesBtn.removeEventListener("click", this.boundHandlers.handleCloseThemesPanel);
+        }
+
+        // Remove setupDataReadyListener listeners
+        if (this.boundHandlers.handleCycleReady) {
+            document.removeEventListener('cycle:ready', this.boundHandlers.handleCycleReady);
+        }
+        if (this._modeSelectorEl && this.boundHandlers.handleModeSelectorChange) {
+            this._modeSelectorEl.removeEventListener('change', this.boundHandlers.handleModeSelectorChange);
+            this._modeSelectorEl = null;
+        }
 
         // Clear timers
         if (this.wheelTimeout) {
