@@ -99,6 +99,10 @@ export class CompletedTasksManager {
         const isVisible = completedList.classList.toggle('visible');
         toggleIcon.textContent = isVisible ? '▲' : '▼';
 
+        // Update aria-expanded on header
+        const header = this.deps.getElementById(DOM_IDS.COMPLETED_TASKS_HEADER);
+        if (header) header.setAttribute('aria-expanded', String(isVisible));
+
         // Save preference to AppState
         const AppState = this.deps.AppState;
         if (AppState?.isReady?.()) {
@@ -132,6 +136,10 @@ export class CompletedTasksManager {
                 completedList.classList.remove('visible');
                 toggleIcon.textContent = '▼';
             }
+
+            // Update aria-expanded on header
+            const header = this.deps.getElementById(DOM_IDS.COMPLETED_TASKS_HEADER);
+            if (header) header.setAttribute('aria-expanded', String(isExpanded));
         }
     }
 

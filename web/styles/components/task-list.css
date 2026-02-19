@@ -393,6 +393,11 @@ body.onboarding-active .complete-all-and-help-window-container {
     z-index: var(--z-content);
 }
 
+#mini-cycle-title:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
+}
+
 #mini-cycle-title:focus {
     background: rgba(255, 255, 255, 0.2);
     color: #f8f8f8;
@@ -684,6 +689,11 @@ body.onboarding-active .complete-all-and-help-window-container {
     max-width: calc(100% - 120px);
     margin-right: 120px;
     box-shadow: 0 0 0 2px rgba(76, 121, 255, 0.25);
+}
+
+.mini-cycle-switch-item input[type="text"]:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
 }
 
 /* =============================================================================

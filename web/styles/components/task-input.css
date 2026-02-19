@@ -54,6 +54,11 @@ input[type="text"]:focus {
     outline: none;
 }
 
+input[type="text"]:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
+}
+
 /* Specific task input element */
 #taskInput {
     flex: 1;
