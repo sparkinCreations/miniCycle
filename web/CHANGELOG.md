@@ -1,3 +1,7 @@
+## [1.963] - 2026-02-19
+- Enhance accessibility by adding ARIA labels to collapsible sections and updating focus management for modals; improve focus styles for various input elements
+
+
 ## [1.962] - 2026-02-19
 - Enhance accessibility by adding ARIA roles and labels to loading elements; refactor event handler assignments for improved clarity and performance
 
