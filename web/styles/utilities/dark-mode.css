@@ -917,15 +917,15 @@ body.dark-mode .task-list-container::-webkit-scrollbar-thumb {
    DARK MODE NAVIGATION DOTS
    ============================================================================= */
 
-body.dark-mode .navigation-dots {
+body.dark-mode .navigation-dots::before {
     background-color: rgba(60, 70, 90, 0.6);
     border-color: rgba(255, 255, 255, 0.1);
 }
 
-body.dark-mode .dot {
+body.dark-mode .dot::after {
     background-color: rgba(180, 180, 200, 0.8);
 }
 
-body.dark-mode .dot.active {
+body.dark-mode .dot.active::after {
     background-color: rgba(100, 150, 255, 1);
 }

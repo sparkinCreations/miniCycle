@@ -289,7 +289,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 15px;
+    gap: 0;
     position: absolute;
     bottom: 35px;
     left: 50%;
@@ -297,54 +297,81 @@
     z-index: var(--z-content);
     pointer-events: auto;
     cursor: pointer;
-    background: none;
+    background: transparent;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+}
+
+/* Visual pill background — fixed size, independent of dot touch targets */
+.navigation-dots::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-sizing: border-box;
+    width: 47px;
+    height: 17px;
     background-color: rgba(130, 177, 250, 0.4);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    padding: 4px 8px;
     border: 1px solid rgba(220, 231, 252, 0.2);
     border-radius: 20px;
     transition: background-color var(--transition-fast) ease;
+    pointer-events: none;
 }
 
-.navigation-dots:hover {
+.navigation-dots:hover::before {
     background-color: rgba(130, 177, 250, 0.55);
 }
 
 .dot {
-    width: 7px;
-    height: 7px;
-    background-color: rgba(68, 82, 124, 1);
-    background-clip: content-box;
+    width: 48px;
+    height: 48px;
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 0;
+    margin: 0 -13px;
     border-radius: 50%;
-    transition: background-color var(--transition-normal) ease;
     pointer-events: auto;
     cursor: pointer;
     position: relative;
-    border: none;
-    outline: none;
-    padding: 21px;
-    margin: -21px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.dot:hover {
+/* Visible 7px dot */
+.dot::after {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: rgba(68, 82, 124, 1);
+    transition: background-color var(--transition-normal) ease;
+    pointer-events: none;
+}
+
+.dot:hover::after {
     background-color: #aaa;
 }
 
 .dot:focus-visible {
     outline: 2px solid #007BFF;
-    outline-offset: -22px;
+    outline-offset: -4px;
 }
 
-.dot.active {
+.dot.active::after {
     background-color: rgb(220, 231, 252);
     transform: scale(1.3);
 }
 
-.dot.active:hover {
+.dot.active:hover::after {
     background-color: #0056b3;
 }
 
-.dot.active:active {
+.dot.active:active::after {
     background-color: #004494;
 }
 
