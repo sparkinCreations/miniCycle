@@ -638,6 +638,7 @@ export function startRenamePreset(presetId, nameSpan, deps, doRenamePreset, doRe
     input.type = 'text';
     input.className = 'preferences-preset-name-input';
     input.value = currentName;
+    input.setAttribute('aria-label', getLabel('accessibility.editPresetName'));
 
     nameSpan.replaceWith(input);
     input.focus();

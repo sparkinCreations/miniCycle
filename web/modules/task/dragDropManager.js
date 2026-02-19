@@ -671,6 +671,14 @@ export class DragDropManager {
                     });
                 }
 
+                // Announce move to screen readers via live region
+                const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
+                if (liveRegion) {
+                    liveRegion.textContent = getLabel(arrowClass === 'move-up'
+                        ? 'accessibility.taskMovedUp'
+                        : 'accessibility.taskMovedDown');
+                }
+
                 console.log(`✅ Task moved from position ${currentIndex} to ${newIndex} via arrows`);
             } else {
                 console.warn('⚠️ AppState not ready for arrow reordering');

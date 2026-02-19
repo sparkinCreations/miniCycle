@@ -65,8 +65,13 @@ button, label, .checkbox-container {
 
 /* Smooth scrolling for all scrollable containers */
 .scrollable {
-    scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .scrollable {
+        scroll-behavior: smooth;
+    }
 }
 
 /* Hide scrollbars but keep functionality */

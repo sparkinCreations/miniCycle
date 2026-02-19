@@ -319,6 +319,9 @@ export class TaskButtons {
             button.classList.toggle("active", isActive);
             button.classList.toggle("delete-when-complete-active", isActive);
             button.setAttribute("aria-pressed", isActive.toString());
+        } else if (btnClass === "set-due-date") {
+            // Due date button shows/hides an input — use aria-expanded
+            button.setAttribute("aria-expanded", "false");
         } else if (["recurring-btn", "priority-btn"].includes(btnClass)) {
             let isActive;
 

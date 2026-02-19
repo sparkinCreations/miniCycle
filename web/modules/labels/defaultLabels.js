@@ -372,6 +372,7 @@ export const DEFAULT_LABELS = deepFreeze({
         fontSizeChanged:         'Font size changed to {size}',
         recurringDefaultReset:   'Recurring default reset to Daily Indefinitely.',
         resetDefaultsFailed:     'Failed to reset defaults.',
+        achievementUnlocked:     'Achievement Unlocked: {name}!',
         achievementReset:        'Achievement progress reset. Badges are now locked.',
         achievementResetFailed:  'Failed to reset achievements.',
         achievementResetCancelled: 'Achievement reset cancelled.',
@@ -1078,7 +1079,14 @@ export const DEFAULT_LABELS = deepFreeze({
         taskCompleted: 'Task completed: {name}',
         taskUncompleted: 'Task uncompleted: {name}',
         cycleCompleted: 'Cycle completed',
-        tasksCleared: 'Tasks cleared'
+        tasksCleared: 'Tasks cleared',
+        taskMovedUp: 'Task moved up',
+        taskMovedDown: 'Task moved down',
+        editRoutineName: 'Edit routine name',
+        editPresetName: 'Edit preset name',
+        taskAdded: 'Task added: {name}',
+        taskViewOpened: 'Task view opened',
+        statsPanelOpened: 'Stats panel opened'
     },
 
     // ========================================================================
@@ -1292,6 +1300,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.highContrastDisabled',
     'notify.fontSizeChanged',
     'notify.recurringDefaultReset',
+    'notify.achievementUnlocked',
     'notify.achievementReset',
     'notify.achievementResetCancelled',
     'notify.taskOptionsUpdated',
@@ -1396,6 +1405,13 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'accessibility.taskUncompleted',
     'accessibility.cycleCompleted',
     'accessibility.tasksCleared',
+    'accessibility.taskMovedUp',
+    'accessibility.taskMovedDown',
+    'accessibility.editRoutineName',
+    'accessibility.editPresetName',
+    'accessibility.taskAdded',
+    'accessibility.taskViewOpened',
+    'accessibility.statsPanelOpened',
 
     // Empty states
     'empty.noTasks',

@@ -253,38 +253,18 @@ export async function restoreFromBackup() {
     modal.className = "backup-restore-dialog";
 
     const modalContent = document.createElement("div");
-    modalContent.style.cssText = `
-        background: var(--modal-bg, #1a1a1a);
-        border: 1px solid var(--modal-border, #333);
-        border-radius: 12px;
-        width: 90%;
-        max-width: 600px;
-        max-height: 70%;
-        padding: 20px;
-        color: var(--modal-text, #fff);
-        overflow-y: auto;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    `;
+    modalContent.className = "backup-restore-content";
 
     const header = document.createElement("div");
     header.innerHTML = `
-        <h3 style="margin: 0 0 20px 0; color: var(--modal-text, #fff);">
-            Restore from Backup
-        </h3>
-        <p style="margin: 0 0 20px 0; color: #ccc; font-size: 14px;">
+        <h3 class="backup-restore-title">Restore from Backup</h3>
+        <p class="backup-restore-description">
             Choose a backup to restore. <strong>Warning:</strong> This will replace all current data.
         </p>
     `;
 
     const backupList = document.createElement("div");
-    backupList.style.cssText = `
-        max-height: 300px;
-        overflow-y: auto;
-        margin-bottom: 20px;
-        border: 1px solid var(--modal-border, #333);
-        border-radius: 6px;
-        padding: 10px;
-    `;
+    backupList.className = "backup-restore-list";
 
     let selectedBackup = null;
 
@@ -295,116 +275,68 @@ export async function restoreFromBackup() {
         let typeLabel = '';
         let storageLabel = '';
         if (backup.type === 'indexeddb-auto') {
-            typeLabel = '<span style="color: #28a745; font-size: 11px; font-weight: bold;">[AUTO]</span>';
-            storageLabel = '<span style="color: #17a2b8; font-size: 10px;">IndexedDB</span>';
+            typeLabel = '<span class="backup-type-badge auto">[AUTO]</span>';
+            storageLabel = '<span class="backup-storage-label indexeddb">IndexedDB</span>';
         } else if (backup.type === 'indexeddb-manual') {
-            typeLabel = '<span style="color: #007bff; font-size: 11px; font-weight: bold;">[MANUAL]</span>';
-            storageLabel = '<span style="color: #17a2b8; font-size: 10px;">IndexedDB</span>';
+            typeLabel = '<span class="backup-type-badge manual">[MANUAL]</span>';
+            storageLabel = '<span class="backup-storage-label indexeddb">IndexedDB</span>';
         } else if (backup.type === 'indexeddb-test') {
-            typeLabel = '<span style="color: #ffc107; font-size: 11px; font-weight: bold;">[TEST]</span>';
-            storageLabel = '<span style="color: #17a2b8; font-size: 10px;">IndexedDB</span>';
+            typeLabel = '<span class="backup-type-badge test">[TEST]</span>';
+            storageLabel = '<span class="backup-storage-label indexeddb">IndexedDB</span>';
         } else if (backup.type === 'indexeddb-session') {
-            typeLabel = '<span style="color: #17a2b8; font-size: 11px; font-weight: bold;">[SESSION]</span>';
-            storageLabel = '<span style="color: #17a2b8; font-size: 10px;">IndexedDB</span>';
+            typeLabel = '<span class="backup-type-badge session">[SESSION]</span>';
+            storageLabel = '<span class="backup-storage-label indexeddb">IndexedDB</span>';
         } else if (backup.type === 'localstorage-auto') {
-            typeLabel = '<span style="color: #ffc107; font-size: 11px; font-weight: bold;">[LEGACY AUTO]</span>';
-            storageLabel = '<span style="color: #6c757d; font-size: 10px;">localStorage</span>';
+            typeLabel = '<span class="backup-type-badge legacy-auto">[LEGACY AUTO]</span>';
+            storageLabel = '<span class="backup-storage-label localstorage">localStorage</span>';
         } else {
-            typeLabel = '<span style="color: #6c757d; font-size: 11px; font-weight: bold;">[LEGACY MANUAL]</span>';
-            storageLabel = '<span style="color: #6c757d; font-size: 10px;">localStorage</span>';
+            typeLabel = '<span class="backup-type-badge legacy-manual">[LEGACY MANUAL]</span>';
+            storageLabel = '<span class="backup-storage-label localstorage">localStorage</span>';
         }
 
-        const latestLabel = index === 0 ? '<span style="color: #ffc107; font-size: 12px;"> (Latest)</span>' : '';
+        const latestLabel = index === 0 ? '<span class="backup-latest-label"> (Latest)</span>' : '';
 
         const backupItem = document.createElement("div");
         backupItem.className = "backup-item";
-        backupItem.style.cssText = `
-            padding: 12px;
-            margin: 8px 0;
-            border: 2px solid transparent;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            background: rgba(255, 255, 255, 0.05);
-        `;
 
         backupItem.innerHTML = `
-            <div style="font-weight: bold; margin-bottom: 4px;">
+            <div class="backup-item-date">
                 ${date.toLocaleString()} ${typeLabel}${latestLabel}
             </div>
-            <div style="font-size: 12px; color: #ccc;">
+            <div class="backup-item-details">
                 ${size} KB - ${storageLabel}
                 ${backup.metadata ? ` - v${escapeHtml(String(backup.metadata.schemaVersion))}` : ''}
             </div>
-            <div style="font-size: 11px; color: #999; margin-top: 4px;">
+            <div class="backup-item-name">
                 ${escapeHtml(backup.name)}
             </div>
         `;
 
         backupItem.addEventListener("click", () => {
             document.querySelectorAll(DOM_SELECTORS.BACKUP_ITEM).forEach(item => {
-                item.style.border = "2px solid transparent";
-                item.style.background = "rgba(255, 255, 255, 0.05)";
+                item.classList.remove('selected');
             });
 
-            backupItem.style.border = "2px solid #007bff";
-            backupItem.style.background = "rgba(0, 123, 255, 0.1)";
+            backupItem.classList.add('selected');
             selectedBackup = backup;
 
             restoreBtn.disabled = false;
-            restoreBtn.style.opacity = "1";
-            restoreBtn.style.cursor = "pointer";
-        });
-
-        backupItem.addEventListener("mouseenter", () => {
-            if (selectedBackup !== backup) {
-                backupItem.style.background = "rgba(255, 255, 255, 0.1)";
-            }
-        });
-
-        backupItem.addEventListener("mouseleave", () => {
-            if (selectedBackup !== backup) {
-                backupItem.style.background = "rgba(255, 255, 255, 0.05)";
-            }
         });
 
         backupList.appendChild(backupItem);
     });
 
     const buttonsContainer = document.createElement("div");
-    buttonsContainer.style.cssText = `
-        display: flex;
-        gap: 12px;
-        justify-content: flex-end;
-        margin-top: 20px;
-    `;
+    buttonsContainer.className = "backup-restore-buttons";
 
     const cancelBtn = document.createElement("button");
     cancelBtn.textContent = "Cancel";
-    cancelBtn.style.cssText = `
-        padding: 10px 20px;
-        background: #6c757d;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: background 0.2s;
-    `;
+    cancelBtn.className = "backup-restore-cancel";
 
     const restoreBtn = document.createElement("button");
     restoreBtn.textContent = "Restore Selected";
     restoreBtn.disabled = true;
-    restoreBtn.style.cssText = `
-        padding: 10px 20px;
-        background: #dc3545;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: not-allowed;
-        opacity: 0.5;
-        transition: all 0.2s;
-        font-weight: bold;
-    `;
+    restoreBtn.className = "backup-restore-confirm";
 
     cancelBtn.addEventListener("click", () => {
         if (modal.open) modal.close();

@@ -788,7 +788,7 @@ export class StatsPanelManager {
 
         this.state.isStatsVisible = false;
         this._syncGestureManager(false);
-        this.announceViewChange("Task view opened");
+        this.announceViewChange(getLabel('accessibility.taskViewOpened'));
         this.updateNavDots();
     }
 
@@ -825,7 +825,7 @@ export class StatsPanelManager {
 
         this.state.isStatsVisible = true;
         this._syncGestureManager(true);
-        this.announceViewChange("Stats panel opened");
+        this.announceViewChange(getLabel('accessibility.statsPanelOpened'));
         this.updateNavDots();
     }
 

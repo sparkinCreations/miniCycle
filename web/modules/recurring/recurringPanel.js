@@ -648,6 +648,14 @@ export class RecurringPanelManager {
         this.deps.querySelectorAll(DOM_SELECTORS.BIWEEKLY_DAY_BOX).forEach(box => {
             this.deps.safeAddEventListener(box, "click", () => {
                 box.classList.toggle("selected");
+                box.setAttribute("aria-checked", box.classList.contains("selected") ? "true" : "false");
+            });
+            this.deps.safeAddEventListener(box, "keydown", (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    box.classList.toggle("selected");
+                    box.setAttribute("aria-checked", box.classList.contains("selected") ? "true" : "false");
+                }
             });
         });
     }

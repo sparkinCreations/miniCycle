@@ -256,24 +256,6 @@ export function initTestingModalDrag() {
         if (!dragHandle) {
             dragHandle = document.createElement("div");
             dragHandle.className = "testing-modal-drag-handle";
-            dragHandle.style.cssText = `
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                height: 40px;
-                cursor: move;
-                z-index: 1000;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                border-radius: 12px 12px 0 0;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-size: 12px;
-                font-weight: bold;
-                text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-            `;
             dragHandle.innerHTML = ':: Drag to Move ::';
             modalContent.style.position = "relative";
             modalContent.appendChild(dragHandle);
@@ -297,25 +279,6 @@ function makeTestingModalDraggable(modalContent, dragHandle) {
         modalContent.style.position = "fixed";
     }
 
-    dragHandle.style.cursor = "move";
-    dragHandle.style.userSelect = "none";
-    dragHandle.style.webkitUserSelect = "none";
-    dragHandle.style.msUserSelect = "none";
-
-    dragHandle.addEventListener("mouseenter", () => {
-        if (!isDragging) {
-            dragHandle.style.background = "linear-gradient(135deg, #5a6fd8 0%, #6a4c93 100%)";
-            dragHandle.style.transform = "scale(1.02)";
-        }
-    });
-
-    dragHandle.addEventListener("mouseleave", () => {
-        if (!isDragging) {
-            dragHandle.style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
-            dragHandle.style.transform = "scale(1)";
-        }
-    });
-
     dragHandle.removeEventListener("mousedown", startDrag);
     dragHandle.addEventListener("mousedown", startDrag);
 
@@ -334,7 +297,7 @@ function makeTestingModalDraggable(modalContent, dragHandle) {
         modalContent.style.zIndex = "10001";
         modalContent.style.boxShadow = "0 25px 50px rgba(0, 0, 0, 0.5)";
         modalContent.style.transform = "scale(1.02)";
-        dragHandle.style.background = "linear-gradient(135deg, #4e5ed6 0%, #5d4284 100%)";
+        dragHandle.classList.add("dragging");
 
         e.preventDefault();
         e.stopPropagation();
@@ -370,7 +333,7 @@ function makeTestingModalDraggable(modalContent, dragHandle) {
             modalContent.style.zIndex = "9999";
             modalContent.style.boxShadow = "";
             modalContent.style.transform = "scale(1)";
-            dragHandle.style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+            dragHandle.classList.remove("dragging");
 
             if (hasMoved) {
                 showNotification("Testing modal repositioned", "info", 1500);
@@ -471,83 +434,30 @@ export function openTestResultsInModal() {
     const content = testingOutput.textContent;
     const timestamp = new Date().toLocaleString();
 
-    // Create modal overlay
-    const modalOverlay = document.createElement("div");
+    // Create modal overlay as <dialog> for top-layer stacking above testing modal
+    const modalOverlay = document.createElement("dialog");
     modalOverlay.id = "test-results-modal";
-    modalOverlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        z-index: 10000;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        backdrop-filter: blur(3px);
-    `;
+    modalOverlay.className = "test-results-overlay";
 
     // Create modal content
     const modalContent = document.createElement("div");
-    modalContent.style.cssText = `
-        background: var(--modal-bg, #1a1a1a);
-        border: 2px solid var(--modal-border, #444);
-        border-radius: 12px;
-        width: 90%;
-        height: 85%;
-        max-width: 1200px;
-        display: flex;
-        flex-direction: column;
-        color: var(--modal-text, #fff);
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        overflow: hidden;
-    `;
+    modalContent.className = "test-results-content";
 
     // Header
     const header = document.createElement("div");
-    header.style.cssText = `
-        padding: 20px;
-        border-bottom: 1px solid var(--modal-border, #444);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: var(--header-bg, #333);
-        flex-shrink: 0;
-    `;
+    header.className = "test-results-header";
 
     header.innerHTML = `
         <div>
-            <h2 style="margin: 0; color: #007bff; font-size: 18px;">
-                Test Results - Expanded View
-            </h2>
-            <p style="margin: 5px 0 0 0; color: #ccc; font-size: 14px;">
-                Generated: ${timestamp}
-            </p>
+            <h2 class="test-results-title">Test Results - Expanded View</h2>
+            <p class="test-results-timestamp">Generated: ${timestamp}</p>
         </div>
-        <button id="close-results-modal" style="
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.2s;
-        ">Close</button>
+        <button id="close-results-modal" class="test-results-close-btn">Close</button>
     `;
 
     // Controls bar
     const controlsBar = document.createElement("div");
-    controlsBar.style.cssText = `
-        padding: 15px 20px;
-        border-bottom: 1px solid var(--modal-border, #444);
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        background: var(--controls-bg, #2a2a2a);
-        flex-shrink: 0;
-    `;
+    controlsBar.className = "test-results-controls";
 
     const controls = [
         { id: "copy-results", text: "Copy", class: "success" },
@@ -561,71 +471,22 @@ export function openTestResultsInModal() {
         const btn = document.createElement("button");
         btn.id = control.id;
         btn.textContent = control.text;
-        btn.className = `results-control-btn ${control.class}`;
-        btn.style.cssText = `
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s;
-            color: white;
-        `;
-
-        const colors = {
-            primary: { bg: "#007bff", hover: "#0056b3" },
-            success: { bg: "#28a745", hover: "#1e7e34" },
-            secondary: { bg: "#6c757d", hover: "#545b62" },
-            info: { bg: "#17a2b8", hover: "#117a8b" }
-        };
-
-        btn.style.background = colors[control.class]?.bg || "#6c757d";
-        btn.addEventListener("mouseenter", () => {
-            btn.style.background = colors[control.class]?.hover || "#545b62";
-        });
-        btn.addEventListener("mouseleave", () => {
-            btn.style.background = colors[control.class]?.bg || "#6c757d";
-        });
-
+        btn.className = `test-results-btn ${control.class}`;
         controlsBar.appendChild(btn);
     });
 
     // Search bar
     const searchBar = document.createElement("div");
     searchBar.id = "search-bar";
-    searchBar.style.cssText = `
-        padding: 10px 20px;
-        border-bottom: 1px solid var(--modal-border, #444);
-        background: var(--search-bg, #2a2a2a);
-        display: none;
-        flex-shrink: 0;
-    `;
+    searchBar.className = "test-results-search-bar";
     searchBar.innerHTML = `
-        <input type="text" id="search-input" name="search-input" placeholder="Search in results..." style="
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #555;
-            border-radius: 4px;
-            background: var(--input-bg, #333);
-            color: var(--input-text, #fff);
-            font-size: 14px;
-        ">
-        <div style="margin-top: 5px; font-size: 12px; color: #888;" id="search-info"></div>
+        <input type="text" id="search-input" name="search-input" placeholder="Search in results..." class="test-results-search-input">
+        <div class="test-results-search-info" id="search-info"></div>
     `;
 
     // Results area
     const resultsArea = document.createElement("div");
-    resultsArea.style.cssText = `
-        flex: 1;
-        padding: 20px;
-        overflow-y: auto;
-        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-        font-size: 13px;
-        line-height: 1.5;
-        background: var(--results-bg, #1a1a1a);
-        white-space: pre-wrap;
-        word-wrap: break-word;
-    `;
+    resultsArea.className = "test-results-body";
     resultsArea.textContent = content;
     resultsArea.id = "modal-results-content";
 
@@ -636,11 +497,14 @@ export function openTestResultsInModal() {
     modalContent.appendChild(resultsArea);
     modalOverlay.appendChild(modalContent);
 
+    const closeResultsModal = () => {
+        if (modalOverlay.open) modalOverlay.close();
+        modalOverlay.remove();
+    };
+
     // Event listeners
     const closeBtn = modalOverlay.querySelector("#close-results-modal");
-    closeBtn.addEventListener("click", () => {
-        modalOverlay.remove();
-    });
+    closeBtn.addEventListener("click", closeResultsModal);
 
     modalOverlay.querySelector("#copy-results").addEventListener("click", () => {
         navigator.clipboard.writeText(content).then(() => {
@@ -724,9 +588,6 @@ export function openTestResultsInModal() {
 
     // Keyboard shortcuts
     modalOverlay.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-            modalOverlay.remove();
-        }
         if (e.ctrlKey || e.metaKey) {
             switch(e.key) {
                 case "f":
@@ -749,14 +610,21 @@ export function openTestResultsInModal() {
         }
     });
 
-    // Close on outside click
+    // ESC key via native dialog cancel event
+    modalOverlay.addEventListener("cancel", (e) => {
+        e.preventDefault();
+        closeResultsModal();
+    });
+
+    // Close on backdrop click
     modalOverlay.addEventListener("click", (e) => {
         if (e.target === modalOverlay) {
-            modalOverlay.remove();
+            closeResultsModal();
         }
     });
 
     document.body.appendChild(modalOverlay);
+    modalOverlay.showModal();
     showNotification("Test results opened in expanded view", "success", 2000);
 }
 
@@ -770,9 +638,7 @@ export function addTestResultsHint() {
     const hint = document.createElement("div");
     hint.className = "test-results-hint";
     hint.innerHTML = `
-        <small style="color: #888; font-size: 11px; margin-top: 5px; display: block;">
-            Tip: Double-click results to open in expanded view
-        </small>
+        <small>Tip: Double-click results to open in expanded view</small>
     `;
 
     testingOutput.parentNode.insertBefore(hint, testingOutput.nextSibling);

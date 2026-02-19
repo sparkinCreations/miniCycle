@@ -95,7 +95,7 @@
   --theme-input-text: #333333;
   --theme-input-border: #cccccc;
   --theme-input-focus-border: var(--color-primary);
-  --theme-input-placeholder: #767676;
+  --theme-input-placeholder: #555555;
 
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Button
@@ -255,11 +255,11 @@
   --z-modal-backdrop: 999;           /* Modal backdrops */
   --z-modal: 1000;                   /* Standard modals */
   --z-modal-high: 2000;              /* High-priority modals (storage, onboarding) */
-  --z-notification: 9999;            /* Notification container */
-  --z-notification-active: 10000;    /* Dragging notification */
-  --z-notification-btn: 10001;       /* Notification interactive buttons */
   --z-overlay-critical: 10000;       /* Import/migration error overlays */
   --z-debug: 99999;                  /* Debug utilities */
+  --z-notification: 100000;          /* Notification container (above all overlays) */
+  --z-notification-active: 100001;   /* Dragging notification */
+  --z-notification-btn: 100002;      /* Notification interactive buttons */
   --z-critical: 999999;              /* Boot critical errors only */
 
   /* ═══════════════════════════════════════════════════════════════════════════

@@ -295,11 +295,11 @@ export const Z_INDEX = Object.freeze({
     MODAL_BACKDROP: 999,     // Modal backdrops
     MODAL: 1000,             // Standard modals
     MODAL_HIGH: 2000,        // High-priority modals (storage, onboarding)
-    NOTIFICATION: 9999,      // Notification container
-    NOTIFICATION_ACTIVE: 10000,  // Dragging notification
-    NOTIFICATION_BTN: 10001,     // Notification interactive buttons
     OVERLAY_CRITICAL: 10000, // Import/migration error overlays
     DEBUG: 99999,            // Debug utilities
+    NOTIFICATION: 100000,    // Notification container (above all overlays)
+    NOTIFICATION_ACTIVE: 100001, // Dragging notification
+    NOTIFICATION_BTN: 100002,    // Notification interactive buttons
     CRITICAL: 999999         // Boot critical errors only
 });
 
