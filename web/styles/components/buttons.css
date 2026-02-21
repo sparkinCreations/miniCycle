@@ -132,7 +132,7 @@ button.icon-only i {
    ============================================================================= */
 
 .complete-all-btn {
-    background: #08c352;
+    background: var(--color-complete-btn);
     border: 2px solid rgba(0, 0, 0, 0.15);
     border-bottom: 3px solid rgba(0, 0, 0, 0.25);
     margin-top: 10px;
@@ -152,7 +152,7 @@ button.icon-only i {
 }
 
 .complete-all-btn:hover {
-    background: #0ad65a;
+    background: var(--color-complete-btn-hover);
     transform: translateY(-1px);
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.18);
 }
@@ -165,23 +165,23 @@ button.icon-only i {
 
 /* To-Do Mode button style - blue color */
 .complete-all-btn.todo-mode-btn {
-    background: #3b82f6;
+    background: var(--color-todo-btn);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .complete-all-btn.todo-mode-btn:hover {
-    background: #4b8ef7;
+    background: var(--color-todo-btn-hover);
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.18);
 }
 
 /* Custom preference colors (Default theme only) */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn:not(.todo-mode-btn) {
-    background: var(--pref-complete-btn, #08c352);
+    background: var(--pref-complete-btn, var(--color-complete-btn));
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn.todo-mode-btn {
-    background: var(--pref-clear-btn, #3b82f6);
+    background: var(--pref-clear-btn, var(--color-todo-btn));
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 

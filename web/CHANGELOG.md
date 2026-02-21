@@ -1,3 +1,7 @@
+## [1.972] - 2026-02-21
+- Enhance accessibility and UI by updating ARIA attributes and improving font sizes across various components
+
+
 ## [1.971] - 2026-02-21
 - Add theme customizer modal styles and functionality
 

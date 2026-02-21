@@ -22,7 +22,7 @@
     color: rgb(44, 50, 112);
     border-radius: 5px;
     padding: 3px 20px 3px 8px;
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     font-weight: 500;
     max-width: 200px;
     height: 22px;
@@ -58,7 +58,7 @@
     cursor: pointer;
     transition: all var(--transition-normal) ease;
     z-index: var(--z-content);
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     font-weight: bold;
     appearance: none;
     -webkit-appearance: none;
@@ -226,7 +226,7 @@
     }
 
     .mode-selector-wrapper .mode-selector {
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         height: 24px;
         max-width: 200px;
     }
@@ -244,6 +244,6 @@
 
     .quick-actions-btn {
         width: 60px;
-        font-size: 12px;
+        font-size: var(--font-size-xs);
     }
 }

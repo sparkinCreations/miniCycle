@@ -435,7 +435,7 @@
     min-width: 14px;
     min-height: 14px;
     max-width: none; /* Override .task span max-width rule */
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     color: #3498db; /* Blue */
     margin-left: 8px;
     margin-right: 0; /* Override .task span margin-right rule */
@@ -604,7 +604,7 @@ select.hidden {
 .yearly-month-box.selected::after,
 .yearly-day-box.selected::after {
     content: "✔";
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     position: absolute;
     top: 4px;
     left: 6px;
@@ -697,7 +697,7 @@ select.hidden {
 
 .add-recurring-task-btn i,
 .add-recurring-task-btn .icon {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
 }
 
 /* Available tasks list */
@@ -863,7 +863,7 @@ dialog.reminders-modal[open] {
     right: 8px;
     background: transparent;
     color: var(--theme-text-muted, #999);
-    font-size: 20px;
+    font-size: var(--font-size-xl);
     border: none;
     cursor: pointer;
 }

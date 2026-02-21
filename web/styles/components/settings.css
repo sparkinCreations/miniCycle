@@ -94,7 +94,7 @@
 }
 
 .settings-section-toggle {
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     transition: transform var(--transition-fast) ease;
     opacity: 0.6;
 }
@@ -213,7 +213,7 @@
 }
 
 .settings-btn i {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
 }
 
 /* Primary buttons (Backup/Restore) */

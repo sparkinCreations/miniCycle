@@ -239,10 +239,12 @@
 
 .app-subtitle {
     font-family: 'Inter', sans-serif;
-    font-weight: 800;
+    font-weight: 600;
+    font-size: 0.75rem;
     letter-spacing: 0.25em;
     color: #000;
     margin-top: 1px;
+    opacity: 0.7;
 }
 
 body.dark-mode .app-subtitle {
