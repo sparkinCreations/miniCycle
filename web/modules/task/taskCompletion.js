@@ -164,9 +164,6 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
                 handleTaskListMovement(taskItem, isCompleted);
             }
 
-            // Update aria-checked on checkbox
-            checkbox.setAttribute('aria-checked', isCompleted.toString());
-
             // Update task item aria-label to reflect new status
             const taskText = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent || '';
             const statusText = isCompleted ? getLabel('nav.completed') : getLabel('nav.notCompleted');

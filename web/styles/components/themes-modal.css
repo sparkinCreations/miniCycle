@@ -283,7 +283,7 @@ dialog.preferences-modal::backdrop {
     color: white;
     border: none;
     border-radius: 6px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: background var(--transition-fast) ease;
@@ -321,7 +321,7 @@ dialog.preferences-modal::backdrop {
 }
 
 .preferences-preview-label {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.9);
     text-transform: uppercase;
@@ -600,7 +600,7 @@ dialog.preferences-modal::backdrop {
 }
 
 .quick-preset-name {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 500;
     color: var(--theme-modal-text, #555);
 }
@@ -645,7 +645,7 @@ dialog.preferences-modal::backdrop {
     color: var(--theme-modal-text, #555);
     border: 1px solid var(--theme-border, #ddd);
     border-radius: 6px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: all var(--transition-fast) ease;
@@ -662,7 +662,7 @@ dialog.preferences-modal::backdrop {
     color: white;
     border: none;
     border-radius: 6px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: background var(--transition-fast) ease;
@@ -763,7 +763,7 @@ dialog.preferences-modal::backdrop {
     background: transparent;
     border: 1px solid var(--theme-border, #ddd);
     border-radius: 4px;
-    font-size: 10px;
+    font-size: 11px;
     cursor: pointer;
     transition: all var(--transition-fast) ease;
     color: var(--theme-modal-text, #555);
@@ -845,7 +845,7 @@ dialog.preferences-modal::backdrop {
 
 .preferences-section-toggle {
     margin-left: auto;
-    font-size: 10px;
+    font-size: 12px;
     color: var(--theme-text-muted, #888);
     transition: transform var(--transition-normal) ease;
 }
@@ -940,7 +940,7 @@ dialog.preferences-modal::backdrop {
     color: var(--theme-text-muted, #888);
     border: 1px solid var(--theme-border, #ddd);
     border-radius: 4px;
-    font-size: 10px;
+    font-size: 11px;
     cursor: pointer;
     transition: all var(--transition-fast) ease;
 }
@@ -1081,7 +1081,7 @@ dialog.preferences-modal::backdrop {
 }
 
 .preferences-bg-image-hint {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--theme-text-muted, #888);
     margin-top: 6px;
     padding-left: 28px;
@@ -1243,7 +1243,7 @@ dialog.preferences-modal::backdrop {
     .preferences-theme-notice {
         padding: 8px 10px;
         margin: 10px 12px 0;
-        font-size: 11px;
+        font-size: 12px;
     }
 
     .preferences-scroll-area {
@@ -1261,7 +1261,7 @@ dialog.preferences-modal::backdrop {
     }
 
     .quick-preset-name {
-        font-size: 9px;
+        font-size: 10px;
     }
 
     .preferences-section-header.collapsible {
@@ -1311,7 +1311,7 @@ dialog.preferences-modal::backdrop {
     }
 
     .preferences-preview-label {
-        font-size: 10px;
+        font-size: 11px;
         margin-bottom: 6px;
     }
 

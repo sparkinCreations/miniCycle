@@ -94,7 +94,7 @@
 }
 
 .settings-section-toggle {
-    font-size: 10px;
+    font-size: 12px;
     transition: transform var(--transition-fast) ease;
     opacity: 0.6;
 }
