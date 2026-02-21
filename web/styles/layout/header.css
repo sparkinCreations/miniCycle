@@ -233,13 +233,12 @@
 }
 
 .app-name {
-    height: 18px;
+    height: 22px;
     width: auto;
 }
 
 .app-subtitle {
     font-family: 'Inter', sans-serif;
-    font-size: 2rem;
     font-weight: 800;
     letter-spacing: 0.25em;
     color: #000;
@@ -267,11 +266,7 @@ body.dark-mode .app-subtitle {
 
     .app-name {
         width: auto;
-        height: 18px;
-    }
-
-    .app-subtitle {
-        font-size: 0.5rem;
+        height: 22px;
     }
 
     .menu-button {

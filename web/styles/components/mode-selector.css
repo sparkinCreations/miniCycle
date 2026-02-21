@@ -226,7 +226,7 @@
     }
 
     .mode-selector-wrapper .mode-selector {
-        font-size: 11px;
+        font-size: 12px;
         height: 24px;
         max-width: 200px;
     }
@@ -244,6 +244,6 @@
 
     .quick-actions-btn {
         width: 60px;
-        font-size: 11px;
+        font-size: 12px;
     }
 }

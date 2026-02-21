@@ -851,8 +851,6 @@ export class TaskDOMManager {
         checkbox.setAttribute("name", `task-complete-${assignedTaskId}`);
         checkbox.checked = completed;
         checkbox.setAttribute("aria-label", getLabel('action.markTaskComplete', { vars: { name: taskTextTrimmed } }));
-        checkbox.setAttribute("role", "checkbox");
-        checkbox.setAttribute("aria-checked", checkbox.checked);
 
         // Add event listener using safe helper
         const addListener = this.deps.safeAddEventListener;

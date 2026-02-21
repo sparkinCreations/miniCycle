@@ -1,3 +1,7 @@
+## [1.971] - 2026-02-21
+- Add theme customizer modal styles and functionality
+
+
 ## [1.970] - 2026-02-20
 - Implement keyboard navigation utilities and enhance arrow key navigation across various components for improved accessibility and user experience.
 

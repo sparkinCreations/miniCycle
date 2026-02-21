@@ -109,7 +109,7 @@
 }
 
 .menu-section-header {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -149,7 +149,7 @@
 }
 
 .menu-section-toggle {
-    font-size: 8px;
+    font-size: 10px;
     color: var(--menu-section-header, #555);
     transition: transform var(--transition-fast) ease;
     opacity: 0.7;
@@ -183,7 +183,7 @@
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     color: var(--menu-button-text, #333);
     background: var(--menu-button-bg, rgba(0, 0, 0, 0.04));
@@ -292,7 +292,7 @@
 
 .menu-container ul li button {
     padding: 5px 5px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     text-align: left;
     background: none;
@@ -342,7 +342,7 @@
     background: rgba(0, 0, 0, 0.05);
     border: none;
     border-radius: 8px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     color: #555;
     cursor: pointer;
@@ -354,7 +354,7 @@
 }
 
 .mode-description-toggle .toggle-icon {
-    font-size: 10px;
+    font-size: 12px;
     transition: transform var(--transition-fast) ease;
 }
 
@@ -364,7 +364,7 @@
 
 /* Mode badge: shows current mode name when collapsed */
 .mode-description-toggle .mode-badge {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     opacity: 0;
     margin-left: auto;
@@ -448,7 +448,7 @@
     padding: 12px 8px;
     background: rgba(255, 255, 255, 0.3);
     border-radius: 8px;
-    font-size: 12px;
+    font-size: 13px;
     transition: background var(--transition-fast) ease;
 }
 

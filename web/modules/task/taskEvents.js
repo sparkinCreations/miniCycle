@@ -171,7 +171,6 @@ export class TaskEvents {
             // Toggle checkbox
             checkbox.checked = !checkbox.checked;
             checkbox.dispatchEvent(new Event("change"));
-            checkbox.setAttribute("aria-checked", checkbox.checked);
 
             // Trigger mini cycle check (DI-pure)
             if (typeof this.deps.checkMiniCycle === 'function') {
