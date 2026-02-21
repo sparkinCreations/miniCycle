@@ -1,3 +1,7 @@
+## [1.978] - 2026-02-21
+- Enhance mobile header layout by adjusting padding for improved subtitle clearance and overall visibility on smaller screens.
+
+
 ## [1.977] - 2026-02-21
 - Enhance mobile layout by adjusting task view max-height and header clearance, and update header padding for better visibility on smaller screens.
 

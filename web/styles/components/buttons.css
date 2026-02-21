@@ -223,7 +223,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
     transition: opacity var(--transition-normal) ease;
     opacity: 1;
     margin-top: 10px;
-    margin-bottom: 100px;
+    margin-bottom: 30px;
 }
 
 .help-window.show {
@@ -259,6 +259,7 @@ body.hide-help-window .help-window {
 
 @media (max-width: 768px) {
     .help-window {
+        margin-top: 8px;
         margin-bottom: 20px;
         font-size: var(--font-size-sm);
         padding: 6px 10px;
