@@ -1,3 +1,7 @@
+## [1.976] - 2026-02-21
+- Enhance complete all button styles by updating background color, text color, dimensions, and font size for improved visibility and user experience.
+
+
 ## [1.975] - 2026-02-21
 - Enhance button styles for cycle completion by updating dimensions, colors, and animations for improved visual feedback.
 

@@ -76,10 +76,11 @@
     transform: translate(-50%, -50%);
 }
 
-/* Mobile: Adjust task view max-height */
+/* Mobile: Adjust task view max-height and offset for header clearance */
 @media (max-width: 768px) {
     #task-view {
         max-height: calc(100vh - 250px);
+        top: calc(50% + 15px);
     }
 
     #task-view.show {
