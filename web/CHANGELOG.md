@@ -1,3 +1,7 @@
+## [1.973] - 2026-02-21
+- Refactor styles and improve accessibility by updating font sizes, adding new color variables, and enhancing ARIA attributes across various components.
+
+
 ## [1.972] - 2026-02-21
 - Enhance accessibility and UI by updating ARIA attributes and improving font sizes across various components
 
