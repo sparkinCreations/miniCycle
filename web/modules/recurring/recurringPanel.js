@@ -26,6 +26,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -645,12 +646,20 @@ export class RecurringPanelManager {
      * Setup biweekly day toggle
      */
     setupBiweeklyDayToggle() {
-        this.deps.querySelectorAll(DOM_SELECTORS.BIWEEKLY_DAY_BOX).forEach(box => {
-            this.deps.safeAddEventListener(box, "click", () => {
+        // Delegated handlers on each .biweekly-days group (Week 1, Week 2)
+        this.deps.querySelectorAll(DOM_SELECTORS.BIWEEKLY_DAYS).forEach(container => {
+            this.deps.safeAddEventListener(container, "click", (e) => {
+                const box = e.target.closest(DOM_SELECTORS.BIWEEKLY_DAY_BOX);
+                if (!box) return;
                 box.classList.toggle("selected");
                 box.setAttribute("aria-checked", box.classList.contains("selected") ? "true" : "false");
             });
-            this.deps.safeAddEventListener(box, "keydown", (e) => {
+            this.deps.safeAddEventListener(container, "keydown", (e) => {
+                const box = e.target.closest(DOM_SELECTORS.BIWEEKLY_DAY_BOX);
+                if (!box) return;
+                // Arrow key navigation between day boxes
+                if (handleHorizontalArrowNav(e, container, DOM_SELECTORS.BIWEEKLY_DAY_BOX, { wrap: false })) return;
+                // Enter/Space to toggle selection
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     box.classList.toggle("selected");

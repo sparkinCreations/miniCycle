@@ -348,3 +348,6 @@
 .json-toggle:hover {
     text-decoration: underline;
 }
+
+/* NOTE: Storage modal overlay styles already defined above (lines 110-132) —
+   originally also in modals.css, now consolidated here */

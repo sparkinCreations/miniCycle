@@ -11,6 +11,7 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -634,6 +635,19 @@ export class AchievementsManager {
                 }
             }
         });
+
+        // Delegated ArrowLeft/Right navigation between badges
+        const badgesContainer = document.querySelector(DOM_SELECTORS.BADGES_CONTAINER);
+        if (badgesContainer && safeAddEventListener) {
+            safeAddEventListener(badgesContainer, 'keydown', (e) => {
+                const badge = e.target.closest(DOM_SELECTORS.BADGE);
+                if (!badge) return;
+                handleHorizontalArrowNav(e, badgesContainer, DOM_SELECTORS.BADGE, {
+                    wrap: false, skipHidden: false
+                });
+            });
+        }
+
         console.log('✅ Badge tooltips and click handlers initialized from constants');
     }
 

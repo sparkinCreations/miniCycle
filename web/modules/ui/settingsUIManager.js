@@ -22,6 +22,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { loadPanelVisibility } from './panelVisibilityHelpers.js';
+import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -212,6 +213,9 @@ function setupSettingsCollapsibleSections(safeAddEventListener) {
     // Load saved collapsed states using cached sections
     loadSettingsCollapsedStates(collapsibleSections);
 
+    // Find the settings modal for delegated arrow nav
+    const settingsModal = document.querySelector(DOM_SELECTORS.SETTINGS_MODAL);
+
     sectionHeaders.forEach(header => {
         safeAddEventListener(header, 'click', (e) => {
             e.stopPropagation();
@@ -232,6 +236,25 @@ function setupSettingsCollapsibleSections(safeAddEventListener) {
                     header.setAttribute('aria-expanded', String(!section.classList.contains('collapsed')));
                     saveSettingsCollapsedStates(collapsibleSections);
                 }
+            } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                const section = header.closest('.settings-section');
+                if (!section) return;
+                const isCollapsed = section.classList.contains('collapsed');
+                if (e.key === 'ArrowRight' && isCollapsed) {
+                    e.preventDefault();
+                    section.classList.remove('collapsed');
+                    header.setAttribute('aria-expanded', 'true');
+                    saveSettingsCollapsedStates(collapsibleSections);
+                } else if (e.key === 'ArrowLeft' && !isCollapsed) {
+                    e.preventDefault();
+                    section.classList.add('collapsed');
+                    header.setAttribute('aria-expanded', 'false');
+                    saveSettingsCollapsedStates(collapsibleSections);
+                }
+            } else if (settingsModal && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+                handleVerticalArrowNav(e, settingsModal, DOM_SELECTORS.SETTINGS_SECTION_HEADER, {
+                    wrap: false, skipHidden: true
+                });
             }
         });
     });

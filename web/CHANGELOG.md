@@ -1,3 +1,7 @@
+## [1.970] - 2026-02-20
+- Implement keyboard navigation utilities and enhance arrow key navigation across various components for improved accessibility and user experience.
+
+
 ## [1.969] - 2026-02-20
 - Enhance notification container behavior by implementing popover management to ensure it appears above dialog modals; update styles to override default popover settings for improved visibility and interaction.
 

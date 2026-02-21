@@ -811,3 +811,124 @@ select.hidden {
 .recurring-empty-state p {
     margin: 0;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REMINDERS MODAL (from modals.css)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.reminders-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: var(--z-modal);
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+}
+
+/* Uses show() instead of showModal() so notifications (z-notification) layer above */
+dialog.reminders-modal {
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+dialog.reminders-modal[open] {
+    display: flex;
+}
+
+.reminders-modal-content {
+    background: var(--theme-modal-bg, #fff);
+    color: var(--theme-modal-text, #333);
+    padding: 20px;
+    border-radius: 8px;
+    width: 320px;
+    max-width: 90%;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.reminders-modal-content h2 {
+    margin-top: 0;
+    padding-left: 28px;
+}
+
+.reminders-modal-content .close-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    color: var(--theme-text-muted, #999);
+    font-size: 20px;
+    border: none;
+    cursor: pointer;
+}
+
+.reminders-modal-content .close-btn:hover {
+    color: var(--theme-text-secondary, #666);
+}
+
+/* Frequency Section */
+#frequency-section {
+    margin-top: 10px;
+    border-top: 1px solid var(--theme-modal-border, #ddd);
+    padding-top: 10px;
+}
+
+#repeat-count-row,
+#every-row {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+}
+
+#repeat-count-row label,
+#every-row label {
+    margin-right: 6px;
+    min-width: 100px;
+}
+
+#repeatCount,
+#frequencyValue {
+    width: 60px;
+    margin-right: 6px;
+}
+
+/* Collapsible privacy notice */
+.settings-warning-details {
+    margin: -2px 0 10px 0;
+    padding-left: 34px;
+}
+
+.settings-warning-summary {
+    font-size: 0.78rem;
+    opacity: 0.6;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+}
+
+.settings-warning-summary::-webkit-details-marker {
+    display: none;
+}
+
+.settings-warning-summary::before {
+    content: '▸ ';
+}
+
+.settings-warning-details[open] .settings-warning-summary::before {
+    content: '▾ ';
+}
+
+/* Privacy/info warning text below settings toggles */
+.settings-warning {
+    font-size: 0.78rem;
+    opacity: 0.6;
+    margin: 4px 0 0 0;
+    padding: 0;
+    line-height: 1.4;
+}

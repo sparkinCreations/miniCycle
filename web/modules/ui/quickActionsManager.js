@@ -15,6 +15,7 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 
 // ============================================================================
 // CONSTANTS
@@ -266,11 +267,14 @@ export class QuickActionsManager {
 
         for (let i = 0; i < SLOT_COUNT; i++) {
             const actionId = pinned[i];
+            let slot;
             if (actionId && ACTION_REGISTRY[actionId]) {
-                fragment.appendChild(this._createFilledSlot(actionId, i));
+                slot = this._createFilledSlot(actionId, i);
             } else {
-                fragment.appendChild(this._createEmptySlot(i));
+                slot = this._createEmptySlot(i);
             }
+            slot.setAttribute('tabindex', i === 0 ? '0' : '-1');
+            fragment.appendChild(slot);
         }
 
         container.appendChild(fragment);
@@ -289,9 +293,13 @@ export class QuickActionsManager {
         }
 
         const fragment = document.createDocumentFragment();
+        let slotIndex = 0;
         recent.forEach(actionId => {
             if (ACTION_REGISTRY[actionId]) {
-                fragment.appendChild(this._createFilledSlot(actionId, -1, true));
+                const slot = this._createFilledSlot(actionId, -1, true);
+                slot.setAttribute('tabindex', slotIndex === 0 ? '0' : '-1');
+                fragment.appendChild(slot);
+                slotIndex++;
             }
         });
         container.appendChild(fragment);
@@ -316,9 +324,13 @@ export class QuickActionsManager {
         }
 
         const fragment = document.createDocumentFragment();
+        let slotIndex = 0;
         qualifying.forEach(([actionId]) => {
             if (ACTION_REGISTRY[actionId]) {
-                fragment.appendChild(this._createFilledSlot(actionId, -1, true));
+                const slot = this._createFilledSlot(actionId, -1, true);
+                slot.setAttribute('tabindex', slotIndex === 0 ? '0' : '-1');
+                fragment.appendChild(slot);
+                slotIndex++;
             }
         });
         container.appendChild(fragment);
@@ -703,6 +715,18 @@ export class QuickActionsManager {
         }
         if (nextBtn) {
             nextBtn.addEventListener('click', () => this._animatedCycleView('next', panel));
+        }
+
+        // Keyboard arrow navigation between slots
+        const slotsContainer = panel.querySelector('.quick-actions-slots');
+        if (slotsContainer) {
+            slotsContainer.addEventListener('keydown', (e) => {
+                const slot = e.target.closest(DOM_SELECTORS.QUICK_ACTIONS_SLOT);
+                if (!slot) return;
+                handleHorizontalArrowNav(e, slotsContainer, DOM_SELECTORS.QUICK_ACTIONS_SLOT, {
+                    wrap: true, skipHidden: true
+                });
+            });
         }
 
         // Swipe gesture on header

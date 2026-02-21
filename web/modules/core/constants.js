@@ -826,6 +826,7 @@ export const DOM_SELECTORS = Object.freeze({
     CHANGE_RECURRING_BTN: '.change-recurring-btn',
     RECURRING_TASK_ITEM_SELECTED: '.recurring-task-item.selected',
     RECURRING_TASK_ITEM_CHECKED: '.recurring-task-item.checked',
+    BIWEEKLY_DAYS: '.biweekly-days',
     BIWEEKLY_DAY_BOX: '.biweekly-day-box',
     BIWEEKLY_DAY_BOX_SELECTED: '.biweekly-day-box.selected',
     MONTHLY_DAYS: '.monthly-days',
@@ -909,6 +910,7 @@ export const DOM_SELECTORS = Object.freeze({
     // ---- Games ----
     GAMES_MODAL_CONTENT: '.games-modal-content',
     BADGE: '.badge',
+    BADGES_CONTAINER: '.badges',
 
     // ---- Quick Actions ----
     QUICK_ACTIONS_MENU_ROW: '.quick-actions-menu-row',
@@ -918,6 +920,7 @@ export const DOM_SELECTORS = Object.freeze({
     QUICK_ACTIONS_TITLE: '.quick-actions-title',
     QUICK_ACTIONS_PICKER: '.quick-actions-picker',
     QUICK_ACTIONS_PICKER_GRID: '.quick-actions-picker-grid',
+    QUICK_ACTIONS_SLOT: '.quick-actions-slot',
     TOOLTIP_REMOVE: 'tooltip-remove',
 
     // ---- Loading & UI ----
