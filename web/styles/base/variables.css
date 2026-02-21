@@ -27,6 +27,11 @@
   --color-error: #dc3545;
   --color-error-light: #f1737e;
   --color-info: #17a2b8;
+  /* App-specific action colors */
+  --color-complete-btn: #08c352;
+  --color-complete-btn-hover: #0ad65a;
+  --color-todo-btn: #3b82f6;
+  --color-todo-btn-hover: #4b8ef7;
 
   /* ═══════════════════════════════════════════════════════════════════════════
      NEUTRAL COLORS (Static palette)
