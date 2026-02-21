@@ -10,6 +10,7 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { handleVerticalArrowNav, handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 
 // ============================================================================
 // CONSTANTS
@@ -406,6 +407,14 @@ export class HistoryManager {
             this._tabHandlers.forEach(({ element, handler }) => element.removeEventListener('click', handler));
             this._tabHandlers = null;
         }
+        if (this._tabKeyHandler) {
+            this.modalOverlay.querySelector('.history-tabs')?.removeEventListener('keydown', this._tabKeyHandler);
+            this._tabKeyHandler = null;
+        }
+        if (this._contentKeyHandler) {
+            this.modalOverlay.querySelector('.history-modal-content')?.removeEventListener('keydown', this._contentKeyHandler);
+            this._contentKeyHandler = null;
+        }
 
         this.modalOverlay.style.opacity = '0';
         this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_MODAL).style.transform = 'translateY(20px)';
@@ -489,6 +498,39 @@ export class HistoryManager {
             this._tabHandlers.push({ element: tab, handler });
             tab.addEventListener('click', handler);
         });
+
+        // Arrow key navigation for tabs (Left/Right to switch)
+        const tabContainer = this.modalOverlay.querySelector('.history-tabs');
+        if (tabContainer) {
+            this._tabKeyHandler = (event) => {
+                if (handleHorizontalArrowNav(event, tabContainer, DOM_SELECTORS.HISTORY_TAB, { wrap: true })) {
+                    // Activate the newly focused tab
+                    const focusedTab = document.activeElement;
+                    if (focusedTab?.dataset?.tab && focusedTab.dataset.tab !== this.activeTab) {
+                        this.activeTab = focusedTab.dataset.tab;
+                        this.isRecreateMode = false;
+                        this.selectedTasks.clear();
+                        this._updateTabStyles();
+                        this._renderModalContent();
+                        this._updateFooterVisibility();
+                        this._updateActionButton();
+                    }
+                }
+            };
+            tabContainer.addEventListener('keydown', this._tabKeyHandler);
+        }
+
+        // Arrow key navigation for event/entry list (Up/Down)
+        const contentArea = this.modalOverlay.querySelector('.history-modal-content');
+        if (contentArea) {
+            this._contentKeyHandler = (event) => {
+                // Navigate history events
+                handleVerticalArrowNav(event, contentArea, '.history-event');
+                // Navigate cleared entries
+                handleVerticalArrowNav(event, contentArea, DOM_SELECTORS.CLEARED_ENTRY);
+            };
+            contentArea.addEventListener('keydown', this._contentKeyHandler);
+        }
 
         // Footer cancel button - store handler for cleanup
         const cancelBtn = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_CANCEL_BTN);
@@ -676,6 +718,7 @@ export class HistoryManager {
         return `
             <div class="cleared-entry ${isSelected ? 'selected' : ''}"
                  data-id="${entry.id}"
+                 tabindex="0"
                  style="
                     display: flex;
                     align-items: flex-start;
@@ -801,7 +844,7 @@ export class HistoryManager {
         }
 
         return `
-            <div class="history-event" style="
+            <div class="history-event" tabindex="0" style="
                 display: flex;
                 align-items: flex-start;
                 gap: 12px;

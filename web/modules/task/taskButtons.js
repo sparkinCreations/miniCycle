@@ -19,6 +19,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_CLASSES, DOM_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 
 // SVG icons for task buttons (Font Awesome style)
 // Colors controlled by CSS via fill="currentColor" - see task-options.css
@@ -256,15 +257,10 @@ export class TaskButtons {
             }
             // Enter: native <button> activation handles the click — no manual trigger needed
 
-            if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-                const focusable = Array.from(buttonContainer.querySelectorAll("button.task-btn"));
-                const currentIndex = focusable.indexOf(e.target);
-                const nextIndex = e.key === "ArrowRight"
-                    ? (currentIndex + 1) % focusable.length
-                    : (currentIndex - 1 + focusable.length) % focusable.length;
-                focusable[nextIndex].focus();
-                e.preventDefault();
-            }
+            handleHorizontalArrowNav(e, buttonContainer, 'button.task-btn', {
+                wrap: true,
+                skipHidden: true
+            });
 
             if (e.key === "Escape") {
                 e.preventDefault();

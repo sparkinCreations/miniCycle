@@ -11,6 +11,7 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 
 // ============================================================================
 // CONSTANTS
@@ -446,6 +447,10 @@ export class ClearedTasksManager {
         if (this._recreateBtnHandler) { recreateBtn?.removeEventListener('click', this._recreateBtnHandler); this._recreateBtnHandler = null; }
         if (this._cancelBtnHandler) { cancelBtn?.removeEventListener('click', this._cancelBtnHandler); this._cancelBtnHandler = null; }
         if (this._confirmBtnHandler) { confirmBtn?.removeEventListener('click', this._confirmBtnHandler); this._confirmBtnHandler = null; }
+        if (this._contentKeyHandler) {
+            this.modalOverlay.querySelector('.cleared-tasks-modal-content')?.removeEventListener('keydown', this._contentKeyHandler);
+            this._contentKeyHandler = null;
+        }
 
         this.modalOverlay.style.opacity = '0';
         this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_TASKS_MODAL).style.transform = 'translateY(20px)';
@@ -504,6 +509,24 @@ export class ClearedTasksManager {
             this.recreateSelectedTasks();
         };
         confirmBtn?.addEventListener('click', this._confirmBtnHandler);
+
+        // Arrow key navigation for cleared entries (Up/Down + Space to toggle in recreate mode)
+        const contentArea = this.modalOverlay.querySelector('.cleared-tasks-modal-content');
+        if (contentArea) {
+            this._contentKeyHandler = (event) => {
+                if (handleVerticalArrowNav(event, contentArea, DOM_SELECTORS.CLEARED_ENTRY)) return;
+
+                // Enter/Space to toggle selection in recreate mode
+                if ((event.key === ' ' || event.key === 'Enter') && this.isRecreateMode) {
+                    const entry = event.target.closest(DOM_SELECTORS.CLEARED_ENTRY);
+                    if (entry) {
+                        event.preventDefault();
+                        entry.click(); // triggers the existing click handler
+                    }
+                }
+            };
+            contentArea.addEventListener('keydown', this._contentKeyHandler);
+        }
 
         // Click outside to close (store handler for cleanup in closeModal)
         this._overlayClickHandler = (e) => {
@@ -639,6 +662,7 @@ export class ClearedTasksManager {
         return `
             <div class="cleared-entry ${isSelected ? 'selected' : ''}"
                  data-id="${entry.id}"
+                 tabindex="0"
                  style="
                     display: flex;
                     align-items: flex-start;

@@ -1,3 +1,7 @@
+## [1.969] - 2026-02-20
+- Enhance notification container behavior by implementing popover management to ensure it appears above dialog modals; update styles to override default popover settings for improved visibility and interaction.
+
+
 ## [1.967] - 2026-02-20
 - Enhance undo/redo functionality by implementing a grace period to prevent async render-triggered state updates from clearing the redo stack; update related logic for state management and notifications
 

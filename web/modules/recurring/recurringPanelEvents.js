@@ -9,6 +9,7 @@
  */
 
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { handleGridArrowNav, handleVerticalArrowNav } from '../utils/keyboardNav.js';
 
 // ============================================================================
 // EVENT DELEGATION FUNCTIONS
@@ -54,50 +55,6 @@ export function initEventDelegation(deps, state, callbacks) {
 function toggleDayBox(box) {
     box.classList.toggle("selected");
     box.setAttribute("aria-checked", box.classList.contains("selected") ? "true" : "false");
-}
-
-/**
- * Arrow key grid navigation for checkbox grids (roving tabindex pattern)
- * Computes column count at runtime to handle auto-fill grids.
- * @param {KeyboardEvent} event - The keydown event
- * @param {HTMLElement} container - Grid container element
- * @param {string} selector - CSS selector for the box elements
- * @returns {boolean} Whether an arrow key was handled
- */
-function handleGridArrowNav(event, container, selector) {
-    const keys = ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End'];
-    if (!keys.includes(event.key)) return false;
-
-    const boxes = Array.from(container.querySelectorAll(selector));
-    const current = boxes.indexOf(event.target);
-    if (current === -1) return false;
-
-    // Compute columns by counting items on the first row
-    let cols = boxes.length;
-    if (boxes.length > 1) {
-        const firstTop = boxes[0].offsetTop;
-        for (let i = 1; i < boxes.length; i++) {
-            if (boxes[i].offsetTop !== firstTop) { cols = i; break; }
-        }
-    }
-
-    let next = current;
-    switch (event.key) {
-        case 'ArrowRight': next = Math.min(current + 1, boxes.length - 1); break;
-        case 'ArrowLeft':  next = Math.max(current - 1, 0); break;
-        case 'ArrowDown':  next = Math.min(current + cols, boxes.length - 1); break;
-        case 'ArrowUp':    next = Math.max(current - cols, 0); break;
-        case 'Home':       next = 0; break;
-        case 'End':        next = boxes.length - 1; break;
-    }
-
-    if (next !== current) {
-        event.preventDefault();
-        boxes[current].setAttribute('tabindex', '-1');
-        boxes[next].setAttribute('tabindex', '0');
-        boxes[next].focus();
-    }
-    return true;
 }
 
 /**
@@ -351,21 +308,7 @@ export function setupTaskListDelegation(deps, state, callbacks) {
         if (!item) return;
 
         // Arrow key navigation between task items
-        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-            event.preventDefault();
-            const items = Array.from(container.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM));
-            const current = items.indexOf(item);
-            if (current === -1) return;
-
-            const next = event.key === 'ArrowDown'
-                ? Math.min(current + 1, items.length - 1)
-                : Math.max(current - 1, 0);
-
-            if (next !== current) {
-                items[next].focus();
-            }
-            return;
-        }
+        if (handleVerticalArrowNav(event, container, DOM_SELECTORS.RECURRING_TASK_ITEM)) return;
 
         // Enter/Space to select task
         if (event.key === 'Enter' || event.key === ' ') {
