@@ -27,6 +27,7 @@ import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, APP_VERSION } from '../core/con
 import { updateThemeColor } from '../features/themeManager.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { applyHelpWindowVisibility, applyQuickActionsVisibility, loadPanelVisibility, resetPanelVisibility } from './panelVisibilityHelpers.js';
+import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 
 // ============================================================================
 // DEFAULT COLORS
@@ -664,6 +665,21 @@ export class PreferencesManager {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     this.toggleSection(header);
+                } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                    const section = header.closest('.preferences-section');
+                    if (!section) return;
+                    const isCollapsed = section.classList.contains('collapsed');
+                    if (e.key === 'ArrowRight' && isCollapsed) {
+                        e.preventDefault();
+                        this.toggleSection(header);
+                    } else if (e.key === 'ArrowLeft' && !isCollapsed) {
+                        e.preventDefault();
+                        this.toggleSection(header);
+                    }
+                } else if (this.modal && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+                    handleVerticalArrowNav(e, this.modal, DOM_SELECTORS.PREFERENCES_SECTION_HEADER_COLLAPSIBLE, {
+                        wrap: false, skipHidden: true
+                    });
                 }
             };
             safeAdd(header, 'keydown', header._keydownHandler);

@@ -200,6 +200,17 @@ export class TaskEvents {
         return (event) => {
             const target = event.target;
 
+            // Navigate between task checkboxes with ArrowUp/Down
+            if (target.type === 'checkbox' && target.closest('.task-content')) {
+                const taskList = target.closest('ul');
+                if (!taskList) return;
+                handleVerticalArrowNav(event, taskList, 'input[type="checkbox"]', {
+                    wrap: false,
+                    skipHidden: true
+                });
+                return;
+            }
+
             // Only navigate when a .task-text label is focused
             if (!target.classList.contains('task-text')) return;
 
