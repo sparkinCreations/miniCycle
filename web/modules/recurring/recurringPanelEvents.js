@@ -57,11 +57,60 @@ function toggleDayBox(box) {
 }
 
 /**
- * Keyboard handler for day/month box containers — Enter/Space toggles selection
+ * Arrow key grid navigation for checkbox grids (roving tabindex pattern)
+ * Computes column count at runtime to handle auto-fill grids.
+ * @param {KeyboardEvent} event - The keydown event
+ * @param {HTMLElement} container - Grid container element
+ * @param {string} selector - CSS selector for the box elements
+ * @returns {boolean} Whether an arrow key was handled
+ */
+function handleGridArrowNav(event, container, selector) {
+    const keys = ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End'];
+    if (!keys.includes(event.key)) return false;
+
+    const boxes = Array.from(container.querySelectorAll(selector));
+    const current = boxes.indexOf(event.target);
+    if (current === -1) return false;
+
+    // Compute columns by counting items on the first row
+    let cols = boxes.length;
+    if (boxes.length > 1) {
+        const firstTop = boxes[0].offsetTop;
+        for (let i = 1; i < boxes.length; i++) {
+            if (boxes[i].offsetTop !== firstTop) { cols = i; break; }
+        }
+    }
+
+    let next = current;
+    switch (event.key) {
+        case 'ArrowRight': next = Math.min(current + 1, boxes.length - 1); break;
+        case 'ArrowLeft':  next = Math.max(current - 1, 0); break;
+        case 'ArrowDown':  next = Math.min(current + cols, boxes.length - 1); break;
+        case 'ArrowUp':    next = Math.max(current - cols, 0); break;
+        case 'Home':       next = 0; break;
+        case 'End':        next = boxes.length - 1; break;
+    }
+
+    if (next !== current) {
+        event.preventDefault();
+        boxes[current].setAttribute('tabindex', '-1');
+        boxes[next].setAttribute('tabindex', '0');
+        boxes[next].focus();
+    }
+    return true;
+}
+
+/**
+ * Keyboard handler for day/month box containers — Enter/Space toggles selection,
+ * arrow keys navigate between boxes
  * @param {KeyboardEvent} event - The keydown event
  * @param {string} selector - CSS selector for the box elements
+ * @param {HTMLElement} [container] - Grid container (required for arrow nav)
  */
-function handleDayBoxKeydown(event, selector) {
+function handleDayBoxKeydown(event, selector, container) {
+    // Arrow key navigation
+    if (container && handleGridArrowNav(event, container, selector)) return;
+
     if (event.key !== 'Enter' && event.key !== ' ') return;
     const box = event.target.closest(selector);
     if (!box) return;
@@ -79,14 +128,14 @@ export function setupMonthlyDayDelegation(deps) {
     if (!container) return;
 
     deps.safeAddEventListener(container, "click", (event) => {
-        const dayBox = event.target.closest(".monthly-day-box");
+        const dayBox = event.target.closest(DOM_SELECTORS.MONTHLY_DAY_BOX);
         if (!dayBox) return;
 
         toggleDayBox(dayBox);
     });
 
     deps.safeAddEventListener(container, "keydown", (event) => {
-        const dayBox = handleDayBoxKeydown(event, ".monthly-day-box");
+        const dayBox = handleDayBoxKeydown(event, DOM_SELECTORS.MONTHLY_DAY_BOX, container);
         if (!dayBox) return;
 
         toggleDayBox(dayBox);
@@ -103,14 +152,14 @@ export function setupWeeklyDayDelegation(deps) {
     if (!container) return;
 
     deps.safeAddEventListener(container, "click", (event) => {
-        const dayBox = event.target.closest(".weekly-day-box");
+        const dayBox = event.target.closest(DOM_SELECTORS.WEEKLY_DAY_BOX);
         if (!dayBox) return;
 
         toggleDayBox(dayBox);
     });
 
     deps.safeAddEventListener(container, "keydown", (event) => {
-        const dayBox = handleDayBoxKeydown(event, ".weekly-day-box");
+        const dayBox = handleDayBoxKeydown(event, DOM_SELECTORS.WEEKLY_DAY_BOX, container);
         if (!dayBox) return;
 
         toggleDayBox(dayBox);
@@ -169,14 +218,14 @@ export function setupYearlyMonthDelegation(deps, state, callbacks) {
     }
 
     deps.safeAddEventListener(container, "click", (event) => {
-        const monthBox = event.target.closest(".yearly-month-box");
+        const monthBox = event.target.closest(DOM_SELECTORS.YEARLY_MONTH_BOX);
         if (!monthBox) return;
 
         handleMonthToggle(monthBox);
     });
 
     deps.safeAddEventListener(container, "keydown", (event) => {
-        const monthBox = handleDayBoxKeydown(event, ".yearly-month-box");
+        const monthBox = handleDayBoxKeydown(event, DOM_SELECTORS.YEARLY_MONTH_BOX, container);
         if (!monthBox) return;
 
         handleMonthToggle(monthBox);
@@ -236,14 +285,14 @@ export function setupYearlyDayDelegation(deps, state, callbacks) {
     }
 
     deps.safeAddEventListener(container, "click", (event) => {
-        const dayBox = event.target.closest(".yearly-day-box");
+        const dayBox = event.target.closest(DOM_SELECTORS.YEARLY_DAY_BOX);
         if (!dayBox) return;
 
         handleYearlyDayToggle(dayBox);
     });
 
     deps.safeAddEventListener(container, "keydown", (event) => {
-        const dayBox = handleDayBoxKeydown(event, ".yearly-day-box");
+        const dayBox = handleDayBoxKeydown(event, DOM_SELECTORS.YEARLY_DAY_BOX, container);
         if (!dayBox) return;
 
         handleYearlyDayToggle(dayBox);
@@ -274,7 +323,7 @@ export function setupTaskListDelegation(deps, state, callbacks) {
         }
 
         // Handle remove button clicks
-        const removeBtn = event.target.closest(".recurring-remove-btn");
+        const removeBtn = event.target.closest(DOM_SELECTORS.RECURRING_REMOVE_BTN);
         if (removeBtn) {
             event.stopPropagation();
             const taskId = item.getAttribute("data-task-id");
@@ -293,31 +342,73 @@ export function setupTaskListDelegation(deps, state, callbacks) {
         }
 
         // Handle row click for selection
-        deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
-            el.classList.remove("selected");
-        });
-        item.classList.add("selected");
+        selectTaskItem(item, deps, state, callbacks);
+    });
 
-        const taskId = item.getAttribute("data-task-id");
-        state.selectedTaskId = taskId;
+    // Keyboard navigation for task list items
+    deps.safeAddEventListener(container, "keydown", (event) => {
+        const item = event.target.closest(DOM_SELECTORS.RECURRING_TASK_ITEM);
+        if (!item) return;
 
-        // Get fresh data from AppState - ONLY use recurringTemplates
-        if (deps.AppState?.isReady?.()) {
-            const currentState = deps.AppState.get();
-            const activeCycleId = currentState.appState?.activeCycleId;
-            const currentCycle = currentState.data?.cycles?.[activeCycleId];
+        // Arrow key navigation between task items
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            const items = Array.from(container.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM));
+            const current = items.indexOf(item);
+            if (current === -1) return;
 
-            // Get task from recurringTemplates ONLY (independent from tasks array)
-            const template = currentCycle?.recurringTemplates?.[taskId];
+            const next = event.key === 'ArrowDown'
+                ? Math.min(current + 1, items.length - 1)
+                : Math.max(current - 1, 0);
 
-            if (template && callbacks.showTaskSummaryPreview) {
-                // Use the template directly (it has all needed properties)
-                callbacks.showTaskSummaryPreview(template);
-            } else if (!template) {
-                console.warn('Template not found for task:', taskId);
+            if (next !== current) {
+                items[next].focus();
             }
+            return;
+        }
+
+        // Enter/Space to select task
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            selectTaskItem(item, deps, state, callbacks);
         }
     });
+}
+
+/**
+ * Select a recurring task item and show its summary preview
+ * @param {HTMLElement} item - The task item element
+ * @param {Object} deps - Dependencies
+ * @param {Object} state - Panel state
+ * @param {Object} callbacks - Callback functions
+ */
+function selectTaskItem(item, deps, state, callbacks) {
+    deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
+        el.classList.remove("selected");
+        el.setAttribute("aria-selected", "false");
+    });
+    item.classList.add("selected");
+    item.setAttribute("aria-selected", "true");
+
+    const taskId = item.getAttribute("data-task-id");
+    state.selectedTaskId = taskId;
+
+    // Get fresh data from AppState - ONLY use recurringTemplates
+    if (deps.AppState?.isReady?.()) {
+        const currentState = deps.AppState.get();
+        const activeCycleId = currentState.appState?.activeCycleId;
+        const currentCycle = currentState.data?.cycles?.[activeCycleId];
+
+        // Get task from recurringTemplates ONLY (independent from tasks array)
+        const template = currentCycle?.recurringTemplates?.[taskId];
+
+        if (template && callbacks.showTaskSummaryPreview) {
+            // Use the template directly (it has all needed properties)
+            callbacks.showTaskSummaryPreview(template);
+        } else if (!template) {
+            console.warn('Template not found for task:', taskId);
+        }
+    }
 }
 
 console.log('recurringPanelEvents module loaded');

@@ -79,7 +79,7 @@ function setupTestingModal() {
     const deps = getDeps();
     const testingModal = deps.getModal('testing');
     const openTestingBtn = document.getElementById(DOM_IDS.OPEN_TESTING_MODAL);
-    const closeTestingBtns = document.querySelectorAll(`${DOM_SELECTORS.CLOSE_TESTING_MODAL}, #${DOM_IDS.CLOSE_TESTING_MODAL}`);
+    const closeTestingBtns = document.querySelectorAll(DOM_SELECTORS.CLOSE_TESTING_MODAL);
 
     if (!testingModal || !openTestingBtn) {
         console.warn("Testing modal elements not found");

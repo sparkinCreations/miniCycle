@@ -11,7 +11,7 @@ import {
     getDeps,
     safeAddEventListenerById
 } from './testing-modal-core.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, Z_INDEX } from '../core/constants.js';
 
 // ==========================================
 // BUTTON SETUP
@@ -212,7 +212,7 @@ function makeStorageModalDraggable() {
         offsetX = e.clientX - rect.left;
         offsetY = e.clientY - rect.top;
         modal.style.position = "fixed";
-        modal.style.zIndex = 9999;
+        modal.style.zIndex = Z_INDEX.OVERLAY_CRITICAL;
         e.preventDefault();
     }
 

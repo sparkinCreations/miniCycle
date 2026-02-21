@@ -33,6 +33,15 @@
     transition: background-color var(--transition-normal) ease, box-shadow var(--transition-fast) ease;
 }
 
+.recurring-task-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.recurring-task-item:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: -2px;
+}
+
 .recurring-task-item.checked {
     background-color: #b9b9b9;
 }

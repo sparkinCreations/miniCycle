@@ -912,6 +912,9 @@ export class RecurringPanelManager {
         const item = document.createElement("li");
         item.className = "recurring-task-item";
         item.setAttribute("data-task-id", task.id);
+        item.setAttribute("role", "option");
+        item.setAttribute("tabindex", "0");
+        item.setAttribute("aria-selected", "false");
 
         // ✅ XSS PROTECTION: Use DOM APIs with textContent (safer than innerHTML + escapeHtml)
         const checkbox = document.createElement("input");
@@ -927,6 +930,7 @@ export class RecurringPanelManager {
 
         const removeBtn = document.createElement("button");
         removeBtn.title = getLabel('recurring.removeFromRecurring');
+        removeBtn.setAttribute("aria-label", getLabel('recurring.removeFromRecurring'));
         removeBtn.className = "recurring-remove-btn";
         removeBtn.innerHTML = `<span class="icon recurring-trash-icon" aria-hidden="true">${ICONS['trash']}</span>`;
 

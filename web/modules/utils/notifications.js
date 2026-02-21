@@ -342,6 +342,23 @@ export class MiniCycleNotifications {
   }
 
   /**
+   * Ensure notification container is in the browser's top layer above any open
+   * <dialog> modals. Native showModal() places dialogs in the top layer, which
+   * renders above all normal DOM z-index values. Using popover="manual" puts
+   * the container in the same top layer, and re-showing it moves it on top.
+   * @param {HTMLElement} container - The notification container element
+   */
+  _ensureAboveDialogs(container) {
+    if (!container?.hasAttribute('popover')) return;
+    try {
+      if (container.matches(':popover-open')) container.hidePopover();
+      container.showPopover();
+    } catch (e) {
+      // Popover API not supported — falls back to normal z-index stacking
+    }
+  }
+
+  /**
    * 🎯 Core notification display function
    */
   show(message, type = "default", duration = null) {
@@ -351,6 +368,8 @@ export class MiniCycleNotifications {
         console.warn("⚠️ Notification container not found.");
         return;
       }
+
+      this._ensureAboveDialogs(notificationContainer);
 
       if (typeof message !== "string" || message.trim() === "") {
         console.warn("⚠️ Invalid or empty message passed to show().");
@@ -465,6 +484,8 @@ export class MiniCycleNotifications {
         console.warn("⚠️ Notification container not found.");
         return;
       }
+
+      this._ensureAboveDialogs(notificationContainer);
 
       if (typeof content !== "string" || content.trim() === "") {
         console.warn("⚠️ Invalid or empty message passed to showWithTip().");

@@ -1,3 +1,7 @@
+## [1.967] - 2026-02-20
+- Enhance undo/redo functionality by implementing a grace period to prevent async render-triggered state updates from clearing the redo stack; update related logic for state management and notifications
+
+
 ## [1.966] - 2026-02-20
 - Enhance dark mode navigation by updating styles for navigation dots and improving dot interaction; adjust layout and visual elements for better user experience
 

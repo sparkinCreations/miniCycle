@@ -104,6 +104,13 @@ html, body {
   gap: 10px;
   max-width: 300px;
   cursor: move;
+  /* Override UA popover defaults */
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  inset: auto;
+  overflow: visible;
 }
 #notification-container.dragging {
   opacity: 0.8;

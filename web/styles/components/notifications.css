@@ -18,6 +18,13 @@
     z-index: var(--z-notification);
     cursor: grab;
     user-select: none;
+    /* Override UA popover defaults (margin: auto, inset, etc.) */
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    inset: auto;
+    overflow: visible;
 }
 
 #notification-container.dragging {
