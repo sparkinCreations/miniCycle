@@ -1,3 +1,7 @@
+## [1.966] - 2026-02-20
+- Enhance dark mode navigation by updating styles for navigation dots and improving dot interaction; adjust layout and visual elements for better user experience
+
+
 ## [1.965] - 2026-02-19
 - Enhance accessibility by adjusting touch target styles and outline offsets for improved user interaction
 
