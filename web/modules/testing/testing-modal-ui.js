@@ -13,7 +13,8 @@ import {
     safeAddEventListener,
     setupTestingTabs
 } from './testing-modal-core.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, Z_INDEX } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ==========================================
 // RESULTS AREA RESIZE FUNCTIONALITY
@@ -294,7 +295,7 @@ function makeTestingModalDraggable(modalContent, dragHandle) {
         offsetX = e.clientX - rect.left;
         offsetY = e.clientY - rect.top;
 
-        modalContent.style.zIndex = "10001";
+        modalContent.style.zIndex = String(Z_INDEX.OVERLAY_CRITICAL + 1);
         modalContent.style.boxShadow = "0 25px 50px rgba(0, 0, 0, 0.5)";
         modalContent.style.transform = "scale(1.02)";
         dragHandle.classList.add("dragging");
@@ -330,13 +331,13 @@ function makeTestingModalDraggable(modalContent, dragHandle) {
         if (isDragging) {
             isDragging = false;
 
-            modalContent.style.zIndex = "9999";
+            modalContent.style.zIndex = String(Z_INDEX.OVERLAY_CRITICAL);
             modalContent.style.boxShadow = "";
             modalContent.style.transform = "scale(1)";
             dragHandle.classList.remove("dragging");
 
             if (hasMoved) {
-                showNotification("Testing modal repositioned", "info", 1500);
+                showNotification(getLabel('notify.testingModalRepositioned'), "info", 1500);
             }
         }
     }
@@ -395,7 +396,7 @@ export function addTestingModalDoubleClickToCenter() {
                 modalContent.style.transition = "";
             }, 300);
 
-            showNotification("Testing modal centered", "info", 1500);
+            showNotification(getLabel('notify.testingModalCentered'), "info", 1500);
         });
 
         dragHandle.title = "Double-click to center modal";
@@ -427,7 +428,7 @@ export function setupTestResultsEnhancements() {
 export function openTestResultsInModal() {
     const testingOutput = document.getElementById(DOM_IDS.TESTING_OUTPUT);
     if (!testingOutput || !testingOutput.textContent.trim()) {
-        showNotification("No test results to display", "warning", 2000);
+        showNotification(getLabel('notify.noTestResults'), "warning", 2000);
         return;
     }
 
@@ -508,7 +509,7 @@ export function openTestResultsInModal() {
 
     modalOverlay.querySelector("#copy-results").addEventListener("click", () => {
         navigator.clipboard.writeText(content).then(() => {
-            showNotification("Results copied to clipboard!", "success", 2000);
+            showNotification(getLabel('notify.testResultsCopied'), "success", 2000);
         });
     });
 
@@ -520,7 +521,7 @@ export function openTestResultsInModal() {
         a.download = `minicycle-test-results-${Date.now()}.txt`;
         a.click();
         URL.revokeObjectURL(url);
-        showNotification("Results saved to downloads", "success", 2000);
+        showNotification(getLabel('notify.testResultsSaved'), "success", 2000);
     });
 
     modalOverlay.querySelector("#print-results").addEventListener("click", () => {
@@ -555,7 +556,7 @@ export function openTestResultsInModal() {
 
     modalOverlay.querySelector("#clear-selection").addEventListener("click", () => {
         window.getSelection().removeAllRanges();
-        showNotification("Text selection cleared", "info", 1500);
+        showNotification(getLabel('notify.selectionCleared'), "info", 1500);
     });
 
     // Search functionality
@@ -625,23 +626,25 @@ export function openTestResultsInModal() {
 
     document.body.appendChild(modalOverlay);
     modalOverlay.showModal();
-    showNotification("Test results opened in expanded view", "success", 2000);
+    showNotification(getLabel('notify.testResultsExpanded'), "success", 2000);
 }
 
 /**
  * Add hint for double-click functionality
  */
 export function addTestResultsHint() {
-    const testingOutput = document.getElementById(DOM_IDS.TESTING_OUTPUT);
-    if (!testingOutput) return;
+    const resultsHeader = document.querySelector(DOM_SELECTORS.TESTING_RESULTS_HEADER);
+    if (!resultsHeader || resultsHeader.querySelector('.test-results-hint')) return;
 
-    const hint = document.createElement("div");
+    const hint = document.createElement("small");
     hint.className = "test-results-hint";
-    hint.innerHTML = `
-        <small>Tip: Double-click results to open in expanded view</small>
-    `;
+    hint.textContent = "Double-click to expand";
 
-    testingOutput.parentNode.insertBefore(hint, testingOutput.nextSibling);
+    // Insert after the h3 title
+    const title = resultsHeader.querySelector('h3');
+    if (title) {
+        title.after(hint);
+    }
 }
 
 // ==========================================
@@ -669,12 +672,12 @@ export function initTestingModalEnhancements(callbacks = {}) {
                 if (testingModal.open) {
                     testingModal.close();
                     testingModal._previousFocus?.focus({ focusVisible: false });
-                    showNotification("Testing panel closed", "info", 1500);
+                    showNotification(getLabel('notify.testingPanelClosed'), "info", 1500);
                 } else {
                     testingModal._previousFocus = document.activeElement;
                     testingModal.showModal();
                     initTestingModalDrag();
-                    showNotification("Testing panel opened", "success", 2000);
+                    showNotification(getLabel('notify.testingPanelOpened'), "success", 2000);
 
                     setTimeout(() => {
                         setupTestingTabs();
@@ -684,7 +687,7 @@ export function initTestingModalEnhancements(callbacks = {}) {
                 }
             } else {
                 console.warn("Testing modal not found");
-                showNotification("Testing panel not available", "error", 2000);
+                showNotification(getLabel('notify.testingPanelNotAvailable'), "error", 2000);
             }
         }
     });

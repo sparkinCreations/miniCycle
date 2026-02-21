@@ -526,6 +526,16 @@ export const DEFAULT_LABELS = deepFreeze({
         testRestoreFailed:       'Failed to restore backup',
         backupsCleaned:          'Cleaned {count} old backups',
 
+        // Testing modal UI notifications
+        testingModalRepositioned: 'Testing modal repositioned',
+        testingModalCentered:     'Testing modal centered',
+        noTestResults:            'No test results to display',
+        testResultsExpanded:      'Test results opened in expanded view',
+        testResultsCopied:        'Results copied to clipboard!',
+        testResultsSaved:         'Results saved to downloads',
+        selectionCleared:         'Text selection cleared',
+        testingPanelNotAvailable: 'Testing panel not available',
+
         // Stats panel notifications
         historyNotAvailable:     'History not available',
         clearedTasksNotAvailable:'Cleared tasks not available',
@@ -1086,7 +1096,8 @@ export const DEFAULT_LABELS = deepFreeze({
         editPresetName: 'Edit preset name',
         taskAdded: 'Task added: {name}',
         taskViewOpened: 'Task view opened',
-        statsPanelOpened: 'Stats panel opened'
+        statsPanelOpened: 'Stats panel opened',
+        dayNumber: 'Day {day}'
     },
 
     // ========================================================================

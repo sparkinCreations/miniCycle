@@ -9,6 +9,7 @@
  */
 
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // GRID GENERATION FUNCTIONS
@@ -29,8 +30,9 @@ export function generateMonthlyDayGrid(deps) {
         dayBox.className = "monthly-day-box";
         dayBox.setAttribute("data-day", i);
         dayBox.setAttribute("role", "checkbox");
-        dayBox.setAttribute("tabindex", "0");
+        dayBox.setAttribute("tabindex", i === 1 ? "0" : "-1");
         dayBox.setAttribute("aria-checked", "false");
+        dayBox.setAttribute("aria-label", getLabel('accessibility.dayNumber', { vars: { day: i } }));
         dayBox.textContent = i;
 
         // No listener added - handled by setupMonthlyDayDelegation()
@@ -57,7 +59,7 @@ export function generateYearlyMonthGrid(deps) {
         monthBox.className = "yearly-month-box";
         monthBox.setAttribute("data-month", index + 1);
         monthBox.setAttribute("role", "checkbox");
-        monthBox.setAttribute("tabindex", "0");
+        monthBox.setAttribute("tabindex", index === 0 ? "0" : "-1");
         monthBox.setAttribute("aria-checked", "false");
         monthBox.textContent = name;
 
@@ -92,7 +94,7 @@ export function generateYearlyDayGrid(deps, state, monthNumber) {
         dayBox.className = "yearly-day-box";
         dayBox.setAttribute("data-day", i);
         dayBox.setAttribute("role", "checkbox");
-        dayBox.setAttribute("tabindex", "0");
+        dayBox.setAttribute("tabindex", i === 1 ? "0" : "-1");
         dayBox.textContent = i;
 
         const isSelected = applyToAll

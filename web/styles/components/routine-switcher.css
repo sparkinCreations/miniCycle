@@ -126,6 +126,11 @@ dialog.mini-cycle-switch-modal::backdrop {
     box-shadow: 0 0 0 2px rgba(76, 121, 255, 0.2);
 }
 
+.routine-search-input:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
+}
+
 .routine-search-input::placeholder {
     color: #999;
 }

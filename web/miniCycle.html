@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.966">
+<meta name="app-version" content="1.968">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -32,20 +32,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.966"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.968"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=1.966" as="style">
-<link rel="preload" href="styles/base/variables.css?v=1.966" as="style">
-<link rel="preload" href="styles/base/reset.css?v=1.966" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=1.966" as="style">
-<link rel="preload" href="styles/layout/header.css?v=1.966" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=1.966" as="style">
+<link rel="preload" href="styles/main.css?v=1.968" as="style">
+<link rel="preload" href="styles/base/variables.css?v=1.968" as="style">
+<link rel="preload" href="styles/base/reset.css?v=1.968" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=1.968" as="style">
+<link rel="preload" href="styles/layout/header.css?v=1.968" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=1.968" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=1.966" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=1.968" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=1.966"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=1.968"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -56,7 +56,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.966"></script>
+<script src="./version.js?v=1.968"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -215,21 +215,21 @@
      3. Or accepting slightly slower initial load without preloads
      ═══════════════════════════════════════════════════════════════════════════ -->
 <!--
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.966">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.966">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.966">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.966">
-<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.966">
-<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.966">
-<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.966">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.966">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.966">
-<link rel="modulepreload" href="./modules/core/appInit.js?v=1.966">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.966">
-<link rel="modulepreload" href="./modules/core/diBase.js?v=1.966">
-<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.966">
-<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.966">
-<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.966">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.968">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.968">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.968">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.968">
+<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.968">
+<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.968">
+<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.968">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.968">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.968">
+<link rel="modulepreload" href="./modules/core/appInit.js?v=1.968">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.968">
+<link rel="modulepreload" href="./modules/core/diBase.js?v=1.968">
+<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.968">
+<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.968">
+<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.968">
 -->
 
 <!-- Critical CSS - extracted to external file for CSP compliance (no 'unsafe-inline' needed) -->
@@ -944,7 +944,7 @@ window.installApp = () => {
     </div>
   </div>
 
-  <div id="notification-container" aria-live="polite" aria-atomic="true" role="status"></div> <!-- Notification container --> 
+  <div id="notification-container" popover="manual" aria-live="polite" aria-atomic="true" role="status"></div> <!-- Notification container --> 
 
 
   
@@ -1194,12 +1194,12 @@ window.installApp = () => {
 <!-- Recurring Panel Modal w/ Overlay -->
 <dialog id="recurring-panel-overlay" class="modal-overlay" aria-labelledby="recurring-panel-title" aria-modal="true">
   <div id="recurring-panel" class="modal-panel has-corner-logo">
-    <h3 id="recurring-panel-title">Recurring Tasks</h3>
+    <h2 id="recurring-panel-title">Recurring Tasks</h2>
     <div id="recurring-toggle-actions" class="hidden">
       <button id="toggle-check-all" class="toggle-check-btn">Check All</button>
     </div>
     <div class="recurring-scroll-area">
-      <ul id="recurring-task-list" aria-label="List of recurring tasks"></ul>
+      <ul id="recurring-task-list" role="listbox" aria-label="List of recurring tasks"></ul>
       <div id="recurring-empty-state" class="recurring-empty-state hidden">
         <p>No recurring tasks yet.</p>
       </div>
@@ -1358,12 +1358,12 @@ window.installApp = () => {
     <p class="section-label">Select days:</p>
     <div class="weekly-days" role="group" aria-label="Select days">
       <div class="weekly-day-box" data-day="Sun" role="checkbox" tabindex="0" aria-checked="false">Sun</div>
-      <div class="weekly-day-box" data-day="Mon" role="checkbox" tabindex="0" aria-checked="false">Mon</div>
-      <div class="weekly-day-box" data-day="Tue" role="checkbox" tabindex="0" aria-checked="false">Tue</div>
-      <div class="weekly-day-box" data-day="Wed" role="checkbox" tabindex="0" aria-checked="false">Wed</div>
-      <div class="weekly-day-box" data-day="Thu" role="checkbox" tabindex="0" aria-checked="false">Thu</div>
-      <div class="weekly-day-box" data-day="Fri" role="checkbox" tabindex="0" aria-checked="false">Fri</div>
-      <div class="weekly-day-box" data-day="Sat" role="checkbox" tabindex="0" aria-checked="false">Sat</div>
+      <div class="weekly-day-box" data-day="Mon" role="checkbox" tabindex="-1" aria-checked="false">Mon</div>
+      <div class="weekly-day-box" data-day="Tue" role="checkbox" tabindex="-1" aria-checked="false">Tue</div>
+      <div class="weekly-day-box" data-day="Wed" role="checkbox" tabindex="-1" aria-checked="false">Wed</div>
+      <div class="weekly-day-box" data-day="Thu" role="checkbox" tabindex="-1" aria-checked="false">Thu</div>
+      <div class="weekly-day-box" data-day="Fri" role="checkbox" tabindex="-1" aria-checked="false">Fri</div>
+      <div class="weekly-day-box" data-day="Sat" role="checkbox" tabindex="-1" aria-checked="false">Sat</div>
     </div>
   </div>
 
@@ -1908,8 +1908,8 @@ window.installApp = () => {
                     <h3>🐛 Debug Information</h3>
                     <button id="generate-debug-report" class="test-btn test-primary">Generate Debug Report</button>
                     <button id="view-local-storage-btn" class="test-btn test-secondary">View Local Storage</button>
-                    <button id="show-service-worker-info" class="test-btn">📡 Service Worker Info</button>
-                    <button id="test-service-worker-update" class="test-btn">🔄 Test SW Update</button>
+                    <button id="show-service-worker-info" class="test-btn test-secondary">📡 Service Worker Info</button>
+                    <button id="test-service-worker-update" class="test-btn test-secondary">🔄 Test SW Update</button>
                 </div>
 
                 <div class="testing-section">
@@ -1917,14 +1917,13 @@ window.installApp = () => {
                     <button id="show-browser-info" class="test-btn test-secondary">Browser Capabilities</button>
                 </div>
 
-                                <!-- Add these to your Debug Info tab -->
                 <div class="button-group">
                     <h4>🎯 Auto Console Capture</h4>
-                    <button id="enable-auto-capture" class="test-btn">🔄 Enable Auto-Capture Mode</button>
-                    <button id="show-all-console-logs" class="test-btn">📊 Show All Captured Logs</button>
-                    <button id="show-migration-errors" class="test-btn">🚨 Show Migration Issues</button>
-                    <button id="clear-all-console-logs" class="test-btn">🧹 Clear All Captured Logs</button>
-                    <button id="stop-console-capture" class="test-btn">⏹️ Stop Auto Capture</button>
+                    <button id="enable-auto-capture" class="test-btn test-info">🔄 Enable Auto-Capture Mode</button>
+                    <button id="show-all-console-logs" class="test-btn test-secondary">📊 Show All Captured Logs</button>
+                    <button id="show-migration-errors" class="test-btn test-warning">🚨 Show Migration Issues</button>
+                    <button id="clear-all-console-logs" class="test-btn test-secondary">🧹 Clear All Captured Logs</button>
+                    <button id="stop-console-capture" class="test-btn test-danger">⏹️ Stop Auto Capture</button>
                 </div>
 
             </div>
@@ -1936,20 +1935,20 @@ window.installApp = () => {
                     <button id="run-all-automated-tests" class="test-btn test-primary">
                         🏁 Run All Tests
                     </button>
-                    <p style="font-size: 12px; color: #888; margin: 8px 0;">
+                    <p class="testing-hint-text">
                         Runs all 1600+ tests and shows pass/fail summary.
                     </p>
                 </div>
 
                 <div class="testing-section">
                     <h3>🔬 Full Test Suite</h3>
-                    <p style="font-size: 13px; margin: 8px 0;">
+                    <p class="testing-hint-text">
                         For detailed testing with individual module controls:
                     </p>
-                    <a href="tests/module-test-suite.html" target="_blank" class="test-btn test-info" style="display: inline-block; text-decoration: none; text-align: center;">
+                    <a href="tests/module-test-suite.html" target="_blank" class="test-btn test-info">
                         Open Test Suite Browser →
                     </a>
-                    <p style="font-size: 12px; color: #888; margin: 8px 0;">
+                    <p class="testing-hint-text">
                         The test suite browser lets you run individual modules, see detailed results, and debug specific failures.
                     </p>
                 </div>
@@ -1978,13 +1977,7 @@ window.installApp = () => {
             </div>
         </div>
 
-        <!-- Modal Footer -->
-        <div class="testing-modal-footer">
-            <div class="testing-modal-info">
-               <!--<p><small>💡 Tip: Export results to share with support if you need help</small></p>-->
-            </div>
-            <button id="close-testing-modal" class="test-btn test-close">Close</button>
-        </div>
+        <!-- Footer removed — X button in header handles close -->
     </div>
 </dialog>
 
@@ -2541,7 +2534,7 @@ window.installApp = () => {
 
     
     
-<div id="app-root" class="app-root" role="application">
+<div id="app-root" class="app-root">
 
 
 
@@ -2557,7 +2550,7 @@ window.installApp = () => {
     🌓
   </button>
     <!-- Left Arrow — visible in stats view, navigates to task view -->
-<div id="slide-left" class="slide-arrow" tabindex="-1" role="button" aria-label="Show Tasks" title="Show Tasks">❯</div>
+<div id="slide-left" class="slide-arrow" tabindex="0" role="button" aria-label="Show Tasks" title="Show Tasks">❯</div>
 
 <!-- Right Arrow — visible in task view, navigates to stats panel -->
 <div id="slide-right" class="slide-arrow" tabindex="0" role="button" aria-label="Show Statistics" title="Show Statistics">❮</div>
@@ -2571,10 +2564,10 @@ window.installApp = () => {
             <button id="addTaskBtn" title="Add task" tabindex="-1">Add</button>
         </div>
         <div class="title-row">
-            <div id="mini-cycle-title" class="mini-cycle-title" contenteditable="true"></div>
+            <div id="mini-cycle-title" class="mini-cycle-title" contenteditable="true" role="textbox" aria-label="Routine name"></div>
             <!-- Task Search Icon (hidden until 3+ tasks) -->
             <div id="task-search-container" class="task-search-container" style="display: none;">
-                <button id="task-search-btn" class="task-search-btn" title="Search tasks">
+                <button id="task-search-btn" class="task-search-btn" aria-label="Search tasks" title="Search tasks">
                     <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8"></circle>
                         <path d="m21 21-4.35-4.35"></path>
@@ -2586,7 +2579,7 @@ window.installApp = () => {
         <!-- Search Input Row (appears below title when search is expanded) -->
         <div id="task-search-input-row" class="task-search-input-row hidden">
             <input type="text" id="task-search-input" class="task-search-input" placeholder="Search tasks..." aria-label="Search tasks">
-            <button id="task-search-clear" class="task-search-clear" title="Clear search">×</button>
+            <button id="task-search-clear" class="task-search-clear" aria-label="Clear search" title="Clear search">×</button>
         </div>
         <!--Tasks will go here-->
         <ul id="taskList" class="task-list" aria-label="Task list"></ul>
@@ -2743,7 +2736,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.966"></script>
+ <script type="module" src="miniCycle-main.js?v=1.968"></script>
 
 <script>
 // Sync About modal version with meta app-version

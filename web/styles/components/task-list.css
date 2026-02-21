@@ -484,6 +484,11 @@ body.onboarding-active .complete-all-and-help-window-container {
     color: rgba(60, 60, 60, 0.8);
 }
 
+.task-search-clear:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
+}
+
 /* =============================================================================
    TASK ITEMS
    ============================================================================= */

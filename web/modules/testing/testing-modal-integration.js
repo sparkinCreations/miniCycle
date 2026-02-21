@@ -367,7 +367,12 @@ async function runAllAutomatedTests() {
             }
 
             if (statusText) {
-                statusText.innerHTML = `🧪 Testing: <strong>${moduleName}</strong> (${currentIndex}/${totalModules})`;
+                statusText.textContent = '';
+                const prefix = document.createTextNode('🧪 Testing: ');
+                const strong = document.createElement('strong');
+                strong.textContent = moduleName;
+                const suffix = document.createTextNode(` (${currentIndex}/${totalModules})`);
+                statusText.append(prefix, strong, suffix);
             }
 
             if (timeEstimate && currentIndex > 0) {
@@ -402,7 +407,7 @@ async function runAllAutomatedTests() {
             const title = document.getElementById(DOM_IDS.TEST_RUNNER_TITLE);
 
             if (progressBar) progressBar.style.width = '100%';
-            if (statusText) statusText.innerHTML = event.data.allPassed
+            if (statusText) statusText.textContent = event.data.allPassed
                 ? '✅ All tests passed!'
                 : `⚠️ ${event.data.totalTests - event.data.totalPassed} test(s) failed`;
             if (timeEstimate) {
