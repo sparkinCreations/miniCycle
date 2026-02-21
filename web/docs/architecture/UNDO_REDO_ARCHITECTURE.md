@@ -162,7 +162,8 @@ Stored in `AppGlobalState` (accessed via DI, not window.*):
   isSwitchingCycles: boolean,      // Flag to block snapshots during switch
   isInitializing: boolean,         // Flag to skip snapshots during app init
   lastSnapshotSignature: string,   // For deduplication
-  lastSnapshotTs: number           // For throttling
+  lastSnapshotTs: number,          // For throttling
+  undoRedoCompletedAt: number      // Grace period timestamp (prevents async render from clearing redo stack)
 }
 ```
 
@@ -184,7 +185,7 @@ Stored in `AppGlobalState` (accessed via DI, not window.*):
 4. Build compact signature for comparison
 5. Check for duplicates (skip if identical to last)
 6. Push to undo stack (shift oldest if > 20)
-7. Clear redo stack (can't redo after new action)
+7. Clear redo stack — **only if outside 2-second grace period** after undo/redo (prevents async render side effects from wiping the stack)
 8. Update UI button states
 9. Save to IndexedDB (debounced)
 
@@ -223,7 +224,8 @@ Stored in `AppGlobalState` (accessed via DI, not window.*):
 9. Update button states
 10. Save updated stacks to IndexedDB
 11. Show success notification with change description
-12. On error: Rollback to saved state
+12. Set `undoRedoCompletedAt` timestamp (grace period for async render)
+13. On error: Rollback to saved state
 
 **Example notifications:**
 - "↩️ Undone: Task added (3 steps left)"
@@ -351,7 +353,8 @@ function buildSnapshotSignature(snapshot) {
     })),
     ti: snapshot.title || '',
     ar: !!snapshot.autoReset,
-    dc: !!snapshot.deleteCheckedTasks
+    dc: !!snapshot.deleteCheckedTasks,
+    cc: snapshot.cycleCount || 0
   });
 }
 ```
@@ -778,6 +781,12 @@ console.log(JSON.parse(cache));
 - Check that lazy getter in moduleLoader.js is resolving correctly
 - Ensure undoRedoManager loaded before cycle switch occurs
 
+**Redo button appears briefly then disappears after undo:**
+- This was caused by async `renderTasks()` triggering `AppState.update()` after `isPerformingUndoRedo` was cleared in the `finally` block
+- The wrapper treated these render-triggered updates as user actions and cleared the redo stack
+- Fix: A 2-second grace period (`undoRedoCompletedAt` timestamp) prevents `activeRedoStack = []` from executing shortly after undo/redo completes
+- Additionally, `UIOrchestrator.flush()` is called after `request()` in `handleUndoRedoUIUpdate` to force synchronous render start while the flag is still active
+
 **onCycleSwitched not being called:**
 - This can happen if routineSwitcher (phase 5) tries to call before undoRedoManager (phase 6) loads
 - Solution: Lazy getters in moduleLoader.js resolve at runtime, not initialization
@@ -793,7 +802,7 @@ console.log(JSON.parse(cache));
 
 ---
 
-**Last Updated:** January 17, 2026
+**Last Updated:** February 20, 2026
 **Module Version:** See [PROJECT_STATS.md](../PROJECT_STATS.md)
 **Test Status:** 76/76 passing ✅
 **Architecture:** localStorage cache + IndexedDB dual-write, per-cycle isolation with validation

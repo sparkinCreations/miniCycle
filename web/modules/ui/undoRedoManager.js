@@ -567,7 +567,14 @@ export function captureStateSnapshot(state) {
   _deps.AppGlobalState.lastSnapshotSignature = sig;
   _deps.AppGlobalState.lastSnapshotTs = now;
 
-  _deps.AppGlobalState.activeRedoStack = [];
+  // Only clear redo stack if this is a genuine user action, not a render-triggered
+  // state update after an undo/redo operation. On mobile, async renderTasks() can
+  // trigger AppState.update() after isPerformingUndoRedo is cleared, which would
+  // wipe the redo stack. The grace period prevents this.
+  const completedAt = _deps.AppGlobalState.undoRedoCompletedAt || 0;
+  if (Date.now() - completedAt > 2000) {
+    _deps.AppGlobalState.activeRedoStack = [];
+  }
   updateUndoRedoButtons();
 
   // ✅ Save to IndexedDB (debounced to avoid excessive writes)
@@ -590,7 +597,8 @@ export function buildSnapshotSignature(s) {
     })),
     ti: s.title || '',
     ar: !!s.autoReset,
-    dc: !!s.deleteCheckedTasks
+    dc: !!s.deleteCheckedTasks,
+    cc: s.cycleCount || 0
   });
 }
 
@@ -849,6 +857,14 @@ function handleUndoRedoUIUpdate(diff, newState) {
         completeAllButton: true
       });
     }
+
+    // ✅ FIX: Force synchronous flush so the render happens while
+    // isPerformingUndoRedo is still true. Without this, the deferred rAF
+    // fires after isPerformingUndoRedo is cleared, and any AppState.update()
+    // triggered during rendering captures a snapshot that clears activeRedoStack.
+    if (orchestrator.flush) {
+      orchestrator.flush();
+    }
   } else {
     // Fallback to refreshUIFromState
     console.log('🔄 Undo/redo using refreshUIFromState (UIOrchestrator not available)');
@@ -914,6 +930,8 @@ export async function performStateBasedUndo() {
       return;
     }
 
+    // Cache signature for efficient dedup comparison later
+    currentSnapshot._sig = buildSnapshotSignature(currentSnapshot);
     _deps.AppGlobalState.activeRedoStack.push(currentSnapshot);
 
     // Compute transaction diff BEFORE applying state change
@@ -962,6 +980,10 @@ export async function performStateBasedUndo() {
       _deps.showNotification(`↩️ Undone: ${changeDesc} (${stepsText})`, 'success', 2000);
     }
 
+    // Clear dedup trackers so the next user-initiated change is always captured
+    _deps.AppGlobalState.lastSnapshotSignature = null;
+    _deps.AppGlobalState.lastSnapshotTs = 0;
+
     console.log('✅ Undo completed');
   } catch (e) {
     console.error('❌ Undo failed, rolling back:', e);
@@ -983,6 +1005,10 @@ export async function performStateBasedUndo() {
     throw e; // Re-throw so caller knows it failed
   } finally {
     _deps.AppGlobalState.isPerformingUndoRedo = false;
+    // Grace period: prevent async render-triggered AppState.update() calls
+    // from clearing the redo stack after undo completes (especially on mobile
+    // where renderTasks() is async and continues after this flag is cleared)
+    _deps.AppGlobalState.undoRedoCompletedAt = Date.now();
   }
 }
 
@@ -1044,6 +1070,8 @@ export async function performStateBasedRedo() {
       return;
     }
 
+    // Cache signature for efficient dedup comparison later
+    currentSnapshot._sig = buildSnapshotSignature(currentSnapshot);
     _deps.AppGlobalState.activeUndoStack.push(currentSnapshot);
 
     // Compute transaction diff BEFORE applying state change
@@ -1092,6 +1120,10 @@ export async function performStateBasedRedo() {
       _deps.showNotification(`↪️ Redone: ${changeDesc} (${stepsText})`, 'success', 2000);
     }
 
+    // Clear dedup trackers so the next user-initiated change is always captured
+    _deps.AppGlobalState.lastSnapshotSignature = null;
+    _deps.AppGlobalState.lastSnapshotTs = 0;
+
     console.log('✅ Redo completed');
   } catch (e) {
     console.error('❌ Redo failed, rolling back:', e);
@@ -1113,6 +1145,9 @@ export async function performStateBasedRedo() {
     throw e; // Re-throw so caller knows it failed
   } finally {
     _deps.AppGlobalState.isPerformingUndoRedo = false;
+    // Grace period: prevent async render-triggered AppState.update() calls
+    // from clearing the undo stack after redo completes
+    _deps.AppGlobalState.undoRedoCompletedAt = Date.now();
   }
 }
 
