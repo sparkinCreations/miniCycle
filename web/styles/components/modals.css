@@ -2381,17 +2381,19 @@ dialog.preferences-modal::backdrop {
 /* Testing Tabs */
 .testing-tabs {
     display: flex;
-    gap: var(--space-2);
-    margin-bottom: var(--space-4);
-    border-bottom: 1px solid var(--theme-modal-border, #e0e0e0);
-    padding-bottom: var(--space-3);
+    gap: var(--space-1);
+    margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) var(--space-4);
+    padding: var(--space-2) var(--space-4);
+    background: var(--theme-input-bg, #f5f5f5);
+    border-bottom: 1px solid var(--theme-modal-border, #d0d0d0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     flex-wrap: wrap;
 }
 
 .testing-tab {
     padding: var(--space-2) var(--space-4);
     border: none;
-    background: var(--theme-input-bg, #f0f0f0);
+    background: transparent;
     color: var(--theme-modal-text, #555);
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -2401,12 +2403,14 @@ dialog.preferences-modal::backdrop {
 }
 
 .testing-tab:hover {
-    background: var(--theme-input-hover-bg, #e5e5e5);
+    background: rgba(0, 0, 0, 0.06);
 }
 
 .testing-tab.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: var(--theme-modal-bg, white);
+    color: var(--theme-modal-text, #333);
+    font-weight: var(--font-weight-semibold);
+    box-shadow: var(--shadow-sm);
 }
 
 .testing-tab:focus-visible {
@@ -2421,15 +2425,16 @@ dialog.preferences-modal::backdrop {
 
 .testing-tab-content.active {
     display: block;
+    padding-top: var(--space-3);
 }
 
 /* Testing Sections */
 .testing-section {
-    margin-bottom: var(--space-3);
-    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-4);
+    padding: var(--space-4);
     background: var(--theme-input-bg, rgba(0, 0, 0, 0.02));
-    border-radius: var(--radius-md);
-    border-bottom: none;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.06));
 }
 
 .testing-section:last-child {
@@ -2439,8 +2444,9 @@ dialog.preferences-modal::backdrop {
 .testing-section h3 {
     margin: 0 0 var(--space-3) 0;
     font-size: var(--font-size-base);
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-bold, 700);
     color: var(--theme-modal-text, #333);
+    letter-spacing: -0.01em;
 }
 
 .testing-section h4 {
@@ -2454,6 +2460,15 @@ dialog.preferences-modal::backdrop {
     font-size: var(--font-size-xs);
     color: var(--theme-text-muted);
     margin: var(--space-2) 0;
+}
+
+/* Button Group heading */
+.testing-tab-content > .button-group h4 {
+    margin: 0 0 var(--space-3) 0;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold, 700);
+    color: var(--theme-modal-text, #333);
+    letter-spacing: -0.01em;
 }
 
 /* Test Buttons */
@@ -2560,16 +2575,17 @@ dialog.preferences-modal::backdrop {
 /* Button Group */
 .testing-section .button-group,
 .testing-tab-content > .button-group {
-    margin-top: var(--space-3);
-    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-4);
+    padding: var(--space-4);
     background: var(--theme-input-bg, rgba(0, 0, 0, 0.02));
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.06));
 }
 
 /* Results Area */
 .testing-results-area {
-    border-top: 1px solid var(--theme-modal-border, #e0e0e0);
-    background: var(--theme-input-bg, #f8f9fa);
+    border-top: 2px solid var(--theme-modal-border, #d0d0d0);
+    background: #f0f2f5;
     flex-shrink: 0;
 }
 
@@ -2577,15 +2593,18 @@ dialog.preferences-modal::backdrop {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--space-2) var(--space-4);
-    background: var(--theme-input-bg, #f0f0f0);
-    border-bottom: 1px solid var(--theme-modal-border, #e0e0e0);
+    padding: var(--space-3) var(--space-4);
+    background: #e8ebf0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .testing-results-header h3 {
     margin: 0;
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold, 700);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-gray-600, #666);
 }
 
 .testing-results-controls {
@@ -2596,6 +2615,7 @@ dialog.preferences-modal::backdrop {
 .testing-results {
     max-height: 200px;
     overflow-y: auto;
+    background: var(--color-white, #fff);
 }
 
 .testing-output {
@@ -2605,11 +2625,12 @@ dialog.preferences-modal::backdrop {
     line-height: var(--line-height-normal);
     white-space: pre-wrap;
     word-break: break-word;
+    color: var(--theme-modal-text, #333);
 }
 
 .testing-output .welcome-message {
     text-align: center;
-    color: var(--color-gray-600);
+    color: var(--color-gray-500, #999);
     font-family: var(--font-family);
 }
 

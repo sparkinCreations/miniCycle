@@ -892,7 +892,7 @@ export class TaskDOMManager {
         });
 
         addListener(checkbox, "keydown", (e) => {
-            if (e.key === "Enter") {
+            if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 checkbox.checked = !checkbox.checked;
                 checkbox.dispatchEvent(new Event("change"));
@@ -913,10 +913,10 @@ export class TaskDOMManager {
         taskLabel.setAttribute("role", "text");
         taskLabel.id = `task-desc-${assignedTaskId}`;
 
-        // Enter key toggles completion (a11y parity with checkbox)
+        // Enter/Space toggles completion (a11y parity with checkbox)
         const addListener = this.deps.safeAddEventListener;
         addListener(taskLabel, "keydown", (e) => {
-            if (e.key === "Enter") {
+            if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 const checkbox = taskLabel.closest('.task-content')?.querySelector('input[type="checkbox"]');
                 if (checkbox) {

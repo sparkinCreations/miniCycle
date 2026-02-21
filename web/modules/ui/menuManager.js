@@ -24,6 +24,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -264,6 +265,31 @@ export class MenuManager {
                         header.setAttribute('aria-expanded', String(!section.classList.contains('collapsed')));
                         this.saveCollapsedStates();
                     }
+                    return;
+                }
+
+                // ArrowRight to expand, ArrowLeft to collapse
+                if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    const section = header.closest('.menu-section');
+                    if (!section) return;
+                    const isCollapsed = section.classList.contains('collapsed');
+                    if (e.key === 'ArrowRight' && isCollapsed) {
+                        section.classList.remove('collapsed');
+                        header.setAttribute('aria-expanded', 'true');
+                        this.saveCollapsedStates();
+                    } else if (e.key === 'ArrowLeft' && !isCollapsed) {
+                        section.classList.add('collapsed');
+                        header.setAttribute('aria-expanded', 'false');
+                        this.saveCollapsedStates();
+                    }
+                    return;
+                }
+
+                // ArrowUp/Down to navigate between section headers
+                const menuSections = header.closest('.menu-sections');
+                if (menuSections) {
+                    handleVerticalArrowNav(e, menuSections, DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE);
                 }
             });
         });

@@ -24,6 +24,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -1171,6 +1172,16 @@ export class RoutineSwitcher {
 
         miniCycleList.innerHTML = ""; // Clear the list before repopulating
 
+        // Delegated arrow key navigation for routine list items
+        this.deps.safeAddEventListener(miniCycleList, "keydown", (event) => {
+            const item = event.target.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
+            if (!item) return;
+            handleVerticalArrowNav(event, miniCycleList, DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM, {
+                wrap: false,
+                skipHidden: true
+            });
+        });
+
         console.log('📊 Found cycles:', Object.keys(cycles).length);
 
         // ✅ Ensure we have cycles to display
@@ -1278,6 +1289,7 @@ export class RoutineSwitcher {
             safeAdd(listItem, "click", listItem._clickHandler);
 
             // Keyboard activation: Enter/Space to select, Enter on selected to confirm
+            // Arrow key navigation is handled by delegated listener on the list container
             listItem._keyHandler = (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
@@ -1287,14 +1299,6 @@ export class RoutineSwitcher {
                     } else {
                         listItem._clickHandler();
                     }
-                } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    const items = [...this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM)];
-                    const currentIndex = items.indexOf(listItem);
-                    const nextIndex = e.key === 'ArrowDown'
-                        ? Math.min(currentIndex + 1, items.length - 1)
-                        : Math.max(currentIndex - 1, 0);
-                    items[nextIndex]?.focus();
                 }
             };
             safeAdd(listItem, "keydown", listItem._keyHandler);

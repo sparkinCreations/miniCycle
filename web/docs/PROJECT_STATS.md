@@ -13,14 +13,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 1.968 |
+| **App Version** | 1.969 |
 | **Lite Version** | 2.05 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 109 |
+| **Total Modules** | 110 |
 | **Total Tests** | 1691 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 35 |
-| **JSDoc Blocks** | 988 |
+| **JSDoc Blocks** | 993 |
 | **Documentation Files** | 173 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -40,12 +40,12 @@
 | `recurring/` | 15 | Recurring task scheduling, panel, activation |
 | `ui/` | 27 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 7 | Themes, stats, achievements, history, reminders |
-| `utils/` | 12 | Notifications, device detection, utilities |
+| `utils/` | 13 | Notifications, device detection, utilities |
 | `storage/` | 1 | Backup manager |
 | `progress/` | 1 | Cycle completion tracking |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **109** | |
+| **Total** | **110** | |
 
 ---
 

@@ -26,6 +26,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -192,6 +193,31 @@ export class TaskEvents {
     }
 
     /**
+     * Create the task keydown handler for arrow key navigation
+     * @returns {Function} The keydown handler
+     */
+    _createTaskKeydownHandler() {
+        return (event) => {
+            const target = event.target;
+
+            // Only navigate when a .task-text label is focused
+            if (!target.classList.contains('task-text')) return;
+
+            // Guard: skip if inside an input/textarea (editing mode)
+            if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+            if (target.isContentEditable) return;
+
+            const taskList = target.closest('ul');
+            if (!taskList) return;
+
+            handleVerticalArrowNav(event, taskList, DOM_SELECTORS.TASK_TEXT, {
+                wrap: false,
+                skipHidden: true
+            });
+        };
+    }
+
+    /**
      * Initialize event delegation for task clicks
      * ✅ MEMORY LEAK FIX: Uses ONE listener for all tasks instead of one per task
      * This prevents listener accumulation when tasks are re-rendered
@@ -214,11 +240,16 @@ export class TaskEvents {
         taskList._taskClickHandler = this._createTaskClickHandler();
         safeAdd(taskList, "click", taskList._taskClickHandler);
 
+        // Arrow key navigation between tasks
+        const taskKeydownHandler = this._createTaskKeydownHandler();
+        safeAdd(taskList, "keydown", taskKeydownHandler);
+
         // ✅ Also add listener to completed tasks dropdown list
         const completedTaskList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
         if (completedTaskList) {
             completedTaskList._taskClickHandler = this._createTaskClickHandler();
             safeAdd(completedTaskList, "click", completedTaskList._taskClickHandler);
+            safeAdd(completedTaskList, "keydown", taskKeydownHandler);
             console.log('✅ Task click delegation also added to completed tasks list');
         }
 
