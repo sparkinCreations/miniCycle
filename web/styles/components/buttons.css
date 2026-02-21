@@ -259,9 +259,9 @@ body.hide-help-window .help-window {
 
 @media (max-width: 768px) {
     .help-window {
-        margin-bottom: 60px;
+        margin-bottom: 20px;
         font-size: var(--font-size-sm);
-        padding: 8px 10px;
+        padding: 6px 10px;
     }
 }
 

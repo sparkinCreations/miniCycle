@@ -1,3 +1,7 @@
+## [1.977] - 2026-02-21
+- Enhance mobile layout by adjusting task view max-height and header clearance, and update header padding for better visibility on smaller screens.
+
+
 ## [1.976] - 2026-02-21
 - Enhance complete all button styles by updating background color, text color, dimensions, and font size for improved visibility and user experience.
 
