@@ -258,7 +258,12 @@ body.dark-mode .app-subtitle {
 @media (max-width: 868px) {
     .mini-cycle-header-row {
         /* Preserve safe area padding on mobile */
-        padding: calc(env(safe-area-inset-top, 0px) + 15px) 15px 15px 15px;
+        padding: calc(env(safe-area-inset-top, 0px) + 15px) 15px 18px 15px;
+    }
+
+    .header-branding {
+        /* Center within visible area (below safe area), not full padded box */
+        top: calc(50% + env(safe-area-inset-top, 0px) / 2);
     }
 
     .header-logo {
@@ -297,7 +302,7 @@ body.dark-mode .app-subtitle {
 @media (max-width: 480px) {
     .mini-cycle-header-row {
         /* Preserve safe area padding on small mobile */
-        padding: calc(env(safe-area-inset-top, 0px) + 12px) 12px 12px 12px;
+        padding: calc(env(safe-area-inset-top, 0px) + 12px) 12px 16px 12px;
         min-height: 42px;
         background: var(--theme-header-bg, var(--header-bg));
     }
