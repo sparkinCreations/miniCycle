@@ -27,11 +27,21 @@
     100% { opacity: 0; }
 }
 
-/* Fade out with scale (for cycle completion) */
+/* Fade out with scale (for cycle completion — legacy, kept for clear animation) */
 @keyframes fadeOutScale {
     0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
     100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Bounce in then fade out (cycle completion checkmark) */
+@keyframes completionBounce {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+    20% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+    35% { opacity: 1; transform: translate(-50%, -50%) scale(0.95); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    75% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
 }
 
 
@@ -261,7 +271,7 @@
     }
     30% {
         background-color: rgba(76, 175, 80, 0.3);
-        transform: scale(1.02);
+        transform: scale(1.04);
     }
     100% {
         background-color: inherit;

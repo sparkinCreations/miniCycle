@@ -1,3 +1,7 @@
+## [1.974] - 2026-02-21
+- Enhance responsive styles for stats panel by adjusting dimensions, padding, and font sizes for improved layout on smaller screens.
+
+
 ## [1.973] - 2026-02-21
 - Refactor styles and improve accessibility by updating font sizes, adding new color variables, and enhancing ARIA attributes across various components.
 

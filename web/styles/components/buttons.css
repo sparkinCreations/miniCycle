@@ -535,14 +535,18 @@ body.hide-help-window .help-window {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(76, 175, 79, 0.909);
-    color: black;
-    padding: 15px 25px;
-    font-size: 60px;
+    background: rgba(76, 175, 79, 0.92);
+    color: white;
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
     font-weight: bold;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    animation: fadeOutScale var(--animation-exit) ease-in-out;
+    border-radius: 50%;
+    box-shadow: 0 6px 24px rgba(76, 175, 79, 0.4);
+    animation: completionBounce 1.5s ease-out;
     z-index: var(--z-modal);
 }
 
