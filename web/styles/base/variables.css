@@ -230,7 +230,7 @@
      COMPONENT VARIABLES - Utilities
      ═══════════════════════════════════════════════════════════════════════════ */
   --pref-panel-text:  rgba(255, 255, 255, 0.9);
-  --shadow-lg:        0 8px 32px rgba(0, 0, 0, 0.25);
+  --shadow-modal:     0 20px 40px rgba(0, 0, 0, 0.15);
 
   /* ═══════════════════════════════════════════════════════════════════════════
      LEGACY VARIABLES (for backward compatibility)

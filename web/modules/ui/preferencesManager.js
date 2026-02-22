@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, APP_VERSION, UI_TIMEOUTS, PREFERENCES } from '../core/constants.js';
 import { updateThemeColor } from '../features/themeManager.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { applyHelpWindowVisibility, applyQuickActionsVisibility, loadPanelVisibility, resetPanelVisibility } from './panelVisibilityHelpers.js';
@@ -259,7 +259,7 @@ export class PreferencesManager {
         this.modal = null;
         this.colorInputs = {};
         this.undoStack = [];
-        this.maxUndoSteps = 20;
+        this.maxUndoSteps = PREFERENCES.MAX_UNDO_STEPS;
     }
 
     /**
@@ -274,6 +274,10 @@ export class PreferencesManager {
             // Load sub-modules with version cache-busting
             const version = APP_VERSION;
             await loadPreferencesSubModules(version);
+
+            // Render quick preset buttons from data before binding click handlers
+            const quickPresetsGrid = document.getElementById(DOM_IDS.PREF_QUICK_PRESETS_GRID);
+            _presetsModule.renderQuickPresets(quickPresetsGrid);
 
             this.modal = _deps.getModal('preferences');
             if (!this.modal) {
@@ -1142,7 +1146,7 @@ export class PreferencesManager {
             this.applyPatternWithCurrentSettings();
             this.updatePreview();
             this.updateUndoButton();
-            _deps.showNotification?.(getLabel('notify.patternColorReset'), 'info', 2000);
+            _deps.showNotification?.(getLabel('notify.patternColorReset'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
             return;
         }
 
@@ -1172,7 +1176,7 @@ export class PreferencesManager {
             this.applyPatternWithCurrentSettings();
             this.updatePreview();
             this.updateUndoButton();
-            _deps.showNotification?.(getLabel('notify.patternOpacityReset'), 'info', 2000);
+            _deps.showNotification?.(getLabel('notify.patternOpacityReset'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
             return;
         }
 
@@ -1215,7 +1219,7 @@ export class PreferencesManager {
         }
 
         this.updateUndoButton();
-        _deps.showNotification?.(getLabel('notify.colorReset'), 'info', 2000);
+        _deps.showNotification?.(getLabel('notify.colorReset'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 
     /**
@@ -1326,7 +1330,7 @@ export class PreferencesManager {
         }
 
         this.updateUndoButton();
-        _deps.showNotification?.(getLabel('notify.allColorsReset'), 'success', 2000);
+        _deps.showNotification?.(getLabel('notify.allColorsReset'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 
     /**
@@ -1600,7 +1604,7 @@ export class PreferencesManager {
         }
 
         this.updateUndoButton();
-        _deps.showNotification?.(getLabel('notify.undone'), 'info', 1500);
+        _deps.showNotification?.(getLabel('notify.undone'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);
     }
 
     /**

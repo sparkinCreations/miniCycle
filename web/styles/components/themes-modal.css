@@ -29,7 +29,7 @@
     width: 420px;
     max-width: 95%;
     text-align: center;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-modal);
     overflow: hidden;
     cursor: default;
 }
@@ -240,7 +240,7 @@ dialog.preferences-modal::backdrop {
     max-width: 95%;
     max-height: 85vh;
     text-align: center;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-modal);
     overflow: hidden;
     cursor: default;
     display: flex;
@@ -267,8 +267,8 @@ dialog.preferences-modal::backdrop {
     gap: var(--space-2-5);
     padding: var(--space-2-5) var(--space-3-5);
     margin: var(--space-3) var(--space-4) 0;
-    background: rgba(74, 144, 226, 0.1);
-    border: 1px solid rgba(74, 144, 226, 0.2);
+    background: var(--theme-selected-bg);
+    border: 1px solid var(--theme-accent, rgba(74, 144, 226, 0.2));
     border-radius: var(--radius-md);
     font-size: 12px;
     color: var(--theme-modal-text, #555);
@@ -323,7 +323,7 @@ dialog.preferences-modal::backdrop {
 .preferences-preview-label {
     font-size: 12px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--pref-panel-text);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: var(--space-2);
@@ -976,7 +976,7 @@ dialog.preferences-modal::backdrop {
     background: var(--theme-btn-primary-bg, #4c79ff);
     border-radius: 50%;
     cursor: pointer;
-    border: 2px solid #fff;
+    border: 2px solid var(--color-white);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
@@ -986,7 +986,7 @@ dialog.preferences-modal::backdrop {
     background: var(--theme-btn-primary-bg, #4c79ff);
     border-radius: 50%;
     cursor: pointer;
-    border: 2px solid #fff;
+    border: 2px solid var(--color-white);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
