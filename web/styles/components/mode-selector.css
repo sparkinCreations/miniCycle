@@ -95,14 +95,14 @@
 
 .mode-selector:hover {
     background: rgba(255, 255, 255, 0.4);
-    border-color: #0c2091;
+    border-color: var(--color-primary-dark);
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .mode-selector:focus-visible {
     background: rgba(255, 255, 255, 0.5);
-    border-color: #0c2091;
+    border-color: var(--color-primary-dark);
     box-shadow: 0 0 0 2px rgba(12, 32, 145, 0.2);
 }
 
@@ -154,7 +154,7 @@
 
 .quick-actions-btn:hover {
     background: rgba(255, 255, 255, 0.4);
-    border-color: #0c2091;
+    border-color: var(--color-primary-dark);
 }
 
 .quick-actions-btn:active {

@@ -306,6 +306,10 @@ body.hide-quick-actions .quick-actions-menu-row {
     border-radius: var(--radius-lg);
 }
 
+.quick-actions-menu-row .quick-actions-empty-msg {
+    color: rgba(0, 0, 0, 0.5);
+}
+
 /* Desktop: hide the menu row version (desktop uses floating panel instead) */
 @media (min-width: 1024px) {
     .quick-actions-menu-row {
