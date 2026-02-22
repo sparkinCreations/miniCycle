@@ -790,24 +790,15 @@ body.onboarding-active .complete-all-and-help-window-container {
     }
 
     /* Mobile task card constraints - using dvh for iOS Safari compatibility */
+    /* Help window (status info) is always visible, so base height accounts for it */
     .task-card {
-        max-height: calc(100dvh - 325px);
+        max-height: calc(100dvh - var(--task-card-offset) - var(--help-window-clearance) - 15px);
         margin-top: 18px;
     }
 
     /* Shorter task card when Complete button is visible on mobile */
     #task-view.complete-btn-visible .task-card {
-        max-height: calc(100dvh - 420px);
-    }
-
-    /* Shorter task card when mode description is visible on mobile */
-    #task-view.mode-description-visible .task-card {
-        max-height: calc(100dvh - 420px);
-    }
-
-    /* Even shorter when both are visible on mobile */
-    #task-view.complete-btn-visible.mode-description-visible .task-card {
-        max-height: calc(100dvh - 445px);
+        max-height: calc(100dvh - var(--task-card-offset-with-btn) - var(--help-window-clearance) - 10px);
     }
 
     #task-view {
