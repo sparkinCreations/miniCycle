@@ -26,7 +26,7 @@
      • Fixed values instead of calc() where possible
      • CSS variable fallbacks for IE11
 
-   Last meaningful update: v2.074 (intentionally static thereafter)
+   Last meaningful update: v2.075 (intentionally static thereafter)
    © 2026 sparkinCreations - https://sparkincreations.com
    ================================================================================ */
 
@@ -166,6 +166,12 @@ body.is-iphone #app-container {
     body.is-iphone .menu-button {
         grid-area: unset;
         top: 50%;
+        right: 15px;
+    }
+
+    /* Menu dropdown: push below the taller iPhone header */
+    body.is-iphone .menu-container {
+        top: var(--header-total);
     }
 
     /* Mode selector: snug below header */
