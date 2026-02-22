@@ -157,7 +157,6 @@ export function createMockData(overrides = {}) {
             unlockedThemes: [],
             soundEnabled: true,
             notifications: true,
-            alwaysShowRecurring: false
         },
         data: {
             cycles: {

@@ -759,7 +759,6 @@ export const DEFAULT_LABELS = deepFreeze({
         display:              'Display',
         showMoveArrows:       'Show Move Arrows',
         showThreeDots:        'Show Three Dots Menu',
-        showRecurring:        'Always Show Recurring Button',
         showCompleted:        'Show Completed in Dropdown',
         darkMode:             'Dark Mode',
         behavior:             'Behavior',

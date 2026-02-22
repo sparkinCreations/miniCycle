@@ -56,9 +56,7 @@ export async function runTaskEventsTests(resultsDiv) {
                             }
                         }
                     },
-                    settings: {
-                        alwaysShowRecurring: false
-                    },
+                    settings: {},
                     ui: {
                         moveArrowsVisible: true
                     }

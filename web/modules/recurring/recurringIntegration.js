@@ -264,23 +264,9 @@ export async function initRecurringModules(options = {}) {
         console.log('✅ Recurring watcher initialized');
 
         // ============================================
-        // STEP 6.5: Load always-show-recurring setting
+        // STEP 6.5: Wire recurring event listeners
         // ============================================
 
-        console.log('⚙️ Loading always-show-recurring setting...');
-
-        // Load the setting after a small delay to ensure DOM is ready
-        setTimeout(() => {
-            recurringPanel.loadAlwaysShowRecurringSetting();
-            console.log('✅ Always-show-recurring setting loaded');
-        }, 100);
-
-        // ============================================
-        // STEP 6.6: Wire recurring event listeners
-        // ============================================
-        // These listeners were moved from orchestrator.js for proper module ownership
-
-        recurringPanel.wireAlwaysShowRecurringListener();
         recurringPanel.wireRecurringSettingsClickListener();
         console.log('✅ Recurring event listeners wired');
 
@@ -313,8 +299,6 @@ export async function initRecurringModules(options = {}) {
             openPanel: () => recurringPanel.openPanel(),
             closePanel: () => recurringPanel.closePanel(),
             openForTask: (taskId) => recurringPanel.openRecurringSettingsPanelForTask(taskId),
-            saveAlwaysShowRecurringSetting: () => recurringPanel.saveAlwaysShowRecurringSetting(),
-            loadAlwaysShowRecurringSetting: () => recurringPanel.loadAlwaysShowRecurringSetting()
         };
 
         // Phase 3 - No window.* exports (main script handles exposure)

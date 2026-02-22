@@ -621,7 +621,11 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
 
     const taskIdsToDelete = tasksToDelete.map(({ taskId }) => taskId);
 
+    // Update completed tasks dropdown count
+    const updateCompletedTasksCount = deps.updateCompletedTasksCount || _deps.updateCompletedTasksCount;
+
     // Apply staggered clear animation
+    const lastIndex = tasksToDelete.length - 1;
     tasksToDelete.forEach(({ taskElement }, index) => {
         const delay = index * CLEAR_STAGGER_DELAY;
         setTimeout(() => {
@@ -629,6 +633,10 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
             // Remove from DOM after animation completes
             setTimeout(() => {
                 taskElement.remove();
+                // Update completed dropdown after last task is removed
+                if (index === lastIndex && typeof updateCompletedTasksCount === 'function') {
+                    updateCompletedTasksCount();
+                }
             }, CLEAR_ANIMATION_DURATION);
         }, delay);
     });
@@ -663,12 +671,6 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
         stats: true,
         completeAllButton: true
     });
-
-    // Update completed tasks dropdown count
-    const updateCompletedTasksCount = deps.updateCompletedTasksCount || _deps.updateCompletedTasksCount;
-    if (typeof updateCompletedTasksCount === 'function') {
-        updateCompletedTasksCount();
-    }
 
     // Show clear animation for To-Do mode
     const showClearAnimation = deps.showClearAnimation || _deps.showClearAnimation;

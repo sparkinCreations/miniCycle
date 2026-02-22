@@ -93,7 +93,6 @@ export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false
             settings: {
                 theme: 'default',
                 darkMode: false,
-                alwaysShowRecurring: false,
                 autoSave: true,
                 unlockedThemes: [],
                 unlockedFeatures: []
