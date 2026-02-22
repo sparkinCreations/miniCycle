@@ -658,7 +658,13 @@ export const DEFAULT_LABELS = deepFreeze({
         newRoutineTitle:          'Create New Routine',
         newRoutineMessage:        'What would you like to name it?',
         newRoutinePlaceholder:    'e.g., Daily Routine',
-        liteVersionMessage:       'Try the Lite version? It works great on older devices and slower connections.'
+        liteVersionMessage:       'Try the Lite version? It works great on older devices and slower connections.',
+        importModeTitle:          'Import Routine',
+        importModeMessage:        '"{name}" — {taskCount} tasks',
+        importAsTemplate:         'Use as Template',
+        importAsTemplateDesc:     'Start fresh — all progress reset',
+        importWithProgress:       'Import with Progress',
+        importWithProgressDesc:   'Keep cycle count, completed tasks, and due dates'
     },
 
     // ========================================================================
@@ -1529,6 +1535,12 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'modal.newRoutineMessage',
     'modal.newRoutinePlaceholder',
     'modal.liteVersionMessage',
+    'modal.importModeTitle',
+    'modal.importModeMessage',
+    'modal.importAsTemplate',
+    'modal.importAsTemplateDesc',
+    'modal.importWithProgress',
+    'modal.importWithProgressDesc',
 
     // Task options customizer
     'taskOptions.customizeLabel',

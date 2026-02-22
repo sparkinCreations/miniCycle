@@ -197,6 +197,7 @@ function wireSubModuleDependencies(dependencies) {
         loadMiniCycleData: dependencies.loadMiniCycleData,
         AppState: dependencies.AppState,
         showNotification: dependencies.showNotification,
+        showChoiceModal: dependencies.showChoiceModal,
         safeAddEventListener: dependencies.safeAddEventListener,
         DataValidator: dependencies.DataValidator,
         calculateNextOccurrence: dependencies.calculateNextOccurrence,

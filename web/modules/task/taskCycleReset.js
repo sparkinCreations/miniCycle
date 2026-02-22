@@ -639,7 +639,7 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
                     if (typeof updateCompletedTasksCount === 'function') {
                         updateCompletedTasksCount();
                     }
-                    requestUIUpdate?.({ progress: true });
+                    requestUIUpdate?.({ progress: true, stats: true });
                 }
             }, CLEAR_ANIMATION_DURATION);
         }, delay);
@@ -670,7 +670,6 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
 
     // Request non-DOM-dependent UI updates immediately
     requestUIUpdate?.({
-        stats: true,
         completeAllButton: true
     });
 

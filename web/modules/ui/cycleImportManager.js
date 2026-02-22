@@ -30,6 +30,7 @@ const di = createDIModule('CycleImportManager', {
     AppState: required(),
     showNotification: required(),
     safeAddEventListener: required(),
+    showChoiceModal: optional(null),  // Optional - for import mode choice
     DataValidator: optional(null),  // Optional - graceful handling if missing
     calculateNextOccurrence: optional(null),  // Optional - for recurring tasks
     AppMeta: optional(null)  // For version info
@@ -184,9 +185,9 @@ export function setupImportButtons() {
             }
 
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 try {
-                    processImportedData(e.target.result);
+                    await processImportedData(e.target.result);
                 } catch (error) {
                     _deps.showNotification?.(getLabel('notify.importError'));
                     console.error("Import error:", error);
@@ -357,9 +358,9 @@ export function setupDragDropImport() {
 
         // Read and process the file
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = async (event) => {
             try {
-                processImportedData(event.target.result);
+                await processImportedData(event.target.result);
             } catch (error) {
                 _deps.showNotification?.(getLabel('notify.importError'), 'error');
                 console.error('Drag-drop import error:', error);
@@ -379,7 +380,7 @@ export function setupDragDropImport() {
  * Process imported cycle data
  * @param {string} fileContent - Raw file content
  */
-export function processImportedData(fileContent) {
+export async function processImportedData(fileContent) {
     let importedData;
     try {
         importedData = JSON.parse(fileContent);
@@ -436,6 +437,31 @@ export function processImportedData(fileContent) {
         console.error("AppState not ready for import");
         _deps.showNotification?.(getLabel('notify.importAppNotReady'), "error");
         return;
+    }
+
+    // Show import mode choice modal
+    const routineName = importedData.title || importedData.name || 'Routine';
+    const taskCount = importedData.tasks.length;
+    let importMode = 'template'; // Default if modal not available
+
+    if (typeof _deps.showChoiceModal === 'function') {
+        importMode = await new Promise((resolve) => {
+            _deps.showChoiceModal({
+                title: getLabel('modal.importModeTitle'),
+                message: getLabel('modal.importModeMessage', { vars: { name: routineName, taskCount } }),
+                choices: [
+                    { text: getLabel('modal.importAsTemplate'), value: 'template', description: getLabel('modal.importAsTemplateDesc') },
+                    { text: getLabel('modal.importWithProgress'), value: 'progress', description: getLabel('modal.importWithProgressDesc') }
+                ],
+                cancelText: getLabel('button.cancel'),
+                callback: resolve
+            });
+        });
+
+        if (importMode === null) {
+            console.log('Import cancelled by user');
+            return;
+        }
     }
 
     const cycleId = `imported_${Date.now()}`;
@@ -512,6 +538,16 @@ export function processImportedData(fileContent) {
             }
         }
     });
+
+    // Apply template resets if user chose "Use as Template"
+    if (importMode === 'template') {
+        mappedTasks.forEach(task => {
+            task.completed = false;
+            task.dueDate = null;
+        });
+        importedData.cycleCount = 0;
+        console.log('📋 Template mode: reset task completion, due dates, and cycle count');
+    }
 
     // Security: Always sanitize cycle title, with or without DataValidator
     let cycleTitle = fallbackSanitize(
