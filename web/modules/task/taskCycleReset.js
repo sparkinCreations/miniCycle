@@ -621,8 +621,9 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
 
     const taskIdsToDelete = tasksToDelete.map(({ taskId }) => taskId);
 
-    // Update completed tasks dropdown count
+    // DOM-dependent UI updaters — must wait until elements are removed
     const updateCompletedTasksCount = deps.updateCompletedTasksCount || _deps.updateCompletedTasksCount;
+    const requestUIUpdate = deps.requestUIUpdate || _deps.requestUIUpdate;
 
     // Apply staggered clear animation
     const lastIndex = tasksToDelete.length - 1;
@@ -633,9 +634,12 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
             // Remove from DOM after animation completes
             setTimeout(() => {
                 taskElement.remove();
-                // Update completed dropdown after last task is removed
-                if (index === lastIndex && typeof updateCompletedTasksCount === 'function') {
-                    updateCompletedTasksCount();
+                // After last task is removed, update DOM-dependent UI
+                if (index === lastIndex) {
+                    if (typeof updateCompletedTasksCount === 'function') {
+                        updateCompletedTasksCount();
+                    }
+                    requestUIUpdate?.({ progress: true });
                 }
             }, CLEAR_ANIMATION_DURATION);
         }, delay);
@@ -664,10 +668,8 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
         console.warn('⚠️ AppState not ready for task deletion - state may be lost');
     }
 
-    // Request UI updates via UIOrchestrator
-    const requestUIUpdate = deps.requestUIUpdate || _deps.requestUIUpdate;
+    // Request non-DOM-dependent UI updates immediately
     requestUIUpdate?.({
-        progress: true,
         stats: true,
         completeAllButton: true
     });
