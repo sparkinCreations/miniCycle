@@ -1,3 +1,25 @@
+## [1.1004] - 2026-02-21
+- Add Lite Version documentation to architecture section
+- Add user notification for redirects from full version boot failures
+- Update Content Security Policy notes and script hashes in configuration files
+- Adjust iPhone header layout for improved branding and button alignment
+- Adjust iPhone header total height for improved visual consistency
+- Refine iPhone header styles for improved layout and consistency
+- Adjust iPhone task view positioning and animation for better usability
+- Refine iPhone menu button positioning for vertical centering in header
+- Refine iPhone header styles for dynamic height and menu button positioning
+- Adjust iPhone menu button positioning to pin it at logo level below Dynamic Island
+- Adjust iPhone menu button positioning to align with logo below Dynamic Island
+- Align iPhone menu button to the top of the header for improved layout
+- Refine iPhone menu button alignment and mode selector positioning for improved layout under Dynamic Island
+- Adjust iPhone menu button alignment for improved layout under Dynamic Island
+- Update app and lite version numbers in PROJECT_STATS.md to 1.986 and 2.066 for consistency.
+- Refine iPhone-specific styles for Dynamic Island support by adjusting menu button alignment and repositioning mobile mode selector for improved layout.
+- Refine iPhone-specific safe area calculations for Dynamic Island support by adjusting CSS variables for improved layout.
+- Adjust iPhone-specific styles for Dynamic Island support by increasing padding and repositioning mobile mode selector for improved layout.
+- Refine iPhone-specific padding adjustments for Dynamic Island support and improve safe area handling in styles.
+
+
 ## [1.980] - 2026-02-21
 - Enhance responsive styles by adjusting padding and margins for dynamic areas, and introduce new CSS variables for improved layout on mobile devices.
 

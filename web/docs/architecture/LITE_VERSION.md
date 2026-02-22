@@ -68,6 +68,7 @@ Lite uses its own key namespace — completely independent from the full version
 | `miniCycleLiteToDoDeleted` | Number | Lifetime tasks cleared (To-Do mode) |
 | `miniCycleLite_celebratedBadges` | JSON array | Cycle milestones already celebrated |
 | `miniCycleLite_celebratedClearedBadges` | JSON array | Cleared-task milestones celebrated |
+| `miniCycleLiteNotifications` | `'off'` or absent | Notification toggle (absent = on) |
 
 ## Full Version Redirect System
 
