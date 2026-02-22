@@ -1,3 +1,8 @@
+## [1.1022] - 2026-02-22
+- Refactor overdue task styles for improved accessibility and consistency; update notification durations and implement dynamic quick preset rendering.
+- Enhance due date notifications and overdue task styling; implement new labels and accessibility styles for overdue tasks in light and dark modes.
+
+
 ## [1.1021] - 2026-02-22
 - Refactor CSS styles to utilize CSS variables for improved theming and consistency across menu, modals, mode selector, quick actions, and recurring components.
 
