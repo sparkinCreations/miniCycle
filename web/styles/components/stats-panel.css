@@ -142,38 +142,40 @@
 @media (max-width: 768px) {
     .stats-panel {
         width: 90vw;
-        top: 55%; /* Push center down so top edge clears the fixed header */
-        max-height: 62vh; /* Keep bottom edge above nav dots (~103px from bottom) */
-        padding: 10px 12px;
+        top: 55%; /* Center pushed down so top edge clears the fixed header */
+        max-height: 54vh; /* Bottom edge stays above nav dots on small phones */
+        padding: 8px 10px;
     }
 
     #stats-header {
+        margin-top: 0;
         margin-bottom: 4px;
-        font-size: var(--font-size-base);
+        font-size: var(--font-size-sm);
     }
 
     .current-routine-status,
     .theme-unlock-status {
-        margin-top: 3px;
-        margin-bottom: 3px;
-        padding: 6px 8px;
+        margin-top: 2px;
+        margin-bottom: 2px;
+        padding: 5px 8px;
     }
 
     .current-routine-status h3,
     .theme-unlock-status h3 {
-        font-size: var(--font-size-base);
+        font-size: var(--font-size-sm);
+        margin: 0;
     }
 
     .current-cycle-doughnut-container {
-        width: 58px;
-        height: 58px;
+        width: 52px;
+        height: 52px;
         margin: 3px auto;
     }
 
     #current-cycle-progress-text {
-        margin-top: 3px;
-        margin-bottom: 3px;
-        font-size: 0.9em;
+        margin-top: 2px;
+        margin-bottom: 2px;
+        font-size: 0.85em;
     }
 
     #current-routine-cycle-count,
@@ -182,32 +184,44 @@
     }
 
     .routine-buttons-container {
-        padding: 3px 0;
+        padding: 2px 0;
+        gap: 6px;
+    }
+
+    .history-btn {
+        padding: 5px 10px;
+        font-size: var(--font-size-xs);
     }
 
     .badge-container {
-        margin-top: 3px;
-        margin-bottom: 3px;
-        padding: 5px 8px;
+        margin-top: 2px;
+        margin-bottom: 2px;
+        padding: 4px 8px;
     }
 
     .badge-container h3 {
-        margin-bottom: 3px;
+        margin-bottom: 2px;
         font-size: var(--font-size-sm);
     }
 
+    .achievement-badges-btn {
+        padding: 5px 10px;
+        font-size: var(--font-size-xs);
+        margin-bottom: 4px;
+    }
+
     .badges {
-        gap: 6px;
+        gap: 5px;
         margin-top: 3px;
     }
 
     .badge {
-        width: 36px;
-        height: 36px;
+        width: 34px;
+        height: 34px;
     }
 
     .global-stats-container {
-        margin-top: 3px;
+        margin-top: 2px;
         padding: 2px 8px;
     }
 
@@ -216,7 +230,11 @@
     }
 
     #milestone-progress-text {
-        margin: 0 0 4px 0;
+        margin: 0 0 3px 0;
+    }
+
+    .progress-container {
+        height: 7px;
     }
 
     .slide-arrow {
@@ -227,18 +245,17 @@
 @media (max-width: 480px) {
     .stats-panel {
         width: 95vw;
-        padding: 8px 10px;
+        padding: 6px 8px;
     }
 
     .current-cycle-doughnut-container {
-        width: 52px;
-        height: 52px;
+        width: 46px;
+        height: 46px;
     }
 
     .badge {
-        width: 32px;
-        height: 32px;
-        font-size: var(--font-size-sm);
+        width: 30px;
+        height: 30px;
     }
 }
 
