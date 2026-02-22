@@ -143,32 +143,37 @@
     .stats-panel {
         width: 90vw;
         top: 55%; /* Push center down so top edge clears the fixed header */
-        max-height: 72vh;
-        padding: 12px 14px;
+        max-height: 62vh; /* Keep bottom edge above nav dots (~103px from bottom) */
+        padding: 10px 12px;
     }
 
     #stats-header {
-        margin-bottom: 6px;
-        font-size: var(--font-size-lg);
+        margin-bottom: 4px;
+        font-size: var(--font-size-base);
     }
 
     .current-routine-status,
     .theme-unlock-status {
-        margin-top: 4px;
-        margin-bottom: 4px;
-        padding: 8px;
+        margin-top: 3px;
+        margin-bottom: 3px;
+        padding: 6px 8px;
+    }
+
+    .current-routine-status h3,
+    .theme-unlock-status h3 {
+        font-size: var(--font-size-base);
     }
 
     .current-cycle-doughnut-container {
-        width: 65px;
-        height: 65px;
-        margin: 4px auto;
+        width: 58px;
+        height: 58px;
+        margin: 3px auto;
     }
 
     #current-cycle-progress-text {
-        margin-top: 4px;
-        margin-bottom: 4px;
-        font-size: 0.95em;
+        margin-top: 3px;
+        margin-bottom: 3px;
+        font-size: 0.9em;
     }
 
     #current-routine-cycle-count,
@@ -177,32 +182,41 @@
     }
 
     .routine-buttons-container {
-        padding: 4px 0;
+        padding: 3px 0;
     }
 
     .badge-container {
-        margin-top: 4px;
-        margin-bottom: 4px;
-        padding: 6px 8px;
+        margin-top: 3px;
+        margin-bottom: 3px;
+        padding: 5px 8px;
     }
 
     .badge-container h3 {
-        margin-bottom: 4px;
-        font-size: var(--font-size-base);
+        margin-bottom: 3px;
+        font-size: var(--font-size-sm);
     }
 
     .badges {
         gap: 6px;
-        margin-top: 4px;
+        margin-top: 3px;
+    }
+
+    .badge {
+        width: 36px;
+        height: 36px;
     }
 
     .global-stats-container {
-        margin-top: 4px;
+        margin-top: 3px;
         padding: 2px 8px;
     }
 
     #stats-panel p {
-        margin: 3px 0;
+        margin: 2px 0;
+    }
+
+    #milestone-progress-text {
+        margin: 0 0 4px 0;
     }
 
     .slide-arrow {
@@ -213,49 +227,18 @@
 @media (max-width: 480px) {
     .stats-panel {
         width: 95vw;
-        padding: 10px 12px;
-    }
-
-    #stats-header {
-        margin-bottom: 4px;
-    }
-
-    .current-routine-status,
-    .theme-unlock-status {
-        margin-top: 4px;
-        margin-bottom: 4px;
-        padding: 6px;
+        padding: 8px 10px;
     }
 
     .current-cycle-doughnut-container {
-        width: 60px;
-        height: 60px;
-        margin: 4px auto;
-    }
-
-    .badge-container {
-        margin-bottom: 4px;
-        padding: 6px;
-    }
-
-    .badge-container h3 {
-        margin-bottom: 4px;
-    }
-
-    .badges {
-        gap: 6px;
-        margin-top: 4px;
+        width: 52px;
+        height: 52px;
     }
 
     .badge {
-        width: 34px;
-        height: 34px;
+        width: 32px;
+        height: 32px;
         font-size: var(--font-size-sm);
-    }
-
-    .global-stats-container {
-        margin-top: 4px;
-        padding: 2px 8px;
     }
 }
 
