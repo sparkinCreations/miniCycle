@@ -26,7 +26,7 @@
      • Fixed values instead of calc() where possible
      • CSS variable fallbacks for IE11
 
-   Last meaningful update: v1.980 (intentionally static thereafter)
+   Last meaningful update: v2.061 (intentionally static thereafter)
    © 2026 sparkinCreations - https://sparkincreations.com
    ================================================================================ */
 
@@ -78,7 +78,7 @@ html, body {
     position: relative;
     width: 100%;
     overflow: hidden;
-    padding-top: calc(env(safe-area-inset-top, 0px) + 120px); /* ✅ Accounts for Dynamic Island/notch */
+    padding-top: max(150px, calc(env(safe-area-inset-top, 0px) + 120px)); /* ✅ Accounts for Dynamic Island/notch */
     max-width: 100%;
 }
 
@@ -691,9 +691,10 @@ body.dark-mode .complete-all-btn:hover {
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 12px;
-    /* ✅ Safe area inset for notched devices (iPhone X+, Dynamic Island, etc.) */
-    padding: 20px 16px 15px 16px; /* Fallback */
-    padding-top: calc(env(safe-area-inset-top, 0px) + 15px);
+    /* ✅ Safe area inset for notched devices (iPhone X+, Dynamic Island, etc.)
+       Fallback uses 50px top padding for Dynamic Island phones where env() returns 0 */
+    padding: 50px 16px 15px 16px; /* Fallback — generous for Dynamic Island */
+    padding-top: max(50px, calc(env(safe-area-inset-top, 0px) + 15px));
     padding-left: calc(16px + env(safe-area-inset-left, 0px));
     padding-right: calc(16px + env(safe-area-inset-right, 0px));
     background: #5680ff; /* ✅ Solid color fallback */
