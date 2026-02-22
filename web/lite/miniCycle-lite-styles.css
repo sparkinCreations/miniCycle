@@ -26,7 +26,7 @@
      • Fixed values instead of calc() where possible
      • CSS variable fallbacks for IE11
 
-   Last meaningful update: v2.077 (intentionally static thereafter)
+   Last meaningful update: v2.078 (intentionally static thereafter)
    © 2026 sparkinCreations - https://sparkincreations.com
    ================================================================================ */
 
@@ -144,7 +144,7 @@ html, body {
    --safe-top: Dynamic Island height (~59px) + content padding (15px) */
 body.is-iphone {
     --safe-top: 130px;         /* Dynamic Island (~59px) + logo/branding (~60px) + padding */
-    --header-total: 170px;     /* --safe-top + bottom padding */
+    --header-total: 135px;     /* --safe-top + bottom padding (5px) */
     --mode-bar: 30px;          /* Mode selector wrapper height */
 }
 
@@ -152,7 +152,8 @@ body.is-iphone .mini-cycle-header-row {
     height: auto;              /* Override fixed 60px so padding grows the box naturally */
     min-height: 60px;          /* Preserve original minimum */
     padding-top: var(--safe-top);
-    padding-bottom: 20px;
+    padding-bottom: 5px;       /* Minimal — mode selector sits just below */
+    background: #4c79ff;       /* Match body background to eliminate color band */
 }
 
 body.is-iphone #app-container {
