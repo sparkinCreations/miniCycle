@@ -1,6 +1,6 @@
 #!/bin/bash
 # update-version.sh - Enhanced Interactive Version Updater for miniCycle
-# Version: 5.2 - Added --lite-only flag for independent lite version updates (Jan 2026)
+# Version: 5.3 - Lite always uses independent versioning (--lite no longer syncs to main) (Feb 2026)
 #
 # Features:
 #  - Generates version.js as single source of truth (using globalThis)
@@ -202,7 +202,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help|-h)
-            echo "🎯 miniCycle Version Updater v5.2"
+            echo "🎯 miniCycle Version Updater v5.3"
             echo ""
             echo "Usage: ./update-version.sh [options]"
             echo ""
@@ -246,18 +246,18 @@ done
 # ============================================
 
 if [ "$DRY_RUN" = true ]; then
-    echo "🔍 miniCycle Version Updater v5.2 (DRY RUN MODE)"
+    echo "🔍 miniCycle Version Updater v5.3 (DRY RUN MODE)"
     echo "================================================="
     echo "⚠️  No files will be modified - preview only"
 elif [ "$LITE_ONLY" = true ]; then
-    echo "📱 miniCycle Version Updater v5.2 (LITE ONLY MODE)"
+    echo "📱 miniCycle Version Updater v5.3 (LITE ONLY MODE)"
     echo "=================================================="
     echo "⚠️  Only lite version files will be updated"
 elif [ "$AUTO_MODE" = true ]; then
-    echo "🤖 miniCycle Version Updater v5.2 (AUTO MODE)"
+    echo "🤖 miniCycle Version Updater v5.3 (AUTO MODE)"
     echo "=============================================="
 else
-    echo "🎯 miniCycle Version Updater v5.2"
+    echo "🎯 miniCycle Version Updater v5.3"
     echo "================================="
 fi
 echo ""
@@ -401,6 +401,12 @@ else
     echo "📊 Current versions (from version.js):"
     echo "   App version: ${CURRENT_VERSION:-"Not set"}"
     echo "   Cache version: ${CURRENT_CACHE_VERSION:-"Not set"}"
+
+    # Also read lite version when --lite is included (lite has independent versioning)
+    if [ "$INCLUDE_LITE" = true ]; then
+        CURRENT_LITE_VERSION=$(grep -oE 'miniCycle-lite-styles\.css\?v=[0-9.]+' lite/miniCycle-lite.html 2>/dev/null | sed -E 's/.*\?v=([0-9.]+).*/\1/' | head -1 || echo "")
+        echo "   Lite version: ${CURRENT_LITE_VERSION:-"Not set"} (independent)"
+    fi
     echo ""
 fi
 
@@ -463,6 +469,18 @@ elif [ "$AUTO_MODE" = true ]; then
     echo "🤖 Auto-calculated new versions:"
     echo "   App version: $CURRENT_VERSION → $NEW_VERSION"
     echo "   Cache version: $CURRENT_CACHE_VERSION → $NEW_CACHE_VERSION"
+
+    # Auto-bump lite version independently when --lite is included
+    if [ "$INCLUDE_LITE" = true ] && [ "$LITE_ONLY" = false ]; then
+        if [[ "$CURRENT_LITE_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            NEW_LITE_VERSION=$(printf "%.3f" "$(echo "$CURRENT_LITE_VERSION + 0.001" | bc)")
+            NEW_LITE_VERSION=$(echo "$NEW_LITE_VERSION" | sed 's/0*$//' | sed 's/\.$//')
+        else
+            NEW_LITE_VERSION="$CURRENT_LITE_VERSION"
+            echo "   ⚠️  Could not parse lite version, keeping: $CURRENT_LITE_VERSION"
+        fi
+        echo "   Lite version: $CURRENT_LITE_VERSION → $NEW_LITE_VERSION (independent)"
+    fi
     echo ""
 else
     # Interactive mode - prompt user
@@ -478,6 +496,24 @@ else
     if [[ ! "$NEW_CACHE_VERSION" =~ ^[0-9]+$ ]]; then
         echo "❌ Invalid cache version. Use a number like 392"
         exit 1
+    fi
+
+    # Prompt for lite version separately when --lite is included
+    if [ "$INCLUDE_LITE" = true ] && [ "$LITE_ONLY" = false ]; then
+        echo ""
+        echo "📱 Lite version has independent versioning (current: ${CURRENT_LITE_VERSION:-"Not set"})"
+        read -p "🔢 Enter new lite version (Enter to auto-bump, or type version): " NEW_LITE_VERSION
+        if [ -z "$NEW_LITE_VERSION" ]; then
+            # Auto-bump by 0.001
+            if [[ "$CURRENT_LITE_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+                NEW_LITE_VERSION=$(printf "%.3f" "$(echo "$CURRENT_LITE_VERSION + 0.001" | bc)")
+                NEW_LITE_VERSION=$(echo "$NEW_LITE_VERSION" | sed 's/0*$//' | sed 's/\.$//')
+                echo "   Auto-bumped lite: $CURRENT_LITE_VERSION → $NEW_LITE_VERSION"
+            else
+                NEW_LITE_VERSION="$CURRENT_LITE_VERSION"
+                echo "   ⚠️  Could not parse lite version, keeping: $CURRENT_LITE_VERSION"
+            fi
+        fi
     fi
 fi
 
@@ -711,6 +747,9 @@ echo ""
 echo "📝 Summary:"
 echo "   App version: ${CURRENT_VERSION:-"?"} → $NEW_VERSION"
 echo "   Cache version: ${CURRENT_CACHE_VERSION:-"?"} → $NEW_CACHE_VERSION"
+if [ "$INCLUDE_LITE" = true ] && [ -n "${NEW_LITE_VERSION:-}" ]; then
+    echo "   Lite version: ${CURRENT_LITE_VERSION:-"?"} → $NEW_LITE_VERSION (independent)"
+fi
 echo "   Files to update: $TOTAL_FILES"
 if [ "$DRY_RUN" = false ]; then
     echo "   Backups will be saved to: $BACKUP_FOLDER"
@@ -868,18 +907,19 @@ if [ "$LITE_ONLY" = false ] && should_update "miniCycle.html"; then
     fi
 fi
 
-# Lite HTML
+# Lite HTML (uses NEW_LITE_VERSION for independent versioning)
+LITE_VER="${NEW_LITE_VERSION:-$NEW_VERSION}"
 if should_update "lite/miniCycle-lite.html"; then
     if [ "$DRY_RUN" = true ]; then
-        echo "   Would update: lite/miniCycle-lite.html"
+        echo "   Would update: lite/miniCycle-lite.html (lite version: $LITE_VER)"
     elif backup_file "lite/miniCycle-lite.html"; then
-        do_sed "lite/miniCycle-lite.html" 's/?v=[0-9.]\{1,\}/?v='"$NEW_VERSION"'/g'
-        do_sed "lite/miniCycle-lite.html" "s/miniCycle-lite-styles\.css\"/miniCycle-lite-styles.css?v=$NEW_VERSION\"/g"
-        do_sed "lite/miniCycle-lite.html" "s/miniCycle-lite-scripts\.js\"/miniCycle-lite-scripts.js?v=$NEW_VERSION\"/g"
-        do_sed "lite/miniCycle-lite.html" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g"
+        do_sed "lite/miniCycle-lite.html" 's/?v=[0-9.]\{1,\}/?v='"$LITE_VER"'/g'
+        do_sed "lite/miniCycle-lite.html" "s/miniCycle-lite-styles\.css\"/miniCycle-lite-styles.css?v=$LITE_VER\"/g"
+        do_sed "lite/miniCycle-lite.html" "s/miniCycle-lite-scripts\.js\"/miniCycle-lite-scripts.js?v=$LITE_VER\"/g"
+        do_sed "lite/miniCycle-lite.html" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$LITE_VER\">|g"
         # Update "Last meaningful update: vX.XXX" in header comment
-        do_sed "lite/miniCycle-lite.html" "s/Last meaningful update: v[0-9.]*/Last meaningful update: v$NEW_VERSION/g"
-        echo "✅ Updated lite/miniCycle-lite.html"
+        do_sed "lite/miniCycle-lite.html" "s/Last meaningful update: v[0-9.]*/Last meaningful update: v$LITE_VER/g"
+        echo "✅ Updated lite/miniCycle-lite.html (v$LITE_VER)"
     else
         echo "⚠️  Failed to update lite/miniCycle-lite.html"
         STAGE2_SUCCESS=false
@@ -945,14 +985,15 @@ fi
 
 if should_update "lite/miniCycle-lite-scripts.js"; then
     echo "📝 Stage 4: Updating lite JS files..."
+    LITE_VER="${NEW_LITE_VERSION:-$NEW_VERSION}"
     if [ "$DRY_RUN" = true ]; then
-        echo "   Would update: lite/miniCycle-lite-scripts.js"
+        echo "   Would update: lite/miniCycle-lite-scripts.js (lite version: $LITE_VER)"
     elif backup_file "lite/miniCycle-lite-scripts.js"; then
-        do_sed "lite/miniCycle-lite-scripts.js" "s/var currentVersion = '[0-9.]*'/var currentVersion = '$NEW_VERSION'/g"
-        do_sed "lite/miniCycle-lite-scripts.js" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$NEW_VERSION'/g"
+        do_sed "lite/miniCycle-lite-scripts.js" "s/var currentVersion = '[0-9.]*'/var currentVersion = '$LITE_VER'/g"
+        do_sed "lite/miniCycle-lite-scripts.js" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$LITE_VER'/g"
         # Update "Last meaningful update: vX.XXX" in header comment
-        do_sed "lite/miniCycle-lite-scripts.js" "s/Last meaningful update: v[0-9.]*/Last meaningful update: v$NEW_VERSION/g"
-        echo "✅ Updated lite/miniCycle-lite-scripts.js"
+        do_sed "lite/miniCycle-lite-scripts.js" "s/Last meaningful update: v[0-9.]*/Last meaningful update: v$LITE_VER/g"
+        echo "✅ Updated lite/miniCycle-lite-scripts.js (v$LITE_VER)"
     fi
     echo "✅ Stage 4 complete"
     echo ""
@@ -964,12 +1005,13 @@ fi
 
 if should_update "lite/miniCycle-lite-styles.css"; then
     echo "📝 Stage 4B: Updating lite CSS files..."
+    LITE_VER="${NEW_LITE_VERSION:-$NEW_VERSION}"
     if [ "$DRY_RUN" = true ]; then
-        echo "   Would update: lite/miniCycle-lite-styles.css"
+        echo "   Would update: lite/miniCycle-lite-styles.css (lite version: $LITE_VER)"
     elif backup_file "lite/miniCycle-lite-styles.css"; then
         # Update "Last meaningful update: vX.XXX" in header comment
-        do_sed "lite/miniCycle-lite-styles.css" "s/Last meaningful update: v[0-9.]*/Last meaningful update: v$NEW_VERSION/g"
-        echo "✅ Updated lite/miniCycle-lite-styles.css"
+        do_sed "lite/miniCycle-lite-styles.css" "s/Last meaningful update: v[0-9.]*/Last meaningful update: v$LITE_VER/g"
+        echo "✅ Updated lite/miniCycle-lite-styles.css (v$LITE_VER)"
     fi
     echo "✅ Stage 4B complete"
     echo ""
@@ -998,13 +1040,14 @@ if [ "$LITE_ONLY" = false ] && should_update "manifest.json"; then
     fi
 fi
 
-# Lite manifest
+# Lite manifest (uses independent lite version)
 if should_update "manifest-lite.json"; then
+    LITE_VER="${NEW_LITE_VERSION:-$NEW_VERSION}"
     if [ "$DRY_RUN" = true ]; then
-        echo "   Would update: manifest-lite.json"
+        echo "   Would update: manifest-lite.json (lite version: $LITE_VER)"
     elif backup_file "manifest-lite.json"; then
-        do_sed "manifest-lite.json" "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/g"
-        echo "✅ Updated manifest-lite.json"
+        do_sed "manifest-lite.json" "s/\"version\": \"[0-9.]*\"/\"version\": \"$LITE_VER\"/g"
+        echo "✅ Updated manifest-lite.json (v$LITE_VER)"
     else
         STAGE5_SUCCESS=false
     fi
@@ -1343,6 +1386,9 @@ if [ "$LITE_ONLY" = true ]; then
 else
     echo "   App version: $NEW_VERSION"
     echo "   Cache version: $NEW_CACHE_VERSION"
+    if [ "$INCLUDE_LITE" = true ] && [ -n "${NEW_LITE_VERSION:-}" ]; then
+        echo "   Lite version: $NEW_LITE_VERSION (independent)"
+    fi
 fi
 if [ "$DRY_RUN" = false ]; then
     echo "   Files updated: $TOTAL_FILES"
