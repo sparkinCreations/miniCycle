@@ -1,3 +1,7 @@
+## [1.1020] - 2026-02-22
+- Refactor styles across components to utilize new color variables for consistency and improved theming
+
+
 ## [1.1019] - 2026-02-22
 - Refactor theme styles to enhance UI interactions; add new CSS variables for hover, selected, accent, and error states in dark and golden glow themes.
 - Add sharing functionality for routines and app; implement share buttons, notifications, and share manager module

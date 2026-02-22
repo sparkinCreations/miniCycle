@@ -500,22 +500,22 @@ dialog.mini-modal-dialog::backdrop {
 
 /* Dark mode mini-modal */
 body.dark-mode .mini-modal-box {
-    background: #23272e;
+    background: var(--theme-modal-bg);
     color: var(--color-gray-100);
     box-shadow: 0 0 24px rgba(0, 0, 0, 0.7);
 }
 
 body.dark-mode .mini-modal-header {
-    color: #e2e8f0;
+    color: var(--theme-modal-text);
 }
 
 body.dark-mode .mini-modal-body {
-    color: #e2e8f0;
+    color: var(--theme-modal-text);
 }
 
 body.dark-mode .mini-modal-buttons .btn-cancel {
-    background-color: #444950;
-    color: #e2e8f0;
+    background-color: var(--theme-button-secondary-bg);
+    color: var(--theme-modal-text);
 }
 
 /* =============================================================================
