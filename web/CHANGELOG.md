@@ -1,3 +1,7 @@
+## [1.1012] - 2026-02-22
+- Add notifications toggle and related functionality for user preferences
+
+
 ## [1.1011] - 2026-02-22
 - Update CHANGELOG.md for version 1.1010 with mobile font-size overrides and style adjustments
 - Update application version to 1.1010 and adjust related files
