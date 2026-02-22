@@ -131,7 +131,7 @@
     height: 16px;
     border-radius: 50%;
     background: rgba(220, 53, 69, 0.9);
-    color: white;
+    color: var(--color-white);
     font-size: 10px;
     line-height: 16px;
     text-align: center;
@@ -340,8 +340,8 @@ dialog.quick-actions-picker-overlay[open] {
 
 .quick-actions-picker {
     position: relative;
-    background: var(--theme-modal-bg, #ffffff);
-    color: var(--theme-modal-text, #333);
+    background: var(--theme-modal-bg, var(--color-white));
+    color: var(--theme-modal-text, var(--theme-text-on-surface));
     border-radius: var(--radius-xl);
     padding: var(--space-5);
     width: 420px;
@@ -357,7 +357,7 @@ dialog.quick-actions-picker-overlay[open] {
     margin: 0 0 var(--space-4) 0;
     font-size: var(--font-size-base);
     font-weight: 600;
-    color: var(--theme-modal-text, #333);
+    color: var(--theme-modal-text, var(--theme-text-on-surface));
     text-align: center;
 }
 
@@ -389,7 +389,7 @@ dialog.quick-actions-picker-overlay[open] {
     border-radius: var(--radius-10);
     background: var(--theme-input-bg, rgba(0, 0, 0, 0.05));
     border: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
-    color: var(--theme-modal-text, #333);
+    color: var(--theme-modal-text, var(--theme-text-on-surface));
     font-size: var(--font-size-sm);
     cursor: pointer;
     transition: background var(--transition-fast) ease;
@@ -421,8 +421,8 @@ dialog.quick-actions-picker-overlay[open] {
 /* Close button — matches settings modal close-btn pattern */
 .quick-actions-picker-cancel {
     display: block;
-    background: var(--menu-close-bg, #3d7ab5);
-    color: var(--menu-close-text, white);
+    background: var(--menu-close-bg, var(--color-steel-blue));
+    color: var(--menu-close-text, var(--color-white));
     font-size: var(--font-size-lg);
     font-weight: 700;
     padding: var(--space-3-5);
@@ -439,7 +439,7 @@ dialog.quick-actions-picker-overlay[open] {
 }
 
 .quick-actions-picker-cancel:hover {
-    background: var(--menu-close-hover-bg, #326a9e);
+    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
 }
 
 /* =============================================================================
@@ -449,7 +449,7 @@ dialog.quick-actions-picker-overlay[open] {
 .quick-actions-tooltip {
     position: fixed;
     background: rgba(0, 0, 0, 0.85);
-    color: white;
+    color: var(--color-white);
     padding: var(--space-2) 14px;
     border-radius: var(--radius-md);
     font-size: var(--font-size-sm);
@@ -473,7 +473,7 @@ dialog.quick-actions-picker-overlay[open] {
     background: rgba(220, 53, 69, 0.8);
     border: none;
     border-radius: var(--radius-sm);
-    color: white;
+    color: var(--color-white);
     font-size: var(--font-size-xs);
     cursor: pointer;
     text-align: center;

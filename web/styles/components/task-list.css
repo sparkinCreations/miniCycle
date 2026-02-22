@@ -252,13 +252,13 @@ body.onboarding-active .complete-all-and-help-window-container {
 
 .due-date {
     font-size: var(--font-size-sm);
-    border: 1px solid var(--theme-input-border, #ccc);
+    border: 1px solid var(--theme-input-border, var(--theme-input-border));
     border-radius: var(--radius-5);
     margin-left: 15%;
     width: 100%;
     max-width: 180px;
     background-color: var(--theme-input-bg, #c8c8c868);
-    color: var(--theme-input-text, #333);
+    color: var(--theme-input-text, var(--theme-text-on-surface));
 }
 
 .due-date.hidden {
@@ -402,7 +402,7 @@ body.onboarding-active .complete-all-and-help-window-container {
 #mini-cycle-title:focus {
     background: rgba(255, 255, 255, 0.2);
     color: #f8f8f8;
-    border-bottom: 2px solid #ffffff;
+    border-bottom: 2px solid var(--color-white);
 }
 
 /* =============================================================================
@@ -456,7 +456,7 @@ body.onboarding-active .complete-all-and-help-window-container {
     background: transparent;
     padding: var(--space-1) 0;
     font-size: var(--font-size-sm);
-    color: var(--theme-input-text, #333);
+    color: var(--theme-input-text, var(--theme-text-on-surface));
     width: 140px;
     outline: none;
 }
@@ -527,7 +527,7 @@ body.onboarding-active .complete-all-and-help-window-container {
 .chip-group-icon {
     display: flex;
     align-items: center;
-    color: var(--theme-text-primary, #333333);
+    color: var(--theme-text-primary, var(--theme-text-on-surface));
     flex-shrink: 0;
     margin-right: var(--space-px);
 }
@@ -557,13 +557,13 @@ body.onboarding-active .complete-all-and-help-window-container {
 .filter-chip:hover,
 .sort-chip:hover {
     background: rgba(0, 0, 0, 0.12);
-    color: var(--theme-text-primary, #333);
+    color: var(--theme-text-primary, var(--theme-text-on-surface));
 }
 
 .filter-chip.active,
 .sort-chip.active {
-    background: var(--theme-accent, #4c79ff);
-    color: white;
+    background: var(--theme-accent, var(--color-primary));
+    color: var(--color-white);
 }
 
 .filter-chip:focus-visible,
@@ -584,9 +584,9 @@ body.onboarding-active .complete-all-and-help-window-container {
     padding: var(--space-2-5);
     border-radius: var(--radius-md);
     margin: var(--space-2-5);
-    background: var(--theme-task-bg, white);
+    background: var(--theme-task-bg, var(--color-white));
     box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
-    color: var(--theme-task-text, #333);
+    color: var(--theme-task-text, var(--theme-text-on-surface));
     position: relative;
 }
 
@@ -633,7 +633,7 @@ body.onboarding-active .complete-all-and-help-window-container {
 }
 
 .task input[type="checkbox"]:focus-visible {
-    border-color: var(--theme-input-focus-border, #4c79ff);
+    border-color: var(--theme-input-focus-border, var(--color-primary));
     box-shadow: 0 0 0 2px var(--theme-input-focus-border, #4c79ff);
 }
 
@@ -744,7 +744,7 @@ body.onboarding-active .complete-all-and-help-window-container {
     flex: 1;
     word-break: break-word;
     text-align: left;
-    color: var(--theme-task-text, #333);
+    color: var(--theme-task-text, var(--theme-text-on-surface));
 }
 
 /* Ensure recurring indicator stays inline with task text, not below checkbox */
@@ -768,10 +768,10 @@ body.onboarding-active .complete-all-and-help-window-container {
     font-size: var(--font-size-base);
     font-family: inherit;
     padding: var(--space-0-5) var(--space-1-5);
-    border: 1px solid var(--theme-input-focus-border, #4c79ff);
+    border: 1px solid var(--theme-input-focus-border, var(--color-primary));
     border-radius: var(--radius-sm);
-    background: var(--theme-input-bg, #fff);
-    color: var(--theme-task-text, #333);
+    background: var(--theme-input-bg, var(--color-white));
+    color: var(--theme-task-text, var(--theme-text-on-surface));
     outline: none;
     min-width: 0;
     max-width: calc(100% - 120px);
@@ -894,6 +894,17 @@ body.onboarding-active .complete-all-and-help-window-container {
         left: calc(50% - 10px);
     }
 
+    /* Give task text more horizontal space on mobile — buttons are behind three-dots */
+    .task span.task-text {
+        max-width: calc(100% - 70px);
+        margin-right: 70px;
+    }
+
+    .task-edit-input {
+        max-width: calc(100% - 70px);
+        margin-right: 70px;
+    }
+
     /* Recurring indicator - ensure it stays inline on mobile */
     .task-text .recurring-indicator {
         display: inline-flex;
@@ -944,13 +955,13 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-list-c
 html:not(.dark-mode) body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task,
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task {
     background: var(--pref-task-bg, rgba(255, 255, 255, 0.95));
-    color: var(--pref-task-text, #333);
+    color: var(--pref-task-text, var(--theme-text-on-surface));
 }
 
 /* Task text element */
 html:not(.dark-mode) body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-text,
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-text {
-    color: var(--pref-task-text, #333);
+    color: var(--pref-task-text, var(--theme-text-on-surface));
 }
 
 /* Title bar - uses custom pref colors when set */

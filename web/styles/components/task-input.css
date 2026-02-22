@@ -63,7 +63,7 @@ input[type="text"]:focus-visible {
 #taskInput {
     flex: 1;
     background: rgb(255, 255, 255);
-    color: #333;
+    color: var(--theme-text-on-surface);
     padding: var(--space-1-75) 0 var(--space-1-75) var(--space-1-75);
     font-size: var(--font-size-base);
     border: none;
@@ -86,7 +86,7 @@ input[type="text"]:focus-visible {
     height: 30px;
     flex-shrink: 0; /* Don't shrink the button */
     background: rgba(0, 0, 0, 0.8);
-    color: white;
+    color: var(--color-white);
     border: none;
     border-radius: var(--radius-6);
     cursor: pointer;
@@ -94,7 +94,7 @@ input[type="text"]:focus-visible {
 }
 
 #addTaskBtn:hover {
-    background: #dc3545;
+    background: var(--color-error);
     transform: scale(1.02);
 }
 

@@ -22,8 +22,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: var(--theme-input-bg, white);
-    border: 1px solid #ddd;
+    background: var(--theme-input-bg, var(--color-white));
+    border: 1px solid var(--theme-border);
     border-radius: var(--radius-md);
     padding: 2px var(--space-1);
     margin-bottom: var(--space-1);
@@ -82,7 +82,7 @@
 }
 
 .recurring-task-item button:hover {
-    color: #c0392b;
+    color: var(--color-error);
 }
 
 /* =============================================================================
@@ -92,8 +92,8 @@
 #recurring-settings-panel {
     margin-top: var(--space-3);
     padding: var(--space-2-5);
-    background: #f0f0f0;
-    border-top: 1px solid #ccc;
+    background: var(--color-gray-100);
+    border-top: 1px solid var(--theme-input-border);
     border-radius: var(--radius-md);
 }
 
@@ -134,7 +134,7 @@
     width: 50%;
     padding: var(--space-1-5);
     border-radius: var(--radius-6);
-    border: 1px solid #ccc;
+    border: 1px solid var(--theme-input-border);
     font-size: var(--font-size-sm);
 }
 
@@ -145,8 +145,8 @@
 #apply-recurring-settings {
     display: inline-block;
     padding: var(--space-2) var(--space-4);
-    background-color: var(--theme-success, #4CAF50);
-    color: white;
+    background-color: var(--theme-success, var(--color-success));
+    color: var(--color-white);
     font-size: var(--font-size-sm);
     font-weight: 600;
     border: none;
@@ -157,12 +157,12 @@
 }
 
 #apply-recurring-settings:hover {
-    background-color: #45a049;
+    background-color: var(--color-success);
     transform: scale(1.02);
 }
 
 #apply-recurring-settings:active {
-    background-color: #3e8e41;
+    background-color: var(--color-success);
     transform: scale(0.98);
 }
 
@@ -181,7 +181,7 @@
     border: none;
     border-radius: var(--radius-2xl);
     background-color: #d8d8d8;
-    color: #333;
+    color: var(--theme-text-on-surface);
     box-shadow: none;
     cursor: pointer;
     transition: background-color var(--transition-normal) ease;
@@ -230,8 +230,8 @@
 
 /* Close button — matches #close-main-menu style */
 .close-recurring-panel {
-    background: var(--menu-close-bg, #3d7ab5);
-    color: var(--menu-close-text, white);
+    background: var(--menu-close-bg, var(--color-steel-blue));
+    color: var(--menu-close-text, var(--color-white));
     font-size: var(--font-size-lg);
     font-weight: 700;
     padding: var(--space-3-5);
@@ -246,7 +246,7 @@
 }
 
 .close-recurring-panel:hover {
-    background: var(--menu-close-hover-bg, #326a9e);
+    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
 }
 
 /* =============================================================================
@@ -268,19 +268,19 @@
 }
 
 .radio-circle:hover {
-    border-color: #fff;
+    border-color: var(--color-white);
     box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
 }
 
 .radio-circle.selected {
-    background: var(--theme-success, #4CAF50);
-    border-color: var(--theme-success, #4CAF50);
+    background: var(--theme-success, var(--color-success));
+    border-color: var(--theme-success, var(--color-success));
     box-shadow: 0 0 12px rgba(76, 175, 80, 0.4);
 }
 
 .radio-circle.selected::after {
     content: '';
-    color: white;
+    color: var(--color-white);
     font-size: 10px;
     font-weight: bold;
     position: absolute;
@@ -311,8 +311,8 @@
 .monthly-day-box {
     text-align: center;
     padding: var(--space-3) 0;
-    background: var(--theme-input-bg, white);
-    border: 2px solid #ccc;
+    background: var(--theme-input-bg, var(--color-white));
+    border: 2px solid var(--theme-input-border);
     border-radius: var(--radius-md);
     font-weight: bold;
     cursor: pointer;
@@ -321,9 +321,9 @@
 }
 
 .monthly-day-box.selected {
-    background: var(--theme-success, #4CAF50);
-    border-color: var(--theme-success, #4CAF50);
-    color: white;
+    background: var(--theme-success, var(--color-success));
+    border-color: var(--theme-success, var(--color-success));
+    color: var(--color-white);
 }
 
 .monthly-day-box.selected::after {
@@ -333,7 +333,7 @@
     right: 2px;
     width: 10px;
     height: 10px;
-    background: white;
+    background: var(--color-white);
     border-radius: 50%;
 }
 
@@ -344,8 +344,8 @@
 .weekly-day-box {
     text-align: center;
     padding: var(--space-2-5);
-    background: var(--theme-input-bg, white);
-    border: 2px solid #ccc;
+    background: var(--theme-input-bg, var(--color-white));
+    border: 2px solid var(--theme-input-border);
     border-radius: var(--radius-md);
     font-weight: bold;
     cursor: pointer;
@@ -353,9 +353,9 @@
 }
 
 .weekly-day-box.selected {
-    background: var(--theme-success, #4CAF50);
-    border-color: var(--theme-success, #4CAF50);
-    color: white;
+    background: var(--theme-success, var(--color-success));
+    border-color: var(--theme-success, var(--color-success));
+    color: var(--color-white);
 }
 
 .weekly-day-box.selected::after {
@@ -503,7 +503,7 @@
     margin: var(--space-5) auto 0 auto;
     max-width: 350px;
     padding: var(--space-2-5);
-    border: 1px solid #ccc;
+    border: 1px solid var(--theme-input-border);
     border-radius: var(--radius-5);
 }
 
@@ -518,7 +518,7 @@
     padding: var(--space-1) var(--space-1);
     font-size: var(--font-size-base);
     border-radius: var(--radius-md);
-    border: 2px solid #ccc;
+    border: 2px solid var(--theme-input-border);
     width: 70px;
     text-align: center;
     appearance: none;
@@ -528,7 +528,7 @@
 .time-picker-group input[type="number"]:focus,
 .time-picker-group select:focus {
     outline: none;
-    border-color: #38a169;
+    border-color: var(--color-success);
 }
 
 .time-picker-group input[type="number"]:focus-visible,
@@ -584,8 +584,8 @@ select.hidden {
 .yearly-day-box {
     text-align: center;
     padding: var(--space-3) 0;
-    background: white;
-    border: 2px solid #ccc;
+    background: var(--color-white);
+    border: 2px solid var(--theme-input-border);
     border-radius: var(--radius-md);
     font-weight: bold;
     cursor: pointer;
@@ -597,8 +597,8 @@ select.hidden {
 .yearly-month-box.selected,
 .yearly-day-box.selected {
     background: #b0f1b5;
-    border-color: #38a169;
-    color: #000000;
+    border-color: var(--color-success);
+    color: var(--color-black);
 }
 
 .yearly-month-box.selected::after,
@@ -608,7 +608,7 @@ select.hidden {
     position: absolute;
     top: 4px;
     left: 6px;
-    color: #000000;
+    color: var(--color-black);
 }
 
 /* =============================================================================
@@ -618,8 +618,8 @@ select.hidden {
 .biweekly-day-box {
     text-align: center;
     padding: var(--space-2-5);
-    background: var(--theme-input-bg, white);
-    border: 2px solid #ccc;
+    background: var(--theme-input-bg, var(--color-white));
+    border: 2px solid var(--theme-input-border);
     border-radius: var(--radius-md);
     font-weight: bold;
     cursor: pointer;
@@ -627,9 +627,9 @@ select.hidden {
 }
 
 .biweekly-day-box.selected {
-    background: var(--theme-success, #4CAF50);
-    border-color: var(--theme-success, #4CAF50);
-    color: white;
+    background: var(--theme-success, var(--color-success));
+    border-color: var(--theme-success, var(--color-success));
+    color: var(--color-white);
 }
 
 /* =============================================================================
@@ -639,9 +639,9 @@ select.hidden {
 #specific-dates-panel {
     margin-top: var(--space-3);
     padding: var(--space-3);
-    border: 2px solid #ccc;
+    border: 2px solid var(--theme-input-border);
     border-radius: var(--radius-10);
-    background-color: #f9f9f9;
+    background-color: var(--color-gray-100);
 }
 
 #specific-date-list {
@@ -659,7 +659,7 @@ select.hidden {
 .specific-date-entry input[type="date"] {
     flex: 1;
     padding: var(--space-1-5);
-    border: 1px solid #ccc;
+    border: 1px solid var(--theme-input-border);
     border-radius: var(--radius-6);
 }
 
@@ -682,7 +682,7 @@ select.hidden {
     padding: 10px var(--space-4);
     font-size: var(--font-size-sm);
     font-weight: 500;
-    color: #333;
+    color: var(--theme-text-on-surface);
     background: rgba(0, 0, 0, 0.05);
     border: 1px dashed rgba(0, 0, 0, 0.2);
     border-radius: var(--radius-md);
@@ -730,8 +730,8 @@ select.hidden {
     gap: var(--space-2);
     padding: var(--space-2) 10px;
     margin-bottom: var(--space-1);
-    background: var(--theme-input-bg, white);
-    border: 1px solid #ddd;
+    background: var(--theme-input-bg, var(--color-white));
+    border: 1px solid var(--theme-border);
     border-radius: var(--radius-6);
     cursor: pointer;
     font-size: var(--font-size-sm);
@@ -739,12 +739,12 @@ select.hidden {
 }
 
 #non-recurring-tasks li:hover {
-    background: #f5f5f5;
+    background: var(--color-gray-100);
 }
 
 #non-recurring-tasks li.selected {
     background: #e8f5e9;
-    border-color: var(--theme-success, #4CAF50);
+    border-color: var(--theme-success, var(--color-success));
 }
 
 #non-recurring-tasks li:last-child {
@@ -775,8 +775,8 @@ select.hidden {
     padding: 10px var(--space-4);
     font-size: var(--font-size-sm);
     font-weight: 600;
-    color: white;
-    background: var(--theme-success, #4CAF50);
+    color: var(--color-white);
+    background: var(--theme-success, var(--color-success));
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -784,11 +784,11 @@ select.hidden {
 }
 
 .confirm-add-recurring-btn:hover {
-    background: #45a049;
+    background: var(--color-success);
 }
 
 .confirm-add-recurring-btn:disabled {
-    background: #ccc;
+    background: var(--theme-input-border);
     cursor: not-allowed;
 }
 
@@ -842,8 +842,8 @@ dialog.reminders-modal[open] {
 }
 
 .reminders-modal-content {
-    background: var(--theme-modal-bg, #fff);
-    color: var(--theme-modal-text, #333);
+    background: var(--theme-modal-bg, var(--color-white));
+    color: var(--theme-modal-text, var(--theme-text-on-surface));
     padding: var(--space-5);
     border-radius: var(--radius-md);
     width: 320px;
@@ -875,7 +875,7 @@ dialog.reminders-modal[open] {
 /* Frequency Section */
 #frequency-section {
     margin-top: var(--space-2-5);
-    border-top: 1px solid var(--theme-modal-border, #ddd);
+    border-top: 1px solid var(--theme-modal-border, var(--theme-border));
     padding-top: var(--space-2-5);
 }
 

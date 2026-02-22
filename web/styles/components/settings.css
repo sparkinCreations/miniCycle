@@ -32,8 +32,8 @@
    ============================================================================= */
 
 .settings-modal-content {
-    background: var(--theme-modal-bg, #ffffff);
-    color: var(--theme-modal-text, #333);
+    background: var(--theme-modal-bg, var(--color-white));
+    color: var(--theme-modal-text, var(--theme-text-on-surface));
     border-radius: var(--radius-xl);
     padding: var(--space-6) var(--space-5);
     width: 420px;
@@ -70,7 +70,7 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--space-3) 14px;
-    background: var(--theme-input-bg, #f5f5f5);
+    background: var(--theme-input-bg, var(--color-gray-100));
     cursor: pointer;
     font-weight: 600;
     font-size: var(--font-size-sm);
@@ -137,7 +137,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #ccc;
+    background-color: var(--theme-input-border);
     transition: var(--transition-normal);
     border-radius: var(--radius-24);
 }
@@ -149,14 +149,14 @@
     width: 18px;
     left: 3px;
     bottom: 3px;
-    background-color: white;
+    background-color: var(--color-white);
     transition: var(--transition-normal);
     border-radius: 50%;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .toggle-switch input:checked + .toggle-slider {
-    background-color: #4790df;
+    background-color: var(--color-primary);
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
@@ -197,8 +197,8 @@
     font-size: var(--font-size-sm);
     border: none;
     border-radius: var(--radius-md);
-    background: #4790df;
-    color: #fff;
+    background: var(--color-primary);
+    color: var(--color-white);
     cursor: pointer;
     transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
     display: flex;
@@ -208,7 +208,7 @@
 }
 
 .settings-btn:hover {
-    background: #2171b5;
+    background: var(--color-primary-dark);
     transform: scale(1.01);
 }
 
@@ -218,41 +218,41 @@
 
 /* Primary buttons (Backup/Restore) */
 .settings-btn.settings-btn-primary {
-    background: #2d8a4e;
-    color: #fff;
+    background: var(--color-success);
+    color: var(--color-white);
 }
 
 .settings-btn.settings-btn-primary:hover {
-    background: #236b3c;
+    background: var(--color-success);
 }
 
 /* Ghost/Outline buttons (Reset options) */
 .settings-btn.settings-btn-ghost {
     background: transparent;
     color: var(--theme-modal-text, #555);
-    border: 1px solid var(--theme-modal-border, #ccc);
+    border: 1px solid var(--theme-modal-border, var(--theme-input-border));
 }
 
 .settings-btn.settings-btn-ghost:hover {
-    background: var(--theme-input-bg, #f5f5f5);
+    background: var(--theme-input-bg, var(--color-gray-100));
     border-color: #999;
 }
 
 /* Factory reset button */
 .factory-reset-btn {
-    background: #dc3545;
-    color: white;
+    background: var(--color-error);
+    color: var(--color-white);
     margin-top: var(--space-2);
 }
 
 .factory-reset-btn:hover {
-    background: #c82333;
+    background: var(--color-error);
 }
 
 /* Close button — matches #close-main-menu style */
 .settings-btn.close-btn {
-    background: var(--menu-close-bg, #3d7ab5);
-    color: var(--menu-close-text, white);
+    background: var(--menu-close-bg, var(--color-steel-blue));
+    color: var(--menu-close-text, var(--color-white));
     font-size: var(--font-size-lg);
     font-weight: 700;
     padding: var(--space-3-5);
@@ -265,7 +265,7 @@
 }
 
 .settings-btn.close-btn:hover {
-    background: var(--menu-close-hover-bg, #326a9e);
+    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
     transform: none;
 }
 
@@ -282,7 +282,7 @@
 .settings-version {
     text-align: center;
     font-size: var(--font-size-xs);
-    color: #888;
+    color: var(--theme-text-muted);
     margin-bottom: var(--space-2-5);
 }
 
@@ -365,8 +365,8 @@
 }
 
 .settings-btn {
-    background: #4790df;
-    color: #fff;
+    background: var(--color-primary);
+    color: var(--color-white);
     border: none;
     padding: var(--space-2) var(--space-3);
     margin-right: var(--space-2-5);
@@ -376,13 +376,13 @@
 }
 
 .settings-btn:hover {
-    background: #2171b5;
+    background: var(--color-primary-dark);
 }
 
 /* Reminders close button — matches #close-main-menu style */
 #close-reminders-btn {
-    background: var(--menu-close-bg, #3d7ab5);
-    color: var(--menu-close-text, white);
+    background: var(--menu-close-bg, var(--color-steel-blue));
+    color: var(--menu-close-text, var(--color-white));
     font-size: 17px;
     font-weight: 700;
     padding: var(--space-3-5);
@@ -397,7 +397,7 @@
 }
 
 #close-reminders-btn:hover {
-    background: var(--menu-close-hover-bg, #326a9e);
+    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
 }
 
 /* =============================================================================
@@ -417,7 +417,7 @@
     padding: var(--space-2) var(--space-3);
     font-size: 15px;
     font-weight: 600;
-    color: #333;
+    color: var(--theme-text-on-surface);
     background: transparent;
     border: none;
     border-radius: var(--radius-6);
@@ -437,7 +437,7 @@
     right: 10px;
     z-index: var(--z-content);
     background: none;
-    color: white;
+    color: var(--color-white);
     border: none;
     border-radius: 50%;
     width: 60px;
@@ -457,7 +457,7 @@
     left: 10px;
     z-index: var(--z-content);
     background: none;
-    color: white;
+    color: var(--color-white);
     border: none;
     border-radius: 50%;
     width: 60px;

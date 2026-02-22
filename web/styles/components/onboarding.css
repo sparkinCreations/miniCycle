@@ -86,8 +86,8 @@ body.onboarding-active .onboarding-placeholder {
    ============================================================================= */
 
 .onboarding-content {
-    background: var(--theme-modal-bg, white);
-    color: var(--theme-modal-text, #333);
+    background: var(--theme-modal-bg, var(--color-white));
+    color: var(--theme-modal-text, var(--theme-text-on-surface));
     padding: 36px var(--space-5) var(--space-5);
     width: 420px;
     max-width: 95%;
@@ -157,7 +157,7 @@ body.onboarding-active .onboarding-placeholder {
 }
 
 .onboarding-skip:hover {
-    color: #333;
+    color: var(--theme-text-on-surface);
 }
 
 /* =============================================================================
@@ -181,7 +181,7 @@ body.onboarding-active .onboarding-placeholder {
 }
 
 .onboarding-dot.active {
-    background: var(--theme-button-primary-bg, #4c79ff);
+    background: var(--theme-button-primary-bg, var(--color-primary));
 }
 
 /* =============================================================================
@@ -190,7 +190,7 @@ body.onboarding-active .onboarding-placeholder {
 
 .onboarding-step-indicator {
     font-size: var(--font-size-xs);
-    color: #888;
+    color: var(--theme-text-muted);
     margin-top: var(--space-2-5);
 }
 
@@ -228,8 +228,8 @@ body.onboarding-active .onboarding-placeholder {
     display: block;
     width: 100%;
     padding: var(--space-2-5);
-    background: #007bff;
-    color: white;
+    background: var(--color-primary);
+    color: var(--color-white);
     border: none;
     font-size: var(--font-size-base);
     margin-top: var(--space-2-5);
@@ -239,7 +239,7 @@ body.onboarding-active .onboarding-placeholder {
 }
 
 #start-mini-cycle:hover {
-    background: #0056b3;
+    background: var(--color-primary-dark);
 }
 
 /* =============================================================================
@@ -267,7 +267,7 @@ dialog.miniCycle-prompt-dialog::backdrop {
     background: rgb(50, 50, 50);
     padding: var(--space-6-25);
     border-radius: var(--radius-xl);
-    border: 1px solid black;
+    border: 1px solid var(--color-black);
     text-align: center;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
     max-width: 95%;
@@ -278,25 +278,25 @@ dialog.miniCycle-prompt-dialog::backdrop {
     font-size: 1.4rem;
     font-weight: bold;
     margin-bottom: var(--space-2-5);
-    color: #fff;
+    color: var(--color-white);
     padding-left: var(--space-7);
 }
 
 .miniCycle-prompt-message {
     font-size: 1rem;
     margin-bottom: var(--space-3-75);
-    color: #ccc;
+    color: var(--theme-input-border);
 }
 
 .miniCycle-prompt-input {
     width: 90%;
     padding: var(--space-2-5);
     font-size: 1rem;
-    border: 1px solid #ccc;
+    border: 1px solid var(--theme-input-border);
     border-radius: var(--radius-md);
     text-align: center;
-    background-color: white;
-    color: black;
+    background-color: var(--color-white);
+    color: var(--color-black);
 }
 
 .miniCycle-input-error {
@@ -320,8 +320,8 @@ dialog.miniCycle-prompt-dialog::backdrop {
 }
 
 .miniCycle-btn-cancel {
-    background-color: #ccc;
-    color: #333;
+    background-color: var(--theme-input-border);
+    color: var(--theme-text-on-surface);
 }
 
 .miniCycle-btn-cancel:hover {
@@ -329,12 +329,12 @@ dialog.miniCycle-prompt-dialog::backdrop {
 }
 
 .miniCycle-btn-confirm {
-    background-color: #38a169;
-    color: white;
+    background-color: var(--color-success);
+    color: var(--color-white);
 }
 
 .miniCycle-btn-confirm:hover {
-    background-color: #2e855a;
+    background-color: var(--color-success);
 }
 
 /* Sample tasks option styling */
@@ -346,7 +346,7 @@ dialog.miniCycle-prompt-dialog::backdrop {
 }
 
 .miniCycle-sample-option label {
-    color: #ddd;
+    color: var(--theme-border);
     font-size: 0.9rem;
     cursor: pointer;
     display: flex;
