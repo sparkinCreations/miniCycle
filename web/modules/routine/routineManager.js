@@ -14,6 +14,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, APP_VERSION } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -165,11 +166,11 @@ export class RoutineManager {
 
         setTimeout(() => {
             this.deps.showPromptModal({
-                title: "Create a Routine",
-                message: "Enter a name to get started:",
-                placeholder: "e.g., Morning Routine",
-                confirmText: "Create",
-                cancelText: "Load Sample",
+                title: getLabel('modal.createRoutineTitle'),
+                message: getLabel('modal.createRoutineMessage'),
+                placeholder: getLabel('modal.createRoutinePlaceholder'),
+                confirmText: getLabel('button.create'),
+                cancelText: getLabel('button.loadSample'),
                 callback: async (input) => {
                     if (!input || input.trim() === "") {
                         console.log('📥 User chose sample cycle');
@@ -315,7 +316,7 @@ export class RoutineManager {
             const existingModals = this.deps.querySelectorAll('dialog.miniCycle-prompt-dialog, dialog.mini-modal-dialog');
             existingModals.forEach(modal => { if (modal.open) modal.close(); modal.remove(); });
 
-            this.deps.showNotification("❌ Failed to load sample miniCycle. Creating a basic cycle instead.", "error");
+            this.deps.showNotification("❌ " + getLabel('notify.sampleLoadFailed'), "error");
 
             // ✅ CREATE A BASIC FALLBACK CYCLE
             this.createBasicFallbackCycle();
@@ -404,17 +405,17 @@ export class RoutineManager {
         }
 
         this.deps.showPromptModal({
-            title: "Create New Routine",
-            message: "What would you like to name it?",
-            placeholder: "e.g., Daily Routine",
+            title: getLabel('modal.newRoutineTitle'),
+            message: getLabel('modal.newRoutineMessage'),
+            placeholder: getLabel('modal.newRoutinePlaceholder'),
             defaultValue: "",
-            confirmText: "Create",
-            cancelText: "Cancel",
+            confirmText: getLabel('button.create'),
+            cancelText: getLabel('button.cancel'),
             required: true,
             callback: (result) => {
                 if (!result) {
                     console.log('❌ User cancelled creation');
-                    this.deps.showNotification("❌ Creation canceled.");
+                    this.deps.showNotification("❌ " + getLabel('notify.creationCancelled'));
                     return;
                 }
 

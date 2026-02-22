@@ -110,9 +110,10 @@ export class MiniCycleDueDates {
                 }
 
                 // Small delay to ensure DOM is fully rendered
-                setTimeout(() => {
-                    this.checkOverdueTasks();
-                    console.log('✅ Overdue tasks checked on page load (hook)');
+                setTimeout(async () => {
+                    await this.checkOverdueTasks();
+                    this.remindOverdueTasks();
+                    console.log('✅ Overdue tasks checked and reminded on page load (hook)');
                 }, 300);
             });
 
@@ -194,7 +195,6 @@ export class MiniCycleDueDates {
         await _deps.appInit?.waitForCore();
 
         const tasks = taskToCheck ? [taskToCheck] : this.deps.querySelectorAll(DOM_SELECTORS.TASK);
-        let autoReset = this.toggleAutoReset?.checked || false;
 
         // ✅ Use AppState only (no localStorage fallback)
         const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
@@ -212,7 +212,7 @@ export class MiniCycleDueDates {
 
         tasks.forEach(task => {
             // ✅ FIX: Use task ID instead of task text for tracking (prevents issues when renaming tasks)
-            const taskId = task.dataset?.assignedTaskId;
+            const taskId = task.dataset?.taskId;
             const taskText = task.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent;
             const dueDateInput = task.querySelector(DOM_SELECTORS.DUE_DATE);
             if (!dueDateInput || !taskId) return;
@@ -233,20 +233,12 @@ export class MiniCycleDueDates {
             const displayName = taskText || getLabel('notify.dueDateUnnamed');
 
             if (dueDate < today) {
-                if (!autoReset) {
-                    if (!overdueTaskStates[taskId]) {
-                        newlyOverdueTasks.push(displayName); // Display text for notification
-                    }
-                    task.classList.add(DOM_CLASSES.OVERDUE_TASK);
-                    task.setAttribute('aria-label', getLabel('action.taskItemLabel', { vars: { name: displayName, status: 'overdue' } }));
-                    overdueTaskStates[taskId] = true;
-                } else if (overdueTaskStates[taskId]) {
-                    task.classList.add(DOM_CLASSES.OVERDUE_TASK);
-                    task.setAttribute('aria-label', getLabel('action.taskItemLabel', { vars: { name: displayName, status: 'overdue' } }));
-                } else {
-                    task.classList.remove(DOM_CLASSES.OVERDUE_TASK);
-                    task.removeAttribute('aria-label');
+                if (!overdueTaskStates[taskId]) {
+                    newlyOverdueTasks.push(displayName); // Display text for notification
                 }
+                task.classList.add(DOM_CLASSES.OVERDUE_TASK);
+                task.setAttribute('aria-label', getLabel('action.taskItemLabel', { vars: { name: displayName, status: 'overdue' } }));
+                overdueTaskStates[taskId] = true;
             } else {
                 task.classList.remove(DOM_CLASSES.OVERDUE_TASK);
                 task.removeAttribute('aria-label');
@@ -290,11 +282,7 @@ export class MiniCycleDueDates {
 
         if (dueDate) {
             dueDateInput.value = dueDate;
-            if (!autoResetEnabled) {
-                dueDateInput.classList.remove("hidden");
-            } else {
-                dueDateInput.classList.add("hidden");
-            }
+            dueDateInput.classList.remove("hidden");
         } else {
             dueDateInput.classList.add("hidden");
         }
@@ -326,6 +314,9 @@ export class MiniCycleDueDates {
             const taskText = taskToUpdate?.text || getLabel('notify.dueDateUnnamed');
             if (dueDateInput.value) {
                 this.deps.showNotification("📅 " + getLabel('notify.dueDateUpdated', { vars: { name: taskText } }), "info", 1500);
+
+                // Auto-enable due date notifications when a due date is set
+                this._autoEnableDueDateReminders();
             } else {
                 this.deps.showNotification("📅 " + getLabel('notify.dueDateCleared', { vars: { name: taskText } }), "info", 1500);
             }
@@ -532,12 +523,6 @@ export class MiniCycleDueDates {
     remindOverdueTasks() {
         console.log('⚠️ Checking for overdue tasks (Schema 2.5 only)...');
 
-        let autoReset = this.toggleAutoReset?.checked || false;
-        if (autoReset) {
-            console.log('🔄 Auto-reset enabled, skipping overdue reminders');
-            return;
-        }
-
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
             console.error('❌ Schema 2.5 data required for remindOverdueTasks');
@@ -584,7 +569,7 @@ export class MiniCycleDueDates {
     updateDueDateVisibility(autoReset) {
         const dueDatesRemindersOption = this.deps.getElementById(DOM_IDS.DUE_DATES_REMINDERS)?.parentNode;
         if (dueDatesRemindersOption) {
-            dueDatesRemindersOption.style.display = autoReset ? "none" : "block";
+            dueDatesRemindersOption.style.display = "block";
         }
 
         // ✅ NO LONGER hide "Set Due Date" buttons based on mode
@@ -593,35 +578,52 @@ export class MiniCycleDueDates {
         //     button.classList.toggle("hidden", autoReset);
         // });
 
-        if (autoReset) {
-            // Auto Reset ON = hide all due dates
-            this.deps.querySelectorAll(DOM_SELECTORS.DUE_DATE).forEach(input => {
+        // Show due dates that have a value, hide empty ones (all modes)
+        this.deps.querySelectorAll(DOM_SELECTORS.DUE_DATE).forEach(input => {
+            if (input.value) {
+                input.classList.remove("hidden");
+            } else {
                 input.classList.add("hidden");
-            });
+            }
+        });
 
-            // Remove overdue visual styling
-            this.deps.querySelectorAll(".overdue-task").forEach(task => {
-                task.classList.remove(DOM_CLASSES.OVERDUE_TASK);
-            });
+        // Due date reminders option: only relevant when reminders are meaningful
+        // (kept visible in all modes so users can configure)
 
-        } else {
-            // Auto Reset OFF = show due dates ONLY if they have a value
-            this.deps.querySelectorAll(DOM_SELECTORS.DUE_DATE).forEach(input => {
-                if (input.value) {
-                    input.classList.remove("hidden");
-                } else {
-                    input.classList.add("hidden");
-                }
-            });
+        // Recheck and reapply overdue classes as needed
+        this.checkOverdueTasks();
 
-            // ✅ NOTE: Button re-creation and listener attachment is now handled by
-            // refreshTaskButtonsForModeChange() in miniCycle-scripts.js (line 8086-8096)
-            // This runs automatically when the toggleAutoReset changes
-            console.log('✅ Due date visibility updated (button listeners handled by refreshTaskButtonsForModeChange)');
+        console.log('✅ Due date visibility updated');
+    }
 
-            // Recheck and reapply overdue classes as needed
-            this.checkOverdueTasks();
-        }
+    // ============================================
+    // AUTO-ENABLE NOTIFICATIONS
+    // ============================================
+
+    /**
+     * Auto-enable due date reminders when a due date is first set.
+     * Updates both AppState and the checkbox UI if present.
+     */
+    _autoEnableDueDateReminders() {
+        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        if (!AppState?.get) return;
+
+        const state = AppState.get();
+        const alreadyEnabled = state.customReminders?.dueDatesReminders;
+        if (alreadyEnabled) return;
+
+        AppState.update(s => {
+            if (s.customReminders) {
+                s.customReminders.dueDatesReminders = true;
+            }
+            s.metadata.lastModified = Date.now();
+        }, true);
+
+        // Sync the checkbox UI if the reminders modal is open
+        const checkbox = this.deps.getElementById(DOM_IDS.DUE_DATES_REMINDERS);
+        if (checkbox) checkbox.checked = true;
+
+        console.log('📅 Auto-enabled due date reminders');
     }
 
     // ============================================

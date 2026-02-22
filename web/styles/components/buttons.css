@@ -559,6 +559,19 @@ body.hide-help-window .help-window {
     z-index: var(--z-modal);
 }
 
+.mini-cycle-complete-animation span {
+    display: block;
+    line-height: 1;
+    font-size: 60px;
+}
+
+/* Safari renders ✔ (U+2714) smaller than other browsers — compensate */
+@supports (-webkit-hyphens: none) {
+    .mini-cycle-complete-animation span {
+        font-size: 76px;
+    }
+}
+
 /* =============================================================================
    CYCLE CLEAR ANIMATION (Blue Broom)
    ============================================================================= */

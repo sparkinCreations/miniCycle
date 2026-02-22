@@ -347,7 +347,7 @@ export async function editTaskImpl(taskItem, deps = {}) {
         input.type = 'text';
         input.className = 'task-edit-input';
         input.value = oldText;
-        input.setAttribute('aria-label', 'Edit task name');
+        input.setAttribute('aria-label', getLabel('action.editTaskTitle'));
         taskLabel.parentNode.insertBefore(input, taskLabel.nextSibling);
 
         input.focus();
@@ -441,10 +441,10 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
         const enableUndoSystemOnFirstInteraction = deps.enableUndoSystemOnFirstInteraction || _deps.enableUndoSystemOnFirstInteraction;
 
         showConfirmationModal({
-            title: "Delete Task",
-            message: `Are you sure you want to delete "${taskName}"?`,
-            confirmText: "Delete",
-            cancelText: "Cancel",
+            title: getLabel('action.deleteTaskTitle'),
+            message: getLabel('action.deleteTaskMessage', { vars: { name: taskName } }),
+            confirmText: getLabel('button.delete'),
+            cancelText: getLabel('button.cancel'),
             destructive: true,
             callback: async (confirmDelete) => {
                 if (!confirmDelete) {

@@ -191,7 +191,7 @@ export class MiniCycleReminders {
             console.log('✅ Reminder system initialized successfully');
         } catch (error) {
             console.warn('⚠️ Reminder system initialization failed:', error);
-            this.deps.showNotification('Reminder system initialized with limited functionality', 'warning');
+            this.deps.showNotification(getLabel('notify.reminderLimited'), 'warning');
         }
     }
 
@@ -877,7 +877,7 @@ export class MiniCycleReminders {
                     notificationElement._clickHandler = clickHandler;
                     safeAdd(notificationElement, 'click', notificationElement._clickHandler);
                     notificationElement.style.cursor = 'pointer';
-                    notificationElement.title = 'Click to configure reminder settings';
+                    notificationElement.title = getLabel('reminders.configureTooltip');
 
                     // ✅ Enable line breaks in notification
                     const notificationContent = notificationElement.querySelector(DOM_SELECTORS.NOTIFICATION_CONTENT);
@@ -1063,8 +1063,8 @@ export class MiniCycleReminders {
                     showConfirm({
                         title: getLabel('reminders.browserNotifications'),
                         message: getLabel('reminders.browserNotificationsWarning'),
-                        confirmText: 'Enable',
-                        cancelText: 'Cancel',
+                        confirmText: getLabel('button.enable'),
+                        cancelText: getLabel('button.cancel'),
                         callback: async (confirmed) => {
                             if (!confirmed) return;
 

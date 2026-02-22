@@ -49,7 +49,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, APP_VERSION } from '../core/constants.js';
-import { getLabel } from '../labels/labelResolver.js';
+import { getLabel, getIcon } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -103,7 +103,7 @@ export function showCompletionAnimation() {
     animation.classList.add("mini-cycle-complete-animation");
     animation.setAttribute('role', 'status');
     animation.setAttribute('aria-live', 'assertive');
-    animation.innerHTML = '<span aria-hidden="true">✔</span>';
+    animation.innerHTML = `<span aria-hidden="true">${getIcon('cycleComplete')}</span>`;
 
     document.body.appendChild(animation);
 
@@ -125,7 +125,7 @@ export function showClearAnimation() {
     animation.classList.add("mini-cycle-clear-animation");
     animation.setAttribute('role', 'status');
     animation.setAttribute('aria-live', 'assertive');
-    animation.innerHTML = '<span aria-hidden="true">🧹</span>';
+    animation.innerHTML = `<span aria-hidden="true">${getIcon('clearComplete')}</span>`;
 
     document.body.appendChild(animation);
 
@@ -168,10 +168,10 @@ function showMilestoneMessage(miniCycleName, cycleCount) {
     // Separate emojis from screen-reader text (use DOM methods to avoid XSS from routine name)
     const leadEmoji = document.createElement('span');
     leadEmoji.setAttribute('aria-hidden', 'true');
-    leadEmoji.textContent = '🎉 ';
+    leadEmoji.textContent = getIcon('celebrate') + ' ';
     const trailEmoji = document.createElement('span');
     trailEmoji.setAttribute('aria-hidden', 'true');
-    trailEmoji.textContent = ' 🚀';
+    trailEmoji.textContent = ' ' + getIcon('milestoneTrail');
     milestonePopup.appendChild(leadEmoji);
     milestonePopup.appendChild(document.createTextNode(labelText));
     milestonePopup.appendChild(trailEmoji);

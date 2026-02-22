@@ -10,6 +10,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -62,20 +63,20 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
         const activeCycleId = state.appState?.activeCycleId;
 
         if (!activeCycleId) {
-            _deps.showNotification("⚠ No active cycle found.");
+            _deps.showNotification("⚠ " + getLabel('notify.recurringNoActiveFound'));
             return;
         }
 
         const cycleData = state.data?.cycles?.[activeCycleId];
         if (!cycleData) {
-            _deps.showNotification("⚠ Active cycle data not found.");
+            _deps.showNotification("⚠ " + getLabel('notify.recurringDataNotFound'));
             return;
         }
 
         const checkedEls = _deps.querySelectorAll(DOM_SELECTORS.RECURRING_CHECK_CHECKED);
 
         if (!checkedEls.length) {
-            _deps.showNotification("⚠ No tasks checked to apply settings.");
+            _deps.showNotification("⚠ " + getLabel('notify.recurringNoChecked'));
             return;
         }
 
