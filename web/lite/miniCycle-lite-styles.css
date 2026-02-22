@@ -26,7 +26,7 @@
      • Fixed values instead of calc() where possible
      • CSS variable fallbacks for IE11
 
-   Last meaningful update: v2.062 (intentionally static thereafter)
+   Last meaningful update: v2.063 (intentionally static thereafter)
    © 2026 sparkinCreations - https://sparkincreations.com
    ================================================================================ */
 
@@ -142,12 +142,17 @@ html, body {
    env(safe-area-inset-top) often returns 0 on iOS PWAs, so we
    hardcode padding matching the Dynamic Island (~59px safe area) */
 body.is-iphone .mini-cycle-header-row {
-    padding-top: 59px;
+    padding-top: 70px;  /* Dynamic Island ~59px + breathing room */
     padding-bottom: 20px;
 }
 
+body.is-iphone .mobile-mode-selector-wrapper {
+    top: 120px;  /* Below taller iPhone header */
+    z-index: 21; /* Above header row (z-index: 20) */
+}
+
 body.is-iphone #app-container {
-    padding-top: 170px; /* 59px safe area + header + mode selector */
+    padding-top: 190px; /* Taller header + mode selector */
 }
 
 @media (max-width: 768px) {
