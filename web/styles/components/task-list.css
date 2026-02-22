@@ -270,13 +270,13 @@ body.onboarding-active .complete-all-and-help-window-container {
    ============================================================================= */
 
 .overdue-task {
-    background-color: rgba(255, 0, 0, 0.2);
-    color: darkred;
+    background-color: var(--overdue-task-bg, rgba(244, 67, 54, 0.15));
+    color: var(--overdue-task-text, var(--color-red));
     font-weight: bold;
 }
 
 .overdue-task:hover {
-    background-color: rgba(255, 0, 0, 0.2);
+    background-color: var(--overdue-task-bg, rgba(244, 67, 54, 0.15));
 }
 
 /* =============================================================================
