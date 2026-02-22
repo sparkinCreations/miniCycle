@@ -205,6 +205,8 @@ export const DEFAULT_LABELS = deepFreeze({
         routineTitle: 'Share the current routine as a file',
         app:          'Share App',
         appTitle:     'Share miniCycle with someone',
+        appShareTitle:'miniCycle',
+        appShareText: 'Check out miniCycle — turn your routine into progress!',
     },
 
     // ========================================================================
@@ -221,10 +223,14 @@ export const DEFAULT_LABELS = deepFreeze({
         sort:               'Sort:',
         sortAlpha:          'A-Z',
         sortAlphaTitle:     'Sort alphabetically',
+        sortZA:             'Z-A',
         sortRecent:         'Recent',
         sortRecentTitle:    'Sort by recently modified',
+        sortOldest:         'Oldest',
         sortSize:           'Size',
         sortSizeTitle:      'Sort by file size',
+        sortLargest:        'Largest',
+        sortSmallest:       'Smallest',
         duplicateRoutine:   'Duplicate routine',
         renameRoutine:      'Rename routine',
         deleteRoutine:      'Delete routine',
@@ -234,7 +240,9 @@ export const DEFAULT_LABELS = deepFreeze({
         calculating:        'Calculating...',
         deleteTitle:        'Delete miniCycle',
         deleteMessage:      'Are you sure you want to delete "{name}"? This action cannot be undone.',
-        noSaved:            'No saved miniCycles found.'
+        noSaved:            'No saved miniCycles found.',
+        noSelectedForDelete:'No miniCycle selected for deletion.',
+        selectPreview:      'Select a miniCycle to preview'
     },
 
     // ========================================================================
@@ -590,6 +598,12 @@ export const DEFAULT_LABELS = deepFreeze({
         dueDateDueSoon:          'Task "{name}" is due soon!',
         dueDateUnnamed:          'Unnamed task',
 
+        // Routine management notifications
+        noRoutineSelected:       'No miniCycle selected for deletion.',
+        sampleLoadFailed:        'Failed to load sample miniCycle. Creating a basic cycle instead.',
+        creationCancelled:       'Creation canceled.',
+        reminderLimited:         'Reminder system initialized with limited functionality',
+
         // Pull-to-refresh notifications
         refreshFailed:           'Refresh failed',
         updateAvailableReload:   'App update available! Reload to update.',
@@ -637,7 +651,14 @@ export const DEFAULT_LABELS = deepFreeze({
         exportPresetMessage:      'Copy this code to share your preset:',
         importPresetTitle:        'Import Preset',
         importPresetMessage:      'Paste the preset code you received:',
-        importPresetPlaceholder:  'Paste code here...'
+        importPresetPlaceholder:  'Paste code here...',
+        createRoutineTitle:       'Create a Routine',
+        createRoutineMessage:     'Enter a name to get started:',
+        createRoutinePlaceholder: 'e.g., Morning Routine',
+        newRoutineTitle:          'Create New Routine',
+        newRoutineMessage:        'What would you like to name it?',
+        newRoutinePlaceholder:    'e.g., Daily Routine',
+        liteVersionMessage:       'Try the Lite version? It works great on older devices and slower connections.'
     },
 
     // ========================================================================
@@ -799,8 +820,11 @@ export const DEFAULT_LABELS = deepFreeze({
         reset:    'Reset',
         yes:      'Yes',
         ok:       'OK',
-        done:     'Done',
-        import:   'Import'
+        done:       'Done',
+        import:     'Import',
+        create:     'Create',
+        enable:     'Enable',
+        loadSample: 'Load Sample'
     },
 
     // ========================================================================
@@ -969,6 +993,7 @@ export const DEFAULT_LABELS = deepFreeze({
         permissionUnsupported:       'Browser notifications are not supported on this device',
         permissionTestFailed:        'Permission was granted but the test notification failed. Your browser may be blocking notifications.',
         browserNotificationsDisabled: 'Browser notifications disabled',
+        configureTooltip:'Click to configure reminder settings',
         indefinitely:    'Remind Indefinitely?',
         count:           'Number of Times:',
         every:           'Every:',
@@ -1184,6 +1209,42 @@ export const DEFAULT_LABELS = deepFreeze({
         completeFirst:     'Complete your first cycle!',
         progressCycles:    '{count} {cycleWord} completed',
         progressCleared:   '{count} completed {taskWord} cleared'
+    },
+
+    // ========================================================================
+    // 36. ICONS
+    // ========================================================================
+    // Emoji/icon constants used throughout the UI.
+    // Centralised here so contextual lenses can override them in the future.
+    // Access via getIcon(key) from labelResolver.js — NOT via getLabel() directly.
+
+    icons: {
+        // Cycle/task state — lens-overridable
+        cycleComplete:  '✔',
+        clearComplete:  '🧹',
+        celebrate:      '🎉',
+        milestoneTrail: '🚀',
+
+        // UI state toggles
+        darkMode:       '🌙',
+        lightMode:      '☀️',
+
+        // Theme identifiers
+        themeOcean:     '🌊',
+        themeStar:      '🌟',
+        themeDefault:   '⭐',
+
+        // Unlock states
+        unlocked:       '🔓',
+        locked:         '🔒',
+        game:           '🎮',
+
+        // Feature icons
+        history:        '📜',
+        keyboard:       '⌨️',
+
+        // Notification prefix
+        warning:        '⚠️'
     }
 });
 
@@ -1281,7 +1342,14 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'switcher.renameRoutine',
     'switcher.deleteRoutine',
     'switcher.deleteTitle',
+    'switcher.deleteMessage',
     'switcher.noSaved',
+    'switcher.noSelectedForDelete',
+    'switcher.selectPreview',
+    'switcher.sortZA',
+    'switcher.sortOldest',
+    'switcher.sortLargest',
+    'switcher.sortSmallest',
 
     // Stats & progress
     'stats.currentRoutine',
@@ -1429,6 +1497,10 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.presetDeleted',
     'notify.presetCopied',
     'notify.invalidPreset',
+    'notify.noRoutineSelected',
+    'notify.sampleLoadFailed',
+    'notify.creationCancelled',
+    'notify.reminderLimited',
     'notify.bgImageRemoved',
     'notify.bgImageRemoveFailed',
     'notify.bgImageSet',
@@ -1451,6 +1523,13 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'modal.factoryResetTitle',
     'modal.factoryResetMessage',
     'modal.factoryResetConfirm',
+    'modal.createRoutineTitle',
+    'modal.createRoutineMessage',
+    'modal.createRoutinePlaceholder',
+    'modal.newRoutineTitle',
+    'modal.newRoutineMessage',
+    'modal.newRoutinePlaceholder',
+    'modal.liteVersionMessage',
 
     // Task options customizer
     'taskOptions.customizeLabel',
@@ -1672,7 +1751,24 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.shareRoutineNoActiveCycle',
     'notify.shareAppSuccess',
     'notify.shareAppCopied',
-    'notify.shareAppFailed'
+    'notify.shareAppFailed',
+
+    // Icons
+    'icons.cycleComplete',
+    'icons.clearComplete',
+    'icons.celebrate',
+    'icons.milestoneTrail',
+    'icons.darkMode',
+    'icons.lightMode',
+    'icons.themeOcean',
+    'icons.themeStar',
+    'icons.themeDefault',
+    'icons.unlocked',
+    'icons.locked',
+    'icons.game',
+    'icons.history',
+    'icons.keyboard',
+    'icons.warning'
 ]));
 
 // ============================================================================

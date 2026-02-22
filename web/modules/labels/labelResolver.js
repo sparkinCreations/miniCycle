@@ -120,6 +120,24 @@ export function getLabel(key, options = {}) {
 }
 
 /**
+ * Get an icon/emoji for the current theme context
+ *
+ * Resolves from the active contextual lens first (future), then falls back
+ * to the `icons` category in DEFAULT_LABELS.
+ *
+ * @param {string} key - Icon key (e.g., 'cycleComplete', 'darkMode', 'celebrate')
+ * @returns {string} Icon character or emoji
+ *
+ * @example
+ * getIcon('cycleComplete')  // '✔' (or '💪' with a Fitness lens)
+ * getIcon('darkMode')       // '🌙'
+ * getIcon('celebrate')      // '🎉'
+ */
+export function getIcon(key) {
+    return getLabel(`icons.${key}`);
+}
+
+/**
  * Get a label with guaranteed string return (never returns the key)
  * Use when you need a fallback value instead of the key on failure
  *

@@ -384,6 +384,17 @@ export class OnboardingManager {
             resetBtn.removeEventListener('click', this._resetOnboardingHandler);
             this._resetOnboardingHandler = null;
         }
+
+        // Clean up orphaned onboarding modal listeners (if modal wasn't completed)
+        const modal = document.getElementById('onboarding-modal');
+        if (modal?._clickHandler) modal.removeEventListener('click', modal._clickHandler);
+        const nextBtn = document.getElementById(DOM_IDS.ONBOARDING_NEXT);
+        if (nextBtn?._clickHandler) nextBtn.removeEventListener('click', nextBtn._clickHandler);
+        const prevBtn = document.getElementById(DOM_IDS.ONBOARDING_PREV);
+        if (prevBtn?._clickHandler) prevBtn.removeEventListener('click', prevBtn._clickHandler);
+        const skipBtn = document.getElementById(DOM_IDS.ONBOARDING_SKIP);
+        if (skipBtn?._clickHandler) skipBtn.removeEventListener('click', skipBtn._clickHandler);
+
         this._eventListenersInitialized = false;
         this.initialized = false;
     }

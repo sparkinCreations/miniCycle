@@ -24,6 +24,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { INTERVALS, DEFAULT_RECURRING_DELETE_SETTINGS, LIMITS } from '../core/constants.js';
+import { getIcon } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -111,7 +112,7 @@ function showTaskLimitNotification(blockedCount) {
     _taskLimitNotificationShown = true;
 
     Deps.showNotification?.(
-        `⚠️ ${blockedCount} recurring task${blockedCount > 1 ? 's' : ''} couldn't spawn - task list full (${LIMITS.TASKS_PER_CYCLE} limit).\nComplete or delete tasks to allow more recurring tasks.`,
+        `${getIcon('warning')} ${blockedCount} recurring task${blockedCount > 1 ? 's' : ''} couldn't spawn - task list full (${LIMITS.TASKS_PER_CYCLE} limit).\nComplete or delete tasks to allow more recurring tasks.`,
         'warning',
         8000
     );

@@ -149,7 +149,7 @@ export class RoutineSwitcher {
 
         if (Object.keys(cycles).length === 0) {
             console.warn('⚠️ No saved miniCycles found');
-            this.deps.showNotification("No saved miniCycles found.");
+            this.deps.showNotification(getLabel('switcher.noSaved'));
             return;
         }
 
@@ -265,7 +265,7 @@ export class RoutineSwitcher {
         const selectedCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
         if (!selectedCycle) {
             console.warn('⚠️ No cycle selected for deletion');
-            this.deps.showNotification("⚠ No miniCycle selected for deletion.");
+            this.deps.showNotification("⚠ " + getLabel('switcher.noSelectedForDelete'));
             return;
         }
 
@@ -306,10 +306,10 @@ export class RoutineSwitcher {
         console.log(`📊 Routine size to delete: ${formatBytes(routineSizeBytes)}`);
 
         this.deps.showConfirmationModal({
-            title: "Delete miniCycle",
-            message: `❌ Are you sure you want to delete "${cycleToDelete}"? This action cannot be undone.`,
-            confirmText: "Delete",
-            cancelText: "Cancel",
+            title: getLabel('switcher.deleteTitle'),
+            message: "❌ " + getLabel('switcher.deleteMessage', { vars: { name: cycleToDelete } }),
+            confirmText: getLabel('button.delete'),
+            cancelText: getLabel('button.cancel'),
             destructive: true,
             callback: (confirmed) => {
                 if (!confirmed) {
@@ -1509,25 +1509,25 @@ export class RoutineSwitcher {
         if (sortAlpha) {
             sortAlpha.classList.toggle('active', this._sortMode === 'alpha');
             if (this._sortMode === 'alpha') {
-                sortAlpha.textContent = this._sortDirection === 'asc' ? 'A-Z' : 'Z-A';
+                sortAlpha.textContent = this._sortDirection === 'asc' ? getLabel('switcher.sortAlpha') : getLabel('switcher.sortZA');
             } else {
-                sortAlpha.textContent = 'A-Z';
+                sortAlpha.textContent = getLabel('switcher.sortAlpha');
             }
         }
         if (sortRecent) {
             sortRecent.classList.toggle('active', this._sortMode === 'recent');
             if (this._sortMode === 'recent') {
-                sortRecent.textContent = this._sortDirection === 'asc' ? 'Recent' : 'Oldest';
+                sortRecent.textContent = this._sortDirection === 'asc' ? getLabel('switcher.sortRecent') : getLabel('switcher.sortOldest');
             } else {
-                sortRecent.textContent = 'Recent';
+                sortRecent.textContent = getLabel('switcher.sortRecent');
             }
         }
         if (sortSize) {
             sortSize.classList.toggle('active', this._sortMode === 'size');
             if (this._sortMode === 'size') {
-                sortSize.textContent = this._sortDirection === 'asc' ? 'Largest' : 'Smallest';
+                sortSize.textContent = this._sortDirection === 'asc' ? getLabel('switcher.sortLargest') : getLabel('switcher.sortSmallest');
             } else {
-                sortSize.textContent = 'Size';
+                sortSize.textContent = getLabel('switcher.sortSize');
             }
         }
     }

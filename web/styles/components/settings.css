@@ -121,6 +121,7 @@
     display: inline-block;
     width: 44px;
     height: 24px;
+    min-height: 44px; /* WCAG touch target */
     flex-shrink: 0;
 }
 

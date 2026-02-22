@@ -332,7 +332,7 @@ function handleGlobalClickForSwitchModal(event) {
       switchItemsRow.style.display = 'none';
     }
     if (previewWindow) {
-      previewWindow.innerHTML = '<p style="color: #888; font-style: italic;">Select a miniCycle to preview</p>';
+      previewWindow.innerHTML = '<p style="color: #888; font-style: italic;">' + getLabel('switcher.selectPreview') + '</p>';
     }
   }
 }
@@ -620,10 +620,10 @@ export function handleTryLiteVersionClick(deps) {
   }
 
   showConfirmationModal?.({
-    title: "Switch to Lite Version",
-    message: "Try the Lite version? It works great on older devices and slower connections.",
-    confirmText: "Try Lite Version",
-    cancelText: "Stay Here",
+    title: getLabel('modal.liteVersionTitle'),
+    message: getLabel('modal.liteVersionMessage'),
+    confirmText: getLabel('modal.liteVersionConfirm'),
+    cancelText: getLabel('modal.liteVersionCancel'),
     callback: (confirmed) => {
       if (confirmed) {
         window.location.href = 'lite/miniCycle-lite.html';

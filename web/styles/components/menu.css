@@ -487,17 +487,13 @@
 }
 
 .slide-arrow:focus-visible {
-    box-shadow: 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+    outline: 2px solid var(--theme-input-focus-border, rgba(76, 121, 255, 0.8));
+    outline-offset: 2px;
+    background-color: rgba(255, 255, 255, 0.9);
 }
 
 .slide-arrow:hover {
     background-color: var(--color-white);
-}
-
-.slide-arrow:focus-visible {
-    outline: 2px solid #007BFF;
-    outline-offset: 2px;
-    background-color: rgba(255, 255, 255, 0.9);
 }
 
 #slide-left {

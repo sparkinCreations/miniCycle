@@ -24,7 +24,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { GESTURE, UI_TIMEOUTS, CHART, INTERVALS, DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
-import { getLabel } from '../labels/labelResolver.js';
+import { getLabel, getIcon } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -215,7 +215,7 @@ export class StatsPanelManager {
             routineButtonsContainer.className = 'routine-buttons-container';
             routineButtonsContainer.innerHTML = `
                 <button class="stats-feature-btn history-btn" id="${DOM_IDS.HISTORY_BTN}">
-                    <span>📜</span> ${getLabel('stats.history')}
+                    <span>${getIcon('history')}</span> ${getLabel('stats.history')}
                 </button>
             `;
             // Insert after cleared count (if exists) so order is: Cycles > Cleared Tasks > History
@@ -733,11 +733,11 @@ export class StatsPanelManager {
         if (event.key === "ArrowRight" && !this.state.isStatsVisible) {
             event.preventDefault();
             this.showStatsPanel();
-            this.dependencies.showNotification(`⌨️ ${getLabel('notify.keyboardStatsOpened')}`, "info", 1500);
+            this.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.keyboardStatsOpened')}`, "info", 1500);
         } else if (event.key === "ArrowLeft" && this.state.isStatsVisible) {
             event.preventDefault();
             this.showTaskView();
-            this.dependencies.showNotification(`⌨️ ${getLabel('notify.keyboardTaskOpened')}`, "info", 1500);
+            this.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.keyboardTaskOpened')}`, "info", 1500);
         }
 
         // Shift+Tab for quick toggle (only when nothing is focused — preserve normal tab navigation)
@@ -749,10 +749,10 @@ export class StatsPanelManager {
             event.preventDefault();
             if (this.state.isStatsVisible) {
                 this.showTaskView();
-                this.dependencies.showNotification(`⌨️ ${getLabel('notify.quickToggleTask')}`, "info", 1500);
+                this.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.quickToggleTask')}`, "info", 1500);
             } else {
                 this.showStatsPanel();
-                this.dependencies.showNotification(`⌨️ ${getLabel('notify.quickToggleStats')}`, "info", 1500);
+                this.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.quickToggleStats')}`, "info", 1500);
             }
         }
     }
@@ -1042,7 +1042,7 @@ export class StatsPanelManager {
             const allUnlocked = globalCyclesCompleted >= maxCycleMilestone || globalTasksCleared >= maxTaskMilestone;
 
             if (allUnlocked) {
-                this.elements.milestoneProgressText.textContent = `🎉 ${getLabel('stats.allBadgesUnlocked')}`;
+                this.elements.milestoneProgressText.textContent = `${getIcon('celebrate')} ${getLabel('stats.allBadgesUnlocked')}`;
                 this.elements.milestoneProgressText.style.color = "var(--theme-color-success, #4caf50)";
                 this.elements.milestoneProgressText.style.fontWeight = "";
             } else if (isToDoMode) {
@@ -1216,15 +1216,15 @@ export class StatsPanelManager {
         // Dark Ocean Theme (5 cycles OR 5 tasks)
         if (themeUnlockMessage) {
             if (milestoneUnlocks.darkOcean) {
-                themeUnlockMessage.textContent = `🌊 ${getLabel('unlock.darkOceanUnlocked')} 🔓`;
+                themeUnlockMessage.textContent = `${getIcon('themeOcean')} ${getLabel('unlock.darkOceanUnlocked')} ${getIcon('unlocked')}`;
                 themeUnlockMessage.classList.add("unlocked-message");
             } else {
                 if (isToDoMode) {
                     const tasksNeeded = Math.max(0, 5 - totalTasksCleared);
-                    themeUnlockMessage.textContent = `🔒 ${getLabel('unlock.darkOcean', { vars: { count: tasksNeeded } })}`;
+                    themeUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.darkOcean', { vars: { count: tasksNeeded } })}`;
                 } else {
                     const cyclesNeeded = Math.max(0, 5 - globalCyclesCompleted);
-                    themeUnlockMessage.textContent = `🔒 ${getLabel('unlock.darkOceanCycles', { vars: { count: cyclesNeeded } })}`;
+                    themeUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.darkOceanCycles', { vars: { count: cyclesNeeded } })}`;
                 }
                 themeUnlockMessage.classList.remove("unlocked-message");
             }
@@ -1234,15 +1234,15 @@ export class StatsPanelManager {
         if (goldenUnlockMessage) {
             if (milestoneUnlocks.darkOcean) {
                 if (globalCyclesCompleted >= 50 || totalTasksCleared >= 250) {
-                    goldenUnlockMessage.textContent = `🌟 ${getLabel('unlock.goldenGlowUnlocked')} 🔓`;
+                    goldenUnlockMessage.textContent = `${getIcon('themeStar')} ${getLabel('unlock.goldenGlowUnlocked')} ${getIcon('unlocked')}`;
                     goldenUnlockMessage.classList.add("unlocked-message");
                 } else {
                     if (isToDoMode) {
                         const tasksNeeded = Math.max(0, 250 - totalTasksCleared);
-                        goldenUnlockMessage.textContent = `🔒 ${getLabel('unlock.goldenGlow', { vars: { count: tasksNeeded } })}`;
+                        goldenUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.goldenGlow', { vars: { count: tasksNeeded } })}`;
                     } else {
                         const cyclesNeeded = Math.max(0, 50 - globalCyclesCompleted);
-                        goldenUnlockMessage.textContent = `🔒 ${getLabel('unlock.goldenGlowCycles', { vars: { count: cyclesNeeded } })}`;
+                        goldenUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.goldenGlowCycles', { vars: { count: cyclesNeeded } })}`;
                     }
                     goldenUnlockMessage.classList.remove("unlocked-message");
                 }
@@ -1257,15 +1257,15 @@ export class StatsPanelManager {
             const showGameHint = milestoneUnlocks.goldenGlow;
             if (showGameHint) {
                 if (milestoneUnlocks.taskOrderGame) {
-                    gameUnlockMessage.textContent = `🎮 ${getLabel('unlock.gameUnlocked')} 🔓`;
+                    gameUnlockMessage.textContent = `${getIcon('game')} ${getLabel('unlock.gameUnlocked')} ${getIcon('unlocked')}`;
                     gameUnlockMessage.classList.add("unlocked-message");
                 } else {
                     if (isToDoMode) {
                         const tasksNeeded = Math.max(0, 500 - totalTasksCleared);
-                        gameUnlockMessage.textContent = `🔒 ${getLabel('unlock.game', { vars: { count: tasksNeeded } })}`;
+                        gameUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.game', { vars: { count: tasksNeeded } })}`;
                     } else {
                         const cyclesNeeded = Math.max(0, 100 - globalCyclesCompleted);
-                        gameUnlockMessage.textContent = `🔒 ${getLabel('unlock.gameCycles', { vars: { count: cyclesNeeded } })}`;
+                        gameUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.gameCycles', { vars: { count: cyclesNeeded } })}`;
                     }
                     gameUnlockMessage.classList.remove("unlocked-message");
                 }
@@ -1544,7 +1544,7 @@ export class StatsPanelManager {
 
         // Update icon
         if (this.elements.quickDarkToggle) {
-            this.elements.quickDarkToggle.textContent = isDark ? "☀️" : "🌙";
+            this.elements.quickDarkToggle.textContent = isDark ? getIcon('lightMode') : getIcon('darkMode');
         }
         
         console.log('✅ Quick dark toggle completed');

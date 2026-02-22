@@ -30,7 +30,7 @@
 
 import { DOM_IDS, DOM_SELECTORS, STORAGE_KEYS } from '../core/constants.js';
 import { createDIModule, optional } from '../core/diBase.js';
-import { getLabel } from '../labels/labelResolver.js';
+import { getLabel, getIcon } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -74,13 +74,13 @@ export class ThemeManager {
             {
                 id: "DarkOcean",
                 class: "dark-ocean", 
-                label: "Dark Ocean Theme 🌊",
+                label: `Dark Ocean Theme ${getIcon('themeOcean')}`,
                 unlockKey: "dark-ocean"
             },
             {
                 id: "GoldenGlow",
                 class: "golden-glow",
-                label: "Golden Glow Theme 🌟",
+                label: `Golden Glow Theme ${getIcon('themeStar')}`,
                 unlockKey: "golden-glow"
             }
         ];
@@ -311,7 +311,7 @@ export class ThemeManager {
             quickToggle.parentNode?.replaceChild(newQuickToggle, quickToggle);
             
             // Set correct initial icon state
-            newQuickToggle.textContent = isDark ? "☀️" : "🌙";
+            newQuickToggle.textContent = isDark ? getIcon('lightMode') : getIcon('darkMode');
             
             const safeAdd = _deps.safeAddEventListener;
             newQuickToggle._clickHandler = (e) => {
@@ -380,7 +380,7 @@ export class ThemeManager {
         try {
             const currentQuickToggle = _deps.getElementById(DOM_IDS.QUICK_DARK_TOGGLE);
             if (currentQuickToggle) {
-                currentQuickToggle.textContent = isDark ? "☀️" : "🌙";
+                currentQuickToggle.textContent = isDark ? getIcon('lightMode') : getIcon('darkMode');
             }
         } catch (error) {
             console.warn('⚠️ Quick toggle icon update failed:', error.message);
@@ -424,7 +424,7 @@ export class ThemeManager {
                 this.showThemeContainer();
                 this.showThemeButton();
                 
-                this.showNotification?.('🎉 ' + getLabel('notify.themeUnlocked', { vars: { name: 'Dark Ocean' } }), 'success', 5000);
+                this.showNotification?.(getIcon('celebrate') + ' ' + getLabel('notify.themeUnlocked', { vars: { name: 'Dark Ocean' } }), 'success', 5000);
             } else {
                 console.log('ℹ️ Dark Ocean theme already unlocked');
             }
@@ -471,7 +471,7 @@ export class ThemeManager {
                 this.showThemeContainer();
                 this.showThemeButton();
 
-                this.showNotification?.("🌟 " + getLabel('notify.themeUnlocked', { vars: { name: 'Golden Glow' } }), "success", 5000);
+                this.showNotification?.(getIcon('themeStar') + " " + getLabel('notify.themeUnlocked', { vars: { name: 'Golden Glow' } }), "success", 5000);
             } else {
                 console.log('ℹ️ Golden Glow theme already unlocked');
             }
@@ -580,7 +580,7 @@ export class ThemeManager {
             this.addThemeToggle(container, {
                 id: "Default",
                 class: "default",
-                label: "Default Theme ⭐",
+                label: `Default Theme ${getIcon('themeDefault')}`,
                 unlockKey: "default"
             }, currentTheme, true); // Always unlocked
             

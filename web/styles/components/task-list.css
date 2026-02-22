@@ -967,7 +967,8 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-text {
     color: var(--pref-task-text, var(--theme-text-on-surface));
 }
 
-/* Overdue tasks must override custom pref colors */
+/* Overdue tasks must override custom pref colors — match html:not() prefix for specificity */
+html:not(.dark-mode) body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task.overdue-task,
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task.overdue-task {
     background: var(--overdue-task-bg, rgba(244, 67, 54, 0.15));
     color: var(--overdue-task-text, var(--color-red));

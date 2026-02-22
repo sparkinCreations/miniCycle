@@ -154,7 +154,6 @@
     color: var(--pref-panel-text, rgba(255, 255, 255, 0.45));
     text-align: center;
     padding: var(--space-2) var(--space-1);
-    white-space: nowrap;
 }
 
 /* =============================================================================

@@ -201,8 +201,8 @@ export function setupShareAppButton() {
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'miniCycle',
-                    text: 'Check out miniCycle — turn your routine into progress!',
+                    title: getLabel('share.appShareTitle'),
+                    text: getLabel('share.appShareText'),
                     url: appUrl
                 });
                 _deps.hideMainMenu?.();
