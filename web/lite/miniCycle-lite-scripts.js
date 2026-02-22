@@ -37,7 +37,7 @@
 //   • Multiple cycles, Recurring tasks, Due dates, Reminders
 //   • Theme unlocks, Gamification, Import/export, Advanced settings
 //
-// Last meaningful update: v2.083 (intentionally static thereafter)
+// Last meaningful update: v2.084 (intentionally static thereafter)
 // © 2026 sparkinCreations - https://sparkincreations.com
 // ================================================================================
 
@@ -86,7 +86,7 @@ console.log('📱 miniCycle Lite Mode Activated for maximum compatibility!');
 
 
 
-var currentVersion = '2.083'; 
+var currentVersion = '2.084'; 
 
 // ✅ ADD version display function
 function showVersionInfo() {
@@ -2795,7 +2795,7 @@ function handleTryFullVersion() {
     return; // User cancelled
   }
 
-  var currentVersion = '2.083';
+  var currentVersion = '2.084';
 
   // Show confirmation
   showNotification(
@@ -2904,6 +2904,33 @@ function setupMenuButtons() {
         resetAllStats();
         closeMenu();
         showNotification('📊 All statistics have been reset', 'success');
+      }
+    });
+  }
+
+  // Notification toggle
+  var notifBtn = document.getElementById('toggle-notifications');
+  var notifLabel = document.getElementById('toggle-notifications-label');
+  if (notifBtn && notifLabel) {
+    // Set initial label from saved preference
+    var notifPref = localStorage.getItem('miniCycleLiteNotifications');
+    var isOff = notifPref === 'off';
+    notifLabel.textContent = 'Notifications: ' + (isOff ? 'Off' : 'On');
+
+    notifBtn.addEventListener('click', function() {
+      var currentlyOff = localStorage.getItem('miniCycleLiteNotifications') === 'off';
+      if (currentlyOff) {
+        localStorage.removeItem('miniCycleLiteNotifications');
+        notifLabel.textContent = 'Notifications: On';
+        // Briefly re-enable to show confirmation
+        showNotification('Notifications turned on', 'success');
+      } else {
+        // Show message before disabling
+        showNotification('Notifications turned off', 'info');
+        setTimeout(function() {
+          localStorage.setItem('miniCycleLiteNotifications', 'off');
+          notifLabel.textContent = 'Notifications: Off';
+        }, 500);
       }
     });
   }

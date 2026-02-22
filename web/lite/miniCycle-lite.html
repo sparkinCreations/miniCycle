@@ -42,7 +42,7 @@ FEATURES NOT INCLUDED (full app only):
   • Import/export
   • Advanced settings
 
-Last meaningful update: v2.083 (intentionally static thereafter)
+Last meaningful update: v2.084 (intentionally static thereafter)
 © 2026 sparkinCreations - https://sparkincreations.com
 ================================================================================
 -->
@@ -66,7 +66,7 @@ Last meaningful update: v2.083 (intentionally static thereafter)
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" onerror="this.disabled=true;">
 
 <!-- ✅ Main stylesheet -->
-<link rel="stylesheet" href="miniCycle-lite-styles.css?v=2.083">
+<link rel="stylesheet" href="miniCycle-lite-styles.css?v=2.084">
 
 <!-- ✅ ADD: Web App Manifest and Theme -->
 <link rel="manifest" href="../manifest-lite.json">
@@ -418,6 +418,13 @@ window.addEventListener('appinstalled', function () {
           <span>Reset Stats</span>
         </button>
       </li>
+      <li>
+        <button id="toggle-notifications" tabindex="0" data-tooltip="Turn notifications on or off">
+          <i class="fas fa-bell" aria-hidden="true"></i>
+          <span class="fallback-icon" style="display: none;">🔔</span>
+          <span id="toggle-notifications-label">Notifications: On</span>
+        </button>
+      </li>
       <!-- ✅ NEW: Try Full Version button -->
       <li>
         <button id="try-full-version" tabindex="0" data-tooltip="Switch to the full-featured miniCycle version (may be slower on older devices)">
@@ -627,7 +634,7 @@ window.addEventListener('appinstalled', function () {
 <input type="hidden" id="taskInput" value="">
 
 <!-- ✅ Load JavaScript last -->
-<script src="miniCycle-lite-scripts.js?v=2.083"></script>
+<script src="miniCycle-lite-scripts.js?v=2.084"></script>
 <script>
 // ES5 toast implementation - Single notification mode (replaces instead of stacking)
 (function () {
@@ -665,6 +672,9 @@ window.addEventListener('appinstalled', function () {
   // Single notification mode: new notifications replace existing ones
   window.showNotification = function (message, type, duration) {
     try {
+      // Respect user preference (skip if notifications disabled)
+      if (localStorage.getItem('miniCycleLiteNotifications') === 'off') return;
+
       type = type || 'info';
       duration = typeof duration === 'number' ? duration : 3000;
 

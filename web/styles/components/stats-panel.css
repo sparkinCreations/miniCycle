@@ -9,7 +9,7 @@
 
 .stats-panel {
     position: fixed;
-    top: 54%;
+    top: 52%;
     left: 50%;
     transform: translate(200%, -50%);
     transition: transform var(--animation-pop) ease-in-out, opacity var(--animation-pop) ease-in-out;
@@ -142,7 +142,7 @@
 @media (max-width: 768px) {
     .stats-panel {
         width: 90vw;
-        max-height: 70vh;
+        max-height: 82vh;
         padding: 14px 16px;
     }
 
@@ -212,13 +212,49 @@
 @media (max-width: 480px) {
     .stats-panel {
         width: 95vw;
-        padding: 12px 14px;
+        padding: 10px 12px;
+    }
+
+    #stats-header {
+        margin-bottom: 4px;
+    }
+
+    .current-routine-status,
+    .theme-unlock-status {
+        margin-top: 4px;
+        margin-bottom: 4px;
+        padding: 6px;
+    }
+
+    .current-cycle-doughnut-container {
+        width: 60px;
+        height: 60px;
+        margin: 4px auto;
+    }
+
+    .badge-container {
+        margin-bottom: 4px;
+        padding: 6px;
+    }
+
+    .badge-container h3 {
+        margin-bottom: 4px;
+    }
+
+    .badges {
+        gap: 6px;
+        margin-top: 4px;
     }
 
     .badge {
-        width: 36px;
-        height: 36px;
-        font-size: var(--font-size-base);
+        width: 34px;
+        height: 34px;
+        font-size: var(--font-size-sm);
+    }
+
+    .global-stats-container {
+        margin-top: 4px;
+        padding: 2px 8px;
     }
 }
 
