@@ -1,3 +1,7 @@
+## [1.1024] - 2026-02-22
+- Refactor notifications and labels for improved localization and icon usage
+
+
 ## [1.1022] - 2026-02-22
 - Refactor overdue task styles for improved accessibility and consistency; update notification durations and implement dynamic quick preset rendering.
 - Enhance due date notifications and overdue task styling; implement new labels and accessibility styles for overdue tasks in light and dark modes.

@@ -1062,10 +1062,10 @@ export class StatsPanelManager {
             }
         }
 
-        // Update badges via achievementsManager and themes with global cycle count
+        // Update badges via achievementsManager with both cycles and cleared tasks
         const achievementsManager = this.dependencies.achievementsManager;
         if (achievementsManager?.updateBadges) {
-            achievementsManager.updateBadges(globalCyclesCompleted);
+            achievementsManager.updateBadges(globalCyclesCompleted, globalTasksCleared);
         }
         this.updateThemeUnlockStatus(globalCyclesCompleted);
 
