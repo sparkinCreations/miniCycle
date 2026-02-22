@@ -582,7 +582,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
 
             _deps.showNotification?.(
                 getLabel(newHighPriority ? 'notify.priorityEnabled' : 'notify.priorityRemoved'),
-                newHighPriority ? "error" : "info",
+                newHighPriority ? "warning" : "info",
                 1500
             );
         } else {
