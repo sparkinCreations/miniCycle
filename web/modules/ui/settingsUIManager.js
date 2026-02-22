@@ -1193,6 +1193,19 @@ export function setupNotificationsToggle() {
     _deps.safeAddEventListener(toggle, 'change', toggle._changeHandler);
 }
 
+/**
+ * Apply the saved priority indicator color from settings on startup.
+ * Sets the --priority-color CSS variable on :root so existing high-priority
+ * tasks immediately render with the user's chosen color.
+ */
+export function applyPriorityColor() {
+    const schemaData = _deps.loadMiniCycleData?.();
+    const color = schemaData?.settings?.priorityColor;
+    if (color) {
+        document.documentElement.style.setProperty('--priority-color', color);
+    }
+}
+
 export function initAllToggles() {
     setupSettingsMenu();
     setupDarkModeToggle();
@@ -1210,6 +1223,7 @@ export function initAllToggles() {
     setupHighContrastToggle();
     setupFontSizeSelect();
     setupNotificationsToggle();
+    applyPriorityColor();
 }
 
 console.log('Settings UI Manager loaded');

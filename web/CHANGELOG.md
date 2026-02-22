@@ -1,3 +1,7 @@
+## [1.1013] - 2026-02-22
+- Update notification types for task priority changes and add mute check for non-error notifications
+
+
 ## [1.1012] - 2026-02-22
 - Add notifications toggle and related functionality for user preferences
 

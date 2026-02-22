@@ -249,7 +249,8 @@ export async function bootFeatures(deps, coreResult) {
       setTaskCRUDDependencies({
         updateSearchVisibility: taskSearchMod.updateSearchVisibility,
         getTaskCount: taskSearchMod.getTaskCount,
-        startReminders: deps.features?.startReminders
+        startReminders: deps.features?.startReminders,
+        notifications: deps.utils?.notifications
       });
 
       console.log('✅ TaskSearch module loaded');
