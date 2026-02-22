@@ -76,6 +76,7 @@ export function taskToAddTaskOptions(task) {
         shouldSave: false,
         dueDate: task.dueDate || null,
         highPriority: task.highPriority || false,
+        priorityColor: task.priorityColor || null,
         isLoading: true,
         remindersEnabled: task.remindersEnabled || false,
         recurring: task.recurring || false,
@@ -247,7 +248,7 @@ export class TaskUtils {
     static createOrUpdateTaskData(taskContext, saveTaskToSchema25) {
         const {
             cycleTasks, assignedTaskId, taskTextTrimmed, completed, dueDate,
-            highPriority, remindersEnabled, recurring, recurringSettings,
+            highPriority, priorityColor, remindersEnabled, recurring, recurringSettings,
             currentCycle, cycles, activeCycle, isLoading, deleteWhenComplete,
             deleteWhenCompleteSettings
         } = taskContext;
@@ -276,6 +277,7 @@ export class TaskUtils {
                 completed,
                 dueDate,
                 highPriority,
+                priorityColor: priorityColor || null,
                 remindersEnabled,
                 recurring,
                 recurringSettings,

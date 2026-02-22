@@ -200,6 +200,7 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         shouldSave = true,
         dueDate = null,
         highPriority = null,
+        priorityColor = null,
         isLoading = false,
         remindersEnabled = false,
         recurring = false,
@@ -267,7 +268,7 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         // Load and validate data context
         const loadContextFn = deps.loadTaskContext || _deps.loadTaskContext;
         const taskContext = loadContextFn?.(validatedInput, taskId, {
-            completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings, deleteWhenComplete, deleteWhenCompleteSettings
+            completed, dueDate, highPriority, priorityColor, remindersEnabled, recurring, recurringSettings, deleteWhenComplete, deleteWhenCompleteSettings
         }, isLoading);
         if (!taskContext) {
             console.warn('Could not load task context');
@@ -573,6 +574,15 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
             button.setAttribute("aria-pressed", newHighPriority.toString());
         }
 
+        // Apply or clear per-task priority color via CSS custom property
+        if (newHighPriority) {
+            // Use task's own saved color, falling back to global default
+            const taskColor = task.priorityColor ?? currentState?.settings?.priorityColor ?? '#dc3545';
+            taskItem.style.setProperty('--task-priority-color', taskColor);
+        } else {
+            taskItem.style.removeProperty('--task-priority-color');
+        }
+
         // ✅ Use AppState only (no localStorage fallback) - DI-pure
         if (AppState?.isReady?.()) {
             AppState.update(state => {
@@ -583,11 +593,25 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
             }, true);
 
             if (newHighPriority) {
-                // Show color picker notification so user can choose their preferred priority color
+                // Show color picker notification with a callback that saves the chosen color
                 const notifications = _deps.notifications;
                 if (notifications?.showPriorityColorPickerNotification) {
-                    const savedColor = AppState.get()?.settings?.priorityColor ?? '#dc3545';
-                    notifications.showPriorityColorPickerNotification(savedColor, 8000);
+                    const taskColor = task.priorityColor ?? currentState?.settings?.priorityColor ?? '#dc3545';
+                    // onColorSelect closes over AppState and taskId — reliable save path
+                    const onColorSelect = async (color) => {
+                        if (AppState?.isReady?.()) {
+                            await AppState.update(state => {
+                                if (!state.settings) state.settings = {};
+                                // Update global default so future new tasks start with this color
+                                state.settings.priorityColor = color;
+                                // Save to the specific task so it remembers its own color
+                                const cid = state.appState?.activeCycleId;
+                                const t = state.data?.cycles?.[cid]?.tasks?.find(t => t.id === taskId);
+                                if (t) t.priorityColor = color;
+                            }, true);
+                        }
+                    };
+                    notifications.showPriorityColorPickerNotification(taskColor, 8000, taskId, onColorSelect);
                 } else {
                     _deps.showNotification?.(getLabel('notify.priorityEnabled'), 'warning', 1500);
                 }

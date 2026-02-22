@@ -165,7 +165,7 @@ body.dark-mode .task input[type="checkbox"]:checked {
 
 /* High Priority in Dark Mode */
 body.dark-mode .high-priority {
-    border-left: 5px solid var(--priority-color, var(--dark-priority-border));
+    border-left: 5px solid var(--task-priority-color, var(--priority-color, var(--dark-priority-border)));
     background: var(--dark-priority-bg);
 }
 
