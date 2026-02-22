@@ -13,8 +13,8 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 1.990 |
-| **Lite Version** | 2.07 (frozen) |
+| **App Version** | 1.991 |
+| **Lite Version** | 2.071 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 110 |
 | **Total Tests** | 1691 |

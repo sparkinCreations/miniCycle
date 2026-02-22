@@ -26,7 +26,7 @@
      • Fixed values instead of calc() where possible
      • CSS variable fallbacks for IE11
 
-   Last meaningful update: v2.07 (intentionally static thereafter)
+   Last meaningful update: v2.071 (intentionally static thereafter)
    © 2026 sparkinCreations - https://sparkincreations.com
    ================================================================================ */
 
@@ -158,9 +158,12 @@ body.is-iphone #app-container {
 }
 
 @media (max-width: 768px) {
-    /* Menu button: align with logo, not top of header padding */
+    /* Menu button: pin to top-right, at logo level (below Dynamic Island) */
     body.is-iphone .menu-button {
-        top: 0px;
+        top: 65px;
+        -webkit-transform: none;
+        -ms-transform: none;
+        transform: none;
     }
 
     /* Mode selector: snug below header */
