@@ -284,7 +284,7 @@ body.onboarding-active .complete-all-and-help-window-container {
    ============================================================================= */
 
 .high-priority {
-    border-left: 5px solid var(--priority-color, #dc3545);
+    border-left: 5px solid var(--task-priority-color, var(--priority-color, #dc3545));
 }
 
 /* =============================================================================
@@ -588,7 +588,7 @@ body.onboarding-active .complete-all-and-help-window-container {
 
 /* High priority task */
 .task.high-priority {
-    border-left: 4px solid var(--priority-color, #dc3545);
+    border-left: 4px solid var(--task-priority-color, var(--priority-color, #dc3545));
 }
 
 /* =============================================================================

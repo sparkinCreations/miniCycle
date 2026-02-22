@@ -1317,27 +1317,37 @@ async setDefaultPosition(notificationContainer) {
    * 🎨 Show priority color picker notification
    * Displays a notification with color swatch buttons when a task is set to high priority.
    * The user can pick Red, Yellow, or Green before the notification dismisses.
-   * The chosen color is saved to AppState and applied via CSS variable --priority-color.
+   * DOM updates happen immediately; persistence is delegated to the onColorSelect callback
+   * provided by the caller (taskCRUD.js), which owns AppState for this task.
    *
-   * @param {string} currentColor - Current hex color value (#dc3545, #f59e0b, or #28a745)
+   * @param {string} currentColor - Current hex color value (#dc3545, #facc15, or #28a745)
    * @param {number} [duration=8000] - How long to show the notification before auto-dismiss
+   * @param {string|null} [taskId=null] - Task ID for immediate DOM update
+   * @param {Function|null} [onColorSelect=null] - Callback(color) to persist the chosen color
    */
-  showPriorityColorPickerNotification(currentColor = '#dc3545', duration = 8000) {
+  showPriorityColorPickerNotification(currentColor = '#dc3545', duration = 8000, taskId = null, onColorSelect = null) {
     const COLORS = [
       { hex: '#dc3545', label: getLabel('notify.priorityColorRed') },
-      { hex: '#f59e0b', label: getLabel('notify.priorityColorYellow') },
+      { hex: '#facc15', label: getLabel('notify.priorityColorYellow') },
       { hex: '#28a745', label: getLabel('notify.priorityColorGreen') },
     ];
 
     const swatchesHTML = COLORS.map(c => {
       const isSelected = c.hex === currentColor;
+      const dotOpacity = isSelected ? '1' : '0';
+      const swatchOutline = isSelected ? '2px solid rgba(255,255,255,0.9)' : '2px solid transparent';
       return `<button class="priority-color-btn"
                        data-color="${c.hex}"
                        role="radio"
                        aria-checked="${isSelected}"
                        aria-label="${c.label}"
                        title="${c.label}"
-                       style="width:28px;height:28px;border-radius:50%;background:${c.hex};border:3px solid ${isSelected ? 'white' : 'transparent'};cursor:pointer;flex-shrink:0;transition:border-color 0.15s;"></button>`;
+                       style="display:flex;align-items:center;gap:5px;background:none;border:none;cursor:pointer;padding:2px;flex-shrink:0;">
+        <span class="priority-radio-dial" style="width:10px;height:10px;border-radius:50%;border:2px solid rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-sizing:border-box;">
+          <span class="priority-radio-dot" style="width:4px;height:4px;border-radius:50%;background:white;display:block;opacity:${dotOpacity};transition:opacity 0.15s;"></span>
+        </span>
+        <span class="priority-swatch" style="width:20px;height:20px;border-radius:50%;background:${c.hex};display:block;flex-shrink:0;border:1px solid rgba(0,0,0,0.35);outline:${swatchOutline};outline-offset:1px;transition:outline 0.15s;"></span>
+      </button>`;
     }).join('');
 
     const html = `
@@ -1356,6 +1366,17 @@ async setDefaultPosition(notificationContainer) {
       </div>
     `;
 
+    // Dismiss any existing color picker so a second task's picker isn't blocked
+    // by the duplicate-ID check (both produce identical HTML → same hash → skipped)
+    const notifContainer = document.getElementById(DOM_IDS.NOTIFICATION_CONTAINER);
+    if (notifContainer) {
+      const existingPicker = notifContainer.querySelector('.priority-color-picker');
+      if (existingPicker) {
+        const existingNotif = existingPicker.closest(DOM_SELECTORS.NOTIFICATION);
+        if (existingNotif) existingNotif.remove();
+      }
+    }
+
     const notification = this.showWithTip(html, 'warning', duration, null, { trusted: true });
     if (!notification) return;
 
@@ -1366,26 +1387,33 @@ async setDefaultPosition(notificationContainer) {
 
       const color = btn.dataset.color;
 
-      // Update swatch selection visual
+      // Update radio dial and swatch ring for each option
       notification.querySelectorAll('.priority-color-btn').forEach(b => {
         const selected = b === btn;
-        b.style.borderColor = selected ? 'white' : 'transparent';
+        const bColor = b.dataset.color;
+        // Radio dial inner dot
+        const dot = b.querySelector('.priority-radio-dot');
+        if (dot) dot.style.opacity = selected ? '1' : '0';
+        // Swatch selected outline
+        const swatch = b.querySelector('.priority-swatch');
+        if (swatch) {
+          swatch.style.outline = selected ? '2px solid rgba(255,255,255,0.9)' : '2px solid transparent';
+        }
         b.setAttribute('aria-checked', selected.toString());
       });
 
-      // Apply CSS variable immediately
-      document.documentElement.style.setProperty('--priority-color', color);
+      // Apply color to the specific task's DOM element immediately (visual-only)
+      if (taskId) {
+        const taskEl = document.querySelector(`[data-task-id="${taskId}"]`);
+        if (taskEl) taskEl.style.setProperty('--task-priority-color', color);
+      }
 
-      // Persist to AppState
-      const AppState = _deps.AppState;
-      if (AppState?.isReady?.()) {
+      // Delegate persistence to caller — notifications.js has no AppState responsibility here
+      if (typeof onColorSelect === 'function') {
         try {
-          await AppState.update(state => {
-            if (!state.settings) state.settings = {};
-            state.settings.priorityColor = color;
-          }, true);
+          await onColorSelect(color);
         } catch (err) {
-          console.warn('⚠️ Could not save priority color:', err);
+          console.warn('⚠️ onColorSelect callback failed:', err);
         }
       }
     };

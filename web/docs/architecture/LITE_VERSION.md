@@ -174,7 +174,7 @@ The lite version has 4 inline `<script>` blocks in the HTML. Their SHA-256 hashe
 | Hash | Script (line in HTML) | Purpose |
 |------|----------------------|---------|
 | `sha256-vGZuMd1H...` | Line 79 | Service Worker & PWA helpers |
-| `sha256-tKyRJ404...` | Line 631 | Toast notification system (`showNotification`) |
+| `sha256-HoVNOC42...` | Line 631 | Toast notification system (`showNotification`) |
 | `sha256-ZmCo1D8q...` | Line 712 | Update prompt modal (`showUpdatePromptLite`) |
 | `sha256-h+r8SXgn...` | Line 770 | FontAwesome fallback icons |
 

@@ -996,7 +996,7 @@ function setupEnhancedTaskInteraction(taskItem) {
       
       // Toggle this menu
       if (optionsMenu) {
-        optionsMenu.classList.toggle('hidden');
+        toggleClass(optionsMenu, 'hidden');
         updateMoveButtonsVisibility();
       }
     });
@@ -1008,15 +1008,15 @@ function setupEnhancedTaskInteraction(taskItem) {
   
   // ✅ Detect if this is a touch device
 taskItem.addEventListener("touchstart", function(e) {
-  if (e.target.closest(".task-options")) return;
+  if (closestParent(e.target, ".task-options")) return;
   isTouch = true;
   touchStartTime = Date.now();
 }, false); // ✅ Change from { passive: true } to false
 
   taskItem.addEventListener("touchend", function(e) {
     // Don't interfere with three dots menu
-    if (e.target.closest(".task-options")) return;
-    
+    if (closestParent(e.target, ".task-options")) return;
+
     var touchDuration = Date.now() - touchStartTime;
     
     // ✅ Only handle tap if it's a short touch (not a long press)
@@ -1028,7 +1028,7 @@ taskItem.addEventListener("touchstart", function(e) {
   // ✅ Mouse click handler - only fires if touch didn't handle it
   taskItem.addEventListener("click", function(e) {
     // Don't interfere with three dots menu or checkbox
-    if (e.target.closest(".task-options") || e.target.type === "checkbox") return;
+    if (closestParent(e.target, ".task-options") || e.target.type === "checkbox") return;
     
     // ✅ Only handle click if this wasn't a touch interaction
     if (!isTouch) {
@@ -2345,7 +2345,7 @@ function setupBasicEventListeners() {
 
   // ✅ Close task options when clicking outside
   document.addEventListener('click', function(e) {
-    if (!e.target.closest('.task-options')) {
+    if (!closestParent(e.target, '.task-options')) {
       hideAllTaskOptions();
     }
   });
@@ -2360,7 +2360,7 @@ function setupBasicEventListeners() {
       } else {
         helpWindow.style.display = "block";
       }
-    } else if (helpWindow && !e.target.closest('#help-window') && e.target !== helpToggle) {
+    } else if (helpWindow && !closestParent(e.target, '#help-window') && e.target !== helpToggle) {
       helpWindow.style.display = "none";
     }
 });
@@ -2810,7 +2810,7 @@ function handleTryFullVersion() {
   
   // ✅ Clear only full version files from cache
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    const messageChannel = new MessageChannel();
+    var messageChannel = new MessageChannel();
     messageChannel.port1.onmessage = function(event) {
       console.log('� Cache clear response:', event.data);
       if (event.data.success) {
@@ -3631,12 +3631,12 @@ function updateNavigationState() {
         window.getComputedStyle(taskView).transform : '';
       
       // If stats panel is translated off-screen to the right, task view is active
-      if (statsTransform.includes('translate') && statsTransform.includes('200%')) {
+      if (statsTransform.indexOf('translate') !== -1 && statsTransform.indexOf('200%') !== -1) {
         isTaskView = true;
         isStatsView = false;
       }
       // If task view is translated off-screen to the left, stats view is active  
-      else if (taskTransform.includes('translate') && taskTransform.includes('-200%')) {
+      else if (taskTransform.indexOf('translate') !== -1 && taskTransform.indexOf('-200%') !== -1) {
         isStatsView = true;
         isTaskView = false;
       }
@@ -3795,6 +3795,27 @@ function showStatsPanel() {
 // ==========================================
 // 🔧 UTILITY FUNCTIONS
 // ==========================================
+
+// IE-compatible closest() polyfill
+function closestParent(element, selector) {
+  if (element.closest) return element.closest(selector);
+  var el = element;
+  while (el && el !== document) {
+    var matches = el.matches || el.msMatchesSelector || el.webkitMatchesSelector;
+    if (matches && matches.call(el, selector)) return el;
+    el = el.parentElement || el.parentNode;
+  }
+  return null;
+}
+
+// IE-compatible classList toggle
+function toggleClass(element, className) {
+  if (hasClass(element, className)) {
+    removeClass(element, className);
+  } else {
+    addClass(element, className);
+  }
+}
 
 // IE-compatible classList methods
 function addClass(element, className) {
@@ -4055,13 +4076,33 @@ function setupAddTaskModal() {
     });
   }
 
-  // ✅ Keyboard trap for accessibility
+  // ✅ Focus trap for accessibility — Tab/Shift+Tab stays inside modal
   modal.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' || e.keyCode === 27) {
       closeAddTaskModal(true);
+      return;
+    }
+    if (e.key === 'Tab' || e.keyCode === 9) {
+      var focusable = modal.querySelectorAll('input:not([type="hidden"]), button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+      if (focusable.length === 0) return;
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     }
   });
 }
+
+var _addTaskModalPreviousFocus = null;
 
 function openAddTaskModal() {
   var modal = document.getElementById('add-task-modal');
@@ -4070,6 +4111,9 @@ function openAddTaskModal() {
   var tasksAddedCount = document.getElementById('tasks-added-count');
 
   if (!modal) return;
+
+  // ✅ Save current focus for restoration on close
+  _addTaskModalPreviousFocus = document.activeElement;
 
   // ✅ Reset state
   pendingModalTasks = [];
@@ -4132,6 +4176,12 @@ function closeAddTaskModal(addTasks) {
 
   // ✅ Clear input
   if (modalInput) modalInput.value = '';
+
+  // ✅ Restore focus to the element that opened the modal
+  if (_addTaskModalPreviousFocus && _addTaskModalPreviousFocus.focus) {
+    try { _addTaskModalPreviousFocus.focus(); } catch (e) {}
+    _addTaskModalPreviousFocus = null;
+  }
 
   console.log('📝 Add task modal closed');
 }

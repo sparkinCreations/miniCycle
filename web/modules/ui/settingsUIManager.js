@@ -1194,16 +1194,31 @@ export function setupNotificationsToggle() {
 }
 
 /**
- * Apply the saved priority indicator color from settings on startup.
- * Sets the --priority-color CSS variable on :root so existing high-priority
- * tasks immediately render with the user's chosen color.
+ * Apply saved priority colors on startup.
+ * 1. Sets --priority-color on :root (global default for tasks without a specific color).
+ * 2. Scans all rendered high-priority task elements and sets --task-priority-color
+ *    per-element from the task's own saved priorityColor, so each task remembers
+ *    its individual color across reloads.
  */
 export function applyPriorityColor() {
     const schemaData = _deps.loadMiniCycleData?.();
-    const color = schemaData?.settings?.priorityColor;
-    if (color) {
-        document.documentElement.style.setProperty('--priority-color', color);
+    if (!schemaData) return;
+
+    // 1. Global default
+    const globalColor = schemaData.settings?.priorityColor;
+    if (globalColor) {
+        document.documentElement.style.setProperty('--priority-color', globalColor);
     }
+
+    // 2. Per-task colors — scan tasks that have their own saved color
+    const activeCycle = schemaData.activeCycle;
+    const tasks = schemaData.cycles?.[activeCycle]?.tasks || [];
+    tasks.forEach(task => {
+        if (task.highPriority && task.priorityColor) {
+            const el = document.querySelector(`[data-task-id="${task.id}"]`);
+            if (el) el.style.setProperty('--task-priority-color', task.priorityColor);
+        }
+    });
 }
 
 export function initAllToggles() {

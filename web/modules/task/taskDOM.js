@@ -558,7 +558,7 @@ export class TaskDOMManager {
      */
     createTaskDOMElements(taskContext, taskData) {
         const {
-            assignedTaskId, taskTextTrimmed, highPriority, recurring,
+            assignedTaskId, taskTextTrimmed, highPriority, priorityColor, recurring,
             recurringSettings, settings, autoResetEnabled, currentCycle, deleteWhenComplete, deleteWhenCompleteSettings
         } = taskContext;
 
@@ -574,6 +574,12 @@ export class TaskDOMManager {
 
         // Create main task element
         const taskItem = this.createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle, deleteWhenComplete, deleteWhenCompleteSettings);
+
+        // Apply per-task priority color via CSS custom property (more reliable than borderLeftColor
+        // because it doesn't conflict with the border-left shorthand in the stylesheet)
+        if (highPriority && priorityColor) {
+            taskItem.style.setProperty('--task-priority-color', priorityColor);
+        }
 
         // Accessibility: descriptive aria-label for screen readers
         const completed = taskContext.completed || false;

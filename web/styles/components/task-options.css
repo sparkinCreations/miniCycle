@@ -106,11 +106,11 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
 
 .priority-btn,
 .priority-btn .icon {
-    color: rgba(191, 3, 3, 0.715);
+    color: #333333;
 }
 
 .task-btn.priority-btn.priority-active {
-    background: #d9534f;
+    background: var(--task-priority-color, var(--priority-color, #dc3545));
     color: white;
 }
 
@@ -119,7 +119,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
 }
 
 .task-btn.priority-btn.priority-active:hover {
-    background: #b52b27;
+    filter: brightness(0.85);
 }
 
 .edit-btn,
