@@ -26,7 +26,7 @@
      • Fixed values instead of calc() where possible
      • CSS variable fallbacks for IE11
 
-   Last meaningful update: v2.08 (intentionally static thereafter)
+   Last meaningful update: v2.081 (intentionally static thereafter)
    © 2026 sparkinCreations - https://sparkincreations.com
    ================================================================================ */
 
@@ -161,13 +161,23 @@ body.is-iphone #app-container {
 }
 
 @media (max-width: 768px) {
+    /* Push branding lower within header to clear Dynamic Island */
+    body.is-iphone .header-branding {
+        top: 60%;
+    }
+
     /* Menu button: unset grid-area so it positions against the full header
        padding box (same containing block as .header-branding), then use
-       top: 50% to vertically center alongside the logo */
+       matching top to vertically align with the branding */
     body.is-iphone .menu-button {
         grid-area: unset;
-        top: 50%;
+        top: 60%;
         right: 15px;
+    }
+
+    /* Tighten gap between Add Tasks button and My Tasks title */
+    body.is-iphone .add-task-button-container {
+        padding: 5px 10px;
     }
 
     /* Menu dropdown: snug below iPhone header content area */
@@ -187,6 +197,7 @@ body.is-iphone #app-container {
         top: calc(var(--header-total) + var(--mode-bar));
         transform: translateX(-50%);
         max-height: calc(100vh - var(--header-total) - var(--mode-bar) - 80px);
+        overflow: hidden;  /* Constrains flex children to max-height; task-list-container scrolls internally */
     }
 
     /* Preserve slide-off animation when hiding */
