@@ -150,7 +150,7 @@
     #stats-header {
         margin-top: 0;
         margin-bottom: 4px;
-        font-size: var(--font-size-sm);
+        font-size: var(--font-size-lg);
     }
 
     .current-routine-status,
