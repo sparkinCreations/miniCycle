@@ -13,38 +13,16 @@ import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
-// DEFAULT COLORS (needed for reset-to-default in quick presets)
-// ============================================================================
-
-const DEFAULT_COLORS = {
-    appBg: '#4c79ff',
-    taskListBg: '#ffffff',
-    taskBg: '#ffffff',
-    taskText: '#333333',
-    titleBg: '#ffffff',
-    titleText: '#2b2b2b',
-    checkboxBg: '#5db567',
-    checkboxIncompleteBg: '#c8c8c8',
-    checkmark: '#124609',
-    completeBtn: '#08c352',
-    clearBtn: '#3b82f6',
-    progressBar: '#82db8c',
-    statsBg: '#ffffff',
-    statsText: '#333333',
-    statsProgress: '#4c79ff',
-    statsDoughnut: '#4caf50',
-    patternColor: '#ffffff',
-    panelText: '#ffffff'
-};
-
-// ============================================================================
 // QUICK PRESET THEMES (Built-in)
 // ============================================================================
+// NOTE: DEFAULT_COLORS lives in preferencesManager.js (single source of truth).
+// The 'default' preset delegates entirely to resetAllColors() and never reads
+// its colors, so no copy is needed here.
 
 const QUICK_PRESETS = {
     default: {
         name: 'Default',
-        colors: { ...DEFAULT_COLORS }
+        colors: {}
     },
     warm: {
         name: 'Warm',
@@ -274,11 +252,11 @@ export function applyQuickPreset(presetKey, callbacks) {
 export function promptSavePreset(deps, renderPresetsList) {
     if (deps.showPromptModal) {
         deps.showPromptModal({
-            title: 'Save Preset',
-            message: 'Enter a name for this color preset:',
-            placeholder: 'My Custom Theme',
-            confirmText: 'Save',
-            cancelText: 'Cancel',
+            title: getLabel('modal.savePresetTitle'),
+            message: getLabel('modal.savePresetMessage'),
+            placeholder: getLabel('modal.savePresetPlaceholder'),
+            confirmText: getLabel('button.save'),
+            cancelText: getLabel('button.cancel'),
             required: true,
             callback: (name) => {
                 if (name && name.trim()) {
@@ -288,7 +266,7 @@ export function promptSavePreset(deps, renderPresetsList) {
         });
     } else {
         // Fallback to native prompt
-        const name = prompt('Enter a name for this preset:');
+        const name = prompt(getLabel('modal.savePresetMessage'));
         if (name && name.trim()) {
             savePreset(name.trim(), deps, renderPresetsList);
         }
@@ -407,10 +385,10 @@ export function deletePreset(presetId, deps, renderPresetsList) {
 
     if (deps.showConfirmationModal) {
         deps.showConfirmationModal({
-            title: 'Delete Preset',
-            message: `Are you sure you want to delete "${preset.name}"?`,
-            confirmText: 'Delete',
-            cancelText: 'Cancel',
+            title: getLabel('modal.deletePresetTitle'),
+            message: getLabel('modal.confirmDeletePreset', { vars: { name: preset.name } }),
+            confirmText: getLabel('button.delete'),
+            cancelText: getLabel('button.cancel'),
             destructive: true,
             callback: (confirmed) => {
                 if (confirmed) {
@@ -420,7 +398,7 @@ export function deletePreset(presetId, deps, renderPresetsList) {
         });
     } else {
         // Fallback to native confirm
-        if (confirm(`Delete preset "${preset.name}"?`)) {
+        if (confirm(getLabel('modal.confirmDeletePreset', { vars: { name: preset.name } }))) {
             doDelete();
         }
     }
@@ -455,15 +433,15 @@ export function exportPreset(presetId, deps) {
         // Fallback: show code in a modal for manual copying
         if (deps.showPromptModal) {
             deps.showPromptModal({
-                title: 'Export Preset',
-                message: 'Copy this code to share your preset:',
+                title: getLabel('modal.exportPresetTitle'),
+                message: getLabel('modal.exportPresetMessage'),
                 defaultValue: code,
-                confirmText: 'Done',
-                cancelText: 'Close',
+                confirmText: getLabel('button.done'),
+                cancelText: getLabel('button.close'),
                 callback: () => {}
             });
         } else {
-            prompt('Copy this preset code:', code);
+            prompt(getLabel('modal.exportPresetMessage'), code);
         }
     });
 }
@@ -476,11 +454,11 @@ export function exportPreset(presetId, deps) {
 export function promptImportPreset(deps, renderPresetsList) {
     if (deps.showPromptModal) {
         deps.showPromptModal({
-            title: 'Import Preset',
-            message: 'Paste the preset code you received:',
-            placeholder: 'Paste code here...',
-            confirmText: 'Import',
-            cancelText: 'Cancel',
+            title: getLabel('modal.importPresetTitle'),
+            message: getLabel('modal.importPresetMessage'),
+            placeholder: getLabel('modal.importPresetPlaceholder'),
+            confirmText: getLabel('button.import'),
+            cancelText: getLabel('button.cancel'),
             required: true,
             callback: (code) => {
                 if (code && code.trim()) {
@@ -490,7 +468,7 @@ export function promptImportPreset(deps, renderPresetsList) {
         });
     } else {
         // Fallback to native prompt
-        const code = prompt('Paste the preset code:');
+        const code = prompt(getLabel('modal.importPresetMessage'));
         if (code && code.trim()) {
             importPreset(code.trim(), deps, renderPresetsList);
         }
@@ -603,11 +581,12 @@ export function renderPresetsList(deps, callbacks) {
  * @returns {string} HTML string for the swatch
  */
 export function createPresetSwatch(colors) {
+    // Fallback values mirror DEFAULT_COLORS in preferencesManager.js
     const swatchColors = [
-        colors.appBg || DEFAULT_COLORS.appBg,
-        colors.taskListBg || DEFAULT_COLORS.taskListBg,
-        colors.checkboxBg || DEFAULT_COLORS.checkboxBg,
-        colors.completeBtn || DEFAULT_COLORS.completeBtn
+        colors.appBg        || '#4c79ff',
+        colors.taskListBg   || '#ffffff',
+        colors.checkboxBg   || '#5db567',
+        colors.completeBtn  || '#08c352'
     ];
 
     // Fix #41: Validate colors to prevent CSS injection

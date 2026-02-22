@@ -583,6 +583,13 @@ export const DEFAULT_LABELS = deepFreeze({
         shareAppCopied:            'App link copied to clipboard!',
         shareAppFailed:            'Share failed. Please try again.',
 
+        // Due date notifications
+        dueDateUpdated:          'Due date set for "{name}"',
+        dueDateCleared:          'Due date cleared for "{name}"',
+        dueDateOverdue:          'Overdue Tasks:',
+        dueDateDueSoon:          'Task "{name}" is due soon!',
+        dueDateUnnamed:          'Unnamed task',
+
         // Pull-to-refresh notifications
         refreshFailed:           'Refresh failed',
         updateAvailableReload:   'App update available! Reload to update.',
@@ -620,7 +627,17 @@ export const DEFAULT_LABELS = deepFreeze({
         factoryResetConfirm:      'Delete Everything',
         resetProgressMessage:     'This will reset this routine\'s cycle count and cleared tasks count to 0. History and cleared task entries will NOT be deleted. Global achievement progress will NOT be affected.',
         clearHistoryMessage:      'Are you sure you want to clear all history for this routine?',
-        removeRecurringMessage:   'Are you sure you want to remove "{name}" from recurring tasks?'
+        removeRecurringMessage:   'Are you sure you want to remove "{name}" from recurring tasks?',
+        savePresetTitle:          'Save Preset',
+        savePresetMessage:        'Enter a name for this color preset:',
+        savePresetPlaceholder:    'My Custom Theme',
+        deletePresetTitle:        'Delete Preset',
+        confirmDeletePreset:      'Are you sure you want to delete "{name}"?',
+        exportPresetTitle:        'Export Preset',
+        exportPresetMessage:      'Copy this code to share your preset:',
+        importPresetTitle:        'Import Preset',
+        importPresetMessage:      'Paste the preset code you received:',
+        importPresetPlaceholder:  'Paste code here...'
     },
 
     // ========================================================================
@@ -781,7 +798,9 @@ export const DEFAULT_LABELS = deepFreeze({
         remove:   'Remove',
         reset:    'Reset',
         yes:      'Yes',
-        ok:       'OK'
+        ok:       'OK',
+        done:     'Done',
+        import:   'Import'
     },
 
     // ========================================================================
@@ -1642,6 +1661,11 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'share.routineTitle',
     'share.app',
     'share.appTitle',
+    'notify.dueDateUpdated',
+    'notify.dueDateCleared',
+    'notify.dueDateOverdue',
+    'notify.dueDateDueSoon',
+    'notify.dueDateUnnamed',
     'notify.shareRoutineSuccess',
     'notify.shareRoutineFallback',
     'notify.shareRoutineFailed',

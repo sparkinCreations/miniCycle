@@ -14,7 +14,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -119,7 +119,7 @@ export class MiniCycleDueDates {
             console.log('✅ Due dates system initialized successfully');
         } catch (error) {
             console.warn('⚠️ Due dates system initialization failed:', error);
-            this.deps.showNotification('Due dates initialized with limited functionality', 'warning');
+            this.deps.showNotification(getLabel('notify.featureUnavailable'), 'warning');
         }
     }
 
@@ -220,7 +220,7 @@ export class MiniCycleDueDates {
             const dueDateValue = dueDateInput.value;
             if (!dueDateValue) {
                 // ✅ Date was cleared — remove overdue class
-                task.classList.remove("overdue-task");
+                task.classList.remove(DOM_CLASSES.OVERDUE_TASK);
                 delete overdueTaskStates[taskId];
                 return;
             }
@@ -230,20 +230,26 @@ export class MiniCycleDueDates {
             today.setHours(0, 0, 0, 0);
             dueDate.setHours(0, 0, 0, 0);
 
+            const displayName = taskText || getLabel('notify.dueDateUnnamed');
+
             if (dueDate < today) {
                 if (!autoReset) {
                     if (!overdueTaskStates[taskId]) {
-                        newlyOverdueTasks.push(taskText || 'Unnamed task'); // Display text for notification
+                        newlyOverdueTasks.push(displayName); // Display text for notification
                     }
-                    task.classList.add("overdue-task");
+                    task.classList.add(DOM_CLASSES.OVERDUE_TASK);
+                    task.setAttribute('aria-label', getLabel('action.taskItemLabel', { vars: { name: displayName, status: 'overdue' } }));
                     overdueTaskStates[taskId] = true;
                 } else if (overdueTaskStates[taskId]) {
-                    task.classList.add("overdue-task");
+                    task.classList.add(DOM_CLASSES.OVERDUE_TASK);
+                    task.setAttribute('aria-label', getLabel('action.taskItemLabel', { vars: { name: displayName, status: 'overdue' } }));
                 } else {
-                    task.classList.remove("overdue-task");
+                    task.classList.remove(DOM_CLASSES.OVERDUE_TASK);
+                    task.removeAttribute('aria-label');
                 }
             } else {
-                task.classList.remove("overdue-task");
+                task.classList.remove(DOM_CLASSES.OVERDUE_TASK);
+                task.removeAttribute('aria-label');
                 delete overdueTaskStates[taskId];
             }
         });
@@ -260,7 +266,7 @@ export class MiniCycleDueDates {
 
         // ✅ Show notification ONLY if there are newly overdue tasks
         if (newlyOverdueTasks.length > 0) {
-            this.deps.showNotification(`⚠️ Overdue Tasks:\n~ ${newlyOverdueTasks.join("\n~ ")}`, "error");
+            this.deps.showNotification("⚠️ " + getLabel('notify.dueDateOverdue') + `\n~ ${newlyOverdueTasks.join("\n~ ")}`, "error");
         }
     }
 
@@ -317,7 +323,12 @@ export class MiniCycleDueDates {
             this.deps.updateProgressBar();
             this.deps.checkCompleteAllButton();
 
-            this.deps.showNotification("📅 Due date updated", "info", 1500);
+            const taskText = taskToUpdate?.text || getLabel('notify.dueDateUnnamed');
+            if (dueDateInput.value) {
+                this.deps.showNotification("📅 " + getLabel('notify.dueDateUpdated', { vars: { name: taskText } }), "info", 1500);
+            } else {
+                this.deps.showNotification("📅 " + getLabel('notify.dueDateCleared', { vars: { name: taskText } }), "info", 1500);
+            }
         };
         safeAdd(dueDateInput, "change", dueDateInput._changeHandler);
 
@@ -501,8 +512,8 @@ export class MiniCycleDueDates {
             const selectedDate = new Date(dueDateValue).setHours(0, 0, 0, 0);
 
             if (selectedDate > today) {
-                const taskText = task.text;
-                this.deps.showNotification(`📅 Task "${taskText}" is due soon!`, "default");
+                const taskText = task.text || getLabel('notify.dueDateUnnamed');
+                this.deps.showNotification("📅 " + getLabel('notify.dueDateDueSoon', { vars: { name: taskText } }), "default");
                 console.log('📢 Due date notification shown for:', taskText);
             }
         }
@@ -546,7 +557,7 @@ export class MiniCycleDueDates {
         console.log('🔍 Scanning for overdue tasks...');
 
         let overdueTasks = [...this.deps.querySelectorAll(DOM_SELECTORS.TASK)]
-            .filter(task => task.classList.contains("overdue-task"))
+            .filter(task => task.classList.contains(DOM_CLASSES.OVERDUE_TASK))
             .map(task => task.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent)
             .filter(Boolean);
 
@@ -554,7 +565,7 @@ export class MiniCycleDueDates {
 
         if (overdueTasks.length > 0) {
             console.log('⚠️ Showing overdue notification for tasks:', overdueTasks);
-            this.deps.showNotification(`⚠️ Overdue Tasks:\n~ ${overdueTasks.join("\n~ ")}`, "error");
+            this.deps.showNotification("⚠️ " + getLabel('notify.dueDateOverdue') + `\n~ ${overdueTasks.join("\n~ ")}`, "error");
         } else {
             console.log('✅ No overdue tasks found');
         }
@@ -584,7 +595,7 @@ export class MiniCycleDueDates {
 
             // Remove overdue visual styling
             this.deps.querySelectorAll(".overdue-task").forEach(task => {
-                task.classList.remove("overdue-task");
+                task.classList.remove(DOM_CLASSES.OVERDUE_TASK);
             });
 
         } else {
@@ -605,6 +616,18 @@ export class MiniCycleDueDates {
             // Recheck and reapply overdue classes as needed
             this.checkOverdueTasks();
         }
+    }
+
+    // ============================================
+    // CLEANUP
+    // ============================================
+
+    /**
+     * Remove document-level listeners for cleanup
+     */
+    destroy() {
+        document.removeEventListener("change", this.handleDueDateChange);
+        console.log('📅 DueDates destroyed — document listener removed');
     }
 
     // ============================================

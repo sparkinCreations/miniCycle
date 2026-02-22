@@ -9,25 +9,25 @@
    ============================================================================= */
 
 /* Design tokens and CSS custom properties */
-@import url('./base/variables.css?v=1.1020');
+@import url('./base/variables.css?v=1.1021');
 
 /* Theme overrides — CSS-native [data-theme] attribute selectors */
-@import url('./themes/themes.css?v=1.1020');
+@import url('./themes/themes.css?v=1.1021');
 
 /* CSS reset and normalization */
-@import url('./base/reset.css?v=1.1020');
+@import url('./base/reset.css?v=1.1021');
 
 /* Background patterns, images, and theme overlays */
-@import url('./base/background.css?v=1.1020');
+@import url('./base/background.css?v=1.1021');
 
 /* Typography - fonts, sizes, line heights */
-@import url('./base/typography.css?v=1.1020');
+@import url('./base/typography.css?v=1.1021');
 
 /* Keyframe animations (deduplicated) */
-@import url('./base/animations.css?v=1.1020');
+@import url('./base/animations.css?v=1.1021');
 
 /* Accessibility overrides - high contrast, reduced motion, font size */
-@import url('./base/accessibility.css?v=1.1020');
+@import url('./base/accessibility.css?v=1.1021');
 
 
 /* =============================================================================
@@ -35,13 +35,13 @@
    ============================================================================= */
 
 /* Main app container and structure */
-@import url('./layout/app-container.css?v=1.1020');
+@import url('./layout/app-container.css?v=1.1021');
 
 /* Header and navigation */
-@import url('./layout/header.css?v=1.1020');
+@import url('./layout/header.css?v=1.1021');
 
 /* iOS safe areas and notch handling */
-@import url('./layout/safe-areas.css?v=1.1020');
+@import url('./layout/safe-areas.css?v=1.1021');
 
 
 /* =============================================================================
@@ -49,70 +49,70 @@
    ============================================================================= */
 
 /* Task input field */
-@import url('./components/task-input.css?v=1.1020');
+@import url('./components/task-input.css?v=1.1021');
 
 /* Task list and items */
-@import url('./components/task-list.css?v=1.1020');
+@import url('./components/task-list.css?v=1.1021');
 
 /* Task action buttons and options */
-@import url('./components/task-options.css?v=1.1020');
+@import url('./components/task-options.css?v=1.1021');
 
 /* Generic button styles */
-@import url('./components/buttons.css?v=1.1020');
+@import url('./components/buttons.css?v=1.1021');
 
 /* SVG icons (replaces Font Awesome) */
-@import url('./components/icons.css?v=1.1020');
+@import url('./components/icons.css?v=1.1021');
 
 /* Modal dialogs */
-@import url('./components/modals.css?v=1.1020');
+@import url('./components/modals.css?v=1.1021');
 
 /* Theme customizer modal (themes + preferences + color picker) */
-@import url('./components/themes-modal.css?v=1.1020');
+@import url('./components/themes-modal.css?v=1.1021');
 
 /* Toast notifications */
-@import url('./components/notifications.css?v=1.1020');
+@import url('./components/notifications.css?v=1.1021');
 
 /* Statistics panel */
-@import url('./components/stats-panel.css?v=1.1020');
+@import url('./components/stats-panel.css?v=1.1021');
 
 /* Progress indicators */
-@import url('./components/progress-bar.css?v=1.1020');
+@import url('./components/progress-bar.css?v=1.1021');
 
 /* Form elements - inputs, selects, checkboxes */
-@import url('./components/forms.css?v=1.1020');
+@import url('./components/forms.css?v=1.1021');
 
 /* Settings panel */
-@import url('./components/settings.css?v=1.1020');
+@import url('./components/settings.css?v=1.1021');
 
 /* Mode selector (Auto/Manual/Todo) */
-@import url('./components/mode-selector.css?v=1.1020');
+@import url('./components/mode-selector.css?v=1.1021');
 
 /* Routine switcher */
-@import url('./components/routine-switcher.css?v=1.1020');
+@import url('./components/routine-switcher.css?v=1.1021');
 
 /* Games panel */
-@import url('./components/games.css?v=1.1020');
+@import url('./components/games.css?v=1.1021');
 
 /* Onboarding screens */
-@import url('./components/onboarding.css?v=1.1020');
+@import url('./components/onboarding.css?v=1.1021');
 
 /* Recurring tasks panel */
-@import url('./components/recurring.css?v=1.1020');
+@import url('./components/recurring.css?v=1.1021');
 
 /* Storage usage display */
-@import url('./components/storage.css?v=1.1020');
+@import url('./components/storage.css?v=1.1021');
 
 /* Testing modal UI (drag handle, results, runner, backup, JSON tree) */
-@import url('./components/testing.css?v=1.1020');
+@import url('./components/testing.css?v=1.1021');
 
 /* Footer and copyright */
-@import url('./components/footer.css?v=1.1020');
+@import url('./components/footer.css?v=1.1021');
 
 /* Menu container and slide arrows */
-@import url('./components/menu.css?v=1.1020');
+@import url('./components/menu.css?v=1.1021');
 
 /* Quick actions panel */
-@import url('./components/quick-actions.css?v=1.1020');
+@import url('./components/quick-actions.css?v=1.1021');
 
 
 /* =============================================================================
@@ -120,10 +120,10 @@
    ============================================================================= */
 
 /* Utility classes and helpers */
-@import url('./utilities/helpers.css?v=1.1020');
+@import url('./utilities/helpers.css?v=1.1021');
 
 /* Responsive utilities and media queries */
-@import url('./utilities/responsive.css?v=1.1020');
+@import url('./utilities/responsive.css?v=1.1021');
 
 
 /* =============================================================================
@@ -131,4 +131,4 @@
    These styles modify components when body.dark-mode is active
    ============================================================================= */
 
-@import url('./utilities/dark-mode.css?v=1.1020');
+@import url('./utilities/dark-mode.css?v=1.1021');

@@ -1,3 +1,7 @@
+## [1.1021] - 2026-02-22
+- Refactor CSS styles to utilize CSS variables for improved theming and consistency across menu, modals, mode selector, quick actions, and recurring components.
+
+
 ## [1.1020] - 2026-02-22
 - Refactor styles across components to utilize new color variables for consistency and improved theming
 
