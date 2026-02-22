@@ -26,7 +26,7 @@
      • Fixed values instead of calc() where possible
      • CSS variable fallbacks for IE11
 
-   Last meaningful update: v2.064 (intentionally static thereafter)
+   Last meaningful update: v2.065 (intentionally static thereafter)
    © 2026 sparkinCreations - https://sparkincreations.com
    ================================================================================ */
 
@@ -143,8 +143,8 @@ html, body {
    single CSS variable for the safe area and derive all offsets from it.
    --safe-top: Dynamic Island height (~59px) + content padding (15px) */
 body.is-iphone {
-    --safe-top: 74px;          /* Single source: 59px Dynamic Island + 15px padding */
-    --header-total: 110px;     /* --safe-top + bottom padding + branding height */
+    --safe-top: 130px;         /* Dynamic Island (~59px) + logo/branding (~60px) + padding */
+    --header-total: 170px;     /* --safe-top + bottom padding */
     --mode-bar: 30px;          /* Mode selector wrapper height */
 }
 
