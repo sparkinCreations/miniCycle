@@ -107,6 +107,59 @@ function showVersionInfo() {
   }
 }
 
+// ✅ Detect redirects from full version boot failure and notify the user
+function checkFullVersionRedirect() {
+  try {
+    var search = window.location.search || '';
+    if (search.indexOf('mode=lite') === -1) return; // Not a redirect
+
+    var src = '';
+    var srcMatch = search.match(/src=([^&]*)/);
+    if (srcMatch) src = decodeURIComponent(srcMatch[1]);
+
+    var tip = ' You can create a task list here to get started. To try the full version again, tap Menu > Try Full Version.';
+    var message = '';
+    switch (src) {
+      case 'feature-gate':
+        var reasonsMatch = search.match(/reasons=([^&]*)/);
+        var reasons = reasonsMatch ? decodeURIComponent(reasonsMatch[1]).replace(/,/g, ', ') : '';
+        message = 'Your device was redirected to Lite mode because some features needed by the full version aren\'t available'
+          + (reasons ? ' (' + reasons + ')' : '')
+          + '. Lite mode is a lightweight version with one task list optimized for your device.' + tip;
+        break;
+      case 'load-timeout':
+        message = 'The full version took too long to load, so you\'ve been redirected to Lite mode. '
+          + 'This can happen on slower connections or older devices. '
+          + 'Lite mode is a simplified version with one task list that loads much faster.' + tip;
+        break;
+      case 'fallback':
+        message = 'The full version encountered a compatibility issue, so you\'ve been switched to Lite mode. '
+          + 'Lite mode is a standalone lightweight version with one task list — it doesn\'t share data with the full version.' + tip;
+        break;
+      case 'no-boot':
+        message = 'The full version didn\'t start properly, so you\'ve been redirected to Lite mode as a safety measure. '
+          + 'Lite mode is a standalone lightweight version with one task list.' + tip;
+        break;
+      default:
+        message = 'You\'ve been redirected to Lite mode — a standalone lightweight version with one task list.' + tip;
+    }
+
+    // Show notification after a short delay so the UI is ready
+    setTimeout(function() {
+      if (typeof window.showNotification === 'function') {
+        window.showNotification(message, 'info', 8000);
+      }
+    }, 1500);
+
+    // Clean the URL params so the notification doesn't repeat on refresh
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  } catch (e) {
+    // Fail silently on legacy browsers
+  }
+}
+
 // ✅ MODIFY your DOMContentLoaded to include mobile overlay
 document.addEventListener('DOMContentLoaded', function() {
 console.log('🚀 Initializing miniCycle Lite v' + currentVersion + '...');
@@ -164,7 +217,10 @@ console.log('🚀 Initializing miniCycle Lite v' + currentVersion + '...');
 
   // ✅ Show version info
   showVersionInfo();
-  
+
+  // ✅ Notify users redirected from full version boot failure
+  checkFullVersionRedirect();
+
   console.log('✅ miniCycle Lite v' + currentVersion + ' initialized successfully');
 });
 
