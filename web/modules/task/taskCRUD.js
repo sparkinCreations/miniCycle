@@ -76,7 +76,9 @@ const di = createDIModule('TaskCRUD', {
     updateSearchVisibility: optional(null),
     getTaskCount: optional(null),
     // Reminders restart after task deletion
-    startReminders: optional(null)
+    startReminders: optional(null),
+    // Notifications instance for color picker notification
+    notifications: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -580,11 +582,18 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
                 if (t) t.highPriority = newHighPriority;
             }, true);
 
-            _deps.showNotification?.(
-                getLabel(newHighPriority ? 'notify.priorityEnabled' : 'notify.priorityRemoved'),
-                newHighPriority ? "warning" : "info",
-                1500
-            );
+            if (newHighPriority) {
+                // Show color picker notification so user can choose their preferred priority color
+                const notifications = _deps.notifications;
+                if (notifications?.showPriorityColorPickerNotification) {
+                    const savedColor = AppState.get()?.settings?.priorityColor ?? '#dc3545';
+                    notifications.showPriorityColorPickerNotification(savedColor, 8000);
+                } else {
+                    _deps.showNotification?.(getLabel('notify.priorityEnabled'), 'warning', 1500);
+                }
+            } else {
+                _deps.showNotification?.(getLabel('notify.priorityRemoved'), 'info', 1500);
+            }
         } else {
             console.warn('⚠️ AppState not ready for priority toggle - state may be lost');
         }

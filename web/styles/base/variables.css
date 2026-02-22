@@ -32,6 +32,8 @@
   --color-complete-btn-hover: #0ad65a;
   --color-todo-btn: #3b82f6;
   --color-todo-btn-hover: #4b8ef7;
+  /* High-priority indicator color — overridden at runtime by user preference */
+  --priority-color: #dc3545;
 
   /* ═══════════════════════════════════════════════════════════════════════════
      NEUTRAL COLORS (Static palette)

@@ -1314,6 +1314,85 @@ async setDefaultPosition(notificationContainer) {
   }
 
   /**
+   * 🎨 Show priority color picker notification
+   * Displays a notification with color swatch buttons when a task is set to high priority.
+   * The user can pick Red, Yellow, or Green before the notification dismisses.
+   * The chosen color is saved to AppState and applied via CSS variable --priority-color.
+   *
+   * @param {string} currentColor - Current hex color value (#dc3545, #f59e0b, or #28a745)
+   * @param {number} [duration=8000] - How long to show the notification before auto-dismiss
+   */
+  showPriorityColorPickerNotification(currentColor = '#dc3545', duration = 8000) {
+    const COLORS = [
+      { hex: '#dc3545', label: getLabel('notify.priorityColorRed') },
+      { hex: '#f59e0b', label: getLabel('notify.priorityColorYellow') },
+      { hex: '#28a745', label: getLabel('notify.priorityColorGreen') },
+    ];
+
+    const swatchesHTML = COLORS.map(c => {
+      const isSelected = c.hex === currentColor;
+      return `<button class="priority-color-btn"
+                       data-color="${c.hex}"
+                       role="radio"
+                       aria-checked="${isSelected}"
+                       aria-label="${c.label}"
+                       title="${c.label}"
+                       style="width:28px;height:28px;border-radius:50%;background:${c.hex};border:3px solid ${isSelected ? 'white' : 'transparent'};cursor:pointer;flex-shrink:0;transition:border-color 0.15s;"></button>`;
+    }).join('');
+
+    const html = `
+      <div class="priority-color-picker" style="padding:10px 38px 10px 14px;min-width:180px;">
+        <div style="margin-bottom:6px;font-size:0.95em;">${getLabel('notify.priorityEnabled')}</div>
+        <div style="margin-bottom:6px;font-size:0.82em;opacity:0.85;">${getLabel('notify.priorityColorPicker')}</div>
+        <div class="priority-color-options"
+             role="radiogroup"
+             aria-label="${getLabel('notify.priorityColorPicker')}"
+             style="display:flex;gap:10px;align-items:center;">
+          ${swatchesHTML}
+        </div>
+        <button class="notification-close"
+                style="position:absolute;top:6px;right:6px;background:transparent;border:none;font-size:16px;cursor:pointer;color:#fff;line-height:1;padding:0;"
+                aria-label="${getLabel('notify.closeNotification')}">✖</button>
+      </div>
+    `;
+
+    const notification = this.showWithTip(html, 'warning', duration, null, { trusted: true });
+    if (!notification) return;
+
+    // Attach color-picker interaction
+    notification._colorPickerClickHandler = async (e) => {
+      const btn = e.target.closest('.priority-color-btn');
+      if (!btn) return;
+
+      const color = btn.dataset.color;
+
+      // Update swatch selection visual
+      notification.querySelectorAll('.priority-color-btn').forEach(b => {
+        const selected = b === btn;
+        b.style.borderColor = selected ? 'white' : 'transparent';
+        b.setAttribute('aria-checked', selected.toString());
+      });
+
+      // Apply CSS variable immediately
+      document.documentElement.style.setProperty('--priority-color', color);
+
+      // Persist to AppState
+      const AppState = _deps.AppState;
+      if (AppState?.isReady?.()) {
+        try {
+          await AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.priorityColor = color;
+          }, true);
+        } catch (err) {
+          console.warn('⚠️ Could not save priority color:', err);
+        }
+      }
+    };
+    _safeAddEventListener(notification, 'click', notification._colorPickerClickHandler);
+  }
+
+  /**
    * ✨ Show confirmation message after applying changes
    */
   showApplyConfirmation(targetElement) {
