@@ -8,23 +8,23 @@
    ============================================================================= */
 
 .storage-bar-container {
-    margin-top: 15px;
-    padding: 10px;
+    margin-top: var(--space-3-75);
+    padding: var(--space-2-5);
     background: rgba(0, 0, 0, 0.05);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 }
 
 .storage-bar-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 6px;
+    margin-bottom: var(--space-1-5);
 }
 
 .storage-bar-label {
     font-size: 0.75rem;
     font-weight: 600;
-    color: #666;
+    color: var(--color-gray-500);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -36,11 +36,11 @@
 .storage-refresh-btn {
     background: none;
     border: none;
-    color: #888;
+    color: var(--theme-text-muted);
     cursor: pointer;
-    padding: 4px 6px;
+    padding: var(--space-1) 6px;
     font-size: 0.7rem;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     transition: all var(--transition-fast) ease;
 }
 
@@ -61,13 +61,13 @@
     width: 100%;
     height: 8px;
     background: rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
 }
 
 .storage-bar-fill {
     height: 100%;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     transition: width var(--transition-normal) ease, background-color var(--transition-normal) ease;
     min-width: 2px;
 }
@@ -77,19 +77,19 @@
    ============================================================================= */
 
 .storage-normal {
-    background: linear-gradient(90deg, #4CAF50, #66BB6A);
+    background: linear-gradient(90deg, var(--color-success), var(--color-success-light));
 }
 
 .storage-caution {
-    background: linear-gradient(90deg, #FFC107, #FFD54F);
+    background: linear-gradient(90deg, var(--color-warning), var(--color-yellow-light));
 }
 
 .storage-warning {
-    background: linear-gradient(90deg, #FF9800, #FFB74D);
+    background: linear-gradient(90deg, var(--color-orange), var(--color-orange-light));
 }
 
 .storage-critical {
-    background: linear-gradient(90deg, #F44336, #EF5350);
+    background: linear-gradient(90deg, var(--color-red), var(--color-red-light));
 }
 
 /* =============================================================================
@@ -98,8 +98,8 @@
 
 .storage-bar-text {
     font-size: 0.7rem;
-    color: #555;
-    margin-top: 6px;
+    color: var(--theme-input-placeholder);
+    margin-top: var(--space-1-5);
     text-align: right;
 }
 
@@ -117,7 +117,7 @@
     max-height: none;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--theme-modal-overlay);
     align-items: center;
     justify-content: center;
 }
@@ -133,8 +133,8 @@
 .storage-modal-content {
     background: var(--theme-modal-bg, #ffffff);
     color: var(--theme-modal-text, #333);
-    border-radius: 12px;
-    padding: 20px;
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
     width: 420px;
     max-width: 95%;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
@@ -144,7 +144,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: var(--space-3-75);
 }
 
 .storage-modal-header h2 {
@@ -157,13 +157,13 @@
    ============================================================================= */
 
 .storage-details {
-    margin-top: 15px;
+    margin-top: var(--space-3-75);
 }
 
 .storage-detail-row {
     display: flex;
     justify-content: space-between;
-    padding: 8px 0;
+    padding: var(--space-2) 0;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
@@ -187,7 +187,7 @@
 
 @media (max-width: 768px) {
     .storage-bar-container {
-        padding: 8px;
+        padding: var(--space-2);
     }
 
     .storage-bar-label {
@@ -196,7 +196,7 @@
 
     .storage-modal-content {
         width: 95%;
-        padding: 15px;
+        padding: var(--space-3-75);
     }
 }
 
@@ -211,7 +211,7 @@
     max-height: 90vh;
     background-color: var(--modal-bg, #fff);
     color: var(--modal-text, #333);
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     box-shadow: 0 6px 25px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
@@ -223,13 +223,13 @@
 .storage-modal-header {
     font-weight: bold;
     font-size: 1.2rem;
-    padding: 16px;
+    padding: var(--space-4);
     background-color: var(--modal-header-bg, #f5f5f5);
     border-bottom: 1px solid var(--modal-border, #ccc);
 }
 
 .storage-modal-body {
-    padding: 16px;
+    padding: var(--space-4);
     overflow-y: auto;
     flex: 1;
     font-family: monospace;
@@ -238,22 +238,22 @@
 }
 
 .storage-modal-buttons {
-    padding: 12px 16px;
+    padding: var(--space-3) var(--space-4);
     text-align: right;
     border-top: 1px solid var(--modal-border, #ccc);
     background-color: var(--modal-footer-bg, #f5f5f5);
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 8px;
+    gap: var(--space-2);
 }
 
 .storage-modal-buttons .btn-confirm {
-    padding: 8px 16px;
+    padding: var(--space-2) var(--space-4);
     background-color: var(--btn-bg, #007bff);
     color: var(--btn-text, white);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-6);
     font-weight: bold;
     cursor: pointer;
 }
@@ -281,7 +281,7 @@
     max-height: 90vh;
     background-color: var(--modal-bg, #fff);
     color: var(--modal-text, #333);
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     box-shadow: 0 6px 25px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
@@ -294,13 +294,13 @@
 #storage-viewer-overlay .mini-modal-header {
     font-weight: bold;
     font-size: 1.2rem;
-    padding: 16px;
+    padding: var(--space-4);
     background-color: var(--modal-header-bg, #f5f5f5);
     border-bottom: 1px solid var(--modal-border, #ccc);
 }
 
 #storage-content {
-    padding: 16px;
+    padding: var(--space-4);
     overflow-y: auto;
     flex: 1;
     font-family: monospace;
@@ -313,30 +313,30 @@
     overflow-y: auto;
     font-family: monospace;
     font-size: 0.9em;
-    background: #282828;
-    padding: 10px;
-    border: 1px solid #ccc;
+    background: var(--color-code-bg);
+    padding: var(--space-2-5);
+    border: 1px solid var(--theme-input-border);
     text-align: left;
 }
 
 .storage-key {
-    margin-bottom: 12px;
-    padding-bottom: 6px;
-    color: #a8a8a8;
+    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-1-5);
+    color: var(--color-gray-400);
 }
 
 .storage-key-title {
     font-weight: bold;
-    margin-bottom: 2px;
-    color: #d7d7d7;
+    margin-bottom: var(--space-0-5);
+    color: var(--color-gray-300);
 }
 
 /* JSON Entry Styling */
 .json-entry {
-    margin-bottom: 8px;
-    padding: 6px;
+    margin-bottom: var(--space-2);
+    padding: var(--space-1-5);
     background: rgba(0, 0, 0, 0.05);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
 }
 
 .json-toggle {

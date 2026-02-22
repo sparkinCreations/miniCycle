@@ -118,21 +118,21 @@
 
 @media (max-width: 768px) {
     .gap-sm-small {
-        gap: 4px;
+        gap: var(--space-1);
     }
 
     .p-sm-small {
-        padding: 8px;
+        padding: var(--space-2);
     }
 }
 
 @media (max-width: 480px) {
     .gap-xs-small {
-        gap: 2px;
+        gap: var(--space-0-5);
     }
 
     .p-xs-small {
-        padding: 6px;
+        padding: var(--space-1-5);
     }
 }
 

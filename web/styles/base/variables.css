@@ -34,6 +34,21 @@
   --color-todo-btn-hover: #4b8ef7;
   /* High-priority indicator color — overridden at runtime by user preference */
   --priority-color: #dc3545;
+  /* Game/achievement teal color */
+  --color-game-primary: #4ecdc4;
+  --color-game-primary-dark: #36b1a8;
+  /* Extended status palette */
+  --color-yellow-light: #ffd54f;      /* caution gradient secondary */
+  --color-orange: #ff9800;            /* mid-severity / orange accent */
+  --color-orange-light: #ffb74d;      /* orange gradient secondary */
+  --color-orange-icon: #e67e22;       /* high-priority task option icon */
+  --color-amber: #f39c12;             /* high-priority icon on dark bg */
+  --color-red: #f44336;               /* storage critical / pure red */
+  --color-red-light: #ef5350;         /* storage critical gradient secondary */
+  /* Extended blue palette */
+  --color-blue-medium: #3498db;       /* recurring / reminder option icons */
+  --color-blue-light: #5dade2;        /* reminder icons on dark bg */
+  --color-steel-blue: #3d7ab5;        /* modal close button */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      NEUTRAL COLORS (Static palette)
@@ -50,6 +65,23 @@
   --color-gray-700: #404040;
   --color-gray-800: #262626;
   --color-gray-900: #171717;
+  /* Slate neutrals (blue-tinted dark palette, used in dark components) */
+  --color-slate-900: #0f172a;
+  --color-slate-800: #1e293b;
+  --color-slate-700: #334155;
+  --color-slate-600: #4a5568;
+  --color-slate-500: #64748b;
+  --color-slate-400: #94a3b8;
+  --color-slate-100: #f1f5f9;
+  /* Navigation dot colors */
+  --color-nav-dot: #44527c;           /* inactive dot */
+  --color-nav-dot-active: #dce7fc;    /* active dot */
+  --color-nav-dot-press: #004494;     /* active dot on press */
+  /* Navy palette (header/overlay context) */
+  --color-navy: #2c3270;              /* dark navy text on header buttons */
+  --color-navy-dark: #0c2091;         /* darker navy border/hover */
+  /* Monospace / code viewer background */
+  --color-code-bg: #282828;
 
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Backgrounds
@@ -179,6 +211,7 @@
   /* ═══════════════════════════════════════════════════════════════════════════
      SPACING SCALE
      ═══════════════════════════════════════════════════════════════════════════ */
+  /* Base scale (multiples of 4px) */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -188,6 +221,27 @@
   --space-8: 32px;
   --space-10: 40px;
   --space-12: 48px;
+  /* Extended scale (sub-unit and fractional values) */
+  --space-px: 1px;      /* 1 pixel */
+  --space-0-5: 2px;     /* 0.5 units */
+  --space-0-75: 3px;    /* 0.75 units */
+  --space-1-25: 5px;    /* 1.25 units */
+  --space-1-5: 6px;     /* 1.5 units */
+  --space-1-75: 7px;    /* 1.75 units */
+  --space-2-25: 9px;    /* 2.25 units */
+  --space-2-5: 10px;    /* 2.5 units */
+  --space-3-25: 13px;   /* 3.25 units */
+  --space-3-5: 14px;    /* 3.5 units */
+  --space-3-75: 15px;   /* 3.75 units */
+  --space-4-5: 18px;    /* 4.5 units */
+  --space-6-25: 25px;   /* 6.25 units */
+  --space-7: 28px;      /* 7 units */
+  --space-7-5: 30px;    /* 7.5 units */
+  --space-8-5: 34px;    /* 8.5 units */
+  --space-8-75: 35px;   /* 8.75 units */
+  --space-12-5: 50px;   /* 12.5 units */
+  --space-20: 80px;     /* 20 units */
+  --space-30: 120px;    /* 30 units */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      TYPOGRAPHY
@@ -239,6 +293,15 @@
   --radius-xl: 16px;
   --radius-2xl: 20px;
   --radius-full: 9999px;
+  /* Extended radius scale */
+  --radius-2xs: 2px;    /* hairline radius */
+  --radius-xs: 3px;     /* extra-small */
+  --radius-5: 5px;      /* between sm and md */
+  --radius-6: 6px;      /* between sm and md */
+  --radius-10: 10px;    /* between md and lg */
+  --radius-14: 14px;    /* between lg and xl */
+  --radius-15: 15px;    /* between lg and xl */
+  --radius-24: 24px;    /* between 2xl and full */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      SHADOWS

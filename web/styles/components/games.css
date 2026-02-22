@@ -35,8 +35,8 @@
 .games-modal-content {
     background: var(--theme-modal-bg, #ffffff);
     color: var(--theme-modal-text, #333);
-    padding: 24px;
-    border-radius: 12px;
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
     width: 420px;
     max-width: 95%;
     text-align: center;
@@ -44,13 +44,13 @@
 }
 
 .games-modal-content h2 {
-    margin-bottom: 12px;
+    margin-bottom: var(--space-3);
     font-size: var(--font-size-2xl);
     color: inherit;
 }
 
 .games-modal-content p {
-    margin-bottom: 20px;
+    margin-bottom: var(--space-5);
     color: var(--theme-text-secondary, #444);
     font-size: var(--font-size-base);
 }
@@ -60,20 +60,20 @@
    ============================================================================= */
 
 #open-task-order-game {
-    background: #4ecdc4;
-    color: white;
+    background: var(--color-game-primary);
+    color: var(--color-white);
     font-weight: bold;
     border: none;
-    padding: 10px 16px;
-    border-radius: 8px;
+    padding: 10px var(--space-4);
+    border-radius: var(--radius-md);
     font-size: var(--font-size-base);
-    margin-bottom: 16px;
+    margin-bottom: var(--space-4);
     cursor: pointer;
     transition: background var(--transition-normal) ease;
 }
 
 #open-task-order-game:hover {
-    background: #36b1a8;
+    background: var(--color-game-primary-dark);
 }
 
 /* =============================================================================
@@ -81,8 +81,8 @@
    ============================================================================= */
 
 .badge.unlocked.game-unlocked {
-    background: linear-gradient(135deg, #4ecdc4 0%, #44a8a0 100%);
-    color: white;
+    background: linear-gradient(135deg, var(--color-game-primary) 0%, var(--color-game-primary-dark) 100%);
+    color: var(--color-white);
     animation: pulse var(--animation-pulse) ease-in-out infinite;
 }
 
@@ -101,9 +101,9 @@
 .game-card {
     background: var(--theme-card-bg, #f8f9fa);
     border: 1px solid var(--theme-card-border, #dee2e6);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    margin-bottom: var(--space-3);
     transition: transform var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
 }
 
@@ -115,22 +115,22 @@
 .game-card-title {
     font-size: var(--font-size-lg);
     font-weight: 600;
-    margin-bottom: 8px;
+    margin-bottom: var(--space-2);
     color: inherit;
 }
 
 .game-card-description {
     font-size: var(--font-size-sm);
     color: var(--theme-text-secondary, #666);
-    margin-bottom: 12px;
+    margin-bottom: var(--space-3);
 }
 
 .game-card-btn {
     background: var(--theme-button-primary-bg, #4c79ff);
     color: var(--theme-button-primary-text, white);
     border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-6);
     font-weight: 500;
     cursor: pointer;
     transition: background var(--transition-fast) ease;
@@ -153,10 +153,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: var(--space-2);
     font-size: var(--font-size-sm);
     color: var(--theme-text-secondary, #666);
-    margin-top: 8px;
+    margin-top: var(--space-2);
 }
 
 .game-score-icon {
@@ -175,7 +175,7 @@
 @media (max-width: 768px) {
     .games-modal-content {
         width: 95%;
-        padding: 20px;
+        padding: var(--space-5);
     }
 
     .games-modal-content h2 {
@@ -183,7 +183,7 @@
     }
 
     #open-task-order-game {
-        padding: 8px 14px;
+        padding: var(--space-2) 14px;
         font-size: var(--font-size-sm);
     }
 }

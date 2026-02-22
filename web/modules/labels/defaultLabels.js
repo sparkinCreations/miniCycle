@@ -105,7 +105,17 @@ export const DEFAULT_LABELS = deepFreeze({
         taskItemRecurring:    '{name}, {status}, recurring',
         searchTasks:          'Search tasks',
         searchTasksPlaceholder: 'Search tasks...',
-        clearSearch:          'Clear search'
+        clearSearch:          'Clear search',
+        filterAll:            'All',
+        filterIncomplete:     'Incomplete',
+        filterCompleted:      'Completed',
+        filterPriority:       'Priority',
+        filterDueDate:        'Due Date',
+        filterRecurring:      'Recurring',
+        sortDefault:          'Default',
+        sortAZ:               'A\u2013Z',
+        sortPriority:         'Priority',
+        sortDueDate:          'Due Date'
     },
 
     // ========================================================================

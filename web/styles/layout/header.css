@@ -25,7 +25,7 @@
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
-    gap: 12px;
+    gap: var(--space-3);
     /* Extend padding to cover status bar/Dynamic Island seamlessly */
     padding: calc(env(safe-area-inset-top, 0px) + 20px) 16px 15px 16px;
     /* Use theme-aware backgrounds - transparent to show gradient through */
@@ -44,7 +44,7 @@
 :root {
     --header-bg: transparent;
     --header-border: rgba(255, 255, 255, 0.2);
-    --header-text: #ffffff;
+    --header-text: var(--color-white);
     --header-height: 60px;
 }
 
@@ -62,13 +62,13 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: var(--space-1);
 }
 
 .header-logo {
     height: 25px;
     width: auto;
-    border-radius: 6px;
+    border-radius: var(--radius-6);
     position: relative;
     z-index: var(--z-content);
     order: 1;
@@ -103,14 +103,14 @@
 
 /* Logo flash effects for feedback */
 .header-logo.logo-flash-green {
-    background-color: #28a745;
-    border-radius: 6px;
+    background-color: var(--color-success);
+    border-radius: var(--radius-6);
     transition: background-color var(--transition-normal) ease;
 }
 
 .header-logo.logo-flash-red {
-    background-color: #dc3545;
-    border-radius: 6px;
+    background-color: var(--color-error);
+    border-radius: var(--radius-6);
     transition: background-color var(--transition-normal) ease;
 }
 
@@ -140,9 +140,9 @@
     justify-self: end;
     background: rgba(0, 0, 0, 0.787);
     border: 1px solid rgba(255, 255, 255, 0.72);
-    border-radius: 5px;
-    color: white;
-    padding: 5px 8px;
+    border-radius: var(--radius-5);
+    color: var(--color-white);
+    padding: 5px var(--space-2);
     font-size: var(--font-size-sm);
     cursor: pointer;
     z-index: var(--z-content);
@@ -166,7 +166,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 2px 0;
+    padding: var(--space-0-5) 0;
     background: transparent;
     border-bottom: none;
     backdrop-filter: blur(5px);
@@ -181,8 +181,8 @@
     box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
     border: 1px solid #0c20913f;
     color: rgb(44, 50, 112);
-    border-radius: 5px;
-    padding: 3px 20px 3px 8px;
+    border-radius: var(--radius-5);
+    padding: 3px var(--space-5) 3px var(--space-2);
     font-size: 12px;
     font-weight: 500;
     max-width: 140px;
@@ -229,7 +229,7 @@
     order: 2;
     position: relative;
     z-index: var(--z-content);
-    margin-left: 8px;
+    margin-left: var(--space-2);
 }
 
 .app-name {
@@ -242,13 +242,13 @@
     font-weight: 600;
     font-size: 0.75rem;
     letter-spacing: 0.25em;
-    color: #000;
-    margin-top: 1px;
+    color: var(--color-black);
+    margin-top: var(--space-px);
     opacity: 0.7;
 }
 
 body.dark-mode .app-subtitle {
-    color: #ccc;
+    color: var(--color-gray-300);
 }
 
 /* =============================================================================
@@ -279,7 +279,7 @@ body.dark-mode .app-subtitle {
     .menu-button {
         background-color: rgba(0, 0, 0, 0.8);
         border: 1px solid rgba(0, 0, 0, 0.475);
-        color: rgb(255, 255, 255);
+        color: var(--color-white);
         font-size: 20px;
     }
 }
@@ -289,7 +289,7 @@ body.dark-mode .app-subtitle {
    ============================================================================= */
 
 .title-text {
-    color: rgb(255, 255, 255);
+    color: var(--color-white);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -328,7 +328,7 @@ body.dark-mode .app-subtitle {
 .ios-pwa .mini-cycle-header-row {
     /* Push content below Dynamic Island with padding (blur still extends to top) */
     padding-top: 59px;
-    padding-bottom: 24px;
+    padding-bottom: var(--space-6);
 }
 
 .ios-pwa .header-branding {

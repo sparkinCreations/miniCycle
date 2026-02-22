@@ -115,7 +115,7 @@ dialog.quick-actions-picker-overlay[open] {
     background: var(--theme-modal-bg);
     color: var(--theme-modal-text);
     border: 1px solid var(--theme-modal-border);
-    padding: 20px;
+    padding: var(--space-5);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     width: 420px;
@@ -142,7 +142,7 @@ dialog.quick-actions-picker-overlay[open] {
 
 .about-modal-content {
     max-width: 340px;
-    padding: 28px 24px;
+    padding: 28px var(--space-6);
     background: var(--theme-stats-bg);
     color: var(--theme-stats-text);
     border: 1px solid var(--theme-stats-border, rgba(255, 255, 255, 0.25));
@@ -160,21 +160,21 @@ dialog.quick-actions-picker-overlay[open] {
 }
 
 .about-header {
-    margin-bottom: 14px;
+    margin-bottom: var(--space-3-5);
 }
 
 .about-logo {
     width: 48px;
     height: 48px;
-    margin-bottom: 10px;
+    margin-bottom: var(--space-2-5);
     background: linear-gradient(135deg, #7ec8e3 0%, #4aa3df 100%);
-    border-radius: 10px;
-    padding: 6px;
+    border-radius: var(--radius-10);
+    padding: var(--space-1-5);
     box-shadow: 0 2px 8px rgba(74, 163, 223, 0.3);
 }
 
 .about-modal-content h2 {
-    margin: 0 0 4px 0;
+    margin: 0 0 var(--space-1) 0;
     font-size: 19px;
     font-weight: 700;
     color: inherit;
@@ -186,7 +186,7 @@ dialog.quick-actions-picker-overlay[open] {
     font-weight: 400;
     opacity: 0.5;
     vertical-align: super;
-    margin-left: 1px;
+    margin-left: var(--space-px);
 }
 
 .about-tagline {
@@ -203,11 +203,11 @@ dialog.quick-actions-picker-overlay[open] {
     display: inline-block;
     background: rgba(255, 255, 255, 0.5);
     color: inherit;
-    padding: 4px 12px;
-    border-radius: 12px;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-lg);
     font-size: 13px;
     font-weight: 600;
-    margin-bottom: 14px;
+    margin-bottom: var(--space-3-5);
 }
 
 .about-description {
@@ -215,14 +215,14 @@ dialog.quick-actions-picker-overlay[open] {
     line-height: 1.6;
     color: inherit;
     opacity: 0.8;
-    margin: 0 0 16px 0;
+    margin: 0 0 var(--space-4) 0;
 }
 
 .about-links {
     background: rgba(255, 255, 255, 0.45);
-    border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 16px;
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
+    margin-bottom: var(--space-4);
 }
 
 .about-links a {
@@ -236,17 +236,17 @@ dialog.quick-actions-picker-overlay[open] {
 }
 
 .about-link-divider {
-    margin: 0 10px;
+    margin: 0 var(--space-2-5);
     opacity: 0.4;
 }
 
 .about-footer {
     border-top: 1px solid rgba(255, 255, 255, 0.3);
-    padding-top: 14px;
+    padding-top: var(--space-3-5);
 }
 
 .about-footer p {
-    margin: 0 0 8px 0;
+    margin: 0 0 var(--space-2) 0;
     font-size: 12px;
     color: inherit;
     opacity: 0.6;
@@ -270,7 +270,7 @@ dialog.quick-actions-picker-overlay[open] {
 .about-modal-content .about-footer .about-cache {
     font-size: 11px;
     opacity: 0.55;
-    margin-top: 6px;
+    margin-top: var(--space-1-5);
 }
 
 /* =============================================================================
@@ -288,8 +288,8 @@ dialog.quick-actions-picker-overlay[open] {
     overflow-y: auto;
     background-color: var(--theme-modal-bg, #f9f9f9);
     color: var(--theme-modal-text, #333);
-    border-radius: 15px;
-    padding: 20px 25px;
+    border-radius: var(--radius-15);
+    padding: var(--space-5) 25px;
     z-index: var(--z-modal);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
     text-align: center;
@@ -300,7 +300,7 @@ dialog.quick-actions-picker-overlay[open] {
 .modal-panel h2 {
     font-size: 1.3rem;
     font-weight: bold;
-    margin-bottom: 15px;
+    margin-bottom: var(--space-3-75);
     color: inherit;
 }
 
@@ -340,9 +340,9 @@ dialog.quick-actions-picker-overlay[open] {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 15px;
+    padding-bottom: var(--space-3-75);
     border-bottom: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
-    margin-bottom: 15px;
+    margin-bottom: var(--space-3-75);
 }
 
 .modal-header h2 {
@@ -358,10 +358,10 @@ dialog.quick-actions-picker-overlay[open] {
 .modal-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
-    padding-top: 15px;
+    gap: var(--space-2-5);
+    padding-top: var(--space-3-75);
     border-top: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
-    margin-top: 15px;
+    margin-top: var(--space-3-75);
 }
 
 /* =============================================================================
@@ -390,11 +390,11 @@ dialog.quick-actions-picker-overlay[open] {
 .modal-close-button {
     background-color: var(--theme-button-primary-bg, #007bff);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-6);
     color: var(--theme-button-primary-text, white);
     font-size: 1rem;
-    padding: 10px 20px;
-    margin-top: 16px;
+    padding: 10px var(--space-5);
+    margin-top: var(--space-4);
     cursor: pointer;
     transition: background-color var(--transition-fast) ease;
 }
@@ -429,7 +429,7 @@ dialog.mini-modal-dialog::backdrop {
     background: var(--theme-modal-bg, #ffffff);
     color: var(--theme-modal-text, #333);
     border-radius: var(--radius-lg);
-    padding: 20px;
+    padding: var(--space-5);
     max-width: 320px;
     width: 90%;
     text-align: center;
@@ -440,26 +440,26 @@ dialog.mini-modal-dialog::backdrop {
 .mini-modal-header {
     font-size: 1.1rem;
     font-weight: 600;
-    margin-bottom: 10px;
-    padding-left: 28px;
+    margin-bottom: var(--space-2-5);
+    padding-left: var(--space-7);
 }
 
 .mini-modal-body {
     font-size: 0.95rem;
-    margin-bottom: 20px;
+    margin-bottom: var(--space-5);
     color: inherit; /* Inherits from .mini-modal-box which sets --theme-modal-text */
 }
 
 .mini-modal-buttons {
     display: flex;
-    gap: 10px;
+    gap: var(--space-2-5);
     justify-content: center;
 }
 
 .mini-modal-buttons .btn-cancel {
     background: var(--theme-button-secondary-bg);
     color: var(--theme-button-secondary-text);
-    padding: 8px 16px;
+    padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-sm);
     border: none;
     cursor: pointer;
@@ -471,7 +471,7 @@ dialog.mini-modal-dialog::backdrop {
 .mini-modal-buttons .btn-confirm {
     background: var(--theme-color-success);
     color: white;
-    padding: 8px 16px;
+    padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-sm);
     border: none;
     cursor: pointer;
@@ -530,7 +530,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 .feedback-modal-content {
     background: var(--theme-modal-bg, #ffffff);
     color: var(--theme-modal-text, #333);
-    padding: 24px 20px 0;
+    padding: var(--space-6) var(--space-5) 0;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
@@ -542,7 +542,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 }
 
 .feedback-modal-content h2 {
-    margin: 0 0 8px 0;
+    margin: 0 0 var(--space-2) 0;
     font-size: 18px;
     font-weight: 700;
     color: var(--theme-modal-text, #333);
@@ -552,7 +552,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     font-size: 13px;
     color: var(--theme-modal-text, #666);
     opacity: 0.7;
-    margin: 0 0 16px 0;
+    margin: 0 0 var(--space-4) 0;
     line-height: 1.5;
 }
 
@@ -577,11 +577,11 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     width: 90%;
     height: 100px;
     border: 1px solid var(--theme-input-border, #ccc);
-    border-radius: 5px;
-    padding: 10px;
+    border-radius: var(--radius-5);
+    padding: var(--space-2-5);
     resize: none;
     font-size: 16px;
-    margin-top: 10px;
+    margin-top: var(--space-2-5);
     background: var(--theme-input-bg, white);
     color: var(--theme-input-text, #333);
 }
@@ -589,10 +589,10 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 #feedback-email {
     width: 90%;
     border: 1px solid var(--theme-input-border, #ccc);
-    border-radius: 5px;
-    padding: 10px;
+    border-radius: var(--radius-5);
+    padding: var(--space-2-5);
     font-size: 14px;
-    margin-top: 8px;
+    margin-top: var(--space-2);
     background: var(--theme-input-bg, white);
     color: var(--theme-input-text, #333);
 }
@@ -603,8 +603,8 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     color: var(--menu-close-text, white);
     font-size: 16px;
     font-weight: 700;
-    padding: 14px;
-    margin-top: 16px;
+    padding: var(--space-3-5);
+    margin-top: var(--space-4);
     margin-left: -20px;
     margin-right: -20px;
     margin-bottom: 0;
@@ -628,7 +628,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 #thank-you-message {
     color: var(--theme-success, green);
     font-weight: bold;
-    padding: 16px 0;
+    padding: var(--space-4) 0;
 }
 
 /* NOTE: Reminders modal styles moved to recurring.css */
@@ -655,25 +655,25 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 
 @media (max-width: 768px) {
     .modal-content {
-        padding: 15px;
+        padding: var(--space-3-75);
         width: 95%;
     }
 
     .modal-panel {
         max-width: 95%;
-        padding: 15px 20px;
+        padding: 15px var(--space-5);
     }
 }
 
 @media (max-width: 480px) {
     .modal-panel {
-        padding: 15px;
-        border-radius: 12px;
+        padding: var(--space-3-75);
+        border-radius: var(--radius-lg);
     }
 
     .mini-modal-box {
         width: 95%;
-        padding: 15px;
+        padding: var(--space-3-75);
     }
 }
 

@@ -10,7 +10,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="1.1015">
+<meta name="app-version" content="1.1017">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -28,20 +28,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.1015"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.1017"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=1.1015" as="style">
-<link rel="preload" href="styles/base/variables.css?v=1.1015" as="style">
-<link rel="preload" href="styles/base/reset.css?v=1.1015" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=1.1015" as="style">
-<link rel="preload" href="styles/layout/header.css?v=1.1015" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=1.1015" as="style">
+<link rel="preload" href="styles/main.css?v=1.1017" as="style">
+<link rel="preload" href="styles/base/variables.css?v=1.1017" as="style">
+<link rel="preload" href="styles/base/reset.css?v=1.1017" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=1.1017" as="style">
+<link rel="preload" href="styles/layout/header.css?v=1.1017" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=1.1017" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=1.1015" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=1.1017" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=1.1015"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=1.1017"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -52,7 +52,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.1015"></script>
+<script src="./version.js?v=1.1017"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -211,21 +211,21 @@
      3. Or accepting slightly slower initial load without preloads
      ═══════════════════════════════════════════════════════════════════════════ -->
 <!--
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.1015">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.1015">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.1015">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.1015">
-<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.1015">
-<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.1015">
-<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.1015">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.1015">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.1015">
-<link rel="modulepreload" href="./modules/core/appInit.js?v=1.1015">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.1015">
-<link rel="modulepreload" href="./modules/core/diBase.js?v=1.1015">
-<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.1015">
-<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.1015">
-<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.1015">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.1017">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.1017">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.1017">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.1017">
+<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.1017">
+<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.1017">
+<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.1017">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.1017">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.1017">
+<link rel="modulepreload" href="./modules/core/appInit.js?v=1.1017">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.1017">
+<link rel="modulepreload" href="./modules/core/diBase.js?v=1.1017">
+<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.1017">
+<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.1017">
+<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.1017">
 -->
 
 <!-- Critical CSS - extracted to external file for CSP compliance (no 'unsafe-inline' needed) -->
@@ -2580,6 +2580,29 @@ window.installApp = () => {
         </div>
         <div class="task-list-container">
         <!-- Search Input Row (appears below title when search is expanded) -->
+        <div id="task-filter-sort-row" class="task-filter-sort-row hidden">
+            <div class="filter-chip-group collapsed" role="group" aria-label="Filter tasks" aria-expanded="false">
+                <span class="chip-group-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                </span>
+                <button class="filter-chip active" data-filter="all" aria-pressed="true">All</button>
+                <button class="filter-chip" data-filter="incomplete" aria-pressed="false">Incomplete</button>
+                <button class="filter-chip" data-filter="completed" aria-pressed="false">Completed</button>
+                <button class="filter-chip" data-filter="priority" aria-pressed="false">Priority</button>
+                <button class="filter-chip" data-filter="due-date" aria-pressed="false">Due Date</button>
+                <button class="filter-chip" data-filter="recurring" aria-pressed="false">Recurring</button>
+            </div>
+            <div class="filter-sort-divider" aria-hidden="true"></div>
+            <div class="sort-chip-group" role="group" aria-label="Sort tasks">
+                <span class="chip-group-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/><line x1="6" y1="5" x2="18" y2="5"/></svg>
+                </span>
+                <button class="sort-chip active" data-sort="default" aria-pressed="true">Default</button>
+                <button class="sort-chip" data-sort="az" aria-pressed="false">A–Z</button>
+                <button class="sort-chip" data-sort="priority" aria-pressed="false">Priority</button>
+                <button class="sort-chip" data-sort="due-date" aria-pressed="false">Due Date</button>
+            </div>
+        </div>
         <div id="task-search-input-row" class="task-search-input-row hidden">
             <input type="text" id="task-search-input" class="task-search-input" placeholder="Search tasks..." aria-label="Search tasks">
             <button id="task-search-clear" class="task-search-clear" aria-label="Clear search" title="Clear search">×</button>
@@ -2739,7 +2762,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.1015"></script>
+ <script type="module" src="miniCycle-main.js?v=1.1017"></script>
 
 <script>
 // Sync About modal version with meta app-version

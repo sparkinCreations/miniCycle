@@ -24,11 +24,11 @@
     align-items: center;
     background: var(--theme-input-bg, white);
     border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 2px 4px;
-    margin-bottom: 4px;
+    border-radius: var(--radius-md);
+    padding: 2px var(--space-1);
+    margin-bottom: var(--space-1);
     user-select: none;
-    gap: 8px;
+    gap: var(--space-2);
     box-shadow: inset 0 0 0 1px #989898;
     transition: background-color var(--transition-normal) ease, box-shadow var(--transition-fast) ease;
 }
@@ -90,11 +90,11 @@
    ============================================================================= */
 
 #recurring-settings-panel {
-    margin-top: 12px;
-    padding: 10px;
+    margin-top: var(--space-3);
+    padding: var(--space-2-5);
     background: #f0f0f0;
     border-top: 1px solid #ccc;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 }
 
 #recurring-settings-panel.hidden {
@@ -103,13 +103,13 @@
 
 #recurring-settings-panel label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: var(--space-2);
     font-size: var(--font-size-sm);
 }
 
 #recur-count-input {
     width: 60px;
-    margin-left: 6px;
+    margin-left: var(--space-1-5);
 }
 
 #recur-count-container.hidden {
@@ -121,19 +121,19 @@
    ============================================================================= */
 
 #recur-frequency-container {
-    margin-top: 10px;
+    margin-top: var(--space-2-5);
 }
 
 #recur-frequency-container label {
     display: block;
-    margin-bottom: 4px;
+    margin-bottom: var(--space-1);
     font-size: var(--font-size-sm);
 }
 
 #recur-frequency {
     width: 50%;
-    padding: 6px;
-    border-radius: 6px;
+    padding: var(--space-1-5);
+    border-radius: var(--radius-6);
     border: 1px solid #ccc;
     font-size: var(--font-size-sm);
 }
@@ -144,15 +144,15 @@
 
 #apply-recurring-settings {
     display: inline-block;
-    padding: 8px 16px;
+    padding: var(--space-2) var(--space-4);
     background-color: var(--theme-success, #4CAF50);
     color: white;
     font-size: var(--font-size-sm);
     font-weight: 600;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-6);
     cursor: pointer;
-    margin-top: 12px;
+    margin-top: var(--space-3);
     transition: background-color var(--transition-fast) ease, transform var(--transition-fast) ease;
 }
 
@@ -174,19 +174,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding: 10px 20px;
+    gap: var(--space-2-5);
+    padding: 10px var(--space-5);
     font-size: var(--font-size-sm);
     font-weight: 500;
     border: none;
-    border-radius: 20px;
+    border-radius: var(--radius-2xl);
     background-color: #d8d8d8;
     color: #333;
     box-shadow: none;
     cursor: pointer;
     transition: background-color var(--transition-normal) ease;
     width: auto;
-    margin: 10px auto;
+    margin: var(--space-2-5) auto;
 }
 
 #open-recurring-panel:not(.menu-section-grid *):hover:not(:disabled) {
@@ -211,8 +211,8 @@
 .recurring-scroll-area {
     max-height: 200px;
     overflow-y: auto;
-    padding-right: 4px;
-    margin-top: 10px;
+    padding-right: var(--space-1);
+    margin-top: var(--space-2-5);
 }
 
 .recurring-scroll-area::-webkit-scrollbar {
@@ -221,7 +221,7 @@
 
 .recurring-scroll-area::-webkit-scrollbar-thumb {
     background-color: rgba(100, 100, 100, 0.3);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
 }
 
 .recurring-scroll-area::-webkit-scrollbar-thumb:hover {
@@ -234,10 +234,10 @@
     color: var(--menu-close-text, white);
     font-size: var(--font-size-lg);
     font-weight: 700;
-    padding: 14px;
+    padding: var(--space-3-5);
     border: none;
-    border-radius: 0 0 15px 15px;
-    margin: 10px -25px -20px;
+    border-radius: 0 0 var(--radius-15) var(--radius-15);
+    margin: var(--space-2-5) -25px -20px;
     width: calc(100% + 50px);
     cursor: pointer;
     transition: background var(--transition-fast) ease;
@@ -301,19 +301,19 @@
 .monthly-days {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-    margin-top: 10px;
-    padding: 8px;
+    gap: var(--space-2);
+    margin-top: var(--space-2-5);
+    padding: var(--space-2);
     background: #d3d3d3;
-    border-radius: 10px;
+    border-radius: var(--radius-10);
 }
 
 .monthly-day-box {
     text-align: center;
-    padding: 12px 0;
+    padding: var(--space-3) 0;
     background: var(--theme-input-bg, white);
     border: 2px solid #ccc;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font-weight: bold;
     cursor: pointer;
     position: relative;
@@ -343,10 +343,10 @@
 
 .weekly-day-box {
     text-align: center;
-    padding: 10px;
+    padding: var(--space-2-5);
     background: var(--theme-input-bg, white);
     border: 2px solid #ccc;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font-weight: bold;
     cursor: pointer;
     transition: background var(--transition-fast), border-color var(--transition-fast);
@@ -367,10 +367,10 @@
    ============================================================================= */
 
 .recurring-summary {
-    margin-top: 15px;
-    padding: 10px;
+    margin-top: var(--space-3-75);
+    padding: var(--space-2-5);
     background: rgba(0, 0, 0, 0.05);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 }
 
 #recurring-summary-preview {
@@ -383,12 +383,12 @@
 }
 
 .change-recurring-btn {
-    margin-top: 8px;
-    padding: 6px 12px;
+    margin-top: var(--space-2);
+    padding: 6px var(--space-3);
     font-size: var(--font-size-xs);
     background: var(--theme-button-secondary-bg);
     border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 6px;
+    border-radius: var(--radius-6);
     cursor: pointer;
     transition: background var(--transition-fast) ease;
 }
@@ -403,8 +403,8 @@
 
 #recurring-toggle-actions {
     display: flex;
-    gap: 8px;
-    margin-top: 10px;
+    gap: var(--space-2);
+    margin-top: var(--space-2-5);
 }
 
 .recurring-check.hidden {
@@ -437,7 +437,7 @@
     max-width: none; /* Override .task span max-width rule */
     font-size: var(--font-size-sm);
     color: #3498db; /* Blue */
-    margin-left: 8px;
+    margin-left: var(--space-2);
     margin-right: 0; /* Override .task span margin-right rule */
     vertical-align: middle;
 }
@@ -463,11 +463,11 @@
 @media (max-width: 768px) {
     .monthly-days {
         grid-template-columns: repeat(5, 1fr);
-        gap: 6px;
+        gap: var(--space-1-5);
     }
 
     .monthly-day-box {
-        padding: 8px 0;
+        padding: var(--space-2) 0;
         font-size: var(--font-size-xs);
     }
 
@@ -493,31 +493,31 @@
 #monthly-time-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    padding: 10px 0;
+    gap: var(--space-3);
+    padding: var(--space-2-5) 0;
     align-items: center;
     font-size: var(--font-size-base);
 }
 
 .time-picker-wrapper {
-    margin: 20px auto 0 auto;
+    margin: var(--space-5) auto 0 auto;
     max-width: 350px;
-    padding: 10px;
+    padding: var(--space-2-5);
     border: 1px solid #ccc;
-    border-radius: 5px;
+    border-radius: var(--radius-5);
 }
 
 .time-picker-group {
     display: flex;
-    gap: 10px;
+    gap: var(--space-2-5);
     align-items: center;
 }
 
 .time-picker-group input[type="number"],
 .time-picker-group select {
-    padding: 4px 4px;
+    padding: var(--space-1) var(--space-1);
     font-size: var(--font-size-base);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     border: 2px solid #ccc;
     width: 70px;
     text-align: center;
@@ -545,19 +545,19 @@ select.hidden {
     font-size: var(--font-size-sm);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--space-1-5);
 }
 
 .time-picker-stack {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: var(--space-2-5);
     align-items: flex-start;
 }
 
 .section-label {
     font-weight: bold;
-    margin-bottom: 4px;
+    margin-bottom: var(--space-1);
 }
 
 .time-picker-group input::placeholder {
@@ -574,19 +574,19 @@ select.hidden {
 .yearly-days {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-    gap: 10px;
-    padding: 10px;
+    gap: var(--space-2-5);
+    padding: var(--space-2-5);
     background: #d3d3d3;
-    border-radius: 10px;
+    border-radius: var(--radius-10);
 }
 
 .yearly-month-box,
 .yearly-day-box {
     text-align: center;
-    padding: 12px 0;
+    padding: var(--space-3) 0;
     background: white;
     border: 2px solid #ccc;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font-weight: bold;
     cursor: pointer;
     position: relative;
@@ -617,10 +617,10 @@ select.hidden {
 
 .biweekly-day-box {
     text-align: center;
-    padding: 10px;
+    padding: var(--space-2-5);
     background: var(--theme-input-bg, white);
     border: 2px solid #ccc;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font-weight: bold;
     cursor: pointer;
     transition: background var(--transition-fast), border-color var(--transition-fast);
@@ -637,30 +637,30 @@ select.hidden {
    ============================================================================= */
 
 #specific-dates-panel {
-    margin-top: 12px;
-    padding: 12px;
+    margin-top: var(--space-3);
+    padding: var(--space-3);
     border: 2px solid #ccc;
-    border-radius: 10px;
+    border-radius: var(--radius-10);
     background-color: #f9f9f9;
 }
 
 #specific-date-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: var(--space-2-5);
 }
 
 .specific-date-entry {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
 }
 
 .specific-date-entry input[type="date"] {
     flex: 1;
-    padding: 6px;
+    padding: var(--space-1-5);
     border: 1px solid #ccc;
-    border-radius: 6px;
+    border-radius: var(--radius-6);
 }
 
 /* =============================================================================
@@ -668,8 +668,8 @@ select.hidden {
    ============================================================================= */
 
 #add-recurring-task-section {
-    margin-top: 12px;
-    padding-top: 12px;
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
     border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
@@ -677,15 +677,15 @@ select.hidden {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: var(--space-2);
     width: 100%;
-    padding: 10px 16px;
+    padding: 10px var(--space-4);
     font-size: var(--font-size-sm);
     font-weight: 500;
     color: #333;
     background: rgba(0, 0, 0, 0.05);
     border: 1px dashed rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: all var(--transition-fast) ease;
 }
@@ -702,10 +702,10 @@ select.hidden {
 
 /* Available tasks list */
 .available-tasks-list {
-    margin-top: 10px;
-    padding: 10px;
+    margin-top: var(--space-2-5);
+    padding: var(--space-2-5);
     background: rgba(255, 255, 255, 0.8);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
@@ -713,7 +713,7 @@ select.hidden {
     font-size: var(--font-size-xs);
     font-weight: 600;
     color: #555;
-    margin-bottom: 8px;
+    margin-bottom: var(--space-2);
 }
 
 #non-recurring-tasks {
@@ -727,12 +727,12 @@ select.hidden {
 #non-recurring-tasks li {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    margin-bottom: 4px;
+    gap: var(--space-2);
+    padding: var(--space-2) 10px;
+    margin-bottom: var(--space-1);
     background: var(--theme-input-bg, white);
     border: 1px solid #ddd;
-    border-radius: 6px;
+    border-radius: var(--radius-6);
     cursor: pointer;
     font-size: var(--font-size-sm);
     transition: all var(--transition-fast) ease;
@@ -771,14 +771,14 @@ select.hidden {
     align-items: center;
     justify-content: center;
     width: 100%;
-    margin-top: 10px;
-    padding: 10px 16px;
+    margin-top: var(--space-2-5);
+    padding: 10px var(--space-4);
     font-size: var(--font-size-sm);
     font-weight: 600;
     color: white;
     background: var(--theme-success, #4CAF50);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: all var(--transition-fast) ease;
 }
@@ -797,13 +797,13 @@ select.hidden {
     color: #666;
     font-style: italic;
     text-align: center;
-    padding: 10px;
+    padding: var(--space-2-5);
 }
 
 /* Empty state */
 .recurring-empty-state {
     text-align: center;
-    padding: 20px;
+    padding: var(--space-5);
     color: #666;
     font-style: italic;
 }
@@ -844,8 +844,8 @@ dialog.reminders-modal[open] {
 .reminders-modal-content {
     background: var(--theme-modal-bg, #fff);
     color: var(--theme-modal-text, #333);
-    padding: 20px;
-    border-radius: 8px;
+    padding: var(--space-5);
+    border-radius: var(--radius-md);
     width: 320px;
     max-width: 90%;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
@@ -854,7 +854,7 @@ dialog.reminders-modal[open] {
 
 .reminders-modal-content h2 {
     margin-top: 0;
-    padding-left: 28px;
+    padding-left: var(--space-7);
 }
 
 .reminders-modal-content .close-btn {
@@ -874,34 +874,34 @@ dialog.reminders-modal[open] {
 
 /* Frequency Section */
 #frequency-section {
-    margin-top: 10px;
+    margin-top: var(--space-2-5);
     border-top: 1px solid var(--theme-modal-border, #ddd);
-    padding-top: 10px;
+    padding-top: var(--space-2-5);
 }
 
 #repeat-count-row,
 #every-row {
     display: flex;
     align-items: center;
-    margin: 10px 0;
+    margin: var(--space-2-5) 0;
 }
 
 #repeat-count-row label,
 #every-row label {
-    margin-right: 6px;
+    margin-right: var(--space-1-5);
     min-width: 100px;
 }
 
 #repeatCount,
 #frequencyValue {
     width: 60px;
-    margin-right: 6px;
+    margin-right: var(--space-1-5);
 }
 
 /* Collapsible privacy notice */
 .settings-warning-details {
-    margin: -2px 0 10px 0;
-    padding-left: 34px;
+    margin: -2px 0 var(--space-2-5) 0;
+    padding-left: var(--space-8-5);
 }
 
 .settings-warning-summary {
@@ -928,7 +928,7 @@ dialog.reminders-modal[open] {
 .settings-warning {
     font-size: 0.78rem;
     opacity: 0.6;
-    margin: 4px 0 0 0;
+    margin: var(--space-1) 0 0 0;
     padding: 0;
     line-height: 1.4;
 }

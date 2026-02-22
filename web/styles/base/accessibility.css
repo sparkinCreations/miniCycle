@@ -598,6 +598,7 @@ body.high-contrast.dark-mode {
     --dark-error-bg: #6b1a1a;
     --dark-border-subtle: #888888;
     --dark-button-border: rgba(255, 255, 255, 0.3);
+    --dark-chip-bg: rgba(255, 255, 255, 0.15);
 }
 
 /* =============================================================================
@@ -1491,4 +1492,64 @@ body.high-contrast .notification.recurring {
 
 body.high-contrast.dark-mode .notification.recurring {
     border: 3px solid #aaa;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — TASK SEARCH & FILTER/SORT
+   ============================================================================= */
+
+/* Light high contrast */
+body.high-contrast:not(.dark-mode) .task-search-input-row,
+body.high-contrast:not(.dark-mode) .task-filter-sort-row {
+    background: var(--theme-bg-surface);
+    border: 1px solid var(--theme-input-border);
+}
+
+body.high-contrast:not(.dark-mode) .task-search-btn,
+body.high-contrast:not(.dark-mode) .task-search-clear,
+body.high-contrast:not(.dark-mode) .chip-group-icon {
+    color: var(--theme-text-on-surface);
+}
+
+body.high-contrast:not(.dark-mode) .filter-chip,
+body.high-contrast:not(.dark-mode) .sort-chip {
+    border: 1px solid var(--theme-text-muted);
+    color: var(--theme-text-on-surface);
+}
+
+body.high-contrast:not(.dark-mode) .filter-chip.active,
+body.high-contrast:not(.dark-mode) .sort-chip.active {
+    border: 2px solid var(--theme-text-on-surface);
+}
+
+body.high-contrast:not(.dark-mode) .filter-sort-divider {
+    background: var(--theme-text-muted);
+}
+
+/* Dark high contrast */
+body.high-contrast.dark-mode .task-search-input-row,
+body.high-contrast.dark-mode .task-filter-sort-row {
+    border: 1px solid var(--theme-task-border);
+}
+
+body.high-contrast.dark-mode .task-search-btn,
+body.high-contrast.dark-mode .task-search-clear,
+body.high-contrast.dark-mode .chip-group-icon {
+    color: var(--theme-text-secondary);
+}
+
+body.high-contrast.dark-mode .filter-chip,
+body.high-contrast.dark-mode .sort-chip {
+    border: 1px solid var(--theme-task-border);
+    background: var(--dark-chip-bg);
+    color: var(--theme-text-secondary);
+}
+
+body.high-contrast.dark-mode .filter-chip.active,
+body.high-contrast.dark-mode .sort-chip.active {
+    border: 2px solid var(--theme-text-primary);
+}
+
+body.high-contrast.dark-mode .filter-sort-divider {
+    background: var(--dark-border-subtle);
 }

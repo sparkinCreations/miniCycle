@@ -525,7 +525,7 @@
     background: var(--color-success);
     color: var(--color-white);
     border: none;
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
     padding: var(--space-1) var(--space-2);
     cursor: pointer;
     font-size: var(--font-size-xs);
@@ -601,12 +601,12 @@
 
 /* Override storage.css text-based toggle for button-style toggle */
 .json-toggle {
-    margin-right: 6px;
+    margin-right: var(--space-1-5);
     background: var(--color-accent);
     color: var(--color-white);
     border: none;
-    border-radius: 3px;
-    padding: 2px 6px;
+    border-radius: var(--radius-xs);
+    padding: var(--space-0-5) var(--space-1-5);
     cursor: pointer;
     font-size: var(--font-size-xs);
     text-decoration: none;
@@ -1046,7 +1046,7 @@
 }
 
 .testing-output .welcome-message p {
-    margin: 4px 0;
+    margin: var(--space-1) 0;
 }
 
 /* Testing modal mobile adjustments */
@@ -1058,7 +1058,7 @@
     }
 
     .testing-modal-header {
-        padding: 12px 16px;
+        padding: var(--space-3) var(--space-4);
     }
 
     .testing-modal-header h2 {
@@ -1066,22 +1066,22 @@
     }
 
     .testing-modal-body {
-        padding: 12px;
+        padding: var(--space-3);
     }
 
     .testing-tabs {
-        gap: 6px;
+        gap: var(--space-1-5);
     }
 
     .testing-tab {
-        padding: 6px 12px;
+        padding: 6px var(--space-3);
         font-size: 0.8rem;
     }
 
     .test-btn {
-        padding: 6px 10px;
+        padding: var(--space-1-5) var(--space-2-5);
         font-size: 0.75rem;
-        margin: 3px;
+        margin: var(--space-0-75);
     }
 
     .testing-results {
@@ -1090,6 +1090,6 @@
 
     .testing-output {
         font-size: 0.7rem;
-        padding: 10px 12px;
+        padding: 10px var(--space-3);
     }
 }
