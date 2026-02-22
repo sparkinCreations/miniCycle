@@ -1,3 +1,7 @@
+## [1.980] - 2026-02-21
+- Enhance responsive styles by adjusting padding and margins for dynamic areas, and introduce new CSS variables for improved layout on mobile devices.
+
+
 ## [1.978] - 2026-02-21
 - Enhance mobile header layout by adjusting padding for improved subtitle clearance and overall visibility on smaller screens.
 
