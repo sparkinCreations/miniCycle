@@ -30,7 +30,6 @@
 
 import { DOM_IDS, DOM_SELECTORS, STORAGE_KEYS } from '../core/constants.js';
 import { createDIModule, optional } from '../core/diBase.js';
-import { JSONThemeManager } from '../../styles/themes/theme-manager.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -133,8 +132,13 @@ export class ThemeManager {
                 document.body?.classList.add(`theme-${themeName}`);
             }
 
-            // Step 3: Apply JSON theme tokens via CSS variables
-            await JSONThemeManager.setTheme(themeName || 'default');
+            // Step 3: Apply theme via CSS [data-theme] attribute (CSS-native, instant)
+            const root = document.documentElement;
+            if (themeName && themeName !== 'default') {
+                root.dataset.theme = themeName;
+            } else {
+                delete root.dataset.theme;
+            }
 
             // Step 4: Update theme color after applying theme
             this.updateThemeColor();

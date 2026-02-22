@@ -1,3 +1,7 @@
+## [1.1018] - 2026-02-22
+- Refactor CSS styles to use CSS variables for spacing, colors, and border radii; update header and safe area styles for consistency; enhance dark mode styles; add comprehensive app reviews for miniCycle Lite and full version.
+
+
 ## [1.1017] - 2026-02-22
 - Implement task priority color handling and update related styles and notifications
 

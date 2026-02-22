@@ -1,19 +1,20 @@
 /**
  * JSON Theme Manager
  *
- * Loads JSON theme definitions and applies them as CSS custom properties.
- * No build step required - themes are applied at runtime.
+ * Utility for loading and validating JSON theme definitions.
+ * Primarily used for custom theme import/export.
  *
- * This module works alongside modules/features/themeManager.js which handles:
- * - Theme unlocking (gamification)
- * - Dark mode toggle
- * - PWA theme colors
+ * Built-in themes (dark, dark-ocean, golden-glow) are now applied
+ * CSS-natively via [data-theme] attribute on <html> — see:
+ *   styles/themes/themes.css  → theme variable overrides
+ *   modules/features/themeManager.js → sets document.documentElement.dataset.theme
  *
  * This module handles:
- * - Loading JSON theme definitions
- * - Applying themes via CSS custom properties
- * - Theme import/export
+ * - JSON theme validation
+ * - Custom theme import/export (user-created themes)
+ * - Theme cache for repeated loads
  *
+ * @see styles/themes/themes.css
  * @see docs/guides/THEME_CREATION_GUIDE.md
  * @see docs/future-work/THEME_ARCHITECTURE.md
  */

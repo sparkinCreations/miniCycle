@@ -13,14 +13,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 1.1017 |
+| **App Version** | 1.1018 |
 | **Lite Version** | 2.086 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 110 |
+| **Total Modules** | 111 |
 | **Total Tests** | 1691 |
 | **Test Pass Rate** | 100% |
-| **CSS Files** | 36 |
-| **JSDoc Blocks** | 997 |
+| **CSS Files** | 37 |
+| **JSDoc Blocks** | 1001 |
 | **Documentation Files** | 175 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -38,14 +38,14 @@
 | `task/` | 12 | Task CRUD, DOM, events, drag-drop, validation |
 | `routine/` | 5 | Routine management, switching, migration |
 | `recurring/` | 15 | Recurring task scheduling, panel, activation |
-| `ui/` | 27 | Modals, menus, settings, onboarding, gestures |
+| `ui/` | 28 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 7 | Themes, stats, achievements, history, reminders |
 | `utils/` | 13 | Notifications, device detection, utilities |
 | `storage/` | 1 | Backup manager |
 | `progress/` | 1 | Cycle completion tracking |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **110** | |
+| **Total** | **111** | |
 
 ---
 
