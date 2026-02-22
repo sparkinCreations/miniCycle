@@ -160,8 +160,13 @@ body.is-iphone #app-container {
 }
 
 @media (max-width: 768px) {
-    /* Menu button: inherits top: 40% from base mobile rule — resolves
-       correctly now that the header uses height: auto instead of fixed 60px */
+    /* Menu button: unset grid-area so it positions against the full header
+       padding box (same containing block as .header-branding), then use
+       top: 50% to vertically center alongside the logo */
+    body.is-iphone .menu-button {
+        grid-area: unset;
+        top: 50%;
+    }
 
     /* Mode selector: snug below header */
     body.is-iphone .mobile-mode-selector-wrapper {
