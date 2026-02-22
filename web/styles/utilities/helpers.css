@@ -378,7 +378,7 @@
 /* Mobile: Move navigation dots higher to avoid footer overlap */
 @media (max-width: 768px) {
     .navigation-dots {
-        bottom: 55px;
+        bottom: var(--nav-area-height);
     }
 }
 

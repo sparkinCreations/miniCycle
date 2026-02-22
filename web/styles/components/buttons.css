@@ -260,20 +260,28 @@ body.hide-help-window .help-window {
 @media (max-width: 768px) {
     .help-window {
         margin-top: 8px;
-        margin-bottom: 20px;
+        margin-bottom: var(--help-window-clearance);
         font-size: var(--font-size-sm);
         padding: 6px 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .help-window {
+        margin-bottom: calc(var(--help-window-clearance) + 10px);
+        padding: 5px 8px;
+        font-size: var(--font-size-xs);
     }
 }
 
 /* Tablet range - reduce task list to make room for help window */
 @media (min-width: 769px) and (max-width: 1023px) {
     .task-list-container {
-        max-height: calc(100vh - 450px);
+        max-height: calc(100vh - var(--task-card-offset-with-btn) - var(--help-window-clearance) - 15px);
     }
 
     .help-window {
-        margin-bottom: 80px;
+        margin-bottom: calc(var(--help-window-clearance) + 25px);
         font-size: var(--font-size-sm);
         padding: 10px;
     }

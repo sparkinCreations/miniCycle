@@ -78,7 +78,7 @@ html, body {
     position: relative;
     width: 100%;
     overflow: hidden;
-    padding-top: 120px; /* ✅ Fixed padding instead of calc() */
+    padding-top: calc(env(safe-area-inset-top, 0px) + 120px); /* ✅ Accounts for Dynamic Island/notch */
     max-width: 100%;
 }
 
@@ -691,11 +691,11 @@ body.dark-mode .complete-all-btn:hover {
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 12px;
-    /* ✅ Safe area inset for notched devices (iPhone X+, etc.) */
-    padding: 20px 16px 8px 16px; /* Fallback */
-    padding-top: calc(20px + env(safe-area-inset-top));
-    padding-left: calc(16px + env(safe-area-inset-left));
-    padding-right: calc(16px + env(safe-area-inset-right));
+    /* ✅ Safe area inset for notched devices (iPhone X+, Dynamic Island, etc.) */
+    padding: 20px 16px 15px 16px; /* Fallback */
+    padding-top: calc(env(safe-area-inset-top, 0px) + 15px);
+    padding-left: calc(16px + env(safe-area-inset-left, 0px));
+    padding-right: calc(16px + env(safe-area-inset-right, 0px));
     background: #5680ff; /* ✅ Solid color fallback */
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 0;
