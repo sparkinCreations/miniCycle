@@ -144,7 +144,7 @@ html, body {
    --safe-top: Dynamic Island height (~59px) + content padding (15px) */
 body.is-iphone {
     --safe-top: 130px;         /* Dynamic Island (~59px) + logo/branding (~60px) + padding */
-    --header-total: 135px;     /* --safe-top + bottom padding (5px) */
+    --header-total: 160px;     /* Visual bottom of header branding area */
     --mode-bar: 30px;          /* Mode selector wrapper height */
 }
 
@@ -177,7 +177,7 @@ body.is-iphone #app-container {
 
     /* Mode selector: snug below header */
     body.is-iphone .mobile-mode-selector-wrapper {
-        top: calc(var(--header-total) - 30px);
+        top: var(--header-total);
         z-index: 21;
     }
 
