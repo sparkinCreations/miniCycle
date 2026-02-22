@@ -85,13 +85,15 @@ async function loadSubModules(version) {
         cycleExportModule,
         cycleImportModule,
         backupRestoreModule,
-        dataSanitizerModule
+        dataSanitizerModule,
+        shareModule
     ] = await Promise.all([
         import(`./settingsUIManager.js?v=${version}`),
         import(`./cycleExportManager.js?v=${version}`),
         import(`./cycleImportManager.js?v=${version}`),
         import(`./backupRestoreManager.js?v=${version}`),
-        import(`../utils/dataSanitizer.js?v=${version}`)
+        import(`../utils/dataSanitizer.js?v=${version}`),
+        import(`./shareManager.js?v=${version}`)
     ]);
 
     // Initialize modules that need dynamic utility imports
@@ -142,7 +144,12 @@ async function loadSubModules(version) {
         // Data Sanitizer
         setDataSanitizerDependencies: dataSanitizerModule.setDataSanitizerDependencies,
         sanitizeImportedData: dataSanitizerModule.sanitizeImportedData,
-        sanitizeText: dataSanitizerModule.sanitizeText
+        sanitizeText: dataSanitizerModule.sanitizeText,
+
+        // Share
+        setShareManagerDependencies: shareModule.setShareManagerDependencies,
+        setupShareRoutineButton: shareModule.setupShareRoutineButton,
+        setupShareAppButton: shareModule.setupShareAppButton
     };
 
     console.log('✅ SettingsManager: All sub-modules loaded');
@@ -210,6 +217,13 @@ function wireSubModuleDependencies(dependencies) {
         sanitizeInput: dependencies.sanitizeInput
     });
 
+    _subModules.setShareManagerDependencies({
+        loadMiniCycleData: dependencies.loadMiniCycleData,
+        showNotification: dependencies.showNotification,
+        safeAddEventListener: dependencies.safeAddEventListener,
+        hideMainMenu: dependencies.hideMainMenu
+    });
+
     console.log('✅ SettingsManager: Sub-module dependencies wired');
 }
 
@@ -251,6 +265,8 @@ export class SettingsManager {
             _subModules.setupBackupButton?.();
             _subModules.setupRestoreButton?.();
             _subModules.setupFactoryResetButton?.();
+            _subModules.setupShareRoutineButton?.();
+            _subModules.setupShareAppButton?.();
 
             this.initialized = true;
             _initialized = true;
@@ -363,5 +379,7 @@ export function neutralizeAppState() { _subModules?.neutralizeAppState?.(); }
 export function sanitizeImportedData(data) { return _subModules?.sanitizeImportedData?.(data); }
 export function sanitizeText(text, maxLen) { return _subModules?.sanitizeText?.(text, maxLen); }
 export function _resetForTesting() { _subModules?._resetForTesting?.(); }
+export function setupShareRoutineButton() { _subModules?.setupShareRoutineButton?.(); }
+export function setupShareAppButton() { _subModules?.setupShareAppButton?.(); }
 
 console.log('Settings Manager loaded (facade pattern with dynamic versioned imports)');

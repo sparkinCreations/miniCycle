@@ -187,6 +187,28 @@
   --theme-stats-border: rgba(255, 255, 255, 0.3);
 
   /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - UI Interaction (used by personalization modal)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-hover-bg:       rgba(0, 0, 0, 0.06);
+  --theme-selected-bg:    rgba(74, 144, 226, 0.1);
+  --theme-accent:         var(--color-primary);
+  --theme-accent-hover:   var(--color-primary-dark);
+  --theme-border:         #dddddd;
+  --theme-section-bg:     rgba(0, 0, 0, 0.02);
+
+  /* Button aliases for shorter shorthand in component CSS */
+  --theme-button-bg:      var(--theme-button-primary-bg);
+  --theme-button-text:    var(--theme-button-primary-text);
+  --theme-button-hover:   var(--theme-button-primary-hover-bg);
+  --theme-btn-primary-bg: var(--theme-button-primary-bg);
+
+  /* Semantic state aliases */
+  --theme-success:        var(--color-success);
+  --theme-success-hover:  #218838;
+  --theme-info:           var(--color-info);
+  --theme-error:          var(--color-error);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
      LEGACY VARIABLES (for backward compatibility)
      These map to theme variables - will be deprecated
      ═══════════════════════════════════════════════════════════════════════════ */

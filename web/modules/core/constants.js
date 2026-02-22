@@ -448,6 +448,8 @@ export const DOM_IDS = Object.freeze({
     DELETE_ALL_MINI_CYCLE_TASKS: 'delete-all-mini-cycle-tasks',
     NEW_MINI_CYCLE: 'new-mini-cycle',
     EXPORT_MINI_CYCLE: 'export-mini-cycle',
+    SHARE_ROUTINE: 'share-routine',
+    SHARE_APP: 'share-app',
 
     // ---- Settings ----
     OPEN_SETTINGS: 'open-settings',

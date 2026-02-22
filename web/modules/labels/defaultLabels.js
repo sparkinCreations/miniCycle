@@ -197,6 +197,17 @@ export const DEFAULT_LABELS = deepFreeze({
     },
 
     // ========================================================================
+    // 6b. SHARE
+    // ========================================================================
+
+    share: {
+        routine:      'Share',
+        routineTitle: 'Share the current routine as a file',
+        app:          'Share App',
+        appTitle:     'Share miniCycle with someone',
+    },
+
+    // ========================================================================
     // 7. ROUTINE SWITCHER MODAL
     // ========================================================================
 
@@ -562,6 +573,15 @@ export const DEFAULT_LABELS = deepFreeze({
         panelSetupFailed:        'Panel setup failed - using degraded mode',
         panelOpenFailed:         'Failed to open panel',
         panelUpdateFailed:       'Panel update failed',
+
+        // Share notifications
+        shareRoutineSuccess:       'Routine shared!',
+        shareRoutineFallback:      'Sharing not supported — file downloaded instead.',
+        shareRoutineFailed:        'Share failed. Please try again.',
+        shareRoutineNoActiveCycle: 'No active routine to share.',
+        shareAppSuccess:           'App link shared!',
+        shareAppCopied:            'App link copied to clipboard!',
+        shareAppFailed:            'Share failed. Please try again.',
 
         // Pull-to-refresh notifications
         refreshFailed:           'Refresh failed',

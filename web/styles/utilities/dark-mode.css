@@ -18,13 +18,14 @@ body.dark-mode {
 }
 
 /* =============================================================================
-   DARK MODE VARIABLE OVERRIDES (Only when no custom JSON theme is active)
-   When a JSON theme is applied, theme-manager.js adds .theme-active class
-   and sets variables via inline styles which should take precedence.
+   DARK MODE VARIABLE OVERRIDES (Only when no custom theme is active)
+   When a CSS theme is applied via [data-theme] on <html>, the theme variables
+   in themes.css take precedence. Dark-mode overrides only apply when no theme
+   is selected (default blue theme + dark mode toggle).
    ============================================================================= */
 
-html.dark-mode:not(.theme-active),
-body.dark-mode:not(.theme-active) {
+html.dark-mode:not([data-theme]),
+body.dark-mode:not([data-theme]) {
 
     /* ─── Dark mode palette ─── */
     --dark-bg-start: #1c1c1c;
