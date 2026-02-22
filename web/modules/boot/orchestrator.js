@@ -515,7 +515,7 @@ async function runBootSequence() {
         const { processImportedData } = await import(
           `../ui/cycleImportManager.js?v=${APP_VERSION}`
         );
-        processImportedData(content);
+        await processImportedData(content);
       } catch (e) {
         sessionStorage.removeItem('__mcyc_file_import_pending');
         console.error('File handling failed:', e);

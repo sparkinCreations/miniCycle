@@ -1541,6 +1541,98 @@ async setDefaultPosition(notificationContainer) {
   }
 
   /**
+   * 🔀 Show choice modal with multiple options
+   *
+   * Presents a modal with N choice buttons and a cancel button.
+   * Used when the user needs to pick between distinct actions (not just confirm/cancel).
+   *
+   * @param {Object} options
+   * @param {string} options.title - Modal title
+   * @param {string} options.message - Modal body text
+   * @param {Array<{text: string, value: string, description?: string}>} options.choices - Choice buttons
+   * @param {string} [options.cancelText] - Cancel button text
+   * @param {Function} options.callback - Called with choice value string, or null if cancelled
+   * @param {boolean} [options.trustedHTML=false] - Skip HTML escaping (DANGEROUS)
+   */
+  showChoiceModal({
+    title = '',
+    message = '',
+    choices = [],
+    cancelText = getLabel('button.cancel'),
+    callback = () => {},
+    trustedHTML = false
+  }) {
+    const escape = getEscapeHtml(this.deps);
+    const safeTitle = trustedHTML ? title : escape(title);
+    const safeMessage = trustedHTML ? message : escape(message);
+    const safeCancelText = trustedHTML ? cancelText : escape(cancelText);
+
+    const overlay = document.createElement("dialog");
+    overlay.className = "mini-modal-dialog";
+
+    const modal = document.createElement("div");
+    modal.className = "mini-modal-box has-corner-logo";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("tabindex", "-1");
+
+    // Build choice buttons HTML
+    const choicesHTML = choices.map((choice, i) => {
+      const safeText = trustedHTML ? choice.text : escape(choice.text);
+      const safeDesc = choice.description ? (trustedHTML ? choice.description : escape(choice.description)) : '';
+      return `<button class="btn-choice" data-choice-index="${i}" data-choice-value="${escape(choice.value)}">
+        <span class="choice-label">${safeText}</span>
+        ${safeDesc ? `<span class="choice-description">${safeDesc}</span>` : ''}
+      </button>`;
+    }).join('');
+
+    modal.innerHTML = `
+      <div class="mini-modal-header">${safeTitle}</div>
+      <div class="mini-modal-body">${safeMessage}</div>
+      <div class="mini-modal-choices">${choicesHTML}</div>
+      <div class="mini-modal-buttons">
+        <button class="btn-cancel">${safeCancelText}</button>
+      </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    overlay.showModal();
+
+    const cancelBtn = modal.querySelector(DOM_SELECTORS.BTN_CANCEL);
+    const choiceBtns = modal.querySelectorAll('.btn-choice');
+
+    // Focus first choice button
+    if (choiceBtns.length > 0) {
+      setTimeout(() => choiceBtns[0].focus({ focusVisible: false }), 20);
+    }
+
+    const cleanup = () => {
+      overlay.close();
+      overlay.remove();
+    };
+
+    // Handle Escape / dialog cancel
+    overlay.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      cancelBtn.click();
+    });
+
+    // Wire choice buttons
+    choiceBtns.forEach(btn => {
+      btn.onclick = () => {
+        cleanup();
+        callback(btn.dataset.choiceValue);
+      };
+    });
+
+    cancelBtn.onclick = () => {
+      cleanup();
+      callback(null);
+    };
+  }
+
+  /**
    * 📝 Show prompt modal
    *
    * ⚠️ SECURITY: All text parameters are HTML-escaped by default to prevent XSS.

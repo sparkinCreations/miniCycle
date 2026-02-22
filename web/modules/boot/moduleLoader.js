@@ -669,6 +669,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         showNotificationWithTip: deps.utils?.showNotificationWithTip,
         notifications: deps.utils?.notifications,
         showConfirmationModal: deps.utils?.showConfirmationModal,
+        showChoiceModal: deps.utils?.showChoiceModal,
         showPromptModal: deps.utils?.showPromptModal,
         sanitizeInput: deps.utils?.sanitizeInput || GlobalUtils?.sanitizeInput,
         generateId: deps.utils?.generateId,

@@ -1,3 +1,7 @@
+## [1.1027] - 2026-02-22
+- Refactor deleteCompletedTasksImpl to improve UI update handling during task deletion; ensure staggered animations complete before updating DOM-dependent elements.
+
+
 ## [1.1026] - 2026-02-22
 - Remove "Always Show Recurring Button" setting and related functionality
 

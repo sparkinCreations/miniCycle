@@ -227,6 +227,41 @@ icons: { cycleComplete: '✨', celebrate: '🧹' }
 | `modules/labels/defaultLabels.js` | Remove Dark Ocean / Golden Glow unlock label keys; add Scholar/Cleaning icons to `icons` category |
 | `modules/features/statsPanel.js` | Remove Dark Ocean / Golden Glow unlock UI; add new theme unlock previews |
 | `miniCycle.html` | Remove Dark Ocean / Golden Glow unlock DOM elements; add theme selector UI (Phase 2) |
+| Import handler | Check theme is unlocked on `.mcyc` import; substitute default + notify if not |
+
+---
+
+## Import Behaviour: Locked Theme
+
+When a user imports a `.mcyc` file whose `theme` field references a theme they haven't unlocked:
+
+1. The routine loads normally — `theme` is set to the user's `defaultTheme` (Classic if not changed)
+2. A one-time notification fires explaining the substitution
+
+**Notification copy:**
+> *"This routine uses the [Theme Name] theme — keep cycling to unlock it! Using Classic for now."*
+
+**Logic (in the import handler):**
+```javascript
+const importedTheme = routine.theme ?? 'classic';
+const unlocked = themeManager.getUnlockedThemeIds();
+
+if (importedTheme !== 'classic' && !unlocked.includes(importedTheme)) {
+    routine.theme = state.settings?.defaultTheme ?? 'classic';
+    showNotification(
+        getLabel('notify.themeLockedOnImport', { vars: { name: THEME_DEFINITIONS[importedTheme]?.name ?? importedTheme } }),
+        'info',
+        5000
+    );
+}
+```
+
+**Label to add to `defaultLabels.js`:**
+```javascript
+themeLockedOnImport: 'This routine uses the {name} theme — keep cycling to unlock it! Using Classic for now.'
+```
+
+Non-blocking — the routine still imports and works perfectly.
 
 ---
 
@@ -234,16 +269,17 @@ icons: { cycleComplete: '✨', celebrate: '🧹' }
 
 ### Phase 1: Core (no UI yet)
 1. Create `modules/labels/themes.js`
-2. Activate lens override in `labelResolver.js`
+2. Activate theme override in `labelResolver.js`
 3. Register in `moduleManifests.js`
 4. Wire `init()` in `featureBoot.js`
 5. Add `theme: 'classic'` to routine creation
 6. Remove Dark Ocean / Golden Glow unlock logic and labels
+7. Add locked-theme handling to import handler
 
 ### Phase 2: UI
-7. Theme selector in routine edit modal (per-routine)
-8. Unlock notification on cycle completion
-9. Theme preview in stats panel / achievements
+8. Theme selector in routine edit modal (per-routine)
+9. Unlock notification on cycle completion
+10. Theme preview in stats panel / achievements
 
 ---
 
