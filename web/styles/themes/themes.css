@@ -175,6 +175,16 @@
     --theme-stats-bg:           rgba(16, 36, 57, 0.95);
     --theme-stats-text:         #e0f7fa;
     --theme-stats-border:       rgba(78, 205, 196, 0.2);
+
+    /* UI interaction */
+    --theme-hover-bg:           rgba(78, 205, 196, 0.1);
+    --theme-selected-bg:        rgba(78, 205, 196, 0.2);
+    --theme-accent:             #4ecdc4;
+    --theme-accent-hover:       #36b1a8;
+    --theme-border:             rgba(78, 205, 196, 0.3);
+    --theme-section-bg:         rgba(78, 205, 196, 0.05);
+    --theme-success-hover:      #3ab0a8;
+    --theme-error:              #ff6b6b;
 }
 
 /* =============================================================================
@@ -257,4 +267,14 @@
     --theme-stats-bg:           #fffbe6;
     --theme-stats-text:         #4a3d00;
     --theme-stats-border:       rgba(255, 215, 0, 0.3);
+
+    /* UI interaction */
+    --theme-hover-bg:           rgba(255, 215, 0, 0.12);
+    --theme-selected-bg:        rgba(212, 167, 0, 0.2);
+    --theme-accent:             #d4a700;
+    --theme-accent-hover:       #b89000;
+    --theme-border:             rgba(255, 215, 0, 0.4);
+    --theme-section-bg:         rgba(255, 215, 0, 0.05);
+    --theme-success-hover:      #218838;
+    --theme-error:              #dc3545;
 }

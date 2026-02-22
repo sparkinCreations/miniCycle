@@ -1039,9 +1039,9 @@ dialog.preferences-modal::backdrop {
 }
 
 .preferences-remove-btn:hover {
-    background: #fee2e2;
-    color: #dc2626;
-    border-color: #fca5a5;
+    background: rgba(220, 53, 69, 0.1);
+    color: var(--theme-error, var(--color-error));
+    border-color: var(--color-error-light);
 }
 
 .preferences-select {
