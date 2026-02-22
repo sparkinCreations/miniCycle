@@ -41,11 +41,11 @@
    ============================================================================= */
 
 .progress-bar.complete {
-    background: var(--theme-success, #28a745);
+    background: var(--theme-success, var(--color-success));
 }
 
 .progress-bar.warning {
-    background: var(--theme-warning, #ffc107);
+    background: var(--theme-warning, var(--color-warning));
 }
 
 /* =============================================================================

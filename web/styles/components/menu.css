@@ -45,7 +45,7 @@
     padding-left: var(--space-8);
     background: none;
     border-radius: var(--radius-md) var(--radius-md) 0 0;
-    color: #fff;
+    color: var(--color-white);
     font-size: 1rem;
     font-weight: bold;
     margin-top: -10px;
@@ -185,7 +185,7 @@
     padding: 6px var(--space-3);
     font-size: 13px;
     font-weight: 500;
-    color: var(--menu-button-text, #333);
+    color: var(--menu-button-text, var(--theme-text-on-surface));
     background: var(--menu-button-bg, rgba(0, 0, 0, 0.04));
     border: none;
     border-radius: var(--radius-2xl);
@@ -213,7 +213,7 @@
 /* Keep delete icon red */
 .menu-section-grid #delete-all-mini-cycle-tasks i,
 .menu-section-grid #delete-all-mini-cycle-tasks .icon {
-    color: #c0392b;
+    color: var(--color-error);
 }
 
 /* Recurring button - blue icon */
@@ -296,7 +296,7 @@
     font-weight: 500;
     text-align: left;
     background: none;
-    color: black;
+    color: var(--color-black);
     border: none;
     border-radius: var(--radius-5);
     transition: background var(--transition-fast) ease-in-out, transform var(--transition-fast);
@@ -473,7 +473,7 @@
     top: 50%;
     transform: translateY(-50%);
     font-size: 32px;
-    color: black;
+    color: var(--color-black);
     font-weight: bold;
     padding: var(--space-2-5) var(--space-3-75);
     border-radius: var(--radius-5);
@@ -491,7 +491,7 @@
 }
 
 .slide-arrow:hover {
-    background-color: white;
+    background-color: var(--color-white);
 }
 
 .slide-arrow:focus-visible {
@@ -568,8 +568,8 @@
     margin-bottom: -10px;
     margin-top: var(--space-2);
     padding: var(--space-3-5);
-    background: var(--menu-close-bg, #3d7ab5);
-    color: var(--menu-close-text, white);
+    background: var(--menu-close-bg, var(--color-steel-blue));
+    color: var(--menu-close-text, var(--color-white));
     border: none;
     border-radius: 0 0 var(--radius-md) var(--radius-md);
     font-size: var(--font-size-lg);
@@ -581,7 +581,7 @@
 }
 
 #close-main-menu:hover {
-    background: var(--menu-close-hover-bg, #326a9e);
+    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
 }
 
 /* =============================================================================
@@ -590,18 +590,18 @@
 
 #delete-all-mini-cycle-tasks i,
 #delete-all-mini-cycle-tasks .icon {
-    color: #c0392b;
+    color: var(--color-error);
 }
 
 /* Hover states */
 #slide-left.show:hover,
 #slide-left:hover:not(.hide) {
-    background-color: white;
+    background-color: var(--color-white);
 }
 
 #slide-right.show:hover,
 #slide-right:hover:not(.hide) {
-    background-color: white;
+    background-color: var(--color-white);
 }
 
 .slide-arrow:active {
@@ -760,7 +760,7 @@ body.theme-dark-ocean .menu-section-grid #open-recurring-panel .icon {
 
 body.theme-dark-ocean .menu-section-grid #new-mini-cycle i,
 body.theme-dark-ocean .menu-section-grid #new-mini-cycle .icon {
-    color: #ffc107;
+    color: var(--color-warning);
 }
 
 body.theme-dark-ocean .menu-section-grid #open-themes-panel i,
@@ -795,7 +795,7 @@ body.theme-golden-glow {
 /* Golden Glow colored icons - darker for contrast on light background */
 body.theme-golden-glow .menu-section-grid #delete-all-mini-cycle-tasks i,
 body.theme-golden-glow .menu-section-grid #delete-all-mini-cycle-tasks .icon {
-    color: #c0392b;
+    color: var(--color-error);
 }
 
 body.theme-golden-glow .menu-section-grid #open-recurring-panel i,

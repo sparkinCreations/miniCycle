@@ -38,8 +38,8 @@ button:disabled {
 
 .btn-primary,
 button.primary {
-    background: var(--theme-button-primary-bg, #4c79ff);
-    color: var(--theme-button-primary-text, #ffffff);
+    background: var(--theme-button-primary-bg, var(--color-primary));
+    color: var(--theme-button-primary-text, var(--color-white));
 }
 
 .btn-primary:hover,
@@ -68,8 +68,8 @@ button.secondary:hover {
 
 .btn-danger,
 button.danger {
-    background: var(--theme-error, #dc3545);
-    color: #ffffff;
+    background: var(--theme-error, var(--color-error));
+    color: var(--color-white);
 }
 
 .btn-danger:hover,
@@ -83,13 +83,13 @@ button.danger:hover {
 
 .btn-success,
 button.success {
-    background: var(--theme-success, #28a745);
-    color: #ffffff;
+    background: var(--theme-success, var(--color-success));
+    color: var(--color-white);
 }
 
 .btn-success:hover,
 button.success:hover {
-    background: var(--theme-success-light, #48c764);
+    background: var(--theme-success-light, var(--color-success-light));
 }
 
 /* =============================================================================
@@ -143,7 +143,7 @@ button.icon-only i {
     border-radius: var(--radius-lg);
     cursor: pointer;
     transition: all var(--transition-fast) ease;
-    color: white;
+    color: var(--color-white);
     position: relative;
     z-index: var(--z-content);
     margin-bottom: -20px;
@@ -347,12 +347,12 @@ body.hide-help-window .help-window {
    ============================================================================= */
 
 .recurring-btn {
-    color: #0056b3;
+    color: var(--color-primary-dark);
 }
 
 .task-btn.recurring-btn.active {
-    background-color: #4CAF50;
-    color: white;
+    background-color: var(--color-success);
+    color: var(--color-white);
 }
 
 /* =============================================================================
@@ -393,7 +393,7 @@ body.hide-help-window .help-window {
 
 .undo-redo-btn:hover {
     background: none;
-    color: #000;
+    color: var(--color-black);
 }
 
 .undo-redo-btn[hidden] {
@@ -511,7 +511,7 @@ body.hide-help-window .help-window {
 
     .undo-redo-btn {
         font-size: 0.85em;
-        color: #fff;
+        color: var(--color-white);
         background: rgba(0,0,0,0.4);
         padding: var(--space-1) var(--space-2);
         border-radius: var(--radius-6);
@@ -519,19 +519,19 @@ body.hide-help-window .help-window {
 
     .undo-redo-btn:hover {
         background: rgba(255,255,255,0.15);
-        color: #fff;
+        color: var(--color-white);
     }
 
     /* Mobile Dark Mode */
     body.dark-mode .undo-redo-btn {
         background: rgba(255,255,255,0.1);
-        color: #f0f0f0;
+        color: var(--color-gray-100);
         border: 1px solid rgba(255,255,255,0.2);
     }
 
     body.dark-mode .undo-redo-btn:hover {
         background: rgba(255,255,255,0.2);
-        color: #ffffff;
+        color: var(--color-white);
     }
 }
 
@@ -545,7 +545,7 @@ body.hide-help-window .help-window {
     left: 50%;
     transform: translate(-50%, -50%);
     background: rgba(76, 175, 79, 0.97);
-    color: black;
+    color: var(--color-black);
     width: 120px;
     height: 120px;
     display: flex;
@@ -569,7 +569,7 @@ body.hide-help-window .help-window {
     left: 50%;
     transform: translate(-50%, -50%);
     background: rgba(59, 130, 246, 0.909);
-    color: white;
+    color: var(--color-white);
     padding: var(--space-3-75) var(--space-6-25);
     font-size: 60px;
     font-weight: bold;

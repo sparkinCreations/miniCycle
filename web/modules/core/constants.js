@@ -995,6 +995,9 @@ export const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
 // Lite version redirect path (relative to app root)
 export const LITE_VERSION_PATH = './lite/miniCycle-lite.html';
 
+// Canonical app URL for sharing
+export const APP_URL = 'https://minicycle.app';
+
 // Version marker for cache debugging (derives from Single Source of Truth)
 export const CONSTANTS_VERSION = globalThis.APP_VERSION;
 

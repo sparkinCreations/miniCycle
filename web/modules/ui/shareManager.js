@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS } from '../core/constants.js';
+import { DOM_IDS, APP_URL } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -132,7 +132,7 @@ export function setupShareRoutineButton() {
                 await navigator.share({
                     files: [file],
                     title: cycleName,
-                    text: `Check out my "${cycleName}" routine on miniCycle!`
+                    text: `Check out my "${cycleName}" routine on miniCycle!\n${APP_URL}`
                 });
                 _deps.hideMainMenu?.();
                 _deps.showNotification?.('✅ ' + getLabel('notify.shareRoutineSuccess'), 'success', 3000);
@@ -193,7 +193,7 @@ export function setupShareAppButton() {
     if (!shareAppBtn) return;
 
     shareAppBtn._clickHandler = async () => {
-        const appUrl = 'https://minicycle.app';
+        const appUrl = APP_URL;
 
         // Try Web Share API
         // NOTE: navigator.share() must be called BEFORE hideMainMenu() —

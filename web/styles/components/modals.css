@@ -126,7 +126,7 @@ dialog.quick-actions-picker-overlay[open] {
 }
 
 .modal-content a {
-    color: var(--theme-info, #007BFF);
+    color: var(--theme-info, var(--color-primary));
     text-decoration: underline;
     font-weight: bold;
 }
@@ -286,8 +286,8 @@ dialog.quick-actions-picker-overlay[open] {
     max-width: 420px;
     max-height: 75vh;
     overflow-y: auto;
-    background-color: var(--theme-modal-bg, #f9f9f9);
-    color: var(--theme-modal-text, #333);
+    background-color: var(--theme-modal-bg, var(--color-gray-100));
+    color: var(--theme-modal-text, var(--theme-text-on-surface));
     border-radius: var(--radius-15);
     padding: var(--space-5) 25px;
     z-index: var(--z-modal);
@@ -388,10 +388,10 @@ dialog.quick-actions-picker-overlay[open] {
 }
 
 .modal-close-button {
-    background-color: var(--theme-button-primary-bg, #007bff);
+    background-color: var(--theme-button-primary-bg, var(--color-primary));
     border: none;
     border-radius: var(--radius-6);
-    color: var(--theme-button-primary-text, white);
+    color: var(--theme-button-primary-text, var(--color-white));
     font-size: 1rem;
     padding: 10px var(--space-5);
     margin-top: var(--space-4);
@@ -400,7 +400,7 @@ dialog.quick-actions-picker-overlay[open] {
 }
 
 .modal-close-button:hover {
-    background-color: var(--theme-button-primary-hover-bg, #0056b3);
+    background-color: var(--theme-button-primary-hover-bg, var(--color-primary-dark));
 }
 
 /* =============================================================================
@@ -426,8 +426,8 @@ dialog.mini-modal-dialog::backdrop {
 }
 
 .mini-modal-box {
-    background: var(--theme-modal-bg, #ffffff);
-    color: var(--theme-modal-text, #333);
+    background: var(--theme-modal-bg, var(--color-white));
+    color: var(--theme-modal-text, var(--theme-text-on-surface));
     border-radius: var(--radius-lg);
     padding: var(--space-5);
     max-width: 320px;
@@ -470,7 +470,7 @@ dialog.mini-modal-dialog::backdrop {
 
 .mini-modal-buttons .btn-confirm {
     background: var(--theme-color-success);
-    color: white;
+    color: var(--color-white);
     padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-sm);
     border: none;
@@ -501,7 +501,7 @@ dialog.mini-modal-dialog::backdrop {
 /* Dark mode mini-modal */
 body.dark-mode .mini-modal-box {
     background: #23272e;
-    color: #f0f0f0;
+    color: var(--color-gray-100);
     box-shadow: 0 0 24px rgba(0, 0, 0, 0.7);
 }
 
@@ -528,8 +528,8 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 }
 
 .feedback-modal-content {
-    background: var(--theme-modal-bg, #ffffff);
-    color: var(--theme-modal-text, #333);
+    background: var(--theme-modal-bg, var(--color-white));
+    color: var(--theme-modal-text, var(--theme-text-on-surface));
     padding: var(--space-6) var(--space-5) 0;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
@@ -545,7 +545,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
     margin: 0 0 var(--space-2) 0;
     font-size: 18px;
     font-weight: 700;
-    color: var(--theme-modal-text, #333);
+    color: var(--theme-modal-text, var(--theme-text-on-surface));
 }
 
 .feedback-modal-content p {
@@ -576,31 +576,31 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 #feedback-text {
     width: 90%;
     height: 100px;
-    border: 1px solid var(--theme-input-border, #ccc);
+    border: 1px solid var(--theme-input-border, var(--theme-input-border));
     border-radius: var(--radius-5);
     padding: var(--space-2-5);
     resize: none;
     font-size: 16px;
     margin-top: var(--space-2-5);
-    background: var(--theme-input-bg, white);
-    color: var(--theme-input-text, #333);
+    background: var(--theme-input-bg, var(--color-white));
+    color: var(--theme-input-text, var(--theme-text-on-surface));
 }
 
 #feedback-email {
     width: 90%;
-    border: 1px solid var(--theme-input-border, #ccc);
+    border: 1px solid var(--theme-input-border, var(--theme-input-border));
     border-radius: var(--radius-5);
     padding: var(--space-2-5);
     font-size: 14px;
     margin-top: var(--space-2);
-    background: var(--theme-input-bg, white);
-    color: var(--theme-input-text, #333);
+    background: var(--theme-input-bg, var(--color-white));
+    color: var(--theme-input-text, var(--theme-text-on-surface));
 }
 
 #submit-feedback {
     display: block;
-    background: var(--menu-close-bg, #3d7ab5);
-    color: var(--menu-close-text, white);
+    background: var(--menu-close-bg, var(--color-steel-blue));
+    color: var(--menu-close-text, var(--color-white));
     font-size: 16px;
     font-weight: 700;
     padding: var(--space-3-5);
@@ -617,7 +617,7 @@ body.dark-mode .mini-modal-buttons .btn-cancel {
 }
 
 #submit-feedback:hover {
-    background: var(--menu-close-hover-bg, #326a9e);
+    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
 }
 
 #submit-feedback:disabled {

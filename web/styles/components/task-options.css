@@ -219,7 +219,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    background: var(--theme-modal-bg, #ffffff);
+    background: var(--theme-modal-bg, var(--color-white));
     padding: var(--space-4) var(--space-5) var(--space-4) var(--space-10);
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
@@ -269,7 +269,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     max-height: 320px;
     overflow-y: auto;
     padding: var(--space-3-5);
-    background: var(--theme-modal-bg, #ffffff);
+    background: var(--theme-modal-bg, var(--color-white));
     border-radius: var(--radius-10);
     border: 1px solid rgba(0, 0, 0, 0.08);
     min-width: 220px;
@@ -313,7 +313,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     display: flex;
     flex-direction: column;
     padding: var(--space-3);
-    background: var(--theme-modal-bg, #ffffff);
+    background: var(--theme-modal-bg, var(--color-white));
     border-radius: var(--radius-10);
     border: 1px solid rgba(0, 0, 0, 0.08);
 }
@@ -688,7 +688,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     gap: var(--space-2-5);
     padding: var(--space-3) 0 0 0;
     margin: 0 -20px -20px -20px;
-    background: var(--theme-modal-bg, #fff);
+    background: var(--theme-modal-bg, var(--color-white));
 }
 
 .task-options-modal .modal-footer-row {
@@ -925,13 +925,13 @@ body.dark-mode .task-option-item[data-option-key="reminders"] .option-icon {
     margin: 0 0 var(--space-1-5) 0;
     font-size: 1.15rem;
     font-weight: 600;
-    color: var(--theme-modal-text, #333);
+    color: var(--theme-modal-text, var(--theme-text-on-surface));
     padding-right: var(--space-7); /* space for close button */
 }
 
 .preview-review-meta {
     font-size: 0.8rem;
-    color: var(--theme-text-muted, #888);
+    color: var(--theme-text-muted, var(--theme-text-muted));
     margin-bottom: var(--space-3-5);
     padding-bottom: var(--space-2-5);
     border-bottom: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
@@ -948,7 +948,7 @@ body.dark-mode .task-option-item[data-option-key="reminders"] .option-icon {
     gap: var(--space-2);
     padding: var(--space-1-75) 0;
     font-size: 0.9rem;
-    color: var(--theme-modal-text, #333);
+    color: var(--theme-modal-text, var(--theme-text-on-surface));
     border-bottom: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.06));
 }
 
@@ -969,7 +969,7 @@ body.dark-mode .task-option-item[data-option-key="reminders"] .option-icon {
 }
 
 .preview-modal-task.completed .preview-modal-check {
-    color: var(--theme-success, #28a745);
+    color: var(--theme-success, var(--color-success));
 }
 
 @media (max-width: 480px) {

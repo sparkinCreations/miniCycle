@@ -1635,7 +1635,20 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     // History (additional)
     'history.recreate',
     'history.clearedTotal',
-    'history.showingRecent'
+    'history.showingRecent',
+
+    // Share
+    'share.routine',
+    'share.routineTitle',
+    'share.app',
+    'share.appTitle',
+    'notify.shareRoutineSuccess',
+    'notify.shareRoutineFallback',
+    'notify.shareRoutineFailed',
+    'notify.shareRoutineNoActiveCycle',
+    'notify.shareAppSuccess',
+    'notify.shareAppCopied',
+    'notify.shareAppFailed'
 ]));
 
 // ============================================================================
