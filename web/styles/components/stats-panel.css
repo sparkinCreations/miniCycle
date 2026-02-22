@@ -731,3 +731,42 @@ body.dark-mode .badge-container,
 body.theme-dark-ocean .badge-container {
     background: rgba(255, 255, 255, 0.08);
 }
+
+/* =============================================================================
+   MOBILE FONT-SIZE OVERRIDES
+   Placed at end of file so they win the cascade over base rules above
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    /* Increase max-height now that nav dots are clearing correctly */
+    .stats-panel {
+        max-height: 62vh;
+    }
+
+    /* Section header h3 — base rule uses font-size-lg, reduce on mobile */
+    .current-routine-status h3,
+    .theme-unlock-status h3 {
+        font-size: var(--font-size-sm);
+        margin: 0;
+        padding: 0;
+    }
+
+    /* .clickable wrapper inside section headers */
+    .current-routine-status .clickable,
+    .theme-unlock-status .clickable {
+        padding: 6px 12px;
+    }
+
+    /* Doughnut base rule uses 90px — override here */
+    .current-cycle-doughnut-container {
+        width: 55px;
+        height: 55px;
+        margin: 3px auto;
+    }
+
+    /* Badge container h3 base uses font-size-lg */
+    .badge-container h3 {
+        font-size: var(--font-size-sm);
+        margin-bottom: 3px;
+    }
+}
