@@ -1,3 +1,7 @@
+## [1.1026] - 2026-02-22
+- Remove "Always Show Recurring Button" setting and related functionality
+
+
 ## [1.1025] - 2026-02-22
 - Refactor quick themes to quick colors for consistency; update achievements and stats panel to handle tasks cleared in badge updates; enhance toggle switch accessibility.
 
