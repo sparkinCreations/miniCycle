@@ -9,7 +9,7 @@
  * @module ui/preferencesPresets
  */
 
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -22,10 +22,16 @@ import { getLabel } from '../labels/labelResolver.js';
 const QUICK_PRESETS = {
     default: {
         name: 'Default',
+        shortName: 'Default',
+        title: 'Default blue theme',
+        swatch: ['#4c79ff', '#ffffff'],
         colors: {}
     },
     warm: {
         name: 'Warm',
+        shortName: 'Warm',
+        title: 'Warm sunset colors',
+        swatch: ['#ff6b6b', '#ffeaa7'],
         colors: {
             appBg: '#ff6b6b',
             taskListBg: '#fff9e6',
@@ -48,6 +54,9 @@ const QUICK_PRESETS = {
     },
     cool: {
         name: 'Cool',
+        shortName: 'Cool',
+        title: 'Cool ocean colors',
+        swatch: ['#74b9ff', '#e8f8f5'],
         colors: {
             appBg: '#74b9ff',
             taskListBg: '#e8f8f5',
@@ -70,6 +79,9 @@ const QUICK_PRESETS = {
     },
     forest: {
         name: 'Forest',
+        shortName: 'Forest',
+        title: 'Natural forest colors',
+        swatch: ['#2d5016', '#d4edda'],
         colors: {
             appBg: '#2d5016',
             taskListBg: '#d4edda',
@@ -92,6 +104,9 @@ const QUICK_PRESETS = {
     },
     monochrome: {
         name: 'Monochrome',
+        shortName: 'Mono',
+        title: 'Elegant grayscale',
+        swatch: ['#2d3436', '#dfe6e9'],
         colors: {
             appBg: '#2d3436',
             taskListBg: '#dfe6e9',
@@ -114,6 +129,9 @@ const QUICK_PRESETS = {
     },
     professional: {
         name: 'Professional',
+        shortName: 'Pro',
+        title: 'Clean minimal look',
+        swatch: ['#007aff', '#f5f5f7'],
         colors: {
             appBg: '#f5f5f7',
             taskListBg: '#ffffff',
@@ -136,6 +154,9 @@ const QUICK_PRESETS = {
     },
     goldenGlow: {
         name: 'Golden Glow',
+        shortName: 'Golden',
+        title: 'Golden glow theme',
+        swatch: ['#d4a017', '#fffef5'],
         colors: {
             appBg: '#d4a017',
             taskListBg: '#fffef5',
@@ -158,6 +179,9 @@ const QUICK_PRESETS = {
     },
     darkOcean: {
         name: 'Dark Ocean',
+        shortName: 'Ocean',
+        title: 'Dark ocean theme',
+        swatch: ['#0a2540', '#1a3a5c'],
         colors: {
             appBg: '#0a2540',
             taskListBg: '#1a3a5c',
@@ -180,6 +204,9 @@ const QUICK_PRESETS = {
     },
     berry: {
         name: 'Berry',
+        shortName: 'Berry',
+        title: 'Berry purple theme',
+        swatch: ['#7c3aed', '#faf5ff'],
         colors: {
             appBg: '#7c3aed',
             taskListBg: '#faf5ff',
@@ -237,7 +264,7 @@ export function applyQuickPreset(presetKey, callbacks) {
     }
 
     callbacks.updateUndoButton();
-    callbacks.showNotification?.(getLabel('notify.themeApplied', { vars: { name: preset.name } }), 'success', 2000);
+    callbacks.showNotification?.(getLabel('notify.themeApplied', { vars: { name: preset.name } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
 }
 
 // ============================================================================
@@ -301,7 +328,7 @@ export function savePreset(name, deps, renderPresetsList) {
     });
 
     renderPresetsList();
-    deps.showNotification?.(getLabel('notify.presetSaved', { vars: { name } }), 'success', 2000);
+    deps.showNotification?.(getLabel('notify.presetSaved', { vars: { name } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
 }
 
 /**
@@ -318,7 +345,7 @@ export function loadPreset(presetId, deps, callbacks) {
     const preset = presets.find(p => p.id === presetId);
 
     if (!preset) {
-        deps.showNotification?.(getLabel('notify.presetNotFound'), 'error', 2000);
+        deps.showNotification?.(getLabel('notify.presetNotFound'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
         return;
     }
 
@@ -333,7 +360,7 @@ export function loadPreset(presetId, deps, callbacks) {
     callbacks.applyCustomColors();
     callbacks.updateUndoButton();
 
-    deps.showNotification?.(getLabel('notify.presetLoaded', { vars: { name: preset.name } }), 'success', 2000);
+    deps.showNotification?.(getLabel('notify.presetLoaded', { vars: { name: preset.name } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
 }
 
 /**
@@ -355,7 +382,7 @@ export function renamePreset(presetId, newName, deps, renderPresetsList) {
     });
 
     renderPresetsList();
-    deps.showNotification?.(getLabel('notify.presetRenamed'), 'success', 2000);
+    deps.showNotification?.(getLabel('notify.presetRenamed'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
 }
 
 /**
@@ -380,7 +407,7 @@ export function deletePreset(presetId, deps, renderPresetsList) {
         });
 
         renderPresetsList();
-        deps.showNotification?.(getLabel('notify.presetDeleted'), 'info', 2000);
+        deps.showNotification?.(getLabel('notify.presetDeleted'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
     };
 
     if (deps.showConfirmationModal) {
@@ -428,7 +455,7 @@ export function exportPreset(presetId, deps) {
 
     // Try to copy to clipboard
     navigator.clipboard.writeText(code).then(() => {
-        deps.showNotification?.(getLabel('notify.presetCopied'), 'success', 3000);
+        deps.showNotification?.(getLabel('notify.presetCopied'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
     }).catch(() => {
         // Fallback: show code in a modal for manual copying
         if (deps.showPromptModal) {
@@ -507,10 +534,10 @@ export function importPreset(code, deps, renderPresetsList) {
         });
 
         renderPresetsList();
-        deps.showNotification?.(getLabel('notify.presetImported', { vars: { name: data.name } }), 'success', 2000);
+        deps.showNotification?.(getLabel('notify.presetImported', { vars: { name: data.name } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
 
     } catch (error) {
-        deps.showNotification?.(getLabel('notify.invalidPreset'), 'error', 2000);
+        deps.showNotification?.(getLabel('notify.invalidPreset'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 }
 
@@ -652,4 +679,38 @@ export function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+}
+
+// ============================================================================
+// QUICK PRESET BUTTON RENDERING
+// ============================================================================
+
+/**
+ * Render quick preset buttons dynamically from QUICK_PRESETS data.
+ * Called by preferencesManager.js before binding click handlers.
+ * @param {HTMLElement} container - The grid container element
+ */
+export function renderQuickPresets(container) {
+    if (!container) return;
+    container.innerHTML = '';
+
+    Object.entries(QUICK_PRESETS).forEach(([key, preset]) => {
+        const btn = document.createElement('button');
+        btn.className = 'quick-preset-btn';
+        btn.dataset.preset = key;
+        btn.title = preset.title;
+
+        const swatch = document.createElement('span');
+        swatch.className = 'quick-preset-swatch';
+        swatch.style.background =
+            `linear-gradient(135deg, ${preset.swatch[0]} 50%, ${preset.swatch[1]} 50%)`;
+
+        const name = document.createElement('span');
+        name.className = 'quick-preset-name';
+        name.textContent = preset.shortName;
+
+        btn.appendChild(swatch);
+        btn.appendChild(name);
+        container.appendChild(btn);
+    });
 }

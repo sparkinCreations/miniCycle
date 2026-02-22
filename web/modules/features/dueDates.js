@@ -508,10 +508,16 @@ export class MiniCycleDueDates {
         }
 
         if (dueDateValue) {
-            const today = new Date().setHours(0, 0, 0, 0);
-            const selectedDate = new Date(dueDateValue).setHours(0, 0, 0, 0);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const selectedDate = new Date(dueDateValue);
+            selectedDate.setHours(0, 0, 0, 0);
 
-            if (selectedDate > today) {
+            // Only show "due soon" if the date is within the next 3 days
+            const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+            const daysUntilDue = selectedDate - today;
+
+            if (daysUntilDue > 0 && daysUntilDue <= threeDaysMs) {
                 const taskText = task.text || getLabel('notify.dueDateUnnamed');
                 this.deps.showNotification("📅 " + getLabel('notify.dueDateDueSoon', { vars: { name: taskText } }), "default");
                 console.log('📢 Due date notification shown for:', taskText);

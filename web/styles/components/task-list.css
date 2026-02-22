@@ -266,20 +266,6 @@ body.onboarding-active .complete-all-and-help-window-container {
 }
 
 /* =============================================================================
-   OVERDUE TASK
-   ============================================================================= */
-
-.overdue-task {
-    background-color: var(--overdue-task-bg, rgba(244, 67, 54, 0.15));
-    color: var(--overdue-task-text, var(--color-red));
-    font-weight: bold;
-}
-
-.overdue-task:hover {
-    background-color: var(--overdue-task-bg, rgba(244, 67, 54, 0.15));
-}
-
-/* =============================================================================
    HIGH PRIORITY
    ============================================================================= */
 
@@ -593,6 +579,23 @@ body.onboarding-active .complete-all-and-help-window-container {
 .task:hover {
     transform: scale(1.02);
     background: var(--theme-bg-surface-elevated, #f8f9fa);
+}
+
+/* =============================================================================
+   OVERDUE TASK
+   Must come AFTER .task to win the cascade (same specificity, later source order).
+   Uses .task.overdue-task for higher specificity to beat themed/prefixed selectors.
+   ============================================================================= */
+
+.task.overdue-task {
+    background: var(--overdue-task-bg, rgba(244, 67, 54, 0.15));
+    color: var(--overdue-task-text, var(--color-red));
+    font-weight: bold;
+}
+
+.task.overdue-task:hover {
+    background: var(--overdue-task-bg, rgba(244, 67, 54, 0.15));
+    transform: scale(1.02);
 }
 
 .task input {
@@ -962,6 +965,12 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task {
 html:not(.dark-mode) body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-text,
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-text {
     color: var(--pref-task-text, var(--theme-text-on-surface));
+}
+
+/* Overdue tasks must override custom pref colors */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task.overdue-task {
+    background: var(--overdue-task-bg, rgba(244, 67, 54, 0.15));
+    color: var(--overdue-task-text, var(--color-red));
 }
 
 /* Title bar - uses custom pref colors when set */

@@ -89,6 +89,8 @@ export const UI_TIMEOUTS = Object.freeze({
     PAGE_RELOAD: 1000,             // 1000ms - Page reload after data operation
     SESSION_BACKUP_DELAY: 1000,    // 1000ms - Session backup delay after boot
     POST_RESTORE_RELOAD: 2500,     // 2500ms - Page reload after backup restoration
+    NOTIFICATION_BRIEF: 1500,      // 1500ms - Brief notification (undo, quick actions)
+    NOTIFICATION_SHORT: 2000,      // 2000ms - Standard notification duration
     NOTIFICATION_LONG: 3000,       // 3000ms - Long notification duration
     TOOLTIP_HIDE: 3000             // 3000ms - Tooltip auto-hide delay
 });
@@ -99,6 +101,14 @@ export const UI_TIMEOUTS = Object.freeze({
  */
 export const ERROR_TIMEOUTS = Object.freeze({
     CRITICAL_ERROR_EXPORT: 2000    // 2s - Delay before exporting error log
+});
+
+/**
+ * Preferences feature constants
+ * @constant {Object}
+ */
+export const PREFERENCES = Object.freeze({
+    MAX_UNDO_STEPS: 20             // Maximum undo history size
 });
 
 // ============================================================================
@@ -523,6 +533,7 @@ export const DOM_IDS = Object.freeze({
     PREF_SAVE_PRESET: 'pref-save-preset',
     PREF_IMPORT_PRESET: 'pref-import-preset',
     PREFERENCES_UNDO: 'preferences-undo',
+    PREF_QUICK_PRESETS_GRID: 'pref-section-quick-themes',
     PREFERENCES_THEME_NOTICE: 'preferences-theme-notice',
     PREF_PATTERN_COLOR: 'pref-pattern-color',
     PREF_PATTERN_OPACITY: 'pref-pattern-opacity',

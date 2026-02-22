@@ -171,9 +171,13 @@ body.dark-mode .high-priority {
 }
 
 /* Overdue Tasks in Dark Mode */
-body.dark-mode .overdue-task {
-    --overdue-task-bg: rgba(220, 53, 69, 0.25);
-    --overdue-task-text: var(--color-red-light);
+body.dark-mode .task.overdue-task {
+    background: rgba(220, 53, 69, 0.25);
+    color: var(--color-red-light);
+}
+
+body.dark-mode .task.overdue-task:hover {
+    background: rgba(220, 53, 69, 0.3);
 }
 
 /* =============================================================================
