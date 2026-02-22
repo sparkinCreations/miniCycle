@@ -1,3 +1,8 @@
+## [1.1019] - 2026-02-22
+- Refactor theme styles to enhance UI interactions; add new CSS variables for hover, selected, accent, and error states in dark and golden glow themes.
+- Add sharing functionality for routines and app; implement share buttons, notifications, and share manager module
+
+
 ## [1.1018] - 2026-02-22
 - Refactor CSS styles to use CSS variables for spacing, colors, and border radii; update header and safe area styles for consistency; enhance dark mode styles; add comprehensive app reviews for miniCycle Lite and full version.
 
