@@ -1,3 +1,7 @@
+## [1.1007] - 2026-02-21
+- Update application version to 1.1006 across all relevant files
+
+
 ## [1.1004] - 2026-02-21
 - Add Lite Version documentation to architecture section
 - Add user notification for redirects from full version boot failures
