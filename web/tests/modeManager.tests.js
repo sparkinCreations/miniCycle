@@ -67,7 +67,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     function createMockDeps(overrides = {}) {
         const mockSchemaData = {
             metadata: { version: "2.5", lastModified: Date.now() },
-            settings: { alwaysShowRecurring: false },
+            settings: {},
             data: {
                 cycles: {
                     'cycle-test-123': {

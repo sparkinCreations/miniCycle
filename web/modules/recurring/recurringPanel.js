@@ -1635,81 +1635,6 @@ export class RecurringPanelManager {
     }
 
     // ============================================
-    // ALWAYS SHOW RECURRING SETTING
-    // ============================================
-
-    /**
-     * Save always show recurring setting to AppState
-     */
-    async saveAlwaysShowRecurringSetting() {
-        console.log('💾 Saving always show recurring setting...');
-
-        try {
-            const checkbox = this.deps.getElementById(DOM_IDS.ALWAYS_SHOW_RECURRING);
-            if (!checkbox) {
-                console.warn('⚠️ Always show recurring checkbox not found');
-                return;
-            }
-
-            const alwaysShow = checkbox.checked;
-
-            // ✅ Save via AppState
-            if (!this.deps.AppState?.isReady?.()) {
-                console.warn('⚠️ AppState not ready for saving always show recurring setting');
-                return;
-            }
-
-            await this.deps.updateAppState(draft => {
-                if (!draft.settings) {
-                    draft.settings = {};
-                }
-                draft.settings.alwaysShowRecurring = alwaysShow;
-            }, true); // ✅ Immediate save for always-show-recurring setting
-
-            console.log('✅ Always show recurring setting saved via AppState:', alwaysShow);
-
-            // ✅ Trigger button refresh to show/hide recurring buttons after small delay (DI-pure)
-            // This ensures AppState changes have fully propagated
-            setTimeout(() => {
-                if (typeof this.deps.refreshTaskButtonsForModeChange === 'function') {
-                    console.log('🔄 Refreshing task buttons for always-show-recurring change...');
-                    this.deps.refreshTaskButtonsForModeChange();
-                }
-            }, 50);
-
-        } catch (error) {
-            console.error('❌ Error saving always show recurring setting:', error);
-        }
-    }
-
-    /**
-     * Load always show recurring setting from AppState
-     */
-    loadAlwaysShowRecurringSetting() {
-        console.log('📥 Loading always show recurring setting...');
-
-        try {
-            if (!this.deps.AppState?.isReady?.()) {
-                console.warn('⚠️ AppState not ready for loading always show recurring setting');
-                return;
-            }
-
-            const state = this.deps.AppState.get();
-            const isEnabled = state.settings?.alwaysShowRecurring || false;
-
-            console.log('📊 Loaded always show recurring setting from AppState:', isEnabled);
-
-            const checkbox = this.deps.getElementById(DOM_IDS.ALWAYS_SHOW_RECURRING);
-            if (checkbox) {
-                checkbox.checked = isEnabled;
-            }
-
-        } catch (error) {
-            console.error('❌ Error loading always show recurring setting:', error);
-        }
-    }
-
-    // ============================================
     // EVENT LISTENERS
     // ============================================
 
@@ -1736,24 +1661,6 @@ export class RecurringPanelManager {
         } catch (error) {
             console.error('❌ Error attaching summary listeners:', error);
         }
-    }
-
-    /**
-     * Wire always-show-recurring checkbox listener
-     * Moved from orchestrator.js for proper module ownership
-     */
-    wireAlwaysShowRecurringListener() {
-        if (!this.deps.safeAddEventListener) return; // Guard: dependency not injected (e.g., in tests)
-        const checkbox = this.deps.getElementById(DOM_IDS.ALWAYS_SHOW_RECURRING);
-        if (!checkbox) {
-            console.warn('⚠️ always-show-recurring checkbox not found');
-            return;
-        }
-
-        this.deps.safeAddEventListener(checkbox, "change", () => {
-            this.saveAlwaysShowRecurringSetting();
-        });
-        console.log('✅ always-show-recurring listener wired');
     }
 
     /**

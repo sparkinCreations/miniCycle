@@ -1,3 +1,7 @@
+## [1.1025] - 2026-02-22
+- Refactor quick themes to quick colors for consistency; update achievements and stats panel to handle tasks cleared in badge updates; enhance toggle switch accessibility.
+
+
 ## [1.1024] - 2026-02-22
 - Refactor notifications and labels for improved localization and icon usage
 

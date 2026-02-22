@@ -215,7 +215,6 @@
  * @typedef {Object} Settings
  * @property {string} [theme='default'] - Current theme name
  * @property {boolean} [darkMode=false] - Dark mode enabled
- * @property {boolean} [alwaysShowRecurring=false] - Always show recurring panel
  * @property {boolean} [autoSave=true] - Auto-save enabled
  * @property {boolean} [showThreeDots=false] - Show three dots menu globally
  * @property {boolean} [showTaskInput=true] - Show task input bar

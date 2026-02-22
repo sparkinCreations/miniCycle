@@ -646,7 +646,6 @@ export const DOM_IDS = Object.freeze({
     SET_DEFAULT_RECURRING: 'set-default-recurring',
     TOGGLE_CHECK_ALL: 'toggle-check-all',
     TOGGLE_ADVANCED_SETTINGS: 'toggle-advanced-settings',
-    ALWAYS_SHOW_RECURRING: 'always-show-recurring',
     APPLY_RECURRING_SETTINGS: 'apply-recurring-settings',
     CANCEL_RECURRING_SETTINGS: 'cancel-recurring-settings',
     RECURRING_TOGGLE_ACTIONS: 'recurring-toggle-actions',

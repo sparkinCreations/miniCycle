@@ -951,12 +951,13 @@ class MiniCycleState {
             settings: {
                 theme: 'default',
                 darkMode: false,
-                alwaysShowRecurring: false,
                 autoSave: true,
                 showThreeDots: false,
                 showTaskInput: false,
                 scrollToNewTask: true,
                 scrollOnLoad: false,
+                showCompletedDropdown: false,
+                completedTasksExpanded: false,
                 onboardingCompleted: false,
                 dismissedEducationalTips: {},
                 defaultRecurringSettings: {
