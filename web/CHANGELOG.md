@@ -1,3 +1,7 @@
+## [1.1014] - 2026-02-22
+- Add priority color picker notification and user preference handling for task priority
+
+
 ## [1.1013] - 2026-02-22
 - Update notification types for task priority changes and add mute check for non-error notifications
 
