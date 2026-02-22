@@ -112,8 +112,9 @@ export class AchievementsManager {
                     s.achievements.unlocked.push(achievement);
                 }, true);
 
-                // NOTE: Rewards are triggered by handleMilestoneUnlocks() in cycleCompletion.js
-                // We don't call _triggerReward() here to avoid duplicate unlock notifications
+                // Trigger reward (theme unlock, game unlock, etc.)
+                // Theme unlock functions are idempotent — safe if also called from cycleCompletion
+                this._triggerReward(milestone, unlockedVia);
 
                 // Log history event
                 if (this.deps.logHistoryEvent) {
@@ -1028,22 +1029,23 @@ export class AchievementsManager {
     }
 
     /**
-     * Update achievement badges based on GLOBAL cycles completed
+     * Update achievement badges based on GLOBAL cycles completed OR tasks cleared
      * Uses MILESTONES constant from constants.js as single source of truth
      * @param {number} globalCyclesCompleted - Total cycles across all routines
+     * @param {number} globalTasksCleared - Total tasks cleared across all routines
      */
-    updateBadges(globalCyclesCompleted) {
+    updateBadges(globalCyclesCompleted, globalTasksCleared = 0) {
         document.querySelectorAll(DOM_SELECTORS.BADGE).forEach(badge => {
             const milestone = parseInt(badge.dataset.milestone);
-            const isUnlocked = globalCyclesCompleted >= milestone;
+            const tierConfig = MILESTONES ? MILESTONES.find(t => t.cycleThreshold === milestone) : null;
+            const cyclesMet = globalCyclesCompleted >= milestone;
+            const tasksMet = tierConfig ? globalTasksCleared >= tierConfig.taskThreshold : false;
+            const isUnlocked = cyclesMet || tasksMet;
 
             badge.classList.toggle("unlocked", isUnlocked);
 
             // Reset theme badge classes
             badge.classList.remove("ocean-theme", "golden-theme", "game-unlocked");
-
-            // Find the tier config for this milestone from constants
-            const tierConfig = MILESTONES ? MILESTONES.find(t => t.cycleThreshold === milestone) : null;
 
             // Assign custom theme class based on reward type from constant
             if (isUnlocked && tierConfig) {

@@ -905,7 +905,7 @@ export const DEFAULT_LABELS = deepFreeze({
         themeNotice:        'Custom colors only apply in the Default theme.',
         openThemes:         'Open Themes',
         livePreview:        'Live Preview',
-        quickThemes:        'Quick Themes',
+        quickThemes:        'Quick Colors',
         savedPresets:       'Saved Presets',
         import:             'Import',
         saveCurrent:        'Save Current',

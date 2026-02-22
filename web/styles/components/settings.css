@@ -121,8 +121,14 @@
     display: inline-block;
     width: 44px;
     height: 24px;
-    min-height: 44px; /* WCAG touch target */
     flex-shrink: 0;
+}
+
+/* WCAG 44px touch target via pseudo-element — keeps visual size unchanged */
+.toggle-switch::after {
+    content: '';
+    position: absolute;
+    inset: -10px -8px;
 }
 
 .toggle-switch input {
