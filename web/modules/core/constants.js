@@ -476,6 +476,9 @@ export const DOM_IDS = Object.freeze({
     TOGGLE_HIGH_CONTRAST: 'toggle-high-contrast',
     FONT_SIZE_SELECT: 'font-size-select',
 
+    // ---- Behavior Settings ----
+    TOGGLE_NOTIFICATIONS: 'toggle-notifications',
+
     // ---- Backup & Recovery ----
     BACKUP_MINI_CYCLES: 'backup-mini-cycles',
     RESTORE_MINI_CYCLES: 'restore-mini-cycles',

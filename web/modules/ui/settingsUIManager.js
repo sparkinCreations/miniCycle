@@ -106,7 +106,8 @@ const _initialized = {
     resetAchievementProgress: false,
     reducedMotionToggle: false,
     highContrastToggle: false,
-    fontSizeSelect: false
+    fontSizeSelect: false,
+    notificationsToggle: false,
 };
 
 // ============================================================================
@@ -1150,6 +1151,48 @@ export function setupFontSizeSelect() {
 /**
  * Initialize all settings UI components
  */
+/**
+ * Setup notifications toggle
+ * When disabled, showNotification() silently skips all notifications.
+ */
+export function setupNotificationsToggle() {
+    if (_initialized.notificationsToggle) return;
+    _initialized.notificationsToggle = true;
+
+    const toggle = document.getElementById(DOM_IDS.TOGGLE_NOTIFICATIONS);
+    if (!toggle) return;
+
+    const schemaData = _deps.loadMiniCycleData?.();
+    // Default true — notifications on unless user has explicitly disabled
+    const enabled = schemaData?.settings?.notificationsEnabled ?? true;
+    toggle.checked = enabled;
+
+    toggle._changeHandler = async () => {
+        const enabled = toggle.checked;
+
+        const AppState = _deps.AppState?.();
+        if (AppState?.isReady?.()) {
+            await AppState.update(state => {
+                if (!state.settings) state.settings = {};
+                state.settings.notificationsEnabled = enabled;
+            }, true);
+        } else {
+            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
+            toggle.checked = !enabled;
+            return;
+        }
+
+        // Always show this one confirmation regardless of new state
+        _deps.showNotification?.(
+            enabled ? getLabel('notify.notificationsEnabled') : getLabel('notify.notificationsDisabled'),
+            'info',
+            2000
+        );
+    };
+
+    _deps.safeAddEventListener(toggle, 'change', toggle._changeHandler);
+}
+
 export function initAllToggles() {
     setupSettingsMenu();
     setupDarkModeToggle();
@@ -1166,6 +1209,7 @@ export function initAllToggles() {
     setupReducedMotionToggle();
     setupHighContrastToggle();
     setupFontSizeSelect();
+    setupNotificationsToggle();
 }
 
 console.log('Settings UI Manager loaded');
