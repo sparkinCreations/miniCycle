@@ -11,7 +11,7 @@ button {
     background: var(--theme-button-secondary-bg);
     color: var(--theme-button-secondary-text);
     border: none;
-    padding: 10px 13px;
+    padding: var(--space-2-5) var(--space-3-25);
     font-size: var(--font-size-base);
     border-radius: var(--radius-sm);
     cursor: pointer;
@@ -113,7 +113,7 @@ button.ghost:hover {
 
 .btn-icon,
 button.icon-only {
-    padding: 8px;
+    padding: var(--space-2);
     width: 36px;
     height: 36px;
     display: inline-flex;
@@ -135,12 +135,12 @@ button.icon-only i {
     background: var(--color-complete-btn);
     border: 2px solid rgba(0, 0, 0, 0.15);
     border-bottom: 3px solid rgba(0, 0, 0, 0.25);
-    margin-top: 10px;
-    padding: 14px 32px;
+    margin-top: var(--space-2-5);
+    padding: 14px var(--space-8);
     font-size: var(--font-size-lg);
     font-weight: 700;
     letter-spacing: 0.3px;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     cursor: pointer;
     transition: all var(--transition-fast) ease;
     color: white;
@@ -190,9 +190,9 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    margin-top: 0px;
-    margin-bottom: 20px;
+    gap: var(--space-2-5);
+    margin-top: 0;
+    margin-bottom: var(--space-5);
 }
 
 /* =============================================================================
@@ -202,14 +202,14 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
 
 .help-window {
     background: rgba(255, 255, 255, 0.12);
-    border-radius: 20px;
+    border-radius: var(--radius-2xl);
     border: 1px solid rgba(255, 255, 255, 0.25);
     box-shadow:
         0 4px 15px rgba(0, 0, 0, 0.08),
         inset 0 1px 1px rgba(255, 255, 255, 0.3);
     max-width: 450px;
     width: 100%;
-    padding: 10px 10px;
+    padding: var(--space-2-5) var(--space-2-5);
     z-index: var(--z-content);
     display: flex;
     flex-direction: column;
@@ -222,8 +222,8 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
     -webkit-backdrop-filter: blur(2px);
     transition: opacity var(--transition-normal) ease;
     opacity: 1;
-    margin-top: 10px;
-    margin-bottom: 30px;
+    margin-top: var(--space-2-5);
+    margin-bottom: var(--space-7-5);
 }
 
 .help-window.show {
@@ -242,7 +242,7 @@ body.hide-help-window .help-window {
 }
 
 .help-window h4 {
-    margin: 0 0 8px 0;
+    margin: 0 0 var(--space-2) 0;
     font-size: var(--font-size-base);
     font-weight: 600;
 }
@@ -259,17 +259,17 @@ body.hide-help-window .help-window {
 
 @media (max-width: 768px) {
     .help-window {
-        margin-top: 8px;
+        margin-top: var(--space-2);
         margin-bottom: var(--help-window-clearance);
         font-size: var(--font-size-sm);
-        padding: 6px 10px;
+        padding: var(--space-1-5) var(--space-2-5);
     }
 }
 
 @media (max-width: 480px) {
     .help-window {
         margin-bottom: calc(var(--help-window-clearance) + 10px);
-        padding: 5px 8px;
+        padding: 5px var(--space-2);
         font-size: var(--font-size-xs);
     }
 }
@@ -283,7 +283,7 @@ body.hide-help-window .help-window {
     .help-window {
         margin-bottom: calc(var(--help-window-clearance) + 25px);
         font-size: var(--font-size-sm);
-        padding: 10px;
+        padding: var(--space-2-5);
     }
 }
 
@@ -307,7 +307,7 @@ body.hide-help-window .help-window {
         align-items: center;
         justify-content: center;
         font-size: var(--font-size-sm);
-        padding: 5px 15px;
+        padding: var(--space-1-25) var(--space-3-75);
         margin: 0;
     }
 
@@ -325,7 +325,7 @@ body.hide-help-window .help-window {
         min-width: 250px;
         max-width: 295px;
         font-size: var(--font-size-sm);
-        padding: 5px 15px;
+        padding: var(--space-1-25) var(--space-3-75);
     }
 }
 
@@ -337,7 +337,7 @@ body.hide-help-window .help-window {
         min-width: 300px;
         max-width: 400px;
         font-size: var(--font-size-sm);
-        padding: 5px 20px;
+        padding: 5px var(--space-5);
     }
 }
 
@@ -376,7 +376,7 @@ body.hide-help-window .help-window {
     font-weight: 600;
     color: #2d2c45;
     cursor: pointer;
-    padding: 2px 6px;
+    padding: var(--space-0-5) var(--space-1-5);
     opacity: .8;
     transition: color var(--transition-fast) ease;
     min-width: 50px;
@@ -409,7 +409,7 @@ body.hide-help-window .help-window {
 .close-modal {
     background: transparent;
     color: inherit;
-    padding: 4px 8px;
+    padding: var(--space-1) var(--space-2);
     font-size: var(--font-size-xl);
     line-height: 1;
     opacity: 0.7;
@@ -425,7 +425,7 @@ body.hide-help-window .help-window {
 /* Full-width close button */
 .close-button-fullwidth {
     width: 100%;
-    padding: 12px;
+    padding: var(--space-3);
     background: var(--theme-button-secondary-bg);
     color: var(--theme-button-secondary-text);
     border: 1px solid var(--theme-button-secondary-border, rgba(0, 0, 0, 0.1));
@@ -444,7 +444,7 @@ body.hide-help-window .help-window {
 
 .btn-group {
     display: flex;
-    gap: 8px;
+    gap: var(--space-2);
 }
 
 .btn-group-vertical {
@@ -464,12 +464,12 @@ body.hide-help-window .help-window {
    ============================================================================= */
 
 .btn-sm {
-    padding: 6px 12px;
+    padding: 6px var(--space-3);
     font-size: var(--font-size-xs);
 }
 
 .btn-lg {
-    padding: 14px 28px;
+    padding: var(--space-3-5) var(--space-7);
     font-size: var(--font-size-lg);
 }
 
@@ -479,12 +479,12 @@ body.hide-help-window .help-window {
 
 @media (max-width: 768px) {
     button {
-        padding: 8px 12px;
+        padding: var(--space-2) var(--space-3);
         font-size: var(--font-size-sm);
     }
 
     .complete-all-btn {
-        padding: 10px 20px;
+        padding: 10px var(--space-5);
         font-size: var(--font-size-sm);
     }
 
@@ -513,8 +513,8 @@ body.hide-help-window .help-window {
         font-size: 0.85em;
         color: #fff;
         background: rgba(0,0,0,0.4);
-        padding: 4px 8px;
-        border-radius: 6px;
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-6);
     }
 
     .undo-redo-btn:hover {
@@ -570,10 +570,10 @@ body.hide-help-window .help-window {
     transform: translate(-50%, -50%);
     background: rgba(59, 130, 246, 0.909);
     color: white;
-    padding: 15px 25px;
+    padding: var(--space-3-75) var(--space-6-25);
     font-size: 60px;
     font-weight: bold;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     animation: fadeOutScale var(--animation-exit) ease-in-out;
     z-index: var(--z-modal);

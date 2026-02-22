@@ -14,7 +14,7 @@
     width: 280px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: var(--space-2-5);
     z-index: var(--z-notification);
     cursor: grab;
     user-select: none;
@@ -53,7 +53,7 @@
 .notification {
     background: var(--theme-notification-bg);
     color: var(--theme-notification-text);
-    padding: 12px 16px;
+    padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-md);
     font-size: var(--font-size-sm);
     box-shadow: var(--shadow-md);
@@ -83,36 +83,36 @@
    ============================================================================= */
 
 .notification.error {
-    background: var(--theme-error, #ff4d4d);
-    color: #ffffff;
+    background: var(--theme-error, var(--color-error-light));
+    color: var(--color-white);
 }
 
 .notification.success {
-    background: var(--theme-success, #28a745);
-    color: #ffffff;
+    background: var(--theme-success, var(--color-success));
+    color: var(--color-white);
 }
 
 .notification.info {
-    background: var(--theme-info, #007bff);
-    color: #ffffff;
+    background: var(--theme-info, var(--color-accent));
+    color: var(--color-white);
 }
 
 .notification.warning {
-    background: var(--theme-warning, #ffc107);
-    color: #000000;
+    background: var(--theme-warning, var(--color-warning));
+    color: var(--color-black);
 }
 
 /* Recurring notification style */
 .notification.recurring {
-    background: #9ec9ea;
-    color: #222;
+    background: var(--color-info);
+    color: var(--color-gray-900);
     border: 3px solid rgba(93, 134, 99, 0.08);
-    border-radius: 10px;
+    border-radius: var(--radius-10);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     font-size: 0.95rem;
     font-weight: 500;
     letter-spacing: 0.3px;
-    padding: 14px 18px;
+    padding: var(--space-3-5) var(--space-4-5);
     transition: transform var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
 }
 
@@ -128,7 +128,7 @@
 .notification .notification-content {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--space-2-5);
 }
 
 .notification .notification-icon {
@@ -156,7 +156,7 @@
     font-size: var(--font-size-lg);
     font-weight: bold;
     cursor: pointer;
-    color: #fff;
+    color: var(--color-white);
     line-height: 28px;
     text-align: center;
     padding: 0;
@@ -176,7 +176,7 @@
 
 /* Ensure notification text doesn't overlap the close button */
 .notification .notification-content {
-    padding-right: 28px;
+    padding-right: var(--space-7);
     white-space: pre-line;
 }
 
@@ -187,9 +187,9 @@
 .notification button {
     background: none;
     border: none;
-    color: white;
+    color: var(--color-white);
     font-weight: bold;
-    margin-left: 10px;
+    margin-left: var(--space-2-5);
     cursor: pointer;
     transition: opacity var(--transition-fast) ease;
 }
@@ -200,11 +200,11 @@
 
 /* Settings button in notification */
 .notification .open-recurring-settings {
-    margin-left: 8px;
-    padding: 6px 12px;
-    background: rgb(111, 111, 111);
+    margin-left: var(--space-2);
+    padding: 6px var(--space-3);
+    background: var(--color-gray-500);
     border: 1px solid rgba(32, 32, 32, 0.091);
-    border-radius: 6px;
+    border-radius: var(--radius-6);
     font-size: var(--font-size-xs);
     font-weight: 600;
     transition: all var(--transition-fast) ease;
@@ -212,7 +212,7 @@
 }
 
 .notification .open-recurring-settings:hover {
-    background: rgba(79, 79, 79, 0.581);
+    background: rgba(0, 0, 0, 0.35);
     border-color: rgba(255, 255, 255, 0.5);
     transform: translateY(-1px);
     opacity: 1;
@@ -225,14 +225,14 @@
 .quick-recurring-options {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    margin-top: 12px;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
 }
 
 .quick-option:focus-visible {
     outline: 2px solid rgba(255, 255, 255, 0.8);
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
 }
 
 .notification button:focus-visible {
@@ -241,10 +241,10 @@
 }
 
 .notification .apply-quick-recurring {
-    padding: 8px 12px;
+    padding: var(--space-2) var(--space-3);
     background: rgba(255, 255, 255, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 6px;
+    border-radius: var(--radius-6);
     font-size: var(--font-size-xs);
     font-weight: 500;
     cursor: pointer;
@@ -263,7 +263,7 @@
 .notification .educational-text {
     font-size: 12px;
     opacity: 0.8;
-    margin-top: 8px;
+    margin-top: var(--space-2);
     font-style: italic;
 }
 
@@ -278,15 +278,15 @@
     }
 
     .notification {
-        padding: 10px 14px;
+        padding: var(--space-2-5) var(--space-3-5);
         font-size: var(--font-size-sm);
     }
 }
 
 @media (max-width: 480px) {
     .notification {
-        padding: 10px 12px;
-        border-radius: 8px;
+        padding: 10px var(--space-3);
+        border-radius: var(--radius-md);
     }
 
     .quick-recurring-options {

@@ -12,9 +12,9 @@
     right: 15px;
     background: rgba(255, 255, 255, 0.2);
     box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
-    border: 1px solid #0c20913f;
-    color: rgb(44, 50, 112);
-    border-radius: 5px;
+    border: 1px solid rgba(12, 32, 145, 0.25);
+    color: var(--color-navy);
+    border-radius: var(--radius-5);
     width: 88px;
     height: 22px;
     cursor: pointer;
@@ -26,7 +26,7 @@
 
 .routine-switcher-btn:hover {
     background: rgba(255, 255, 255, 0.4);
-    border-color: #0c2091;
+    border-color: var(--color-navy-dark);
 }
 
 .routine-switcher-btn:active {
@@ -34,7 +34,7 @@
 }
 
 .routine-switcher-btn svg {
-    fill: rgb(44, 50, 112);
+    fill: var(--color-navy);
     width: 16px;
     height: 16px;
 }
@@ -82,8 +82,8 @@ dialog.mini-cycle-switch-modal::backdrop {
     position: relative;
     background: var(--theme-modal-bg, rgb(237, 239, 246));
     color: var(--theme-modal-text, #333);
-    padding: 15px;
-    border-radius: 10px;
+    padding: var(--space-3-75);
+    border-radius: var(--radius-10);
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
     min-width: 300px;
     max-width: 400px;
@@ -97,9 +97,9 @@ dialog.mini-cycle-switch-modal::backdrop {
     font-weight: bold;
     color: inherit;
     text-align: center;
-    padding: 10px 0;
+    padding: var(--space-2-5) 0;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    margin-bottom: 10px;
+    margin-bottom: var(--space-2-5);
 }
 
 /* Legacy .mini-cycle-switch-title-logo removed — now uses .has-corner-logo */
@@ -110,10 +110,10 @@ dialog.mini-cycle-switch-modal::backdrop {
 
 .routine-search-input {
     width: 100%;
-    padding: 8px 12px;
-    margin-bottom: 8px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    padding: var(--space-2) var(--space-3);
+    margin-bottom: var(--space-2);
+    border: 1px solid var(--theme-input-border);
+    border-radius: var(--radius-5);
     font-size: var(--font-size-sm);
     font-family: var(--font-family);
     box-sizing: border-box;
@@ -132,7 +132,7 @@ dialog.mini-cycle-switch-modal::backdrop {
 }
 
 .routine-search-input::placeholder {
-    color: #999;
+    color: var(--color-gray-400);
 }
 
 /* =============================================================================
@@ -143,36 +143,36 @@ dialog.mini-cycle-switch-modal::backdrop {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin: 8px 0;
-    gap: 10px;
+    margin: var(--space-2) 0;
+    gap: var(--space-2-5);
 }
 
 .routine-sort-controls {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--space-1-5);
 }
 
 .routine-sort-label {
     font-size: 0.75rem;
-    color: #666;
-    margin-right: 4px;
+    color: var(--color-gray-500);
+    margin-right: var(--space-1);
 }
 
 .routine-sort-btn {
-    padding: 4px 10px;
+    padding: var(--space-1) 10px;
     font-size: 0.75rem;
-    border: 1px solid #ccc;
-    background: #f5f5f5;
-    border-radius: 4px;
+    border: 1px solid var(--theme-input-border);
+    background: var(--color-gray-100);
+    border-radius: var(--radius-sm);
     cursor: pointer;
     transition: all var(--transition-fast) ease;
-    color: #555;
+    color: var(--theme-input-placeholder);
 }
 
 .routine-sort-btn:hover {
-    background: #e8e8e8;
-    border-color: #999;
+    background: var(--color-gray-200);
+    border-color: var(--color-gray-400);
 }
 
 .routine-sort-btn.active {
@@ -187,13 +187,13 @@ dialog.mini-cycle-switch-modal::backdrop {
 }
 
 .routine-filter-select {
-    padding: 4px 8px;
+    padding: var(--space-1) var(--space-2);
     font-size: 0.75rem;
-    border: 1px solid #ccc;
-    background: #f5f5f5;
-    border-radius: 4px;
+    border: 1px solid var(--theme-input-border);
+    background: var(--color-gray-100);
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    color: #555;
+    color: var(--theme-input-placeholder);
     outline: none;
     max-width: 100px;
 }
@@ -203,7 +203,7 @@ dialog.mini-cycle-switch-modal::backdrop {
 }
 
 .routine-filter-select:hover {
-    border-color: #999;
+    border-color: var(--color-gray-400);
 }
 
 .routine-filter-select:focus {
@@ -219,11 +219,11 @@ dialog.mini-cycle-switch-modal::backdrop {
     max-height: 240px;
     overflow-y: auto;
     overflow-x: hidden;
-    border: 1px solid #767676;
-    padding: 6px;
+    border: 1px solid var(--color-gray-500);
+    padding: var(--space-1-5);
     background: var(--theme-input-bg, white);
     text-align: left;
-    border-radius: 5px;
+    border-radius: var(--radius-5);
 }
 
 /* =============================================================================
@@ -235,17 +235,17 @@ dialog.mini-cycle-switch-modal::backdrop {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    gap: 8px;
-    padding: 8px;
-    margin-bottom: 3px;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    margin-bottom: var(--space-0-75);
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     background: none;
-    color: black;
+    color: var(--color-black);
     font-weight: bold;
     cursor: pointer;
     transition: background var(--transition-fast) ease-in-out, transform var(--transition-fast);
     text-align: left;
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
     font-size: 0.9rem;
 }
 
@@ -265,7 +265,7 @@ dialog.mini-cycle-switch-modal::backdrop {
 
 .mini-cycle-switch-item.selected {
     background: var(--theme-button-primary-bg, #0056b3);
-    color: white;
+    color: var(--color-white);
     font-weight: bold;
 }
 
@@ -277,7 +277,7 @@ dialog.mini-cycle-switch-modal::backdrop {
     white-space: nowrap;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
 }
 
 .cycle-item-emoji {
@@ -305,9 +305,9 @@ dialog.mini-cycle-switch-modal::backdrop {
 .cycle-item-edit-input {
     font-size: inherit;
     font-family: inherit;
-    padding: 2px 6px;
+    padding: var(--space-0-5) var(--space-1-5);
     border: 1px solid var(--theme-info, #007bff);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     background: var(--theme-input-bg, #fff);
     color: var(--theme-input-text, #333);
     outline: none;
@@ -324,10 +324,10 @@ dialog.mini-cycle-switch-modal::backdrop {
 .cycle-item-size {
     font-size: 0.75rem;
     font-weight: normal;
-    color: #888;
+    color: var(--theme-text-muted);
     background: rgba(0, 0, 0, 0.06);
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: var(--space-0-5) var(--space-1-5);
+    border-radius: var(--radius-sm);
     flex-shrink: 0;
 }
 
@@ -342,21 +342,21 @@ dialog.mini-cycle-switch-modal::backdrop {
 
 .switch-items-row {
     display: none;
-    padding: 10px;
-    margin-top: 10px;
+    padding: var(--space-2-5);
+    margin-top: var(--space-2-5);
     text-align: center;
 }
 
 .switch-preview-window {
     position: relative;
-    margin: 10px auto;
+    margin: var(--space-2-5) auto;
     width: 180px;
     height: auto;
-    padding: 10px;
+    padding: var(--space-2-5);
     background-color: var(--theme-input-bg, #fafafa);
     border: 1px solid rgba(0, 0, 0, 0.15);
-    border-radius: 8px;
-    color: #3A3A3A;
+    border-radius: var(--radius-md);
+    color: var(--color-gray-700);
     font-size: 0.9rem;
     text-align: left;
     overflow-y: auto;
@@ -366,7 +366,7 @@ dialog.mini-cycle-switch-modal::backdrop {
 
 .preview-task {
     font-size: 0.85rem;
-    padding: 3px;
+    padding: var(--space-0-75);
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
@@ -376,9 +376,9 @@ dialog.mini-cycle-switch-modal::backdrop {
 
 .switch-preview-date {
     font-size: 0.7rem;
-    color: #888;
+    color: var(--theme-text-muted);
     text-align: center;
-    margin-top: 6px;
+    margin-top: var(--space-1-5);
     font-style: italic;
 }
 
@@ -389,11 +389,11 @@ dialog.mini-cycle-switch-modal::backdrop {
 .mini-cycle-switch-btn {
     width: 100px;
     height: 30px;
-    padding: 0 16px;
+    padding: 0 var(--space-4);
     font-size: 0.95rem;
-    margin: 5px;
+    margin: var(--space-1-25);
     font-weight: 600;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     border: none;
     cursor: pointer;
     transition: all var(--transition-fast) ease;
@@ -414,21 +414,21 @@ dialog.mini-cycle-switch-modal::backdrop {
 }
 
 .mini-cycle-switch-btn.open-btn {
-    background: linear-gradient(135deg, #4790df 0%, #2171b5 100%);
-    color: white;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    color: var(--color-white);
 }
 
 .mini-cycle-switch-btn.open-btn:hover {
-    background: linear-gradient(135deg, #5a9fe6 0%, #3182c4 100%);
+    filter: brightness(1.12);
 }
 
 .mini-cycle-switch-btn.cancel-btn {
-    background: #2d3748;
-    color: white;
+    background: var(--color-slate-800);
+    color: var(--color-white);
 }
 
 .mini-cycle-switch-btn.cancel-btn:hover {
-    background: #4a5568;
+    background: var(--color-slate-600);
 }
 
 /* =============================================================================
@@ -439,21 +439,21 @@ dialog.mini-cycle-switch-modal::backdrop {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 8px 16px;
-    margin: 8px auto;
+    gap: var(--space-1-5);
+    padding: var(--space-2) var(--space-4);
+    margin: var(--space-2) auto;
     font-size: 0.85rem;
     font-weight: 500;
-    border-radius: 6px;
+    border-radius: var(--radius-6);
     border: none;
     cursor: pointer;
-    background: #2d3748;
-    color: white;
+    background: var(--color-slate-800);
+    color: var(--color-white);
     transition: all var(--transition-fast) ease;
 }
 
 .mini-cycle-upload-btn:hover {
-    background: #4a5568;
+    background: var(--color-slate-600);
 }
 
 .mini-cycle-upload-btn:active {
@@ -471,16 +471,16 @@ dialog.mini-cycle-switch-modal::backdrop {
 .switch-buttons {
     background: transparent;
     border: none;
-    color: #666;
-    padding: 8px 12px;
+    color: var(--color-gray-500);
+    padding: var(--space-2) var(--space-3);
     font-size: 1rem;
     cursor: pointer;
     transition: color var(--transition-fast) ease, transform var(--transition-fast) ease;
-    border-radius: 6px;
+    border-radius: var(--radius-6);
 }
 
 .switch-buttons:hover {
-    color: #333;
+    color: var(--theme-text-on-surface);
     background: rgba(0, 0, 0, 0.05);
     transform: scale(1.05);
 }
@@ -490,7 +490,7 @@ dialog.mini-cycle-switch-modal::backdrop {
 }
 
 .switch-delete:hover {
-    color: #dc3545;
+    color: var(--color-error);
 }
 
 /* =============================================================================
@@ -503,7 +503,7 @@ dialog.mini-cycle-switch-modal::backdrop {
 
 .routine-buttons-container.visible {
     display: flex;
-    gap: 8px;
+    gap: var(--space-2);
     justify-content: center;
 }
 
@@ -526,7 +526,7 @@ dialog.mini-cycle-switch-modal::backdrop {
 @media (max-width: 480px) {
     .mini-cycle-switch-modal-content {
         width: 85%;
-        padding: 12px;
+        padding: var(--space-3);
     }
 
     .mini-cycle-switch-title {
@@ -535,11 +535,11 @@ dialog.mini-cycle-switch-modal::backdrop {
 
     .mini-cycle-switch-btn {
         width: 90px;
-        padding: 8px 12px;
+        padding: var(--space-2) var(--space-3);
     }
 
     .mini-cycle-upload-btn {
-        padding: 6px 14px;
+        padding: var(--space-1-5) var(--space-3-5);
         font-size: 0.8rem;
     }
 

@@ -37,7 +37,7 @@
 //   • Multiple cycles, Recurring tasks, Due dates, Reminders
 //   • Theme unlocks, Gamification, Import/export, Advanced settings
 //
-// Last meaningful update: v2.085 (intentionally static thereafter)
+// Last meaningful update: v2.086 (intentionally static thereafter)
 // © 2026 sparkinCreations - https://sparkincreations.com
 // ================================================================================
 
@@ -86,7 +86,7 @@ console.log('📱 miniCycle Lite Mode Activated for maximum compatibility!');
 
 
 
-var currentVersion = '2.085'; 
+var currentVersion = '2.086'; 
 
 // ✅ ADD version display function
 function showVersionInfo() {
@@ -518,7 +518,12 @@ function setupModeSelector() {
   }
   
   // ✅ Load saved mode preference
-var savedMode = localStorage.getItem('miniCycleLiteMode') || 'auto-cycle';
+  var savedMode = 'auto-cycle';
+  try {
+    savedMode = localStorage.getItem('miniCycleLiteMode') || 'auto-cycle';
+  } catch (e) {
+    console.warn('⚠️ Could not read mode preference:', e);
+  }
   
   // ✅ Set initial values
   if (desktopSelect) desktopSelect.value = savedMode;
@@ -1184,14 +1189,14 @@ function toggleTaskPriority(taskItem) {
 function hideTaskOptions(taskItem) {
   var optionsMenu = taskItem.querySelector('.options-menu');
   if (optionsMenu) {
-    optionsMenu.classList.add('hidden');
+    addClass(optionsMenu, 'hidden');
   }
 }
 
 function hideAllTaskOptions() {
   var allOptionsMenus = document.querySelectorAll('.options-menu');
   for (var i = 0; i < allOptionsMenus.length; i++) {
-    allOptionsMenus[i].classList.add('hidden');
+    addClass(allOptionsMenus[i], 'hidden');
   }
 }
 
@@ -1229,7 +1234,7 @@ function autoSave() {
       title: (titleElement ? titleElement.textContent : null) || "My Tasks",
       tasks: tasks,
       autoReset: true,
-      cycleCount: parseInt(localStorage.getItem("miniCycleLiteCount")) || 0,
+      cycleCount: parseInt(localStorage.getItem("miniCycleLiteCount"), 10) || 0,
       lastSaved: new Date().getTime()
     };
 
@@ -1356,11 +1361,12 @@ function setupEventBasedStatsUpdate() {
   var lastCompletedCount = 0;
   
   setInterval(function() {
+    try {
     if (!taskList) return;
-    
+
     var currentTaskCount = taskList.children.length;
     var currentCompletedCount = 0;
-    
+
     for (var i = 0; i < taskList.children.length; i++) {
       var checkbox = taskList.children[i].querySelector("input[type='checkbox']");
       if (checkbox && checkbox.checked) {
@@ -1373,6 +1379,9 @@ function setupEventBasedStatsUpdate() {
       updateStats();
       lastTaskCount = currentTaskCount;
       lastCompletedCount = currentCompletedCount;
+    }
+    } catch (err) {
+      console.warn('⚠️ Stats update error:', err);
     }
   }, 1000);
 }
@@ -2288,8 +2297,15 @@ function updateProgressBar() {
 // 🎮 EVENT LISTENERS SETUP
 // ==========================================
 
+var _basicListenersSetup = false;
+
 // ✅ CORRECTED setupBasicEventListeners function (remove the duplicate setupModeSelector call):
 function setupBasicEventListeners() {
+  if (_basicListenersSetup) {
+    console.warn('⚠️ setupBasicEventListeners called more than once — skipping');
+    return;
+  }
+  _basicListenersSetup = true;
   // Add task button
   if (addTaskButton) {
     addTaskButton.addEventListener("click", function() {
@@ -2662,9 +2678,9 @@ function setupBasicTheme() {
   
   // ✅ Apply theme class
   if (isDarkMode) {
-    document.body.classList.add('dark-mode');
+    addClass(document.body, 'dark-mode');
   } else {
-    document.body.classList.remove('dark-mode');
+    removeClass(document.body, 'dark-mode');
   }
   
   // ✅ Set correct toggle icon based on current theme
@@ -2685,12 +2701,12 @@ function setupBasicTheme() {
 
 // ✅ UPDATED toggleTheme function with proper ARIA labels
 function toggleTheme() {
-  var isDark = document.body.classList.contains('dark-mode');
+  var isDark = hasClass(document.body, 'dark-mode');
   var darkToggle = document.getElementById('quick-dark-toggle');
-  
+
   if (isDark) {
     // ✅ Switching to light mode
-    document.body.classList.remove('dark-mode');
+    removeClass(document.body, 'dark-mode');
     localStorage.setItem('miniCycleLiteTheme', 'default');
     if (darkToggle) {
       darkToggle.textContent = '🌙'; // Moon emoji for light mode
@@ -2699,7 +2715,7 @@ function toggleTheme() {
     }
   } else {
     // ✅ Switching to dark mode
-    document.body.classList.add('dark-mode');
+    addClass(document.body, 'dark-mode');
     localStorage.setItem('miniCycleLiteTheme', 'dark');
     if (darkToggle) {
       darkToggle.textContent = '☀️'; // Sun emoji for dark mode
@@ -2795,7 +2811,7 @@ function handleTryFullVersion() {
     return; // User cancelled
   }
 
-  var currentVersion = '2.085';
+  var currentVersion = '2.086';
 
   // Show confirmation
   showNotification(
@@ -2810,18 +2826,22 @@ function handleTryFullVersion() {
   
   // ✅ Clear only full version files from cache
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    var messageChannel = new MessageChannel();
-    messageChannel.port1.onmessage = function(event) {
-      console.log('� Cache clear response:', event.data);
-      if (event.data.success) {
-        console.log('✅ Full version cache cleared successfully');
-      }
-    };
-    
-    navigator.serviceWorker.controller.postMessage(
-      {type: 'CLEAR_FULL_VERSION_CACHE'}, 
-      [messageChannel.port2]
-    );
+    try {
+      var messageChannel = new MessageChannel();
+      messageChannel.port1.onmessage = function(event) {
+        console.log('📦 Cache clear response:', event.data);
+        if (event.data && event.data.success) {
+          console.log('✅ Full version cache cleared successfully');
+        }
+      };
+
+      navigator.serviceWorker.controller.postMessage(
+        {type: 'CLEAR_FULL_VERSION_CACHE'},
+        [messageChannel.port2]
+      );
+    } catch (swError) {
+      console.warn('⚠️ Could not clear service worker cache:', swError);
+    }
   }
   
   // Log the switch for debugging
@@ -2852,7 +2872,7 @@ function handleTryFullVersion() {
 function toggleMenu() {
   if (!menu) return;
   
-  var isVisible = menu.classList.contains('visible');
+  var isVisible = hasClass(menu, 'visible');
   if (isVisible) {
     closeMenu();
   } else {
@@ -2862,15 +2882,15 @@ function toggleMenu() {
 
 function openMenu() {
   if (!menu) return;
-  
-  menu.classList.add('visible');
+
+  addClass(menu, 'visible');
   updateCurrentDate();
 }
 
 function closeMenu() {
   if (!menu) return;
-  
-  menu.classList.remove('visible');
+
+  removeClass(menu, 'visible');
 }
 
 function setupMenuButtons() {
@@ -2878,7 +2898,9 @@ function setupMenuButtons() {
   var deleteAllBtn = document.getElementById('delete-all-mini-cycle-tasks');
   if (deleteAllBtn) {
     deleteAllBtn.addEventListener('click', function() {
-      if (confirm('Are you sure you want to delete all tasks?')) {
+      var ok = false;
+      try { ok = confirm('Are you sure you want to delete all tasks?'); } catch (e) {}
+      if (ok) {
         deleteAllTasks();
         closeMenu();
       }
@@ -2889,7 +2911,9 @@ function setupMenuButtons() {
   var clearCompletedBtn = document.getElementById('clear-mini-cycle-tasks');
   if (clearCompletedBtn) {
     clearCompletedBtn.addEventListener('click', function() {
-      if (confirm('Are you sure you want to uncheck all completed tasks?')) {
+      var ok = false;
+      try { ok = confirm('Are you sure you want to uncheck all completed tasks?'); } catch (e) {}
+      if (ok) {
         clearCompletedTasks();
         closeMenu();
       }
@@ -2900,7 +2924,9 @@ function setupMenuButtons() {
   var resetStatsBtn = document.getElementById('reset-all-stats');
   if (resetStatsBtn) {
     resetStatsBtn.addEventListener('click', function() {
-      if (confirm('Reset all statistics? This will clear cycles completed, tasks cleared, and all badge progress. This cannot be undone.')) {
+      var ok = false;
+      try { ok = confirm('Reset all statistics? This will clear cycles completed, tasks cleared, and all badge progress. This cannot be undone.'); } catch (e) {}
+      if (ok) {
         resetAllStats();
         closeMenu();
         showNotification('📊 All statistics have been reset', 'success');
@@ -2939,8 +2965,10 @@ function setupMenuButtons() {
   var exitBtn = document.getElementById('exit-mini-cycle');
   if (exitBtn) {
     exitBtn.addEventListener('click', function() {
-      if (confirm('Exit miniCycle? Your data will be saved.')) {
-        window.close();
+      var ok = false;
+      try { ok = confirm('Exit miniCycle? Your data will be saved.'); } catch (e) {}
+      if (ok) {
+        try { window.close(); } catch (e) {}
       }
     });
   }
@@ -3343,59 +3371,75 @@ function handleFeedbackSubmission(e) {
   }
   
   // ✅ Create form data (ES5 compatible)
-  var formData = new FormData(feedbackForm);
-  
+  var formData;
+  try {
+    formData = new FormData(feedbackForm);
+  } catch (fdError) {
+    console.error('❌ Failed to create form data:', fdError);
+    handleFeedbackError();
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = 'Submit';
+    }
+    return;
+  }
+
   // ✅ Add additional data to match full version
   formData.append('subject', 'miniCycle Lite Feedback');
   formData.append('user_agent', navigator.userAgent);
   formData.append('timestamp', new Date().toISOString());
   formData.append('app_version', 'miniCycle Lite v1.0');
-  
+
   console.log('📤 Sending feedback to:', feedbackForm.action);
-  
+
   // ✅ Submit using XMLHttpRequest (ES5 compatible)
   var xhr = new XMLHttpRequest();
   xhr.open('POST', feedbackForm.action, true);
   
   xhr.onreadystatechange = function() {
-    console.log('📡 XHR State:', xhr.readyState, 'Status:', xhr.status);
-    
-    if (xhr.readyState === 4) {
-      // ✅ Reset button state
-      if (submitButton) {
-        submitButton.disabled = false;
-        submitButton.textContent = 'Submit';
-      }
-      
-      if (xhr.status === 200) {
-        console.log('✅ Feedback submitted successfully');
-        // ✅ Success - hide form and show thank you message
-        if (feedbackForm) feedbackForm.style.display = 'none';
-        if (thankYouMessage) {
-          thankYouMessage.style.display = 'block';
-          thankYouMessage.innerHTML = '✅ Thank you for your feedback!';
+    try {
+      console.log('📡 XHR State:', xhr.readyState, 'Status:', xhr.status);
+
+      if (xhr.readyState === 4) {
+        // ✅ Reset button state
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = 'Submit';
         }
-        
-        // ✅ Clear the form for next time
-        if (feedbackText) feedbackText.value = '';
-        var emailInput = document.querySelector('input[name="email"]');
-        if (emailInput) emailInput.value = '';
-        
-        // ✅ Show success notification
-        showNotification('Feedback sent successfully! Thank you!', 'success');
-        
-        // ✅ Auto-close modal after 3 seconds
-        setTimeout(function() {
-          closeFeedbackModal();
-          // Reset form display for next time
-          if (feedbackForm) feedbackForm.style.display = 'block';
-          if (thankYouMessage) thankYouMessage.style.display = 'none';
-        }, 3000);
-      } else {
-        console.error('❌ Feedback submission failed with status:', xhr.status);
-        // ✅ Error
-        handleFeedbackError();
+
+        if (xhr.status === 200) {
+          console.log('✅ Feedback submitted successfully');
+          // ✅ Success - hide form and show thank you message
+          if (feedbackForm) feedbackForm.style.display = 'none';
+          if (thankYouMessage) {
+            thankYouMessage.style.display = 'block';
+            thankYouMessage.textContent = 'Thank you for your feedback!';
+          }
+
+          // ✅ Clear the form for next time
+          if (feedbackText) feedbackText.value = '';
+          var emailInput = document.querySelector('input[name="email"]');
+          if (emailInput) emailInput.value = '';
+
+          // ✅ Show success notification
+          showNotification('Feedback sent successfully! Thank you!', 'success');
+
+          // ✅ Auto-close modal after 3 seconds
+          setTimeout(function() {
+            closeFeedbackModal();
+            // Reset form display for next time
+            if (feedbackForm) feedbackForm.style.display = 'block';
+            if (thankYouMessage) thankYouMessage.style.display = 'none';
+          }, 3000);
+        } else {
+          console.error('❌ Feedback submission failed with status:', xhr.status);
+          // ✅ Error
+          handleFeedbackError();
+        }
       }
+    } catch (xhrError) {
+      console.error('❌ Error in XHR callback:', xhrError);
+      handleFeedbackError();
     }
   };
   
@@ -3433,7 +3477,10 @@ function handleFeedbackSuccess() {
   if (feedbackForm) feedbackForm.style.display = 'none';
   if (thankYouMessage) {
     thankYouMessage.style.display = 'block';
-    thankYouMessage.innerHTML = '✅ Thank you for your feedback!<br>We appreciate your input.';
+    thankYouMessage.textContent = '';
+    thankYouMessage.appendChild(document.createTextNode('Thank you for your feedback!'));
+    thankYouMessage.appendChild(document.createElement('br'));
+    thankYouMessage.appendChild(document.createTextNode('We appreciate your input.'));
   }
   
   // ✅ Clear the form for next time
@@ -3457,7 +3504,10 @@ function handleFeedbackError() {
   var thankYouMessage = document.getElementById('thank-you-message');
   if (thankYouMessage) {
     thankYouMessage.style.display = 'block';
-    thankYouMessage.innerHTML = '❌ Failed to send feedback.<br>Please try again later or contact support.';
+    thankYouMessage.textContent = '';
+    thankYouMessage.appendChild(document.createTextNode('Failed to send feedback.'));
+    thankYouMessage.appendChild(document.createElement('br'));
+    thankYouMessage.appendChild(document.createTextNode('Please try again later or contact support.'));
     thankYouMessage.style.color = 'red';
   }
   
@@ -3922,6 +3972,7 @@ function showEmptyState() {
   ].join('');
   
   // ✅ Insert empty state before the task list
+  if (!taskList.parentNode) return;
   taskList.parentNode.insertBefore(emptyState, taskList);
   
   console.log('🎨 Empty state shown for lite version');
@@ -3941,7 +3992,9 @@ function hideEmptyState() {
   }
 }
 
-setTimeout(showEmptyState, 1000);
+setTimeout(function() {
+  try { showEmptyState(); } catch (e) { console.warn('⚠️ Empty state error:', e); }
+}, 1000);
 
 // ============================================
 // LOADING SPINNER CONTROL
@@ -3949,13 +4002,15 @@ setTimeout(showEmptyState, 1000);
 
 // Hide initial app loader when app is ready
 setTimeout(function() {
-  var appLoader = document.getElementById('app-loader');
-  if (appLoader) {
-    appLoader.classList.add('fade-out');
-    setTimeout(function() {
-      appLoader.style.display = 'none';
-    }, 500);
-  }
+  try {
+    var appLoader = document.getElementById('app-loader');
+    if (appLoader) {
+      addClass(appLoader, 'fade-out');
+      setTimeout(function() {
+        if (appLoader) appLoader.style.display = 'none';
+      }, 500);
+    }
+  } catch (e) { console.warn('⚠️ App loader error:', e); }
 }, 500);
 
 /**
@@ -3971,7 +4026,7 @@ window.showLoader = function(message) {
     if (textElement && msg) {
       textElement.textContent = msg;
     }
-    overlay.classList.add('active');
+    addClass(overlay, 'active');
   }
 };
 
@@ -3981,7 +4036,7 @@ window.showLoader = function(message) {
 window.hideLoader = function() {
   var overlay = document.getElementById('loading-overlay');
   if (overlay) {
-    overlay.classList.remove('active');
+    removeClass(overlay, 'active');
   }
 };
 

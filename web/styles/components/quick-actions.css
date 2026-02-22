@@ -12,8 +12,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
     user-select: none;
     -webkit-user-select: none;
 }
@@ -32,8 +32,8 @@
     border: none;
     color: var(--pref-panel-text, rgba(255, 255, 255, 0.7));
     font-size: 12px;
-    padding: 4px 8px;
-    border-radius: 6px;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-6);
     cursor: pointer;
     transition: background var(--transition-fast) ease, color var(--transition-fast) ease;
     line-height: 1;
@@ -52,7 +52,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: var(--space-1-5);
 }
 
 /* =============================================================================
@@ -62,7 +62,7 @@
 .quick-actions-slot {
     width: 44px;
     height: 44px;
-    border-radius: 10px;
+    border-radius: var(--radius-10);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -153,7 +153,7 @@
     font-size: 12px;
     color: var(--pref-panel-text, rgba(255, 255, 255, 0.45));
     text-align: center;
-    padding: 8px 4px;
+    padding: var(--space-2) var(--space-1);
     white-space: nowrap;
 }
 
@@ -180,12 +180,12 @@ body.hide-quick-actions .quick-actions-menu-row {
         top: 50%;
         transform: translateY(-50%);
         background: rgba(255, 255, 255, 0.12);
-        border-radius: 20px;
+        border-radius: var(--radius-2xl);
         border: 1px solid rgba(255, 255, 255, 0.25);
         box-shadow:
             0 4px 15px rgba(0, 0, 0, 0.08),
             inset 0 1px 1px rgba(255, 255, 255, 0.3);
-        padding: 10px 12px;
+        padding: 10px var(--space-3);
         z-index: var(--z-content);
         backdrop-filter: blur(2px);
         -webkit-backdrop-filter: blur(2px);
@@ -193,7 +193,7 @@ body.hide-quick-actions .quick-actions-menu-row {
     }
       .quick-actions-window .quick-actions-header {                                                                                                            
       flex-wrap: wrap;                                                                                                                                     
-      gap: 4px;                                                                                                                                            
+      gap: var(--space-1);                                                                                                                                            
   }  
 
     /* Compact multi-row grid to avoid overlapping slide arrow at left: 2% */
@@ -209,7 +209,7 @@ body.hide-quick-actions .quick-actions-menu-row {
     /* Mid-range: 3 columns (2 rows), header on one line */
     .quick-actions-window .quick-actions-header {
         flex-wrap: nowrap;
-        gap: 8px;
+        gap: var(--space-2);
     }
 
     .quick-actions-window .quick-actions-slots {
@@ -221,7 +221,7 @@ body.hide-quick-actions .quick-actions-menu-row {
 @media (min-width: 1450px) {
     .quick-actions-window {
         right: calc(100% + 30px);
-        padding: 12px 14px;
+        padding: var(--space-3) 14px;
     }
 
     /* Enough room — single row of 5 */
@@ -239,7 +239,7 @@ body.hide-quick-actions .quick-actions-menu-row {
 @media (min-width: 1800px) {
     .quick-actions-window {
         right: calc(100% + 40px);
-        padding: 12px 16px;
+        padding: var(--space-3) var(--space-4);
     }
 
     .quick-actions-slot {
@@ -254,7 +254,7 @@ body.hide-quick-actions .quick-actions-menu-row {
    ============================================================================= */
 
 .quick-actions-menu-row {
-    padding: 4px 12px;
+    padding: var(--space-1) var(--space-3);
 }
 
 /* Override default menu-section collapsed behavior — always visible */
@@ -264,7 +264,7 @@ body.hide-quick-actions .quick-actions-menu-row {
 }
 
 .quick-actions-menu-row .quick-actions-header {
-    margin-bottom: 10px;
+    margin-bottom: var(--space-2-5);
 }
 
 .quick-actions-menu-row .quick-actions-title {
@@ -297,13 +297,13 @@ body.hide-quick-actions .quick-actions-menu-row {
 }
 
 .quick-actions-menu-row .quick-actions-slots {
-    gap: 8px;
+    gap: var(--space-2);
 }
 
 .quick-actions-menu-row .quick-actions-slot {
     width: 42px;
     height: 42px;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
 }
 
 /* Desktop: hide the menu row version (desktop uses floating panel instead) */
@@ -342,8 +342,8 @@ dialog.quick-actions-picker-overlay[open] {
     position: relative;
     background: var(--theme-modal-bg, #ffffff);
     color: var(--theme-modal-text, #333);
-    border-radius: 16px;
-    padding: 20px;
+    border-radius: var(--radius-xl);
+    padding: var(--space-5);
     width: 420px;
     max-width: 95%;
     max-height: 80vh;
@@ -354,7 +354,7 @@ dialog.quick-actions-picker-overlay[open] {
 }
 
 .quick-actions-picker h3 {
-    margin: 0 0 16px 0;
+    margin: 0 0 var(--space-4) 0;
     font-size: var(--font-size-base);
     font-weight: 600;
     color: var(--theme-modal-text, #333);
@@ -362,7 +362,7 @@ dialog.quick-actions-picker-overlay[open] {
 }
 
 .quick-actions-picker-section {
-    margin-bottom: 12px;
+    margin-bottom: var(--space-3);
 }
 
 .quick-actions-picker-section-title {
@@ -371,22 +371,22 @@ dialog.quick-actions-picker-overlay[open] {
     text-transform: uppercase;
     letter-spacing: 0.8px;
     color: var(--theme-modal-text, #666);
-    margin-bottom: 8px;
-    padding-left: 4px;
+    margin-bottom: var(--space-2);
+    padding-left: var(--space-1);
 }
 
 .quick-actions-picker-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: var(--space-2);
 }
 
 .quick-actions-picker-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border-radius: 10px;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-10);
     background: var(--theme-input-bg, rgba(0, 0, 0, 0.05));
     border: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
     color: var(--theme-modal-text, #333);
@@ -425,14 +425,14 @@ dialog.quick-actions-picker-overlay[open] {
     color: var(--menu-close-text, white);
     font-size: var(--font-size-lg);
     font-weight: 700;
-    padding: 14px;
-    margin-top: 12px;
+    padding: var(--space-3-5);
+    margin-top: var(--space-3);
     margin-left: -20px;
     margin-right: -20px;
     margin-bottom: -20px;
     width: calc(100% + 40px);
     border: none;
-    border-radius: 0 0 16px 16px;
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
     cursor: pointer;
     transition: background var(--transition-fast) ease;
     text-align: center;
@@ -450,8 +450,8 @@ dialog.quick-actions-picker-overlay[open] {
     position: fixed;
     background: rgba(0, 0, 0, 0.85);
     color: white;
-    padding: 8px 14px;
-    border-radius: 8px;
+    padding: var(--space-2) 14px;
+    border-radius: var(--radius-md);
     font-size: var(--font-size-sm);
     z-index: calc(var(--z-modal) + 1);
     pointer-events: none;
@@ -468,11 +468,11 @@ dialog.quick-actions-picker-overlay[open] {
 
 .quick-actions-tooltip .tooltip-remove {
     display: block;
-    margin-top: 6px;
-    padding: 4px 10px;
+    margin-top: var(--space-1-5);
+    padding: var(--space-1) 10px;
     background: rgba(220, 53, 69, 0.8);
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     color: white;
     font-size: var(--font-size-xs);
     cursor: pointer;

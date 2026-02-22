@@ -432,6 +432,7 @@ export const DOM_IDS = Object.freeze({
     TASK_SEARCH_INPUT: 'task-search-input',
     TASK_SEARCH_CLEAR: 'task-search-clear',
     TASK_SEARCH_INPUT_ROW: 'task-search-input-row',
+    TASK_FILTER_SORT_ROW: 'task-filter-sort-row',
 
     // ---- Menu ----
     MENU_BUTTON: 'menu-button',

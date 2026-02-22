@@ -1,3 +1,7 @@
+## [1.1017] - 2026-02-22
+- Implement task priority color handling and update related styles and notifications
+
+
 ## [1.1014] - 2026-02-22
 - Add priority color picker notification and user preference handling for task priority
 

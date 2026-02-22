@@ -26,7 +26,7 @@ body.onboarding-active .complete-all-and-help-window-container {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 40px 20px;
+    padding: var(--space-10) var(--space-5);
     text-align: center;
     color: rgba(255, 255, 255, 0.9);
     min-height: 200px;
@@ -38,14 +38,14 @@ body.onboarding-active .onboarding-placeholder {
 
 .onboarding-placeholder-icon {
     font-size: 56px;
-    margin-bottom: 20px;
+    margin-bottom: var(--space-5);
     opacity: 0.9;
 }
 
 .onboarding-placeholder-title {
     font-size: var(--font-size-xl);
     font-weight: 600;
-    margin-bottom: 12px;
+    margin-bottom: var(--space-3);
     color: rgba(255, 255, 255, 0.95);
 }
 
@@ -88,10 +88,10 @@ body.onboarding-active .onboarding-placeholder {
 .onboarding-content {
     background: var(--theme-modal-bg, white);
     color: var(--theme-modal-text, #333);
-    padding: 36px 20px 20px;
+    padding: 36px var(--space-5) var(--space-5);
     width: 420px;
     max-width: 95%;
-    border-radius: 10px;
+    border-radius: var(--radius-10);
     text-align: center;
     position: relative;
     pointer-events: auto;
@@ -100,24 +100,24 @@ body.onboarding-active .onboarding-placeholder {
 .onboarding-content h2 {
     color: inherit;
     font-size: var(--font-size-2xl);
-    margin-bottom: 15px;
-    padding-left: 28px;
-    padding-right: 50px;
+    margin-bottom: var(--space-3-75);
+    padding-left: var(--space-7);
+    padding-right: var(--space-12-5);
 }
 
 .onboarding-content ul {
     text-align: left;
-    padding-left: 20px;
-    margin: 15px 0;
+    padding-left: var(--space-5);
+    margin: var(--space-3-75) 0;
 }
 
 .onboarding-content li {
-    margin-bottom: 8px;
+    margin-bottom: var(--space-2);
     line-height: 1.5;
 }
 
 .onboarding-content p {
-    margin: 10px 0;
+    margin: var(--space-2-5) 0;
     line-height: 1.6;
 }
 
@@ -129,7 +129,7 @@ body.onboarding-active .onboarding-placeholder {
     display: flex;
     justify-content: space-between;
     margin-top: 1rem;
-    gap: 10px;
+    gap: var(--space-2-5);
 }
 
 .onboarding-controls button {
@@ -167,8 +167,8 @@ body.onboarding-active .onboarding-placeholder {
 .onboarding-nav {
     display: flex;
     justify-content: center;
-    gap: 8px;
-    margin-top: 15px;
+    gap: var(--space-2);
+    margin-top: var(--space-3-75);
 }
 
 .onboarding-dot {
@@ -191,7 +191,7 @@ body.onboarding-active .onboarding-placeholder {
 .onboarding-step-indicator {
     font-size: var(--font-size-xs);
     color: #888;
-    margin-top: 10px;
+    margin-top: var(--space-2-5);
 }
 
 /* =============================================================================
@@ -200,7 +200,7 @@ body.onboarding-active .onboarding-placeholder {
 
 @media (max-width: 768px) {
     .onboarding-content {
-        padding: 15px;
+        padding: var(--space-3-75);
     }
 
     .onboarding-content h2 {
@@ -208,7 +208,7 @@ body.onboarding-active .onboarding-placeholder {
     }
 
     .onboarding-placeholder {
-        padding: 30px 15px;
+        padding: var(--space-7-5) var(--space-3-75);
     }
 
     .onboarding-placeholder-icon {
@@ -227,14 +227,14 @@ body.onboarding-active .onboarding-placeholder {
 #start-mini-cycle {
     display: block;
     width: 100%;
-    padding: 10px;
+    padding: var(--space-2-5);
     background: #007bff;
     color: white;
     border: none;
     font-size: var(--font-size-base);
-    margin-top: 10px;
+    margin-top: var(--space-2-5);
     cursor: pointer;
-    border-radius: 5px;
+    border-radius: var(--radius-5);
     transition: background var(--transition-fast) ease;
 }
 
@@ -265,8 +265,8 @@ dialog.miniCycle-prompt-dialog::backdrop {
 
 .miniCycle-prompt-box {
     background: rgb(50, 50, 50);
-    padding: 25px;
-    border-radius: 16px;
+    padding: var(--space-6-25);
+    border-radius: var(--radius-xl);
     border: 1px solid black;
     text-align: center;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
@@ -277,23 +277,23 @@ dialog.miniCycle-prompt-dialog::backdrop {
 .miniCycle-prompt-title {
     font-size: 1.4rem;
     font-weight: bold;
-    margin-bottom: 10px;
+    margin-bottom: var(--space-2-5);
     color: #fff;
-    padding-left: 28px;
+    padding-left: var(--space-7);
 }
 
 .miniCycle-prompt-message {
     font-size: 1rem;
-    margin-bottom: 15px;
+    margin-bottom: var(--space-3-75);
     color: #ccc;
 }
 
 .miniCycle-prompt-input {
     width: 90%;
-    padding: 10px;
+    padding: var(--space-2-5);
     font-size: 1rem;
     border: 1px solid #ccc;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     text-align: center;
     background-color: white;
     color: black;
@@ -306,14 +306,14 @@ dialog.miniCycle-prompt-dialog::backdrop {
 .miniCycle-prompt-buttons {
     display: flex;
     justify-content: space-around;
-    margin-top: 20px;
+    margin-top: var(--space-5);
 }
 
 .miniCycle-btn-cancel,
 .miniCycle-btn-confirm {
-    padding: 10px 20px;
+    padding: 10px var(--space-5);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font-size: 1rem;
     cursor: pointer;
     transition: background var(--transition-fast) ease;
@@ -339,10 +339,10 @@ dialog.miniCycle-prompt-dialog::backdrop {
 
 /* Sample tasks option styling */
 .miniCycle-sample-option {
-    margin-top: 15px;
-    padding: 10px;
+    margin-top: var(--space-3-75);
+    padding: var(--space-2-5);
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 }
 
 .miniCycle-sample-option label {
@@ -351,7 +351,7 @@ dialog.miniCycle-prompt-dialog::backdrop {
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
 }
 
 .miniCycle-sample-option input[type="checkbox"] {

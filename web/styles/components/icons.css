@@ -81,7 +81,7 @@ button .icon:only-child,
 .menu-item .icon {
     display: block;
     font-size: 1.5em;
-    margin-bottom: 4px;
+    margin-bottom: var(--space-1);
 }
 
 /* =============================================================================

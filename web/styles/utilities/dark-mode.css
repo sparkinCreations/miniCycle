@@ -984,7 +984,7 @@ body.dark-mode #addTaskBtn {
 
 body.dark-mode .title-row {
     background-color: var(--dark-surface-muted);
-    border-radius: 10px 10px 0 0;
+    border-radius: var(--radius-10) var(--radius-10) 0 0;
 }
 
 /* =============================================================================
@@ -1028,4 +1028,47 @@ body.dark-mode .dot::after {
 
 body.dark-mode .dot.active::after {
     background-color: rgba(100, 150, 255, 1);
+}
+
+/* =============================================================================
+   DARK MODE TASK SEARCH & FILTER/SORT
+   ============================================================================= */
+
+body.dark-mode .task-search-input-row,
+body.dark-mode .task-filter-sort-row {
+    background: var(--theme-bg-surface-elevated);
+}
+
+body.dark-mode .task-search-btn,
+body.dark-mode .task-search-clear {
+    color: var(--theme-text-secondary);
+}
+
+body.dark-mode .task-search-btn:hover,
+body.dark-mode .task-search-clear:hover {
+    color: var(--theme-text-primary);
+}
+
+body.dark-mode .task-search-input {
+    color: var(--theme-text-primary);
+}
+
+body.dark-mode .filter-chip,
+body.dark-mode .sort-chip {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--theme-text-secondary);
+}
+
+body.dark-mode .filter-chip:hover,
+body.dark-mode .sort-chip:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: var(--theme-text-primary);
+}
+
+body.dark-mode .filter-sort-divider {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .chip-group-icon {
+    color: var(--theme-text-primary);
 }

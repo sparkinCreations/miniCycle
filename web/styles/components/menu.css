@@ -14,12 +14,12 @@
     position: fixed;
     top: calc(env(safe-area-inset-top, 0px) + 50px);
     right: 10px;
-    padding: 10px;
-    border-radius: 8px;
+    padding: var(--space-2-5);
+    border-radius: var(--radius-md);
     box-shadow: var(--menu-shadow, 0 4px 6px rgba(0, 0, 0, 0.1));
     display: none;
     flex-direction: column;
-    gap: 10px;
+    gap: var(--space-2-5);
     z-index: var(--z-menu);
     min-width: 280px;
     max-width: 380px;
@@ -41,10 +41,10 @@
 .main-menu-header-row {
     display: flex;
     align-items: center;
-    padding: 8px;
-    padding-left: 32px;
+    padding: var(--space-2);
+    padding-left: var(--space-8);
     background: none;
-    border-radius: 8px 8px 0 0;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
     color: #fff;
     font-size: 1rem;
     font-weight: bold;
@@ -63,8 +63,8 @@
     font-size: var(--font-size-lg);
     font-weight: 600;
     color: var(--menu-header-text, #081d3ace);
-    margin-left: 8px;
-    gap: 2px;
+    margin-left: var(--space-2);
+    gap: var(--space-0-5);
 }
 
 .main-menu-header-row::after {
@@ -92,19 +92,19 @@
 .menu-sections {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--space-2);
     flex: 1;
     overflow-y: auto;
     min-height: 0;
-    padding-right: 8px;
+    padding-right: var(--space-2);
 }
 
 .menu-section {
     background: var(--menu-section-bg, rgba(255, 255, 255, 0.5));
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border-radius: 8px;
-    padding: 8px 10px;
+    border-radius: var(--radius-md);
+    padding: var(--space-2) 10px;
     border: 1px solid var(--menu-section-border, rgba(255, 255, 255, 0.3));
 }
 
@@ -114,8 +114,8 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--menu-section-header, #555);
-    margin-bottom: 6px;
-    padding-left: 4px;
+    margin-bottom: var(--space-1-5);
+    padding-left: var(--space-1);
 }
 
 /* Collapsible menu section headers */
@@ -124,9 +124,9 @@
     align-items: center;
     justify-content: space-between;
     cursor: pointer;
-    padding: 6px 8px;
-    margin: -8px -10px 6px -10px;
-    border-radius: 6px 6px 0 0;
+    padding: 6px var(--space-2);
+    margin: -8px -10px var(--space-1-5) -10px;
+    border-radius: var(--radius-6) var(--radius-6) 0 0;
     transition: background var(--transition-fast) ease;
     user-select: none;
 }
@@ -138,14 +138,14 @@
 .menu-section-header.collapsible:focus-visible {
     outline: 2px solid var(--accent-color, #007bff);
     outline-offset: -2px;
-    border-radius: 6px;
+    border-radius: var(--radius-6);
 }
 
 .menu-section-grid button:focus-visible,
 .menu-section-grid .menu-link-button:focus-visible {
     outline: 2px solid var(--accent-color, #007bff);
     outline-offset: 2px;
-    border-radius: 6px;
+    border-radius: var(--radius-6);
 }
 
 .menu-section-toggle {
@@ -158,7 +158,7 @@
 /* Collapsed state */
 .menu-section.collapsed .menu-section-header.collapsible {
     margin-bottom: -8px;
-    border-radius: 6px;
+    border-radius: var(--radius-6);
 }
 
 .menu-section.collapsed .menu-section-toggle {
@@ -172,7 +172,7 @@
 .menu-section-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 4px;
+    gap: var(--space-1);
 }
 
 .menu-section-grid button,
@@ -181,14 +181,14 @@
 .menu-section-grid .games-menu-option button {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
+    gap: var(--space-1-5);
+    padding: 6px var(--space-3);
     font-size: 13px;
     font-weight: 500;
     color: var(--menu-button-text, #333);
     background: var(--menu-button-bg, rgba(0, 0, 0, 0.04));
     border: none;
-    border-radius: 20px;
+    border-radius: var(--radius-2xl);
     cursor: pointer;
     transition: all var(--transition-fast) ease;
     white-space: nowrap;
@@ -238,7 +238,7 @@
 .menu-section-grid #open-themes-panel i,
 .menu-section-grid #open-themes-panel .icon {
     color: #d81b60;
-    margin-right: 4px;
+    margin-right: var(--space-1);
 }
 
 /* Games button - green icon (playful) */
@@ -287,23 +287,23 @@
 }
 
 .menu-container ul li {
-    margin: 5px 0;
+    margin: var(--space-1-25) 0;
 }
 
 .menu-container ul li button {
-    padding: 5px 5px;
+    padding: var(--space-1-25) var(--space-1-25);
     font-size: 13px;
     font-weight: 500;
     text-align: left;
     background: none;
     color: black;
     border: none;
-    border-radius: 5px;
+    border-radius: var(--radius-5);
     transition: background var(--transition-fast) ease-in-out, transform var(--transition-fast);
     display: flex;
     align-items: center;
     flex-direction: column;
-    gap: 1px;
+    gap: var(--space-px);
 }
 
 .menu-container button i,
@@ -330,7 +330,7 @@
    ============================================================================= */
 
 .mode-description-wrapper {
-    margin-bottom: 7px;
+    margin-bottom: var(--space-1-75);
 }
 
 .mode-description-toggle {
@@ -338,10 +338,10 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 8px 12px;
+    padding: var(--space-2) var(--space-3);
     background: rgba(0, 0, 0, 0.05);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font-size: 13px;
     font-weight: 600;
     color: #555;
@@ -368,7 +368,7 @@
     font-weight: 500;
     opacity: 0;
     margin-left: auto;
-    margin-right: 6px;
+    margin-right: var(--space-1-5);
     color: inherit;
     opacity: 0.5;
     transition: opacity var(--transition-fast) ease;
@@ -382,11 +382,11 @@
 }
 
 .mode-description {
-    margin-top: 8px;
-    padding: 12px;
+    margin-top: var(--space-2);
+    padding: var(--space-3);
     background: #f4f8ff;
     color: #222;
-    border-radius: 10px;
+    border-radius: var(--radius-10);
     box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.08);
     font-size: var(--font-size-sm);
     font-weight: 500;
@@ -405,7 +405,7 @@
 .mode-description.collapsed {
     max-height: 0;
     opacity: 0;
-    padding: 0 12px;
+    padding: 0 var(--space-3);
     margin-top: 0;
 }
 
@@ -418,10 +418,10 @@
     background: none;
     border: none;
     cursor: pointer;
-    padding: 8px 12px;
+    padding: var(--space-2) var(--space-3);
     text-align: left;
     font-size: 14px;
-    border-radius: 6px;
+    border-radius: var(--radius-6);
     transition: background var(--transition-fast) ease;
 }
 
@@ -437,7 +437,7 @@
 .menu-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    gap: var(--space-2);
 }
 
 .menu-grid button {
@@ -445,9 +445,9 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 12px 8px;
+    padding: var(--space-3) var(--space-2);
     background: rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font-size: 13px;
     transition: background var(--transition-fast) ease;
 }
@@ -461,7 +461,7 @@
     font-size: 22px;
     width: 22px;
     height: 22px;
-    margin-bottom: 4px;
+    margin-bottom: var(--space-1);
 }
 
 /* =============================================================================
@@ -475,8 +475,8 @@
     font-size: 32px;
     color: black;
     font-weight: bold;
-    padding: 10px 15px;
-    border-radius: 5px;
+    padding: var(--space-2-5) var(--space-3-75);
+    border-radius: var(--radius-5);
     cursor: pointer;
     transition: background var(--transition-normal) ease-in-out, opacity var(--transition-normal);
     z-index: var(--z-content);
@@ -566,12 +566,12 @@
     margin-left: -10px;
     margin-right: -10px;
     margin-bottom: -10px;
-    margin-top: 8px;
-    padding: 14px;
+    margin-top: var(--space-2);
+    padding: var(--space-3-5);
     background: var(--menu-close-bg, #3d7ab5);
     color: var(--menu-close-text, white);
     border: none;
-    border-radius: 0 0 8px 8px;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
     font-size: var(--font-size-lg);
     font-weight: 700;
     cursor: pointer;
@@ -632,7 +632,7 @@
     }
 
     .complete-all-and-help-window-container {
-        gap: 10px;
+        gap: var(--space-2-5);
         flex-direction: column;
         align-items: center;
         width: 100%;

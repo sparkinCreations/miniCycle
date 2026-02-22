@@ -125,15 +125,15 @@ body {
 
 @supports not (padding-top: env(safe-area-inset-top)) {
     body {
-        padding-top: 20px;
-        padding-bottom: 20px;
+        padding-top: var(--space-5);
+        padding-bottom: var(--space-5);
     }
 
     .safe-area-top {
-        padding-top: 20px;
+        padding-top: var(--space-5);
     }
 
     .safe-area-bottom {
-        padding-bottom: 20px;
+        padding-bottom: var(--space-5);
     }
 }

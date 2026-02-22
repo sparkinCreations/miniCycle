@@ -25,7 +25,7 @@
         0 8px 32px rgba(0, 0, 0, 0.12),
         0 2px 8px rgba(0, 0, 0, 0.08),
         inset 0 1px 1px rgba(255, 255, 255, 0.4);
-    padding: 20px 24px;
+    padding: var(--space-5) var(--space-6);
     border-radius: var(--radius-lg);
     display: flex;
     flex-direction: column;
@@ -59,13 +59,13 @@
    ============================================================================= */
 
 #stats-panel p {
-    margin: 8px 0;
+    margin: var(--space-2) 0;
     font-size: var(--font-size-sm);
 }
 
 #stats-header {
     margin-top: 0;
-    margin-bottom: 16px;
+    margin-bottom: var(--space-4);
     font-size: var(--font-size-xl);
     font-weight: 700;
 }
@@ -78,9 +78,9 @@
     background: var(--theme-button-secondary-bg);
     color: var(--theme-button-secondary-text);
     border: 1px solid var(--theme-stats-border, rgba(0, 0, 0, 0.1));
-    padding: 10px 16px;
+    padding: 10px var(--space-4);
     border-radius: var(--radius-md);
-    margin: 5px;
+    margin: var(--space-1-25);
     cursor: pointer;
     transition: background var(--transition-normal), transform var(--transition-fast);
 }
@@ -124,14 +124,14 @@
 @media (min-width: 1024px) {
     .stats-panel {
         max-width: 550px;
-        padding: 24px 32px;
+        padding: var(--space-6) var(--space-8);
     }
 }
 
 @media (min-width: 1280px) {
     .stats-panel {
         max-width: 650px;
-        padding: 28px 40px;
+        padding: 28px var(--space-10);
     }
 }
 
@@ -144,20 +144,20 @@
         width: 90vw;
         top: 55%; /* Center pushed down so top edge clears the fixed header */
         max-height: 54vh; /* Bottom edge stays above nav dots on small phones */
-        padding: 8px 10px;
+        padding: var(--space-2) 10px;
     }
 
     #stats-header {
         margin-top: 0;
-        margin-bottom: 4px;
+        margin-bottom: var(--space-1);
         font-size: var(--font-size-lg);
     }
 
     .current-routine-status,
     .theme-unlock-status {
-        margin-top: 2px;
-        margin-bottom: 2px;
-        padding: 5px 8px;
+        margin-top: var(--space-0-5);
+        margin-bottom: var(--space-0-5);
+        padding: 5px var(--space-2);
     }
 
     .current-routine-status h3,
@@ -169,12 +169,12 @@
     .current-cycle-doughnut-container {
         width: 52px;
         height: 52px;
-        margin: 3px auto;
+        margin: var(--space-0-75) auto;
     }
 
     #current-cycle-progress-text {
-        margin-top: 2px;
-        margin-bottom: 2px;
+        margin-top: var(--space-0-5);
+        margin-bottom: var(--space-0-5);
         font-size: 0.85em;
     }
 
@@ -184,35 +184,35 @@
     }
 
     .routine-buttons-container {
-        padding: 2px 0;
-        gap: 6px;
+        padding: var(--space-0-5) 0;
+        gap: var(--space-1-5);
     }
 
     .history-btn {
-        padding: 5px 10px;
+        padding: var(--space-1-25) var(--space-2-5);
         font-size: var(--font-size-xs);
     }
 
     .badge-container {
-        margin-top: 2px;
-        margin-bottom: 2px;
-        padding: 4px 8px;
+        margin-top: var(--space-0-5);
+        margin-bottom: var(--space-0-5);
+        padding: var(--space-1) var(--space-2);
     }
 
     .badge-container h3 {
-        margin-bottom: 2px;
+        margin-bottom: var(--space-0-5);
         font-size: var(--font-size-sm);
     }
 
     .achievement-badges-btn {
-        padding: 5px 10px;
+        padding: var(--space-1-25) var(--space-2-5);
         font-size: var(--font-size-xs);
-        margin-bottom: 4px;
+        margin-bottom: var(--space-1);
     }
 
     .badges {
-        gap: 5px;
-        margin-top: 3px;
+        gap: var(--space-1-25);
+        margin-top: var(--space-0-75);
     }
 
     .badge {
@@ -221,16 +221,16 @@
     }
 
     .global-stats-container {
-        margin-top: 2px;
-        padding: 2px 8px;
+        margin-top: var(--space-0-5);
+        padding: 2px var(--space-2);
     }
 
     #stats-panel p {
-        margin: 2px 0;
+        margin: var(--space-0-5) 0;
     }
 
     #milestone-progress-text {
-        margin: 0 0 3px 0;
+        margin: 0 0 var(--space-0-75) 0;
     }
 
     .progress-container {
@@ -245,7 +245,7 @@
 @media (max-width: 480px) {
     .stats-panel {
         width: 95vw;
-        padding: 6px 8px;
+        padding: 6px var(--space-2);
     }
 
     .current-cycle-doughnut-container {
@@ -264,15 +264,15 @@
    ============================================================================= */
 
 .current-routine-status {
-    margin-top: 12px;
-    margin-bottom: 12px;
+    margin-top: var(--space-3);
+    margin-bottom: var(--space-3);
     font-size: var(--font-size-sm);
     text-align: center;
     cursor: pointer;
     width: 100%;
     background: transparent;
-    border-radius: 12px;
-    padding: 12px;
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
     transition: background var(--transition-normal) ease;
 }
 
@@ -296,8 +296,8 @@
 .current-routine-status .clickable {
     cursor: pointer;
     background: rgba(255, 255, 255, 0.5);
-    padding: 10px 18px;
-    border-radius: 8px;
+    padding: var(--space-2-5) var(--space-4-5);
+    border-radius: var(--radius-md);
     display: inline-block;
     transition: background var(--transition-normal) ease, transform var(--transition-normal) ease;
 }
@@ -320,7 +320,7 @@
 .current-cycle-doughnut-container {
     width: 90px;
     height: 90px;
-    margin: 10px auto;
+    margin: var(--space-2-5) auto;
     display: none;
 }
 
@@ -357,8 +357,8 @@
     font-size: 1.05em;
     font-weight: 500;
     color: var(--theme-stats-text, #555);
-    margin-top: 8px;
-    margin-bottom: 8px;
+    margin-top: var(--space-2);
+    margin-bottom: var(--space-2);
     display: none;
 }
 
@@ -382,8 +382,8 @@
 
 .routine-buttons-container {
     display: none;
-    gap: 8px;
-    padding: 8px 0;
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
     justify-content: center;
     flex-wrap: wrap;
 }
@@ -395,10 +395,10 @@
 .history-btn {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
+    gap: var(--space-1-5);
+    padding: var(--space-2) 14px;
     border: 1px solid var(--theme-stats-border, rgba(0, 0, 0, 0.1));
-    border-radius: 20px;
+    border-radius: var(--radius-2xl);
     background: rgba(255, 255, 255, 0.5);
     color: var(--theme-stats-text, #333);
     font-size: var(--font-size-sm);
@@ -416,15 +416,15 @@
    ============================================================================= */
 
 .theme-unlock-status {
-    margin-top: 12px;
-    margin-bottom: 8px;
+    margin-top: var(--space-3);
+    margin-bottom: var(--space-2);
     font-size: var(--font-size-sm);
     text-align: center;
     cursor: pointer;
     width: 100%;
     background: transparent;
-    border-radius: 12px;
-    padding: 12px;
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
     transition: background var(--transition-normal) ease;
 }
 
@@ -447,8 +447,8 @@
 .theme-unlock-status .clickable {
     cursor: pointer;
     background: rgba(255, 255, 255, 0.5);
-    padding: 10px 18px;
-    border-radius: 8px;
+    padding: var(--space-2-5) var(--space-4-5);
+    border-radius: var(--radius-md);
     display: inline-block;
     transition: background var(--transition-normal) ease, transform var(--transition-normal) ease;
 }
@@ -488,7 +488,7 @@
 }
 
 .toggle-icon {
-    margin-left: 8px;
+    margin-left: var(--space-2);
     font-size: 0.9em;
     vertical-align: middle;
 }
@@ -499,31 +499,31 @@
 
 .badge-container {
     text-align: center;
-    margin-top: 8px;
-    margin-bottom: 16px;
+    margin-top: var(--space-2);
+    margin-bottom: var(--space-4);
     width: 100%;
-    padding: 12px;
+    padding: var(--space-3);
     background: rgba(255, 255, 255, 0.45);
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
 }
 
 .badge-container h3 {
     font-size: var(--font-size-lg);
     font-weight: 600;
-    margin-bottom: 12px;
+    margin-bottom: var(--space-3);
 }
 
 .badges {
     display: flex;
     justify-content: center;
-    gap: 12px;
-    margin-top: 12px;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
     user-select: none;
     cursor: default;
 }
 
 #all-routines-count {
-    margin: 0 0 6px 0;
+    margin: 0 0 var(--space-1-5) 0;
     text-align: center;
     font-size: var(--font-size-sm);
     font-weight: 400;
@@ -538,11 +538,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 8px 14px;
-    margin: 0 auto 8px;
+    gap: var(--space-1-5);
+    padding: var(--space-2) 14px;
+    margin: 0 auto var(--space-2);
     border: 1px solid var(--theme-stats-border, rgba(0, 0, 0, 0.1));
-    border-radius: 20px;
+    border-radius: var(--radius-2xl);
     background: rgba(255, 255, 255, 0.5);
     color: var(--theme-stats-text, #333);
     font-size: var(--font-size-sm);
@@ -559,8 +559,8 @@
 .achievement-count-badge {
     background: var(--color-primary, #4c79ff);
     color: white;
-    border-radius: 10px;
-    padding: 1px 6px;
+    border-radius: var(--radius-10);
+    padding: var(--space-px) var(--space-1-5);
     font-size: var(--font-size-xs);
     min-width: 18px;
     text-align: center;
@@ -571,20 +571,20 @@
    ============================================================================= */
 
 .global-stats-container {
-    margin-top: 12px;
-    padding: 8px 12px;
+    margin-top: var(--space-3);
+    padding: var(--space-2) var(--space-3);
 }
 
 #milestone-progress-text {
     font-size: 0.85em;
     color: var(--theme-stats-text, #595959);
-    margin: 0 0 8px 0;
+    margin: 0 0 var(--space-2) 0;
     text-align: center;
 }
 
 .progress-container {
     background: var(--theme-progress-track-bg, #d0d0d0);
-    border-radius: 6px;
+    border-radius: var(--radius-6);
     overflow: hidden;
     height: 10px;
     max-width: 85%;
@@ -754,19 +754,19 @@ body.theme-dark-ocean .badge-container {
     /* .clickable wrapper inside section headers */
     .current-routine-status .clickable,
     .theme-unlock-status .clickable {
-        padding: 6px 12px;
+        padding: 6px var(--space-3);
     }
 
     /* Doughnut base rule uses 90px — override here */
     .current-cycle-doughnut-container {
         width: 55px;
         height: 55px;
-        margin: 3px auto;
+        margin: var(--space-0-75) auto;
     }
 
     /* Badge container h3 base uses font-size-lg */
     .badge-container h3 {
         font-size: var(--font-size-sm);
-        margin-bottom: 3px;
+        margin-bottom: var(--space-0-75);
     }
 }
