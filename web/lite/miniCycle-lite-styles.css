@@ -26,7 +26,7 @@
      • Fixed values instead of calc() where possible
      • CSS variable fallbacks for IE11
 
-   Last meaningful update: v2.068 (intentionally static thereafter)
+   Last meaningful update: v2.069 (intentionally static thereafter)
    © 2026 sparkinCreations - https://sparkincreations.com
    ================================================================================ */
 
@@ -153,22 +153,22 @@ body.is-iphone .mini-cycle-header-row {
     padding-bottom: 20px;
 }
 
-/* Menu button: align with logo area (just below Dynamic Island) */
-body.is-iphone .menu-button {
-    top: 0;
-}
-
-/* Mode selector: snug below header */
-body.is-iphone .mobile-mode-selector-wrapper {
-    top: calc(var(--header-total) - 30px);
-    z-index: 21; /* Above header row (z-index: 20) */
-}
-
 body.is-iphone #app-container {
     padding-top: calc(var(--header-total) + var(--mode-bar) - 10px);
 }
 
 @media (max-width: 768px) {
+    /* Menu button: align with logo, not top of header padding */
+    body.is-iphone .menu-button {
+        top: 65px;
+    }
+
+    /* Mode selector: snug below header */
+    body.is-iphone .mobile-mode-selector-wrapper {
+        top: calc(var(--header-total) - 30px);
+        z-index: 21;
+    }
+
     body.is-iphone #task-view {
         top: 55%;
     }
