@@ -26,7 +26,7 @@
      • Fixed values instead of calc() where possible
      • CSS variable fallbacks for IE11
 
-   Last meaningful update: v2.072 (intentionally static thereafter)
+   Last meaningful update: v2.073 (intentionally static thereafter)
    © 2026 sparkinCreations - https://sparkincreations.com
    ================================================================================ */
 
@@ -149,6 +149,8 @@ body.is-iphone {
 }
 
 body.is-iphone .mini-cycle-header-row {
+    height: auto;              /* Override fixed 60px so padding grows the box naturally */
+    min-height: 60px;          /* Preserve original minimum */
     padding-top: var(--safe-top);
     padding-bottom: 20px;
 }
@@ -158,10 +160,8 @@ body.is-iphone #app-container {
 }
 
 @media (max-width: 768px) {
-    /* Menu button: pin to top-right, at logo level (below Dynamic Island) */
-    body.is-iphone .menu-button {
-        top: -25px;
-    }
+    /* Menu button: inherits top: 40% from base mobile rule — resolves
+       correctly now that the header uses height: auto instead of fixed 60px */
 
     /* Mode selector: snug below header */
     body.is-iphone .mobile-mode-selector-wrapper {
