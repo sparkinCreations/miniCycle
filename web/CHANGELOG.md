@@ -1,3 +1,7 @@
+## [1.1009] - 2026-02-21
+- Refactor stats panel styles for improved layout and responsiveness on small screens
+
+
 ## [1.1008] - 2026-02-21
 - Update application version to 1.1007 in CHANGELOG.md
 - Refactor stats panel styles for improved spacing and responsiveness
