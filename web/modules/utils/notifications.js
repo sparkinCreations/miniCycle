@@ -363,6 +363,15 @@ export class MiniCycleNotifications {
    */
   show(message, type = "default", duration = null) {
     try {
+      // Check user preference — errors always show; all others suppressed when disabled
+      if (type !== 'error') {
+        const AppState = _deps.AppState;
+        if (AppState?.isReady?.()) {
+          const notificationsEnabled = AppState.get()?.settings?.notificationsEnabled ?? true;
+          if (!notificationsEnabled) return;
+        }
+      }
+
       const notificationContainer = document.getElementById(DOM_IDS.NOTIFICATION_CONTAINER);
       if (!notificationContainer) {
         console.warn("⚠️ Notification container not found.");
