@@ -1,3 +1,7 @@
+## [1.1010] - 2026-02-22
+- Add mobile font-size overrides and adjust styles for better responsiveness
+
+
 ## [1.1009] - 2026-02-21
 - Refactor stats panel styles for improved layout and responsiveness on small screens
 
