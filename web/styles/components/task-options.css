@@ -618,7 +618,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
 
 /* Colored icons for each option type */
 .task-option-item[data-option-key="highPriority"] .option-icon {
-    color: var(--color-orange-icon);
+    color: var(--task-priority-color, var(--priority-color, var(--color-orange-icon)));
 }
 
 .task-option-item[data-option-key="rename"] .option-icon {

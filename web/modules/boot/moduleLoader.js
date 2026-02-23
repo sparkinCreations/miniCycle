@@ -721,6 +721,8 @@ function buildModuleDependencies(manifest, deps, coreResult) {
             () => deps.progress?.updateProgressBar),
         checkCompleteAllButton: createValidatedWrapper('checkCompleteAllButton',
             () => deps.ui?.checkCompleteAllButton),
+        applyCustomColors: createValidatedWrapper('applyCustomColors',
+            () => deps.ui?.applyCustomColors),
 
         // Theme manager instance (from deps.features) - returns instance when called as function
         themeManager: () => deps.features?.themeManager,
@@ -733,6 +735,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         refreshThemeToggles: (...args) => deps.features?.refreshThemeToggles?.(...args),
         setupThemesPanel: (...args) => deps.features?.setupThemesPanel?.(...args),
         renderVocabThemes: (...args) => deps.features?.themeManager?.renderVocabThemes?.(...args),
+        refreshThemeLabels: (...args) => deps.features?.themeManager?.refreshThemeLabels?.(...args),
 
         // Games functions (from gamesManager instance in deps.ui)
         unlockMiniGame: (...args) => deps.ui?.gamesManager?.unlockMiniGame?.(...args),
