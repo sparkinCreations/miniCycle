@@ -723,25 +723,45 @@ export class PreferencesManager {
     }
 
     /**
-     * Update theme notice visibility based on current theme
+     * Update theme notice visibility and text based on current theme
      */
     updateThemeNotice() {
         const notice = document.getElementById(DOM_IDS.PREFERENCES_THEME_NOTICE);
         if (!notice) return;
 
-        const isDefaultTheme = this.isDefaultTheme();
-        notice.style.display = isDefaultTheme ? 'none' : 'flex';
+        const root = document.documentElement;
+        const vocabTheme = root.dataset.vocabTheme;
+        const isVocabThemeActive = !!vocabTheme && vocabTheme !== 'classic';
+
+        if (isVocabThemeActive) {
+            const themeName = root.dataset.vocabThemeName || vocabTheme;
+            const textNode = notice.firstChild;
+            if (textNode?.nodeType === Node.TEXT_NODE) {
+                textNode.textContent = `${themeName} theme colors are active. Switch to Classic to customize. `;
+            }
+            notice.style.display = 'flex';
+        } else if (!this.isDefaultTheme()) {
+            const textNode = notice.firstChild;
+            if (textNode?.nodeType === Node.TEXT_NODE) {
+                textNode.textContent = 'Custom colors only apply in the Default theme. ';
+            }
+            notice.style.display = 'flex';
+        } else {
+            notice.style.display = 'none';
+        }
     }
 
     /**
-     * Check if the default theme is active
+     * Check if the default theme is active (no CSS-class override and no vocab theme)
      * @returns {boolean}
      */
     isDefaultTheme() {
         const body = document.body;
+        const root = document.documentElement;
         return !body.classList.contains('theme-dark-ocean') &&
                !body.classList.contains('theme-golden-glow') &&
-               !body.classList.contains('dark-mode');
+               !body.classList.contains('dark-mode') &&
+               (!root.dataset.vocabTheme || root.dataset.vocabTheme === 'classic');
     }
 
     /**
@@ -1342,7 +1362,13 @@ export class PreferencesManager {
         const root = document.documentElement;
 
         if (!this.isDefaultTheme()) {
-            this.removeCustomColors();
+            // Only clear --pref-* vars for CSS-class overrides (dark mode, legacy themes).
+            // Vocab themes apply their own --pref-* vars directly — don't clear them.
+            if (document.body.classList.contains('dark-mode') ||
+                document.body.classList.contains('theme-dark-ocean') ||
+                document.body.classList.contains('theme-golden-glow')) {
+                this.removeCustomColors();
+            }
             return;
         }
 

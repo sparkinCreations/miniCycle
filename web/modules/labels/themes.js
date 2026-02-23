@@ -70,6 +70,34 @@ export const THEME_DEFINITIONS = {
             cycleComplete: '👍',
             celebrate:     '🔥',
         },
+        colorPreset: {
+            appBg:                '#c05215',  // deeper orange — white text 4.71:1 ✓
+            taskListBg:           'rgba(255, 225, 195, 0.5)',  // 50% transparent — orange bleeds through
+            taskBg:               '#ffd0a0',  // warm amber card — text 11.3:1 ✓, not white
+            taskText:             '#3d1a00',  // dark brown — 11.3:1 on taskBg ✓
+            titleBg:              '#f0c080',  // amber title bar — titleText 5.6:1 ✓
+            titleText:            '#7a2d00',  // on titleBg — 5.6:1 ✓
+            checkboxBg:           '#fbecb6',  // deep orange — white checkmark 5.0:1 ✓
+            checkboxIncompleteBg: '#fbecb6',  // deeper terracotta — 3.6:1 on amber taskBg ✓
+            checkmark:            '#964e24',
+            completeBtn:          '#cb8800',  // deep orange — white text 5.0:1 ✓
+            clearBtn:             '#7a3009',  // dark brown — white text 9.5:1 ✓
+            progressBar:          '#ffb700',  // vibrant orange-amber bar fill
+            statsBg:              'rgba(255, 225, 195, 0.5)',  // matches task list panel
+            statsText:            '#3d1a00',  // dark brown — 6.9:1 on blended bg ✓
+            statsProgress:        '#b04e12',  // deep orange arc
+            statsDoughnut:        '#d79a00',  // medium orange track
+            panelText:            '#ffffff',  // on appBg — 4.71:1 ✓
+            celebrationBg:        'rgba(192, 82, 21, 0.97)',   // fiery orange popup
+            celebrationShadow:    'rgba(192, 82, 21, 0.4)',
+            priorityColor:        '#b04e12',
+        },
+        // Priority picker options — darkened for contrast on warm amber taskBg (#ffd0a0)
+        priorityColors: [
+            { hex: '#8b1a1a', labelKey: 'notify.priorityColorRed' },
+            { hex: '#7a4d00', labelKey: 'notify.priorityColorYellow' },
+            { hex: '#1a5c2e', labelKey: 'notify.priorityColorGreen' },
+        ],
         preview: {
             tagline:      'Build streaks, track habits',
             sampleLabels: ['Habit', 'Streak', 'Complete Day'],
@@ -96,6 +124,34 @@ export const THEME_DEFINITIONS = {
             cycleComplete: '💪',
             celebrate:     '🏆',
         },
+        colorPreset: {
+            appBg:                '#1e8c52',
+            taskListBg:           '#f0fdf4',
+            taskBg:               '#ffffff',
+            taskText:             '#0d2b1a',
+            titleBg:              '#e8f5ee',
+            titleText:            '#0d5c2d',
+            checkboxBg:           '#1e8c52',
+            checkboxIncompleteBg: '#b8e8cc',
+            checkmark:            '#ffffff',
+            completeBtn:          '#1e8c52',
+            clearBtn:             '#2dab67',
+            progressBar:          '#2dab67',
+            statsBg:              '#f0fdf4',
+            statsText:            '#0d2b1a',
+            statsProgress:        '#1e8c52',
+            statsDoughnut:        '#2dab67',
+            panelText:            '#ffffff',
+            celebrationBg:        'rgba(30, 140, 82, 0.97)',   // athletic green popup
+            celebrationShadow:    'rgba(30, 140, 82, 0.4)',
+            priorityColor:        '#1e8c52',
+        },
+        // Priority picker options — improved contrast on white taskBg (#ffffff)
+        priorityColors: [
+            { hex: '#c0392b', labelKey: 'notify.priorityColorRed' },
+            { hex: '#b8860b', labelKey: 'notify.priorityColorYellow' },
+            { hex: '#27ae60', labelKey: 'notify.priorityColorGreen' },
+        ],
         preview: {
             tagline:      'Track workouts, build routines',
             sampleLabels: ['Exercise', 'Workout', 'Complete Workout'],
@@ -122,6 +178,34 @@ export const THEME_DEFINITIONS = {
             cycleComplete: '📚',
             celebrate:     '🎓',
         },
+        colorPreset: {
+            appBg:                '#3d35b5',
+            taskListBg:           '#f5f3ff',
+            taskBg:               '#ffffff',
+            taskText:             '#1e1b4b',
+            titleBg:              '#ede9fe',
+            titleText:            '#2d2899',
+            checkboxBg:           '#3d35b5',
+            checkboxIncompleteBg: '#c4b5fd',
+            checkmark:            '#ffffff',
+            completeBtn:          '#3d35b5',
+            clearBtn:             '#6d28d9',
+            progressBar:          '#6d28d9',
+            statsBg:              '#f5f3ff',
+            statsText:            '#1e1b4b',
+            statsProgress:        '#3d35b5',
+            statsDoughnut:        '#6d28d9',
+            panelText:            '#ffffff',
+            celebrationBg:        'rgba(61, 53, 181, 0.97)',   // deep indigo popup
+            celebrationShadow:    'rgba(61, 53, 181, 0.4)',
+            priorityColor:        '#3d35b5',
+        },
+        // Priority picker options — improved contrast on white taskBg (#ffffff)
+        priorityColors: [
+            { hex: '#c0392b', labelKey: 'notify.priorityColorRed' },
+            { hex: '#b8860b', labelKey: 'notify.priorityColorYellow' },
+            { hex: '#27ae60', labelKey: 'notify.priorityColorGreen' },
+        ],
         preview: {
             tagline:      'Study topics, track sessions',
             sampleLabels: ['Topic', 'Study Session', 'Complete Session'],
@@ -148,6 +232,34 @@ export const THEME_DEFINITIONS = {
             cycleComplete: '🧼',
             celebrate:     '🧹',
         },
+        colorPreset: {
+            appBg:                '#0a8db5',
+            taskListBg:           '#f0fdff',
+            taskBg:               '#ffffff',
+            taskText:             '#0c2b33',
+            titleBg:              '#e0f8ff',
+            titleText:            '#0e5260',
+            checkboxBg:           '#0a8db5',
+            checkboxIncompleteBg: '#a5eaf3',
+            checkmark:            '#ffffff',
+            completeBtn:          '#0a8db5',
+            clearBtn:             '#06b6d4',
+            progressBar:          '#06b6d4',
+            statsBg:              '#f0fdff',
+            statsText:            '#0c2b33',
+            statsProgress:        '#0a8db5',
+            statsDoughnut:        '#06b6d4',
+            panelText:            '#ffffff',
+            celebrationBg:        'rgba(10, 141, 181, 0.97)',  // fresh teal popup
+            celebrationShadow:    'rgba(10, 141, 181, 0.4)',
+            priorityColor:        '#0a8db5',
+        },
+        // Priority picker options — improved contrast on white taskBg (#ffffff)
+        priorityColors: [
+            { hex: '#c0392b', labelKey: 'notify.priorityColorRed' },
+            { hex: '#b8860b', labelKey: 'notify.priorityColorYellow' },
+            { hex: '#27ae60', labelKey: 'notify.priorityColorGreen' },
+        ],
         preview: {
             tagline:      'Tackle chores, run clean sweeps',
             sampleLabels: ['Chore', 'Clean Sweep', 'Complete Chores'],

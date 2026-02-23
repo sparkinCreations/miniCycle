@@ -37,6 +37,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, Z_INDEX } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { THEME_DEFINITIONS } from '../labels/themes.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -1353,11 +1354,15 @@ async setDefaultPosition(notificationContainer) {
    * @param {Function|null} [onColorSelect=null] - Callback(color) to persist the chosen color
    */
   showPriorityColorPickerNotification(currentColor = '#dc3545', duration = 8000, taskId = null, onColorSelect = null) {
-    const COLORS = [
-      { hex: '#dc3545', label: getLabel('notify.priorityColorRed') },
-      { hex: '#facc15', label: getLabel('notify.priorityColorYellow') },
-      { hex: '#28a745', label: getLabel('notify.priorityColorGreen') },
-    ];
+    const vocabThemeId = document.documentElement.dataset?.vocabTheme;
+    const activeThemeDef = (vocabThemeId && vocabThemeId !== 'classic') ? THEME_DEFINITIONS[vocabThemeId] : null;
+    const COLORS = activeThemeDef?.priorityColors
+      ? activeThemeDef.priorityColors.map(c => ({ hex: c.hex, label: getLabel(c.labelKey) }))
+      : [
+          { hex: '#dc3545', label: getLabel('notify.priorityColorRed') },
+          { hex: '#facc15', label: getLabel('notify.priorityColorYellow') },
+          { hex: '#28a745', label: getLabel('notify.priorityColorGreen') },
+        ];
 
     const swatchesHTML = COLORS.map(c => {
       const isSelected = c.hex === currentColor;

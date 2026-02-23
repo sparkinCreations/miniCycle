@@ -42,7 +42,8 @@ const di = createDIModule('RoutineLoader', {
   taskToAddTaskOptions: optional(null),  // From taskUtils - injected to avoid duplicate module loading
   updateSearchVisibility: optional(null),  // Task search visibility based on count
   syncModeFromToggles: optional(null),  // Sync mode selector with routine's saved mode
-  completedTasksManager: optional(null)  // For organizing completed tasks into dropdown
+  completedTasksManager: optional(null),  // For organizing completed tasks into dropdown
+  refreshThemeLabels: optional(null),  // Re-apply vocab theme colors and labels on routine switch
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
@@ -449,6 +450,7 @@ function updateDependentComponents() {
   _deps.checkCompleteAllButton?.();
   _deps.updateMainMenuHeader?.();
   _deps.updateStatsPanel?.();
+  _deps.refreshThemeLabels?.();  // Apply vocab theme colors and labels for the newly active routine
 }
 
 /**

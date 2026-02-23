@@ -1,3 +1,7 @@
+## [1.1032] - 2026-02-23
+- feat: enhance task and cycle labels for improved pluralization and clarity
+
+
 ## [1.1031] - 2026-02-23
 - feat: enhance notifications and labels for improved user feedback and consistency
 

@@ -131,7 +131,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/themeManager.js',
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'showNotification', 'getModal', 'getElementById', 'querySelector', 'querySelectorAll'],
-        optionalDeps: ['vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'updateHelpWindow'],
+        optionalDeps: ['vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'updateHelpWindow', 'applyCustomColors'],
         provides: ['applyTheme', 'updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'initThemesPanel', 'refreshThemeToggles', 'setupThemesPanel'],
         provideInstance: 'themeManager',
         api: 'features',

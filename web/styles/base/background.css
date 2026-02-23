@@ -34,6 +34,15 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
     background-size: cover;
 }
 
+/* Vocab theme background — belt-and-suspenders selector for vocab themes.
+   themeManager sets --pref-app-bg on body.style directly (not html), so the
+   body always has a tracked dependency on the var and repaints immediately.
+   This rule provides an extra specificity layer as a fallback. */
+html[data-vocab-theme] body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
+    background: var(--pref-app-bg, var(--theme-bg-gradient));
+    background-size: cover;
+}
+
 /* Custom pattern color (Preferences - Default theme only) */
 body.custom-pattern:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow):not(.no-bg-pattern)::before {
     background: var(--custom-pattern-bg) repeat;

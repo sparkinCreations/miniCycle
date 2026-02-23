@@ -50,7 +50,8 @@ const di = createDIModule('ThemeManager', {
     checkCompleteAllButton: optional(null),
     updateStatsPanel: optional(null),
     updateMainMenuHeader: optional(null),
-    updateHelpWindow: optional(null)
+    updateHelpWindow: optional(null),
+    applyCustomColors: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -71,6 +72,58 @@ export function setThemeManagerDependencies(deps) {
     console.log('🎨 ThemeManager dependencies injected');
 }
 
+// Mapping from colorPreset keys to --pref-* CSS variable names
+const VOCAB_THEME_CSS_VARS = {
+    appBg:                '--pref-app-bg',
+    taskListBg:           '--pref-task-list-bg',
+    taskBg:               '--pref-task-bg',
+    taskText:             '--pref-task-text',
+    titleBg:              '--pref-title-bg',
+    titleText:            '--pref-title-text',
+    checkboxBg:           '--pref-checkbox-bg',
+    checkboxIncompleteBg: '--pref-checkbox-incomplete-bg',
+    checkmark:            '--pref-checkmark',
+    completeBtn:          '--pref-complete-btn',
+    clearBtn:             '--pref-clear-btn',
+    progressBar:          '--pref-progress-bar',
+    statsBg:              '--pref-stats-bg',
+    statsText:            '--pref-stats-text',
+    statsProgress:        '--pref-stats-progress',
+    statsDoughnut:        '--pref-stats-doughnut',
+    panelText:            '--pref-panel-text',
+    celebrationBg:        '--pref-celebration-bg',
+    celebrationShadow:    '--pref-celebration-shadow',
+    priorityColor:        '--task-priority-color',
+};
+
+// ─── Dark-mode / vocab-theme restore ─────────────────────────────────────────
+// When dark mode is toggled ON while a vocab theme is active, we clear the
+// direct body.style.background so dark mode CSS rules take over.
+// When dark mode is toggled OFF, we restore it.
+// CSS :not(.dark-mode) guards handle all --pref-* custom property vars automatically;
+// only the direct `background` property on body.style needs manual management.
+let _darkModeObserver = null;
+
+function _setupDarkModeObserver() {
+    if (_darkModeObserver) return;
+    _darkModeObserver = new MutationObserver(() => {
+        const root = document.documentElement;
+        const vocabThemeId = root.dataset?.vocabTheme;
+        if (!vocabThemeId || vocabThemeId === 'classic') return;
+
+        if (document.body.classList.contains('dark-mode')) {
+            document.body.style.removeProperty('background');
+        } else {
+            const activeTheme = _deps.vocabThemeManager?.getActiveTheme?.();
+            if (activeTheme?.colorPreset?.appBg) {
+                document.body.style.setProperty('background', activeTheme.colorPreset.appBg);
+            }
+        }
+    });
+    _darkModeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
  * Refresh all visible theme-sensitive labels in the UI.
  * Called after the user selects a new vocab theme so the page updates
@@ -78,6 +131,45 @@ export function setThemeManagerDependencies(deps) {
  * active theme's labels (AppState is updated before this is called).
  */
 function _refreshLiveLensLabels() {
+    _setupDarkModeObserver();
+
+    // Apply vocab theme color preset (or restore Classic personalization)
+    const activeTheme = _deps.vocabThemeManager?.getActiveTheme?.();
+    const themeId = activeTheme?.id ?? 'classic';
+    const root = document.documentElement;
+
+    if (themeId !== 'classic' && activeTheme?.colorPreset) {
+        // Set vars on body.style so child-element rules (task cards, stats panel,
+        // etc.) resolve them from body's inline style — more correct scope than
+        // html.style, and child elements always track ancestor custom property changes.
+        for (const [key, cssVar] of Object.entries(VOCAB_THEME_CSS_VARS)) {
+            if (activeTheme.colorPreset[key]) {
+                document.body.style.setProperty(cssVar, activeTheme.colorPreset[key]);
+            }
+        }
+        // Body's own `background: var(--pref-app-bg)` does NOT reliably repaint when
+        // the var transitions from "unset fallback" to "first set" on the element itself
+        // (Chrome does not invalidate body's computed style in that case). Setting the
+        // background property directly on body.style always triggers an immediate repaint.
+        if (activeTheme.colorPreset.appBg) {
+            document.body.style.setProperty('background', activeTheme.colorPreset.appBg);
+        }
+        root.dataset.vocabTheme = themeId;
+        root.dataset.vocabThemeName = activeTheme.name;
+    } else {
+        // Clear ALL vocab theme CSS vars before restoring Classic personalization.
+        // applyCustomColors() only covers COLOR_MAP vars — celebration and priority
+        // vars live outside that map and must be removed explicitly.
+        for (const cssVar of Object.values(VOCAB_THEME_CSS_VARS)) {
+            document.body.style.removeProperty(cssVar);
+        }
+        // Remove the direct background override so Classic CSS / user colors take over.
+        document.body.style.removeProperty('background');
+        delete root.dataset.vocabTheme;
+        delete root.dataset.vocabThemeName;
+        _deps.applyCustomColors?.();
+    }
+
     // Injected helpers (checkCompleteAllButton, updateStatsPanel, updateMainMenuHeader)
     // also call getLabel() internally — run them first so their DOM writes land,
     // then our explicit updates below ensure the key elements are correct too.
@@ -240,8 +332,11 @@ export class ThemeManager {
             // Use black-translucent to show body background-color
             statusBarStyle = 'black-translucent';
 
-            // Check for custom appBg color from preferences
-            const customAppBg = getComputedStyle(document.documentElement).getPropertyValue('--pref-app-bg').trim();
+            // Check for custom appBg color from preferences or active vocab theme.
+            // Read from body (not documentElement) — vocab theme vars are set on
+            // body.style, and getComputedStyle(body) also inherits user pref vars
+            // from html.style, so both sources are covered.
+            const customAppBg = getComputedStyle(document.body).getPropertyValue('--pref-app-bg').trim();
 
             if (customAppBg) {
                 // Use custom app background color for status bar

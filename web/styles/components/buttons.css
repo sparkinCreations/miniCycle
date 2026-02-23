@@ -544,7 +544,7 @@ body.hide-help-window .help-window {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(76, 175, 79, 0.97);
+    background: var(--pref-celebration-bg, rgba(76, 175, 79, 0.97));
     color: var(--color-black);
     width: 120px;
     height: 120px;
@@ -554,7 +554,7 @@ body.hide-help-window .help-window {
     font-size: 56px;
     font-weight: bold;
     border-radius: 50%;
-    box-shadow: 0 6px 24px rgba(76, 175, 79, 0.4);
+    box-shadow: 0 6px 24px var(--pref-celebration-shadow, rgba(76, 175, 79, 0.4));
     animation: completionBounce 1.5s ease-out;
     z-index: var(--z-modal);
 }

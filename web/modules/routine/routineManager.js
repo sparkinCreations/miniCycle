@@ -230,6 +230,7 @@ export class RoutineManager {
                     console.log('💾 New cycle saved via AppState');
 
                     // ✅ Complete the setup after user interaction
+                    this.deps.refreshThemeLabels?.();  // Apply Classic colors immediately (new routine defaults to classic)
                     this.deps.completeInitialSetup(finalTitle, appState.get());
                 }
             });
@@ -492,6 +493,7 @@ export class RoutineManager {
                 this.deps.updateProgressBar();
                 this.deps.checkCompleteAllButton();
                 this.deps.updateMainMenuHeader();
+                this.deps.refreshThemeLabels?.();  // Apply Classic colors (new routine defaults to classic)
                 // Note: autoSave removed - AppState.update(immediate=true) already persisted
 
                 // ✅ Notify undo system of new cycle

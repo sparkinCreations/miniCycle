@@ -685,6 +685,10 @@ export class RoutineSwitcher {
             }
         }, 50);
 
+        // Re-apply theme labels/colors in case the active routine was renamed
+        // (activeCycleId key changed — vocabThemeManager must re-resolve from new key)
+        this.deps.refreshThemeLabels?.();
+
         this.deps.showNotification(`✅ Renamed to "${uniqueName}"`, "success", 2000);
     }
 
@@ -778,20 +782,8 @@ export class RoutineSwitcher {
                 `${icon} ${getLabel('notify.themeApplied', { vars: { name: def.name } })}`,
                 'success', 3000
             );
-            this.deps.checkCompleteAllButton?.();
-            this.deps.updateStatsPanel?.();
-            this.deps.updateMainMenuHeader?.();
-            const taskInputEl = document.getElementById(DOM_IDS.TASK_INPUT);
-            if (taskInputEl) taskInputEl.placeholder = getLabel('action.addTask');
-            const addTaskText = document.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_TEXT);
-            if (addTaskText) addTaskText.textContent = getLabel('action.addTask');
-            const completeBtn = document.getElementById(DOM_IDS.COMPLETE_ALL);
-            if (completeBtn) {
-                const isToDoMode = document.body.classList.contains('todo-mode-mode');
-                completeBtn.textContent = isToDoMode
-                    ? '🧹 ' + getLabel('action.clearCompletedTasks')
-                    : '🔄 ' + getLabel('action.completeCycle');
-            }
+            // refreshThemeLabels handles all label updates + applies vocab theme color preset
+            this.deps.refreshThemeLabels?.();
             this.closeThemePicker();
         }
     }
