@@ -727,6 +727,7 @@ export const DOM_IDS = Object.freeze({
     TOGGLE_TASK_INPUT_BTN: 'toggle-task-input-btn',
     CREATE_ROUTINE_BTN: 'create-routine-btn',
     TOGGLE_TASK_INPUT_TEXT: 'toggle-task-input-text',
+    APP_SUBTITLE: 'app-subtitle',
 
     // ---- Onboarding ----
     ONBOARDING_STEP_CONTENT: 'onboarding-step-content',

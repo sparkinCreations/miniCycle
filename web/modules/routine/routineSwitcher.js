@@ -127,14 +127,14 @@ export class RoutineSwitcher {
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for switchMiniCycle');
-            this.deps.showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", 3000);
             return;
         }
 
         const currentState = this.deps.AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for switchMiniCycle');
-            this.deps.showNotification("⚠️ No data available. Please try again.", "error", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", 3000);
             return;
         }
 
@@ -241,21 +241,21 @@ export class RoutineSwitcher {
 
         if (!selectedCycle) {
             console.warn('⚠️ No cycle selected for rename');
-            this.deps.showNotification("Please select a miniCycle to rename.", "info", 1500);
+            this.deps.showNotification(getLabel('notify.selectToRename'), "info", 1500);
             return;
         }
 
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for renameMiniCycle');
-            this.deps.showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", 3000);
             return;
         }
 
         const currentState = this.deps.AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for renameMiniCycle');
-            this.deps.showNotification("⚠️ No data available. Please try again.", "error", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", 3000);
             return;
         }
 
@@ -264,7 +264,7 @@ export class RoutineSwitcher {
 
         if (!cycleKey || !currentCycle) {
             console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!currentCycle });
-            this.deps.showNotification("⚠️ Invalid cycle selection.", "error", 1500);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", 1500);
             return;
         }
 
@@ -290,14 +290,14 @@ export class RoutineSwitcher {
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for deleteMiniCycle');
-            this.deps.showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", 3000);
             return;
         }
 
         const currentState = this.deps.AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for deleteMiniCycle');
-            this.deps.showNotification("⚠️ No data available. Please try again.", "error", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", 3000);
             return;
         }
 
@@ -312,7 +312,7 @@ export class RoutineSwitcher {
 
         if (!cycleKey || !currentCycle) {
             console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!currentCycle });
-            this.deps.showNotification("⚠️ Invalid cycle selection.", "error", 1500);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", 1500);
             return;
         }
 
@@ -458,21 +458,21 @@ export class RoutineSwitcher {
 
         if (!selectedCycle) {
             console.warn('⚠️ No cycle selected for duplication');
-            this.deps.showNotification("Please select a miniCycle to duplicate.", "info", 1500);
+            this.deps.showNotification(getLabel('notify.selectToDuplicate'), "info", 1500);
             return;
         }
 
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for duplicateMiniCycle');
-            this.deps.showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", 3000);
             return;
         }
 
         const currentState = this.deps.AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for duplicateMiniCycle');
-            this.deps.showNotification("⚠️ No data available. Please try again.", "error", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", 3000);
             return;
         }
 
@@ -485,7 +485,7 @@ export class RoutineSwitcher {
 
         if (!cycleKey || !originalCycle) {
             console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!originalCycle });
-            this.deps.showNotification("⚠️ Invalid cycle selection.", "error", 1500);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", 1500);
             return;
         }
 
@@ -839,14 +839,14 @@ export class RoutineSwitcher {
         const selectedCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
 
         if (!selectedCycle) {
-            this.deps.showNotification("⚠️ Please select a miniCycle first.", "warning", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.selectFirst'), "warning", 3000);
             return;
         }
 
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for confirmMiniCycle');
-            this.deps.showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", 3000);
             return;
         }
 
@@ -854,7 +854,7 @@ export class RoutineSwitcher {
 
         if (!cycleKey) {
             console.error("❌ Invalid cycle selection - missing cycleKey");
-            this.deps.showNotification("⚠️ Invalid cycle selection.", "error", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", 3000);
             return;
         }
 
@@ -900,7 +900,7 @@ export class RoutineSwitcher {
 
         if (newActiveId !== cycleKey) {
             console.error('❌ State update failed! Expected:', cycleKey, 'Got:', newActiveId);
-            this.deps.showNotification("⚠️ Failed to switch cycle. Please try again.", "error", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.failedToSwitch'), "error", 3000);
             return;
         }
 
@@ -1182,7 +1182,7 @@ export class RoutineSwitcher {
             .map(task => `<div class="preview-task">${task.completed ? "✔️" : "___"} ${escapeHTML(task.text)}</div>`)
             .join("");
 
-        previewWindow.innerHTML = `<strong>Tasks:</strong><br>${tasksPreview}`;
+        previewWindow.innerHTML = `<strong>${getLabel('switcher.tasksPreviewLabel')}:</strong><br>${tasksPreview}`;
 
         // ✅ Show last modified date (falls back to created date if not yet set)
         const timestamp = cycleData.lastModified || cycleData.createdAt;
@@ -1193,7 +1193,7 @@ export class RoutineSwitcher {
                 month: 'short',
                 day: 'numeric'
             });
-            const label = cycleData.lastModified ? 'Modified' : 'Created';
+            const label = cycleData.lastModified ? getLabel('switcher.modified') : getLabel('switcher.created');
             dateDisplay.textContent = `${label}: ${formattedDate}`;
         } else {
             dateDisplay.textContent = '';
@@ -1226,7 +1226,7 @@ export class RoutineSwitcher {
             const dateStr = timestamp
                 ? new Date(timestamp).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
                 : '';
-            const dateLabel = cycleData.lastModified ? 'Modified' : 'Created';
+            const dateLabel = cycleData.lastModified ? getLabel('switcher.modified') : getLabel('switcher.created');
 
             const escDiv = document.createElement("div");
             const escapeText = (str) => { escDiv.textContent = str; return escDiv.innerHTML; };
@@ -1328,7 +1328,7 @@ export class RoutineSwitcher {
         // ✅ Ensure we have cycles to display
         if (Object.keys(cycles).length === 0) {
             console.warn('⚠️ No cycles found to display');
-            miniCycleList.innerHTML = '<div class="no-cycles-message">No miniCycles found</div>';
+            miniCycleList.innerHTML = `<div class="no-cycles-message">${getLabel('switcher.noCyclesFound')}</div>`;
             return;
         }
 
@@ -1338,8 +1338,8 @@ export class RoutineSwitcher {
 
         // ✅ Handle no matches for filter
         if (filteredCycles.length === 0) {
-            const modeLabels = { auto: 'Auto Cycle', manual: 'Manual Cycle', todo: 'To-Do' };
-            miniCycleList.innerHTML = `<div class="no-cycles-message">No ${modeLabels[this._filterMode] || ''} routines found</div>`;
+            const modeLabel = { auto: getLabel('switcher.filterAuto'), manual: getLabel('switcher.filterManual'), todo: getLabel('switcher.filterTodo') }[this._filterMode] || '';
+            miniCycleList.innerHTML = `<div class="no-cycles-message">${getLabel('switcher.noModeRoutinesFound', { vars: { mode: modeLabel } })}</div>`;
             return;
         }
 

@@ -156,12 +156,12 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
 
         // Show success notifications
         if (_deps.getElementById(DOM_IDS.SET_DEFAULT_RECURRING)?.checked) {
-            _deps.showNotification("✅ Default recurring settings saved!", "success", 1500);
+            _deps.showNotification('✅ ' + getLabel('notify.recurringDefaultSaved'), "success", 1500);
         }
 
         // Call panel methods for UI updates
         panel.updateRecurringSummary();
-        _deps.showNotification("✅ Recurring settings applied!", "success", 2000);
+        _deps.showNotification('✅ ' + getLabel('notify.recurringApplied'), "success", 2000);
         await panel.updateRecurringPanel();
 
         // Post-apply UI updates with delay for DOM to settle
@@ -192,7 +192,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
 
     } catch (error) {
         console.error('❌ Failed to apply recurring settings:', error);
-        _deps.showNotification('❌ Failed to apply settings. Please try again.', 'error', 5000);
+        _deps.showNotification('❌ ' + getLabel('notify.recurringApplyFailed'), 'error', 5000);
 
         // Cleanup on error
         const settingsPanel = _deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);

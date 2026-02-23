@@ -245,7 +245,13 @@ export const DEFAULT_LABELS = deepFreeze({
         noSaved:            'No saved miniCycles found.',
         noSelectedForDelete:'No miniCycle selected for deletion.',
         selectPreview:      'Select a miniCycle to preview',
-        selectFirst:        'Select a routine first to change its theme.'
+        selectFirst:        'Select a routine first to change its theme.',
+        modified:            'Modified',
+        created:             'Created',
+        tasksPreviewLabel:   'Tasks',
+        noCyclesFound:       'No miniCycles found',
+        noModeRoutinesFound: 'No {mode} routines found',
+        completed:           'completed',
     },
 
     // ========================================================================
@@ -274,7 +280,30 @@ export const DEFAULT_LABELS = deepFreeze({
     },
 
     // ========================================================================
-    // 9. NOTIFICATIONS
+    // 9. ACHIEVEMENTS
+    // ========================================================================
+
+    achievement: {
+        title:           'Achievements',
+        statCycles:      'Cycles',
+        statCleared:     'Cleared Tasks',
+        statUnlocked:    'Unlocked',
+        sectionUnlocked: 'Unlocked',
+        sectionUpcoming: 'Upcoming',
+        noAchievements:  'No achievements available',
+        unlockedOn:      'Unlocked {date} via {via}',
+        reward:          'Reward: {label}',
+        rewardLabel:     'Reward:',
+        cyclesNeeded:    '{count} cycles',
+        tasksNeeded:     '{count} cleared tasks',
+        dragToSpin:      'drag to spin',
+        badgeTooltip:    '{name}: {cycles} cycles OR {tasks} cleared tasks',
+        badgeUnlocks:    'Unlocks {reward}',
+        threshold:       '{cycles} cycles or {tasks} cleared tasks',
+    },
+
+    // ========================================================================
+    // 9c. NOTIFICATIONS
     // ========================================================================
 
     notify: {
@@ -611,7 +640,31 @@ export const DEFAULT_LABELS = deepFreeze({
         // Pull-to-refresh notifications
         refreshFailed:           'Refresh failed',
         updateAvailableReload:   'App update available! Reload to update.',
-        refreshed:               'Refreshed'
+        refreshed:               'Refreshed',
+
+        // Undo/redo notifications
+        undoFailed:              'Undo failed — state restored',
+        redoFailed:              'Redo failed — state restored',
+        undoHistoryUnavailableCycle: 'Undo history unavailable for this cycle',
+        undoHistoryUnavailable:  'Undo history unavailable',
+
+        // Reminder notifications
+        reminderEnabled:         'Task reminders enabled!',
+        reminderDisabled:        'Task reminders disabled.',
+        taskReminderDisabled:    'Reminder disabled for task.',
+
+        // Recurring settings notifications
+        recurringApplied:        'Recurring settings applied!',
+        recurringApplyFailed:    'Failed to apply settings. Please try again.',
+
+        // Routine management (additional)
+        samplePreloaded:         'A sample miniCycle has been preloaded to help you get started!',
+        failedToCreateCycle:     'Failed to create cycle. Please refresh.',
+        selectToRename:          'Please select a miniCycle to rename.',
+        invalidCycleSelection:   'Invalid cycle selection.',
+        selectToDuplicate:       'Please select a miniCycle to duplicate.',
+        selectFirst:             'Please select a miniCycle first.',
+        failedToSwitch:          'Failed to switch cycle. Please try again.',
     },
 
     // ========================================================================
@@ -857,7 +910,8 @@ export const DEFAULT_LABELS = deepFreeze({
         hideTaskInput:  'Hide Task Input',
         addTaskToggle:  'Add Task',
         darkModeAria:   'Toggle dark mode',
-        personalizationAria: 'Personalization'
+        personalizationAria: 'Personalization',
+        appSubtitle:    'ROUTINE MANAGER'
     },
 
     // ========================================================================

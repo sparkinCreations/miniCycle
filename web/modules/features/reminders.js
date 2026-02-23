@@ -281,13 +281,13 @@ export class MiniCycleReminders {
         if (globalReminderState) {
             console.log("🔔 Global Reminders Enabled — Starting reminders...");
             if (!wasEnabled) {
-                this.deps.showNotification("🔔 Task reminders enabled!", "success", 2500);
+                this.deps.showNotification('🔔 ' + getLabel('notify.reminderEnabled'), "success", 2500);
             }
             setTimeout(() => this.startReminders(), UI_TIMEOUTS.ANIMATION_SHORT);
         } else {
             console.log("🔕 Global Reminders Disabled — Stopping reminders...");
             if (wasEnabled) {
-                this.deps.showNotification("🔕 Task reminders disabled.", "error", 2500);
+                this.deps.showNotification('🔕 ' + getLabel('notify.reminderDisabled'), "error", 2500);
             }
             this.stopReminders();
         }
@@ -886,7 +886,7 @@ export class MiniCycleReminders {
                     }
                 }
             } else {
-                this.deps.showNotification('🔕 Reminder disabled for task.', 'info', 1500);
+                this.deps.showNotification('🔕 ' + getLabel('notify.taskReminderDisabled'), 'info', 1500);
             }
         };
         safeAdd(button, "click", button._reminderClickHandler);

@@ -1031,8 +1031,8 @@ export class StatsPanelManager {
         if (this.elements.statsProgressBar) {
             this.elements.statsProgressBar.style.transform = `scaleX(${milestoneProgress / 100})`;
             const ariaLabel = isToDoMode
-                ? `${globalTasksCleared} of ${nextMilestone} cleared tasks to next milestone`
-                : `${globalCyclesCompleted} of ${nextMilestone} cycles to next milestone`;
+                ? getLabel('stats.progressCleared', { vars: { current: globalTasksCleared, next: nextMilestone } })
+                : getLabel('stats.progressCycles', { vars: { current: globalCyclesCompleted, next: nextMilestone } });
             this.elements.statsProgressBar.setAttribute('aria-label', ariaLabel);
             this.elements.statsProgressBar.setAttribute('aria-valuenow', Math.round(milestoneProgress));
         }
@@ -1224,12 +1224,13 @@ export class StatsPanelManager {
         // Updates immediately after checkThemeUnlocks() writes to state before updateStatsPanel() runs
         if (themeUnlockMessage) {
             if (vtm) {
-                const unlockedIds = vtm.getUnlockedThemeIds().filter(id => id !== 'classic');
+                const unlockedIds = vtm.getUnlockedThemeIds()
+                    .filter(id => id !== 'classic' && vtm.getThemeDefinition(id) !== null);
                 if (unlockedIds.length > 0) {
                     themeUnlockMessage.textContent = unlockedIds.map(id => {
                         const def = vtm.getThemeDefinition(id);
                         const icon = def?.icons?.celebrate ?? '✅';
-                        return `${icon} ${def?.name ?? id}`;
+                        return `${icon} ${def.name}`;
                     }).join('\n');
                     themeUnlockMessage.classList.add("unlocked-message", "visible");
                 } else {
@@ -1248,9 +1249,8 @@ export class StatsPanelManager {
                 if (nextVocabTheme) {
                     const cyclesNeeded = Math.max(0, nextVocabTheme.unlockAt.cycles - globalCyclesCompleted);
                     const nextIcon = nextVocabTheme.icons?.celebrate ?? '';
-                    goldenUnlockMessage.textContent = nextIcon
-                        ? `${nextIcon} Next: ${nextVocabTheme.name} — ${cyclesNeeded} more cycles`
-                        : getLabel('unlock.nextThemeUnlock', { vars: { name: nextVocabTheme.name, count: cyclesNeeded } });
+                    const themeUnlockText = getLabel('unlock.nextThemeUnlock', { vars: { name: nextVocabTheme.name, count: cyclesNeeded } });
+                    goldenUnlockMessage.textContent = nextIcon ? `${nextIcon} ${themeUnlockText}` : themeUnlockText;
                     goldenUnlockMessage.classList.remove("unlocked-message");
                     goldenUnlockMessage.classList.add("visible");
                 } else {

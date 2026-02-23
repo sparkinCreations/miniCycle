@@ -63,6 +63,8 @@ export const THEME_DEFINITIONS = {
             'action.completeCycle':        'Complete Streak',
             'action.clearCompletedTasks':  'Clear Habits',
             'notify.cycleComplete':        'Day completed! Streak extended!',
+            'help.cycleComplete':          'Streak extended! Habits reset.',
+            'nav.appSubtitle':             'HABIT TRACKER',
         },
         icons: {
             cycleComplete: '👍',
@@ -87,6 +89,8 @@ export const THEME_DEFINITIONS = {
             'action.completeCycle':        'Complete Workout',
             'action.clearCompletedTasks':  'Clear Exercises',
             'notify.cycleComplete':        'Workout complete!',
+            'help.cycleComplete':          'Workout complete! Exercises reset.',
+            'nav.appSubtitle':             'FITNESS TRACKER',
         },
         icons: {
             cycleComplete: '💪',
@@ -111,6 +115,8 @@ export const THEME_DEFINITIONS = {
             'action.completeCycle':        'Complete Session',
             'action.clearCompletedTasks':  'Clear Topics',
             'notify.cycleComplete':        'Study session complete!',
+            'help.cycleComplete':          'Study session complete! Topics reset.',
+            'nav.appSubtitle':             'STUDY PLANNER',
         },
         icons: {
             cycleComplete: '📚',
@@ -135,6 +141,8 @@ export const THEME_DEFINITIONS = {
             'action.completeCycle':        'Complete Chores',
             'action.clearCompletedTasks':  'Clear Chores',
             'notify.cycleComplete':        'Chores done!',
+            'help.cycleComplete':          'Clean sweep complete! Chores reset.',
+            'nav.appSubtitle':             'CHORE MANAGER',
         },
         icons: {
             cycleComplete: '🧼',

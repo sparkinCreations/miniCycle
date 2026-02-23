@@ -144,7 +144,7 @@ export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton, 
         taskApi?.add?.(taskText);
       } catch (e) {
         console.error('❌ Failed to add task:', e);
-        getShowNotification()?.('❌ Failed to add task. Please try again.', 'error', 3000);
+        getShowNotification()?.('❌ ' + getLabel('notify.taskAddFailed'), 'error', 3000);
       }
       taskInput.value = '';
     });
@@ -176,7 +176,7 @@ export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton, 
           taskApi?.add?.(taskText);
         } catch (e) {
           console.error('❌ Failed to add task:', e);
-          getShowNotification()?.('❌ Failed to add task. Please try again.', 'error', 3000);
+          getShowNotification()?.('❌ ' + getLabel('notify.taskAddFailed'), 'error', 3000);
         }
         taskInput.value = '';
       }

@@ -254,7 +254,7 @@ export class AchievementsManager {
                         font-size: 18px;
                         font-weight: 600;
                         color: var(--text-primary, #333);
-                    ">Achievements</h2>
+                    ">${getLabel('achievement.title')}</h2>
                 </header>
                 <div class="achievements-modal-content" style="
                     flex: 1;
@@ -377,15 +377,15 @@ export class AchievementsManager {
                 <div style="display: flex; justify-content: space-around; gap: 16px;">
                     <div>
                         <div style="font-size: 24px; font-weight: 600; color: #4361ee;">${cyclesCompleted}</div>
-                        <div style="font-size: 12px; color: var(--text-secondary, #666);">Cycles</div>
+                        <div style="font-size: 12px; color: var(--text-secondary, #666);">${getLabel('achievement.statCycles')}</div>
                     </div>
                     <div>
                         <div style="font-size: 24px; font-weight: 600; color: #10b981;">${tasksCleared}</div>
-                        <div style="font-size: 12px; color: var(--text-secondary, #666);">Cleared Tasks</div>
+                        <div style="font-size: 12px; color: var(--text-secondary, #666);">${getLabel('achievement.statCleared')}</div>
                     </div>
                     <div>
                         <div style="font-size: 24px; font-weight: 600; color: var(--text-primary, #333);">${unlocked.length}</div>
-                        <div style="font-size: 12px; color: var(--text-primary, #333);">Unlocked</div>
+                        <div style="font-size: 12px; color: var(--text-primary, #333);">${getLabel('achievement.statUnlocked')}</div>
                     </div>
                 </div>
             </div>
@@ -400,7 +400,7 @@ export class AchievementsManager {
                     color: var(--text-secondary, #666);
                     text-transform: uppercase;
                     margin: 0 0 12px;
-                ">Unlocked</h3>
+                ">${getLabel('achievement.sectionUnlocked')}</h3>
             `;
             html += unlocked.map(a => this._renderUnlockedAchievement(a)).join('');
         }
@@ -414,7 +414,7 @@ export class AchievementsManager {
                     color: var(--text-secondary, #666);
                     text-transform: uppercase;
                     margin: 20px 0 12px;
-                ">Upcoming</h3>
+                ">${getLabel('achievement.sectionUpcoming')}</h3>
             `;
             html += upcoming.map(u => this._renderUpcomingAchievement(u)).join('');
         }
@@ -427,7 +427,7 @@ export class AchievementsManager {
                     color: var(--text-secondary, #666);
                 ">
                     <div style="font-size: 48px; margin-bottom: 16px;">🏆</div>
-                    <p style="margin: 0;">No achievements available</p>
+                    <p style="margin: 0;">${getLabel('achievement.noAchievements')}</p>
                 </div>
             `;
         }
@@ -472,7 +472,7 @@ export class AchievementsManager {
                         color: var(--text-secondary, #888);
                         margin-top: 4px;
                     ">
-                        Unlocked ${dateStr} via ${achievement.unlockedVia}
+                        ${getLabel('achievement.unlockedOn', { vars: { date: dateStr, via: achievement.unlockedVia } })}
                     </div>
                     ${milestone.rewardLabel ? `
                         <div style="
@@ -480,7 +480,7 @@ export class AchievementsManager {
                             color: var(--success-color, #28a745);
                             margin-top: 4px;
                             font-weight: 500;
-                        ">Reward: ${milestone.rewardLabel}</div>
+                        ">${getLabel('achievement.reward', { vars: { label: milestone.rewardLabel } })}</div>
                     ` : ''}
                 </div>
             </div>
@@ -566,10 +566,10 @@ export class AchievementsManager {
                     ">
                         <div style="display: flex; flex-direction: column; gap: 2px;">
                             <span style="color: #4361ee; font-weight: 500;">
-                                <span style="font-size: 14px;">●</span> ${cyclesNeeded} cycles
+                                <span style="font-size: 14px;">●</span> ${getLabel('achievement.cyclesNeeded', { vars: { count: cyclesNeeded } })}
                             </span>
                             <span style="color: #10b981; font-weight: 500;">
-                                <span style="font-size: 14px;">●</span> ${tasksNeeded} cleared tasks
+                                <span style="font-size: 14px;">●</span> ${getLabel('achievement.tasksNeeded', { vars: { count: tasksNeeded } })}
                             </span>
                         </div>
                         ${milestone.rewardLabel ? `
@@ -577,7 +577,7 @@ export class AchievementsManager {
                                 font-size: 11px;
                                 color: var(--text-secondary, #888);
                                 font-weight: 500;
-                            ">Reward: ${milestone.rewardLabel}</span>
+                            ">${getLabel('achievement.reward', { vars: { label: milestone.rewardLabel } })}</span>
                         ` : ''}
                     </div>
                 </div>
@@ -601,9 +601,9 @@ export class AchievementsManager {
             const tierConfig = MILESTONES.find(t => t.cycleThreshold === milestone);
 
             if (tierConfig) {
-                let tooltip = `${tierConfig.name}: ${tierConfig.cycleThreshold} cycles OR ${tierConfig.taskThreshold} cleared tasks`;
+                let tooltip = getLabel('achievement.badgeTooltip', { vars: { name: tierConfig.name, cycles: tierConfig.cycleThreshold, tasks: tierConfig.taskThreshold } });
                 if (tierConfig.rewardLabel) {
-                    tooltip += ` - Unlocks ${tierConfig.rewardLabel}`;
+                    tooltip += ` - ${getLabel('achievement.badgeUnlocks', { vars: { reward: tierConfig.rewardLabel } })}`;
                 }
                 badge.title = tooltip;
 
@@ -737,10 +737,10 @@ export class AchievementsManager {
                         font-size: 11px;
                     ">
                         <span style="color: #4361ee; font-weight: 500;">
-                            <span style="font-size: 14px;">●</span> ${cyclesNeeded} cycles
+                            <span style="font-size: 14px;">●</span> ${getLabel('achievement.cyclesNeeded', { vars: { count: cyclesNeeded } })}
                         </span>
                         <span style="color: #10b981; font-weight: 500;">
-                            <span style="font-size: 14px;">●</span> ${tasksNeeded} cleared tasks
+                            <span style="font-size: 14px;">●</span> ${getLabel('achievement.tasksNeeded', { vars: { count: tasksNeeded } })}
                         </span>
                     </div>
                 </div>
@@ -753,7 +753,7 @@ export class AchievementsManager {
             const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
             statusHtml = `
                 <p style="margin: 0; font-size: 12px; color: var(--text-secondary, #888);">
-                    Unlocked ${dateStr} via ${unlockedAchievement.unlockedVia}
+                    ${getLabel('achievement.unlockedOn', { vars: { date: dateStr, via: unlockedAchievement.unlockedVia } })}
                 </p>
             `;
         }
@@ -761,7 +761,7 @@ export class AchievementsManager {
         // Drag to spin hint (only for unlocked badges)
         const dragHintHtml = isUnlocked ? `
             <p style="margin: 4px 0 0; font-size: 11px; color: var(--text-secondary, #aaa); font-style: italic;">
-                drag to spin
+                ${getLabel('achievement.dragToSpin')}
             </p>
         ` : '';
 
@@ -811,7 +811,7 @@ export class AchievementsManager {
 
                 <h3 style="margin: 8px 0 4px; font-size: 20px; color: var(--text-primary, #333);">${tierConfig.name}</h3>
                 <p style="margin: 0 0 12px; font-size: 13px; color: var(--text-secondary, #666);">
-                    ${tierConfig.cycleThreshold} cycles or ${tierConfig.taskThreshold} cleared tasks
+                    ${getLabel('achievement.threshold', { vars: { cycles: tierConfig.cycleThreshold, tasks: tierConfig.taskThreshold } })}
                 </p>
 
                 ${statusHtml}
@@ -819,7 +819,7 @@ export class AchievementsManager {
 
                 ${tierConfig.rewardLabel ? `
                     <p style="margin: 12px 0 0; font-size: 12px; color: var(--primary-color, #4c79ff);">
-                        <strong>Reward:</strong> ${tierConfig.rewardLabel}
+                        <strong>${getLabel('achievement.rewardLabel')}</strong> ${tierConfig.rewardLabel}
                     </p>
                 ` : ''}
             </div>
