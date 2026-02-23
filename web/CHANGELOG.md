@@ -1,3 +1,7 @@
+## [1.1031] - 2026-02-23
+- feat: enhance notifications and labels for improved user feedback and consistency
+
+
 ## [1.1030] - 2026-02-23
 - refactor: update vocabulary labels and icons for consistency across themes
 

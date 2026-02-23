@@ -261,9 +261,9 @@ export const DEFAULT_LABELS = deepFreeze({
     stats: {
         title:              'Stats',
         currentRoutine:     'Current Routine',
-        completion:         '{completed} of {total} Tasks Completed',
-        cyclesCompleted:    '{count} Cycles Completed',
-        clearedTasks:       '{count} Cleared Tasks',
+        completion:         '{completed} of {total} {taskWord} Completed',
+        cyclesCompleted:    '{count} {cycleWord} Completed',
+        clearedTasks:       '{count} Cleared {taskWord}',
         milestoneRewards:   'Milestone Rewards',
         achievementBadges:  'Achievement Badges',
         allRoutines:        'All Routines:',

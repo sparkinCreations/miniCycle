@@ -987,7 +987,7 @@ export class StatsPanelManager {
         // ✅ Update current cycle progress text with proper singular/plural
         if (this.elements.currentCycleProgressText) {
             this.elements.currentCycleProgressText.textContent =
-                getLabel('stats.completion', { vars: { completed: completedTasks, total: totalTasks } });
+                getLabel('stats.completion', { vars: { completed: completedTasks, total: totalTasks, taskWord: getLabel('noun.task', { count: totalTasks }) } });
         }
 
         // ✅ Show global cycles count (primary metric for rewards) with proper singular/plural
@@ -1006,7 +1006,7 @@ export class StatsPanelManager {
         // ✅ Show per-cycle count (this specific routine) with proper singular/plural
         if (this.elements.perCycleCount) {
             this.elements.perCycleCount.textContent =
-                getLabel('stats.cyclesCompleted', { vars: { count: perCycleCount } });
+                getLabel('stats.cyclesCompleted', { vars: { count: perCycleCount, cycleWord: getLabel('noun.cycle', { count: perCycleCount }) } });
         }
 
         // ✅ Show per-routine cleared tasks count (regardless of mode, if at least 1 cleared)
@@ -1014,7 +1014,7 @@ export class StatsPanelManager {
         if (this.elements.currentRoutineClearedCount && this.elements.perRoutineCleared) {
             if (perRoutineCleared > 0) {
                 this.elements.perRoutineCleared.textContent =
-                    getLabel('stats.clearedTasks', { vars: { count: perRoutineCleared } });
+                    getLabel('stats.clearedTasks', { vars: { count: perRoutineCleared, taskWord: getLabel('noun.task', { count: perRoutineCleared }) } });
                 // Mark as having content - visibility is controlled by .visible class from dropdown toggle
                 this.elements.currentRoutineClearedCount.classList.add('has-content');
                 // Sync with dropdown expanded state (check if cycle count has .visible)
