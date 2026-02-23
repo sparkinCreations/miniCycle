@@ -66,9 +66,8 @@ const di = createDIModule('CycleCompletion', {
     AppState: optional(null),
     showNotification: optional(null),
     updateStatsPanel: optional(null),
-    unlockDarkOceanTheme: optional(null),
-    unlockGoldenGlowTheme: optional(null),
     unlockMiniGame: optional(null),
+    renderVocabThemes: optional(null),
     // For updateProgressBar and checkMiniCycle
     getTaskList: optional(null),           // () => taskList element
     getProgressBar: optional(null),        // () => progressBar element
@@ -76,7 +75,9 @@ const di = createDIModule('CycleCompletion', {
     resetTasks: optional(null),            // () => void
     // History & Achievements hooks
     logHistoryEvent: optional(null),       // (type, details) => void
-    checkAchievements: optional(null)      // (cycles, tasks) => Array
+    checkAchievements: optional(null),     // (cycles, tasks) => Array
+    // Vocabulary theme system
+    vocabThemeManager: optional(null)      // VocabThemeManager singleton
 });
 
 // Late-binding deps via Proxy
@@ -107,9 +108,9 @@ export function showCompletionAnimation() {
 
     document.body.appendChild(animation);
 
-    // Announce to screen readers
+    // Announce to screen readers (theme-sensitive: adapts to active vocabulary theme)
     const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
-    if (liveRegion) liveRegion.textContent = getLabel('accessibility.cycleCompleted');
+    if (liveRegion) liveRegion.textContent = getLabel('notify.cycleComplete');
 
     // Remove the animation after 1.5 seconds
     setTimeout(() => {
@@ -206,15 +207,6 @@ function handleMilestoneUnlocks(miniCycleName, globalCyclesCompleted) {
     // Show milestone achievement message based on global cycles
     checkForMilestone(miniCycleName, globalCyclesCompleted);
 
-    // Theme unlocks based on GLOBAL cycle count across all cycles
-    // Thresholds from MILESTONES in constants.js (single source of truth)
-    if (globalCyclesCompleted >= MILESTONES.DARK_OCEAN_THEME && typeof deps.unlockDarkOceanTheme === 'function') {
-        deps.unlockDarkOceanTheme();
-    }
-    if (globalCyclesCompleted >= MILESTONES.GOLDEN_GLOW_THEME && typeof deps.unlockGoldenGlowTheme === 'function') {
-        deps.unlockGoldenGlowTheme();
-    }
-
     // Game unlock based on GLOBAL cycle count
     if (globalCyclesCompleted >= MILESTONES.TASK_ORDER_GAME) {
         const unlockedFeatures = currentState.settings?.unlockedFeatures || [];
@@ -222,7 +214,17 @@ function handleMilestoneUnlocks(miniCycleName, globalCyclesCompleted) {
 
         if (!hasGameUnlock) {
             if (typeof deps.showNotification === 'function') {
-                deps.showNotification(`🎮 ${getLabel('notify.gameUnlocked')}`, "success", 6000);
+                deps.showNotification(
+                    `🎮 ${getLabel('notify.gameUnlocked')}`,
+                    "success",
+                    6000,
+                    {
+                        actionButton: {
+                            label: getLabel('action.openGamesModal'),
+                            onClick: () => document.getElementById(DOM_IDS.OPEN_GAMES_PANEL)?.click()
+                        }
+                    }
+                );
             }
             if (typeof deps.unlockMiniGame === 'function') {
                 deps.unlockMiniGame();
@@ -297,6 +299,32 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
     // Check for new achievements (OR-based: cycles OR tasks can unlock)
     if (typeof deps.checkAchievements === 'function') {
         deps.checkAchievements(globalCyclesCompleted, totalTasksCompleted);
+    }
+
+    // Check for newly unlocked vocabulary themes
+    if (typeof deps.vocabThemeManager?.checkThemeUnlocks === 'function') {
+        const newThemes = deps.vocabThemeManager.checkThemeUnlocks();
+        if (newThemes.length > 0) {
+            // Refresh themes modal if it's currently open
+            deps.renderVocabThemes?.();
+
+            newThemes.forEach(themeId => {
+                const def = deps.vocabThemeManager.getThemeDefinition(themeId);
+                const name = def?.name ?? themeId;
+                const icon = def?.icons?.celebrate ?? '🎨';
+                deps.showNotification(
+                    `${icon} ${getLabel('notify.themeUnlocked', { vars: { name } })}`,
+                    'success',
+                    6000,
+                    {
+                        actionButton: {
+                            label: getLabel('action.openThemesModal'),
+                            onClick: () => document.getElementById(DOM_IDS.OPEN_THEMES_PANEL)?.click()
+                        }
+                    }
+                );
+            });
+        }
     }
 
     // Show animation + update stats

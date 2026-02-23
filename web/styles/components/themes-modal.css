@@ -205,6 +205,57 @@
 }
 
 /* =============================================================================
+   VOCABULARY THEME SECTION
+   ============================================================================= */
+
+#vocab-theme-section {
+    padding: var(--space-2) var(--space-5) var(--space-3);
+    text-align: left;
+}
+
+.vocab-theme-heading {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--theme-text-muted, #888);
+    margin: 0 0 var(--space-2) 0;
+}
+
+.vocab-theme-option {
+    /* inherits .theme-radio-option layout */
+}
+
+.vocab-theme-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.vocab-theme-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--theme-modal-text, #333);
+}
+
+.vocab-theme-hint {
+    font-size: 11px;
+    color: var(--theme-text-muted, #888);
+}
+
+/* Themes modal needs scroll room now that vocab themes are added */
+.themes-modal-content {
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+/* Keep the Close button pinned at bottom */
+.themes-modal-content .close-btn {
+    position: sticky;
+    bottom: 0;
+}
+
+/* =============================================================================
    PREFERENCES MODAL
    ============================================================================= */
 

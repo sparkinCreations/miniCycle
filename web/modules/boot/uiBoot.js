@@ -730,6 +730,14 @@ export async function finalizeUI(options) {
     await deviceManager.autoRedetectOnVersionChange();
   }
 
+  // Sync theme-sensitive labels with the active vocab theme.
+  // Several DOM elements (e.g. #toggle-task-input-text) are hardcoded in HTML
+  // and only get their themed text ("Add habit", "Complete Habits", etc.) via JS.
+  // This call must come AFTER initializeModeSelector() because that function is
+  // async and resumes after waitForCore(), potentially overwriting labels set
+  // earlier. By running last in finalizeUI(), we guarantee the themed values win.
+  deps.features?.themeManager?.refreshThemeLabels?.();
+
   console.log('✅ UI finalized');
 }
 

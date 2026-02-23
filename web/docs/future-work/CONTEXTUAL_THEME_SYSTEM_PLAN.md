@@ -1,6 +1,6 @@
 # Contextual Theme System Plan
 
-**Status:** In Progress
+**Status:** ✅ COMPLETE (Phases 1 & 2)
 **Priority:** High
 **Breaking Changes:** No (additive feature, backward compatible)
 
@@ -29,13 +29,13 @@ The app already does this. It just doesn't *speak* this way yet.
 
 ### Naming
 - The new system is called **"Themes"** — universally understood, no invented terminology
-- The color presets section in Personalization is renamed **"Quick Colors"** (already done) to
+- The color presets section in Personalization is renamed **"Quick Colors"** (done) to
   free up the word "Theme" for this system
 
 ### Dark Ocean & Golden Glow
 - **Removed as unlockables** — equivalent colors (Ocean, Golden) already exist freely in Quick Colors
 - No migration needed — users who had them unlocked still have the colors via Quick Colors presets
-- All unlock logic, labels, and references to Dark Ocean / Golden Glow unlocks are removed
+- All unlock logic, labels, and references have been removed
 
 ### Theme Set & Unlock Milestones
 
@@ -114,42 +114,23 @@ Lives alongside `defaultLabels.js` and `labelResolver.js` — all label-related 
 modules/labels/
   defaultLabels.js   ← all default strings
   labelResolver.js   ← resolves strings (with theme override)
-  themes.js          ← theme definitions (what to override)
+  themes.js          ← theme definitions + VocabThemeManager
 ```
-
-
 
 Exports:
 - `THEME_DEFINITIONS` — all 5 theme objects
-- `ThemeManager` class with:
+- `VocabThemeManager` class with:
   - `init()` — migrate existing state (set `unlockedThemes`, `defaultTheme`)
   - `getActiveTheme()` — returns theme object for the active routine
   - `getRoutineTheme(routineId)` — returns theme object for a specific routine
   - `setRoutineTheme(routineId, themeId)` — saves per-routine theme
   - `setDefaultTheme(themeId)` — saves default for new routines
-  - `checkThemeUnlocks()` — called after cycle completion, returns newly unlocked theme IDs
+  - `checkThemeUnlocks()` — call after cycle completion, returns newly unlocked theme IDs
   - `getUnlockedThemeIds()` — returns array from state or computes from progress
-- `themeManager` — singleton instance
+  - `getThemeDefinition(id)` — look up a theme object by ID
+  - `getNextLockedTheme(globalCycles)` — returns the next theme not yet earned
+- `vocabThemeManager` — singleton instance
 - At module load time: calls `setLabelResolverDependencies` to inject lazy theme getters
-
-### Wire into labelResolver.js
-
-Uncomment the currently-commented override block in `getLabel()`:
-
-```javascript
-const deps = di.resolve();
-const theme = routineId
-    ? deps.getRoutineLens?.(routineId)
-    : deps.getActiveLens?.();
-
-if (theme?.labels?.[key] !== undefined) {
-    label = theme.labels[key];
-} else {
-    // fall through to DEFAULT_LABELS
-}
-```
-
-And update `getIcon()` to check `theme.icons[key]` before falling back to the `icons.*` label.
 
 ---
 
@@ -190,7 +171,7 @@ icons: { cycleComplete: '🏆', celebrate: '💪' }
 ### Scholar (50 cycles)
 ```javascript
 labels: {
-    'noun.task':          { one: 'topic',         other: 'topics' },
+    'noun.task':          { one: 'topic',         other: 'topics'         },
     'noun.cycle':         { one: 'study session', other: 'study sessions' },
     'action.addTask':     'Add topic',
     'action.completeAll': 'Complete Session',
@@ -203,7 +184,7 @@ icons: { cycleComplete: '🎓', celebrate: '📚' }
 ### Cleaning (75 cycles)
 ```javascript
 labels: {
-    'noun.task':          { one: 'chore',       other: 'chores' },
+    'noun.task':          { one: 'chore',       other: 'chores'       },
     'noun.cycle':         { one: 'clean sweep', other: 'clean sweeps' },
     'action.addTask':     'Add chore',
     'action.completeAll': 'Finish Sweep',
@@ -215,22 +196,6 @@ icons: { cycleComplete: '✨', celebrate: '🧹' }
 
 ---
 
-## Files to Create / Modify
-
-| File | Change |
-|------|--------|
-| `modules/labels/themes.js` | **New** — theme definitions + ThemeManager |
-| `modules/labels/labelResolver.js` | Uncomment override block; update `getIcon()` |
-| `modules/boot/moduleManifests.js` | Add `themeSystem` manifest (THEME_VISUAL phase) |
-| `modules/boot/featureBoot.js` | Call `themeManager.init()` after `loadAllModules` |
-| `modules/routine/routineManager.js` | Add `theme: 'classic'` to all 3 cycle creation paths |
-| `modules/labels/defaultLabels.js` | Remove Dark Ocean / Golden Glow unlock label keys; add Scholar/Cleaning icons to `icons` category |
-| `modules/features/statsPanel.js` | Remove Dark Ocean / Golden Glow unlock UI; add new theme unlock previews |
-| `miniCycle.html` | Remove Dark Ocean / Golden Glow unlock DOM elements; add theme selector UI (Phase 2) |
-| Import handler | Check theme is unlocked on `.mcyc` import; substitute default + notify if not |
-
----
-
 ## Import Behaviour: Locked Theme
 
 When a user imports a `.mcyc` file whose `theme` field references a theme they haven't unlocked:
@@ -238,28 +203,7 @@ When a user imports a `.mcyc` file whose `theme` field references a theme they h
 1. The routine loads normally — `theme` is set to the user's `defaultTheme` (Classic if not changed)
 2. A one-time notification fires explaining the substitution
 
-**Notification copy:**
-> *"This routine uses the [Theme Name] theme — keep cycling to unlock it! Using Classic for now."*
-
-**Logic (in the import handler):**
-```javascript
-const importedTheme = routine.theme ?? 'classic';
-const unlocked = themeManager.getUnlockedThemeIds();
-
-if (importedTheme !== 'classic' && !unlocked.includes(importedTheme)) {
-    routine.theme = state.settings?.defaultTheme ?? 'classic';
-    showNotification(
-        getLabel('notify.themeLockedOnImport', { vars: { name: THEME_DEFINITIONS[importedTheme]?.name ?? importedTheme } }),
-        'info',
-        5000
-    );
-}
-```
-
-**Label to add to `defaultLabels.js`:**
-```javascript
-themeLockedOnImport: 'This routine uses the {name} theme — keep cycling to unlock it! Using Classic for now.'
-```
+**Notification:** *"This routine uses the [Theme Name] theme — keep cycling to unlock it! Using Classic for now."*
 
 Non-blocking — the routine still imports and works perfectly.
 
@@ -267,25 +211,76 @@ Non-blocking — the routine still imports and works perfectly.
 
 ## Implementation Phases
 
-### Phase 1: Core (no UI yet)
-1. Create `modules/labels/themes.js`
-2. Activate theme override in `labelResolver.js`
-3. Register in `moduleManifests.js`
-4. Wire `init()` in `featureBoot.js`
-5. Add `theme: 'classic'` to routine creation
-6. Remove Dark Ocean / Golden Glow unlock logic and labels
-7. Add locked-theme handling to import handler
+### Phase 1: Core ✅ COMPLETE
 
-### Phase 2: UI
-8. Theme selector in routine edit modal (per-routine)
-9. Unlock notification on cycle completion
-10. Theme preview in stats panel / achievements
+- [x] Create `modules/labels/themes.js` — THEME_DEFINITIONS + VocabThemeManager + singleton
+- [x] Activate theme override in `labelResolver.js` — uncomment block, update `getIcon()`
+- [x] Register `vocabThemes` manifest in `moduleManifests.js` (THEME_VISUAL phase)
+- [x] Wire `vocabThemeManager.init()` in `featureBoot.js`
+- [x] Add `theme: 'classic'` to all 3 routine creation paths in `routineManager.js`
+- [x] Remove Dark Ocean / Golden Glow unlock logic from `cycleCompletion.js`, `achievementsManager.js`, `themeManager.js`, `moduleLoader.js`, `moduleManifests.js`
+- [x] Remove Dark Ocean / Golden Glow label keys from `defaultLabels.js`
+- [x] Add locked-theme handling to `cycleImportManager.js`
+- [x] Clean up `statsPanel.js` — remove Dark Ocean / Golden Glow blocks, ungated game unlock
+
+---
+
+### Phase 2: UI ✅ COMPLETE
+
+- [x] **Unlock notifications** (`cycleCompletion.js`) — `checkThemeUnlocks()` called after every cycle; each new unlock fires a 5s success notification
+- [x] **Stats panel theme status** (`statsPanel.js`) — `#theme-unlock-message` shows current theme with icon; `#golden-unlock-message` shows next unlock milestone or "All themes unlocked!"
+- [x] **Theme picker in routine switcher** (`routineSwitcher.js`, `miniCycle.html`, `routine-switcher.css`) — 🎨 button in action row opens compact picker; unlocked = clickable, locked = grayed with cycle count; applying fires confirmation notification; picker cleans up on modal close
+- [x] New VocabThemeManager helpers: `getThemeDefinition(id)`, `getNextLockedTheme(globalCycles)`
+- [x] New label keys: `unlock.themeCurrentPrefix`, `unlock.nextThemeUnlock`, `unlock.allThemesUnlocked`, `switcher.selectFirst`
+- [x] New DOM IDs: `SWITCH_THEME_BTN`, `THEME_PICKER_ROW`
+
+---
+
+## Known Limitation
+
+Theme labels update on **routine switch** (full `loadMiniCycle()` re-render). If a user changes a routine's theme while already on that routine, the add-task placeholder, button labels, etc. won't reflect the new theme until they switch away and back. This is acceptable for an initial release.
+
+---
+
+## Post-Implementation Gap Fixes
+
+Three gaps discovered after Phase 2 and resolved:
+
+1. **Task input placeholder** — HTML hardcoded `placeholder="Enter a task..."`. Fixed in `taskRenderer.js:refreshUIFromState()` — now calls `getLabel('action.addTask')` each time the routine loads, so themes like Fitness get "Add exercise" correctly.
+
+2. **Button label key mismatches** — `themes.js` defined `'action.completeAll'` and `'action.clearAll'`, but `taskUI.js` reads `'action.completeCycle'` (cycle mode) and `'action.clearCompletedTasks'` (to-do mode). Fixed: all 4 non-classic themes now use the correct keys.
+
+3. **`notify.cycleComplete` never surfaced** — Defined in each theme but never called. Fixed: `showCompletionAnimation()` in `cycleCompletion.js` now announces `getLabel('notify.cycleComplete')` to the ARIA live region (previously used `accessibility.cycleCompleted`, which had no theme override). Added `'notify.cycleComplete'` to `LENS_SENSITIVE_KEYS`.
+
+---
+
+## Files Modified / Created
+
+| File | Phase | Status |
+|------|-------|--------|
+| `modules/labels/themes.js` | 1 + fix | ✅ Created |
+| `modules/labels/labelResolver.js` | 1 | ✅ Modified |
+| `modules/boot/moduleManifests.js` | 1+2 | ✅ Modified |
+| `modules/boot/featureBoot.js` | 1 | ✅ Modified |
+| `modules/routine/routineManager.js` | 1 | ✅ Modified |
+| `modules/labels/defaultLabels.js` | 1+2+fix | ✅ Modified |
+| `modules/features/statsPanel.js` | 1+2 | ✅ Modified |
+| `modules/features/themeManager.js` | 1 | ✅ Modified (no-ops) |
+| `modules/features/achievementsManager.js` | 1 | ✅ Modified |
+| `modules/progress/cycleCompletion.js` | 1+2+fix | ✅ Modified |
+| `modules/boot/moduleLoader.js` | 1 | ✅ Modified |
+| `modules/ui/cycleImportManager.js` | 1 | ✅ Modified |
+| `modules/routine/routineSwitcher.js` | 2 | ✅ Modified |
+| `modules/core/constants.js` | 2 | ✅ Modified |
+| `miniCycle.html` | 2 | ✅ Modified |
+| `styles/components/routine-switcher.css` | 2 | ✅ Modified |
+| `modules/task/taskRenderer.js` | fix | ✅ Modified |
 
 ---
 
 ## What Was Already Done (Prerequisites)
 
-- `defaultLabels.js` — `icons` category with 15 emoji constants ✅
+- `defaultLabels.js` — `icons` category with emoji constants ✅
 - `labelResolver.js` — `getIcon()` function + DI hooks (`getActiveLens`, `getRoutineLens`) ready ✅
 - All emoji centralized via `getIcon()` in cycleCompletion, themeManager, statsPanel, recurringWatcher ✅
 - `LENS_SENSITIVE_KEYS` updated with all `icons.*` keys ✅
@@ -294,4 +289,4 @@ Non-blocking — the routine still imports and works perfectly.
 ---
 
 **Author:** sparkinCreations
-**Updated:** February 2026
+**Completed:** February 2026

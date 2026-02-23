@@ -764,7 +764,9 @@ export class ModeManager {
             // Use CSS class toggle (visibility:hidden) instead of display:none to prevent CLS
             const updateToggleText = (isVisible) => {
                 if (toggleText) {
-                    toggleText.textContent = isVisible ? getLabel('nav.hideTaskInput') : getLabel('nav.addTaskToggle');
+                    // Use 'action.addTask' (not 'nav.addTaskToggle') so vocab themes
+                    // ("Add habit", "Add exercise", etc.) are reflected here too.
+                    toggleText.textContent = isVisible ? getLabel('nav.hideTaskInput') : getLabel('action.addTask');
                 }
                 // Remove inline display style if present (from initial HTML)
                 if (taskInput.style.display) {

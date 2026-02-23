@@ -131,10 +131,21 @@ export const MODULE_MANIFESTS = {
         path: '../features/themeManager.js',
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'showNotification', 'getModal', 'getElementById', 'querySelector', 'querySelectorAll'],
-        provides: ['applyTheme', 'updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'unlockDarkOceanTheme', 'unlockGoldenGlowTheme', 'initThemesPanel', 'refreshThemeToggles', 'setupThemesPanel'],
+        optionalDeps: ['vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'updateHelpWindow'],
+        provides: ['applyTheme', 'updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'initThemesPanel', 'refreshThemeToggles', 'setupThemesPanel'],
         provideInstance: 'themeManager',
         api: 'features',
         after: ['notifications']
+    },
+
+    vocabThemes: {
+        path: '../labels/themes.js',
+        phase: PHASES.THEME_VISUAL,
+        requires: ['AppState'],
+        provides: ['vocabThemeManager', 'THEME_DEFINITIONS'],
+        provideInstance: 'vocabThemeManager',
+        api: 'features',
+        after: ['labelResolver']
     },
 
     gamesManager: {
@@ -202,7 +213,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/statsPanel.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['showNotification', 'AppState', 'appInit', 'getModal'],
-        optionalDeps: ['historyManager', 'clearedTasksManager', 'achievementsManager', 'gesturePanelManager'],
+        optionalDeps: ['historyManager', 'clearedTasksManager', 'achievementsManager', 'gesturePanelManager', 'vocabThemeManager'],
         provides: ['showStatsPanel', 'showTaskView', 'updateStatsPanel', 'openHistoryModal', 'openClearedTasksModal', 'openAchievementsModal'],
         provideInstance: 'statsPanelManager',
         api: 'ui'
@@ -287,7 +298,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineSwitcher.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showCycleCreationModal', 'getOnboardingManager', 'getModal'],
-        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched'],  // From undoRedoManager (phase 6)
+        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader'],  // vocabThemeManager for per-routine theme selector
         provides: ['switchMiniCycle', 'renameMiniCycle', 'deleteMiniCycle'],
         api: 'cycle',
         after: ['routineManager', 'onboardingManager']
@@ -377,7 +388,7 @@ export const MODULE_MANIFESTS = {
         path: '../progress/cycleCompletion.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification'],
-        optionalDeps: ['logHistoryEvent', 'checkAchievements'],
+        optionalDeps: ['logHistoryEvent', 'checkAchievements', 'vocabThemeManager', 'renderVocabThemes'],
         provides: ['checkMiniCycle', 'updateProgressBar', 'incrementCycleCount', 'showCompletionAnimation', 'showClearAnimation', 'animateProgressBarFill', 'animateProgressBarEmpty'],
         api: 'progress'
     },
@@ -504,7 +515,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/achievementsManager.js',
         phase: PHASES.FEATURES,
         requires: ['appInit', 'AppState', 'showNotification'],
-        optionalDeps: ['unlockDarkOceanTheme', 'unlockGoldenGlowTheme', 'unlockMiniGame', 'safeAddEventListener'],
+        optionalDeps: ['unlockMiniGame', 'safeAddEventListener'],
         provides: ['checkAchievements', 'getAchievements', 'isAchievementUnlocked', 'openAchievementsModal', 'initBadgeTooltips', 'showBadgeDetail', 'hideBadgeDetail', 'updateBadges'],
         provideInstance: 'achievementsManager',
         api: 'features',

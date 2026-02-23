@@ -210,6 +210,7 @@ export class RoutineManager {
                             deleteCheckedTasks: false,
                             cycleCount: 0,
                             createdAt: Date.now(),
+                            theme: 'classic',
                             recurringTemplates: {},
                             reminders: {
                                 enabled: false,
@@ -281,6 +282,7 @@ export class RoutineManager {
                     cycleCount: sample.cycleCount || 0,
                     deleteCheckedTasks: sample.deleteCheckedTasks || false,
                     createdAt: Date.now(),
+                    theme: 'classic',
                     recurringTemplates: {},
                     reminders: {
                         enabled: false,
@@ -367,6 +369,7 @@ export class RoutineManager {
                 deleteCheckedTasks: false,
                 cycleCount: 0,
                 createdAt: Date.now(),
+                theme: 'classic',
                 recurringTemplates: {}
             };
 
@@ -451,6 +454,7 @@ export class RoutineManager {
                         deleteCheckedTasks: false,
                         cycleCount: 0,
                         createdAt: Date.now(),
+                        theme: 'classic',
                         recurringTemplates: {},
                         taskOptionButtons: { ...this.deps.DEFAULT_TASK_OPTION_BUTTONS }
                     };

@@ -45,7 +45,12 @@ const di = createDIModule('ThemeManager', {
     getModal: optional(null),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
-    querySelectorAll: optional((sel) => document.querySelectorAll(sel))
+    querySelectorAll: optional((sel) => document.querySelectorAll(sel)),
+    vocabThemeManager: optional(null),
+    checkCompleteAllButton: optional(null),
+    updateStatsPanel: optional(null),
+    updateMainMenuHeader: optional(null),
+    updateHelpWindow: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -64,6 +69,43 @@ const _deps = new Proxy({}, {
 export function setThemeManagerDependencies(deps) {
     di.setDependencies(deps);
     console.log('🎨 ThemeManager dependencies injected');
+}
+
+/**
+ * Refresh all visible theme-sensitive labels in the UI.
+ * Called after the user selects a new vocab theme so the page updates
+ * immediately without a reload. Relies on getLabel() returning the newly
+ * active theme's labels (AppState is updated before this is called).
+ */
+function _refreshLiveLensLabels() {
+    // Injected helpers (checkCompleteAllButton, updateStatsPanel, updateMainMenuHeader)
+    // also call getLabel() internally — run them first so their DOM writes land,
+    // then our explicit updates below ensure the key elements are correct too.
+    _deps.checkCompleteAllButton?.();
+    _deps.updateStatsPanel?.();
+    _deps.updateMainMenuHeader?.();
+    _deps.updateHelpWindow?.();
+
+    // Task input placeholder ("Add task" → "Add habit" etc.)
+    const taskInputEl = document.getElementById(DOM_IDS.TASK_INPUT);
+    if (taskInputEl) {
+        taskInputEl.placeholder = getLabel('action.addTask');
+    }
+
+    // Quick-action "Add Task" button text
+    const addTaskText = document.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_TEXT);
+    if (addTaskText) {
+        addTaskText.textContent = getLabel('action.addTask');
+    }
+
+    // Complete-all button text ("Complete Cycle" → "Complete Habits" etc.)
+    const completeBtn = document.getElementById(DOM_IDS.COMPLETE_ALL);
+    if (completeBtn) {
+        const isToDoMode = document.body.classList.contains('todo-mode-mode');
+        completeBtn.textContent = isToDoMode
+            ? '🧹 ' + getLabel('action.clearCompletedTasks')
+            : '🔄 ' + getLabel('action.completeCycle');
+    }
 }
 
 export class ThemeManager {
@@ -387,100 +429,18 @@ export class ThemeManager {
         }
     }
     
-    // ===== THEME UNLOCK FUNCTIONS =====
-    
+    // ===== THEME UNLOCK FUNCTIONS (removed — now handled by VocabThemeManager) =====
+
     /**
-     * Unlock Dark Ocean theme
+     * @deprecated Dark Ocean and Golden Glow are no longer unlock-gated.
+     * Kept as no-ops temporarily so any stale DI wiring doesn't throw.
      */
     async unlockDarkOceanTheme() {
-        try {
-            console.log("🌊 Unlocking Dark Ocean theme (state-based)...");
-
-            // ✅ Wait for core systems to be ready (AppState + data)
-            await _deps.appInit?.waitForCore();
-
-            if (!_deps.AppState) {
-                console.warn('⚠️ AppState not injected - using fallback');
-                this.unlockThemeFallback('dark-ocean', 'Dark Ocean');
-                return;
-            }
-            const currentState = _deps.AppState.get();
-            if (!currentState) {
-                console.warn('⚠️ No state data for unlockDarkOceanTheme - using fallback');
-                this.unlockThemeFallback('dark-ocean', 'Dark Ocean');
-                return;
-            }
-            
-            if (!currentState.settings.unlockedThemes.includes("dark-ocean")) {
-                _deps.AppState.update(state => {
-                    state.settings.unlockedThemes.push("dark-ocean");
-                    state.userProgress.rewardMilestones.push("dark-ocean-5");
-                }, true);
-                
-                console.log("🎨 Dark Ocean theme unlocked (state-based)!");
-                this.refreshThemeToggles();
-                
-                // Show theme options
-                this.showThemeContainer();
-                this.showThemeButton();
-                
-                this.showNotification?.(getIcon('celebrate') + ' ' + getLabel('notify.themeUnlocked', { vars: { name: 'Dark Ocean' } }), 'success', 5000);
-            } else {
-                console.log('ℹ️ Dark Ocean theme already unlocked');
-            }
-            
-            this.refreshThemeToggles();
-        } catch (error) {
-            console.warn('⚠️ Dark Ocean theme unlock failed:', error.message);
-            this.unlockThemeFallback('dark-ocean', 'Dark Ocean');
-        }
+        // No-op — Dark Ocean is now freely available in Quick Colors
     }
-    
-    /**
-     * Unlock Golden Glow theme
-     */
+
     async unlockGoldenGlowTheme() {
-        try {
-            console.log("🌟 Unlocking Golden Glow theme (state-based)...");
-
-            // ✅ Wait for core systems to be ready (AppState + data)
-            await _deps.appInit?.waitForCore();
-
-            if (!_deps.AppState) {
-                console.warn('⚠️ AppState not injected - using fallback');
-                this.unlockThemeFallback('golden-glow', 'Golden Glow');
-                return;
-            }
-            const currentState = _deps.AppState.get();
-            if (!currentState) {
-                console.warn('⚠️ No state data for unlockGoldenGlowTheme - using fallback');
-                this.unlockThemeFallback('golden-glow', 'Golden Glow');
-                return;
-            }
-
-            if (!currentState.settings.unlockedThemes.includes("golden-glow")) {
-                _deps.AppState.update(state => {
-                    state.settings.unlockedThemes.push("golden-glow");
-                    state.userProgress.rewardMilestones.push("golden-glow-50");
-                }, true);
-                
-                console.log("🎨 Golden Glow theme unlocked (state-based)!");
-                this.refreshThemeToggles();
-
-                // Show theme options
-                this.showThemeContainer();
-                this.showThemeButton();
-
-                this.showNotification?.(getIcon('themeStar') + " " + getLabel('notify.themeUnlocked', { vars: { name: 'Golden Glow' } }), "success", 5000);
-            } else {
-                console.log('ℹ️ Golden Glow theme already unlocked');
-            }
-            
-            this.refreshThemeToggles();
-        } catch (error) {
-            console.warn('⚠️ Golden Glow theme unlock failed:', error.message);
-            this.unlockThemeFallback('golden-glow', 'Golden Glow');
-        }
+        // No-op — Golden Glow is now freely available in Quick Colors
     }
     
     /**
@@ -509,40 +469,13 @@ export class ThemeManager {
     // ===== THEME PANEL FUNCTIONS =====
     
     /**
-     * Initialize themes panel 
+     * Initialize themes panel
+     * @deprecated #theme-options-section was removed — color themes live in Personalization.
+     * Kept as a no-op so stale call sites in featureBoot/uiBoot don't throw.
      */
     initThemesPanel() {
-        try {
-            console.log("🌈 Initializing Theme Panel");
-
-            const existingContainer = _deps.querySelector(DOM_SELECTORS.THEME_CONTAINER);
-            if (existingContainer) {
-                console.log('ℹ️ Theme container already exists');
-                return;
-            }
-
-            const themeContainer = document.createElement('div');
-            themeContainer.className = 'theme-container';
-            themeContainer.id = 'theme-container';
-
-            const themeOptionContainer = document.createElement('div');
-            themeOptionContainer.className = 'theme-option-container';
-            themeOptionContainer.id = 'theme-option-container';
-
-            themeContainer.appendChild(themeOptionContainer);
-
-            // Inject into modal
-            const themeSection = _deps.getElementById(DOM_IDS.THEME_OPTIONS_SECTION);
-            if (themeSection) {
-                themeSection.appendChild(themeContainer);
-                this.refreshThemeToggles();
-                console.log('✅ Theme panel initialized');
-            } else {
-                console.warn('⚠️ Theme options section not found');
-            }
-        } catch (error) {
-            console.warn('⚠️ Theme panel initialization failed:', error.message);
-        }
+        // No-op: #theme-options-section no longer exists in the DOM.
+        // Vocabulary themes are rendered by renderVocabThemes() on modal open.
     }
     
     /**
@@ -641,6 +574,98 @@ export class ThemeManager {
     }
     
     /**
+     * Render vocabulary theme options into #vocab-theme-section.
+     * Called each time the Themes modal opens so unlock state is always fresh.
+     */
+    renderVocabThemes() {
+        try {
+            const vtm = _deps.vocabThemeManager;
+            const section = _deps.getElementById(DOM_IDS.VOCAB_THEME_SECTION);
+            if (!section || !vtm) return;
+
+            const state = _deps.AppState?.get?.();
+            if (!state) return;
+
+            const activeCycleId = state.appState?.activeCycleId;
+            const activeCycle = state.data?.cycles?.[activeCycleId];
+            const currentThemeId = activeCycle?.theme ?? 'classic';
+            const unlocked = new Set(vtm.getUnlockedThemeIds());
+
+            section.innerHTML = '';
+
+            // Section heading
+            const heading = document.createElement('p');
+            heading.className = 'vocab-theme-heading';
+            heading.textContent = getLabel('unlock.vocabThemeSection');
+            section.appendChild(heading);
+
+            const themeIds = ['classic', 'habit-tracker', 'fitness', 'scholar', 'cleaning'];
+            themeIds.forEach(id => {
+                if (!unlocked.has(id)) return; // hide locked themes entirely
+
+                const def = vtm.getThemeDefinition(id);
+                if (!def) return;
+
+                const isCurrent = id === currentThemeId;
+                const icon = def.icons?.celebrate ?? (id === 'classic' ? '✨' : '');
+
+                const option = document.createElement('label');
+                option.className = 'theme-radio-option vocab-theme-option';
+
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'vocab-theme-selection';
+                radio.value = id;
+                radio.checked = isCurrent;
+
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'theme-radio-label vocab-theme-label';
+
+                const nameEl = document.createElement('span');
+                nameEl.className = 'vocab-theme-name';
+                nameEl.textContent = icon ? `${icon} ${def.name}` : def.name;
+                labelSpan.appendChild(nameEl);
+
+                option.appendChild(radio);
+                option.appendChild(labelSpan);
+
+                radio.addEventListener('change', () => {
+                    if (radio.checked && activeCycleId) {
+                        vtm.setRoutineTheme(activeCycleId, id);
+                        _deps.showNotification?.(
+                            getLabel('unlock.vocabThemeApplied', { vars: { name: def.name } }),
+                            'success', 2000
+                        );
+                        _refreshLiveLensLabels();
+                    }
+                });
+
+                section.appendChild(option);
+            });
+
+            console.log('✅ Vocab themes rendered in Themes modal');
+        } catch (error) {
+            console.warn('⚠️ renderVocabThemes failed:', error.message);
+        }
+    }
+
+    /**
+     * Refresh all theme-sensitive labels in the UI to match the active vocab theme.
+     *
+     * Called in two situations:
+     *   1. Boot — from uiBoot.finalizeUI(), so HTML-hardcoded elements ("Add Task",
+     *      "Complete Cycle", etc.) show the correct themed text on first load.
+     *   2. Theme change — from renderVocabThemes() and routineSwitcher._selectTheme()
+     *      so the page updates immediately without a reload.
+     *
+     * If you add a new HTML element whose text should change with the active vocab
+     * theme, add its DOM update to _refreshLiveLensLabels() below.
+     */
+    refreshThemeLabels() {
+        _refreshLiveLensLabels();
+    }
+
+    /**
      * Setup themes panel modal
      */
     setupThemesPanel() {
@@ -680,17 +705,13 @@ export class ThemeManager {
      */
     setupThemesPanelWithData(schemaData) {
         try {
-            const { settings } = schemaData;
-            const unlockedThemes = settings?.unlockedThemes || [];
-            const hasUnlockedThemes = unlockedThemes.length > 0;
-
             const themeButton = _deps.getElementById(DOM_IDS.OPEN_THEMES_PANEL);
             const themesModal = _deps.getModal('themes');
             const themesModalContent = themesModal?.querySelector(DOM_SELECTORS.THEMES_MODAL_CONTENT);
             const closeThemesBtn = _deps.getElementById(DOM_IDS.CLOSE_THEMES_BTN);
 
-            // Show the button if any theme is unlocked
-            if (hasUnlockedThemes && themeButton) {
+            // Themes modal is always accessible (vocabulary themes available from day one)
+            if (themeButton) {
                 themeButton.style.display = "block";
             }
 
@@ -701,6 +722,7 @@ export class ThemeManager {
                     if (themesModal && !themesModal.open) {
                         themesModal._previousFocus = document.activeElement;
                         themesModal.showModal();
+                        this.renderVocabThemes();
                         _deps.hideMainMenu?.();
                     }
                 };
@@ -976,20 +998,6 @@ function setupQuickDarkToggle() {
 }
 
 /**
- * Unlock Dark Ocean theme
- */
-function unlockDarkOceanTheme() {
-    return themeManager.unlockDarkOceanTheme();
-}
-
-/**
- * Unlock Golden Glow theme
- */
-function unlockGoldenGlowTheme() {
-    return themeManager.unlockGoldenGlowTheme();
-}
-
-/**
  * Initialize themes panel
  */
 function initThemesPanel() {
@@ -1030,8 +1038,6 @@ export {
     updateThemeColor,
     setupDarkModeToggle,
     setupQuickDarkToggle,
-    unlockDarkOceanTheme,
-    unlockGoldenGlowTheme,
     initThemesPanel,
     refreshThemeToggles,
     setupThemesPanel,

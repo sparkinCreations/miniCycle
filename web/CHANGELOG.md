@@ -1,3 +1,7 @@
+## [1.1028] - 2026-02-23
+- Implement choice modal for import options; enhance import process with user selection for template or progress mode
+
+
 ## [1.1027] - 2026-02-22
 - Refactor deleteCompletedTasksImpl to improve UI update handling during task deletion; ensure staggered animations complete before updating DOM-dependent elements.
 

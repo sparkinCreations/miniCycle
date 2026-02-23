@@ -81,7 +81,7 @@ export async function bootEarlyDeps(deps, coreResult) {
 
     // Store in deps container
     deps.utils.notifications = notifications;
-    deps.utils.showNotification = (message, type, duration) => notifications.show(message, type, duration);
+    deps.utils.showNotification = (message, type, duration, options) => notifications.show(message, type, duration, options);
     deps.utils.showNotificationWithTip = (content, type, duration, tipId, options) => notifications.showWithTip(content, type, duration, tipId, options);
     deps.utils.showApplyConfirmation = (targetElement) => notifications.showApplyConfirmation(targetElement);
     deps.utils.showConfirmationModal = (options) => notifications.showConfirmationModal(options);
@@ -179,6 +179,14 @@ export async function bootFeatures(deps, coreResult) {
 
     // Register grouped APIs with appContext
     registerGroupedApisFromLoader(deps, appContextMod, coreResult);
+
+    // =========================================================================
+    // INITIALISE VOCABULARY THEME SYSTEM
+    // =========================================================================
+    if (deps.features?.vocabThemeManager) {
+      deps.features.vocabThemeManager.init();
+      console.log('✅ Vocabulary theme system initialised');
+    }
 
     // =========================================================================
     // INJECT RECURRING FUNCTIONS INTO NOTIFICATIONS

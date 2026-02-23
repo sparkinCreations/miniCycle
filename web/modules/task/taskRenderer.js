@@ -23,6 +23,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
 // ============================================================================
@@ -278,6 +279,11 @@ export class TaskRenderer {
 
                 this.deps.updateProgressBar?.();
                 this.deps.checkCompleteAllButton?.();
+
+                // Sync task input placeholder with active theme
+                const taskInputEl = document.getElementById(DOM_IDS.TASK_INPUT);
+                if (taskInputEl) taskInputEl.placeholder = getLabel('action.addTask');
+
                 return;
             }
         }

@@ -201,7 +201,8 @@ function wireSubModuleDependencies(dependencies) {
         safeAddEventListener: dependencies.safeAddEventListener,
         DataValidator: dependencies.DataValidator,
         calculateNextOccurrence: dependencies.calculateNextOccurrence,
-        AppMeta: dependencies.AppMeta
+        AppMeta: dependencies.AppMeta,
+        vocabThemeManager: dependencies.vocabThemeManager
     });
 
     _subModules.setBackupRestoreManagerDependencies({

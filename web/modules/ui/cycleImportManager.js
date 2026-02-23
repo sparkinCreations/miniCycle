@@ -33,7 +33,8 @@ const di = createDIModule('CycleImportManager', {
     showChoiceModal: optional(null),  // Optional - for import mode choice
     DataValidator: optional(null),  // Optional - graceful handling if missing
     calculateNextOccurrence: optional(null),  // Optional - for recurring tasks
-    AppMeta: optional(null)  // For version info
+    AppMeta: optional(null),  // For version info
+    vocabThemeManager: optional(null)  // For theme validation during import
 });
 
 /** @type {{AppState: Object, showNotification: Function, safeAddEventListener: Function, DataValidator: Object|null, calculateNextOccurrence: Function|null, AppMeta: Object|null}} */
@@ -630,6 +631,21 @@ export async function processImportedData(fileContent) {
         };
     }
 
+    // ✅ Resolve theme — use imported theme if unlocked, otherwise fall back to Classic
+    const importedTheme = importedData.theme ?? 'classic';
+    const currentState = appState.get();
+    const unlockedThemes = currentState?.settings?.unlockedThemes ?? ['classic'];
+    let resolvedTheme = 'classic';
+    let themeWasDowngraded = false;
+
+    if (importedTheme === 'classic' || unlockedThemes.includes(importedTheme)) {
+        resolvedTheme = importedTheme;
+    } else if (_deps.vocabThemeManager?.getThemeDefinition(importedTheme)) {
+        // Theme exists but user hasn't unlocked it yet
+        resolvedTheme = currentState?.settings?.defaultTheme ?? 'classic';
+        themeWasDowngraded = true;
+    }
+
     // ✅ Create imported cycle via AppState.update() - use title as storage key (consistent with app)
     appState.update(state => {
         state.data.cycles[finalCycleTitle] = {
@@ -640,6 +656,7 @@ export async function processImportedData(fileContent) {
             cycleCount: importedData.cycleCount || 0,
             deleteCheckedTasks: importedData.deleteCheckedTasks || false,
             createdAt: Date.now(),
+            theme: resolvedTheme,
             recurringTemplates: mergedTemplates,
             taskOptionButtons: safeTaskOptionButtons,
             reminders: safeReminders
@@ -660,7 +677,11 @@ export async function processImportedData(fileContent) {
     let importMessage = '';
     let messageType = 'success';
 
-    if (tasksTruncated) {
+    if (themeWasDowngraded) {
+        const themeName = _deps.vocabThemeManager?.getThemeDefinition(importedTheme)?.name ?? importedTheme;
+        importMessage = getLabel('notify.themeLockedOnImport', { vars: { name: themeName } });
+        messageType = 'info';
+    } else if (tasksTruncated) {
         const truncatedCount = originalTaskCount - MAX_TASK_COUNT;
         importMessage = getLabel('notify.importTruncated', { vars: { name: finalCycleTitle, limit: MAX_TASK_COUNT, count: truncatedCount } });
         messageType = 'warning';

@@ -199,51 +199,50 @@ export const GESTURE = Object.freeze({
  * To change thresholds, edit ONLY this file.
  */
 export const MILESTONES = Object.freeze({
-    // Legacy format (for backwards compatibility)
-    DARK_OCEAN_THEME: 5,
-    GOLDEN_GLOW_THEME: 50,
     TASK_ORDER_GAME: 100,
 
     // Full milestone definitions (5 tiers: 5, 25, 50, 75, 100)
-    // Names match badge emojis: 🌊 💎 🌞 💫 👑
+    // Emojis match vocab theme celebrate icons: 🔥 💪 📚 🧹 👑
     TIERS: Object.freeze([
         {
             id: 'milestone-5',
-            name: 'Making Waves',
-            emoji: '🌊',
+            name: 'Habit Tracker',
+            emoji: '🔥',
             cycles: 5,
             tasks: 5,
-            reward: 'dark-ocean',
-            rewardType: 'theme',
-            rewardLabel: 'Dark Ocean Theme'
+            reward: 'habit-tracker',
+            rewardType: 'vocab-theme',
+            rewardLabel: 'Habit Tracker Theme'
         },
         {
             id: 'milestone-25',
-            name: 'Diamond',
-            emoji: '💎',
+            name: 'Fitness',
+            emoji: '💪',
             cycles: 25,
             tasks: 125,
-            reward: null,
-            rewardType: null
+            reward: 'fitness',
+            rewardType: 'vocab-theme',
+            rewardLabel: 'Fitness Theme'
         },
         {
             id: 'milestone-50',
-            name: 'Radiant',
-            emoji: '🌞',
+            name: 'Scholar',
+            emoji: '📚',
             cycles: 50,
             tasks: 250,
-            reward: 'golden-glow',
-            rewardType: 'theme',
-            rewardLabel: 'Golden Glow Theme'
+            reward: 'scholar',
+            rewardType: 'vocab-theme',
+            rewardLabel: 'Scholar Theme'
         },
         {
             id: 'milestone-75',
-            name: 'Stellar',
-            emoji: '💫',
+            name: 'Cleaning',
+            emoji: '🧹',
             cycles: 75,
             tasks: 375,
-            reward: null,
-            rewardType: null
+            reward: 'cleaning',
+            rewardType: 'vocab-theme',
+            rewardLabel: 'Cleaning Theme'
         },
         {
             id: 'milestone-100',
@@ -255,7 +254,6 @@ export const MILESTONES = Object.freeze({
             rewardType: 'game',
             rewardLabel: 'Whack-a-Order Game'
         }
-        // Future tiers can be added here when rewards are defined
     ])
 });
 
@@ -584,6 +582,8 @@ export const DOM_IDS = Object.freeze({
     SWITCH_DUPLICATE: 'switch-duplicate',
     SWITCH_RENAME: 'switch-rename',
     SWITCH_DELETE: 'switch-delete',
+    SWITCH_THEME_BTN: 'switch-theme',
+    THEME_PICKER_ROW: 'theme-picker-row',
     MINI_CYCLE_SWITCH_CONFIRM: 'miniCycleSwitchConfirm',
     MINI_CYCLE_SWITCH_CANCEL: 'miniCycleSwitchCancel',
     STORAGE_BAR_FILL: 'storage-bar-fill',
@@ -630,6 +630,7 @@ export const DOM_IDS = Object.freeze({
     STATUS_BAR_STYLE_META: 'status-bar-style-meta',
     THEME_OPTIONS_SECTION: 'theme-options-section',
     THEME_OPTION_CONTAINER: 'theme-option-container',
+    VOCAB_THEME_SECTION: 'vocab-theme-section',
 
     // ---- Recurring Panel ----
     RECURRING_PANEL_OVERLAY: 'recurring-panel-overlay',

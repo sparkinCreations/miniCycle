@@ -34,8 +34,6 @@ const di = createDIModule('AchievementsManager', {
     AppState: required(),
     appInit: required(),
     showNotification: required(),
-    unlockDarkOceanTheme: optional(null),
-    unlockGoldenGlowTheme: optional(null),
     unlockMiniGame: optional(null),
     logHistoryEvent: optional(null),
     // Badge UI dependencies
@@ -147,13 +145,6 @@ export class AchievementsManager {
         console.log(`Triggering reward: ${milestone.reward} (${milestone.rewardType})`);
 
         switch (milestone.rewardType) {
-            case 'theme':
-                if (milestone.reward === 'dark-ocean' && this.deps.unlockDarkOceanTheme) {
-                    this.deps.unlockDarkOceanTheme();
-                } else if (milestone.reward === 'golden-glow' && this.deps.unlockGoldenGlowTheme) {
-                    this.deps.unlockGoldenGlowTheme();
-                }
-                break;
             case 'game':
                 if (this.deps.unlockMiniGame) {
                     this.deps.unlockMiniGame(milestone.reward);
@@ -684,12 +675,16 @@ export class AchievementsManager {
         // Determine badge circle color based on unlock status and reward
         let badgeBackground = 'linear-gradient(135deg, #e0e0e0, #c0c0c0)'; // Default gray for locked
         if (isUnlocked) {
-            if (tierConfig.reward === 'dark-ocean') {
-                badgeBackground = 'linear-gradient(135deg, #1a5276, #2980b9)';
-            } else if (tierConfig.reward === 'golden-glow') {
-                badgeBackground = 'linear-gradient(135deg, #b8860b, #ffd700)';
+            if (tierConfig.reward === 'habit-tracker') {
+                badgeBackground = 'linear-gradient(135deg, #28a745, #5cb85c)'; // green (standard unlock)
+            } else if (tierConfig.reward === 'fitness') {
+                badgeBackground = 'linear-gradient(135deg, #1a6b9e, #2ecc71)'; // energy blue-green
+            } else if (tierConfig.reward === 'scholar') {
+                badgeBackground = 'linear-gradient(135deg, #5b2c8d, #8e44ad)'; // academic purple
+            } else if (tierConfig.reward === 'cleaning') {
+                badgeBackground = 'linear-gradient(135deg, #0e7c6a, #1abc9c)'; // fresh teal
             } else if (tierConfig.reward === 'whack-a-order') {
-                badgeBackground = 'linear-gradient(135deg, #8b0000, #dc143c)';
+                badgeBackground = 'linear-gradient(135deg, #8b0000, #dc143c)'; // game red
             } else {
                 badgeBackground = 'linear-gradient(135deg, #28a745, #5cb85c)';
             }
