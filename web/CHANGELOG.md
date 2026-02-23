@@ -1,3 +1,7 @@
+## [1.1029] - 2026-02-23
+- feat: implement vocabulary theme system for dynamic terminology
+
+
 ## [1.1028] - 2026-02-23
 - Implement choice modal for import options; enhance import process with user selection for template or progress mode
 

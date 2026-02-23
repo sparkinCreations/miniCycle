@@ -60,18 +60,18 @@ export const THEME_DEFINITIONS = {
             'noun.task':                   { one: 'habit',  other: 'habits'  },
             'noun.cycle':                  { one: 'streak', other: 'streaks' },
             'action.addTask':              'Add habit',
-            'action.completeCycle':        'Complete Habits',
+            'action.completeCycle':        'Complete Streak',
             'action.clearCompletedTasks':  'Clear Habits',
             'notify.cycleComplete':        'Day completed! Streak extended!',
         },
         icons: {
-            cycleComplete: '⚡',
+            cycleComplete: '👍',
             celebrate:     '🔥',
         },
         preview: {
             tagline:      'Build streaks, track habits',
             sampleLabels: ['Habit', 'Streak', 'Complete Day'],
-            sampleIcons:  ['🔥', '⚡']
+            sampleIcons:  ['🔥', '👍']
         }
     },
 
@@ -89,8 +89,8 @@ export const THEME_DEFINITIONS = {
             'notify.cycleComplete':        'Workout complete!',
         },
         icons: {
-            cycleComplete: '🏆',
-            celebrate:     '💪',
+            cycleComplete: '💪',
+            celebrate:     '🏆',
         },
         preview: {
             tagline:      'Track workouts, build routines',
@@ -113,8 +113,8 @@ export const THEME_DEFINITIONS = {
             'notify.cycleComplete':        'Study session complete!',
         },
         icons: {
-            cycleComplete: '🎓',
-            celebrate:     '📚',
+            cycleComplete: '📚',
+            celebrate:     '🎓',
         },
         preview: {
             tagline:      'Study topics, track sessions',
@@ -134,16 +134,16 @@ export const THEME_DEFINITIONS = {
             'action.addTask':              'Add chore',
             'action.completeCycle':        'Complete Chores',
             'action.clearCompletedTasks':  'Clear Chores',
-            'notify.cycleComplete':        'Clean sweep done!',
+            'notify.cycleComplete':        'Chores done!',
         },
         icons: {
-            cycleComplete: '✨',
+            cycleComplete: '🧼',
             celebrate:     '🧹',
         },
         preview: {
             tagline:      'Tackle chores, run clean sweeps',
             sampleLabels: ['Chore', 'Clean Sweep', 'Complete Chores'],
-            sampleIcons:  ['🧹', '✨']
+            sampleIcons:  ['🧹', '🧼']
         }
     }
 };
