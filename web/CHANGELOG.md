@@ -1,3 +1,7 @@
+## [1.1030] - 2026-02-23
+- refactor: update vocabulary labels and icons for consistency across themes
+
+
 ## [1.1029] - 2026-02-23
 - feat: implement vocabulary theme system for dynamic terminology
 

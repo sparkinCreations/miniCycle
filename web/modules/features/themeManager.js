@@ -92,6 +92,12 @@ function _refreshLiveLensLabels() {
         taskInputEl.placeholder = getLabel('action.addTask');
     }
 
+    // App subtitle ("ROUTINE MANAGER" → "HABIT TRACKER" etc.)
+    const appSubtitle = document.getElementById(DOM_IDS.APP_SUBTITLE);
+    if (appSubtitle) {
+        appSubtitle.textContent = getLabel('nav.appSubtitle');
+    }
+
     // Quick-action "Add Task" button text
     const addTaskText = document.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_TEXT);
     if (addTaskText) {

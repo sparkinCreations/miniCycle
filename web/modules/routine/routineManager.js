@@ -306,7 +306,7 @@ export class RoutineManager {
             const existingModals = this.deps.querySelectorAll('dialog.miniCycle-prompt-dialog, dialog.mini-modal-dialog');
             existingModals.forEach(modal => { if (modal.open) modal.close(); modal.remove(); });
 
-            this.deps.showNotification("✨ A sample miniCycle has been preloaded to help you get started!", "success", 5000);
+            this.deps.showNotification('✨ ' + getLabel('notify.samplePreloaded'), "success", 5000);
 
             // ✅ COMPLETE SETUP AFTER LOADING SAMPLE
             this.deps.completeInitialSetup(finalTitle, appState.get());
@@ -335,7 +335,7 @@ export class RoutineManager {
         const appState = this.deps.AppState;
 
         if (!this._ensureAppStateReady('fallback cycle creation')) {
-            this.deps.showNotification("⚠️ Failed to create cycle. Please refresh.", "error", 5000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.failedToCreateCycle'), "error", 5000);
             return;
         }
 
