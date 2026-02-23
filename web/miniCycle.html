@@ -10,7 +10,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="1.1027">
+<meta name="app-version" content="1.1028">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -28,20 +28,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.1027"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.1028"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=1.1027" as="style">
-<link rel="preload" href="styles/base/variables.css?v=1.1027" as="style">
-<link rel="preload" href="styles/base/reset.css?v=1.1027" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=1.1027" as="style">
-<link rel="preload" href="styles/layout/header.css?v=1.1027" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=1.1027" as="style">
+<link rel="preload" href="styles/main.css?v=1.1028" as="style">
+<link rel="preload" href="styles/base/variables.css?v=1.1028" as="style">
+<link rel="preload" href="styles/base/reset.css?v=1.1028" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=1.1028" as="style">
+<link rel="preload" href="styles/layout/header.css?v=1.1028" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=1.1028" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=1.1027" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=1.1028" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=1.1027"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=1.1028"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -52,7 +52,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.1027"></script>
+<script src="./version.js?v=1.1028"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -211,21 +211,21 @@
      3. Or accepting slightly slower initial load without preloads
      ═══════════════════════════════════════════════════════════════════════════ -->
 <!--
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.1027">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.1027">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.1027">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.1027">
-<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.1027">
-<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.1027">
-<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.1027">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.1027">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.1027">
-<link rel="modulepreload" href="./modules/core/appInit.js?v=1.1027">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.1027">
-<link rel="modulepreload" href="./modules/core/diBase.js?v=1.1027">
-<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.1027">
-<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.1027">
-<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.1027">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.1028">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.1028">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.1028">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.1028">
+<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.1028">
+<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.1028">
+<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.1028">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.1028">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.1028">
+<link rel="modulepreload" href="./modules/core/appInit.js?v=1.1028">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.1028">
+<link rel="modulepreload" href="./modules/core/diBase.js?v=1.1028">
+<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.1028">
+<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.1028">
+<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.1028">
 -->
 
 <!-- Critical CSS - extracted to external file for CSP compliance (no 'unsafe-inline' needed) -->
@@ -974,7 +974,7 @@ window.installApp = () => {
     <div id="quick-actions-menu" class="quick-actions-menu" style="display: none;">
       <button id="toggle-task-input-btn" class="quick-action-item">
         <span class="quick-action-icon">📝</span>
-        <span id="toggle-task-input-text" class="quick-action-text">Add Task</span>
+        <span id="toggle-task-input-text" class="quick-action-text"></span>
       </button>
       <button id="create-routine-btn" class="quick-action-item">
         <span class="quick-action-icon">✨</span>
@@ -2003,14 +2003,14 @@ window.installApp = () => {
     <div class="themes-modal-content has-corner-logo">
       <h2 id="themes-modal-title">🎨 Theme Settings</h2>
   
-      <!-- 🎨 THEME OPTIONS -->
-      <div id="theme-options-section">
-        <!-- ✅ Theme checkboxes will be inserted here via JS -->
+      <!-- 🗣️ VOCABULARY THEMES -->
+      <div id="vocab-theme-section">
+        <!-- Vocabulary theme options injected by JS -->
       </div>
-  
+
       <!-- Divider Line -->
       <hr class="theme-divider" />
-  
+
       <!-- 🌙 Dark Mode Section -->
       <div id="dark-mode-section">
         <label class="custom-checkbox">
@@ -2424,8 +2424,10 @@ window.installApp = () => {
             <button id="switch-duplicate" class="switch-duplicate switch-buttons" title="Duplicate routine"><i class="fas fa-copy"></i></button>
             <button id="switch-rename" class="switch-rename switch-buttons" title="Rename routine"><i class="fas fa-edit"></i></button>
             <button id="switch-delete" class="switch-delete switch-buttons" title="Delete routine"><i class="fas fa-trash"></i></button>
+            <button id="switch-theme" class="switch-theme switch-buttons" title="Change routine theme" aria-label="Change theme" aria-expanded="false" aria-controls="theme-picker-row">🎨</button>
             <div id="switch-preview-window" class="switch-preview-window"><br>Preview</div>
         </div>
+        <div id="theme-picker-row" class="theme-picker-row hidden" role="radiogroup" aria-label="Select theme for this routine"></div>
 
         <div>
             <button id="miniCycleSwitchCancel" class="mini-cycle-switch-btn cancel-btn">Cancel</button>
@@ -2658,10 +2660,10 @@ window.installApp = () => {
             </button>
             <!-- Badge tooltips set dynamically from MILESTONES constant in statsPanel.js -->
             <div class="badges">
-                <div class="badge" data-milestone="5" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="5 cycles milestone">🌊</div>
-                <div class="badge" data-milestone="25" tabindex="-1" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="25 cycles milestone">💎</div>
-                <div class="badge" data-milestone="50" tabindex="-1" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="50 cycles milestone">🌞</div>
-                <div class="badge" data-milestone="75" tabindex="-1" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="75 cycles milestone">💫</div>
+                <div class="badge" data-milestone="5" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="5 cycles milestone">🔥</div>
+                <div class="badge" data-milestone="25" tabindex="-1" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="25 cycles milestone">💪</div>
+                <div class="badge" data-milestone="50" tabindex="-1" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="50 cycles milestone">📚</div>
+                <div class="badge" data-milestone="75" tabindex="-1" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="75 cycles milestone">🧹</div>
                 <div class="badge" data-milestone="100" tabindex="-1" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="100 cycles milestone">👑</div>
             </div>
           </div>
@@ -2722,7 +2724,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.1027"></script>
+ <script type="module" src="miniCycle-main.js?v=1.1028"></script>
 
 <script>
 // Sync About modal version with meta app-version

@@ -80,24 +80,25 @@ export function getLabel(key, options = {}) {
     const category = parts[0];
     const labelKey = parts.slice(1).join('.');
 
-    // Future: Check for lens override
-    // const deps = di.resolve();
-    // const lens = routineId
-    //     ? deps.getRoutineLens?.(routineId)
-    //     : deps.getActiveLens?.();
-    // if (lens?.labels?.[category]?.[labelKey]) {
-    //     label = lens.labels[category][labelKey];
-    // }
+    // Check for active theme override (uses full dot-path key)
+    const deps = di.resolve();
+    const theme = routineId
+        ? deps.getRoutineLens?.(routineId)
+        : deps.getActiveLens?.();
 
-    // Resolve from defaults
-    const categoryObj = DEFAULT_LABELS[category];
-    if (!categoryObj) {
-        console.warn(`LabelResolver: Unknown category "${category}"`);
-        return key;
+    let label;
+    if (theme?.labels?.[key] !== undefined) {
+        label = theme.labels[key];
+    } else {
+        // Resolve from defaults
+        const categoryObj = DEFAULT_LABELS[category];
+        if (!categoryObj) {
+            console.warn(`LabelResolver: Unknown category "${category}"`);
+            return key;
+        }
+
+        label = categoryObj[labelKey];
     }
-
-    // Navigate to the label (handles nested keys like 'noun.task' → { one, other })
-    const label = categoryObj[labelKey];
     if (label === undefined) {
         console.warn(`LabelResolver: Unknown key "${key}"`);
         return key;
@@ -134,6 +135,12 @@ export function getLabel(key, options = {}) {
  * getIcon('celebrate')      // '🎉'
  */
 export function getIcon(key) {
+    // Check active theme's icon overrides first
+    const deps = di.resolve();
+    const theme = deps.getActiveLens?.();
+    if (theme?.icons?.[key] !== undefined) {
+        return theme.icons[key];
+    }
     return getLabel(`icons.${key}`);
 }
 

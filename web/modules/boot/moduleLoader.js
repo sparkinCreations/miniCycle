@@ -729,11 +729,10 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         setupDarkModeToggle: (...args) => deps.features?.setupDarkModeToggle?.(...args),
         setupQuickDarkToggle: (...args) => deps.features?.setupQuickDarkToggle?.(...args),
         updateThemeColor: (...args) => deps.features?.updateThemeColor?.(...args),
-        unlockDarkOceanTheme: (...args) => deps.features?.unlockDarkOceanTheme?.(...args),
-        unlockGoldenGlowTheme: (...args) => deps.features?.unlockGoldenGlowTheme?.(...args),
         initThemesPanel: (...args) => deps.features?.initThemesPanel?.(...args),
         refreshThemeToggles: (...args) => deps.features?.refreshThemeToggles?.(...args),
         setupThemesPanel: (...args) => deps.features?.setupThemesPanel?.(...args),
+        renderVocabThemes: (...args) => deps.features?.themeManager?.renderVocabThemes?.(...args),
 
         // Games functions (from gamesManager instance in deps.ui)
         unlockMiniGame: (...args) => deps.ui?.gamesManager?.unlockMiniGame?.(...args),
@@ -889,6 +888,15 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         isAchievementUnlocked: (...args) => deps.features?.achievementsManager?.isUnlocked?.(...args),
         openAchievementsModal: (...args) => deps.features?.achievementsManager?.openModal?.(...args),
 
+        // Vocabulary theme manager (from deps.features) - use Proxy for lazy resolution
+        vocabThemeManager: new Proxy({}, {
+            get(target, prop) {
+                const manager = deps.features?.vocabThemeManager;
+                const value = manager?.[prop];
+                return typeof value === 'function' ? value.bind(manager) : value;
+            }
+        }),
+
         // Recurring task activation/deactivation (from recurringCore via deps.recurring.core)
         handleRecurringTaskActivation: (...args) => deps.recurring?.core?.handleRecurringTaskActivation?.(...args),
         handleRecurringTaskDeactivation: (...args) => deps.recurring?.core?.handleRecurringTaskDeactivation?.(...args),
@@ -931,6 +939,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
 
         // Help window manager (from deps.ui) - returns instance when called as function
         helpWindowManager: () => deps.ui?.helpWindowManager,
+        updateHelpWindow: (...args) => deps.ui?.helpWindowManager?.updateConstantMessage?.(...args),
 
         // Stats panel manager (from deps.ui) - returns instance when called as function
         statsPanelManager: () => deps.ui?.statsPanelManager,

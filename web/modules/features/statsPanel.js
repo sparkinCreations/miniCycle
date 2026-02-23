@@ -54,7 +54,9 @@ const di = createDIModule('StatsPanel', {
     achievementsManager: optional(null),
     getModal: optional(null),
     trackAction: optional(null),
-    gesturePanelManager: optional(null)
+    gesturePanelManager: optional(null),
+    // Vocabulary theme system (Phase 2)
+    vocabThemeManager: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -150,7 +152,9 @@ export class StatsPanelManager {
             // History & Achievements managers (lazy resolution)
             historyManager: _deps.historyManager,
             clearedTasksManager: _deps.clearedTasksManager,
-            achievementsManager: _deps.achievementsManager
+            achievementsManager: _deps.achievementsManager,
+            // Vocabulary theme system
+            vocabThemeManager: _deps.vocabThemeManager
         };
     }
 
@@ -1180,8 +1184,6 @@ export class StatsPanelManager {
 
         // Convert to milestone format
         const milestoneUnlocks = {
-            darkOcean: unlockedThemes.includes("dark-ocean"),
-            goldenGlow: unlockedThemes.includes("golden-glow"),
             taskOrderGame: unlockedFeatures.includes("task-order-game")
         };
 
@@ -1213,38 +1215,47 @@ export class StatsPanelManager {
             isToDoMode = currentCycle?.deleteCheckedTasks || false;
         }
 
-        // Dark Ocean Theme (5 cycles OR 5 tasks)
+        // Resolve vtm once — shared across all three message blocks
+        const vtm = this.dependencies.vocabThemeManager;
+        const nextVocabTheme = vtm ? vtm.getNextLockedTheme(globalCyclesCompleted) : null;
+        const allVocabUnlocked = vtm ? !nextVocabTheme : false;
+
+        // All unlocked vocabulary theme rewards (excludes 'classic' — always available by default)
+        // Updates immediately after checkThemeUnlocks() writes to state before updateStatsPanel() runs
         if (themeUnlockMessage) {
-            if (milestoneUnlocks.darkOcean) {
-                themeUnlockMessage.textContent = `${getIcon('themeOcean')} ${getLabel('unlock.darkOceanUnlocked')} ${getIcon('unlocked')}`;
-                themeUnlockMessage.classList.add("unlocked-message");
-            } else {
-                if (isToDoMode) {
-                    const tasksNeeded = Math.max(0, 5 - totalTasksCleared);
-                    themeUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.darkOcean', { vars: { count: tasksNeeded } })}`;
+            if (vtm) {
+                const unlockedIds = vtm.getUnlockedThemeIds().filter(id => id !== 'classic');
+                if (unlockedIds.length > 0) {
+                    themeUnlockMessage.textContent = unlockedIds.map(id => {
+                        const def = vtm.getThemeDefinition(id);
+                        const icon = def?.icons?.celebrate ?? '✅';
+                        return `${icon} ${def?.name ?? id}`;
+                    }).join('\n');
+                    themeUnlockMessage.classList.add("unlocked-message", "visible");
                 } else {
-                    const cyclesNeeded = Math.max(0, 5 - globalCyclesCompleted);
-                    themeUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.darkOceanCycles', { vars: { count: cyclesNeeded } })}`;
+                    themeUnlockMessage.textContent = "";
+                    themeUnlockMessage.classList.remove("unlocked-message", "visible");
                 }
-                themeUnlockMessage.classList.remove("unlocked-message");
+            } else {
+                themeUnlockMessage.textContent = "";
+                themeUnlockMessage.classList.remove("unlocked-message", "visible");
             }
         }
 
-        // Golden Glow Theme (50 cycles OR 250 tasks) - only show if Ocean is unlocked
+        // Next vocabulary theme to unlock (with emoji)
         if (goldenUnlockMessage) {
-            if (milestoneUnlocks.darkOcean) {
-                if (globalCyclesCompleted >= 50 || totalTasksCleared >= 250) {
-                    goldenUnlockMessage.textContent = `${getIcon('themeStar')} ${getLabel('unlock.goldenGlowUnlocked')} ${getIcon('unlocked')}`;
-                    goldenUnlockMessage.classList.add("unlocked-message");
-                } else {
-                    if (isToDoMode) {
-                        const tasksNeeded = Math.max(0, 250 - totalTasksCleared);
-                        goldenUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.goldenGlow', { vars: { count: tasksNeeded } })}`;
-                    } else {
-                        const cyclesNeeded = Math.max(0, 50 - globalCyclesCompleted);
-                        goldenUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.goldenGlowCycles', { vars: { count: cyclesNeeded } })}`;
-                    }
+            if (vtm) {
+                if (nextVocabTheme) {
+                    const cyclesNeeded = Math.max(0, nextVocabTheme.unlockAt.cycles - globalCyclesCompleted);
+                    const nextIcon = nextVocabTheme.icons?.celebrate ?? '';
+                    goldenUnlockMessage.textContent = nextIcon
+                        ? `${nextIcon} Next: ${nextVocabTheme.name} — ${cyclesNeeded} more cycles`
+                        : getLabel('unlock.nextThemeUnlock', { vars: { name: nextVocabTheme.name, count: cyclesNeeded } });
                     goldenUnlockMessage.classList.remove("unlocked-message");
+                    goldenUnlockMessage.classList.add("visible");
+                } else {
+                    goldenUnlockMessage.textContent = getLabel('unlock.allThemesUnlocked');
+                    goldenUnlockMessage.classList.add("unlocked-message", "visible");
                 }
             } else {
                 goldenUnlockMessage.textContent = "";
@@ -1252,26 +1263,25 @@ export class StatsPanelManager {
             }
         }
 
-        // Task Order Game (100 cycles OR 500 tasks) - only show if Golden Glow unlocked
+        // Task Order Game — only shown once all vocab themes are unlocked
         if (gameUnlockMessage) {
-            const showGameHint = milestoneUnlocks.goldenGlow;
-            if (showGameHint) {
-                if (milestoneUnlocks.taskOrderGame) {
-                    gameUnlockMessage.textContent = `${getIcon('game')} ${getLabel('unlock.gameUnlocked')} ${getIcon('unlocked')}`;
-                    gameUnlockMessage.classList.add("unlocked-message");
-                } else {
-                    if (isToDoMode) {
-                        const tasksNeeded = Math.max(0, 500 - totalTasksCleared);
-                        gameUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.game', { vars: { count: tasksNeeded } })}`;
-                    } else {
-                        const cyclesNeeded = Math.max(0, 100 - globalCyclesCompleted);
-                        gameUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.gameCycles', { vars: { count: cyclesNeeded } })}`;
-                    }
-                    gameUnlockMessage.classList.remove("unlocked-message");
-                }
-            } else {
+            if (!allVocabUnlocked) {
+                // Still vocab themes to unlock — hide game message entirely
                 gameUnlockMessage.textContent = "";
                 gameUnlockMessage.classList.remove("unlocked-message", "visible");
+            } else if (milestoneUnlocks.taskOrderGame) {
+                gameUnlockMessage.textContent = `${getIcon('game')} ${getLabel('unlock.gameUnlocked')} ${getIcon('unlocked')}`;
+                gameUnlockMessage.classList.add("unlocked-message", "visible");
+            } else {
+                if (isToDoMode) {
+                    const tasksNeeded = Math.max(0, 500 - totalTasksCleared);
+                    gameUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.game', { vars: { count: tasksNeeded } })}`;
+                } else {
+                    const cyclesNeeded = Math.max(0, 100 - globalCyclesCompleted);
+                    gameUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.gameCycles', { vars: { count: cyclesNeeded } })}`;
+                }
+                gameUnlockMessage.classList.remove("unlocked-message");
+                gameUnlockMessage.classList.add("visible");
             }
         }
     }
@@ -1299,15 +1309,6 @@ export class StatsPanelManager {
             if (!state.userProgress) state.userProgress = {};
             if (!state.userProgress.rewardMilestones) state.userProgress.rewardMilestones = [];
 
-            // Unlock Golden Glow at 50 GLOBAL cycles
-            if (globalCyclesCompleted >= 50 && !milestoneUnlocks.goldenGlow) {
-                if (!state.settings.unlockedThemes.includes("golden-glow")) {
-                    state.settings.unlockedThemes.push("golden-glow");
-                    state.userProgress.rewardMilestones.push("golden-glow-50");
-                    needsUpdate = true;
-                }
-            }
-
             // Unlock Task Order Game at 100 GLOBAL cycles
             if (globalCyclesCompleted >= 100 && !milestoneUnlocks.taskOrderGame) {
                 if (!state.settings.unlockedFeatures.includes("task-order-game")) {
@@ -1332,45 +1333,16 @@ export class StatsPanelManager {
 
         console.log('🎨 Handling theme toggle (state-based)...');
 
-        let unlockedThemes = [];
-        let unlockedFeatures = [];
-
-        // ✅ Use state-based data access - DI-pure
-        const AppState = this.dependencies.AppState;
-        if (AppState?.isReady?.()) {
-            const currentState = AppState.get();
-            if (currentState) {
-                unlockedThemes = currentState.settings.unlockedThemes || [];
-                unlockedFeatures = currentState.settings.unlockedFeatures || [];
-            }
-        } else {
-            console.warn('⚠️ AppState not ready - using fallback data access');
-
-            // Fallback to old method if state not ready
-            const schemaData = this.dependencies.loadMiniCycleData();
-            if (schemaData) {
-                const { settings } = schemaData;
-                unlockedThemes = settings.unlockedThemes || [];
-                unlockedFeatures = settings.unlockedFeatures || [];
-            }
-        }
-        
-        const milestoneUnlocks = {
-            darkOcean: unlockedThemes.includes("dark-ocean"),
-            goldenGlow: unlockedThemes.includes("golden-glow"),
-            taskOrderGame: unlockedFeatures.includes("task-order-game")
-        };
-
-        // Toggle theme message
+        // Toggle theme message (will be repopulated in Phase 2 with vocabulary theme status)
         themeUnlockMessage.classList.toggle("visible");
 
-        // Toggle golden glow if present
-        if (goldenUnlockMessage?.textContent && goldenUnlockMessage.textContent !== "Loading...") {
+        // Toggle golden glow message if present
+        if (goldenUnlockMessage?.textContent) {
             goldenUnlockMessage.classList.toggle("visible");
         }
 
-        // Toggle game message if Golden Glow has been unlocked
-        if (milestoneUnlocks.goldenGlow && gameUnlockMessage?.textContent && gameUnlockMessage.textContent !== "Loading...") {
+        // Toggle game message if it has content
+        if (gameUnlockMessage?.textContent) {
             gameUnlockMessage.classList.toggle("visible");
         }
 

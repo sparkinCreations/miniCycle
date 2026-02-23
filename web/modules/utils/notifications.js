@@ -361,7 +361,7 @@ export class MiniCycleNotifications {
   /**
    * 🎯 Core notification display function
    */
-  show(message, type = "default", duration = null) {
+  show(message, type = "default", duration = null, options = {}) {
     try {
       // Check user preference — errors always show; all others suppressed when disabled
       if (type !== 'error') {
@@ -411,10 +411,15 @@ export class MiniCycleNotifications {
         : (typeof this.deps.escapeHtml === 'function' ? this.deps.escapeHtml(message) : message);
 
       // Always escape user content, regardless of structure
-      notification.innerHTML = `
-        <div class="notification-content">${escapedMessage}</div>
-        <button class="close-btn" title="${getLabel('button.close')}" aria-label="${getLabel('notify.closeNotification')}">✖</button>
-      `;
+      // When an action button is present, wrap message in a span so both sit in a flex-column
+      const hasAction = !!(options?.actionButton);
+      notification.innerHTML = hasAction
+        ? `<div class="notification-content notification-has-action">
+             <span class="notification-message">${escapedMessage}</span>
+           </div>
+           <button class="close-btn" title="${getLabel('button.close')}" aria-label="${getLabel('notify.closeNotification')}">✖</button>`
+        : `<div class="notification-content">${escapedMessage}</div>
+           <button class="close-btn" title="${getLabel('button.close')}" aria-label="${getLabel('notify.closeNotification')}">✖</button>`;
 
       // ✅ FIX #7: Track cleanup function for timeouts
       let cleanupTimeouts = null;
@@ -446,6 +451,28 @@ export class MiniCycleNotifications {
           setTimeout(() => notification.remove(), UI_TIMEOUTS.NOTIFICATION_FADE);
         };
         _safeAddEventListener(closeBtn, "click", closeBtn._clickHandler);
+      }
+
+      // Optional action button — appended as second flex child inside notification-has-action
+      if (hasAction) {
+        const { label: btnLabel, onClick } = options.actionButton;
+        const contentDiv = notification.querySelector('.notification-content');
+        if (contentDiv && typeof btnLabel === 'string') {
+          const actionBtn = document.createElement('button');
+          actionBtn.className = 'notification-action-btn';
+          actionBtn.textContent = btnLabel; // textContent for XSS safety
+          actionBtn._clickHandler = (e) => {
+            e.stopPropagation();
+            if (cleanupTimeouts) cleanupTimeouts();
+            notification.classList.remove('show');
+            setTimeout(() => {
+              notification.remove();
+              if (typeof onClick === 'function') onClick();
+            }, UI_TIMEOUTS.NOTIFICATION_FADE);
+          };
+          _safeAddEventListener(actionBtn, 'click', actionBtn._clickHandler);
+          contentDiv.appendChild(actionBtn);
+        }
       }
 
       notificationContainer.appendChild(notification);

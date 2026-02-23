@@ -115,7 +115,9 @@ export const DEFAULT_LABELS = deepFreeze({
         sortDefault:          'Default',
         sortAZ:               'A\u2013Z',
         sortPriority:         'Priority',
-        sortDueDate:          'Due Date'
+        sortDueDate:          'Due Date',
+        openThemesModal:      'Open Themes',
+        openGamesModal:       'Open Games'
     },
 
     // ========================================================================
@@ -242,7 +244,8 @@ export const DEFAULT_LABELS = deepFreeze({
         deleteMessage:      'Are you sure you want to delete "{name}"? This action cannot be undone.',
         noSaved:            'No saved miniCycles found.',
         noSelectedForDelete:'No miniCycle selected for deletion.',
-        selectPreview:      'Select a miniCycle to preview'
+        selectPreview:      'Select a miniCycle to preview',
+        selectFirst:        'Select a routine first to change its theme.'
     },
 
     // ========================================================================
@@ -418,7 +421,8 @@ export const DEFAULT_LABELS = deepFreeze({
         onboardingReset:         'Onboarding will show again next time you open the app.',
 
         // Theme notifications
-        themeUnlocked:           'New theme unlocked: {name}! Check the themes menu to activate it.',
+        themeUnlocked:           '{name} theme unlocked!',
+        themeLockedOnImport:     'This routine uses the {name} theme — keep cycling to unlock it! Using Classic for now.',
 
         // Boot/init notifications
         noRoutinesFound:         'No routines found. Create one or load a sample.',
@@ -878,15 +882,18 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     unlock: {
-        darkOcean:          '{count} more cleared task(s) to unlock Dark Ocean Theme!',
-        darkOceanUnlocked:  'Dark Ocean Theme unlocked!',
-        darkOceanCycles:    '{count} more cycle(s) to unlock Dark Ocean Theme!',
-        goldenGlow:         '{count} more cleared task(s) to unlock Golden Glow Theme!',
-        goldenGlowUnlocked: 'Golden Glow Theme unlocked!',
-        goldenGlowCycles:   '{count} more cycle(s) to unlock Golden Glow Theme!',
         game:               '{count} more cleared task(s) to unlock Whack-a-Order Game!',
         gameUnlocked:       'Whack-a-Order Game unlocked!',
-        gameCycles:         '{count} more cycle(s) to unlock Whack-a-Order Game!'
+        gameCycles:         '{count} more cycle(s) to unlock Whack-a-Order Game!',
+
+        // Vocabulary theme unlock status (used in stats panel)
+        themeCurrentPrefix: 'Theme',
+        nextThemeUnlock:    'Next: {name} — {count} more cycles',
+        allThemesUnlocked:  'All themes unlocked!',
+
+        // Vocabulary theme section heading (used in Themes modal)
+        vocabThemeSection:  'Routine Theme',
+        vocabThemeApplied:  '{name} applied'
     },
 
     // ========================================================================
@@ -1249,7 +1256,17 @@ export const DEFAULT_LABELS = deepFreeze({
         keyboard:       '⌨️',
 
         // Notification prefix
-        warning:        '⚠️'
+        warning:        '⚠️',
+
+        // Vocabulary theme icons (Classic falls through to above defaults)
+        habitComplete:   '⚡',
+        habitCelebrate:  '🔥',
+        fitnessComplete: '🏆',
+        fitnessCelebrate:'💪',
+        scholarComplete: '🎓',
+        scholarCelebrate:'📚',
+        cleanComplete:   '✨',
+        cleanCelebrate:  '🧹'
     }
 });
 
@@ -1387,7 +1404,10 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.editUnavailable',
     'notify.deleteUnavailable',
     'notify.priorityUnavailable',
+    'notify.cycleComplete',
     'notify.themeUnlocked',
+    'unlock.vocabThemeSection',
+    'unlock.vocabThemeApplied',
     'notify.noRoutinesFound',
     'notify.noActiveRoutine',
     'notify.positionReset',
