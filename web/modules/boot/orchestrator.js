@@ -448,6 +448,17 @@ async function runBootSequence() {
 
   console.log(`✅ Phase 1 complete (${Date.now() - bootStart}ms)`);
 
+  // Inject large dialog modals BEFORE Phase 2 — modules query these elements during init
+  const { RECURRING_PANEL_HTML, PREFERENCES_MODAL_HTML, SETTINGS_MODAL_HTML } =
+      await import(`./modalTemplates.js?v=${versionSuffix}`);
+  document.getElementById('games-panel')
+      ?.insertAdjacentHTML('beforebegin', RECURRING_PANEL_HTML);
+  document.getElementById('routine-switcher-modal')
+      ?.insertAdjacentHTML('beforebegin', PREFERENCES_MODAL_HTML);
+  document.getElementById('testing-modal')
+      ?.insertAdjacentHTML('beforebegin', SETTINGS_MODAL_HTML);
+  console.log('✅ Modal templates injected');
+
   // ========== PHASE 2: FEATURES (with timeout) ==========
   updateLoaderProgress(getLabel('boot.loadingFeatures'), 55);
   console.log('🔌 Phase 2: Feature modules...');
