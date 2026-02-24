@@ -78,7 +78,9 @@ const di = createDIModule('TaskCRUD', {
     // Reminders restart after task deletion
     startReminders: optional(null),
     // Notifications instance for color picker notification
-    notifications: optional(null)
+    notifications: optional(null),
+    // History logging
+    logHistoryEvent: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -309,6 +311,13 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         // Update search visibility after adding task
         _deps.updateSearchVisibility?.(_deps.getTaskCount?.() ?? 0);
 
+        // Log history event for task addition (skip during bulk loading)
+        if (!isLoading && typeof _deps.logHistoryEvent === 'function') {
+            _deps.logHistoryEvent('task_added', {
+                taskName: validatedInput
+            });
+        }
+
         return result;
 
     } catch (error) {
@@ -397,6 +406,14 @@ export async function editTaskImpl(taskItem, deps = {}) {
 
             _deps.showNotification?.(getLabel('notify.taskRenamed', { vars: { name: newText } }), "info", 1500);
 
+            // Log history event for task edit
+            if (typeof _deps.logHistoryEvent === 'function') {
+                _deps.logHistoryEvent('task_edited', {
+                    oldName: oldText,
+                    newName: newText
+                });
+            }
+
             const requestUIUpdate = deps.requestUIUpdate || _deps.requestUIUpdate;
             requestUIUpdate?.({
                 stats: true,
@@ -483,6 +500,13 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
                     taskItem.remove();
 
                     _deps.showNotification?.(getLabel('notify.taskDeleted', { vars: { name: taskName } }), "show", 2500);
+
+                    // Log history event for task deletion
+                    if (typeof _deps.logHistoryEvent === 'function') {
+                        _deps.logHistoryEvent('task_deleted', {
+                            taskName: taskName
+                        });
+                    }
 
                     // Request UI updates via UIOrchestrator
                     const requestUIUpdate = deps.requestUIUpdate || _deps.requestUIUpdate;
