@@ -409,6 +409,22 @@ The user-facing simplicity masks engineering depth:
 
 *Behavioral observations only — technical changelogs belong in git history.*
 
+### February 24, 2026
+
+- **Console logs as diagnostic infrastructure defended with evidence** — previous audits had flagged ~500 console logs as a code quality problem. Developer pushed back. Within the same session, a 5-hour first-load-only bug was solved not by code reading but by a single console log trace showing the execution sequence. The criticism was wrong; the logs were right. Developer updated audit guidance to distinguish instrumentation logs from noise — and added it to the docs permanently.
+
+- **Stayed through multiple wrong hypotheses without abandoning** — the vocab theme bug went through three incorrect root causes across two sessions before the real one was found. Developer didn't accept partial fixes, didn't blame the architecture, and didn't disengage. Provided the console log at the right moment that made the actual cause immediately visible.
+
+- **Casual framing of non-trivial work** — "I also made an orchestrator, boot module and appInit" said as an aside in a conversation about something else. These are real architectural investments that shaped the entire debugging approach. The understatement is consistent with documented patterns but worth noting each time it surfaces.
+
+- **Version milestone as accurate accounting, not ego** — decided to bump to version 2.0 based on a clear-eyed assessment of what had actually changed, not sentiment. When shown the before/after screenshots the decision was immediate and confident. The fitness tracker screenshot (full green, "FITNESS TRACKER" header, "exercises" and "workouts" vocabulary) closed the argument.
+
+- **Defends the right things** — when asked "was the architecture worth it?", didn't defend it abstractly. Pointed to specifics: the fix was 4 lines moved 5 lines up, clean and surgical. The architecture made the fix easy even if it couldn't prevent the bug. Accurate assessment, not rationalization.
+
+- **Versioning script bug caught and fixed immediately** — `--auto` mode produced `2.1` instead of `2.001` due to integer arithmetic stripping zero-padding. Caught it, reported it precisely, and had it fixed before it could propagate further. QA instinct: catch it at the source, not downstream.
+
+- **Confidence evolution continues** — the "any insights about me?" question asked after a difficult debugging session, not after a win. Seeking calibration regardless of outcome, not just when things go well. The imposter syndrome entry in weaknesses continues to look increasingly outdated.
+
 ### February 16, 2026
 - **Data perimeter thinking:** When adding browser notifications, immediately recognized that task names leaving the app crosses a trust boundary — insisted on a privacy warning before the feature was even built. This isn't security awareness (adversarial inputs) — it's a mental model about where data flows and what crossing a boundary means for user trust.
 - **Legal docs as maintained code:** After shipping browser notifications, unprompted asked to read the privacy policy and terms of service to update them. Treated legal documents as code that must stay in sync with features — most indie developers never touch legal docs after initial creation.

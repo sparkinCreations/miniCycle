@@ -6,6 +6,11 @@
 **Actual Effort:** 2 days
 **Breaking Changes:** No (schema additions only)
 
+> **Theme Rewards Note (Feb 2026):** This plan references "Dark Ocean Theme" and "Golden Glow Theme" as milestone rewards.
+> Those themes were removed and replaced by the vocabulary theme system (Classic/Habit Tracker/Fitness/Scholar/Cleaning).
+> The badge/milestone structure itself (Bronze/Silver/Gold/Diamond/Crown) remains as designed.
+> See [THEME_ARCHITECTURE.md](../architecture/THEME_ARCHITECTURE.md) for current theme docs.
+
 ---
 
 ## Overview
@@ -1177,7 +1182,7 @@ This system gives To-Do Mode users first-class gamification support while mainta
 ---
 
 **Created:** January 5, 2026
-**Updated:** January 7, 2026
+**Updated:** February 24, 2026
 **Author:** Brainstorm session with Claude
 **Status:** ✅ IMPLEMENTED
 
@@ -1190,3 +1195,4 @@ This system gives To-Do Mode users first-class gamification support while mainta
 | Jan 5, 2026 | Initial spec created |
 | Jan 6, 2026 | Added Section 8 (Architecture & Technical Implementation) with boot process, module manifests, DI patterns, depMappings, and cross-module communication details. Updated UI Design section to clarify buttons → modals approach (not inline sections). |
 | Jan 7, 2026 | **IMPLEMENTED** - All features complete. Created historyManager.js, clearedTasksManager.js, achievementsManager.js. Added Proxy binding fix for `this` context preservation. |
+| Feb 24, 2026 | **Task CRUD events implemented** — `task_added`, `task_deleted`, `task_edited` now logged from `taskCRUD.js` via `logHistoryEvent` DI. Added 3 labels (`history.taskAdded/taskDeleted/taskEdited`), rendering in `historyManager._renderEvent()`, and `logHistoryEvent` to taskCore `optionalDeps`. Developer guide created at `docs/developer-guides/HISTORY_SYSTEM.md`. |

@@ -1,6 +1,6 @@
 # miniCycle Feature List
 
-> **Last Updated:** January 18, 2026
+> **Last Updated:** February 24, 2026
 > **Status:** Production Ready
 >
 > See [PROJECT_STATS.md](../PROJECT_STATS.md) for current version.
@@ -209,12 +209,14 @@ Create tasks that automatically appear on a schedule.
 | Task Recreation | Recreate cleared tasks as new tasks in active routine | `features/clearedTasksManager.js` |
 | Auto-Prune | Automatically removes cleared tasks older than 90 days | `features/clearedTasksManager.js` |
 
-### Theme Unlocking
+### Vocabulary Theme System
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Theme Rewards | Unlock themes by completing cycle milestones | `features/themeManager.js` |
-| Dark Ocean Theme | Unlockable theme (blue tones) | `features/themeManager.js` |
-| Golden Glow Theme | Unlockable theme (gold tones) | `features/themeManager.js` |
+| Vocabulary Themes | Each routine uses its own terminology (Classic/Habit Tracker/Fitness/Scholar/Cleaning) | `labels/themes.js` |
+| Per-Routine Theme | Assign a vocabulary theme to each routine independently | `routine/routineSwitcher.js` |
+| Theme Color Presets | Vocabulary themes apply matching color schemes via CSS variables | `features/themeManager.js` |
+| Theme Unlock Progression | Unlock new vocabulary themes at 0/5/25/50/75 total cycles | `progress/cycleCompletion.js` |
+| Theme Picker | 🎨 chip picker in the routine switcher action row | `routine/routineSwitcher.js` |
 
 ### Mini-Games
 | Feature | Description | Module |

@@ -71,7 +71,8 @@ const di = createDIModule('RoutineSwitcher', {
     onCycleSwitched: optional(null),
     getModal: optional(null),
     vocabThemeManager: optional(null),
-    updateMainMenuHeader: optional(null)
+    updateMainMenuHeader: optional(null),
+    refreshThemeLabels: optional(null)
 });
 
 /**
@@ -214,6 +215,14 @@ export class RoutineSwitcher {
                 };
             }
             safeAdd(themeBtn, 'click', themeBtn._clickHandler);
+
+            // Hide the button until at least one non-Classic theme is unlocked.
+            // Classic is the default and always present, so "unlocked" means length > 1.
+            const vtm = this.deps.vocabThemeManager;
+            const unlockedIds = vtm?.getUnlockedThemeIds() ?? ['classic'];
+            const hasExtraTheme = unlockedIds.some(id => id !== 'classic');
+            themeBtn.style.display = hasExtraTheme ? '' : 'none';
+            if (!hasExtraTheme) this.closeThemePicker();
         }
 
         const confirmBtn = this.deps.getElementById(DOM_IDS.MINI_CYCLE_SWITCH_CONFIRM);

@@ -724,7 +724,10 @@ export class TaskDOMManager {
             timestamp: Date.now()
         });
 
+        // stopImmediatePropagation stops other handlers on this same element too,
+        // not just bubbling. Belt-and-suspenders against duplicate handler registrations.
         event.stopPropagation();
+        event.stopImmediatePropagation();
 
         // Use revealTaskButtons from injected deps
         if (typeof this.deps.revealTaskButtons === 'function') {

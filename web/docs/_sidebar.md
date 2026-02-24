@@ -35,6 +35,7 @@
   * [Claude AI Guide](developer-guides/CLAUDE.md)
   * [Code Review (Dec 2025)](developer-guides/COMPREHENSIVE_CODE_REVIEW_DEC_2025.md)
   * [Hidden Codebase Insights](developer-guides/HIDDEN_CODEBASE_INSIGHTS.md)
+  * [Vocabulary Theme System](developer-guides/VOCAB_THEME_SYSTEM.md)
   * [Dev Server](DEV_SERVER.md)
 
 * **Architecture**
@@ -90,7 +91,6 @@
   * [Update Version Guide](deployment/UPDATE-VERSION-GUIDE.md)
 
 * **Future Work**
-  * [Contextual Theme System](future-work/CONTEXTUAL_THEME_SYSTEM_PLAN.md)
   * [Label System Integration](future-work/LABEL_SYSTEM_INTEGRATION_PLAN.md)
   * [CSS Refactor Plan](future-work/CSS_REFACTOR_PLAN.md)
   * [DI Migration Completion](future-work/DI_MIGRATION_COMPLETION_PLAN.md)

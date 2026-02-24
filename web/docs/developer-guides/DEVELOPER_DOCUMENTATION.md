@@ -264,6 +264,7 @@ See [DI_PATTERNS.md](./DI_PATTERNS.md) for the current DI architecture.
 ### Features
 - [minicycle-recurring-guide.md](../features/minicycle-recurring-guide.md) - Recurring tasks
 - [TASK_OPTIONS_CUSTOMIZER.md](../features/TASK_OPTIONS_CUSTOMIZER.md) - Per-cycle buttons
+- [HISTORY_SYSTEM.md](HISTORY_SYSTEM.md) - History event logging and adding new event types
 
 ### Completed Plans (Archive)
 - [MODULAR_OVERHAUL_PLAN.md](../archive/MODULAR_OVERHAUL_PLAN.md) - ✅ Completed Dec 2025

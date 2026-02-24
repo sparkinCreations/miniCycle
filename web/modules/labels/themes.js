@@ -65,6 +65,9 @@ export const THEME_DEFINITIONS = {
             'notify.cycleComplete':        'Day completed! Streak extended!',
             'help.cycleComplete':          'Streak extended! Habits reset.',
             'nav.appSubtitle':             'HABIT TRACKER',
+            'help.addFirstTask':           'Add your first habit to get started!',
+            'empty.noTasks':               'No habits yet',
+            'empty.noTasksHint':           'Press the + button to show the habit bar to add a habit or create a new routine',
         },
         icons: {
             cycleComplete: '👍',
@@ -119,6 +122,9 @@ export const THEME_DEFINITIONS = {
             'notify.cycleComplete':        'Workout complete!',
             'help.cycleComplete':          'Workout complete! Exercises reset.',
             'nav.appSubtitle':             'FITNESS TRACKER',
+            'help.addFirstTask':           'Add your first exercise to get started!',
+            'empty.noTasks':               'No exercises yet',
+            'empty.noTasksHint':           'Press the + button to show the exercise bar to add an exercise or create a new routine',
         },
         icons: {
             cycleComplete: '💪',
@@ -173,6 +179,9 @@ export const THEME_DEFINITIONS = {
             'notify.cycleComplete':        'Study session complete!',
             'help.cycleComplete':          'Study session complete! Topics reset.',
             'nav.appSubtitle':             'STUDY PLANNER',
+            'help.addFirstTask':           'Add your first topic to get started!',
+            'empty.noTasks':               'No topics yet',
+            'empty.noTasksHint':           'Press the + button to show the topic bar to add a topic or create a new routine',
         },
         icons: {
             cycleComplete: '📚',
@@ -227,6 +236,9 @@ export const THEME_DEFINITIONS = {
             'notify.cycleComplete':        'Chores done!',
             'help.cycleComplete':          'Clean sweep complete! Chores reset.',
             'nav.appSubtitle':             'CHORE MANAGER',
+            'help.addFirstTask':           'Add your first chore to get started!',
+            'empty.noTasks':               'No chores yet',
+            'empty.noTasksHint':           'Press the + button to show the chore bar to add a chore or create a new routine',
         },
         icons: {
             cycleComplete: '🧼',

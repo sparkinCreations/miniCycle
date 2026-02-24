@@ -231,36 +231,33 @@ function createTaskElement(task) {
 // 4. Don't forget to increment schema version if this is a breaking change!
 ```
 
-### How to Add a New Theme
+### How to Add a New Vocabulary Theme
+
+miniCycle uses a vocabulary theme system (not CSS-class themes). Each theme overrides
+label keys and applies a color preset. No build step needed.
 
 ```javascript
-// 1. Add CSS variables
-:root[data-theme="my-new-theme"] {
-    --primary-color: #6366f1;
-    --secondary-color: #8b5cf6;
-    --background-color: #1e1b4b;
-    --text-color: #f8fafc;
-}
-
-// 2. Register theme
-const themes = {
-    default: { name: "Default", unlockAt: 0 },
-    "dark-ocean": { name: "Dark Ocean", unlockAt: 5 },
-    "golden-glow": { name: "Golden Glow", unlockAt: 50 },
-    "my-new-theme": { name: "My New Theme", unlockAt: 100 }  // ← Add here
-};
-
-// 3. Apply theme
-async function applyTheme(themeName) {
-    document.documentElement.setAttribute('data-theme', themeName);
-
-    // Save to state
-    const { state } = await import(`./modules/core/appContext.js?v=${globalThis.APP_VERSION}`);
-    state().AppState.update((state) => {
-        state.settings.theme = themeName;
-    }, true);
+// modules/labels/themes.js — add to THEME_DEFINITIONS
+'my-new-theme': {
+    name: 'My New Theme',
+    icon: '🌿',
+    unlockCycles: 100,   // Global cycles required to unlock
+    labels: {
+        // Only the keys you want to override; others fall back to DEFAULT_LABELS
+        'action.addTask': 'Add item',
+        'noun.task':      'item',
+        'noun.cycle':     'round',
+    },
+    colorPreset: {
+        bgStart:   '#2a5f3a',
+        bgEnd:     '#1a4228',
+        headerBg:  '#1a3a28',
+        // ... other --pref-* values
+    }
 }
 ```
+
+See [THEME_ARCHITECTURE.md](../architecture/THEME_ARCHITECTURE.md) for the complete guide.
 
 ### How to Add a Keyboard Shortcut
 

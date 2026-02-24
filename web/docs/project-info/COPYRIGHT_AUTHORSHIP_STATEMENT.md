@@ -57,7 +57,7 @@ I, the undersigned author, created miniCycle as an original work of authorship. 
 - Recurring task scheduling with multiple frequency options
 - "Delete When Complete" functionality
 - Task search/filtering system
-- Dark mode and theme system (Dark Ocean, Golden Glow)
+- Dark mode and theme system (vocabulary themes, color presets, dark mode)
 - Undo/redo functionality
 - Reminders system
 - Statistics and progress tracking

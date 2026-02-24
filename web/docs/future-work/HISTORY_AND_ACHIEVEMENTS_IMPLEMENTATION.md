@@ -925,4 +925,20 @@ Tasks render via TWO paths - hook into BOTH if needed:
 
 ---
 
-**Last Updated:** January 7, 2026
+## Post-Launch Enhancements
+
+### Task CRUD History Events (February 24, 2026)
+
+Added `task_added`, `task_deleted`, and `task_edited` event tracking to the history system.
+
+**Files Modified:**
+- `modules/labels/defaultLabels.js` — Added 3 labels (`history.taskAdded/taskDeleted/taskEdited`) + key registrations
+- `modules/task/taskCRUD.js` — Added `logHistoryEvent: optional(null)` to DI; logging calls in `addTaskImpl` (with `!isLoading` guard), `editTaskImpl`, `deleteTaskImpl`
+- `modules/features/historyManager.js` — Added icons, labels, and detail text rendering for 3 new event types
+- `modules/boot/moduleManifests.js` — Added `logHistoryEvent` to taskCore `optionalDeps`
+
+**Developer Guide:** `docs/developer-guides/HISTORY_SYSTEM.md`
+
+---
+
+**Last Updated:** February 24, 2026

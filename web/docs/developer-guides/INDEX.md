@@ -437,6 +437,10 @@
 1. [MODE_MANAGER_ARCHITECTURE.md](../architecture/MODE_MANAGER_ARCHITECTURE.md) → Mode management system
 2. [TASK_OPTIONS_CUSTOMIZER.md](../features/TASK_OPTIONS_CUSTOMIZER.md) → Button customization per mode
 
+**History & Achievements:**
+1. [HISTORY_SYSTEM.md](./HISTORY_SYSTEM.md) → History event logging, adding new event types
+2. [HISTORY_AND_ACHIEVEMENTS_PLAN.md](../future-work/HISTORY_AND_ACHIEVEMENTS_PLAN.md) → Full spec and architecture
+
 **Import/Export:**
 1. [MCYC_FILE_FORMAT.md](../data-schema/MCYC_FILE_FORMAT.md) → File format
 2. [SCHEMA_2_5.md](../data-schema/SCHEMA_2_5.md) → Data structure
@@ -572,6 +576,7 @@ Status: Complete ✅
 | MCYC_FILE_FORMAT.md | 2025-01 | ✅ Current |
 | WHAT_IS_MINICYCLE.md | 2025-10-27 | ✅ Current |
 | UNDO_REDO_ARCHITECTURE.md | 2025-10-15 | ✅ Current |
+| HISTORY_SYSTEM.md | 2026-02-24 | ✅ Current |
 
 ---
 

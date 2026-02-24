@@ -13,7 +13,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, APP_VERSION } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -47,7 +47,8 @@ const di = createDIModule('RoutineManager', {
     autoSave: optional(null),
     onCycleCreated: optional(null),
     DEFAULT_TASK_OPTION_BUTTONS: optional(null),
-    AppMeta: optional(null)
+    AppMeta: optional(null),
+    refreshThemeLabels: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -95,6 +96,9 @@ export class RoutineManager {
 
             // Constants (required)
             DEFAULT_TASK_OPTION_BUTTONS: resolvedDeps.DEFAULT_TASK_OPTION_BUTTONS,
+
+            // Theme
+            refreshThemeLabels: resolvedDeps.refreshThemeLabels || null,
 
             // DOM functions
             getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
@@ -487,6 +491,15 @@ export class RoutineManager {
 
                 if (toggleAutoReset) toggleAutoReset.checked = true;
                 if (deleteCheckedTasks) deleteCheckedTasks.checked = false;
+
+                // Hide task input bar (new routines default to hidden)
+                const taskInputContainer = document.querySelector(DOM_SELECTORS.TASK_INPUT);
+                if (taskInputContainer) {
+                    taskInputContainer.classList.add('hidden');
+                    const toggleText = this.deps.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_TEXT);
+                    if (toggleText) toggleText.textContent = getLabel('action.addTask');
+                    taskInputContainer.querySelectorAll('input, button').forEach(el => { el.tabIndex = -1; });
+                }
 
                 // ✅ Ensure UI updates
                 this.deps.hideMainMenu();

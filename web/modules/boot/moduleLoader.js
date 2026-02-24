@@ -942,7 +942,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
 
         // Help window manager (from deps.ui) - returns instance when called as function
         helpWindowManager: () => deps.ui?.helpWindowManager,
-        updateHelpWindow: (...args) => deps.ui?.helpWindowManager?.updateConstantMessage?.(...args),
+        updateHelpWindow: (...args) => deps.ui?.helpWindowManager?.refreshLabels?.(...args),
 
         // Stats panel manager (from deps.ui) - returns instance when called as function
         statsPanelManager: () => deps.ui?.statsPanelManager,
