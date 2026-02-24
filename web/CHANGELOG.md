@@ -1,3 +1,8 @@
+## [1.1033] - 2026-02-23
+- feat: update theme manager and add new SVG patterns
+- feat: add support for custom theme colors and update related UI components
+
+
 ## [1.1032] - 2026-02-23
 - feat: enhance task and cycle labels for improved pluralization and clarity
 
