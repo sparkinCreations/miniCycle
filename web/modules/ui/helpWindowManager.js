@@ -63,6 +63,7 @@ export class HelpWindowManager {
         this.initialized = false;
         this.sideLayoutEnabled = false;
         this._pendingTimeouts = [];
+        this._customizerTipShownOnHover = false;
 
         this.init();
     }
@@ -399,6 +400,52 @@ export class HelpWindowManager {
             this.isShowingCycleComplete = false;
             this.updateConstantMessage();
         }, 2000));
+    }
+
+    /**
+     * Shows a contextual tip about the task options customizer.
+     * @param {'three-dots'|'hover'} trigger - What triggered the tip
+     *   - 'three-dots': show every time (user pressed three-dots button)
+     *   - 'hover': show only once per page reload (first desktop hover)
+     */
+    showCustomizerTip(trigger) {
+        if (!this.helpWindow) return;
+
+        // Hover tip: only show once per page reload
+        if (trigger === 'hover') {
+            if (this._customizerTipShownOnHover) return;
+            this._customizerTipShownOnHover = true;
+        }
+
+        // Don't interrupt cycle complete message
+        if (this.isShowingCycleComplete) return;
+
+        // Clear any existing mode description timeout
+        if (this.modeDescriptionTimeout) {
+            clearTimeout(this.modeDescriptionTimeout);
+            this.modeDescriptionTimeout = null;
+        }
+
+        this.isShowingModeDescription = true;
+        this.currentMode = null; // Not a mode description — refreshLabels() will fall through to updateConstantMessage()
+
+        const tipText = getLabel('help.customizerTip');
+        this.helpWindow.innerHTML = `
+            <div class="mode-help-content">
+                <p style="margin: 0; line-height: 1.4;">${tipText}</p>
+            </div>
+        `;
+
+        // Auto-hide after 10 seconds
+        this.modeDescriptionTimeout = setTimeout(() => {
+            this.isShowingModeDescription = false;
+            this.modeDescriptionTimeout = null;
+            const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
+            taskView?.classList.remove('mode-description-visible');
+            // Force re-evaluation by clearing cached message (same pattern as refreshLabels)
+            this.currentMessage = null;
+            this.updateConstantMessage();
+        }, 10000);
     }
 
     getCurrentStatusMessage() {

@@ -819,7 +819,12 @@ export class HistoryManager {
             'achievement_unlocked': '🏆',
             'task_added': '➕',
             'task_deleted': '🗑️',
-            'task_edited': '✏️'
+            'task_edited': '✏️',
+            'recurring_tasks_removed': '🔁',
+            'tasks_removed_on_reset': '❌',
+            'task_priority_set': '⚠️',
+            'task_priority_removed': '➖',
+            'task_priority_color_changed': '🎨'
         };
 
         const labels = {
@@ -829,7 +834,12 @@ export class HistoryManager {
             'achievement_unlocked': getLabel('history.achievementUnlocked'),
             'task_added': getLabel('history.taskAdded'),
             'task_deleted': getLabel('history.taskDeleted'),
-            'task_edited': getLabel('history.taskEdited')
+            'task_edited': getLabel('history.taskEdited'),
+            'recurring_tasks_removed': getLabel('history.recurringTasksRemoved'),
+            'tasks_removed_on_reset': getLabel('history.tasksRemovedOnReset'),
+            'task_priority_set': getLabel('history.taskPrioritySet'),
+            'task_priority_removed': getLabel('history.taskPriorityRemoved'),
+            'task_priority_color_changed': getLabel('history.taskPriorityColorChanged')
         };
 
         const time = new Date(event.timestamp).toLocaleTimeString([], {
@@ -848,6 +858,16 @@ export class HistoryManager {
             } else if (event.details.oldName !== undefined) {
                 detailText = `${this._escapeHtml(event.details.oldName)} → ${this._escapeHtml(event.details.newName)}`;
             } else if (event.details.taskName !== undefined) {
+                detailText = this._escapeHtml(event.details.taskName);
+            } else if (event.details.taskNames !== undefined) {
+                const count = event.details.count ?? event.details.taskNames.length;
+                const names = event.details.taskNames.map(n => this._escapeHtml(n)).join(', ');
+                detailText = `${count} task${count !== 1 ? 's' : ''}: ${names}`;
+            } else if (event.type === 'task_priority_set' && event.details.taskName !== undefined) {
+                const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(event.details.priorityColor)
+                    ? event.details.priorityColor : '#dc3545';
+                detailText = `${this._escapeHtml(event.details.taskName)} <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${safeColor};vertical-align:middle;margin-left:4px;" aria-hidden="true"></span>`;
+            } else if (event.type === 'task_priority_removed' && event.details.taskName !== undefined) {
                 detailText = this._escapeHtml(event.details.taskName);
             }
         }

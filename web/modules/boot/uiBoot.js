@@ -215,6 +215,20 @@ export function attachMenuButtonListener(GlobalUtils, menuButton, menu) {
         // Focus first focusable element in menu
         const firstFocusable = menu.querySelector('button, [tabindex="0"]');
         if (firstFocusable) setTimeout(() => firstFocusable.focus({ focusVisible: false }), 50);
+
+        // First-open tip: teach new users that sections are collapsible
+        const _AppState = getAppState();
+        const _showNotification = getShowNotification();
+        if (_AppState && _showNotification) {
+          const _state = _AppState.get();
+          if (!_state?.settings?.dismissedEducationalTips?.['tip.menuSections']) {
+            _showNotification(getLabel('notify.menuSectionsTip'), 'info', 4000);
+            _AppState.update(s => {
+              if (!s.settings.dismissedEducationalTips) s.settings.dismissedEducationalTips = {};
+              s.settings.dismissedEducationalTips['tip.menuSections'] = true;
+            }, false);
+          }
+        }
         // Escape key handler
         menu._escHandler = (e) => {
           if (e.key === 'Escape') {

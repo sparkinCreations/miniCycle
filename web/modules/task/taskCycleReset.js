@@ -286,6 +286,16 @@ function resetTasksData(context, deps) {
         return { aborted: true };
     }
 
+    // Capture recurring task names before removal for history logging
+    const recurringRemovedNames = [];
+    taskElements.forEach(taskEl => {
+        if (taskEl.classList.contains('recurring')) {
+            const taskId = taskEl.dataset.taskId;
+            const task = freshCycleData?.tasks?.find(t => t.id === taskId);
+            if (task?.text) recurringRemovedNames.push(task.text);
+        }
+    });
+
     // Remove recurring tasks
     if (typeof removeRecurringTasksFromCycle === 'function') {
         removeRecurringTasksFromCycle(taskElements, freshCycleData);
@@ -293,6 +303,7 @@ function resetTasksData(context, deps) {
 
     // Process non-recurring tasks
     const tasksToDelete = [];
+    const tasksToDeleteNames = [];
     let animationIndex = 0;
     const STAGGER_DELAY = 60; // ms between each task animation
 
@@ -306,6 +317,7 @@ function resetTasksData(context, deps) {
         if (task?.deleteWhenComplete === true) {
             console.log(`Marking task for deletion: ${task.text}`);
             tasksToDelete.push(taskId);
+            if (task.text) tasksToDeleteNames.push(task.text);
             taskEl.remove();
             return;
         }
@@ -352,6 +364,23 @@ function resetTasksData(context, deps) {
         console.log('Reset data saved to AppState');
     } else {
         console.warn('⚠️ AppState not ready for cycle reset - state may be lost');
+    }
+
+    // Log history events for task removals during reset
+    const logHistoryEvent = deps.logHistoryEvent || _deps.logHistoryEvent;
+    if (typeof logHistoryEvent === 'function') {
+        if (recurringRemovedNames.length > 0) {
+            logHistoryEvent('recurring_tasks_removed', {
+                count: recurringRemovedNames.length,
+                taskNames: recurringRemovedNames
+            });
+        }
+        if (tasksToDeleteNames.length > 0) {
+            logHistoryEvent('tasks_removed_on_reset', {
+                count: tasksToDeleteNames.length,
+                taskNames: tasksToDeleteNames
+            });
+        }
     }
 
     return { aborted: false, tasksDeleted: tasksToDelete.length };

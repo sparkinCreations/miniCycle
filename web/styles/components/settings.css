@@ -245,14 +245,14 @@
     border-color: #999;
 }
 
-/* Factory reset button */
-.factory-reset-btn {
+/* Factory reset button — combined selector wins over .settings-btn alone */
+.settings-btn.factory-reset-btn {
     background: var(--color-error);
     color: var(--color-white);
     margin-top: var(--space-2);
 }
 
-.factory-reset-btn:hover {
+.settings-btn.factory-reset-btn:hover {
     background: var(--color-error);
 }
 

@@ -619,8 +619,8 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
             if (newHighPriority) {
                 // Show color picker notification with a callback that saves the chosen color
                 const notifications = _deps.notifications;
+                const taskColor = task.priorityColor ?? currentState?.settings?.priorityColor ?? '#dc3545';
                 if (notifications?.showPriorityColorPickerNotification) {
-                    const taskColor = task.priorityColor ?? currentState?.settings?.priorityColor ?? '#dc3545';
                     // onColorSelect closes over AppState and taskId — reliable save path
                     const onColorSelect = async (color) => {
                         if (AppState?.isReady?.()) {
@@ -633,14 +633,25 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
                                 const t = state.data?.cycles?.[cid]?.tasks?.find(t => t.id === taskId);
                                 if (t) t.priorityColor = color;
                             }, true);
+                            _deps.logHistoryEvent?.('task_priority_color_changed', {
+                                taskName: task.text,
+                                priorityColor: color
+                            });
                         }
                     };
                     notifications.showPriorityColorPickerNotification(taskColor, 8000, taskId, onColorSelect);
                 } else {
                     _deps.showNotification?.(getLabel('notify.priorityEnabled'), 'warning', 1500);
                 }
+                _deps.logHistoryEvent?.('task_priority_set', {
+                    taskName: task.text,
+                    priorityColor: taskColor
+                });
             } else {
                 _deps.showNotification?.(getLabel('notify.priorityRemoved'), 'info', 1500);
+                _deps.logHistoryEvent?.('task_priority_removed', {
+                    taskName: task.text
+                });
             }
         } else {
             console.warn('⚠️ AppState not ready for priority toggle - state may be lost');

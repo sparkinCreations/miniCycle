@@ -735,6 +735,9 @@ export class TaskDOMManager {
         } else {
             console.warn('⚠️ revealTaskButtons not injected');
         }
+
+        // Show customizer tip in help window (helpWindowManager is a factory function)
+        this.deps.helpWindowManager?.()?.showCustomizerTip?.('three-dots');
     }
 
     /**
@@ -875,7 +878,7 @@ export class TaskDOMManager {
             }
 
             if (typeof this.deps.checkMiniCycle === 'function') {
-                this.deps.checkMiniCycle();
+                this.deps.checkMiniCycle({ lastToggledElement: checkbox.closest('.task') });
             }
 
             // Note: autoSave removed - handleTaskCompletionChange already updates AppState
@@ -1628,6 +1631,11 @@ function toggleHoverTaskOptions(enableHover) {
 function revealTaskButtons(taskItem, caller = 'three-dots-button') {
     if (!taskDOMManager?.events) return;
     taskDOMManager.events.revealTaskButtons(taskItem, caller);
+
+    // Show customizer tip on long-press (mobile — every time, same as three-dots)
+    if (caller === 'long-press') {
+        taskDOMManager.deps.helpWindowManager?.()?.showCustomizerTip?.('three-dots');
+    }
 }
 
 function syncRecurringStateToDOM(taskEl, recurringSettings) {

@@ -171,7 +171,7 @@ export class TaskEvents {
 
             // Trigger mini cycle check (DI-pure)
             if (typeof this.deps.checkMiniCycle === 'function') {
-                this.deps.checkMiniCycle();
+                this.deps.checkMiniCycle({ lastToggledElement: taskItem });
             }
 
             // Note: autoSave removed - handleTaskCompletionChange already updates AppState
