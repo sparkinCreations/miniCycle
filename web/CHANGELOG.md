@@ -1,3 +1,8 @@
+## [1.1040] - 2026-02-24
+- fix: correct state snapshot timing to ensure accurate theme unlock detection
+- feat: implement theme unlock reconciliation for improved user experience
+
+
 ## [1.1039] - 2026-02-24
 - feat: refactor theme management to streamline vocab theme rendering and initialization
 
