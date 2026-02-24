@@ -1,3 +1,8 @@
+## [2.004] - 2026-02-24
+- docs: Update architecture and developer guides with important fixes and clarifications
+- feat: Implement vocabulary theme system and update related documentation
+
+
 ## [2.003] - 2026-02-24
 - feat: enhance history tracking with task addition, deletion, and editing events
 
