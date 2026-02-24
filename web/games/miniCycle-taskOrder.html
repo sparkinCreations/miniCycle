@@ -4,227 +4,396 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/png" href="../assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
-  <title>Task Whack-a-Order - Mini Game</title>
+  <link rel="stylesheet" href="../styles/base/variables.css" />
+  <title>Whack-a-Order - Mini Game</title>
+  <!-- Dark mode + reduced motion detection (flash-free, before paint) -->
+  <script>
+    try {
+      var d = JSON.parse(localStorage.getItem('miniCycleData'));
+      if (d && d.settings) {
+        if (d.settings.darkMode) document.documentElement.classList.add('dark-mode');
+        if (d.settings.reducedMotion) document.documentElement.classList.add('reduced-motion');
+      }
+    } catch(e) {}
+  </script>
   <style>
-    /* 🌐 Game Layout */
-body {
-  font-family: 'Poppins', sans-serif;
-  background: rgb(177, 177, 177);
-  margin: 0;
-  padding: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-}
+    /* ================================================================
+       Game-Specific CSS Custom Properties
+       ================================================================ */
+    :root {
+      --game-body-bg: linear-gradient(135deg, #4a90d9 0%, #6db3f2 30%, #87ceeb 60%, #a8d8ea 100%);
+      --game-container-bg: rgba(255, 255, 255, 0.15);
+      --game-container-border: rgba(255, 255, 255, 0.3);
+      --game-container-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+      --game-heading-color: #ffffff;
+      --game-heading-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      --game-primary: #4c79ff;
+      --game-primary-shadow: rgba(76, 121, 255, 0.4);
+      --game-success: #28a745;
+      --game-error: #ff4d4d;
+      --game-error-hover: #e04343;
+      --game-error-shadow: rgba(255, 77, 77, 0.4);
+      --game-text-light: rgba(255, 255, 255, 0.9);
+      --game-text-light-alt: rgba(255, 255, 255, 0.85);
+      --game-text-dark: #444;
+      --game-btn-text: white;
+      --game-field-bg: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(200,220,245,0.9) 100%);
+      --game-field-border: rgba(255, 255, 255, 0.5);
+      --game-btn-shadow: rgba(0, 0, 0, 0.15);
+      --game-leaderboard-bg: rgba(255, 255, 255, 0.15);
+      --game-leaderboard-text: rgba(255, 255, 255, 0.9);
+      --game-leaderboard-border: rgba(255, 255, 255, 0.2);
+      --game-back-btn-bg: rgba(0, 0, 0, 0.3);
+      --game-back-btn-hover: rgba(0, 0, 0, 0.45);
+      --game-back-btn-shadow: rgba(0, 0, 0, 0.2);
+      --game-difficulty-bg: rgba(255, 255, 255, 0.15);
+      --game-difficulty-border: rgba(255, 255, 255, 0.3);
+      --game-difficulty-hover: rgba(255, 255, 255, 0.25);
+      --game-focus-outline: #ffd700;
+      --game-timer-color: rgba(255, 255, 255, 0.7);
+      --game-new-best-color: #ffd700;
+      --game-stat-label: rgba(255, 255, 255, 0.6);
+    }
 
-/* 🎮 Game Container */
-.game-container {
-  background: rgb(87, 137, 172);
-  padding: 30px 40px;
-  border: solid 2px rgba(0, 0, 0, 0.474);
-  border-radius: 16px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
-  text-align: center;
-  max-width: 650px;
-  width: 100%;
-  transition: transform 0.3s ease;
-}
-.game-container:hover {
-  transform: scale(1.01);
-}
+    /* Dark mode overrides */
+    html.dark-mode {
+      --game-body-bg: linear-gradient(135deg, #0f1923 0%, #1a2a3a 30%, #1e3450 60%, #243b55 100%);
+      --game-container-bg: rgba(255, 255, 255, 0.06);
+      --game-container-border: rgba(255, 255, 255, 0.1);
+      --game-container-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+      --game-heading-color: #e0e0e0;
+      --game-heading-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+      --game-primary: #6b93ff;
+      --game-primary-shadow: rgba(107, 147, 255, 0.4);
+      --game-text-light: rgba(255, 255, 255, 0.8);
+      --game-text-light-alt: rgba(255, 255, 255, 0.7);
+      --game-text-dark: #cccccc;
+      --game-field-bg: linear-gradient(180deg, rgba(30,42,58,0.95) 0%, rgba(42,61,85,0.9) 100%);
+      --game-field-border: rgba(255, 255, 255, 0.15);
+      --game-btn-shadow: rgba(0, 0, 0, 0.4);
+      --game-leaderboard-bg: rgba(255, 255, 255, 0.06);
+      --game-leaderboard-text: rgba(255, 255, 255, 0.8);
+      --game-leaderboard-border: rgba(255, 255, 255, 0.08);
+      --game-back-btn-bg: rgba(255, 255, 255, 0.1);
+      --game-back-btn-hover: rgba(255, 255, 255, 0.15);
+      --game-back-btn-shadow: rgba(0, 0, 0, 0.3);
+      --game-difficulty-bg: rgba(255, 255, 255, 0.08);
+      --game-difficulty-border: rgba(255, 255, 255, 0.12);
+      --game-difficulty-hover: rgba(255, 255, 255, 0.15);
+      --game-focus-outline: #ffd700;
+      --game-timer-color: rgba(255, 255, 255, 0.5);
+      --game-stat-label: rgba(255, 255, 255, 0.45);
+    }
 
-/* 🧠 Header */
-h1 {
-  color: #2a2e47;
-  font-size: 26px;
-  margin-bottom: 12px;
-}
+    /* ================================================================
+       Game Layout
+       ================================================================ */
+    * { box-sizing: border-box; }
 
-/* 🎚️ Difficulty Selector */
-.difficulty-selector {
-  margin: 15px 0;
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-}
-.difficulty-btn {
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  color: white;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.3s ease;
-}
-.difficulty-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
-}
-.difficulty-btn.active {
-  background: #4c79ff;
-  border-color: #4c79ff;
-  box-shadow: 0 4px 12px rgba(76, 121, 255, 0.4);
-}
+    body {
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--game-body-bg);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
 
-/* 📋 Instructions & Score */
-#instructions {
-  margin-bottom: 10px;
-  color: #f2f1f1;
-  font-size: 14px;
-}
-#scoreboard {
-  font-size: 16px;
-  font-weight: 500;
-  color: #f6f6f6;
-  margin-bottom: 16px;
-}
+    /* Game Container — glassmorphism card */
+    .game-container {
+      background: var(--game-container-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 28px 32px;
+      border: 1px solid var(--game-container-border);
+      border-radius: 20px;
+      box-shadow: var(--game-container-shadow);
+      text-align: center;
+      max-width: 620px;
+      width: 100%;
+    }
 
-/* ⬜ Task Field */
-#taskWindow {
-  position: relative;
-  width: 100%;
-  height: 320px;
-  border: 2px dashed #ccc;
-  border-radius: 12px;
-  overflow: hidden;
-  margin-bottom: 16px;
-  background: linear-gradient(white, rgb(187, 211, 247));
-}
+    /* Header */
+    h1 {
+      color: var(--game-heading-color);
+      text-shadow: var(--game-heading-shadow);
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0 0 4px 0;
+      letter-spacing: -0.5px;
+    }
 
-/* 🟦 Task Buttons */
-.task-btn {
-  position: absolute;
-  padding: 10px 14px;
-  background: #4c79ff;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-.task-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(76, 121, 255, 0.4);
-}
-.task-btn.clicked {
-  background: #28a745;
-  cursor: default;
-  animation: successPulse 0.4s ease;
-}
-.task-btn:focus {
-  outline: 3px solid yellow;
-  outline-offset: 2px;
-}
+    /* Difficulty Selector */
+    .difficulty-selector {
+      margin: 12px 0 16px;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+    .difficulty-btn {
+      padding: 6px 18px;
+      background: var(--game-difficulty-bg);
+      border: 1px solid var(--game-difficulty-border);
+      border-radius: 20px;
+      color: var(--game-btn-text);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    .difficulty-btn:hover {
+      background: var(--game-difficulty-hover);
+      transform: translateY(-1px);
+    }
+    .difficulty-btn.active {
+      background: var(--game-primary);
+      border-color: var(--game-primary);
+      box-shadow: 0 3px 12px var(--game-primary-shadow);
+    }
 
-/* ✨ Animations */
-@keyframes successPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-}
+    /* Instructions & Score */
+    #instructions {
+      margin-bottom: 6px;
+      color: var(--game-text-light);
+      font-size: 13px;
+      opacity: 0.85;
+    }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+    /* Scoreboard row */
+    .scoreboard-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--game-text-light-alt);
+    }
+    #timer {
+      color: var(--game-timer-color);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
 
-@keyframes particle {
-  0% {
-    transform: translate(0, 0) scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(var(--tx), var(--ty)) scale(0);
-    opacity: 0;
-  }
-}
+    /* Task Field */
+    #taskWindow {
+      position: relative;
+      width: 100%;
+      height: 340px;
+      border: 1px solid var(--game-field-border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      background: var(--game-field-bg);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
 
-/* 💬 Feedback Text */
-.feedback {
-  font-size: 18px;
-  font-weight: bold;
-  color: #444;
-  margin-top: 12px;
-  min-height: 24px;
-  animation: fadeIn 0.4s ease;
-}
-.feedback.success {
-  color: #28a745;
-}
-.feedback.error {
-  color: #ff4d4d;
-}
+    /* Task Buttons */
+    .task-btn {
+      position: absolute;
+      padding: 8px 14px;
+      background: var(--game-primary);
+      color: var(--game-btn-text);
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+      box-shadow: 0 2px 8px var(--game-btn-shadow);
+      white-space: nowrap;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .task-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 14px var(--game-primary-shadow);
+    }
+    .task-btn.clicked {
+      background: var(--game-success);
+      cursor: default;
+      animation: successPulse 0.35s ease;
+    }
+    .task-btn:focus {
+      outline: 3px solid var(--game-focus-outline);
+      outline-offset: 2px;
+    }
 
-/* 🎉 Particle Effect */
-.particle {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  pointer-events: none;
-  animation: particle 0.8s ease-out forwards;
-}
+    /* Animations */
+    @keyframes successPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes particle {
+      0% { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+    }
+    @keyframes newBestPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
 
-/* 🔁 Restart Button */
-#restartBtn {
-  display: none;
-  margin: 14px auto 0 auto;
-  padding: 10px 20px;
-  font-size: 15px;
-  border: none;
-  background: #ff4d4d;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-#restartBtn:hover {
-  background: #e04343;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 77, 77, 0.4);
-}
+    /* Feedback Text */
+    .feedback {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--game-text-dark);
+      margin-top: 10px;
+      min-height: 24px;
+      animation: fadeIn 0.3s ease;
+    }
+    .feedback.success { color: var(--game-success); }
+    .feedback.error { color: var(--game-error); }
+    .feedback.new-best {
+      color: var(--game-new-best-color);
+      animation: newBestPulse 0.6s ease 2;
+    }
 
-/* 🏆 Leaderboard */
-#leaderboard {
-  margin-top: 20px;
-  font-size: 14px;
-  color: #2a2e47;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 12px;
-  border-radius: 8px;
-}
-#leaderboard div {
-  margin: 4px 0;
-}
+    /* Particle Effect */
+    .particle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: particle 0.7s ease-out forwards;
+    }
 
-/* 🔙 Back Button */
-#back-to-minicycle {
-  margin-top: 24px;
-  padding: 10px 18px;
-  font-size: 15px;
-  background: #333;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-#back-to-minicycle:hover {
-  background: #222;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
+    /* Restart Button */
+    #restartBtn {
+      display: none;
+      margin: 12px auto 0 auto;
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      background: var(--game-error);
+      color: var(--game-btn-text);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    #restartBtn:hover {
+      background: var(--game-error-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px var(--game-error-shadow);
+    }
+
+    /* Leaderboard */
+    #leaderboard {
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--game-leaderboard-text);
+      background: var(--game-leaderboard-bg);
+      border: 1px solid var(--game-leaderboard-border);
+      padding: 12px 16px;
+      border-radius: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 4px 20px;
+    }
+    #leaderboard .lb-title {
+      width: 100%;
+      text-align: center;
+      font-weight: 600;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    .lb-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 80px;
+    }
+    .lb-stat .lb-value {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .lb-stat .lb-label {
+      font-size: 11px;
+      color: var(--game-stat-label);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Back Button */
+    #back-to-minicycle {
+      margin-top: 16px;
+      padding: 8px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      background: var(--game-back-btn-bg);
+      color: var(--game-btn-text);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    #back-to-minicycle:hover {
+      background: var(--game-back-btn-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px var(--game-back-btn-shadow);
+    }
+
+    /* ================================================================
+       Responsive
+       ================================================================ */
+    @media (max-width: 480px) {
+      body { padding: 12px; }
+      .game-container { padding: 20px 16px; }
+      h1 { font-size: 22px; }
+      #taskWindow { height: 260px; }
+      .task-btn { font-size: 12px; padding: 6px 10px; max-width: 160px; }
+      .scoreboard-row { font-size: 13px; gap: 10px; }
+      #leaderboard { gap: 4px 12px; }
+      .lb-stat .lb-value { font-size: 17px; }
+    }
+
+    /* ================================================================
+       Reduced Motion Support
+       ================================================================ */
+    @media (prefers-reduced-motion: reduce) {
+      .game-container, .difficulty-btn, .task-btn, #restartBtn, #back-to-minicycle {
+        transition: none;
+      }
+      .game-container:hover, .difficulty-btn:hover, .task-btn:hover,
+      #restartBtn:hover, #back-to-minicycle:hover {
+        transform: none;
+      }
+      .task-btn.clicked, .feedback, .feedback.new-best { animation: none; }
+      .particle { animation: none; display: none; }
+    }
+    html.reduced-motion .game-container,
+    html.reduced-motion .difficulty-btn,
+    html.reduced-motion .task-btn,
+    html.reduced-motion #restartBtn,
+    html.reduced-motion #back-to-minicycle { transition: none; }
+    html.reduced-motion .game-container:hover,
+    html.reduced-motion .difficulty-btn:hover,
+    html.reduced-motion .task-btn:hover,
+    html.reduced-motion #restartBtn:hover,
+    html.reduced-motion #back-to-minicycle:hover { transform: none; }
+    html.reduced-motion .task-btn.clicked,
+    html.reduced-motion .feedback,
+    html.reduced-motion .feedback.new-best { animation: none; }
+    html.reduced-motion .particle { animation: none; display: none; }
   </style>
 </head>
 <body>
   <main role="main">
     <div class="game-container" aria-label="Whack-a-Order Mini Game">
-    <h1>Task Whack-a-Order</h1>
+    <h1>Whack-a-Order</h1>
 
     <!-- Difficulty Selector -->
     <div class="difficulty-selector">
@@ -236,41 +405,98 @@ h1 {
     <div id="instructions">
       Click the tasks in the correct order (1, 2, 3, ...). They will move faster each round!
     </div>
-    <div id="scoreboard" aria-live="polite">Round: 1 | Score: 0</div>
+    <div class="scoreboard-row">
+      <span id="scoreboard" aria-live="polite">Round: 1 | Score: 0</span>
+      <span id="timer">0:00</span>
+    </div>
     <!-- Task Window Container -->
     <div id="taskWindow" aria-label="Task field"></div>
     <div class="feedback" id="feedback" aria-live="polite"></div>
     <button id="restartBtn" aria-label="Restart Game">Restart Game</button>
     <!-- Leaderboard Display -->
     <div id="leaderboard">
-      <div><strong>Your Best (Easy):</strong></div>
-      <div>Highest Round: <span id="bestRound">0</span></div>
-      <div>Fastest Time: <span id="bestTime">--</span> seconds</div>
+      <div class="lb-title" id="lbTitle">Your Best (Easy):</div>
+      <div class="lb-stat">
+        <span class="lb-value" id="bestRound">0</span>
+        <span class="lb-label">Best Round</span>
+      </div>
+      <div class="lb-stat">
+        <span class="lb-value" id="bestTime">--</span>
+        <span class="lb-label">Best Time</span>
+      </div>
+      <div class="lb-stat">
+        <span class="lb-value" id="gamesPlayed">0</span>
+        <span class="lb-label">Played</span>
+      </div>
     </div>
     <button id="back-to-minicycle" aria-label="Go back to miniCycle">Back to miniCycle</button>
   </div>
 
   <script>
+    /***** Centralized Labels *****/
+    const LABELS = Object.freeze({
+      title: 'Whack-a-Order',
+      difficultyEasy: 'Easy',
+      difficultyNormal: 'Normal',
+      difficultyHard: 'Hard',
+      instructions: 'Click the tasks in the correct order (1, 2, 3, ...). They will move faster each round!',
+      scoreboard: 'Round: {round} | Score: {score}',
+      roundComplete: 'Round complete! \u{1F389}',
+      wrongOrder: 'Wrong order! Game Over! \u{274C}',
+      winner: '\u{1F389} Winner! Time: {time}s',
+      newBest: '\u{1F31F} New Best!',
+      yourBest: 'Your Best ({difficulty}):',
+      restartGame: 'Restart Game',
+      backToApp: 'Back to miniCycle',
+      gameAriaLabel: 'Whack-a-Order Mini Game',
+      taskFieldAria: 'Task field',
+      restartAria: 'Restart Game',
+      backAria: 'Go back to miniCycle',
+      noTime: '--',
+      fallbackTasks: [
+        'Inspect Part', 'Check Serial', 'Verify Job', 'Record Number',
+        'Update Log', 'Order Supplies', 'Calibrate Tool', 'Review Report',
+        'Confirm Specs', 'Test Output', 'Schedule Meeting', 'File Report'
+      ]
+    });
+
+    /** Populate DOM elements from LABELS */
+    function populateLabels() {
+      document.querySelector('h1').textContent = LABELS.title;
+      document.getElementById('instructions').textContent = LABELS.instructions;
+      document.querySelector('[data-difficulty="easy"]').textContent = LABELS.difficultyEasy;
+      document.querySelector('[data-difficulty="normal"]').textContent = LABELS.difficultyNormal;
+      document.querySelector('[data-difficulty="hard"]').textContent = LABELS.difficultyHard;
+      document.getElementById('restartBtn').textContent = LABELS.restartGame;
+      document.getElementById('restartBtn').setAttribute('aria-label', LABELS.restartAria);
+      document.getElementById('back-to-minicycle').textContent = LABELS.backToApp;
+      document.getElementById('back-to-minicycle').setAttribute('aria-label', LABELS.backAria);
+      document.querySelector('.game-container').setAttribute('aria-label', LABELS.gameAriaLabel);
+      document.getElementById('taskWindow').setAttribute('aria-label', LABELS.taskFieldAria);
+    }
+
+    /** Check if reduced motion is preferred */
+    function prefersReducedMotion() {
+      return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ||
+             document.documentElement.classList.contains('reduced-motion');
+    }
+
+    /** Truncate text to maxLen characters */
+    function truncateText(text, maxLen) {
+      if (text.length <= maxLen) return text;
+      return text.substring(0, maxLen - 1) + '\u2026';
+    }
+
+    /** Clean task name for game display */
+    function cleanTaskName(text) {
+      return truncateText(text.trim(), 22);
+    }
+
     /***** Difficulty Settings *****/
     const DIFFICULTY_SETTINGS = {
-      easy: {
-        baseSpeed: 80,        // Base velocity multiplier
-        speedIncrease: 10,    // Speed increase per round
-        maxRounds: 10,
-        label: 'Easy'
-      },
-      normal: {
-        baseSpeed: 120,
-        speedIncrease: 15,
-        maxRounds: 10,
-        label: 'Normal'
-      },
-      hard: {
-        baseSpeed: 160,
-        speedIncrease: 20,
-        maxRounds: 15,
-        label: 'Hard'
-      }
+      easy:   { baseSpeed: 80,  speedIncrease: 10, maxRounds: 10, label: LABELS.difficultyEasy },
+      normal: { baseSpeed: 120, speedIncrease: 15, maxRounds: 10, label: LABELS.difficultyNormal },
+      hard:   { baseSpeed: 160, speedIncrease: 20, maxRounds: 15, label: LABELS.difficultyHard }
     };
 
     let currentDifficulty = 'easy';
@@ -278,36 +504,13 @@ h1 {
     /***** Schema 2.5 Integration *****/
     function getSchema25Data() {
       try {
-        // Debug: Show current origin and localStorage contents
-        console.log('🔍 Current origin:', window.location.origin);
-        console.log('🔍 localStorage keys:', Object.keys(localStorage));
-
         const rawData = localStorage.getItem("miniCycleData");
-        console.log('🔍 Raw miniCycleData:', rawData ? `${rawData.length} chars` : 'null');
-
-        if (!rawData) {
-          console.warn('⚠️ Schema 2.5 data not found - localStorage is empty or key missing');
-          console.warn('💡 Make sure you are running the game from the same origin as miniCycle');
-          console.warn('💡 Expected: same protocol, domain, and port (e.g., http://localhost:8080)');
-          return null;
-        }
-
+        if (!rawData) return null;
         const schemaData = JSON.parse(rawData);
-        if (!schemaData) {
-          console.warn('⚠️ Schema 2.5 data parsed as null/undefined');
-          return null;
-        }
-
-        // Schema version is stored as string "2.5" not number
-        console.log('🔍 Schema version found:', schemaData.schemaVersion, typeof schemaData.schemaVersion);
-        if (schemaData.schemaVersion !== "2.5") {
-          console.warn('⚠️ Schema outdated:', schemaData.schemaVersion, '(expected "2.5")');
-          return null;
-        }
-        console.log('✅ Schema 2.5 data loaded successfully');
+        if (!schemaData || schemaData.schemaVersion !== "2.5") return null;
         return schemaData;
       } catch (error) {
-        console.error('❌ Error reading Schema 2.5 data:', error);
+        console.error('Error reading Schema 2.5 data:', error);
         return null;
       }
     }
@@ -315,117 +518,71 @@ h1 {
     function saveGameStatsToSchema25(difficulty, round, time) {
       try {
         const schemaData = getSchema25Data();
-        if (!schemaData) {
-          console.warn('⚠️ Cannot save stats - no Schema 2.5 data');
-          return false;
-        }
+        if (!schemaData) return { saved: false };
 
-        // Ensure settings object exists
-        if (!schemaData.settings) {
-          schemaData.settings = {};
-        }
-
-        // Initialize game stats if not exists
+        if (!schemaData.settings) schemaData.settings = {};
         if (!schemaData.settings.gameStats) {
-          schemaData.settings.gameStats = {
-            taskOrderGame: {
-              easy: { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 },
-              normal: { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 },
-              hard: { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 }
-            }
-          };
+          schemaData.settings.gameStats = { taskOrderGame: {} };
         }
-
-        // Ensure taskOrderGame exists
         if (!schemaData.settings.gameStats.taskOrderGame) {
-          schemaData.settings.gameStats.taskOrderGame = {
-            easy: { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 },
-            normal: { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 },
-            hard: { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 }
-          };
+          schemaData.settings.gameStats.taskOrderGame = {};
         }
-
-        // Ensure this difficulty exists
         if (!schemaData.settings.gameStats.taskOrderGame[difficulty]) {
           schemaData.settings.gameStats.taskOrderGame[difficulty] = {
-            bestRound: 0,
-            bestTime: Infinity,
-            gamesPlayed: 0
+            bestRound: 0, bestTime: Infinity, gamesPlayed: 0
           };
         }
 
         const stats = schemaData.settings.gameStats.taskOrderGame[difficulty];
+        const prevBestRound = stats.bestRound;
+        const prevBestTime = stats.bestTime;
 
-        // Update stats
-        if (round > stats.bestRound) stats.bestRound = round;
-        if (time < stats.bestTime) stats.bestTime = time;
+        let isNewBest = false;
+        if (round > stats.bestRound) { stats.bestRound = round; isNewBest = true; }
+        if (time < stats.bestTime) { stats.bestTime = time; isNewBest = true; }
         stats.gamesPlayed = (stats.gamesPlayed || 0) + 1;
         stats.lastPlayed = Date.now();
 
-        // Save back to localStorage
         localStorage.setItem("miniCycleData", JSON.stringify(schemaData));
-        console.log('✅ Game stats saved to Schema 2.5:', { difficulty, round, time, gamesPlayed: stats.gamesPlayed });
-        return true;
+        return { saved: true, isNewBest };
       } catch (error) {
-        console.error('❌ Error saving game stats:', error);
-        return false;
+        console.error('Error saving game stats:', error);
+        return { saved: false };
       }
     }
 
     function loadGameStatsFromSchema25(difficulty) {
       try {
         const schemaData = getSchema25Data();
-        if (!schemaData || !schemaData.settings.gameStats?.taskOrderGame) {
+        if (!schemaData || !schemaData.settings?.gameStats?.taskOrderGame) {
           return { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 };
         }
         return schemaData.settings.gameStats.taskOrderGame[difficulty] ||
                { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 };
       } catch (error) {
-        console.error('❌ Error loading game stats:', error);
         return { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 };
       }
     }
 
     /***** Game Setup *****/
-    // Retrieve task names from Schema 2.5
     function getTaskNames() {
       const schemaData = getSchema25Data();
-      if (!schemaData) {
-        console.warn('⚠️ Using fallback tasks - Schema 2.5 data not available');
-        return [];
-      }
+      if (!schemaData) return [];
 
       const activeCycleId = schemaData.appState?.activeCycleId;
-      if (!activeCycleId) {
-        console.warn('⚠️ No active cycle found');
-        return [];
-      }
+      if (!activeCycleId) return [];
 
-      // Schema 2.5 structure: cycles is nested in data.cycles
       const currentCycle = schemaData.data?.cycles?.[activeCycleId];
-      if (!currentCycle || !Array.isArray(currentCycle.tasks)) {
-        console.warn('⚠️ No tasks found in active cycle:', activeCycleId);
-        console.warn('Available cycles:', Object.keys(schemaData.data?.cycles || {}));
-        return [];
-      }
+      if (!currentCycle || !Array.isArray(currentCycle.tasks)) return [];
 
-      const names = currentCycle.tasks
+      return currentCycle.tasks
         .map(task => task.text)
         .filter(text => text && text.trim() !== "");
-
-      console.log(`✅ Loaded ${names.length} tasks from Schema 2.5 (cycle: ${activeCycleId})`);
-      return names;
     }
 
-    // Use fallback tasks if none are found
     let tasks = getTaskNames();
     if (tasks.length === 0) {
-      tasks = [
-        "Inspect Part", "Check Serial", "Verify Job", "Record Number",
-        "Update Log", "Order Supplies", "Calibrate Tool", "Review Report",
-        "Confirm Specs", "Test Output", "Schedule Meeting", "File Report"
-      ];
-      console.log('ℹ️ Using fallback tasks');
+      tasks = [...LABELS.fallbackTasks];
     }
 
     let round = 1;
@@ -433,13 +590,17 @@ h1 {
     let expectedOrder = 1;
     let gameActive = true;
     let gameStartTime = null;
+    let timerInterval = null;
 
     const taskWindow = document.getElementById("taskWindow");
     const feedbackEl = document.getElementById("feedback");
     const scoreboardEl = document.getElementById("scoreboard");
+    const timerEl = document.getElementById("timer");
     const restartBtn = document.getElementById("restartBtn");
     const bestRoundEl = document.getElementById("bestRound");
     const bestTimeEl = document.getElementById("bestTime");
+    const gamesPlayedEl = document.getElementById("gamesPlayed");
+    const lbTitleEl = document.getElementById("lbTitle");
     const backToMiniCycle = document.getElementById("back-to-minicycle");
     const difficultyButtons = document.querySelectorAll('.difficulty-btn');
 
@@ -447,30 +608,45 @@ h1 {
     let movementAnimationFrame = null;
     let lastTimestamp = null;
 
+    /***** Timer *****/
+    function startTimer() {
+      stopTimer();
+      gameStartTime = Date.now();
+      timerEl.textContent = '0:00';
+      timerInterval = setInterval(() => {
+        if (!gameStartTime) return;
+        const elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
+        const mins = Math.floor(elapsed / 60);
+        const secs = elapsed % 60;
+        timerEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+      }, 250);
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
     /***** Difficulty Selection *****/
     difficultyButtons.forEach(btn => {
       btn.addEventListener('click', function() {
-        if (!gameActive && round > 1) {
-          // Don't allow difficulty change mid-game
-          return;
-        }
+        if (!gameActive && round > 1) return;
 
         difficultyButtons.forEach(b => b.classList.remove('active'));
         this.classList.add('active');
         currentDifficulty = this.dataset.difficulty;
-
-        // Update leaderboard display
         updateLeaderboardDisplay();
 
-        // Restart game with new difficulty
-        if (round > 1) {
-          restartGame();
-        }
+        if (round > 1) restartGame();
       });
     });
 
     /***** Particle Effects *****/
     function createParticles(x, y, color) {
+      if (prefersReducedMotion()) return;
+
       const particleCount = 12;
       for (let i = 0; i < particleCount; i++) {
         const particle = document.createElement('div');
@@ -481,47 +657,45 @@ h1 {
 
         const angle = (Math.PI * 2 * i) / particleCount;
         const distance = 50 + Math.random() * 50;
-        const tx = Math.cos(angle) * distance;
-        const ty = Math.sin(angle) * distance;
-
-        particle.style.setProperty('--tx', tx + 'px');
-        particle.style.setProperty('--ty', ty + 'px');
+        particle.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
+        particle.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
 
         taskWindow.appendChild(particle);
-
-        setTimeout(() => particle.remove(), 800);
+        setTimeout(() => particle.remove(), 700);
       }
     }
 
     /***** Leaderboard Functions *****/
     function updateLeaderboard(currentRound, elapsedTime) {
-      saveGameStatsToSchema25(currentDifficulty, currentRound, elapsedTime);
+      const result = saveGameStatsToSchema25(currentDifficulty, currentRound, elapsedTime);
       updateLeaderboardDisplay();
+      return result;
     }
 
     function updateLeaderboardDisplay() {
       const stats = loadGameStatsFromSchema25(currentDifficulty);
       const difficultyLabel = DIFFICULTY_SETTINGS[currentDifficulty].label;
 
-      document.querySelector('#leaderboard strong').textContent =
-        `Your Best (${difficultyLabel}):`;
+      lbTitleEl.textContent = LABELS.yourBest.replace('{difficulty}', difficultyLabel);
       bestRoundEl.textContent = stats.bestRound;
-      bestTimeEl.textContent = stats.bestTime === Infinity ? "--" :
-        Math.floor(stats.bestTime / 1000);
+      bestTimeEl.textContent = stats.bestTime === Infinity ? LABELS.noTime :
+        Math.floor(stats.bestTime / 1000) + 's';
+      gamesPlayedEl.textContent = stats.gamesPlayed || 0;
     }
 
     /***** Game Functions *****/
     function startRound() {
       if (round === 1) {
-        gameStartTime = Date.now();
+        startTimer();
       }
       clearTasks();
       feedbackEl.textContent = "";
       feedbackEl.className = "feedback";
       expectedOrder = 1;
-      scoreboardEl.textContent = `Round: ${round} | Score: ${score}`;
+      scoreboardEl.textContent = LABELS.scoreboard
+        .replace('{round}', round)
+        .replace('{score}', score);
 
-      // Randomly select up to 10 tasks
       let roundTasks = shuffleArray(tasks);
       if (roundTasks.length > 10) {
         roundTasks = roundTasks.slice(0, 10);
@@ -531,35 +705,26 @@ h1 {
         text: task
       }));
 
-      // Create moving buttons for each task
-      currentTasks.forEach(taskObj => {
-        createMovingTaskButton(taskObj);
-      });
+      currentTasks.forEach(taskObj => createMovingTaskButton(taskObj));
 
-      // Start the animation loop
       lastTimestamp = null;
       startMovement();
     }
 
-    // Create a task button with difficulty-based velocity
     function createMovingTaskButton(taskObj) {
       const btn = document.createElement("button");
       btn.className = "task-btn";
-      btn.textContent = `${taskObj.order}. ${taskObj.text}`;
+      btn.textContent = `${taskObj.order}. ${cleanTaskName(taskObj.text)}`;
       btn.dataset.order = taskObj.order;
 
-      // Set initial random position
       const pos = getRandomPosition();
       btn.style.left = pos.x + "px";
       btn.style.top = pos.y + "px";
 
-      // Calculate velocity based on difficulty and round
       const settings = DIFFICULTY_SETTINGS[currentDifficulty];
       const speedMultiplier = settings.baseSpeed + (round - 1) * settings.speedIncrease;
-
-      // Random velocity with consistent speed
       const angle = Math.random() * Math.PI * 2;
-      const speed = speedMultiplier * (0.8 + Math.random() * 0.4); // ±20% variance
+      const speed = speedMultiplier * (0.8 + Math.random() * 0.4);
 
       btn.dataset.dx = (Math.cos(angle) * speed).toFixed(2);
       btn.dataset.dy = (Math.sin(angle) * speed).toFixed(2);
@@ -569,53 +734,52 @@ h1 {
         const clickedOrder = parseInt(this.dataset.order, 10);
 
         if (clickedOrder === expectedOrder) {
-          // Success!
           this.classList.add("clicked");
           this.disabled = true;
 
-          // Create success particles
           const rect = this.getBoundingClientRect();
           const windowRect = taskWindow.getBoundingClientRect();
           const x = rect.left - windowRect.left + rect.width / 2;
           const y = rect.top - windowRect.top + rect.height / 2;
-          createParticles(x, y, '#28a745');
+          createParticles(x, y, getComputedStyle(document.documentElement).getPropertyValue('--game-success').trim() || '#28a745');
 
           expectedOrder++;
 
           if (expectedOrder > currentTasks.length) {
             const settings = DIFFICULTY_SETTINGS[currentDifficulty];
 
-            // Check if game is won
             if (round >= settings.maxRounds) {
               score++;
               stopMovement();
+              stopTimer();
               const elapsedTime = Date.now() - gameStartTime;
-              feedbackEl.textContent = `🎉 Winner! Time: ${Math.floor(elapsedTime / 1000)}s`;
+              const result = updateLeaderboard(round, elapsedTime);
+              feedbackEl.textContent = LABELS.winner.replace('{time}', Math.floor(elapsedTime / 1000));
               feedbackEl.className = "feedback success";
-              updateLeaderboard(round, elapsedTime);
+              if (result.isNewBest) showNewBest();
               gameActive = false;
               restartBtn.style.display = "block";
               return;
             }
 
-            // Continue to next round
             score++;
-            feedbackEl.textContent = "Round complete! 🎉";
+            feedbackEl.textContent = LABELS.roundComplete;
             feedbackEl.className = "feedback success";
             stopMovement();
             round++;
             setTimeout(startRound, 1500);
           }
         } else {
-          // Wrong order!
-          feedbackEl.textContent = "Wrong order! Game Over! ❌";
-          feedbackEl.className = "feedback error";
-          gameActive = false;
           stopMovement();
-
+          stopTimer();
           const elapsedTime = Date.now() - gameStartTime;
-          updateLeaderboard(round, elapsedTime);
-
+          const result = updateLeaderboard(round, elapsedTime);
+          feedbackEl.textContent = LABELS.wrongOrder;
+          feedbackEl.className = "feedback error";
+          if (result.isNewBest) {
+            setTimeout(() => showNewBest(), 800);
+          }
+          gameActive = false;
           restartBtn.style.display = "block";
         }
       });
@@ -630,18 +794,21 @@ h1 {
       taskWindow.appendChild(btn);
     }
 
-    // Get a random position within taskWindow boundaries
+    function showNewBest() {
+      feedbackEl.textContent = LABELS.newBest;
+      feedbackEl.className = "feedback new-best";
+    }
+
     function getRandomPosition() {
       const rect = taskWindow.getBoundingClientRect();
-      const maxX = rect.width - 120;
-      const maxY = rect.height - 60;
+      const maxX = rect.width - 140;
+      const maxY = rect.height - 50;
       return {
-        x: Math.floor(Math.random() * maxX),
-        y: Math.floor(Math.random() * maxY)
+        x: Math.max(0, Math.floor(Math.random() * maxX)),
+        y: Math.max(0, Math.floor(Math.random() * maxY))
       };
     }
 
-    // Helper to shuffle an array
     function shuffleArray(arr) {
       let array = [...arr];
       for (let i = array.length - 1; i > 0; i--) {
@@ -651,12 +818,9 @@ h1 {
       return array;
     }
 
-    // Clear all task buttons from taskWindow
     function clearTasks() {
-      const buttons = document.querySelectorAll(".task-btn");
-      buttons.forEach(btn => btn.remove());
-      const particles = document.querySelectorAll(".particle");
-      particles.forEach(p => p.remove());
+      document.querySelectorAll(".task-btn").forEach(btn => btn.remove());
+      document.querySelectorAll(".particle").forEach(p => p.remove());
     }
 
     /***** Smooth Movement using requestAnimationFrame *****/
@@ -674,31 +838,13 @@ h1 {
         let dx = parseFloat(btn.dataset.dx);
         let dy = parseFloat(btn.dataset.dy);
 
-        // Update positions
         x += dx * dt;
         y += dy * dt;
 
-        // Bounce off boundaries with slight speed randomization
-        if (x < 0) {
-          x = 0;
-          dx = -dx * (0.9 + Math.random() * 0.2);
-          btn.dataset.dx = dx;
-        }
-        if (x > rect.width - btn.offsetWidth) {
-          x = rect.width - btn.offsetWidth;
-          dx = -dx * (0.9 + Math.random() * 0.2);
-          btn.dataset.dx = dx;
-        }
-        if (y < 0) {
-          y = 0;
-          dy = -dy * (0.9 + Math.random() * 0.2);
-          btn.dataset.dy = dy;
-        }
-        if (y > rect.height - btn.offsetHeight) {
-          y = rect.height - btn.offsetHeight;
-          dy = -dy * (0.9 + Math.random() * 0.2);
-          btn.dataset.dy = dy;
-        }
+        if (x < 0) { x = 0; dx = -dx * (0.9 + Math.random() * 0.2); btn.dataset.dx = dx; }
+        if (x > rect.width - btn.offsetWidth) { x = rect.width - btn.offsetWidth; dx = -dx * (0.9 + Math.random() * 0.2); btn.dataset.dx = dx; }
+        if (y < 0) { y = 0; dy = -dy * (0.9 + Math.random() * 0.2); btn.dataset.dy = dy; }
+        if (y > rect.height - btn.offsetHeight) { y = rect.height - btn.offsetHeight; dy = -dy * (0.9 + Math.random() * 0.2); btn.dataset.dy = dy; }
 
         btn.style.left = x + "px";
         btn.style.top = y + "px";
@@ -727,6 +873,7 @@ h1 {
       restartBtn.style.display = "none";
       feedbackEl.textContent = "";
       feedbackEl.className = "feedback";
+      timerEl.textContent = '0:00';
       startRound();
     }
 
@@ -736,8 +883,8 @@ h1 {
       window.location.href = "../miniCycle.html";
     });
 
-    // Initialize leaderboard and start game
     window.onload = function() {
+      populateLabels();
       updateLeaderboardDisplay();
       startRound();
     };

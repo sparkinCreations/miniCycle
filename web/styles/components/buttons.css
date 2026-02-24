@@ -370,15 +370,16 @@ body.hide-help-window .help-window {
 }
 
 .undo-redo-btn {
-    background: none;
-    border: none;
-    font-size: var(--font-size-sm);
+    font-size: 0.85em;
     font-weight: 600;
-    color: #2d2c45;
+    color: var(--color-white);
+    background: rgba(0, 0, 0, 0.4);
+    border: none;
+    border-radius: var(--radius-6);
     cursor: pointer;
-    padding: var(--space-0-5) var(--space-1-5);
+    padding: var(--space-1) var(--space-2);
     opacity: .8;
-    transition: color var(--transition-fast) ease;
+    transition: background var(--transition-fast) ease, color var(--transition-fast) ease;
     min-width: 50px;
     position: absolute;
 }
@@ -392,8 +393,8 @@ body.hide-help-window .help-window {
 }
 
 .undo-redo-btn:hover {
-    background: none;
-    color: var(--color-black);
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--color-white);
 }
 
 .undo-redo-btn[hidden] {
@@ -507,31 +508,6 @@ body.hide-help-window .help-window {
 
     .undo-redo-btn#redo-btn {
         right: 25%;
-    }
-
-    .undo-redo-btn {
-        font-size: 0.85em;
-        color: var(--color-white);
-        background: rgba(0,0,0,0.4);
-        padding: var(--space-1) var(--space-2);
-        border-radius: var(--radius-6);
-    }
-
-    .undo-redo-btn:hover {
-        background: rgba(255,255,255,0.15);
-        color: var(--color-white);
-    }
-
-    /* Mobile Dark Mode */
-    body.dark-mode .undo-redo-btn {
-        background: rgba(255,255,255,0.1);
-        color: var(--color-gray-100);
-        border: 1px solid rgba(255,255,255,0.2);
-    }
-
-    body.dark-mode .undo-redo-btn:hover {
-        background: rgba(255,255,255,0.2);
-        color: var(--color-white);
     }
 }
 

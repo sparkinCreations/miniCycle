@@ -10,7 +10,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="1.1034">
+<meta name="app-version" content="1.1035">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -28,20 +28,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.1034"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=1.1035"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=1.1034" as="style">
-<link rel="preload" href="styles/base/variables.css?v=1.1034" as="style">
-<link rel="preload" href="styles/base/reset.css?v=1.1034" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=1.1034" as="style">
-<link rel="preload" href="styles/layout/header.css?v=1.1034" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=1.1034" as="style">
+<link rel="preload" href="styles/main.css?v=1.1035" as="style">
+<link rel="preload" href="styles/base/variables.css?v=1.1035" as="style">
+<link rel="preload" href="styles/base/reset.css?v=1.1035" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=1.1035" as="style">
+<link rel="preload" href="styles/layout/header.css?v=1.1035" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=1.1035" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=1.1034" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=1.1035" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=1.1034"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=1.1035"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -52,7 +52,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.1034"></script>
+<script src="./version.js?v=1.1035"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -211,21 +211,21 @@
      3. Or accepting slightly slower initial load without preloads
      ═══════════════════════════════════════════════════════════════════════════ -->
 <!--
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.1034">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.1034">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.1034">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.1034">
-<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.1034">
-<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.1034">
-<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.1034">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.1034">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.1034">
-<link rel="modulepreload" href="./modules/core/appInit.js?v=1.1034">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.1034">
-<link rel="modulepreload" href="./modules/core/diBase.js?v=1.1034">
-<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.1034">
-<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.1034">
-<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.1034">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.1035">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.1035">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.1035">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.1035">
+<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=1.1035">
+<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=1.1035">
+<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=1.1035">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.1035">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.1035">
+<link rel="modulepreload" href="./modules/core/appInit.js?v=1.1035">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.1035">
+<link rel="modulepreload" href="./modules/core/diBase.js?v=1.1035">
+<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=1.1035">
+<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=1.1035">
+<link rel="modulepreload" href="./modules/utils/notifications.js?v=1.1035">
 -->
 
 <!-- Critical CSS - extracted to external file for CSP compliance (no 'unsafe-inline' needed) -->
@@ -1613,11 +1613,9 @@ window.installApp = () => {
         <div class="games-modal-content has-corner-logo">
           <h2 id="games-panel-title">🎮 Games</h2>
           <p>Try to complete tasks in the correct order as fast as you can!</p>
-          <button id="open-task-order-game">Play Task Order</button>
+          <button id="open-task-order-game">Play Whack-a-Order</button>
           <button id="close-games-panel" class="close-btn">Close</button>
         </div>
-         <!-- 🎮 Game Container (initially hidden) -->
- <div id="taskOrderGameContainer" style="display: none;"></div>
       </dialog>
 
         <!-- Reminders Modal -->
@@ -1820,6 +1818,7 @@ window.installApp = () => {
                         <button id="reset-notification-position" class="settings-btn settings-btn-ghost"><i class="fas fa-bell"></i> Reset Notification Position</button>
                         <button id="reset-recurring-default" class="settings-btn settings-btn-ghost"><i class="fas fa-sync"></i> Reset Recurring Default</button>
                         <button id="reset-achievement-progress" class="settings-btn settings-btn-ghost"><i class="fas fa-trophy"></i> Reset Achievements</button>
+                        <button id="clear-undo-history" class="settings-btn settings-btn-ghost"><i class="fas fa-history"></i> Clear Undo History</button>
                     </div>
                 </div>
 
@@ -2724,7 +2723,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.1034"></script>
+ <script type="module" src="miniCycle-main.js?v=1.1035"></script>
 
 <script>
 // Sync About modal version with meta app-version

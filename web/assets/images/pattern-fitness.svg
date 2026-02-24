@@ -4,7 +4,7 @@
     Icons: dumbbell, lightning bolt, bullseye, ECG heartbeat,
            stopwatch, medal with star, trophy, running shoe
   -->
-  <g fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.2"
+  <g fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1.2"
      stroke-linecap="round" stroke-linejoin="round">
 
     <!-- Dumbbell / strength (top-left, angled) -->

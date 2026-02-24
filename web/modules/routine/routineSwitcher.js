@@ -1418,6 +1418,12 @@ export class RoutineSwitcher {
 
                 // ✅ Pass the cycle key for Schema 2.5
                 this.updatePreview(cycleKey);
+
+                // If theme picker is open, refresh it for the newly selected routine
+                const picker = this.deps.getElementById(DOM_IDS.THEME_PICKER_ROW);
+                if (picker && !picker.classList.contains('hidden')) {
+                    this.openThemePicker(cycleKey);
+                }
             };
             safeAdd(listItem, "click", listItem._clickHandler);
 

@@ -14,6 +14,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -81,12 +82,36 @@ class GamesManager {
         await _deps.appInit?.waitForCore();
 
         this.setupEventListeners();
+        this.populateGamesPanelContent();
 
         // Defer checkGamesUnlock until AppState is ready
         this.deferredCheckGamesUnlock();
 
         this.initialized = true;
         console.log('🎮 Games Manager initialized');
+    }
+
+    /**
+     * Populate games panel DOM content from label system
+     */
+    populateGamesPanelContent() {
+        const titleEl = document.getElementById('games-panel-title');
+        if (titleEl) {
+            titleEl.textContent = `🎮 ${getLabel('games.title')}`;
+        }
+
+        const contentEl = document.querySelector(DOM_SELECTORS.GAMES_MODAL_CONTENT);
+        if (contentEl) {
+            const descP = contentEl.querySelector('p');
+            if (descP) {
+                descP.textContent = getLabel('games.description');
+            }
+        }
+
+        const playBtn = document.getElementById(DOM_IDS.OPEN_TASK_ORDER_GAME);
+        if (playBtn) {
+            playBtn.textContent = getLabel('games.play');
+        }
     }
 
     /**

@@ -329,7 +329,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/undoRedoManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListener', 'getElementById', 'refreshUIFromState', 'UIOrchestrator', 'requestUIUpdate'],
-        provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction', 'wrapAppStateForUndo', 'setupStateBasedUndoRedo', 'initUndoSystemForApp', 'onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched'],
+        provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction', 'wrapAppStateForUndo', 'setupStateBasedUndoRedo', 'initUndoSystemForApp', 'onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'clearAllUndoHistory'],
         api: 'undo',
         after: ['taskDOM', 'uiOrchestrator']
     },
@@ -347,10 +347,11 @@ export const MODULE_MANIFESTS = {
         path: '../ui/settingsManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
+        optionalDeps: ['clearAllUndoHistory'],
         provides: ['syncCurrentSettingsToStorage'],
         provideInstance: 'settingsManager',
         api: 'ui',
-        after: ['menuManager', 'themeManager']
+        after: ['menuManager', 'themeManager', 'undoRedoManager']
     },
 
     // NOTE: preferencesBgImage and preferencesPresets are loaded as

@@ -111,6 +111,9 @@ export class StatsPanelManager {
             MOUSE_DRAG_START_THRESHOLD: GESTURE.MOUSE_DRAG_START
         };
 
+        // Collapsible section state
+        this._milestonesExpanded = false;
+
         // DOM elements cache
         this.elements = {};
 
@@ -1047,8 +1050,8 @@ export class StatsPanelManager {
 
             if (allUnlocked) {
                 this.elements.milestoneProgressText.textContent = `${getIcon('celebrate')} ${getLabel('stats.allBadgesUnlocked')}`;
-                this.elements.milestoneProgressText.style.color = "var(--theme-color-success, #4caf50)";
-                this.elements.milestoneProgressText.style.fontWeight = "";
+                this.elements.milestoneProgressText.style.color = "";
+                this.elements.milestoneProgressText.style.fontWeight = "bold";
             } else if (isToDoMode) {
                 // To-Do mode: show cleared tasks progress
                 const remaining = nextMilestone - globalTasksCleared;
@@ -1222,6 +1225,8 @@ export class StatsPanelManager {
 
         // All unlocked vocabulary theme rewards (excludes 'classic' — always available by default)
         // Updates immediately after checkThemeUnlocks() writes to state before updateStatsPanel() runs
+        const expanded = this._milestonesExpanded;
+
         if (themeUnlockMessage) {
             if (vtm) {
                 const unlockedIds = vtm.getUnlockedThemeIds()
@@ -1232,7 +1237,8 @@ export class StatsPanelManager {
                         const icon = def?.icons?.celebrate ?? '✅';
                         return `${icon} ${def.name}`;
                     }).join('\n');
-                    themeUnlockMessage.classList.add("unlocked-message", "visible");
+                    themeUnlockMessage.classList.toggle("unlocked-message", true);
+                    themeUnlockMessage.classList.toggle("visible", expanded);
                 } else {
                     themeUnlockMessage.textContent = "";
                     themeUnlockMessage.classList.remove("unlocked-message", "visible");
@@ -1252,10 +1258,11 @@ export class StatsPanelManager {
                     const themeUnlockText = getLabel('unlock.nextThemeUnlock', { vars: { name: nextVocabTheme.name, count: cyclesNeeded } });
                     goldenUnlockMessage.textContent = nextIcon ? `${nextIcon} ${themeUnlockText}` : themeUnlockText;
                     goldenUnlockMessage.classList.remove("unlocked-message");
-                    goldenUnlockMessage.classList.add("visible");
+                    goldenUnlockMessage.classList.toggle("visible", expanded);
                 } else {
                     goldenUnlockMessage.textContent = getLabel('unlock.allThemesUnlocked');
-                    goldenUnlockMessage.classList.add("unlocked-message", "visible");
+                    goldenUnlockMessage.classList.toggle("unlocked-message", true);
+                    goldenUnlockMessage.classList.toggle("visible", expanded);
                 }
             } else {
                 goldenUnlockMessage.textContent = "";
@@ -1271,7 +1278,8 @@ export class StatsPanelManager {
                 gameUnlockMessage.classList.remove("unlocked-message", "visible");
             } else if (milestoneUnlocks.taskOrderGame) {
                 gameUnlockMessage.textContent = `${getIcon('game')} ${getLabel('unlock.gameUnlocked')} ${getIcon('unlocked')}`;
-                gameUnlockMessage.classList.add("unlocked-message", "visible");
+                gameUnlockMessage.classList.toggle("unlocked-message", true);
+                gameUnlockMessage.classList.toggle("visible", expanded);
             } else {
                 if (isToDoMode) {
                     const tasksNeeded = Math.max(0, 500 - totalTasksCleared);
@@ -1281,7 +1289,7 @@ export class StatsPanelManager {
                     gameUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.gameCycles', { vars: { count: cyclesNeeded } })}`;
                 }
                 gameUnlockMessage.classList.remove("unlocked-message");
-                gameUnlockMessage.classList.add("visible");
+                gameUnlockMessage.classList.toggle("visible", expanded);
             }
         }
     }
@@ -1331,39 +1339,32 @@ export class StatsPanelManager {
         const { themeUnlockMessage, goldenUnlockMessage, gameUnlockMessage, themeUnlockStatus } = this.elements;
         if (!themeUnlockMessage) return;
 
-        console.log('🎨 Handling theme toggle (state-based)...');
+        // Flip expanded state — use _milestonesExpanded as single source of truth
+        const newExpanded = !this._milestonesExpanded;
+        this._milestonesExpanded = newExpanded;
 
-        // Toggle theme message (will be repopulated in Phase 2 with vocabulary theme status)
-        themeUnlockMessage.classList.toggle("visible");
+        // Show only elements that have content; always hide when collapsing
+        const applyVisible = (el) => {
+            if (!el) return;
+            if (newExpanded && el.textContent) {
+                el.classList.add("visible");
+            } else {
+                el.classList.remove("visible");
+            }
+        };
 
-        // Toggle golden glow message if present
-        if (goldenUnlockMessage?.textContent) {
-            goldenUnlockMessage.classList.toggle("visible");
-        }
+        applyVisible(themeUnlockMessage);
+        applyVisible(goldenUnlockMessage);
+        applyVisible(gameUnlockMessage);
 
-        // Toggle game message if it has content
-        if (gameUnlockMessage?.textContent) {
-            gameUnlockMessage.classList.toggle("visible");
-        }
-
-        // Update toggle arrow
+        // Update toggle arrow and ARIA
         const toggleIcon = themeUnlockStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);
-        if (toggleIcon) {
-            const anyVisible =
-                themeUnlockMessage.classList.contains("visible") ||
-                goldenUnlockMessage?.classList.contains("visible") ||
-                gameUnlockMessage?.classList.contains("visible");
+        if (toggleIcon) toggleIcon.textContent = newExpanded ? "▲" : "▼";
 
-            toggleIcon.textContent = anyVisible ? "▲" : "▼";
+        const clickableHeader = themeUnlockStatus?.querySelector('.clickable');
+        if (clickableHeader) clickableHeader.setAttribute('aria-expanded', String(newExpanded));
 
-            const clickableHeader = themeUnlockStatus?.querySelector('.clickable');
-            if (clickableHeader) clickableHeader.setAttribute('aria-expanded', String(anyVisible));
-
-            // ✅ Save preference to localStorage
-            this.saveCollapsiblePreference('milestonesExpanded', anyVisible);
-        }
-
-        console.log('✅ Theme toggle handled (state-based)');
+        this.saveCollapsiblePreference('milestonesExpanded', newExpanded);
     }
 
     /**
@@ -1469,6 +1470,8 @@ export class StatsPanelManager {
             // Restore Milestone Rewards state
             const { themeUnlockMessage, goldenUnlockMessage, gameUnlockMessage, themeUnlockStatus } = this.elements;
 
+            this._milestonesExpanded = milestonesExpanded;
+
             if (milestonesExpanded && themeUnlockMessage) {
                 themeUnlockMessage.classList.add("visible");
                 if (goldenUnlockMessage) goldenUnlockMessage.classList.add("visible");
@@ -1476,6 +1479,9 @@ export class StatsPanelManager {
 
                 const toggleIcon = themeUnlockStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);
                 if (toggleIcon) toggleIcon.textContent = "▲";
+
+                const clickableHeader = themeUnlockStatus?.querySelector('.clickable');
+                if (clickableHeader) clickableHeader.setAttribute('aria-expanded', 'true');
             }
 
             console.log('✅ Collapsible preferences restored');

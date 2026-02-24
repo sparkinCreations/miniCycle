@@ -473,6 +473,7 @@ export const DOM_IDS = Object.freeze({
     TOGGLE_DEBUG_MODE: 'toggle-debug-mode',
     RESET_RECURRING_DEFAULT: 'reset-recurring-default',
     RESET_ACHIEVEMENT_PROGRESS: 'reset-achievement-progress',
+    CLEAR_UNDO_HISTORY: 'clear-undo-history',
     TOGGLE_CHECKBOX_FILL: 'toggle-checkbox-fill',
     TOGGLE_CHECKBOX_INCOMPLETE: 'toggle-checkbox-incomplete',
     TOGGLE_BG_PATTERN: 'toggle-bg-pattern',

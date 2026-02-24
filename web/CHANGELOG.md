@@ -1,3 +1,7 @@
+## [1.1035] - 2026-02-24
+- feat: enhance achievements manager with vocab theme unlocking and update related UI elements
+
+
 ## [1.1034] - 2026-02-23
 - chore: update version to 1.1033 and reflect changes in relevant files
 
