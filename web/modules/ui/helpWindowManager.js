@@ -58,6 +58,7 @@ export class HelpWindowManager {
         this.currentMessage = null;
         this.isShowingCycleComplete = false;
         this.isShowingModeDescription = false;
+        this.currentMode = null;
         this.modeDescriptionTimeout = null;
         this.initialized = false;
         this.sideLayoutEnabled = false;
@@ -257,6 +258,31 @@ export class HelpWindowManager {
     }
 
     /**
+     * Re-render the current help window content with fresh labels.
+     * Called when the vocabulary theme changes so themed labels update
+     * regardless of which state the help window is in (mode description,
+     * cycle complete, or normal status message).
+     */
+    refreshLabels() {
+        if (!this.helpWindow) return;
+
+        if (this.isShowingModeDescription && this.currentMode) {
+            // Re-render mode description with new themed labels
+            this.showModeDescription(this.currentMode);
+            return;
+        }
+
+        if (this.isShowingCycleComplete) {
+            this.showCycleCompleteMessage();
+            return;
+        }
+
+        // Force re-evaluation of the constant message by clearing the cache
+        this.currentMessage = null;
+        this.updateConstantMessage();
+    }
+
+    /**
      * Shows mode description temporarily.
      * @param {string} mode - The mode to describe
      */
@@ -270,6 +296,7 @@ export class HelpWindowManager {
         }
 
         this.isShowingModeDescription = true;
+        this.currentMode = mode;
 
         // Add class to task-view for CSS to reduce task card height
         const taskView = document.getElementById(DOM_IDS.TASK_VIEW);

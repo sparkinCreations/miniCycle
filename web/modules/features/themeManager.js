@@ -194,10 +194,12 @@ function _refreshLiveLensLabels() {
         appSubtitle.textContent = getLabel('nav.appSubtitle');
     }
 
-    // Quick-action "Add Task" button text
+    // Quick-action "Add Task" / "Hide Task Input" button text
     const addTaskText = document.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_TEXT);
     if (addTaskText) {
-        addTaskText.textContent = getLabel('action.addTask');
+        const taskInputContainer = document.querySelector(DOM_SELECTORS.TASK_INPUT);
+        const isTaskInputVisible = taskInputContainer && !taskInputContainer.classList.contains('hidden');
+        addTaskText.textContent = isTaskInputVisible ? getLabel('nav.hideTaskInput') : getLabel('action.addTask');
     }
 
     // Complete-all button text ("Complete Cycle" → "Complete Habits" etc.)
@@ -208,6 +210,19 @@ function _refreshLiveLensLabels() {
             ? '🧹 ' + getLabel('action.clearCompletedTasks')
             : '🔄 ' + getLabel('action.completeCycle');
     }
+
+    // Empty state text ("No tasks yet" → "No habits yet" etc.)
+    const emptyState = document.getElementById(DOM_IDS.EMPTY_STATE);
+    if (emptyState) {
+        const emptyText = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_TEXT);
+        if (emptyText) emptyText.textContent = getLabel('empty.noTasks');
+        const emptyHint = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
+        if (emptyHint) emptyHint.textContent = getLabel('empty.noTasksHint');
+    }
+
+    // Keep the Themes modal section content fresh so it always reflects the active routine's theme,
+    // regardless of which code path opens the modal (themeManager, preferencesManager, statsPanel).
+    renderVocabThemes();
 }
 
 export class ThemeManager {
@@ -699,6 +714,14 @@ export class ThemeManager {
             const currentThemeId = activeCycle?.theme ?? 'classic';
             const unlocked = new Set(vtm.getUnlockedThemeIds());
 
+            // Keep the routine-switcher theme button in sync: only show it when at
+            // least one non-Classic theme has been unlocked (mirrors switchMiniCycle logic).
+            const switchThemeBtn = _deps.getElementById?.(DOM_IDS.SWITCH_THEME_BTN);
+            if (switchThemeBtn) {
+                const hasExtraTheme = [...unlocked].some(id => id !== 'classic');
+                switchThemeBtn.style.display = hasExtraTheme ? '' : 'none';
+            }
+
             section.innerHTML = '';
 
             // Section heading
@@ -738,8 +761,11 @@ export class ThemeManager {
                 option.appendChild(labelSpan);
 
                 radio.addEventListener('change', () => {
-                    if (radio.checked && activeCycleId) {
-                        vtm.setRoutineTheme(activeCycleId, id);
+                    // Read the active cycle at click time (not render time)
+                    // so the theme is always applied to the currently active routine.
+                    const currentCycleId = _deps.AppState?.get?.()?.appState?.activeCycleId;
+                    if (radio.checked && currentCycleId) {
+                        vtm.setRoutineTheme(currentCycleId, id);
                         _deps.showNotification?.(
                             getLabel('unlock.vocabThemeApplied', { vars: { name: def.name } }),
                             'success', 2000

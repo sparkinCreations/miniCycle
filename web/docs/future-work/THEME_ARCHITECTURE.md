@@ -1,10 +1,20 @@
-# Theme Architecture
+# Theme Architecture (Old Design — Not Implemented)
 
-Technical documentation for miniCycle's JSON-based theming system.
+> **Superseded (Feb 2026):** This document describes a JSON-file + build-step theming system
+> that was never implemented. The actual theming architecture is vocabulary-based with no
+> build step required. See [architecture/THEME_ARCHITECTURE.md](../architecture/THEME_ARCHITECTURE.md)
+> for current documentation.
+>
+> This file is preserved as a historical design reference.
+
+---
+
+Technical documentation for miniCycle's JSON-based theming system (design only — not built).
 
 **Related Documents:**
+- [Current theme docs](../architecture/THEME_ARCHITECTURE.md) - **Use this instead**
 - [CSS Refactor Plan](./CSS_REFACTOR_PLAN.md) - Overall CSS architecture
-- [Theme Creation Guide](../guides/THEME_CREATION_GUIDE.md) - User-friendly guide for creating themes
+- [Theme Creation Guide](../guides/THEME_CREATION_GUIDE.md) - User-friendly guide (also outdated)
 
 ---
 

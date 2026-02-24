@@ -1,5 +1,13 @@
 # Theme Creation Guide
 
+> **Note (Feb 2026):** This guide was written for a JSON-based build system that was never implemented.
+> The actual theming system is vocabulary-based — see [THEME_ARCHITECTURE.md](../architecture/THEME_ARCHITECTURE.md)
+> for how theming actually works (no build step, no JSON files in `styles/themes/`).
+>
+> The content below is preserved as a design reference.
+
+---
+
 Create custom themes for miniCycle in minutes. No CSS knowledge required - just edit a JSON file.
 
 ---

@@ -520,9 +520,10 @@ These are the foundational terms that define the app's vocabulary. A contextual 
 
 | Key | Current Value | Source(s) | Lens-Sensitive | Notes |
 |-----|--------------|-----------|----------------|-------|
-| `unlock.darkOcean` | {count} more cleared task(s) to unlock Dark Ocean Theme! | statsPanel.js:1188 | Yes | Unlock progress |
-| `unlock.goldenGlow` | {count} more cleared task(s) to unlock Golden Glow Theme! | statsPanel.js:1206 | Yes | Unlock progress |
-| `unlock.game` | {count} more cleared task(s) to unlock Whack-a-Order Game! | statsPanel.js:1229 | Yes | Unlock progress |
+| `unlock.vocabTheme` | {count} more cycles to unlock {name}! | statsPanel.js | Yes | Vocabulary theme unlock progress |
+| `unlock.game` | {count} more cleared task(s) to unlock Whack-a-Order Game! | statsPanel.js | Yes | Unlock progress |
+
+> **Note:** `unlock.darkOcean` and `unlock.goldenGlow` were removed when the vocabulary theme system replaced those themes (Feb 2026).
 
 ---
 

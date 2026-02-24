@@ -140,7 +140,6 @@ export class TaskEvents {
             const checkbox = taskItem.querySelector("input[type='checkbox']");
             const buttonContainer = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
             const dueDateInput = taskItem.querySelector(DOM_SELECTORS.DUE_DATE);
-            const threeDotsButton = taskItem.querySelector(DOM_SELECTORS.THREE_DOTS_BTN);
 
             // ✅ Early return if checkbox not found (incomplete task structure)
             if (!checkbox) {
@@ -148,18 +147,16 @@ export class TaskEvents {
                 return;
             }
 
-            // Ignore clicks on checkbox, buttons, three-dots button, or due date input
-            const isThreeDots = event.target === threeDotsButton || event.target.closest(".three-dots-btn");
-            const isCheckbox = event.target === checkbox;
-            const isButton = buttonContainer?.contains(event.target);
-            const isDueDate = event.target === dueDateInput;
-
-            if (isCheckbox || isThreeDots || isButton || isDueDate) {
-                if (isThreeDots) {
-                    console.log('🟡 Task delegation: Ignoring three-dots click (correct behavior)');
-                }
-                return;
-            }
+            // Don't complete the task for checkbox clicks (native toggle handles it),
+            // any button anywhere inside the task (three-dots, option buttons, icon children),
+            // the three-dots button by class (belt-and-suspenders for the button check above),
+            // anything inside the task-options container (catches non-button descendants too),
+            // or the due date input.
+            if (event.target === checkbox) return;
+            if (event.target.closest('button')) return;
+            if (event.target.closest('.three-dots-btn')) return;
+            if (buttonContainer?.contains(event.target)) return;
+            if (event.target === dueDateInput) return;
 
             console.log('🟢 Task delegation: Processing task click (will toggle checkbox)');
 

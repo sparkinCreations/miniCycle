@@ -75,8 +75,8 @@ Users can access the stats panel via:
 │                                         │
 │  ┌─────────────────────────────────┐   │
 │  │  🏆 Milestones ▼                │   │
-│  │  🎨 Dark Ocean (10)    ✅       │   │
-│  │  ✨ Golden Glow (50)   🔒       │   │
+│  │  🥉 Bronze (5)         ✅       │   │
+│  │  🥈 Silver (10)        ✅       │   │
 │  │  🎮 Task Game (100)    🔒       │   │
 │  └─────────────────────────────────┘   │
 │                                         │
@@ -145,20 +145,25 @@ Milestones can be unlocked via **cycles completed OR tasks cleared**:
 | Badge | Cycles Required | Tasks Required | Unlock |
 |-------|-----------------|----------------|--------|
 | 🥉 Bronze | 5 | 25 | Badge |
-| 🥈 Silver | 10 | 50 | Badge + Dark Ocean Theme |
+| 🥈 Silver | 10 | 50 | Badge |
 | 🥇 Gold | 25 | 125 | Badge |
-| 💎 Diamond | 50 | 250 | Badge + Golden Glow Theme |
+| 💎 Diamond | 50 | 250 | Badge |
 | 👑 Crown | 100 | 500 | Badge + Whack-a-Order Game |
 | 🌟 Star | 250 | 1250 | Badge |
 | ⚡ Lightning | 500 | 2500 | Badge |
 | 🔥 Fire | 1000 | 5000 | Badge |
 
-### Theme Unlocks
+### Vocabulary Theme Unlocks
 
-| Theme | Requirement | Description |
-|-------|-------------|-------------|
-| **Dark Ocean** | 10 cycles OR 50 tasks | Deep blue gradient theme |
-| **Golden Glow** | 50 cycles OR 250 tasks | Warm golden accent theme |
+Vocabulary themes are unlocked by global cycle count and applied per-routine. See [THEME_ARCHITECTURE.md](../architecture/THEME_ARCHITECTURE.md) for full details.
+
+| Theme | Cycles Required | Description |
+|-------|-----------------|-------------|
+| **Classic** | 0 (default) | Standard tasks & cycles terminology |
+| **Habit Tracker** | 5 cycles | Habits & Streaks |
+| **Fitness** | 25 cycles | Workouts & Sessions |
+| **Scholar** | 50 cycles | Study Goals & Study Sessions |
+| **Cleaning** | 75 cycles | Chores & Cleaning Rounds |
 
 ### Game Unlocks
 
@@ -171,13 +176,13 @@ Milestones can be unlocked via **cycles completed OR tasks cleared**:
 When a milestone is locked, the stats panel shows progress hints:
 
 ```
-🔒 25 more cycles to unlock ✨ Golden Glow!
+🔒 20 more cycles to unlock 🏋️ Fitness theme!
 ```
 
 When unlocked:
 
 ```
-✨ Golden Glow unlocked! 🔓
+🏋️ Fitness theme unlocked! 🔓
 ```
 
 ---
@@ -414,6 +419,7 @@ npm test
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.001 | Feb 2026 | Vocabulary themes replace Dark Ocean/Golden Glow unlocks |
 | 1.729 | Jan 2026 | Badge UI delegated to achievementsManager |
 | 1.729 | Jan 2026 | Gesture handling extracted to gesturePanelManager |
 | 1.672 | Dec 2025 | Mode-aware milestone progress |
@@ -425,5 +431,6 @@ npm test
 
 **Related Documentation:**
 - [FEATURE_LIST.md](./FEATURE_LIST.md) - Complete feature overview
+- [THEME_ARCHITECTURE.md](../architecture/THEME_ARCHITECTURE.md) - Complete theme system docs
+- [VOCAB_THEME_SYSTEM.md](../developer-guides/VOCAB_THEME_SYSTEM.md) - Developer guide for vocabulary themes
 - [API_REFERENCE.md](../developer-guides/API_REFERENCE.md) - Module APIs
-- [ARCHITECTURE_OVERVIEW.md](../developer-guides/ARCHITECTURE_OVERVIEW.md) - System architecture

@@ -474,7 +474,8 @@ This keeps your data 100% under your control.
 
 **Themes:**
 - **Dark Mode:** Toggle via 🌓 button or in Settings
-- **Achievement Themes:** Unlock special themes (Dark Ocean, Golden Glow) by reaching milestones
+- **Vocabulary Themes:** Each routine can use its own terminology (Habit Tracker, Fitness, Scholar, Cleaning). Themes unlock as you accumulate cycles (5/25/50/75). Select via the 🎨 button in the routine switcher.
+- **Quick Colors:** Choose an app-wide color palette in the Personalization modal (🖌️ button)
 
 ---
 

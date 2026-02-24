@@ -30,6 +30,8 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 
 ### Key Features
 - **[STATS_PANEL.md](./features/STATS_PANEL.md)** - Statistics dashboard with milestone tracking
+- **[VOCAB_THEME_SYSTEM.md](./developer-guides/VOCAB_THEME_SYSTEM.md)** - Per-routine vocabulary themes (Habit Tracker, Fitness, Scholar, Cleaning)
+- **[THEME_ARCHITECTURE.md](./architecture/THEME_ARCHITECTURE.md)** - Complete three-layer theming system (vocabulary + color + dark mode)
 - **[TASK_OPTIONS_CUSTOMIZER.md](./features/TASK_OPTIONS_CUSTOMIZER.md)** - Per-cycle button visibility customization
 - **[FEATURE_LIST.md](./features/FEATURE_LIST.md)** - Complete feature list (156+ features)
 - **[MODE_MANAGER_ARCHITECTURE.md](./architecture/MODE_MANAGER_ARCHITECTURE.md)** - Mode management system
@@ -91,11 +93,11 @@ The codebase has **complete strict DI** and **modular CSS**:
 See [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) for complete analysis.
 
 ### Future Work
-- **[CONTEXTUAL_THEME_SYSTEM_PLAN.md](./future-work/CONTEXTUAL_THEME_SYSTEM_PLAN.md)** - Transform themes into contextual "lenses" that adapt terminology
 - **[MODULAR_OVERHAUL_PLAN.md](./future-work/MODULAR_OVERHAUL_PLAN.md)** - Plan for true modularization
 - **[SCHEMA_2_6_PLAN.md](./future-work/SCHEMA_2_6_PLAN.md)** - Terminology alignment (cycles → routine)
 
 ### Completed Initiatives
+- ✅ **Vocabulary Theme System** (Feb 2026) - See [THEME_ARCHITECTURE.md](./architecture/THEME_ARCHITECTURE.md) and [VOCAB_THEME_SYSTEM.md](./developer-guides/VOCAB_THEME_SYSTEM.md)
 - ✅ **CSS Modularization** (Jan 2026) - See [archive/CSS_REFACTOR_PLAN_COMPLETED.md](./archive/CSS_REFACTOR_PLAN_COMPLETED.md)
 
 ---
@@ -133,6 +135,9 @@ See [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) for complete analysis.
 
 **...modify styles or CSS**
 → See `styles/` folder structure in [FOLDER_STRUCTURE.md](./developer-guides/FOLDER_STRUCTURE.md) and CSS standards in [CODING_STANDARDS.md](./developer-guides/CODING_STANDARDS.md)
+
+**...add or modify a vocabulary theme**
+→ See [VOCAB_THEME_SYSTEM.md](./developer-guides/VOCAB_THEME_SYSTEM.md) and [THEME_ARCHITECTURE.md](./architecture/THEME_ARCHITECTURE.md)
 
 ---
 

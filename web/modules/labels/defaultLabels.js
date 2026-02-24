@@ -146,7 +146,7 @@ export const DEFAULT_LABELS = deepFreeze({
     taskOptions: {
         title:                    'Customize Task Options',
         subtitle:                 'Choose which buttons appear for tasks in "{name}"',
-        thisCycle:                'This Cycle',
+        thisCycle:                'This Routine',
         optionDetails:            'Option Details',
         highPriority:             'High Priority Toggle',
         renameTask:               'Rename Task',
@@ -194,7 +194,7 @@ export const DEFAULT_LABELS = deepFreeze({
         duplicate:       'Duplicate',
         duplicateTitle:  'Duplicate the current routine',
         switchAria:      'Switch routine',
-        untitled:        'Untitled Cycle',
+        untitled:        'Untitled Routine',
         noSelected:      'No Routine Selected'
     },
 
@@ -341,6 +341,7 @@ export const DEFAULT_LABELS = deepFreeze({
         noRoutineToSave:        'No routine found to save.',
 
         // Cycle/routine notifications
+        cycleComplete:          'Cycle complete!',
         cycleDeletedSwitch:     '"{deleted}" deleted. "{active}" is now active.',
         cycleDeleted:           '"{name}" has been deleted.',
         routineCreated:         'Created new routine "{name}"',
@@ -354,8 +355,8 @@ export const DEFAULT_LABELS = deepFreeze({
         recurringAdded:         'Added {count} {taskWord} to recurring (daily by default)',
         recurringAddFailed:     'Failed to add tasks',
         recurringDefaultSaved:  'Default recurring settings saved!',
-        recurringNoActiveFound: 'No active cycle found.',
-        recurringDataNotFound:  'Active cycle data not found.',
+        recurringNoActiveFound: 'No active routine found.',
+        recurringDataNotFound:  'Active routine data not found.',
         recurringNoChecked:     'No tasks checked to apply settings.',
 
         // History & progress notifications
@@ -383,7 +384,7 @@ export const DEFAULT_LABELS = deepFreeze({
         bgImageRemoveFailed:    'Failed to remove background image',
         bgImageSet:             'Background image set',
         taskOptionsReset:       'Reset to defaults',
-        selectCycleFirst:       'Please select a cycle first',
+        selectCycleFirst:       'Please select a routine first',
         selectRoutineFirst:     'Please select a routine first',
 
         // Import/export notifications
@@ -647,7 +648,7 @@ export const DEFAULT_LABELS = deepFreeze({
         // Undo/redo notifications
         undoFailed:              'Undo failed — state restored',
         redoFailed:              'Redo failed — state restored',
-        undoHistoryUnavailableCycle: 'Undo history unavailable for this cycle',
+        undoHistoryUnavailableCycle: 'Undo history unavailable for this routine',
         undoHistoryUnavailable:  'Undo history unavailable',
 
         // Reminder notifications
@@ -666,7 +667,7 @@ export const DEFAULT_LABELS = deepFreeze({
         invalidCycleSelection:   'Invalid routine selection.',
         selectToDuplicate:       'Please select a routine to duplicate.',
         selectFirst:             'Please select a routine first.',
-        failedToSwitch:          'Failed to switch cycle. Please try again.',
+        failedToSwitch:          'Failed to switch routine. Please try again.',
     },
 
     // ========================================================================
@@ -735,7 +736,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
     empty: {
         noTasks:              'No tasks yet',
-        noTasksHint:          'Press the + button above to add a task or create a new routine',
+        noTasksHint:          'Press the + button to show the task bar to add a task or create a new routine',
         createFirst:          'Create your first routine',
         orTrySample:          'or try a sample',
         noRecurringTasks:     'Add a task from this routine to make it recurring',

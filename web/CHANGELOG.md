@@ -1,3 +1,7 @@
+## [2.003] - 2026-02-24
+- feat: enhance history tracking with task addition, deletion, and editing events
+
+
 ## [2.002] - 2026-02-24
 - chore: update version to 2.001 across relevant files
 

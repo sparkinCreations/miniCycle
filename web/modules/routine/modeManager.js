@@ -302,6 +302,11 @@ export class ModeManager {
             // ✅ CRITICAL FIX: Update DOM to match data
             toggleAutoReset.checked = autoReset;
             deleteCheckedTasks.checked = deleteChecked;
+
+            // Sync task input bar visibility with routine's saved preference
+            if (this._updateTaskInputVisibility) {
+                this._updateTaskInputVisibility(currentCycle.showTaskInput === true);
+            }
         } else {
             // ✅ Normal during Phase 2 - data loads in Phase 3
             console.log('ℹ️ No active cycle yet - using DOM defaults until data loads');
@@ -762,7 +767,7 @@ export class ModeManager {
 
             // Update button text and visibility based on state
             // Use CSS class toggle (visibility:hidden) instead of display:none to prevent CLS
-            const updateToggleText = (isVisible) => {
+            this._updateTaskInputVisibility = (isVisible) => {
                 if (toggleText) {
                     // Use 'action.addTask' (not 'nav.addTaskToggle') so vocab themes
                     // ("Add habit", "Add exercise", etc.) are reflected here too.
@@ -781,22 +786,28 @@ export class ModeManager {
                 });
             };
 
-            // Set initial state from settings (default: false = hidden)
-            const initialVisible = this.deps.AppState?.get()?.settings?.showTaskInput === true;
-            updateToggleText(initialVisible);
+            // Set initial state from per-routine setting (default: false = hidden)
+            const state = this.deps.AppState?.get();
+            const activeCycleId = state?.appState?.activeCycleId;
+            const activeCycle = activeCycleId ? state?.data?.cycles?.[activeCycleId] : null;
+            const initialVisible = activeCycle?.showTaskInput === true;
+            this._updateTaskInputVisibility(initialVisible);
 
             this.deps.safeAddEventListener(toggleTaskInputBtn, 'click', async () => {
                 const currentVisible = !taskInput.classList.contains('hidden');
                 const newVisible = !currentVisible;
 
                 // Update UI immediately
-                updateToggleText(newVisible);
+                this._updateTaskInputVisibility(newVisible);
                 quickActionsMenu.style.display = 'none';
 
-                // Persist to settings
+                // Persist to active routine (per-routine setting)
                 if (this.deps.AppState) {
                     await this.deps.AppState.update(state => {
-                        state.settings.showTaskInput = newVisible;
+                        const cycleId = state.appState?.activeCycleId;
+                        if (cycleId && state.data?.cycles?.[cycleId]) {
+                            state.data.cycles[cycleId].showTaskInput = newVisible;
+                        }
                     });
                 }
 
