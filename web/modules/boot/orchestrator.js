@@ -483,6 +483,15 @@ async function runBootSequence() {
       appContextMod.state?.()?.fixTaskValidationIssues?.();
       await deps.core.initAppWithAutoMigration({ forceMode: true });
 
+      // Re-initialize vocab themes and themes panel for new users.
+      // vocabThemeManager.init() and setupThemesPanel() both run during Phase 2, but
+      // for brand-new users AppState has no data yet at that point and both return early.
+      // Now that initAppWithAutoMigration() has created the initial state, retry them.
+      // Both are no-ops for returning users (init() guards on unlockedThemes length;
+      // setupThemesPanel() guards on _setupThemesPanelInitialized flag).
+      deps.features?.vocabThemeManager?.init?.();
+      deps.features?.setupThemesPanel?.();
+
       // Initialize UI (single entrypoint - all DOM/listeners/finalization)
       await initUIBoot({ GlobalUtils, deps, appContextMod });
     })(),

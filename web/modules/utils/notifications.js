@@ -37,7 +37,6 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, Z_INDEX } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { THEME_DEFINITIONS } from '../labels/themes.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -55,7 +54,8 @@ const di = createDIModule('Notifications', {
   applyRecurringToTaskSchema25: optional(null),
   updateRecurringPanel: optional(null),
   openRecurringSettingsPanelForTask: optional(null),
-  safeAddEventListener: optional(null)
+  safeAddEventListener: optional(null),
+  vocabThemeManager: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -1355,7 +1355,7 @@ async setDefaultPosition(notificationContainer) {
    */
   showPriorityColorPickerNotification(currentColor = '#dc3545', duration = 8000, taskId = null, onColorSelect = null) {
     const vocabThemeId = document.documentElement.dataset?.vocabTheme;
-    const activeThemeDef = (vocabThemeId && vocabThemeId !== 'classic') ? THEME_DEFINITIONS[vocabThemeId] : null;
+    const activeThemeDef = (vocabThemeId && vocabThemeId !== 'classic') ? _deps.vocabThemeManager?.getThemeDefinition(vocabThemeId) : null;
     const COLORS = activeThemeDef?.priorityColors
       ? activeThemeDef.priorityColors.map(c => ({ hex: c.hex, label: getLabel(c.labelKey) }))
       : [

@@ -1,3 +1,7 @@
+## [1.1038] - 2026-02-24
+- feat: add apple touch icon and improve event listener management in various modules
+
+
 ## [1.1037] - 2026-02-24
 - Refactor code structure for improved readability and maintainability
 
