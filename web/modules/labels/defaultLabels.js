@@ -1153,6 +1153,9 @@ export const DEFAULT_LABELS = deepFreeze({
         tasksCleared:         'Tasks Cleared',
         cycleReset:           'Cycle Reset',
         achievementUnlocked:  'Achievement Unlocked',
+        taskAdded:            'Task Added',
+        taskDeleted:          'Task Deleted',
+        taskEdited:           'Task Edited',
         recreate:             'Recreate',
         clearedTotal:         'cleared total',
         showingRecent:        'Showing last {count} ({days} days)'
@@ -1790,6 +1793,9 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'history.tasksCleared',
     'history.cycleReset',
     'history.achievementUnlocked',
+    'history.taskAdded',
+    'history.taskDeleted',
+    'history.taskEdited',
 
     // New modal keys
     'modal.resetProgressMessage',

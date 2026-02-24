@@ -462,7 +462,7 @@ export const MODULE_MANIFESTS = {
         path: '../task/taskCore.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'sanitizeInput', 'removeRecurringTasksFromCycle'],
-        optionalDeps: ['showCompletionAnimation', 'showClearAnimation'],
+        optionalDeps: ['showCompletionAnimation', 'showClearAnimation', 'logHistoryEvent'],
         provides: ['addTask', 'editTask', 'deleteTask', 'toggleTaskPriority', 'handleTaskCompletionChange', 'resetTasks', 'saveTaskToSchema25', 'handleCompleteAllTasks'],
         provideInstance: 'taskCore',
         api: 'task',

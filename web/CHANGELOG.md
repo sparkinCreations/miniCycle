@@ -1,3 +1,7 @@
+## [2.002] - 2026-02-24
+- chore: update version to 2.001 across relevant files
+
+
 ## [2.1] - 2026-02-24
 - chore: update version to 2.1 across all relevant files
 

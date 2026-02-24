@@ -816,14 +816,20 @@ export class HistoryManager {
             'cycle_completed': '🔄',
             'tasks_cleared': '✓',
             'cycle_reset': '🔁',
-            'achievement_unlocked': '🏆'
+            'achievement_unlocked': '🏆',
+            'task_added': '➕',
+            'task_deleted': '🗑️',
+            'task_edited': '✏️'
         };
 
         const labels = {
             'cycle_completed': getLabel('history.cycleCompleted'),
             'tasks_cleared': getLabel('history.tasksCleared'),
             'cycle_reset': getLabel('history.cycleReset'),
-            'achievement_unlocked': getLabel('history.achievementUnlocked')
+            'achievement_unlocked': getLabel('history.achievementUnlocked'),
+            'task_added': getLabel('history.taskAdded'),
+            'task_deleted': getLabel('history.taskDeleted'),
+            'task_edited': getLabel('history.taskEdited')
         };
 
         const time = new Date(event.timestamp).toLocaleTimeString([], {
@@ -839,7 +845,10 @@ export class HistoryManager {
                 detailText = `${event.details.tasksCleared} task${event.details.tasksCleared !== 1 ? 's' : ''}`;
             } else if (event.details.achievementId) {
                  detailText = this._escapeHtml(event.details.achievementName || event.details.achievementId);
-
+            } else if (event.details.oldName !== undefined) {
+                detailText = `${this._escapeHtml(event.details.oldName)} → ${this._escapeHtml(event.details.newName)}`;
+            } else if (event.details.taskName !== undefined) {
+                detailText = this._escapeHtml(event.details.taskName);
             }
         }
 
