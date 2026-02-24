@@ -434,7 +434,14 @@ export class VocabThemeManager {
         if (!state) return [];
 
         const progress = state.userProgress?.cyclesCompleted ?? 0;
-        const currentUnlocked = new Set(this.getUnlockedThemeIds());
+
+        // Use stored unlockedThemes as the baseline for change detection.
+        // Do NOT fall back to _computeUnlockedFromProgress() here — that already includes
+        // themes earned at the current progress level, causing checkThemeUnlocks() to treat
+        // newly-unlocked themes as "already known" and miss them for new users whose
+        // init() never ran (AppState was null during Phase 2 boot).
+        const storedList = state.settings?.unlockedThemes;
+        const currentUnlocked = new Set(Array.isArray(storedList) ? storedList : ['classic']);
         const newlyUnlocked = [];
 
         for (const [id, theme] of Object.entries(THEME_DEFINITIONS)) {

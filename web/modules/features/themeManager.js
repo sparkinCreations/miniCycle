@@ -774,31 +774,24 @@ export class ThemeManager {
      * Setup themes panel modal
      */
     setupThemesPanel() {
-        // ✅ Idempotency guard
+        // ✅ Idempotency guard — only set after successful setup so Phase 3 can retry
         if (this._setupThemesPanelInitialized) {
             console.log('✅ Themes panel already set up');
             return;
         }
-        this._setupThemesPanelInitialized = true;
 
         try {
             console.log('🎨 Setting up themes panel (Schema 2.5 only)...');
-            
+
             const schemaData = this.loadSchemaData();
             if (!schemaData) {
-                console.log('ℹ️ Schema data not yet loaded for setupThemesPanel — deferring setup');
-                setTimeout(() => {
-                    const retryData = this.loadSchemaData();
-                    if (retryData) {
-                        console.log('🎨 Retrying setupThemesPanel with loaded data...');
-                        this.setupThemesPanelWithData(retryData);
-                    } else {
-                        console.warn('⚠️ Schema 2.5 data still not available for setupThemesPanel');
-                    }
-                }, 1000);
+                // AppState not ready yet. Orchestrator calls setupThemesPanel() again
+                // after initAppWithAutoMigration() creates data for new users.
+                console.log('ℹ️ Schema data not yet loaded for setupThemesPanel — will retry from Phase 3');
                 return;
             }
 
+            this._setupThemesPanelInitialized = true;
             this.setupThemesPanelWithData(schemaData);
         } catch (error) {
             console.warn('⚠️ Themes panel setup failed:', error.message);
@@ -1131,6 +1124,14 @@ function setupThemesPanelWithData(schemaData) {
     return themeManager.setupThemesPanelWithData(schemaData);
 }
 
+/**
+ * Render vocabulary themes into the Themes modal.
+ * Exposed as a provide so cycleCompletion can refresh the modal when a theme unlocks.
+ */
+function renderVocabThemes(...args) {
+    return themeManager.renderVocabThemes(...args);
+}
+
 // ===== MODULE EXPORTS (Phase 2 - No window.* pollution) =====
 
 console.log('🎨 ThemeManager module loaded (Phase 2 - no window.* exports)');
@@ -1146,5 +1147,6 @@ export {
     initThemesPanel,
     refreshThemeToggles,
     setupThemesPanel,
-    setupThemesPanelWithData
+    setupThemesPanelWithData,
+    renderVocabThemes
 };

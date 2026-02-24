@@ -198,7 +198,8 @@ const di = createDIModule('PreferencesManager', {
     showPromptModal: optional(null),
     showConfirmationModal: optional(null),
     safeAddEventListener: optional(null),
-    hideMainMenu: optional(null)
+    hideMainMenu: optional(null),
+    renderVocabThemes: optional(null)
 });
 
 const _deps = new Proxy({}, {
@@ -376,6 +377,7 @@ export class PreferencesManager {
                 const themesModal = _deps.getModal('themes');
                 if (themesModal) {
                     if (!themesModal.open) themesModal.showModal();
+                    _deps.renderVocabThemes?.();
                 }
             };
             safeAdd(openThemesBtn, 'click', openThemesBtn._clickHandler);

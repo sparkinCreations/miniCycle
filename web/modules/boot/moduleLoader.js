@@ -734,7 +734,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         initThemesPanel: (...args) => deps.features?.initThemesPanel?.(...args),
         refreshThemeToggles: (...args) => deps.features?.refreshThemeToggles?.(...args),
         setupThemesPanel: (...args) => deps.features?.setupThemesPanel?.(...args),
-        renderVocabThemes: (...args) => deps.features?.themeManager?.renderVocabThemes?.(...args),
+        renderVocabThemes: (...args) => deps.features?.renderVocabThemes?.(...args),
         refreshThemeLabels: (...args) => deps.features?.themeManager?.refreshThemeLabels?.(...args),
 
         // Games functions (from gamesManager instance in deps.ui)
