@@ -1,4 +1,8 @@
 ## [2.1] - 2026-02-24
+- chore: update version to 2.1 across all relevant files
+
+
+## [2.1] - 2026-02-24
 - feat: add guidelines for distinguishing between noise and instrumentation console logs
 
 
