@@ -133,3 +133,40 @@ toggleText.textContent = getLabel('action.addTask');  // "Add habit", "Add exerc
 If a boot function is `async` and called without `await`, it can resume **after** `refreshThemeLabels()` has already set the correct text — and overwrite it with unthemed values. This happened with `setupModeSelector()`.
 
 **Fix:** Ensure any async boot function that writes to a themed element uses the correct themed label key (see pitfall #2). Then the order doesn't matter — both paths return the same themed value.
+
+---
+
+### 4. The two theme-unlock paths — snapshot timing
+
+Vocab themes can be unlocked by **two completely separate code paths** inside `cycleCompletion.js`:
+
+| Path | Trigger | Function |
+|------|---------|----------|
+| Cycle-threshold | Direct cycle count check | `vtm.checkThemeUnlocks()` |
+| Achievement | `checkAchievements()` → reward type `vocab-theme` | `vtm.unlockThemeFromAchievement(id)` |
+
+Both paths write to `state.settings.unlockedThemes`. Change detection uses a before/after snapshot to find newly unlocked themes. If that snapshot is taken **after either path has already mutated state**, the diff is always empty and `renderVocabThemes()` is never called — the themes modal will not update until the next page load.
+
+**The bug (now fixed):** `beforeUnlocked` was captured after `checkAchievements()` had already called `unlockThemeFromAchievement()`. So `beforeUnlocked` already contained the new theme, `afterUnlocked - beforeUnlocked = {}`, and `renderVocabThemes()` was skipped.
+
+This only affected initial users (no prior page refresh) because returning users had `setupThemesPanel()` run successfully at boot time and the panel was already correctly populated before the unlock occurred. Initial users relied entirely on the cycle-completion refresh path — which was silently broken.
+
+**The fix:** The `beforeUnlocked` snapshot must be captured before **both** handlers:
+
+```javascript
+// CORRECT — snapshot before any unlock logic
+const beforeUnlocked = vtm?.getUnlockedThemeIds ? new Set(vtm.getUnlockedThemeIds()) : null;
+
+handleMilestoneUnlocks(...);   // may unlock via unlockThemeFromAchievement
+// ...
+checkAchievements(...);         // may also unlock via unlockThemeFromAchievement
+
+// Now the diff is accurate
+const afterUnlocked = new Set(vtm.getUnlockedThemeIds());
+const combined = new Set([...afterUnlocked].filter(id => !beforeUnlocked.has(id) && id !== 'classic'));
+// combined correctly contains newly unlocked themes → renderVocabThemes() fires
+```
+
+**If this breaks again:** Add `console.log('beforeUnlocked:', [...beforeUnlocked])` immediately after the snapshot is taken. If it already contains the newly unlocked theme, the snapshot has been moved below an unlock call again.
+
+**Key rule:** Any new code path that can call `unlockThemeFromAchievement()` or otherwise write to `state.settings.unlockedThemes` must be placed **after** the `beforeUnlocked` snapshot in `cycleCompletion.js` (~line 294), or the change detection will miss it.

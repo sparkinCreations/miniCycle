@@ -15,6 +15,7 @@ This document captures non-obvious patterns, hidden behaviors, and things that m
 3. [Hidden Strengths](#3-hidden-strengths)
 4. [Architectural Patterns](#4-architectural-patterns)
 5. [Things That Might Bite You Later](#5-things-that-might-bite-you-later)
+   - [5.8 State Snapshot Timing](#58-state-snapshot-timing----if-you-snapshot-after-the-mutation-the-diff-is-always-empty-fixed-feb-2026)
 6. [Interesting Metrics](#6-interesting-metrics)
 7. [Action Items](#7-action-items)
 
@@ -469,6 +470,74 @@ historyManager: new Proxy({}, {
 - Methods work when called directly but fail through depMappings Proxy
 
 **Modules affected:** historyManager, clearedTasksManager, achievementsManager (all fixed)
+
+---
+
+### 5.8 State Snapshot Timing — If You Snapshot After the Mutation, the Diff Is Always Empty (Fixed Feb 2026)
+
+**Location:** `modules/progress/cycleCompletion.js` (~line 294)
+
+**The Pattern:**
+
+A common pattern for detecting state changes is a before/after snapshot:
+
+```javascript
+const before = new Set(getThings());
+doSomethingThatMightAddThings();
+const after = new Set(getThings());
+const newThings = [...after].filter(id => !before.has(id));  // what changed?
+```
+
+This is correct — but only if `before` is captured before **all** code that can mutate the state being tracked.
+
+**The Bug:**
+
+In `cycleCompletion.js`, the vocab theme unlock flow used this pattern to detect newly unlocked themes and call `renderVocabThemes()`. The snapshot was placed after `checkAchievements()`, which itself calls `unlockThemeFromAchievement()` and writes the new theme directly into `state.settings.unlockedThemes`.
+
+Execution order (broken version):
+```
+1. handleMilestoneUnlocks()           // milestone rewards
+2. checkAchievements()
+       → unlockThemeFromAchievement('habit-tracker')
+           → state.settings.unlockedThemes = ['classic', 'habit-tracker']  ← MUTATED
+3. const beforeUnlocked = new Set(vtm.getUnlockedThemeIds())
+       → returns ['classic', 'habit-tracker']                               ← TOO LATE
+4. const afterUnlocked = ...          → ['classic', 'habit-tracker']
+5. combined = afterUnlocked - beforeUnlocked = {}                           ← ALWAYS EMPTY
+6. renderVocabThemes() never called                                         ← BUG
+```
+
+Result: the themes modal never refreshed when a theme unlocked. This only affected first-time users who had not yet refreshed their page, because returning users had `setupThemesPanel()` already run at boot, so the panel was pre-populated. 5+ hours of debugging to find 4 lines of misplaced code.
+
+**The Fix:**
+
+Move the snapshot to before all code that can mutate the tracked state:
+
+```javascript
+// Snapshot FIRST — before any unlock logic
+const beforeUnlocked = vtm?.getUnlockedThemeIds ? new Set(vtm.getUnlockedThemeIds()) : null;
+
+handleMilestoneUnlocks(...);   // ← runs after snapshot ✅
+// ...
+checkAchievements(...);         // ← runs after snapshot ✅
+
+const afterUnlocked = new Set(vtm.getUnlockedThemeIds());
+const combined = new Set([...afterUnlocked].filter(id => !beforeUnlocked.has(id)));
+// combined now correctly contains newly unlocked themes
+```
+
+**How to Diagnose:**
+
+If change detection silently produces empty results on first load but works after refresh:
+1. Add a `console.log` immediately after the snapshot showing its contents
+2. Add a `console.log` after each upstream function call showing what was added to state
+3. If the snapshot already contains the "new" item, you've found it — the snapshot is placed too late
+
+The console log sequence will reveal the exact mutation order and make the bug obvious.
+
+**General Rule:**
+
+When multiple code paths can mutate the same piece of state, the snapshot must precede **all of them**. Any new code that writes to the tracked state and is inserted above the snapshot will silently break the change detection.
 
 ---
 
