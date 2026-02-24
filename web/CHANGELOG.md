@@ -1,3 +1,7 @@
+## [2.006] - 2026-02-24
+- feat: enhance task management with history logging and user tips
+
+
 ## [2.005] - 2026-02-24
 - chore: update version to 2.004 across relevant files
 

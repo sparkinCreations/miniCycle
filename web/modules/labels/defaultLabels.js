@@ -450,6 +450,7 @@ export const DEFAULT_LABELS = deepFreeze({
         taskOptionsUpdated:      'Task options updated',
         threeDotsDisabledTip:    'Long press a task to access options',
         menuSectionsTip:         'Tap any section header to expand it',
+        routinePreviewTip:       'Double-click to expand',
         appStateNotReady:        'AppState not ready.',
         onboardingReset:         'Onboarding will show again next time you open the app.',
 

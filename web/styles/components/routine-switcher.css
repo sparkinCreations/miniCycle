@@ -382,6 +382,16 @@ dialog.mini-cycle-switch-modal::backdrop {
     font-style: italic;
 }
 
+.switch-preview-hint {
+    font-size: 0.65rem;
+    color: var(--theme-text-muted);
+    text-align: center;
+    margin-top: var(--space-1);
+    opacity: 0.6;
+    pointer-events: none;
+    user-select: none;
+}
+
 /* =============================================================================
    ACTION BUTTONS
    ============================================================================= */
