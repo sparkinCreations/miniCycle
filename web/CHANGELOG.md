@@ -1,3 +1,7 @@
+## [1.1036] - 2026-02-24
+- feat: add clear undo history functionality and UI integration
+
+
 ## [1.1035] - 2026-02-24
 - feat: enhance achievements manager with vocab theme unlocking and update related UI elements
 

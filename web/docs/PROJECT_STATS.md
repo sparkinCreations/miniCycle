@@ -13,14 +13,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 1.1035 |
+| **App Version** | 1.1036 |
 | **Lite Version** | 2.086 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 112 |
+| **Total Modules** | 113 |
 | **Total Tests** | 1691 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 37 |
-| **JSDoc Blocks** | 1008 |
+| **JSDoc Blocks** | 1009 |
 | **Documentation Files** | 176 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -33,7 +33,7 @@
 
 | Directory | Count | Purpose |
 |-----------|-------|---------|
-| `boot/` | 6 | Boot sequence, orchestration, module loading |
+| `boot/` | 7 | Boot sequence, orchestration, module loading |
 | `core/` | 9 | AppState, appInit, appContext, DI base, constants |
 | `task/` | 12 | Task CRUD, DOM, events, drag-drop, validation |
 | `routine/` | 5 | Routine management, switching, migration |
@@ -45,7 +45,7 @@
 | `progress/` | 1 | Cycle completion tracking |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **112** | |
+| **Total** | **113** | |
 
 ---
 
@@ -54,11 +54,11 @@
 | File | Lines | Purpose |
 |------|-------|---------|
 | `miniCycle-main.js` | ~56 | Entrypoint |
-| `modules/boot/orchestrator.js` | ~639 | Pure sequence controller |
+| `modules/boot/orchestrator.js` | ~650 | Pure sequence controller |
 | `modules/boot/coreBoot.js` | ~1045 | Core state & init |
 | `modules/boot/featureBoot.js` | ~547 | DI wiring hub |
 | `modules/boot/uiBoot.js` | ~827 | UI handlers |
-| **Total** | **~3114** | |
+| **Total** | **~3125** | |
 
 ---
 
