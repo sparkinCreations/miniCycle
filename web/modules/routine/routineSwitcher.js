@@ -1213,7 +1213,30 @@ export class RoutineSwitcher {
         const safeAdd = this.deps.safeAddEventListener;
         if (!safeAdd) return;
 
+        // Show subtle hint below preview if user hasn't used the feature yet
+        const _state = this.deps.AppState?.get();
+        const _dismissed = _state?.settings?.dismissedEducationalTips?.['tip.routinePreview'];
+        if (!_dismissed) {
+            let hint = document.getElementById('switch-preview-hint');
+            if (!hint) {
+                hint = document.createElement('div');
+                hint.id = 'switch-preview-hint';
+                hint.className = 'switch-preview-hint';
+                hint.textContent = getLabel('notify.routinePreviewTip');
+                previewWindow.insertAdjacentElement('afterend', hint);
+            }
+        }
+
         safeAdd(previewWindow, "dblclick", () => {
+            // Dismiss hint on first use
+            const hintEl = document.getElementById('switch-preview-hint');
+            if (hintEl) {
+                hintEl.remove();
+                this.deps.AppState?.update(s => {
+                    if (!s.settings.dismissedEducationalTips) s.settings.dismissedEducationalTips = {};
+                    s.settings.dismissedEducationalTips['tip.routinePreview'] = true;
+                }, false);
+            }
             const selected = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
             if (!selected) return;
 
