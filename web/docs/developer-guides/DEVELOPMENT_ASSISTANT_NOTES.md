@@ -50,4 +50,19 @@ These notes describe how the AI assistant should collaborate on this project.
 - **State-based UI** - Prefer updating AppState and re-rendering from state over direct DOM manipulation.
 - **Object.defineProperties** - Always use this for DI setters to preserve lazy getters.
 
+## 10. Do Not Flag Instrumentation Console Logs as Noise
+
+Previous audits cited the high number of `console.log` statements (~500+) as a code quality concern. This was wrong. There is a meaningful distinction:
+
+| Type | Description | Treatment |
+|------|-------------|-----------|
+| **Noise logs** | `console.log('here')`, raw data dumps, debug leftovers | Flag and remove |
+| **Instrumentation logs** | Structured traces of boot phases, cycle completion, unlock sequences, state mutations | Keep — they are diagnostic infrastructure |
+
+**Why this matters:** In February 2026, a first-load-only bug (vocab themes not refreshing in the themes modal after unlock, but working after any page refresh) took 5+ hours to diagnose from code reading alone. When the developer provided a single console log trace of the cycle-completion sequence, the root cause (a state snapshot taken after the mutating call) was visible in seconds.
+
+Instrumentation logs let you reconstruct the exact execution order of timing-dependent, first-load-only bugs — bugs that are nearly impossible to diagnose from code alone. They are a deliberate architectural choice, not sloppiness.
+
+**What to flag in audits:** Logs that dump raw objects without context, logs left inside tight loops, or logs that expose sensitive data. Not the boot/feature/unlock sequence traces.
+
 These guidelines are living; the maintainer can adjust them as the architecture evolves.

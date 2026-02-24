@@ -114,6 +114,21 @@ Developer approach:
 ```
 This is systematic debugging using version control as a diagnostic tool. AI helped with implementation, but the developer drove the investigation strategy.
 
+**February 2026 - Vocab Theme First-Load Bug**
+```
+Bug: Newly unlocked vocabulary themes didn't appear in the themes modal
+     for first-time users — only visible after a page refresh.
+
+AI approach (5+ hours): Read code, formed hypotheses, applied fixes one
+by one. Three wrong root causes chased before identifying the real one.
+
+Developer's diagnostic tool: Provided a single console log trace showing
+the exact execution sequence during cycle completion. The root cause
+(state snapshot taken after the mutating call) was immediately visible
+in the log sequence — a timing issue invisible from code reading alone.
+```
+The developer's instrumentation logs — which previous AI audits had flagged as noise — were the decisive diagnostic tool. The AI had been reading the same code for hours; the developer's log trace resolved it in seconds.
+
 **The developer's own words:**
 > "I would have solved it without AI - just slower"
 
