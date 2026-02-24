@@ -131,6 +131,12 @@ The Personalization modal reads `dataset.vocabTheme` to detect whether a vocab t
 
 Static HTML strings (like the "Add task" button label) are hardcoded in the HTML file. On boot, `themeManager.refreshThemeLabels()` is called in `uiBoot.finalizeUI()` to overwrite these with the themed versions. Any new themed HTML element must be added to `_refreshLiveLensLabels()` in `themeManager.js`.
 
+### Live Refresh on Routine Switch/Creation
+
+When a routine is created or switched to, the routine modules (`routineManager`, `routineSwitcher`, `routineLoader`) call `this.deps.refreshThemeLabels()` to update the UI with the new routine's theme. This dependency must be wired through all three DI layers (definition, constructor, manifest `optionalDeps`) — see [VOCAB_THEME_SYSTEM.md pitfall #4](../developer-guides/VOCAB_THEME_SYSTEM.md#4-refreshthemelabels-must-be-wired-in-three-places-fixed-feb-2026).
+
+`_refreshLiveLensLabels()` also unconditionally calls `renderVocabThemes()` to keep the Themes modal's radio buttons in sync with the active routine's theme. This ensures the modal always shows the correct selected theme regardless of which code path opens it.
+
 ### Theme Picker
 
 The theme picker is accessed via the 🎨 button in the routine switcher action row (`#theme-picker-row`). It shows chips for each unlocked theme; selecting one updates `state.data.cycles[cycleId].theme` and triggers a label refresh.

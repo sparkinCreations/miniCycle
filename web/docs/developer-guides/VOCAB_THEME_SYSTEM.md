@@ -85,6 +85,9 @@ function _refreshLiveLensLabels() {
 }
 ```
 
+**Themes modal sync:**
+`_refreshLiveLensLabels()` unconditionally calls `renderVocabThemes()` at the end. This keeps the `#vocab-theme-section` content (radio buttons) fresh so it always reflects the active routine's theme, regardless of which code path opens the modal (`themeManager`, `preferencesManager`, or `statsPanel`). The call uses the module-level `renderVocabThemes()` wrapper, not the `themeManager` singleton directly.
+
 ---
 
 ## Adding a new vocab theme
@@ -136,7 +139,105 @@ If a boot function is `async` and called without `await`, it can resume **after*
 
 ---
 
-### 4. The two theme-unlock paths — snapshot timing
+### 4. `refreshThemeLabels` must be wired in three places (Fixed Feb 2026)
+
+If a module calls `this.deps.refreshThemeLabels?.()`, the optional chaining will silently return `undefined` if the dependency was never wired. This happened in `routineManager.js`, `routineSwitcher.js`, and `routineLoader.js` — all three called `refreshThemeLabels` but it was never delivered to them.
+
+**The three wiring layers:**
+
+1. **DI definition** — declare it in `createDIModule()`:
+   ```javascript
+   const di = createDIModule('RoutineManager', {
+       // ...
+       refreshThemeLabels: optional(null)
+   });
+   ```
+
+2. **Constructor `this.deps`** (if the module copies resolved deps into `this.deps`):
+   ```javascript
+   this.deps = {
+       // ...
+       refreshThemeLabels: resolvedDeps.refreshThemeLabels || null,
+   };
+   ```
+
+3. **Module manifest** (`moduleManifests.js`) — add to `optionalDeps`:
+   ```javascript
+   routineManager: {
+       optionalDeps: ['refreshThemeLabels'],
+   }
+   ```
+
+If **any** of the three layers is missing, the dependency silently stays `null` and `?.()` returns `undefined`. No error, no warning — the theme just doesn't update.
+
+**Symptoms:** Creating a new routine or switching routines doesn't update themed labels/colors. The new routine defaults to Classic but the UI still shows the previous routine's theme. A page refresh fixes it.
+
+**How to diagnose:** Search the codebase for `refreshThemeLabels?.()` calls and verify each caller has the dependency in all three layers.
+
+---
+
+### 5. Stale closures in event handlers — read state at click time (Fixed Feb 2026)
+
+`renderVocabThemes()` in `themeManager.js` renders radio buttons for each theme. The radio `change` handlers originally captured `activeCycleId` in a closure at render time:
+
+```javascript
+// ❌ WRONG — captures activeCycleId at render time
+const activeCycleId = state?.appState?.activeCycleId;
+radio.addEventListener('change', () => {
+    if (radio.checked && activeCycleId) {
+        vtm.setRoutineTheme(activeCycleId, id);  // Stale!
+    }
+});
+```
+
+If the user switches routines after the modal renders, the handler applies the theme to the **old** routine.
+
+```javascript
+// ✅ RIGHT — reads current state at click time
+radio.addEventListener('change', () => {
+    const currentCycleId = _deps.AppState?.get?.()?.appState?.activeCycleId;
+    if (radio.checked && currentCycleId) {
+        vtm.setRoutineTheme(currentCycleId, id);  // Always current
+    }
+});
+```
+
+**General rule:** Never capture mutable state (like `activeCycleId`) in a closure for an event handler. Always read from `AppState.get()` at the time the handler fires.
+
+---
+
+### 6. Help window guard blocks themed label updates (Fixed Feb 2026)
+
+`helpWindowManager.updateConstantMessage()` has a guard:
+
+```javascript
+if (this.isShowingCycleComplete || this.isShowingModeDescription) return;
+```
+
+When `refreshThemeLabels()` calls `updateHelpWindow()`, the help window ignores the call if a mode description is being shown (30-second window after mode switch). The help text stays in the old theme.
+
+**Fix:** A `refreshLabels()` method was added that handles all three help window states:
+
+```javascript
+refreshLabels() {
+    if (this.isShowingModeDescription && this.currentMode) {
+        this.showModeDescription(this.currentMode);  // Re-render with new theme
+        return;
+    }
+    if (this.isShowingCycleComplete) {
+        this.showCycleCompleteMessage();
+        return;
+    }
+    this.currentMessage = null;  // Clear cache
+    this.updateConstantMessage();
+}
+```
+
+`updateHelpWindow` in `moduleLoader.js` now points to `refreshLabels` instead of `updateConstantMessage`.
+
+---
+
+### 7. The two theme-unlock paths — snapshot timing
 
 Vocab themes can be unlocked by **two completely separate code paths** inside `cycleCompletion.js`:
 
