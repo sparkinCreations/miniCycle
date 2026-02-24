@@ -445,6 +445,7 @@ export const DEFAULT_LABELS = deepFreeze({
         achievementReset:        'Achievement progress reset. Badges are now locked.',
         achievementResetFailed:  'Failed to reset achievements.',
         achievementResetCancelled: 'Achievement reset cancelled.',
+        undoHistoryCleared:      'Undo history cleared.',
         taskOptionsUpdated:      'Task options updated',
         threeDotsDisabledTip:    'Long press a task to access options',
         appStateNotReady:        'AppState not ready.',
@@ -533,7 +534,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Milestone/unlock notifications
         milestoneAchieved:       'You\'ve completed {count} cycles for "{name}"! Keep going!',
-        gameUnlocked:            'Game Unlocked! \'Task Order\' is now available in the Games menu.',
+        gameUnlocked:            'Game Unlocked! \'Whack-a-Order\' is now available in the Games menu.',
 
         // Keyboard shortcut notifications
         keyboardStatsOpened:     'Keyboard shortcut - Stats Panel opened',
@@ -688,6 +689,9 @@ export const DEFAULT_LABELS = deepFreeze({
         resetAchievementsTitle:   'Reset Achievement Progress',
         resetAchievementsMessage: 'This will reset all achievement badges and global progress to 0. Your individual routine stats and history will NOT be affected. Are you sure?',
         resetAchievementsConfirm: 'Reset Achievements',
+        clearUndoHistoryTitle:   'Clear Undo History?',
+        clearUndoHistoryMessage: 'This will permanently clear all undo and redo history for every routine. You won\'t be able to undo recent changes.',
+        clearUndoHistoryConfirm: 'Clear History',
         duplicateRoutine:         'Duplicate Routine',
         duplicateMessage:         'Enter a new name for your copy of "{name}":',
         duplicatePlaceholder:     'e.g., My Custom Routine',
@@ -929,7 +933,24 @@ export const DEFAULT_LABELS = deepFreeze({
         frequentlyUsed: 'Frequently Used',
         addAction:      'Add action',
         pickerTitle:    'Add Quick Action',
-        unpinAria:      'Unpin {name}'
+        unpinAria:      'Unpin {name}',
+        history:        'History',
+        achievements:   'Achievements',
+        completeAll:    'Complete / Clear',
+        darkMode:       'Dark Mode',
+        personalization: 'Personalization',
+        themes:         'Themes',
+        help:           'Help',
+        games:          'Games',
+        feedback:       'Feedback',
+        search:         'Search',
+        shareRoutine:   'Share Routine',
+        newRoutine:     'New Routine',
+        exportData:     'Export Data',
+        taskOrderGame:  'Task Order Game',
+        userManual:     'User Manual',
+        toggleInput:    'Toggle Task Input',
+        taskOptions:    'Task Options'
     },
 
     // ========================================================================
@@ -1076,7 +1097,7 @@ export const DEFAULT_LABELS = deepFreeze({
     games: {
         title:       'Games',
         description: 'Try to complete tasks in the correct order as fast as you can!',
-        play:        'Play Task Order'
+        play:        'Play Whack-a-Order'
     },
 
     // ========================================================================

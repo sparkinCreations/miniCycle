@@ -48,7 +48,9 @@ const di = createDIModule('SettingsManager', {
     BackupManager: optional(null),
     enableDebug: optional(null),
     disableDebug: optional(null),
-    isDebug: optional(null)
+    isDebug: optional(null),
+    clearAllUndoHistory: optional(null),
+    updateHelpWindow: optional(null)
 });
 
 /** @type {{appInit: Object|null, loadMiniCycleData: Function, AppState: Object, showNotification: Function, showConfirmationModal: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, performSchema25Migration: Function|null, resetDefaultRecurringSettings: Function|null, organizeCompletedTasks: Function|null, DataValidator: Object|null, calculateNextOccurrence: Function|null, sanitizeInput: Function, AppMeta: Object|null, safeAddEventListener: Function, BackupManager: Object|null}} */
@@ -121,6 +123,7 @@ async function loadSubModules(version) {
         setupDebugModeToggle: settingsUIModule.setupDebugModeToggle,
         setupResetRecurringButton: settingsUIModule.setupResetRecurringButton,
         setupResetAchievementProgressButton: settingsUIModule.setupResetAchievementProgressButton,
+        setupClearUndoHistoryButton: settingsUIModule.setupClearUndoHistoryButton,
         syncCurrentSettingsToStorage: settingsUIModule.syncCurrentSettingsToStorage,
         initAllToggles: settingsUIModule.initAllToggles,
 
@@ -183,7 +186,9 @@ function wireSubModuleDependencies(dependencies) {
         updateStatsPanel: dependencies.updateStatsPanel,
         enableDebug: dependencies.enableDebug,
         disableDebug: dependencies.disableDebug,
-        isDebug: dependencies.isDebug
+        isDebug: dependencies.isDebug,
+        clearAllUndoHistory: dependencies.clearAllUndoHistory,
+        updateHelpWindow: dependencies.updateHelpWindow
     });
 
     _subModules.setCycleExportManagerDependencies({
@@ -369,6 +374,7 @@ export function setupScrollOnLoadToggle() { _subModules?.setupScrollOnLoadToggle
 export function setupDebugModeToggle() { _subModules?.setupDebugModeToggle?.(); }
 export function setupResetRecurringButton() { _subModules?.setupResetRecurringButton?.(); }
 export function setupResetAchievementProgressButton() { _subModules?.setupResetAchievementProgressButton?.(); }
+export function setupClearUndoHistoryButton() { _subModules?.setupClearUndoHistoryButton?.(); }
 export function syncCurrentSettingsToStorage() { return _subModules?.syncCurrentSettingsToStorage?.(); }
 export function initAllToggles() { _subModules?.initAllToggles?.(); }
 export function setupExportButton() { _subModules?.setupExportButton?.(); }

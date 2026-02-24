@@ -4,7 +4,7 @@
     Icons: flame/streak, habit ring+check, star, water drop,
            alarm clock, circular refresh arrow, running figure, calendar
   -->
-  <g fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.2"
+  <g fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1.2"
      stroke-linecap="round" stroke-linejoin="round">
 
     <!-- Flame / streak (top-left) -->

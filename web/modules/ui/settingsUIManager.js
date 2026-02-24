@@ -46,7 +46,9 @@ const di = createDIModule('SettingsUIManager', {
     enableDebug: optional(null),
     disableDebug: optional(null),
     isDebug: optional(null),
-    getModal: optional(null)
+    getModal: optional(null),
+    clearAllUndoHistory: optional(null),
+    updateHelpWindow: optional(null)
 });
 
 /** @type {{AppState: Object, loadMiniCycleData: Function, showNotification: Function, safeAddEventListener: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, organizeCompletedTasks: Function|null, resetDefaultRecurringSettings: Function|null}} */
@@ -85,6 +87,7 @@ export function _resetForTesting() {
     _initialized.debugToggle = false;
     _initialized.resetRecurringDefaults = false;
     _initialized.resetAchievementProgress = false;
+    _initialized.clearUndoHistory = false;
     _initialized.reducedMotionToggle = false;
     _initialized.highContrastToggle = false;
     _initialized.fontSizeSelect = false;
@@ -104,6 +107,7 @@ const _initialized = {
     debugToggle: false,
     resetRecurringDefaults: false,
     resetAchievementProgress: false,
+    clearUndoHistory: false,
     reducedMotionToggle: false,
     highContrastToggle: false,
     fontSizeSelect: false,
@@ -908,6 +912,62 @@ export function setupResetAchievementProgressButton() {
 }
 
 /**
+ * Setup Clear Undo History button
+ * Clears in-memory stacks, localStorage cache, and IndexedDB undo data for all routines
+ */
+export function setupClearUndoHistoryButton() {
+    if (_initialized.clearUndoHistory) {
+        console.log('✅ Clear undo history button already set up');
+        return;
+    }
+    _initialized.clearUndoHistory = true;
+
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('SettingsUIManager: safeAddEventListener dependency not injected');
+        return;
+    }
+
+    const btn = document.getElementById(DOM_IDS.CLEAR_UNDO_HISTORY);
+    if (!btn) return;
+
+    btn._clickHandler = async () => {
+        const showConfirmationModal = _deps.showConfirmationModal;
+
+        const doClear = async () => {
+            await _deps.clearAllUndoHistory?.();
+            // Zero stored undo sizes on all routines so switcher shows correct data
+            const AppState = _deps.AppState?.();
+            if (AppState?.isReady?.()) {
+                AppState.update(state => {
+                    Object.values(state.data?.cycles ?? {}).forEach(cycle => {
+                        cycle.undoSizeBytes = 0;
+                    });
+                }, false);
+            }
+            _deps.updateHelpWindow?.();
+            _deps.showNotification?.(getLabel('notify.undoHistoryCleared'), 'success');
+        };
+
+        if (showConfirmationModal) {
+            showConfirmationModal({
+                title: getLabel('modal.clearUndoHistoryTitle'),
+                message: getLabel('modal.clearUndoHistoryMessage'),
+                confirmText: getLabel('modal.clearUndoHistoryConfirm'),
+                cancelText: getLabel('button.cancel'),
+                callback: async (confirmed) => {
+                    if (confirmed) await doClear();
+                }
+            });
+        } else {
+            if (confirm(getLabel('modal.clearUndoHistoryMessage'))) await doClear();
+        }
+    };
+
+    safeAddEventListener(btn, 'click', btn._clickHandler);
+}
+
+/**
  * Sync current settings to storage
  */
 export async function syncCurrentSettingsToStorage() {
@@ -1234,6 +1294,7 @@ export function initAllToggles() {
     setupDebugModeToggle();
     setupResetRecurringButton();
     setupResetAchievementProgressButton();
+    setupClearUndoHistoryButton();
     setupReducedMotionToggle();
     setupHighContrastToggle();
     setupFontSizeSelect();

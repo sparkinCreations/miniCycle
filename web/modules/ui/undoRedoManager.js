@@ -1840,6 +1840,21 @@ export async function clearAllUndoHistoryFromIndexedDB() {
   }
 }
 
+/**
+ * Clear ALL undo/redo history: in-memory stacks, localStorage cache, and IndexedDB.
+ * Called by the Settings "Clear Undo History" button.
+ */
+export async function clearAllUndoHistory() {
+  if (_deps.AppGlobalState) {
+    _deps.AppGlobalState.activeUndoStack = [];
+    _deps.AppGlobalState.activeRedoStack = [];
+  }
+  clearUndoCache();
+  await clearAllUndoHistoryFromIndexedDB();
+  updateUndoRedoButtons();
+  console.log('✅ All undo history cleared');
+}
+
 // ============ INIT FUNCTION (for moduleLoader) ============
 
 /**

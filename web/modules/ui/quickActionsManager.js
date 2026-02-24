@@ -65,6 +65,110 @@ const ACTION_REGISTRY = {
         icon: 'cog',
         section: 'Settings',
         handler: 'openSettings'
+    },
+    'history': {
+        labelKey: 'quickAction.history',
+        icon: 'history',
+        section: 'Navigation',
+        handler: 'openHistory'
+    },
+    'achievements': {
+        labelKey: 'quickAction.achievements',
+        icon: 'trophy',
+        section: 'Navigation',
+        handler: 'openAchievements'
+    },
+    'complete-all': {
+        labelKey: 'quickAction.completeAll',
+        icon: 'check-circle',
+        section: 'Task Actions & Features',
+        handler: 'completeAll'
+    },
+    'dark-mode': {
+        labelKey: 'quickAction.darkMode',
+        icon: 'moon',
+        section: 'Settings',
+        handler: 'toggleDarkMode'
+    },
+    'personalization': {
+        labelKey: 'quickAction.personalization',
+        icon: 'paintbrush',
+        section: 'Settings',
+        handler: 'openPersonalization'
+    },
+    'themes': {
+        labelKey: 'quickAction.themes',
+        icon: 'palette',
+        section: 'More',
+        handler: 'openThemesPanel'
+    },
+    'help': {
+        labelKey: 'quickAction.help',
+        icon: 'question-circle',
+        section: 'Settings',
+        handler: 'openHelp'
+    },
+    'games': {
+        labelKey: 'quickAction.games',
+        icon: 'gamepad',
+        section: 'More',
+        handler: 'openGames',
+        unlockKey: 'task-order-game'
+    },
+    'feedback': {
+        labelKey: 'quickAction.feedback',
+        icon: 'comment',
+        section: 'More',
+        handler: 'openFeedback'
+    },
+    'search': {
+        labelKey: 'quickAction.search',
+        icon: 'magnifier',
+        section: 'Navigation',
+        handler: 'openSearch'
+    },
+    'user-manual': {
+        labelKey: 'quickAction.userManual',
+        icon: 'book',
+        section: 'Navigation',
+        handler: 'openUserManual'
+    },
+    'toggle-input': {
+        labelKey: 'quickAction.toggleInput',
+        icon: 'pencil',
+        section: 'Task Actions & Features',
+        handler: 'toggleTaskInput'
+    },
+    'task-options': {
+        labelKey: 'quickAction.taskOptions',
+        icon: 'minus-plus',
+        section: 'Task Actions & Features',
+        handler: 'openTaskOptions'
+    },
+    'new-routine': {
+        labelKey: 'quickAction.newRoutine',
+        icon: 'file-plus',
+        section: 'Routine Actions',
+        handler: 'newRoutine'
+    },
+    'share-routine': {
+        labelKey: 'quickAction.shareRoutine',
+        icon: 'share-nodes',
+        section: 'Routine Actions',
+        handler: 'shareRoutine'
+    },
+    'export': {
+        labelKey: 'quickAction.exportData',
+        icon: 'file-export',
+        section: 'Routine Actions',
+        handler: 'exportData'
+    },
+    'task-order-game': {
+        labelKey: 'quickAction.taskOrderGame',
+        icon: 'puzzle-piece',
+        section: 'More',
+        handler: 'openTaskOrderGame',
+        unlockKey: 'task-order-game'
     }
 };
 
@@ -74,7 +178,24 @@ const ACTION_ICONS = {
     'folder-open': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor"><path d="M88.7 223.8L0 375.8V96C0 60.7 28.7 32 64 32H181.5c17 0 33.3 6.7 45.3 18.7l26.5 26.5c12 12 28.3 18.7 45.3 18.7H416c35.3 0 64 28.7 64 64v32H144c-22.8 0-43.8 12.1-55.3 31.8zM534.7 272.8c8.8 15.5 8.2 34.5-1.4 49.4S508.4 352 490.7 352H64c-17.7 0-32-14.3-32-32V379.8L123.3 256H490.7c11.5 0 22.2 6.2 27.9 16.3l16.1 .5z"/></svg>',
     'repeat': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M0 224c0 17.7 14.3 32 32 32s32-14.3 32-32c0-53 43-96 96-96H320v32c0 12.9 7.8 24.6 19.8 29.6s25.7 2.2 34.9-6.9l64-64c12.5-12.5 12.5-32.8 0-45.3l-64-64c-9.2-9.2-22.9-11.9-34.9-6.9S320 19.1 320 32V64H160C71.6 64 0 135.6 0 224zm512 64c0-17.7-14.3-32-32-32s-32 14.3-32 32c0 53-43 96-96 96H192V352c0-12.9-7.8-24.6-19.8-29.6s-25.7-2.2-34.9 6.9l-64 64c-12.5 12.5-12.5 32.8 0 45.3l64 64c9.2 9.2 22.9 11.9 34.9 6.9s19.8-16.6 19.8-29.6V448H352c88.4 0 160-71.6 160-160z"/></svg>',
     'bell': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor"><path d="M224 0c-17.7 0-32 14.3-32 32V51.2C119 66 64 130.6 64 208v18.8c0 47-17.3 92.4-48.5 127.6l-7.4 8.3c-8.4 9.4-10.4 22.9-5.3 34.4S19.4 416 32 416H416c12.6 0 24-7.4 29.2-18.9s3.1-25-5.3-34.4l-7.4-8.3C401.3 319.2 384 273.9 384 226.8V208c0-77.4-55-142-128-156.8V32c0-17.7-14.3-32-32-32zm45.3 493.3c12-12 18.7-28.3 18.7-45.3H224 160c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7z"/></svg>',
-    'cog': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M495.9 166.6c3.2 8.7 .5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6c-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2c-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9 16.3-18.2 17.8c-13.8 2.3-28 3.5-42.5 3.5s-28.7-1.2-42.5-3.5c-9.2-1.5-16.2-8.7-18.2-17.8l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4L83.1 425.9c-8.8 2.8-18.6 .3-24.5-6.8c-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C64.6 273.1 64 264.6 64 256s.6-17.1 1.7-25.4L22.4 191.2c-6.9-6.2-9.6-15.9-6.4-24.6c4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2c5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9-16.3 18.2-17.8C227.3 1.2 241.5 0 256 0s28.7 1.2 42.5 3.5c9.2 1.5 16.2 8.7 18.2 17.8l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8c8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z"/></svg>'
+    'cog': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M495.9 166.6c3.2 8.7 .5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6c-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2c-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9 16.3-18.2 17.8c-13.8 2.3-28 3.5-42.5 3.5s-28.7-1.2-42.5-3.5c-9.2-1.5-16.2-8.7-18.2-17.8l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4L83.1 425.9c-8.8 2.8-18.6 .3-24.5-6.8c-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C64.6 273.1 64 264.6 64 256s.6-17.1 1.7-25.4L22.4 191.2c-6.9-6.2-9.6-15.9-6.4-24.6c4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2c5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9-16.3 18.2-17.8C227.3 1.2 241.5 0 256 0s28.7 1.2 42.5 3.5c9.2 1.5 16.2 8.7 18.2 17.8l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8c8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z"/></svg>',
+    'history': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg>',
+    'trophy': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor"><path d="M400 0H176c-26.5 0-48.1 21.8-47.1 48.2c.2 5.3 .4 10.6 .7 15.8H24C10.7 64 0 74.7 0 88c0 92.6 33.5 157 78.5 200.7c44.3 43.1 98.3 64.8 138.1 75.8c23.4 6.5 39.4 26 39.4 45.6c0 20.9-17 37.9-37.9 37.9H192c-17.7 0-32 14.3-32 32s14.3 32 32 32H384c17.7 0 32-14.3 32-32s-14.3-32-32-32H357.9C337 448 320 431 320 410.1c0-19.6 15.9-39.2 39.4-45.6c39.9-11 93.9-32.7 138.2-75.8C542.5 245 576 180.6 576 88c0-13.3-10.7-24-24-24H446.4c.3-5.2 .5-10.5 .7-15.8C448.1 21.8 426.5 0 400 0zM48.9 112h84.4c9.1 90.1 29.2 150.3 51.9 190.6c-24.9-11-50.8-26.5-73.2-48.3c-32-31.1-58-76-63-142.3zM464.1 254.3c-22.4 21.8-48.3 37.3-73.2 48.3c22.7-40.3 42.8-100.5 51.9-190.6h84.4c-5.1 66.3-31.1 111.2-63 142.3z"/></svg>',
+    'check-circle': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"/></svg>',
+    'moon': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor"><path d="M223.5 32C100 32 0 132.3 0 256S100 480 223.5 480c60.6 0 115.5-24.2 155.8-63.4c5-4.9 6.3-12.5 3.1-18.7s-10.1-9.7-17-8.5c-9.8 1.7-19.8 2.6-30.1 2.6c-96.9 0-175.5-78.8-175.5-176c0-65.8 36-123.1 89.3-153.3c6.1-3.5 9.2-10.5 7.7-17.3s-7.3-11.9-14.3-12.2c-6.3-.3-12.6-.4-19-.4z"/></svg>',
+    'palette': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M512 256c0 .9 0 1.8 0 2.7c-.4 36.5-33.6 61.3-70.1 61.3H344c-26.5 0-48 21.5-48 48c0 3.4 .4 6.7 1 9.9c2.1 10.2 6.5 20 10.8 29.9c6.1 13.8 12.1 27.5 12.1 42c0 31.8-21.6 60.4-53.4 62c-3.5 .2-7 .3-10.6 .3C114.6 512 0 397.4 0 256S114.6 0 256 0S512 114.6 512 256zM128 288a32 32 0 1 0 -64 0 32 32 0 1 0 64 0zm0-96a32 32 0 1 0 0-64 32 32 0 1 0 0 64zM288 96a32 32 0 1 0 -64 0 32 32 0 1 0 64 0zm96 96a32 32 0 1 0 0-64 32 32 0 1 0 0 64z"/></svg>',
+    'question-circle': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM169.8 165.3c7.9-22.3 29.1-37.3 52.8-37.3h58.3c34.9 0 63.1 28.3 63.1 63.1c0 22.6-12.1 43.5-31.7 54.8L280 264.4c-.2 13-10.9 23.6-24 23.6c-13.3 0-24-10.7-24-24V250.5c0-8.6 4.6-16.5 12.1-20.8l44.3-25.4c4.7-2.7 7.6-7.7 7.6-13.1c0-8.4-6.8-15.1-15.1-15.1H222.6c-3.4 0-6.4 2.1-7.5 5.3l-.4 1.2c-4.4 12.5-18.2 19-30.6 14.6s-19-18.2-14.6-30.6l.4-1.2zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z"/></svg>',
+    'gamepad': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" fill="currentColor"><path d="M192 64C86 64 0 150 0 256S86 448 192 448H448c106 0 192-86 192-192s-86-192-192-192H192zM496 168a40 40 0 1 1 0 80 40 40 0 1 1 0-80zM392 304a40 40 0 1 1 80 0 40 40 0 1 1 -80 0zM168 200c0-13.3 10.7-24 24-24s24 10.7 24 24v32h32c13.3 0 24 10.7 24 24s-10.7 24-24 24H216v32c0 13.3-10.7 24-24 24s-24-10.7-24-24V280H136c-13.3 0-24-10.7-24-24s10.7-24 24-24h32V200z"/></svg>',
+    'comment': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M512 240c0 114.9-114.6 208-256 208c-37.1 0-72.3-6.4-104.1-17.9c-11.9 8.7-31.3 20.6-54.3 30.6C73.6 471.1 44.7 480 16 480c-6.5 0-12.3-3.9-14.8-9.9c-2.5-6-1.1-12.8 3.4-17.4l0 0 0 0 0 0 0 0 .3-.3c.3-.3 .7-.7 1.3-1.4c1.1-1.2 2.8-3.1 4.9-5.7c4.1-5 9.6-12.4 15.2-21.6c10-16.6 19.5-38.4 21.4-62.9C17.7 326.8 0 285.1 0 240C0 125.1 114.6 32 256 32s256 93.1 256 208z"/></svg>',
+    'magnifier': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/></svg>',
+    'share-nodes': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor"><path d="M352 224c53 0 96-43 96-96s-43-96-96-96s-96 43-96 96c0 4 .2 8 .7 11.9l-94.1 47C145.4 170.2 121.9 160 96 160c-53 0-96 43-96 96s43 96 96 96c25.9 0 49.4-10.2 66.6-26.9l94.1 47c-.5 3.9-.7 7.8-.7 11.9c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-25.9 0-49.4 10.2-66.6 26.9l-94.1-47c.5-3.9 .7-7.8 .7-11.9s-.2-8-.7-11.9l94.1-47C302.6 213.8 326.1 224 352 224z"/></svg>',
+    'file-plus': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor"><path d="M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384v38.6C310.1 219.5 256 287.4 256 368c0 59.1 29.1 111.3 73.7 143.3c-3.2 .5-6.4 .7-9.7 .7H64c-35.3 0-64-28.7-64-64V64zm384 64H256V0L384 128zM288 368a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-80c-8.8 0-16 7.2-16 16v48H368c-8.8 0-16 7.2-16 16s7.2 16 16 16h48v48c0 8.8 7.2 16 16 16s16-7.2 16-16V384h48c8.8 0 16-7.2 16-16s-7.2-16-16-16H448V304c0-8.8-7.2-16-16-16z"/></svg>',
+    'file-export': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor"><path d="M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384V288H216c-13.3 0-24 10.7-24 24s10.7 24 24 24H384v48c0 26.5-21.5 48-48 48H112c-26.5 0-48-21.5-48-48V336H48c-26.5 0-48-21.5-48-48V240c0-26.5 21.5-48 48-48H64V64zM384 128H256V0L384 128zM559 226.2c9.4-9.4 9.4-24.6 0-33.9L495 128.4c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l39 39-103 0c-13.3 0-24 10.7-24 24s10.7 24 24 24l103 0-39 39c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l64-64z"/></svg>',
+    'puzzle-piece': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M192 104.8c0-9.2-5.8-17.3-13.2-22.8C167.2 73.3 160 61.3 160 48c0-26.5 28.7-48 64-48s64 21.5 64 48c0 13.3-7.2 25.3-18.8 34c-7.4 5.5-13.2 13.6-13.2 22.8c0 12.8 10.4 23.2 23.2 23.2H336c26.5 0 48 21.5 48 48v56.8c0 12.8 10.4 23.2 23.2 23.2c9.2 0 17.3-5.8 22.8-13.2C439.3 183.2 451.3 176 464 176c26.5 0 48 28.7 48 64s-21.5 64-48 64c-13.3 0-25.3-7.2-34-18.8c-5.5-7.4-13.6-13.2-22.8-13.2c-12.8 0-23.2 10.4-23.2 23.2V352c0 26.5-21.5 48-48 48H295.2c-12.8 0-23.2-10.4-23.2-23.2c0-9.2 5.8-17.3 13.2-22.8c11.6-8.7 18.8-20.7 18.8-34c0-26.5-28.7-48-64-48s-64 21.5-64 48c0 13.3 7.2 25.3 18.8 34c7.4 5.5 13.2 13.6 13.2 22.8c0 12.8-10.4 23.2-23.2 23.2H128c-26.5 0-48-21.5-48-48V295.2c0-12.8-10.4-23.2-23.2-23.2c-9.2 0-17.3 5.8-22.8 13.2C25.3 296.8 13.3 304 0 304c-26.5 0-48-28.7-48-64s21.5-64 48-64c13.3 0 25.3 7.2 34 18.8c5.5 7.4 13.6 13.2 22.8 13.2c12.8 0 23.2-10.4 23.2-23.2V128c0-26.5 21.5-48 48-48h64.8c12.8 0 23.2-10.4 23.2-23.2z"/></svg>',
+    'book': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor"><path d="M96 0C43 0 0 43 0 96V416c0 53 43 96 96 96H384h32c17.7 0 32-14.3 32-32s-14.3-32-32-32V384c17.7 0 32-14.3 32-32V32c0-17.7-14.3-32-32-32H384 96zm0 384H352v64H96c-17.7 0-32-14.3-32-32s14.3-32 32-32zm32-240c0-8.8 7.2-16 16-16H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16zm16 48H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16s7.2-16 16-16z"/></svg>',
+    'pencil': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.3 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2 6.2 16.4 6.2 22.6 0s6.2 16.4 0 22.6z"/></svg>',
+    'paintbrush': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M20.599 1.5c-.376 0-.743.111-1.055.32l-5.08 3.385a18.747 18.747 0 00-3.471 2.987 10.04 10.04 0 014.815 4.815 18.748 18.748 0 002.987-3.472l3.386-5.079A1.902 1.902 0 0020.599 1.5zm-8.3 14.025a18.76 18.76 0 001.896-1.207 8.026 8.026 0 00-4.513-4.513A18.75 18.75 0 008.475 11.7l-.278.5a5.26 5.26 0 013.601 3.602l.502-.278zM6.75 13.5A3.75 3.75 0 003 17.25a1.5 1.5 0 01-1.601 1.497.75.75 0 00-.7 1.143 5.25 5.25 0 009.8-2.62 3.75 3.75 0 00-3.75-3.75z" clip-rule="evenodd"/></svg>',
+    'minus-plus': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="1" y1="9" x2="7" y2="9"/><line x1="9" y1="18" x2="15" y2="6"/><line x1="17" y1="15" x2="23" y2="15"/><line x1="20" y1="12" x2="20" y2="18"/></svg>'
 };
 
 // ============================================================================
@@ -245,7 +366,7 @@ export class QuickActionsManager {
 
         const view = this._getActiveView();
 
-        container.innerHTML = '';
+        container.replaceChildren();
 
         switch (view) {
             case 'pinned':
@@ -372,17 +493,17 @@ export class QuickActionsManager {
             removeBadge.setAttribute('role', 'button');
             removeBadge.setAttribute('aria-label', getLabel('quickAction.unpinAria', { vars: { name: label } }));
             removeBadge.textContent = '×';
-            removeBadge.addEventListener('click', (e) => {
+            removeBadge._clickHandler = (e) => {
                 e.stopPropagation();
                 this.unpinAction(slotIndex);
-            });
+            };
+            removeBadge.addEventListener('click', removeBadge._clickHandler);
             btn.appendChild(removeBadge);
         }
 
         // Click handler: execute the action
-        btn.addEventListener('click', () => {
-            this.executeAction(actionId);
-        });
+        btn._clickHandler = () => this.executeAction(actionId);
+        btn.addEventListener('click', btn._clickHandler);
 
         // Long-press for mobile tooltip
         this._addLongPressHandler(btn, actionId, slotIndex, isAutoView);
@@ -399,9 +520,8 @@ export class QuickActionsManager {
         btn.dataset.slotIndex = slotIndex;
         btn.textContent = '+';
 
-        btn.addEventListener('click', () => {
-            this.showActionPicker(slotIndex);
-        });
+        btn._clickHandler = () => this.showActionPicker(slotIndex);
+        btn.addEventListener('click', btn._clickHandler);
 
         return btn;
     }
@@ -409,6 +529,13 @@ export class QuickActionsManager {
     // ========================================================================
     // ACTION EXECUTION
     // ========================================================================
+
+    _isActionAvailable(action) {
+        if (!action.unlockKey) return true;
+        const state = this.deps.AppState?.get();
+        const unlocked = state?.settings?.unlockedFeatures || [];
+        return unlocked.includes(action.unlockKey);
+    }
 
     _warnMissingDep(depName, actionId) {
         console.warn(`⚡ QuickActionsManager: '${depName}' is null — action '${actionId}' cannot execute`);
@@ -490,6 +617,294 @@ export class QuickActionsManager {
                                 settingsBtn.click();
                             } else {
                                 this._warnMissingDep(DOM_IDS.OPEN_SETTINGS, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'openHistory': {
+                    this.deps.hideMainMenu?.();
+                    setTimeout(() => {
+                        try {
+                            const btn = document.getElementById(DOM_IDS.HISTORY_BTN);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.HISTORY_BTN, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'openAchievements': {
+                    this.deps.hideMainMenu?.();
+                    setTimeout(() => {
+                        try {
+                            const btn = document.getElementById(DOM_IDS.ACHIEVEMENT_BADGES_BTN);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.ACHIEVEMENT_BADGES_BTN, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'completeAll': {
+                    this.deps.hideMainMenu?.();
+                    setTimeout(() => {
+                        try {
+                            const btn = document.getElementById(DOM_IDS.COMPLETE_ALL);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.COMPLETE_ALL, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'toggleDarkMode': {
+                    setTimeout(() => {
+                        try {
+                            const btn = document.getElementById(DOM_IDS.QUICK_DARK_TOGGLE);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.QUICK_DARK_TOGGLE, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'openPersonalization': {
+                    this.deps.hideMainMenu?.();
+                    setTimeout(() => {
+                        try {
+                            const btn = document.getElementById(DOM_IDS.PERSONALIZATION_BTN);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.PERSONALIZATION_BTN, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'openHelp': {
+                    this.deps.hideMainMenu?.();
+                    setTimeout(() => {
+                        try {
+                            const btn = document.getElementById(DOM_IDS.TOGGLE_HELP_WINDOW);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.TOGGLE_HELP_WINDOW, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'openGames': {
+                    this.deps.hideMainMenu?.();
+                    setTimeout(() => {
+                        try {
+                            const btn = document.getElementById(DOM_IDS.OPEN_GAMES_PANEL);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.OPEN_GAMES_PANEL, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'openFeedback': {
+                    this.deps.hideMainMenu?.();
+                    setTimeout(() => {
+                        try {
+                            const btn = document.getElementById(DOM_IDS.OPEN_FEEDBACK_MODAL);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.OPEN_FEEDBACK_MODAL, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'openSearch': {
+                    this.deps.hideMainMenu?.();
+                    setTimeout(() => {
+                        try {
+                            const btn = document.getElementById(DOM_IDS.TASK_SEARCH_BTN);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.TASK_SEARCH_BTN, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'openUserManual': {
+                    this.deps.hideMainMenu?.();
+                    setTimeout(() => {
+                        try {
+                            const btn = document.getElementById(DOM_IDS.OPEN_USER_MANUAL);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.OPEN_USER_MANUAL, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'toggleTaskInput': {
+                    this.deps.hideMainMenu?.();
+                    setTimeout(() => {
+                        try {
+                            const btn = document.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_BTN);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.TOGGLE_TASK_INPUT_BTN, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'newRoutine': {
+                    this.deps.hideMainMenu?.();
+                    setTimeout(() => {
+                        try {
+                            const btn = document.getElementById(DOM_IDS.NEW_MINI_CYCLE);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.NEW_MINI_CYCLE, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'shareRoutine': {
+                    this.deps.hideMainMenu?.();
+                    setTimeout(() => {
+                        try {
+                            const btn = document.getElementById(DOM_IDS.SHARE_ROUTINE);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.SHARE_ROUTINE, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'exportData': {
+                    this.deps.hideMainMenu?.();
+                    setTimeout(() => {
+                        try {
+                            const btn = document.getElementById(DOM_IDS.EXPORT_MINI_CYCLE);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.EXPORT_MINI_CYCLE, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'openTaskOrderGame': {
+                    this.deps.hideMainMenu?.();
+                    setTimeout(() => {
+                        try {
+                            const btn = document.getElementById(DOM_IDS.OPEN_TASK_ORDER_GAME);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.OPEN_TASK_ORDER_GAME, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'openTaskOptions': {
+                    this.deps.hideMainMenu?.();
+                    setTimeout(() => {
+                        try {
+                            const btn = document.getElementById(DOM_IDS.OPEN_TASK_OPTIONS_CUSTOMIZER);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.OPEN_TASK_OPTIONS_CUSTOMIZER, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'openThemesPanel': {
+                    this.deps.hideMainMenu?.();
+                    setTimeout(() => {
+                        try {
+                            const btn = document.getElementById(DOM_IDS.OPEN_THEMES_PANEL);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.OPEN_THEMES_PANEL, actionId);
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
@@ -580,11 +995,12 @@ export class QuickActionsManager {
         // Build picker content
         const picker = this._pickerOverlay.querySelector(DOM_SELECTORS.QUICK_ACTIONS_PICKER);
         const grid = picker.querySelector(DOM_SELECTORS.QUICK_ACTIONS_PICKER_GRID);
-        grid.innerHTML = '';
+        grid.replaceChildren();
 
         // Group actions by section
         const sections = {};
         for (const [id, action] of Object.entries(ACTION_REGISTRY)) {
+            if (!this._isActionAvailable(action)) continue;
             if (!sections[action.section]) {
                 sections[action.section] = [];
             }
@@ -622,11 +1038,12 @@ export class QuickActionsManager {
                 labelSpan.textContent = getLabel(action.labelKey);
                 item.appendChild(labelSpan);
 
-                item.addEventListener('click', () => {
+                item._clickHandler = () => {
                     if (!pinned.includes(action.id)) {
                         this.pinAction(slotIndex, action.id);
                     }
-                });
+                };
+                item.addEventListener('click', item._clickHandler);
 
                 itemsDiv.appendChild(item);
             });
@@ -935,7 +1352,7 @@ export class QuickActionsManager {
         const actionLabel = getLabel(action.labelKey);
         const rect = element.getBoundingClientRect();
 
-        this._tooltip.innerHTML = '';
+        this._tooltip.replaceChildren();
 
         const label = document.createElement('div');
         label.textContent = actionLabel;
@@ -947,10 +1364,11 @@ export class QuickActionsManager {
             removeBtn.className = DOM_SELECTORS.TOOLTIP_REMOVE;
             removeBtn.setAttribute('aria-label', getLabel('quickAction.unpinAria', { vars: { name: actionLabel } }));
             removeBtn.textContent = getLabel('button.remove');
-            removeBtn.addEventListener('click', () => {
+            removeBtn._clickHandler = () => {
                 this.unpinAction(slotIndex);
                 this._hideTooltip();
-            });
+            };
+            removeBtn.addEventListener('click', removeBtn._clickHandler);
             this._tooltip.appendChild(removeBtn);
         }
 
