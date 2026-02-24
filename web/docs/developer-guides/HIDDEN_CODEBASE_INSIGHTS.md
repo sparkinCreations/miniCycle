@@ -16,6 +16,8 @@ This document captures non-obvious patterns, hidden behaviors, and things that m
 4. [Architectural Patterns](#4-architectural-patterns)
 5. [Things That Might Bite You Later](#5-things-that-might-bite-you-later)
    - [5.8 State Snapshot Timing](#58-state-snapshot-timing----if-you-snapshot-after-the-mutation-the-diff-is-always-empty-fixed-feb-2026)
+   - [5.9 Optional Chaining Masks Missing DI Wiring](#59-optional-chaining-silently-masks-missing-di-wiring-fixed-feb-2026)
+   - [5.10 Stale Closures in Event Handlers](#510-stale-closures-in-event-handlers-capture-outdated-state-fixed-feb-2026)
 6. [Interesting Metrics](#6-interesting-metrics)
 7. [Action Items](#7-action-items)
 
@@ -538,6 +540,86 @@ The console log sequence will reveal the exact mutation order and make the bug o
 **General Rule:**
 
 When multiple code paths can mutate the same piece of state, the snapshot must precede **all of them**. Any new code that writes to the tracked state and is inserted above the snapshot will silently break the change detection.
+
+---
+
+### 5.9 Optional Chaining Silently Masks Missing DI Wiring (Fixed Feb 2026)
+
+**Location:** `modules/routine/routineManager.js`, `routineSwitcher.js`, `routineLoader.js`
+
+**The Gotcha:**
+
+When a module calls a dependency with optional chaining (`this.deps.someFunc?.()`), a missing dependency produces no error — the call silently returns `undefined`. This masks DI wiring bugs that can go undetected for a long time.
+
+```javascript
+// This line runs without error even if refreshThemeLabels is never wired
+this.deps.refreshThemeLabels?.();  // undefined — silently does nothing
+```
+
+Three routine modules (`routineManager`, `routineSwitcher`, `routineLoader`) all called `this.deps.refreshThemeLabels?.()` after creating a new routine or switching routines. The dependency was never wired because it was missing from one or more of: the DI definition, the constructor's `this.deps` object, or the module manifest's `optionalDeps` array.
+
+**Result:** Creating a new routine or switching routines never triggered a theme label refresh. The UI stayed on the previous routine's theme colors and labels until a page reload.
+
+**The Fix:**
+
+Added `refreshThemeLabels` to all three wiring layers for each affected module:
+
+1. `createDIModule()` definition → `refreshThemeLabels: optional(null)`
+2. Constructor `this.deps` → `refreshThemeLabels: resolvedDeps.refreshThemeLabels || null`
+3. `moduleManifests.js` → `optionalDeps: ['refreshThemeLabels']`
+
+**How to Diagnose:**
+
+If a feature "works after refresh but not live":
+1. Find the call site (e.g., `this.deps.someFunc?.()`)
+2. Check if `someFunc` is declared in the module's `createDIModule()` definition
+3. Check if `someFunc` is in the module manifest's `optionalDeps`
+4. If either is missing, the dependency is never delivered
+
+**General Rule:** Optional chaining on dependencies is safe for *truly optional* features, but dangerous for *critical* features — it hides the wiring gap. Consider adding a `console.warn` or using `required()` for dependencies that the module genuinely depends on for correct behavior.
+
+---
+
+### 5.10 Stale Closures in Event Handlers Capture Outdated State (Fixed Feb 2026)
+
+**Location:** `modules/features/themeManager.js` (`renderVocabThemes()`)
+
+**The Gotcha:**
+
+Event handlers created inside a render function capture variables from the render-time scope. If those variables reference mutable state (like `activeCycleId`), the handler uses stale values after the state changes.
+
+```javascript
+// ❌ BROKEN — activeCycleId captured at render time
+const activeCycleId = state?.appState?.activeCycleId;  // e.g. "Morning Routine"
+
+radio.addEventListener('change', () => {
+    vtm.setRoutineTheme(activeCycleId, themeId);  // Still "Morning Routine" even after switching
+});
+```
+
+If the user switches to "Evening Routine" after the modal renders, clicking a theme radio applies it to "Morning Routine" — the stale value in the closure.
+
+**The Fix:**
+
+Read mutable state from `AppState.get()` at the time the handler fires:
+
+```javascript
+// ✅ FIXED — reads current state at click time
+radio.addEventListener('change', () => {
+    const currentCycleId = _deps.AppState?.get?.()?.appState?.activeCycleId;
+    vtm.setRoutineTheme(currentCycleId, themeId);
+});
+```
+
+**How to Diagnose:**
+
+If an action applies to the wrong entity (wrong routine, wrong task):
+1. Find the event handler
+2. Check if it references a variable from an outer scope
+3. If that variable was set from `AppState.get()` at render time, it's stale
+4. Move the state read inside the handler
+
+**General Rule:** Never capture `activeCycleId`, `taskId`, or other mutable identifiers in closures for long-lived event handlers. Always read the current value from `AppState.get()` at event-fire time.
 
 ---
 

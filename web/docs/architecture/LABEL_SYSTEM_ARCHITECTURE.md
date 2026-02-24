@@ -229,6 +229,8 @@ import { getLabel } from '../labels/labelResolver.js';
 const label = getLabel('action.sortTasks');  // 'Sort Tasks'
 ```
 
+**Important:** Every label key used in vocab theme overrides (`THEME_DEFINITIONS[id].labels`) must also have a corresponding entry in `DEFAULT_LABELS`. The resolver falls back to `DEFAULT_LABELS` when the Classic theme is active or when a theme doesn't override that specific key. If the default is missing, `getLabel()` logs `Unknown key` warnings. For example, `notify.cycleComplete` existed in theme overrides but was missing from `DEFAULT_LABELS` until Feb 2026, causing console warnings on every cycle completion in Classic mode.
+
 ---
 
 ## Accessing Labels
