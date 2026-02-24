@@ -616,9 +616,34 @@
 }
 
 .badge.unlocked {
-    background-color: var(--color-success);
     color: var(--color-white);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Per-tier badge colors — each milestone matches its reward theme */
+.badge.unlocked[data-milestone="5"] {
+    background-color: #c87132;                          /* 🔥 Habit Tracker — cognac amber */
+    box-shadow: 0 4px 10px rgba(200, 113, 50, 0.45);
+}
+
+.badge.unlocked[data-milestone="25"] {
+    background-color: #22a05e;                          /* 💪 Fitness — athletic green */
+    box-shadow: 0 4px 10px rgba(34, 160, 94, 0.45);
+}
+
+.badge.unlocked[data-milestone="50"] {
+    background-color: #4440c0;                          /* 📚 Scholar — indigo */
+    box-shadow: 0 4px 10px rgba(68, 64, 192, 0.45);
+}
+
+.badge.unlocked[data-milestone="75"] {
+    background-color: #0a8db5;                          /* 🧹 Cleaning — fresh teal */
+    box-shadow: 0 4px 10px rgba(10, 141, 181, 0.45);
+}
+
+.badge.unlocked[data-milestone="100"] {
+    background-color: #d4a017;                          /* 👑 Crowned — royal gold */
+    box-shadow: 0 4px 10px rgba(212, 160, 23, 0.45);
 }
 
 .badge.unlocked.ocean-theme {
@@ -639,6 +664,7 @@
     box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
     font-weight: bold;
 }
+
 
 /* =============================================================================
    CUSTOM PREFERENCE COLORS (Default Theme Only)

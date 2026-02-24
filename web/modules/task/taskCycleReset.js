@@ -690,6 +690,11 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
  * @param {Object} deps - Resolved dependencies
  */
 export function markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps = {}) {
+    if (isResetting) {
+        console.log('⏳ Reset already in progress, ignoring duplicate mark-all-complete');
+        return;
+    }
+
     const checkMiniCycle = deps.checkMiniCycle || _deps.checkMiniCycle;
 
     console.log('Marking all tasks as complete');
@@ -748,6 +753,12 @@ function getCompleteAllContext(deps) {
  */
 export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
     try {
+        // Guard against rapid clicks while a reset is already in progress
+        if (isResetting) {
+            console.log('⏳ Reset already in progress, ignoring duplicate complete-all');
+            return;
+        }
+
         console.log('Handling complete all tasks (Schema 2.5 only)...');
 
         // Merge deps with module-level deps

@@ -71,7 +71,7 @@ export const THEME_DEFINITIONS = {
             celebrate:     '🔥',
         },
         colorPreset: {
-            appBg:                '#c05215',  // deeper orange — white text 4.71:1 ✓
+            appBg:                'linear-gradient(160deg, #c87132 0%, #5c2800 100%)',  // cognac amber → deep mahogany
             taskListBg:           'rgba(255, 225, 195, 0.5)',  // 50% transparent — orange bleeds through
             taskBg:               '#ffd0a0',  // warm amber card — text 11.3:1 ✓, not white
             taskText:             '#3d1a00',  // dark brown — 11.3:1 on taskBg ✓
@@ -125,24 +125,24 @@ export const THEME_DEFINITIONS = {
             celebrate:     '🏆',
         },
         colorPreset: {
-            appBg:                '#1e8c52',
-            taskListBg:           '#f0fdf4',
-            taskBg:               '#ffffff',
+            appBg:                'linear-gradient(160deg, #22a05e 0%, #0a4a28 100%)',  // bright green → dark forest
+            taskListBg:           'rgba(240, 253, 244, 0.55)',  // semi-transparent — green bleeds through
+            taskBg:               'rgba(200, 240, 218, 0.88)',  // soft sage green — distinct from list bg
             taskText:             '#0d2b1a',
-            titleBg:              '#e8f5ee',
+            titleBg:              'rgba(232, 245, 238, 0.65)',
             titleText:            '#0d5c2d',
             checkboxBg:           '#1e8c52',
-            checkboxIncompleteBg: '#b8e8cc',
-            checkmark:            '#ffffff',
-            completeBtn:          '#1e8c52',
+            checkboxIncompleteBg: '#8bc9a8',                    // solid mid-green — visible against sage task bg
+            checkmark:            '#000000',                    // black — high contrast on green checkbox
+            completeBtn:          '#0a3d20',                    // dark forest green — clearly stands out from appBg
             clearBtn:             '#2dab67',
-            progressBar:          '#2dab67',
-            statsBg:              '#f0fdf4',
+            progressBar:          '#a3e635',                    // lime green — energetic, visible against mid-green
+            statsBg:              'rgba(240, 253, 244, 0.55)',  // matches task list panel
             statsText:            '#0d2b1a',
-            statsProgress:        '#1e8c52',
+            statsProgress:        '#a3e635',                    // lime — matches progress bar
             statsDoughnut:        '#2dab67',
             panelText:            '#ffffff',
-            celebrationBg:        'rgba(30, 140, 82, 0.97)',   // athletic green popup
+            celebrationBg:        'rgba(30, 140, 82, 0.97)',
             celebrationShadow:    'rgba(30, 140, 82, 0.4)',
             priorityColor:        '#1e8c52',
         },
@@ -179,24 +179,24 @@ export const THEME_DEFINITIONS = {
             celebrate:     '🎓',
         },
         colorPreset: {
-            appBg:                '#3d35b5',
-            taskListBg:           '#f5f3ff',
-            taskBg:               '#ffffff',
+            appBg:                'linear-gradient(160deg, #3d35b5 0%, #0d3d4a 100%)',  // slate indigo → deep teal
+            taskListBg:           'rgba(195, 215, 255, 0.55)',  // blue-tinted — indigo bleeds through
+            taskBg:               'rgba(216, 213, 255, 0.88)',  // soft periwinkle — distinct from list bg
             taskText:             '#1e1b4b',
-            titleBg:              '#ede9fe',
+            titleBg:              'rgba(237, 233, 254, 0.65)',
             titleText:            '#2d2899',
             checkboxBg:           '#3d35b5',
-            checkboxIncompleteBg: '#c4b5fd',
-            checkmark:            '#ffffff',
-            completeBtn:          '#3d35b5',
+            checkboxIncompleteBg: '#9980ff',
+            checkmark:            '#d391ff',                    // black — high contrast on indigo checkbox
+            completeBtn:          '#1a0f5e',                    // dark navy-indigo — clearly stands out from appBg
             clearBtn:             '#6d28d9',
-            progressBar:          '#6d28d9',
-            statsBg:              '#f5f3ff',
+            progressBar:          '#c084fc',                    // bright lilac — pops against dark indigo bg
+            statsBg:              'rgba(195, 215, 255, 0.55)',  // matches task list panel
             statsText:            '#1e1b4b',
-            statsProgress:        '#3d35b5',
+            statsProgress:        '#c084fc',                    // matches progress bar
             statsDoughnut:        '#6d28d9',
             panelText:            '#ffffff',
-            celebrationBg:        'rgba(61, 53, 181, 0.97)',   // deep indigo popup
+            celebrationBg:        'rgba(61, 53, 181, 0.97)',
             celebrationShadow:    'rgba(61, 53, 181, 0.4)',
             priorityColor:        '#3d35b5',
         },
@@ -233,24 +233,24 @@ export const THEME_DEFINITIONS = {
             celebrate:     '🧹',
         },
         colorPreset: {
-            appBg:                '#0a8db5',
-            taskListBg:           '#f0fdff',
-            taskBg:               '#ffffff',
+            appBg:                'linear-gradient(160deg, #0d9ecf 0%, #053d50 100%)',  // sky teal → deep ocean
+            taskListBg:           'rgba(240, 253, 255, 0.55)',  // semi-transparent — teal bleeds through
+            taskBg:               'rgba(185, 235, 248, 0.88)',  // soft aqua — distinct from list bg
             taskText:             '#0c2b33',
-            titleBg:              '#e0f8ff',
+            titleBg:              'rgba(224, 248, 255, 0.65)',
             titleText:            '#0e5260',
             checkboxBg:           '#0a8db5',
-            checkboxIncompleteBg: '#a5eaf3',
-            checkmark:            '#ffffff',
-            completeBtn:          '#0a8db5',
+            checkboxIncompleteBg: '#69b1c7',                    // full teal — visible against aqua task bg
+            checkmark:            '#000000',                    // black — high contrast on teal checkbox
+            completeBtn:          '#042d38',                    // dark deep teal — clearly stands out from appBg
             clearBtn:             '#06b6d4',
-            progressBar:          '#06b6d4',
-            statsBg:              '#f0fdff',
+            progressBar:          '#67e8f9',                    // bright light cyan — pops against mid-teal bg
+            statsBg:              'rgba(240, 253, 255, 0.55)',  // matches task list panel
             statsText:            '#0c2b33',
-            statsProgress:        '#0a8db5',
+            statsProgress:        '#67e8f9',                    // matches progress bar
             statsDoughnut:        '#06b6d4',
             panelText:            '#ffffff',
-            celebrationBg:        'rgba(10, 141, 181, 0.97)',  // fresh teal popup
+            celebrationBg:        'rgba(10, 141, 181, 0.97)',
             celebrationShadow:    'rgba(10, 141, 181, 0.4)',
             priorityColor:        '#0a8db5',
         },
@@ -391,6 +391,36 @@ export class VocabThemeManager {
             state.settings.defaultTheme = themeId;
             state.metadata.lastModified = Date.now();
         }, true);
+    }
+
+    /**
+     * Directly unlock a specific theme by ID (e.g. when unlocked via task path).
+     * Safe to call if already unlocked — no-op in that case.
+     *
+     * @param {string} themeId - The theme ID to unlock (e.g. 'habit-tracker')
+     * @returns {boolean} True if newly unlocked, false if already unlocked or unknown
+     */
+    unlockThemeFromAchievement(themeId) {
+        const state = this.deps.AppState?.get();
+        if (!state) return false;
+
+        if (!THEME_DEFINITIONS[themeId] || themeId === 'classic') {
+            console.warn(`VocabThemeManager: Unknown or non-unlockable theme '${themeId}'`);
+            return false;
+        }
+
+        const currentUnlocked = new Set(this.getUnlockedThemeIds());
+        if (currentUnlocked.has(themeId)) return false; // already unlocked
+
+        currentUnlocked.add(themeId);
+        this.deps.AppState.update(s => {
+            if (!s.settings) s.settings = {};
+            s.settings.unlockedThemes = Array.from(currentUnlocked);
+            s.metadata.lastModified = Date.now();
+        }, false);
+
+        console.log(`🎨 VocabThemeManager: Theme '${themeId}' unlocked via achievement`);
+        return true;
     }
 
     /**

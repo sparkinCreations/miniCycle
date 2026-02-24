@@ -36,6 +36,7 @@ const di = createDIModule('AchievementsManager', {
     showNotification: required(),
     unlockMiniGame: optional(null),
     logHistoryEvent: optional(null),
+    vocabThemeManager: optional(null),
     // Badge UI dependencies
     safeAddEventListener: optional(null)
 });
@@ -150,6 +151,26 @@ export class AchievementsManager {
                     this.deps.unlockMiniGame(milestone.reward);
                 }
                 break;
+            case 'vocab-theme': {
+                const wasNew = this.deps.vocabThemeManager?.unlockThemeFromAchievement?.(milestone.reward);
+                if (wasNew) {
+                    const def = this.deps.vocabThemeManager?.getThemeDefinition?.(milestone.reward);
+                    const themeName = def?.name ?? milestone.name;
+                    const icon = def?.icons?.celebrate ?? '🎨';
+                    this.deps.showNotification(
+                        `${icon} ${getLabel('notify.themeUnlocked', { vars: { name: themeName } })}`,
+                        'success',
+                        6000,
+                        {
+                            actionButton: {
+                                label: getLabel('action.openThemesModal'),
+                                onClick: () => document.getElementById(DOM_IDS.OPEN_THEMES_PANEL)?.click()
+                            }
+                        }
+                    );
+                }
+                break;
+            }
         }
     }
 
@@ -672,21 +693,45 @@ export class AchievementsManager {
         const tasksNeeded = Math.max(0, tierConfig.taskThreshold - achievements.tasksCleared);
         const cyclesHigher = cycleProgress >= taskProgress;
 
-        // Determine badge circle color based on unlock status and reward
-        let badgeBackground = 'linear-gradient(135deg, #e0e0e0, #c0c0c0)'; // Default gray for locked
+        // Determine badge coin + modal colors based on unlock status and reward
+        let badgeBackground = 'linear-gradient(135deg, #e0e0e0, #c0c0c0)'; // locked — gray
+        let modalBg         = 'var(--bg-primary, #fff)';
+        let textPrimary     = 'var(--text-primary, #333)';
+        let textSecondary   = 'var(--text-secondary, #666)';
+        let textReward      = 'var(--primary-color, #4c79ff)';
         if (isUnlocked) {
             if (tierConfig.reward === 'habit-tracker') {
-                badgeBackground = 'linear-gradient(135deg, #28a745, #5cb85c)'; // green (standard unlock)
+                badgeBackground = 'linear-gradient(135deg, #c87132, #e8924a)'; // cognac amber
+                modalBg         = '#c87132';
+                textPrimary     = '#ffffff';
+                textSecondary   = 'rgba(255,255,255,0.8)';
+                textReward      = '#ffe0b8';
             } else if (tierConfig.reward === 'fitness') {
-                badgeBackground = 'linear-gradient(135deg, #1a6b9e, #2ecc71)'; // energy blue-green
+                badgeBackground = 'linear-gradient(135deg, #22a05e, #3dba74)'; // athletic green
+                modalBg         = '#22a05e';
+                textPrimary     = '#ffffff';
+                textSecondary   = 'rgba(255,255,255,0.8)';
+                textReward      = '#b8f0d4';
             } else if (tierConfig.reward === 'scholar') {
-                badgeBackground = 'linear-gradient(135deg, #5b2c8d, #8e44ad)'; // academic purple
+                badgeBackground = 'linear-gradient(135deg, #4440c0, #6560d8)'; // indigo
+                modalBg         = '#4440c0';
+                textPrimary     = '#ffffff';
+                textSecondary   = 'rgba(255,255,255,0.8)';
+                textReward      = '#c8c4ff';
             } else if (tierConfig.reward === 'cleaning') {
-                badgeBackground = 'linear-gradient(135deg, #0e7c6a, #1abc9c)'; // fresh teal
+                badgeBackground = 'linear-gradient(135deg, #0a8db5, #20a8d8)'; // fresh teal
+                modalBg         = '#0a8db5';
+                textPrimary     = '#ffffff';
+                textSecondary   = 'rgba(255,255,255,0.8)';
+                textReward      = '#b8eeff';
             } else if (tierConfig.reward === 'whack-a-order') {
                 badgeBackground = 'linear-gradient(135deg, #8b0000, #dc143c)'; // game red
+                modalBg         = '#8b0000';
+                textPrimary     = '#ffffff';
+                textSecondary   = 'rgba(255,255,255,0.8)';
+                textReward      = '#ffb8c8';
             } else {
-                badgeBackground = 'linear-gradient(135deg, #28a745, #5cb85c)';
+                badgeBackground = 'linear-gradient(135deg, #22a05e, #3dba74)';
             }
         }
 
@@ -752,7 +797,7 @@ export class AchievementsManager {
             const date = new Date(unlockedAchievement.unlockedAt);
             const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
             statusHtml = `
-                <p style="margin: 0; font-size: 12px; color: var(--text-secondary, #888);">
+                <p style="margin: 0; font-size: 12px; color: ${textSecondary};">
                     ${getLabel('achievement.unlockedOn', { vars: { date: dateStr, via: unlockedAchievement.unlockedVia } })}
                 </p>
             `;
@@ -760,14 +805,14 @@ export class AchievementsManager {
 
         // Drag to spin hint (only for unlocked badges)
         const dragHintHtml = isUnlocked ? `
-            <p style="margin: 4px 0 0; font-size: 11px; color: var(--text-secondary, #aaa); font-style: italic;">
+            <p style="margin: 4px 0 0; font-size: 11px; color: ${textSecondary}; font-style: italic;">
                 ${getLabel('achievement.dragToSpin')}
             </p>
         ` : '';
 
         overlay.innerHTML = `
             <div style="
-                background: var(--bg-primary, #fff);
+                background: ${modalBg};
                 border-radius: 16px;
                 padding: 24px;
                 min-width: 260px;
@@ -809,8 +854,8 @@ export class AchievementsManager {
                 </div>
                 ${dragHintHtml}
 
-                <h3 style="margin: 8px 0 4px; font-size: 20px; color: var(--text-primary, #333);">${tierConfig.name}</h3>
-                <p style="margin: 0 0 12px; font-size: 13px; color: var(--text-secondary, #666);">
+                <h3 style="margin: 8px 0 4px; font-size: 20px; color: ${textPrimary};">${tierConfig.name}</h3>
+                <p style="margin: 0 0 12px; font-size: 13px; color: ${textSecondary};">
                     ${getLabel('achievement.threshold', { vars: { cycles: tierConfig.cycleThreshold, tasks: tierConfig.taskThreshold } })}
                 </p>
 
@@ -818,7 +863,7 @@ export class AchievementsManager {
                 ${progressHtml}
 
                 ${tierConfig.rewardLabel ? `
-                    <p style="margin: 12px 0 0; font-size: 12px; color: var(--primary-color, #4c79ff);">
+                    <p style="margin: 12px 0 0; font-size: 12px; color: ${textReward};">
                         <strong>${getLabel('achievement.rewardLabel')}</strong> ${tierConfig.rewardLabel}
                     </p>
                 ` : ''}
