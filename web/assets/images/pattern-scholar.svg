@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    Scholar Background Pattern
+    Icons: graduation cap, lightbulb, atom, glasses,
+           magnifying glass, open book, flask, ruler
+  -->
+  <g fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.2"
+     stroke-linecap="round" stroke-linejoin="round">
+
+    <!-- Graduation cap / academic (top-left) -->
+    <g transform="rotate(-5 28 22)">
+      <!-- Board -->
+      <path d="M10 22 L28 14 L46 22 L28 30 Z" stroke-width="1.4"/>
+      <!-- Top face diamond -->
+      <path d="M20 19 L28 15 L36 19 L28 23 Z" stroke-width="0.7"/>
+      <!-- Hanging mortarboard -->
+      <path d="M22 27 L22 37 C22 37 28 40 34 37 L34 27" stroke-width="1.2"/>
+      <!-- Tassel cord -->
+      <line x1="46" y1="22" x2="46" y2="33" stroke-width="1.2"/>
+      <!-- Tassel flare -->
+      <path d="M43 33 Q46 35 49 33" stroke-width="1"/>
+      <line x1="43" y1="34" x2="41" y2="38" stroke-width="0.8"/>
+      <line x1="46" y1="35" x2="46" y2="39" stroke-width="0.8"/>
+      <line x1="49" y1="34" x2="51" y2="38" stroke-width="0.8"/>
+    </g>
+
+    <!-- Lightbulb / ideas (top-right) -->
+    <g transform="rotate(5 167 24)">
+      <!-- Bulb dome -->
+      <path d="M167 9 C160 9 155 15 155 22 C155 27 158 31 161 33 L163 38 L171 38 L173 33 C176 31 179 27 179 22 C179 15 174 9 167 9 Z" stroke-width="1.4"/>
+      <!-- Filament coil -->
+      <path d="M163 27 Q163 24 165 23 Q167 22 169 23 Q171 24 171 27" stroke-width="0.9"/>
+      <line x1="167" y1="23" x2="167" y2="27" stroke-width="0.7"/>
+      <!-- Base segments -->
+      <line x1="163" y1="38" x2="171" y2="38" stroke-width="0.8"/>
+      <path d="M163 38 L163 41"/>
+      <path d="M171 38 L171 41"/>
+      <line x1="163" y1="40" x2="171" y2="40" stroke-width="1.1"/>
+      <line x1="164" y1="42" x2="170" y2="42" stroke-width="1.1"/>
+      <!-- Radiant shine lines -->
+      <line x1="167" y1="5" x2="167" y2="3" stroke-width="0.8"/>
+      <line x1="180" y1="12" x2="182" y2="10" stroke-width="0.8"/>
+      <line x1="154" y1="12" x2="152" y2="10" stroke-width="0.8"/>
+      <line x1="183" y1="21" x2="185" y2="21" stroke-width="0.7"/>
+      <line x1="151" y1="21" x2="149" y2="21" stroke-width="0.7"/>
+    </g>
+
+    <!-- Atom / science (top-center) -->
+    <g transform="rotate(0 100 24)">
+      <!-- Nucleus -->
+      <circle cx="100" cy="24" r="2.8" stroke-width="1.3"/>
+      <!-- Three orbital ellipses at 0°, 60°, 120° -->
+      <ellipse cx="100" cy="24" rx="14" ry="5.5" stroke-width="1"/>
+      <ellipse cx="100" cy="24" rx="14" ry="5.5" transform="rotate(60 100 24)" stroke-width="1"/>
+      <ellipse cx="100" cy="24" rx="14" ry="5.5" transform="rotate(120 100 24)" stroke-width="1"/>
+    </g>
+
+    <!-- Glasses / reading (left) -->
+    <g transform="rotate(-8 19 92)">
+      <circle cx="11" cy="92" r="7.5" stroke-width="1.3"/>
+      <circle cx="27" cy="92" r="7.5" stroke-width="1.3"/>
+      <!-- Nose bridge -->
+      <path d="M18.5 89 Q19.5 91 20.5 89" stroke-width="1.1"/>
+      <!-- Temple arms -->
+      <path d="M3.5 88 L1 86" stroke-width="1.2"/>
+      <path d="M34.5 88 L37 86" stroke-width="1.2"/>
+      <!-- Lens shine marks -->
+      <path d="M7 88 L9 86" stroke-width="0.6"/>
+      <path d="M23 88 L25 86" stroke-width="0.6"/>
+    </g>
+
+    <!-- Magnifying glass / research (right) -->
+    <g transform="rotate(10 176 88)">
+      <!-- Lens -->
+      <circle cx="171" cy="83" r="12" stroke-width="1.4"/>
+      <!-- Inner lens ring -->
+      <circle cx="171" cy="83" r="8" stroke-width="0.7"/>
+      <!-- Handle -->
+      <line x1="180" y1="92" x2="192" y2="104" stroke-width="3.5"/>
+      <!-- Handle grip notches -->
+      <line x1="183" y1="94" x2="181" y2="96" stroke-width="0.7"/>
+      <line x1="186" y1="97" x2="184" y2="99" stroke-width="0.7"/>
+      <line x1="189" y1="100" x2="187" y2="102" stroke-width="0.7"/>
+      <!-- Lens shine -->
+      <path d="M164 78 Q166 76 169 78" stroke-width="0.7"/>
+    </g>
+
+    <!-- Open book / study (center) -->
+    <g transform="rotate(-5 96 120)">
+      <!-- Left page -->
+      <path d="M78 108 C84 106 90 108 96 113 L96 135 C90 131 84 131 78 133 Z" stroke-width="1.4"/>
+      <!-- Right page -->
+      <path d="M114 108 C108 106 102 108 96 113 L96 135 C102 131 108 131 114 133 Z" stroke-width="1.4"/>
+      <!-- Spine crease -->
+      <line x1="96" y1="113" x2="96" y2="135" stroke-width="0.9"/>
+      <!-- Left page text lines -->
+      <path d="M82 116 L92 115" stroke-width="0.9"/>
+      <path d="M82 120 L92 119" stroke-width="0.9"/>
+      <path d="M82 124 L92 123" stroke-width="0.9"/>
+      <path d="M82 128 L89 127" stroke-width="0.9"/>
+      <!-- Right page text lines -->
+      <path d="M100 116 L110 115" stroke-width="0.9"/>
+      <path d="M100 120 L110 119" stroke-width="0.9"/>
+      <path d="M100 124 L110 123" stroke-width="0.9"/>
+      <path d="M100 128 L107 127" stroke-width="0.9"/>
+      <!-- Bookmark tab -->
+      <path d="M111 108 L111 115 L113.5 113 L116 115 L116 108" stroke-width="0.8"/>
+    </g>
+
+    <!-- Erlenmeyer flask / experiment (bottom-left) -->
+    <g transform="rotate(-8 28 162)">
+      <!-- Neck -->
+      <rect x="24" y="148" width="8" height="8" rx="1" stroke-width="1.3"/>
+      <!-- Stopper -->
+      <rect x="25" y="145" width="6" height="4" rx="1" stroke-width="0.9"/>
+      <!-- Flask body -->
+      <path d="M24 156 L16 176 L40 176 L32 156 Z" stroke-width="1.4"/>
+      <!-- Liquid level lines -->
+      <path d="M19 167 L37 167" stroke-width="0.9"/>
+      <path d="M18 171 L38 171" stroke-width="0.7"/>
+      <!-- Bubbles in liquid -->
+      <circle cx="25" cy="172" r="1.5" stroke-width="0.7"/>
+      <circle cx="31" cy="170" r="1" stroke-width="0.7"/>
+      <circle cx="28" cy="169" r="1.2" stroke-width="0.7"/>
+    </g>
+
+    <!-- Ruler / precision (bottom-right) -->
+    <g transform="rotate(15 163 163)">
+      <rect x="147" y="155" width="32" height="12" rx="1.5" stroke-width="1.4"/>
+      <!-- Major ticks (every 8px) -->
+      <line x1="151" y1="155" x2="151" y2="162" stroke-width="1"/>
+      <line x1="159" y1="155" x2="159" y2="162" stroke-width="1"/>
+      <line x1="167" y1="155" x2="167" y2="162" stroke-width="1"/>
+      <line x1="175" y1="155" x2="175" y2="162" stroke-width="1"/>
+      <!-- Minor ticks (every 4px) -->
+      <line x1="155" y1="155" x2="155" y2="158.5" stroke-width="0.7"/>
+      <line x1="163" y1="155" x2="163" y2="158.5" stroke-width="0.7"/>
+      <line x1="171" y1="155" x2="171" y2="158.5" stroke-width="0.7"/>
+    </g>
+
+  </g>
+</svg>

@@ -120,7 +120,7 @@ export function setupExportButton() {
 
         const miniCycleData = {
             name: activeCycle,
-            title: cycle.title || "New miniCycle",
+            title: cycle.title || "New Routine",
             tasks: cycle.tasks.map(task => {
                 // Clone to avoid mutating live cycle data
                 const settings = task.recurringSettings

@@ -85,7 +85,7 @@ export function setupShareRoutineButton() {
         // Build .mcyc payload (same structure as cycleExportManager)
         const miniCycleData = {
             name: activeCycle,
-            title: cycle.title || 'New miniCycle',
+            title: cycle.title || 'New Routine',
             tasks: cycle.tasks.map(task => {
                 const settings = task.recurringSettings
                     ? structuredClone(task.recurringSettings)

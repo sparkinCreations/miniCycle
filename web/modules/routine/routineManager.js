@@ -505,7 +505,7 @@ export class RoutineManager {
 
                 if (finalResult) {
                     console.log(`✅ Created and switched to new miniCycle (state-based): "${finalResult.finalTitle}" (key: ${finalResult.storageKey})`);
-                    this.deps.showNotification(`✅ Created new miniCycle "${finalResult.finalTitle}"`, "success", 3000);
+                    this.deps.showNotification(`✅ ${getLabel('notify.routineCreated', { vars: { name: finalResult.finalTitle } })}`, "success", 3000);
                 }
             }
         });

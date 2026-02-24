@@ -139,6 +139,10 @@ function _refreshLiveLensLabels() {
     const root = document.documentElement;
 
     if (themeId !== 'classic' && activeTheme?.colorPreset) {
+        // Clear any user-set custom pattern so the theme's SVG pattern shows.
+        // applyCustomColors() restores it when switching back to Classic.
+        document.body.classList.remove('custom-pattern');
+
         // Set vars on body.style so child-element rules (task cards, stats panel,
         // etc.) resolve them from body's inline style — more correct scope than
         // html.style, and child elements always track ancestor custom property changes.
