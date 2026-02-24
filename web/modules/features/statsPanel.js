@@ -1687,19 +1687,6 @@ export class StatsPanelManager {
             this._achievementsClickHandler = null;
         }
 
-        // Remove gesture event listeners
-        document.removeEventListener("touchstart", this.boundHandlers.handleTouchStart);
-        document.removeEventListener("touchmove", this.boundHandlers.handleTouchMove);
-        document.removeEventListener("touchend", this.boundHandlers.handleTouchEnd);
-        document.removeEventListener("wheel", this.boundHandlers.handleWheel);
-        document.removeEventListener("mousedown", this.boundHandlers.handleMouseDown);
-        document.removeEventListener("mousemove", this.boundHandlers.handleMouseMove);
-        document.removeEventListener("mouseup", this.boundHandlers.handleMouseUp);
-        document.removeEventListener("pointerdown", this.boundHandlers.handlePointerDown);
-        document.removeEventListener("pointermove", this.boundHandlers.handlePointerMove);
-        document.removeEventListener("pointerup", this.boundHandlers.handlePointerUp);
-        document.removeEventListener("keydown", this.boundHandlers.handleKeydown);
-
         // Remove setupUIEvents listeners
         if (this.elements.slideLeft) {
             this.elements.slideLeft.removeEventListener("click", this.boundHandlers.handleSlideLeftClick);

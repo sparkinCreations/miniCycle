@@ -339,10 +339,10 @@ export class HelpWindowManager {
         `;
 
         // Auto-hide after 2 seconds and return to normal message
-        setTimeout(() => {
+        this._pendingTimeouts.push(setTimeout(() => {
             this.isShowingCycleComplete = false;
             this.updateConstantMessage();
-        }, 2000);
+        }, 2000));
     }
 
     /**
@@ -368,10 +368,10 @@ export class HelpWindowManager {
         `;
 
         // Auto-hide after 2 seconds and return to normal message
-        setTimeout(() => {
+        this._pendingTimeouts.push(setTimeout(() => {
             this.isShowingCycleComplete = false;
             this.updateConstantMessage();
-        }, 2000);
+        }, 2000));
     }
 
     getCurrentStatusMessage() {

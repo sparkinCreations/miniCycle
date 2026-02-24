@@ -123,15 +123,17 @@ class GamesManager {
         const maxAttempts = 150;  // 15 seconds max (150 × 100ms)
         let attempts = 0;
 
-        const checkInterval = setInterval(() => {
+        this._deferredCheckInterval = setInterval(() => {
             attempts++;
 
             const AppState = this._getAppState();
             if (AppState?.isReady?.()) {
-                clearInterval(checkInterval);
+                clearInterval(this._deferredCheckInterval);
+                this._deferredCheckInterval = null;
                 this.checkGamesUnlock();
             } else if (attempts >= maxAttempts) {
-                clearInterval(checkInterval);
+                clearInterval(this._deferredCheckInterval);
+                this._deferredCheckInterval = null;
                 console.warn('⚠️ AppState never became ready for checkGamesUnlock (this is normal for new users until cycle is created)');
             }
         }, 100); // Check every 100ms
@@ -290,6 +292,11 @@ class GamesManager {
         if (gamesPanel) {
             this._gamesPanelCloseHandler = () => {
                 gamesPanel._previousFocus?.focus({ focusVisible: false });
+                // Remove outside-click handler when modal closes (re-added on next open)
+                if (this._gamesOutsideClickHandler) {
+                    document.removeEventListener('click', this._gamesOutsideClickHandler);
+                    this._gamesOutsideClickHandler = null;
+                }
             };
             safeAdd(gamesPanel, "close", this._gamesPanelCloseHandler);
         }
@@ -310,6 +317,12 @@ class GamesManager {
      * Clean up event listeners and timers
      */
     destroy() {
+        // Clear deferred check interval
+        if (this._deferredCheckInterval) {
+            clearInterval(this._deferredCheckInterval);
+            this._deferredCheckInterval = null;
+        }
+
         // Remove document-level outside-click handler
         if (this._gamesOutsideClickHandler) {
             document.removeEventListener('click', this._gamesOutsideClickHandler);
