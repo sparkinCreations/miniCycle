@@ -195,7 +195,7 @@ export const DEFAULT_LABELS = deepFreeze({
         duplicateTitle:  'Duplicate the current routine',
         switchAria:      'Switch routine',
         untitled:        'Untitled Cycle',
-        noSelected:      'No miniCycle Selected'
+        noSelected:      'No Routine Selected'
     },
 
     // ========================================================================
@@ -240,16 +240,16 @@ export const DEFAULT_LABELS = deepFreeze({
         importExternal:     'Import From External',
         storage:            'Storage',
         calculating:        'Calculating...',
-        deleteTitle:        'Delete miniCycle',
+        deleteTitle:        'Delete Routine',
         deleteMessage:      'Are you sure you want to delete "{name}"? This action cannot be undone.',
-        noSaved:            'No saved miniCycles found.',
-        noSelectedForDelete:'No miniCycle selected for deletion.',
-        selectPreview:      'Select a miniCycle to preview',
+        noSaved:            'No saved routines found.',
+        noSelectedForDelete:'No routine selected for deletion.',
+        selectPreview:      'Select a routine to preview',
         selectFirst:        'Select a routine first to change its theme.',
         modified:            'Modified',
         created:             'Created',
         tasksPreviewLabel:   'Tasks',
-        noCyclesFound:       'No miniCycles found',
+        noCyclesFound:       'No routines found',
         noModeRoutinesFound: 'No {mode} routines found',
         completed:           'completed',
     },
@@ -338,7 +338,7 @@ export const DEFAULT_LABELS = deepFreeze({
         deleteTasksFailed:      'Failed to delete tasks. Please try again.',
         deletionCancelled:      'Deletion cancelled.',
         saveCancelled:          'Save cancelled.',
-        noRoutineToSave:        'No miniCycle found to save.',
+        noRoutineToSave:        'No routine found to save.',
 
         // Cycle/routine notifications
         cycleDeletedSwitch:     '"{deleted}" deleted. "{active}" is now active.',
@@ -474,8 +474,8 @@ export const DEFAULT_LABELS = deepFreeze({
         routineCopied:           '"{original}" was copied as "{copy}"!',
         allTasksUnchecked:       'All tasks unchecked for "{name}"',
         allTasksDeleted:         'All tasks deleted from "{name}"',
-        noActiveCycleClear:      'No active miniCycle to clear tasks.',
-        noActiveCycleDelete:     'No active miniCycle to delete tasks from.',
+        noActiveCycleClear:      'No active routine to clear tasks.',
+        noActiveCycleDelete:     'No active routine to delete tasks from.',
         menuLimited:             'Menu may have limited functionality',
         settingsLimited:         'Settings may have limited functionality',
         patternOpacityReset:     'Pattern opacity reset to default',
@@ -502,13 +502,13 @@ export const DEFAULT_LABELS = deepFreeze({
         importOneFileOnly:       'Only one file can be imported at a time.',
         importDropMcyc:          'Please drop a .mcyc file to import.',
         importReadError:         'Error reading file.',
-        importError:             'Error importing miniCycle.',
+        importError:             'Error importing routine.',
         importAppNotReady:       'Cannot import - app not ready. Please try again.',
         importNoStorage:         'Not enough storage space to import this routine.',
         exportSuccess:           '"{name}" exported successfully!',
         exportFailed:            'Export failed. Please try again.',
         exportNoData:            'No data found. Cannot export.',
-        exportNoActiveCycle:     'No active miniCycle to export.',
+        exportNoActiveCycle:     'No active routine to export.',
         importSuccess:           '"{name}" imported successfully!',
         importTruncated:         '"{name}" imported but exceeded {limit} task limit. {count} task(s) not imported.',
         importNameCollision:     'Name "{original}" already exists. Imported as "{name}".',
@@ -547,7 +547,7 @@ export const DEFAULT_LABELS = deepFreeze({
         dataIssuesFixed:         'Fixed {count} data compatibility issues',
         dataUpdatedWithFixes:    'Data updated successfully! Fixed {count} compatibility issues.',
         dataFormatUpdated:       'Data format updated successfully!',
-        freshCycleCreated:       'Created fresh miniCycle. Previous data may have been incompatible.',
+        freshCycleCreated:       'Created fresh routine. Previous data may have been incompatible.',
         migrationFailed:         'Unable to update data format. Using existing data until next app reload. Your data is safe!',
 
         // Device detection notifications
@@ -633,8 +633,8 @@ export const DEFAULT_LABELS = deepFreeze({
         dueDateUnnamed:          'Unnamed task',
 
         // Routine management notifications
-        noRoutineSelected:       'No miniCycle selected for deletion.',
-        sampleLoadFailed:        'Failed to load sample miniCycle. Creating a basic cycle instead.',
+        noRoutineSelected:       'No routine selected for deletion.',
+        sampleLoadFailed:        'Failed to load sample routine. Creating a basic routine instead.',
         creationCancelled:       'Creation canceled.',
         reminderLimited:         'Reminder system initialized with limited functionality',
 
@@ -659,12 +659,12 @@ export const DEFAULT_LABELS = deepFreeze({
         recurringApplyFailed:    'Failed to apply settings. Please try again.',
 
         // Routine management (additional)
-        samplePreloaded:         'A sample miniCycle has been preloaded to help you get started!',
-        failedToCreateCycle:     'Failed to create cycle. Please refresh.',
-        selectToRename:          'Please select a miniCycle to rename.',
-        invalidCycleSelection:   'Invalid cycle selection.',
-        selectToDuplicate:       'Please select a miniCycle to duplicate.',
-        selectFirst:             'Please select a miniCycle first.',
+        samplePreloaded:         'A sample routine has been preloaded to help you get started!',
+        failedToCreateCycle:     'Failed to create routine. Please refresh.',
+        selectToRename:          'Please select a routine to rename.',
+        invalidCycleSelection:   'Invalid routine selection.',
+        selectToDuplicate:       'Please select a routine to duplicate.',
+        selectFirst:             'Please select a routine first.',
         failedToSwitch:          'Failed to switch cycle. Please try again.',
     },
 
@@ -1167,7 +1167,7 @@ export const DEFAULT_LABELS = deepFreeze({
         refreshAndroid:   'Pull down to refresh, or clear browser data in Settings.',
         refreshMac:       'Press Cmd+Shift+R to hard refresh.',
         refreshOther:     'Press Ctrl+Shift+R to hard refresh.',
-        previewSelect:    'Select a miniCycle to preview',
+        previewSelect:    'Select a routine to preview',
 
         // Error descriptions (orchestrator boot failures)
         errorCachedFile:    'A cached file is outdated',

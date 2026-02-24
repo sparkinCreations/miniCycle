@@ -515,11 +515,11 @@ export const MODULE_MANIFESTS = {
         path: '../features/achievementsManager.js',
         phase: PHASES.FEATURES,
         requires: ['appInit', 'AppState', 'showNotification'],
-        optionalDeps: ['unlockMiniGame', 'safeAddEventListener'],
+        optionalDeps: ['unlockMiniGame', 'safeAddEventListener', 'vocabThemeManager'],
         provides: ['checkAchievements', 'getAchievements', 'isAchievementUnlocked', 'openAchievementsModal', 'initBadgeTooltips', 'showBadgeDetail', 'hideBadgeDetail', 'updateBadges'],
         provideInstance: 'achievementsManager',
         api: 'features',
-        after: ['clearedTasksManager', 'themeManager', 'gamesManager']
+        after: ['clearedTasksManager', 'themeManager', 'gamesManager', 'vocabThemes']
     },
 
     // =========================================================================
