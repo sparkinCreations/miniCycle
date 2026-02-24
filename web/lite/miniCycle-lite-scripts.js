@@ -37,7 +37,7 @@
 //   • Multiple cycles, Recurring tasks, Due dates, Reminders
 //   • Theme unlocks, Gamification, Import/export, Advanced settings
 //
-// Last meaningful update: v2.086 (intentionally static thereafter)
+// Last meaningful update: v2.087 (intentionally static thereafter)
 // © 2026 sparkinCreations - https://sparkincreations.com
 // ================================================================================
 
@@ -86,7 +86,7 @@ console.log('📱 miniCycle Lite Mode Activated for maximum compatibility!');
 
 
 
-var currentVersion = '2.086'; 
+var currentVersion = '2.087'; 
 
 // ✅ ADD version display function
 function showVersionInfo() {
@@ -2811,7 +2811,7 @@ function handleTryFullVersion() {
     return; // User cancelled
   }
 
-  var currentVersion = '2.086';
+  var currentVersion = '2.087';
 
   // Show confirmation
   showNotification(
@@ -3953,8 +3953,8 @@ function showEmptyState() {
       '<div class="lite-version-info">',
         '<p class="lite-info-text">',
           '<span class="info-icon">ℹ️</span>',
-          'This Lite version is optimized for older devices and slower connections. ',
-          'It includes all core features with enhanced compatibility and performance.',
+          'You may have been automatically redirected here if the full version couldn\'t load on your device. ',
+          'This Lite version includes all core features and is optimized for speed and compatibility.',
         '</p>',
       '</div>',
 
