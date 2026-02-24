@@ -1,3 +1,7 @@
+## [2.005] - 2026-02-24
+- chore: update version to 2.004 across relevant files
+
+
 ## [2.004] - 2026-02-24
 - docs: Update architecture and developer guides with important fixes and clarifications
 - feat: Implement vocabulary theme system and update related documentation

@@ -48,7 +48,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -77,7 +77,9 @@ const di = createDIModule('CycleCompletion', {
     logHistoryEvent: optional(null),       // (type, details) => void
     checkAchievements: optional(null),     // (cycles, tasks) => Array
     // Vocabulary theme system
-    vocabThemeManager: optional(null)      // VocabThemeManager singleton
+    vocabThemeManager: optional(null),     // VocabThemeManager singleton
+    // Confirmation modal for due date warning
+    showConfirmationModal: optional(null)  // ({ title, message, confirmText, cancelText, callback }) => void
 });
 
 // Late-binding deps via Proxy
@@ -430,13 +432,20 @@ export function updateProgressBar() {
     }, 200);
 }
 
+// Guard flag to prevent double-modal when checkMiniCycle is called twice per click
+// (taskDOM.js change handler + taskEvents.js click handler both call checkMiniCycle)
+let _showingDueDateModal = false;
+
 /**
  * Checks if all tasks in the miniCycle are completed.
  * If auto-reset is enabled, resets tasks after completion.
  * Updates progress bar and stats panel.
  * Checks tasks from both main list AND completed dropdown.
+ * @param {Object} [options] - Optional parameters
+ * @param {HTMLElement} [options.lastToggledElement] - The task element that was just toggled (for cancel-revert)
  */
-export function checkMiniCycle() {
+export function checkMiniCycle(options = {}) {
+    const { lastToggledElement } = options;
     // Early return if AppState not ready to prevent initialization race conditions
     if (!deps.AppState?.isReady?.()) {
         console.log('⏳ checkMiniCycle deferred - AppState not ready');
@@ -489,6 +498,56 @@ export function checkMiniCycle() {
 
         // Auto-reset: Only reset if AutoReset is enabled (manual mode = autoReset OFF)
         if (autoResetEnabled) {
+            // Check if any tasks have due dates that will be cleared on reset
+            const hasDueDates = allTasks.some(task => {
+                const dueDateInput = task.querySelector(DOM_SELECTORS.DUE_DATE);
+                return dueDateInput && dueDateInput.value;
+            });
+
+            // Show warning modal if due dates exist (guard prevents double-modal)
+            if (hasDueDates && deps.showConfirmationModal && !_showingDueDateModal) {
+                _showingDueDateModal = true;
+                console.log('⚠️ Tasks have due dates — showing confirmation before auto-reset');
+                deps.showConfirmationModal({
+                    title: getLabel('modal.resetTasksTitle'),
+                    message: getLabel('modal.resetTasksMessage'),
+                    confirmText: getLabel('modal.resetTasksConfirm'),
+                    cancelText: getLabel('button.cancel'),
+                    callback: (confirmed) => {
+                        _showingDueDateModal = false;
+                        if (confirmed) {
+                            // Verify cycle hasn't changed during modal
+                            const freshState = deps.AppState?.get?.();
+                            const currentCycleId = freshState?.appState?.activeCycleId;
+                            if (currentCycleId !== activeCycleId) {
+                                console.warn('⚠️ Cycle changed during modal, aborting reset');
+                                return;
+                            }
+                            deps.resetTasks?.();
+                        } else if (lastToggledElement) {
+                            // Revert the last checked task so cycle doesn't complete
+                            const checkbox = lastToggledElement.querySelector('input[type="checkbox"]');
+                            if (checkbox) {
+                                checkbox.checked = false;
+                                // Update AppState to mark task uncompleted
+                                const taskId = lastToggledElement.dataset?.taskId;
+                                if (taskId && deps.AppState) {
+                                    deps.AppState.update(s => {
+                                        const cycle = s.data?.cycles?.[s.appState?.activeCycleId];
+                                        const task = cycle?.tasks?.find(t => t.id === taskId);
+                                        if (task) task.completed = false;
+                                    });
+                                }
+                                // Refresh progress bar to reflect the reverted task
+                                updateProgressBar();
+                            }
+                        }
+                    }
+                });
+                return;
+            }
+
+            // No due dates — auto-reset after 1 second (existing behavior)
             console.log(`🔄 AutoReset is ON. Resetting tasks for "${lastUsedMiniCycle}"...`);
             // Store expected cycle to verify it hasn't changed during delay
             const expectedCycleId = activeCycleId;

@@ -259,7 +259,8 @@ export async function bootFeatures(deps, coreResult) {
         updateSearchVisibility: taskSearchMod.updateSearchVisibility,
         getTaskCount: taskSearchMod.getTaskCount,
         startReminders: deps.features?.startReminders,
-        notifications: deps.utils?.notifications
+        notifications: deps.utils?.notifications,
+        logHistoryEvent: (...args) => deps.features?.historyManager?.logEvent?.(...args)
       });
 
       console.log('✅ TaskSearch module loaded');

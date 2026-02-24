@@ -69,9 +69,9 @@ export const DEFAULT_LABELS = deepFreeze({
         autoTitle:          'Auto Cycle Mode',
         autoDetail:         'Tasks will automatically reset to incomplete when all are completed. This is the traditional miniCycle experience.',
         manualTitle:        'Manual Cycle Mode',
-        manualDetail:       'Tasks will only reset when you manually press the complete button. The complete button will complete any remaining tasks and then reset all tasks to incomplete.',
+        manualDetail:       'Tasks will only reset when you manually press the Complete Cycle button. The Complete Cycle button will complete any remaining tasks and then reset all tasks to incomplete.',
         todoTitle:          'To-Do Mode',
-        todoDetail:         'This mode will not complete any cycles. Instead, it will delete all tasks when you hit the complete button.',
+        todoDetail:         'This mode will not complete any cycles. Instead, it will remove completed tasks when you hit the Clear Completed button.',
         autoToggle:         'Auto Reset',
         deleteChecked:      'Delete Checked Tasks after Complete',
         info:               'Mode Info'
@@ -418,7 +418,7 @@ export const DEFAULT_LABELS = deepFreeze({
         unknownNotification:    'Unknown notification',
 
         // Recurring notification
-        recurringTipExplanation: 'Recurring tasks are deleted on cycle reset and reappear based on their schedule',
+        recurringTipExplanation: 'Recurring tasks are removed on cycle reset and will reappear on their schedule',
         recurringStatus:         'Recurring set to {frequency} ({pattern})',
         changeSettings:          'Change Settings',
         moreOptions:             'More Options',
@@ -449,6 +449,7 @@ export const DEFAULT_LABELS = deepFreeze({
         undoHistoryCleared:      'Undo history cleared.',
         taskOptionsUpdated:      'Task options updated',
         threeDotsDisabledTip:    'Long press a task to access options',
+        menuSectionsTip:         'Tap any section header to expand it',
         appStateNotReady:        'AppState not ready.',
         onboardingReset:         'Onboarding will show again next time you open the app.',
 
@@ -675,9 +676,9 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     modal: {
-        resetTasksTitle:    'Reset Tasks with Due Dates',
-        resetTasksMessage:  'This will complete all tasks and reset them to an uncompleted state.\n\nAny assigned Due Dates will be cleared.\n\nProceed?',
-        resetTasksConfirm:  'Reset Tasks',
+        resetTasksTitle:    'Complete Cycle with Due Dates',
+        resetTasksMessage:  'Completing all tasks will reset them to incomplete status.\n\nAll assigned due dates will be cleared.\n\nProceed?',
+        resetTasksConfirm:  'Complete Cycle',
         resetProgressTitle: 'Reset Routine Progress',
         resetProgressConfirm: 'Reset',
         clearHistoryTitle:  'Clear History',
@@ -1157,6 +1158,11 @@ export const DEFAULT_LABELS = deepFreeze({
         taskAdded:            'Task Added',
         taskDeleted:          'Task Deleted',
         taskEdited:           'Task Edited',
+        recurringTasksRemoved: 'Recurring Tasks Removed',
+        tasksRemovedOnReset:  'Tasks Removed on Reset',
+        taskPrioritySet:           'Priority Assigned',
+        taskPriorityRemoved:       'Priority Removed',
+        taskPriorityColorChanged:  'Priority Color Changed',
         recreate:             'Recreate',
         clearedTotal:         'cleared total',
         showingRecent:        'Showing last {count} ({days} days)'
@@ -1290,8 +1296,8 @@ export const DEFAULT_LABELS = deepFreeze({
     help: {
         welcome:           'Welcome to miniCycle!',
         modeAutoShort:     'Tasks automatically reset when all are completed.',
-        modeManualShort:   'Tasks only reset when you click the Complete button.',
-        modeTodoShort:     'Completed tasks are removed when you click Complete.',
+        modeManualShort:   'Tasks only reset when you click the Complete Cycle button.',
+        modeTodoShort:     'Completed tasks are removed when you click Clear Completed.',
         cycleComplete:     'Cycle Complete! Tasks reset.',
         tasksCleared:      '{count} {taskWord} cleared!',
         addFirstTask:      'Add your first task to get started!',
@@ -1300,7 +1306,8 @@ export const DEFAULT_LABELS = deepFreeze({
         clearFirst:        'Clear your first completed task!',
         completeFirst:     'Complete your first cycle!',
         progressCycles:    '{count} {cycleWord} completed',
-        progressCleared:   '{count} completed {taskWord} cleared'
+        progressCleared:   '{count} completed {taskWord} cleared',
+        customizerTip:     'Press the -/+ button to add or remove task option buttons in the task customizer'
     },
 
     // ========================================================================
@@ -1829,6 +1836,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'help.completeFirst',
     'help.progressCycles',
     'help.progressCleared',
+    'help.customizerTip',
 
     // Onboarding steps
     'onboarding.step1Title',

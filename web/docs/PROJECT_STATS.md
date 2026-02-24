@@ -13,7 +13,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.004 |
+| **App Version** | 2.005 |
 | **Lite Version** | 2.086 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 113 |
@@ -56,9 +56,9 @@
 | `miniCycle-main.js` | ~56 | Entrypoint |
 | `modules/boot/orchestrator.js` | ~659 | Pure sequence controller |
 | `modules/boot/coreBoot.js` | ~1045 | Core state & init |
-| `modules/boot/featureBoot.js` | ~547 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~827 | UI handlers |
-| **Total** | **~3134** | |
+| `modules/boot/featureBoot.js` | ~548 | DI wiring hub |
+| `modules/boot/uiBoot.js` | ~841 | UI handlers |
+| **Total** | **~3149** | |
 
 ---
 

@@ -390,7 +390,7 @@ export const MODULE_MANIFESTS = {
         path: '../progress/cycleCompletion.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification'],
-        optionalDeps: ['logHistoryEvent', 'checkAchievements', 'vocabThemeManager', 'renderVocabThemes'],
+        optionalDeps: ['logHistoryEvent', 'checkAchievements', 'vocabThemeManager', 'renderVocabThemes', 'showConfirmationModal'],
         provides: ['checkMiniCycle', 'updateProgressBar', 'incrementCycleCount', 'showCompletionAnimation', 'showClearAnimation', 'animateProgressBarFill', 'animateProgressBarEmpty'],
         api: 'progress'
     },
@@ -399,6 +399,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/taskUI.js',
         phase: PHASES.THEME_VISUAL, // Must load before TASK_MANAGEMENT so TaskOptionsVisibilityController is available
         requires: ['appInit', 'loadMiniCycleData'],
+        optionalDeps: ['showCustomizerTip'],
         provides: ['refreshTaskListUI', 'showTaskOptions', 'hideTaskOptions', 'checkCompleteAllButton', 'TaskOptionsVisibilityController', 'hideTaskButtons'],
         api: 'ui'
     },

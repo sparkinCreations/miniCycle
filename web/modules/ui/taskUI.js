@@ -37,7 +37,10 @@ const di = createDIModule('TaskUI', {
     isTouchDevice: optional(null),
 
     // From taskUtils - injected to avoid duplicate module loading
-    taskToAddTaskOptions: optional(null)
+    taskToAddTaskOptions: optional(null),
+
+    // Help window tip for task customizer
+    showCustomizerTip: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -304,6 +307,9 @@ export function showTaskOptions(event) {
     if (allowShow) {
         // Use centralized controller (handles mode checking automatically)
         TaskOptionsVisibilityController.show(taskElement, 'mouseenter');
+
+        // Show customizer tip on first hover (desktop only, once per reload)
+        _deps.showCustomizerTip?.('hover');
     }
 }
 
