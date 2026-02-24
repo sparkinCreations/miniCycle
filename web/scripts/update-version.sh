@@ -451,8 +451,9 @@ elif [ "$AUTO_MODE" = true ]; then
     if [[ "$CURRENT_VERSION" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
         MAJOR="${BASH_REMATCH[1]}"
         MINOR="${BASH_REMATCH[2]}"
-        NEW_MINOR=$((MINOR + 1))
-        NEW_VERSION="${MAJOR}.${NEW_MINOR}"
+        MINOR_LEN=${#MINOR}   # Preserve zero-padding width (e.g. "000" → 3)
+        NEW_MINOR=$((10#$MINOR + 1))  # 10# forces base-10 (avoids octal issues)
+        NEW_VERSION=$(printf "${MAJOR}.%0${MINOR_LEN}d" $NEW_MINOR)
     else
         echo "❌ Cannot parse current version for auto-bump: $CURRENT_VERSION"
         exit 1
