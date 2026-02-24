@@ -1,3 +1,7 @@
+## [1.1037] - 2026-02-24
+- Refactor code structure for improved readability and maintainability
+
+
 ## [1.1036] - 2026-02-24
 - feat: add clear undo history functionality and UI integration
 
