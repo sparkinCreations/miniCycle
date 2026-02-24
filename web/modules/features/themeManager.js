@@ -691,6 +691,9 @@ export class ThemeManager {
             const state = _deps.AppState?.get?.();
             if (!state) return;
 
+            // Reconcile unlocks for new users or missed unlock checks.
+            vtm.reconcileUnlocksFromProgress?.();
+
             const activeCycleId = state.appState?.activeCycleId;
             const activeCycle = state.data?.cycles?.[activeCycleId];
             const currentThemeId = activeCycle?.theme ?? 'classic';

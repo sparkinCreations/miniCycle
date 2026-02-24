@@ -523,6 +523,44 @@ export class VocabThemeManager {
         ) ?? null;
     }
 
+    /**
+     * Reconcile unlocked themes based on current progress.
+     * Useful when unlock checks were missed earlier in the session.
+     *
+     * @returns {string[]} Newly unlocked theme IDs
+     */
+    reconcileUnlocksFromProgress() {
+        const state = this.deps.AppState?.get();
+        if (!state) return [];
+
+        const progress = state.userProgress?.cyclesCompleted ?? 0;
+        const computed = this._computeUnlockedFromProgress(progress);
+
+        const storedList = Array.isArray(state.settings?.unlockedThemes)
+            ? state.settings.unlockedThemes
+            : [];
+
+        const currentUnlocked = new Set(storedList.length ? storedList : ['classic']);
+        const newlyUnlocked = [];
+
+        for (const id of computed) {
+            if (!currentUnlocked.has(id)) {
+                currentUnlocked.add(id);
+                if (id !== 'classic') newlyUnlocked.push(id);
+            }
+        }
+
+        if (newlyUnlocked.length > 0) {
+            this.deps.AppState.update(s => {
+                if (!s.settings) s.settings = {};
+                s.settings.unlockedThemes = Array.from(currentUnlocked);
+                s.metadata.lastModified = Date.now();
+            }, false);
+        }
+
+        return newlyUnlocked;
+    }
+
     // --------------------------------------------------------------------------
     // Private helpers
     // --------------------------------------------------------------------------
