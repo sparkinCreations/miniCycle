@@ -286,6 +286,13 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
     const updatedState = deps.AppState.get();
     const globalCyclesCompleted = updatedState.userProgress?.cyclesCompleted || 0;
     const totalTasksCompleted = updatedState.userProgress?.totalTasksCompleted || 0;
+
+    // Snapshot unlocked themes BEFORE any unlock logic runs.
+    // Both handleMilestoneUnlocks and checkAchievements can unlock themes,
+    // so the snapshot must precede both to detect newly added themes correctly.
+    const vtm = deps.vocabThemeManager;
+    const beforeUnlocked = vtm?.getUnlockedThemeIds ? new Set(vtm.getUnlockedThemeIds()) : null;
+
     handleMilestoneUnlocks(activeCycle, globalCyclesCompleted);
 
     // Log history event
@@ -297,19 +304,30 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
     }
 
     // Check for new achievements (OR-based: cycles OR tasks can unlock)
+    // NOTE: achievements can also unlock vocab themes via unlockThemeFromAchievement()
     if (typeof deps.checkAchievements === 'function') {
         deps.checkAchievements(globalCyclesCompleted, totalTasksCompleted);
     }
 
-    // Check for newly unlocked vocabulary themes
-    if (typeof deps.vocabThemeManager?.checkThemeUnlocks === 'function') {
-        const newThemes = deps.vocabThemeManager.checkThemeUnlocks();
-        if (newThemes.length > 0) {
-            // Refresh themes modal if it's currently open
+    // Check for newly unlocked vocabulary themes.
+    // Compare against beforeUnlocked (captured before all unlock logic) so themes
+    // added by either the achievement path or the cycle-threshold path are detected.
+    if (vtm?.getUnlockedThemeIds && beforeUnlocked !== null) {
+        vtm.init?.();
+        // Run cycle-threshold check (safe no-op if achievement already unlocked the theme)
+        if (typeof vtm.checkThemeUnlocks === 'function') {
+            vtm.checkThemeUnlocks();
+        }
+
+        const afterUnlocked = new Set(vtm.getUnlockedThemeIds());
+        const combined = new Set([...afterUnlocked].filter(id => !beforeUnlocked.has(id) && id !== 'classic'));
+
+        if (combined.size > 0) {
+            // Refresh themes modal to show newly unlocked themes
             deps.renderVocabThemes?.();
 
-            newThemes.forEach(themeId => {
-                const def = deps.vocabThemeManager.getThemeDefinition(themeId);
+            combined.forEach(themeId => {
+                const def = vtm.getThemeDefinition?.(themeId);
                 const name = def?.name ?? themeId;
                 const icon = def?.icons?.celebrate ?? '🎨';
                 deps.showNotification(

@@ -1,3 +1,7 @@
+## [1.1039] - 2026-02-24
+- feat: refactor theme management to streamline vocab theme rendering and initialization
+
+
 ## [1.1038] - 2026-02-24
 - feat: add apple touch icon and improve event listener management in various modules
 
