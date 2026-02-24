@@ -1,3 +1,7 @@
+## [2.1] - 2026-02-24
+- feat: add guidelines for distinguishing between noise and instrumentation console logs
+
+
 ## [1.1040] - 2026-02-24
 - fix: correct state snapshot timing to ensure accurate theme unlock detection
 - feat: implement theme unlock reconciliation for improved user experience
