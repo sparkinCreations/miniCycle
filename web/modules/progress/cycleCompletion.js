@@ -288,6 +288,7 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
     const totalTasksCompleted = updatedState.userProgress?.totalTasksCompleted || 0;
 
     // Snapshot unlocked themes BEFORE any unlock logic runs.
+    // Do not move this below checkAchievements() or the diff will be empty.
     // Both handleMilestoneUnlocks and checkAchievements can unlock themes,
     // so the snapshot must precede both to detect newly added themes correctly.
     const vtm = deps.vocabThemeManager;
