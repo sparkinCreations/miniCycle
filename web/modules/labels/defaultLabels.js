@@ -343,6 +343,7 @@ export const DEFAULT_LABELS = deepFreeze({
         // Cycle/routine notifications
         cycleDeletedSwitch:     '"{deleted}" deleted. "{active}" is now active.',
         cycleDeleted:           '"{name}" has been deleted.',
+        routineCreated:         'Created new routine "{name}"',
 
         // Recurring notifications
         recurringDisabled:      'Recurring disabled for this task',

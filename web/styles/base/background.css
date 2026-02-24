@@ -23,9 +23,25 @@ body::before {
     position: fixed;
     inset: 0;
     z-index: -1; /* Above body's gradient background, below body's content */
-    background: url("../../assets/images/pattern.svg") repeat;
+    background-image: url("../../assets/images/pattern.svg");
+    background-repeat: repeat;
     background-size: 400px 400px;
     pointer-events: none;
+}
+
+/* Per-theme SVG patterns — keyed off html[data-vocab-theme] set by themeManager.
+   Only background-image is overridden; repeat and size inherit from the base rule. */
+html[data-vocab-theme="habit-tracker"] body::before {
+    background-image: url("../../assets/images/pattern-habit-tracker.svg");
+}
+html[data-vocab-theme="fitness"] body::before {
+    background-image: url("../../assets/images/pattern-fitness.svg");
+}
+html[data-vocab-theme="scholar"] body::before {
+    background-image: url("../../assets/images/pattern-scholar.svg");
+}
+html[data-vocab-theme="cleaning"] body::before {
+    background-image: url("../../assets/images/pattern-cleaning.svg");
 }
 
 /* Custom app background color (Preferences - Default theme only) */

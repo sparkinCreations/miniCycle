@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    Habit Tracker Background Pattern
+    Icons: flame/streak, habit ring+check, star, water drop,
+           alarm clock, circular refresh arrow, running figure, calendar
+  -->
+  <g fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.2"
+     stroke-linecap="round" stroke-linejoin="round">
+
+    <!-- Flame / streak (top-left) -->
+    <g transform="rotate(-10 22 20)">
+      <!-- Outer flame body -->
+      <path d="M22 34 C17 29 12 23 15 16 C16 13 19 16 19 16 C18 10 21 6 25 4 C24 11 27 13 29 11 C30 8 28 5 27 4 C31 8 33 15 31 22 C30 17 27 18 27 22 C29 27 27 33 22 34 Z" stroke-width="1.4"/>
+      <!-- Inner flame -->
+      <path d="M22 31 C21 28 19 25 20 21 C21 20 22 21 22 21 C22 19 23 17 24 16 C24 19 25 21 26 20 C26 23 25 28 22 31 Z" stroke-width="0.7"/>
+      <!-- Base flicker -->
+      <path d="M18 34 Q22 36 26 34" stroke-width="0.7"/>
+    </g>
+
+    <!-- Habit ring with progress arc + checkmark (top-right) -->
+    <g transform="rotate(8 165 22)">
+      <!-- Background ring -->
+      <circle cx="165" cy="22" r="13" stroke-width="0.7"/>
+      <!-- Progress arc ~270° clockwise -->
+      <path d="M 165 9 A 13 13 0 1 1 152 22" stroke-width="2.2" stroke-linecap="round"/>
+      <!-- Checkmark -->
+      <path d="M157 22 L162 27 L173 16" stroke-width="1.8"/>
+    </g>
+
+    <!-- 5-point star / milestone (top-center) -->
+    <g transform="rotate(5 100 20)">
+      <path d="M100 9 L102.6 16.4 L110.5 16.6 L104.3 21.4 L106.5 28.9 L100 24.5 L93.5 28.9 L95.7 21.4 L89.5 16.6 L97.4 16.4 Z" stroke-width="1.3"/>
+    </g>
+
+    <!-- Water drop / hydration (left) -->
+    <g transform="rotate(-5 18 93)">
+      <path d="M18 78 Q10 91 10 97 Q10 108 18 108 Q26 108 26 97 Q26 91 18 78 Z" stroke-width="1.4"/>
+      <!-- Highlight -->
+      <path d="M14 88 Q12 93 12 97" stroke-width="0.7"/>
+      <!-- Ripple -->
+      <path d="M13 111 Q18 113 23 111" stroke-width="0.7"/>
+    </g>
+
+    <!-- Alarm clock / reminder (right) -->
+    <g transform="rotate(5 181 89)">
+      <!-- Face -->
+      <circle cx="181" cy="90" r="13" stroke-width="1.4"/>
+      <!-- Inner dial ring -->
+      <circle cx="181" cy="90" r="9" stroke-width="0.6"/>
+      <!-- Hour hand -->
+      <line x1="181" y1="83" x2="181" y2="90" stroke-width="1.6"/>
+      <!-- Minute hand -->
+      <line x1="181" y1="90" x2="189" y2="90" stroke-width="1.3"/>
+      <!-- Center dot -->
+      <circle cx="181" cy="90" r="1.5" stroke-width="0.8"/>
+      <!-- Bell posts -->
+      <path d="M172 82 L169 78" stroke-width="1.3"/>
+      <path d="M190 82 L193 78"/>
+      <!-- Bell heads -->
+      <path d="M167 77 Q166 74 169 74" stroke-width="0.9"/>
+      <path d="M195 77 Q196 74 193 74" stroke-width="0.9"/>
+      <!-- Tick marks (12/3/6/9) -->
+      <line x1="181" y1="78" x2="181" y2="80" stroke-width="0.8"/>
+      <line x1="181" y1="100" x2="181" y2="102" stroke-width="0.8"/>
+      <line x1="169" y1="90" x2="171" y2="90" stroke-width="0.8"/>
+      <line x1="191" y1="90" x2="193" y2="90" stroke-width="0.8"/>
+    </g>
+
+    <!-- Circular refresh arrow / daily habit loop (center) -->
+    <g transform="rotate(-10 96 118)">
+      <!-- 240° clockwise arc from 12-o'clock to 8-o'clock -->
+      <path d="M 96 106 A 12 12 0 1 1 86 124" stroke-width="1.6"/>
+      <!-- Arrowhead at endpoint (moving upper-left, wings go back-lower) -->
+      <path d="M 86 124 L 84 130 M 86 124 L 92 126" stroke-width="1.4"/>
+    </g>
+
+    <!-- Running figure / activity (bottom-left) -->
+    <g transform="rotate(6 36 160)">
+      <circle cx="38" cy="149" r="4" stroke-width="1.4"/>
+      <!-- Torso (leaning forward) -->
+      <line x1="38" y1="153" x2="36" y2="163" stroke-width="1.3"/>
+      <!-- Legs in stride -->
+      <path d="M36 163 L30 172" stroke-width="1.3"/>
+      <path d="M36 163 L44 170" stroke-width="1.3"/>
+      <!-- Arms pumping -->
+      <path d="M37 156 L30 152" stroke-width="1.2"/>
+      <path d="M37 156 L44 158" stroke-width="1.2"/>
+      <!-- Motion lines -->
+      <path d="M26 169 L28 171" stroke-width="0.7"/>
+      <path d="M24 165 L26 167" stroke-width="0.7"/>
+    </g>
+
+    <!-- Calendar with day grid and checkmark (bottom-right) -->
+    <g transform="rotate(-6 162 163)">
+      <!-- Body -->
+      <rect x="150" y="152" width="24" height="23" rx="2" stroke-width="1.4"/>
+      <!-- Header separator -->
+      <line x1="150" y1="160" x2="174" y2="160" stroke-width="1.2"/>
+      <!-- Binding rings -->
+      <line x1="156" y1="149" x2="156" y2="155" stroke-width="1.5"/>
+      <line x1="168" y1="149" x2="168" y2="155" stroke-width="1.5"/>
+      <!-- Day dots in header -->
+      <circle cx="157" cy="156" r="1" stroke-width="0.6"/>
+      <circle cx="163" cy="156" r="1" stroke-width="0.6"/>
+      <circle cx="169" cy="156" r="1" stroke-width="0.6"/>
+      <!-- Checkmark in body -->
+      <path d="M155 167 L159 172 L169 163" stroke-width="1.7"/>
+    </g>
+
+  </g>
+</svg>
