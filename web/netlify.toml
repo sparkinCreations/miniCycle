@@ -75,6 +75,13 @@
     # Cache manifest for PWA (less critical, can be cached briefly)
     Cache-Control = "public, max-age=3600"
 
+# CSS files - use no-cache (revalidate) so version param changes take effect
+# Without this, CSS falls through to the default 1-year max-age
+[[headers]]
+  for = "*.css"
+  [headers.values]
+    Cache-Control = "no-cache, max-age=0"
+
 # JavaScript modules - use no-cache (revalidate) but allow service worker caching
 # no-store is too aggressive and breaks offline support
 # The version parameter (?v=X.XXX) handles cache busting for modules

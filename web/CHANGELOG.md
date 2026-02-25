@@ -1,3 +1,7 @@
+## [2.012] - 2026-02-25
+- feat: enhance cycle data export and import with history and cleared tasks, improve focus mode layout and transitions
+
+
 ## [2.011] - 2026-02-25
 - feat: implement focus mode enhancements with new UI elements and improved button positioning
 

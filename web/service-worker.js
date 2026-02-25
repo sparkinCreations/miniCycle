@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.011';
-var CACHE_VERSION = 'v850';
+var APP_VERSION = '2.012';
+var CACHE_VERSION = 'v851';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -166,38 +166,44 @@ var BOOT_CRITICAL = [
 ];
 
 // CSS files - all @imports from main.css (required for offline styling)
+// ✅ Versioned with APP_VERSION for cache busting (matches main.css ?v= params)
 var CSS_FILES = [
-  './styles/base/variables.css',
-  './styles/base/reset.css',
-  './styles/base/background.css',
-  './styles/base/typography.css',
-  './styles/base/animations.css',
-  './styles/base/accessibility.css',
-  './styles/layout/app-container.css',
-  './styles/layout/header.css',
-  './styles/layout/safe-areas.css',
-  './styles/components/task-input.css',
-  './styles/components/task-list.css',
-  './styles/components/task-options.css',
-  './styles/components/buttons.css',
-  './styles/components/icons.css',
-  './styles/components/modals.css',
-  './styles/components/notifications.css',
-  './styles/components/stats-panel.css',
-  './styles/components/progress-bar.css',
-  './styles/components/forms.css',
-  './styles/components/settings.css',
-  './styles/components/mode-selector.css',
-  './styles/components/routine-switcher.css',
-  './styles/components/games.css',
-  './styles/components/onboarding.css',
-  './styles/components/recurring.css',
-  './styles/components/storage.css',
-  './styles/components/footer.css',
-  './styles/components/menu.css',
-  './styles/utilities/helpers.css',
-  './styles/utilities/responsive.css',
-  './styles/utilities/dark-mode.css'
+  './styles/base/variables.css?v=' + APP_VERSION,
+  './styles/themes/themes.css?v=' + APP_VERSION,
+  './styles/base/reset.css?v=' + APP_VERSION,
+  './styles/base/background.css?v=' + APP_VERSION,
+  './styles/base/typography.css?v=' + APP_VERSION,
+  './styles/base/animations.css?v=' + APP_VERSION,
+  './styles/base/accessibility.css?v=' + APP_VERSION,
+  './styles/layout/app-container.css?v=' + APP_VERSION,
+  './styles/layout/header.css?v=' + APP_VERSION,
+  './styles/layout/safe-areas.css?v=' + APP_VERSION,
+  './styles/components/task-input.css?v=' + APP_VERSION,
+  './styles/components/task-list.css?v=' + APP_VERSION,
+  './styles/components/task-options.css?v=' + APP_VERSION,
+  './styles/components/buttons.css?v=' + APP_VERSION,
+  './styles/components/icons.css?v=' + APP_VERSION,
+  './styles/components/modals.css?v=' + APP_VERSION,
+  './styles/components/themes-modal.css?v=' + APP_VERSION,
+  './styles/components/notifications.css?v=' + APP_VERSION,
+  './styles/components/stats-panel.css?v=' + APP_VERSION,
+  './styles/components/progress-bar.css?v=' + APP_VERSION,
+  './styles/components/forms.css?v=' + APP_VERSION,
+  './styles/components/settings.css?v=' + APP_VERSION,
+  './styles/components/mode-selector.css?v=' + APP_VERSION,
+  './styles/components/routine-switcher.css?v=' + APP_VERSION,
+  './styles/components/games.css?v=' + APP_VERSION,
+  './styles/components/onboarding.css?v=' + APP_VERSION,
+  './styles/components/focus-mode.css?v=' + APP_VERSION,
+  './styles/components/recurring.css?v=' + APP_VERSION,
+  './styles/components/storage.css?v=' + APP_VERSION,
+  './styles/components/testing.css?v=' + APP_VERSION,
+  './styles/components/footer.css?v=' + APP_VERSION,
+  './styles/components/menu.css?v=' + APP_VERSION,
+  './styles/components/quick-actions.css?v=' + APP_VERSION,
+  './styles/utilities/helpers.css?v=' + APP_VERSION,
+  './styles/utilities/responsive.css?v=' + APP_VERSION,
+  './styles/utilities/dark-mode.css?v=' + APP_VERSION
 ];
 
 // Lite version shell (smaller precache)
