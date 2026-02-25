@@ -490,6 +490,15 @@ export const MODULE_MANIFESTS = {
         optional: true
     },
 
+    focusMode: {
+        path: '../ui/focusMode.js',
+        phase: PHASES.UI_MANAGERS,
+        optionalDeps: ['showNotification', 'safeAddEventListener'],
+        provides: ['focusMode'],
+        api: 'ui',
+        optional: true
+    },
+
     // =========================================================================
     // PHASE 7: FEATURES - History, Achievements
     // =========================================================================

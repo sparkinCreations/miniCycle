@@ -408,6 +408,7 @@ export const DOM_CLASSES = Object.freeze({
     MODE_DESCRIPTION_VISIBLE: 'mode-description-visible',
     HELP_WINDOW_SIDE: 'help-window-side',
     ONBOARDING_ACTIVE: 'onboarding-active',
+    FOCUS_MODE: 'focus-mode',
     DROPDOWN_OPEN: 'dropdown-open',
 
     // ---- Task Options Visibility ----
@@ -743,6 +744,8 @@ export const DOM_IDS = Object.freeze({
     LOADING_OVERLAY: 'loading-overlay',
     CLEAR_CACHE_BTN: 'clear-cache-btn',
     HELP_WINDOW: 'help-window',
+    FOCUS_MODE_BTN: 'focus-mode-btn',
+    COMPLETE_ALL_CONTAINER: 'complete-all-and-help-window-container',
     NOTIFICATION_CONTAINER: 'notification-container',
     NEW_TASK_INPUT: 'new-task-input',
     PULL_REFRESH_INDICATOR: 'pull-refresh-indicator',

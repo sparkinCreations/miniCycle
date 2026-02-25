@@ -924,6 +924,21 @@ export const DEFAULT_LABELS = deepFreeze({
     },
 
     // ========================================================================
+    // 18b. FOCUS MODE
+    // ========================================================================
+
+    focusMode: {
+        enter:          'Focus Mode',
+        enterTitle:     'Hide distractions and focus on tasks',
+        exit:           'Exit Focus Mode',
+        exitTitle:      'Show all UI elements',
+        enterAria:      'Enter focus mode — hides header, navigation, and other UI elements',
+        exitAria:       'Exit focus mode — restores all UI elements',
+        activated:      'Focus mode activated',
+        deactivated:    'Focus mode deactivated'
+    },
+
+    // ========================================================================
     // 19. QUICK ACTIONS
     // ========================================================================
 
