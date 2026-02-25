@@ -68,15 +68,15 @@ export class FocusMode {
 
     /**
      * Create the focus mode toggle button and insert it into the DOM.
+     * Button is absolutely positioned inside #task-view so it never
+     * affects layout flow of any child container.
      */
     _createButton() {
-        const container = document.getElementById(DOM_IDS.COMPLETE_ALL_CONTAINER);
-        if (!container) {
-            console.warn('FocusMode: container not found');
+        const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
+        if (!taskView) {
+            console.warn('FocusMode: task-view not found');
             return;
         }
-
-        const completeBtn = document.getElementById(DOM_IDS.COMPLETE_ALL);
 
         // Create focus button
         this._button = document.createElement('button');
@@ -84,19 +84,10 @@ export class FocusMode {
         this._button.className = 'focus-mode-btn';
         this._button.title = getLabel('focusMode.enterTitle');
         this._button.setAttribute('aria-label', getLabel('focusMode.enterAria'));
-        this._button.innerHTML = getIcon('crosshair');
+        this._button.innerHTML = getIcon('expand');
 
-        // Wrap Complete button and Focus button in a row div
-        if (completeBtn && completeBtn.parentNode === container) {
-            const row = document.createElement('div');
-            row.className = 'complete-row';
-            container.insertBefore(row, completeBtn);
-            row.appendChild(completeBtn);
-            row.appendChild(this._button);
-        } else {
-            // Auto-cycle mode or no complete button: focus button alone
-            container.appendChild(this._button);
-        }
+        // Append to task-view — positioned via CSS (absolute)
+        taskView.appendChild(this._button);
     }
 
     /**
@@ -114,9 +105,9 @@ export class FocusMode {
             this._button.addEventListener('click', this._clickHandler);
         }
 
-        // Escape key exits focus mode
+        // Escape key exits focus mode (skip if a modal/dialog is open)
         this._keyHandler = (e) => {
-            if (e.key === 'Escape' && this._active) {
+            if (e.key === 'Escape' && this._active && !document.querySelector('dialog[open]')) {
                 this.deactivate();
             }
         };
@@ -136,6 +127,8 @@ export class FocusMode {
 
     /**
      * Activate focus mode — hide chrome.
+     * Reparents button to document.body so position:fixed works
+     * (escapes #task-view's transform containing block).
      */
     activate() {
         if (this._active) return;
@@ -144,7 +137,8 @@ export class FocusMode {
         document.body.classList.add(DOM_CLASSES.FOCUS_MODE);
 
         if (this._button) {
-            this._button.innerHTML = getIcon('expand');
+            document.body.appendChild(this._button);
+            this._button.innerHTML = getIcon('compress');
             this._button.title = getLabel('focusMode.exitTitle');
             this._button.setAttribute('aria-label', getLabel('focusMode.exitAria'));
         }
@@ -153,19 +147,42 @@ export class FocusMode {
     }
 
     /**
-     * Deactivate focus mode — restore chrome.
+     * Deactivate focus mode — animate out, then restore chrome.
+     * Pins task-view height so the CSS transition can animate the collapse,
+     * then reparents button back to #task-view after the animation.
      */
     deactivate() {
         if (!this._active) return;
         this._active = false;
 
+        const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
+
+        // Pin current height so CSS can transition to the smaller max-height
+        if (taskView) {
+            taskView.style.height = `${taskView.offsetHeight}px`;
+        }
+
         document.body.classList.remove(DOM_CLASSES.FOCUS_MODE);
 
+        // After a frame, remove the pinned height so it collapses with transition
+        if (taskView) {
+            requestAnimationFrame(() => {
+                taskView.style.height = '';
+            });
+        }
+
         if (this._button) {
-            this._button.innerHTML = getIcon('crosshair');
+            this._button.innerHTML = getIcon('expand');
             this._button.title = getLabel('focusMode.enterTitle');
             this._button.setAttribute('aria-label', getLabel('focusMode.enterAria'));
         }
+
+        // Reparent button after animation completes
+        setTimeout(() => {
+            if (this._button && taskView) {
+                taskView.appendChild(this._button);
+            }
+        }, 400);
 
         this.deps.showNotification?.(getLabel('focusMode.deactivated'), 'info', 1500);
     }

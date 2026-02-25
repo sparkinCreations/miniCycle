@@ -385,11 +385,11 @@ body.hide-help-window .help-window {
 }
 
 .undo-redo-btn#undo-btn {
-    left: 42%;
+    left: 38%;
 }
 
 .undo-redo-btn#redo-btn {
-    right: 42%;
+    right: 38%;
 }
 
 .undo-redo-btn:hover {

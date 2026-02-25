@@ -8,6 +8,83 @@
    FOCUS MODE STATE — HIDE CHROME
    ============================================================================= */
 
+/* Selectors map to constants.js:
+   .fixed-header-container  → DOM_CLASSES.FIXED_HEADER_CONTAINER
+   #slide-left              → DOM_IDS.SLIDE_LEFT
+   #slide-right             → DOM_IDS.SLIDE_RIGHT
+   #quick-actions-window    → DOM_IDS.QUICK_ACTIONS_WINDOW
+   #help-window             → DOM_IDS.HELP_WINDOW
+   #footer-container        → DOM_IDS.FOOTER_CONTAINER
+   #personalization-btn     → DOM_IDS.PERSONALIZATION_BTN
+   #quick-dark-toggle       → DOM_IDS.QUICK_DARK_TOGGLE */
+/* Overlay base — uses ::after since ::before is the SVG pattern (background.css) */
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+    z-index: var(--z-base);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease,
+                background 0.4s ease,
+                backdrop-filter 0.4s ease,
+                -webkit-backdrop-filter 0.4s ease;
+}
+
+/* Dark blurred overlay to reduce distractions */
+body.focus-mode::after {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    opacity: 1;
+}
+
+/* =============================================================================
+   FOCUS MODE LAYOUT — Expand task list into freed vertical space
+   ============================================================================= */
+
+/* Smooth expansion transition on task-view and task-card */
+#task-view {
+    transition: height var(--transition-normal) ease,
+                max-height var(--transition-normal) ease;
+}
+
+.task-card,
+.task-list-container {
+    transition: max-height var(--transition-normal) ease;
+}
+
+body.focus-mode #task-view {
+    max-height: calc(100vh - 40px);
+    max-height: calc(100dvh - 40px);
+}
+
+body.focus-mode .task-card {
+    max-height: calc(100vh - 120px);
+    max-height: calc(100dvh - 120px);
+}
+
+/* The real scroll constraint — normally calc(100vh - 385px) */
+body.focus-mode .task-list-container {
+    max-height: calc(100vh - 150px);
+    max-height: calc(100dvh - 150px);
+}
+
+/* Chrome elements fade in/out */
+.fixed-header-container,
+#slide-left,
+#slide-right,
+#quick-actions-window,
+#help-window,
+#footer-container,
+#personalization-btn,
+#quick-dark-toggle {
+    transition: opacity 0.3s ease;
+}
+
 body.focus-mode .fixed-header-container,
 body.focus-mode #slide-left,
 body.focus-mode #slide-right,
@@ -16,30 +93,21 @@ body.focus-mode #help-window,
 body.focus-mode #footer-container,
 body.focus-mode #personalization-btn,
 body.focus-mode #quick-dark-toggle {
-    display: none;
-}
-
-/* =============================================================================
-   FOCUS MODE LAYOUT ADJUSTMENTS
-   Give task-view more vertical space when header/footer are hidden
-   ============================================================================= */
-
-body.focus-mode #task-view {
-    max-height: calc(100vh - 80px);
-    max-height: calc(100dvh - 80px);
-}
-
-body.focus-mode .task-card {
-    max-height: calc(100vh - 200px);
-    max-height: calc(100dvh - 200px);
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* =============================================================================
    FOCUS MODE BUTTON
-   Small circular icon button, sits adjacent to Complete button
+   Absolutely positioned inside #task-view (position:fixed, acts as
+   positioning context). Sits at the bottom-right, near the progress bar,
+   without affecting layout flow.
    ============================================================================= */
 
 .focus-mode-btn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -48,18 +116,17 @@ body.focus-mode .task-card {
     border-radius: var(--radius-full);
     border: 1px solid rgba(255, 255, 255, 0.25);
     background: rgba(255, 255, 255, 0.12);
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--pref-panel-text, rgba(255, 255, 255, 0.85));
     cursor: pointer;
     transition: all var(--transition-fast) ease;
     padding: 0;
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
-    flex-shrink: 0;
 }
 
 .focus-mode-btn:hover {
     background: rgba(255, 255, 255, 0.22);
-    color: var(--color-white);
+    color: var(--pref-panel-text, var(--color-white));
     transform: scale(1.08);
 }
 
@@ -72,20 +139,79 @@ body.focus-mode .task-card {
     height: 16px;
 }
 
-/* Active state — button stands out more */
+/* Active state — fixed to bottom-right of viewport so it's always reachable */
 body.focus-mode .focus-mode-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 48px;
+    height: 48px;
     background: rgba(255, 255, 255, 0.25);
     border-color: rgba(255, 255, 255, 0.4);
-    color: var(--color-white);
+    color: var(--pref-panel-text, var(--color-white));
+    z-index: var(--z-notification);
+    box-shadow: var(--shadow-md);
+}
+
+body.focus-mode .focus-mode-btn svg {
+    width: 20px;
+    height: 20px;
 }
 
 /* =============================================================================
-   COMPLETE ROW — Flex row holding Complete button + Focus button
+   MOBILE — Float exit button so it's always reachable
+   Without this, the button can scroll out of view on long task lists,
+   leaving no way to exit focus mode (no Escape key on mobile).
    ============================================================================= */
 
-.complete-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-3);
+/* Tablet: widen task list between mobile and desktop breakpoints */
+@media (min-width: 769px) and (max-width: 1023px) {
+    #task-view {
+        max-width: 55vw;
+    }
+
+    .task-card {
+        max-width: 55vw;
+    }
+}
+
+@media (max-width: 1023px) {
+    /* Shrink progress bar to make room for the focus button beside it */
+    .progress-container {
+        width: 78% !important;
+    }
+
+    /* Align button with progress bar level, just outside task-view edge */
+    .focus-mode-btn {
+        bottom: 110px;
+        right: -10px;
+    }
+
+    /* Shift task view down so title isn't cut off at top */
+    body.focus-mode #task-view {
+        top: calc(50% + 20px);
+    }
+
+    /* Focus mode: fixed to bottom-right of viewport */
+    body.focus-mode .focus-mode-btn {
+        position: fixed;
+        bottom: calc(env(safe-area-inset-bottom) + 16px);
+        right: 16px;
+        z-index: var(--z-notification);
+        width: 44px;
+        height: 44px;
+        box-shadow: var(--shadow-md);
+    }
+
+    body.focus-mode .focus-mode-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+/* Mobile: lower the focus button closer to progress bar */
+@media (max-width: 768px) {
+    .focus-mode-btn {
+        bottom: 65px;
+    }
 }

@@ -1683,6 +1683,16 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'taskOptions.markedForRemoval',
     'taskOptions.global',
 
+    // Focus mode
+    'focusMode.enter',
+    'focusMode.enterTitle',
+    'focusMode.exit',
+    'focusMode.exitTitle',
+    'focusMode.enterAria',
+    'focusMode.exitAria',
+    'focusMode.activated',
+    'focusMode.deactivated',
+
     // Feedback
     'feedback.sending',
     'feedback.errorSend',
