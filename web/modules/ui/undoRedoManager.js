@@ -225,7 +225,8 @@ const di = createDIModule('UndoRedoManager', {
   safeAddEventListener: optional(null),
   showNotification: optional(null),
   // UIOrchestrator for smart UI updates (optional - falls back to refreshUIFromState)
-  UIOrchestrator: optional(null)
+  UIOrchestrator: optional(null),
+  logHistoryEvent: optional(null)  // (type, details) => void — logs undo/redo to routine history
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
@@ -531,6 +532,8 @@ export function captureStateSnapshot(state) {
     autoReset: currentCycle.autoReset,
     deleteCheckedTasks: currentCycle.deleteCheckedTasks,
     cycleCount: currentCycle.cycleCount || 0,  // ✅ Include cycle count in snapshot
+    theme: currentCycle.theme || 'classic',
+    clearedTasks: currentCycle.clearedTasks ? structuredClone(currentCycle.clearedTasks) : null,
     timestamp: Date.now()
   };
 
@@ -599,7 +602,8 @@ export function buildSnapshotSignature(s) {
     ti: s.title || '',
     ar: !!s.autoReset,
     dc: !!s.deleteCheckedTasks,
-    cc: s.cycleCount || 0
+    cc: s.cycleCount || 0,
+    th: s.theme || 'classic'
   });
 }
 
@@ -950,7 +954,12 @@ export async function performStateBasedUndo() {
       if ('autoReset' in snap) cycle.autoReset = snap.autoReset;
       if ('deleteCheckedTasks' in snap) cycle.deleteCheckedTasks = snap.deleteCheckedTasks;
       if ('cycleCount' in snap) cycle.cycleCount = snap.cycleCount;  // ✅ Restore cycle count
+      if ('theme' in snap) cycle.theme = snap.theme;
+      if ('clearedTasks' in snap) cycle.clearedTasks = snap.clearedTasks ? structuredClone(snap.clearedTasks) : cycle.clearedTasks;
     }, false);
+
+    // Log undo as a history event
+    _deps.logHistoryEvent?.('undo', { description: transactionDiff.description || 'Undo' });
 
     // Use UIOrchestrator if available, otherwise fall back to refreshUIFromState
     handleUndoRedoUIUpdate(transactionDiff, _deps.AppState.get());
@@ -1090,7 +1099,12 @@ export async function performStateBasedRedo() {
       if ('autoReset' in snap) cycle.autoReset = snap.autoReset;
       if ('deleteCheckedTasks' in snap) cycle.deleteCheckedTasks = snap.deleteCheckedTasks;
       if ('cycleCount' in snap) cycle.cycleCount = snap.cycleCount;  // ✅ Restore cycle count
+      if ('theme' in snap) cycle.theme = snap.theme;
+      if ('clearedTasks' in snap) cycle.clearedTasks = snap.clearedTasks ? structuredClone(snap.clearedTasks) : cycle.clearedTasks;
     }, false);
+
+    // Log redo as a history event
+    _deps.logHistoryEvent?.('redo', { description: transactionDiff.description || 'Redo' });
 
     // Use UIOrchestrator if available, otherwise fall back to refreshUIFromState
     handleUndoRedoUIUpdate(transactionDiff, _deps.AppState.get());

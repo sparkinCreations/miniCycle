@@ -1,3 +1,7 @@
+## [2.011] - 2026-02-25
+- feat: implement focus mode enhancements with new UI elements and improved button positioning
+
+
 ## [2.010] - 2026-02-25
 - chore: update version to 2.009 and reflect changes across relevant files
 

@@ -547,7 +547,9 @@ export async function processImportedData(fileContent) {
             task.dueDate = null;
         });
         importedData.cycleCount = 0;
-        console.log('📋 Template mode: reset task completion, due dates, and cycle count');
+        importedData.history = null;
+        importedData.clearedTasks = null;
+        console.log('📋 Template mode: reset task completion, due dates, cycle count, history, and cleared tasks');
     }
 
     // Security: Always sanitize cycle title, with or without DataValidator
@@ -646,6 +648,43 @@ export async function processImportedData(fileContent) {
         themeWasDowngraded = true;
     }
 
+    // Sanitize history — only allow valid structure with events array
+    let safeHistory = null;
+    if (importedData.history && typeof importedData.history === 'object') {
+        const h = importedData.history;
+        const maxEvents = typeof h.maxEvents === 'number' ? Math.min(h.maxEvents, 500) : 100;
+        const events = Array.isArray(h.events)
+            ? h.events.filter(e => e && typeof e === 'object' && typeof e.type === 'string')
+                .slice(0, maxEvents)
+                .map(e => ({
+                    type: fallbackSanitize(e.type, 50),
+                    timestamp: typeof e.timestamp === 'number' ? e.timestamp : Date.now(),
+                    details: (e.details && typeof e.details === 'object') ? e.details : {}
+                }))
+            : [];
+        safeHistory = { events, maxEvents };
+    }
+
+    // Sanitize clearedTasks — only allow valid structure
+    let safeClearedTasks = null;
+    if (importedData.clearedTasks && typeof importedData.clearedTasks === 'object') {
+        const ct = importedData.clearedTasks;
+        const entries = Array.isArray(ct.entries)
+            ? ct.entries.filter(e => e && typeof e === 'object')
+                .slice(0, 500)
+                .map(e => ({
+                    text: fallbackSanitize(e.text || '', MAX_TASK_TEXT_LENGTH),
+                    clearedAt: typeof e.clearedAt === 'number' ? e.clearedAt : Date.now(),
+                    ...(e.id ? { id: fallbackSanitize(String(e.id), 100) } : {})
+                }))
+            : [];
+        safeClearedTasks = {
+            entries,
+            totalCleared: typeof ct.totalCleared === 'number' ? ct.totalCleared : entries.length,
+            autoPruneEnabled: ct.autoPruneEnabled !== false
+        };
+    }
+
     // ✅ Create imported cycle via AppState.update() - use title as storage key (consistent with app)
     appState.update(state => {
         state.data.cycles[finalCycleTitle] = {
@@ -659,7 +698,9 @@ export async function processImportedData(fileContent) {
             theme: resolvedTheme,
             recurringTemplates: mergedTemplates,
             taskOptionButtons: safeTaskOptionButtons,
-            reminders: safeReminders
+            reminders: safeReminders,
+            history: safeHistory,
+            clearedTasks: safeClearedTasks
         };
 
         state.appState.activeCycleId = finalCycleTitle;

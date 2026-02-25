@@ -115,7 +115,10 @@ export function setupShareRoutineButton() {
             taskOptionButtons: cycle.taskOptionButtons || null,
             recurringTemplates: cycle.recurringTemplates || {},
             reminders: cycle.reminders || null,
-            createdAt: cycle.createdAt || null
+            createdAt: cycle.createdAt || null,
+            theme: cycle.theme || 'classic',
+            history: cycle.history || null,
+            clearedTasks: cycle.clearedTasks || null
         };
 
         const cycleName = cycle.title || activeCycle;
