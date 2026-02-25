@@ -1,3 +1,7 @@
+## [2.016] - 2026-02-25
+- fix: adjust CSS selectors for task card and list container in focus mode for improved layout
+
+
 ## [2.015] - 2026-02-25
 - fix: update Content-Security-Policy to include additional script hash for improved security
 

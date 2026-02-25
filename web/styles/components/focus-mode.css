@@ -219,7 +219,7 @@ body.focus-mode .focus-mode-btn svg {
 @media (max-width: 1023px) {
     /* Shift task view down so title isn't cut off at top */
     body.focus-mode #task-view {
-        top: calc(50% + 20px);
+        top: calc(50% - 10px);
     }
 
     /* Focus mode: fixed to bottom-right of viewport */
