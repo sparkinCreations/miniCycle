@@ -457,6 +457,62 @@
     opacity: 1; /* Make it fully visible on hover */
 }
 
+        /* Skip link — hidden off-screen, visible on focus */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #000;
+            color: #fff;
+            padding: 8px 16px;
+            z-index: 1000;
+            font-size: 0.9rem;
+            text-decoration: none;
+            border-radius: 0 0 4px 0;
+            transition: top 0.2s;
+        }
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* Focus-visible styles */
+        *:focus-visible {
+            outline: 2px solid white;
+            outline-offset: 2px;
+        }
+        .cta-button:focus-visible,
+        .cta-button-two:focus-visible {
+            outline: 3px solid white;
+            outline-offset: 3px;
+        }
+        .nav-button:focus-visible {
+            outline: 3px solid white;
+            outline-offset: 3px;
+        }
+        .dot:focus-visible {
+            outline: 2px solid white;
+            outline-offset: 3px;
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            .video-display img,
+            .features-slide,
+            .video-info,
+            .dot,
+            .nav-button,
+            .cta-button,
+            .cta-button-two {
+                transition: none !important;
+            }
+        }
+
         @media (max-width: 768px) {
             .logo-container {
                 gap: 10px;
@@ -490,6 +546,8 @@
     </style>
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <main id="main-content">
     <div class="container">
         <div class="logo-container">
           <!--<img src="../assets/images/logo/logo.png" alt="miniCycle Logo" class="logo-icon">-->
@@ -505,7 +563,7 @@
             </div>
             <!-- Changelog Section (Collapsible) -->
             <div id="changelog" style="margin-top: 15px; text-align: center; padding: 0 20px;">
-                <button id="changelog-toggle" style="background: none; border: none; color: rgba(0,0,0,0.5); font-size: 0.8rem; cursor: pointer; padding: 5px 12px; transition: color 0.2s;" onmouseover="this.style.color='rgba(0,0,0,0.8)'" onmouseout="this.style.color='rgba(0,0,0,0.5)'">
+                <button id="changelog-toggle" aria-expanded="false" aria-controls="changelog-content" style="background: none; border: none; color: rgba(0,0,0,0.5); font-size: 0.8rem; cursor: pointer; padding: 5px 12px; transition: color 0.2s;" onmouseover="this.style.color='rgba(0,0,0,0.8)'" onmouseout="this.style.color='rgba(0,0,0,0.5)'">
                     Changelog <span id="changelog-arrow" style="font-size: 0.65rem; transition: transform 0.3s ease; display: inline-block;">▼</span>
                 </button>
                 <div id="changelog-content" style="max-height: 0; overflow: hidden; font-size: 0.8rem; line-height: 1.5; transition: max-height 0.4s ease; text-align: center; background: rgba(0,0,0,0.08); border-radius: 10px; margin-top: 8px; color: rgba(0,0,0,0.7);">
@@ -518,33 +576,33 @@
         </div>
 
         <div class="video-showcase">
-            <div class="slogan-three">Your routine in action:</div>
+            <h1 class="slogan-three">Your routine in action:</h1>
          <p class="slogan"> Complete → Cycle → Repeat</p>
             <div class="video-container">
-                <button class="nav-button" id="prevBtn">‹</button>
+                <button class="nav-button" id="prevBtn" aria-label="Previous slide">‹</button>
                 
                 <div class="video-display">
                     <img id="currentVideo" src="../assets/videos/samples/Daily_Home_Routine.gif" alt="miniCycle Demo">
                     <div id="featuresSlide" class="features-slide">
-                        <h3 style="font-size: 1.8rem; margin-bottom: 1rem;">Why Choose miniCycle? ✨</h3>
+                        <h3 style="font-size: 1.8rem; margin-bottom: 1rem;">Why Choose miniCycle? <span aria-hidden="true">✨</span></h3>
                         <div class="features-grid-mini">
                             <div class="feature-item">
-                                <div class="feature-icon-large">🔒</div>
+                                <div class="feature-icon-large" aria-hidden="true">🔒</div>
                                 <h4>Privacy Focused</h4>
                                 <p>Your data stays on your device. No tracking, no analytics, no cloud storage.</p>
                             </div>
                             <div class="feature-item">
-                                <div class="feature-icon-large">📱</div>
+                                <div class="feature-icon-large" aria-hidden="true">📱</div>
                                 <h4>Mobile First PWA</h4>
                                 <p>Install on any device. Works offline. Native app experience.</p>
                             </div>
                             <div class="feature-item">
-                                <div class="feature-icon-large">💾</div>
+                                <div class="feature-icon-large" aria-hidden="true">💾</div>
                                 <h4>Export .MCYC Files</h4>
                                 <p>Download your routines as portable files. Share and backup easily.</p>
                             </div>
                             <div class="feature-item">
-                                <div class="feature-icon-large">🎨</div>
+                                <div class="feature-icon-large" aria-hidden="true">🎨</div>
                                 <h4>Beautiful Themes</h4>
                                 <p>Unlock stunning themes as you complete cycles and build habits.</p>
                             </div>
@@ -552,7 +610,7 @@
                     </div>
                 </div>
                 
-                <button class="nav-button" id="nextBtn">›</button>
+                <button class="nav-button" id="nextBtn" aria-label="Next slide">›</button>
             </div>
             
             <div class="video-info">
@@ -560,11 +618,11 @@
                 <p class="video-description" id="videoDescription">Streamline your daily home tasks with organized cycles that keep you productive and focused.</p>
             </div>
             
-            <div class="progress-dots" id="progressDots">
-                <span class="dot active" data-index="0"></span>
-                <span class="dot" data-index="1"></span>
-                <span class="dot" data-index="2"></span>
-                <span class="dot" data-index="3"></span>
+            <div class="progress-dots" id="progressDots" role="tablist" aria-label="Slide navigation">
+                <span class="dot active" data-index="0" role="tab" aria-label="Slide 1" aria-selected="true" tabindex="0"></span>
+                <span class="dot" data-index="1" role="tab" aria-label="Slide 2" aria-selected="false" tabindex="0"></span>
+                <span class="dot" data-index="2" role="tab" aria-label="Slide 3" aria-selected="false" tabindex="0"></span>
+                <span class="dot" data-index="3" role="tab" aria-label="Slide 4" aria-selected="false" tabindex="0"></span>
             </div>
 
             <div style="margin-top: 20px; display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
@@ -582,9 +640,10 @@
         </div>
     </div>
 
-           <div class="footer-bottom">
-                <p id="copyright">&copy; 2026 <a href="https://sparkincreations.com" target="_blank">sparkinCreations</a></p>
-            </div>
+    </main>
+           <footer class="footer-bottom" role="contentinfo">
+                <p id="copyright">&copy; 2026 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a></p>
+            </footer>
 
     <script>
         const videos = [
@@ -687,7 +746,11 @@
             // Update dots
             dots.forEach((dot, i) => {
                 dot.classList.toggle('active', i === index);
+                dot.setAttribute('aria-selected', i === index ? 'true' : 'false');
             });
+
+            // Update image alt text
+            videoElement.alt = 'miniCycle demo: ' + video.title;
             
             // Fade in the info section
             setTimeout(() => {
@@ -735,8 +798,10 @@
             if (e.key === 'ArrowLeft') prevVideo();
         });
 
-        // Auto-advance every 5 seconds (optional - can be removed)
-        setInterval(nextVideo, 15000);
+        // Auto-advance every 15 seconds (skip if user prefers reduced motion)
+        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            setInterval(nextVideo, 15000);
+        }
 
         // Fetch and render changelog
         fetch('../CHANGELOG.md')
@@ -776,16 +841,19 @@
                 changelogInner.style.maxHeight = 'none';
                 changelogArrow.style.transform = 'rotate(0deg)';
                 changelogHint.style.display = 'none';
+                changelogToggle.setAttribute('aria-expanded', 'false');
             } else if (state === 'open') {
                 changelogContent.style.maxHeight = '200px';
                 changelogInner.style.maxHeight = '170px';
                 changelogArrow.style.transform = 'rotate(180deg)';
                 changelogHint.style.display = 'block';
+                changelogToggle.setAttribute('aria-expanded', 'true');
             } else if (state === 'expanded') {
                 changelogContent.style.maxHeight = '500px';
                 changelogInner.style.maxHeight = '470px';
                 changelogArrow.style.transform = 'rotate(180deg)';
                 changelogHint.style.display = 'none';
+                changelogToggle.setAttribute('aria-expanded', 'true');
             }
         }
 

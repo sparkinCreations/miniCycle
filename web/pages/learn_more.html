@@ -444,6 +444,56 @@
             margin-top: 1rem;
         }
 
+        /* Skip link — hidden off-screen, visible on focus */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #0088ff;
+            color: #fff;
+            padding: 8px 16px;
+            z-index: 1001;
+            font-size: 0.9rem;
+            text-decoration: none;
+            border-radius: 0 0 4px 0;
+            transition: top 0.2s;
+        }
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* Focus-visible styles */
+        *:focus-visible {
+            outline: 2px solid #0088ff;
+            outline-offset: 2px;
+        }
+        .cta-btn:focus-visible,
+        .cta-primary:focus-visible,
+        .cta-secondary:focus-visible {
+            outline: 3px solid #0088ff;
+            outline-offset: 3px;
+        }
+        .faq-question:focus-visible {
+            outline: 2px solid #0088ff;
+            outline-offset: -2px;
+        }
+        header *:focus-visible {
+            outline-color: white;
+        }
+        .cta-section *:focus-visible {
+            outline-color: white;
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .header-nav {
@@ -487,14 +537,15 @@
     </style>
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <!-- Header -->
-    <header>
+    <header role="banner">
         <div class="header-content">
             <a href="product.html" class="logo-link">
                 <img src="../assets/images/logo/logo.png" alt="miniCycle">
                 <span style="font-size: 1.3rem; font-weight: 600;">miniCycle</span>
             </a>
-            <nav class="header-nav">
+            <nav class="header-nav" aria-label="Page navigation">
                 <a href="#what-is">What is miniCycle</a>
                 <a href="#features">Features</a>
                 <a href="#who-its-for">Who It's For</a>
@@ -504,6 +555,7 @@
         </div>
     </header>
 
+    <main id="main-content">
     <!-- What is miniCycle -->
     <section id="what-is">
         <div class="container">
@@ -517,7 +569,7 @@
                     <p>miniCycle organizes your tasks into <strong>routines</strong>. When you complete all your tasks, they automatically reset so you can tackle them again. Your progress is tracked by <strong>cycle count</strong> - how many times you've completed the routine.</p>
                     <p>It's perfect for daily routines, weekly goals, and recurring habits you want to build consistency with.</p>
                     <div class="privacy-badge">
-                        <span>🔒</span> 100% Private - All data stays on your device
+                        <span aria-hidden="true">🔒</span> 100% Private - All data stays on your device
                     </div>
                 </div>
                 <div class="intro-image">
@@ -547,17 +599,17 @@
 
             <div class="modes-grid">
                 <div class="mode-card">
-                    <div class="mode-icon">🔄</div>
+                    <div class="mode-icon" aria-hidden="true">🔄</div>
                     <h4>Auto Cycle</h4>
                     <p>Tasks automatically reset when all are complete. Perfect for daily routines you repeat consistently.</p>
                 </div>
                 <div class="mode-card">
-                    <div class="mode-icon">✅</div>
+                    <div class="mode-icon" aria-hidden="true">✅</div>
                     <h4>Manual Cycle</h4>
                     <p>Click "Complete" when you're ready to reset. Gives you time to review before starting fresh.</p>
                 </div>
                 <div class="mode-card">
-                    <div class="mode-icon">📝</div>
+                    <div class="mode-icon" aria-hidden="true">📝</div>
                     <h4>To-Do Mode</h4>
                     <p>Completed tasks are deleted. Works like a traditional to-do list for one-time tasks.</p>
                 </div>
@@ -573,35 +625,35 @@
 
             <div class="features-grid">
                 <div class="feature-card">
-                    <h4><span class="feature-icon">🔁</span> Recurring Tasks</h4>
+                    <h4><span class="feature-icon" aria-hidden="true">🔁</span> Recurring Tasks</h4>
                     <p>Set tasks to automatically appear on a schedule - hourly, daily, weekly, biweekly, monthly, or yearly.</p>
                 </div>
                 <div class="feature-card">
-                    <h4><span class="feature-icon">📅</span> Due Dates & Reminders</h4>
+                    <h4><span class="feature-icon" aria-hidden="true">📅</span> Due Dates & Reminders</h4>
                     <p>Set deadlines and get browser notifications. Overdue tasks are highlighted so nothing slips through.</p>
                 </div>
                 <div class="feature-card">
-                    <h4><span class="feature-icon">📁</span> Multiple Routines</h4>
+                    <h4><span class="feature-icon" aria-hidden="true">📁</span> Multiple Routines</h4>
                     <p>Create separate routines for different areas of life - work, home, fitness, personal projects.</p>
                 </div>
                 <div class="feature-card">
-                    <h4><span class="feature-icon">📊</span> Progress Tracking</h4>
+                    <h4><span class="feature-icon" aria-hidden="true">📊</span> Progress Tracking</h4>
                     <p>Track cycle counts, view statistics, and earn milestone badges as you build consistency.</p>
                 </div>
                 <div class="feature-card">
-                    <h4><span class="feature-icon">🎨</span> Themes & Dark Mode</h4>
+                    <h4><span class="feature-icon" aria-hidden="true">🎨</span> Themes & Dark Mode</h4>
                     <p>Unlock beautiful themes by reaching milestones. Toggle dark mode for comfortable viewing.</p>
                 </div>
                 <div class="feature-card">
-                    <h4><span class="feature-icon">💾</span> Export & Share</h4>
+                    <h4><span class="feature-icon" aria-hidden="true">💾</span> Export & Share</h4>
                     <p>Download routines as .mcyc files. Back up your data or share templates with others.</p>
                 </div>
                 <div class="feature-card">
-                    <h4><span class="feature-icon">↩️</span> Undo & Redo</h4>
+                    <h4><span class="feature-icon" aria-hidden="true">↩️</span> Undo & Redo</h4>
                     <p>Made a mistake? Undo recent actions. Your history is preserved per routine.</p>
                 </div>
                 <div class="feature-card">
-                    <h4><span class="feature-icon">📱</span> Works Everywhere</h4>
+                    <h4><span class="feature-icon" aria-hidden="true">📱</span> Works Everywhere</h4>
                     <p>Responsive design for phone, tablet, or desktop. Install as a PWA for offline use.</p>
                 </div>
             </div>
@@ -616,25 +668,25 @@
 
             <div class="personas-grid">
                 <div class="persona-card">
-                    <div class="persona-icon">🏠</div>
+                    <div class="persona-icon" aria-hidden="true">🏠</div>
                     <h4>Home Routine Managers</h4>
                     <p>Keep track of household tasks, cleaning schedules, and daily chores that need doing again and again.</p>
                     <p class="persona-examples">Morning routine, evening routine, weekly cleaning</p>
                 </div>
                 <div class="persona-card">
-                    <div class="persona-icon">💼</div>
+                    <div class="persona-icon" aria-hidden="true">💼</div>
                     <h4>Professionals</h4>
                     <p>Manage recurring work tasks, daily standups, weekly reports, and consistent workflows.</p>
                     <p class="persona-examples">Daily tasks, weekly reviews, monthly reports</p>
                 </div>
                 <div class="persona-card">
-                    <div class="persona-icon">💪</div>
+                    <div class="persona-icon" aria-hidden="true">💪</div>
                     <h4>Fitness & Health</h4>
                     <p>Track workout routines, medication schedules, and health habits you're building.</p>
                     <p class="persona-examples">Workout plan, supplements, stretching routine</p>
                 </div>
                 <div class="persona-card">
-                    <div class="persona-icon">📚</div>
+                    <div class="persona-icon" aria-hidden="true">📚</div>
                     <h4>Students & Learners</h4>
                     <p>Build study habits, track assignments, and maintain consistent learning routines.</p>
                     <p class="persona-examples">Study schedule, reading goals, practice sessions</p>
@@ -655,8 +707,8 @@
 
             <div class="faq-list">
                 <div class="faq-item">
-                    <button class="faq-question">Is miniCycle free?</button>
-                    <div class="faq-answer">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-answer-0">Is miniCycle free?</button>
+                    <div class="faq-answer" id="faq-answer-0">
                         <div class="faq-answer-content">
                             Yes! miniCycle is completely free to use. No subscriptions, no ads, no premium features locked behind a paywall.
                         </div>
@@ -664,8 +716,8 @@
                 </div>
 
                 <div class="faq-item">
-                    <button class="faq-question">Do I need to create an account?</button>
-                    <div class="faq-answer">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-answer-1">Do I need to create an account?</button>
+                    <div class="faq-answer" id="faq-answer-1">
                         <div class="faq-answer-content">
                             No account required. miniCycle stores all data locally in your browser. Just open the app and start using it immediately.
                         </div>
@@ -673,8 +725,8 @@
                 </div>
 
                 <div class="faq-item">
-                    <button class="faq-question">Is my data private?</button>
-                    <div class="faq-answer">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-answer-2">Is my data private?</button>
+                    <div class="faq-answer" id="faq-answer-2">
                         <div class="faq-answer-content">
                             100% private. All your data stays on your device - nothing is sent to any server. There's no analytics, no tracking, and no cloud sync. Your routines are completely yours.
                         </div>
@@ -682,8 +734,8 @@
                 </div>
 
                 <div class="faq-item">
-                    <button class="faq-question">Can I use miniCycle offline?</button>
-                    <div class="faq-answer">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-answer-3">Can I use miniCycle offline?</button>
+                    <div class="faq-answer" id="faq-answer-3">
                         <div class="faq-answer-content">
                             Yes! miniCycle is a Progressive Web App (PWA). Install it to your home screen and it works completely offline since all data is stored locally.
                         </div>
@@ -691,8 +743,8 @@
                 </div>
 
                 <div class="faq-item">
-                    <button class="faq-question">What's the difference between a routine and a cycle?</button>
-                    <div class="faq-answer">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-answer-4">What's the difference between a routine and a cycle?</button>
+                    <div class="faq-answer" id="faq-answer-4">
                         <div class="faq-answer-content">
                             A <strong>routine</strong> is the persistent checklist you create - it stays forever. A <strong>cycle</strong> is one complete run-through of that routine. Your cycle count tracks how many times you've completed the routine.
                         </div>
@@ -700,8 +752,8 @@
                 </div>
 
                 <div class="faq-item">
-                    <button class="faq-question">Can I sync data between devices?</button>
-                    <div class="faq-answer">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-answer-5">Can I sync data between devices?</button>
+                    <div class="faq-answer" id="faq-answer-5">
                         <div class="faq-answer-content">
                             Not automatically - miniCycle is privacy-focused with no cloud sync. However, you can export routines as .mcyc files from one device and import them on another.
                         </div>
@@ -709,8 +761,8 @@
                 </div>
 
                 <div class="faq-item">
-                    <button class="faq-question">How do I back up my data?</button>
-                    <div class="faq-answer">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-answer-6">How do I back up my data?</button>
+                    <div class="faq-answer" id="faq-answer-6">
                         <div class="faq-answer-content">
                             Use the menu to export individual routines or backup all routines at once. The exported .mcyc files can be stored in cloud storage or transferred to other devices.
                         </div>
@@ -718,8 +770,8 @@
                 </div>
 
                 <div class="faq-item">
-                    <button class="faq-question">What happens if I clear my browser data?</button>
-                    <div class="faq-answer">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-answer-7">What happens if I clear my browser data?</button>
+                    <div class="faq-answer" id="faq-answer-7">
                         <div class="faq-answer-content">
                             Your miniCycle data will be deleted. Always export backups before clearing browser data, switching browsers, or resetting your device.
                         </div>
@@ -727,8 +779,8 @@
                 </div>
 
                 <div class="faq-item">
-                    <button class="faq-question">Is there a simpler version for older devices?</button>
-                    <div class="faq-answer">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-answer-8">Is there a simpler version for older devices?</button>
+                    <div class="faq-answer" id="faq-answer-8">
                         <div class="faq-answer-content">
                             Yes! miniCycle Lite is a lightweight version designed for older devices and slower connections. It has the core features without the advanced functionality. <a href="../lite/miniCycle-lite.html">Try Lite Version</a>
                         </div>
@@ -748,9 +800,11 @@
         </div>
     </section>
 
+    </main>
+
     <!-- Footer -->
-    <footer>
-        <p>&copy; 2025 <a href="https://sparkincreations.com" target="_blank">sparkinCreations</a> | <a href="../lite/miniCycle-lite.html">Lite Version</a> | <a href="../legal/user-manual.html">User Manual</a></p>
+    <footer role="contentinfo">
+        <p>&copy; 2026 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a> | <a href="../lite/miniCycle-lite.html">Lite Version</a> | <a href="../legal/user-manual.html">User Manual</a></p>
     </footer>
 
     <script>
@@ -760,12 +814,16 @@
                 const item = button.parentElement;
                 const isActive = item.classList.contains('active');
 
-                // Close all items
-                document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+                // Close all items and reset aria-expanded
+                document.querySelectorAll('.faq-item').forEach(i => {
+                    i.classList.remove('active');
+                    i.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
+                });
 
                 // Open clicked item if it wasn't active
                 if (!isActive) {
                     item.classList.add('active');
+                    button.setAttribute('aria-expanded', 'true');
                 }
             });
         });
