@@ -46,6 +46,7 @@ export class FocusMode {
     constructor() {
         this._active = false;
         this._button = null;
+        this._progressRow = null;
         this._clickHandler = null;
         this._keyHandler = null;
         this.initialized = false;
@@ -86,8 +87,17 @@ export class FocusMode {
         this._button.setAttribute('aria-label', getLabel('focusMode.enterAria'));
         this._button.innerHTML = getIcon('expand');
 
-        // Append to task-view — positioned via CSS (absolute)
-        taskView.appendChild(this._button);
+        // Wrap progress bar and button in a flex row so they stay inline
+        const progressContainer = taskView.querySelector('.progress-container');
+        if (progressContainer) {
+            this._progressRow = document.createElement('div');
+            this._progressRow.className = 'progress-focus-row';
+            progressContainer.parentNode.insertBefore(this._progressRow, progressContainer);
+            this._progressRow.appendChild(progressContainer);
+            this._progressRow.appendChild(this._button);
+        } else {
+            taskView.appendChild(this._button);
+        }
     }
 
     /**
@@ -177,9 +187,11 @@ export class FocusMode {
             this._button.setAttribute('aria-label', getLabel('focusMode.enterAria'));
         }
 
-        // Reparent button after animation completes
+        // Reparent button back to progress row after animation completes
         setTimeout(() => {
-            if (this._button && taskView) {
+            if (this._button && this._progressRow) {
+                this._progressRow.appendChild(this._button);
+            } else if (this._button && taskView) {
                 taskView.appendChild(this._button);
             }
         }, 400);
@@ -208,6 +220,7 @@ export class FocusMode {
         this._clickHandler = null;
         this._keyHandler = null;
         this._button = null;
+        this._progressRow = null;
         this._active = false;
         this.initialized = false;
         document.body.classList.remove(DOM_CLASSES.FOCUS_MODE);

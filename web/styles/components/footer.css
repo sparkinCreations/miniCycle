@@ -102,7 +102,7 @@
    MOBILE ADJUSTMENTS
    ============================================================================= */
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
     #footer-container .footer-links {
         flex-wrap: wrap;
         align-items: center;

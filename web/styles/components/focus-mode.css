@@ -46,9 +46,12 @@ body.focus-mode::after {
    FOCUS MODE LAYOUT — Expand task list into freed vertical space
    ============================================================================= */
 
-/* Smooth expansion transition on task-view and task-card */
+/* Smooth expansion transition on task-view and task-card —
+   must preserve the left/transform slide animation from app-container.css */
 #task-view {
-    transition: height var(--transition-normal) ease,
+    transition: left var(--animation-pop) ease-in-out,
+                transform var(--animation-pop) ease-in-out,
+                height var(--transition-normal) ease,
                 max-height var(--transition-normal) ease;
 }
 
@@ -104,13 +107,39 @@ body.focus-mode #quick-dark-toggle {
    without affecting layout flow.
    ============================================================================= */
 
+/* Flex row wrapping progress bar + focus button —
+   width must match .task-card at every breakpoint */
+.progress-focus-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 400px;
+    margin-top: var(--space-3-75);
+}
+
+/* Remove progress container's own top margin since the row handles it */
+.progress-focus-row .progress-container {
+    margin-top: 0;
+    width: 75%;
+    max-width: 350px;
+}
+
+@media (min-width: 1024px) {
+    .progress-focus-row .progress-container {
+        width: 75%;
+        max-width: none;
+    }
+}
+
 .focus-mode-btn {
     position: absolute;
-    bottom: 0;
     right: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     width: 36px;
     height: 36px;
     border-radius: var(--radius-full);
@@ -159,12 +188,9 @@ body.focus-mode .focus-mode-btn svg {
 }
 
 /* =============================================================================
-   MOBILE — Float exit button so it's always reachable
-   Without this, the button can scroll out of view on long task lists,
-   leaving no way to exit focus mode (no Escape key on mobile).
+   TABLET — Widen task list between mobile and desktop breakpoints
    ============================================================================= */
 
-/* Tablet: widen task list between mobile and desktop breakpoints */
 @media (min-width: 769px) and (max-width: 1023px) {
     #task-view {
         max-width: 55vw;
@@ -173,20 +199,24 @@ body.focus-mode .focus-mode-btn svg {
     .task-card {
         max-width: 55vw;
     }
+
+    .progress-focus-row {
+        max-width: 55vw;
+    }
 }
 
+/* Desktop: match task card width */
+@media (min-width: 1024px) {
+    .progress-focus-row {
+        max-width: 50vw;
+    }
+}
+
+/* =============================================================================
+   MOBILE/TABLET — Focus mode adjustments
+   ============================================================================= */
+
 @media (max-width: 1023px) {
-    /* Shrink progress bar to make room for the focus button beside it */
-    .progress-container {
-        width: 78% !important;
-    }
-
-    /* Align button with progress bar level, just outside task-view edge */
-    .focus-mode-btn {
-        bottom: 110px;
-        right: -10px;
-    }
-
     /* Shift task view down so title isn't cut off at top */
     body.focus-mode #task-view {
         top: calc(50% + 20px);
@@ -206,12 +236,5 @@ body.focus-mode .focus-mode-btn svg {
     body.focus-mode .focus-mode-btn svg {
         width: 20px;
         height: 20px;
-    }
-}
-
-/* Mobile: lower the focus button closer to progress bar */
-@media (max-width: 768px) {
-    .focus-mode-btn {
-        bottom: 65px;
     }
 }
