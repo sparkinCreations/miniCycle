@@ -1055,15 +1055,17 @@ export class StatsPanelManager {
             } else if (isToDoMode) {
                 // To-Do mode: show cleared tasks progress
                 const remaining = nextMilestone - globalTasksCleared;
+                const taskWord = getLabel('noun.task', { count: remaining });
                 this.elements.milestoneProgressText.textContent =
-                    getLabel('stats.clearedToMilestone', { vars: { remaining } });
+                    getLabel('stats.clearedToMilestone', { vars: { remaining, taskWord } });
                 this.elements.milestoneProgressText.style.color = "";
                 this.elements.milestoneProgressText.style.fontWeight = "";
             } else {
                 // Cycle mode: show cycles progress
                 const remaining = nextMilestone - globalCyclesCompleted;
+                const cycleWord = getLabel('noun.cycle', { count: remaining });
                 this.elements.milestoneProgressText.textContent =
-                    getLabel('stats.cyclesToMilestone', { vars: { remaining } });
+                    getLabel('stats.cyclesToMilestone', { vars: { remaining, cycleWord } });
                 this.elements.milestoneProgressText.style.color = "";
                 this.elements.milestoneProgressText.style.fontWeight = "";
             }
@@ -1255,7 +1257,8 @@ export class StatsPanelManager {
                 if (nextVocabTheme) {
                     const cyclesNeeded = Math.max(0, nextVocabTheme.unlockAt.cycles - globalCyclesCompleted);
                     const nextIcon = nextVocabTheme.icons?.celebrate ?? '';
-                    const themeUnlockText = getLabel('unlock.nextThemeUnlock', { vars: { name: nextVocabTheme.name, count: cyclesNeeded } });
+                    const cycleWord = getLabel('noun.cycle', { count: cyclesNeeded });
+                    const themeUnlockText = getLabel('unlock.nextThemeUnlock', { vars: { name: nextVocabTheme.name, count: cyclesNeeded, cycleWord } });
                     goldenUnlockMessage.textContent = nextIcon ? `${nextIcon} ${themeUnlockText}` : themeUnlockText;
                     goldenUnlockMessage.classList.remove("unlocked-message");
                     goldenUnlockMessage.classList.toggle("visible", expanded);
@@ -1283,10 +1286,12 @@ export class StatsPanelManager {
             } else {
                 if (isToDoMode) {
                     const tasksNeeded = Math.max(0, 500 - totalTasksCleared);
-                    gameUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.game', { vars: { count: tasksNeeded } })}`;
+                    const taskWord = getLabel('noun.task', { count: tasksNeeded });
+                    gameUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.game', { vars: { count: tasksNeeded, taskWord } })}`;
                 } else {
                     const cyclesNeeded = Math.max(0, 100 - globalCyclesCompleted);
-                    gameUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.gameCycles', { vars: { count: cyclesNeeded } })}`;
+                    const cycleWord = getLabel('noun.cycle', { count: cyclesNeeded });
+                    gameUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.gameCycles', { vars: { count: cyclesNeeded, cycleWord } })}`;
                 }
                 gameUnlockMessage.classList.remove("unlocked-message");
                 gameUnlockMessage.classList.toggle("visible", expanded);

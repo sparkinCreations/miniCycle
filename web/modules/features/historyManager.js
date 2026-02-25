@@ -9,7 +9,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_SELECTORS } from '../core/constants.js';
-import { getLabel } from '../labels/labelResolver.js';
+import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav, handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 
 // ============================================================================
@@ -69,6 +69,43 @@ export class HistoryManager {
         if (!activeCycleId) {
             console.warn('HistoryManager: No active cycle to log event');
             return;
+        }
+
+        // Snapshot the themed label + icon at log time so history preserves
+        // the vocabulary that was active (e.g. "Streak Extended" stays even
+        // if the user later switches to a different theme).
+        const labelMap = {
+            'cycle_completed': 'history.cycleCompleted',
+            'tasks_cleared': 'history.tasksCleared',
+            'cycle_reset': 'history.cycleReset',
+            'achievement_unlocked': 'history.achievementUnlocked',
+            'task_added': 'history.taskAdded',
+            'task_deleted': 'history.taskDeleted',
+            'task_edited': 'history.taskEdited',
+            'recurring_tasks_removed': 'history.recurringTasksRemoved',
+            'tasks_removed_on_reset': 'history.tasksRemovedOnReset',
+            'task_priority_set': 'history.taskPrioritySet',
+            'task_priority_removed': 'history.taskPriorityRemoved',
+            'task_priority_color_changed': 'history.taskPriorityColorChanged',
+            'theme_changed': 'history.themeChanged'
+        };
+        const iconMap = {
+            'cycle_completed': 'cycleComplete'
+        };
+        if (labelMap[type]) {
+            details._eventLabel = getLabel(labelMap[type]);
+        }
+        if (iconMap[type]) {
+            details._eventIcon = getIcon(iconMap[type]);
+        }
+        if (type === 'cycle_completed') {
+            details._cycleNoun = getLabel('noun.cycle', { count: 1 });
+        }
+        if (type === 'tasks_cleared' && details.tasksCleared !== undefined) {
+            details._taskNoun = getLabel('noun.task', { count: details.tasksCleared });
+        }
+        if ((type === 'recurring_tasks_removed' || type === 'tasks_removed_on_reset') && details.count !== undefined) {
+            details._taskNoun = getLabel('noun.task', { count: details.count });
         }
 
         const event = {
@@ -824,7 +861,8 @@ export class HistoryManager {
             'tasks_removed_on_reset': '❌',
             'task_priority_set': '⚠️',
             'task_priority_removed': '➖',
-            'task_priority_color_changed': '🎨'
+            'task_priority_color_changed': '🎨',
+            'theme_changed': '🎨'
         };
 
         const labels = {
@@ -839,7 +877,8 @@ export class HistoryManager {
             'tasks_removed_on_reset': getLabel('history.tasksRemovedOnReset'),
             'task_priority_set': getLabel('history.taskPrioritySet'),
             'task_priority_removed': getLabel('history.taskPriorityRemoved'),
-            'task_priority_color_changed': getLabel('history.taskPriorityColorChanged')
+            'task_priority_color_changed': getLabel('history.taskPriorityColorChanged'),
+            'theme_changed': getLabel('history.themeChanged')
         };
 
         const time = new Date(event.timestamp).toLocaleTimeString([], {
@@ -850,9 +889,12 @@ export class HistoryManager {
         let detailText = '';
         if (event.details) {
             if (event.details.cycleCount !== undefined) {
-                detailText = `Cycle #${event.details.cycleCount}`;
+                const cycleNoun = event.details._cycleNoun || getLabel('noun.cycle', { count: 1 });
+                const capitalized = cycleNoun.charAt(0).toUpperCase() + cycleNoun.slice(1);
+                detailText = `${capitalized} #${event.details.cycleCount}`;
             } else if (event.details.tasksCleared !== undefined) {
-                detailText = `${event.details.tasksCleared} task${event.details.tasksCleared !== 1 ? 's' : ''}`;
+                const taskNoun = event.details._taskNoun || getLabel('noun.task', { count: event.details.tasksCleared });
+                detailText = `${event.details.tasksCleared} ${taskNoun}`;
             } else if (event.details.achievementId) {
                  detailText = this._escapeHtml(event.details.achievementName || event.details.achievementId);
             } else if (event.details.oldName !== undefined) {
@@ -862,13 +904,16 @@ export class HistoryManager {
             } else if (event.details.taskNames !== undefined) {
                 const count = event.details.count ?? event.details.taskNames.length;
                 const names = event.details.taskNames.map(n => this._escapeHtml(n)).join(', ');
-                detailText = `${count} task${count !== 1 ? 's' : ''}: ${names}`;
+                const taskNounPlural = event.details._taskNoun || getLabel('noun.task', { count });
+                detailText = `${count} ${taskNounPlural}: ${names}`;
             } else if (event.type === 'task_priority_set' && event.details.taskName !== undefined) {
                 const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(event.details.priorityColor)
                     ? event.details.priorityColor : '#dc3545';
                 detailText = `${this._escapeHtml(event.details.taskName)} <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${safeColor};vertical-align:middle;margin-left:4px;" aria-hidden="true"></span>`;
             } else if (event.type === 'task_priority_removed' && event.details.taskName !== undefined) {
                 detailText = this._escapeHtml(event.details.taskName);
+            } else if (event.details.themeName !== undefined) {
+                detailText = this._escapeHtml(event.details.themeName);
             }
         }
 
@@ -882,12 +927,12 @@ export class HistoryManager {
                 border-radius: 8px;
                 margin-bottom: 8px;
             ">
-                <span style="font-size: 20px;">${icons[event.type] || '📌'}</span>
+                <span style="font-size: 20px;">${event.details?._eventIcon || icons[event.type] || '📌'}</span>
                 <div style="flex: 1; min-width: 0;">
                     <div style="
                         font-weight: 500;
                         color: var(--text-primary, #333);
-                    ">${labels[event.type] || this._escapeHtml(event.type)}</div>
+                    ">${event.details?._eventLabel || labels[event.type] || this._escapeHtml(event.type)}</div>
                     ${detailText ? `<div style="
                         font-size: 13px;
                         color: var(--text-secondary, #666);
