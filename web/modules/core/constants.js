@@ -409,6 +409,7 @@ export const DOM_CLASSES = Object.freeze({
     HELP_WINDOW_SIDE: 'help-window-side',
     ONBOARDING_ACTIVE: 'onboarding-active',
     FOCUS_MODE: 'focus-mode',
+    FIXED_HEADER_CONTAINER: 'fixed-header-container',
     DROPDOWN_OPEN: 'dropdown-open',
 
     // ---- Task Options Visibility ----
@@ -745,6 +746,7 @@ export const DOM_IDS = Object.freeze({
     CLEAR_CACHE_BTN: 'clear-cache-btn',
     HELP_WINDOW: 'help-window',
     FOCUS_MODE_BTN: 'focus-mode-btn',
+    FOOTER_CONTAINER: 'footer-container',
     COMPLETE_ALL_CONTAINER: 'complete-all-and-help-window-container',
     NOTIFICATION_CONTAINER: 'notification-container',
     NEW_TASK_INPUT: 'new-task-input',
@@ -829,6 +831,9 @@ export const DOM_SELECTORS = Object.freeze({
     MINI_MODAL_OVERLAY: '.mini-modal-dialog',
     SWITCH_PREVIEW_WINDOW: '.switch-preview-window',
     PREVIEW_REVIEW_CLOSE: '.preview-review-close',
+
+    // ---- Progress ----
+    PROGRESS_CONTAINER: '.progress-container',
 
     // ---- Stats ----
     STATS_PANEL: '.stats-panel',

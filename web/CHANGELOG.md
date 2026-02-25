@@ -1,3 +1,7 @@
+## [2.010] - 2026-02-25
+- chore: update version to 2.009 and reflect changes across relevant files
+
+
 ## [2.009] - 2026-02-25
 - feat: enhance history logging with detailed event labels and icons
 - fix: remove !important from focus-mode CSS, use proper specificity
