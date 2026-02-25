@@ -274,8 +274,8 @@ export const DEFAULT_LABELS = deepFreeze({
         globalDisplay:      '{cycles} {cycleText} / {cleared} {clearedText}',
         progressCircleAria: 'Current cycle task completion',
         allBadgesUnlocked:  'All badges unlocked!',
-        clearedToMilestone: '{remaining} more cleared task(s) to next badge',
-        cyclesToMilestone:  '{remaining} more cycle(s) to next badge',
+        clearedToMilestone: '{remaining} more cleared {taskWord} to next badge',
+        cyclesToMilestone:  '{remaining} more {cycleWord} to next badge',
         history:            'History'
     },
 
@@ -300,6 +300,7 @@ export const DEFAULT_LABELS = deepFreeze({
         badgeTooltip:    '{name}: {cycles} cycles OR {tasks} cleared tasks',
         badgeUnlocks:    'Unlocks {reward}',
         threshold:       '{cycles} cycles or {tasks} cleared tasks',
+        description:     'Complete {cycles} cycles or {tasks} cleared tasks',
     },
 
     // ========================================================================
@@ -961,13 +962,13 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     unlock: {
-        game:               '{count} more cleared task(s) to unlock Whack-a-Order Game!',
+        game:               '{count} more cleared {taskWord} to unlock Whack-a-Order Game!',
         gameUnlocked:       'Whack-a-Order Game unlocked!',
-        gameCycles:         '{count} more cycle(s) to unlock Whack-a-Order Game!',
+        gameCycles:         '{count} more {cycleWord} to unlock Whack-a-Order Game!',
 
         // Vocabulary theme unlock status (used in stats panel)
         themeCurrentPrefix: 'Theme',
-        nextThemeUnlock:    'Next: {name} — {count} more cycles',
+        nextThemeUnlock:    'Next: {name} — {count} more {cycleWord}',
         allThemesUnlocked:  'All themes unlocked!',
 
         // Vocabulary theme section heading (used in Themes modal)
@@ -1164,6 +1165,7 @@ export const DEFAULT_LABELS = deepFreeze({
         taskPrioritySet:           'Priority Assigned',
         taskPriorityRemoved:       'Priority Removed',
         taskPriorityColorChanged:  'Priority Color Changed',
+        themeChanged:         'Theme Changed',
         recreate:             'Recreate',
         clearedTotal:         'cleared total',
         showingRecent:        'Showing last {count} ({days} days)'
@@ -1460,6 +1462,15 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'switcher.sortOldest',
     'switcher.sortLargest',
     'switcher.sortSmallest',
+
+    // Achievements
+    'achievement.statCycles',
+    'achievement.statCleared',
+    'achievement.cyclesNeeded',
+    'achievement.tasksNeeded',
+    'achievement.threshold',
+    'achievement.badgeTooltip',
+    'achievement.description',
 
     // Stats & progress
     'stats.currentRoutine',
@@ -1765,6 +1776,14 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
 
     // History
     'history.clearedTasks',
+    'history.cycleCompleted',
+    'history.tasksCleared',
+    'history.cycleReset',
+    'history.taskAdded',
+    'history.taskDeleted',
+    'history.taskEdited',
+    'history.noHistoryHint',
+    'history.noClearedHint',
 
     // Boot
     'boot.previewSelect',

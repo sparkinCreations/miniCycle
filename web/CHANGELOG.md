@@ -1,3 +1,8 @@
+## [2.008] - 2026-02-25
+- chore: update version to 2.007 across relevant files
+- feat: add educational tip for routine preview feature and style hint
+
+
 ## [2.006] - 2026-02-24
 - feat: enhance task management with history logging and user tips
 

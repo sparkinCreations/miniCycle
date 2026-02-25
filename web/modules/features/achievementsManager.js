@@ -487,13 +487,13 @@ export class AchievementsManager {
                         font-size: 13px;
                         color: var(--text-secondary, #666);
                         margin-top: 2px;
-                    ">${milestone.description}</div>
+                    ">${getLabel('achievement.description', { vars: { cycles: milestone.cycleThreshold, tasks: milestone.taskThreshold } })}</div>
                     <div style="
                         font-size: 12px;
                         color: var(--text-secondary, #888);
                         margin-top: 4px;
                     ">
-                        ${getLabel('achievement.unlockedOn', { vars: { date: dateStr, via: achievement.unlockedVia } })}
+                        ${getLabel('achievement.unlockedOn', { vars: { date: dateStr, via: achievement.unlockedVia === 'cycles' ? getLabel('noun.cycle', { count: 2 }) : getLabel('noun.task', { count: 2 }) } })}
                     </div>
                     ${milestone.rewardLabel ? `
                         <div style="
@@ -539,7 +539,7 @@ export class AchievementsManager {
                         font-size: 13px;
                         color: var(--text-secondary, #666);
                         margin-top: 2px;
-                    ">${milestone.description}</div>
+                    ">${getLabel('achievement.description', { vars: { cycles: milestone.cycleThreshold, tasks: milestone.taskThreshold } })}</div>
                     <!-- Combined progress bar -->
                     <div role="progressbar"
                         aria-valuenow="${Math.round(Math.max(cycleProgress, taskProgress))}"
@@ -798,7 +798,7 @@ export class AchievementsManager {
             const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
             statusHtml = `
                 <p style="margin: 0; font-size: 12px; color: ${textSecondary};">
-                    ${getLabel('achievement.unlockedOn', { vars: { date: dateStr, via: unlockedAchievement.unlockedVia } })}
+                    ${getLabel('achievement.unlockedOn', { vars: { date: dateStr, via: unlockedAchievement.unlockedVia === 'cycles' ? getLabel('noun.cycle', { count: 2 }) : getLabel('noun.task', { count: 2 }) } })}
                 </p>
             `;
         }

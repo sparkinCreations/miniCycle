@@ -72,7 +72,8 @@ const di = createDIModule('RoutineSwitcher', {
     getModal: optional(null),
     vocabThemeManager: optional(null),
     updateMainMenuHeader: optional(null),
-    refreshThemeLabels: optional(null)
+    refreshThemeLabels: optional(null),
+    logHistoryEvent: optional(null)
 });
 
 /**
@@ -791,6 +792,7 @@ export class RoutineSwitcher {
                 `${icon} ${getLabel('notify.themeApplied', { vars: { name: def.name } })}`,
                 'success', 3000
             );
+            this.deps.logHistoryEvent?.('theme_changed', { themeName: def.name, themeId });
             // refreshThemeLabels handles all label updates + applies vocab theme color preset
             this.deps.refreshThemeLabels?.();
             this.closeThemePicker();

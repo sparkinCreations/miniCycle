@@ -51,7 +51,8 @@ const di = createDIModule('ThemeManager', {
     updateStatsPanel: optional(null),
     updateMainMenuHeader: optional(null),
     updateHelpWindow: optional(null),
-    applyCustomColors: optional(null)
+    applyCustomColors: optional(null),
+    logHistoryEvent: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -770,6 +771,7 @@ export class ThemeManager {
                             getLabel('unlock.vocabThemeApplied', { vars: { name: def.name } }),
                             'success', 2000
                         );
+                        _deps.logHistoryEvent?.('theme_changed', { themeName: def.name, themeId: id });
                         _refreshLiveLensLabels();
                     }
                 });
