@@ -65,13 +65,13 @@ body.focus-mode #task-view {
     max-height: calc(100dvh - 40px);
 }
 
-body.focus-mode .task-card {
+body.focus-mode #task-view .task-card {
     max-height: calc(100vh - 120px);
     max-height: calc(100dvh - 120px);
 }
 
 /* The real scroll constraint — normally calc(100vh - 385px) */
-body.focus-mode .task-list-container {
+body.focus-mode #task-view .task-list-container {
     max-height: calc(100vh - 150px);
     max-height: calc(100dvh - 150px);
 }

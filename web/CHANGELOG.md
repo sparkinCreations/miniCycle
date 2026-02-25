@@ -1,3 +1,7 @@
+## [2.015] - 2026-02-25
+- fix: update Content-Security-Policy to include additional script hash for improved security
+
+
 ## [2.014] - 2026-02-25
 - feat: add "Check for Updates" button and style adjustments for dark mode
 
