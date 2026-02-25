@@ -1,3 +1,7 @@
+## [2.013] - 2026-02-25
+- feat: update CSS file caching strategy with versioning for cache busting and add no-cache headers
+
+
 ## [2.012] - 2026-02-25
 - feat: enhance cycle data export and import with history and cleared tasks, improve focus mode layout and transitions
 
