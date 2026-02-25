@@ -234,6 +234,12 @@
     color: #6a1b9a;
 }
 
+/* Check for Updates button - teal icon */
+.menu-section-grid #menu-check-updates i,
+.menu-section-grid #menu-check-updates .icon {
+    color: #00897b;
+}
+
 /* Themes button - pink/magenta icon (artistic) */
 .menu-section-grid #open-themes-panel i,
 .menu-section-grid #open-themes-panel .icon {
@@ -703,6 +709,11 @@ body.dark-mode .menu-section-grid #new-mini-cycle .icon {
 body.dark-mode .menu-section-grid #open-user-manual i,
 body.dark-mode .menu-section-grid #open-user-manual .icon {
     color: #ab47bc;
+}
+
+body.dark-mode .menu-section-grid #menu-check-updates i,
+body.dark-mode .menu-section-grid #menu-check-updates .icon {
+    color: #26a69a;
 }
 
 body.dark-mode .menu-section-grid #open-themes-panel i,
