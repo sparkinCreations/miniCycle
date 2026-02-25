@@ -1,3 +1,7 @@
+## [2.014] - 2026-02-25
+- feat: add "Check for Updates" button and style adjustments for dark mode
+
+
 ## [2.013] - 2026-02-25
 - feat: update CSS file caching strategy with versioning for cache busting and add no-cache headers
 
