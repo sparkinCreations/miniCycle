@@ -1,3 +1,9 @@
+## [2.009] - 2026-02-25
+- feat: enhance history logging with detailed event labels and icons
+- fix: remove !important from focus-mode CSS, use proper specificity
+- feat: add Focus Mode for distraction-free task management
+
+
 ## [2.008] - 2026-02-25
 - chore: update version to 2.007 across relevant files
 - feat: add educational tip for routine preview feature and style hint
