@@ -1,0 +1,106 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Focus Mode Component
+   Hides UI chrome so user can focus on the task list.
+   Toggled via body.focus-mode class (transient, not persisted).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   FOCUS MODE STATE — HIDE CHROME
+   ============================================================================= */
+
+body.focus-mode .fixed-header-container {
+    display: none !important;
+}
+
+body.focus-mode #slide-left,
+body.focus-mode #slide-right {
+    display: none !important;
+}
+
+body.focus-mode #quick-actions-window {
+    display: none !important;
+}
+
+body.focus-mode #help-window {
+    display: none !important;
+}
+
+body.focus-mode #footer-container {
+    display: none !important;
+}
+
+body.focus-mode #personalization-btn,
+body.focus-mode #quick-dark-toggle {
+    display: none !important;
+}
+
+/* =============================================================================
+   FOCUS MODE LAYOUT ADJUSTMENTS
+   Give task-view more vertical space when header/footer are hidden
+   ============================================================================= */
+
+body.focus-mode #task-view {
+    max-height: calc(100vh - 80px);
+    max-height: calc(100dvh - 80px);
+}
+
+body.focus-mode .task-card {
+    max-height: calc(100vh - 200px);
+    max-height: calc(100dvh - 200px);
+}
+
+/* =============================================================================
+   FOCUS MODE BUTTON
+   Small circular icon button, sits adjacent to Complete button
+   ============================================================================= */
+
+.focus-mode-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+    transition: all var(--transition-fast) ease;
+    padding: 0;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    flex-shrink: 0;
+}
+
+.focus-mode-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+    color: var(--color-white);
+    transform: scale(1.08);
+}
+
+.focus-mode-btn:active {
+    transform: scale(0.95);
+}
+
+.focus-mode-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Active state — button stands out more */
+body.focus-mode .focus-mode-btn {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: var(--color-white);
+}
+
+/* =============================================================================
+   COMPLETE ROW — Flex row holding Complete button + Focus button
+   ============================================================================= */
+
+.complete-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+}

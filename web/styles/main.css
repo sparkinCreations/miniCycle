@@ -96,6 +96,9 @@
 /* Onboarding screens */
 @import url('./components/onboarding.css?v=2.007');
 
+/* Focus mode (hides chrome for distraction-free view) */
+@import url('./components/focus-mode.css?v=2.007');
+
 /* Recurring tasks panel */
 @import url('./components/recurring.css?v=2.007');
 
