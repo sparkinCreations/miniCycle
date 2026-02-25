@@ -220,6 +220,15 @@ body.focus-mode .focus-mode-btn svg {
     /* Shift task view down so title isn't cut off at top */
     body.focus-mode #task-view {
         top: calc(50% - 10px);
+        max-height: calc(100dvh - 80px);
+    }
+
+    body.focus-mode #task-view .task-card {
+        max-height: calc(100dvh - 160px);
+    }
+
+    body.focus-mode #task-view .task-list-container {
+        max-height: calc(100dvh - 200px);
     }
 
     /* Focus mode: fixed to bottom-right of viewport */

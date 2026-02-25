@@ -1,3 +1,7 @@
+## [2.017] - 2026-02-25
+- fix: adjust task view positioning in focus mode for better visibility on smaller screens
+
+
 ## [2.016] - 2026-02-25
 - fix: adjust CSS selectors for task card and list container in focus mode for improved layout
 
