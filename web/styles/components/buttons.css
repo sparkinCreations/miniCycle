@@ -398,8 +398,7 @@ body.hide-help-window .help-window {
 }
 
 .undo-redo-btn[hidden] {
-    visibility: hidden;
-    opacity: 0;
+    display: none;
 }
 
 /* =============================================================================

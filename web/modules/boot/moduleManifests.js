@@ -308,7 +308,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineManager.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'updateMainMenuHeader'],
-        optionalDeps: ['refreshThemeLabels'],
+        optionalDeps: ['refreshThemeLabels', 'onCycleCreated'],
         provides: ['showCycleCreationModal', 'createNewMiniCycle'],
         api: 'cycle',
         after: ['menuManager']  // Needs hideMainMenu and updateMainMenuHeader from menuManager
@@ -331,7 +331,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListener', 'getElementById', 'refreshUIFromState', 'UIOrchestrator', 'requestUIUpdate'],
         optionalDeps: ['logHistoryEvent'],
-        provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction', 'wrapAppStateForUndo', 'setupStateBasedUndoRedo', 'initUndoSystemForApp', 'onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'clearAllUndoHistory'],
+        provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction', 'wrapAppStateForUndo', 'setupStateBasedUndoRedo', 'initUndoSystemForApp', 'onCycleCreated', 'onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'clearAllUndoHistory'],
         api: 'undo',
         after: ['taskDOM', 'uiOrchestrator']
     },

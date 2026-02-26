@@ -738,6 +738,7 @@ export async function processImportedData(fileContent) {
     // Store for display after reload (use localStorage since sessionStorage can be lost on iOS PWA reload)
     try {
         localStorage.setItem('miniCycle_importNotification', JSON.stringify({ message: importMessage, type: messageType }));
+        localStorage.setItem('miniCycle_importReloading', 'true');
     } catch (e) {
         console.warn('Could not store import notification:', e);
     }

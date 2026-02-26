@@ -750,6 +750,38 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
 }
 
 /* =============================================================================
+   DARK MODE TASK BUTTONS (half-circle icons on task rows)
+   ============================================================================= */
+
+body.dark-mode .task-btn {
+    color: var(--color-slate-100);
+}
+
+body.dark-mode .task-btn .icon {
+    color: var(--color-slate-100);
+}
+
+body.dark-mode .edit-btn .icon,
+body.dark-mode .delete-btn .icon,
+body.dark-mode .priority-btn .icon,
+body.dark-mode .enable-task-reminders .icon,
+body.dark-mode .set-due-date .icon {
+    color: var(--color-slate-100);
+}
+
+body.dark-mode .recurring-btn .icon {
+    color: var(--color-slate-100);
+}
+
+/* Active states keep their distinctive colors in dark mode */
+body.dark-mode .task-btn.priority-btn.priority-active .icon,
+body.dark-mode .task-btn.recurring-btn.active .icon,
+body.dark-mode .task-btn.enable-task-reminders.reminder-active .icon,
+body.dark-mode .task-btn.set-due-date.active .icon {
+    color: var(--color-white);
+}
+
+/* =============================================================================
    DARK MODE TASK OPTIONS MODAL
    ============================================================================= */
 

@@ -1,3 +1,7 @@
+## [2.019] - 2026-02-26
+- Add Docsify configuration and security guidelines
+
+
 ## [2.018] - 2026-02-26
 - fix: enhance accessibility with skip link and focus-visible styles in learn more and product pages
 - fix: adjust max-height for task view and its components in focus mode for better visibility

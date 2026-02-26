@@ -1189,8 +1189,6 @@ export function updateUndoRedoButtonStates() {
     redoBtn.disabled = !hasRedo;
     redoBtn.style.opacity = redoBtn.disabled ? '0.5' : '1';
   }
-
-  console.log(`🔘 Button states: hasUndo=${hasUndo} disabled=${undoBtn?.disabled}, hasRedo=${hasRedo} disabled=${redoBtn?.disabled}`);
 }
 
 /**
@@ -1208,8 +1206,6 @@ export function updateUndoRedoButtonVisibility() {
 
   if (undoBtn) undoBtn.hidden = !hasUndo;
   if (redoBtn) redoBtn.hidden = !hasRedo;
-
-  console.log(`👁️ Button visibility: undo hidden=${undoBtn?.hidden}, redo hidden=${redoBtn?.hidden}`);
 }
 
 /**
@@ -1408,17 +1404,21 @@ export async function initUndoSystemForApp() {
   console.log('🔄 Initializing undo system...');
 
   try {
-    // 1. Get current active cycle
+    // 1. Always initialize IndexedDB (even if no active cycle yet — first-time users
+    //    complete onboarding later, and cycle lifecycle hooks need undoDB ready)
+    const dbReady = initUndoIndexedDB();
+
+    // 2. Get current active cycle
     const currentState = _deps.AppState.get();
     const activeCycleId = currentState?.appState?.activeCycleId;
 
     if (!activeCycleId) {
-      // ✅ Normal during Phase 2 - data loads in Phase 3
-      console.log('ℹ️ No active cycle yet - undo system will initialize after data loads');
+      // Normal for first-time users — onboarding hasn't completed yet
+      console.log('ℹ️ No active cycle yet - IndexedDB initializing, undo stacks will be set on first routine creation');
       return;
     }
 
-    // 2. Try localStorage cache first (sync, instant!)
+    // 3. Try localStorage cache first (sync, instant!)
     const cached = loadFromUndoCache(activeCycleId);
     if (cached) {
       // Cache hit! Populate stacks instantly
@@ -1435,12 +1435,9 @@ export async function initUndoSystemForApp() {
       console.log('ℹ️ No cache found, will load from IndexedDB');
     }
 
-    // 3. Initialize IndexedDB in background (for cycle switching and persistence)
-    // If we had a cache hit, this just sets up the connection
-    // If cache miss, we load from IndexedDB and update stacks
-    initUndoIndexedDB().then(async () => {
+    // 4. After IndexedDB is ready, load stacks if cache missed
+    dbReady.then(async () => {
       if (!cached) {
-        // Cache miss - load from IndexedDB
         const loaded = await loadUndoStackFromIndexedDB(activeCycleId);
         _deps.AppGlobalState.activeUndoStack = loaded.undoStack || [];
         _deps.AppGlobalState.activeRedoStack = loaded.redoStack || [];
@@ -1667,7 +1664,6 @@ export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack, options 
 
       const request = objectStore.put(data);
 
-      // ✅ FIX #11: Properly await IndexedDB operation
       await new Promise((resolve, reject) => {
         request.onsuccess = () => {
           console.log(`💾 Saved undo history for "${cycleId}" (${undoStack?.length || 0} undo, ${redoStack?.length || 0} redo)`);
@@ -1682,7 +1678,6 @@ export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack, options 
     } catch (e) {
       console.error('❌ IndexedDB write failed:', e);
 
-      // ✅ FIX #11: Handle quota exceeded errors
       if (e.name === 'QuotaExceededError') {
         console.error('💾 Storage quota exceeded - undo history not saved');
         if (_deps.showNotification) {
@@ -1911,8 +1906,14 @@ export async function initUndoRedoManager(dependencies = {}) {
     wrapAppStateForUndo,
     setupStateBasedUndoRedo,
     initUndoSystemForApp,
+    // Cycle lifecycle hooks
+    onCycleCreated,
+    onCycleSwitched,
+    onCycleDeleted,
+    onCycleRenamed,
     // Cache helpers
-    clearUndoCache
+    clearUndoCache,
+    clearAllUndoHistory
   };
 }
 

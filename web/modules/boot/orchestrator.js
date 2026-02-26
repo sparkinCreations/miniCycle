@@ -121,6 +121,9 @@ const MAX_BOOT_RETRIES = 1;
 const LITE_VERSION_PATH = './lite/miniCycle-lite.html';
 let bootAttempt = 0;
 
+// If set, overrides all boot progress messages (e.g., during routine import reload)
+let loaderMessageOverride = null;
+
 /**
  * Update loader text and progress bar
  * @param {string} message - Progress message to display
@@ -129,7 +132,7 @@ let bootAttempt = 0;
 function updateLoaderProgress(message, percent = 0) {
   const loaderText = document.querySelector(DOM_SELECTORS.LOADER_TEXT);
   if (loaderText) {
-    loaderText.textContent = message;
+    loaderText.textContent = loaderMessageOverride || message;
   }
   const loaderBar = document.querySelector(DOM_SELECTORS.LOADER_BAR);
   if (loaderBar) {
@@ -637,6 +640,13 @@ async function waitForServiceWorker(timeoutMs = 3000) {
 // Run when DOM is ready - must load dependencies first (Safari memory cache fix)
 async function startOrchestrator() {
   try {
+    // Check if this reload was triggered by a routine import
+    // If so, show "Importing routine..." instead of normal boot messages
+    if (localStorage.getItem('miniCycle_importReloading')) {
+      localStorage.removeItem('miniCycle_importReloading');
+      loaderMessageOverride = getLabel('boot.importingRoutine');
+    }
+
     // Show initial progress immediately
     updateLoaderProgress(getLabel('boot.connecting'), 2);
 
