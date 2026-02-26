@@ -372,89 +372,41 @@
 
         /* Footer */
         footer {
-            background: #2c3e50;
+            background: transparent;
             color: white;
             text-align: center;
-            padding: 3rem 0;
-        }
-
-        .footer-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .footer-section h3 {
-            margin-bottom: 1rem;
-            color: #ecf0f1;
-        }
-
-        .footer-section p,
-        .footer-section a {
-            color: #bdc3c7;
-            text-decoration: none;
-            line-height: 1.6;
-        }
-
-        .footer-section a:hover {
-            color: white;
+            padding: 2rem 0;
         }
 
         .footer-bottom {
-            border-top: 1px solid #34495e;
-            padding-top: 2rem;
-            margin-top: 2rem;
-            color: #95a5a6;
+            border-top: none;
+            padding-top: 1rem;
+            margin-top: 1rem;
+            color: rgba(255, 255, 255, 0.7);
         }
 
         
-
-/* Footer Styling */
-#footer-container {
-    display: block;
-    position: fixed;
-    bottom: 0;
-    color: white;
-    text-align: center;
-    padding: 10px 0;
-    font-size: 10px;
-    font-family: 'Poppins', sans-serif;
-    z-index:0;
-    width:100%;
- 
-    
-
-    
-}
 
 /* Copyright Text */
 #copyright {
     margin: 0;
     line-height: 1.5;
-    opacity: 0.8; /* Subtle fade effect for a softer appearance */
+    opacity: 0.7;
     transition: opacity 0.3s ease-in-out;
-    align-items: center;
-    
-}
-
-#copyright {
-    color: white; /* Make the text white */
+    font-size: 0.85rem;
 }
 
 #copyright a {
-    color: white; /* Ensure the link is also white */
-    text-decoration: none; /* Optional: Removes underline */
+    color: white;
+    text-decoration: none;
 }
 
 #copyright a:hover {
-    text-decoration: underline; /* Optional: Adds underline on hover */
+    text-decoration: underline;
 }
 
-
-/* Hover Effect */
-#footer-container:hover #copyright {
-    opacity: 1; /* Make it fully visible on hover */
+footer:hover #copyright {
+    opacity: 1;
 }
 
         /* Skip link — hidden off-screen, visible on focus */

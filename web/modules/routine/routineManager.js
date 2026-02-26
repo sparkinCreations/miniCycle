@@ -233,6 +233,13 @@ export class RoutineManager {
 
                     console.log('💾 New cycle saved via AppState');
 
+                    // ✅ Notify undo system of new cycle (onboarding path)
+                    if (typeof this.deps.onCycleCreated === 'function') {
+                        this.deps.onCycleCreated(finalTitle).catch(err => {
+                            console.warn('⚠️ Undo system cycle creation notification failed:', err);
+                        });
+                    }
+
                     // ✅ Complete the setup after user interaction
                     this.deps.refreshThemeLabels?.();  // Apply Classic colors immediately (new routine defaults to classic)
                     this.deps.completeInitialSetup(finalTitle, appState.get());
@@ -384,6 +391,14 @@ export class RoutineManager {
         }, true); // immediate save
 
         console.log('✅ Basic fallback cycle created via AppState');
+
+        // ✅ Notify undo system of new cycle (fallback path)
+        if (typeof this.deps.onCycleCreated === 'function') {
+            this.deps.onCycleCreated(finalTitle).catch(err => {
+                console.warn('⚠️ Undo system cycle creation notification failed:', err);
+            });
+        }
+
         this.deps.completeInitialSetup(finalTitle, appState.get());
     }
 

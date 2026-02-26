@@ -209,6 +209,14 @@ body.dark-mode .complete-all-btn {
     transition: background var(--transition-normal) ease;
 }
 
+/* Task option half-circle buttons need extra contrast against dark task cards */
+body.dark-mode .task-options .task-btn,
+body.dark-mode .task-options .move-btn {
+    background: var(--dark-button-hover-bg);
+    border: 1px solid var(--dark-border-subtle);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
 body.dark-mode .complete-all-btn.todo-mode-btn {
     background: var(--dark-todo-bg);
     border: 2px solid var(--dark-button-border);
@@ -222,6 +230,39 @@ body.dark-mode .complete-all-btn.todo-mode-btn:hover {
 body.dark-mode .task-options button:hover,
 body.dark-mode .complete-all-btn:hover {
     background: var(--dark-button-hover-bg);
+}
+
+body.dark-mode .task-options .task-btn:hover,
+body.dark-mode .task-options .move-btn:hover {
+    background: var(--dark-border-subtle);
+    border-color: var(--dark-border-hover);
+}
+
+/* Active/toggled task button states must keep their colors in dark mode */
+body.dark-mode .task-options .task-btn.priority-btn.priority-active {
+    background: var(--task-priority-color, var(--priority-color, #dc3545));
+    border-color: transparent;
+}
+
+body.dark-mode .task-options .task-btn.recurring-btn.active {
+    background-color: var(--color-success);
+    border-color: transparent;
+}
+
+body.dark-mode .task-options .task-btn.enable-task-reminders.reminder-active {
+    background: var(--color-primary);
+    border-color: transparent;
+}
+
+body.dark-mode .task-options .task-btn.set-due-date.active {
+    background-color: var(--color-slate-500);
+    border-color: transparent;
+}
+
+body.dark-mode .task-options .delete-when-complete-btn.active,
+body.dark-mode .task-options .delete-when-complete-btn.delete-when-complete-active {
+    background-color: var(--color-error-light);
+    border-color: transparent;
 }
 
 /* =============================================================================
@@ -971,22 +1012,31 @@ body.dark-mode .miniCycle-prompt-input {
    ============================================================================= */
 
 body.dark-mode .task-input {
-    background: var(--theme-task-bg);
-    border: 1px solid var(--dark-button-bg);
+    background: var(--color-slate-800);
+    border: 1px solid var(--color-slate-700);
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.4);
 }
 
 body.dark-mode #taskInput {
-    background: var(--theme-input-bg);
+    background: var(--color-slate-900);
     color: var(--theme-text-primary);
 }
 
 body.dark-mode #taskInput::placeholder {
-    color: var(--theme-input-placeholder);
+    color: var(--color-slate-400);
+}
+
+body.dark-mode #taskInput:focus {
+    box-shadow: 0 0 0 2px rgba(76, 121, 255, 0.4);
 }
 
 body.dark-mode #addTaskBtn {
-    background: var(--color-primary);
-    color: var(--color-white);
+    background: var(--color-slate-600);
+    color: var(--color-slate-100);
+}
+
+body.dark-mode #addTaskBtn:hover {
+    background: var(--color-slate-500);
 }
 
 /* =============================================================================

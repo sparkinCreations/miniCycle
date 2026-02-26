@@ -801,6 +801,14 @@ export class ModeManager {
                 this._updateTaskInputVisibility(newVisible);
                 quickActionsMenu.style.display = 'none';
 
+                // Focus the text input when showing the input bar
+                if (newVisible) {
+                    requestAnimationFrame(() => {
+                        const textInput = this.deps.getElementById(DOM_IDS.TASK_INPUT);
+                        textInput?.focus();
+                    });
+                }
+
                 // Persist to active routine (per-routine setting)
                 if (this.deps.AppState) {
                     await this.deps.AppState.update(state => {

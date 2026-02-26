@@ -833,6 +833,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
             () => deps.ui?.updateUndoRedoButtons),
         // Undo cycle lifecycle hooks (called by routineSwitcher when cycles change)
         onCycleSwitched: (...args) => deps.ui?.onCycleSwitched?.(...args),
+        onCycleCreated: (...args) => deps.ui?.onCycleCreated?.(...args),
         onCycleDeleted: (...args) => deps.ui?.onCycleDeleted?.(...args),
         onCycleRenamed: (...args) => deps.ui?.onCycleRenamed?.(...args),
 

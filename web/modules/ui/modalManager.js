@@ -265,6 +265,13 @@ export class ModalManager {
             feedbackForm._submitHandler = (event) => {
                 event.preventDefault(); // Prevent default form submission
 
+                // Manual validation (novalidate on form prevents browser flicker)
+                if (feedbackText && feedbackText.value.trim().length < 10) {
+                    this.deps.showNotification("⚠️ " + getLabel('feedback.minLength'), "warning", 3000);
+                    feedbackText.focus();
+                    return;
+                }
+
                 // Disable button while sending
                 if (submitButton) {
                     submitButton.disabled = true;

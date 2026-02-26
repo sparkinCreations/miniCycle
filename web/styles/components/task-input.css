@@ -12,7 +12,7 @@
     align-items: center;
     gap: var(--space-2); /* Space between input and button */
     align-self: center;
-    background: rgb(255, 255, 255);
+    background: var(--theme-input-bg, rgb(255, 255, 255));
     border-radius: var(--radius-md);
     padding: var(--space-1-25) var(--space-1-25) var(--space-1-25) var(--space-2-5); /* Less right padding since button has its own */
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
@@ -62,8 +62,8 @@ input[type="text"]:focus-visible {
 /* Specific task input element */
 #taskInput {
     flex: 1;
-    background: rgb(255, 255, 255);
-    color: var(--theme-text-on-surface);
+    background: var(--theme-input-bg, rgb(255, 255, 255));
+    color: var(--theme-input-text, var(--theme-text-on-surface));
     padding: var(--space-1-75) 0 var(--space-1-75) var(--space-1-75);
     font-size: var(--font-size-base);
     border: none;

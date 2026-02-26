@@ -161,7 +161,7 @@ export function setupShareRoutineButton() {
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
-            _deps.showNotification?.('📥 ' + getLabel('notify.shareRoutineFallback'), 'info', 3000);
+            _deps.showNotification?.('📥 ' + getLabel('notify.shareRoutineFallback'), 'success', 3000);
         } catch (error) {
             console.error('Share routine fallback failed:', error);
             _deps.showNotification?.(getLabel('notify.shareRoutineFailed'), 'error', 3000);

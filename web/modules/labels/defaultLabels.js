@@ -623,7 +623,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Share notifications
         shareRoutineSuccess:       'Routine shared!',
-        shareRoutineFallback:      'Sharing not supported — file downloaded instead.',
+        shareRoutineFallback:      'Routine file downloaded!',
         shareRoutineFailed:        'Share failed. Please try again.',
         shareRoutineNoActiveCycle: 'No active routine to share.',
         shareAppSuccess:           'App link shared!',
@@ -1135,7 +1135,8 @@ export const DEFAULT_LABELS = deepFreeze({
         thanks:        'Thank you for your feedback!',
         sending:       'Sending...',
         errorSend:     'Error sending feedback. Please try again.',
-        errorNetwork:  'Network error. Please try again later.'
+        errorNetwork:  'Network error. Please try again later.',
+        minLength:     'Please enter at least 10 characters.'
     },
 
     // ========================================================================
@@ -1199,6 +1200,7 @@ export const DEFAULT_LABELS = deepFreeze({
         loadingFeatures:  'Loading features...',
         startingUp:       'Starting up...',
         ready:            'Ready!',
+        importingRoutine: 'Importing routine...',
         unableToLoad:     'Unable to Load',
         havingTrouble:    'Having trouble loading...',
         retrying:         'Retrying automatically...',
