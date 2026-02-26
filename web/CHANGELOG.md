@@ -1,3 +1,8 @@
+## [2.018] - 2026-02-26
+- fix: enhance accessibility with skip link and focus-visible styles in learn more and product pages
+- fix: adjust max-height for task view and its components in focus mode for better visibility
+
+
 ## [2.017] - 2026-02-25
 - fix: adjust task view positioning in focus mode for better visibility on smaller screens
 

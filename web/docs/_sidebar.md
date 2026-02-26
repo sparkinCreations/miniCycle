@@ -80,6 +80,7 @@
   * [📊 Complete Summary (Start Here)](security/ERROR_HANDLING_AND_TESTING_SUMMARY.md)
   * [Error Handling Improvements](security/ERROR_HANDLING_IMPROVEMENTS.md)
   * [Security Overview](security/SECURITY.md)
+  * [CSP & .htaccess Guide](security/CSP_AND_HTACCESS_GUIDE.md)
   * [Error Handling Audit](security/audits/AUDIT_README.md)
   * [Audit Summary (Executive)](security/audits/AUDIT_SUMMARY.md)
   * [Error Handling Analysis](security/audits/ERROR_HANDLING_AUDIT.md)

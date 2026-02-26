@@ -1,0 +1,288 @@
+# Content Security Policy & .htaccess Guide
+
+> **Audience:** Anyone working on miniCycle — no security background needed.
+> **Last Updated:** February 26, 2026
+> **Applies to:** All HTML pages served from minicycle.app
+
+---
+
+## What Problem Does This Solve?
+
+Imagine someone finds a way to sneak a malicious script into your website — maybe through a form, an imported file, or a browser extension. That script could steal user data, redirect people to fake pages, or do other harmful things.
+
+**Content Security Policy (CSP)** is a set of rules that tells the browser: *"Only run scripts and load resources that I explicitly trust."* If anything tries to run that isn't on the approved list, the browser blocks it immediately.
+
+miniCycle's CSP is like a bouncer at the door — it has a guest list, and if your name isn't on it, you're not getting in.
+
+---
+
+## The Two Key Files
+
+### `.htaccess` — The Rule Book
+
+**Location:** `web/.htaccess`
+
+This is an Apache web server configuration file. When someone visits any page on minicycle.app, the server reads `.htaccess` and attaches security rules to the response. Think of it as a set of instructions the server follows every time it serves a page.
+
+**Key point:** `.htaccess` applies to **every single page** on the entire domain — not just `miniCycle.html`, but also the product page, legal pages, game pages, docs, everything.
+
+### `miniCycle.html` — The Main App
+
+The main app has a few small inline scripts (code written directly in the HTML file rather than in a separate `.js` file). These are the only inline scripts allowed on the entire site, and each one has a unique fingerprint (called a SHA-256 hash) registered in `.htaccess`.
+
+---
+
+## How miniCycle's CSP Works
+
+Here's the CSP from `.htaccess`, broken down rule by rule:
+
+### `default-src 'self'`
+
+**What it means:** By default, only load things from our own domain (minicycle.app).
+
+**In plain English:** "If we didn't host it ourselves, don't load it." This blocks any attempt to pull in scripts, images, or other resources from random external websites.
+
+### `script-src 'self' 'sha256-...' 'sha256-...' ...`
+
+**What it means:** JavaScript can only come from two places:
+1. **External `.js` files** hosted on minicycle.app (`'self'`)
+2. **Specific inline scripts** whose exact content matches one of the listed SHA-256 hashes
+
+**In plain English:** "Run our own script files freely. For inline scripts (code written directly in HTML), only run them if they match a known fingerprint."
+
+The hashes listed in `.htaccess` are fingerprints of the inline scripts in `miniCycle.html` and `miniCycle-lite.html`. If even one character of those scripts changes, the fingerprint changes and the browser will block them until the hash is updated.
+
+**This is why new pages must never use inline scripts** — their fingerprints aren't in the list, so the browser will block them.
+
+### `style-src 'self' 'unsafe-inline'`
+
+**What it means:** CSS stylesheets can come from our domain, and inline styles (like `style="color: red"`) are allowed.
+
+**In plain English:** "Styles are fine from our files or written directly on elements." Inline styles are lower risk than inline scripts, so we allow them for convenience.
+
+### `font-src 'self'`
+
+**What it means:** Fonts can only come from our domain.
+
+**In plain English:** "We host our own fonts. Don't load fonts from anywhere else."
+
+### `img-src 'self' data: blob:`
+
+**What it means:** Images can come from our domain, from data URLs (images embedded directly in code), or from blob URLs (images generated in memory).
+
+**In plain English:** "Our images, plus images the app creates on the fly (like generated icons)."
+
+### `connect-src 'self' https://api.web3forms.com`
+
+**What it means:** The app can make network requests to our domain and to the Web3Forms API.
+
+**In plain English:** "The only external service we talk to is Web3Forms — that's the feedback form. Nothing else."
+
+### `frame-ancestors 'none'`
+
+**What it means:** No other website can embed miniCycle inside an iframe.
+
+**In plain English:** "Nobody can put our app inside their website to trick users" (this prevents clickjacking attacks).
+
+### `base-uri 'self'`
+
+**What it means:** The `<base>` HTML tag can only point to our own domain.
+
+**In plain English:** Prevents an attacker from redirecting all relative URLs on the page to a malicious site.
+
+### `form-action 'self' https://api.web3forms.com`
+
+**What it means:** Forms can only submit to our domain or to Web3Forms.
+
+**In plain English:** "The feedback form can send data to Web3Forms. No other form submissions are allowed to go anywhere else."
+
+### `upgrade-insecure-requests`
+
+**What it means:** If any resource tries to load over HTTP (insecure), automatically upgrade it to HTTPS (secure).
+
+**In plain English:** "Always use the secure version of a connection, even if someone accidentally wrote `http://` instead of `https://`."
+
+---
+
+## Other Security Headers in .htaccess
+
+Beyond CSP, `.htaccess` sets several other protective headers:
+
+| Header | What It Does | Plain English |
+|--------|-------------|---------------|
+| `X-Frame-Options: DENY` | Blocks the site from being embedded in iframes | Same as `frame-ancestors 'none'` but for older browsers |
+| `X-Content-Type-Options: nosniff` | Prevents browsers from guessing file types | "If we say it's CSS, treat it as CSS — don't try to run it as JavaScript" |
+| `X-XSS-Protection: 1; mode=block` | Legacy XSS filter for older browsers | Extra protection for browsers that don't support CSP |
+| `Referrer-Policy: strict-origin-when-cross-origin` | Controls what URL info is sent when clicking links | "When leaving our site, only share the domain name, not the full page URL" |
+| `Permissions-Policy` | Disables hardware features we don't use | "We don't need your camera, microphone, GPS, or payment info — block all of it" |
+
+---
+
+## The Golden Rule for New Pages
+
+> **All new HTML pages MUST use external `.js` files. Never write inline `<script>` blocks or inline event handlers.**
+
+### What's allowed
+
+```html
+<!-- GOOD — external script file -->
+<script src="my-page.js"></script>
+```
+
+External scripts from our domain are covered by `'self'` in the CSP. No hash needed.
+
+### What's blocked
+
+```html
+<!-- BLOCKED — inline script -->
+<script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+
+<!-- BLOCKED — inline event handler -->
+<button onmouseover="this.style.color='red'">Hover me</button>
+```
+
+Inline scripts need a SHA-256 hash in `.htaccess` to work. Inline event handlers (`onclick`, `onmouseover`, etc.) **cannot** be allowed with hashes at all — they require `unsafe-inline`, which weakens security.
+
+### The fix is always the same
+
+1. Create an external `.js` file next to your HTML file
+2. Move all JavaScript into that file
+3. Replace `<script>...</script>` with `<script src="your-file.js"></script>`
+4. Replace inline handlers with `addEventListener` in the JS file
+
+### Current page setup
+
+| Page | Script File | Notes |
+|------|------------|-------|
+| `miniCycle.html` | Inline (hashed in CSP) | Main app — only page allowed to use inline scripts |
+| `miniCycle-lite.html` | Inline (hashed in CSP) | Lite version — also has registered hashes |
+| `pages/product.html` | `pages/product.js` | Carousel, changelog, hover effects |
+| `pages/learn_more.html` | `pages/learn_more.js` | FAQ accordion, smooth scroll |
+| `legal/privacy.html` | `legal/legal-footer.js` | Shared year footer |
+| `legal/accessibility.html` | `legal/legal-footer.js` | Shared year footer |
+| `legal/security.html` | `legal/legal-footer.js` | Shared year footer |
+| `legal/terms.html` | `legal/legal-footer.js` | Shared year footer |
+| `legal/user-manual.html` | None needed | Pure HTML + CSS, no JavaScript |
+| `games/miniCycle-taskOrder.html` | `games/miniCycle-taskOrder-init.js` + `games/miniCycle-taskOrder.js` | Init script in head (dark mode detection), game logic at end of body |
+| `docs/index.html` | `docs/docsify-config.js` | Docsify configuration |
+
+---
+
+## What Happens When CSP Blocks Something
+
+When the browser blocks a script, you'll see a red error in the browser console (DevTools > Console) that looks like this:
+
+```
+Refused to execute inline script because it violates the following
+Content Security Policy directive: "script-src 'self' 'sha256-...'"
+```
+
+**What this tells you:**
+- An inline script tried to run
+- Its fingerprint doesn't match any hash in the CSP
+- The browser blocked it to protect the user
+
+**How to fix it:**
+- Move the inline script to an external `.js` file (see the golden rule above)
+
+---
+
+## How SHA-256 Hashes Work (For miniCycle.html Only)
+
+The main app (`miniCycle.html`) uses inline scripts for critical boot-time operations (like dark mode detection that must run before the page paints). Each inline script has a SHA-256 hash — a unique fingerprint of its exact content.
+
+### How hashes are computed
+
+```bash
+# Take the exact content between <script> and </script>
+# Compute its SHA-256 hash and encode as base64
+echo -n 'SCRIPT_CONTENT_HERE' | openssl dgst -sha256 -binary | openssl base64
+```
+
+The result looks like: `sha256-3Xbv1x8IO7a2BA/oYED4OTrf+44CPz5dLfxVpEswDOg=`
+
+### When you need to update hashes
+
+**Only** if you change an inline script in `miniCycle.html` or `miniCycle-lite.html`:
+
+1. Make your change to the inline script
+2. Copy the exact content between `<script>` and `</script>` (not including the tags)
+3. Run the hash command above on that content
+4. Replace the old hash with the new one in `.htaccess`
+5. Deploy both files together
+
+**If you change even one space or newline, the hash changes.** Always recompute after any edit.
+
+### When you do NOT need to update hashes
+
+- Adding or editing external `.js` files — these are covered by `'self'`
+- Adding new HTML pages with external scripts
+- Changing CSS, images, or other non-script resources
+- Editing the `.htaccess` file itself (unless changing CSP hashes)
+
+---
+
+## Common Mistakes and How to Avoid Them
+
+### Mistake 1: "I'll just add a quick inline script"
+
+**Problem:** You add `<script>alert('test')</script>` to a new page. It works on localhost (no `.htaccess` there) but breaks in production.
+
+**Fix:** Always use external `.js` files for new pages. Test with a local Apache server if you want to verify CSP.
+
+### Mistake 2: "I'll use onclick handlers for simplicity"
+
+**Problem:** You write `<button onclick="doSomething()">`. CSP blocks it because inline event handlers are treated as inline scripts.
+
+**Fix:** Use `addEventListener` in your external JS file:
+```javascript
+document.getElementById('myBtn').addEventListener('click', doSomething);
+```
+
+### Mistake 3: "I changed an inline script in miniCycle.html but forgot to update the hash"
+
+**Problem:** The app's inline script runs fine on localhost but gets blocked in production. Users see a broken page.
+
+**Fix:** Always recompute the hash after editing any inline script in `miniCycle.html` or `miniCycle-lite.html`. Update `.htaccess` and deploy both together.
+
+### Mistake 4: "I need to load a script from a CDN"
+
+**Problem:** You add `<script src="https://cdn.example.com/library.js">`. CSP blocks it because `cdn.example.com` isn't in the `script-src` list.
+
+**Fix:** miniCycle self-hosts all dependencies. Download the library, put it in your project, and reference it locally. If you absolutely must use a CDN, add its domain to `script-src` in `.htaccess` — but self-hosting is preferred.
+
+### Mistake 5: "It works on localhost so it's fine"
+
+**Problem:** Your local Python dev server (`npm start`) doesn't send CSP headers. Everything works locally, then breaks when deployed to Apache.
+
+**Fix:** Remember that `.htaccess` only applies on the production Apache server. If something works locally but fails in production, check the browser console for CSP errors first.
+
+---
+
+## Quick Reference
+
+| I want to... | Do this |
+|--------------|---------|
+| Add JS to a new page | Create an external `.js` file, reference with `<script src="...">` |
+| Add a click handler | Use `addEventListener` in your `.js` file — never use `onclick=""` |
+| Change a miniCycle.html inline script | Edit the script, recompute the SHA-256 hash, update `.htaccess` |
+| Load an external library | Self-host it. Put the file in your project and reference locally |
+| Debug a CSP error | Open browser DevTools > Console. Look for "Content Security Policy" errors |
+| Add a new external service | Add its domain to the relevant CSP directive in `.htaccess` |
+
+---
+
+## File Locations
+
+| File | Path | Purpose |
+|------|------|---------|
+| CSP rules | `web/.htaccess` | Security headers for all pages |
+| Main app | `web/miniCycle.html` | Only file with hashed inline scripts |
+| Lite app | `web/lite/miniCycle-lite.html` | Also has hashed inline scripts |
+| This guide | `web/docs/security/CSP_AND_HTACCESS_GUIDE.md` | You're reading it |
+
+---
+
+*This guide was created February 2026 after fixing CSP violations across 7 pages (product, learn more, privacy, accessibility, security, terms, task order game, and docs). All inline scripts were extracted to external files to comply with the site-wide CSP.*
