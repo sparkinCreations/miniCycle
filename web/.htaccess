@@ -9,8 +9,17 @@
     # ===================================================================
     # Prevents XSS attacks by controlling which resources can be loaded
 
-    # NOTE: SHA-256 hashes must be recomputed if ANY inline <script> content changes
-    # in miniCycle.html OR lite/miniCycle-lite.html
+    # !! IMPORTANT — READ BEFORE ADDING NEW PAGES !!
+    # This CSP applies to EVERY page on the domain (product, legal, games, docs, etc.)
+    # Inline <script> blocks are BLOCKED unless their SHA-256 hash is listed below.
+    # The hashes below only cover miniCycle.html and miniCycle-lite.html.
+    #
+    # RULE: New pages MUST use external .js files (<script src="...">) — never inline scripts.
+    #       External scripts are allowed by 'self'. No hash needed.
+    #       Inline event handlers (onmouseover, onclick, etc.) are also blocked — use addEventListener.
+    #
+    # If you MUST change an inline script in miniCycle.html or lite, recompute its hash:
+    #   echo -n 'SCRIPT_CONTENT' | openssl dgst -sha256 -binary | openssl base64
     Header set Content-Security-Policy "\
         default-src 'self'; \
         script-src 'self' \
