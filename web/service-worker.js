@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.021';
-var CACHE_VERSION = 'v860';
+var APP_VERSION = '2.022';
+var CACHE_VERSION = 'v861';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -629,14 +629,24 @@ self.addEventListener('fetch', function (event) {
             console.warn('❌ Network failed for boot-critical file, trying cache:', request.url);
             return caches.match(cacheRequest).then(function (cached) {
               if (cached) return cached;
-              // Return a response that will cause the import to fail with a clear error
-              // rather than silently returning an empty module
-              console.error('❌ Module not in cache and network failed:', request.url);
-              var safePath = url.pathname.replace(/[\\'"<>]/g, '');
-              return new Response('throw new Error("Module not available offline: ' + safePath + '");', {
-                status: 504,
-                statusText: 'Gateway Timeout',
-                headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
+              // ✅ Last resort: try STATIC_CACHE explicitly (precached files)
+              return caches.open(STATIC_CACHE).then(function (staticCache) {
+                return staticCache.match(cacheRequest);
+              }).then(function (staticCached) {
+                if (staticCached) {
+                  console.log('📦 Found in static cache:', request.url);
+                  return staticCached;
+                }
+                console.error('❌ Module not in cache and network failed:', request.url);
+                var safePath = url.pathname.replace(/[\\'"<>]/g, '');
+                return new Response(
+                  url.pathname.endsWith('.css') ? '/* offline: not cached */' : 'throw new Error("Module not available offline: ' + safePath + '");',
+                  {
+                    status: 504,
+                    statusText: 'Gateway Timeout',
+                    headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
+                  }
+                );
               });
             });
           })
@@ -677,12 +687,23 @@ self.addEventListener('fetch', function (event) {
           // No cache - wait for network
           return fetchPromise.then(function (res) {
             if (res) return res;
-            // Return a response that will cause the import to fail with a clear error
-            console.error('❌ Module not in cache and network failed:', request.url);
-            return new Response('throw new Error("Module not available offline: ' + url.pathname + '");', {
-              status: 504,
-              statusText: 'Gateway Timeout',
-              headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
+            // ✅ Last resort: try STATIC_CACHE explicitly (precached CSS files)
+            return caches.open(STATIC_CACHE).then(function (staticCache) {
+              return staticCache.match(cacheRequest);
+            }).then(function (staticCached) {
+              if (staticCached) {
+                console.log('📦 Found in static cache:', request.url);
+                return staticCached;
+              }
+              console.error('❌ Module not in cache and network failed:', request.url);
+              return new Response(
+                url.pathname.endsWith('.css') ? '/* offline: not cached */' : 'throw new Error("Module not available offline: ' + url.pathname + '");',
+                {
+                  status: 504,
+                  statusText: 'Gateway Timeout',
+                  headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
+                }
+              );
             });
           });
         })

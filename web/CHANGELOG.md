@@ -1,3 +1,7 @@
+## [2.022] - 2026-02-27
+- fix: enhance notification display for routine creation cancellation
+
+
 ## [2.021] - 2026-02-27
 - feat: enhance mode selector and sync functionality across routines and tasks
 
