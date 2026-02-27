@@ -70,6 +70,14 @@
     Expires = "0"
 
 [[headers]]
+  for = "/pages/*"
+  [headers.values]
+    # Pages served via pretty URLs (no .html extension) need explicit no-cache
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
   for = "/manifest.json"
   [headers.values]
     # Cache manifest for PWA (less critical, can be cached briefly)
