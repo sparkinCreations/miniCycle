@@ -1,3 +1,7 @@
+## [2.021] - 2026-02-27
+- feat: enhance mode selector and sync functionality across routines and tasks
+
+
 ## [2.020] - 2026-02-27
 - fix: add no-cache headers for pretty URL pages to prevent caching issues
 - chore: update version to 2.019 and enhance functionality
