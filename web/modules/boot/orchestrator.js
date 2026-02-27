@@ -612,8 +612,19 @@ async function initApp() {
 async function waitForServiceWorker(timeoutMs = 3000) {
   if (!('serviceWorker' in navigator)) return;
 
+  // iOS kills SW when PWA is backgrounded. Offline, it needs more time to restart.
+  const isOffline = !navigator.onLine;
+  const effectiveTimeout = isOffline ? Math.max(timeoutMs, 8000) : timeoutMs;
+
   try {
-    const registration = await navigator.serviceWorker.ready;
+    // navigator.serviceWorker.ready can hang on iOS offline — add a timeout
+    const registration = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('SW ready timeout')), effectiveTimeout)
+      )
+    ]);
+
     // If there's a waiting worker, it means an update is pending - don't wait
     if (registration.waiting) {
       console.log('⚠️ SW update pending, proceeding with boot');
@@ -624,16 +635,23 @@ async function waitForServiceWorker(timeoutMs = 3000) {
       console.log('✅ Service worker ready');
       return;
     }
-    // Wait briefly for controller to be set
+    // Wait for controller to be set
+    console.log(`⏳ Waiting for SW controller (offline: ${isOffline}, timeout: ${effectiveTimeout}ms)`);
     await new Promise((resolve) => {
-      const timeout = setTimeout(resolve, timeoutMs);
+      const timeout = setTimeout(resolve, effectiveTimeout);
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         clearTimeout(timeout);
+        console.log('✅ SW controller acquired');
         resolve();
       }, { once: true });
     });
   } catch (e) {
-    console.warn('SW ready check failed:', e);
+    console.warn('SW ready check failed:', e.message);
+    // If offline and SW isn't ready, wait a bit more for iOS to spin it up
+    if (isOffline && !navigator.serviceWorker.controller) {
+      console.log('⏳ Offline with no SW controller, extra wait...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
   }
 }
 
