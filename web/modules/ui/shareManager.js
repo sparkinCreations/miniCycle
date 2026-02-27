@@ -65,6 +65,13 @@ export function setupShareRoutineButton() {
     const shareBtn = document.getElementById(DOM_IDS.SHARE_ROUTINE);
     if (!shareBtn) return;
 
+    // Hide share button if Web Share API with file sharing is not supported
+    // (Download button already covers the file export use case)
+    if (!navigator.share || !navigator.canShare) {
+        shareBtn.style.display = 'none';
+        return;
+    }
+
     shareBtn._clickHandler = async () => {
         const loadMiniCycleData = _deps.loadMiniCycleData;
         const schemaData = loadMiniCycleData?.();

@@ -446,9 +446,6 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
         max-height: 200px;
     }
 
-    .task-option-preview {
-        min-height: 150px;
-    }
 }
 
 @media (max-width: 480px) {
@@ -510,6 +507,64 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     color: var(--theme-text-muted);
     font-size: 0.95em;
     line-height: 1.5;
+}
+
+/* =============================================================================
+   PREVIEW PANEL — MOBILE OVERRIDES
+   Must come AFTER base preview styles to win at equal specificity
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .task-option-preview {
+        min-height: 0;
+        padding: 4px 6px;
+        border-radius: var(--radius-6);
+    }
+
+    .preview-header {
+        display: none;
+    }
+
+    .preview-content {
+        padding: 2px 4px;
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+        text-align: left;
+    }
+
+    .preview-option-icon {
+        font-size: 19px;
+        margin-bottom: 0;
+        flex-shrink: 0;
+        min-width: 20px;
+    }
+
+    .preview-option-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .preview-option-title {
+        margin-bottom: 0;
+        font-size: 13px;
+        display: inline;
+    }
+
+    .preview-option-description {
+        font-size: 12px;
+        line-height: 1.2;
+        display: inline;
+    }
+
+    .preview-option-description::before {
+        content: ' — ';
+    }
+
+    .preview-placeholder {
+        font-size: 0.7em;
+        padding: 2px 0;
+    }
 }
 
 /* =============================================================================

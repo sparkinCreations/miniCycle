@@ -455,7 +455,7 @@ export class RoutineManager {
             callback: (result) => {
                 if (!result) {
                     console.log('❌ User cancelled creation');
-                    this.deps.showNotification("❌ " + getLabel('notify.creationCancelled'));
+                    this.deps.showNotification("❌ " + getLabel('notify.creationCancelled'), 'info', 3000);
                     return;
                 }
 

@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.020';
-var CACHE_VERSION = 'v859';
+var APP_VERSION = '2.021';
+var CACHE_VERSION = 'v860';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -236,7 +236,13 @@ self.addEventListener('install', function (event) {
   }
 
   // Build the full pre-cache list - includes CSS for offline support
-  var precacheList = CORE.concat(BOOT_CRITICAL, CSS_FILES, LITE_SHELL);
+  // ✅ Strip ?v= from CSS files so cache keys match the fetch handler's
+  // normalized lookups (fetch handler strips ?v= via cacheUrl.searchParams.delete('v'))
+  var normalizedCSS = CSS_FILES.map(function(url) {
+    var idx = url.indexOf('?');
+    return idx !== -1 ? url.substring(0, idx) : url;
+  });
+  var precacheList = CORE.concat(BOOT_CRITICAL, normalizedCSS, LITE_SHELL);
 
   function addAllSafe(cache, urls) {
     // 1) Fast path: one shot addAll
