@@ -1,3 +1,7 @@
+## [2.023] - 2026-02-27
+- chore: update version to 2.022 and reflect changes across documentation and files
+
+
 ## [2.022] - 2026-02-27
 - fix: enhance notification display for routine creation cancellation
 
