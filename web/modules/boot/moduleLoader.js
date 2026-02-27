@@ -1220,7 +1220,8 @@ function buildGroupedApis(deps) {
             delete: deps.cycle?.deleteMiniCycle,
             check: deps.progress?.checkMiniCycle,
             initializeModeSelector: deps.cycle?.setupModeSelector,
-            setupModeSelector: deps.cycle?.setupModeSelector
+            setupModeSelector: deps.cycle?.setupModeSelector,
+            modeManager: deps.cycle?.modeManager
         },
         ui: {
             showNotification: deps.utils?.showNotification,

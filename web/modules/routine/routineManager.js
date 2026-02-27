@@ -48,7 +48,8 @@ const di = createDIModule('RoutineManager', {
     onCycleCreated: optional(null),
     DEFAULT_TASK_OPTION_BUTTONS: optional(null),
     AppMeta: optional(null),
-    refreshThemeLabels: optional(null)
+    refreshThemeLabels: optional(null),
+    syncModeFromToggles: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -99,6 +100,9 @@ export class RoutineManager {
 
             // Theme
             refreshThemeLabels: resolvedDeps.refreshThemeLabels || null,
+
+            // Mode sync (must run before refreshThemeLabels on new routine creation)
+            syncModeFromToggles: resolvedDeps.syncModeFromToggles || null,
 
             // DOM functions
             getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
@@ -239,6 +243,19 @@ export class RoutineManager {
                             console.warn('⚠️ Undo system cycle creation notification failed:', err);
                         });
                     }
+
+                    // ✅ Sync mode selector and body class IMMEDIATELY (synchronous).
+                    // New routine defaults to auto-cycle, but the selector still shows
+                    // the previous routine's mode. Must update before refreshThemeLabels,
+                    // which re-renders the help window using the cached mode.
+                    const onboardModeSelector = document.getElementById(DOM_IDS.MODE_SELECTOR);
+                    if (onboardModeSelector) {
+                        onboardModeSelector.value = 'auto-cycle';
+                    }
+                    document.body.className = document.body.className.replace(
+                        /\b(auto-cycle-mode|manual-cycle-mode|todo-mode-mode|todo-mode)\b/g, ''
+                    );
+                    document.body.classList.add('auto-cycle-mode');
 
                     // ✅ Complete the setup after user interaction
                     this.deps.refreshThemeLabels?.();  // Apply Classic colors immediately (new routine defaults to classic)
@@ -506,6 +523,21 @@ export class RoutineManager {
 
                 if (toggleAutoReset) toggleAutoReset.checked = true;
                 if (deleteCheckedTasks) deleteCheckedTasks.checked = false;
+
+                // ✅ Sync mode selector IMMEDIATELY (synchronous) — new routine defaults
+                // to auto-cycle, but the selector still shows the previous routine's mode.
+                // Must run before refreshThemeLabels, which re-renders the help window
+                // using the cached mode from helpWindowManager.
+                // Note: Cannot use async syncModeFromToggles here because showPromptModal's
+                // callback is not awaited. Do the sync inline instead.
+                const modeSelector = this.deps.getElementById(DOM_IDS.MODE_SELECTOR);
+                if (modeSelector) {
+                    modeSelector.value = 'auto-cycle';
+                }
+                document.body.className = document.body.className.replace(
+                    /\b(auto-cycle-mode|manual-cycle-mode|todo-mode-mode|todo-mode)\b/g, ''
+                );
+                document.body.classList.add('auto-cycle-mode');
 
                 // Hide task input bar (new routines default to hidden)
                 const taskInputContainer = document.querySelector(DOM_SELECTORS.TASK_INPUT);

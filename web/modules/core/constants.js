@@ -612,6 +612,7 @@ export const DOM_IDS = Object.freeze({
     MILESTONE_PROGRESS_TEXT: 'milestone-progress-text',
     STATS_PROGRESS_BAR: 'stats-progress-bar',
     CURRENT_ROUTINE_STATUS: 'current-routine-status',
+    CURRENT_ROUTINE_NAME: 'current-routine-name',
     CURRENT_CYCLE_DOUGHNUT_CONTAINER: 'current-cycle-doughnut-container',
     CURRENT_CYCLE_DOUGHNUT_PROGRESS: 'current-cycle-doughnut-progress',
     CURRENT_CYCLE_DOUGHNUT_TEXT: 'current-cycle-doughnut-text',
@@ -781,6 +782,7 @@ export const DOM_SELECTORS = Object.freeze({
     // ---- Task ----
     TASK: '.task',
     TASK_TEXT: '.task-text',
+    TASK_EDIT_INPUT: '.task-edit-input',
     TASK_OPTIONS: '.task-options',
     TASK_BTN: '.task-btn',
     TASK_INPUT: '.task-input',

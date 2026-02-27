@@ -348,7 +348,9 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     check: deps.progress?.checkMiniCycle,
     updateProgress: deps.progress?.updateProgressBar,
     incrementCount: deps.progress?.incrementCycleCount,
-    initializeModeSelector: deps.cycle?.setupModeSelector
+    initializeModeSelector: deps.cycle?.setupModeSelector,
+    modeManager: deps.cycle?.modeManager,
+    syncModeFromToggles: deps.cycle?.syncModeFromToggles
   };
   appContextMod.setContextValue('cycleApi', cycleApiObj);
   appContextMod.registerApi('cycle', cycleApiObj);

@@ -114,6 +114,7 @@ body.onboarding-active .onboarding-placeholder {
 .onboarding-content li {
     margin-bottom: var(--space-2);
     line-height: 1.5;
+    list-style: disc;
 }
 
 .onboarding-content p {

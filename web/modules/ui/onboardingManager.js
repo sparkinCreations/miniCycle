@@ -180,9 +180,10 @@ export class OnboardingManager {
              </ul>`,
             `<h3>${getLabel('onboarding.step3Title')}</h3>
              <ul>
-               <li><span aria-hidden="true">📱</span> ${getLabel('onboarding.step3Item1')}</li>
-               <li><span aria-hidden="true">➕</span> ${getLabel('onboarding.step3Item2')}</li>
-               <li><span aria-hidden="true">📱</span> ${getLabel('onboarding.step3Item3')}</li>
+               <li>${getLabel('onboarding.step3Item1')}</li>
+               <li>${getLabel('onboarding.step3Item2')}</li>
+               <li>${getLabel('onboarding.step3Item3')}</li>
+               <li>${getLabel('onboarding.step3Item4')}</li>
              </ul>`
         ];
 

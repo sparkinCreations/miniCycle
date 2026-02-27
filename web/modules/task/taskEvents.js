@@ -151,12 +151,13 @@ export class TaskEvents {
             // any button anywhere inside the task (three-dots, option buttons, icon children),
             // the three-dots button by class (belt-and-suspenders for the button check above),
             // anything inside the task-options container (catches non-button descendants too),
-            // or the due date input.
+            // the due date input, or the inline edit input (cursor repositioning).
             if (event.target === checkbox) return;
             if (event.target.closest('button')) return;
             if (event.target.closest('.three-dots-btn')) return;
             if (buttonContainer?.contains(event.target)) return;
             if (event.target === dueDateInput) return;
+            if (event.target.closest(DOM_SELECTORS.TASK_EDIT_INPUT)) return;
 
             console.log('🟢 Task delegation: Processing task click (will toggle checkbox)');
 
