@@ -665,6 +665,12 @@ export async function initAppState(deps, showNotification) {
       organizeCompletedTasks: () => appContextMod.getUiApi?.()?.organizeCompletedTasks,
       startReminders: () => appContextMod.getReminderApi?.()?.start?.(),
       updateThemeColor: () => appContextMod.getUiApi?.()?.updateThemeColor?.(),
+      syncModeFromToggles: () => {
+        const cycleApi = appContextMod.getCycleApi?.();
+        const mm = cycleApi?.modeManager;
+        const fn = mm?.syncModeFromToggles;
+        return fn?.call(mm);
+      },
       getElementById: (id) => document.getElementById(id),
       addBodyClass: (cls) => document.body.classList.add(cls),
       removeBodyClass: (cls) => document.body.classList.remove(cls)

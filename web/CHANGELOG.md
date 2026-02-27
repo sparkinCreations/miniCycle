@@ -1,3 +1,8 @@
+## [2.020] - 2026-02-27
+- fix: add no-cache headers for pretty URL pages to prevent caching issues
+- chore: update version to 2.019 and enhance functionality
+
+
 ## [2.019] - 2026-02-26
 - Add Docsify configuration and security guidelines
 

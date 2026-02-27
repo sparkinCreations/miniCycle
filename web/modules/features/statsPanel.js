@@ -318,6 +318,7 @@ export class StatsPanelManager {
             statsProgressBar: document.getElementById(DOM_IDS.STATS_PROGRESS_BAR),
             // Current Routine collapsible elements
             currentRoutineStatus: document.getElementById(DOM_IDS.CURRENT_ROUTINE_STATUS),
+            currentRoutineName: document.getElementById(DOM_IDS.CURRENT_ROUTINE_NAME),
             currentCycleDoughnutContainer: document.getElementById(DOM_IDS.CURRENT_CYCLE_DOUGHNUT_CONTAINER),
             currentCycleDoughnutProgress: document.getElementById(DOM_IDS.CURRENT_CYCLE_DOUGHNUT_PROGRESS),
             currentCycleDoughnutText: document.getElementById(DOM_IDS.CURRENT_CYCLE_DOUGHNUT_TEXT),
@@ -971,6 +972,12 @@ export class StatsPanelManager {
         if (this.elements.completedTasks) this.elements.completedTasks.textContent = completedTasks;
         if (this.elements.completionRate) this.elements.completionRate.textContent = taskCompletionRate;
 
+        // ✅ Update routine name above the doughnut chart
+        if (this.elements.currentRoutineName) {
+            const routineTitle = activeCycleData?.title || '';
+            this.elements.currentRoutineName.textContent = routineTitle;
+        }
+
         // ✅ Update current cycle doughnut chart (always visible)
         const completionPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
@@ -1383,7 +1390,8 @@ export class StatsPanelManager {
 
         console.log('📋 Handling Current Routine toggle...');
 
-        // Toggle doughnut chart, progress text, cycle count, cleared count, and History button container
+        // Toggle routine name, doughnut chart, progress text, cycle count, cleared count, and History button container
+        if (this.elements.currentRoutineName) this.elements.currentRoutineName.classList.toggle("visible");
         if (currentCycleDoughnutContainer) currentCycleDoughnutContainer.classList.toggle("visible");
         if (currentCycleProgressText) currentCycleProgressText.classList.toggle("visible");
         currentRoutineCycleCount.classList.toggle("visible");
@@ -1462,6 +1470,7 @@ export class StatsPanelManager {
                     currentRoutineCycleCount, currentRoutineClearedCount, currentRoutineStatus, routineButtonsContainer } = this.elements;
 
             if (currentRoutineExpanded && currentRoutineCycleCount) {
+                if (this.elements.currentRoutineName) this.elements.currentRoutineName.classList.add("visible");
                 if (currentCycleDoughnutContainer) currentCycleDoughnutContainer.classList.add("visible");
                 if (currentCycleProgressText) currentCycleProgressText.classList.add("visible");
                 currentRoutineCycleCount.classList.add("visible");

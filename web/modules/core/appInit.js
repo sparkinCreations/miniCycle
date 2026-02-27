@@ -60,6 +60,7 @@ const di = createDIModule('AppInit', {
 	organizeCompletedTasks: optional(null),
 	startReminders: optional(null),
 	updateThemeColor: optional(null),
+	syncModeFromToggles: optional(null),
 	getElementById: optional((id) => document.getElementById(id)),
 	addBodyClass: optional((cls) => document.body.classList.add(cls)),
 	removeBodyClass: optional((cls) => document.body.classList.remove(cls))
@@ -523,6 +524,9 @@ class AppInit {
 			autoReset: currentCycle.autoReset,
 			deleteCheckedTasks: currentCycle.deleteCheckedTasks
 		});
+
+		// Sync mode selector dropdown to match the toggle states we just set
+		await _deps.syncModeFromToggles?.();
 
 		if (enableReminders) {
 			enableReminders.checked = reminders.enabled === true;

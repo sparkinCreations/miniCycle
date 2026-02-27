@@ -1271,10 +1271,11 @@ export const DEFAULT_LABELS = deepFreeze({
         step2Item2:  'Complete all tasks in your routine',
         step2Item3:  'Tasks reset and you complete a cycle',
         step2Item4:  'Track how many cycles you\'ve completed',
-        step3Title:  'Tips',
-        step3Item1:  'Tap \u22EE on any task for quick options',
-        step3Item2:  'Tap the -/+ button to customize task options',
-        step3Item3:  'Swipe left for the Stats Panel'
+        step3Title:  'Quick Tips',
+        step3Item1:  'Hover or tap the three dots (\u22EE) for task options',
+        step3Item2:  'Use the + button (upper left) to add tasks and create routines',
+        step3Item3:  'Swipe or drag left to view your Stats Panel',
+        step3Item4:  'Tap the 📁 icon (upper right) to switch between routines'
     },
 
     // ========================================================================
@@ -1898,6 +1899,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'onboarding.step3Item1',
     'onboarding.step3Item2',
     'onboarding.step3Item3',
+    'onboarding.step3Item4',
 
     // History (additional)
     'history.recreate',

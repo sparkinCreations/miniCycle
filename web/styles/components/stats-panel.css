@@ -166,6 +166,11 @@
         margin: 0;
     }
 
+    .current-routine-name {
+        font-size: var(--font-size-sm);
+        margin: var(--space-0-5) 0 0;
+    }
+
     .current-cycle-doughnut-container {
         width: 52px;
         height: 52px;
@@ -316,6 +321,19 @@
 /* =============================================================================
    DOUGHNUT CHART
    ============================================================================= */
+
+.current-routine-name {
+    text-align: center;
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--theme-stats-text, #444);
+    margin: var(--space-1) 0 0;
+    display: none;
+}
+
+.current-routine-name.visible {
+    display: block;
+}
 
 .current-cycle-doughnut-container {
     width: 90px;
@@ -678,6 +696,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .stats-panel
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #stats-panel p,
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #stats-header,
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .doughnut-text,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #current-routine-name,
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #current-cycle-progress-text,
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #current-routine-cycle-count,
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #current-routine-cleared-count,
