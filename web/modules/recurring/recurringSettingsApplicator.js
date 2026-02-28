@@ -87,11 +87,14 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
             settings.defaultRecurTime = new Date().toISOString();
         }
 
+        // Read DOM state before entering AppState callback (DOM queries shouldn't happen inside state producers)
+        const saveAsDefault = _deps.getElementById(DOM_IDS.SET_DEFAULT_RECURRING)?.checked || false;
+
         // Batch all updates in one AppState operation
         if (_deps.updateAppState) {
             await _deps.updateAppState(draft => {
                 // Save default recurring settings if requested
-                if (_deps.getElementById(DOM_IDS.SET_DEFAULT_RECURRING)?.checked) {
+                if (saveAsDefault) {
                     if (!draft.settings) draft.settings = {};
                     draft.settings.defaultRecurringSettings = settings;
                 }
@@ -183,6 +186,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
         toggleContainer?.classList.add("hidden");
 
         panel.updateRecurringPanelButtonVisibility();
+        panel.updateRecurringInfoLink();
         panel.clearRecurringForm();
 
         // Restart watcher at active interval since templates now exist

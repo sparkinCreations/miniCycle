@@ -25,7 +25,7 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
         Add Task to Recurring
       </button>
       <div id="available-tasks-list" class="available-tasks-list hidden">
-        <p class="available-tasks-header">Select tasks to make recurring:</p>
+        <p class="available-tasks-header">Select tasks to make recurring: <button id="select-all-add-recurring" class="select-all-add-recurring-btn">Select All</button></p>
         <ul id="non-recurring-tasks" aria-label="Available tasks to make recurring"></ul>
         <p id="no-available-tasks" class="no-available-tasks hidden">All tasks are already recurring, or no tasks exist in this routine.</p>
         <button id="confirm-add-recurring" class="confirm-add-recurring-btn hidden">Add to Recurring</button>

@@ -143,6 +143,51 @@ export function showClearAnimation() {
 }
 
 /**
+ * Shows a full-screen darkened overlay celebrating the user's first cycle completion.
+ * One-time only — globalCyclesCompleted is only 1 once.
+ * Auto-dismisses after 4 seconds or on click/tap.
+ */
+function showFirstCycleOverlay() {
+    const overlay = document.createElement('div');
+    overlay.className = 'first-cycle-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', getLabel('notify.firstCycleCompleted'));
+
+    // Celebration icon (aria-hidden)
+    const icon = document.createElement('span');
+    icon.className = 'first-cycle-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = getIcon('celebrate');
+
+    // Main heading
+    const heading = document.createElement('p');
+    heading.className = 'first-cycle-heading';
+    heading.textContent = getLabel('notify.firstCycleCompleted');
+
+    // Subtitle
+    const subtitle = document.createElement('p');
+    subtitle.className = 'first-cycle-subtitle';
+    subtitle.textContent = getLabel('notify.firstCycleSubtitle');
+
+    overlay.appendChild(icon);
+    overlay.appendChild(heading);
+    overlay.appendChild(subtitle);
+    document.body.appendChild(overlay);
+
+    // Announce to screen readers
+    const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
+    if (liveRegion) liveRegion.textContent = getLabel('notify.firstCycleCompleted');
+
+    // Dismiss on click/tap
+    const dismiss = () => overlay.remove();
+    overlay.addEventListener('click', dismiss, { once: true });
+
+    // Auto-dismiss after 10 seconds
+    setTimeout(dismiss, 10000);
+}
+
+/**
  * Checks if a milestone level has been reached and shows a message.
  * @param {string} miniCycleName - The name of the cycle
  * @param {number} cycleCount - The current cycle count
@@ -297,6 +342,11 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
     const beforeUnlocked = vtm?.getUnlockedThemeIds ? new Set(vtm.getUnlockedThemeIds()) : null;
 
     handleMilestoneUnlocks(activeCycle, globalCyclesCompleted);
+
+    // First cycle celebration overlay (one-time — globalCyclesCompleted is only 1 once)
+    if (globalCyclesCompleted === 1) {
+        showFirstCycleOverlay();
+    }
 
     // Log history event
     if (typeof deps.logHistoryEvent === 'function') {

@@ -1,8 +1,8 @@
 # miniCycle Recurring Tasks: Complete User Guide
 
-**Version 1.5 | For miniCycle v1.349+ Users & Developers**
+**Version 1.6 | For miniCycle v2.023+ Users & Developers**
 
-_Updated November 2025 to include: **NEW v1.349 features** - Monthly week-of-month patterns (2nd Tuesday, Last Friday), End date (Until) option for all frequencies, Monthly last-day handling; Plus from v1.348: Biweekly two-week pattern with separate day selections per week, DST-safe date calculations, clarification of "one task only" catch-up behavior for cycle-based routine management, next occurrence display, catch-up function, two-state notifications, hybrid optimization pattern, immediate appearance for newly-enabled tasks, and schedule recalculation on cycle reset._
+_Updated February 2026 to include: **NEW v2.023 features** - Recurring info link in task list (shows count of recurring tasks, opens panel on click), "Select All" button for bulk adding tasks to recurring, watcher interval reduced from 30s to 15s for faster task appearance, 5 bug fixes (listener leak, cache corruption, missing await, stale DOM data, DOM query in state callback). Plus from v1.349: Monthly week-of-month patterns (2nd Tuesday, Last Friday), End date (Until) option for all frequencies, Monthly last-day handling; Plus from v1.348: Biweekly two-week pattern with separate day selections per week, DST-safe date calculations, clarification of "one task only" catch-up behavior for cycle-based routine management, next occurrence display, catch-up function, two-state notifications, hybrid optimization pattern, immediate appearance for newly-enabled tasks, and schedule recalculation on cycle reset._
 
 ---
 
@@ -155,7 +155,7 @@ cycle.recurringTemplates["task-123"] = {
    
    ═══════════════════════════════════════
    
-10. WATCH FUNCTION checks every 30 seconds
+10. WATCH FUNCTION checks every 15 seconds
     ↓
 11. Is it time to recreate this task?
     ↓
@@ -356,7 +356,7 @@ Morning Routine
 
 ### Phase 3: Task Reappears Automatically
 
-**The Watch Function runs every 30 seconds (and on tab visibility):**
+**The Watch Function runs every 15 seconds (and on tab visibility):**
 
 ```javascript
 // Simplified pseudocode with hybrid optimization
@@ -406,7 +406,7 @@ setInterval(() => {
       saveToStorage();
     }
   });
-}, 30000); // Check every 30 seconds
+}, 15000); // Check every 15 seconds
 
 // Also runs on visibility change (catch-up function)
 document.addEventListener("visibilitychange", () => {
@@ -472,6 +472,44 @@ miniCycle shows you when each recurring task will appear next using human-readab
 
 This helps you understand your schedule at a glance without mental calculations.
 
+**Recurring Info Link (v2.023+):**
+At the bottom of the task list, a clickable info link shows how many recurring templates are active:
+
+```
+☐ Make bed
+☐ Exercise
+☐ Review calendar
+
+🔄 3 recurring tasks scheduled — tap to manage
+```
+
+- Appears automatically when you have one or more recurring templates
+- Shows the current count of active recurring templates
+- Clicking it opens the Manage Recurring Tasks panel directly
+- Updates in real-time as you add, remove, or modify recurring settings
+- If all recurring templates are removed, the link disappears
+
+When no tasks are in the list at all, an enhanced empty state message appears encouraging you to add tasks or set up recurring schedules.
+
+**Add Task to Recurring (with Select All):**
+The panel includes an "Add Task to Recurring" section at the bottom, letting you convert existing non-recurring tasks into recurring tasks:
+
+```
+Select tasks to make recurring:    [Select All]
+───────────────────────────────────
+☐ Make bed
+☐ Exercise
+☐ Review calendar
+
+[Confirm: Add 0 tasks to recurring]
+```
+
+- Lists all non-recurring tasks in your current routine
+- Check individual tasks or use the **Select All** button (v2.023+) to select/deselect all at once
+- The Select All button toggles between "Select All" and "Deselect All" based on the current state
+- The confirm button shows how many tasks are selected and is hidden when none are selected
+- After confirming, the recurring settings panel opens for each selected task so you can configure its schedule
+
 ---
 
 ## Technical Architecture
@@ -488,7 +526,7 @@ The recurring task system is organized across multiple files following miniCycle
   - Pattern matching (`shouldTaskRecurNow()`)
   - Next occurrence calculation (`calculateNextOccurrence()`)
   - Template lifecycle management
-  - Watch function (30-second polling)
+  - Watch function (15-second polling)
   - Catch-up function (missed task detection)
   - Cycle reset integration (`removeRecurringTasksFromCycle()`)
 - **Size:** ~1,700 lines
@@ -539,7 +577,7 @@ AppState.update() ← Both write here
 2. **Integration loads** → `recurringIntegration.js` imports core and panel
 3. **Dependencies configured** → Core receives AppState functions via DI
 4. **Panel wired** → Panel callbacks connected to core functions
-5. **Watch started** → 30-second polling begins
+5. **Watch started** → 15-second polling begins
 6. **System ready** → User can interact with recurring features
 
 **Data Flow Example (Toggle Recurring ON):**
@@ -565,7 +603,7 @@ AppState.update() ← Both write here
 
 **Scheduling Flow (Watch Function):**
 ```
-Every 30 seconds:
+Every 15 seconds:
 
 1. watchRecurringTasks() runs
    → recurringCore.js:1086
@@ -740,7 +778,7 @@ function handleRecurringTaskActivation(task, taskContext) {
 
   // 2. Create template with next occurrence calculation
   // ✅ NEW (v1.338+): For newly-enabled recurring tasks, set nextScheduledOccurrence to 0
-  // This ensures the task appears immediately on the next watch cycle (within 30 seconds)
+  // This ensures the task appears immediately on the next watch cycle (within 15 seconds)
   const isNewRecurring = !currentCycle.recurringTemplates[task.id] ||
                          !currentCycle.recurringTemplates[task.id].recurring;
 
@@ -1170,10 +1208,10 @@ async function catchUpMissedRecurringTasks() {
 }
 ```
 
-#### Watch Recurring Tasks (30-second Polling)
+#### Watch Recurring Tasks (15-second Polling)
 **Location:** `/modules/recurringCore.js` (lines 1086-1217)
 **Function:** `watchRecurringTasks()`
-**Trigger:** Runs every 30 seconds via `setInterval` (setup in `recurringIntegration.js`)
+**Trigger:** Runs every 15 seconds via `setInterval` (setup in `recurringIntegration.js`)
 ```javascript
 // Simplified version of the watch function
 export async function watchRecurringTasks() {
@@ -1586,7 +1624,7 @@ Do you just need a reminder?
    - If not there, the task isn't set to recur
 
 2. **For newly-enabled recurring tasks (v1.338+):**
-   - After toggling recurring ON, the task should appear within 30 seconds
+   - After toggling recurring ON, the task should appear within 15 seconds
    - The system sets `nextScheduledOccurrence = 0` for immediate appearance
    - If it doesn't appear, try switching tabs or refreshing the page
 
@@ -1597,8 +1635,8 @@ Do you just need a reminder?
    - Example: "Next: Tomorrow at 9:00 AM" means it's scheduled for tomorrow
 
 4. **Has enough time passed?**
-   - Watch function checks every 30 seconds
-   - Wait up to 30 seconds after scheduled time
+   - Watch function checks every 15 seconds
+   - Wait up to 15 seconds after scheduled time
    - Example: 9:00am task may appear between 9:00:00 and 9:00:30
 
 5. **Did the task already appear?**
@@ -1615,7 +1653,7 @@ Do you just need a reminder?
    - Switch to another tab or minimize the window
    - Return to miniCycle
    - The catch-up function will check for missed tasks
-   - This forces an immediate check instead of waiting for the 30-second interval
+   - This forces an immediate check instead of waiting for the 15-second interval
 
 8. **Was it triggered recently?**
    - Tasks won't appear twice in the same minute
@@ -1911,7 +1949,7 @@ Work Routine cycle:
 
 5. **"Manage Recurring Tasks" is your control center** - see and edit scheduled tasks even when not visible
 
-6. **Watch function checks every 30 seconds** - tasks appear automatically at scheduled times
+6. **Watch function checks every 15 seconds** - tasks appear automatically at scheduled times
 
 ### Who This Is For
 

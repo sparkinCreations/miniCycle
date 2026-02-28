@@ -106,7 +106,7 @@ export function normalizeRecurringSettings(settings = {}) {
     }
 
     normalizationCache.set(cacheKey, normalized);
-    return normalized;
+    return structuredClone(normalized);
 }
 
 console.log('⚙️ RecurringSettings module loaded');

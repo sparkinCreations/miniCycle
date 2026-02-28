@@ -1042,6 +1042,7 @@ export class RecurringPanelManager {
 
                     item.remove();
                     this.updateRecurringPanelButtonVisibility();
+                    this.updateRecurringInfoLink();
 
                     // ✅ Check remaining templates via AppState
                     const updatedState = this.deps.AppState.get();
@@ -1375,6 +1376,66 @@ export class RecurringPanelManager {
         }
     }
 
+    /**
+     * Update the recurring info link below the task list.
+     * Shows recurring template count and links to the recurring panel.
+     * Also enhances the empty state hint when task list is empty.
+     */
+    updateRecurringInfoLink() {
+        try {
+            if (!this.deps.AppState?.isReady?.()) return;
+            const state = this.deps.AppState.get();
+            const cid = state.appState?.activeCycleId;
+            if (!cid) return;
+            const cycle = state.data.cycles[cid];
+            if (!cycle) return;
+
+            const templateCount = Object.keys(cycle.recurringTemplates || {}).length;
+            const taskCount = (cycle.tasks || []).length;
+            const linkEl = this.deps.getElementById(DOM_IDS.RECURRING_INFO_LINK);
+            if (!linkEl) return;
+
+            const hint = this.deps.querySelector?.(DOM_SELECTORS.EMPTY_STATE_HINT);
+
+            if (templateCount === 0) {
+                linkEl.classList.remove('show');
+                // Restore default empty state hint
+                if (hint) {
+                    hint.innerHTML = getLabel('empty.noTasksHint').replace('+', '<strong>+</strong>');
+                }
+                return;
+            }
+
+            const countText = templateCount === 1
+                ? getLabel('empty.recurringScheduledOne')
+                : getLabel('empty.recurringScheduled', { vars: { count: templateCount } });
+
+            // Show the link
+            linkEl.classList.add('show');
+            linkEl.textContent = '\u21BB ' + countText;
+
+            // Click handler
+            linkEl.onclick = () => this.openPanel();
+            linkEl.onkeydown = (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.openPanel();
+                }
+            };
+
+            // If task list is empty, enhance the empty state hint
+            if (hint) {
+                if (taskCount === 0) {
+                    hint.innerHTML = '\u21BB ' + countText + ' \u00B7 ' + getLabel('empty.viewRecurring');
+                } else {
+                    hint.innerHTML = getLabel('empty.noTasksHint').replace('+', '<strong>+</strong>');
+                }
+            }
+        } catch (error) {
+            console.error('\u274C Error updating recurring info link:', error);
+        }
+    }
+
     // ============================================
     // ADD TASK SECTION
     // ============================================
@@ -1446,6 +1507,27 @@ export class RecurringPanelManager {
             });
         }
 
+        // Setup select all button
+        const selectAllBtn = this.deps.getElementById(DOM_IDS.SELECT_ALL_ADD_RECURRING);
+        if (selectAllBtn && nonRecurringList) {
+            this.deps.safeAddEventListener(selectAllBtn, "click", () => {
+                const checkboxes = nonRecurringList.querySelectorAll("input[type='checkbox']");
+                const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
+
+                checkboxes.forEach(cb => {
+                    cb.checked = anyUnchecked;
+                    const item = cb.closest("li[data-task-id]");
+                    if (item) item.classList.toggle("selected", anyUnchecked);
+                });
+
+                selectAllBtn.textContent = anyUnchecked
+                    ? getLabel('recurring.deselectAll')
+                    : getLabel('recurring.selectAll');
+
+                this.updateConfirmButtonVisibility();
+            });
+        }
+
         console.log('✅ Add task section setup complete');
     }
 
@@ -1481,9 +1563,11 @@ export class RecurringPanelManager {
             return;
         }
 
-        // Clear existing list and hide confirm button
+        // Clear existing list, hide confirm button, reset select all
         nonRecurringList.innerHTML = "";
         if (confirmBtn) confirmBtn.classList.add("hidden");
+        const selectAllBtn = this.deps.getElementById(DOM_IDS.SELECT_ALL_ADD_RECURRING);
+        if (selectAllBtn) selectAllBtn.textContent = getLabel('recurring.selectAll');
 
         try {
             if (!this.deps.AppState?.isReady?.()) {

@@ -618,6 +618,60 @@ body.dark-mode .next-occurrence-text {
     color: var(--dark-next-occurrence-text);
 }
 
+/* Add Task to Recurring button + panel section */
+body.dark-mode .add-recurring-task-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .add-recurring-task-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+body.dark-mode .available-tasks-list {
+    background: var(--dark-surface-secondary);
+    border-color: var(--dark-button-hover-bg);
+}
+
+body.dark-mode .available-tasks-header {
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .select-all-add-recurring-btn {
+    color: var(--color-blue-light);
+}
+
+body.dark-mode .select-all-add-recurring-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode #non-recurring-tasks li {
+    background: var(--dark-surface-deep);
+    border-color: var(--dark-button-hover-bg);
+    color: var(--dark-text-light);
+}
+
+body.dark-mode #non-recurring-tasks li:hover {
+    background: var(--dark-button-bg);
+}
+
+body.dark-mode #non-recurring-tasks li.selected {
+    background: rgba(76, 175, 80, 0.15);
+    border-color: var(--color-success);
+}
+
+body.dark-mode .no-available-tasks,
+body.dark-mode .recurring-empty-state {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .confirm-add-recurring-btn:disabled {
+    background: var(--dark-button-bg);
+    color: var(--dark-text-dim);
+}
+
 /* =============================================================================
    DARK MODE MINI-MODAL
    ============================================================================= */

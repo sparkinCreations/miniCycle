@@ -132,6 +132,7 @@ export async function initRecurringModules(options = {}) {
             updateRecurringPanel: null,        // Set later
             updateRecurringSummary: null,      // Set later
             updatePanelButtonVisibility: null, // Set later
+            updateInfoLink: null,             // Set later
             refreshUIFromState: () => {
                 if (typeof deps.refreshUIFromState === 'function') {
                     return deps.refreshUIFromState();
@@ -237,7 +238,8 @@ export async function initRecurringModules(options = {}) {
         await recurringCore.setRecurringCoreDependencies({
             updateRecurringPanel: () => recurringPanel.updateRecurringPanel(),
             updateRecurringSummary: () => recurringPanel.updateRecurringSummary(),
-            updatePanelButtonVisibility: () => recurringPanel.updateRecurringPanelButtonVisibility()
+            updatePanelButtonVisibility: () => recurringPanel.updateRecurringPanelButtonVisibility(),
+            updateInfoLink: () => recurringPanel.updateRecurringInfoLink()
         });
 
         console.log('✅ Panel callbacks wired to core');
@@ -259,7 +261,7 @@ export async function initRecurringModules(options = {}) {
         console.log('⏱️ Setting up recurring task watcher...');
 
         // Initialize the watcher - will start checking every 30 seconds
-        coreFunctions.setupRecurringWatcher();
+        await coreFunctions.setupRecurringWatcher();
 
         console.log('✅ Recurring watcher initialized');
 
@@ -296,6 +298,7 @@ export async function initRecurringModules(options = {}) {
             updatePanel: () => recurringPanel.updateRecurringPanel(),
             updateSummary: () => recurringPanel.updateRecurringSummary(),
             updateButtonVisibility: () => recurringPanel.updateRecurringPanelButtonVisibility(),
+            updateInfoLink: () => recurringPanel.updateRecurringInfoLink(),
             openPanel: () => recurringPanel.openPanel(),
             closePanel: () => recurringPanel.closePanel(),
             openForTask: (taskId) => recurringPanel.openRecurringSettingsPanelForTask(taskId),
@@ -315,10 +318,11 @@ export async function initRecurringModules(options = {}) {
             deps.clearDeferredRecurringSetup?.();
         }
 
-        // ✅ Update recurring button visibility on init (shows button if templates exist)
+        // ✅ Update recurring button visibility and info link on init (shows button if templates exist)
         setTimeout(() => {
             recurringPanel.updateRecurringPanelButtonVisibility();
-            console.log('✅ Recurring button visibility updated on init');
+            recurringPanel.updateRecurringInfoLink();
+            console.log('✅ Recurring button visibility and info link updated on init');
         }, 150);
 
         console.log('✅ Recurring modules initialized (Phase 3)');
@@ -406,6 +410,7 @@ export function testRecurringIntegration(recurringModules = null) {
             'updatePanel',
             'updateSummary',
             'updateButtonVisibility',
+            'updateInfoLink',
             'openPanel',
             'closePanel',
             'openForTask'

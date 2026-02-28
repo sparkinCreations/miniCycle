@@ -342,6 +342,8 @@ export const DEFAULT_LABELS = deepFreeze({
         noRoutineToSave:        'No routine found to save.',
 
         // Cycle/routine notifications
+        firstCycleCompleted:    'Congratulations on completing your first cycle!',
+        firstCycleSubtitle:     'Unlock badges and achievements by completing more cycles.',
         cycleComplete:          'Cycle complete!',
         cycleDeletedSwitch:     '"{deleted}" deleted. "{active}" is now active.',
         cycleDeleted:           '"{name}" has been deleted.',
@@ -748,7 +750,10 @@ export const DEFAULT_LABELS = deepFreeze({
         noSavedPresets:       'No saved presets yet',
         loadingTasks:         'Loading tasks...',
         noRecentActions:      'No recent actions',
-        noFrequentActions:    'No frequent actions yet'
+        noFrequentActions:    'No frequent actions yet',
+        recurringScheduled:   '{count} tasks set to recurring',
+        recurringScheduledOne: '1 task set to recurring',
+        viewRecurring:        'View recurring settings'
     },
 
     // ========================================================================
@@ -779,7 +784,9 @@ export const DEFAULT_LABELS = deepFreeze({
         firstSpecificDate:    'First specific date',
         specificDate:         'Specific date {index}',
         removeDate:           'Remove this date',
-        addTasksToRecurring:  'Add {count} Tasks to Recurring'
+        addTasksToRecurring:  'Add {count} Tasks to Recurring',
+        selectAll:            'Select All',
+        deselectAll:          'Deselect All'
     },
 
     // ========================================================================
