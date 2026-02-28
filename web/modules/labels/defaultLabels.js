@@ -242,6 +242,8 @@ export const DEFAULT_LABELS = deepFreeze({
         calculating:        'Calculating...',
         deleteTitle:        'Delete Routine',
         deleteMessage:      'Are you sure you want to delete "{name}"? This action cannot be undone.',
+        downloadConfirmTitle:   'Download Routine',
+        downloadConfirmMessage: 'Download "{name}" as a .mcyc file?',
         noSaved:            'No saved routines found.',
         noSelectedForDelete:'No routine selected for deletion.',
         selectPreview:      'Select a routine to preview',

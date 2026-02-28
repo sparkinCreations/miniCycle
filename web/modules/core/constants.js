@@ -587,6 +587,7 @@ export const DOM_IDS = Object.freeze({
     SWITCH_DUPLICATE: 'switch-duplicate',
     SWITCH_RENAME: 'switch-rename',
     SWITCH_DELETE: 'switch-delete',
+    SWITCH_DOWNLOAD: 'switch-download',
     SWITCH_THEME_BTN: 'switch-theme',
     THEME_PICKER_ROW: 'theme-picker-row',
     MINI_CYCLE_SWITCH_CONFIRM: 'miniCycleSwitchConfirm',
