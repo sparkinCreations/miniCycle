@@ -73,7 +73,8 @@ const di = createDIModule('RoutineSwitcher', {
     vocabThemeManager: optional(null),
     updateMainMenuHeader: optional(null),
     refreshThemeLabels: optional(null),
-    logHistoryEvent: optional(null)
+    logHistoryEvent: optional(null),
+    exportMiniCycleData: optional(null)
 });
 
 /**
@@ -201,6 +202,15 @@ export class RoutineSwitcher {
             deleteButton._clickHandler = () => this.deleteMiniCycle();
         }
         safeAdd(deleteButton, "click", deleteButton._clickHandler);
+
+        // Download button
+        const downloadButton = this.deps.getElementById(DOM_IDS.SWITCH_DOWNLOAD);
+        if (downloadButton) {
+            if (!downloadButton._clickHandler) {
+                downloadButton._clickHandler = () => this.downloadMiniCycle();
+            }
+            safeAdd(downloadButton, "click", downloadButton._clickHandler);
+        }
 
         // Theme picker button (only wired once; shows/hides the picker for the selected routine)
         const themeBtn = this.deps.getElementById(DOM_IDS.SWITCH_THEME_BTN);
@@ -456,6 +466,84 @@ export class RoutineSwitcher {
                 }
             }
         });
+    }
+
+    /**
+     * Download the selected routine as a .mcyc file with confirmation
+     */
+    downloadMiniCycle() {
+        const selected = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
+        if (!selected) {
+            this.deps.showNotification(getLabel('switcher.selectFirst'), 'info', 2000);
+            return;
+        }
+
+        const cycleKey = selected.dataset.cycleKey;
+        const currentState = this.deps.AppState?.get();
+        const cycleData = currentState?.data?.cycles?.[cycleKey];
+        if (!cycleData) return;
+
+        const cycleName = cycleData.title || cycleKey;
+
+        this.deps.showConfirmationModal({
+            title: getLabel('switcher.downloadConfirmTitle'),
+            message: getLabel('switcher.downloadConfirmMessage', { vars: { name: cycleName } }),
+            confirmText: getLabel('routine.download'),
+            cancelText: getLabel('button.cancel'),
+            destructive: false,
+            callback: (confirmed) => {
+                if (!confirmed) return;
+                const exportData = this._buildExportPayload(cycleKey, cycleData);
+                if (typeof this.deps.exportMiniCycleData === 'function') {
+                    this.deps.exportMiniCycleData(exportData, cycleName);
+                }
+            }
+        });
+    }
+
+    /**
+     * Build export payload from cycle data (matches cycleExportManager format)
+     * @param {string} cycleKey - The cycle key/ID
+     * @param {Object} cycle - The cycle data from AppState
+     * @returns {Object} Export-ready data object
+     * @private
+     */
+    _buildExportPayload(cycleKey, cycle) {
+        return {
+            name: cycleKey,
+            title: cycle.title || "New Routine",
+            tasks: (cycle.tasks || []).map(task => {
+                const settings = task.recurringSettings
+                    ? structuredClone(task.recurringSettings)
+                    : {};
+                if (task.recurring && !settings.specificTime && !settings.defaultRecurTime) {
+                    settings.defaultRecurTime = new Date().toISOString();
+                }
+                return {
+                    id: task.id,
+                    text: task.text || "",
+                    completed: task.completed || false,
+                    dueDate: task.dueDate || null,
+                    highPriority: task.highPriority || false,
+                    remindersEnabled: task.remindersEnabled || false,
+                    recurring: task.recurring || false,
+                    recurringSettings: settings,
+                    deleteWhenComplete: task.deleteWhenComplete,
+                    deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || { cycle: false, todo: true },
+                    schemaVersion: task.schemaVersion || 2
+                };
+            }),
+            autoReset: cycle.autoReset || false,
+            cycleCount: cycle.cycleCount || 0,
+            deleteCheckedTasks: cycle.deleteCheckedTasks || false,
+            taskOptionButtons: cycle.taskOptionButtons || null,
+            recurringTemplates: cycle.recurringTemplates || {},
+            reminders: cycle.reminders || null,
+            createdAt: cycle.createdAt || null,
+            theme: cycle.theme || 'classic',
+            history: cycle.history || null,
+            clearedTasks: cycle.clearedTasks || null
+        };
     }
 
     /**

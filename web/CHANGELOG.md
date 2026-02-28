@@ -1,3 +1,7 @@
+## [2.025] - 2026-02-28
+- feat(recurring): Enhance recurring tasks functionality and UI
+
+
 ## [2.024] - 2026-02-28
 - chore: update version to 2.023 and reflect changes across documentation and files
 
