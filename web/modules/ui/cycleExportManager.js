@@ -19,6 +19,7 @@ import { getLabel } from '../labels/labelResolver.js';
 const di = createDIModule('CycleExportManager', {
     loadMiniCycleData: required(),
     showNotification: required(),
+    showConfirmationModal: required(),
     safeAddEventListener: required(),
     getElementById: optional(null),  // DOM helper - safe to default
     AppMeta: optional(null)  // For version info
@@ -68,7 +69,23 @@ export function exportMiniCycleData(miniCycleData, cycleName) {
         URL.revokeObjectURL(link.href);
 
         console.log('Export completed successfully');
-        _deps.showNotification?.("✅ " + getLabel('notify.exportSuccess', { vars: { name: cycleName } }), "success", 3000);
+
+        // Notification must wait for save dialog to close — it covers the browser
+        // and the 3s auto-dismiss expires before the user can see it.
+        // Strategy: fire on window focus (save dialog causes blur→focus cycle),
+        // with a short fallback for browsers that auto-download without a dialog.
+        const notify = _deps.showNotification;
+        if (typeof notify === 'function') {
+            let notified = false;
+            const showSuccess = () => {
+                if (notified) return;
+                notified = true;
+                window.removeEventListener('focus', showSuccess);
+                notify("✅ " + getLabel('notify.exportSuccess', { vars: { name: cycleName } }), "success", 3000);
+            };
+            window.addEventListener('focus', showSuccess);
+            setTimeout(showSuccess, 3000); // fallback if no save dialog
+        }
 
     } catch (error) {
         console.error('Export failed:', error);
@@ -117,48 +134,60 @@ export function setupExportButton() {
         }
 
         console.log('Exporting cycle:', activeCycle);
+        const cycleName = cycle.title || activeCycle;
 
-        const miniCycleData = {
-            name: activeCycle,
-            title: cycle.title || "New Routine",
-            tasks: cycle.tasks.map(task => {
-                // Clone to avoid mutating live cycle data
-                const settings = task.recurringSettings
-                    ? structuredClone(task.recurringSettings)
-                    : {};
+        _deps.showConfirmationModal({
+            title: getLabel('switcher.downloadConfirmTitle'),
+            message: getLabel('switcher.downloadConfirmMessage', { vars: { name: cycleName } }),
+            confirmText: getLabel('routine.download'),
+            cancelText: getLabel('button.cancel'),
+            destructive: false,
+            callback: (confirmed) => {
+                if (!confirmed) return;
 
-                // Add fallback time if task is recurring and doesn't use specificTime
-                if (task.recurring && !settings.specificTime && !settings.defaultRecurTime) {
-                    settings.defaultRecurTime = new Date().toISOString();
-                }
+                const miniCycleData = {
+                    name: activeCycle,
+                    title: cycle.title || "New Routine",
+                    tasks: cycle.tasks.map(task => {
+                        // Clone to avoid mutating live cycle data
+                        const settings = task.recurringSettings
+                            ? structuredClone(task.recurringSettings)
+                            : {};
 
-                return {
-                    id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-                    text: task.text || "",
-                    completed: task.completed || false,
-                    dueDate: task.dueDate || null,
-                    highPriority: task.highPriority || false,
-                    remindersEnabled: task.remindersEnabled || false,
-                    recurring: task.recurring || false,
-                    recurringSettings: settings,
-                    deleteWhenComplete: task.deleteWhenComplete,
-                    deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || { cycle: false, todo: true },
-                    schemaVersion: task.schemaVersion || 2
+                        // Add fallback time if task is recurring and doesn't use specificTime
+                        if (task.recurring && !settings.specificTime && !settings.defaultRecurTime) {
+                            settings.defaultRecurTime = new Date().toISOString();
+                        }
+
+                        return {
+                            id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                            text: task.text || "",
+                            completed: task.completed || false,
+                            dueDate: task.dueDate || null,
+                            highPriority: task.highPriority || false,
+                            remindersEnabled: task.remindersEnabled || false,
+                            recurring: task.recurring || false,
+                            recurringSettings: settings,
+                            deleteWhenComplete: task.deleteWhenComplete,
+                            deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || { cycle: false, todo: true },
+                            schemaVersion: task.schemaVersion || 2
+                        };
+                    }),
+                    autoReset: cycle.autoReset || false,
+                    cycleCount: cycle.cycleCount || 0,
+                    deleteCheckedTasks: cycle.deleteCheckedTasks || false,
+                    taskOptionButtons: cycle.taskOptionButtons || null,
+                    recurringTemplates: cycle.recurringTemplates || {},
+                    reminders: cycle.reminders || null,
+                    createdAt: cycle.createdAt || null,
+                    theme: cycle.theme || 'classic',
+                    history: cycle.history || null,
+                    clearedTasks: cycle.clearedTasks || null
                 };
-            }),
-            autoReset: cycle.autoReset || false,
-            cycleCount: cycle.cycleCount || 0,
-            deleteCheckedTasks: cycle.deleteCheckedTasks || false,
-            taskOptionButtons: cycle.taskOptionButtons || null,
-            recurringTemplates: cycle.recurringTemplates || {},
-            reminders: cycle.reminders || null,
-            createdAt: cycle.createdAt || null,
-            theme: cycle.theme || 'classic',
-            history: cycle.history || null,
-            clearedTasks: cycle.clearedTasks || null
-        };
 
-        exportMiniCycleData(miniCycleData, cycle.title || activeCycle);
+                exportMiniCycleData(miniCycleData, cycleName);
+            }
+        });
     };
 
     safeAddEventListener(exportBtn, "click", exportBtn._clickHandler);
