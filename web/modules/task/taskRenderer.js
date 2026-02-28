@@ -43,6 +43,7 @@ const di = createDIModule('TaskRenderer', {
     enableDragAndDropOnTask: optional(null),
     recurringPanel: optional(null),
     updateRecurringPanelButtonVisibility: optional(null),
+    updateRecurringInfoLink: optional(null),
     updateSearchVisibility: optional(null),  // Task search visibility based on count
     AppMeta: optional(null),
     taskToAddTaskOptions: optional(null),  // From taskUtils - injected to avoid duplicate module loading
@@ -94,6 +95,7 @@ export class TaskRenderer {
             // Recurring panel (required)
             recurringPanel: resolvedDeps.recurringPanel,
             updateRecurringPanelButtonVisibility: resolvedDeps.updateRecurringPanelButtonVisibility,
+            updateRecurringInfoLink: resolvedDeps.updateRecurringInfoLink,
 
             // Task search visibility
             updateSearchVisibility: resolvedDeps.updateSearchVisibility,
@@ -223,6 +225,7 @@ export class TaskRenderer {
 
         // Update recurring panel
         this.deps.updateRecurringPanelButtonVisibility?.();
+        this.deps.updateRecurringInfoLink?.();
 
         // Check overdue tasks after rendering
         setTimeout(() => {
@@ -274,6 +277,7 @@ export class TaskRenderer {
                 // Update other UI bits that don't depend on reloading storage
                 this.deps.recurringPanel?.updateRecurringPanel?.();
                 this.deps.recurringPanel?.updateRecurringPanelButtonVisibility?.();
+                this.deps.updateRecurringInfoLink?.();
 
                 this.deps.updateMainMenuHeader?.();
 

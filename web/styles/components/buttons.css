@@ -566,3 +566,59 @@ body.hide-help-window .help-window {
     animation: fadeOutScale var(--animation-exit) ease-in-out;
     z-index: var(--z-modal);
 }
+
+/* =============================================================================
+   FIRST CYCLE CELEBRATION OVERLAY — darkened screen with floating text
+   ============================================================================= */
+
+.first-cycle-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    z-index: var(--z-modal-high);
+    animation: fadeIn var(--transition-normal) ease-out;
+    cursor: pointer;
+}
+
+@keyframes firstCycleBounce {
+    0%   { opacity: 0; transform: scale(0.3); }
+    20%  { opacity: 1; transform: scale(1.15); }
+    35%  { opacity: 1; transform: scale(0.95); }
+    50%  { opacity: 1; transform: scale(1); }
+    75%  { opacity: 1; transform: scale(1); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.first-cycle-icon {
+    font-size: 64px;
+    line-height: 1;
+    animation: firstCycleBounce 1.5s ease-out;
+}
+
+.first-cycle-heading {
+    color: var(--color-white);
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    text-align: center;
+    padding: 0 var(--space-4);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.first-cycle-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: var(--font-size-md);
+    font-weight: 400;
+    text-align: center;
+    padding: 0 var(--space-4);
+    margin: 0;
+    line-height: 1.4;
+}

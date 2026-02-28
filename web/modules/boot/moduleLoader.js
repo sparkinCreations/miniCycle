@@ -920,6 +920,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
             }
         }),
         updateRecurringPanelButtonVisibility: (...args) => deps.recurring?.panel?.updateRecurringPanelButtonVisibility?.(...args),
+        updateRecurringInfoLink: (...args) => deps.recurring?.panel?.updateRecurringInfoLink?.(...args),
         catchUpMissedRecurringTasks: (...args) => deps.recurring?.core?.catchUpMissedRecurringTasks?.(...args),
         watchRecurringTasks: (...args) => deps.recurring?.core?.watchRecurringTasks?.(...args),
         removeRecurringTasksFromCycle: (...args) => {

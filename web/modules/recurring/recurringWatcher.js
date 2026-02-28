@@ -78,6 +78,7 @@ let _recurringWatcherInitialized = false;
 let _watcherIntervalId = null;
 let _currentIntervalMs = null;
 let _taskLimitNotificationShown = false; // Prevent notification spam
+let _visibilityChangeHandler = null; // Stored for cleanup
 
 // ============================================================================
 // TASK LIMIT HELPERS
@@ -154,7 +155,7 @@ function switchInterval(hasTemplates) {
         _watcherIntervalId = Deps.setInterval(() => watchRecurringTasks(), targetInterval);
         _currentIntervalMs = targetInterval;
 
-        const intervalDesc = hasTemplates ? '30 seconds (active)' : '2 hours (idle)';
+        const intervalDesc = hasTemplates ? '15 seconds (active)' : '2 hours (idle)';
         console.log(`⏱️ Recurring watcher interval: ${intervalDesc}`);
     }
 }
@@ -582,14 +583,18 @@ export async function setupRecurringWatcher() {
     assertInjected('setInterval', Deps.setInterval);
     switchInterval(hasTemplates);
 
-    // Re-check when tab becomes visible
-    document.addEventListener("visibilitychange", async () => {
+    // Re-check when tab becomes visible (remove previous listener to prevent leaks)
+    if (_visibilityChangeHandler) {
+        document.removeEventListener("visibilitychange", _visibilityChangeHandler);
+    }
+    _visibilityChangeHandler = async () => {
         if (document.visibilityState === "visible") {
             console.log('👁️ Tab visible again, checking for missed tasks...');
             await catchUpMissedRecurringTasks();
             await watchRecurringTasks();
         }
-    });
+    };
+    document.addEventListener("visibilitychange", _visibilityChangeHandler);
 
     _recurringWatcherInitialized = true;
     console.log('✅ Recurring watcher initialized successfully');
@@ -612,6 +617,10 @@ export function resetWatcherState() {
     _recurringWatcherInitialized = false;
     _watcherIntervalId = null;
     _currentIntervalMs = null;
+    if (_visibilityChangeHandler) {
+        document.removeEventListener("visibilitychange", _visibilityChangeHandler);
+        _visibilityChangeHandler = null;
+    }
 }
 
 console.log('👁️ RecurringWatcher module loaded');

@@ -53,6 +53,7 @@ const di = createDIModule('RecurringCore', {
     updateRecurringPanel: optional(null),
     updateRecurringSummary: optional(null),
     updatePanelButtonVisibility: optional(null),
+    updateInfoLink: optional(null),
     refreshUIFromState: optional(null),
     updateProgressBar: optional(null),
     GlobalUtils: optional(null),

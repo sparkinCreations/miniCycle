@@ -172,6 +172,7 @@ export class TaskDOMManager {
             handleRecurringTaskActivation: resolvedDeps.handleRecurringTaskActivation || null,
             handleRecurringTaskDeactivation: resolvedDeps.handleRecurringTaskDeactivation || null,
             updateRecurringPanelButtonVisibility: resolvedDeps.updateRecurringPanelButtonVisibility || null,
+            updateRecurringInfoLink: resolvedDeps.updateRecurringInfoLink || null,
 
             // DOM helpers (fallback to native)
             safeAddEventListener: resolvedDeps.safeAddEventListener,
@@ -344,6 +345,7 @@ export class TaskDOMManager {
                     // Recurring panel
                     recurringPanel: this.deps.recurringPanel,
                     updateRecurringPanelButtonVisibility: this.deps.updateRecurringPanelButtonVisibility,
+                    updateRecurringInfoLink: this.deps.updateRecurringInfoLink,
 
                     // DOM helpers
                     getElementById: this.deps.getElementById,

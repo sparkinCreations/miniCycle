@@ -710,10 +710,27 @@ select.hidden {
 }
 
 .available-tasks-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     font-size: var(--font-size-xs);
     font-weight: 600;
     color: #555;
     margin-bottom: var(--space-2);
+}
+
+.select-all-add-recurring-btn {
+    font-size: var(--font-size-xs);
+    color: var(--color-blue-medium);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+.select-all-add-recurring-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
 }
 
 #non-recurring-tasks {

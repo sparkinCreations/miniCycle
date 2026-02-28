@@ -30,6 +30,7 @@ const di = createDIModule('RecurringActivation', {
     updateRecurringPanel: optional(null),
     updateRecurringSummary: optional(null),
     updatePanelButtonVisibility: optional(null),
+    updateInfoLink: optional(null),
     updateProgressBar: optional(null),
     GlobalUtils: optional(null),
     // Functions from sibling modules (injected to avoid circular imports)
@@ -235,10 +236,11 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
     // Restart watcher at active interval since a template was created
     Deps.restartRecurringWatcher?.();
 
-    // Update panel button visibility
+    // Update panel button visibility and info link
     if (Deps.updatePanelButtonVisibility && typeof Deps.updatePanelButtonVisibility === 'function') {
         setTimeout(() => {
             Deps.updatePanelButtonVisibility();
+            Deps.updateInfoLink?.();
         }, 100);
     }
 }
@@ -325,6 +327,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
     if (Deps.updatePanelButtonVisibility && typeof Deps.updatePanelButtonVisibility === 'function') {
         Deps.updatePanelButtonVisibility();
     }
+    Deps.updateInfoLink?.();
 }
 
 // ============================================================================
@@ -408,12 +411,17 @@ export async function applyRecurringToTaskSchema25(taskId, newSettings) {
         }
     }, true);
 
+    // Re-read task from updated state (the `task` variable above holds pre-update data)
+    const updatedState = Deps.AppState.get();
+    const updatedCycle = updatedState.data?.cycles?.[activeCycleId];
+    const updatedTask = updatedCycle?.tasks?.find(t => t.id === taskId);
+
     // Update DOM
     assertInjected('querySelector', Deps.querySelector);
     const taskElement = Deps.querySelector(DATA_SELECTORS.elementByTaskId(taskId));
     if (taskElement) {
         taskElement.classList.add("recurring");
-        taskElement.setAttribute("data-recurring-settings", JSON.stringify(task.recurringSettings));
+        taskElement.setAttribute("data-recurring-settings", JSON.stringify(updatedTask?.recurringSettings || task.recurringSettings));
         const recurringBtn = taskElement.querySelector(DOM_SELECTORS.RECURRING_BTN);
         if (recurringBtn) {
             recurringBtn.classList.add("active");
@@ -433,6 +441,7 @@ export async function applyRecurringToTaskSchema25(taskId, newSettings) {
     if (Deps.updatePanelButtonVisibility && typeof Deps.updatePanelButtonVisibility === 'function') {
         Deps.updatePanelButtonVisibility();
     }
+    Deps.updateInfoLink?.();
 
     // Restart watcher at active interval since a template was created/updated
     Deps.restartRecurringWatcher?.();

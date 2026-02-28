@@ -133,7 +133,7 @@ export const DEBOUNCE = Object.freeze({
  * @constant {Object}
  */
 export const INTERVALS = Object.freeze({
-    RECURRING_WATCHER: 30000,           // 30s - Recurring task watcher check interval (active)
+    RECURRING_WATCHER: 15000,           // 15s - Recurring task watcher check interval (active)
     RECURRING_WATCHER_IDLE: 7200000,    // 2h - Recurring watcher interval when no templates exist
     STATS_CACHE_TTL: 5000               // 5s - Task stats cache time-to-live
 });
@@ -433,6 +433,7 @@ export const DOM_IDS = Object.freeze({
     COMPLETE_ALL: 'completeAll',
     COMPLETED_TASK_LIST: 'completedTaskList',
     EMPTY_STATE: 'empty-state',
+    RECURRING_INFO_LINK: 'recurring-info-link',
     COMPLETED_TASKS_SECTION: 'completed-tasks-section',
     COMPLETED_TASKS_HEADER: 'completed-tasks-header',
     COMPLETED_COUNT: 'completed-count',
@@ -662,6 +663,7 @@ export const DOM_IDS = Object.freeze({
     AVAILABLE_TASKS_LIST: 'available-tasks-list',
     CONFIRM_ADD_RECURRING: 'confirm-add-recurring',
     NON_RECURRING_TASKS: 'non-recurring-tasks',
+    SELECT_ALL_ADD_RECURRING: 'select-all-add-recurring',
     NO_AVAILABLE_TASKS: 'no-available-tasks',
     RECUR_INDEFINITELY: 'recur-indefinitely',
     RECUR_LIMITED_CONTAINER: 'recur-limited-container',
