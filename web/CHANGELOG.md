@@ -1,3 +1,7 @@
+## [2.026] - 2026-02-28
+- feat: add download functionality for routines and implement guided tour system
+
+
 ## [2.025] - 2026-02-28
 - feat(recurring): Enhance recurring tasks functionality and UI
 

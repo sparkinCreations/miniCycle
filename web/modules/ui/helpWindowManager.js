@@ -448,6 +448,44 @@ export class HelpWindowManager {
         }, 10000);
     }
 
+    /**
+     * Shows a message about recurring tasks being removed after cycle reset or task clearing.
+     * Chains after the 2-second cycle-complete or tasks-cleared message.
+     */
+    showRecurringRemovedMessage() {
+        if (!this.helpWindow) return;
+
+        // Don't interrupt cycle complete message (this should be called with a delay)
+        if (this.isShowingCycleComplete) return;
+
+        // Clear any existing mode description timeout
+        if (this.modeDescriptionTimeout) {
+            clearTimeout(this.modeDescriptionTimeout);
+            this.modeDescriptionTimeout = null;
+        }
+
+        this.isShowingModeDescription = true;
+        this.currentMode = null; // Not a mode description — refreshLabels() will fall through to updateConstantMessage()
+
+        const message = getLabel('help.recurringRemoved');
+        this.helpWindow.innerHTML = `
+            <div class="mode-help-content">
+                <p style="margin: 0; line-height: 1.4;">${message}</p>
+            </div>
+        `;
+
+        // Auto-hide after 10 seconds
+        this.modeDescriptionTimeout = setTimeout(() => {
+            this.isShowingModeDescription = false;
+            this.modeDescriptionTimeout = null;
+            const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
+            taskView?.classList.remove('mode-description-visible');
+            // Force re-evaluation by clearing cached message
+            this.currentMessage = null;
+            this.updateConstantMessage();
+        }, 10000);
+    }
+
     getCurrentStatusMessage() {
         const totalTasks = document.querySelectorAll(DOM_SELECTORS.TASK).length;
         const completedTasks = document.querySelectorAll('.task input:checked').length;

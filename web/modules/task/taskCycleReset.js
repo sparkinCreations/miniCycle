@@ -383,7 +383,7 @@ function resetTasksData(context, deps) {
         }
     }
 
-    return { aborted: false, tasksDeleted: tasksToDelete.length };
+    return { aborted: false, tasksDeleted: tasksToDelete.length, recurringRemovedCount: recurringRemovedNames.length };
 }
 
 /**
@@ -537,6 +537,13 @@ export async function resetTasksImpl(deps = {}) {
             helpWindowMgr.showCycleCompleteMessage();
         }
 
+        // Step 8.5: Chain recurring-removed message after cycle complete message (if applicable)
+        if (result.recurringRemovedCount > 0) {
+            trackTimeout(setTimeout(() => {
+                helpWindowMgr?.showRecurringRemovedMessage?.();
+            }, 2100)); // fires after 2s cycle-complete message ends
+        }
+
         // Step 9: Update undo/redo buttons
         if (typeof mergedDeps.updateUndoRedoButtons === 'function') {
             mergedDeps.updateUndoRedoButtons();
@@ -609,6 +616,12 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
         return { aborted: true, reason: 'no_tasks' };
     }
 
+    // Count recurring tasks among those being deleted
+    const recurringDeleteCount = tasksToDelete.filter(({ taskId }) => {
+        const task = cycleData.tasks?.find(t => t.id === taskId);
+        return task?.recurring === true;
+    }).length;
+
     console.log(`Deleting ${tasksToDelete.length} tasks marked for deletion`);
 
     // Trigger logo scan effect for to-do mode task clearing
@@ -642,6 +655,13 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     const resolvedHelpMgr = typeof helpWindowMgr === 'function' ? helpWindowMgr() : helpWindowMgr;
     if (resolvedHelpMgr?.showTasksClearedMessage) {
         resolvedHelpMgr.showTasksClearedMessage(tasksToDelete.length);
+    }
+
+    // Chain recurring-removed message after tasks-cleared message (if applicable)
+    if (recurringDeleteCount > 0) {
+        setTimeout(() => {
+            resolvedHelpMgr?.showRecurringRemovedMessage?.();
+        }, 2100); // fires after 2s tasks-cleared message ends
     }
 
     // Animate and remove from DOM, collect IDs

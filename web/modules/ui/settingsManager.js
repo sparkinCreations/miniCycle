@@ -194,6 +194,7 @@ function wireSubModuleDependencies(dependencies) {
     _subModules.setCycleExportManagerDependencies({
         loadMiniCycleData: dependencies.loadMiniCycleData,
         showNotification: dependencies.showNotification,
+        showConfirmationModal: dependencies.showConfirmationModal,
         safeAddEventListener: dependencies.safeAddEventListener,
         AppMeta: dependencies.AppMeta
     });

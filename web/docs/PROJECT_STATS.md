@@ -13,7 +13,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.025 |
+| **App Version** | 2.026 |
 | **Lite Version** | 2.087 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 114 |
@@ -21,7 +21,7 @@
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 38 |
 | **JSDoc Blocks** | 1015 |
-| **Documentation Files** | 178 |
+| **Documentation Files** | 180 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
 
