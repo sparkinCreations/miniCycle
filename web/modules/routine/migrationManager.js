@@ -351,6 +351,11 @@ export function simulateMigrationToSchema25(dryRun = true) {
 
         // 7. User progress
         newData.userProgress.cyclesCompleted = totalCompleted;
+        // Mark first-cycle celebration as already shown for migrated users
+        // (they are not new users — don't show the first-cycle overlay)
+        if (totalCompleted > 0) {
+            newData.userProgress.firstCycleCelebrated = true;
+        }
         if (milestones.darkOcean) newData.userProgress.rewardMilestones.push("dark-ocean-5");
         if (milestones.goldenGlow) newData.userProgress.rewardMilestones.push("golden-glow-50");
 

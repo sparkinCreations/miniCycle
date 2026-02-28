@@ -1,3 +1,7 @@
+## [2.027] - 2026-02-28
+- feat: add guided tour system for onboarding new users
+
+
 ## [2.026] - 2026-02-28
 - feat: add download functionality for routines and implement guided tour system
 
