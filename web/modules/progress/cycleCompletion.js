@@ -343,9 +343,15 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
 
     handleMilestoneUnlocks(activeCycle, globalCyclesCompleted);
 
-    // First cycle celebration overlay (one-time — globalCyclesCompleted is only 1 once)
-    if (globalCyclesCompleted === 1) {
+    // First cycle celebration overlay (one-time only for truly new users)
+    // Guard: globalCyclesCompleted must be exactly 1 AND the celebration must not have
+    // been shown before. The flag prevents re-showing for migrated users whose
+    // cyclesCompleted was set to their pre-existing total by migrationManager.
+    if (globalCyclesCompleted === 1 && !updatedState.userProgress?.firstCycleCelebrated) {
         showFirstCycleOverlay();
+        deps.AppState.update(state => {
+            state.userProgress.firstCycleCelebrated = true;
+        }, true);
     }
 
     // Log history event
