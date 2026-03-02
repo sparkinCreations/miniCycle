@@ -1,3 +1,7 @@
+## [2.030] - 2026-03-02
+- feat: Enhance user experience and fix usability issues
+
+
 ## [2.028] - 2026-03-02
 - feat: enhance first cycle celebration logic for new users and migrated users
 
