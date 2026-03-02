@@ -81,6 +81,7 @@
     #task-view {
         max-height: calc(100vh - 250px);
         top: calc(50% + 15px);
+        overflow: hidden; /* Contain flex children — task-card shrinks, button stays fixed */
     }
 
     #task-view.show {

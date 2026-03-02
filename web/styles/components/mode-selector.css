@@ -308,7 +308,8 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
 
     .mode-selector-wrapper .mode-selector {
         font-size: var(--font-size-xs);
-        height: 24px;
+        height: 25px;
+        padding: 3px var(--space-5) 4px var(--space-2);
         max-width: 200px;
     }
 

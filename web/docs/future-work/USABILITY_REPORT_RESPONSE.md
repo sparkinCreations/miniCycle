@@ -170,12 +170,13 @@
 
 **Our assessment:** Confirmed. The `.complete-all-btn` used `margin-bottom: -20px` with `z-index: var(--z-content)`, while `.navigation-dots` were positioned at `bottom: 35px` with the same z-index. Both elements occupied overlapping vertical space at the bottom of the screen. On touch devices with 48x48px dot hit targets, accidental taps were a real risk.
 
-**Action:** DONE. Three changes in CSS:
+**Action:** DONE. Four changes across CSS:
 1. Removed `margin-bottom: -20px` from `.complete-all-btn` (set to `0`) in `buttons.css` — this was the primary cause, pulling the button down into the nav dot zone
 2. Bumped `.navigation-dots` z-index from `var(--z-content)` to `var(--z-elevated)` in `helpers.css` — safety net so nav dots always render above content-level elements
 3. Added `#task-view.complete-btn-visible .task-list-container` rule in `task-list.css` — reduces task list max-height by `var(--nav-area-height) + 30px` when the button is visible, preventing overlap even with 150+ tasks on desktop
+4. **Mobile flex-shrink fix:** Replaced 4 brittle `max-height: calc()` rules on `.task-card` with proper flexbox shrinking (`flex: 1 1 0; min-height: 0; overflow: hidden`). Added `flex-shrink: 0` to `.complete-all-and-help-window-container` and `overflow: hidden` to mobile `#task-view`. The task card now naturally shrinks on short viewports while the button, progress bar, and help window maintain their fixed size — no overlap at any viewport height.
 
-Verified: 43px gap between Complete Cycle button bottom and nav dots top on desktop with a 150-task stress test routine.
+Verified: 43px gap between Complete Cycle button bottom and nav dots top on desktop with a 150-task stress test routine. No overlap on mobile viewports down to 568px height.
 
 ---
 
