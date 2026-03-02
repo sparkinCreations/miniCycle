@@ -1,3 +1,7 @@
+## [2.033] - 2026-03-02
+- feat: Remove max-height constraints for task cards and list in focus mode for improved layout
+
+
 ## [2.032] - 2026-03-02
 - feat: Remove max-height constraints for task list on desktop and mobile for improved layout
 

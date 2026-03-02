@@ -217,19 +217,20 @@ body.focus-mode .focus-mode-btn svg {
    ============================================================================= */
 
 @media (max-width: 1023px) {
-    /* Shift task view down so title isn't cut off at top */
+    /* Focus mode: near-full viewport. Explicit max-heights at each level
+       so task-list-container knows when to scroll (max-height: none won't trigger scrollbar) */
     body.focus-mode #task-view {
-        top: calc(50% - 10px);
-        max-height: calc(100dvh - 50px);
+        top: calc(50% + 10px);
+        transform: translate(-50%, -50%);
+        max-height: calc(100dvh - 30px);
     }
 
-    /* Let flex parent constrain height — no self-imposed caps on mobile */
     body.focus-mode #task-view .task-card {
-        max-height: none;
+        max-height: calc(100dvh - 110px); /* minus input + progress + button + margins */
     }
 
     body.focus-mode #task-view .task-list-container {
-        max-height: none;
+        max-height: calc(100dvh - 150px); /* minus input + title + progress + button + margins */
     }
 
     /* Focus mode: fixed to bottom-right of viewport */
