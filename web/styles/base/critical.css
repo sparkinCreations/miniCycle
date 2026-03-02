@@ -198,8 +198,8 @@ html, body {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 28px;
-  padding: 2px 0;
+  min-height: 31px;
+  padding: 3px 0;
   background: linear-gradient(135deg, #f1f1f172, #ffffff10);
 }
 

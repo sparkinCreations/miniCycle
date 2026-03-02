@@ -1,3 +1,7 @@
+## [2.028] - 2026-03-02
+- feat: enhance first cycle celebration logic for new users and migrated users
+
+
 ## [2.027] - 2026-02-28
 - feat: add guided tour system for onboarding new users
 

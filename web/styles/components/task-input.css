@@ -21,6 +21,12 @@
     width: 80%;
     height: 40px;
     flex-shrink: 0; /* Don't shrink - task list shrinks instead */
+    transition: box-shadow 0.15s ease;
+}
+
+/* Focus ring on the entire container when input is focused */
+.task-input:focus-within {
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2), 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
 }
 
 /* Hidden state - use visibility to reserve space and prevent CLS */
@@ -73,7 +79,7 @@ input[type="text"]:focus-visible {
 
 #taskInput:focus {
     outline: none;
-    box-shadow: 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+    box-shadow: none;
 }
 
 /* =============================================================================
@@ -124,7 +130,7 @@ input[type="text"]:focus-visible {
 
 @media (max-width: 480px) {
     .task-input {
-        margin-top: var(--space-5);
+        margin-top: var(--space-2);
         width: 90%; /* Wider on mobile for more input space */
     }
 }

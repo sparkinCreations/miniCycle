@@ -1820,9 +1820,11 @@ export class RoutineSwitcher {
         } else {
             // Default: alphabetical by title
             // asc = A-Z, desc = Z-A
+            // Strip leading emojis (including ZWJ sequences) so sort uses the text, not emoji code points
+            const stripLeadingEmoji = (text) => text.replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, '');
             return cycleEntries.sort((a, b) => {
-                const aTitle = (a[1].title || a[0]).toLowerCase();
-                const bTitle = (b[1].title || b[0]).toLowerCase();
+                const aTitle = stripLeadingEmoji((a[1].title || a[0]).toLowerCase());
+                const bTitle = stripLeadingEmoji((b[1].title || b[0]).toLowerCase());
                 return isAsc ? aTitle.localeCompare(bTitle) : bTitle.localeCompare(aTitle);
             });
         }

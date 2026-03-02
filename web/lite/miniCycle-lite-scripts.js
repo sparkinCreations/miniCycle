@@ -37,7 +37,7 @@
 //   • Multiple cycles, Recurring tasks, Due dates, Reminders
 //   • Theme unlocks, Gamification, Import/export, Advanced settings
 //
-// Last meaningful update: v2.087 (intentionally static thereafter)
+// Last meaningful update: v2.088 (intentionally static thereafter)
 // © 2026 sparkinCreations - https://sparkincreations.com
 // ================================================================================
 
@@ -86,7 +86,7 @@ console.log('📱 miniCycle Lite Mode Activated for maximum compatibility!');
 
 
 
-var currentVersion = '2.087'; 
+var currentVersion = '2.088'; 
 
 // ✅ ADD version display function
 function showVersionInfo() {
@@ -2811,7 +2811,7 @@ function handleTryFullVersion() {
     return; // User cancelled
   }
 
-  var currentVersion = '2.087';
+  var currentVersion = '2.088';
 
   // Show confirmation
   showNotification(
@@ -3710,13 +3710,13 @@ function updateNavigationState() {
   // ✅ Update slide arrows visibility and states
   if (slideLeft && slideRight) {
     if (isStatsView) {
-      // On stats view - show left arrow, hide right arrow
+      // On stats view - show slideLeft (now on RIGHT side), hide slideRight
       slideLeft.style.display = 'block';
       slideRight.style.display = 'none';
       slideLeft.setAttribute('aria-pressed', 'false');
       slideLeft.setAttribute('aria-label', 'Go back to tasks');
     } else {
-      // On task view - show right arrow, hide left arrow
+      // On task view - show slideRight (now on LEFT side), hide slideLeft
       slideRight.style.display = 'block';
       slideLeft.style.display = 'none';
       slideRight.setAttribute('aria-pressed', 'false');

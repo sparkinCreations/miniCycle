@@ -294,7 +294,7 @@
     bottom: 35px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: var(--z-content);
+    z-index: var(--z-elevated);
     pointer-events: auto;
     cursor: pointer;
     background: transparent;

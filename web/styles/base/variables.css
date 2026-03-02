@@ -43,6 +43,8 @@
   --color-orange-light: #ffb74d;      /* orange gradient secondary */
   --color-orange-icon: #e67e22;       /* high-priority task option icon */
   --color-amber: #f39c12;             /* high-priority icon on dark bg */
+  --color-green-dark: #388E3C;         /* manual cycle mode indicator */
+  --color-purple: #7B1FA2;            /* to-do mode indicator */
   --color-red: #f44336;               /* storage critical / pure red */
   --color-red-light: #ef5350;         /* storage critical gradient secondary */
   /* Extended blue palette */
