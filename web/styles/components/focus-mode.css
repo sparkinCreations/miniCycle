@@ -223,12 +223,13 @@ body.focus-mode .focus-mode-btn svg {
         max-height: calc(100dvh - 50px);
     }
 
+    /* Let flex parent constrain height — no self-imposed caps on mobile */
     body.focus-mode #task-view .task-card {
-        max-height: calc(100dvh - 100px);
+        max-height: none;
     }
 
     body.focus-mode #task-view .task-list-container {
-        max-height: calc(100dvh - 140px);
+        max-height: none;
     }
 
     /* Focus mode: fixed to bottom-right of viewport */
