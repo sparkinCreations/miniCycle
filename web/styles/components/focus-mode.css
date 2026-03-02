@@ -220,7 +220,7 @@ body.focus-mode .focus-mode-btn svg {
     /* Focus mode: near-full viewport. Explicit max-heights at each level
        so task-list-container knows when to scroll (max-height: none won't trigger scrollbar) */
     body.focus-mode #task-view {
-        top: calc(50% + 10px);
+        top: calc(50% + 25px);
         transform: translate(-50%, -50%);
         max-height: calc(100dvh - 10px);
     }
