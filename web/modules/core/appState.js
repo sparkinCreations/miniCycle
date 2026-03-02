@@ -959,6 +959,7 @@ class MiniCycleState {
                 showCompletedDropdown: false,
                 completedTasksExpanded: false,
                 onboardingCompleted: false,
+                addTaskDiscovered: false,
                 dismissedEducationalTips: {},
                 defaultRecurringSettings: {
                     frequency: "daily",

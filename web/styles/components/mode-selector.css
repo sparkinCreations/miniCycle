@@ -21,11 +21,11 @@
     border: 1px solid #0c20913f;
     color: rgb(44, 50, 112);
     border-radius: var(--radius-5);
-    padding: 3px var(--space-5) 3px var(--space-2);
+    padding: 3px var(--space-5) 4px var(--space-2);
     font-size: var(--font-size-xs);
     font-weight: 500;
     max-width: 200px;
-    height: 22px;
+    height: 25px;
     appearance: none;
     -webkit-appearance: none;
     cursor: pointer;
@@ -129,6 +129,39 @@
 }
 
 /* =============================================================================
+   MODE INDICATOR ACCENT
+   Colored bottom border on the mode selector dropdown — always visible so
+   users can tell at a glance which mode they're in.
+   Colors: blue (Auto), amber (Manual), green (To-Do)
+   ============================================================================= */
+
+body.auto-cycle-mode .mode-selector-wrapper .mode-selector {
+    border-bottom: 2.5px solid var(--color-gray-700);
+}
+
+body.manual-cycle-mode .mode-selector-wrapper .mode-selector {
+    border-bottom: 2.5px solid var(--color-green-dark);
+}
+
+body.todo-mode-mode .mode-selector-wrapper .mode-selector {
+    border-bottom: 2.5px solid var(--color-todo-btn);
+}
+
+/* Dark mode: re-assert accent color (4-class specificity beats dark-mode.css's
+   3-class border-color override) */
+body.dark-mode.auto-cycle-mode .mode-selector-wrapper .mode-selector {
+    border-bottom-color: var(--color-gray-700);
+}
+
+body.dark-mode.manual-cycle-mode .mode-selector-wrapper .mode-selector {
+    border-bottom-color: var(--color-green-dark);
+}
+
+body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
+    border-bottom-color: var(--color-todo-btn);
+}
+
+/* =============================================================================
    QUICK ACTIONS
    ============================================================================= */
 
@@ -190,6 +223,30 @@ body:has(.task-list:empty) .quick-actions-btn {
     }
 }
 body.reduced-motion:has(.task-list:empty) .quick-actions-btn {
+    animation: none;
+}
+
+/* Shimmer for first-time users — persists until they press the + button */
+.quick-actions-btn.first-time-shimmer {
+    background: linear-gradient(
+        110deg,
+        rgba(255, 255, 255, 0.2) 0%,
+        rgba(255, 255, 255, 0.2) 40%,
+        rgba(255, 255, 255, 0.8) 50%,
+        rgba(255, 255, 255, 0.2) 60%,
+        rgba(255, 255, 255, 0.2) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .quick-actions-btn.first-time-shimmer {
+        animation: none;
+    }
+}
+body.reduced-motion .quick-actions-btn.first-time-shimmer {
     animation: none;
 }
 

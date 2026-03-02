@@ -747,11 +747,28 @@ export class ModeManager {
             return;
         }
 
+        // Apply first-time shimmer if user hasn't clicked + yet
+        const currentState = this.deps.AppState?.get();
+        if (!currentState?.settings?.addTaskDiscovered) {
+            quickActionsBtn.classList.add('first-time-shimmer');
+        }
+
         // Toggle menu on button click
         this.deps.safeAddEventListener(quickActionsBtn, 'click', (e) => {
             e.stopPropagation();
             const isVisible = quickActionsMenu.style.display !== 'none';
             quickActionsMenu.style.display = isVisible ? 'none' : 'block';
+
+            // Remove first-time shimmer on first click
+            if (quickActionsBtn.classList.contains('first-time-shimmer')) {
+                quickActionsBtn.classList.remove('first-time-shimmer');
+                if (this.deps.AppState) {
+                    this.deps.AppState.update(state => {
+                        if (!state.settings) state.settings = {};
+                        state.settings.addTaskDiscovered = true;
+                    }, true);
+                }
+            }
         });
 
         // Close menu on outside click

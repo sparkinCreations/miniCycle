@@ -658,6 +658,8 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     display: flex;
     align-items: center;
     gap: var(--space-2-5);
+    flex-wrap: wrap;
+    min-width: 0;
 }
 
 .option-icon {
@@ -726,9 +728,9 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    margin-left: var(--space-1-5);
     flex-shrink: 0;
     white-space: nowrap;
+    margin: 0 auto;
 }
 
 /* Customize button */

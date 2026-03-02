@@ -39,6 +39,11 @@
     flex: 1 1 auto;
 }
 
+/* Shorter task list when Complete/Clear button is visible — prevents button overlapping nav dots */
+#task-view.complete-btn-visible .task-list-container {
+    max-height: calc(100vh - var(--task-card-offset-with-btn) - var(--nav-area-height) - 30px);
+}
+
 /* Custom scrollbar - water themed */
 .task-list-container::-webkit-scrollbar {
     width: 8px;
@@ -907,9 +912,19 @@ body.onboarding-active .complete-all-and-help-window-container {
         margin-top: var(--space-4-5);
     }
 
-    /* Shorter task card when Complete button is visible on mobile */
+    /* Shorter task card when Complete button is visible on mobile — extra clearance for nav dots */
     #task-view.complete-btn-visible .task-card {
-        max-height: calc(100dvh - var(--task-card-offset-with-btn) - var(--help-window-clearance) - 10px);
+        max-height: calc(100dvh - var(--task-card-offset-with-btn) - var(--help-window-clearance) - 40px);
+    }
+
+    /* Shorter task card when mode description is visible (help window is taller) */
+    #task-view.mode-description-visible .task-card {
+        max-height: calc(100dvh - var(--task-card-offset) - var(--help-window-clearance) - 65px);
+    }
+
+    /* Shortest: both Complete button and mode description visible */
+    #task-view.complete-btn-visible.mode-description-visible .task-card {
+        max-height: calc(100dvh - var(--task-card-offset-with-btn) - var(--help-window-clearance) - 55px);
     }
 
     #task-view {

@@ -98,7 +98,7 @@ body.dark-mode:not([data-theme]) {
 
     /* ─── Theme variables for dark mode fallback ─── */
     --theme-task-text: var(--theme-text-primary);
-    --theme-task-bg: #2e2e2e;
+    --theme-task-bg: #3d3d40;
     --theme-task-completed-bg: rgba(40, 167, 69, 0.15);
     --theme-task-completed-text: var(--dark-text-dim);
     --theme-task-border: var(--dark-button-bg);
@@ -194,6 +194,10 @@ body.dark-mode .modal-panel {
     background-color: var(--dark-surface-primary);
     color: var(--theme-text-primary);
     border: 1px solid var(--dark-button-hover-bg);
+}
+
+body.dark-mode .stats-panel {
+    background-color: rgba(42, 42, 42, 0.92);
 }
 
 /* =============================================================================
@@ -968,7 +972,7 @@ body.dark-mode .quick-action-item:not(:last-child) {
    ============================================================================= */
 
 body.dark-mode .help-window {
-    background: rgba(50, 60, 80, 0.85);
+    background: rgba(61, 61, 64, 0.85);
     border-color: rgba(255, 255, 255, 0.2);
     color: var(--pref-panel-text, rgba(255, 255, 255, 0.9));
 }
@@ -1108,7 +1112,7 @@ body.dark-mode .title-row {
 
 body.dark-mode .mini-cycle-title {
     background-color: transparent;
-    color: rgba(240, 240, 240, 0.95);
+    color: #1a1a1a;
 }
 
 body.dark-mode #mini-cycle-title:focus {
@@ -1121,7 +1125,13 @@ body.dark-mode #mini-cycle-title:focus {
    ============================================================================= */
 
 body.dark-mode .task-list-container {
-    background: var(--theme-bg-surface-elevated);
+    background: rgba(40, 40, 45, 0.6);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.06);
 }
 
 body.dark-mode .task-list-container::-webkit-scrollbar-thumb {

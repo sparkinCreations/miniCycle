@@ -129,16 +129,20 @@ export function initTaskSearch() {
             });
         });
 
-        // Sort chip click handlers
+        // Sort chip click handlers — clicking an active non-default chip toggles back to Default
+        const defaultSortChip = filterRow.querySelector('.sort-chip[data-sort="default"]');
         filterRow.querySelectorAll('.sort-chip').forEach(btn => {
             safeAdd(btn, 'click', () => {
-                currentSort = btn.dataset.sort;
+                const isAlreadyActive = btn.classList.contains('active');
+                const targetChip = (isAlreadyActive && btn.dataset.sort !== 'default') ? defaultSortChip : btn;
+
+                currentSort = targetChip.dataset.sort;
                 // Reset captured order when going back to default (allow fresh capture next time)
                 if (currentSort === 'default') {
                     originalTaskOrder = null;
                 }
                 filterRow.querySelectorAll('.sort-chip').forEach(b => {
-                    const selected = b === btn;
+                    const selected = b === targetChip;
                     b.classList.toggle('active', selected);
                     b.setAttribute('aria-pressed', String(selected));
                 });
@@ -270,10 +274,13 @@ function applySortToDOM(tasks, taskList) {
         originalTaskOrder = tasks.map(t => t.dataset.taskId).filter(Boolean);
     }
 
+    // Strip leading emojis (including ZWJ sequences) so A-Z sorts by the text, not the emoji code point
+    const stripLeadingEmoji = (text) => text.replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, '');
+
     const sorted = [...tasks].sort((a, b) => {
         if (currentSort === 'az') {
-            const ta = a.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent?.toLowerCase() || '';
-            const tb = b.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent?.toLowerCase() || '';
+            const ta = stripLeadingEmoji(a.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent?.toLowerCase() || '');
+            const tb = stripLeadingEmoji(b.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent?.toLowerCase() || '');
             return ta.localeCompare(tb);
         }
         if (currentSort === 'priority') {

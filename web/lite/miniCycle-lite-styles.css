@@ -26,7 +26,7 @@
      • Fixed values instead of calc() where possible
      • CSS variable fallbacks for IE11
 
-   Last meaningful update: v2.087 (intentionally static thereafter)
+   Last meaningful update: v2.088 (intentionally static thereafter)
    © 2026 sparkinCreations - https://sparkincreations.com
    ================================================================================ */
 
@@ -230,11 +230,12 @@ body.is-iphone #app-container {
     height: auto;
     max-height: 70vh;
     overflow-y: auto;
-    color: black;
-    background: rgba(255, 255, 255, 0.95);
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    color: #1a1a2e;
+    background: rgba(230, 235, 248, 0.96);
+    box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(76, 121, 255, 0.15);
     padding: 10px 12px;
-    border-radius: 10px;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -256,11 +257,12 @@ body.is-iphone #app-container {
     height: auto;
     max-height: 65vh;
     overflow-y: auto;
-    color: black;
-    background: rgba(255, 255, 255, 0.95);
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-    padding: 8px 10px;
-    border-radius: 10px;
+    color: #1a1a2e;
+    background: rgba(230, 235, 248, 0.96);
+    box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(76, 121, 255, 0.15);
+    padding: 16px 20px;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -281,11 +283,11 @@ body.is-iphone #app-container {
     font-size: 14px;
     font-weight: 700;
     text-align: center;
-    color: #212529;
+    color: #2c3270;
 }
 
 body.dark-mode #stats-panel h2 {
-    color: #f8f9fa;
+    color: #c8d0f0;
 }
 
 #stats-panel p {
@@ -299,46 +301,66 @@ body.dark-mode #stats-panel h2 {
 }
 
 /* ✅ Slide Arrows - Desktop Only */
-.slide-arrow {
+button.slide-arrow {
     position: fixed;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 32px;
-    color: black;
-    font-weight: bold;
-    padding: 10px 15px;
-    border-radius: 5px;
+    font-size: 24px;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 600;
+    letter-spacing: -1px;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    border-radius: 50%;
     cursor: pointer;
-    transition: background 0.2s ease;
+    background: #a8c0ee;
+    color: #1a2a70;
+    border: 2px solid #ffffff;
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.15),
+        0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* ✅ Focus indicators for slide arrows */
-.slide-arrow:focus {
-  outline: 2px solid #ffffff;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.2);
+button.slide-arrow:focus {
+    outline: 2px solid #6080e0;
+    outline-offset: 3px;
+    box-shadow:
+        0 4px 16px rgba(20, 28, 80, 0.45),
+        0 0 0 4px rgba(60, 100, 220, 0.25);
 }
 
-.slide-arrow:focus:not(:focus-visible) {
-  outline: none;
-  box-shadow: none;
+button.slide-arrow:focus:not(:focus-visible) {
+    outline: none;
+    box-shadow:
+        0 4px 16px rgba(20, 28, 80, 0.45),
+        0 1px 3px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-.slide-arrow:focus-visible {
-  outline: 2px solid #ffffff;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.2); /* ✅ Visible focus for keyboard users */
+button.slide-arrow:focus-visible {
+    outline: 2px solid #6080e0;
+    outline-offset: 3px;
+    box-shadow:
+        0 4px 16px rgba(20, 28, 80, 0.45),
+        0 0 0 4px rgba(60, 100, 220, 0.25);
 }
 
 
 
 #slide-left {
-    left: 5%;
+    right: 5%;
 }
 
 #slide-right {
-    right: 5%;
+    left: 5%;
 }
 
 /* ✅ Wide Desktop Only - show arrows when enough space */
@@ -348,9 +370,24 @@ body.dark-mode #stats-panel h2 {
         pointer-events: all;
     }
 
-    #slide-left.show:hover,
-    #slide-right.show:hover {
-        background-color: white;
+    button#slide-left.show:hover,
+    button#slide-right.show:hover {
+        background: #d8e4fc;
+        border-color: #b0c8f0;
+        box-shadow:
+            0 6px 24px rgba(0, 0, 0, 0.15),
+            0 0 16px rgba(255, 255, 255, 0.2);
+        transform: translateY(-50%) scale(1.1);
+    }
+
+    button#slide-left.show:active,
+    button#slide-right.show:active {
+        background: #b8cce8;
+        border-color: #90a8d8;
+        box-shadow:
+            0 2px 8px rgba(0, 0, 0, 0.15),
+            inset 0 2px 4px rgba(0, 0, 0, 0.08);
+        transform: translateY(-50%) scale(0.96);
     }
 }
 
@@ -362,19 +399,20 @@ body.dark-mode #stats-panel h2 {
     }
 }
 
-/* ✅ Task Input Section */
+/* ✅ Task Input Section — balanced padding */
 .task-input {
     display: flex;
     align-items: center;
     justify-content: center;
     background: white;
-    border-radius: 8px;
-    padding: 8px;
-    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 8px 12px; /* ✅ Balanced horizontal padding */
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.15);
     margin-bottom: 15px;
     width: 80%;
     max-width: 400px;
-    height: 30px;
+    height: 36px; /* ✅ Slightly taller for better proportion */
+    box-sizing: border-box;
 }
 
 input[type="text"] {
@@ -1231,32 +1269,47 @@ body.dark-mode .header-logo.task-completed-glow {
 
 .menu-container ul {
     list-style: none;
-    padding: 0;
+    padding: 4px 0;
     margin-top: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* ✅ Center buttons in menu */
+    gap: 2px;
 }
 
 .menu-container ul li {
-    margin: 5px 0;
+    margin: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center; /* ✅ Center each button */
 }
 
 .menu-container ul li button {
-    padding: 5px 5px;
+    padding: 8px 6px;
     font-size: 12px;
     font-weight: 500;
-    text-align: left;
+    text-align: center;
     background: none;
     color: black;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     transition: all 0.2s;
     display: flex;
     align-items: center;
+    justify-content: center;
     flex-direction: column;
-    gap: 1px;
+    gap: 4px;
+    min-width: 72px; /* ✅ Consistent button width for alignment */
 }
 
 .menu-container button i {
     font-size: 20px;
+    width: 24px; /* ✅ Fixed icon container for optical centering */
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
 
 .menu-container ul li button:hover {
@@ -1357,6 +1410,7 @@ body.dark-mode .header-logo.task-completed-glow {
 
 .dot.active {
     background-color: #007BFF;
+    transform: scale(1.4);
 }
 
 .dot.active:active {
@@ -1486,23 +1540,24 @@ body.dark-mode .feedback-modal {
 }
 
 body.dark-mode .feedback-modal-content {
-    background: #2d3748;
-    color: #e2e8f0;
+    background: #2a2a3c;
+    color: #e8e8ef;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 body.dark-mode #feedback-text,
 body.dark-mode input[name="email"] {
-    background: #4a5568;
-    border-color: #718096;
-    color: #e2e8f0;
+    background: #32324a;
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #e8e8ef;
 }
 
 body.dark-mode .close-feedback-modal {
-    color: #a0aec0;
+    color: #a0a0b8;
 }
 
 body.dark-mode .close-feedback-modal:hover {
-    color: #e2e8f0;
+    color: #e8e8ef;
 }
 
 /* ✅ Feedback Modal Overlay */
@@ -1763,33 +1818,33 @@ body.dark-mode .back-button:hover {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: #e9ecef;
-    color: #495057;
+    background: #d8dff0;
+    color: #3a4070;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 10px;
     font-weight: bold;
-    border: 2px solid #dee2e6;
+    border: 2px solid #b8c4e0;
     transition: all 0.3s ease;
     cursor: default;
 }
 
 /* ✅ LOCKED state (default) */
 .badge.locked {
-    background: #e9ecef;
-    color: #6c757d;
-    border-color: #dee2e6;
+    background: #dce2f0;
+    color: #7080a8;
+    border-color: #c0c8e0;
     opacity: 0.6;
 }
 
 /* ✅ UNLOCKED state (earned) */
 .badge.unlocked {
-    background: #28a745;
+    background: #3a8fd8;
     color: white;
-    border-color: #1e7e34;
+    border-color: #2a70b8;
     transform: scale(1.1);
-    box-shadow: 0 0 15px rgba(40, 167, 69, 0.4);
+    box-shadow: 0 0 15px rgba(58, 143, 216, 0.4);
 }
 
 /* ✅ CELEBRATING animation */
@@ -1806,9 +1861,9 @@ body.dark-mode .back-button:hover {
 
 /* ✅ CELEBRATED state (permanent after celebration) */
 .badge.celebrated {
-    background: #28a745;
+    background: #3a8fd8;
     color: white;
-    border-color: #1e7e34;
+    border-color: #2a70b8;
     transform: scale(1.1);
 }
 
@@ -1823,22 +1878,23 @@ body.dark-mode .back-button:hover {
 
 /* ✅ Dark Mode for Badges */
 body.dark-mode .badge {
-    background: #495057;
-    color: #f0f0f0;
-    border-color: #6c757d;
+    background: #363860;
+    color: #b0b8d8;
+    border-color: #4a4e78;
 }
 
 body.dark-mode .badge.locked {
-    background: #343a40;
-    color: #6c757d;
-    border-color: #495057;
+    background: #282848;
+    color: #5a5e80;
+    border-color: #363860;
 }
 
 body.dark-mode .badge.unlocked,
 body.dark-mode .badge.celebrated {
-    background: #198754;
-    border-color: #146c43;
+    background: #3070c0;
+    border-color: #2860a8;
     color: white;
+    box-shadow: 0 0 12px rgba(48, 112, 192, 0.35);
 }
 
 /* ✅ Menu Close Button */
@@ -1866,17 +1922,17 @@ body.dark-mode .badge.celebrated {
     gap: 2px;
     margin-bottom: 6px;
     padding: 4px;
-    background: rgba(0, 0, 0, 0.03);
+    background: rgba(76, 121, 255, 0.06);
     border-radius: 8px;
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(76, 121, 255, 0.12);
     width: 100%;
 }
 
 .stats-grid p {
     margin: 0;
     padding: 4px 8px;
-    background: rgba(255, 255, 255, 0.7);
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 6px;
     font-size: 11px;
     display: flex;
     justify-content: space-between;
@@ -1884,45 +1940,46 @@ body.dark-mode .badge.celebrated {
 }
 
 .stats-grid p strong {
-    color: #495057;
+    color: #3a4070;
 }
 
 .stats-grid p span {
     font-weight: 600;
-    color: #212529;
+    color: #2c3270;
     font-size: 12px;
 }
 
 body.dark-mode .stats-grid {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(60, 70, 120, 0.2);
+    border-color: rgba(80, 100, 200, 0.15);
 }
 
 body.dark-mode .stats-grid p {
     background: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
 }
 
 body.dark-mode .stats-grid p strong {
-    color: #adb5bd;
+    color: #a8b0d0;
 }
 
 body.dark-mode .stats-grid p span {
-    color: #f8f9fa;
+    color: #d8e0ff;
 }
 
 /* ✅ Stats Section Card - for badge containers */
 .stats-section {
-    background: rgba(0, 0, 0, 0.03);
+    background: rgba(76, 121, 255, 0.06);
     border-radius: 8px;
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(76, 121, 255, 0.12);
     padding: 6px 8px;
     margin-bottom: 6px;
     width: 100%;
 }
 
 body.dark-mode .stats-section {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(60, 70, 120, 0.2);
+    border-color: rgba(80, 100, 200, 0.15);
 }
 
 /* ✅ Stats Section Header */
@@ -2076,21 +2133,25 @@ body.dark-mode #quick-dark-toggle:hover {
     outline-offset: -16px;
 }           
 
-/* ✅ Slide Arrows as Buttons */
-button.slide-arrow {
-    background: rgba(255, 255, 255, 0.8);
-    border: 2px solid rgba(0, 0, 0, 0.1);
+/* ✅ Slide Arrows as Buttons — reinforces solid style (ID selectors to win cascade) */
+#slide-left,
+#slide-right {
+    background: #a8c0ee;
+    border: 2px solid #ffffff;
+    color: #1a2a70;
     outline: none;
 }
 
-button.slide-arrow:focus {
-    outline: 2px solid #ffffff;
-    outline-offset: 2px;
+#slide-left:focus,
+#slide-right:focus {
+    outline: 2px solid #1a2a70;
+    outline-offset: 3px;
 }
 
-button.slide-arrow:hover {
-    background: white;
-    border-color: rgba(0, 0, 0, 0.2);
+#slide-left:hover,
+#slide-right:hover {
+    background: #d8e4fc;
+    border-color: #b0c8f0;
 }
 
 /* ✅ Current Date Styling */
@@ -2973,17 +3034,21 @@ body.dark-mode .task.high-priority {
 
 /* ✅ Dark mode priority button */
 body.dark-mode .options-menu .priority-btn {
-    color: #adb5bd;
+    background: #4a3a50;
+    border-color: #5e4a62;
+    color: #d0a0d8;
 }
 
 body.dark-mode .options-menu .priority-btn:hover {
-    background: rgba(255, 107, 107, 0.2);
-    color: #ff6b6b;
+    background: #5a4460;
+    border-color: #6e5672;
+    color: #e8b8f0;
 }
 
 body.dark-mode .options-menu .priority-btn.active {
-    color: #ff6b6b;
-    background: rgba(255, 107, 107, 0.2);
+    background: #6a2a2a;
+    border-color: #803838;
+    color: #ff7e7e;
 }
 
 /* ✅ High priority tasks appear slightly above others */
@@ -3376,43 +3441,64 @@ body.dark-mode .options-menu {
 
 /* ✅ Dark mode support */
 .dark-mode .empty-state {
-  background: var(--card-background-dark, #2a2a2a);
+  background: #2a2a3c;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .dark-mode .empty-state-title {
-  color: var(--text-primary-dark, #fff);
+  color: #e8e8ef;
 }
 
 .dark-mode .empty-state-subtitle {
-  color: var(--text-secondary-dark, #ccc);
+  color: #a0a0b8;
+}
+
+.dark-mode .empty-state-features {
+  background: #323250;
+  border: 1px solid rgba(100, 120, 200, 0.15);
 }
 
 .dark-mode .feature-text {
-  color: var(--text-primary-dark, #fff);
+  color: #d0d8f0;
 }
 
 .dark-mode .getting-started {
-  background: var(--background-secondary-dark, #333);
+  background: #323250;
+  border: 1px solid rgba(100, 120, 200, 0.15);
 }
 
 .dark-mode .getting-started h4 {
-  color: var(--text-primary-dark, #fff);
+  color: #e8e8ef;
+}
+
+.dark-mode .getting-started-steps li {
+  color: #b8b8d0;
+}
+
+.dark-mode .lite-version-info {
+  background: #2e3558;
+  border: 1px solid rgba(80, 100, 180, 0.2);
 }
 
 .dark-mode .lite-info-text {
-  color: var(--text-secondary-dark, #bbb);
+  color: #b0b8d0;
 }
 
 .dark-mode .quick-tips {
-  background: var(--tips-background-dark, #333);
+  background: #2e2e44;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .dark-mode .quick-tips h4 {
-  color: var(--text-primary-dark, #fff);
+  color: #e8e8ef;
 }
 
 .dark-mode .tips-list li {
-  color: var(--text-secondary-dark, #bbb);
+  color: #a8a8c0;
+}
+
+.dark-mode .mode-list li {
+  color: #b0b8d0;
 }
 
 /* ✅ Mobile optimizations */
@@ -3498,52 +3584,71 @@ body.dark-mode .options-menu {
     }
 }
 
-/* Dark mode support */
+/* Dark mode support — task options */
 body.dark-mode .three-dots-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #adb5bd;
+    background: rgba(100, 120, 200, 0.2);
+    border-color: rgba(100, 120, 200, 0.3);
+    color: #8fa0d8;
 }
 
 body.dark-mode .three-dots-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.4);
-    color: #ffffff;
+    background: rgba(100, 120, 200, 0.35);
+    border-color: rgba(100, 120, 200, 0.45);
+    color: #b8c8f0;
 }
 
 body.dark-mode .options-menu {
-    background: #343a40;
-    border-color: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    background: #404868;
+    border-color: rgba(130, 150, 220, 0.3);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
 body.dark-mode .options-menu .task-btn {
-    color: #adb5bd;
+    background: #3c4468;
+    border-color: #4e5880;
+    color: #c0c8e8;
 }
 
 body.dark-mode .options-menu .task-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
+    background: #4a5478;
+    border-color: #6070a0;
+    color: #e8eeff;
 }
 
 body.dark-mode .options-menu .move-btn {
-    color: #66b3ff;
+    background: #2e4470;
+    border-color: #3a5890;
+    color: #7eb8ff;
 }
 
 body.dark-mode .options-menu .move-btn:hover {
-    background: rgba(102, 179, 255, 0.2);
+    background: #385080;
+    border-color: #4a6aa0;
+    color: #a0d0ff;
+}
+
+body.dark-mode .options-menu .edit-btn {
+    background: #504830;
+    border-color: #685e3a;
+    color: #ffd066;
 }
 
 body.dark-mode .options-menu .edit-btn:hover {
-    background: rgba(255, 193, 7, 0.2);
+    background: #5e5438;
+    border-color: #7a6e48;
+    color: #ffe0a0;
 }
 
 body.dark-mode .options-menu .delete-btn {
-    color: #ff6b6b;
+    background: #5c2a2a;
+    border-color: #703838;
+    color: #ff7e7e;
 }
 
 body.dark-mode .options-menu .delete-btn:hover {
-    background: rgba(255, 107, 107, 0.2);
+    background: #6a3434;
+    border-color: #804444;
+    color: #ffa0a0;
 }
 
 
@@ -3855,82 +3960,203 @@ body.dark-mode select:focus {
     color: #000;
 }
 
-/* ✅ Simple Dark Mode */
+/* ✅ Polished Dark Mode */
 body.dark-mode {
-    background: #2a2a2a;
-    background-color: #2a2a2a;
-    color: #f0f0f0;
+    background: #1e1e2e;
+    background-color: #1e1e2e;
+    color: #e8e8ef;
 }
 
 body.dark-mode .task {
-    background: #2e2e2e;
-    color: #f0f0f0;
-    border: 1px solid #444;
+    background: #3e4460;
+    color: #e8e8ef;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 body.dark-mode .task:hover {
-    background: #1f1f1f;
+    background: #48506e;
+    border-color: rgba(255, 255, 255, 0.11);
 }
 
 body.dark-mode .menu-container {
-    background: #828282;
-    color: #fff;
-    border: 1px solid #555;
+    background: #2a2a3c;
+    color: #e8e8ef;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+body.dark-mode .menu-container ul li button {
+    color: #d0d0e0;
+}
+
+body.dark-mode .menu-container ul li button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+body.dark-mode .main-menu-header {
+    color: #e8e8ef;
+}
+
+body.dark-mode #current-date {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+body.dark-mode .menu-close-btn {
+    color: #d0d0e0;
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .menu-close-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+}
+
+body.dark-mode .main-menu-row {
+    border-top-color: rgba(255, 255, 255, 0.1);
 }
 
 body.dark-mode .stats-panel {
-    background: rgba(50, 50, 50, 0.95);
-    color: #fff;
+    background: rgba(32, 34, 55, 0.97);
+    color: #e8e8ef;
+    border: 1px solid rgba(80, 100, 200, 0.2);
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
 body.dark-mode .task-input {
-    background: #e4e4e4;
+    background: #32324a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 body.dark-mode .task-input input[type="text"] {
-    background: #dbdbdb;
-    color: #3b3b3b;
+    background: #32324a;
+    color: #e8e8ef;
 }
 
 body.dark-mode .mini-cycle-title {
-    background-color: rgba(80, 80, 80, 0.8);
-    color: #f0f0f0;
+    background-color: rgba(180, 160, 210, 0.35);
+    color: #e8e8ef;
 }
 
 body.dark-mode .task-list-container {
-    background: rgba(60, 60, 60, 0.3);
+    background: rgba(160, 180, 230, 0.12);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode #slide-left,
+body.dark-mode #slide-right {
+    color: #e0e8ff;
+    background: #3a4880;
+    border: 2px solid #5570b8;
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.4),
+        0 0 10px rgba(60, 90, 180, 0.15);
+}
+
+body.dark-mode #slide-left:hover,
+body.dark-mode #slide-right:hover {
+    color: #f0f4ff;
+    background: #4858a0;
+    border-color: #6882d0;
+    box-shadow:
+        0 6px 24px rgba(0, 0, 0, 0.45),
+        0 0 18px rgba(70, 100, 220, 0.2);
+    transform: translateY(-50%) scale(1.1);
+}
+
+body.dark-mode #slide-left:active,
+body.dark-mode #slide-right:active {
+    background: #2e3a68;
+    border-color: #4a60a0;
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.4),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    transform: translateY(-50%) scale(0.96);
 }
 
 body.dark-mode .help-window {
-    background: rgba(60, 60, 80, 0.85);
+    background: rgba(42, 42, 60, 0.9);
     color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 body.dark-mode .mini-cycle-header-row {
-    background: #2a2a2a;
+    background: #1e1e2e;
 }
 
 body.dark-mode .mode-selector {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(50, 80, 200, 0.45);
+    border-color: rgba(70, 110, 240, 0.55);
+    color: #d8e0ff;
+}
+
+body.dark-mode .mode-selector option {
+    background: #2a2a3c;
+    color: #e8e8ef;
+}
+
+body.dark-mode .mobile-mode-selector-wrapper {
+    background: rgba(18, 18, 30, 0.85);
+    border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 
 body.dark-mode .menu-button {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
 body.dark-mode .lite-notification {
-    background: #717076;
-    color: #fff;
+    background: #32324a;
+    color: #e8e8ef;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 body.dark-mode .lite-notification.success {
-    background: #2e7d32;
+    background: #1a5c2e;
 }
 
 body.dark-mode .lite-notification.error {
-    background: #c62828;
+    background: #8b1a1a;
+}
+
+body.dark-mode .complete-all-btn {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .empty-state {
+    background: rgba(42, 42, 60, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .task-text {
+    color: #e8e8ef;
+}
+
+body.dark-mode .task input[type="checkbox"] {
+    background-color: #4a5070;
+    border-color: #6070a0;
+}
+
+body.dark-mode .task input[type="checkbox"]:checked {
+    background-color: #3a9d5e;
+    border-color: #2e8a4e;
+}
+
+body.dark-mode .three-dots-btn {
+    color: #a0a0b8;
+}
+
+body.dark-mode .three-dots-btn:hover {
+    color: #e8e8ef;
+    background: rgba(255, 255, 255, 0.1);
 }
 
 /* ✅ Animation Keyframes - Essential Only */
@@ -4991,7 +5217,8 @@ body.dark-mode .add-task-btn:focus {
 }
 
 body.dark-mode .add-task-modal-content {
-    background: #2e2e2e;
+    background: #2a2a3c;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 body.dark-mode .add-task-modal-header {
@@ -4999,13 +5226,13 @@ body.dark-mode .add-task-modal-header {
 }
 
 body.dark-mode .add-task-modal-body {
-    background: #2e2e2e;
+    background: #2a2a3c;
 }
 
 body.dark-mode .modal-task-input {
-    background: #3a3a3a;
-    border-color: #555;
-    color: #f0f0f0;
+    background: #32324a;
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #e8e8ef;
 }
 
 body.dark-mode .modal-task-input:focus {
@@ -5014,21 +5241,21 @@ body.dark-mode .modal-task-input:focus {
 
 body.dark-mode .added-task-item,
 body.dark-mode .modal-added-task-item {
-    background: #3a3a3a;
+    background: #32324a;
 }
 
 body.dark-mode .added-task-text,
 body.dark-mode .modal-task-text {
-    color: #f0f0f0;
+    color: #e8e8ef;
 }
 
 body.dark-mode .add-task-modal-footer {
-    background: #252525;
-    border-top-color: #444;
+    background: #22223a;
+    border-top-color: rgba(255, 255, 255, 0.1);
 }
 
 body.dark-mode .tasks-added-count {
-    color: #aaa;
+    color: #a0a0b8;
 }
 
 /* ✅ Mobile responsive */
@@ -5268,5 +5495,277 @@ body.dark-mode .skip-link {
     background: rgba(78, 161, 255, 0.15);
     border: 1px solid rgba(78, 161, 255, 0.35);
     font-size: 12px;
+}
+
+/* =============================================================================
+   DESKTOP: Larger task list, task elements, and stats panel
+   ============================================================================= */
+
+@media (min-width: 1024px) {
+    /* ✅ Task view — much wider on desktop */
+    #task-view {
+        max-width: 860px;
+        width: 85%;
+    }
+
+    .task-list-container {
+        max-width: 840px;
+        padding: 18px 20px;
+    }
+
+    .mini-cycle-title {
+        max-width: 840px;
+        font-size: 22px;
+        padding: 12px 20px;
+    }
+
+    .task-input {
+        max-width: 840px;
+        height: 44px;
+        padding: 10px 16px;
+    }
+
+    .task-input input[type="text"] {
+        font-size: 18px;
+    }
+
+    /* ✅ Task list — much wider */
+    .task-list {
+        max-width: 800px;
+        gap: 8px;
+    }
+
+    /* ✅ Individual tasks — wide but compact height on desktop */
+    .task {
+        max-width: 760px;
+        padding: 6px 18px;
+        min-height: 44px;
+        margin-bottom: 4px;
+        border-radius: 12px;
+    }
+
+    .task-text {
+        font-size: 20px;
+        line-height: 1.5;
+    }
+
+    .task input[type="checkbox"] {
+        width: 32px;
+        height: 32px;
+        border-width: 2.5px;
+    }
+
+    .task-content {
+        gap: 16px;
+    }
+
+    .three-dots-btn {
+        font-size: 20px;
+        padding: 8px 10px;
+    }
+
+    /* ✅ Empty state — match wider tasks */
+    .empty-state {
+        max-width: 760px;
+        padding: 50px 30px;
+    }
+
+    .empty-state-content h3 {
+        font-size: 22px;
+    }
+
+    .empty-state-content p {
+        font-size: 16px;
+    }
+
+    /* ✅ Progress bar — wider */
+    .progress-container {
+        max-width: 800px;
+        height: 14px;
+    }
+
+    /* ✅ Complete All button — more presence */
+    .complete-all-btn {
+        padding: 16px 36px;
+        font-size: 18px;
+        border-radius: 8px;
+    }
+
+    /* ✅ Stats panel — much larger and more spacious */
+    .stats-panel {
+        max-width: 640px;
+        width: 80%;
+        padding: 28px 32px;
+    }
+
+    #stats-panel h2 {
+        font-size: 22px;
+        margin-bottom: 14px;
+    }
+
+    .stats-grid {
+        gap: 6px;
+        padding: 12px;
+        margin-bottom: 14px;
+        border-radius: 10px;
+    }
+
+    .stats-grid p {
+        padding: 10px 16px;
+        font-size: 16px;
+        border-radius: 6px;
+    }
+
+    .stats-grid p strong {
+        font-size: 16px;
+    }
+
+    .stats-grid p span {
+        font-size: 17px;
+    }
+
+    /* ✅ Badge sections — much larger */
+    .stats-section {
+        padding: 14px 18px;
+        margin-bottom: 14px;
+        border-radius: 10px;
+    }
+
+    .stats-section-header {
+        gap: 6px;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+    }
+
+    .stats-section-header h3 {
+        font-size: 16px;
+    }
+
+    .badges {
+        gap: 14px;
+        padding: 10px 0;
+    }
+
+    .badge {
+        width: 44px;
+        height: 44px;
+        font-size: 15px;
+        border-width: 2.5px;
+    }
+
+    .badge-container {
+        margin: 10px 0;
+    }
+
+    .badge-container h3 {
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+
+    /* ✅ Stats count text */
+    .stats-count {
+        font-size: 14px;
+    }
+
+    /* ✅ Help window — larger text */
+    .help-window {
+        font-size: 16px;
+        padding: 14px 20px;
+    }
+
+    /* ✅ Menu — wider on desktop */
+    .menu-container {
+        min-width: 340px;
+        padding: 20px;
+        border-radius: 14px;
+    }
+
+    .menu-container ul li button {
+        padding: 16px 14px;
+        font-size: 17px;
+        min-width: 100px;
+        border-radius: 12px;
+        gap: 8px;
+    }
+
+    .menu-container button i {
+        font-size: 28px;
+        width: 32px;
+        height: 32px;
+    }
+
+    .main-menu-header {
+        font-size: 24px;
+    }
+
+    #current-date {
+        font-size: 17px;
+    }
+
+    /* ✅ Header branding — nudged down on desktop */
+    .header-branding {
+        margin-top: 12px;
+    }
+
+    /* ✅ Menu button — larger on desktop */
+    .menu-button {
+        font-size: 20px;
+        height: 52px;
+        padding: 14px 22px;
+        border-radius: 10px;
+    }
+
+    /* ✅ Footer — larger on desktop */
+    #footer-container {
+        font-size: 15px;
+        bottom: 12px;
+    }
+
+    /* ✅ Undo/Redo — more prominent, higher on desktop */
+    .undo-container {
+        bottom: 78px;
+    }
+
+    .undo-redo-btn {
+        padding: 12px 24px;
+        font-size: 14px;
+    }
+
+    /* ✅ Add Tasks button — larger */
+    .add-task-btn {
+        font-size: 16px;
+        padding: 12px 24px;
+    }
+
+    /* ✅ Slide arrows — larger circle on desktop */
+    button.slide-arrow {
+        font-size: 28px;
+        width: 62px;
+        height: 62px;
+    }
+
+    /* ✅ Mode selector — larger with room for text */
+    .mode-selector {
+        font-size: 13px;
+        padding: 8px 20px;
+        min-width: 160px;
+        height: 36px;
+    }
+
+    /* ✅ Help toggle — much larger on desktop */
+    #quick-help-toggle {
+        font-size: 48px;
+        padding: 12px 16px;
+        bottom: 32px;
+        left: 32px;
+    }
+
+    /* ✅ Dark mode toggle — much larger on desktop */
+    #quick-dark-toggle {
+        font-size: 48px;
+        padding: 12px 16px;
+        bottom: 32px;
+        right: 32px;
+    }
 }
 
