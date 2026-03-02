@@ -79,8 +79,8 @@
 /* Mobile: Adjust task view max-height and offset for header clearance */
 @media (max-width: 768px) {
     #task-view {
-        max-height: calc(100vh - 190px);
-        top: calc(50% + 15px);
+        max-height: calc(100vh - 220px);
+        top: calc(50% + 30px);
         overflow: hidden; /* Contain flex children — task-card shrinks, button stays fixed */
     }
 
