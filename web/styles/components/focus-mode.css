@@ -222,15 +222,15 @@ body.focus-mode .focus-mode-btn svg {
     body.focus-mode #task-view {
         top: calc(50% + 10px);
         transform: translate(-50%, -50%);
-        max-height: calc(100dvh - 30px);
+        max-height: calc(100dvh - 10px);
     }
 
     body.focus-mode #task-view .task-card {
-        max-height: calc(100dvh - 110px); /* minus input + progress + button + margins */
+        max-height: calc(100dvh - 80px);
     }
 
     body.focus-mode #task-view .task-list-container {
-        max-height: calc(100dvh - 150px); /* minus input + title + progress + button + margins */
+        max-height: calc(100dvh - 120px);
     }
 
     /* Focus mode: fixed to bottom-right of viewport */
