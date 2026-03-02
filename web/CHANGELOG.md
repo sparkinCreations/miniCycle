@@ -1,3 +1,7 @@
+## [2.035] - 2026-03-02
+- feat: Adjust max-height constraints for task view and containers in focus mode for improved layout
+
+
 ## [2.034] - 2026-03-02
 - feat: Refine focus mode layout with explicit max-heights for task view and containers
 
