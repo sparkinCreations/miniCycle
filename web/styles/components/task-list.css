@@ -903,6 +903,12 @@ body.onboarding-active .complete-all-and-help-window-container {
     .task-list-container {
         padding-bottom: var(--space-10);
         min-height: 100px; /* Smaller than desktop 200px to prevent overlap */
+        max-height: none; /* Remove desktop max-height — flex parent constrains height */
+    }
+
+    /* Override complete-btn-visible max-height too — flex handles it on mobile */
+    #task-view.complete-btn-visible .task-list-container {
+        max-height: none;
     }
 
     /* Mobile task card — flex shrink replaces brittle max-height calc() rules.
