@@ -881,7 +881,7 @@ export const DOM_SELECTORS = Object.freeze({
     // ---- Preferences ----
     PREFERENCES_MODAL: '.preferences-modal',
     PREFERENCES_SECTION_HEADER_COLLAPSIBLE: '.preferences-section-header.collapsible',
-    PREFERENCES_SECTION_BY_DATA: '.preferences-section[data-section]',
+    PREFERENCES_SECTION_BY_DATA: '.preferences-section[data-section], .preferences-preview-section[data-section]',
     PREFERENCES_RESET_BTN: '.preferences-reset-btn',
     QUICK_PRESET_BTN: '.quick-preset-btn',
     PREFERENCES_PRESET_ITEM: '.preferences-preset-item',
@@ -1011,7 +1011,7 @@ export const DATA_SELECTORS = Object.freeze({
     recurringTaskById: (id) => `.recurring-task-item[data-task-id="${id}"]`,
     elementByTaskId: (id) => `[data-task-id="${id}"]`,
     menuSectionByName: (name) => `.menu-section[data-section="${name}"]`,
-    preferencesSectionByName: (name) => `.preferences-section[data-section="${name}"]`
+    preferencesSectionByName: (name) => `.preferences-section[data-section="${name}"], .preferences-preview-section[data-section="${name}"]`
 });
 
 // ============================================================================

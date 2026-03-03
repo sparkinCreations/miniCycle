@@ -335,15 +335,23 @@ function handleGlobalClickForSwitchModal(event) {
   const switchItemsRow = document.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
   const previewWindow = document.querySelector(DOM_SELECTORS.SWITCH_PREVIEW_WINDOW);
 
+  const themePicker = document.getElementById(DOM_IDS.THEME_PICKER_ROW);
+
   if (
     switchModalContent?.contains(event.target) &&
     selectedCycle &&
     !event.target.classList.contains('mini-cycle-switch-item') &&
-    !previewWindow?.contains(event.target)
+    !event.target.closest('.mini-cycle-switch-item') &&
+    !previewWindow?.contains(event.target) &&
+    !event.target.closest('.switch-buttons') &&
+    !themePicker?.contains(event.target)
   ) {
     selectedCycle.classList.remove('selected');
     if (switchItemsRow) {
       switchItemsRow.style.display = 'none';
+    }
+    if (themePicker) {
+      themePicker.classList.add('hidden');
     }
     if (previewWindow) {
       previewWindow.innerHTML = '<p style="color: #888; font-style: italic;">' + getLabel('switcher.selectPreview') + '</p>';

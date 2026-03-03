@@ -1448,6 +1448,20 @@ async setDefaultPosition(notificationContainer) {
           console.warn('⚠️ onColorSelect callback failed:', err);
         }
       }
+
+      // Auto-dismiss shortly after color selection
+      // If hovering, wait for mouseleave first, then dismiss after short delay
+      const dismissAfterDelay = () => {
+        setTimeout(() => {
+          notification.classList.remove('show');
+          setTimeout(() => notification.remove(), UI_TIMEOUTS.NOTIFICATION_FADE);
+        }, 1500);
+      };
+      if (notification.matches(':hover')) {
+        notification.addEventListener('mouseleave', dismissAfterDelay, { once: true });
+      } else {
+        dismissAfterDelay();
+      }
     };
     _safeAddEventListener(notification, 'click', notification._colorPickerClickHandler);
   }
@@ -1699,8 +1713,8 @@ async setDefaultPosition(notificationContainer) {
         <p class="miniCycle-prompt-message">${safeMessage}</p>
         <input type="text" id="miniCycle-prompt-input" name="miniCycle-prompt-input" class="miniCycle-prompt-input" aria-labelledby="miniCycle-prompt-title" placeholder="${safePlaceholder}" value="${safeDefaultValue}" />
         <div class="miniCycle-prompt-buttons">
-          <button class="miniCycle-btn-cancel">${safeCancelText}</button>
-          <button class="miniCycle-btn-confirm">${safeConfirmText}</button>
+          <button type="button" class="miniCycle-btn-cancel">${safeCancelText}</button>
+          <button type="button" class="miniCycle-btn-confirm">${safeConfirmText}</button>
         </div>
       </div>
     `;
@@ -1740,9 +1754,12 @@ async setDefaultPosition(notificationContainer) {
     });
 
     overlay._keydownHandler = (e) => {
-      if (e.key === "Enter") confirmBtn.click();
+      if (e.key === "Enter") {
+        e.preventDefault();
+        confirmBtn.click();
+      }
     };
-    _safeAddEventListener(overlay, "keydown", overlay._keydownHandler);
+    _safeAddEventListener(input, "keydown", overlay._keydownHandler);
   }
 }
 

@@ -965,10 +965,10 @@ body.onboarding-active .complete-all-and-help-window-container {
     }
 }
 
-/* iPhone-specific adjustments */
+/* Small screen adjustments — scales with safe-area for notch/Dynamic Island */
 @media (max-width: 480px) {
     .task-card {
-        margin-top: var(--space-8-75);
+        margin-top: calc(15px + env(safe-area-inset-top, 0px) / 2);
     }
 
     /* Even smaller min-height on very small screens */

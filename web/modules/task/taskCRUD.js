@@ -614,6 +614,10 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
                 const cycle = state.data.cycles[cid];
                 const t = cycle?.tasks?.find(t => t.id === taskId);
                 if (t) t.highPriority = newHighPriority;
+                // Sync priority state to recurring template so recreated tasks keep the setting
+                if (cycle?.recurringTemplates?.[taskId]) {
+                    cycle.recurringTemplates[taskId].highPriority = newHighPriority;
+                }
             }, true);
 
             if (newHighPriority) {
@@ -630,9 +634,16 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
                                 state.settings.priorityColor = color;
                                 // Save to the specific task so it remembers its own color
                                 const cid = state.appState?.activeCycleId;
-                                const t = state.data?.cycles?.[cid]?.tasks?.find(t => t.id === taskId);
+                                const cycle = state.data?.cycles?.[cid];
+                                const t = cycle?.tasks?.find(t => t.id === taskId);
                                 if (t) t.priorityColor = color;
+                                // Sync color to recurring template so recreated tasks keep the color
+                                if (cycle?.recurringTemplates?.[taskId]) {
+                                    cycle.recurringTemplates[taskId].priorityColor = color;
+                                }
                             }, true);
+                            // Update DOM immediately so the color change is visible without refresh
+                            taskItem.style.setProperty('--task-priority-color', color);
                             _deps.logHistoryEvent?.('task_priority_color_changed', {
                                 taskName: task.text,
                                 priorityColor: color

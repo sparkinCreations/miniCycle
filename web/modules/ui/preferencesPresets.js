@@ -13,6 +13,73 @@ import { DOM_IDS, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
+// PRESET VALIDATION
+// ============================================================================
+
+/** Current export format version */
+const PRESET_VERSION = 2;
+
+/**
+ * Keys allowed in a preset's colors object, grouped by type.
+ * Only keys listed here are accepted during import — unknown keys are stripped.
+ */
+const PRESET_COLOR_KEYS = [
+    'appBg', 'taskListBg', 'taskBg', 'taskText', 'titleBg', 'titleText',
+    'checkboxBg', 'checkboxIncompleteBg', 'checkmark', 'completeBtn',
+    'clearBtn', 'progressBar', 'statsBg', 'statsText', 'statsProgress',
+    'statsDoughnut', 'panelText', 'patternColor'
+];
+
+const PRESET_BOOLEAN_KEYS = [
+    'showCheckboxFill', 'showCheckboxIncomplete', 'showBgPattern',
+    'showBgImage', 'solidListBg', 'solidStatsBg',
+    'showHelpWindow', 'showQuickActions'
+];
+
+const PRESET_NUMBER_KEYS = {
+    patternOpacity: { min: 1, max: 25 }
+};
+
+/** All allowed keys (union of color + boolean + number) */
+const VALID_PRESET_KEYS = new Set([
+    ...PRESET_COLOR_KEYS,
+    ...PRESET_BOOLEAN_KEYS,
+    ...Object.keys(PRESET_NUMBER_KEYS)
+]);
+
+/** Validate a hex color string (#RGB, #RRGGBB, or #RRGGBBAA) */
+const isValidHex = (v) => typeof v === 'string' && /^#[0-9A-Fa-f]{3,8}$/.test(v);
+
+/**
+ * Sanitize a preset colors object: strip unknown keys, validate types.
+ * Returns a clean object with only valid entries.
+ * @param {Object} raw - The raw colors object from an import
+ * @returns {Object} Sanitized colors object
+ */
+function sanitizePresetColors(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+
+    const clean = {};
+
+    for (const [key, value] of Object.entries(raw)) {
+        if (!VALID_PRESET_KEYS.has(key)) continue; // strip unknown keys
+
+        if (PRESET_COLOR_KEYS.includes(key)) {
+            if (isValidHex(value)) clean[key] = value;
+        } else if (PRESET_BOOLEAN_KEYS.includes(key)) {
+            if (typeof value === 'boolean') clean[key] = value;
+        } else if (key in PRESET_NUMBER_KEYS) {
+            const range = PRESET_NUMBER_KEYS[key];
+            if (typeof value === 'number' && value >= range.min && value <= range.max) {
+                clean[key] = value;
+            }
+        }
+    }
+
+    return clean;
+}
+
+// ============================================================================
 // QUICK PRESET THEMES (Built-in)
 // ============================================================================
 // NOTE: DEFAULT_COLORS lives in preferencesManager.js (single source of truth).
@@ -310,13 +377,18 @@ export function savePreset(name, deps, renderPresetsList) {
     if (!deps.AppState) return;
 
     const state = deps.AppState.get();
-    const currentColors = { ...state?.settings?.customColors } || {};
+    const rawColors = { ...state?.settings?.customColors } || {};
+
+    // Strip null/undefined values — they mean "use default" and shouldn't be in presets.
+    const presetColors = Object.fromEntries(
+        Object.entries(rawColors).filter(([, v]) => v != null)
+    );
 
     // Create new preset
     const preset = {
         id: Date.now().toString(),
         name: name,
-        colors: currentColors,
+        colors: presetColors,
         createdAt: Date.now()
     };
 
@@ -351,8 +423,12 @@ export function loadPreset(presetId, deps, callbacks) {
 
     callbacks.pushToUndoStack();
 
+    // Merge preset colors on top of current customColors instead of replacing.
+    // This preserves panel-visibility and any keys not in the preset (e.g. keys
+    // added after the preset was saved). Preset values override current ones.
     deps.AppState.update(state => {
-        state.settings.customColors = { ...preset.colors };
+        if (!state.settings.customColors) state.settings.customColors = {};
+        Object.assign(state.settings.customColors, preset.colors);
     });
 
     callbacks.loadSavedColors();
@@ -446,7 +522,7 @@ export function exportPreset(presetId, deps) {
     const exportData = {
         name: preset.name,
         colors: preset.colors,
-        version: 1
+        version: PRESET_VERSION
     };
 
     // Fix #42: Handle Unicode characters that btoa can't encode
@@ -510,10 +586,24 @@ export function promptImportPreset(deps, renderPresetsList) {
  */
 export function importPreset(code, deps, renderPresetsList) {
     try {
-        const data = JSON.parse(atob(code));
+        // Fix #42 (import side): Decode Unicode characters that were encoded during export
+        const data = JSON.parse(decodeURIComponent(escape(atob(code))));
 
-        if (!data.name || !data.colors) {
-            throw new Error('Invalid preset format');
+        // Structural validation
+        if (!data.name || typeof data.name !== 'string') {
+            throw new Error('Missing or invalid preset name');
+        }
+        if (!data.colors || typeof data.colors !== 'object' || Array.isArray(data.colors)) {
+            throw new Error('Missing or invalid colors object');
+        }
+
+        // Sanitize: strip unknown keys, validate types, remove panel-visibility keys
+        const sanitized = sanitizePresetColors(data.colors);
+
+        // Must have at least one valid color key after sanitization
+        const hasColors = Object.keys(sanitized).some(k => PRESET_COLOR_KEYS.includes(k));
+        if (!hasColors) {
+            throw new Error('No valid color values found');
         }
 
         // Save as new preset
@@ -522,7 +612,7 @@ export function importPreset(code, deps, renderPresetsList) {
         const preset = {
             id: Date.now().toString(),
             name: data.name + ' (imported)',
-            colors: data.colors,
+            colors: sanitized,
             createdAt: Date.now()
         };
 

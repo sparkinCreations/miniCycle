@@ -121,7 +121,8 @@ export function createInitialSchema25Data() {
             darkMode: false,
             alwaysShowRecurring: false,
             autoSave: true,
-            showThreeDots: ('ontouchstart' in window && !(window.matchMedia?.('(pointer: fine)')?.matches)) || false,
+            // Match isTouchDevice() logic from deviceDetection.js
+            showThreeDots: !(window.matchMedia?.('(pointer: fine)')?.matches) && (('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0),
             onboardingCompleted: false,
             dismissedEducationalTips: {},
             defaultRecurringSettings: {

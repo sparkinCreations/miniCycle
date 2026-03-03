@@ -10,7 +10,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.035">
+<meta name="app-version" content="2.036">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -29,20 +29,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.035"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.036"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.035" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.035" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.035" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.035" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.035" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.035" as="style">
+<link rel="preload" href="styles/main.css?v=2.036" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.036" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.036" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.036" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.036" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.036" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.035" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.036" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.035"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.036"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -53,7 +53,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.035"></script>
+<script src="./version.js?v=2.036"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -201,33 +201,40 @@
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
-     MODULEPRELOAD TEMPORARILY DISABLED
-     Reason: Versioned modulepreload URLs (?v=X) create duplicate module instances
-     when combined with static imports (which can't have query params).
-     This causes appInit singleton to be duplicated, breaking waitForCore().
-
-     TODO: Fix by either:
-     1. Using importmaps to map unversioned paths to versioned URLs
-     2. Using content-hash filenames instead of query params
-     3. Or accepting slightly slower initial load without preloads
+     MODULEPRELOAD: Dynamic injection using APP_VERSION from version.js
+     Only preloads modules loaded exclusively via versioned dynamic imports.
+     Modules with unversioned static imports (constants.js, diBase.js,
+     labelResolver.js) are excluded to avoid duplicate module instances.
      ═══════════════════════════════════════════════════════════════════════════ -->
-<!--
-<link rel="modulepreload" href="./miniCycle-main.js?v=2.035">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=2.035">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=2.035">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=2.035">
-<link rel="modulepreload" href="./modules/boot/uiBoot.js?v=2.035">
-<link rel="modulepreload" href="./modules/boot/moduleLoader.js?v=2.035">
-<link rel="modulepreload" href="./modules/boot/moduleManifests.js?v=2.035">
-<link rel="modulepreload" href="./modules/core/appState.js?v=2.035">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=2.035">
-<link rel="modulepreload" href="./modules/core/appInit.js?v=2.035">
-<link rel="modulepreload" href="./modules/core/constants.js?v=2.035">
-<link rel="modulepreload" href="./modules/core/diBase.js?v=2.035">
-<link rel="modulepreload" href="./modules/utils/globalUtils.js?v=2.035">
-<link rel="modulepreload" href="./modules/utils/errorHandler.js?v=2.035">
-<link rel="modulepreload" href="./modules/utils/notifications.js?v=2.035">
--->
+<script>
+(function() {
+  var v = globalThis.APP_VERSION || 'dev-local';
+  var modules = [
+    './miniCycle-main.js',
+    './modules/boot/orchestrator.js',
+    './modules/boot/coreBoot.js',
+    './modules/boot/featureBoot.js',
+    './modules/boot/uiBoot.js',
+    './modules/boot/moduleLoader.js',
+    './modules/boot/moduleManifests.js',
+    './modules/core/appState.js',
+    './modules/core/appGlobalState.js',
+    './modules/core/appInit.js',
+    './modules/utils/globalUtils.js',
+    './modules/utils/debugMode.js',
+    './modules/utils/storageUtils.js',
+    './modules/utils/errorHandler.js',
+    './modules/utils/notifications.js'
+  ];
+  var head = document.head;
+  for (var i = 0; i < modules.length; i++) {
+    var link = document.createElement('link');
+    link.rel = 'modulepreload';
+    link.href = modules[i] + '?v=' + v;
+    head.appendChild(link);
+  }
+})();
+</script>
 
 <!-- Critical CSS - extracted to external file for CSP compliance (no 'unsafe-inline' needed) -->
 <link rel="stylesheet" href="./styles/base/critical.css">
@@ -1771,7 +1778,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.035"></script>
+ <script type="module" src="miniCycle-main.js?v=2.036"></script>
 
 <script>
 // Sync About modal version with meta app-version
@@ -1827,7 +1834,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     // Last resort: no boot detected at all.
     location.replace('./lite/miniCycle-lite.html?mode=lite&src=no-boot');
-  }, 8000);
+  }, 16000);
 })();
 </script>
 

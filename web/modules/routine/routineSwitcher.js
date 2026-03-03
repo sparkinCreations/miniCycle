@@ -853,7 +853,10 @@ export class RoutineSwitcher {
                 `<span class="theme-chip-name">${def.name}</span>`
             ].join('');
 
-            const handler = () => this._selectTheme(cycleKey, id, def);
+            const handler = (e) => {
+                e.stopPropagation();
+                this._selectTheme(cycleKey, id, def);
+            };
             chip.addEventListener('click', handler);
             picker._chipHandlers.push({ el: chip, fn: handler });
 
@@ -883,7 +886,8 @@ export class RoutineSwitcher {
             this.deps.logHistoryEvent?.('theme_changed', { themeName: def.name, themeId });
             // refreshThemeLabels handles all label updates + applies vocab theme color preset
             this.deps.refreshThemeLabels?.();
-            this.closeThemePicker();
+            // Re-render picker to update which chip is highlighted (don't close it)
+            this.openThemePicker(cycleKey);
         }
     }
 

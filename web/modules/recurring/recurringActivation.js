@@ -97,6 +97,7 @@ export function activateTaskRecurringState(cycle, taskId, normalizedSettings, ca
         recurring: true,
         recurringSettings: structuredClone(normalizedSettings),
         highPriority: task?.highPriority || false,
+        priorityColor: task?.priorityColor || null,
         dueDate: task?.dueDate || null,
         remindersEnabled: task?.remindersEnabled || false,
         deleteWhenComplete: true,
