@@ -228,6 +228,7 @@ function wireSubModuleDependencies(dependencies) {
     _subModules.setShareManagerDependencies({
         loadMiniCycleData: dependencies.loadMiniCycleData,
         showNotification: dependencies.showNotification,
+        showConfirmationModal: dependencies.showConfirmationModal,
         safeAddEventListener: dependencies.safeAddEventListener,
         hideMainMenu: dependencies.hideMainMenu
     });

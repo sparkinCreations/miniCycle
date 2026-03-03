@@ -1535,7 +1535,7 @@ export class PreferencesManager {
      * @param {HTMLElement} header - The section header element
      */
     toggleSection(header) {
-        const section = header.closest('.preferences-section');
+        const section = header.closest('.preferences-section') || header.closest('.preferences-preview-section');
         if (section) {
             section.classList.toggle('collapsed');
             const isCollapsed = section.classList.contains('collapsed');
@@ -1550,6 +1550,25 @@ export class PreferencesManager {
     loadCollapsedStates() {
         const state = _deps.AppState?.get();
         const collapsedSections = state?.settings?.preferencesCollapsedSections;
+
+        // On mobile, default live-preview to collapsed if no saved state
+        const isMobile = window.matchMedia('(max-width: 480px)').matches;
+        const previewSection = document.querySelector(DATA_SELECTORS.preferencesSectionByName('live-preview'));
+        if (previewSection) {
+            if (isMobile) {
+                const hasSaved = collapsedSections && ('live-preview' in collapsedSections);
+                if (!hasSaved) {
+                    previewSection.classList.add('collapsed');
+                    const header = previewSection.querySelector('.preferences-section-header');
+                    if (header) header.setAttribute('aria-expanded', 'false');
+                }
+            } else {
+                // Desktop: always expanded
+                previewSection.classList.remove('collapsed');
+                const header = previewSection.querySelector('.preferences-section-header');
+                if (header) header.setAttribute('aria-expanded', 'true');
+            }
+        }
 
         if (!collapsedSections) return;
 

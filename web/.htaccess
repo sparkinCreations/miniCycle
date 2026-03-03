@@ -36,12 +36,13 @@
             'sha256-vGZuMd1H/FTwm86koTe5wsQY3mvTLKnbF+b8y6E6ELI=' \
             'sha256-HoVNOC42cKVHDxrnLY25aAvmKNrxd0QbgTdu4G7p9Vk=' \
             'sha256-ZmCo1D8qlgnCgO2lPu9go7bFumJyHt4sEttY02PYpQ8=' \
-            'sha256-h+r8SXgnpMvpkOBx8UvUXtwr8qr+Jw6l0RYQo66Ga1s='; \
+            'sha256-TvxHZOVivrxcPviI9Cd4f1swAF6ZVYzwtIGENftY0+E=' \
+            'sha256-Vo0/IA9ruygvlez4e/pjWdwP+XSwTltcdu39i1MU+UA='; \
         style-src 'self' 'unsafe-inline'; \
         font-src 'self'; \
         img-src 'self' data: blob:; \
         connect-src 'self' https://api.web3forms.com; \
-        frame-ancestors 'none'; \
+        frame-ancestors 'self'; \
         base-uri 'self'; \
         form-action 'self' https://api.web3forms.com; \
         upgrade-insecure-requests;"
@@ -50,7 +51,7 @@
     # X-FRAME-OPTIONS
     # ===================================================================
     # Prevents clickjacking attacks
-    Header always set X-Frame-Options "DENY"
+    Header always set X-Frame-Options "SAMEORIGIN"
 
     # ===================================================================
     # X-CONTENT-TYPE-OPTIONS

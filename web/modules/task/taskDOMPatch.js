@@ -120,12 +120,20 @@ export class TaskDOMPatch {
      * @private
      */
     _patchHighPriority(taskElement, taskData) {
-        taskElement.classList.toggle('high-priority', taskData.highPriority || false);
+        const isHighPriority = taskData.highPriority || false;
+        taskElement.classList.toggle('high-priority', isHighPriority);
+
+        // Apply or clear per-task priority color via CSS custom property
+        if (isHighPriority && taskData.priorityColor) {
+            taskElement.style.setProperty('--task-priority-color', taskData.priorityColor);
+        } else if (!isHighPriority) {
+            taskElement.style.removeProperty('--task-priority-color');
+        }
 
         const priorityBtn = taskElement.querySelector(DOM_SELECTORS.PRIORITY_BTN);
         if (priorityBtn) {
-            priorityBtn.classList.toggle('priority-active', taskData.highPriority || false);
-            priorityBtn.setAttribute('aria-pressed', String(taskData.highPriority || false));
+            priorityBtn.classList.toggle('priority-active', isHighPriority);
+            priorityBtn.setAttribute('aria-pressed', String(isHighPriority));
         }
     }
 

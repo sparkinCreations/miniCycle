@@ -747,10 +747,43 @@ export class ModeManager {
             return;
         }
 
-        // Apply first-time shimmer if user hasn't clicked + yet
+        // Apply first-time shimmer only for genuinely new users
         const currentState = this.deps.AppState?.get();
-        if (!currentState?.settings?.addTaskDiscovered) {
+        const activeCycleId = currentState?.appState?.activeCycleId;
+        const activeCycle = currentState?.data?.cycles?.[activeCycleId];
+        const isReturningUser = activeCycle?.cycleCount > 0
+            || activeCycle?.tasks?.length > 0
+            || Object.keys(currentState?.data?.cycles || {}).length > 1;
+
+        if (!currentState?.settings?.addTaskDiscovered && !isReturningUser) {
             quickActionsBtn.classList.add('first-time-shimmer');
+
+            // Also remove shimmer when a task is added (covers mobile path where
+            // users type into the input directly without ever clicking the + button)
+            const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
+            if (taskList) {
+                const observer = new MutationObserver(() => {
+                    if (taskList.children.length > 0) {
+                        quickActionsBtn.classList.remove('first-time-shimmer');
+                        observer.disconnect();
+                        if (this.deps.AppState) {
+                            this.deps.AppState.update(state => {
+                                if (!state.settings) state.settings = {};
+                                state.settings.addTaskDiscovered = true;
+                            }, true);
+                        }
+                    }
+                });
+                observer.observe(taskList, { childList: true });
+            }
+        } else if (!currentState?.settings?.addTaskDiscovered && isReturningUser) {
+            // Returning user without the flag — set it silently
+            if (this.deps.AppState) {
+                this.deps.AppState.update(state => {
+                    if (!state.settings) state.settings = {};
+                    state.settings.addTaskDiscovered = true;
+                }, true);
+            }
         }
 
         // Toggle menu on button click

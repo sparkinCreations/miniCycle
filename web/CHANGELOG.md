@@ -1,3 +1,8 @@
+## [2.036] - 2026-03-03
+- feat: Update CHANGELOG for version 2.035 with max-height adjustments for task view in focus mode
+- feat: Update app version to 2.035 across all relevant files
+
+
 ## [2.035] - 2026-03-02
 - feat: Adjust max-height constraints for task view and containers in focus mode for improved layout
 

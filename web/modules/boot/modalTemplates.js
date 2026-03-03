@@ -441,8 +441,14 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
         <div class="preferences-scroll-area">
 
             <!-- Live Preview Section -->
-            <div class="preferences-preview-section">
-                <div class="preferences-preview-label">Live Preview</div>
+            <div class="preferences-preview-section" data-section="live-preview">
+                <div class="preferences-preview-label preferences-section-header collapsible"
+                     role="button" tabindex="0" data-toggle="live-preview"
+                     aria-expanded="true" aria-controls="preferences-preview"
+                     aria-label="Toggle Live Preview section">
+                    <span>Live Preview</span>
+                    <span class="preferences-section-toggle">&#x25BC;</span>
+                </div>
                 <div class="preferences-preview-container" id="preferences-preview">
                     <div class="preview-app-bg">
                         <div class="preview-title">My Routine</div>

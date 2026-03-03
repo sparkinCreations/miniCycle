@@ -381,6 +381,20 @@ dialog.preferences-modal::backdrop {
     text-align: left;
 }
 
+/* Desktop: preview is always visible, not collapsible */
+.preferences-preview-label.preferences-section-header {
+    cursor: default;
+    pointer-events: none;
+}
+
+.preferences-preview-label .preferences-section-toggle {
+    display: none;
+}
+
+.preferences-preview-section.collapsed .preferences-preview-container {
+    display: block;
+}
+
 .preferences-preview-container {
     border-radius: var(--radius-10);
     overflow: hidden;
@@ -1276,6 +1290,46 @@ dialog.preferences-modal::backdrop {
         transform: scale(0.95);
         transform-origin: center top;
     }
+
+    /* Collapsible preview on tablet */
+    .preferences-preview-section {
+        position: static;
+        z-index: auto;
+    }
+
+    .preferences-preview-label.preferences-section-header {
+        cursor: pointer;
+        pointer-events: auto;
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+
+    .preferences-preview-label .preferences-section-toggle {
+        display: inline;
+        margin-left: auto;
+        font-size: 11px;
+        color: var(--pref-panel-text);
+        transition: transform var(--transition-normal) ease;
+    }
+
+    .preferences-preview-section.collapsed .preferences-preview-container {
+        display: none;
+    }
+
+    .preferences-preview-section.collapsed {
+        padding: 0;
+    }
+
+    /* When collapsed, stretch header to fill entire section for larger tap target */
+    .preferences-preview-section.collapsed .preferences-preview-label.preferences-section-header {
+        padding: var(--space-3) var(--space-4);
+        margin: 0;
+    }
+
+    .preferences-preview-section.collapsed .preferences-section-toggle {
+        transform: rotate(-90deg);
+    }
 }
 
 @media (max-width: 480px) {
@@ -1355,66 +1409,69 @@ dialog.preferences-modal::backdrop {
         font-size: 13px;
     }
 
-    /* Compact preview on mobile */
+    /* Compact preview on mobile — collapsible behavior inherited from 768px */
     .preferences-preview-section {
         margin: 0 -10px var(--space-2-5) -10px;
         padding: var(--space-2) 10px 10px 10px;
     }
 
-    .preferences-preview-label {
-        font-size: 11px;
+    .preferences-preview-label.preferences-section-header {
         margin-bottom: var(--space-1-5);
+        font-size: 11px;
     }
 
-    .preview-app-bg {
-        padding: var(--space-2);
+    .preferences-preview-label .preferences-section-toggle {
+        font-size: 10px;
     }
+
+    /* Shrink preview further on mobile */
+    .preferences-preview-container {
+        transform: scale(0.85);
+        transform-origin: center top;
+        margin-bottom: -10px; /* compensate for scale whitespace */
+    }
+
+    .preview-app-bg { padding: var(--space-1-5); }
 
     .preview-title {
-        padding: 5px var(--space-2);
-        font-size: 11px;
-        margin-bottom: var(--space-1-5);
+        padding: var(--space-1) var(--space-1-5);
+        font-size: 10px;
+        margin-bottom: var(--space-1);
     }
 
     .preview-task-list {
         padding: var(--space-1);
-        margin-bottom: var(--space-1-5);
+        margin-bottom: var(--space-1);
     }
 
     .preview-task {
-        padding: var(--space-1) 6px;
-        gap: var(--space-1-5);
+        padding: var(--space-0-75) var(--space-1);
+        gap: var(--space-1);
         margin-bottom: var(--space-0-5);
     }
 
-    .preview-checkbox {
-        width: 12px;
-        height: 12px;
-    }
-
-    .preview-task-text {
-        font-size: 10px;
-    }
+    .preview-checkbox { width: 10px; height: 10px; }
+    .preview-task-text { font-size: 9px; }
 
     .preview-progress-bar {
-        height: 4px;
-        margin-bottom: var(--space-1-5);
+        height: 3px;
+        margin-bottom: var(--space-1);
     }
 
     .preview-buttons-row { gap: var(--space-1); }
-    .preview-button { padding: var(--space-0-75) 0; font-size: 8px; }
+    .preview-button { padding: var(--space-0-5) 0; font-size: 7px; }
 
     .preview-stats-panel {
-        padding: var(--space-1) 6px;
-        margin-top: var(--space-1-5);
-        gap: var(--space-1-5);
+        padding: var(--space-0-75) var(--space-1);
+        margin-top: var(--space-1);
+        gap: var(--space-1);
     }
-    .preview-doughnut { width: 24px; height: 24px; }
-    .preview-stats-label { font-size: 8px; margin-bottom: var(--space-0-5); }
-    .preview-stats-bar { height: 3px; }
+    .preview-doughnut { width: 20px; height: 20px; }
+    .preview-stats-label { font-size: 7px; margin-bottom: var(--space-0-5); }
+    .preview-stats-bar { height: 2px; }
 
-    .preview-panels-row { margin-top: var(--space-1-5); gap: var(--space-1); }
-    .preview-panel { font-size: 7px; padding: var(--space-0-5) var(--space-1-5); }
+    .preview-panels-row { margin-top: var(--space-1); gap: var(--space-1); }
+    .preview-panel { font-size: 6px; padding: var(--space-0-5) var(--space-1); }
 
     /* Tighter section spacing on mobile */
     .preferences-section {

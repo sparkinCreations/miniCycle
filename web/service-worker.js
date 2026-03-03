@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.035';
-var CACHE_VERSION = 'v874';
+var APP_VERSION = '2.036';
+var CACHE_VERSION = 'v875';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -23,10 +23,14 @@ var NETWORK_FIRST_PATTERNS = [
   'modules/boot/',               // All boot files - version critical
   'modules/core/',               // Core modules (diBase, appInit, appState) - statically imported
   'modules/utils/',              // Utility modules (storageUtils, etc.) - statically imported
-  'modules/recurring/'           // Recurring modules - complex DI interdependencies, must be in sync
+  'modules/recurring/',          // Recurring modules - complex DI interdependencies, must be in sync
+  'styles/'                      // CSS files - prevent stale @import chains during version transitions
   // Note: modules/core/, modules/utils/, and modules/recurring/ use network-first because these
   // files have complex interdependencies. Without network-first, stale cached versions can cause
   // DI wiring failures like "missing required deps" errors when module interfaces change.
+  // styles/ uses network-first because main.css has versioned @import URLs. If stale main.css
+  // is served via stale-while-revalidate, all 36 CSS sub-imports carry the old version,
+  // triggering 36 individual version-mismatch network requests instead of cache hits.
   // Other modules use version mismatch detection (see fetch handler) which automatically uses
   // network-first when ?v= param doesn't match SW version.
 ];

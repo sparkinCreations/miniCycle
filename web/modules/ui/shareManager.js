@@ -19,6 +19,7 @@ import { getLabel } from '../labels/labelResolver.js';
 const di = createDIModule('ShareManager', {
     loadMiniCycleData: required(),
     showNotification: required(),
+    showConfirmationModal: optional(null),
     safeAddEventListener: required(),
     hideMainMenu: optional(null)
 });
@@ -40,6 +41,31 @@ export function setShareManagerDependencies(dependencies) {
 
 let _shareRoutineInitialized = false;
 let _shareAppInitialized = false;
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+/**
+ * Download a routine as an .mcyc file
+ * @param {Blob} dataBlob - The routine data blob
+ * @param {string} fileName - The filename to use
+ */
+function _downloadRoutineFile(dataBlob, fileName) {
+    try {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+        _deps.showNotification?.('📥 ' + getLabel('notify.shareRoutineFallback'), 'success', 3000);
+    } catch (error) {
+        console.error('Routine file download failed:', error);
+        _deps.showNotification?.(getLabel('notify.shareRoutineFailed'), 'error', 3000);
+    }
+}
 
 // ============================================================================
 // SHARE ROUTINE
@@ -64,13 +90,6 @@ export function setupShareRoutineButton() {
 
     const shareBtn = document.getElementById(DOM_IDS.SHARE_ROUTINE);
     if (!shareBtn) return;
-
-    // Hide share button if Web Share API with file sharing is not supported
-    // (Download button already covers the file export use case)
-    if (!navigator.share || !navigator.canShare) {
-        shareBtn.style.display = 'none';
-        return;
-    }
 
     shareBtn._clickHandler = async () => {
         const loadMiniCycleData = _deps.loadMiniCycleData;
@@ -158,20 +177,24 @@ export function setupShareRoutineButton() {
             }
         }
 
-        // Fallback: download the file
+        // Browser doesn't support sharing files — show confirmation dialog offering download
         _deps.hideMainMenu?.();
-        try {
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(dataBlob);
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
-            _deps.showNotification?.('📥 ' + getLabel('notify.shareRoutineFallback'), 'success', 3000);
-        } catch (error) {
-            console.error('Share routine fallback failed:', error);
-            _deps.showNotification?.(getLabel('notify.shareRoutineFailed'), 'error', 3000);
+        const showConfirmationModal = _deps.showConfirmationModal;
+        if (showConfirmationModal) {
+            showConfirmationModal({
+                title: getLabel('notify.shareRoutineUnsupportedTitle'),
+                message: getLabel('notify.shareRoutineUnsupportedMessage'),
+                confirmText: getLabel('routine.download'),
+                cancelText: getLabel('button.cancel'),
+                destructive: false,
+                callback: (confirmed) => {
+                    if (!confirmed) return;
+                    _downloadRoutineFile(dataBlob, fileName);
+                }
+            });
+        } else {
+            // No modal available — download directly
+            _downloadRoutineFile(dataBlob, fileName);
         }
     };
 

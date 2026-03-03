@@ -1076,7 +1076,7 @@ body.dark-mode .task-input {
 }
 
 body.dark-mode #taskInput {
-    background: var(--color-slate-900);
+    background: transparent;
     color: var(--theme-text-primary);
 }
 
@@ -1084,8 +1084,8 @@ body.dark-mode #taskInput::placeholder {
     color: var(--color-slate-400);
 }
 
-body.dark-mode #taskInput:focus {
-    box-shadow: 0 0 0 2px rgba(76, 121, 255, 0.4);
+body.dark-mode .task-input:focus-within {
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.4), 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
 }
 
 body.dark-mode #addTaskBtn {

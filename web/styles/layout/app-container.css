@@ -80,7 +80,7 @@
 @media (max-width: 768px) {
     #task-view {
         max-height: calc(100vh - 220px);
-        top: calc(50% + 30px);
+        top: calc(50% + 10px + env(safe-area-inset-top, 0px) / 2);
         overflow: hidden; /* Contain flex children — task-card shrinks, button stays fixed */
     }
 
