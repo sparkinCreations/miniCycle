@@ -308,7 +308,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineManager.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'updateMainMenuHeader'],
-        optionalDeps: ['refreshThemeLabels', 'onCycleCreated', 'syncModeFromToggles'],
+        optionalDeps: ['refreshThemeLabels', 'onCycleCreated', 'syncModeFromToggles', 'updateRecurringInfoLink', 'loadMiniCycle'],
         provides: ['showCycleCreationModal', 'createNewMiniCycle'],
         api: 'cycle',
         after: ['menuManager']  // Needs hideMainMenu and updateMainMenuHeader from menuManager
@@ -476,7 +476,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineLoader.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'loadMiniCycleData'],
-        optionalDeps: ['refreshThemeLabels', 'syncModeFromToggles'],
+        optionalDeps: ['refreshThemeLabels', 'syncModeFromToggles', 'updateRecurringInfoLink'],
         provides: ['loadMiniCycle'],
         api: 'cycle',
         after: ['taskCore']

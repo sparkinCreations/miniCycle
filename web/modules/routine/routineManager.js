@@ -49,7 +49,9 @@ const di = createDIModule('RoutineManager', {
     DEFAULT_TASK_OPTION_BUTTONS: optional(null),
     AppMeta: optional(null),
     refreshThemeLabels: optional(null),
-    syncModeFromToggles: optional(null)
+    syncModeFromToggles: optional(null),
+    updateRecurringInfoLink: optional(null),
+    loadMiniCycle: optional(null),
 });
 
 // Late-binding deps via Proxy
@@ -259,6 +261,7 @@ export class RoutineManager {
 
                     // ✅ Complete the setup after user interaction
                     this.deps.refreshThemeLabels?.();  // Apply Classic colors immediately (new routine defaults to classic)
+                    this.deps.updateRecurringInfoLink?.();  // Clear stale recurring count from previous routine
                     this.deps.completeInitialSetup(finalTitle, appState.get());
                 }
             });
@@ -553,8 +556,18 @@ export class RoutineManager {
                 this.deps.updateProgressBar();
                 this.deps.checkCompleteAllButton();
                 this.deps.updateMainMenuHeader();
-                this.deps.refreshThemeLabels?.();  // Apply Classic colors (new routine defaults to classic)
-                // Note: autoSave removed - AppState.update(immediate=true) already persisted
+                this.deps.refreshThemeLabels?.();
+
+                // ✅ Clear stale recurring info from previous routine (direct DOM)
+                // New routines have empty recurringTemplates, so always hide the link
+                const recurringLink = document.getElementById(DOM_IDS.RECURRING_INFO_LINK);
+                if (recurringLink) recurringLink.classList.remove('show');
+
+                // Also restore default empty state hint
+                const emptyHint = document.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
+                if (emptyHint) {
+                    emptyHint.innerHTML = getLabel('empty.noTasksHint').replace('+', '<strong>+</strong>');
+                }
 
                 // ✅ Notify undo system of new cycle
                 if (finalResult && typeof this.deps.onCycleCreated === 'function') {
