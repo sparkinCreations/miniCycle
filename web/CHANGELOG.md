@@ -1,3 +1,8 @@
+## [2.038] - 2026-03-04
+- feat: update task button icons and labels for clarity and consistency
+- feat: enhance user experience with loading tips and recurring task panel hints
+
+
 ## [2.037] - 2026-03-04
 - feat: enhance recurring task handling with priority color support
 
