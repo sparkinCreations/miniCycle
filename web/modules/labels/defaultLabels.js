@@ -135,8 +135,8 @@ export const DEFAULT_LABELS = deepFreeze({
         delete:           'Delete task',
         deleteOnComplete: 'Marked for removal (removes task on reset or clear)',
         showOptions:      'Show task options',
-        customize:        'Customize task options',
-        customizeAria:    'Customize which task option buttons are visible'
+        customize:        'Add or remove task buttons',
+        customizeAria:    'Add or remove which task option buttons are visible'
     },
 
     // ========================================================================
@@ -144,7 +144,7 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     taskOptions: {
-        title:                    'Customize Task Options',
+        title:                    'Add or Remove Task Buttons',
         subtitle:                 'Choose which buttons appear for tasks in "{name}"',
         thisCycle:                'This Routine',
         optionDetails:            'Option Details',
@@ -156,8 +156,8 @@ export const DEFAULT_LABELS = deepFreeze({
         taskReminders:            'Task Reminders',
         changesApply:             'Changes apply immediately',
         resetDefault:             'Reset to Default',
-        customizeLabel:           'Customize Options',
-        customizeDescription:     'Always visible — opens this customization menu',
+        customizeLabel:           'Add/Remove Buttons',
+        customizeDescription:     'Always visible — opens this panel',
         moveArrowsLabel:          'Move Task Arrows',
         moveArrowsDescription:    'Reorder tasks using arrow buttons',
         threeDotsLabel:           'Three Dots Menu',
@@ -509,7 +509,8 @@ export const DEFAULT_LABELS = deepFreeze({
         invalidFormat:           'Invalid file format',
         tcycNotSupported:        'miniCycle does not support .tcyc files.\nPlease save your Task Cycle as .MCYC to import.',
         importOneFileOnly:       'Only one file can be imported at a time.',
-        importDropMcyc:          'Please drop a .mcyc file to import.',
+        importDropMcyc:          'Please drop a .mcyc or .json file to import.',
+        importDropFile:          'Drop .mcyc or .json file to import',
         importReadError:         'Error reading file.',
         importError:             'Error importing routine.',
         importAppNotReady:       'Cannot import - app not ready. Please try again.',
@@ -790,7 +791,8 @@ export const DEFAULT_LABELS = deepFreeze({
         removeDate:           'Remove this date',
         addTasksToRecurring:  'Add {count} Tasks to Recurring',
         selectAll:            'Select All',
-        deselectAll:          'Deselect All'
+        deselectAll:          'Deselect All',
+        panelHint:            'Tap a recurring task to see its schedule or change settings'
     },
 
     // ========================================================================
@@ -820,7 +822,7 @@ export const DEFAULT_LABELS = deepFreeze({
         reminders:               'Reminders',
         remindersTitle:          'Configure reminders and notifications',
         taskOptions:             'Task Options',
-        taskOptionsTitle:        'Customize task option buttons',
+        taskOptionsTitle:        'Add or remove task option buttons',
         recurring:               'Recurring',
         recurringTitle:          'Manage recurring tasks',
         themes:                  'Themes',
@@ -1339,7 +1341,7 @@ export const DEFAULT_LABELS = deepFreeze({
         completeFirst:     'Complete your first cycle!',
         progressCycles:    '{count} {cycleWord} completed',
         progressCleared:   '{count} completed {taskWord} cleared',
-        customizerTip:     'Press the -/+ button to add or remove task option buttons in the task customizer',
+        customizerTip:     'Press the -/+ button to add or remove task option buttons',
         recurringRemoved:  'Recurring tasks removed — they\'ll return on schedule'
     },
 
@@ -1632,6 +1634,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.tcycNotSupported',
     'notify.importOneFileOnly',
     'notify.importDropMcyc',
+    'notify.importDropFile',
     'notify.importReadError',
     'notify.importError',
     'notify.importAppNotReady',

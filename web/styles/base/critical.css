@@ -42,6 +42,39 @@ html, body {
   opacity: 0;
   pointer-events: none;
 }
+.loader-tip {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  max-width: 80vw;
+  padding: 10px 24px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: white;
+  font-size: var(--font-size-base, 15px);
+  font-weight: 500;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  text-align: center;
+  line-height: 1.4;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 12px rgba(0, 0, 0, 0.25);
+}
+.loader-tip.visible {
+  opacity: 0.85;
+}
+.loader-tip-header {
+  font-size: var(--font-size-md, 17px);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.loader-tip-text {
+  font-weight: 400;
+}
 .loader-logo {
   width: 120px;
   height: 96px;

@@ -1,3 +1,7 @@
+## [2.037] - 2026-03-04
+- feat: enhance recurring task handling with priority color support
+
+
 ## [2.036] - 2026-03-03
 - feat: Update CHANGELOG for version 2.035 with max-height adjustments for task view in focus mode
 - feat: Update app version to 2.035 across all relevant files
