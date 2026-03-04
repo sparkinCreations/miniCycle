@@ -862,10 +862,12 @@ export class RecurringPanelManager {
 
             // Handle empty state
             const emptyState = this.deps.getElementById(DOM_IDS.RECURRING_EMPTY_STATE);
+            const panelHint = recurringList.parentElement?.querySelector('.recurring-panel-hint');
 
             if (recurringTasks.length === 0) {
                 console.log('📋 No recurring tasks found, showing empty state');
                 if (emptyState) emptyState.classList.remove("hidden");
+                if (panelHint) panelHint.classList.add("hidden");
 
                 // ✅ Hide the preview when no tasks
                 const summaryContainer = this.deps.getElementById(DOM_IDS.RECURRING_SUMMARY_PREVIEW);
@@ -874,6 +876,7 @@ export class RecurringPanelManager {
                 }
             } else {
                 if (emptyState) emptyState.classList.add("hidden");
+                if (panelHint) panelHint.classList.remove("hidden");
 
                 // Render each recurring task
                 recurringTasks.forEach(task => {

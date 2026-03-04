@@ -751,19 +751,23 @@ export class ModeManager {
         const currentState = this.deps.AppState?.get();
         const activeCycleId = currentState?.appState?.activeCycleId;
         const activeCycle = currentState?.data?.cycles?.[activeCycleId];
+        // Don't count sample routine tasks — new users have tasks from the getting-started routine
+        // Only cycleCount > 0 (completed a cycle) or multiple routines indicate a returning user
         const isReturningUser = activeCycle?.cycleCount > 0
-            || activeCycle?.tasks?.length > 0
             || Object.keys(currentState?.data?.cycles || {}).length > 1;
 
         if (!currentState?.settings?.addTaskDiscovered && !isReturningUser) {
             quickActionsBtn.classList.add('first-time-shimmer');
 
             // Also remove shimmer when a task is added (covers mobile path where
-            // users type into the input directly without ever clicking the + button)
+            // users type into the input directly without ever clicking the + button).
+            // Capture initial count so the sample routine's pre-populated tasks don't
+            // trigger removal — only genuinely new user-added tasks should dismiss it.
             const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
             if (taskList) {
+                const initialCount = taskList.children.length;
                 const observer = new MutationObserver(() => {
-                    if (taskList.children.length > 0) {
+                    if (taskList.children.length > initialCount) {
                         quickActionsBtn.classList.remove('first-time-shimmer');
                         observer.disconnect();
                         if (this.deps.AppState) {

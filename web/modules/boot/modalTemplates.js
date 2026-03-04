@@ -14,6 +14,7 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
       <button id="toggle-check-all" class="toggle-check-btn">Check All</button>
     </div>
     <div class="recurring-scroll-area">
+      <p class="recurring-panel-hint">Tap a recurring task to see its schedule or change settings</p>
       <ul id="recurring-task-list" role="listbox" aria-label="List of recurring tasks"></ul>
       <div id="recurring-empty-state" class="recurring-empty-state hidden">
         <p>No recurring tasks yet.</p>
@@ -841,7 +842,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                             </span>
                             <span>Show Quick Actions</span>
                         </label>
-                        <button id="open-task-options-customizer" class="settings-btn"><span class="icon-text">-/+</span> Customize Task Options</button>
+                        <button id="open-task-options-customizer" class="settings-btn"><span class="icon-text">-/+</span> Add or Remove Task Buttons</button>
                     </div>
                 </div>
 

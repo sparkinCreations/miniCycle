@@ -529,7 +529,8 @@ async function runBootSequence() {
       try {
         const fileHandle = launchParams.files[0];
         const file = await fileHandle.getFile();
-        if (!file.name.endsWith('.mcyc')) return;
+        const name = file.name.toLowerCase();
+        if (!name.endsWith('.mcyc') && !name.endsWith('.json')) return;
         const content = await file.text();
 
         // Set flag before import (processImportedData will reload)

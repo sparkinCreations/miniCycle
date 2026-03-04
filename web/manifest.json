@@ -12,7 +12,7 @@
   "dir": "ltr",
   "theme_color": "#4c79ff",
   "background_color": "#4c79ff",
-  "version": "2.036",
+  "version": "2.037",
   "categories": ["productivity", "lifestyle", "utilities"],
   "icons": [
     {
@@ -99,7 +99,7 @@
     {
       "action": "./miniCycle.html",
       "accept": {
-        "application/json": [".mcyc"]
+        "application/json": [".mcyc", ".json"]
       }
     }
   ]

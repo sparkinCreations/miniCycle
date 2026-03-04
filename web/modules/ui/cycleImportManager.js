@@ -143,7 +143,7 @@ export function setupImportButtons() {
         fileInput.type = "file";
         fileInput.id = "import-data-file-input";
         fileInput.name = "dataImport";
-        fileInput.accept = ".mcyc";
+        fileInput.accept = ".mcyc,.json,application/json";
         fileInput.style.display = "none";
         document.body.appendChild(fileInput);
 
@@ -245,7 +245,7 @@ export function setupDragDropImport() {
     overlay.innerHTML = `
         <div class="mcyc-drop-content">
             <div class="mcyc-drop-icon">+</div>
-            <div class="mcyc-drop-text">Drop .mcyc file to import</div>
+            <div class="mcyc-drop-text">${getLabel('notify.importDropFile')}</div>
         </div>
     `;
     overlay.style.cssText = `
@@ -285,9 +285,10 @@ export function setupDragDropImport() {
         overlay.style.display = 'none';
     };
 
-    // Check if file is .mcyc
-    const isMcycFile = (file) => {
-        return file?.name?.toLowerCase().endsWith('.mcyc');
+    // Check if file is a valid import format (.mcyc or .json)
+    const isValidImportFile = (file) => {
+        const name = file?.name?.toLowerCase() || '';
+        return name.endsWith('.mcyc') || name.endsWith('.json');
     };
 
     // Check if drag contains files
@@ -339,7 +340,7 @@ export function setupDragDropImport() {
         const file = files[0];
 
         // Validate file extension
-        if (!isMcycFile(file)) {
+        if (!isValidImportFile(file)) {
             _deps.showNotification?.(getLabel('notify.importDropMcyc'), 'warning');
             return;
         }

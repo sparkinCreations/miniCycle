@@ -10,7 +10,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.036">
+<meta name="app-version" content="2.037">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -29,20 +29,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.036"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.037"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.036" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.036" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.036" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.036" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.036" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.036" as="style">
+<link rel="preload" href="styles/main.css?v=2.037" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.037" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.037" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.037" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.037" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.037" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.036" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.037" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.036"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.037"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -53,7 +53,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.036"></script>
+<script src="./version.js?v=2.037"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -933,12 +933,43 @@ window.installApp = () => {
   <a href="#app-container" class="skip-to-content">Skip to main content</a>
   <!-- Initial App Loader -->
   <div id="app-loader" role="status" aria-label="Application loading" aria-live="polite">
+    <div id="loader-tip" class="loader-tip" aria-live="polite">
+      <div class="loader-tip-header">💡 Tip:</div>
+      <div class="loader-tip-text"></div>
+    </div>
     <img src="assets/images/logo/minicycle_logo_icon.png" alt="Loading..." class="loader-logo" width="120" height="96" fetchpriority="high">
     <div class="loader-text">Loading miniCycle...</div>
     <div class="loader-bar-container">
       <div class="loader-bar"></div>
     </div>
   </div>
+
+  <!-- Loading tips rotation -->
+  <script>
+  (function() {
+    var el = document.getElementById('loader-tip');
+    if (!el) return;
+    var text = el.querySelector('.loader-tip-text');
+    if (!text) return;
+    fetch('./modules/labels/loading-tips.json')
+      .then(function(r) { return r.json(); })
+      .then(function(tips) {
+        if (!tips || !tips.length) return;
+        var i = Math.floor(Math.random() * tips.length);
+        text.textContent = tips[i];
+        el.classList.add('visible');
+        setInterval(function() {
+          el.classList.remove('visible');
+          setTimeout(function() {
+            i = (i + 1) % tips.length;
+            text.textContent = tips[i];
+            el.classList.add('visible');
+          }, 400);
+        }, 4000);
+      })
+      .catch(function() {});
+  })();
+  </script>
 
   <!-- Loading Overlay for Operations -->
   <div id="loading-overlay" class="loading-overlay" role="status" aria-label="Operation in progress">
@@ -1778,7 +1809,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.036"></script>
+ <script type="module" src="miniCycle-main.js?v=2.037"></script>
 
 <script>
 // Sync About modal version with meta app-version

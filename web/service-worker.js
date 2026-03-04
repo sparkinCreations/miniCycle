@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.036';
-var CACHE_VERSION = 'v875';
+var APP_VERSION = '2.037';
+var CACHE_VERSION = 'v876';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -48,6 +48,8 @@ var CORE = [
   './assets/images/pattern.svg',
   './assets/images/logo/minicycle_logo_icon.png',
   './assets/images/logo/logo.png',
+  // Loading tips (shown during boot splash)
+  './modules/labels/loading-tips.json',
   // Self-hosted fonts
   './assets/fonts/fonts.css',
   './assets/fonts/poppins-300.woff2',
