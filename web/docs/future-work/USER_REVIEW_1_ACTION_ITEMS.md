@@ -25,17 +25,22 @@ The tester successfully completed core workflows (task management, completed tas
 **Severity:** HIGH
 **Tester quote:** "I would not think to click on that... what would be helpful if this was like a gear icon. Like, customized task options settings. So a gear kind of makes more sense than a plus minus thing."
 
-**Problem:** The +/- button opens the task option button customizer (add/remove which action buttons appear on each task). Users universally interpret it as "task settings" or "expand/collapse." The icon does not communicate its purpose.
+**Problem:** The +/- button opens the task option button customizer (add/remove which action buttons appear on each task). Users universally interpret it as "task settings" or "expand/collapse." The icon does not communicate its purpose. The tester's confusion here cascaded into recurring task confusion — they assumed the +/- panel was where you configure recurring tasks.
 
 **Tester expectation:** A gear icon = settings for that task's buttons.
 
-**Suggestions:**
-- A. Replace +/- icon with a gear/cog icon and tooltip "Customize task buttons"
-- B. Add a first-time tooltip or popover explaining what the panel does
-- C. Consider renaming the panel header to make its purpose clearer (e.g., "Choose which buttons appear on your tasks")
-- D. Loading tip already added: "Tap the +/- buttons to customize which task option buttons appear" — but in-app discovery is still needed
+**Assessment:** A gear icon would be worse — users would confuse it for system settings. Instead, we renamed the panel to clearly describe what it does. The icon order was also changed from -/+ to +/- (add first, remove second).
 
-**Status:** NOT STARTED
+**Action taken:**
+- Renamed modal title from "Customize Task Options" → "Add or Remove Task Buttons" (all labels updated)
+- Changed icon from ⚙️ gear emoji to "+/-" text to match the button
+- Swapped icon order from "-/+" to "+/-" across all files (button, modal, settings, labels, loading tips)
+- Updated modal subtitle: "Choose which buttons appear for tasks in '{name}'"
+- Updated all related labels, ARIA text, help tips, and loading tips
+
+**Files changed:** `defaultLabels.js`, `taskButtons.js`, `taskOptionsCustomizer.js`, `modalTemplates.js`, `globalUtils.js`, `loading-tips.json`
+
+**Status:** DONE
 
 ---
 
@@ -82,8 +87,11 @@ That's 6 steps to set a recurring time. The tester expected to find this in 1-2 
 - B. Add a "Set time" shortcut directly in the recurring confirmation notification
 - C. Consider making "Show advanced options" expanded by default, or rename to something less intimidating
 - D. Add recurring time configuration to the recurring panel (hamburger menu path) so users don't need to go through per-task options
+- E. Added hint text to recurring panel: "Tap a recurring task to see its schedule or change settings" — helps users discover that clicking a task in the panel reveals schedule details and settings
 
-**Status:** NOT STARTED
+**Partial fix applied:** Panel hint added (suggestion E). Remaining suggestions (A-D) still under consideration.
+
+**Status:** PARTIALLY ADDRESSED
 
 ---
 
@@ -182,9 +190,9 @@ That's 6 steps to set a recurring time. The tester expected to find this in 1-2 
 
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
-| 1 | +/- icon confusion | HIGH | NOT STARTED |
+| 1 | +/- icon confusion → renamed to "Add or Remove Task Buttons" | HIGH | DONE |
 | 2 | Recurring panel state mismatch (BUG) | HIGH | NOT STARTED |
-| 3 | Recurring settings too buried | HIGH | NOT STARTED |
+| 3 | Recurring settings too buried (panel hint added) | HIGH | PARTIALLY ADDRESSED |
 | 4 | Notification lightbulb not noticed | MEDIUM | NOT STARTED |
 | 5 | Import warning tone | MEDIUM | NOT STARTED |
 | 6 | Hide task input confusion | LOW-MEDIUM | NOT STARTED |

@@ -734,7 +734,7 @@ export class GlobalUtils {
  * - reminders: Task reminders (🔔)
  */
 export const DEFAULT_TASK_OPTION_BUTTONS = {
-    customize: true,        // -/+ Customize button (always visible, can't disable)
+    customize: true,        // +/- Add/Remove buttons (always visible, can't disable)
     moveArrows: false,      // ▲▼ Move task arrows (up and down together)
     highPriority: true,     // ⚡ High priority toggle
     rename: true,           // ✏️ Rename/edit task

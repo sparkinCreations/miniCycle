@@ -76,7 +76,7 @@ const BUTTON_CONFIG = [
     {
         key: 'customize',
         labelKey: 'taskOptions.customizeLabel',
-        icon: '-/+',
+        icon: '+/-',
         disabled: true,
         scope: 'global',
         descriptionKey: 'taskOptions.customizeDescription'
@@ -346,7 +346,7 @@ export class TaskOptionsCustomizer {
             <div class="modal-content task-options-modal has-corner-logo">
                 <div class="modal-header">
                     <div class="modal-header-text">
-                        <h2 id="task-options-customizer-title">⚙️ ${getLabel('taskOptions.title')}</h2>
+                        <h2 id="task-options-customizer-title">+/-&ensp;${getLabel('taskOptions.title')}</h2>
                         <p class="modal-subtitle">${getLabel('taskOptions.subtitle', { vars: { name: escapeHtml(cycleTitle) } })}</p>
                     </div>
                 </div>
