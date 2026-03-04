@@ -44,6 +44,7 @@ const di = createDIModule('RoutineLoader', {
   syncModeFromToggles: optional(null),  // Sync mode selector with routine's saved mode
   completedTasksManager: optional(null),  // For organizing completed tasks into dropdown
   refreshThemeLabels: optional(null),  // Re-apply vocab theme colors and labels on routine switch
+  updateRecurringInfoLink: optional(null),  // Refresh recurring count below task list on routine switch
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
@@ -451,6 +452,7 @@ function updateDependentComponents() {
   _deps.updateMainMenuHeader?.();
   _deps.updateStatsPanel?.();
   _deps.refreshThemeLabels?.();  // Apply vocab theme colors and labels for the newly active routine
+  _deps.updateRecurringInfoLink?.();  // Refresh recurring count for the newly active routine
 }
 
 /**
