@@ -1341,7 +1341,7 @@ export const DEFAULT_LABELS = deepFreeze({
         completeFirst:     'Complete your first cycle!',
         progressCycles:    '{count} {cycleWord} completed',
         progressCleared:   '{count} completed {taskWord} cleared',
-        customizerTip:     'Press the -/+ button to add or remove task option buttons',
+        customizerTip:     'Press the +/- button to add or remove task option buttons',
         recurringRemoved:  'Recurring tasks removed — they\'ll return on schedule'
     },
 

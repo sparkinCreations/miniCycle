@@ -842,7 +842,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                             </span>
                             <span>Show Quick Actions</span>
                         </label>
-                        <button id="open-task-options-customizer" class="settings-btn"><span class="icon-text">-/+</span> Add or Remove Task Buttons</button>
+                        <button id="open-task-options-customizer" class="settings-btn"><span class="icon-text">+/-</span> Add or Remove Task Buttons</button>
                     </div>
                 </div>
 

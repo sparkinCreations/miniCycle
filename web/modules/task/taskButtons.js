@@ -138,7 +138,7 @@ export class TaskButtons {
     createCustomizeButton() {
         const button = document.createElement("button");
         button.classList.add("task-btn", "customize-btn");
-        button.textContent = "-/+";
+        button.textContent = "+/-";
         button.setAttribute("type", "button");
         button.setAttribute("title", getLabel('taskOption.customize'));
         button.setAttribute("tabindex", "-1");
