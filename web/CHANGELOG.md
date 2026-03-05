@@ -1,3 +1,7 @@
+## [2.041] - 2026-03-05
+- Refactor DOM access to use dependency injection across multiple modules
+
+
 ## [2.040] - 2026-03-05
 - feat: enhance routine management with new optional dependencies and update recurring info link
 

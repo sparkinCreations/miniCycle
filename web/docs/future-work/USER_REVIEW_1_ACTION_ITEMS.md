@@ -63,7 +63,9 @@ This asymmetry means when a user sets recurring via one path, the other path may
 
 **Fix approach:** Align the recurring panel filter to use the same check as the button state — `recurringTemplateIds.includes(task.id) || task.recurring`. Or better: ensure `activateTaskRecurringState()` always creates BOTH `task.recurring = true` AND the template entry atomically, and verify no code path sets one without the other.
 
-**Status:** NOT STARTED
+**Action taken:** Added `&& !task.recurring` to the `populateAvailableTasks()` filter in `recurringPanel.js` (line 1600), so the panel now checks both `recurringTemplates` keys AND `task.recurring` — matching the per-task button logic in `taskButtons.js`.
+
+**Status:** DONE
 
 ---
 
@@ -191,7 +193,7 @@ That's 6 steps to set a recurring time. The tester expected to find this in 1-2 
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
 | 1 | +/- icon confusion → renamed to "Add or Remove Task Buttons" | HIGH | DONE |
-| 2 | Recurring panel state mismatch (BUG) | HIGH | NOT STARTED |
+| 2 | Recurring panel state mismatch (BUG) | HIGH | DONE |
 | 3 | Recurring settings too buried (panel hint added) | HIGH | PARTIALLY ADDRESSED |
 | 4 | Notification lightbulb not noticed | MEDIUM | NOT STARTED |
 | 5 | Import warning tone | MEDIUM | NOT STARTED |

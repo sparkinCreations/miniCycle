@@ -709,6 +709,15 @@ export const DOM_IDS = Object.freeze({
     YEARLY_APPLY_ALL: 'yearly-apply-all',
     BIWEEKLY_SPECIFIC_DAYS: 'biweekly-specific-days',
 
+    // ---- Time Picker Sections (surfaced outside advanced) ----
+    TIME_PICKER_SECTION: 'time-picker-section',
+    DAILY_TIME_SECTION: 'daily-time-section',
+    HOURLY_TIME_SECTION: 'hourly-time-section',
+    WEEKLY_TIME_SECTION: 'weekly-time-section',
+    BIWEEKLY_TIME_SECTION: 'biweekly-time-section',
+    MONTHLY_TIME_SECTION: 'monthly-time-section',
+    YEARLY_TIME_SECTION: 'yearly-time-section',
+
     // ---- Games & Achievements ----
     OPEN_GAMES_PANEL: 'open-games-panel',
     GAMES_MENU_OPTION: 'games-menu-option',
@@ -855,6 +864,7 @@ export const DOM_SELECTORS = Object.freeze({
 
     // ---- Recurring ----
     FREQUENCY_OPTIONS: '.frequency-options',
+    FREQUENCY_TIME_SECTION: '.frequency-time-section',
     RECURRING_TASK_ITEM: '.recurring-task-item',
     RECURRING_CHECK: '.recurring-check',
     RECURRING_CHECK_CHECKED: '.recurring-check:checked',
