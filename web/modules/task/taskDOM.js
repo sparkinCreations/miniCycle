@@ -1051,7 +1051,7 @@ export class TaskDOMManager {
 
                 // Keyboard focus flow: stay on recurring button, Tab → notification → next task option
                 if (wasKeyboardActivated) {
-                    const notification = document.querySelector('.notification.recurring.show');
+                    const notification = this.deps.querySelector(DOM_SELECTORS.NOTIFICATION_RECURRING_SHOW);
                     if (notification) {
                         const changeSettingsBtn = notification.querySelector('.show-quick-actions');
                         if (changeSettingsBtn) {
@@ -1313,7 +1313,7 @@ export class TaskDOMManager {
      * @returns {HTMLElement|null}
      */
     getTaskElement(taskId) {
-        return document.querySelector(DATA_SELECTORS.taskById(taskId));
+        return this.deps.querySelector(DATA_SELECTORS.taskById(taskId));
     }
 
     /**
@@ -1321,7 +1321,7 @@ export class TaskDOMManager {
      * @returns {NodeList}
      */
     getAllTaskElements() {
-        return document.querySelectorAll('#taskList > .task');
+        return this.deps.querySelectorAll(`#${DOM_IDS.TASK_LIST} > ${DOM_SELECTORS.TASK}`);
     }
 }
 
@@ -1485,7 +1485,7 @@ function createOrUpdateTaskData(taskContext) {
 function restoreFocusToNextTaskOption(context) {
     if (!context) return;
     const { taskId, sourceButtonClass } = context;
-    const taskItem = document.querySelector(DATA_SELECTORS.taskById(taskId));
+    const taskItem = taskDOMManager?.deps.querySelector(DATA_SELECTORS.taskById(taskId));
     if (!taskItem) return;
 
     // Re-show task options if hidden
@@ -1520,7 +1520,7 @@ function restoreFocusToNextTaskOption(context) {
 function restoreFocusToTaskOptionButton(context) {
     if (!context) return;
     const { taskId, sourceButtonClass } = context;
-    const taskItem = document.querySelector(DATA_SELECTORS.taskById(taskId));
+    const taskItem = taskDOMManager?.deps.querySelector(DATA_SELECTORS.taskById(taskId));
     if (!taskItem) return;
 
     const taskOptions = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);

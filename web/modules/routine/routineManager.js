@@ -250,7 +250,7 @@ export class RoutineManager {
                     // New routine defaults to auto-cycle, but the selector still shows
                     // the previous routine's mode. Must update before refreshThemeLabels,
                     // which re-renders the help window using the cached mode.
-                    const onboardModeSelector = document.getElementById(DOM_IDS.MODE_SELECTOR);
+                    const onboardModeSelector = this.deps.getElementById(DOM_IDS.MODE_SELECTOR);
                     if (onboardModeSelector) {
                         onboardModeSelector.value = 'auto-cycle';
                     }
@@ -543,7 +543,7 @@ export class RoutineManager {
                 document.body.classList.add('auto-cycle-mode');
 
                 // Hide task input bar (new routines default to hidden)
-                const taskInputContainer = document.querySelector(DOM_SELECTORS.TASK_INPUT);
+                const taskInputContainer = this.deps.querySelector(DOM_SELECTORS.TASK_INPUT);
                 if (taskInputContainer) {
                     taskInputContainer.classList.add('hidden');
                     const toggleText = this.deps.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_TEXT);
@@ -558,13 +558,13 @@ export class RoutineManager {
                 this.deps.updateMainMenuHeader();
                 this.deps.refreshThemeLabels?.();
 
-                // ✅ Clear stale recurring info from previous routine (direct DOM)
+                // ✅ Clear stale recurring info from previous routine
                 // New routines have empty recurringTemplates, so always hide the link
-                const recurringLink = document.getElementById(DOM_IDS.RECURRING_INFO_LINK);
+                const recurringLink = this.deps.getElementById(DOM_IDS.RECURRING_INFO_LINK);
                 if (recurringLink) recurringLink.classList.remove('show');
 
                 // Also restore default empty state hint
-                const emptyHint = document.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
+                const emptyHint = this.deps.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
                 if (emptyHint) {
                     emptyHint.innerHTML = getLabel('empty.noTasksHint').replace('+', '<strong>+</strong>');
                 }

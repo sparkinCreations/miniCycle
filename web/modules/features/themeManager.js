@@ -184,27 +184,27 @@ function _refreshLiveLensLabels() {
     _deps.updateHelpWindow?.();
 
     // Task input placeholder ("Add task" → "Add habit" etc.)
-    const taskInputEl = document.getElementById(DOM_IDS.TASK_INPUT);
+    const taskInputEl = _deps.getElementById(DOM_IDS.TASK_INPUT);
     if (taskInputEl) {
         taskInputEl.placeholder = getLabel('action.addTask');
     }
 
     // App subtitle ("ROUTINE MANAGER" → "HABIT TRACKER" etc.)
-    const appSubtitle = document.getElementById(DOM_IDS.APP_SUBTITLE);
+    const appSubtitle = _deps.getElementById(DOM_IDS.APP_SUBTITLE);
     if (appSubtitle) {
         appSubtitle.textContent = getLabel('nav.appSubtitle');
     }
 
     // Quick-action "Add Task" / "Hide Task Input" button text
-    const addTaskText = document.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_TEXT);
+    const addTaskText = _deps.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_TEXT);
     if (addTaskText) {
-        const taskInputContainer = document.querySelector(DOM_SELECTORS.TASK_INPUT);
+        const taskInputContainer = _deps.querySelector(DOM_SELECTORS.TASK_INPUT);
         const isTaskInputVisible = taskInputContainer && !taskInputContainer.classList.contains('hidden');
         addTaskText.textContent = isTaskInputVisible ? getLabel('nav.hideTaskInput') : getLabel('action.addTask');
     }
 
     // Complete-all button text ("Complete Cycle" → "Complete Habits" etc.)
-    const completeBtn = document.getElementById(DOM_IDS.COMPLETE_ALL);
+    const completeBtn = _deps.getElementById(DOM_IDS.COMPLETE_ALL);
     if (completeBtn) {
         const isToDoMode = document.body.classList.contains('todo-mode-mode');
         completeBtn.textContent = isToDoMode
@@ -213,7 +213,7 @@ function _refreshLiveLensLabels() {
     }
 
     // Empty state text ("No tasks yet" → "No habits yet" etc.)
-    const emptyState = document.getElementById(DOM_IDS.EMPTY_STATE);
+    const emptyState = _deps.getElementById(DOM_IDS.EMPTY_STATE);
     if (emptyState) {
         const emptyText = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_TEXT);
         if (emptyText) emptyText.textContent = getLabel('empty.noTasks');

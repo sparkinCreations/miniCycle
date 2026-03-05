@@ -399,7 +399,8 @@ export async function handleBgImageUpload(event, deps) {
         }
 
         // Get current display mode
-        const modeSelect = document.getElementById(DOM_IDS.BG_IMAGE_MODE);
+        const getElementById = deps.getElementById || ((id) => document.getElementById(id));
+        const modeSelect = getElementById(DOM_IDS.BG_IMAGE_MODE);
         const mode = modeSelect?.value || 'cover';
 
         // Save to IndexedDB
@@ -478,13 +479,16 @@ export async function handleBgImageModeChange(mode) {
  * @param {string|null} dataUrl - The image data URL (null if no image)
  * @param {string} mode - The display mode
  * @param {Object} AppState - AppState dependency
+ * @param {Object} [deps={}] - Optional dependencies { getElementById }
  */
-export function updateBgImageUI(dataUrl, mode, AppState) {
-    const optionsDiv = document.getElementById(DOM_IDS.BG_IMAGE_OPTIONS);
-    const removeBtn = document.getElementById(DOM_IDS.BG_IMAGE_REMOVE_BTN);
-    const preview = document.getElementById(DOM_IDS.BG_IMAGE_PREVIEW);
-    const modeSelect = document.getElementById(DOM_IDS.BG_IMAGE_MODE);
-    const visibleToggle = document.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
+export function updateBgImageUI(dataUrl, mode, AppState, deps = {}) {
+    const getElementById = deps.getElementById || ((id) => document.getElementById(id));
+
+    const optionsDiv = getElementById(DOM_IDS.BG_IMAGE_OPTIONS);
+    const removeBtn = getElementById(DOM_IDS.BG_IMAGE_REMOVE_BTN);
+    const preview = getElementById(DOM_IDS.BG_IMAGE_PREVIEW);
+    const modeSelect = getElementById(DOM_IDS.BG_IMAGE_MODE);
+    const visibleToggle = getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
 
     if (dataUrl) {
         // Show options and remove button

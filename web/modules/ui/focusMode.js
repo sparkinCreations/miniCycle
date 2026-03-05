@@ -26,6 +26,8 @@ import { getIcon } from '../utils/icons.js';
 const di = createDIModule('FocusMode', {
     showNotification: optional(null),
     safeAddEventListener: optional(null),
+    getElementById: optional((id) => document.getElementById(id)),
+    querySelector: optional((sel) => document.querySelector(sel)),
 });
 
 /**
@@ -73,7 +75,7 @@ export class FocusMode {
      * affects layout flow of any child container.
      */
     _createButton() {
-        const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
+        const taskView = this.deps.getElementById(DOM_IDS.TASK_VIEW);
         if (!taskView) {
             console.warn('FocusMode: task-view not found');
             return;
@@ -117,7 +119,7 @@ export class FocusMode {
 
         // Escape key exits focus mode (skip if a modal/dialog is open)
         this._keyHandler = (e) => {
-            if (e.key === 'Escape' && this._active && !document.querySelector('dialog[open]')) {
+            if (e.key === 'Escape' && this._active && !this.deps.querySelector('dialog[open]')) {
                 this.deactivate();
             }
         };
@@ -165,7 +167,7 @@ export class FocusMode {
         if (!this._active) return;
         this._active = false;
 
-        const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
+        const taskView = this.deps.getElementById(DOM_IDS.TASK_VIEW);
 
         // Pin current height so CSS can transition to the smaller max-height
         if (taskView) {

@@ -38,7 +38,11 @@ const di = createDIModule('AchievementsManager', {
     logHistoryEvent: optional(null),
     vocabThemeManager: optional(null),
     // Badge UI dependencies
-    safeAddEventListener: optional(null)
+    safeAddEventListener: optional(null),
+    // DOM access helpers (testable, avoids direct document.* calls)
+    getElementById: optional((id) => document.getElementById(id)),
+    querySelector: optional((sel) => document.querySelector(sel)),
+    querySelectorAll: optional((sel) => document.querySelectorAll(sel))
 });
 
 export const setAchievementsManagerDependencies = di.setDependencies;
@@ -164,7 +168,7 @@ export class AchievementsManager {
                         {
                             actionButton: {
                                 label: getLabel('action.openThemesModal'),
-                                onClick: () => document.getElementById(DOM_IDS.OPEN_THEMES_PANEL)?.click()
+                                onClick: () => this.deps.getElementById(DOM_IDS.OPEN_THEMES_PANEL)?.click()
                             }
                         }
                     );
@@ -617,7 +621,7 @@ export class AchievementsManager {
     initBadgeTooltips() {
         const safeAddEventListener = this.deps.safeAddEventListener;
 
-        document.querySelectorAll(DOM_SELECTORS.BADGE).forEach(badge => {
+        this.deps.querySelectorAll(DOM_SELECTORS.BADGE).forEach(badge => {
             const milestone = parseInt(badge.dataset.milestone);
             const tierConfig = MILESTONES.find(t => t.cycleThreshold === milestone);
 
@@ -650,7 +654,7 @@ export class AchievementsManager {
         });
 
         // Delegated ArrowLeft/Right navigation between badges
-        const badgesContainer = document.querySelector(DOM_SELECTORS.BADGES_CONTAINER);
+        const badgesContainer = this.deps.querySelector(DOM_SELECTORS.BADGES_CONTAINER);
         if (badgesContainer && safeAddEventListener) {
             safeAddEventListener(badgesContainer, 'keydown', (e) => {
                 const badge = e.target.closest(DOM_SELECTORS.BADGE);
@@ -676,7 +680,7 @@ export class AchievementsManager {
         this.hideBadgeDetail();
 
         // Set aria-expanded on the triggering badge
-        const triggerBadge = document.querySelector(`.badge[data-milestone="${milestone}"]`);
+        const triggerBadge = this.deps.querySelector(`.badge[data-milestone="${milestone}"]`);
         if (triggerBadge) triggerBadge.setAttribute('aria-expanded', 'true');
 
         // Get achievement data
@@ -881,8 +885,8 @@ export class AchievementsManager {
 
         // Add coin spin interaction for unlocked badges
         if (isUnlocked) {
-            const spinArea = document.getElementById(DOM_IDS.BADGE_SPIN_AREA);
-            const coin = document.getElementById(DOM_IDS.BADGE_COIN);
+            const spinArea = this.deps.getElementById(DOM_IDS.BADGE_SPIN_AREA);
+            const coin = this.deps.getElementById(DOM_IDS.BADGE_COIN);
             if (spinArea && coin) {
                 let isDragging = false;
                 let startX = 0;
@@ -1036,11 +1040,11 @@ export class AchievementsManager {
      * Hide badge detail popup
      */
     hideBadgeDetail() {
-        const overlay = document.getElementById(DOM_IDS.BADGE_DETAIL_OVERLAY);
+        const overlay = this.deps.getElementById(DOM_IDS.BADGE_DETAIL_OVERLAY);
         if (!overlay) return;
 
         // Reset aria-expanded on all badges
-        document.querySelectorAll(DOM_SELECTORS.BADGE).forEach(badge => {
+        this.deps.querySelectorAll(DOM_SELECTORS.BADGE).forEach(badge => {
             badge.setAttribute('aria-expanded', 'false');
         });
 
@@ -1075,7 +1079,7 @@ export class AchievementsManager {
      * @param {number} globalTasksCleared - Total tasks cleared across all routines
      */
     updateBadges(globalCyclesCompleted, globalTasksCleared = 0) {
-        document.querySelectorAll(DOM_SELECTORS.BADGE).forEach(badge => {
+        this.deps.querySelectorAll(DOM_SELECTORS.BADGE).forEach(badge => {
             const milestone = parseInt(badge.dataset.milestone);
             const tierConfig = MILESTONES ? MILESTONES.find(t => t.cycleThreshold === milestone) : null;
             const cyclesMet = globalCyclesCompleted >= milestone;
