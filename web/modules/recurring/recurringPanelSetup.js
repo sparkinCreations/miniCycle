@@ -44,6 +44,24 @@ export function setupFrequencySelector(deps, onUpdate) {
             frequencyMap[selectedFrequency].classList.remove("hidden");
         }
 
+        // Show/hide time picker sections (surfaced outside advanced)
+        const timeMap = {
+            hourly: deps.getElementById(DOM_IDS.HOURLY_TIME_SECTION),
+            daily: deps.getElementById(DOM_IDS.DAILY_TIME_SECTION),
+            weekly: deps.getElementById(DOM_IDS.WEEKLY_TIME_SECTION),
+            biweekly: deps.getElementById(DOM_IDS.BIWEEKLY_TIME_SECTION),
+            monthly: deps.getElementById(DOM_IDS.MONTHLY_TIME_SECTION),
+            yearly: deps.getElementById(DOM_IDS.YEARLY_TIME_SECTION),
+        };
+
+        Object.values(timeMap).forEach(section => {
+            if (section) section.classList.add("hidden");
+        });
+
+        if (timeMap[selectedFrequency]) {
+            timeMap[selectedFrequency].classList.remove("hidden");
+        }
+
         onUpdate?.();
     });
 }

@@ -6,6 +6,8 @@
  * @module boot/modalTemplates
  */
 
+import { getLabel } from '../labels/labelResolver.js';
+
 export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
 <dialog id="recurring-panel-overlay" class="modal-overlay" aria-labelledby="recurring-panel-title" aria-modal="true">
   <div id="recurring-panel" class="modal-panel has-corner-logo">
@@ -119,152 +121,209 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
           <option value="yearly">Yearly</option>
         </select>
       </div>
-      <button id="toggle-advanced-settings" type="button" class="toggle-advanced-btn">
-        Show Advanced Options
-      </button>
-      <!-- Dynamic Frequency Options -->
-      <div id="frequency-dynamic-options">
-
-
-        <!-- Hourly options -->
-        <div id="hourly-options" class="frequency-options hidden">
-          <label><input type="checkbox" id="hourly-specific-time" name="hourly-specific-time"> Choose specific minute of each hour</label>
-          <div id="hourly-minute-container" class="hidden">
-            <div class="time-picker-stack">
-            <div class="time-picker-wrapper">
-            <div class="time-picker-group">
-              <label for="hourly-minute" class="visually-hidden">Minute</label>
-            <input type="number" id="hourly-minute" name="hourly-minute" min="0" max="59" placeholder="Minute">
-          </div>
-          </div>
-          </div>
-          </div>
-        </div>
-
-        <!-- Daily options -->
-        <div id="daily-options" class="frequency-options">
-          <label><input type="checkbox" id="daily-specific-time" name="daily-specific-time"> Choose specific time of day</label>
+      <!-- Time Picker Section — surfaced outside advanced options for discoverability -->
+      <div id="time-picker-section">
+        <!-- Daily time (default visible since daily is default frequency) -->
+        <div id="daily-time-section" class="frequency-time-section">
+          <label><input type="checkbox" id="daily-specific-time" name="daily-specific-time"> ${getLabel('recurring.specificTimeOfDay')}</label>
           <div id="daily-time-container" class="hidden">
             <div class="time-picker-wrapper">
               <div class="time-picker-stack">
-            <div class="time-picker-group">
-              <label for="daily-hour" class="visually-hidden">Hour</label>
-              <input type="number" id="daily-hour" name="daily-hour" min="1" max="12" placeholder="Hours">
-              :
-              <label for="daily-minute" class="visually-hidden">Minute</label>
-              <input type="number" id="daily-minute" name="daily-minute" min="0" max="59" placeholder="Minutes">
-              
-              <select id="daily-meridiem" aria-label="AM or PM">
-                <option value="AM">AM</option>
-                <option value="PM">PM</option>
-              </select>
-            </div>
-            <label class="time-format-toggle">
-              <input type="checkbox" id="daily-military" name="daily-military"> Check box to use 24-hour format
-            </label>
-            </div>
+                <div class="time-picker-group">
+                  <label for="daily-hour" class="visually-hidden">${getLabel('recurring.ariaHour')}</label>
+                  <input type="number" id="daily-hour" name="daily-hour" min="1" max="12" placeholder="${getLabel('recurring.placeholderHours')}">
+                  :
+                  <label for="daily-minute" class="visually-hidden">${getLabel('recurring.ariaMinute')}</label>
+                  <input type="number" id="daily-minute" name="daily-minute" min="0" max="59" placeholder="${getLabel('recurring.placeholderMinutes')}">
+                  <select id="daily-meridiem" aria-label="${getLabel('recurring.ariaAmPm')}">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+                <label class="time-format-toggle">
+                  <input type="checkbox" id="daily-military" name="daily-military"> ${getLabel('recurring.use24HourFormat')}
+                </label>
+              </div>
             </div>
           </div>
         </div>
 
-     <!-- Weekly options -->
-<div id="weekly-options" class="frequency-options hidden">
-  <label><input type="checkbox" id="weekly-specific-days" name="weekly-specific-days"> Choose specific day(s) of the week</label>
-  <div id="weekly-day-container" class="hidden">
-    <p class="section-label">Select days:</p>
-    <div class="weekly-days" role="group" aria-label="Select days">
-      <div class="weekly-day-box" data-day="Sun" role="checkbox" tabindex="0" aria-checked="false">Sun</div>
-      <div class="weekly-day-box" data-day="Mon" role="checkbox" tabindex="-1" aria-checked="false">Mon</div>
-      <div class="weekly-day-box" data-day="Tue" role="checkbox" tabindex="-1" aria-checked="false">Tue</div>
-      <div class="weekly-day-box" data-day="Wed" role="checkbox" tabindex="-1" aria-checked="false">Wed</div>
-      <div class="weekly-day-box" data-day="Thu" role="checkbox" tabindex="-1" aria-checked="false">Thu</div>
-      <div class="weekly-day-box" data-day="Fri" role="checkbox" tabindex="-1" aria-checked="false">Fri</div>
-      <div class="weekly-day-box" data-day="Sat" role="checkbox" tabindex="-1" aria-checked="false">Sat</div>
-    </div>
-  </div>
-
-  <label><input type="checkbox" id="weekly-specific-time" name="weekly-specific-time"> Choose specific time</label>
-  <div id="weekly-time-container" class="hidden">
-    <div class="time-picker-wrapper">
-      <div class="time-picker-stack">
-      <div class="time-picker-group">
-        <label for="weekly-hour" class="visually-hidden">Hour</label>
-        <input type="number" id="weekly-hour" name="weekly-hour" min="1" max="12" placeholder="Hours">
-        :
-        <label for="weekly-minute" class="visually-hidden">Minute</label>
-        <input type="number" id="weekly-minute" name="weekly-minute" min="0" max="59" placeholder="Minutes">
-
-        <select id="weekly-meridiem" aria-label="AM or PM">
-          <option value="AM">AM</option>
-          <option value="PM">PM</option>
-        </select>
-      </div>
-      <label class="time-format-toggle">
-        <input type="checkbox" id="weekly-military" name="weekly-military"> Check box to use 24-hour format
-      </label>
-    </div>
-    </div>
-  </div>
-</div>
-
- <!-- Biweekly options -->
- <div id="biweekly-options" class="frequency-options hidden">
-  <label><input type="checkbox" id="biweekly-specific-days" name="biweekly-specific-days"> Choose specific day(s) of the week</label>
-  <div id="biweekly-day-container" class="hidden">
-    <p class="section-label">Week 1:</p>
-    <div class="biweekly-days" role="group" aria-label="Week 1 days">
-      <div class="biweekly-day-box" data-day="Sun" data-week="1" role="checkbox" tabindex="0" aria-checked="false">Sun</div>
-      <div class="biweekly-day-box" data-day="Mon" data-week="1" role="checkbox" tabindex="-1" aria-checked="false">Mon</div>
-      <div class="biweekly-day-box" data-day="Tue" data-week="1" role="checkbox" tabindex="-1" aria-checked="false">Tue</div>
-      <div class="biweekly-day-box" data-day="Wed" data-week="1" role="checkbox" tabindex="-1" aria-checked="false">Wed</div>
-      <div class="biweekly-day-box" data-day="Thu" data-week="1" role="checkbox" tabindex="-1" aria-checked="false">Thu</div>
-      <div class="biweekly-day-box" data-day="Fri" data-week="1" role="checkbox" tabindex="-1" aria-checked="false">Fri</div>
-      <div class="biweekly-day-box" data-day="Sat" data-week="1" role="checkbox" tabindex="-1" aria-checked="false">Sat</div>
-    </div>
-
-    <p class="section-label" style="margin-top: 16px;">Week 2:</p>
-    <div class="biweekly-days" role="group" aria-label="Week 2 days">
-      <div class="biweekly-day-box" data-day="Sun" data-week="2" role="checkbox" tabindex="0" aria-checked="false">Sun</div>
-      <div class="biweekly-day-box" data-day="Mon" data-week="2" role="checkbox" tabindex="-1" aria-checked="false">Mon</div>
-      <div class="biweekly-day-box" data-day="Tue" data-week="2" role="checkbox" tabindex="-1" aria-checked="false">Tue</div>
-      <div class="biweekly-day-box" data-day="Wed" data-week="2" role="checkbox" tabindex="-1" aria-checked="false">Wed</div>
-      <div class="biweekly-day-box" data-day="Thu" data-week="2" role="checkbox" tabindex="-1" aria-checked="false">Thu</div>
-      <div class="biweekly-day-box" data-day="Fri" data-week="2" role="checkbox" tabindex="-1" aria-checked="false">Fri</div>
-      <div class="biweekly-day-box" data-day="Sat" data-week="2" role="checkbox" tabindex="-1" aria-checked="false">Sat</div>
-    </div>
-  </div>
-
-
-
-
-  <label>
-    <input type="checkbox" id="biweekly-specific-time" name="biweekly-specific-time">
-    Choose specific time
-  </label>
-
-  <div id="biweekly-time-container" class="hidden">
-    <div class="time-picker-wrapper">
-      <div class="time-picker-stack">
-        <div class="time-picker-group">
-          <label for="biweekly-hour" class="visually-hidden">Hour</label>
-          <input type="number" id="biweekly-hour" name="biweekly-hour" min="1" max="12" placeholder="Hours"> :
-          <label for="biweekly-minute" class="visually-hidden">Minute</label>
-          <input type="number" id="biweekly-minute" name="biweekly-minute" min="0" max="59" placeholder="Minutes">
-          <select id="biweekly-meridiem" aria-label="AM or PM">
-            <option value="AM">AM</option>
-            <option value="PM">PM</option>
-          </select>
+        <!-- Hourly time -->
+        <div id="hourly-time-section" class="frequency-time-section hidden">
+          <label><input type="checkbox" id="hourly-specific-time" name="hourly-specific-time"> ${getLabel('recurring.specificMinute')}</label>
+          <div id="hourly-minute-container" class="hidden">
+            <div class="time-picker-stack">
+              <div class="time-picker-wrapper">
+                <div class="time-picker-group">
+                  <label for="hourly-minute" class="visually-hidden">${getLabel('recurring.ariaMinute')}</label>
+                  <input type="number" id="hourly-minute" name="hourly-minute" min="0" max="59" placeholder="${getLabel('recurring.placeholderMinute')}">
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <label class="time-format-toggle">
-          <input type="checkbox" id="biweekly-military" name="biweekly-military">
-         Check box to use 24-hour format
-        </label>
-      </div>
-    </div>
-  </div>
-</div>
 
-        <!-- Monthly options -->
+        <!-- Weekly time -->
+        <div id="weekly-time-section" class="frequency-time-section hidden">
+          <label><input type="checkbox" id="weekly-specific-time" name="weekly-specific-time"> ${getLabel('recurring.specificTime')}</label>
+          <div id="weekly-time-container" class="hidden">
+            <div class="time-picker-wrapper">
+              <div class="time-picker-stack">
+                <div class="time-picker-group">
+                  <label for="weekly-hour" class="visually-hidden">${getLabel('recurring.ariaHour')}</label>
+                  <input type="number" id="weekly-hour" name="weekly-hour" min="1" max="12" placeholder="${getLabel('recurring.placeholderHours')}">
+                  :
+                  <label for="weekly-minute" class="visually-hidden">${getLabel('recurring.ariaMinute')}</label>
+                  <input type="number" id="weekly-minute" name="weekly-minute" min="0" max="59" placeholder="${getLabel('recurring.placeholderMinutes')}">
+                  <select id="weekly-meridiem" aria-label="${getLabel('recurring.ariaAmPm')}">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+                <label class="time-format-toggle">
+                  <input type="checkbox" id="weekly-military" name="weekly-military"> ${getLabel('recurring.use24HourFormat')}
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Biweekly time -->
+        <div id="biweekly-time-section" class="frequency-time-section hidden">
+          <label><input type="checkbox" id="biweekly-specific-time" name="biweekly-specific-time"> ${getLabel('recurring.specificTime')}</label>
+          <div id="biweekly-time-container" class="hidden">
+            <div class="time-picker-wrapper">
+              <div class="time-picker-stack">
+                <div class="time-picker-group">
+                  <label for="biweekly-hour" class="visually-hidden">${getLabel('recurring.ariaHour')}</label>
+                  <input type="number" id="biweekly-hour" name="biweekly-hour" min="1" max="12" placeholder="${getLabel('recurring.placeholderHours')}">
+                  :
+                  <label for="biweekly-minute" class="visually-hidden">${getLabel('recurring.ariaMinute')}</label>
+                  <input type="number" id="biweekly-minute" name="biweekly-minute" min="0" max="59" placeholder="${getLabel('recurring.placeholderMinutes')}">
+                  <select id="biweekly-meridiem" aria-label="${getLabel('recurring.ariaAmPm')}">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+                <label class="time-format-toggle">
+                  <input type="checkbox" id="biweekly-military" name="biweekly-military"> ${getLabel('recurring.use24HourFormat')}
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly time -->
+        <div id="monthly-time-section" class="frequency-time-section hidden">
+          <label><input type="checkbox" id="monthly-specific-time" name="monthly-specific-time"> ${getLabel('recurring.specificTime')}</label>
+          <div id="monthly-time-container" class="hidden">
+            <div class="time-picker-wrapper">
+              <div class="time-picker-stack">
+                <div class="time-picker-group">
+                  <label for="monthly-hour" class="visually-hidden">${getLabel('recurring.ariaHour')}</label>
+                  <input type="number" id="monthly-hour" name="monthly-hour" min="1" max="12" placeholder="${getLabel('recurring.placeholderHours')}">
+                  :
+                  <label for="monthly-minute" class="visually-hidden">${getLabel('recurring.ariaMinute')}</label>
+                  <input type="number" id="monthly-minute" name="monthly-minute" min="0" max="59" placeholder="${getLabel('recurring.placeholderMinutes')}">
+                  <select id="monthly-meridiem" aria-label="${getLabel('recurring.ariaAmPm')}">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+                <label class="time-format-toggle">
+                  <input type="checkbox" id="monthly-military" name="monthly-military"> ${getLabel('recurring.use24HourFormat')}
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Yearly time -->
+        <div id="yearly-time-section" class="frequency-time-section hidden">
+          <label><input type="checkbox" id="yearly-specific-time" name="yearly-specific-time" aria-controls="yearly-time-container"> ${getLabel('recurring.specificTime')}</label>
+          <div id="yearly-time-container" class="hidden" aria-live="polite">
+            <div class="time-picker-stack">
+              <div class="time-picker-wrapper">
+                <div class="time-picker-group" role="group" aria-label="Time of day">
+                  <label for="yearly-hour" class="visually-hidden">${getLabel('recurring.ariaHour')}</label>
+                  <input type="number" id="yearly-hour" name="yearly-hour" min="1" max="12" placeholder="${getLabel('recurring.placeholderHours')}">
+                  :
+                  <label for="yearly-minute" class="visually-hidden">${getLabel('recurring.ariaMinute')}</label>
+                  <input type="number" id="yearly-minute" name="yearly-minute" min="0" max="59" placeholder="${getLabel('recurring.placeholderMinutes')}">
+                  <select id="yearly-meridiem" aria-label="${getLabel('recurring.ariaAmPm')}">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+                <label class="time-format-toggle">
+                  <input type="checkbox" id="yearly-military" name="yearly-military" aria-label="Use 24-hour time format"> ${getLabel('recurring.use24HourFormat')}
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button id="toggle-advanced-settings" type="button" class="toggle-advanced-btn">
+        Show Advanced Options
+      </button>
+
+      <!-- Dynamic Frequency Options (advanced — days, months, patterns only; time moved above) -->
+      <div id="frequency-dynamic-options">
+
+        <!-- Hourly options (empty — minute picker moved to time-picker-section) -->
+        <div id="hourly-options" class="frequency-options hidden">
+        </div>
+
+        <!-- Daily options (empty — time picker moved to time-picker-section) -->
+        <div id="daily-options" class="frequency-options">
+        </div>
+
+        <!-- Weekly options (days only — time moved) -->
+        <div id="weekly-options" class="frequency-options hidden">
+          <label><input type="checkbox" id="weekly-specific-days" name="weekly-specific-days"> Choose specific day(s) of the week</label>
+          <div id="weekly-day-container" class="hidden">
+            <p class="section-label">Select days:</p>
+            <div class="weekly-days" role="group" aria-label="Select days">
+              <div class="weekly-day-box" data-day="Sun" role="checkbox" tabindex="0" aria-checked="false">Sun</div>
+              <div class="weekly-day-box" data-day="Mon" role="checkbox" tabindex="-1" aria-checked="false">Mon</div>
+              <div class="weekly-day-box" data-day="Tue" role="checkbox" tabindex="-1" aria-checked="false">Tue</div>
+              <div class="weekly-day-box" data-day="Wed" role="checkbox" tabindex="-1" aria-checked="false">Wed</div>
+              <div class="weekly-day-box" data-day="Thu" role="checkbox" tabindex="-1" aria-checked="false">Thu</div>
+              <div class="weekly-day-box" data-day="Fri" role="checkbox" tabindex="-1" aria-checked="false">Fri</div>
+              <div class="weekly-day-box" data-day="Sat" role="checkbox" tabindex="-1" aria-checked="false">Sat</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Biweekly options (days only — time moved) -->
+        <div id="biweekly-options" class="frequency-options hidden">
+          <label><input type="checkbox" id="biweekly-specific-days" name="biweekly-specific-days"> Choose specific day(s) of the week</label>
+          <div id="biweekly-day-container" class="hidden">
+            <p class="section-label">Week 1:</p>
+            <div class="biweekly-days" role="group" aria-label="Week 1 days">
+              <div class="biweekly-day-box" data-day="Sun" data-week="1" role="checkbox" tabindex="0" aria-checked="false">Sun</div>
+              <div class="biweekly-day-box" data-day="Mon" data-week="1" role="checkbox" tabindex="-1" aria-checked="false">Mon</div>
+              <div class="biweekly-day-box" data-day="Tue" data-week="1" role="checkbox" tabindex="-1" aria-checked="false">Tue</div>
+              <div class="biweekly-day-box" data-day="Wed" data-week="1" role="checkbox" tabindex="-1" aria-checked="false">Wed</div>
+              <div class="biweekly-day-box" data-day="Thu" data-week="1" role="checkbox" tabindex="-1" aria-checked="false">Thu</div>
+              <div class="biweekly-day-box" data-day="Fri" data-week="1" role="checkbox" tabindex="-1" aria-checked="false">Fri</div>
+              <div class="biweekly-day-box" data-day="Sat" data-week="1" role="checkbox" tabindex="-1" aria-checked="false">Sat</div>
+            </div>
+            <p class="section-label" style="margin-top: 16px;">Week 2:</p>
+            <div class="biweekly-days" role="group" aria-label="Week 2 days">
+              <div class="biweekly-day-box" data-day="Sun" data-week="2" role="checkbox" tabindex="0" aria-checked="false">Sun</div>
+              <div class="biweekly-day-box" data-day="Mon" data-week="2" role="checkbox" tabindex="-1" aria-checked="false">Mon</div>
+              <div class="biweekly-day-box" data-day="Tue" data-week="2" role="checkbox" tabindex="-1" aria-checked="false">Tue</div>
+              <div class="biweekly-day-box" data-day="Wed" data-week="2" role="checkbox" tabindex="-1" aria-checked="false">Wed</div>
+              <div class="biweekly-day-box" data-day="Thu" data-week="2" role="checkbox" tabindex="-1" aria-checked="false">Thu</div>
+              <div class="biweekly-day-box" data-day="Fri" data-week="2" role="checkbox" tabindex="-1" aria-checked="false">Fri</div>
+              <div class="biweekly-day-box" data-day="Sat" data-week="2" role="checkbox" tabindex="-1" aria-checked="false">Sat</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly options (days/patterns only — time moved) -->
         <div id="monthly-options" class="frequency-options hidden">
           <label><input type="checkbox" id="monthly-specific-days" name="monthly-specific-days"> Choose specific day(s) of the month</label>
           <div id="monthly-day-container" class="hidden">
@@ -299,56 +358,33 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
               </select>
             </div>
           </div>
-
-          <label><input type="checkbox" id="monthly-specific-time" name="monthly-specific-time"> Choose specific time</label>
-          <div id="monthly-time-container" class="hidden">
-            <div class="time-picker-wrapper">
-              <div class="time-picker-stack">
-            <div class="time-picker-group">
-              <label for="monthly-hour" class="visually-hidden">Hour</label>
-              <input type="number" id="monthly-hour" name="monthly-hour" min="1" max="12" placeholder="Hours">
-              :
-              <label for="monthly-minute" class="visually-hidden">Minute</label>
-              <input type="number" id="monthly-minute" name="monthly-minute" min="0" max="59" placeholder="Minutes">
-          
-              <select id="monthly-meridiem" aria-label="AM or PM">
-                <option value="AM">AM</option>
-                <option value="PM">PM</option>
-              </select>
-            </div>
-            <label class="time-format-toggle">
-              <input type="checkbox" id="monthly-military" name="monthly-military"> Check box to use 24-hour format
-            </label>
-            </div>
-            </div>
-          </div>
         </div>
       </div>
 
-      <!-- Yearly options -->
+      <!-- Yearly options (months/days only — time moved) -->
       <div id="yearly-options" class="frequency-options hidden" aria-labelledby="yearly-options-heading">
         <h4 id="yearly-options-heading" class="visually-hidden">Yearly recurrence options</h4>
-      
+
         <label>
           <input type="checkbox" id="yearly-specific-months" name="yearly-specific-months" aria-describedby="yearly-month-container">
           Choose specific month(s)
         </label>
-      
+
         <div id="yearly-month-container" class="hidden" aria-live="polite">
           <p class="section-label">Select months:</p>
           <div class="yearly-months" aria-label="Yearly month options" role="group">
             <!-- These will be dynamically generated -->
           </div>
         </div>
-      
+
         <label id="yearly-specific-days-label" class="hidden">
           <input type="checkbox" id="yearly-specific-days" name="yearly-specific-days" aria-describedby="yearly-day-container">
           Choose specific day(s) of the month
         </label>
-      
+
         <div id="yearly-day-container" class="hidden" aria-live="polite">
           <p class="section-label">Select days:</p>
-      
+
           <select id="yearly-month-select" aria-label="Month to assign specific days to">
             <option value="1">January</option>
             <option value="2">February</option>
@@ -363,43 +399,15 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
             <option value="11">November</option>
             <option value="12">December</option>
           </select>
-      
+
           <label id="yearly-apply-all-label" class="apply-all-label">
             <input type="checkbox" id="yearly-apply-days-to-all" name="yearly-apply-days-to-all" aria-describedby="yearly-apply-description">
             Apply selected days to all selected months
           </label>
           <p id="yearly-apply-description" class="visually-hidden">When checked, all selected days will apply to every selected month.</p>
-      
+
           <div class="yearly-days" aria-label="Specific days of selected month" role="group">
             <!-- Dynamically filled -->
-          </div>
-        </div>
-      
-        <label>
-          <input type="checkbox" id="yearly-specific-time" name="yearly-specific-time" aria-controls="yearly-time-container">
-          Choose specific time
-        </label>
-      
-        <div id="yearly-time-container" class="hidden" aria-live="polite">
-          <div class="time-picker-stack">
-            <div class="time-picker-wrapper">
-              <div class="time-picker-group" role="group" aria-label="Time of day">
-                <label for="yearly-hour" class="visually-hidden">Hour</label>
-                <input type="number" id="yearly-hour" name="yearly-hour" min="1" max="12" placeholder="Hours">
-                :
-                <label for="yearly-minute" class="visually-hidden">Minute</label>
-                <input type="number" id="yearly-minute" name="yearly-minute" min="0" max="59" placeholder="Minutes">
-                <select id="yearly-meridiem" aria-label="AM or PM">
-                  <option value="AM">AM</option>
-                  <option value="PM">PM</option>
-                </select>
-              </div>
-      
-              <label class="time-format-toggle">
-                <input type="checkbox" id="yearly-military" name="yearly-military" aria-label="Use 24-hour time format">
-                Check box to use 24-hour format
-              </label>
-            </div>
           </div>
         </div>
       </div>

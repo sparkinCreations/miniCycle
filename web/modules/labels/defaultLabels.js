@@ -792,7 +792,16 @@ export const DEFAULT_LABELS = deepFreeze({
         addTasksToRecurring:  'Add {count} Tasks to Recurring',
         selectAll:            'Select All',
         deselectAll:          'Deselect All',
-        panelHint:            'Tap a recurring task to see its schedule or change settings'
+        panelHint:            'Tap a recurring task to see its schedule or change settings',
+        specificTimeOfDay:    'Choose specific time of day',
+        specificMinute:       'Choose specific minute of each hour',
+        use24HourFormat:      'Check box to use 24-hour format',
+        placeholderHours:     'Hours',
+        placeholderMinutes:   'Minutes',
+        placeholderMinute:    'Minute',
+        ariaHour:             'Hour',
+        ariaMinute:           'Minute',
+        ariaAmPm:             'AM or PM'
     },
 
     // ========================================================================

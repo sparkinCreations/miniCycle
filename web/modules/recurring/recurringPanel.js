@@ -1594,9 +1594,10 @@ export class RecurringPanelManager {
             const allTasks = currentCycle.tasks || [];
             const recurringTemplateIds = Object.keys(currentCycle.recurringTemplates || {});
 
-            // Filter to non-recurring tasks only
+            // Filter to non-recurring tasks only (check both template AND task.recurring flag
+            // to match the per-task button check in taskButtons.js)
             const nonRecurringTasks = allTasks.filter(task =>
-                task && task.id && task.text && !recurringTemplateIds.includes(task.id)
+                task && task.id && task.text && !recurringTemplateIds.includes(task.id) && !task.recurring
             );
 
             if (nonRecurringTasks.length === 0) {

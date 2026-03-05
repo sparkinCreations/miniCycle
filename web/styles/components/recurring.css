@@ -139,6 +139,22 @@
 }
 
 /* =============================================================================
+   TIME PICKER SECTION (surfaced outside advanced options)
+   ============================================================================= */
+
+#time-picker-section {
+    margin-top: var(--space-2);
+}
+
+.frequency-time-section.hidden {
+    display: none;
+}
+
+.toggle-advanced-btn {
+    margin-top: var(--space-3);
+}
+
+/* =============================================================================
    APPLY RECURRING SETTINGS BUTTON
    ============================================================================= */
 
