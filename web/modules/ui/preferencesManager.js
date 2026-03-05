@@ -199,7 +199,10 @@ const di = createDIModule('PreferencesManager', {
     showConfirmationModal: optional(null),
     safeAddEventListener: optional(null),
     hideMainMenu: optional(null),
-    renderVocabThemes: optional(null)
+    renderVocabThemes: optional(null),
+    getElementById: optional((id) => document.getElementById(id)),
+    querySelector: optional((sel) => document.querySelector(sel)),
+    querySelectorAll: optional((sel) => document.querySelectorAll(sel))
 });
 
 const _deps = new Proxy({}, {
@@ -277,7 +280,7 @@ export class PreferencesManager {
             await loadPreferencesSubModules(version);
 
             // Render quick preset buttons from data before binding click handlers
-            const quickPresetsGrid = document.getElementById(DOM_IDS.PREF_QUICK_PRESETS_GRID);
+            const quickPresetsGrid = _deps.getElementById(DOM_IDS.PREF_QUICK_PRESETS_GRID);
             _presetsModule.renderQuickPresets(quickPresetsGrid);
 
             this.modal = _deps.getModal('preferences');
@@ -334,21 +337,21 @@ export class PreferencesManager {
         }
 
         // Open preferences button (from menu)
-        const openBtn = document.getElementById(DOM_IDS.OPEN_PREFERENCES);
+        const openBtn = _deps.getElementById(DOM_IDS.OPEN_PREFERENCES);
         if (openBtn) {
             openBtn._clickHandler = () => this.openModal();
             safeAdd(openBtn, 'click', openBtn._clickHandler);
         }
 
         // Personalization button (quick access in header)
-        const personalizationBtn = document.getElementById(DOM_IDS.PERSONALIZATION_BTN);
+        const personalizationBtn = _deps.getElementById(DOM_IDS.PERSONALIZATION_BTN);
         if (personalizationBtn) {
             personalizationBtn._clickHandler = () => this.openModal();
             safeAdd(personalizationBtn, 'click', personalizationBtn._clickHandler);
         }
 
         // Close button
-        const closeBtn = document.getElementById(DOM_IDS.CLOSE_PREFERENCES_BTN);
+        const closeBtn = _deps.getElementById(DOM_IDS.CLOSE_PREFERENCES_BTN);
         if (closeBtn) {
             closeBtn._clickHandler = () => this.closeModal();
             safeAdd(closeBtn, 'click', closeBtn._clickHandler);
@@ -370,7 +373,7 @@ export class PreferencesManager {
         }
 
         // Open themes button
-        const openThemesBtn = document.getElementById(DOM_IDS.PREFERENCES_OPEN_THEMES);
+        const openThemesBtn = _deps.getElementById(DOM_IDS.PREFERENCES_OPEN_THEMES);
         if (openThemesBtn) {
             openThemesBtn._clickHandler = () => {
                 this.closeModal();
@@ -385,7 +388,7 @@ export class PreferencesManager {
 
         // Color inputs
         Object.keys(COLOR_MAP).forEach(inputId => {
-            const input = document.getElementById(inputId);
+            const input = _deps.getElementById(inputId);
             if (input) {
                 this.colorInputs[inputId] = input;
                 input._changeHandler = (e) => this.handleColorChange(inputId, e.target.value);
@@ -394,7 +397,7 @@ export class PreferencesManager {
         });
 
         // Pattern color input (special handling - generates SVG dynamically)
-        const patternColorInput = document.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
+        const patternColorInput = _deps.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
         if (patternColorInput) {
             this.colorInputs['pref-pattern-color'] = patternColorInput;
             patternColorInput._changeHandler = (e) => this.handlePatternColorChange(e.target.value);
@@ -402,9 +405,9 @@ export class PreferencesManager {
         }
 
         // Pattern opacity slider
-        const patternOpacitySlider = document.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
+        const patternOpacitySlider = _deps.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
         if (patternOpacitySlider) {
-            const opacityDisplay = document.getElementById('pref-pattern-opacity-value');
+            const opacityDisplay = _deps.getElementById('pref-pattern-opacity-value');
             patternOpacitySlider._inputHandler = (e) => {
                 const percent = parseInt(e.target.value, 10);
                 if (opacityDisplay) opacityDisplay.textContent = `${percent}%`;
@@ -415,7 +418,7 @@ export class PreferencesManager {
         }
 
         // Checkbox fill visibility toggle
-        const checkboxFillToggle = document.getElementById(DOM_IDS.TOGGLE_CHECKBOX_FILL);
+        const checkboxFillToggle = _deps.getElementById(DOM_IDS.TOGGLE_CHECKBOX_FILL);
         if (checkboxFillToggle) {
             checkboxFillToggle._changeHandler = (e) => this.handleCheckboxFillToggle(e.target.checked);
             safeAdd(checkboxFillToggle, 'change', checkboxFillToggle._changeHandler);
@@ -433,7 +436,7 @@ export class PreferencesManager {
         }
 
         // Checkbox incomplete visibility toggle
-        const checkboxIncompleteToggle = document.getElementById(DOM_IDS.TOGGLE_CHECKBOX_INCOMPLETE);
+        const checkboxIncompleteToggle = _deps.getElementById(DOM_IDS.TOGGLE_CHECKBOX_INCOMPLETE);
         if (checkboxIncompleteToggle) {
             checkboxIncompleteToggle._changeHandler = (e) => this.handleCheckboxIncompleteToggle(e.target.checked);
             safeAdd(checkboxIncompleteToggle, 'change', checkboxIncompleteToggle._changeHandler);
@@ -451,7 +454,7 @@ export class PreferencesManager {
         }
 
         // Background pattern visibility toggle
-        const bgPatternToggle = document.getElementById(DOM_IDS.TOGGLE_BG_PATTERN);
+        const bgPatternToggle = _deps.getElementById(DOM_IDS.TOGGLE_BG_PATTERN);
         if (bgPatternToggle) {
             bgPatternToggle._changeHandler = (e) => this.handleBackgroundPatternToggle(e.target.checked);
             safeAdd(bgPatternToggle, 'change', bgPatternToggle._changeHandler);
@@ -469,7 +472,7 @@ export class PreferencesManager {
         }
 
         // Solid list background toggle
-        const solidListBgToggle = document.getElementById(DOM_IDS.TOGGLE_SOLID_LIST_BG);
+        const solidListBgToggle = _deps.getElementById(DOM_IDS.TOGGLE_SOLID_LIST_BG);
         if (solidListBgToggle) {
             solidListBgToggle._changeHandler = (e) => this.handleSolidBgToggle('solidListBg', e.target.checked);
             safeAdd(solidListBgToggle, 'change', solidListBgToggle._changeHandler);
@@ -487,7 +490,7 @@ export class PreferencesManager {
         }
 
         // Solid stats background toggle
-        const solidStatsBgToggle = document.getElementById(DOM_IDS.TOGGLE_SOLID_STATS_BG);
+        const solidStatsBgToggle = _deps.getElementById(DOM_IDS.TOGGLE_SOLID_STATS_BG);
         if (solidStatsBgToggle) {
             solidStatsBgToggle._changeHandler = (e) => this.handleSolidBgToggle('solidStatsBg', e.target.checked);
             safeAdd(solidStatsBgToggle, 'change', solidStatsBgToggle._changeHandler);
@@ -505,7 +508,7 @@ export class PreferencesManager {
         }
 
         // Background image visibility toggle
-        const bgImageVisibleToggle = document.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
+        const bgImageVisibleToggle = _deps.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
         if (bgImageVisibleToggle) {
             bgImageVisibleToggle._changeHandler = (e) => {
                 _bgImageModule.handleBgImageVisibleToggle(e.target.checked, _deps.AppState);
@@ -527,7 +530,7 @@ export class PreferencesManager {
         }
 
         // Help window visibility toggle (desktop only)
-        const helpWindowToggle = document.getElementById(DOM_IDS.TOGGLE_HELP_WINDOW);
+        const helpWindowToggle = _deps.getElementById(DOM_IDS.TOGGLE_HELP_WINDOW);
         if (helpWindowToggle) {
             helpWindowToggle._changeHandler = (e) => this.handleHelpWindowToggle(e.target.checked);
             safeAdd(helpWindowToggle, 'change', helpWindowToggle._changeHandler);
@@ -545,7 +548,7 @@ export class PreferencesManager {
         }
 
         // Quick actions visibility toggle (desktop only)
-        const quickActionsToggle = document.getElementById(DOM_IDS.TOGGLE_QUICK_ACTIONS);
+        const quickActionsToggle = _deps.getElementById(DOM_IDS.TOGGLE_QUICK_ACTIONS);
         if (quickActionsToggle) {
             quickActionsToggle._changeHandler = (e) => this.handleQuickActionsToggle(e.target.checked);
             safeAdd(quickActionsToggle, 'change', quickActionsToggle._changeHandler);
@@ -563,7 +566,7 @@ export class PreferencesManager {
         }
 
         // Reset buttons
-        document.querySelectorAll(DOM_SELECTORS.PREFERENCES_RESET_BTN).forEach(btn => {
+        _deps.querySelectorAll(DOM_SELECTORS.PREFERENCES_RESET_BTN).forEach(btn => {
             const targetId = btn.dataset.target;
             if (targetId) {
                 btn._clickHandler = () => this.resetColor(targetId);
@@ -572,14 +575,14 @@ export class PreferencesManager {
         });
 
         // Reset all button
-        const resetAllBtn = document.getElementById(DOM_IDS.PREFERENCES_RESET_ALL);
+        const resetAllBtn = _deps.getElementById(DOM_IDS.PREFERENCES_RESET_ALL);
         if (resetAllBtn) {
             resetAllBtn._clickHandler = () => this.resetAllColors();
             safeAdd(resetAllBtn, 'click', resetAllBtn._clickHandler);
         }
 
         // Save preset button
-        const savePresetBtn = document.getElementById(DOM_IDS.PREF_SAVE_PRESET);
+        const savePresetBtn = _deps.getElementById(DOM_IDS.PREF_SAVE_PRESET);
         if (savePresetBtn) {
             savePresetBtn._clickHandler = () => _presetsModule.promptSavePreset(
                 { AppState: _deps.AppState, showPromptModal: _deps.showPromptModal, showNotification: _deps.showNotification },
@@ -589,7 +592,7 @@ export class PreferencesManager {
         }
 
         // Import preset button
-        const importPresetBtn = document.getElementById(DOM_IDS.PREF_IMPORT_PRESET);
+        const importPresetBtn = _deps.getElementById(DOM_IDS.PREF_IMPORT_PRESET);
         if (importPresetBtn) {
             importPresetBtn._clickHandler = () => _presetsModule.promptImportPreset(
                 { AppState: _deps.AppState, showPromptModal: _deps.showPromptModal, showNotification: _deps.showNotification },
@@ -599,14 +602,14 @@ export class PreferencesManager {
         }
 
         // Undo button
-        const undoBtn = document.getElementById(DOM_IDS.PREFERENCES_UNDO);
+        const undoBtn = _deps.getElementById(DOM_IDS.PREFERENCES_UNDO);
         if (undoBtn) {
             undoBtn._clickHandler = () => this.undoLastChange();
             safeAdd(undoBtn, 'click', undoBtn._clickHandler);
         }
 
         // Quick preset buttons
-        document.querySelectorAll(DOM_SELECTORS.QUICK_PRESET_BTN).forEach(btn => {
+        _deps.querySelectorAll(DOM_SELECTORS.QUICK_PRESET_BTN).forEach(btn => {
             const presetKey = btn.dataset.preset;
             if (presetKey) {
                 btn._clickHandler = () => _presetsModule.applyQuickPreset(presetKey, {
@@ -625,10 +628,10 @@ export class PreferencesManager {
         });
 
         // Background image upload
-        const bgImageUploadBtn = document.getElementById(DOM_IDS.BG_IMAGE_UPLOAD_BTN);
-        const bgImageUpload = document.getElementById(DOM_IDS.BG_IMAGE_UPLOAD);
-        const bgImageRemoveBtn = document.getElementById(DOM_IDS.BG_IMAGE_REMOVE_BTN);
-        const bgImageMode = document.getElementById(DOM_IDS.BG_IMAGE_MODE);
+        const bgImageUploadBtn = _deps.getElementById(DOM_IDS.BG_IMAGE_UPLOAD_BTN);
+        const bgImageUpload = _deps.getElementById(DOM_IDS.BG_IMAGE_UPLOAD);
+        const bgImageRemoveBtn = _deps.getElementById(DOM_IDS.BG_IMAGE_REMOVE_BTN);
+        const bgImageMode = _deps.getElementById(DOM_IDS.BG_IMAGE_MODE);
 
         if (bgImageUploadBtn && bgImageUpload) {
             bgImageUploadBtn._clickHandler = () => bgImageUpload.click();
@@ -637,10 +640,11 @@ export class PreferencesManager {
             bgImageUpload._changeHandler = async (e) => {
                 const result = await _bgImageModule.handleBgImageUpload(e, {
                     AppState: _deps.AppState,
-                    showNotification: _deps.showNotification
+                    showNotification: _deps.showNotification,
+                    getElementById: _deps.getElementById
                 });
                 if (result) {
-                    _bgImageModule.updateBgImageUI(result.dataUrl, result.mode, _deps.AppState);
+                    _bgImageModule.updateBgImageUI(result.dataUrl, result.mode, _deps.AppState, { getElementById: _deps.getElementById });
                     this.updatePreview();
                 }
             };
@@ -651,7 +655,7 @@ export class PreferencesManager {
             bgImageRemoveBtn._clickHandler = async () => {
                 const removed = await _bgImageModule.removeBgImage({ showNotification: _deps.showNotification });
                 if (removed) {
-                    _bgImageModule.updateBgImageUI(null, 'cover', _deps.AppState);
+                    _bgImageModule.updateBgImageUI(null, 'cover', _deps.AppState, { getElementById: _deps.getElementById });
                     this.updatePreview();
                 }
             };
@@ -664,7 +668,7 @@ export class PreferencesManager {
         }
 
         // Collapsible sections
-        document.querySelectorAll(DOM_SELECTORS.PREFERENCES_SECTION_HEADER_COLLAPSIBLE).forEach(header => {
+        _deps.querySelectorAll(DOM_SELECTORS.PREFERENCES_SECTION_HEADER_COLLAPSIBLE).forEach(header => {
             header._clickHandler = () => this.toggleSection(header);
             safeAdd(header, 'click', header._clickHandler);
             header._keydownHandler = (e) => {
@@ -707,7 +711,7 @@ export class PreferencesManager {
 
             // Refresh background image UI
             const bgData = await _bgImageModule.loadBgImage();
-            _bgImageModule.updateBgImageUI(bgData?.dataUrl || null, bgData?.mode || 'cover', _deps.AppState);
+            _bgImageModule.updateBgImageUI(bgData?.dataUrl || null, bgData?.mode || 'cover', _deps.AppState, { getElementById: _deps.getElementById });
 
             this.modal._previousFocus = document.activeElement;
             if (!this.modal.open) this.modal.showModal();
@@ -728,7 +732,7 @@ export class PreferencesManager {
      * Update theme notice visibility and text based on current theme
      */
     updateThemeNotice() {
-        const notice = document.getElementById(DOM_IDS.PREFERENCES_THEME_NOTICE);
+        const notice = _deps.getElementById(DOM_IDS.PREFERENCES_THEME_NOTICE);
         if (!notice) return;
 
         const root = document.documentElement;
@@ -782,31 +786,31 @@ export class PreferencesManager {
         });
 
         // Load checkbox fill visibility toggle state
-        const checkboxFillToggle = document.getElementById(DOM_IDS.TOGGLE_CHECKBOX_FILL);
+        const checkboxFillToggle = _deps.getElementById(DOM_IDS.TOGGLE_CHECKBOX_FILL);
         if (checkboxFillToggle) {
             const showFill = customColors.showCheckboxFill !== false; // Default to true
             checkboxFillToggle.checked = showFill;
 
-            const colorInput = document.getElementById(DOM_IDS.PREF_CHECKBOX_BG);
-            const resetBtn = document.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_BG}"]`);
+            const colorInput = _deps.getElementById(DOM_IDS.PREF_CHECKBOX_BG);
+            const resetBtn = _deps.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_BG}"]`);
             if (colorInput) colorInput.style.opacity = showFill ? '1' : '0.3';
             if (resetBtn) resetBtn.style.opacity = showFill ? '1' : '0.3';
         }
 
         // Load checkbox incomplete visibility toggle state
-        const checkboxIncompleteToggle = document.getElementById(DOM_IDS.TOGGLE_CHECKBOX_INCOMPLETE);
+        const checkboxIncompleteToggle = _deps.getElementById(DOM_IDS.TOGGLE_CHECKBOX_INCOMPLETE);
         if (checkboxIncompleteToggle) {
             const showCheckbox = customColors.showCheckboxIncomplete !== false; // Default to true
             checkboxIncompleteToggle.checked = showCheckbox;
 
-            const colorInput = document.getElementById(DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG);
-            const resetBtn = document.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG}"]`);
+            const colorInput = _deps.getElementById(DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG);
+            const resetBtn = _deps.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG}"]`);
             if (colorInput) colorInput.style.opacity = showCheckbox ? '1' : '0.3';
             if (resetBtn) resetBtn.style.opacity = showCheckbox ? '1' : '0.3';
         }
 
         // Load background pattern visibility toggle state
-        const bgPatternToggle = document.getElementById(DOM_IDS.TOGGLE_BG_PATTERN);
+        const bgPatternToggle = _deps.getElementById(DOM_IDS.TOGGLE_BG_PATTERN);
         if (bgPatternToggle) {
             const showPattern = customColors.showBgPattern !== false; // Default to true
             bgPatternToggle.checked = showPattern;
@@ -817,7 +821,7 @@ export class PreferencesManager {
         }
 
         // Load background image visibility toggle state
-        const bgImageVisibleToggle = document.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
+        const bgImageVisibleToggle = _deps.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
         if (bgImageVisibleToggle) {
             const showBgImage = customColors.showBgImage !== false; // Default to true
             bgImageVisibleToggle.checked = showBgImage;
@@ -828,24 +832,24 @@ export class PreferencesManager {
         loadPanelVisibility(customColors);
 
         // Load solid background toggle states
-        const solidListBgToggle = document.getElementById(DOM_IDS.TOGGLE_SOLID_LIST_BG);
+        const solidListBgToggle = _deps.getElementById(DOM_IDS.TOGGLE_SOLID_LIST_BG);
         if (solidListBgToggle) {
             solidListBgToggle.checked = customColors.solidListBg === true; // Default false
         }
-        const solidStatsBgToggle = document.getElementById(DOM_IDS.TOGGLE_SOLID_STATS_BG);
+        const solidStatsBgToggle = _deps.getElementById(DOM_IDS.TOGGLE_SOLID_STATS_BG);
         if (solidStatsBgToggle) {
             solidStatsBgToggle.checked = customColors.solidStatsBg === true; // Default false
         }
 
         // Load pattern color input
-        const patternColorInput = document.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
+        const patternColorInput = _deps.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
         if (patternColorInput) {
             const savedPatternColor = customColors.patternColor || DEFAULT_COLORS.patternColor;
             patternColorInput.value = savedPatternColor;
         }
 
         // Load pattern opacity slider
-        const patternOpacitySlider = document.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
+        const patternOpacitySlider = _deps.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
         if (patternOpacitySlider) {
             const defaultPercent = Math.round(DEFAULT_PATTERN_OPACITY * 100);
             const savedOpacity = customColors.patternOpacity != null
@@ -853,7 +857,7 @@ export class PreferencesManager {
                 : defaultPercent;
             patternOpacitySlider.value = savedOpacity;
             patternOpacitySlider.setAttribute('aria-valuetext', `Opacity: ${savedOpacity}%`);
-            const opacityDisplay = document.getElementById('pref-pattern-opacity-value');
+            const opacityDisplay = _deps.getElementById('pref-pattern-opacity-value');
             if (opacityDisplay) opacityDisplay.textContent = `${savedOpacity}%`;
         }
 
@@ -907,8 +911,8 @@ export class PreferencesManager {
         }
 
         // Update color input visibility
-        const colorInput = document.getElementById(DOM_IDS.PREF_CHECKBOX_BG);
-        const resetBtn = document.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_BG}"]`);
+        const colorInput = _deps.getElementById(DOM_IDS.PREF_CHECKBOX_BG);
+        const resetBtn = _deps.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_BG}"]`);
         if (colorInput) colorInput.style.opacity = visible ? '1' : '0.3';
         if (resetBtn) resetBtn.style.opacity = visible ? '1' : '0.3';
 
@@ -939,8 +943,8 @@ export class PreferencesManager {
         }
 
         // Update color input visibility
-        const colorInput = document.getElementById(DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG);
-        const resetBtn = document.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG}"]`);
+        const colorInput = _deps.getElementById(DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG);
+        const resetBtn = _deps.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG}"]`);
         if (colorInput) colorInput.style.opacity = visible ? '1' : '0.3';
         if (resetBtn) resetBtn.style.opacity = visible ? '1' : '0.3';
 
@@ -1024,11 +1028,11 @@ export class PreferencesManager {
      */
     updatePatternControlsVisibility(visible) {
         const dimOpacity = visible ? '1' : '0.3';
-        const colorInput = document.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
-        const colorResetBtn = document.querySelector(`[data-target="${DOM_IDS.PREF_PATTERN_COLOR}"]`);
-        const opacitySlider = document.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
-        const opacityDisplay = document.getElementById('pref-pattern-opacity-value');
-        const opacityResetBtn = document.querySelector(`[data-target="${DOM_IDS.PREF_PATTERN_OPACITY}"]`);
+        const colorInput = _deps.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
+        const colorResetBtn = _deps.querySelector(`[data-target="${DOM_IDS.PREF_PATTERN_COLOR}"]`);
+        const opacitySlider = _deps.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
+        const opacityDisplay = _deps.getElementById('pref-pattern-opacity-value');
+        const opacityResetBtn = _deps.querySelector(`[data-target="${DOM_IDS.PREF_PATTERN_OPACITY}"]`);
 
         if (colorInput) colorInput.style.opacity = dimOpacity;
         if (colorResetBtn) colorResetBtn.style.opacity = dimOpacity;
@@ -1177,12 +1181,12 @@ export class PreferencesManager {
             this.pushToUndoStack();
 
             const defaultPercent = Math.round(DEFAULT_PATTERN_OPACITY * 100);
-            const slider = document.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
+            const slider = _deps.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
             if (slider) {
                 slider.value = defaultPercent;
                 slider.setAttribute('aria-valuetext', `Opacity: ${defaultPercent}%`);
             }
-            const display = document.getElementById('pref-pattern-opacity-value');
+            const display = _deps.getElementById('pref-pattern-opacity-value');
             if (display) display.textContent = `${defaultPercent}%`;
 
             // Save to appState
@@ -1217,7 +1221,7 @@ export class PreferencesManager {
 
         // If resetting a translucent background, also turn off its solid toggle
         if (config.key === 'taskListBg') {
-            const toggle = document.getElementById(DOM_IDS.TOGGLE_SOLID_LIST_BG);
+            const toggle = _deps.getElementById(DOM_IDS.TOGGLE_SOLID_LIST_BG);
             if (toggle) toggle.checked = false;
             if (_deps.AppState) {
                 _deps.AppState.update(state => {
@@ -1225,7 +1229,7 @@ export class PreferencesManager {
                 });
             }
         } else if (config.key === 'statsBg') {
-            const toggle = document.getElementById(DOM_IDS.TOGGLE_SOLID_STATS_BG);
+            const toggle = _deps.getElementById(DOM_IDS.TOGGLE_SOLID_STATS_BG);
             if (toggle) toggle.checked = false;
             if (_deps.AppState) {
                 _deps.AppState.update(state => {
@@ -1294,16 +1298,16 @@ export class PreferencesManager {
         }
 
         // Reset solid background toggles
-        const solidListBgToggle = document.getElementById(DOM_IDS.TOGGLE_SOLID_LIST_BG);
+        const solidListBgToggle = _deps.getElementById(DOM_IDS.TOGGLE_SOLID_LIST_BG);
         if (solidListBgToggle) solidListBgToggle.checked = false;
-        const solidStatsBgToggle = document.getElementById(DOM_IDS.TOGGLE_SOLID_STATS_BG);
+        const solidStatsBgToggle = _deps.getElementById(DOM_IDS.TOGGLE_SOLID_STATS_BG);
         if (solidStatsBgToggle) solidStatsBgToggle.checked = false;
 
         // Reset panel visibility (both visible, sync all checkboxes)
         resetPanelVisibility();
 
         // Reset background pattern toggle + body class + controls
-        const bgPatternToggle = document.getElementById(DOM_IDS.TOGGLE_BG_PATTERN);
+        const bgPatternToggle = _deps.getElementById(DOM_IDS.TOGGLE_BG_PATTERN);
         if (bgPatternToggle) bgPatternToggle.checked = true;
         document.body.classList.remove('no-bg-pattern');
         this.updatePatternControlsVisibility(true);
@@ -1313,35 +1317,35 @@ export class PreferencesManager {
 
         // Reset pattern opacity slider UI
         const defaultPercent = Math.round(DEFAULT_PATTERN_OPACITY * 100);
-        const opacitySlider = document.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
+        const opacitySlider = _deps.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
         if (opacitySlider) {
             opacitySlider.value = defaultPercent;
             opacitySlider.setAttribute('aria-valuetext', `Opacity: ${defaultPercent}%`);
         }
-        const opacityDisplay = document.getElementById('pref-pattern-opacity-value');
+        const opacityDisplay = _deps.getElementById('pref-pattern-opacity-value');
         if (opacityDisplay) opacityDisplay.textContent = `${defaultPercent}%`;
 
         // Reset pattern color input UI
-        const patternColorInput = document.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
+        const patternColorInput = _deps.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
         if (patternColorInput) patternColorInput.value = DEFAULT_COLORS.patternColor;
 
         // Reset checkbox toggles
-        const checkboxFillToggle = document.getElementById(DOM_IDS.TOGGLE_CHECKBOX_FILL);
+        const checkboxFillToggle = _deps.getElementById(DOM_IDS.TOGGLE_CHECKBOX_FILL);
         if (checkboxFillToggle) checkboxFillToggle.checked = true;
-        const checkboxFillInput = document.getElementById(DOM_IDS.PREF_CHECKBOX_BG);
-        const checkboxFillResetBtn = document.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_BG}"]`);
+        const checkboxFillInput = _deps.getElementById(DOM_IDS.PREF_CHECKBOX_BG);
+        const checkboxFillResetBtn = _deps.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_BG}"]`);
         if (checkboxFillInput) checkboxFillInput.style.opacity = '1';
         if (checkboxFillResetBtn) checkboxFillResetBtn.style.opacity = '1';
 
-        const checkboxIncompleteToggle = document.getElementById(DOM_IDS.TOGGLE_CHECKBOX_INCOMPLETE);
+        const checkboxIncompleteToggle = _deps.getElementById(DOM_IDS.TOGGLE_CHECKBOX_INCOMPLETE);
         if (checkboxIncompleteToggle) checkboxIncompleteToggle.checked = true;
-        const checkboxIncompleteInput = document.getElementById(DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG);
-        const checkboxIncompleteResetBtn = document.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG}"]`);
+        const checkboxIncompleteInput = _deps.getElementById(DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG);
+        const checkboxIncompleteResetBtn = _deps.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG}"]`);
         if (checkboxIncompleteInput) checkboxIncompleteInput.style.opacity = '1';
         if (checkboxIncompleteResetBtn) checkboxIncompleteResetBtn.style.opacity = '1';
 
         // Hide background image (keep image data, just toggle off)
-        const bgImageVisibleToggle = document.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
+        const bgImageVisibleToggle = _deps.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
         if (bgImageVisibleToggle) bgImageVisibleToggle.checked = false;
         document.body.classList.remove('has-bg-image', 'bg-mode-cover', 'bg-mode-center', 'bg-mode-tile');
 
@@ -1428,7 +1432,7 @@ export class PreferencesManager {
      * Update the live preview with current colors
      */
     updatePreview() {
-        const preview = document.getElementById(DOM_IDS.PREFERENCES_PREVIEW);
+        const preview = _deps.getElementById(DOM_IDS.PREFERENCES_PREVIEW);
         if (!preview) return;
 
         const state = _deps.AppState?.get();
@@ -1465,7 +1469,7 @@ export class PreferencesManager {
 
             // Also update the preview section background when app background changes
             if (config.key === 'appBg') {
-                const previewSection = document.querySelector(DOM_SELECTORS.PREFERENCES_PREVIEW_SECTION);
+                const previewSection = _deps.querySelector(DOM_SELECTORS.PREFERENCES_PREVIEW_SECTION);
                 if (previewSection) {
                     previewSection.style.setProperty('--preview-section-bg', color);
                 }
@@ -1473,24 +1477,24 @@ export class PreferencesManager {
         });
 
         // Handle checkbox fill visibility in preview
-        const checkboxFillToggle = document.getElementById(DOM_IDS.TOGGLE_CHECKBOX_FILL);
+        const checkboxFillToggle = _deps.getElementById(DOM_IDS.TOGGLE_CHECKBOX_FILL);
         const showCheckboxFill = checkboxFillToggle?.checked !== false;
         if (!showCheckboxFill) {
             preview.style.setProperty('--preview-checkbox-bg', 'transparent');
         }
 
         // Handle checkbox incomplete visibility in preview
-        const checkboxIncompleteToggle = document.getElementById(DOM_IDS.TOGGLE_CHECKBOX_INCOMPLETE);
+        const checkboxIncompleteToggle = _deps.getElementById(DOM_IDS.TOGGLE_CHECKBOX_INCOMPLETE);
         const showCheckboxIncomplete = checkboxIncompleteToggle?.checked !== false;
         if (!showCheckboxIncomplete) {
             preview.style.setProperty('--preview-checkbox-incomplete-bg', 'transparent');
         }
 
         // Handle background pattern color and opacity in preview
-        const bgPatternToggle = document.getElementById(DOM_IDS.TOGGLE_BG_PATTERN);
+        const bgPatternToggle = _deps.getElementById(DOM_IDS.TOGGLE_BG_PATTERN);
         const showPattern = bgPatternToggle?.checked !== false;
-        const patternColorInput = document.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
-        const patternOpacitySlider = document.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
+        const patternColorInput = _deps.getElementById(DOM_IDS.PREF_PATTERN_COLOR);
+        const patternOpacitySlider = _deps.getElementById(DOM_IDS.PREF_PATTERN_OPACITY);
 
         if (showPattern && patternColorInput) {
             const patternColor = patternColorInput.value || DEFAULT_COLORS.patternColor;
@@ -1504,9 +1508,9 @@ export class PreferencesManager {
         }
 
         // Handle background image in preview
-        const bgImageVisibleToggle = document.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
+        const bgImageVisibleToggle = _deps.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
         const showBgImage = bgImageVisibleToggle?.checked !== false;
-        const bgImagePreview = document.getElementById(DOM_IDS.BG_IMAGE_PREVIEW);
+        const bgImagePreview = _deps.getElementById(DOM_IDS.BG_IMAGE_PREVIEW);
 
         if (showBgImage && bgImagePreview?.src && bgImagePreview.src !== window.location.href) {
             // Show background image in live preview
@@ -1517,8 +1521,8 @@ export class PreferencesManager {
         }
 
         // Handle Help Window and Quick Actions visibility in preview
-        const helpToggle = document.getElementById(DOM_IDS.TOGGLE_HELP_WINDOW);
-        const quickActionsToggle = document.getElementById(DOM_IDS.TOGGLE_QUICK_ACTIONS);
+        const helpToggle = _deps.getElementById(DOM_IDS.TOGGLE_HELP_WINDOW);
+        const quickActionsToggle = _deps.getElementById(DOM_IDS.TOGGLE_QUICK_ACTIONS);
         const previewHelp = preview.querySelector('.preview-help-window');
         const previewQuickActions = preview.querySelector('.preview-quick-actions');
 
@@ -1553,7 +1557,7 @@ export class PreferencesManager {
 
         // On mobile, default live-preview to collapsed if no saved state
         const isMobile = window.matchMedia('(max-width: 480px)').matches;
-        const previewSection = document.querySelector(DATA_SELECTORS.preferencesSectionByName('live-preview'));
+        const previewSection = _deps.querySelector(DATA_SELECTORS.preferencesSectionByName('live-preview'));
         if (previewSection) {
             if (isMobile) {
                 const hasSaved = collapsedSections && ('live-preview' in collapsedSections);
@@ -1574,7 +1578,7 @@ export class PreferencesManager {
 
         // Apply saved collapsed states
         Object.entries(collapsedSections).forEach(([sectionName, isCollapsed]) => {
-            const section = document.querySelector(DATA_SELECTORS.preferencesSectionByName(sectionName));
+            const section = _deps.querySelector(DATA_SELECTORS.preferencesSectionByName(sectionName));
             if (section) {
                 if (isCollapsed) {
                     section.classList.add('collapsed');
@@ -1595,7 +1599,7 @@ export class PreferencesManager {
     saveCollapsedStates() {
         if (!_deps.AppState) return;
 
-        const sections = document.querySelectorAll(DOM_SELECTORS.PREFERENCES_SECTION_BY_DATA);
+        const sections = _deps.querySelectorAll(DOM_SELECTORS.PREFERENCES_SECTION_BY_DATA);
         const collapsedSections = {};
 
         sections.forEach(section => {
@@ -1658,7 +1662,7 @@ export class PreferencesManager {
      * Update undo button state
      */
     updateUndoButton() {
-        const undoBtn = document.getElementById(DOM_IDS.PREFERENCES_UNDO);
+        const undoBtn = _deps.getElementById(DOM_IDS.PREFERENCES_UNDO);
         if (undoBtn) {
             undoBtn.disabled = this.undoStack.length === 0;
         }

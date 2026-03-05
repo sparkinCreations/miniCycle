@@ -897,6 +897,7 @@ export const DOM_SELECTORS = Object.freeze({
 
     // ---- Notifications ----
     NOTIFICATION: '.notification',
+    NOTIFICATION_RECURRING_SHOW: '.notification.recurring.show',
     CLOSE_BTN: '.close-btn',
     NOTIFICATION_CLOSE: '.notification-close',
     NOTIFICATION_CONTENT: '.notification-content',

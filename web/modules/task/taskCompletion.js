@@ -37,6 +37,7 @@ const di = createDIModule('TaskCompletion', {
     showNotification: optional(null),
     captureStateSnapshot: optional(null),
     checkOverdueTasks: optional(null),
+    getElementById: optional((id) => document.getElementById(id)),
     handleTaskListMovement: optional(null),
     helpWindowManager: optional(null),
     querySelector: optional(null),
@@ -45,7 +46,7 @@ const di = createDIModule('TaskCompletion', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{appInit: Object|null, AppState: Object|null, isPerformingUndoRedo: Function|null, showNotification: Function|null, captureStateSnapshot: Function|null, checkOverdueTasks: Function|null, handleTaskListMovement: Function|null, helpWindowManager: Object|null, querySelector: Function|null, querySelectorAll: Function|null, watchRecurringTasks: Function|null}} */
+/** @type {{appInit: Object|null, AppState: Object|null, isPerformingUndoRedo: Function|null, showNotification: Function|null, captureStateSnapshot: Function|null, checkOverdueTasks: Function|null, getElementById: Function, handleTaskListMovement: Function|null, helpWindowManager: Object|null, querySelector: Function|null, querySelectorAll: Function|null, watchRecurringTasks: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -172,7 +173,8 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
             taskItem.setAttribute('aria-label', getLabel(labelKey, { vars: { name: taskText, status: statusText } }));
 
             // Announce completion state to screen readers via live region
-            const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
+            const getElementById = deps.getElementById || _deps.getElementById;
+            const liveRegion = getElementById(DOM_IDS.LIVE_REGION);
             if (liveRegion) {
                 liveRegion.textContent = isCompleted
                     ? getLabel('accessibility.taskCompleted', { vars: { name: taskText } })

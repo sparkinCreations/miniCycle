@@ -1,3 +1,7 @@
+## [2.040] - 2026-03-05
+- feat: enhance routine management with new optional dependencies and update recurring info link
+
+
 ## [2.039] - 2026-03-04
 - feat: update app version to 2.038 and reflect changes in relevant files
 

@@ -362,7 +362,7 @@ export const MODULE_MANIFESTS = {
     preferencesManager: {
         path: '../ui/preferencesManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showConfirmationModal', 'safeAddEventListener', 'hideMainMenu', 'getModal'],
+        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showConfirmationModal', 'safeAddEventListener', 'hideMainMenu', 'getModal', 'getElementById', 'querySelector', 'querySelectorAll'],
         provides: ['applyCustomColors', 'removeCustomColors'],
         provideInstance: 'preferencesManager',
         api: 'ui',

@@ -56,7 +56,11 @@ const di = createDIModule('StatsPanel', {
     trackAction: optional(null),
     gesturePanelManager: optional(null),
     // Vocabulary theme system (Phase 2)
-    vocabThemeManager: optional(null)
+    vocabThemeManager: optional(null),
+    // DOM query helpers (testable, avoids direct document access)
+    getElementById: optional((id) => document.getElementById(id)),
+    querySelector: optional((sel) => document.querySelector(sel)),
+    querySelectorAll: optional((sel) => document.querySelectorAll(sel))
 });
 
 // Late-binding deps via Proxy
@@ -298,44 +302,47 @@ export class StatsPanelManager {
      * Cache DOM elements for performance
      */
     cacheElements() {
+        const getById = _deps.getElementById;
+        const queryAll = _deps.querySelectorAll;
+
         this.elements = {
-            statsPanel: document.getElementById(DOM_IDS.STATS_PANEL),
-            taskView: document.getElementById(DOM_IDS.TASK_VIEW),
-            liveRegion: document.getElementById(DOM_IDS.LIVE_REGION),
-            slideLeft: document.getElementById(DOM_IDS.SLIDE_LEFT),
-            slideRight: document.getElementById(DOM_IDS.SLIDE_RIGHT),
-            navDotsContainer: document.getElementById(DOM_IDS.NAV_DOTS),
-            dots: document.querySelectorAll(DOM_SELECTORS.DOT),
-            taskList: document.getElementById(DOM_IDS.TASK_LIST),
-            addTaskButton: document.getElementById(DOM_IDS.ADD_TASK_BTN),
+            statsPanel: getById(DOM_IDS.STATS_PANEL),
+            taskView: getById(DOM_IDS.TASK_VIEW),
+            liveRegion: getById(DOM_IDS.LIVE_REGION),
+            slideLeft: getById(DOM_IDS.SLIDE_LEFT),
+            slideRight: getById(DOM_IDS.SLIDE_RIGHT),
+            navDotsContainer: getById(DOM_IDS.NAV_DOTS),
+            dots: queryAll(DOM_SELECTORS.DOT),
+            taskList: getById(DOM_IDS.TASK_LIST),
+            addTaskButton: getById(DOM_IDS.ADD_TASK_BTN),
             // Stats display elements
-            totalTasks: document.getElementById(DOM_IDS.TOTAL_TASKS),
-            completedTasks: document.getElementById(DOM_IDS.COMPLETED_TASKS),
-            completionRate: document.getElementById(DOM_IDS.COMPLETION_RATE),
-            miniCycleCount: document.getElementById(DOM_IDS.MINI_CYCLE_COUNT),
-            perCycleCount: document.getElementById(DOM_IDS.PER_CYCLE_COUNT),
-            milestoneProgressText: document.getElementById(DOM_IDS.MILESTONE_PROGRESS_TEXT),
-            statsProgressBar: document.getElementById(DOM_IDS.STATS_PROGRESS_BAR),
+            totalTasks: getById(DOM_IDS.TOTAL_TASKS),
+            completedTasks: getById(DOM_IDS.COMPLETED_TASKS),
+            completionRate: getById(DOM_IDS.COMPLETION_RATE),
+            miniCycleCount: getById(DOM_IDS.MINI_CYCLE_COUNT),
+            perCycleCount: getById(DOM_IDS.PER_CYCLE_COUNT),
+            milestoneProgressText: getById(DOM_IDS.MILESTONE_PROGRESS_TEXT),
+            statsProgressBar: getById(DOM_IDS.STATS_PROGRESS_BAR),
             // Current Routine collapsible elements
-            currentRoutineStatus: document.getElementById(DOM_IDS.CURRENT_ROUTINE_STATUS),
-            currentRoutineName: document.getElementById(DOM_IDS.CURRENT_ROUTINE_NAME),
-            currentCycleDoughnutContainer: document.getElementById(DOM_IDS.CURRENT_CYCLE_DOUGHNUT_CONTAINER),
-            currentCycleDoughnutProgress: document.getElementById(DOM_IDS.CURRENT_CYCLE_DOUGHNUT_PROGRESS),
-            currentCycleDoughnutText: document.getElementById(DOM_IDS.CURRENT_CYCLE_DOUGHNUT_TEXT),
-            currentCycleProgressText: document.getElementById(DOM_IDS.CURRENT_CYCLE_PROGRESS_TEXT),
-            currentRoutineCycleCount: document.getElementById(DOM_IDS.CURRENT_ROUTINE_CYCLE_COUNT),
-            currentRoutineClearedCount: document.getElementById(DOM_IDS.CURRENT_ROUTINE_CLEARED_COUNT),
-            perRoutineCleared: document.getElementById(DOM_IDS.PER_ROUTINE_CLEARED),
+            currentRoutineStatus: getById(DOM_IDS.CURRENT_ROUTINE_STATUS),
+            currentRoutineName: getById(DOM_IDS.CURRENT_ROUTINE_NAME),
+            currentCycleDoughnutContainer: getById(DOM_IDS.CURRENT_CYCLE_DOUGHNUT_CONTAINER),
+            currentCycleDoughnutProgress: getById(DOM_IDS.CURRENT_CYCLE_DOUGHNUT_PROGRESS),
+            currentCycleDoughnutText: getById(DOM_IDS.CURRENT_CYCLE_DOUGHNUT_TEXT),
+            currentCycleProgressText: getById(DOM_IDS.CURRENT_CYCLE_PROGRESS_TEXT),
+            currentRoutineCycleCount: getById(DOM_IDS.CURRENT_ROUTINE_CYCLE_COUNT),
+            currentRoutineClearedCount: getById(DOM_IDS.CURRENT_ROUTINE_CLEARED_COUNT),
+            perRoutineCleared: getById(DOM_IDS.PER_ROUTINE_CLEARED),
             // Theme elements
-            themeUnlockMessage: document.getElementById(DOM_IDS.THEME_UNLOCK_MESSAGE),
-            goldenUnlockMessage: document.getElementById(DOM_IDS.GOLDEN_UNLOCK_MESSAGE),
-            gameUnlockMessage: document.getElementById(DOM_IDS.GAME_UNLOCK_MESSAGE),
-            themeUnlockStatus: document.getElementById(DOM_IDS.THEME_UNLOCK_STATUS),
+            themeUnlockMessage: getById(DOM_IDS.THEME_UNLOCK_MESSAGE),
+            goldenUnlockMessage: getById(DOM_IDS.GOLDEN_UNLOCK_MESSAGE),
+            gameUnlockMessage: getById(DOM_IDS.GAME_UNLOCK_MESSAGE),
+            themeUnlockStatus: getById(DOM_IDS.THEME_UNLOCK_STATUS),
             // Theme panel elements
-            openThemesPanel: document.getElementById(DOM_IDS.OPEN_THEMES_PANEL),
+            openThemesPanel: getById(DOM_IDS.OPEN_THEMES_PANEL),
             get themesModal() { return _deps.getModal('themes'); },
-            closeThemesBtn: document.getElementById(DOM_IDS.CLOSE_THEMES_BTN),
-            quickDarkToggle: document.getElementById(DOM_IDS.QUICK_DARK_TOGGLE)
+            closeThemesBtn: getById(DOM_IDS.CLOSE_THEMES_BTN),
+            quickDarkToggle: getById(DOM_IDS.QUICK_DARK_TOGGLE)
         };
 
         // Validate critical elements
@@ -529,7 +536,7 @@ export class StatsPanelManager {
         }
 
         // Listen for mode changes to update milestone text dynamically
-        this._modeSelectorEl = document.getElementById(DOM_IDS.MODE_SELECTOR);
+        this._modeSelectorEl = _deps.getElementById(DOM_IDS.MODE_SELECTOR);
         if (this._modeSelectorEl) {
             this.boundHandlers.handleModeSelectorChange = () => {
                 console.log('📊 Stats panel detected mode change - updating stats...');
@@ -1529,8 +1536,8 @@ export class StatsPanelManager {
         this.dependencies.updateThemeColor();
 
         // Sync toggle states in settings panel
-        const settingsToggle = document.getElementById(DOM_IDS.DARK_MODE_TOGGLE);
-        const themeToggle = document.getElementById(DOM_IDS.DARK_MODE_TOGGLE_THEMES);
+        const settingsToggle = _deps.getElementById(DOM_IDS.DARK_MODE_TOGGLE);
+        const themeToggle = _deps.getElementById(DOM_IDS.DARK_MODE_TOGGLE_THEMES);
         if (settingsToggle) settingsToggle.checked = isDark;
         if (themeToggle) themeToggle.checked = isDark;
 
@@ -1652,8 +1659,8 @@ export class StatsPanelManager {
         const CACHE_TTL = INTERVALS.STATS_CACHE_TTL; // 5 seconds
 
         if (!this._taskStatsCache || this._taskStatsCacheTime < now - CACHE_TTL) {
-            const tasks = document.querySelectorAll(DOM_SELECTORS.TASK);
-            const checked = document.querySelectorAll(".task input:checked");
+            const tasks = _deps.querySelectorAll(DOM_SELECTORS.TASK);
+            const checked = _deps.querySelectorAll(".task input:checked");
             this._taskStatsCache = {
                 total: tasks.length,
                 completed: checked.length
@@ -1791,7 +1798,7 @@ export class StatsPanelManager {
             'dialog.modal[open]',
             '.notification-container .notification'
         ];
-        return overlaySelectors.some(selector => document.querySelector(selector));
+        return overlaySelectors.some(selector => _deps.querySelector(selector));
     }
 
     /**
