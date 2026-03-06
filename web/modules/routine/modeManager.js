@@ -587,7 +587,7 @@ export class ModeManager {
             }
 
             if (this.deps.showNotification) {
-                this.deps.showNotification(`Switched to ${this.getModeName(e.target.value)}`, 'success', 2000);
+                this.deps.showNotification(getLabel('notify.modeSwitched', { vars: { mode: this.getModeName(e.target.value) } }), 'success', 2000);
             }
 
             console.log('✅ ModeManager: Mode change applied without reload');
@@ -656,7 +656,7 @@ export class ModeManager {
                 this.updateCycleModeDescription();
 
                 if (this.deps.showNotification) {
-                    this.deps.showNotification(`Switched to ${this.getModeName(modeToRestore)}`, 'success', 3000);
+                    this.deps.showNotification(getLabel('notify.modeSwitched', { vars: { mode: this.getModeName(modeToRestore) } }), 'success', 3000);
                 }
             }, 500);
         }
@@ -875,9 +875,9 @@ export class ModeManager {
 
                 if (this.deps.showNotification) {
                     this.deps.showNotification(
-                        newVisible ? 'Task input shown' : 'Task input hidden',
+                        getLabel(newVisible ? 'notify.taskInputShown' : 'notify.taskInputHidden'),
                         'info',
-                        2000
+                        4000
                     );
                 }
             });
@@ -893,7 +893,7 @@ export class ModeManager {
                 } else {
                     console.warn('⚠️ ModeManager: createNewMiniCycle not available');
                     if (this.deps.showNotification) {
-                        this.deps.showNotification('Create routine not available', 'warning', 2000);
+                        this.deps.showNotification(getLabel('notify.createRoutineUnavailable'), 'warning', 2000);
                     }
                 }
             });

@@ -729,7 +729,7 @@ export async function processImportedData(fileContent) {
         messageType = 'warning';
     } else if (titleWasModified) {
         importMessage = getLabel('notify.importNameCollision', { vars: { original: cycleTitle, name: finalCycleTitle } });
-        messageType = 'warning';
+        messageType = 'success';
     } else if (recurringCount > 0) {
         importMessage = getLabel('notify.importWithRecurring', { vars: { name: finalCycleTitle, count: recurringCount } });
     } else {

@@ -1126,8 +1126,7 @@ async setDefaultPosition(notificationContainer) {
 
         <button class="tip-toggle-btn"
                 data-tip-id="${tipId}"
-                aria-label="${getLabel('notify.showTip')}"
-                style="position: absolute; bottom: 8px; right: 8px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 14px; padding: 0; display: flex; align-items: center; justify-content: center; z-index: ${Z_INDEX.ELEVATED};">💡</button>
+                aria-label="${getLabel('notify.showTip')}">💡</button>
 
         <button class="close-btn"
                 data-task-id="${assignedTaskId}"

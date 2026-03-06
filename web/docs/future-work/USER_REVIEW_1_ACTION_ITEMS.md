@@ -110,7 +110,8 @@ That's 6 steps to set a recurring time. The tester expected to find this in 1-2 
 - C. Consider showing the explanation expanded by default for first-time users
 - D. Use a different approach: inline help text below the notification instead of a toggle icon
 
-**Status:** NOT STARTED
+**Status:** DONE
+**Action taken:** Added CSS pulse/glow animation to `.tip-toggle-btn` (3 pulses with 1s delay). Moved inline styles from `notifications.js` to `notifications.css` with proper `#notification-container .tip-toggle-btn` specificity.
 
 ---
 
@@ -126,7 +127,8 @@ That's 6 steps to set a recurring time. The tester expected to find this in 1-2 
 - B. Use a success (green) notification instead of warning (yellow/orange)
 - C. Auto-rename without alarming the user — just append a number silently
 
-**Status:** NOT STARTED
+**Status:** DONE
+**Action taken:** Changed notification type from `warning` to `success` in `cycleImportManager.js`. The import succeeded — green communicates that clearly while the message text explains the rename.
 
 ---
 
@@ -142,7 +144,8 @@ That's 6 steps to set a recurring time. The tester expected to find this in 1-2 
 - B. Consider renaming: "Auto-hide task input" or "Compact mode"
 - C. The loading tip system could include a tip about this feature
 
-**Status:** NOT STARTED
+**Status:** DONE
+**Action taken:** Updated "Task input shown" notification to be instructional: "Add tasks using the input bar. Press + to hide it when you're done." Updated "Task input hidden" to: "Task input hidden. Press + to show it again." Both now use `getLabel()`. Duration bumped from 2s to 4s for readability. Also converted 3 other hardcoded strings in `modeManager.js` to `getLabel()`.
 
 ---
 
@@ -158,7 +161,8 @@ That's 6 steps to set a recurring time. The tester expected to find this in 1-2 
 - B. Add checkbox-style selection UI so the interaction pattern is obvious
 - C. Consider auto-selecting all tasks when opening "Change recurring settings" if all tasks are already recurring
 
-**Status:** NOT STARTED
+**Status:** ACCEPTABLE
+**Assessment:** The "Check All" / "Uncheck All" button appears after tapping "Change Recurring Settings" — progressive disclosure keeps the initial view clean. Minor first-time discovery friction but the tester worked through it. No change needed.
 
 ---
 
@@ -171,7 +175,8 @@ That's 6 steps to set a recurring time. The tester expected to find this in 1-2 
 
 **Assessment:** This is a UX preference suggestion. The current separation of concerns (quick actions vs edit modal) is intentional, but worth considering for a future "task detail" view.
 
-**Status:** DEFERRED — design consideration for future task detail view
+**Status:** PARTIALLY ADDRESSED
+**Action taken:** Moved Delete button to the right side of the task options bar (destructive actions grouped on the right — common UI pattern). Made task option toggle notifications informative: now shows "{Option} enabled/disabled" instead of generic "Task options updated". Full layout redesign deferred for future task detail view.
 
 ---
 
@@ -194,13 +199,13 @@ That's 6 steps to set a recurring time. The tester expected to find this in 1-2 
 |---|-------|----------|--------|
 | 1 | +/- icon confusion → renamed to "Add or Remove Task Buttons" | HIGH | DONE |
 | 2 | Recurring panel state mismatch (BUG) | HIGH | DONE |
-| 3 | Recurring settings too buried (panel hint added) | HIGH | PARTIALLY ADDRESSED |
-| 4 | Notification lightbulb not noticed | MEDIUM | NOT STARTED |
-| 5 | Import warning tone | MEDIUM | NOT STARTED |
-| 6 | Hide task input confusion | LOW-MEDIUM | NOT STARTED |
-| 7 | Recurring panel select all | LOW-MEDIUM | NOT STARTED |
-| 8 | Task options layout | LOW | DEFERRED |
-| 9 | Recurring time discoverability | LOW | SEE ISSUE 3 |
+| 3 | Recurring settings too buried (time picker surfaced) | HIGH | DONE |
+| 4 | Notification lightbulb not noticed | MEDIUM | DONE |
+| 5 | Import warning tone | MEDIUM | DONE |
+| 6 | Hide task input confusion | LOW-MEDIUM | DONE |
+| 7 | Recurring panel select all | LOW-MEDIUM | ACCEPTABLE |
+| 8 | Task options layout (delete moved right, informative notifications) | LOW | PARTIALLY ADDRESSED |
+| 9 | Recurring time discoverability | LOW | DONE (SEE ISSUE 3) |
 
 ---
 

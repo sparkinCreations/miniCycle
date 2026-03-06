@@ -1,3 +1,7 @@
+## [2.042] - 2026-03-06
+- feat: enhance recurring panel with time picker sections and improved task filtering
+
+
 ## [2.041] - 2026-03-05
 - Refactor DOM access to use dependency injection across multiple modules
 

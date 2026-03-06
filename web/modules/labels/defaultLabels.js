@@ -331,6 +331,8 @@ export const DEFAULT_LABELS = deepFreeze({
         priorityColorYellow:    'Yellow',
         priorityColorGreen:     'Green',
         priorityColorSaved:     'Priority color saved',
+        taskInputShown:         'Add tasks using the input bar. Press + to hide it when you\'re done.',
+        taskInputHidden:        'Task input hidden. Press + to show it again.',
         taskSystemLimited:      'Task system initialized with limited functionality',
         taskDisplayLimited:     'Task display may not work properly',
         featureUnavailable:     'Feature temporarily unavailable',
@@ -342,6 +344,10 @@ export const DEFAULT_LABELS = deepFreeze({
         deletionCancelled:      'Deletion cancelled.',
         saveCancelled:          'Save cancelled.',
         noRoutineToSave:        'No routine found to save.',
+
+        // Mode notifications
+        modeSwitched:           'Switched to {mode}',
+        createRoutineUnavailable: 'Create routine not available',
 
         // Cycle/routine notifications
         firstCycleCompleted:    'Congratulations on completing your first cycle!',
@@ -453,6 +459,9 @@ export const DEFAULT_LABELS = deepFreeze({
         achievementResetCancelled: 'Achievement reset cancelled.',
         undoHistoryCleared:      'Undo history cleared.',
         taskOptionsUpdated:      'Task options updated',
+        taskOptionEnabled:       '{option} enabled',
+        taskOptionDisabled:      '{option} disabled',
+        taskOptionsReset:        'Task options reset to defaults',
         threeDotsDisabledTip:    'Long press a task to access options',
         menuSectionsTip:         'Tap any section header to expand it',
         routinePreviewTip:       'Double-click to expand',
