@@ -480,7 +480,7 @@ export class TaskOptionsCustomizer {
         // ✅ Real-time saving: Save immediately when any checkbox changes
         checkboxes.forEach(checkbox => {
             checkbox._changeHandler = () => {
-                this.saveCustomization(cycleId, checkboxes);
+                this.saveCustomization(cycleId, checkboxes, checkbox);
             };
             safeAdd(checkbox, 'change', checkbox._changeHandler);
 
@@ -579,8 +579,8 @@ export class TaskOptionsCustomizer {
         // Reset button - now applies immediately
         resetBtn._clickHandler = () => {
             this.resetToDefaults(checkboxes);
-            // Save after resetting
-            this.saveCustomization(cycleId, checkboxes);
+            // Save after resetting — pass 'reset' flag for specific notification
+            this.saveCustomization(cycleId, checkboxes, 'reset');
         };
         safeAdd(resetBtn, 'click', resetBtn._clickHandler);
 
@@ -603,8 +603,9 @@ export class TaskOptionsCustomizer {
      * Save customization to AppState
      * @param {string} cycleId - The cycle ID
      * @param {NodeList} checkboxes - Checkbox elements
+     * @param {HTMLInputElement} [changedCheckbox] - The specific checkbox that triggered the save
      */
-    async saveCustomization(cycleId, checkboxes) {
+    async saveCustomization(cycleId, checkboxes, changedCheckbox) {
         // ✅ Collect all checkbox values
         const allOptions = {};
         checkboxes.forEach(cb => {
@@ -731,7 +732,16 @@ export class TaskOptionsCustomizer {
         // ✅ Refresh task list UI (debounced)
         this.scheduleRefresh();
 
-        this.deps.showNotification?.('✅ ' + getLabel('notify.taskOptionsUpdated'), 'success', 2000);
+        // Show informative notification about what changed
+        if (changedCheckbox === 'reset') {
+            this.deps.showNotification?.(getLabel('notify.taskOptionsReset'), 'info', 2000);
+        } else if (changedCheckbox) {
+            const optionLabel = changedCheckbox.closest('[data-option-label]')?.dataset.optionLabel || changedCheckbox.dataset.option;
+            const labelKey = changedCheckbox.checked ? 'notify.taskOptionEnabled' : 'notify.taskOptionDisabled';
+            this.deps.showNotification?.(getLabel(labelKey, { vars: { option: optionLabel } }), 'info', 2000);
+        } else {
+            this.deps.showNotification?.(getLabel('notify.taskOptionsUpdated'), 'info', 2000);
+        }
         console.log(`✅ Saved task options for cycle: ${cycleId}`, { cycleOnlyOptions, moveArrows: newMoveArrows, threeDots: newThreeDots });
     }
 

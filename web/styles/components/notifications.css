@@ -343,3 +343,40 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* =============================================================================
+   TIP TOGGLE BUTTON (lightbulb)
+   ============================================================================= */
+
+#notification-container .tip-toggle-btn {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--z-elevated);
+    animation: tip-pulse 2s ease-in-out 1s 3;
+}
+
+#notification-container .tip-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+@keyframes tip-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 8px 4px rgba(255, 255, 255, 0.3);
+    }
+}

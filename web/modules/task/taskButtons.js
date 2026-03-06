@@ -116,10 +116,10 @@ export class TaskButtons {
             { class: "move-down", icon: "▼", show: true },
             { class: "priority-btn", iconClass: "fas fa-exclamation-triangle", show: visibleOptions.highPriority ?? true },
             { class: "edit-btn", iconClass: "fas fa-edit", show: visibleOptions.rename ?? true },
-            { class: "delete-btn", iconClass: "fas fa-trash", show: visibleOptions.delete ?? true },
             { class: "recurring-btn", iconClass: "fas fa-repeat", show: visibleOptions.recurring ?? false },
             { class: "set-due-date", iconClass: "fas fa-calendar-alt", show: visibleOptions.dueDate ?? false },
             { class: "enable-task-reminders", iconClass: "fas fa-bell", show: visibleOptions.reminders ?? false, toggle: true },
+            { class: "delete-btn", iconClass: "fas fa-trash", show: visibleOptions.delete ?? true },
             { class: "delete-when-complete-btn", icon: "❌", show: visibleOptions.deleteWhenComplete ?? false, toggle: true }
         ];
 
