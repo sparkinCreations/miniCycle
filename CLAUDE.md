@@ -22,7 +22,7 @@ web/
 ├── miniCycle.html              # Main entry point (PWA)
 ├── service-worker.js           # Offline support, caching
 ├── version.js                  # APP_VERSION + CACHE_VERSION (single source of truth)
-├── modules/                    # 108 ES6 modules (strict DI, zero window.* fallbacks)
+├── modules/                    # 114 ES6 modules (strict DI, zero window.* fallbacks)
 │   ├── boot/                   # orchestrator → coreBoot → featureBoot → uiBoot
 │   ├── core/                   # appState, appContext, appInit, diBase, constants
 │   ├── task/                   # Task CRUD, DOM, events, rendering, drag-drop
@@ -30,12 +30,12 @@ web/
 │   ├── recurring/              # 15 files — scheduling, matching, panel, settings
 │   ├── features/               # Themes, stats, achievements, history, reminders
 │   ├── routine/                # Routine lifecycle, switching, migration
-│   ├── labels/                 # defaultLabels.js (566 keys) + labelResolver.js
+│   ├── labels/                 # defaultLabels.js (~600 keys) + labelResolver.js
 │   ├── utils/                  # Notifications, device detection, globalUtils
 │   ├── storage/                # backupManager (IndexedDB)
 │   ├── progress/               # Cycle completion tracking
 │   └── other/                  # Plugin system
-├── styles/                     # 33 CSS files, token-based (variables.css foundation)
+├── styles/                     # 38 CSS files, token-based (variables.css foundation)
 └── tests/                      # 1,458 Playwright tests
 ```
 

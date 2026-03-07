@@ -428,12 +428,32 @@ Signatures are cached on snapshot objects (`_sig` property) to avoid recomputing
 - Delete old key
 - Update in-memory tracking
 
+### Clear Undo History (Settings Button)
+
+**Function:** `clearAllUndoHistory()`
+**Called by:** Settings → Reset Options → Clear Undo History
+**DI Wiring:** `settingsUIManager` → `settingsManager` (facade) → `depMappings` → `undoRedoManager`
+
+**Action — clears all three tiers with guards against snapshot recapture:**
+
+1. **Cancel pending IndexedDB write** — clears `dbWriteTimeout` to prevent a debounced write from re-saving old data after the clear
+2. **Set `isPerformingUndoRedo` guard** — blocks the AppState wrapper from capturing new snapshots during cleanup (the caller's `AppState.update()` to zero `undoSizeBytes` would otherwise trigger a fresh snapshot)
+3. **Clear in-memory stacks** — empties `activeUndoStack` and `activeRedoStack` in AppGlobalState
+4. **Reset dedup trackers** — sets `lastSnapshotSignature = null` and `lastSnapshotTs = 0` so the next real user action gets captured fresh
+5. **Clear localStorage cache** — calls `clearUndoCache()` to remove `__miniCycle_undoCache__`
+6. **Clear IndexedDB** — calls `clearAllUndoHistoryFromIndexedDB()` to wipe the `undoStacks` object store
+7. **Update UI** — calls `updateUndoRedoButtons()` to hide undo/redo buttons
+8. **Release guard** — uses `setTimeout(0)` to clear `isPerformingUndoRedo` after the caller's synchronous `AppState.update()` has completed
+
+**Why the guard is needed:**
+The settings button handler calls `clearAllUndoHistory()` then immediately calls `AppState.update()` to zero out `undoSizeBytes` in cycle state. Without the `isPerformingUndoRedo` guard, the AppState wrapper would treat that update as a user action and capture a fresh snapshot into the just-cleared cache — defeating the clear.
+
 ### Factory Reset
 
 **Functions:**
 - `clearAllUndoHistoryFromIndexedDB()` - Clears IndexedDB
 - `clearUndoCache()` - Clears localStorage cache
-**Called by:** Settings → Factory Reset
+**Called by:** Settings → Factory Reset (uses low-level functions directly)
 
 **Action:**
 - Clear entire `undoStacks` object store in IndexedDB
@@ -697,6 +717,18 @@ await onCycleRenamed(oldCycleId, newCycleId);
 enableUndoSystemOnFirstInteraction();
 ```
 
+### Clear & Reset
+
+```javascript
+// Clear ALL undo history (in-memory + localStorage + IndexedDB)
+// Used by Settings → Clear Undo History button
+await clearAllUndoHistory();
+
+// Low-level clear functions (used by factory reset)
+clearUndoCache();                        // localStorage only
+await clearAllUndoHistoryFromIndexedDB(); // IndexedDB only
+```
+
 ### Utilities
 
 ```javascript
@@ -792,6 +824,14 @@ console.log(JSON.parse(cache));
 - Solution: Lazy getters in moduleLoader.js resolve at runtime, not initialization
 - Check console for "Cleared undo stack, active ID, and cache" log after switching
 
+**Clear Undo History button does nothing (fixed March 2026):**
+- Root cause: `clearAllUndoHistory` was in the manifest's `provides` and the consumer's `optionalDeps`, but missing from `depMappings` in `moduleLoader.js`
+- `_deps.clearAllUndoHistory?.()` in `settingsUIManager` silently returned `undefined` — optional chaining masked the missing wiring
+- Fix: Added `clearAllUndoHistory` entry to `depMappings` in `moduleLoader.js`
+- Secondary fix: Added `isPerformingUndoRedo` guard to `clearAllUndoHistory()` to prevent the caller's `AppState.update()` from recapturing a snapshot into the freshly-cleared cache
+- Diagnostic: Patch `localStorage.removeItem` to log calls — if zero removes during clear, the function was never called (wiring issue)
+- See `MAKING_CODE_CHANGES.md` Step 4 checklist for preventing this class of bug
+
 ---
 
 ## Related Documentation
@@ -802,7 +842,7 @@ console.log(JSON.parse(cache));
 
 ---
 
-**Last Updated:** February 20, 2026
+**Last Updated:** March 7, 2026
 **Module Version:** See [PROJECT_STATS.md](../PROJECT_STATS.md)
 **Test Status:** 76/76 passing ✅
 **Architecture:** localStorage cache + IndexedDB dual-write, per-cycle isolation with validation

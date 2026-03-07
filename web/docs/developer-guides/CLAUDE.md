@@ -101,7 +101,7 @@ const { MyModule, setModuleDependencies } = await import('../path/myModule.js');
 setModuleDependencies({
     get AppState() { return getAppState(); },  // Via appContext getter
     showNotification: deps.utils.showNotification,
-    AppMeta: window.AppMeta
+    AppMeta: deps.core.AppMeta
 });
 
 const myModule = new MyModule();
@@ -168,7 +168,7 @@ Only standard browser API event handlers remain (`window.onload`, `window.onerro
 
 Centralizes all user-facing strings into a single registry with resolver support:
 
-- **`defaultLabels.js`** — Pure data module with 566 keys across 32 categories. No DI, no imports — importable anywhere.
+- **`defaultLabels.js`** — Pure data module with ~600 keys across 32 categories. No DI, no imports — importable anywhere.
 - **`labelResolver.js`** — DI-wired module providing `getLabel(key, options)` with pluralization and variable interpolation.
 
 ```javascript
@@ -379,7 +379,7 @@ AppState.reload();  // Critical! Syncs in-memory state with restored localStorag
 | `recurring/` | Recurring task scheduling, activation, panel |
 | `ui/` | Modals, menus, settings, onboarding, gestures |
 | `features/` | Themes, stats, achievements, history, reminders |
-| `labels/` | Label registry (566 keys), resolver with getLabel() |
+| `labels/` | Label registry (~600 keys), resolver with getLabel() |
 | `utils/` | Notifications, device detection, utilities |
 | `storage/` | Backup manager |
 | `progress/` | Cycle completion tracking |
@@ -427,6 +427,11 @@ Every DI module follows this pattern:
 - **DI patterns & pitfalls**: [DI_PATTERNS.md](./DI_PATTERNS.md)
 - **Architecture overview**: [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md)
 - **Label system**: [LABEL_SYSTEM_ARCHITECTURE.md](../architecture/LABEL_SYSTEM_ARCHITECTURE.md)
+- **Constants system**: [CONSTANTS_SYSTEM_GUIDE.md](./CONSTANTS_SYSTEM_GUIDE.md)
+- **CSS architecture**: [CSS_ARCHITECTURE_GUIDE.md](./CSS_ARCHITECTURE_GUIDE.md)
+- **Event listeners**: [EVENT_LISTENER_GUIDE.md](./EVENT_LISTENER_GUIDE.md)
+- **How to add X**: [HOW_TO_ADD_COOKBOOK.md](./HOW_TO_ADD_COOKBOOK.md)
+- **Making changes**: [MAKING_CODE_CHANGES.md](./MAKING_CODE_CHANGES.md)
 - **Folder structure**: [FOLDER_STRUCTURE.md](./FOLDER_STRUCTURE.md)
 - **Testing guide**: [TESTING_GUIDE.md](./TESTING_GUIDE.md)
 - **Version management**: [UPDATE-VERSION-GUIDE.md](../deployment/UPDATE-VERSION-GUIDE.md)

@@ -1,21 +1,21 @@
 # miniCycle Dependency Map
 
 > **Generated:** November 2025
-> **Updated:** January 5, 2026
+> **Updated:** March 7, 2026
 > **Purpose:** Document actual module dependencies for debugging, maintenance, and feature development
 
 > **Note:** This map reflects architecture as of December 2025. Infrastructure globals (APP_VERSION for service worker, window.onerror for error handling) are intentional exceptions to the "no window.*" rule.
 
 ## Executive Summary
 
-The miniCycle codebase has **96 modules** across **12 directories**. All modules use strict dependency injection via `appContext.js` and the `deps` container pattern.
+The miniCycle codebase has **114 modules** across **12 directories**. All modules use strict dependency injection via `appContext.js` and the `deps` container pattern.
 
 **No custom business logic is exposed on `window.*`** (exceptions: version/service-worker infrastructure, browser API event handlers).
 
 ### Key Numbers
 | Metric | Before (Nov 2025) | Current | Target | Progress |
 |--------|-------------------|---------|--------|----------|
-| Total modules | 43 | **96** | — | — |
+| Total modules | 43 | **114** | — | — |
 | Custom `window.*` globals (business logic) | ~68 | **0** | 0 | **100%** ✅ |
 | `window.*` fallbacks in modules | ~748 | **0** | 0 | **100%** ✅ |
 | Modules with DI setters (`set*Dependencies`) | 0 | **40+** | All stateful | **Exceeded** |
@@ -30,15 +30,16 @@ The miniCycle codebase has **96 modules** across **12 directories**. All modules
 ### Module Distribution
 | Directory | Count |
 |-----------|-------|
-| ui/ | 20 |
+| ui/ | 22 |
 | recurring/ | 15 |
 | task/ | 12 |
-| core/ | 9 |
-| utils/ | 10 |
+| utils/ | 12 |
 | testing/ | 10 |
-| boot/ | 6 |
+| core/ | 9 |
+| boot/ | 7 |
 | routine/ | 5 |
-| features/ | 4 |
+| features/ | 5 |
+| labels/ | 3 |
 | other/ | 3 |
 | progress/ | 1 |
 | storage/ | 1 |
@@ -532,4 +533,4 @@ const taskCore = new TaskCore();
 
 ---
 
-*This document reflects the actual architecture as of January 5, 2026. All modules use strict DI.*
+*This document reflects the actual architecture as of March 7, 2026. All modules use strict DI.*
