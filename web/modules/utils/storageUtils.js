@@ -37,6 +37,7 @@
 
 import { APP_VERSION } from '../core/constants.js';
 import { createDIModule, optional } from '../core/diBase.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // CONSTANTS
@@ -331,7 +332,7 @@ export function checkStorageWarning(info, showNotification) {
 
     if (typeof showNotification === 'function') {
         showNotification(
-            'Storage is getting tight. Export old routines to free up space.',
+            getLabel('notify.storageTight'),
             'warning',
             5000
         );

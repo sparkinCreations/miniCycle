@@ -87,7 +87,7 @@ export const DEFAULT_LABELS = deepFreeze({
         addTaskPlaceholder:   'Enter a task...',
         addTaskTitle:         'Type a task and press Add or Enter',
         addTaskMenu:          'Add Task',
-        editTaskTitle:        'Edit Task Name',
+        editTaskTitle:        'Rename Task',
         editTaskMessage:      'Rename this task:',
         editTaskPlaceholder:  'Enter new task name',
         deleteTaskTitle:      'Delete Task',
@@ -131,7 +131,7 @@ export const DEFAULT_LABELS = deepFreeze({
         dueDate:          'Set due date',
         reminders:        'Toggle reminders for this task',
         priority:         'Mark task as high priority',
-        edit:             'Edit task',
+        edit:             'Rename task',
         delete:           'Delete task',
         deleteOnComplete: 'Marked for removal (removes task on reset or clear)',
         showOptions:      'Show task options',
@@ -163,7 +163,7 @@ export const DEFAULT_LABELS = deepFreeze({
         threeDotsLabel:           'Three Dots Menu',
         threeDotsDescription:     'Show ⋮ button to reveal task options. When disabled, long press a task for options on mobile.',
         highPriorityDescription:  'Mark task as high priority',
-        renameDescription:        'Edit task text',
+        renameDescription:        'Rename task text',
         deleteDescription:        'Remove task from list',
         recurringDescription:     'Schedule task to repeat automatically',
         dueDateDescription:       'Add deadline to task',
@@ -317,7 +317,7 @@ export const DEFAULT_LABELS = deepFreeze({
         taskUpdateFailed:       'Could not update task',
         taskOrderFailed:        'Could not save task order',
         taskAddFailed:          'Could not add task - please try again',
-        taskEditFailed:         'Could not edit task',
+        taskEditFailed:         'Could not rename task',
         taskDeleteFailed:       'Could not delete task',
         taskPriorityFailed:     'Could not toggle priority',
         taskResetFailed:        'Could not reset tasks',
@@ -356,6 +356,9 @@ export const DEFAULT_LABELS = deepFreeze({
         cycleDeletedSwitch:     '"{deleted}" deleted. "{active}" is now active.',
         cycleDeleted:           '"{name}" has been deleted.',
         routineCreated:         'Created new routine "{name}"',
+        routineDuplicated:      'Duplicated as "{name}"',
+        routineRenamed:         'Renamed to "{name}"',
+        routineSwitched:        'Switched to "{name}"',
 
         // Recurring notifications
         recurringDisabled:      'Recurring disabled for this task',
@@ -458,6 +461,12 @@ export const DEFAULT_LABELS = deepFreeze({
         achievementResetFailed:  'Failed to reset achievements.',
         achievementResetCancelled: 'Achievement reset cancelled.',
         undoHistoryCleared:      'Undo history cleared.',
+        undoAction:              'Undone: {description} ({steps})',
+        redoAction:              'Redone: {description} ({steps})',
+        stepsLeftNone:           'no steps left',
+        stepsLeftOne:            '1 step left',
+        stepsLeftMany:           '{count} steps left',
+        undoStorageFull:         'Storage full - undo history not saved. Consider exporting your data.',
         taskOptionsUpdated:      'Task options updated',
         taskOptionEnabled:       '{option} enabled',
         taskOptionDisabled:      '{option} disabled',
@@ -549,6 +558,38 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Recurring (additional)
         taskSetRecurring:        'Task set to recurring ({frequency})',
+        recurringInitFailed:     'Recurring feature initialization failed',
+
+        // Reminder notifications
+        reminderTasksToComplete: 'You have tasks to complete:',
+        reminderEnabled:         'Reminder enabled: {settings}',
+        reminderClickToConfigure:'Click to configure',
+        reminderCustomSettings:  'Custom settings',
+        reminderEveryFrequency:  'Every {freq} {unit}',
+
+        // Error notifications
+        errorMultipleSuppressed: 'Multiple errors detected. Further error notifications will be suppressed. Check the console for details.',
+        errorUnexpected:         'An unexpected error occurred.',
+        errorUnexpectedContinue: 'An unexpected error occurred. The app will try to continue.',
+        errorStorageQuota:       'Storage quota exceeded. Please export your data and clear some space.',
+        errorNetwork:            'Network error. Please check your connection.',
+        errorDataCorruption:     'Data corruption detected. Your data may need to be restored from backup.',
+        errorPermission:         'Permission denied. Please check your browser settings.',
+        errorCriticalExport:     'Critical error detected. We recommend exporting your data as backup. Go to Settings \u2192 Import/Export.',
+
+        // Storage warnings
+        storageTight:            'Storage is getting tight. Export old routines to free up space.',
+
+        // Background image notifications
+        compressingImage:        'Compressing {size}MB image...',
+
+        // Migration (additional)
+        compatibilityMode:       'Running in compatibility mode due to: {reason}. Restart app to retry migration.',
+
+        // Device detection (additional)
+        deviceStatusVersion:     'Version: {version}',
+        deviceStatusSchema:      'Schema: {schema}',
+        deviceStatusLastCheck:   'Last Check: {lastCheck}',
 
         // Milestone/unlock notifications
         milestoneAchieved:       'You\'ve completed {count} cycles for "{name}"! Keep going!',

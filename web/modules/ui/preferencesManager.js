@@ -202,7 +202,10 @@ const di = createDIModule('PreferencesManager', {
     renderVocabThemes: optional(null),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
-    querySelectorAll: optional((sel) => document.querySelectorAll(sel))
+    querySelectorAll: optional((sel) => document.querySelectorAll(sel)),
+    getBody: optional(() => document.body),
+    getRootElement: optional(() => document.documentElement),
+    getActiveElement: optional(() => document.activeElement),
 });
 
 const _deps = new Proxy({}, {
@@ -320,7 +323,7 @@ export class PreferencesManager {
             });
         });
 
-        this._themeObserver.observe(document.body, {
+        this._themeObserver.observe(_deps.getBody(), {
             attributes: true,
             attributeFilter: ['class']
         });
@@ -713,7 +716,7 @@ export class PreferencesManager {
             const bgData = await _bgImageModule.loadBgImage();
             _bgImageModule.updateBgImageUI(bgData?.dataUrl || null, bgData?.mode || 'cover', _deps.AppState, { getElementById: _deps.getElementById });
 
-            this.modal._previousFocus = document.activeElement;
+            this.modal._previousFocus = _deps.getActiveElement();
             if (!this.modal.open) this.modal.showModal();
         }
     }
@@ -735,7 +738,7 @@ export class PreferencesManager {
         const notice = _deps.getElementById(DOM_IDS.PREFERENCES_THEME_NOTICE);
         if (!notice) return;
 
-        const root = document.documentElement;
+        const root = _deps.getRootElement();
         const vocabTheme = root.dataset.vocabTheme;
         const isVocabThemeActive = !!vocabTheme && vocabTheme !== 'classic';
 
@@ -762,8 +765,8 @@ export class PreferencesManager {
      * @returns {boolean}
      */
     isDefaultTheme() {
-        const body = document.body;
-        const root = document.documentElement;
+        const body = _deps.getBody();
+        const root = _deps.getRootElement();
         return !body.classList.contains('theme-dark-ocean') &&
                !body.classList.contains('theme-golden-glow') &&
                !body.classList.contains('dark-mode') &&
@@ -815,7 +818,7 @@ export class PreferencesManager {
             const showPattern = customColors.showBgPattern !== false; // Default to true
             bgPatternToggle.checked = showPattern;
             // Apply body class immediately
-            document.body.classList.toggle('no-bg-pattern', !showPattern);
+            _deps.getBody().classList.toggle('no-bg-pattern', !showPattern);
             // Dim pattern controls if pattern is hidden
             this.updatePatternControlsVisibility(showPattern);
         }
@@ -975,7 +978,7 @@ export class PreferencesManager {
         }
 
         // Toggle body class to show/hide pattern
-        document.body.classList.toggle('no-bg-pattern', !visible);
+        _deps.getBody().classList.toggle('no-bg-pattern', !visible);
 
         // Dim/enable pattern color and opacity controls
         this.updatePatternControlsVisibility(visible);
@@ -1115,8 +1118,8 @@ export class PreferencesManager {
         } else {
             // Custom color or opacity — generate inline SVG
             const patternUrl = generatePatternSvg(color, opacity);
-            document.documentElement.style.setProperty('--custom-pattern-bg', patternUrl);
-            document.body.classList.add('custom-pattern');
+            _deps.getRootElement().style.setProperty('--custom-pattern-bg', patternUrl);
+            _deps.getBody().classList.add('custom-pattern');
         }
     }
 
@@ -1124,8 +1127,8 @@ export class PreferencesManager {
      * Remove custom pattern (revert to external SVG)
      */
     removePatternColor() {
-        document.documentElement.style.removeProperty('--custom-pattern-bg');
-        document.body.classList.remove('custom-pattern');
+        _deps.getRootElement().style.removeProperty('--custom-pattern-bg');
+        _deps.getBody().classList.remove('custom-pattern');
     }
 
     /**
@@ -1309,7 +1312,7 @@ export class PreferencesManager {
         // Reset background pattern toggle + body class + controls
         const bgPatternToggle = _deps.getElementById(DOM_IDS.TOGGLE_BG_PATTERN);
         if (bgPatternToggle) bgPatternToggle.checked = true;
-        document.body.classList.remove('no-bg-pattern');
+        _deps.getBody().classList.remove('no-bg-pattern');
         this.updatePatternControlsVisibility(true);
 
         // Reset custom pattern (revert to external SVG)
@@ -1347,7 +1350,7 @@ export class PreferencesManager {
         // Hide background image (keep image data, just toggle off)
         const bgImageVisibleToggle = _deps.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
         if (bgImageVisibleToggle) bgImageVisibleToggle.checked = false;
-        document.body.classList.remove('has-bg-image', 'bg-mode-cover', 'bg-mode-center', 'bg-mode-tile');
+        _deps.getBody().classList.remove('has-bg-image', 'bg-mode-cover', 'bg-mode-center', 'bg-mode-tile');
 
         this.updatePreview();
 
@@ -1365,14 +1368,15 @@ export class PreferencesManager {
     applyCustomColors() {
         const state = _deps.AppState?.get();
         const customColors = state?.settings?.customColors || {};
-        const root = document.documentElement;
+        const root = _deps.getRootElement();
 
         if (!this.isDefaultTheme()) {
             // Only clear --pref-* vars for CSS-class overrides (dark mode, legacy themes).
             // Vocab themes apply their own --pref-* vars directly — don't clear them.
-            if (document.body.classList.contains('dark-mode') ||
-                document.body.classList.contains('theme-dark-ocean') ||
-                document.body.classList.contains('theme-golden-glow')) {
+            const body = _deps.getBody();
+            if (body.classList.contains('dark-mode') ||
+                body.classList.contains('theme-dark-ocean') ||
+                body.classList.contains('theme-golden-glow')) {
                 this.removeCustomColors();
             }
             return;
@@ -1419,7 +1423,7 @@ export class PreferencesManager {
      * Remove all custom color overrides
      */
     removeCustomColors() {
-        const root = document.documentElement;
+        const root = _deps.getRootElement();
         Object.values(COLOR_MAP).forEach(config => {
             root.style.removeProperty(config.cssVar);
         });

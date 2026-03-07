@@ -12,6 +12,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -341,7 +342,7 @@ export async function initRecurringModules(options = {}) {
 
         // Show user-facing error - DI-pure
         if (typeof deps.showNotification === 'function') {
-            deps.showNotification('Recurring feature initialization failed', 'error', 5000);
+            deps.showNotification(getLabel('notify.recurringInitFailed'), 'error', 5000);
         }
 
         throw error;

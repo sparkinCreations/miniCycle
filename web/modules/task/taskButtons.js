@@ -441,7 +441,7 @@ export class TaskButtons {
                     button.classList.toggle("delete-when-complete-active", newState);
                     button.setAttribute("aria-pressed", newState.toString());
 
-                    if (isToDoMode) {
+                    if (currentMode === 'todo') {
                         taskItem.classList.remove('show-delete-indicator');
                         taskItem.classList.toggle('kept-task', !newState);
                     } else {

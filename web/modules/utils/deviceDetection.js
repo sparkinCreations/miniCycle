@@ -291,9 +291,9 @@ export class DeviceDetectionManager {
 
     this.deps.showNotification(
       `${statusMessage}\n` +
-      `Version: ${deviceInfo.version}\n` +
-      `Schema: ${deviceInfo.schema}\n` +
-      `Last Check: ${deviceInfo.lastDetectionVersion || 'Never'}`,
+      `${getLabel('notify.deviceStatusVersion', { vars: { version: deviceInfo.version } })}\n` +
+      `${getLabel('notify.deviceStatusSchema', { vars: { schema: deviceInfo.schema } })}\n` +
+      `${getLabel('notify.deviceStatusLastCheck', { vars: { lastCheck: deviceInfo.lastDetectionVersion || 'Never' } })}`,
       statusType,
       8000
     );

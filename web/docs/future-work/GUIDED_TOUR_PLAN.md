@@ -235,8 +235,88 @@ Add "Retake Guided Tour" button near existing "Reset Onboarding" button. Clickin
 - All text comes from label system
 - All listeners cleaned up after tour ends
 
+## Main Menu Tour (Optional Extension)
+
+After the main 7-step tour completes, offer an optional "Explore the Menu" mini-tour. This addresses the UX review finding that users struggled to locate features like recurring settings, task options, and export/download within the menu.
+
+### Trigger
+
+After step 5 (hamburger menu spotlight) or at the end of the main tour, show:
+
+```
+"Want a quick walkthrough of the menu sections?"
+[ Show Me ]  [ No Thanks ]
+```
+
+Selecting "Show Me" opens the hamburger menu and begins the menu sub-tour. "No Thanks" skips to the next main tour step or completes the tour.
+
+### Menu Tour Steps
+
+The tour opens the menu, then spotlights each section header one at a time. Each section expands briefly during its spotlight to show what's inside.
+
+| Step | Target Section | Message |
+|------|---------------|---------|
+| M1 | Settings & Personalization (`[data-section="app"]`) | "Customize your app's colors, themes, accessibility options, and display preferences." |
+| M2 | Routine Actions (`[data-section="routines"]`) | "Create new routines, import or export .mcyc files, duplicate, and share routines." |
+| M3 | Task Actions & Features (`[data-section="tasks"]`) | "Manage recurring schedules, reminders, task option buttons, and bulk task actions." |
+| M4 | Rewards & Extras (`[data-section="rewards"]`) | "Unlock vocabulary themes and mini-games as you complete more cycles." |
+| M5 | Help & Support (`[data-section="help"]`) | "Access the user manual, send feedback, check for updates, or share the app." |
+| M6 | Legal & Info (`[data-section="legal"]`) | "Privacy policy, terms of service, accessibility statement, and security info." |
+
+### Behavior
+
+- **Auto-expand**: When a section is spotlighted, temporarily expand it so the user can see the buttons inside. Collapse it when advancing to the next section.
+- **Restore state**: After the menu tour ends, restore each section's original collapsed/expanded state.
+- **Menu stays open**: The hamburger menu remains open throughout the sub-tour. On completion, the menu closes and the main tour continues or finishes.
+- **Skip**: "Skip" during the menu tour skips only the remaining menu steps, not the entire guided tour.
+
+### Step Object Shape (extends main tour)
+
+```javascript
+{
+    target: '[data-section="routines"]',
+    targetType: 'menuSection',           // signals menu must be open
+    message: getLabel('tour.menuStep2'),
+    position: 'right',                   // tooltip to the right of the section
+    action: 'next',
+    onEnter: (section) => section.classList.remove('collapsed'),
+    onExit: (section) => section.classList.add('collapsed')
+}
+```
+
+### New Labels
+
+Add to `tour` section in `defaultLabels.js`:
+
+```javascript
+    menuTourPrompt:   'Want a quick walkthrough of the menu sections?',
+    menuTourStart:    'Show Me',
+    menuTourSkip:     'No Thanks',
+    menuStep1:        'Customize your app\'s colors, themes, accessibility options, and display preferences.',
+    menuStep2:        'Create new routines, import or export .mcyc files, duplicate, and share routines.',
+    menuStep3:        'Manage recurring schedules, reminders, task option buttons, and bulk task actions.',
+    menuStep4:        'Unlock vocabulary themes and mini-games as you complete more cycles.',
+    menuStep5:        'Access the user manual, send feedback, check for updates, or share the app.',
+    menuStep6:        'Privacy policy, terms of service, accessibility statement, and security info.',
+```
+
+### New State
+
+```javascript
+// Extend guided tour state
+state.settings.menuTourCompleted    // boolean, default false (independent of main tour)
+```
+
+### Mobile Considerations
+
+- Menu sections take full width on mobile — tooltip should appear above or below the section, not to the side
+- Scrolling may be needed to reach lower sections — auto-scroll the spotlighted section into view
+- Touch-friendly: same 44px min tap targets as main tour
+
+---
+
 ## Estimated Scope
 
 - **New files**: 2 (guidedTourManager.js, guided-tour.css)
 - **Modified files**: ~6 (defaultLabels.js, constants.js, moduleManifests.js, moduleLoader.js, appInit.js, settingsUIManager.js)
-- **Complexity**: Medium — the spotlight/tooltip positioning is the trickiest part
+- **Complexity**: Medium — the spotlight/tooltip positioning is the trickiest part; menu sub-tour adds section expand/collapse orchestration

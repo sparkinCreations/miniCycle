@@ -1641,7 +1641,7 @@ export async function initAppWithAutoMigration(options = {}) {
         console.log('❌ Previous failure reason:', failureReason);
 
         _deps.showNotification(
-            `⚠️ Running in compatibility mode due to: ${failureReason}. Restart app to retry migration.`,
+            '⚠️ ' + getLabel('notify.compatibilityMode', { vars: { reason: failureReason } }),
             'warning',
             5000
         );

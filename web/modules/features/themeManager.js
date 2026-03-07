@@ -52,7 +52,10 @@ const di = createDIModule('ThemeManager', {
     updateMainMenuHeader: optional(null),
     updateHelpWindow: optional(null),
     applyCustomColors: optional(null),
-    logHistoryEvent: optional(null)
+    logHistoryEvent: optional(null),
+    getBody: optional(() => document.body),
+    getRootElement: optional(() => document.documentElement),
+    getActiveElement: optional(() => document.activeElement),
 });
 
 // Late-binding deps via Proxy
@@ -108,20 +111,21 @@ let _darkModeObserver = null;
 function _setupDarkModeObserver() {
     if (_darkModeObserver) return;
     _darkModeObserver = new MutationObserver(() => {
-        const root = document.documentElement;
+        const root = _deps.getRootElement();
         const vocabThemeId = root.dataset?.vocabTheme;
         if (!vocabThemeId || vocabThemeId === 'classic') return;
 
-        if (document.body.classList.contains('dark-mode')) {
-            document.body.style.removeProperty('background');
+        const body = _deps.getBody();
+        if (body.classList.contains('dark-mode')) {
+            body.style.removeProperty('background');
         } else {
             const activeTheme = _deps.vocabThemeManager?.getActiveTheme?.();
             if (activeTheme?.colorPreset?.appBg) {
-                document.body.style.setProperty('background', activeTheme.colorPreset.appBg);
+                body.style.setProperty('background', activeTheme.colorPreset.appBg);
             }
         }
     });
-    _darkModeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    _darkModeObserver.observe(_deps.getBody(), { attributes: true, attributeFilter: ['class'] });
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -137,19 +141,20 @@ function _refreshLiveLensLabels() {
     // Apply vocab theme color preset (or restore Classic personalization)
     const activeTheme = _deps.vocabThemeManager?.getActiveTheme?.();
     const themeId = activeTheme?.id ?? 'classic';
-    const root = document.documentElement;
+    const root = _deps.getRootElement();
+    const body = _deps.getBody();
 
     if (themeId !== 'classic' && activeTheme?.colorPreset) {
         // Clear any user-set custom pattern so the theme's SVG pattern shows.
         // applyCustomColors() restores it when switching back to Classic.
-        document.body.classList.remove('custom-pattern');
+        body.classList.remove('custom-pattern');
 
         // Set vars on body.style so child-element rules (task cards, stats panel,
         // etc.) resolve them from body's inline style — more correct scope than
         // html.style, and child elements always track ancestor custom property changes.
         for (const [key, cssVar] of Object.entries(VOCAB_THEME_CSS_VARS)) {
             if (activeTheme.colorPreset[key]) {
-                document.body.style.setProperty(cssVar, activeTheme.colorPreset[key]);
+                body.style.setProperty(cssVar, activeTheme.colorPreset[key]);
             }
         }
         // Body's own `background: var(--pref-app-bg)` does NOT reliably repaint when
@@ -157,7 +162,7 @@ function _refreshLiveLensLabels() {
         // (Chrome does not invalidate body's computed style in that case). Setting the
         // background property directly on body.style always triggers an immediate repaint.
         if (activeTheme.colorPreset.appBg) {
-            document.body.style.setProperty('background', activeTheme.colorPreset.appBg);
+            body.style.setProperty('background', activeTheme.colorPreset.appBg);
         }
         root.dataset.vocabTheme = themeId;
         root.dataset.vocabThemeName = activeTheme.name;
@@ -166,10 +171,10 @@ function _refreshLiveLensLabels() {
         // applyCustomColors() only covers COLOR_MAP vars — celebration and priority
         // vars live outside that map and must be removed explicitly.
         for (const cssVar of Object.values(VOCAB_THEME_CSS_VARS)) {
-            document.body.style.removeProperty(cssVar);
+            body.style.removeProperty(cssVar);
         }
         // Remove the direct background override so Classic CSS / user colors take over.
-        document.body.style.removeProperty('background');
+        body.style.removeProperty('background');
         delete root.dataset.vocabTheme;
         delete root.dataset.vocabThemeName;
         _deps.applyCustomColors?.();
@@ -206,7 +211,7 @@ function _refreshLiveLensLabels() {
     // Complete-all button text ("Complete Cycle" → "Complete Habits" etc.)
     const completeBtn = _deps.getElementById(DOM_IDS.COMPLETE_ALL);
     if (completeBtn) {
-        const isToDoMode = document.body.classList.contains('todo-mode-mode');
+        const isToDoMode = _deps.getBody().classList.contains('todo-mode-mode');
         completeBtn.textContent = isToDoMode
             ? '🧹 ' + getLabel('action.clearCompletedTasks')
             : '🔄 ' + getLabel('action.completeCycle');
@@ -285,15 +290,16 @@ export class ThemeManager {
 
             // Step 1: Remove all theme classes
             const allThemes = ['theme-dark-ocean', 'theme-golden-glow', 'theme-dark'];
-            allThemes.forEach(theme => document.body?.classList.remove(theme));
+            const body = _deps.getBody();
+            allThemes.forEach(theme => body?.classList.remove(theme));
 
             // Step 2: Add selected theme class if it's not 'default'
             if (themeName && themeName !== 'default') {
-                document.body?.classList.add(`theme-${themeName}`);
+                body?.classList.add(`theme-${themeName}`);
             }
 
             // Step 3: Apply theme via CSS [data-theme] attribute (CSS-native, instant)
-            const root = document.documentElement;
+            const root = _deps.getRootElement();
             if (themeName && themeName !== 'default') {
                 root.dataset.theme = themeName;
             } else {
@@ -326,7 +332,7 @@ export class ThemeManager {
      */
     updateThemeColor() {
         try {
-            const body = document.body;
+            const body = _deps.getBody();
             if (!body) {
                 console.warn('⚠️ Document body not available for theme color update');
                 return;
@@ -356,7 +362,7 @@ export class ThemeManager {
             // Read from body (not documentElement) — vocab theme vars are set on
             // body.style, and getComputedStyle(body) also inherits user pref vars
             // from html.style, so both sources are covered.
-            const customAppBg = getComputedStyle(document.body).getPropertyValue('--pref-app-bg').trim();
+            const customAppBg = getComputedStyle(body).getPropertyValue('--pref-app-bg').trim();
 
             if (customAppBg) {
                 // Use custom app background color for status bar
@@ -424,8 +430,8 @@ export class ThemeManager {
 
             // Set initial state
             thisToggle.checked = isDark;
-            document.body?.classList.toggle("dark-mode", isDark);
-            document.documentElement?.classList.toggle("dark-mode", isDark);
+            _deps.getBody()?.classList.toggle("dark-mode", isDark);
+            _deps.getRootElement()?.classList.toggle("dark-mode", isDark);
 
             // Update theme color and quick toggle
             this.updateThemeColor();
@@ -510,8 +516,8 @@ export class ThemeManager {
      */
     toggleDarkMode(enabled, allToggleIds = [], excludeToggle = null) {
         try {
-            document.body?.classList.toggle("dark-mode", enabled);
-            document.documentElement?.classList.toggle("dark-mode", enabled);
+            _deps.getBody()?.classList.toggle("dark-mode", enabled);
+            _deps.getRootElement()?.classList.toggle("dark-mode", enabled);
 
             console.log('🌙 Dark mode toggle changed:', enabled);
             
@@ -849,7 +855,7 @@ export class ThemeManager {
             if (themeButton) {
                 themeButton._clickHandler = () => {
                     if (themesModal && !themesModal.open) {
-                        themesModal._previousFocus = document.activeElement;
+                        themesModal._previousFocus = _deps.getActiveElement();
                         themesModal.showModal();
                         this.renderVocabThemes();
                         _deps.hideMainMenu?.();

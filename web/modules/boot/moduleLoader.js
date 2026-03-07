@@ -691,6 +691,9 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         getElementById: (id) => document.getElementById(id),
         querySelector: (sel) => document.querySelector(sel),
         querySelectorAll: (sel) => document.querySelectorAll(sel),
+        getBody: () => document.body,
+        getRootElement: () => document.documentElement,
+        getActiveElement: () => document.activeElement,
         getTaskList: () => document.getElementById(DOM_IDS.TASK_LIST),
         getProgressBar: () => document.getElementById(DOM_IDS.PROGRESS_BAR),
 
@@ -832,6 +835,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
             () => deps.ui?.enableUndoSystemOnFirstInteraction),
         updateUndoRedoButtons: createValidatedWrapper('updateUndoRedoButtons',
             () => deps.ui?.updateUndoRedoButtons),
+        clearAllUndoHistory: (...args) => deps.ui?.clearAllUndoHistory?.(...args),
         // Undo cycle lifecycle hooks (called by routineSwitcher when cycles change)
         onCycleSwitched: (...args) => deps.ui?.onCycleSwitched?.(...args),
         onCycleCreated: (...args) => deps.ui?.onCycleCreated?.(...args),

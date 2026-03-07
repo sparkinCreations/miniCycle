@@ -60,7 +60,9 @@ const di = createDIModule('StatsPanel', {
     // DOM query helpers (testable, avoids direct document access)
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
-    querySelectorAll: optional((sel) => document.querySelectorAll(sel))
+    querySelectorAll: optional((sel) => document.querySelectorAll(sel)),
+    getBody: optional(() => document.body),
+    getActiveElement: optional(() => document.activeElement),
 });
 
 // Late-binding deps via Proxy
@@ -608,7 +610,7 @@ export class StatsPanelManager {
 
         this.state.isMouseDragging = false;
         this.state.mouseStartX = event.clientX;
-        document.body.style.userSelect = "none";
+        _deps.getBody().style.userSelect = "none";
     }
 
     handleMouseMove(event) {
@@ -645,8 +647,9 @@ export class StatsPanelManager {
     resetMouseDrag() {
         this.state.isMouseDragging = false;
         this.state.mouseStartX = 0;
-        document.body.style.cursor = "";
-        document.body.style.userSelect = "";
+        const body = _deps.getBody();
+        body.style.cursor = "";
+        body.style.userSelect = "";
     }
 
     // ==========================================
@@ -757,8 +760,8 @@ export class StatsPanelManager {
 
         // Shift+Tab for quick toggle (only when nothing is focused — preserve normal tab navigation)
         if (event.key === "Tab") {
-            const activeEl = document.activeElement;
-            const hasFocusedElement = activeEl && activeEl !== document.body;
+            const activeEl = _deps.getActiveElement();
+            const hasFocusedElement = activeEl && activeEl !== _deps.getBody();
             if (hasFocusedElement || this.dependencies.isOverlayActive()) return;
 
             event.preventDefault();
@@ -1515,7 +1518,8 @@ export class StatsPanelManager {
      * Handle quick dark mode toggle
      */
     async handleQuickDarkToggle() {
-        const isDark = document.body.classList.toggle("dark-mode");
+        const body = _deps.getBody();
+        const isDark = body.classList.toggle("dark-mode");
 
         console.log('🌙 Quick dark toggle (Schema 2.5 only)...');
 
@@ -1523,7 +1527,7 @@ export class StatsPanelManager {
         const AppState = this.dependencies.AppState;
         if (!AppState?.isReady?.()) {
             console.error('❌ AppState not ready for quick dark toggle');
-            document.body.classList.toggle("dark-mode"); // Revert
+            body.classList.toggle("dark-mode"); // Revert
             return;
         }
 
@@ -1554,7 +1558,7 @@ export class StatsPanelManager {
      */
     openThemesPanel() {
         if (this.elements.themesModal) {
-            this.elements.themesModal._previousFocus = document.activeElement;
+            this.elements.themesModal._previousFocus = _deps.getActiveElement();
             if (!this.elements.themesModal.open) this.elements.themesModal.showModal();
             this.dependencies.hideMainMenu();
         }
