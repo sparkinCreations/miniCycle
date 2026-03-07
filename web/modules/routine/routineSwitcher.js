@@ -460,9 +460,9 @@ export class RoutineSwitcher {
 
                 console.log(`✅ Successfully deleted: "${cycleToDelete}"`);
                 if (wasActiveCycle && newActiveCycleName) {
-                    this.deps.showNotification(`🗑️ "${cycleToDelete}" deleted. "${newActiveCycleName}" is now active.`, "info", 4000);
+                    this.deps.showNotification('🗑️ ' + getLabel('notify.cycleDeletedSwitch', { vars: { deleted: cycleToDelete, active: newActiveCycleName } }), "info", 4000);
                 } else {
-                    this.deps.showNotification(`🗑️ "${cycleToDelete}" has been deleted.`);
+                    this.deps.showNotification('🗑️ ' + getLabel('notify.cycleDeleted', { vars: { name: cycleToDelete } }));
                 }
             }
         });
@@ -657,7 +657,7 @@ export class RoutineSwitcher {
             }
         }, 100);
 
-        this.deps.showNotification(`📋 Duplicated as "${uniqueName}"`, "success", 2000);
+        this.deps.showNotification('📋 ' + getLabel('notify.routineDuplicated', { vars: { name: uniqueName } }), "success", 2000);
     }
 
     /**
@@ -738,7 +738,7 @@ export class RoutineSwitcher {
 
         if (wasModified) {
             console.log(`⚠️ Name collision: "${newName}" → "${uniqueName}"`);
-            this.deps.showNotification(`Name already exists. Using "${uniqueName}" instead.`, "warning", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: uniqueName } }), "warning", 3000);
         }
 
         console.log(`📝 Renaming inline: "${oldKey}" → "${uniqueName}"`);
@@ -787,7 +787,7 @@ export class RoutineSwitcher {
         // (activeCycleId key changed — vocabThemeManager must re-resolve from new key)
         this.deps.refreshThemeLabels?.();
 
-        this.deps.showNotification(`✅ Renamed to "${uniqueName}"`, "success", 2000);
+        this.deps.showNotification('✅ ' + getLabel('notify.routineRenamed', { vars: { name: uniqueName } }), "success", 2000);
     }
 
     /**
@@ -1038,7 +1038,7 @@ export class RoutineSwitcher {
 
             // ✅ Get cycle name from state for confirmation (use fresh state)
             const cycleName = freshState?.data?.cycles?.[currentActiveCycle]?.title || currentActiveCycle;
-            this.deps.showNotification(`✅ Switched to "${cycleName}"`, "success", 2000);
+            this.deps.showNotification('✅ ' + getLabel('notify.routineSwitched', { vars: { name: cycleName } }), "success", 2000);
         }, 100);
     }
 

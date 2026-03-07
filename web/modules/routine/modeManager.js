@@ -33,6 +33,7 @@ const di = createDIModule('ModeManager', {
     recurringCore: optional(null),
     getElementById: optional((id) => document.getElementById(id)),
     querySelectorAll: optional((sel) => document.querySelectorAll(sel)),
+    getBody: optional(() => document.body),
     safeAddEventListener: optional(null),
     checkMiniCycle: optional(() => {}),
     refreshTaskListUI: optional(null),
@@ -334,8 +335,9 @@ export class ModeManager {
         modeSelector.value = mode;
 
         // Update body classes
-        document.body.className = document.body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode)\b/g, '');
-        document.body.classList.add(mode + '-mode');
+        const body = this.deps.getBody();
+        body.className = body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode)\b/g, '');
+        body.classList.add(mode + '-mode');
 
         // ✅ FIXED: Update container visibility based on mode, not just autoReset
         const deleteContainer = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS_CONTAINER);
@@ -1239,8 +1241,9 @@ export class ModeManager {
             if (modeSelector) modeSelector.value = correctMode;
 
             // Update body class
-            document.body.className = document.body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode)\b/g, '');
-            document.body.classList.add(correctMode + '-mode');
+            const body = this.deps.getBody();
+            body.className = body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode)\b/g, '');
+            body.classList.add(correctMode + '-mode');
 
             console.log('✅ ModeManager: Mode enforcement corrected to:', correctMode);
 

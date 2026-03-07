@@ -13,6 +13,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { LIMITS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -132,7 +133,7 @@ class ErrorHandler {
             const { showNotification } = this.deps;
             if (typeof showNotification === 'function') {
                 showNotification(
-                    'Multiple errors detected. Further error notifications will be suppressed. Check the console for details.',
+                    getLabel('notify.errorMultipleSuppressed'),
                     'error'
                 );
             }
@@ -168,23 +169,23 @@ class ErrorHandler {
             return;
         }
 
-        let message = 'An unexpected error occurred.';
+        let message = getLabel('notify.errorUnexpected');
 
         // Customize message based on error type
         if (errorInfo.message) {
             const msg = String(errorInfo.message).toLowerCase();
 
             if (msg.includes('quota') || msg.includes('storage')) {
-                message = 'Storage quota exceeded. Please export your data and clear some space.';
+                message = getLabel('notify.errorStorageQuota');
             } else if (msg.includes('network') || msg.includes('fetch')) {
-                message = 'Network error. Please check your connection.';
+                message = getLabel('notify.errorNetwork');
             } else if (msg.includes('syntax') || msg.includes('parse')) {
-                message = 'Data corruption detected. Your data may need to be restored from backup.';
+                message = getLabel('notify.errorDataCorruption');
             } else if (msg.includes('permission') || msg.includes('denied')) {
-                message = 'Permission denied. Please check your browser settings.';
+                message = getLabel('notify.errorPermission');
             } else {
                 // Generic error message
-                message = 'An unexpected error occurred. The app will try to continue.';
+                message = getLabel('notify.errorUnexpectedContinue');
             }
         }
 
@@ -213,7 +214,7 @@ class ErrorHandler {
             const { showNotification } = this.deps;
             if (typeof showNotification === 'function') {
                 showNotification(
-                    'Critical error detected. We recommend exporting your data as backup. Go to Settings → Import/Export.',
+                    getLabel('notify.errorCriticalExport'),
                     'warning'
                 );
             }

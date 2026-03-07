@@ -42,7 +42,9 @@ const di = createDIModule('AchievementsManager', {
     // DOM access helpers (testable, avoids direct document.* calls)
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
-    querySelectorAll: optional((sel) => document.querySelectorAll(sel))
+    querySelectorAll: optional((sel) => document.querySelectorAll(sel)),
+    getBody: optional(() => document.body),
+    getActiveElement: optional(() => document.activeElement),
 });
 
 export const setAchievementsManagerDependencies = di.setDependencies;
@@ -289,8 +291,8 @@ export class AchievementsManager {
             </div>
         `;
 
-        document.body.appendChild(this.modalOverlay);
-        this.modalOverlay._previousFocus = document.activeElement;
+        this.deps.getBody().appendChild(this.modalOverlay);
+        this.modalOverlay._previousFocus = this.deps.getActiveElement();
         this.modalOverlay.showModal();
 
         // Setup event handlers
@@ -874,7 +876,7 @@ export class AchievementsManager {
             </div>
         `;
 
-        document.body.appendChild(overlay);
+        this.deps.getBody().appendChild(overlay);
         overlay.showModal();
 
         // Animate in

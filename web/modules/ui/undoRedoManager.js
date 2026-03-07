@@ -984,10 +984,10 @@ export async function performStateBasedUndo() {
     if (_deps.showNotification) {
       const changeDesc = transactionDiff.description;
       const stepsLeft = _deps.AppGlobalState.activeUndoStack.length;
-      const stepsText = stepsLeft === 0 ? 'no steps left' :
-                        stepsLeft === 1 ? '1 step left' :
-                        `${stepsLeft} steps left`;
-      _deps.showNotification(`↩️ Undone: ${changeDesc} (${stepsText})`, 'success', 2000);
+      const stepsText = stepsLeft === 0 ? getLabel('notify.stepsLeftNone') :
+                        stepsLeft === 1 ? getLabel('notify.stepsLeftOne') :
+                        getLabel('notify.stepsLeftMany', { vars: { count: stepsLeft } });
+      _deps.showNotification('↩️ ' + getLabel('notify.undoAction', { vars: { description: changeDesc, steps: stepsText } }), 'success', 2000);
     }
 
     // Clear dedup trackers so the next user-initiated change is always captured
@@ -1129,10 +1129,10 @@ export async function performStateBasedRedo() {
     if (_deps.showNotification) {
       const changeDesc = transactionDiff.description;
       const stepsLeft = _deps.AppGlobalState.activeRedoStack.length;
-      const stepsText = stepsLeft === 0 ? 'no steps left' :
-                        stepsLeft === 1 ? '1 step left' :
-                        `${stepsLeft} steps left`;
-      _deps.showNotification(`↪️ Redone: ${changeDesc} (${stepsText})`, 'success', 2000);
+      const stepsText = stepsLeft === 0 ? getLabel('notify.stepsLeftNone') :
+                        stepsLeft === 1 ? getLabel('notify.stepsLeftOne') :
+                        getLabel('notify.stepsLeftMany', { vars: { count: stepsLeft } });
+      _deps.showNotification('↪️ ' + getLabel('notify.redoAction', { vars: { description: changeDesc, steps: stepsText } }), 'success', 2000);
     }
 
     // Clear dedup trackers so the next user-initiated change is always captured
@@ -1682,7 +1682,7 @@ export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack, options 
         console.error('💾 Storage quota exceeded - undo history not saved');
         if (_deps.showNotification) {
           _deps.showNotification(
-            '⚠️ Storage full - undo history not saved. Consider exporting your data.',
+            '⚠️ ' + getLabel('notify.undoStorageFull'),
             'warning',
             5000
           );
@@ -1852,15 +1852,43 @@ export async function clearAllUndoHistoryFromIndexedDB() {
 /**
  * Clear ALL undo/redo history: in-memory stacks, localStorage cache, and IndexedDB.
  * Called by the Settings "Clear Undo History" button.
+ *
+ * Sets isPerformingUndoRedo guard so any AppState.update() calls that follow
+ * (e.g., zeroing undoSizeBytes) don't immediately recapture a new snapshot
+ * and repopulate the cache we just cleared.
  */
 export async function clearAllUndoHistory() {
+  // 1. Cancel any pending debounced IndexedDB write that would re-save old data
+  if (dbWriteTimeout) {
+    clearTimeout(dbWriteTimeout);
+    dbWriteTimeout = null;
+  }
+
+  // 2. Guard against snapshot recapture during cleanup
   if (_deps.AppGlobalState) {
+    _deps.AppGlobalState.isPerformingUndoRedo = true;
     _deps.AppGlobalState.activeUndoStack = [];
     _deps.AppGlobalState.activeRedoStack = [];
+    // Reset dedup trackers so next real user action gets captured fresh
+    _deps.AppGlobalState.lastSnapshotSignature = null;
+    _deps.AppGlobalState.lastSnapshotTs = 0;
   }
+
+  // 3. Clear persistent storage
   clearUndoCache();
   await clearAllUndoHistoryFromIndexedDB();
+
+  // 4. Update button states
   updateUndoRedoButtons();
+
+  // 5. Release guard after a macrotask so caller's synchronous AppState.update()
+  //    (e.g., zeroing undoSizeBytes) doesn't recapture a snapshot
+  if (_deps.AppGlobalState) {
+    setTimeout(() => {
+      _deps.AppGlobalState.isPerformingUndoRedo = false;
+    }, 0);
+  }
+
   console.log('✅ All undo history cleared');
 }
 

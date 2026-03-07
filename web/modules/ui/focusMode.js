@@ -28,6 +28,7 @@ const di = createDIModule('FocusMode', {
     safeAddEventListener: optional(null),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
+    getBody: optional(() => document.body),
 });
 
 /**
@@ -146,10 +147,10 @@ export class FocusMode {
         if (this._active) return;
         this._active = true;
 
-        document.body.classList.add(DOM_CLASSES.FOCUS_MODE);
+        this.deps.getBody().classList.add(DOM_CLASSES.FOCUS_MODE);
 
         if (this._button) {
-            document.body.appendChild(this._button);
+            this.deps.getBody().appendChild(this._button);
             this._button.innerHTML = getIcon('compress');
             this._button.title = getLabel('focusMode.exitTitle');
             this._button.setAttribute('aria-label', getLabel('focusMode.exitAria'));
@@ -174,7 +175,7 @@ export class FocusMode {
             taskView.style.height = `${taskView.offsetHeight}px`;
         }
 
-        document.body.classList.remove(DOM_CLASSES.FOCUS_MODE);
+        this.deps.getBody().classList.remove(DOM_CLASSES.FOCUS_MODE);
 
         // After a frame, remove the pinned height so it collapses with transition
         if (taskView) {
@@ -225,7 +226,7 @@ export class FocusMode {
         this._progressRow = null;
         this._active = false;
         this.initialized = false;
-        document.body.classList.remove(DOM_CLASSES.FOCUS_MODE);
+        this.deps.getBody().classList.remove(DOM_CLASSES.FOCUS_MODE);
     }
 }
 

@@ -52,6 +52,7 @@ const di = createDIModule('RoutineManager', {
     syncModeFromToggles: optional(null),
     updateRecurringInfoLink: optional(null),
     loadMiniCycle: optional(null),
+    getBody: optional(() => document.body),
 });
 
 // Late-binding deps via Proxy
@@ -197,7 +198,7 @@ export class RoutineManager {
                     const appState = this.deps.AppState;
 
                     if (!this._ensureAppStateReady('cycle creation')) {
-                        this.deps.showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+                        this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", 3000);
                         return;
                     }
 
@@ -207,7 +208,7 @@ export class RoutineManager {
 
                     if (wasModified) {
                         console.log(`⚠️ Name collision: "${newCycleName}" → "${finalTitle}"`);
-                        this.deps.showNotification(`Name already exists. Using "${finalTitle}" instead.`, "warning", 3000);
+                        this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", 3000);
                     }
 
                     // ✅ Create cycle via AppState.update() - use title as key
@@ -254,10 +255,11 @@ export class RoutineManager {
                     if (onboardModeSelector) {
                         onboardModeSelector.value = 'auto-cycle';
                     }
-                    document.body.className = document.body.className.replace(
+                    const body = this.deps.getBody();
+                    body.className = body.className.replace(
                         /\b(auto-cycle-mode|manual-cycle-mode|todo-mode-mode|todo-mode)\b/g, ''
                     );
-                    document.body.classList.add('auto-cycle-mode');
+                    body.classList.add('auto-cycle-mode');
 
                     // ✅ Complete the setup after user interaction
                     this.deps.refreshThemeLabels?.();  // Apply Classic colors immediately (new routine defaults to classic)
@@ -431,7 +433,7 @@ export class RoutineManager {
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for createNewMiniCycle');
-            this.deps.showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", 3000);
             return;
         }
 
@@ -475,7 +477,7 @@ export class RoutineManager {
 
                 if (wasModified) {
                     console.log(`⚠️ Name collision: "${newCycleName}" → "${finalTitle}"`);
-                    this.deps.showNotification(`Name already exists. Using "${finalTitle}" instead.`, "warning", 3000);
+                    this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", 3000);
                 }
 
                 const storageKey = finalTitle;
@@ -537,10 +539,11 @@ export class RoutineManager {
                 if (modeSelector) {
                     modeSelector.value = 'auto-cycle';
                 }
-                document.body.className = document.body.className.replace(
+                const body = this.deps.getBody();
+                body.className = body.className.replace(
                     /\b(auto-cycle-mode|manual-cycle-mode|todo-mode-mode|todo-mode)\b/g, ''
                 );
-                document.body.classList.add('auto-cycle-mode');
+                body.classList.add('auto-cycle-mode');
 
                 // Hide task input bar (new routines default to hidden)
                 const taskInputContainer = this.deps.querySelector(DOM_SELECTORS.TASK_INPUT);

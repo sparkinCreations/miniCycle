@@ -611,7 +611,7 @@ export class MiniCycleReminders {
         }
         // No duration = requires manual dismissal (user may be away from app)
         // Use \n instead of <br> - CSS white-space: pre-line renders newlines (XSS-safe)
-        this._activeReminderNotification = this.deps.showNotification(`🔔 You have tasks to complete:\n~ ${incompleteTasks.join("\n~ ")}`, "info");
+        this._activeReminderNotification = this.deps.showNotification(`🔔 ${getLabel('notify.reminderTasksToComplete')}\n~ ${incompleteTasks.join("\n~ ")}`, "info");
 
         // Send browser notification if enabled and permission granted
         console.log('🔔 Browser notification check:', {
@@ -852,10 +852,10 @@ export class MiniCycleReminders {
                 const freq = reminderSettings.frequencyValue || 0;
                 const unit = reminderSettings.frequencyUnit || 'hours';
                 const settingsText = freq > 0
-                    ? `Every ${freq} ${unit}`
-                    : 'Custom settings';
+                    ? getLabel('notify.reminderEveryFrequency', { vars: { freq, unit } })
+                    : getLabel('notify.reminderCustomSettings');
 
-                const message = `🔔 Reminder enabled: ${settingsText}\nClick to configure`;
+                const message = `🔔 ${getLabel('notify.reminderEnabled', { vars: { settings: settingsText } })}\n${getLabel('notify.reminderClickToConfigure')}`;
                 const notificationElement = this.deps.showNotification(message, "success", 5000);
 
                 // Add click listener to open reminders modal

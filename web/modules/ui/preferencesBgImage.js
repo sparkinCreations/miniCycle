@@ -383,7 +383,7 @@ export async function handleBgImageUpload(event, deps) {
 
         // Compress if over size limit, otherwise read directly
         if (file.size > BG_IMAGE_MAX_SIZE) {
-            deps.showNotification?.(`Compressing ${fileSizeMB}MB image...`, 'info', 3000);
+            deps.showNotification?.(getLabel('notify.compressingImage', { vars: { size: fileSizeMB } }), 'info', 3000);
 
             const result = await compressImage(file);
             dataUrl = result.dataUrl;
