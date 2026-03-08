@@ -606,8 +606,10 @@ async function initApp() {
   } catch (error) {
     const phase = error.message.includes('Phase') ? error.message.split(' timed')[0] : 'initialization';
 
-    if (bootAttempt <= MAX_BOOT_RETRIES && navigator.onLine) {
-      // Show retry message and try again (only when online — retry exists to re-fetch fresh files)
+    if (bootAttempt <= MAX_BOOT_RETRIES) {
+      // Always retry at least once — on iOS, the SW process needs time to restart
+      // after being killed while backgrounded. The retry delay gives it time to spin up.
+      // Version suffix is already suppressed when offline (no version mismatch risk).
       showBootError(phase, error, true);
       console.log(`🔄 Retrying boot in ${BOOT_TIMEOUTS.RETRY_DELAY}ms...`);
       await new Promise(resolve => setTimeout(resolve, BOOT_TIMEOUTS.RETRY_DELAY));

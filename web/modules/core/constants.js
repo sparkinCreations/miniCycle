@@ -50,7 +50,7 @@ export const BOOT_TIMEOUTS = Object.freeze({
     PHASE_2: 20000,        // 20s for feature boot (largest phase - 40+ modules)
     PHASE_3: 15000,        // 15s for UI boot (event listeners, DOM init)
     TOTAL: 45000,          // 45s total boot timeout
-    RETRY_DELAY: 1000      // 1s delay before boot retry
+    RETRY_DELAY: 2000      // 2s delay before boot retry (iOS needs time to restart killed SW)
 });
 
 /**

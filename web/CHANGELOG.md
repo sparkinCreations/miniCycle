@@ -1,3 +1,7 @@
+## [2.046] - 2026-03-07
+- fix: improve service worker timeout handling for iOS; ensure faster cache fallback
+
+
 ## [2.045] - 2026-03-07
 - feat: update app version to 2.044; enhance error handling for offline scenarios and improve cache management
 
