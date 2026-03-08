@@ -1,3 +1,7 @@
+## [2.050] - 2026-03-08
+- feat: add synthetic version.js generation for offline support; improve error handling for uncached modules
+
+
 ## [2.049] - 2026-03-08
 - feat: enhance service worker boot process; add modal templates and registry to boot-critical files, improve cache management for offline fallback
 
