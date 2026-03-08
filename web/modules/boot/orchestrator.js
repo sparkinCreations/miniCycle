@@ -190,7 +190,19 @@ function escapeHtml(str) {
 function getErrorDetails(error, phase) {
   const msg = error?.message || '';
 
-  // Cache/import errors
+  // Offline-specific errors — check BEFORE cache errors because the SW's 504
+  // "Module not available offline: ..." contains "module", matching the cache path
+  if (!navigator.onLine) {
+    if (msg.includes('offline') || msg.includes('module') || msg.includes('Module') ||
+        msg.includes('fetch') || msg.includes('network') || msg.includes('Failed to load')) {
+      return {
+        description: getLabel('boot.errorOffline'),
+        suggestion: getLabel('boot.suggestReconnect')
+      };
+    }
+  }
+
+  // Cache/import errors (only reached when online)
   if (msg.includes('Importing') || msg.includes('module') || msg.includes('binding name')) {
     return {
       description: getLabel('boot.errorCachedFile'),
@@ -280,8 +292,9 @@ function showBootError(phase, error, willRetry = false) {
       <div style="margin-top: 10px; color: rgba(255,255,255,0.7); font-size: 14px;">${escapeHtml(getLabel('boot.retrying'))}</div>
     `;
   } else {
-    // Check if this looks like a cache error
-    const isCacheErrorMatch = isCacheError(error);
+    // Check if this looks like a cache error — only show destructive "Clear Cache"
+    // button when online (offline, clearing caches destroys the only available files)
+    const isCacheErrorMatch = isCacheError(error) && navigator.onLine;
 
     loader.innerHTML = `
       <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle" width="120" height="96" style="object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2)); animation: none;">
@@ -357,7 +370,9 @@ async function runBootSequence() {
   // ✅ On retry, append retry counter to version for cache busting
   // This forces fresh ES module loads, bypassing browser's module cache
   // Critical for clearing DI module state that persists in cached modules
-  const versionSuffix = isRetry ? `${APP_VERSION}.r${bootAttempt}` : APP_VERSION;
+  // ⚠️ Skip retry suffix when offline — it creates a version mismatch in the SW,
+  // forcing network-first for ALL files (guaranteed failure when offline)
+  const versionSuffix = (isRetry && navigator.onLine) ? `${APP_VERSION}.r${bootAttempt}` : APP_VERSION;
 
   // ========== CHECK FOR UPDATES ==========
   updateLoaderProgress(getLabel('boot.checkingUpdates'), 5);
@@ -591,19 +606,21 @@ async function initApp() {
   } catch (error) {
     const phase = error.message.includes('Phase') ? error.message.split(' timed')[0] : 'initialization';
 
-    if (bootAttempt <= MAX_BOOT_RETRIES) {
-      // Show retry message and try again
+    if (bootAttempt <= MAX_BOOT_RETRIES && navigator.onLine) {
+      // Show retry message and try again (only when online — retry exists to re-fetch fresh files)
       showBootError(phase, error, true);
       console.log(`🔄 Retrying boot in ${BOOT_TIMEOUTS.RETRY_DELAY}ms...`);
       await new Promise(resolve => setTimeout(resolve, BOOT_TIMEOUTS.RETRY_DELAY));
       return initApp(); // Retry
     } else {
-      if (isCacheError(error) && !isRecoveryExhausted()) {
+      // ⚠️ Only attempt cache recovery when online — clearing caches offline
+      // destroys the only available files and bricks the app
+      if (isCacheError(error) && !isRecoveryExhausted() && navigator.onLine) {
         console.warn('🧹 Cache error after retries - attempting recovery');
         const recovered = await attemptCacheRecovery('orchestrator-bootFailure');
         if (recovered) return;
       }
-      // Max retries exceeded - show final error with lite option
+      // Max retries exceeded (or offline) - show final error with lite option
       showBootError(phase, error, false);
     }
   }
