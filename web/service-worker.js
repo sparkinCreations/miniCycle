@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.050';
-var CACHE_VERSION = 'v889';
+var APP_VERSION = '2.051';
+var CACHE_VERSION = 'v890';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -587,15 +587,13 @@ self.addEventListener('fetch', function (event) {
         })
         .catch(function () {
           // ✅ Offline fallback with smart shell selection
+          // Use caches.match() (ALL caches) first — if precache failed, the HTML
+          // might only exist in old caches kept as fallback
           var shell = pickShell(url);
-          return caches.open(STATIC_CACHE).then(function (cache) {
+          var shellPath = shell === 'lite' ? fromScope('lite/miniCycle-lite.html')
+                                          : fromScope('miniCycle.html');
 
-            // ✅ Try the correct shell first
-            var shellPath = shell === 'lite' ? fromScope('lite/miniCycle-lite.html')
-                                            : fromScope('miniCycle.html');
-            return cache.match(shellPath);
-
-          }).then(function (fallback) {
+          return caches.match(shellPath).then(function (fallback) {
             if (fallback) {
               console.log('📱 Offline fallback: serving ' + shell + ' shell');
               return fallback;
@@ -656,19 +654,25 @@ self.addEventListener('fetch', function (event) {
       console.log('⚠️ Version mismatch detected:', requestVersion, '→', APP_VERSION, url.pathname);
     }
     if (staticImportWithoutVersion) {
-      console.log('📦 Static import (no version):', url.pathname, '- using network-first');
+      console.log('📦 Static import (no version):', url.pathname);
     }
 
-    // ✅ HYBRID STRATEGY: Network-first ONLY when version is uncertain
-    // When ?v= matches APP_VERSION, the module is the correct version — no need
-    // for network-first. This is CRITICAL for offline boot: the moduleLoader loads
-    // 40+ modules SEQUENTIALLY. If each network-first module waits 3s for timeout
-    // (when iOS navigator.onLine is unreliably true), the total wait exceeds the
-    // Phase 2 boot timeout (20s) and the app fails to boot offline.
-    // With matching version → stale-while-revalidate → instant cache hit.
-    var versionMatches = requestVersion && requestVersion === APP_VERSION;
-    var needsNetworkFirst = versionMismatch || staticImportWithoutVersion ||
-        (isNetworkFirstFile(url.pathname) && !versionMatches);
+    // ✅ HYBRID STRATEGY: Network-first ONLY for actual version mismatches
+    // Static imports (no ?v=) and version-matching imports use stale-while-revalidate
+    // for instant cache serving. This is CRITICAL for offline boot on iOS:
+    //
+    // Problem: moduleLoader loads 40+ modules SEQUENTIALLY. Each module's static
+    // imports (constants.js, diBase.js, etc.) have no ?v= param. If these go through
+    // network-first, and iOS navigator.onLine lies (returns true when offline),
+    // each file waits 3s for network timeout before falling back to cache.
+    // Even with browser module deduplication, the cumulative timeout exceeds
+    // the Phase 2 boot timeout (20s) and the app fails to boot offline.
+    //
+    // Fix: Only use network-first when there's an ACTUAL version mismatch (?v=X
+    // where X ≠ APP_VERSION). All other files use stale-while-revalidate:
+    // - Cache hit → instant serve + background update
+    // - Cache miss → wait for network (same as before)
+    var needsNetworkFirst = versionMismatch;
 
     if (needsNetworkFirst) {
       // ═══════════════════════════════════════════════════════════════════

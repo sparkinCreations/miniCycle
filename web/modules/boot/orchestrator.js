@@ -285,25 +285,40 @@ function showBootError(phase, error, willRetry = false) {
   const safeShortError = escapeHtml(shortError);
 
   if (willRetry) {
+    // Include diagnostic details so user can screenshot on iOS
+    const diagOnline = navigator.onLine ? 'online' : 'offline';
+    const diagSW = navigator.serviceWorker?.controller ? 'SW:active' : 'SW:none';
+    const diagTime = typeof performance !== 'undefined' ? Math.round(performance.now()) + 'ms' : '?';
+    const diagError = escapeHtml((error?.message || 'Unknown').substring(0, 120));
+    const diagPhase = escapeHtml(phase);
+
     loader.innerHTML = `
       <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle" class="loader-logo" width="120" height="96">
       <div class="loader-text" style="animation: none;">${escapeHtml(getLabel('boot.havingTrouble'))}</div>
       <div style="margin-top: 8px; color: rgba(255,255,255,0.9); font-size: 13px;">${safeDescription}</div>
       <div style="margin-top: 10px; color: rgba(255,255,255,0.7); font-size: 14px;">${escapeHtml(getLabel('boot.retrying'))}</div>
+      <div style="margin-top: 16px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 6px; color: rgba(255,255,255,0.7); font-size: 10px; font-family: monospace; max-width: 300px; word-break: break-word; text-align: left;">
+        Phase: ${diagPhase} | ${diagOnline} | ${diagSW} | ${diagTime}<br>
+        Error: ${diagError}
+      </div>
     `;
   } else {
     // Check if this looks like a cache error — only show destructive "Clear Cache"
     // button when online (offline, clearing caches destroys the only available files)
     const isCacheErrorMatch = isCacheError(error) && navigator.onLine;
 
+    // Diagnostic info for iOS debugging (visible in screenshots)
+    const finalDiagOnline = navigator.onLine ? 'online' : 'offline';
+    const finalDiagSW = navigator.serviceWorker?.controller ? 'SW:active' : 'SW:none';
+    const finalDiagTime = typeof performance !== 'undefined' ? Math.round(performance.now()) + 'ms' : '?';
+    const finalDiagError = escapeHtml((error?.message || 'Unknown').substring(0, 200));
+    const finalDiagPhase = escapeHtml(phase);
+
     loader.innerHTML = `
       <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle" width="120" height="96" style="object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2)); animation: none;">
       <div style="margin-top: 20px; color: white; font-size: 18px; font-weight: 500; font-family: 'Inter', sans-serif;">${escapeHtml(getLabel('boot.unableToLoad'))}</div>
       <div style="margin-top: 8px; color: rgba(255,255,255,0.9); font-size: 14px; max-width: 300px; text-align: center;">
         ${safeDescription}
-      </div>
-      <div style="margin-top: 6px; color: rgba(255,255,255,0.6); font-size: 12px; max-width: 280px; text-align: center; font-family: monospace; word-break: break-word;">
-        ${safeShortError}
       </div>
       <div style="margin-top: 12px; color: rgba(255,255,255,0.8); font-size: 13px;">
         💡 ${safeSuggestion}
@@ -322,8 +337,10 @@ function showBootError(phase, error, willRetry = false) {
           ${escapeHtml(getLabel('boot.useLite'))}
         </button>
       </div>
-      <div style="margin-top: 12px; color: rgba(255,255,255,0.5); font-size: 11px;">
-        ${escapeHtml(getLabel('boot.failedAt', { vars: { phase: phase, number: bootAttempt } }))}
+      <div style="margin-top: 12px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 6px; color: rgba(255,255,255,0.7); font-size: 10px; font-family: monospace; max-width: 300px; word-break: break-word; text-align: left;">
+        Phase: ${finalDiagPhase} | ${finalDiagOnline} | ${finalDiagSW} | ${finalDiagTime}<br>
+        Attempt: ${bootAttempt} | v${escapeHtml(APP_VERSION || '?')}<br>
+        Error: ${finalDiagError}
       </div>
     `;
 
@@ -381,6 +398,8 @@ async function runBootSequence() {
 
   // ========== LOAD BOOT MODULES (with timeout) ==========
   updateLoaderProgress(getLabel('boot.loadingCore'), 15);
+  console.log(`📥 Loading boot modules... (online: ${navigator.onLine}, SW: ${!!navigator.serviceWorker?.controller})`);
+  const importStart = Date.now();
   const [coreBoot, featureBoot, uiBoot] = await withTimeout(
     Promise.all([
       import(`./coreBoot.js?v=${versionSuffix}`),
@@ -390,6 +409,7 @@ async function runBootSequence() {
     BOOT_TIMEOUTS.MODULE_IMPORT,
     'Module import'
   );
+  console.log(`✅ Boot modules loaded in ${Date.now() - importStart}ms`);
 
   const { initCoreBoot, initAppState } = coreBoot;
   const { bootFeatures, bootEarlyDeps } = featureBoot;
