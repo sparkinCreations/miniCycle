@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.048';
-var CACHE_VERSION = 'v887';
+var APP_VERSION = '2.049';
+var CACHE_VERSION = 'v888';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -98,6 +98,7 @@ var BOOT_CRITICAL = [
   './modules/utils/icons.js',
   './modules/utils/nameUtils.js',
   './modules/utils/storageUtils.js',
+  './modules/utils/keyboardNav.js',
   // Task modules - ALL task functionality
   './modules/task/taskCore.js',
   './modules/task/taskDOM.js',
@@ -166,6 +167,7 @@ var BOOT_CRITICAL = [
   './modules/ui/taskSearch.js',
   './modules/ui/uiOrchestrator.js',
   './modules/ui/undoRedoManager.js',
+  './modules/ui/panelVisibilityHelpers.js',
   // Features - remaining
   './modules/features/clearedTasksManager.js',
   './modules/features/historyManager.js',
@@ -663,10 +665,23 @@ self.addEventListener('fetch', function (event) {
               return staticCache.match(cacheRequest);
             }).then(function(staticCached) {
               if (staticCached) return staticCached;
-              // Not cached at all — log for diagnosis and return error
+              // Not cached at all — try to synthesize critical files, otherwise error
               // Use status 200 so the browser's module loader accepts and parses it
               // (non-200 responses cause silent "Importing a module script failed" errors)
               console.error('📴 NOT CACHED (offline):', url.pathname);
+
+              // ✅ SYNTHETIC version.js: The SW always has the version values (via importScripts),
+              // so we can generate version.js on the fly if the precache missed it.
+              // version.js is the #1 boot blocker — without it, APP_VERSION is undefined and
+              // no module URLs resolve correctly.
+              if (url.pathname.endsWith('version.js')) {
+                console.log('📴 Generating synthetic version.js (APP_VERSION=' + APP_VERSION + ', CACHE_VERSION=' + CACHE_VERSION + ')');
+                return new Response(
+                  'globalThis.APP_VERSION = "' + APP_VERSION + '";\nglobalThis.CACHE_VERSION = ' + CACHE_VERSION + ';',
+                  { status: 200, headers: { 'Content-Type': 'application/javascript' } }
+                );
+              }
+
               var safePath = url.pathname.replace(/[\\'"<>]/g, '');
               return new Response(
                 url.pathname.endsWith('.css')
@@ -727,6 +742,16 @@ self.addEventListener('fetch', function (event) {
                   return staticCached;
                 }
                 console.error('❌ Module not in cache and network failed:', request.url);
+
+                // ✅ SYNTHETIC version.js fallback (same as offline fast-path)
+                if (url.pathname.endsWith('version.js')) {
+                  console.log('🔧 Generating synthetic version.js (APP_VERSION=' + APP_VERSION + ', CACHE_VERSION=' + CACHE_VERSION + ')');
+                  return new Response(
+                    'globalThis.APP_VERSION = "' + APP_VERSION + '";\nglobalThis.CACHE_VERSION = ' + CACHE_VERSION + ';',
+                    { status: 200, headers: { 'Content-Type': 'application/javascript' } }
+                  );
+                }
+
                 var safePath = url.pathname.replace(/[\\'"<>]/g, '');
                 return new Response(
                   url.pathname.endsWith('.css') ? '/* offline: not cached */' : 'throw new Error("Module not available offline: ' + safePath + '");',

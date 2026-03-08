@@ -1,3 +1,7 @@
+## [2.049] - 2026-03-08
+- feat: enhance service worker boot process; add modal templates and registry to boot-critical files, improve cache management for offline fallback
+
+
 ## [2.048] - 2026-03-08
 - feat: update app version to 2.047; reflect changes across documentation and service worker
 
