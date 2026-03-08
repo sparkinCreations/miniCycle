@@ -1,3 +1,7 @@
+## [2.048] - 2026-03-08
+- feat: update app version to 2.047; reflect changes across documentation and service worker
+
+
 ## [2.047] - 2026-03-07
 - feat: update app version to 2.046; enhance service worker and boot retry logic for improved iOS performance
 
