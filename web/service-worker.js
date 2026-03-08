@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.049';
-var CACHE_VERSION = 'v888';
+var APP_VERSION = '2.050';
+var CACHE_VERSION = 'v889';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -129,6 +129,10 @@ var BOOT_CRITICAL = [
   './modules/ui/gesturePanelManager.js',
   './modules/ui/completedTasksManager.js',
   './modules/ui/uiEffects.js',
+  './modules/ui/focusMode.js',
+  './modules/ui/quickActionsManager.js',
+  './modules/ui/preferencesBgImage.js',
+  './modules/ui/preferencesPresets.js',
   // Features
   './modules/features/themeManager.js',
   './modules/features/statsPanel.js',
@@ -357,18 +361,27 @@ self.addEventListener('activate', function (event) {
           }));
         }
 
-        // Find old static caches and keep the most recent one as fallback
+        // Find old caches and keep the most recent pair (static + dynamic) as fallback.
+        // The old dynamic cache has modules cached during previous online sessions.
+        // When the new SW activates, its precache may be incomplete (iOS kills SW
+        // processes during long installs). The old caches fill those gaps.
         var oldStaticCaches = keys.filter(function(k) {
           return k.indexOf('miniCycle-static-') === 0 && k !== STATIC_CACHE;
         }).sort();
-        var keepAsBackup = oldStaticCaches.length > 0
+        var oldDynamicCaches = keys.filter(function(k) {
+          return k.indexOf('miniCycle-dynamic-') === 0 && k !== DYNAMIC_CACHE;
+        }).sort();
+        var keepStatic = oldStaticCaches.length > 0
           ? oldStaticCaches[oldStaticCaches.length - 1]
+          : null;
+        var keepDynamic = oldDynamicCaches.length > 0
+          ? oldDynamicCaches[oldDynamicCaches.length - 1]
           : null;
 
         return Promise.all(keys.map(function (k) {
           if (k === STATIC_CACHE || k === DYNAMIC_CACHE) return;
-          if (k === keepAsBackup) {
-            console.log('📦 Keeping previous static cache as offline fallback:', k);
+          if (k === keepStatic || k === keepDynamic) {
+            console.log('📦 Keeping previous cache as offline fallback:', k);
             return; // Don't delete — caches.match() will find entries here
           }
           if (k.indexOf('miniCycle-') === 0) {
@@ -646,8 +659,16 @@ self.addEventListener('fetch', function (event) {
       console.log('📦 Static import (no version):', url.pathname, '- using network-first');
     }
 
-    // ✅ HYBRID STRATEGY: Network-first for boot-critical, version mismatch, OR static module imports
-    var needsNetworkFirst = isNetworkFirstFile(url.pathname) || versionMismatch || staticImportWithoutVersion;
+    // ✅ HYBRID STRATEGY: Network-first ONLY when version is uncertain
+    // When ?v= matches APP_VERSION, the module is the correct version — no need
+    // for network-first. This is CRITICAL for offline boot: the moduleLoader loads
+    // 40+ modules SEQUENTIALLY. If each network-first module waits 3s for timeout
+    // (when iOS navigator.onLine is unreliably true), the total wait exceeds the
+    // Phase 2 boot timeout (20s) and the app fails to boot offline.
+    // With matching version → stale-while-revalidate → instant cache hit.
+    var versionMatches = requestVersion && requestVersion === APP_VERSION;
+    var needsNetworkFirst = versionMismatch || staticImportWithoutVersion ||
+        (isNetworkFirstFile(url.pathname) && !versionMatches);
 
     if (needsNetworkFirst) {
       // ═══════════════════════════════════════════════════════════════════
@@ -809,11 +830,23 @@ self.addEventListener('fetch', function (event) {
                 return staticCached;
               }
               console.error('❌ Module not in cache and network failed:', request.url);
+
+              // ✅ SYNTHETIC version.js fallback (same as other paths)
+              if (url.pathname.endsWith('version.js')) {
+                console.log('🔧 Generating synthetic version.js (stale-while-revalidate fallback)');
+                return new Response(
+                  'globalThis.APP_VERSION = "' + APP_VERSION + '";\nglobalThis.CACHE_VERSION = ' + CACHE_VERSION + ';',
+                  { status: 200, headers: { 'Content-Type': 'application/javascript' } }
+                );
+              }
+
+              // Use status 200 so browser's module loader accepts and parses it
+              // (non-200 responses cause silent "Importing a module script failed")
+              var safePath = url.pathname.replace(/[\\'"<>]/g, '');
               return new Response(
-                url.pathname.endsWith('.css') ? '/* offline: not cached */' : 'throw new Error("Module not available offline: ' + url.pathname + '");',
+                url.pathname.endsWith('.css') ? '/* offline: not cached */' : 'throw new Error("Module not available offline: ' + safePath + '");',
                 {
-                  status: 504,
-                  statusText: 'Gateway Timeout',
+                  status: 200,
                   headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
                 }
               );
