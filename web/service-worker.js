@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.047';
-var CACHE_VERSION = 'v886';
+var APP_VERSION = '2.048';
+var CACHE_VERSION = 'v887';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -74,6 +74,7 @@ var BOOT_CRITICAL = [
   './modules/boot/uiBoot.js',
   './modules/boot/moduleLoader.js',
   './modules/boot/moduleManifests.js',
+  './modules/boot/modalTemplates.js',
   // Core foundation (Phase 1 dependencies)
   './modules/core/appState.js',
   './modules/core/appInit.js',
@@ -118,6 +119,7 @@ var BOOT_CRITICAL = [
   './modules/routine/migrationManager.js',
   // UI modules
   './modules/ui/modalManager.js',
+  './modules/ui/modalRegistry.js',
   './modules/ui/menuManager.js',
   './modules/ui/settingsManager.js',
   './modules/ui/settingsUIManager.js',
@@ -178,6 +180,7 @@ var BOOT_CRITICAL = [
 // CSS files - all @imports from main.css (required for offline styling)
 // ✅ Versioned with APP_VERSION for cache busting (matches main.css ?v= params)
 var CSS_FILES = [
+  './styles/base/critical.css?v=' + APP_VERSION,
   './styles/base/variables.css?v=' + APP_VERSION,
   './styles/themes/themes.css?v=' + APP_VERSION,
   './styles/base/reset.css?v=' + APP_VERSION,
@@ -340,14 +343,33 @@ self.addEventListener('activate', function (event) {
           console.warn('⚠️ Navigation preload not supported:', err);
         }) : Promise.resolve()),
 
-      // Clean old caches
+      // Clean old caches — but keep the previous static cache as offline fallback.
+      // On iOS, the SW process can be killed during install, causing incomplete precache.
+      // If old caches are deleted, offline boot fails because neither old nor new cache
+      // has all the files. caches.match() searches ALL caches, so old entries are found.
       caches.keys().then(function (keys) {
-        return Promise.all(keys.map(function (k) {
-          if (DISABLE_CACHING) {
+        if (DISABLE_CACHING) {
+          return Promise.all(keys.map(function (k) {
             console.log('🗑️ Deleting cache (online-only):', k);
             return caches.delete(k);
+          }));
+        }
+
+        // Find old static caches and keep the most recent one as fallback
+        var oldStaticCaches = keys.filter(function(k) {
+          return k.indexOf('miniCycle-static-') === 0 && k !== STATIC_CACHE;
+        }).sort();
+        var keepAsBackup = oldStaticCaches.length > 0
+          ? oldStaticCaches[oldStaticCaches.length - 1]
+          : null;
+
+        return Promise.all(keys.map(function (k) {
+          if (k === STATIC_CACHE || k === DYNAMIC_CACHE) return;
+          if (k === keepAsBackup) {
+            console.log('📦 Keeping previous static cache as offline fallback:', k);
+            return; // Don't delete — caches.match() will find entries here
           }
-          if (k.indexOf('miniCycle-') === 0 && k !== STATIC_CACHE && k !== DYNAMIC_CACHE) {
+          if (k.indexOf('miniCycle-') === 0) {
             console.log('🗑️ Deleting old cache:', k);
             return caches.delete(k);
           }
