@@ -630,9 +630,11 @@ async function initApp() {
 async function waitForServiceWorker(timeoutMs = 3000) {
   if (!('serviceWorker' in navigator)) return;
 
-  // iOS kills SW when PWA is backgrounded. Offline, it needs more time to restart.
+  // iOS kills SW when PWA is backgrounded. It needs more time to restart.
+  // ⚠️ navigator.onLine is unreliable on iOS (often returns true when offline),
+  // so always use the longer timeout to give the SW time to spin up.
   const isOffline = !navigator.onLine;
-  const effectiveTimeout = isOffline ? Math.max(timeoutMs, 8000) : timeoutMs;
+  const effectiveTimeout = Math.max(timeoutMs, 8000);
 
   try {
     // navigator.serviceWorker.ready can hang on iOS offline — add a timeout

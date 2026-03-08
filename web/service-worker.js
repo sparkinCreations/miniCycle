@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.044';
-var CACHE_VERSION = 'v883';
+var APP_VERSION = '2.045';
+var CACHE_VERSION = 'v884';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -665,8 +665,12 @@ self.addEventListener('fetch', function (event) {
       });
 
       // ✅ iOS FIX: Use fetchWithTimeout to prevent hanging
+      // Use shorter timeout (3s) so cache fallback fires well before
+      // the orchestrator's 10s MODULE_IMPORT timeout. On slow connections,
+      // serving a slightly stale cached file is better than timing out.
+      var NETWORK_FIRST_TIMEOUT = 3000;
       event.respondWith(
-        fetchWithTimeout(freshRequest, FETCH_TIMEOUT_MS)
+        fetchWithTimeout(freshRequest, NETWORK_FIRST_TIMEOUT)
           .then(function (res) {
             if (res && res.status === 200) {
               return caches.open(DYNAMIC_CACHE).then(function (cache) {
