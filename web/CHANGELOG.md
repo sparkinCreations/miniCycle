@@ -1,3 +1,7 @@
+## [2.047] - 2026-03-07
+- feat: update app version to 2.046; enhance service worker and boot retry logic for improved iOS performance
+
+
 ## [2.046] - 2026-03-07
 - fix: improve service worker timeout handling for iOS; ensure faster cache fallback
 

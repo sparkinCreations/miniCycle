@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.046';
-var CACHE_VERSION = 'v885';
+var APP_VERSION = '2.047';
+var CACHE_VERSION = 'v886';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -168,7 +168,11 @@ var BOOT_CRITICAL = [
   './modules/features/clearedTasksManager.js',
   './modules/features/historyManager.js',
   // Storage
-  './modules/storage/backupManager.js'
+  './modules/storage/backupManager.js',
+  // Labels - statically imported by boot modules, required for offline
+  './modules/labels/labelResolver.js',
+  './modules/labels/defaultLabels.js',
+  './modules/labels/themes.js'
 ];
 
 // CSS files - all @imports from main.css (required for offline styling)
@@ -637,13 +641,16 @@ self.addEventListener('fetch', function (event) {
               return staticCache.match(cacheRequest);
             }).then(function(staticCached) {
               if (staticCached) return staticCached;
-              // Not cached at all — return 504
+              // Not cached at all — log for diagnosis and return error
+              // Use status 200 so the browser's module loader accepts and parses it
+              // (non-200 responses cause silent "Importing a module script failed" errors)
+              console.error('📴 NOT CACHED (offline):', url.pathname);
               var safePath = url.pathname.replace(/[\\'"<>]/g, '');
               return new Response(
                 url.pathname.endsWith('.css')
                   ? '/* offline: not cached */'
                   : 'throw new Error("Module not available offline: ' + safePath + '");',
-                { status: 504, statusText: 'Gateway Timeout',
+                { status: 200,
                   headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' } }
               );
             });
@@ -702,8 +709,7 @@ self.addEventListener('fetch', function (event) {
                 return new Response(
                   url.pathname.endsWith('.css') ? '/* offline: not cached */' : 'throw new Error("Module not available offline: ' + safePath + '");',
                   {
-                    status: 504,
-                    statusText: 'Gateway Timeout',
+                    status: 200,
                     headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
                   }
                 );
