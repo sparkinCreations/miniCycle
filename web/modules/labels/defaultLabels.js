@@ -1302,7 +1302,9 @@ export const DEFAULT_LABELS = deepFreeze({
         errorStorage:       'Storage access problem',
         suggestClearSiteData: 'Clear site data in browser settings',
         errorGeneric:       'Something went wrong during startup',
-        suggestRefresh:     'Try refreshing or clearing cache'
+        suggestRefresh:     'Try refreshing or clearing cache',
+        errorOffline:       'You appear to be offline',
+        suggestReconnect:   'Connect to the internet and try again, or use Lite version'
     },
 
     // ========================================================================

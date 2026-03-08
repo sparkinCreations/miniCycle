@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.043';
-var CACHE_VERSION = 'v882';
+var APP_VERSION = '2.044';
+var CACHE_VERSION = 'v883';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -294,7 +294,27 @@ self.addEventListener('install', function (event) {
         // Optional: keep a tiny manifest in cache you can read later from the page
         try { self._lastPrecacheResult = result; } catch (e) {}
       }
-      return self.skipWaiting();
+
+      // Verify boot-critical files are cached — if these are missing, offline boot fails
+      var criticalFiles = [
+        './version.js', './miniCycle-main.js',
+        './modules/boot/orchestrator.js', './modules/boot/coreBoot.js',
+        './modules/boot/featureBoot.js', './modules/boot/uiBoot.js',
+        './modules/boot/moduleLoader.js', './modules/core/appInit.js'
+      ];
+      return caches.open(STATIC_CACHE).then(function(verifyCache) {
+        return Promise.all(criticalFiles.map(function(file) {
+          return verifyCache.match(file).then(function(found) {
+            return found ? null : file;
+          });
+        }));
+      }).then(function(results) {
+        var missing = results.filter(function(f) { return f !== null; });
+        if (missing.length > 0) {
+          console.error('⚠️ CRITICAL: Failed to precache boot files:', missing);
+        }
+        return self.skipWaiting();
+      });
     }).catch(function (error) {
       // If we got here, we couldn't even open the cache; still don't leave install hanging
       console.error('❌ Precache error during install:', error);
@@ -602,6 +622,36 @@ self.addEventListener('fetch', function (event) {
     var needsNetworkFirst = isNetworkFirstFile(url.pathname) || versionMismatch || staticImportWithoutVersion;
 
     if (needsNetworkFirst) {
+      // ═══════════════════════════════════════════════════════════════════
+      // OFFLINE FAST-PATH: Serve from cache immediately without trying network
+      // Avoids 10-second timeout per file when offline (self.navigator.onLine)
+      // ═══════════════════════════════════════════════════════════════════
+      if (!self.navigator.onLine) {
+        event.respondWith(
+          caches.match(cacheRequest).then(function(cached) {
+            if (cached) {
+              console.log('📴 Offline fast-path:', url.pathname);
+              return cached;
+            }
+            return caches.open(STATIC_CACHE).then(function(staticCache) {
+              return staticCache.match(cacheRequest);
+            }).then(function(staticCached) {
+              if (staticCached) return staticCached;
+              // Not cached at all — return 504
+              var safePath = url.pathname.replace(/[\\'"<>]/g, '');
+              return new Response(
+                url.pathname.endsWith('.css')
+                  ? '/* offline: not cached */'
+                  : 'throw new Error("Module not available offline: ' + safePath + '");',
+                { status: 504, statusText: 'Gateway Timeout',
+                  headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' } }
+              );
+            });
+          })
+        );
+        return;
+      }
+
       // ═══════════════════════════════════════════════════════════════════
       // NETWORK-FIRST: Boot-critical files must always load fresh
       // Prevents version mismatches that break gestures, loading bar, etc.
