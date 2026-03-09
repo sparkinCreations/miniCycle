@@ -31,6 +31,7 @@ const di = createDIModule('SettingsManager', {
     showNotification: required(),
     showConfirmationModal: required(),
     hideMainMenu: optional(null),
+    closeAllModals: optional(null),
     setupDarkModeToggle: optional(null),
     setupQuickDarkToggle: optional(null),
     updateMoveArrowsVisibility: optional(null),
@@ -227,7 +228,10 @@ function wireSubModuleDependencies(dependencies) {
         AppMeta: dependencies.AppMeta,
         loadMiniCycle: dependencies.loadMiniCycle,
         showLoader: dependencies.showLoader,
-        hideLoader: dependencies.hideLoader
+        hideLoader: dependencies.hideLoader,
+        hideMainMenu: dependencies.hideMainMenu,
+        closeAllModals: dependencies.closeAllModals,
+        appInit: dependencies.appInit
     });
 
     _subModules.setDataSanitizerDependencies({

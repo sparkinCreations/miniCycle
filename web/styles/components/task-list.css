@@ -681,7 +681,7 @@ body.onboarding-active .complete-all-and-help-window-container {
 }
 
 .task input[type="checkbox"]::after {
-    content: "✔";
+    content: "\2714\FE0E";  /* ✔ + text variation selector — forces text rendering so CSS color works on iOS */
     font-size: 28px;
     color: rgb(18, 70, 9);
     font-weight: bold;

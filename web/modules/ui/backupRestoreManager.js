@@ -26,7 +26,10 @@ const di = createDIModule('BackupRestoreManager', {
     AppMeta: optional(null),  // For version info
     loadMiniCycle: optional(null),  // For in-place UI refresh after restore/reset (replaces location.reload)
     showLoader: optional(null),  // Loading overlay from uiBoot
-    hideLoader: optional(null)   // Loading overlay from uiBoot
+    hideLoader: optional(null),  // Loading overlay from uiBoot
+    hideMainMenu: optional(null),  // Close settings menu after restore/reset
+    closeAllModals: optional(null),  // Close all open modals after restore/reset
+    appInit: optional(null)  // For full re-init after factory reset (triggers onboarding)
 });
 
 /** @type {{AppState: Object, showNotification: Function, showConfirmationModal: Function, safeAddEventListener: Function, performSchema25Migration: Function|null, BackupManager: Object|null, AppMeta: Object|null}} */
@@ -59,18 +62,37 @@ const _initialized = {
  * Faster than location.reload() and avoids iOS PWA offline issues where
  * reload can bypass the service worker in standalone mode.
  * @param {string} logContext - Console label for the operation (e.g. 'Restore')
+ * @param {Object} [options] - Optional behaviour flags
+ * @param {boolean} [options.fullReinit=false] - When true, runs appInit.runInitialSetup()
+ *   instead of loadMiniCycle(). Used after factory reset to trigger onboarding flow.
  */
-function reloadWithLoader(logContext) {
+function reloadWithLoader(logContext, options = {}) {
+    const { fullReinit = false } = options;
+
+    // Close all open modals and the settings menu BEFORE showing the loader
+    _deps.closeAllModals?.();
+    _deps.hideMainMenu?.();
+
     // Show loading overlay via DI (from uiBoot)
     _deps.showLoader?.(getLabel('notify.importLoading'));
 
-    setTimeout(() => {
+    setTimeout(async () => {
         console.log(`🔄 ${logContext} complete — re-rendering UI in place`);
+
+        // Clear the task list DOM so stale tasks don't linger
+        const taskList = document.getElementById(DOM_IDS.TASK_LIST);
+        if (taskList) taskList.innerHTML = '';
+
         const AppState = typeof _deps.AppState === 'function' ? _deps.AppState() : _deps.AppState;
         AppState?.reload?.();
-        if (typeof _deps.loadMiniCycle === 'function') {
+
+        if (fullReinit && _deps.appInit?.runInitialSetup) {
+            // Full re-init: creates fresh data if needed, checks onboarding, loads UI
+            await _deps.appInit.runInitialSetup();
+        } else if (typeof _deps.loadMiniCycle === 'function') {
             _deps.loadMiniCycle();
         }
+
         _deps.hideLoader?.();
     }, 400);
 }
@@ -601,8 +623,8 @@ export function setupFactoryResetButton() {
 
         _deps.showNotification?.("✅ " + getLabel('notify.factoryResetComplete'), "success", 2000);
 
-        // Re-render UI in place — faster than location.reload() and works offline
-        reloadWithLoader('Factory reset');
+        // Full re-init: creates fresh Schema 2.5 data, triggers onboarding, loads UI
+        reloadWithLoader('Factory reset', { fullReinit: true });
     };
 
     const showConfirmationModal = _deps.showConfirmationModal;
