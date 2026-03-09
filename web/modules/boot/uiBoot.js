@@ -791,8 +791,10 @@ export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
   // Store appContextMod for use by module-level getters
   _appContextMod = appContextMod;
 
-  // Register isOverlayActive to deps
+  // Register UI helpers to deps for DI access by other modules
   deps.ui.isOverlayActive = isOverlayActive;
+  deps.ui.showLoader = showLoader;
+  deps.ui.hideLoader = hideLoader;
 
   // Nav dots and menu setup
   updateNavDots();

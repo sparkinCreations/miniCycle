@@ -542,6 +542,7 @@ export const DEFAULT_LABELS = deepFreeze({
         importNameCollision:     'Name "{original}" already exists. Imported as "{name}".',
         importWithRecurring:     '"{name}" imported with {count} recurring task(s)!',
         importOfflineReopen:     'Close and reopen the app to see your changes',
+        importLoading:           'Loading routines...',
 
         // Storage (additional)
         storageAccessError:      'Storage access error. Some data may not load.',
@@ -723,6 +724,8 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Routine management (additional)
         samplePreloaded:         'A sample routine has been preloaded to help you get started!',
+        welcomeSampleLoaded:     'Welcome to miniCycle! A sample routine has been loaded to get you started',
+        startBlankRoutine:       'Start with a blank routine',
         failedToCreateCycle:     'Failed to create routine. Please refresh.',
         selectToRename:          'Please select a routine to rename.',
         invalidCycleSelection:   'Invalid routine selection.',

@@ -35,7 +35,9 @@ const di = createDIModule('CycleImportManager', {
     calculateNextOccurrence: optional(null),  // Optional - for recurring tasks
     AppMeta: optional(null),  // For version info
     vocabThemeManager: optional(null),  // For theme validation during import
-    loadMiniCycle: optional(null)  // For in-place UI refresh after offline import (avoids location.reload)
+    loadMiniCycle: optional(null),  // For in-place UI refresh after import (replaces location.reload)
+    showLoader: optional(null),  // Loading overlay from uiBoot
+    hideLoader: optional(null)   // Loading overlay from uiBoot
 });
 
 /** @type {{AppState: Object, showNotification: Function, safeAddEventListener: Function, DataValidator: Object|null, calculateNextOccurrence: Function|null, AppMeta: Object|null}} */
@@ -737,30 +739,27 @@ export async function processImportedData(fileContent) {
         importMessage = getLabel('notify.importSuccess', { vars: { name: finalCycleTitle } });
     }
 
-    // ⚠️ iOS PWA offline: location.reload() can bypass the service worker in standalone
-    // mode, causing a network error. Instead, re-render the UI in place using
-    // loadMiniCycle() — the same function the routine switcher uses.
-    if (!navigator.onLine) {
-        console.log('📴 Import complete (offline) — re-rendering UI in place');
-        _deps.showNotification?.(importMessage, messageType, 4000);
-        if (typeof _deps.loadMiniCycle === 'function') {
+    // Re-render UI in place using loadMiniCycle() — faster than location.reload()
+    // and avoids iOS PWA offline issues where reload bypasses the service worker.
+    if (typeof _deps.loadMiniCycle === 'function') {
+        // Show loading overlay for visual feedback (via DI from uiBoot)
+        _deps.showLoader?.(getLabel('notify.importLoading'));
+        // Small delay so the loader is visible before re-render
+        setTimeout(() => {
             _deps.loadMiniCycle();
-        } else {
-            // Fallback: tell user to reopen if loadMiniCycle unavailable
-            _deps.showNotification?.(getLabel('notify.importOfflineReopen'), 'info', 6000);
+            _deps.hideLoader?.();
+            _deps.showNotification?.(importMessage, messageType, 4000);
+        }, 400);
+    } else {
+        // Fallback: full page reload if loadMiniCycle not wired
+        try {
+            localStorage.setItem('miniCycle_importNotification', JSON.stringify({ message: importMessage, type: messageType }));
+            localStorage.setItem('miniCycle_importReloading', 'true');
+        } catch (e) {
+            console.warn('Could not store import notification:', e);
         }
-        return;
+        location.reload();
     }
-
-    // Store for display after reload (use localStorage since sessionStorage can be lost on iOS PWA reload)
-    try {
-        localStorage.setItem('miniCycle_importNotification', JSON.stringify({ message: importMessage, type: messageType }));
-        localStorage.setItem('miniCycle_importReloading', 'true');
-    } catch (e) {
-        console.warn('Could not store import notification:', e);
-    }
-
-    location.reload();
 }
 
 // ============================================================================
