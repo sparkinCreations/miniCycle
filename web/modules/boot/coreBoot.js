@@ -413,7 +413,12 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   console.log('🚀 coreBoot: Starting core initialization...');
 
   // ✅ Use version suffix for retry cache busting (bypasses ES module cache)
-  const effectiveVersion = versionSuffix || APP_VERSION;
+  // When versionSuffix is '' (empty string), it means "offline retry — drop all ?v= params"
+  // so browser HTTP cache can serve files when SW is dead (iOS kills SW between sessions).
+  // '' is falsy so we can't use || — check explicitly.
+  const dropVersionParam = versionSuffix === '';
+  const effectiveVersion = dropVersionParam ? APP_VERSION : (versionSuffix || APP_VERSION);
+  const vSuffix = dropVersionParam ? '' : `?v=${effectiveVersion}`;
 
   // ========== FIRST: Check for interrupted tests and restore data ==========
   // This MUST happen before any modules load to ensure localStorage has correct data
@@ -424,7 +429,7 @@ export async function initCoreBoot(deps, versionSuffix = null) {
 
   // ========== Load AppGlobalState ==========
   const appGlobalStateMod = await import(
-    `../core/appGlobalState.js?v=${effectiveVersion}`
+    `../core/appGlobalState.js${vSuffix}`
   );
   AppGlobalState = appGlobalStateMod.AppGlobalState;
   FeatureFlags = appGlobalStateMod.FeatureFlags;
@@ -462,7 +467,7 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   AppGlobalState.bootStartTime = parseInt(document.documentElement.dataset.bootStartTime, 10) || Date.now();
 
   // ========== Load appInit ==========
-  const appInitModule = await import(`../core/appInit.js?v=${effectiveVersion}`);
+  const appInitModule = await import(`../core/appInit.js${vSuffix}`);
   const { appInit: appInitInstance, setAppInitDependencies, APPINIT_VERSION } = appInitModule;
   appInit = appInitInstance;
 
@@ -503,7 +508,7 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   }
 
   // ========== Load Constants ==========
-  const constantsModule = await import(`../core/constants.js?v=${effectiveVersion}`);
+  const constantsModule = await import(`../core/constants.js${vSuffix}`);
   DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = constantsModule.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
   DEFAULT_RECURRING_DELETE_SETTINGS = constantsModule.DEFAULT_RECURRING_DELETE_SETTINGS;
   TASK_LIMIT = constantsModule.LIMITS?.TASKS_PER_CYCLE || constantsModule.TASK_LIMIT || 150; // Fix #37: use LIMITS constant
@@ -522,7 +527,11 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   console.log('✅ Constants loaded');
 
   // ========== Update withV helper ==========
-  withV = (path) => `${path}?v=${effectiveVersion}`;
+  // When offline retry (dropVersionParam), withV returns bare path — no ?v= suffix
+  // This lets browser HTTP cache serve files when SW is dead (iOS kills SW between sessions)
+  withV = dropVersionParam
+    ? (path) => path
+    : (path) => `${path}?v=${effectiveVersion}`;
   deps.core.withV = withV;
 
   // ========== Create AppMeta ==========
@@ -569,7 +578,7 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   deps.core.initAppWithAutoMigration = migrationMod.initAppWithAutoMigration;
 
   // Initialize migration facade (consolidates 8 globals into 1 importable object)
-  const migrationFacadeMod = await import(`../core/migrationFacade.js?v=${effectiveVersion}`);
+  const migrationFacadeMod = await import(`../core/migrationFacade.js${vSuffix}`);
   migrationFacadeMod.initMigrationFacade(migrationMod);
   deps.core.MigrationFacade = migrationFacadeMod.MigrationFacade;
 
@@ -581,7 +590,7 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   // This allows modules loaded between initCoreBoot and initAppState
   // to use appContext getters (e.g., getGlobalUtils())
   // ✅ Use version param for cache-busting (like appInit pattern)
-  const appContextMod = await import(`../core/appContext.js?v=${effectiveVersion}`);
+  const appContextMod = await import(`../core/appContext.js${vSuffix}`);
   appContextMod.initAppContext({
     appInit,
     AppGlobalState,

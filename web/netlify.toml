@@ -46,7 +46,7 @@
     # in miniCycle.html OR lite/miniCycle-lite.html
     # - cdnjs.cloudflare.com for Font Awesome (lite version)
     # - Web3Forms and Formspree for feedback form submissions
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'sha256-3Xbv1x8IO7a2BA/oYED4OTrf+44CPz5dLfxVpEswDOg=' 'sha256-PtjTViCuOjuj2D2cao71d7bjI5Rdyc2IJz+Vf3u5IxM=' 'sha256-is3p4zpxwXm44dMheYjF5v+H/4wW+gUYr74vcqyiV3w=' 'sha256-9oUJeQk/LnW7VxfSmRqGw4lXWmtMuImBkFhmgZ7Ba24=' 'sha256-sJx991XPbUZFhuZvc9oIsNgT1VqZwTg2i8CnRbhRRQE=' 'sha256-Ap/qUcImyjbtMrnIDm33iL8CxsWsZv59fJqy6NvxgeA=' 'sha256-dH6NPiVfMuKFmbIyk5/8uKmbYNjl/15FQdplPtcbkJU=' 'sha256-tH9zTPwQPfjoVZK5ZX8hiQPwALCJqJsGg6KQWh266TQ=' 'sha256-12UbUdgIfxtzMEt5kKmOoRkUuMOfk+uP2b8DU2fpPAQ=' 'sha256-H5cwKCzq4XtgjtloC40EDA5K9ciXt2ttmi8onTVlyGs=' 'sha256-vGZuMd1H/FTwm86koTe5wsQY3mvTLKnbF+b8y6E6ELI=' 'sha256-HoVNOC42cKVHDxrnLY25aAvmKNrxd0QbgTdu4G7p9Vk=' 'sha256-ZmCo1D8qlgnCgO2lPu9go7bFumJyHt4sEttY02PYpQ8=' 'sha256-TvxHZOVivrxcPviI9Cd4f1swAF6ZVYzwtIGENftY0+E=' 'sha256-Vo0/IA9ruygvlez4e/pjWdwP+XSwTltcdu39i1MU+UA=' 'sha256-PfrW3fr2T/Zq6bK08Knql7RxD7HNiLo+JvN4umJm0dE='; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: blob:; connect-src 'self' https://api.web3forms.com https://formspree.io https://cdnjs.cloudflare.com; form-action 'self' https://api.web3forms.com https://formspree.io; manifest-src 'self'; worker-src 'self'; base-uri 'self'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'sha256-3Xbv1x8IO7a2BA/oYED4OTrf+44CPz5dLfxVpEswDOg=' 'sha256-PtjTViCuOjuj2D2cao71d7bjI5Rdyc2IJz+Vf3u5IxM=' 'sha256-TJvKNGd2juQ/x1tfGoDak7F4WXI6XRM55SvnV6tddE4=' 'sha256-9oUJeQk/LnW7VxfSmRqGw4lXWmtMuImBkFhmgZ7Ba24=' 'sha256-sJx991XPbUZFhuZvc9oIsNgT1VqZwTg2i8CnRbhRRQE=' 'sha256-Ap/qUcImyjbtMrnIDm33iL8CxsWsZv59fJqy6NvxgeA=' 'sha256-dH6NPiVfMuKFmbIyk5/8uKmbYNjl/15FQdplPtcbkJU=' 'sha256-tH9zTPwQPfjoVZK5ZX8hiQPwALCJqJsGg6KQWh266TQ=' 'sha256-12UbUdgIfxtzMEt5kKmOoRkUuMOfk+uP2b8DU2fpPAQ=' 'sha256-640meEnOenpColBQdyAuD707TeH3jPOOM4rKJiXun9k=' 'sha256-vGZuMd1H/FTwm86koTe5wsQY3mvTLKnbF+b8y6E6ELI=' 'sha256-HoVNOC42cKVHDxrnLY25aAvmKNrxd0QbgTdu4G7p9Vk=' 'sha256-ZmCo1D8qlgnCgO2lPu9go7bFumJyHt4sEttY02PYpQ8=' 'sha256-TvxHZOVivrxcPviI9Cd4f1swAF6ZVYzwtIGENftY0+E=' 'sha256-Vo0/IA9ruygvlez4e/pjWdwP+XSwTltcdu39i1MU+UA=' 'sha256-PfrW3fr2T/Zq6bK08Knql7RxD7HNiLo+JvN4umJm0dE='; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: blob:; connect-src 'self' https://api.web3forms.com https://formspree.io https://cdnjs.cloudflare.com; form-action 'self' https://api.web3forms.com https://formspree.io; manifest-src 'self'; worker-src 'self'; base-uri 'self'"
 
     # Permissions Policy - restrict sensitive APIs
     Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=()"
@@ -83,30 +83,35 @@
     # Cache manifest for PWA (less critical, can be cached briefly)
     Cache-Control = "public, max-age=3600"
 
-# CSS files - use no-cache (revalidate) so version param changes take effect
-# Without this, CSS falls through to the default 1-year max-age
+# CSS files - cache for 1 day for offline support
+# Version param (?v=X.XXX) in HTML link tags handles cache busting
+# Without browser caching, offline boot fails when iOS kills the service worker
 [[headers]]
   for = "*.css"
   [headers.values]
-    Cache-Control = "no-cache, max-age=0"
+    Cache-Control = "public, max-age=86400"
 
-# JavaScript modules - use no-cache (revalidate) but allow service worker caching
-# no-store is too aggressive and breaks offline support
-# The version parameter (?v=X.XXX) handles cache busting for modules
+# JavaScript files - cache for 1 day for offline support
+# Version param (?v=X.XXX) in dynamic imports handles cache busting
+# CRITICAL: iOS kills the PWA's service worker after the app is backgrounded.
+# When the user reopens offline, the SW may not restart. Without browser-level
+# caching, all module imports fail because no-cache requires server revalidation
+# (impossible when offline). max-age=86400 lets the browser serve cached files
+# for 24 hours without revalidation — plenty for offline sessions.
 [[headers]]
   for = "*.js"
   [headers.values]
-    Cache-Control = "no-cache, max-age=0"
+    Cache-Control = "public, max-age=86400"
 
 [[headers]]
   for = "/modules/*.js"
   [headers.values]
-    Cache-Control = "no-cache, max-age=0"
+    Cache-Control = "public, max-age=86400"
 
 [[headers]]
   for = "/modules/**/*.js"
   [headers.values]
-    Cache-Control = "no-cache, max-age=0"
+    Cache-Control = "public, max-age=86400"
 
 # CRITICAL FILES - Must come AFTER general *.js rule (last match wins in Netlify)
 # These use no-store for Safari compatibility - Safari ignores must-revalidate
