@@ -482,8 +482,13 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   // Clear reload flag on successful load
   sessionStorage.removeItem('_staleCacheReload');
 
-  // Clean up any cached copies of legacy appInit.js
-  await cleanLegacyAppInitCache();
+  // REMOVED: cleanLegacyAppInitCache() was deleting the CURRENT appInit.js from
+  // both static and dynamic caches on every boot (precache stores it without ?v=,
+  // which matched the legacy cleanup request). This caused second-offline-boot
+  // failures — appInit loaded fine on first offline boot, got deleted by this
+  // cleanup, then was missing on the next offline boot.
+  // The stale-cache detection above (typeof setAppInitDependencies !== 'function')
+  // is the proper mechanism for handling outdated appInit.js versions.
 
   // Check for cache recovery reload
   const justReloaded = sessionStorage.getItem('_cacheRecoveryReload');
@@ -878,6 +883,13 @@ export function clearRecoveryFlags() {
  * @returns {Promise<boolean>} true if reload initiated, false if exhausted
  */
 export async function attemptCacheRecovery(source = 'unknown') {
+  // NEVER clear caches when offline — they're the only source of files.
+  // Clearing offline bricks the app until the user gets back online.
+  if (!navigator.onLine) {
+    console.warn(`⚠️ Cache recovery skipped (offline) — from ${source}`);
+    return false;
+  }
+
   const attempts = getRecoveryAttemptCount();
 
   if (attempts < MAX_RECOVERY_ATTEMPTS) {
