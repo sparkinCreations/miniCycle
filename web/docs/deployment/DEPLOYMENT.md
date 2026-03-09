@@ -2,345 +2,292 @@
 
 > **For current version and metrics, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
-**Last Updated:** December 27, 2025
+**Last Updated:** March 2026
 
 ---
 
-## 🌐 Live URLs
+## Live URLs
 
 ### Official URL
-**[minicycleapp.com](https://minicycleapp.com)** - Official branded URL for miniCycle
+**[minicycleapp.com](https://minicycleapp.com)** — Official branded URL for miniCycle
 
-- Automatically redirects to: `https://minicycle.app/product.html`
+- Redirects (301) to: `https://minicycle.app/product.html`
 - Use this URL for all marketing, sharing, and promotional materials
-- Cleaner, more memorable branding
 
 ### Direct Access URLs
-All content is hosted at **minicycle.app**:
+All content is hosted at **minicycle.app** via **Netlify**:
 
 | Resource | URL |
 |----------|-----|
 | **Product Page** | [minicycle.app/product.html](https://minicycle.app/product.html) |
 | **Full App** | [minicycle.app/miniCycle.html](https://minicycle.app/miniCycle.html) |
-| **Lite Version** | [minicycle.app/miniCycle-lite.html](https://minicycle.app/miniCycle-lite.html) ⚠️ Static fallback |
-| **Test Suite** | [minicycle.app/tests/module-test-suite.html](https://minicycle.app/tests/module-test-suite.html) |
+| **Lite Version** | [minicycle.app/miniCycle-lite.html](https://minicycle.app/miniCycle-lite.html) ⚠️ Static fallback, not maintained |
 | **Documentation** | [minicycle.app/docs](https://minicycle.app/docs) |
 
 ---
 
-## 🏗️ Deployment Architecture
+## Hosting: Netlify
+
+miniCycle is deployed on **Netlify** with automatic Git-based deploys.
+
+### How It Works
+```
+git push origin main
+       ↓
+Netlify detects push → builds from repo root
+       ↓
+Site published to minicycle.app CDN
+```
+
+- **No build step** — the app is vanilla JS/HTML/CSS, served as static files
+- **Publish directory:** `.` (repo root, configured in `netlify.toml`)
+- **Auto-deploy:** Every push to `main` triggers a deploy
+- **Preview deploys:** Pull requests get preview URLs automatically
 
 ### Domain Setup
 ```
-minicycleapp.com (Official URL)
-    ↓
-    301 Redirect
-    ↓
-minicycle.app/product.html (Product landing page)
+minicycleapp.com → 301 redirect → minicycle.app/product.html
 ```
+Redirects are configured in `netlify.toml` (not DNS-level).
 
-### File Structure on Server
+---
+
+## File Structure
+
 ```
-minicycle.app/
-├── product.html                    # Landing page (redirect target)
-├── miniCycle.html                  # Full PWA application
-├── miniCycle-lite.html            # ES5 compatible version (static fallback, not maintained)
-├── modules/boot/orchestrator.js           # Main application bundle
-├── miniCycle-lite-scripts.js      # Lite version bundle
-├── service-worker.js              # PWA service worker
-├── manifest.json                  # PWA manifest (full version)
-├── manifest-lite.json             # PWA manifest (lite version)
-├── version.js                     # Version configuration (v1.341)
-├── modules/                     # Modular components (33 modules)
-├── tests/                         # Test suite
-│   ├── module-test-suite.html     # Browser-based test runner
-│   └── ...
-└── docs/                          # Documentation site (Docsify)
-    ├── index.html                 # Docsify configuration
-    ├── README.md                  # Documentation home
-    ├── _sidebar.md                # Navigation structure
-    └── ...                        # 27 documentation files
+web/
+├── miniCycle.html                 # Main PWA entry point
+├── service-worker.js              # Offline caching, precache, update logic
+├── version.js                     # APP_VERSION + CACHE_VERSION (single source of truth)
+├── manifest.json                  # PWA manifest
+├── netlify.toml                   # Netlify config: headers, redirects, CSP
+├── product.html                   # Landing page (redirect target)
+├── modules/                       # 114 ES6 modules (strict DI, zero window.* fallbacks)
+│   ├── boot/                      # orchestrator → coreBoot → featureBoot → uiBoot
+│   ├── core/                      # appState, appContext, appInit, diBase, constants
+│   ├── task/                      # Task CRUD, DOM, events, rendering, drag-drop
+│   ├── ui/                        # Modals, menus, settings, onboarding, gestures
+│   ├── recurring/                 # Scheduling, matching, panel, settings
+│   ├── features/                  # Themes, stats, achievements, history, reminders
+│   ├── routine/                   # Routine lifecycle, switching, migration
+│   ├── labels/                    # defaultLabels.js (~600 keys) + labelResolver.js
+│   ├── utils/                     # Notifications, device detection, globalUtils
+│   ├── storage/                   # backupManager (IndexedDB)
+│   ├── progress/                  # Cycle completion tracking
+│   └── other/                     # Plugin system
+├── styles/                        # 38 CSS files, token-based (variables.css foundation)
+├── tests/                         # 1,500+ Playwright tests
+│   └── *.tests.js
+├── lite/                          # Static frozen fallback (not maintained)
+├── scripts/                       # update-version.sh, utilities
+└── docs/                          # Documentation (Docsify-powered)
 ```
 
 ---
 
-## 📦 Deployment Process
+## Deployment Process
 
-### Manual Deployment
+### 1. Update Version
+```bash
+./scripts/update-version.sh
+# Enter new version number (e.g., 2.057)
+# Script updates version.js, service-worker.js, manifests, HTML meta tags
+```
 
-1. **Update Version**
-   ```bash
-   ./update-version.sh
-   # Enter new version number (e.g., 1.342)
-   # Script automatically updates all files and creates backup
-   ```
+### 2. Run Tests
+```bash
+npm start          # Start local server (required for tests)
+npm test           # Run all Playwright tests
+```
 
-2. **Run Tests**
-   ```bash
-   npm test
-   # Ensure all 1,690+ tests pass before deploying
-   ```
+### 3. Deploy
+```bash
+git add -A
+git commit -m "v2.057: description of changes"
+git push origin main
+```
+Netlify auto-deploys on push to `main`. No manual upload needed.
 
-3. **Upload to Server**
-   ```bash
-   # Upload via FTP, SFTP, or your hosting provider's deployment tool
-   # Target: Root directory of minicycle.app
-   ```
-
-4. **Verify Deployment**
-   - Visit https://minicycleapp.com (should redirect to product page)
-   - Visit https://minicycle.app/miniCycle.html (full app loads)
-   - Visit https://minicycle.app/docs (documentation site loads)
-   - Check browser console for errors
-   - Verify service worker updates correctly
-
-### Automated Deployment (Future)
-
-Currently manual deployment. Potential automation options:
-- GitHub Actions workflow to deploy on tag push
-- FTP/SFTP automated sync
-- Netlify/Vercel integration (if migrating hosting)
+### 4. Verify
+- Visit https://minicycleapp.com → should redirect to product page
+- Visit https://minicycle.app/miniCycle.html → app loads
+- Check browser console for errors
+- Test service worker update (should appear within 60 seconds)
+- **Test offline** — see checklist below
 
 ---
 
-## 🔄 PWA Update Strategy
+## PWA Update Strategy
 
 ### Version Synchronization
 
-The app uses a single source of truth for versioning:
-
-**`version.js`** (loaded first):
+**`version.js`** is the single source of truth:
 ```javascript
-self.APP_VERSION = '1.341';
+globalThis.APP_VERSION = '2.056';
+globalThis.CACHE_VERSION = 895;
 ```
 
-**All files that must be updated together:**
-1. `version.js` - Single source of truth
-2. `miniCycle.html` / `miniCycle-lite.html` - Meta tags and cache busters
-3. `service-worker.js` - `CACHE_VERSION` and `APP_VERSION`
-4. `manifest.json` / `manifest-lite.json` - Version numbers
-5. All module imports - Use versioned URLs (`?v=1.341`)
-
-**Use `./update-version.sh` to synchronize everything automatically.**
+Files that reference the version (all updated by `update-version.sh`):
+1. `version.js` — source of truth
+2. `service-worker.js` — inlined APP_VERSION and CACHE_VERSION
+3. `miniCycle.html` — meta tags and inline script cache busters
+4. `manifest.json` — version field
+5. All module imports — use versioned URLs via `withV()` helper
 
 ### Cache Invalidation
+On version increment, the new service worker activates, deletes the old cache, and precaches all files fresh. Users see an update notification within 60 seconds.
 
-Service worker uses cache-first strategy with version-based invalidation:
-
-```javascript
-const CACHE_VERSION = 'v1.341';  // Increment to force cache refresh
-```
-
-**On version increment:**
-1. New service worker registers with updated `CACHE_VERSION`
-2. Old cache is automatically deleted
-3. All resources are fetched fresh from server
-4. Users see update notification within 60 seconds
-
-**Critical:** Always increment version when deploying changes to:
-- Core HTML files
-- JavaScript modules
-- CSS files
-- Service worker itself
+For full details, see [SERVICE_WORKER_UPDATE_STRATEGY.md](./SERVICE_WORKER_UPDATE_STRATEGY.md).
 
 ---
 
-## 🧪 Testing After Deployment
+## Cache Headers (netlify.toml)
 
-### 1. Basic Functionality
-- [ ] App loads without errors
-- [ ] Tasks can be created, edited, deleted
-- [ ] Cycles can be switched
-- [ ] Data persists after refresh
-- [ ] Service worker installs correctly
+Netlify uses **last-match-wins** ordering. Critical files must come AFTER general rules.
 
-### 2. PWA Features
-- [ ] "Install App" prompt appears
-- [ ] Offline mode works (disable network in DevTools)
-- [ ] App updates properly when new version deployed
-- [ ] Notifications work (if enabled)
+| File Pattern | Cache-Control | Why |
+|---|---|---|
+| `/*` (default) | `public, max-age=31536000` | Long cache for static assets |
+| `*.html` | `no-cache, no-store, must-revalidate` | Safari fix — `no-store` required |
+| `*.js`, `modules/**/*.js` | `public, max-age=86400` | 24-hour cache for offline support |
+| `*.css` | `public, max-age=86400` | Same — offline support |
+| `/version.js` | `no-cache, no-store, must-revalidate` | Must never be cached |
+| `/service-worker.js` | `no-cache, no-store, must-revalidate` | Must never be cached |
 
-### 3. Cross-Platform
-- [ ] Desktop browsers (Chrome, Firefox, Safari)
-- [ ] Mobile Safari (iPhone/iPad)
-- [ ] Mobile Chrome (Android if available)
-
-### 4. Service Worker Update
-1. Note current version in footer
-2. Deploy new version to server
-3. Reload app within 60 seconds
-4. Verify update notification appears
-5. Accept update and verify new version loads
+**Why JS/CSS have 24-hour cache:** iOS kills the PWA's service worker when the app is backgrounded. If the user reopens offline and the SW hasn't restarted, the browser's HTTP cache is the only fallback. Without `max-age`, the browser tries to revalidate with the server (impossible offline) and fails. See [PWA_OFFLINE_ARCHITECTURE.md](./PWA_OFFLINE_ARCHITECTURE.md).
 
 ---
 
-## 🐛 Common Deployment Issues
+## Security
 
-### Issue: Service Worker Not Updating
-
-**Symptoms:** Users stuck on old version after deployment
-
-**Solutions:**
-1. Verify `CACHE_VERSION` was incremented in `service-worker.js`
-2. Verify `APP_VERSION` matches in `version.js` and `service-worker.js`
-3. Check all module imports use versioned URLs (`?v=1.341`)
-4. Hard refresh (Cmd+Shift+R / Ctrl+Shift+F5) to bypass cache
-5. Unregister old service worker in DevTools → Application → Service Workers
-
-### Issue: 404 on Module Imports
-
-**Symptoms:** Console errors like `Failed to load module: ./modules/notifications.js?v=1.341`
-
-**Solutions:**
-1. Verify all files uploaded to server
-2. Check `utilities/` folder structure is intact
-3. Verify file permissions (should be readable)
-4. Check server supports ES6 modules (MIME type: `text/javascript`)
-
-### Issue: Redirect Loop
-
-**Symptoms:** `minicycleapp.com` keeps redirecting endlessly
-
-**Solutions:**
-1. Check DNS settings for both domains
-2. Verify redirect is 301 (permanent) not 302 (temporary)
-3. Ensure `product.html` exists at target location
-4. Clear browser cache and cookies
-
-### Issue: Documentation Site Not Loading
-
-**Symptoms:** Blank page or 404 at `minicycle.app/docs`
-
-**Solutions:**
-1. Verify `docs/` folder uploaded to server root
-2. Check `docs/index.html` exists and is readable
-3. Verify all markdown files are in `docs/` folder
-4. Check browser console for JavaScript errors
-5. Ensure CDN resources are accessible (Docsify, themes)
-
----
-
-## 📊 Monitoring & Analytics
-
-### Performance Metrics to Track
-- Page load time
-- Service worker installation rate
-- PWA installation rate (if tracking enabled)
-- Error rates (via console monitoring)
-- Cross-platform usage statistics
-
-### Recommended Tools
-- Google Analytics (if privacy policy allows)
-- Lighthouse audits (run periodically)
-- Browser DevTools → Application → PWA score
-- WebPageTest.org for performance baseline
-
----
-
-## 🔐 Security Considerations
-
-### HTTPS Required
-- PWA features require HTTPS
-- Service workers only work over HTTPS (or localhost)
-- Ensure SSL certificate is valid and renewed
+### HTTPS
+Required for PWA features and service workers. Handled automatically by Netlify.
 
 ### Content Security Policy
 
-**Implemented (v1.569+):**
+CSP uses **SHA-256 hashes** for inline scripts — no `'unsafe-inline'`. Configured in two places for defense in depth:
 
-CSP is configured in two places for defense in depth:
+1. **`<meta>` tag** in `miniCycle.html`
+2. **HTTP headers** in `netlify.toml`
 
-1. **Meta tag** in `miniCycle.html`:
-```html
-<meta http-equiv="Content-Security-Policy" content="
-  default-src 'self';
-  script-src 'self' 'unsafe-inline';
-  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com;
-  font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;
-  img-src 'self' data: blob:;
-  connect-src 'self' https://api.web3forms.com;
-  form-action 'self' https://api.web3forms.com;
-  base-uri 'self';
-">
-```
+Both must stay in sync. If you modify ANY inline `<script>` in miniCycle.html, you must:
+1. Compute the new SHA-256 hash
+2. Update the `<meta>` tag in miniCycle.html
+3. Update the `Content-Security-Policy` header in `netlify.toml`
 
-2. **HTTP headers** in `netlify.toml`:
-   - Same CSP policy as above
-   - Plus `X-Frame-Options: DENY` (clickjacking protection)
-   - Plus `Strict-Transport-Security` (HSTS)
-   - Plus `X-Content-Type-Options: nosniff`
+**Local dev won't catch CSP mismatches** — the Python server doesn't send CSP headers. This only breaks in production on Netlify.
 
-See `netlify.toml` for full security headers configuration.
-
-### CORS Configuration
-If hosting on subdomain or CDN:
-- Ensure proper CORS headers for module imports
-- Service worker must be same-origin as app
+### Other Security Headers (netlify.toml)
+- `X-Frame-Options: DENY` — clickjacking protection
+- `Strict-Transport-Security` — HSTS for 1 year
+- `X-Content-Type-Options: nosniff`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy` — disables geolocation, microphone, camera, payment
 
 ---
 
-## 📝 Deployment Checklist
+## Testing After Deployment
 
-**Before Every Deployment:**
+### Basic Functionality
+- [ ] App loads without console errors
+- [ ] Tasks can be created, edited, deleted
+- [ ] Routines can be switched
+- [ ] Data persists after refresh
+- [ ] Service worker installs correctly
 
-- [ ] Run `./update-version.sh` to increment version
-- [ ] Run `npm test` - Ensure all 1,690+ tests pass
-- [ ] Test locally on http://localhost:8080
-- [ ] Test on local WiFi (iPad/iPhone if available)
-- [ ] Create git commit with version number
-- [ ] Tag release in git: `git tag v1.341 && git push --tags`
+### PWA / Offline
+- [ ] "Install App" prompt appears
+- [ ] Go offline (DevTools → Network → Offline) → reload → app boots from cache
+- [ ] No "Clear Cache" button shown when offline
+- [ ] Go back online → reload → normal boot, caches intact
+- [ ] Service worker update appears within 60 seconds of deploy
 
-**During Deployment:**
+### iOS Offline (Critical)
+- [ ] Open app on iPhone → confirm it loads
+- [ ] Enable airplane mode
+- [ ] Force-close the app (swipe up from app switcher)
+- [ ] Reopen the app → should boot from cache
+- [ ] Repeat close/reopen 3 times → should still work every time
+- [ ] Disable airplane mode → reload → normal boot, caches intact
 
-- [ ] Upload all files to `minicycle.app` root directory
-- [ ] Verify file permissions are correct
-- [ ] Check `docs/` folder uploaded completely
+### Cross-Platform
+- [ ] Desktop Chrome
+- [ ] Desktop Firefox
+- [ ] Desktop Safari
+- [ ] Mobile Safari (iPhone/iPad)
+- [ ] Mobile Chrome (Android if available)
 
-**After Deployment:**
+---
 
+## Common Deployment Issues
+
+### Service Worker Not Updating
+**Symptoms:** Users stuck on old version after deployment
+
+**Solutions:**
+1. Verify `update-version.sh` was run (check `version.js` has new version)
+2. Verify `CACHE_VERSION` was incremented in `service-worker.js`
+3. Hard refresh (Cmd+Shift+R) to bypass cache
+4. Unregister old SW in DevTools → Application → Service Workers
+
+### 404 on Module Imports
+**Symptoms:** Console errors like `Failed to load module`
+
+**Solutions:**
+1. Verify the deploy completed successfully on Netlify dashboard
+2. Check that the file exists in the repo (Netlify deploys from Git)
+3. Verify the server returns `text/javascript` MIME type for `.js` files
+
+### App Doesn't Work Offline After Deploy
+**Symptoms:** Blank screen or boot error when offline
+
+**Solutions:**
+1. Load the app online first (precache needs one successful online boot)
+2. Check DevTools → Application → Cache Storage → verify entries exist
+3. Check the service worker is active and controlling the page
+4. See [PWA_OFFLINE_ARCHITECTURE.md](./PWA_OFFLINE_ARCHITECTURE.md) for full diagnosis
+
+### CSP Blocking Inline Script
+**Symptoms:** Boot failsafe doesn't run; app shows blank screen on error
+
+**Solutions:**
+1. Compute the SHA-256 hash of the inline script that changed
+2. Update both `miniCycle.html` meta tag AND `netlify.toml`
+3. Redeploy
+
+---
+
+## Deployment Checklist
+
+### Before Every Deployment
+- [ ] Run `./scripts/update-version.sh` to increment version
+- [ ] Run `npm test` — ensure tests pass
+- [ ] Test locally at http://localhost:8080
+- [ ] Test offline locally (DevTools → Network → Offline → reload)
+
+### Deploy
+- [ ] Commit changes with version number in message
+- [ ] Push to `main` — Netlify auto-deploys
+- [ ] Check Netlify dashboard for successful deploy
+
+### After Deployment
 - [ ] Visit https://minicycleapp.com (verify redirect)
 - [ ] Visit https://minicycle.app/miniCycle.html (verify app loads)
-- [ ] Visit https://minicycle.app/docs (verify docs load)
 - [ ] Check browser console for errors
-- [ ] Test on mobile device (if possible)
 - [ ] Verify service worker updates within 60 seconds
-- [ ] Test offline functionality
-- [ ] Verify tests still pass at live URL
+- [ ] Test offline boot (especially on iOS if possible)
+- [ ] Verify CSP isn't blocking anything (check console for CSP violations)
 
 ---
 
-## 🚀 Future Deployment Improvements
+## Related Documentation
 
-### Potential Enhancements
-1. **CI/CD Pipeline**: GitHub Actions auto-deploy on tag push
-2. **Automated Testing**: Playwright tests run against live URL after deployment
-3. **Rollback Mechanism**: Quick revert to previous version if issues detected
-4. **Staging Environment**: Test deployments before going live
-5. **Performance Monitoring**: Automated Lighthouse audits on every deploy
-6. **Version Announcements**: Auto-generate changelog from git commits
-
-### Hosting Alternatives
-Current: Custom hosting at `minicycle.app`
-
-**Alternative Options:**
-- **Netlify**: Automatic deploys, CDN, preview deployments
-- **Vercel**: Edge functions, automatic previews
-- **GitHub Pages**: Free hosting, automatic from repository
-- **Cloudflare Pages**: Fast CDN, automatic deployments
-
-**Recommendation:** Current setup works well. Only migrate if specific needs arise (e.g., automatic deployments, better CDN, custom edge functions).
+- **[PWA_OFFLINE_ARCHITECTURE.md](./PWA_OFFLINE_ARCHITECTURE.md)** — Full offline architecture, caching layers, iOS issues, FAQ
+- **[SERVICE_WORKER_UPDATE_STRATEGY.md](./SERVICE_WORKER_UPDATE_STRATEGY.md)** — SW update mechanics and versioning strategy
+- **[UPDATE-VERSION-GUIDE.md](./UPDATE-VERSION-GUIDE.md)** — Version management procedures
 
 ---
 
-## 📚 Related Documentation
-
-- **[UPDATE-VERSION-GUIDE.md](./UPDATE-VERSION-GUIDE.md)** - Detailed version management
-- **[SERVICE_WORKER_UPDATE_STRATEGY.md](./SERVICE_WORKER_UPDATE_STRATEGY.md)** - PWA update mechanics
-- **[DEVELOPER_DOCUMENTATION.md](../developer-guides/DEVELOPER_DOCUMENTATION.md)** - Complete development guide
-- **[TESTING_QUICK_REFERENCE.md](../testing/TESTING_QUICK_REFERENCE.md)** - Testing procedures
-
----
-
-**miniCycle** - Turn Your Routine Into Progress
+**miniCycle** — Turn Your Routine Into Progress
 
 Built with ❤️ by [MJ](https://sparkincreations.com) | Official Site: [minicycleapp.com](https://minicycleapp.com)
