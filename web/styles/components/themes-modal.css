@@ -1488,6 +1488,19 @@ dialog.preferences-modal::backdrop {
    CHECKMARK STYLE PICKER
    ============================================================================= */
 
+.checkmark-style-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: var(--space-2, 8px) 0 0;
+    font-size: var(--font-size-sm, 13px);
+    color: var(--theme-modal-text, var(--color-gray-700, #555));
+}
+
+.checkmark-style-row label {
+    font-weight: 600;
+}
+
 .checkmark-style-options {
     display: flex;
     gap: var(--space-3, 12px);
