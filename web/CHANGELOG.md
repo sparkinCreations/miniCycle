@@ -1,3 +1,7 @@
+## [2.064] - 2026-03-09
+- feat: refactor checkmark style options to use dropdown; update related labels and dependencies
+
+
 ## [2.063] - 2026-03-09
 - feat: update preferences modal checkmark style section and improve styling for consistency
 

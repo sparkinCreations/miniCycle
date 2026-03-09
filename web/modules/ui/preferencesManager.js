@@ -58,9 +58,9 @@ const DEFAULT_COLORS = {
 const DEFAULT_PATTERN_COLOR = '#ffffff';
 const DEFAULT_PATTERN_OPACITY = 0.07;
 
-// Checkmark style options ('minimal' is the default — clean ✓ that fits inside the circle)
-const CHECKMARK_STYLES = ['minimal', 'standard', 'fitted', 'circle'];
-const CHECKMARK_DEFAULT = 'minimal';
+// Checkmark style options ('fitted' is the default — ✔ sized to fit inside the circle)
+const CHECKMARK_STYLES = ['fitted', 'minimal', 'standard', 'circle'];
+const CHECKMARK_DEFAULT = 'fitted';
 const CHECKMARK_CLASS_MAP = {
     fitted: 'checkmark-fitted',
     minimal: 'checkmark-minimal',
