@@ -722,9 +722,9 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         <span class="pref-color-icon">&#x2714;</span>
                         <label for="checkmark-style-options">Checkmark Style</label>
                         <select id="checkmark-style-options" class="preferences-select">
+                            <option value="fitted">Fitted</option>
                             <option value="minimal">Minimal</option>
                             <option value="standard">Larger</option>
-                            <option value="fitted">Fitted</option>
                             <option value="circle">No Checkmark</option>
                         </select>
                     </div>
