@@ -801,6 +801,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         showClearAnimation: (...args) => deps.progress?.showClearAnimation?.(...args),
         animateProgressBarFill: (...args) => deps.progress?.animateProgressBarFill?.(...args),
         animateProgressBarEmpty: (...args) => deps.progress?.animateProgressBarEmpty?.(...args),
+        showMilestoneCelebrationOverlay: (...args) => deps.progress?.showMilestoneCelebrationOverlay?.(...args),
 
         // UI functions (from deps.ui) - validated lazy wrappers for critical functions
         refreshUIFromState: createValidatedWrapper('refreshUIFromState',

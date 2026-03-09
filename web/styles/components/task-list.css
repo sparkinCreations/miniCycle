@@ -704,7 +704,8 @@ body.onboarding-active .complete-all-and-help-window-container {
 
 /* =============================================================================
    CHECKMARK STYLE VARIANTS
-   Applied via body class. Default "standard" uses base styles above (no class).
+   Applied via body class. Default "fitted" uses the checkmark-fitted class.
+   "standard" (Larger) uses base styles above (no class).
    Color is NOT overridden here — --pref-checkmark handles that separately.
    ============================================================================= */
 

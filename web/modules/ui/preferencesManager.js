@@ -59,7 +59,6 @@ const DEFAULT_PATTERN_COLOR = '#ffffff';
 const DEFAULT_PATTERN_OPACITY = 0.07;
 
 // Checkmark style options ('fitted' is the default — ✔ sized to fit inside the circle)
-const CHECKMARK_STYLES = ['fitted', 'minimal', 'standard', 'circle'];
 const CHECKMARK_DEFAULT = 'fitted';
 const CHECKMARK_CLASS_MAP = {
     fitted: 'checkmark-fitted',
@@ -1456,6 +1455,19 @@ export class PreferencesManager {
     initCheckmarkStyleOptions() {
         const select = _deps.getElementById(DOM_IDS.CHECKMARK_STYLE_OPTIONS);
         if (!select || select.tagName !== 'SELECT') return;
+
+        // Apply localised labels to <option> elements (HTML has placeholder text)
+        const labelMap = {
+            fitted: getLabel('preferences.checkmarkFitted'),
+            minimal: getLabel('preferences.checkmarkMinimal'),
+            standard: getLabel('preferences.checkmarkLarger'),
+            circle: getLabel('preferences.checkmarkNoCheckmark')
+        };
+        for (const option of select.options) {
+            if (labelMap[option.value]) {
+                option.textContent = labelMap[option.value];
+            }
+        }
 
         const safeAdd = _deps.safeAddEventListener;
         const state = _deps.AppState?.get();

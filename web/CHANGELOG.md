@@ -1,3 +1,7 @@
+## [2.065] - 2026-03-09
+- feat: update checkmark style options to set 'fitted' as default and adjust preferences modal accordingly
+
+
 ## [2.064] - 2026-03-09
 - feat: refactor checkmark style options to use dropdown; update related labels and dependencies
 
@@ -7,7 +11,8 @@
 
 
 ## [2.062] - 2026-03-09
-- All done! Here's a summary of the changes:
+- feat: add checkmark style customization to personalization modal (Standard, Fitted, Minimal, Circle)
+- fix: iOS checkmark color not responding to color picker (text variation selector \FE0E)
 
 
 ## [2.061] - 2026-03-09

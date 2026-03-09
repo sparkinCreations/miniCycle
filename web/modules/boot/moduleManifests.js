@@ -393,7 +393,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification'],
         optionalDeps: ['logHistoryEvent', 'checkAchievements', 'vocabThemeManager', 'renderVocabThemes', 'showConfirmationModal'],
-        provides: ['checkMiniCycle', 'updateProgressBar', 'incrementCycleCount', 'showCompletionAnimation', 'showClearAnimation', 'animateProgressBarFill', 'animateProgressBarEmpty'],
+        provides: ['checkMiniCycle', 'updateProgressBar', 'incrementCycleCount', 'showCompletionAnimation', 'showClearAnimation', 'animateProgressBarFill', 'animateProgressBarEmpty', 'showMilestoneCelebrationOverlay'],
         api: 'progress'
     },
 
@@ -466,7 +466,7 @@ export const MODULE_MANIFESTS = {
         path: '../task/taskCore.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'sanitizeInput', 'removeRecurringTasksFromCycle'],
-        optionalDeps: ['showCompletionAnimation', 'showClearAnimation', 'logHistoryEvent'],
+        optionalDeps: ['showCompletionAnimation', 'showClearAnimation', 'logHistoryEvent', 'showMilestoneCelebrationOverlay'],
         provides: ['addTask', 'editTask', 'deleteTask', 'toggleTaskPriority', 'handleTaskCompletionChange', 'resetTasks', 'saveTaskToSchema25', 'handleCompleteAllTasks'],
         provideInstance: 'taskCore',
         api: 'task',
