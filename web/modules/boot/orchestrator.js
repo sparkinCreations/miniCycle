@@ -384,12 +384,23 @@ async function runBootSequence() {
   const bootStart = Date.now();
   const isRetry = bootAttempt > 1;
 
-  // ✅ On retry, append retry counter to version for cache busting
-  // This forces fresh ES module loads, bypassing browser's module cache
-  // Critical for clearing DI module state that persists in cached modules
-  // ⚠️ Skip retry suffix when offline — it creates a version mismatch in the SW,
-  // forcing network-first for ALL files (guaranteed failure when offline)
-  const versionSuffix = (isRetry && navigator.onLine) ? `${APP_VERSION}.r${bootAttempt}` : APP_VERSION;
+  // ✅ Version suffix strategy for imports:
+  // - Online retry: append retry counter for cache busting (clears stale DI state)
+  // - Offline retry: DROP version param entirely — use browser HTTP cache
+  //   iOS kills the PWA's service worker after the app is backgrounded. When the
+  //   user reopens offline, the SW may not restart. Without ?v=, the import URL
+  //   matches what the browser cached during previous online sessions, so the
+  //   browser's HTTP cache serves the file even without the SW.
+  // - Normal (first attempt): use APP_VERSION for SW cache matching
+  let versionSuffix;
+  if (isRetry && navigator.onLine) {
+    versionSuffix = `${APP_VERSION}.r${bootAttempt}`;
+  } else if (isRetry && !navigator.onLine) {
+    versionSuffix = ''; // Drop version — use browser HTTP cache
+  } else {
+    versionSuffix = APP_VERSION;
+  }
+  const vParam = versionSuffix ? `?v=${versionSuffix}` : '';
 
   // ========== CHECK FOR UPDATES ==========
   updateLoaderProgress(getLabel('boot.checkingUpdates'), 5);
@@ -402,9 +413,9 @@ async function runBootSequence() {
   const importStart = Date.now();
   const [coreBoot, featureBoot, uiBoot] = await withTimeout(
     Promise.all([
-      import(`./coreBoot.js?v=${versionSuffix}`),
-      import(`./featureBoot.js?v=${versionSuffix}`),
-      import(`./uiBoot.js?v=${versionSuffix}`)
+      import(`./coreBoot.js${vParam}`),
+      import(`./featureBoot.js${vParam}`),
+      import(`./uiBoot.js${vParam}`)
     ]),
     BOOT_TIMEOUTS.MODULE_IMPORT,
     'Module import'
@@ -416,10 +427,10 @@ async function runBootSequence() {
   const { initUIBoot } = uiBoot;
 
   // Import moduleLoader to clear cache on retry
-  const { clearLoadedModules } = await import(`./moduleLoader.js?v=${versionSuffix}`);
+  const { clearLoadedModules } = await import(`./moduleLoader.js${vParam}`);
 
   // Import appInit to reset its state on retry
-  const { appInit } = await import(`../core/appInit.js?v=${versionSuffix}`);
+  const { appInit } = await import(`../core/appInit.js${vParam}`);
 
   // ========== CREATE/REUSE DEPS CONTAINER ==========
   // Reuse deps across retries to preserve DI closure references AND module state
@@ -488,7 +499,7 @@ async function runBootSequence() {
 
   // Inject large dialog modals BEFORE Phase 2 — modules query these elements during init
   const { RECURRING_PANEL_HTML, PREFERENCES_MODAL_HTML, SETTINGS_MODAL_HTML } =
-      await import(`./modalTemplates.js?v=${versionSuffix}`);
+      await import(`./modalTemplates.js${vParam}`);
   document.getElementById('games-panel')
       ?.insertAdjacentHTML('beforebegin', RECURRING_PANEL_HTML);
   document.getElementById('routine-switcher-modal')
@@ -507,7 +518,7 @@ async function runBootSequence() {
   );
 
   // ✅ Use version param for cache-busting (like appInit pattern)
-  const appContextMod = await import(`../core/appContext.js?v=${versionSuffix}`);
+  const appContextMod = await import(`../core/appContext.js${vParam}`);
   appContextMod.validateAllApisRegistered();
   console.log(`✅ Phase 2 complete (${Date.now() - bootStart}ms)`);
 

@@ -1,3 +1,7 @@
+## [2.055] - 2026-03-09
+- feat: update app version to 2.054; enhance service worker diagnostics and cache logging
+
+
 ## [2.054] - 2026-03-08
 - feat: enhance offline handling in service worker; skip background fetch when offline and generate synthetic version.js
 
