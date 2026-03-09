@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.052';
-var CACHE_VERSION = 'v891';
+var APP_VERSION = '2.053';
+var CACHE_VERSION = 'v892';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -796,6 +796,45 @@ self.addEventListener('fetch', function (event) {
       // ═══════════════════════════════════════════════════════════════════
       event.respondWith(
         caches.match(cacheRequest).then(function (cached) {
+          // ✅ OFFLINE: Skip background fetch entirely when offline.
+          // On iOS, firing 80+ fetch() calls with cache:'no-cache' when offline:
+          // - Generates 80+ "Failed to load resource" errors in Safari console
+          // - Wastes resources and may trigger iOS Safari's aggressive offline behavior
+          // - The cache:'no-cache' directive can cause Safari to invalidate HTTP cache
+          //   entries, which may interfere with cache persistence across PWA sessions
+          if (!self.navigator.onLine) {
+            if (cached) {
+              return cached;
+            }
+            // Not in any cache and offline — try STATIC_CACHE, then all caches with ignoreSearch
+            return caches.open(STATIC_CACHE).then(function (staticCache) {
+              return staticCache.match(cacheRequest);
+            }).then(function (staticCached) {
+              if (staticCached) return staticCached;
+              // ✅ Last resort: try matching ignoring search params (catches URL mismatches)
+              return caches.match(cacheRequest, { ignoreSearch: true });
+            }).then(function (anyMatch) {
+              if (anyMatch) {
+                console.log('📦 Found via ignoreSearch fallback:', url.pathname);
+                return anyMatch;
+              }
+              console.error('📴 NOT CACHED (offline):', url.pathname);
+              // Synthetic version.js
+              if (url.pathname.endsWith('version.js')) {
+                console.log('📴 Generating synthetic version.js');
+                return new Response(
+                  'globalThis.APP_VERSION = "' + APP_VERSION + '";\nglobalThis.CACHE_VERSION = ' + CACHE_VERSION + ';',
+                  { status: 200, headers: { 'Content-Type': 'application/javascript' } }
+                );
+              }
+              var safePath = url.pathname.replace(/[\\'"<>]/g, '');
+              return new Response(
+                url.pathname.endsWith('.css') ? '/* offline: not cached */' : 'throw new Error("Module not available offline: ' + safePath + '");',
+                { status: 200, headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' } }
+              );
+            });
+          }
+
           var freshRequest = new Request(fetchUrl.href, {
             method: 'GET',
             headers: request.headers,
@@ -804,7 +843,7 @@ self.addEventListener('fetch', function (event) {
             cache: 'no-cache'
           });
 
-          // Background fetch to update cache
+          // Background fetch to update cache (only when online)
           var fetchPromise = fetch(freshRequest).then(function (res) {
             if (res && res.status === 200) {
               return caches.open(DYNAMIC_CACHE).then(function (cache) {
@@ -930,23 +969,44 @@ self.addEventListener('message', function (event) {
     var filesToWarm = BOOT_CRITICAL.concat(
       CSS_FILES.map(function(url) { var idx = url.indexOf('?'); return idx !== -1 ? url.substring(0, idx) : url; })
     );
-    caches.open(STATIC_CACHE).then(function(cache) {
+    // Store in BOTH static and dynamic cache for redundancy.
+    // iOS can evict individual cache entries between PWA sessions.
+    // caches.match() searches ALL caches, so having files in two places
+    // doubles the chance of surviving iOS cache eviction.
+    Promise.all([
+      caches.open(STATIC_CACHE),
+      caches.open(DYNAMIC_CACHE)
+    ]).then(function(cachesPair) {
+      var staticCache = cachesPair[0];
+      var dynamicCache = cachesPair[1];
+      var warmed = 0;
       return Promise.all(filesToWarm.map(function(file) {
-        return cache.match(file).then(function(found) {
-          if (found) return null; // Already cached
-          // Missing — fetch and cache it
+        return staticCache.match(file).then(function(found) {
+          if (found) {
+            // Already in static cache — also ensure it's in dynamic cache
+            return dynamicCache.match(file).then(function(dynFound) {
+              if (!dynFound) {
+                return dynamicCache.put(file, found.clone());
+              }
+            });
+          }
+          // Missing from static cache — fetch and store in BOTH
           console.log('🔥 Warm cache: fetching missing file:', file);
+          warmed++;
           return fetch(file).then(function(res) {
             if (res && res.status === 200) {
-              return cache.put(file, res);
+              return Promise.all([
+                staticCache.put(file, res.clone()),
+                dynamicCache.put(file, res.clone())
+              ]);
             }
           }).catch(function(err) {
             console.warn('🔥 Warm cache: failed to fetch:', file, err);
           });
         });
-      }));
-    }).then(function() {
-      console.log('✅ Warm cache complete');
+      })).then(function() {
+        console.log('✅ Warm cache complete. Fetched:', warmed, 'files. Total:', filesToWarm.length);
+      });
     }).catch(function(err) {
       console.warn('⚠️ Warm cache failed:', err);
     });
