@@ -1,3 +1,7 @@
+## [2.059] - 2026-03-09
+- feat: update app version to 2.058; reflect changes across documentation and codebase
+
+
 ## [2.057] - 2026-03-09
 - feat: update app version to 2.056; reflect changes across documentation and codebase
 

@@ -34,7 +34,8 @@ const di = createDIModule('CycleImportManager', {
     DataValidator: optional(null),  // Optional - graceful handling if missing
     calculateNextOccurrence: optional(null),  // Optional - for recurring tasks
     AppMeta: optional(null),  // For version info
-    vocabThemeManager: optional(null)  // For theme validation during import
+    vocabThemeManager: optional(null),  // For theme validation during import
+    loadMiniCycle: optional(null)  // For in-place UI refresh after offline import (avoids location.reload)
 });
 
 /** @type {{AppState: Object, showNotification: Function, safeAddEventListener: Function, DataValidator: Object|null, calculateNextOccurrence: Function|null, AppMeta: Object|null}} */
@@ -737,12 +738,17 @@ export async function processImportedData(fileContent) {
     }
 
     // ⚠️ iOS PWA offline: location.reload() can bypass the service worker in standalone
-    // mode, causing a network error. Skip the reload when offline — the data is already
-    // saved to localStorage. Show the notification directly and tell the user to reopen.
+    // mode, causing a network error. Instead, re-render the UI in place using
+    // loadMiniCycle() — the same function the routine switcher uses.
     if (!navigator.onLine) {
-        console.log('📴 Import complete (offline) — skipping reload');
+        console.log('📴 Import complete (offline) — re-rendering UI in place');
         _deps.showNotification?.(importMessage, messageType, 4000);
-        _deps.showNotification?.(getLabel('notify.importOfflineReopen'), 'info', 6000);
+        if (typeof _deps.loadMiniCycle === 'function') {
+            _deps.loadMiniCycle();
+        } else {
+            // Fallback: tell user to reopen if loadMiniCycle unavailable
+            _deps.showNotification?.(getLabel('notify.importOfflineReopen'), 'info', 6000);
+        }
         return;
     }
 
