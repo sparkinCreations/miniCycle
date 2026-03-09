@@ -272,8 +272,11 @@ export class RoutineManager {
 
     /**
      * Preload the getting started sample cycle
+     * @param {Object} [options={}] - Options
+     * @param {boolean} [options.silent=false] - When true, suppresses notifications and fallback cycle creation (caller handles messaging)
+     * @returns {Promise<boolean>} True if sample loaded successfully, false on failure
      */
-    async preloadGettingStartedCycle() {
+    async preloadGettingStartedCycle(options = {}) {
         console.log('📥 Preloading getting started cycle (Schema 2.5 only)...');
 
         try {
@@ -340,10 +343,14 @@ export class RoutineManager {
             const existingModals = this.deps.querySelectorAll('dialog.miniCycle-prompt-dialog, dialog.mini-modal-dialog');
             existingModals.forEach(modal => { if (modal.open) modal.close(); modal.remove(); });
 
-            this.deps.showNotification('✨ ' + getLabel('notify.samplePreloaded'), "success", 5000);
+            if (!options.silent) {
+                this.deps.showNotification('✨ ' + getLabel('notify.samplePreloaded'), "success", 5000);
+            }
 
             // ✅ COMPLETE SETUP AFTER LOADING SAMPLE
             this.deps.completeInitialSetup(finalTitle, appState.get());
+
+            return true;
 
         } catch (err) {
             console.error('❌ Failed to load sample miniCycle:', err);
@@ -352,10 +359,14 @@ export class RoutineManager {
             const existingModals = this.deps.querySelectorAll('dialog.miniCycle-prompt-dialog, dialog.mini-modal-dialog');
             existingModals.forEach(modal => { if (modal.open) modal.close(); modal.remove(); });
 
-            this.deps.showNotification("❌ " + getLabel('notify.sampleLoadFailed'), "error");
+            if (!options.silent) {
+                this.deps.showNotification("❌ " + getLabel('notify.sampleLoadFailed'), "error");
 
-            // ✅ CREATE A BASIC FALLBACK CYCLE
-            this.createBasicFallbackCycle();
+                // ✅ CREATE A BASIC FALLBACK CYCLE
+                this.createBasicFallbackCycle();
+            }
+
+            return false;
         }
     }
 

@@ -51,7 +51,9 @@ const di = createDIModule('SettingsManager', {
     isDebug: optional(null),
     clearAllUndoHistory: optional(null),
     updateHelpWindow: optional(null),
-    loadMiniCycle: optional(null)
+    loadMiniCycle: optional(null),
+    showLoader: optional(null),
+    hideLoader: optional(null)
 });
 
 /** @type {{appInit: Object|null, loadMiniCycleData: Function, AppState: Object, showNotification: Function, showConfirmationModal: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, performSchema25Migration: Function|null, resetDefaultRecurringSettings: Function|null, organizeCompletedTasks: Function|null, DataValidator: Object|null, calculateNextOccurrence: Function|null, sanitizeInput: Function, AppMeta: Object|null, safeAddEventListener: Function, BackupManager: Object|null}} */
@@ -210,7 +212,9 @@ function wireSubModuleDependencies(dependencies) {
         calculateNextOccurrence: dependencies.calculateNextOccurrence,
         AppMeta: dependencies.AppMeta,
         vocabThemeManager: dependencies.vocabThemeManager,
-        loadMiniCycle: dependencies.loadMiniCycle
+        loadMiniCycle: dependencies.loadMiniCycle,
+        showLoader: dependencies.showLoader,
+        hideLoader: dependencies.hideLoader
     });
 
     _subModules.setBackupRestoreManagerDependencies({
@@ -221,7 +225,9 @@ function wireSubModuleDependencies(dependencies) {
         performSchema25Migration: dependencies.performSchema25Migration,
         BackupManager: dependencies.BackupManager,
         AppMeta: dependencies.AppMeta,
-        loadMiniCycle: dependencies.loadMiniCycle
+        loadMiniCycle: dependencies.loadMiniCycle,
+        showLoader: dependencies.showLoader,
+        hideLoader: dependencies.hideLoader
     });
 
     _subModules.setDataSanitizerDependencies({

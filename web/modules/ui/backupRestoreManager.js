@@ -24,7 +24,9 @@ const di = createDIModule('BackupRestoreManager', {
     performSchema25Migration: optional(null),  // For legacy backup migration
     BackupManager: optional(null),  // For safety backups before restore
     AppMeta: optional(null),  // For version info
-    loadMiniCycle: optional(null)  // For in-place UI refresh after offline restore (avoids location.reload)
+    loadMiniCycle: optional(null),  // For in-place UI refresh after restore/reset (replaces location.reload)
+    showLoader: optional(null),  // Loading overlay from uiBoot
+    hideLoader: optional(null)   // Loading overlay from uiBoot
 });
 
 /** @type {{AppState: Object, showNotification: Function, showConfirmationModal: Function, safeAddEventListener: Function, performSchema25Migration: Function|null, BackupManager: Object|null, AppMeta: Object|null}} */
@@ -51,6 +53,27 @@ const _initialized = {
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
+
+/**
+ * Show loading overlay, reload AppState + UI in place, then hide overlay.
+ * Faster than location.reload() and avoids iOS PWA offline issues where
+ * reload can bypass the service worker in standalone mode.
+ * @param {string} logContext - Console label for the operation (e.g. 'Restore')
+ */
+function reloadWithLoader(logContext) {
+    // Show loading overlay via DI (from uiBoot)
+    _deps.showLoader?.(getLabel('notify.importLoading'));
+
+    setTimeout(() => {
+        console.log(`🔄 ${logContext} complete — re-rendering UI in place`);
+        const AppState = typeof _deps.AppState === 'function' ? _deps.AppState() : _deps.AppState;
+        AppState?.reload?.();
+        if (typeof _deps.loadMiniCycle === 'function') {
+            _deps.loadMiniCycle();
+        }
+        _deps.hideLoader?.();
+    }, 400);
+}
 
 /**
  * Neutralize AppState to prevent auto-saving during critical operations
@@ -305,22 +328,8 @@ async function processRestoreData(fileContent) {
         localStorage.setItem(STORAGE_KEYS.DATA, backupData.miniCycleData);
         _deps.showNotification?.("✅ " + getLabel('notify.backupRestored'), "success", 4000);
 
-        // ⚠️ iOS PWA offline: location.reload() can bypass the SW in standalone mode.
-        // Re-initialize AppState from the new localStorage data and re-render in place.
-        if (!navigator.onLine) {
-            console.log('📴 Restore complete (offline) — re-rendering UI in place');
-            const AppState = typeof _deps.AppState === 'function' ? _deps.AppState() : _deps.AppState;
-            AppState?.reload?.();
-            if (typeof _deps.loadMiniCycle === 'function') {
-                _deps.loadMiniCycle();
-            } else {
-                _deps.showNotification?.(getLabel('notify.importOfflineReopen'), 'info', 6000);
-            }
-            return;
-        }
-
-        _deps.showNotification?.(getLabel('notify.backupReloading'), "info", 2000);
-        setTimeout(() => location.reload(), UI_TIMEOUTS.POST_RESTORE_RELOAD);
+        // Re-render UI in place — faster than location.reload() and works offline
+        reloadWithLoader('Restore');
         return;
     }
 
@@ -381,20 +390,8 @@ async function processRestoreData(fileContent) {
                 _deps.showNotification?.(getLabel('notify.backupMigrationFailed'), "error", 4000);
             }
 
-            // ⚠️ iOS PWA offline: location.reload() can bypass the SW in standalone mode.
-            if (!navigator.onLine) {
-                console.log('📴 Legacy restore complete (offline) — re-rendering UI in place');
-                const AppState = typeof _deps.AppState === 'function' ? _deps.AppState() : _deps.AppState;
-                AppState?.reload?.();
-                if (typeof _deps.loadMiniCycle === 'function') {
-                    _deps.loadMiniCycle();
-                } else {
-                    _deps.showNotification?.(getLabel('notify.importOfflineReopen'), 'info', 6000);
-                }
-                return;
-            }
-
-            setTimeout(() => location.reload(), UI_TIMEOUTS.PAGE_RELOAD);
+            // Re-render UI in place — faster than location.reload() and works offline
+            reloadWithLoader('Legacy restore');
         }, 500);
 
         return;
@@ -573,20 +570,8 @@ export function setupFactoryResetButton() {
 
         _deps.showNotification?.("✅ " + getLabel('notify.factoryResetComplete'), "success", 2000);
 
-        // ⚠️ iOS PWA offline: location.reload() can bypass the SW in standalone mode.
-        if (!navigator.onLine) {
-            console.log('📴 Factory reset complete (offline) — re-rendering UI in place');
-            const AppState = typeof _deps.AppState === 'function' ? _deps.AppState() : _deps.AppState;
-            AppState?.reload?.();
-            if (typeof _deps.loadMiniCycle === 'function') {
-                _deps.loadMiniCycle();
-            } else {
-                _deps.showNotification?.(getLabel('notify.importOfflineReopen'), 'info', 6000);
-            }
-            return;
-        }
-
-        setTimeout(() => location.reload(), UI_TIMEOUTS.POST_RESTORE_RELOAD);
+        // Re-render UI in place — faster than location.reload() and works offline
+        reloadWithLoader('Factory reset');
     };
 
     const showConfirmationModal = _deps.showConfirmationModal;

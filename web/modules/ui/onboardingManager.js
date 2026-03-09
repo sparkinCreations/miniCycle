@@ -30,7 +30,9 @@ const di = createDIModule('OnboardingManager', {
     completeInitialSetup: optional(null),
     safeAddEventListenerById: optional(null),
     safeAddEventListener: optional(null),
-    AppMeta: optional(null)
+    AppMeta: optional(null),
+    preloadGettingStartedCycle: optional(null),
+    createNewMiniCycle: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -71,7 +73,9 @@ export class OnboardingManager {
                     AppState: resolvedDeps.AppState,
                     showCycleCreationModal: resolvedDeps.showCycleCreationModal,
                     completeInitialSetup: resolvedDeps.completeInitialSetup,
-                    safeAddEventListenerById: resolvedDeps.safeAddEventListenerById
+                    safeAddEventListenerById: resolvedDeps.safeAddEventListenerById,
+                    preloadGettingStartedCycle: resolvedDeps.preloadGettingStartedCycle,
+                    createNewMiniCycle: resolvedDeps.createNewMiniCycle
                 };
             }
         });
@@ -329,14 +333,41 @@ export class OnboardingManager {
 
         modal.remove();
 
-        // Always transition to cycle creation or complete setup
+        // Always transition to sample load or complete setup
         if (!activeCycle || !cycles[activeCycle]) {
-            // No active cycle - show cycle creation modal
-            setTimeout(() => {
-                if (this.deps.showCycleCreationModal) {
-                    this.deps.showCycleCreationModal();
+            // No active cycle — auto-load sample routine instead of showing creation modal
+            setTimeout(async () => {
+                if (this.deps.preloadGettingStartedCycle) {
+                    const success = await this.deps.preloadGettingStartedCycle({ silent: true });
+                    if (success) {
+                        // Show welcome notification with action button to create blank routine
+                        this.deps.showNotification(
+                            getLabel('notify.welcomeSampleLoaded'),
+                            'success',
+                            8000,
+                            {
+                                actionButton: {
+                                    label: getLabel('notify.startBlankRoutine'),
+                                    onClick: () => {
+                                        if (this.deps.createNewMiniCycle) {
+                                            this.deps.createNewMiniCycle();
+                                        }
+                                    }
+                                }
+                            }
+                        );
+                    } else {
+                        // Sample load failed (e.g., offline first visit) — fall back to creation modal
+                        if (this.deps.showCycleCreationModal) {
+                            this.deps.showCycleCreationModal();
+                        }
+                    }
                 } else {
-                    console.warn('⚠️ showCycleCreationModal not available');
+                    // Fallback: preloadGettingStartedCycle not wired
+                    console.warn('⚠️ preloadGettingStartedCycle not available, falling back to modal');
+                    if (this.deps.showCycleCreationModal) {
+                        this.deps.showCycleCreationModal();
+                    }
                 }
             }, 300); // Small delay for smooth transition
         } else {

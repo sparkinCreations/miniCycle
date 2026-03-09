@@ -697,6 +697,10 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         getTaskList: () => document.getElementById(DOM_IDS.TASK_LIST),
         getProgressBar: () => document.getElementById(DOM_IDS.PROGRESS_BAR),
 
+        // Loading overlay (registered by uiBoot in Phase 3, use lazy getters)
+        showLoader: (...args) => deps.ui?.showLoader?.(...args),
+        hideLoader: (...args) => deps.ui?.hideLoader?.(...args),
+
         // Modal registry
         getModal: (...args) => deps.ui?.getModal?.(...args),
         invalidateModal: (...args) => deps.ui?.invalidateModal?.(...args),
@@ -790,6 +794,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         loadMiniCycle: (...args) => deps.cycle?.loadMiniCycle?.(...args),
         showCycleCreationModal: (...args) => deps.cycle?.showCycleCreationModal?.(...args),
         createNewMiniCycle: (...args) => deps.cycle?.createNewMiniCycle?.(...args),
+        preloadGettingStartedCycle: (...args) => deps.cycle?.preloadGettingStartedCycle?.(...args),
         checkMiniCycle: (...args) => deps.progress?.checkMiniCycle?.(...args),
         incrementCycleCount: (...args) => deps.progress?.incrementCycleCount?.(...args),
         showCompletionAnimation: (...args) => deps.progress?.showCompletionAnimation?.(...args),

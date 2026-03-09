@@ -1,3 +1,7 @@
+## [2.060] - 2026-03-09
+- feat: add loadMiniCycle dependency for in-place UI refresh after offline operations
+
+
 ## [2.059] - 2026-03-09
 - feat: update app version to 2.058; reflect changes across documentation and codebase
 
