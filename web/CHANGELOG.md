@@ -1,3 +1,7 @@
+## [2.054] - 2026-03-08
+- feat: enhance offline handling in service worker; skip background fetch when offline and generate synthetic version.js
+
+
 ## [2.053] - 2026-03-08
 - feat: implement warm cache functionality; verify boot-critical files after online boot to ensure offline availability
 

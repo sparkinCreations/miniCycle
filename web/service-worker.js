@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.053';
-var CACHE_VERSION = 'v892';
+var APP_VERSION = '2.054';
+var CACHE_VERSION = 'v893';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -818,7 +818,19 @@ self.addEventListener('fetch', function (event) {
                 console.log('📦 Found via ignoreSearch fallback:', url.pathname);
                 return anyMatch;
               }
-              console.error('📴 NOT CACHED (offline):', url.pathname);
+              console.error('📴 NOT CACHED (offline):', url.pathname,
+                '| CacheKey:', cacheRequest.url,
+                '| StaticCache:', STATIC_CACHE);
+              // Log what IS in static cache for this path (diagnostic)
+              caches.open(STATIC_CACHE).then(function(sc) {
+                sc.keys().then(function(reqs) {
+                  var related = reqs.filter(function(r) {
+                    return r.url.indexOf(url.pathname.split('/').pop()) !== -1;
+                  });
+                  console.log('📴 Related entries in static cache:', related.length,
+                    related.map(function(r) { return r.url; }));
+                });
+              });
               // Synthetic version.js
               if (url.pathname.endsWith('version.js')) {
                 console.log('📴 Generating synthetic version.js');
@@ -1055,3 +1067,26 @@ self.addEventListener('error', function (event) {
 });
 
 console.log('🎯 Service Worker script loaded - ' + CACHE_VERSION + ' (App v' + APP_VERSION + ')');
+
+// ✅ DIAGNOSTIC: Log cache inventory on SW startup.
+// iOS can evict cache entries between PWA sessions. This shows exactly
+// what's in each cache when the SW starts, helping debug offline boot failures.
+caches.keys().then(function(names) {
+  var miniCycleCaches = names.filter(function(n) { return n.indexOf('miniCycle-') === 0; });
+  if (miniCycleCaches.length === 0) {
+    console.warn('📋 Cache inventory: NO miniCycle caches found!');
+    return;
+  }
+  miniCycleCaches.forEach(function(name) {
+    caches.open(name).then(function(cache) {
+      cache.keys().then(function(requests) {
+        // Check for critical boot file
+        var hasAppInit = requests.some(function(r) { return r.url.indexOf('appInit') !== -1; });
+        var hasConstants = requests.some(function(r) { return r.url.indexOf('constants') !== -1; });
+        var hasOrchestrator = requests.some(function(r) { return r.url.indexOf('orchestrator') !== -1; });
+        console.log('📋 Cache [' + name + ']: ' + requests.length + ' entries'
+          + ' | appInit:' + hasAppInit + ' constants:' + hasConstants + ' orch:' + hasOrchestrator);
+      });
+    });
+  });
+});
