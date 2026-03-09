@@ -58,8 +58,9 @@ const DEFAULT_COLORS = {
 const DEFAULT_PATTERN_COLOR = '#ffffff';
 const DEFAULT_PATTERN_OPACITY = 0.07;
 
-// Checkmark style options
-const CHECKMARK_STYLES = ['standard', 'fitted', 'minimal', 'circle'];
+// Checkmark style options ('minimal' is the default — clean ✓ that fits inside the circle)
+const CHECKMARK_STYLES = ['minimal', 'standard', 'fitted', 'circle'];
+const CHECKMARK_DEFAULT = 'minimal';
 const CHECKMARK_CLASS_MAP = {
     fitted: 'checkmark-fitted',
     minimal: 'checkmark-minimal',
@@ -1436,68 +1437,54 @@ export class PreferencesManager {
      */
     applyCheckmarkStyle() {
         const state = _deps.AppState?.get();
-        const style = state?.settings?.checkmarkStyle || 'standard';
+        const style = state?.settings?.checkmarkStyle || CHECKMARK_DEFAULT;
         const body = _deps.getBody();
         if (!body) return;
 
         // Remove all checkmark style classes
         Object.values(CHECKMARK_CLASS_MAP).forEach(cls => body.classList.remove(cls));
 
-        // Apply selected style class (standard has no class)
+        // Apply selected style class (standard has no class — it uses the base CSS)
         if (CHECKMARK_CLASS_MAP[style]) {
             body.classList.add(CHECKMARK_CLASS_MAP[style]);
         }
     }
 
     /**
-     * Initialize checkmark style option cards in preferences modal
+     * Initialize checkmark style dropdown in preferences modal
      */
     initCheckmarkStyleOptions() {
-        const container = _deps.getElementById(DOM_IDS.CHECKMARK_STYLE_OPTIONS);
-        if (!container) return;
+        const select = _deps.getElementById(DOM_IDS.CHECKMARK_STYLE_OPTIONS);
+        if (!select || select.tagName !== 'SELECT') return;
 
         const safeAdd = _deps.safeAddEventListener;
         const state = _deps.AppState?.get();
-        const currentStyle = state?.settings?.checkmarkStyle || 'standard';
+        const currentStyle = state?.settings?.checkmarkStyle || CHECKMARK_DEFAULT;
 
-        // Set initial active state
-        const options = container.querySelectorAll('.checkmark-style-option');
-        options.forEach(option => {
-            const style = option.dataset.style;
-            const isActive = style === currentStyle;
-            option.classList.toggle('active', isActive);
-            option.setAttribute('aria-pressed', isActive.toString());
+        // Set initial selected value
+        select.value = currentStyle;
 
-            // Bind click handler
-            option._clickHandler = () => {
-                if (option.classList.contains('active')) return; // Already selected
+        // Bind change handler
+        select._changeHandler = () => {
+            const style = select.value;
 
-                // Update UI
-                options.forEach(opt => {
-                    opt.classList.remove('active');
-                    opt.setAttribute('aria-pressed', 'false');
-                });
-                option.classList.add('active');
-                option.setAttribute('aria-pressed', 'true');
+            // Save to AppState
+            _deps.AppState?.update(state => {
+                if (!state.settings) state.settings = {};
+                state.settings.checkmarkStyle = style;
+            }, true);
 
-                // Save to AppState
-                _deps.AppState?.update(state => {
-                    if (!state.settings) state.settings = {};
-                    state.settings.checkmarkStyle = style;
-                }, true);
+            // Apply CSS class
+            this.applyCheckmarkStyle();
 
-                // Apply CSS class
-                this.applyCheckmarkStyle();
-
-                // Notification
-                _deps.showNotification?.(
-                    getLabel('notify.checkmarkStyleChanged'),
-                    'info',
-                    2000
-                );
-            };
-            if (safeAdd) safeAdd(option, 'click', option._clickHandler);
-        });
+            // Notification
+            _deps.showNotification?.(
+                getLabel('notify.checkmarkStyleChanged'),
+                'info',
+                2000
+            );
+        };
+        if (safeAdd) safeAdd(select, 'change', select._changeHandler);
     }
 
     /**

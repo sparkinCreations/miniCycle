@@ -718,27 +718,15 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         <input type="color" id="pref-checkmark" value="#124609" />
                         <button class="preferences-reset-btn" data-target="pref-checkmark" title="Reset to default">Reset</button>
                     </div>
-                    <div class="checkmark-style-row">
+                    <div class="preferences-color-row">
                         <span class="pref-color-icon">&#x2714;</span>
-                        <label>Checkmark Style</label>
-                    </div>
-                    <div class="checkmark-style-options" id="checkmark-style-options">
-                        <button class="checkmark-style-option active" data-style="standard" aria-pressed="true" title="Standard">
-                            <span class="checkmark-style-preview checkmark-preview-standard">&#x2714;</span>
-                            <span class="checkmark-style-label">Standard</span>
-                        </button>
-                        <button class="checkmark-style-option" data-style="fitted" aria-pressed="false" title="Fitted">
-                            <span class="checkmark-style-preview checkmark-preview-fitted">&#x2714;</span>
-                            <span class="checkmark-style-label">Fitted</span>
-                        </button>
-                        <button class="checkmark-style-option" data-style="minimal" aria-pressed="false" title="Minimal">
-                            <span class="checkmark-style-preview checkmark-preview-minimal">&#x2713;</span>
-                            <span class="checkmark-style-label">Minimal</span>
-                        </button>
-                        <button class="checkmark-style-option" data-style="circle" aria-pressed="false" title="Circle">
-                            <span class="checkmark-style-preview checkmark-preview-circle"></span>
-                            <span class="checkmark-style-label">Circle</span>
-                        </button>
+                        <label for="checkmark-style-options">Checkmark Style</label>
+                        <select id="checkmark-style-options" class="preferences-select">
+                            <option value="minimal">Minimal</option>
+                            <option value="standard">Larger</option>
+                            <option value="fitted">Fitted</option>
+                            <option value="circle">No Checkmark</option>
+                        </select>
                     </div>
                 </div>
             </div>

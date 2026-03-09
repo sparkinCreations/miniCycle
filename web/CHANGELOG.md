@@ -1,3 +1,7 @@
+## [2.063] - 2026-03-09
+- feat: update preferences modal checkmark style section and improve styling for consistency
+
+
 ## [2.062] - 2026-03-09
 - All done! Here's a summary of the changes:
 
