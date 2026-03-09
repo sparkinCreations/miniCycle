@@ -303,6 +303,15 @@ async function processRestoreData(fileContent) {
 
         localStorage.setItem(STORAGE_KEYS.DATA, backupData.miniCycleData);
         _deps.showNotification?.("✅ " + getLabel('notify.backupRestored'), "success", 4000);
+
+        // ⚠️ iOS PWA offline: location.reload() can bypass the SW in standalone mode.
+        // Data is already saved to localStorage — skip reload and tell user to reopen.
+        if (!navigator.onLine) {
+            console.log('📴 Restore complete (offline) — skipping reload');
+            _deps.showNotification?.(getLabel('notify.importOfflineReopen'), 'info', 6000);
+            return;
+        }
+
         _deps.showNotification?.(getLabel('notify.backupReloading'), "info", 2000);
         setTimeout(() => location.reload(), UI_TIMEOUTS.POST_RESTORE_RELOAD);
         return;
@@ -363,6 +372,13 @@ async function processRestoreData(fileContent) {
                 _deps.showNotification?.("✅ " + getLabel('notify.backupLegacyRestored'), "success", 4000);
             } else {
                 _deps.showNotification?.(getLabel('notify.backupMigrationFailed'), "error", 4000);
+            }
+
+            // ⚠️ iOS PWA offline: skip reload — data saved, user can reopen
+            if (!navigator.onLine) {
+                console.log('📴 Legacy restore complete (offline) — skipping reload');
+                _deps.showNotification?.(getLabel('notify.importOfflineReopen'), 'info', 6000);
+                return;
             }
 
             setTimeout(() => location.reload(), UI_TIMEOUTS.PAGE_RELOAD);
@@ -543,6 +559,14 @@ export function setupFactoryResetButton() {
         }
 
         _deps.showNotification?.("✅ " + getLabel('notify.factoryResetComplete'), "success", 2000);
+
+        // ⚠️ iOS PWA offline: skip reload — data cleared, user can reopen
+        if (!navigator.onLine) {
+            console.log('📴 Factory reset complete (offline) — skipping reload');
+            _deps.showNotification?.(getLabel('notify.importOfflineReopen'), 'info', 6000);
+            return;
+        }
+
         setTimeout(() => location.reload(), UI_TIMEOUTS.POST_RESTORE_RELOAD);
     };
 
