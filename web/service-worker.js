@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.057';
-var CACHE_VERSION = 'v896';
+var APP_VERSION = '2.058';
+var CACHE_VERSION = 'v897';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -15,25 +15,35 @@ var MAX_DYNAMIC_ENTRIES = 300;  // Maximum entries in dynamic cache (app has 100
 var MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
 // ✅ iOS OPTIMIZATION: Minimal network-first patterns for faster offline startup
-// Boot-critical files need network-first to prevent version mismatch errors
-// This prevents stale-while-revalidate from serving old cached modules
-var NETWORK_FIRST_PATTERNS = [
-  'version.js',                  // Version source of truth - MUST be fresh
-  'miniCycle-main.js',           // Entry point
-  'modules/boot/',               // All boot files - version critical
-  'modules/core/',               // Core modules (diBase, appInit, appState) - statically imported
-  'modules/utils/',              // Utility modules (storageUtils, etc.) - statically imported
-  'modules/recurring/',          // Recurring modules - complex DI interdependencies, must be in sync
-  'styles/'                      // CSS files - prevent stale @import chains during version transitions
-  // Note: modules/core/, modules/utils/, and modules/recurring/ use network-first because these
-  // files have complex interdependencies. Without network-first, stale cached versions can cause
-  // DI wiring failures like "missing required deps" errors when module interfaces change.
-  // styles/ uses network-first because main.css has versioned @import URLs. If stale main.css
-  // is served via stale-while-revalidate, all 36 CSS sub-imports carry the old version,
-  // triggering 36 individual version-mismatch network requests instead of cache hits.
-  // Other modules use version mismatch detection (see fetch handler) which automatically uses
-  // network-first when ?v= param doesn't match SW version.
-];
+// ============================================================================
+// NETWORK-FIRST STRATEGY — History & Current Approach
+// ============================================================================
+// Previously, a NETWORK_FIRST_PATTERNS array listed path prefixes (version.js,
+// modules/boot/, modules/core/, modules/utils/, modules/recurring/, styles/)
+// that should always use network-first fetching. An isNetworkFirstFile() helper
+// checked URLs against those patterns.
+//
+// This was replaced by the HYBRID STRATEGY in the fetch handler (see line ~660):
+//   var needsNetworkFirst = versionMismatch;
+//
+// Now, network-first is triggered ONLY when a request's ?v= param doesn't match
+// APP_VERSION — an actual version mismatch. All other requests (including CSS,
+// boot files, and static imports with no ?v=) use stale-while-revalidate for
+// instant cache serving. This change was critical for offline boot on iOS:
+//
+// - iOS kills the PWA's service worker when backgrounded. When the user reopens
+//   offline, navigator.onLine can lie (return true). Pattern-based network-first
+//   would send 100+ files through 3-10s network timeouts before falling back to
+//   cache, exceeding the 20s boot timeout.
+//
+// - With the hybrid approach, files only hit the network when there's a genuine
+//   version mismatch. Same-version and unversioned requests serve instantly from
+//   cache. Precaching ensures all files are current after each SW activation,
+//   so stale content during normal operation is not a concern.
+//
+// The old pattern-based approach and isNetworkFirstFile() were removed in v2.057
+// because they were dead code — never called by the fetch handler.
+// ============================================================================
 
 // ============================================================================
 // PRECACHE LISTS - Optimized for iOS PWA performance
@@ -430,21 +440,9 @@ function fetchWithTimeout(request, timeoutMs) {
   });
 }
 
-/**
- * Check if a URL should use network-first strategy
- * Boot-critical files need fresh loads to avoid version mismatches
- */
-function isNetworkFirstFile(urlPath) {
-  for (var i = 0; i < NETWORK_FIRST_PATTERNS.length; i++) {
-    var pattern = NETWORK_FIRST_PATTERNS[i];
-    var idx = urlPath.indexOf(pattern);
-    // Ensure match is at a path boundary (not a substring of another filename)
-    if (idx !== -1 && (idx === 0 || urlPath.charAt(idx - 1) === '/')) {
-      return true;
-    }
-  }
-  return false;
-}
+// isNetworkFirstFile() was removed in v2.057 — see comment block at top of file.
+// Network-first is now determined solely by version mismatch detection in the
+// fetch handler: var needsNetworkFirst = versionMismatch;
 
 /**
  * Trim cache to prevent unbounded growth (LRU-style)
@@ -560,6 +558,35 @@ self.addEventListener('fetch', function (event) {
                    (request.destination === '' && accept.indexOf('text/html') !== -1);
 
   if (isNavigate) {
+    // ═══════════════════════════════════════════════════════════════════
+    // OFFLINE FAST-PATH for navigations: Serve cached HTML immediately.
+    // On iOS PWA standalone mode, location.reload() can bypass the SW or
+    // hang waiting for network. Serving from cache instantly avoids this.
+    // ═══════════════════════════════════════════════════════════════════
+    if (!self.navigator.onLine) {
+      var offlineShell = pickShell(url);
+      var offlineShellPath = offlineShell === 'lite' ? fromScope('lite/miniCycle-lite.html')
+                                                     : fromScope('miniCycle.html');
+      event.respondWith(
+        caches.match(offlineShellPath).then(function (cached) {
+          if (cached) {
+            console.log('📴 Offline navigation fast-path: serving ' + offlineShell + ' shell');
+            return cached;
+          }
+          // Fallback: try all caches
+          return caches.open(STATIC_CACHE).then(function (cache) {
+            return cache.match(offlineShellPath);
+          }).then(function (staticCached) {
+            if (staticCached) return staticCached;
+            return new Response('Offline - No cached version available', {
+              status: 503, statusText: 'Offline'
+            });
+          });
+        })
+      );
+      return;
+    }
+
     event.respondWith(
       // ✅ Use navigation preload if available (saves ~50-100ms on mobile)
       // Falls back to regular fetch if preload not supported

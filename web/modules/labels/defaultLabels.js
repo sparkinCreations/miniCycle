@@ -541,6 +541,7 @@ export const DEFAULT_LABELS = deepFreeze({
         importTruncated:         '"{name}" imported but exceeded {limit} task limit. {count} task(s) not imported.',
         importNameCollision:     'Name "{original}" already exists. Imported as "{name}".',
         importWithRecurring:     '"{name}" imported with {count} recurring task(s)!',
+        importOfflineReopen:     'Close and reopen the app to see your changes',
 
         // Storage (additional)
         storageAccessError:      'Storage access error. Some data may not load.',

@@ -505,7 +505,7 @@ web/
 - **[LABEL_SYSTEM_INTEGRATION_PLAN.md](./LABEL_SYSTEM_INTEGRATION_PLAN.md)** — Label system migration (complete)
 - **[CONTEXTUAL_THEME_SYSTEM_PLAN.md](./CONTEXTUAL_THEME_SYSTEM_PLAN.md)** — Lens system that i18n builds on
 - **[THEME_ARCHITECTURE.md](./THEME_ARCHITECTURE.md)** — Existing theme system
-- **[SERVICE_WORKER_OPTIMIZATION_PLAN.md](./SERVICE_WORKER_OPTIMIZATION_PLAN.md)** — Service worker caching strategy
+- **[PWA_OFFLINE_ARCHITECTURE.md](../deployment/PWA_OFFLINE_ARCHITECTURE.md)** — Service worker caching and offline boot
 
 ---
 

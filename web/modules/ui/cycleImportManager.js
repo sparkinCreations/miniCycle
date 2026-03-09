@@ -736,6 +736,16 @@ export async function processImportedData(fileContent) {
         importMessage = getLabel('notify.importSuccess', { vars: { name: finalCycleTitle } });
     }
 
+    // ⚠️ iOS PWA offline: location.reload() can bypass the service worker in standalone
+    // mode, causing a network error. Skip the reload when offline — the data is already
+    // saved to localStorage. Show the notification directly and tell the user to reopen.
+    if (!navigator.onLine) {
+        console.log('📴 Import complete (offline) — skipping reload');
+        _deps.showNotification?.(importMessage, messageType, 4000);
+        _deps.showNotification?.(getLabel('notify.importOfflineReopen'), 'info', 6000);
+        return;
+    }
+
     // Store for display after reload (use localStorage since sessionStorage can be lost on iOS PWA reload)
     try {
         localStorage.setItem('miniCycle_importNotification', JSON.stringify({ message: importMessage, type: messageType }));
