@@ -1,3 +1,7 @@
+## [2.052] - 2026-03-08
+- feat: enhance boot error diagnostics; include detailed information for iOS debugging and improve offline fallback handling
+
+
 ## [2.051] - 2026-03-08
 - feat: enhance service worker caching strategy; add new boot-critical files and improve fallback handling for offline support
 

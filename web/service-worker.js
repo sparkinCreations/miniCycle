@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.051';
-var CACHE_VERSION = 'v890';
+var APP_VERSION = '2.052';
+var CACHE_VERSION = 'v891';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -919,6 +919,37 @@ self.addEventListener('message', function (event) {
         }
       });
     }
+  }
+
+  // ✅ WARM_CACHE: Verify all boot-critical files are cached after successful online boot.
+  // iOS can fail to precache files during install (partial cache.addAll failure).
+  // This runs after the app boots online to fill any gaps, guaranteeing the next
+  // offline boot has all required files.
+  if (data.type === 'WARM_CACHE') {
+    console.log('🔥 Warm cache: verifying boot-critical files...');
+    var filesToWarm = BOOT_CRITICAL.concat(
+      CSS_FILES.map(function(url) { var idx = url.indexOf('?'); return idx !== -1 ? url.substring(0, idx) : url; })
+    );
+    caches.open(STATIC_CACHE).then(function(cache) {
+      return Promise.all(filesToWarm.map(function(file) {
+        return cache.match(file).then(function(found) {
+          if (found) return null; // Already cached
+          // Missing — fetch and cache it
+          console.log('🔥 Warm cache: fetching missing file:', file);
+          return fetch(file).then(function(res) {
+            if (res && res.status === 200) {
+              return cache.put(file, res);
+            }
+          }).catch(function(err) {
+            console.warn('🔥 Warm cache: failed to fetch:', file, err);
+          });
+        });
+      }));
+    }).then(function() {
+      console.log('✅ Warm cache complete');
+    }).catch(function(err) {
+      console.warn('⚠️ Warm cache failed:', err);
+    });
   }
 
   // ✅ ADDED: Cache status reporting
