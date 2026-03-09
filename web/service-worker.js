@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.058';
-var CACHE_VERSION = 'v897';
+var APP_VERSION = '2.059';
+var CACHE_VERSION = 'v898';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -558,35 +558,13 @@ self.addEventListener('fetch', function (event) {
                    (request.destination === '' && accept.indexOf('text/html') !== -1);
 
   if (isNavigate) {
-    // ═══════════════════════════════════════════════════════════════════
-    // OFFLINE FAST-PATH for navigations: Serve cached HTML immediately.
-    // On iOS PWA standalone mode, location.reload() can bypass the SW or
-    // hang waiting for network. Serving from cache instantly avoids this.
-    // ═══════════════════════════════════════════════════════════════════
-    if (!self.navigator.onLine) {
-      var offlineShell = pickShell(url);
-      var offlineShellPath = offlineShell === 'lite' ? fromScope('lite/miniCycle-lite.html')
-                                                     : fromScope('miniCycle.html');
-      event.respondWith(
-        caches.match(offlineShellPath).then(function (cached) {
-          if (cached) {
-            console.log('📴 Offline navigation fast-path: serving ' + offlineShell + ' shell');
-            return cached;
-          }
-          // Fallback: try all caches
-          return caches.open(STATIC_CACHE).then(function (cache) {
-            return cache.match(offlineShellPath);
-          }).then(function (staticCached) {
-            if (staticCached) return staticCached;
-            return new Response('Offline - No cached version available', {
-              status: 503, statusText: 'Offline'
-            });
-          });
-        })
-      );
-      return;
-    }
-
+    // NOTE: No offline fast-path for navigations. Safari/iOS rejects cached
+    // responses that have `redirected: true` for navigation requests, causing
+    // "Response served by service worker has redirections" errors. The existing
+    // network-first → cache-fallback (.catch) path handles offline correctly
+    // because Safari tolerates cached responses in the error recovery path.
+    // The import/restore offline case is handled separately by calling
+    // loadMiniCycle() in-place instead of location.reload().
     event.respondWith(
       // ✅ Use navigation preload if available (saves ~50-100ms on mobile)
       // Falls back to regular fetch if preload not supported

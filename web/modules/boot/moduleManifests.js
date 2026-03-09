@@ -349,7 +349,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/settingsManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
-        optionalDeps: ['clearAllUndoHistory'],
+        optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle'],
         provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData'],
         provideInstance: 'settingsManager',
         api: 'ui',
