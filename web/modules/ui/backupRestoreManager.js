@@ -298,107 +298,138 @@ async function processRestoreData(fileContent) {
         return;
     }
 
-    // Create safety backup before restore
-    try {
-        const BackupManager = _deps.BackupManager?.();
-        if (BackupManager) {
-            await BackupManager.createManualBackup(`Pre-Restore Safety Backup ${new Date().toLocaleString()}`);
-            console.log('Safety backup created successfully');
-        }
-    } catch (backupErr) {
-        console.warn('Could not create safety backup:', backupErr);
-    }
-
-    // Stop AppState from auto-saving
-    neutralizeAppState();
-
-    // Handle Schema 2.5 backup
-    if (backupData.schemaVersion === "2.5" && backupData.miniCycleData) {
-        console.log('Detected Schema 2.5 backup format');
-
-        // Validate miniCycleData is valid JSON before writing
-        try {
-            JSON.parse(backupData.miniCycleData);
-        } catch (dataErr) {
-            console.error('miniCycleData is not valid JSON:', dataErr.message);
-            _deps.showNotification?.(getLabel('notify.backupCorruptData'), "error", 4000);
-            return;
-        }
-
-        localStorage.setItem(STORAGE_KEYS.DATA, backupData.miniCycleData);
-        _deps.showNotification?.("✅ " + getLabel('notify.backupRestored'), "success", 4000);
-
-        // Re-render UI in place — faster than location.reload() and works offline
-        reloadWithLoader('Restore');
+    // ✅ Confirm before overwriting current data
+    const showConfirmationModal = _deps.showConfirmationModal;
+    if (!showConfirmationModal) {
+        console.error('BackupRestoreManager: showConfirmationModal not available for restore confirmation');
         return;
     }
 
-    // Handle legacy backup - convert to Schema 2.5
-    if (backupData.schemaVersion === "legacy" || backupData.miniCycleStorage) {
-        console.log('Detected legacy backup format');
-        _deps.showNotification?.(getLabel('notify.backupConvertingLegacy'), "info", 3000);
+    return new Promise((resolve) => {
+        showConfirmationModal({
+            title: getLabel('modal.restoreBackupTitle'),
+            message: getLabel('modal.restoreBackupMessage'),
+            confirmText: getLabel('modal.restoreBackupConfirm'),
+            cancelText: getLabel('button.cancel'),
+            destructive: true,
+            callback: async (confirmed) => {
+                if (!confirmed) {
+                    _deps.showNotification?.(getLabel('notify.restoreCancelled'), "info", 2000);
+                    resolve();
+                    return;
+                }
 
-        if (!backupData.miniCycleStorage) {
-            _deps.showNotification?.(getLabel('notify.backupInvalidLegacy'), "error", 3000);
-            return;
-        }
+                // Create safety backup before restore
+                try {
+                    const BackupManager = _deps.BackupManager?.();
+                    if (BackupManager) {
+                        await BackupManager.createManualBackup(`Pre-Restore Safety Backup ${new Date().toLocaleString()}`);
+                        console.log('Safety backup created successfully');
+                    }
+                } catch (backupErr) {
+                    console.warn('Could not create safety backup:', backupErr);
+                }
 
-        // Remove existing Schema 2.5 data so migration will run
-        localStorage.removeItem(STORAGE_KEYS.DATA);
+                // Stop AppState from auto-saving
+                neutralizeAppState();
 
-        // Restore legacy keys (validate JSON strings before writing to localStorage)
-        if (typeof backupData.miniCycleStorage === 'string') {
-            try { JSON.parse(backupData.miniCycleStorage); } catch {
-                console.error('Invalid legacy miniCycleStorage data');
-                _deps.showNotification?.(getLabel('notify.backupCorruptData'), 'error', 4000);
-                return;
+                // Handle Schema 2.5 backup
+                if (backupData.schemaVersion === "2.5" && backupData.miniCycleData) {
+                    console.log('Detected Schema 2.5 backup format');
+
+                    // Validate miniCycleData is valid JSON before writing
+                    try {
+                        JSON.parse(backupData.miniCycleData);
+                    } catch (dataErr) {
+                        console.error('miniCycleData is not valid JSON:', dataErr.message);
+                        _deps.showNotification?.(getLabel('notify.backupCorruptData'), "error", 4000);
+                        resolve();
+                        return;
+                    }
+
+                    localStorage.setItem(STORAGE_KEYS.DATA, backupData.miniCycleData);
+                    _deps.showNotification?.("✅ " + getLabel('notify.backupRestored'), "success", 4000);
+
+                    // Re-render UI in place — faster than location.reload() and works offline
+                    reloadWithLoader('Restore');
+                    resolve();
+                    return;
+                }
+
+                // Handle legacy backup - convert to Schema 2.5
+                if (backupData.schemaVersion === "legacy" || backupData.miniCycleStorage) {
+                    console.log('Detected legacy backup format');
+                    _deps.showNotification?.(getLabel('notify.backupConvertingLegacy'), "info", 3000);
+
+                    if (!backupData.miniCycleStorage) {
+                        _deps.showNotification?.(getLabel('notify.backupInvalidLegacy'), "error", 3000);
+                        resolve();
+                        return;
+                    }
+
+                    // Remove existing Schema 2.5 data so migration will run
+                    localStorage.removeItem(STORAGE_KEYS.DATA);
+
+                    // Restore legacy keys (validate JSON strings before writing to localStorage)
+                    if (typeof backupData.miniCycleStorage === 'string') {
+                        try { JSON.parse(backupData.miniCycleStorage); } catch {
+                            console.error('Invalid legacy miniCycleStorage data');
+                            _deps.showNotification?.(getLabel('notify.backupCorruptData'), 'error', 4000);
+                            resolve();
+                            return;
+                        }
+                        localStorage.setItem(STORAGE_KEYS.LEGACY_DATA, backupData.miniCycleStorage);
+                    } else {
+                        console.error('Legacy backup missing miniCycleStorage string');
+                        _deps.showNotification?.(getLabel('notify.backupInvalidLegacy'), 'error', 3000);
+                        resolve();
+                        return;
+                    }
+                    localStorage.setItem(STORAGE_KEYS.LAST_USED, backupData.lastUsedMiniCycle || "");
+
+                    if (backupData.miniCycleReminders) {
+                        const remVal = typeof backupData.miniCycleReminders === 'string'
+                            ? backupData.miniCycleReminders : JSON.stringify(backupData.miniCycleReminders);
+                        localStorage.setItem(STORAGE_KEYS.REMINDERS, remVal);
+                    }
+                    if (backupData.milestoneUnlocks) {
+                        const milVal = typeof backupData.milestoneUnlocks === 'string'
+                            ? backupData.milestoneUnlocks : JSON.stringify(backupData.milestoneUnlocks);
+                        localStorage.setItem(STORAGE_KEYS.MILESTONE_UNLOCKS, milVal);
+                    }
+                    if (backupData.darkModeEnabled !== undefined) {
+                        localStorage.setItem(STORAGE_KEYS.DARK_MODE, backupData.darkModeEnabled);
+                    }
+                    if (backupData.currentTheme) {
+                        localStorage.setItem(STORAGE_KEYS.CURRENT_THEME, backupData.currentTheme);
+                    }
+
+                    // Migrate to 2.5
+                    setTimeout(() => {
+                        console.log('Running Schema 2.5 migration...');
+                        const performSchema25Migration = _deps.performSchema25Migration;
+                        const migrationResults = performSchema25Migration?.() || { success: false };
+
+                        if (migrationResults.success) {
+                            _deps.showNotification?.("✅ " + getLabel('notify.backupLegacyRestored'), "success", 4000);
+                        } else {
+                            _deps.showNotification?.(getLabel('notify.backupMigrationFailed'), "error", 4000);
+                        }
+
+                        // Re-render UI in place — faster than location.reload() and works offline
+                        reloadWithLoader('Legacy restore');
+                        resolve();
+                    }, 500);
+
+                    return;
+                }
+
+                console.error('Unrecognized backup format');
+                _deps.showNotification?.(getLabel('notify.invalidFormat'), "error", 3000);
+                resolve();
             }
-            localStorage.setItem(STORAGE_KEYS.LEGACY_DATA, backupData.miniCycleStorage);
-        } else {
-            console.error('Legacy backup missing miniCycleStorage string');
-            _deps.showNotification?.(getLabel('notify.backupInvalidLegacy'), 'error', 3000);
-            return;
-        }
-        localStorage.setItem(STORAGE_KEYS.LAST_USED, backupData.lastUsedMiniCycle || "");
-
-        if (backupData.miniCycleReminders) {
-            const remVal = typeof backupData.miniCycleReminders === 'string'
-                ? backupData.miniCycleReminders : JSON.stringify(backupData.miniCycleReminders);
-            localStorage.setItem(STORAGE_KEYS.REMINDERS, remVal);
-        }
-        if (backupData.milestoneUnlocks) {
-            const milVal = typeof backupData.milestoneUnlocks === 'string'
-                ? backupData.milestoneUnlocks : JSON.stringify(backupData.milestoneUnlocks);
-            localStorage.setItem(STORAGE_KEYS.MILESTONE_UNLOCKS, milVal);
-        }
-        if (backupData.darkModeEnabled !== undefined) {
-            localStorage.setItem(STORAGE_KEYS.DARK_MODE, backupData.darkModeEnabled);
-        }
-        if (backupData.currentTheme) {
-            localStorage.setItem(STORAGE_KEYS.CURRENT_THEME, backupData.currentTheme);
-        }
-
-        // Migrate to 2.5
-        setTimeout(() => {
-            console.log('Running Schema 2.5 migration...');
-            const performSchema25Migration = _deps.performSchema25Migration;
-            const migrationResults = performSchema25Migration?.() || { success: false };
-
-            if (migrationResults.success) {
-                _deps.showNotification?.("✅ " + getLabel('notify.backupLegacyRestored'), "success", 4000);
-            } else {
-                _deps.showNotification?.(getLabel('notify.backupMigrationFailed'), "error", 4000);
-            }
-
-            // Re-render UI in place — faster than location.reload() and works offline
-            reloadWithLoader('Legacy restore');
-        }, 500);
-
-        return;
-    }
-
-    console.error('Unrecognized backup format');
-    _deps.showNotification?.(getLabel('notify.invalidFormat'), "error", 3000);
+        });
+    });
 }
 
 // ============================================================================

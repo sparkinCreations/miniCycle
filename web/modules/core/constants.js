@@ -418,7 +418,12 @@ export const DOM_CLASSES = Object.freeze({
 
     // ---- Accessibility ----
     REDUCED_MOTION: 'reduced-motion',
-    HIGH_CONTRAST: 'high-contrast'
+    HIGH_CONTRAST: 'high-contrast',
+
+    // ---- Checkmark Styles ----
+    CHECKMARK_FITTED: 'checkmark-fitted',
+    CHECKMARK_MINIMAL: 'checkmark-minimal',
+    CHECKMARK_CIRCLE: 'checkmark-circle'
 });
 
 // ============================================================================
@@ -552,6 +557,7 @@ export const DOM_IDS = Object.freeze({
     PREF_STATS_DOUGHNUT: 'pref-stats-doughnut',
     TOGGLE_SOLID_LIST_BG: 'toggle-solid-list-bg',
     TOGGLE_SOLID_STATS_BG: 'toggle-solid-stats-bg',
+    CHECKMARK_STYLE_OPTIONS: 'checkmark-style-options',
 
     // ---- Reminders Form ----
     ENABLE_REMINDERS: 'enableReminders',

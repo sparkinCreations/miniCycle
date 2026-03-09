@@ -58,6 +58,14 @@ const DEFAULT_COLORS = {
 const DEFAULT_PATTERN_COLOR = '#ffffff';
 const DEFAULT_PATTERN_OPACITY = 0.07;
 
+// Checkmark style options
+const CHECKMARK_STYLES = ['standard', 'fitted', 'minimal', 'circle'];
+const CHECKMARK_CLASS_MAP = {
+    fitted: 'checkmark-fitted',
+    minimal: 'checkmark-minimal',
+    circle: 'checkmark-circle',
+};
+
 /**
  * Background keys that should preserve translucency when customized.
  * Maps settings key → alpha value to apply over the user's chosen color.
@@ -295,6 +303,7 @@ export class PreferencesManager {
             this.setupEventListeners();
             this.loadSavedColors();
             this.applyCustomColors();
+            this.applyCheckmarkStyle();
             this.setupThemeObserver();
             this.updatePreview();
             _bgImageModule.initBgImage(_deps.AppState); // Load saved background image
@@ -669,6 +678,9 @@ export class PreferencesManager {
             bgImageMode._changeHandler = (e) => _bgImageModule.handleBgImageModeChange(e.target.value);
             safeAdd(bgImageMode, 'change', bgImageMode._changeHandler);
         }
+
+        // Checkmark style options
+        this.initCheckmarkStyleOptions();
 
         // Collapsible sections
         _deps.querySelectorAll(DOM_SELECTORS.PREFERENCES_SECTION_HEADER_COLLAPSIBLE).forEach(header => {
@@ -1417,6 +1429,75 @@ export class PreferencesManager {
 
         // Update status bar color to match app background
         updateThemeColor();
+    }
+
+    /**
+     * Apply checkmark style from settings to body class
+     */
+    applyCheckmarkStyle() {
+        const state = _deps.AppState?.get();
+        const style = state?.settings?.checkmarkStyle || 'standard';
+        const body = _deps.getBody();
+        if (!body) return;
+
+        // Remove all checkmark style classes
+        Object.values(CHECKMARK_CLASS_MAP).forEach(cls => body.classList.remove(cls));
+
+        // Apply selected style class (standard has no class)
+        if (CHECKMARK_CLASS_MAP[style]) {
+            body.classList.add(CHECKMARK_CLASS_MAP[style]);
+        }
+    }
+
+    /**
+     * Initialize checkmark style option cards in preferences modal
+     */
+    initCheckmarkStyleOptions() {
+        const container = _deps.getElementById(DOM_IDS.CHECKMARK_STYLE_OPTIONS);
+        if (!container) return;
+
+        const safeAdd = _deps.safeAddEventListener;
+        const state = _deps.AppState?.get();
+        const currentStyle = state?.settings?.checkmarkStyle || 'standard';
+
+        // Set initial active state
+        const options = container.querySelectorAll('.checkmark-style-option');
+        options.forEach(option => {
+            const style = option.dataset.style;
+            const isActive = style === currentStyle;
+            option.classList.toggle('active', isActive);
+            option.setAttribute('aria-pressed', isActive.toString());
+
+            // Bind click handler
+            option._clickHandler = () => {
+                if (option.classList.contains('active')) return; // Already selected
+
+                // Update UI
+                options.forEach(opt => {
+                    opt.classList.remove('active');
+                    opt.setAttribute('aria-pressed', 'false');
+                });
+                option.classList.add('active');
+                option.setAttribute('aria-pressed', 'true');
+
+                // Save to AppState
+                _deps.AppState?.update(state => {
+                    if (!state.settings) state.settings = {};
+                    state.settings.checkmarkStyle = style;
+                }, true);
+
+                // Apply CSS class
+                this.applyCheckmarkStyle();
+
+                // Notification
+                _deps.showNotification?.(
+                    getLabel('notify.checkmarkStyleChanged'),
+                    'info',
+                    2000
+                );
+            };
+            if (safeAdd) safeAdd(option, 'click', option._clickHandler);
+        });
     }
 
     /**
