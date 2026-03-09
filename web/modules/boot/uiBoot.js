@@ -533,31 +533,50 @@ export function hideAppLoader() {
 }
 
 /**
- * Show a loading spinner with message
- * @param {string} message - Loading message to display
+ * Show the app splash screen with a custom message.
+ * Re-uses #app-loader (the boot splash with logo + progress bar) for a
+ * consistent branded experience during import/restore operations.
+ * @param {string} message - Loading message to display (e.g. 'Loading routines...')
  */
 export function showLoader(message = 'Processing...') {
-  const overlay = document.getElementById(DOM_IDS.LOADING_OVERLAY);
-  const textElement = overlay?.querySelector(DOM_SELECTORS.LOADING_SPINNER_TEXT);
+  const appLoader = document.getElementById(DOM_IDS.APP_LOADER);
+  if (!appLoader) return;
 
-  if (overlay) {
-    if (textElement && message) {
-      textElement.textContent = message;
-    }
-    overlay.setAttribute('aria-busy', 'true');
-    overlay.classList.add('active');
+  // Hide the tip section (not relevant during import/restore)
+  const tip = appLoader.querySelector('#loader-tip');
+  if (tip) tip.style.display = 'none';
+
+  // Update the text
+  const textElement = appLoader.querySelector(DOM_SELECTORS.LOADER_TEXT);
+  if (textElement && message) {
+    textElement.textContent = message;
   }
+
+  // Show the splash screen
+  appLoader.classList.remove('fade-out');
+  appLoader.style.display = '';
+  appLoader.setAttribute('aria-busy', 'true');
 }
 
 /**
- * Hide the loading spinner
+ * Hide the app splash screen after an operation completes.
+ * Restores original text for the next boot.
  */
 export function hideLoader() {
-  const overlay = document.getElementById(DOM_IDS.LOADING_OVERLAY);
-  if (overlay) {
-    overlay.setAttribute('aria-busy', 'false');
-    overlay.classList.remove('active');
-  }
+  const appLoader = document.getElementById(DOM_IDS.APP_LOADER);
+  if (!appLoader) return;
+
+  appLoader.classList.add('fade-out');
+  appLoader.setAttribute('aria-busy', 'false');
+  setTimeout(() => {
+    appLoader.style.display = 'none';
+
+    // Restore original text and tip visibility for next boot
+    const textElement = appLoader.querySelector(DOM_SELECTORS.LOADER_TEXT);
+    if (textElement) textElement.textContent = 'Loading miniCycle...';
+    const tip = appLoader.querySelector('#loader-tip');
+    if (tip) tip.style.display = '';
+  }, 500);
 }
 
 /**

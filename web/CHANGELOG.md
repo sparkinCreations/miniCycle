@@ -1,3 +1,7 @@
+## [2.061] - 2026-03-09
+- feat: enhance loading and update mechanisms; add preloadGettingStartedCycle and UI loader functions
+
+
 ## [2.060] - 2026-03-09
 - feat: add loadMiniCycle dependency for in-place UI refresh after offline operations
 

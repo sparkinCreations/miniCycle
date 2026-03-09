@@ -562,6 +562,35 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                 </div>
             </div>
 
+            <!-- Checkmark Style Section -->
+            <div class="preferences-section collapsed" data-section="checkmark-style">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="checkmark-style" aria-expanded="false" aria-label="Toggle Checkmark Style section" aria-controls="pref-section-checkmark-style">
+                    <span class="preferences-section-icon">&#x2714;</span>
+                    <span>Checkmark Style</span>
+                    <span class="preferences-section-toggle">&#x25BC;</span>
+                </div>
+                <div class="preferences-section-content" id="pref-section-checkmark-style">
+                    <div class="checkmark-style-options" id="checkmark-style-options">
+                        <button class="checkmark-style-option active" data-style="standard" aria-pressed="true" title="Standard">
+                            <span class="checkmark-style-preview checkmark-preview-standard">&#x2714;</span>
+                            <span class="checkmark-style-label">Standard</span>
+                        </button>
+                        <button class="checkmark-style-option" data-style="fitted" aria-pressed="false" title="Fitted">
+                            <span class="checkmark-style-preview checkmark-preview-fitted">&#x2714;</span>
+                            <span class="checkmark-style-label">Fitted</span>
+                        </button>
+                        <button class="checkmark-style-option" data-style="minimal" aria-pressed="false" title="Minimal">
+                            <span class="checkmark-style-preview checkmark-preview-minimal">&#x2713;</span>
+                            <span class="checkmark-style-label">Minimal</span>
+                        </button>
+                        <button class="checkmark-style-option" data-style="circle" aria-pressed="false" title="Circle">
+                            <span class="checkmark-style-preview checkmark-preview-circle"></span>
+                            <span class="checkmark-style-label">Circle</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Collapsible Color Sections -->
 
             <!-- App Background Section -->

@@ -520,6 +520,7 @@ export const DEFAULT_LABELS = deepFreeze({
         backupCorruptData:       'Backup data is corrupt.',
         factoryResetComplete:    'Factory Reset Complete. Reloading...',
         factoryResetCancelled:   'Factory reset cancelled.',
+        restoreCancelled:        'Restore cancelled.',
 
         // Import/export notifications
         fileTooLarge:            'File too large. Maximum size is 10MB.',
@@ -724,6 +725,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Routine management (additional)
         samplePreloaded:         'A sample routine has been preloaded to help you get started!',
+        checkmarkStyleChanged:   'Checkmark style updated',
         welcomeSampleLoaded:     'Welcome to miniCycle! A sample routine has been loaded to get you started',
         startBlankRoutine:       'Start with a blank routine',
         failedToCreateCycle:     'Failed to create routine. Please refresh.',
@@ -763,6 +765,9 @@ export const DEFAULT_LABELS = deepFreeze({
         saveCopy:                 'Save Copy',
         deleteAllTasks:           'Delete All Tasks',
         deleteAllMessage:         'Are you sure you want to permanently delete all tasks in "{name}"? This action cannot be undone.',
+        restoreBackupTitle:       'Restore Backup',
+        restoreBackupMessage:     'This will replace all your current routines, settings, and progress with the backup data. A safety backup will be saved first.',
+        restoreBackupConfirm:     'Restore',
         factoryResetTitle:        'Factory Reset',
         factoryResetMessage:      'This will DELETE ALL data, settings, and progress. Are you sure?',
         factoryResetConfirm:      'Delete Everything',
@@ -1108,6 +1113,11 @@ export const DEFAULT_LABELS = deepFreeze({
         listBackground:     'List Background',
         titleBackground:    'Title Background',
         titleText:          'Title Text',
+        checkmarkStyleTitle:   'Checkmark Style',
+        checkmarkStandard:     'Standard',
+        checkmarkFitted:       'Fitted',
+        checkmarkMinimal:      'Minimal',
+        checkmarkCircle:       'Circle',
         tasksCheckboxes:    'Tasks & Checkboxes',
         taskBackground:     'Task Background',
         taskText:           'Task Text',

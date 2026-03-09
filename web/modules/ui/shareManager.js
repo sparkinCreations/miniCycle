@@ -148,7 +148,7 @@ export function setupShareRoutineButton() {
         };
 
         const cycleName = cycle.title || activeCycle;
-        const fileName = `${cycleName.replace(/[^a-z0-9]/gi, '_')}.mcyc`;
+        const fileName = `${cycleName.replace(/[^a-z0-9]/gi, '_')}.mcyc.json`;
         const dataStr = JSON.stringify(miniCycleData, null, 2);
         const dataBlob = new Blob([dataStr], { type: 'application/json' });
         const file = new File([dataBlob], fileName, { type: 'application/json' });

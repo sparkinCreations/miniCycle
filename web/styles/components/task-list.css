@@ -702,6 +702,35 @@ body.onboarding-active .complete-all-and-help-window-container {
     border-radius: 50%;
 }
 
+/* =============================================================================
+   CHECKMARK STYLE VARIANTS
+   Applied via body class. Default "standard" uses base styles above (no class).
+   Color is NOT overridden here — --pref-checkmark handles that separately.
+   ============================================================================= */
+
+/* Fitted: same ✔ symbol but sized to fit inside the 22px circle */
+body.checkmark-fitted .task input[type="checkbox"]::after {
+    font-size: 15px;
+    position: static;
+    top: auto;
+    left: auto;
+}
+
+/* Minimal: thin ✓ (U+2713) inside the circle */
+body.checkmark-minimal .task input[type="checkbox"]::after {
+    content: "\2713";
+    font-size: 14px;
+    font-weight: normal;
+    position: static;
+    top: auto;
+    left: auto;
+}
+
+/* Circle: no symbol, just the filled circle */
+body.checkmark-circle .task input[type="checkbox"]::after {
+    content: none;
+}
+
 /* High priority task */
 .task.high-priority {
     border-left: 4px solid var(--task-priority-color, var(--priority-color, #dc3545));
