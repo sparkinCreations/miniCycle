@@ -549,6 +549,18 @@ async function runBootSequence() {
     window.__miniCycleBootSuccess();
   }
 
+  // ✅ WARM CACHE: After successful online boot, tell the SW to verify all
+  // boot-critical files are cached. iOS can fail to precache files during install
+  // (partial cache.addAll failure). This fills gaps so the next offline boot works.
+  if (navigator.onLine && 'serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    try {
+      navigator.serviceWorker.controller.postMessage({ type: 'WARM_CACHE' });
+      console.log('🔥 Warm cache request sent to SW');
+    } catch (e) {
+      // Non-critical — don't let cache warming break boot
+    }
+  }
+
   // PWA File Handling: open .mcyc files from desktop
   if ('launchQueue' in window) {
     window.launchQueue.setConsumer(async (launchParams) => {
