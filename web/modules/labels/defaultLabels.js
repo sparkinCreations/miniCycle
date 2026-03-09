@@ -1124,7 +1124,7 @@ export const DEFAULT_LABELS = deepFreeze({
         checkboxFill:       'Checkbox Fill',
         checkboxEmpty:      'Checkbox Empty',
         checkmark:          'Checkmark',
-        buttonsProgress:    'Task Buttons & Progress',
+        buttonsProgress:    'Buttons & Progress',
         completeCycle:      'Complete Cycle',
         clearCompleted:     'Clear Completed',
         progressBar:        'Progress Bar',
