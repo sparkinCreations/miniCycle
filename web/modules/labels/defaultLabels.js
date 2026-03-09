@@ -352,6 +352,12 @@ export const DEFAULT_LABELS = deepFreeze({
         // Cycle/routine notifications
         firstCycleCompleted:    'Congratulations on completing your first cycle!',
         firstCycleSubtitle:     'Unlock badges and achievements by completing more cycles.',
+        milestone100Cycles:         'You\'ve completed 100 cycles!',
+        milestone100CyclesSubtitle: 'Your dedication is truly impressive. Keep building those habits!',
+        milestone500Tasks:          'You\'ve cleared 500 tasks!',
+        milestone500TasksSubtitle:  'Half a thousand tasks conquered — nothing can stop you!',
+        milestone500Cycles:         'You\'ve completed 500 cycles!',
+        milestone500CyclesSubtitle: 'A legendary milestone. You\'re a routine master!',
         cycleComplete:          'Cycle complete!',
         cycleDeletedSwitch:     '"{deleted}" deleted. "{active}" is now active.',
         cycleDeleted:           '"{name}" has been deleted.',

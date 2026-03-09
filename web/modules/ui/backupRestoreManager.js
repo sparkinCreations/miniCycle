@@ -32,7 +32,7 @@ const di = createDIModule('BackupRestoreManager', {
     appInit: optional(null)  // For full re-init after factory reset (triggers onboarding)
 });
 
-/** @type {{AppState: Object, showNotification: Function, showConfirmationModal: Function, safeAddEventListener: Function, performSchema25Migration: Function|null, BackupManager: Object|null, AppMeta: Object|null}} */
+/** @type {{AppState: Object, showNotification: Function, showConfirmationModal: Function, safeAddEventListener: Function, performSchema25Migration: Function|null, BackupManager: Object|null, AppMeta: Object|null, loadMiniCycle: Function|null, showLoader: Function|null, hideLoader: Function|null, hideMainMenu: Function|null, closeAllModals: Function|null, appInit: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -77,23 +77,27 @@ function reloadWithLoader(logContext, options = {}) {
     _deps.showLoader?.(getLabel('notify.importLoading'));
 
     setTimeout(async () => {
-        console.log(`🔄 ${logContext} complete — re-rendering UI in place`);
+        try {
+            console.log(`🔄 ${logContext} complete — re-rendering UI in place`);
 
-        // Clear the task list DOM so stale tasks don't linger
-        const taskList = document.getElementById(DOM_IDS.TASK_LIST);
-        if (taskList) taskList.innerHTML = '';
+            // Clear the task list DOM so stale tasks don't linger
+            const taskList = document.getElementById(DOM_IDS.TASK_LIST);
+            if (taskList) taskList.innerHTML = '';
 
-        const AppState = typeof _deps.AppState === 'function' ? _deps.AppState() : _deps.AppState;
-        AppState?.reload?.();
+            const AppState = typeof _deps.AppState === 'function' ? _deps.AppState() : _deps.AppState;
+            AppState?.reload?.();
 
-        if (fullReinit && _deps.appInit?.runInitialSetup) {
-            // Full re-init: creates fresh data if needed, checks onboarding, loads UI
-            await _deps.appInit.runInitialSetup();
-        } else if (typeof _deps.loadMiniCycle === 'function') {
-            _deps.loadMiniCycle();
+            if (fullReinit && _deps.appInit?.runInitialSetup) {
+                // Full re-init: creates fresh data if needed, checks onboarding, loads UI
+                await _deps.appInit.runInitialSetup();
+            } else if (typeof _deps.loadMiniCycle === 'function') {
+                _deps.loadMiniCycle();
+            }
+        } catch (error) {
+            console.error(`❌ ${logContext} reload failed:`, error);
+        } finally {
+            _deps.hideLoader?.();
         }
-
-        _deps.hideLoader?.();
     }, 400);
 }
 

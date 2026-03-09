@@ -86,6 +86,7 @@ const di = createDIModule('TaskCycleReset', {
     recordMultipleClearedTasks: optional(null),
     logHistoryEvent: optional(null),
     checkAchievements: optional(null),
+    showMilestoneCelebrationOverlay: optional(null),
     // Logo effects
     triggerLogoScan: optional(null)
 });
@@ -712,6 +713,17 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
             const globalCyclesCompleted = updatedState.userProgress?.cyclesCompleted || 0;
             const totalTasksCompleted = updatedState.userProgress?.totalTasksCompleted || 0;
             _deps.checkAchievements(globalCyclesCompleted, totalTasksCompleted);
+        }
+
+        // Check for 500 tasks cleared milestone celebration
+        const postUpdateState = AppState.get();
+        const newTotalTasks = postUpdateState.userProgress?.totalTasksCompleted || 0;
+        if (newTotalTasks >= 500 && !postUpdateState.userProgress?.celebrated500Tasks) {
+            _deps.showMilestoneCelebrationOverlay?.('milestoneTrail', 'notify.milestone500Tasks', 'notify.milestone500TasksSubtitle');
+            await AppState.update(state => {
+                if (!state.userProgress) state.userProgress = {};
+                state.userProgress.celebrated500Tasks = true;
+            }, true);
         }
     } else {
         console.warn('⚠️ AppState not ready for task deletion - state may be lost');

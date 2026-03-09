@@ -143,32 +143,35 @@ export function showClearAnimation() {
 }
 
 /**
- * Shows a full-screen darkened overlay celebrating the user's first cycle completion.
- * One-time only — globalCyclesCompleted is only 1 once.
- * Auto-dismisses after 4 seconds or on click/tap.
+ * Shows a full-screen darkened overlay celebrating a milestone.
+ * Reusable for any one-time celebration (first cycle, 100 cycles, 500 tasks, etc.).
+ * Auto-dismisses after 10 seconds or on click/tap.
+ * @param {string} iconKey - Icon key for getIcon() (e.g., 'celebrate', 'milestoneTrail')
+ * @param {string} headingKey - Label key for heading text
+ * @param {string} subtitleKey - Label key for subtitle text
  */
-function showFirstCycleOverlay() {
+export function showMilestoneCelebrationOverlay(iconKey, headingKey, subtitleKey) {
     const overlay = document.createElement('div');
     overlay.className = 'first-cycle-overlay';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-label', getLabel('notify.firstCycleCompleted'));
+    overlay.setAttribute('aria-label', getLabel(headingKey));
 
     // Celebration icon (aria-hidden)
     const icon = document.createElement('span');
     icon.className = 'first-cycle-icon';
     icon.setAttribute('aria-hidden', 'true');
-    icon.textContent = getIcon('celebrate');
+    icon.textContent = getIcon(iconKey);
 
     // Main heading
     const heading = document.createElement('p');
     heading.className = 'first-cycle-heading';
-    heading.textContent = getLabel('notify.firstCycleCompleted');
+    heading.textContent = getLabel(headingKey);
 
     // Subtitle
     const subtitle = document.createElement('p');
     subtitle.className = 'first-cycle-subtitle';
-    subtitle.textContent = getLabel('notify.firstCycleSubtitle');
+    subtitle.textContent = getLabel(subtitleKey);
 
     overlay.appendChild(icon);
     overlay.appendChild(heading);
@@ -177,7 +180,7 @@ function showFirstCycleOverlay() {
 
     // Announce to screen readers
     const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
-    if (liveRegion) liveRegion.textContent = getLabel('notify.firstCycleCompleted');
+    if (liveRegion) liveRegion.textContent = getLabel(headingKey);
 
     // Dismiss on click/tap
     const dismiss = () => overlay.remove();
@@ -348,9 +351,27 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
     // been shown before. The flag prevents re-showing for migrated users whose
     // cyclesCompleted was set to their pre-existing total by migrationManager.
     if (globalCyclesCompleted === 1 && !updatedState.userProgress?.firstCycleCelebrated) {
-        showFirstCycleOverlay();
+        showMilestoneCelebrationOverlay('celebrate', 'notify.firstCycleCompleted', 'notify.firstCycleSubtitle');
         deps.AppState.update(state => {
             state.userProgress.firstCycleCelebrated = true;
+        }, true);
+    }
+
+    // ---- Milestone celebration overlays (one-time each) ----
+    // Uses >= so backup restores past the threshold still trigger once
+    if (globalCyclesCompleted >= 100 && !updatedState.userProgress?.celebrated100Cycles) {
+        showMilestoneCelebrationOverlay('milestoneTrail', 'notify.milestone100Cycles', 'notify.milestone100CyclesSubtitle');
+        deps.AppState.update(state => {
+            if (!state.userProgress) state.userProgress = {};
+            state.userProgress.celebrated100Cycles = true;
+        }, true);
+    }
+
+    if (globalCyclesCompleted >= 500 && !updatedState.userProgress?.celebrated500Cycles) {
+        showMilestoneCelebrationOverlay('milestoneTrail', 'notify.milestone500Cycles', 'notify.milestone500CyclesSubtitle');
+        deps.AppState.update(state => {
+            if (!state.userProgress) state.userProgress = {};
+            state.userProgress.celebrated500Cycles = true;
         }, true);
     }
 
