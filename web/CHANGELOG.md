@@ -1,3 +1,8 @@
+## [2.068] - 2026-03-10
+- docs: rewrite README with screenshots, updated feature sections, and current stats
+- feat: add 'loadMiniCycle' to optional dependencies in pullToRefresh module; enhance UI refresh logic
+
+
 ## [2.067] - 2026-03-10
 - Refactor notification timeouts and improve shadow variables across components
 

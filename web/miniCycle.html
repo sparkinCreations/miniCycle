@@ -10,7 +10,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.067">
+<meta name="app-version" content="2.068">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -29,20 +29,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.067"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.068"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.067" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.067" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.067" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.067" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.067" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.067" as="style">
+<link rel="preload" href="styles/main.css?v=2.068" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.068" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.068" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.068" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.068" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.068" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.067" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.068" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.067"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.068"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -53,7 +53,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.067"></script>
+<script src="./version.js?v=2.068"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -1484,59 +1484,75 @@ window.installApp = () => {
 <dialog id="routine-switcher-modal" class="mini-cycle-switch-modal" data-modal aria-labelledby="routine-switcher-title" aria-modal="true">
     <div class="mini-cycle-switch-modal-content has-corner-logo" autofocus tabindex="-1">
         <div class="mini-cycle-switch-title" id="routine-switcher-title">Open Routine</div>
-        <!-- Search input for filtering routines -->
-        <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off" aria-label="Search routines">
-        <!-- Sort and Filter controls -->
-        <div class="routine-sort-filter-row">
-            <!-- Filter dropdown -->
-            <div class="routine-filter-controls">
-                <select id="routine-filter-select" class="routine-filter-select">
-                    <option value="all">All Modes</option>
-                    <option value="auto">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔄 Auto Cycle</option>
-                    <option value="manual">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✋ Manual Cycle</option>
-                    <option value="todo">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📋 To-Do</option>
-                </select>
-            </div>
-            <!-- Sort controls -->
-            <div class="routine-sort-controls">
-                <span class="routine-sort-label">Sort:</span>
-                <button id="sort-alpha" class="routine-sort-btn active" title="Sort alphabetically">A-Z</button>
-                <button id="sort-recent" class="routine-sort-btn" title="Sort by recently modified">Recent</button>
-                <button id="sort-size" class="routine-sort-btn" title="Sort by file size">Size</button>
-            </div>
-        </div>
-        <!-- ✅ Scrollable list instead of input -->
-        <div class="mini-cycle-switch-list" id="miniCycleList" role="listbox" aria-label="Routines"></div>
-        <div id="switch-items-row" class="switch-items-row">
-            <button id="switch-duplicate" class="switch-duplicate switch-buttons" title="Duplicate routine"><i class="fas fa-copy"></i></button>
-            <button id="switch-rename" class="switch-rename switch-buttons" title="Rename routine"><i class="fas fa-edit"></i></button>
-            <button id="switch-delete" class="switch-delete switch-buttons" title="Delete routine"><i class="fas fa-trash"></i></button>
-            <button id="switch-download" class="switch-download switch-buttons" title="Download routine"><i class="fas fa-file-download"></i></button>
-            <button id="switch-theme" class="switch-theme switch-buttons" title="Change routine theme" aria-label="Change theme" aria-expanded="false" aria-controls="theme-picker-row">🎨</button>
-            <div id="switch-preview-window" class="switch-preview-window"><br>Preview</div>
-        </div>
-        <div id="theme-picker-row" class="theme-picker-row hidden" role="radiogroup" aria-label="Select theme for this routine"></div>
 
-        <div>
-            <button id="miniCycleSwitchCancel" class="mini-cycle-switch-btn cancel-btn">Cancel</button>
-            <button id="miniCycleSwitchConfirm" class="mini-cycle-switch-btn open-btn">Open</button>
-        </div>
-        <div>
-            <button id="miniCycleUpload" class="mini-cycle-upload-btn"><i class="fas fa-file-upload"></i> Import From External</button>
-        </div>
+        <!-- Two-panel body: left (controls + list) | right (desktop preview) -->
+        <div class="routine-switcher-body">
 
-        <!-- Storage Bar -->
-        <div class="storage-bar-container">
-            <div class="storage-bar-header">
-                <div class="storage-bar-label">Storage</div>
-                <button id="storage-refresh-btn" class="storage-refresh-btn" title="Refresh storage quota">
-                    <i class="fas fa-sync-alt"></i>
-                </button>
+            <!-- Left panel — all existing controls -->
+            <div class="routine-switcher-left">
+                <!-- Search input for filtering routines -->
+                <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off" aria-label="Search routines">
+                <!-- Sort and Filter controls -->
+                <div class="routine-sort-filter-row">
+                    <!-- Filter dropdown -->
+                    <div class="routine-filter-controls">
+                        <select id="routine-filter-select" class="routine-filter-select">
+                            <option value="all">All Modes</option>
+                            <option value="auto">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔄 Auto Cycle</option>
+                            <option value="manual">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✋ Manual Cycle</option>
+                            <option value="todo">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📋 To-Do</option>
+                        </select>
+                    </div>
+                    <!-- Sort controls -->
+                    <div class="routine-sort-controls">
+                        <span class="routine-sort-label">Sort:</span>
+                        <button id="sort-alpha" class="routine-sort-btn active" title="Sort alphabetically">A-Z</button>
+                        <button id="sort-recent" class="routine-sort-btn" title="Sort by recently modified">Recent</button>
+                        <button id="sort-size" class="routine-sort-btn" title="Sort by file size">Size</button>
+                    </div>
+                </div>
+                <!-- Scrollable list -->
+                <div class="mini-cycle-switch-list" id="miniCycleList" role="listbox" aria-label="Routines"></div>
+                <div id="switch-items-row" class="switch-items-row">
+                    <button id="switch-duplicate" class="switch-duplicate switch-buttons" title="Duplicate routine"><i class="fas fa-copy"></i></button>
+                    <button id="switch-rename" class="switch-rename switch-buttons" title="Rename routine"><i class="fas fa-edit"></i></button>
+                    <button id="switch-delete" class="switch-delete switch-buttons" title="Delete routine"><i class="fas fa-trash"></i></button>
+                    <button id="switch-download" class="switch-download switch-buttons" title="Download routine"><i class="fas fa-file-download"></i></button>
+                    <button id="switch-theme" class="switch-theme switch-buttons" title="Change routine theme" aria-label="Change theme" aria-expanded="false" aria-controls="theme-picker-row">🎨</button>
+                    <div id="switch-preview-window" class="switch-preview-window"><br>Preview</div>
+                </div>
+                <div id="theme-picker-row" class="theme-picker-row hidden" role="radiogroup" aria-label="Select theme for this routine"></div>
+
+                <div>
+                    <button id="miniCycleSwitchCancel" class="mini-cycle-switch-btn cancel-btn">Cancel</button>
+                    <button id="miniCycleSwitchConfirm" class="mini-cycle-switch-btn open-btn">Open</button>
+                </div>
+                <div>
+                    <button id="miniCycleUpload" class="mini-cycle-upload-btn"><i class="fas fa-file-upload"></i> Import From External</button>
+                </div>
+
+                <!-- Storage Bar -->
+                <div class="storage-bar-container">
+                    <div class="storage-bar-header">
+                        <div class="storage-bar-label">Storage</div>
+                        <button id="storage-refresh-btn" class="storage-refresh-btn" title="Refresh storage quota">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div class="storage-bar-track">
+                        <div id="storage-bar-fill" class="storage-bar-fill storage-normal"></div>
+                    </div>
+                    <div id="storage-bar-text" class="storage-bar-text">Calculating...</div>
+                </div>
             </div>
-            <div class="storage-bar-track">
-                <div id="storage-bar-fill" class="storage-bar-fill storage-normal"></div>
+
+            <!-- Right panel — desktop task preview (hidden on mobile) -->
+            <div class="routine-switcher-right">
+                <div id="desktop-preview-window" class="desktop-preview-window">
+                    Select a routine to preview
+                </div>
             </div>
-            <div id="storage-bar-text" class="storage-bar-text">Calculating...</div>
+
         </div>
     </div>
 </dialog>
@@ -1816,7 +1832,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.067"></script>
+ <script type="module" src="miniCycle-main.js?v=2.068"></script>
 
 <script>
 // Sync About modal version with meta app-version
