@@ -7,12 +7,14 @@
  * @module testing-modal-diagnostics
  */
 
+import { UI_TIMEOUTS } from '../core/constants.js';
 import {
     getDeps,
     showNotification,
     appendToTestResults,
     safeAddEventListenerById
 } from './testing-modal-core.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ==========================================
 // BUTTON SETUP
@@ -57,19 +59,19 @@ export function setupDiagnosticsButtons() {
 export function runHealthCheck() {
     const deps = getDeps();
     appendToTestResults("Running Full Health Check...\n");
-    showNotification("Running full diagnostic health check", "info", 3000);
+    showNotification(getLabel('notify.diagHealthCheck'), "info", UI_TIMEOUTS.NOTIFICATION_LONG);
 
     setTimeout(() => {
         if (!deps.AppState?.isReady?.()) {
             appendToTestResults("AppState not ready\n\n");
-            showNotification("AppState not available", "error", 3000);
+            showNotification(getLabel('notify.diagNoAppState'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
         const currentState = deps.AppState.get();
         if (!currentState) {
             appendToTestResults("No state data available\n\n");
-            showNotification("No data available", "error", 3000);
+            showNotification(getLabel('notify.diagNoData'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -88,7 +90,7 @@ export function runHealthCheck() {
         appendToTestResults(`Storage Status: OK\n`);
         appendToTestResults(`Schema Version: ${metadata?.schemaVersion || '2.5'}\n\n`);
 
-        showNotification("Health check completed successfully!", "success", 3000);
+        showNotification(getLabel('notify.diagHealthCheckDone'), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
     }, 1500);
 }
 
@@ -98,12 +100,12 @@ export function runHealthCheck() {
 export function checkDataIntegrity() {
     const deps = getDeps();
     appendToTestResults("Checking Data Integrity...\n");
-    showNotification("Checking data integrity...", "info", 2000);
+    showNotification(getLabel('notify.diagIntegrityCheck'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
 
     setTimeout(() => {
         if (!deps.AppState?.isReady?.()) {
             appendToTestResults("AppState not ready\n\n");
-            showNotification("AppState not available", "error", 3000);
+            showNotification(getLabel('notify.diagNoAppState'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -139,14 +141,14 @@ export function checkDataIntegrity() {
         if (results.length === 0) {
             appendToTestResults("Data Integrity: PASSED\n");
             appendToTestResults("All cycles and tasks have valid structure\n\n");
-            showNotification("Data integrity check passed!", "success", 3000);
+            showNotification(getLabel('notify.diagIntegrityPassed'), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
         } else {
             appendToTestResults(`Data Integrity: ${results.length} issues found\n`);
             results.forEach(result => {
                 appendToTestResults(`- Cycle: ${result.cycle}, Issue: ${result.issue}\n`);
             });
             appendToTestResults("\n");
-            showNotification(`Found ${results.length} data integrity issues`, "warning", 3000);
+            showNotification(`Found ${results.length} data integrity issues`, "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
         }
     }, 1000);
 }
@@ -157,12 +159,12 @@ export function checkDataIntegrity() {
 export function validateSchema() {
     const deps = getDeps();
     appendToTestResults("Validating Schema Versions...\n");
-    showNotification("Validating schema versions...", "info", 2000);
+    showNotification(getLabel('notify.diagSchemaValidating'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
 
     setTimeout(() => {
         if (!deps.AppState?.isReady?.()) {
             appendToTestResults("AppState not ready\n\n");
-            showNotification("AppState not available", "error", 3000);
+            showNotification(getLabel('notify.diagNoAppState'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -194,9 +196,9 @@ export function validateSchema() {
         appendToTestResults(`- Cycles needing migration: ${cyclesWithOldFormat}\n\n`);
 
         if (cyclesWithOldFormat > 0) {
-            showNotification(`Found ${cyclesWithOldFormat} cycles that may need migration`, "warning", 3000);
+            showNotification(`Found ${cyclesWithOldFormat} cycles that may need migration`, "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
         } else {
-            showNotification("All tasks using current schema v2", "success", 3000);
+            showNotification(getLabel('notify.diagSchemaValid'), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
         }
     }, 800);
 }
@@ -226,7 +228,7 @@ export function showAppInfo() {
     appendToTestResults(`- Last Modified: ${buildDate}\n`);
     appendToTestResults(`- User Agent: ${navigator.userAgent}\n\n`);
 
-    showNotification("App information displayed", "info", 2000);
+    showNotification(getLabel('notify.diagAppInfo'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
 }
 
 /**
@@ -244,7 +246,7 @@ export function showStorageInfo() {
     appendToTestResults(`- Usage: ${usagePercent}%\n`);
     appendToTestResults(`- Available Keys: ${Object.keys(localStorage).length}\n\n`);
 
-    showNotification(`Storage: ${usagePercent}% used`, "info", 3000);
+    showNotification(`Storage: ${usagePercent}% used`, "info", UI_TIMEOUTS.NOTIFICATION_LONG);
 }
 
 /**
@@ -270,7 +272,7 @@ export function showPerformanceInfo() {
     appendToTestResults(`- Memory Limit: ${(performance.memory?.jsHeapSizeLimit / 1024 / 1024 || 0).toFixed(2)} MB\n`);
     appendToTestResults(`- Viewport: ${window.innerWidth}x${window.innerHeight}\n\n`);
 
-    showNotification("Performance info displayed", "info", 2000);
+    showNotification(getLabel('notify.diagPerfInfo'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
 }
 
 console.log('Testing Modal Diagnostics loaded (DI-pure)');

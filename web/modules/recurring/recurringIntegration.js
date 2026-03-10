@@ -14,6 +14,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel } from '../labels/labelResolver.js';
 
+import { UI_TIMEOUTS } from '../core/constants.js';
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
@@ -342,7 +343,7 @@ export async function initRecurringModules(options = {}) {
 
         // Show user-facing error - DI-pure
         if (typeof deps.showNotification === 'function') {
-            deps.showNotification(getLabel('notify.recurringInitFailed'), 'error', 5000);
+            deps.showNotification(getLabel('notify.recurringInitFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SLOW);
         }
 
         throw error;

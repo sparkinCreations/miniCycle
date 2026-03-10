@@ -59,10 +59,15 @@ html[data-vocab-theme] body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-go
     background-size: cover;
 }
 
-/* Custom pattern color (Preferences - Default theme only) */
-body.custom-pattern:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow):not(.no-bg-pattern)::before {
+/* Custom pattern color (Preferences - Default and dark mode) */
+body.custom-pattern:not(.theme-dark-ocean):not(.theme-golden-glow):not(.no-bg-pattern)::before {
     background: var(--custom-pattern-bg) repeat;
     background-size: 400px 400px;
+}
+
+/* Dark mode pattern — reduce intensity so it's subtler against dark backgrounds */
+body.dark-mode::before {
+    opacity: 0.45;
 }
 
 /* Hide background pattern when toggle is off */

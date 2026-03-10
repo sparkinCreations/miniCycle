@@ -16,7 +16,7 @@
  * @module deviceDetection
  */
 
-import { STORAGE_KEYS, LITE_VERSION_PATH } from '../core/constants.js';
+import { STORAGE_KEYS, LITE_VERSION_PATH, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { createDIModule, required, optional } from '../core/diBase.js';
 
@@ -92,7 +92,7 @@ export class DeviceDetectionManager {
       });
 
       console.log('✅ Manual override saved to Schema 2.5');
-      this.deps.showNotification('✅ ' + getLabel('notify.deviceDetectionComplete'), 'success', 3000);
+      this.deps.showNotification('✅ ' + getLabel('notify.deviceDetectionComplete'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
       return true;
     }
     return false;
@@ -181,7 +181,7 @@ export class DeviceDetectionManager {
     const cacheBuster = `?redirect=auto&v=${this.currentVersion}&t=${Date.now()}`;
     console.log('📱 Redirecting to lite version:', LITE_VERSION_PATH + cacheBuster);
 
-    this.deps.showNotification('📱 ' + getLabel('notify.redirectingToLite'), 'info', 2000);
+    this.deps.showNotification('📱 ' + getLabel('notify.redirectingToLite'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
     setTimeout(() => {
       window.location.href = LITE_VERSION_PATH + cacheBuster;
     }, 1000);
@@ -237,7 +237,7 @@ export class DeviceDetectionManager {
     const schemaData = this.deps.loadMiniCycleData();
     if (!schemaData) {
       console.error('❌ Schema 2.5 data required for compatibility report');
-      this.deps.showNotification('❌ ' + getLabel('notify.reportRequiresSchema'), 'error', 3000);
+      this.deps.showNotification('❌ ' + getLabel('notify.reportRequiresSchema'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
       return null;
     }
     
@@ -295,13 +295,13 @@ export class DeviceDetectionManager {
       `${getLabel('notify.deviceStatusSchema', { vars: { schema: deviceInfo.schema } })}\n` +
       `${getLabel('notify.deviceStatusLastCheck', { vars: { lastCheck: deviceInfo.lastDetectionVersion || 'Never' } })}`,
       statusType,
-      8000
+      UI_TIMEOUTS.NOTIFICATION_PERSISTENT
     );
   }
 
   // Test function for manual testing
   async testDeviceDetection() {
-    this.deps.showNotification('🧪 ' + getLabel('notify.startingDetectionTest'), 'info', 2000);
+    this.deps.showNotification('🧪 ' + getLabel('notify.startingDetectionTest'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
 
     // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
     const appInitModule = this.deps.appInit;
@@ -312,7 +312,7 @@ export class DeviceDetectionManager {
     const schemaData = this.deps.loadMiniCycleData();
     if (!schemaData) {
       console.error('❌ Schema 2.5 data required for device detection test');
-      this.deps.showNotification('❌ ' + getLabel('notify.detectionTestFailed'), 'error', 3000);
+      this.deps.showNotification('❌ ' + getLabel('notify.detectionTestFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
       return;
     }
 

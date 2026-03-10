@@ -187,7 +187,7 @@ export function showMilestoneCelebrationOverlay(iconKey, headingKey, subtitleKey
     overlay.addEventListener('click', dismiss, { once: true });
 
     // Auto-dismiss after 10 seconds
-    setTimeout(dismiss, 10000);
+    setTimeout(dismiss, UI_TIMEOUTS.NOTIFICATION_OVERLAY);
 }
 
 /**

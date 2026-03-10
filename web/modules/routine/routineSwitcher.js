@@ -130,14 +130,14 @@ export class RoutineSwitcher {
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for switchMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
         const currentState = this.deps.AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for switchMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -219,7 +219,7 @@ export class RoutineSwitcher {
                 themeBtn._clickHandler = () => {
                     const selected = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
                     if (!selected) {
-                        this.deps.showNotification(getLabel('switcher.selectFirst'), 'info', 2000);
+                        this.deps.showNotification(getLabel('switcher.selectFirst'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
                         return;
                     }
                     this.toggleThemePicker(selected.dataset.cycleKey);
@@ -261,21 +261,21 @@ export class RoutineSwitcher {
 
         if (!selectedCycle) {
             console.warn('⚠️ No cycle selected for rename');
-            this.deps.showNotification(getLabel('notify.selectToRename'), "info", 1500);
+            this.deps.showNotification(getLabel('notify.selectToRename'), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
             return;
         }
 
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for renameMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
         const currentState = this.deps.AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for renameMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -284,7 +284,7 @@ export class RoutineSwitcher {
 
         if (!cycleKey || !currentCycle) {
             console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!currentCycle });
-            this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", 1500);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
             return;
         }
 
@@ -310,14 +310,14 @@ export class RoutineSwitcher {
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for deleteMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
         const currentState = this.deps.AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for deleteMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -332,7 +332,7 @@ export class RoutineSwitcher {
 
         if (!cycleKey || !currentCycle) {
             console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!currentCycle });
-            this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", 1500);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
             return;
         }
 
@@ -460,7 +460,7 @@ export class RoutineSwitcher {
 
                 console.log(`✅ Successfully deleted: "${cycleToDelete}"`);
                 if (wasActiveCycle && newActiveCycleName) {
-                    this.deps.showNotification('🗑️ ' + getLabel('notify.cycleDeletedSwitch', { vars: { deleted: cycleToDelete, active: newActiveCycleName } }), "info", 4000);
+                    this.deps.showNotification('🗑️ ' + getLabel('notify.cycleDeletedSwitch', { vars: { deleted: cycleToDelete, active: newActiveCycleName } }), "info", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
                 } else {
                     this.deps.showNotification('🗑️ ' + getLabel('notify.cycleDeleted', { vars: { name: cycleToDelete } }));
                 }
@@ -474,7 +474,7 @@ export class RoutineSwitcher {
     downloadMiniCycle() {
         const selected = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
         if (!selected) {
-            this.deps.showNotification(getLabel('switcher.selectFirst'), 'info', 2000);
+            this.deps.showNotification(getLabel('switcher.selectFirst'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
             return;
         }
 
@@ -556,21 +556,21 @@ export class RoutineSwitcher {
 
         if (!selectedCycle) {
             console.warn('⚠️ No cycle selected for duplication');
-            this.deps.showNotification(getLabel('notify.selectToDuplicate'), "info", 1500);
+            this.deps.showNotification(getLabel('notify.selectToDuplicate'), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
             return;
         }
 
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for duplicateMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
         const currentState = this.deps.AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for duplicateMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -583,7 +583,7 @@ export class RoutineSwitcher {
 
         if (!cycleKey || !originalCycle) {
             console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!originalCycle });
-            this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", 1500);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
             return;
         }
 
@@ -657,7 +657,7 @@ export class RoutineSwitcher {
             }
         }, 100);
 
-        this.deps.showNotification('📋 ' + getLabel('notify.routineDuplicated', { vars: { name: uniqueName } }), "success", 2000);
+        this.deps.showNotification('📋 ' + getLabel('notify.routineDuplicated', { vars: { name: uniqueName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 
     /**
@@ -738,7 +738,7 @@ export class RoutineSwitcher {
 
         if (wasModified) {
             console.log(`⚠️ Name collision: "${newName}" → "${uniqueName}"`);
-            this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: uniqueName } }), "warning", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: uniqueName } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
         }
 
         console.log(`📝 Renaming inline: "${oldKey}" → "${uniqueName}"`);
@@ -787,7 +787,7 @@ export class RoutineSwitcher {
         // (activeCycleId key changed — vocabThemeManager must re-resolve from new key)
         this.deps.refreshThemeLabels?.();
 
-        this.deps.showNotification('✅ ' + getLabel('notify.routineRenamed', { vars: { name: uniqueName } }), "success", 2000);
+        this.deps.showNotification('✅ ' + getLabel('notify.routineRenamed', { vars: { name: uniqueName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 
     /**
@@ -881,7 +881,7 @@ export class RoutineSwitcher {
             const icon = def.icons?.celebrate ?? '🎨';
             this.deps.showNotification(
                 `${icon} ${getLabel('notify.themeApplied', { vars: { name: def.name } })}`,
-                'success', 3000
+                'success', UI_TIMEOUTS.NOTIFICATION_LONG
             );
             this.deps.logHistoryEvent?.('theme_changed', { themeName: def.name, themeId });
             // refreshThemeLabels handles all label updates + applies vocab theme color preset
@@ -934,14 +934,14 @@ export class RoutineSwitcher {
         const selectedCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
 
         if (!selectedCycle) {
-            this.deps.showNotification('⚠️ ' + getLabel('notify.selectFirst'), "warning", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.selectFirst'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for confirmMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -949,7 +949,7 @@ export class RoutineSwitcher {
 
         if (!cycleKey) {
             console.error("❌ Invalid cycle selection - missing cycleKey");
-            this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -995,7 +995,7 @@ export class RoutineSwitcher {
 
         if (newActiveId !== cycleKey) {
             console.error('❌ State update failed! Expected:', cycleKey, 'Got:', newActiveId);
-            this.deps.showNotification('⚠️ ' + getLabel('notify.failedToSwitch'), "error", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.failedToSwitch'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -1038,7 +1038,7 @@ export class RoutineSwitcher {
 
             // ✅ Get cycle name from state for confirmation (use fresh state)
             const cycleName = freshState?.data?.cycles?.[currentActiveCycle]?.title || currentActiveCycle;
-            this.deps.showNotification('✅ ' + getLabel('notify.routineSwitched', { vars: { name: cycleName } }), "success", 2000);
+            this.deps.showNotification('✅ ' + getLabel('notify.routineSwitched', { vars: { name: cycleName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
         }, 100);
     }
 
@@ -1264,7 +1264,10 @@ export class RoutineSwitcher {
         }
 
         if (!cycleData || !cycleData.tasks) {
-            previewWindow.innerHTML = `<br><strong>No tasks found.</strong>`;
+            const noTasksMsg = document.createElement('strong');
+            noTasksMsg.textContent = getLabel('empty.noTasksPreview');
+            previewWindow.innerHTML = '<br>';
+            previewWindow.appendChild(noTasksMsg);
             dateDisplay.textContent = '';
             console.log('⚠️ No tasks found for preview');
             return;
@@ -1637,10 +1640,10 @@ export class RoutineSwitcher {
                     updateStorageBarUI(barElement, textElement, this.deps.showNotification);
                 }
 
-                this.deps.showNotification?.(getLabel('notify.storageRefreshed'), 'success', 2000);
+                this.deps.showNotification?.(getLabel('notify.storageRefreshed'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
             } catch (error) {
                 console.error('Failed to refresh storage quota:', error);
-                this.deps.showNotification?.(getLabel('notify.storageRefreshFailed'), 'error', 3000);
+                this.deps.showNotification?.(getLabel('notify.storageRefreshFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
             } finally {
                 // Remove spinning animation
                 refreshBtn.classList.remove('refreshing');

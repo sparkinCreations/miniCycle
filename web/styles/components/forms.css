@@ -98,7 +98,7 @@ input[type="date"] {
 .time-picker-group input[type="number"]:focus,
 .time-picker-group select:focus {
     border-color: var(--theme-button-primary-bg, var(--color-primary));
-    box-shadow: 0 0 0 2px rgba(76, 121, 255, 0.2);
+    box-shadow: var(--shadow-focus-ring-subtle);
 }
 
 /* =============================================================================

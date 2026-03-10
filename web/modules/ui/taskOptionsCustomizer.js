@@ -699,7 +699,7 @@ export class TaskOptionsCustomizer {
             // Show tip when disabling on touch devices
             if (!newThreeDots && ('ontouchstart' in window)) {
                 setTimeout(() => {
-                    this.deps.showNotification?.('💡 ' + getLabel('notify.threeDotsDisabledTip'), 'info', 4000);
+                    this.deps.showNotification?.('💡 ' + getLabel('notify.threeDotsDisabledTip'), 'info', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
                 }, 300);
             }
         }
@@ -734,13 +734,13 @@ export class TaskOptionsCustomizer {
 
         // Show informative notification about what changed
         if (changedCheckbox === 'reset') {
-            this.deps.showNotification?.(getLabel('notify.taskOptionsReset'), 'info', 2000);
+            this.deps.showNotification?.(getLabel('notify.taskOptionsReset'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
         } else if (changedCheckbox) {
             const optionLabel = changedCheckbox.closest('[data-option-label]')?.dataset.optionLabel || changedCheckbox.dataset.option;
             const labelKey = changedCheckbox.checked ? 'notify.taskOptionEnabled' : 'notify.taskOptionDisabled';
-            this.deps.showNotification?.(getLabel(labelKey, { vars: { option: optionLabel } }), 'info', 2000);
+            this.deps.showNotification?.(getLabel(labelKey, { vars: { option: optionLabel } }), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
         } else {
-            this.deps.showNotification?.(getLabel('notify.taskOptionsUpdated'), 'info', 2000);
+            this.deps.showNotification?.(getLabel('notify.taskOptionsUpdated'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
         }
         console.log(`✅ Saved task options for cycle: ${cycleId}`, { cycleOnlyOptions, moveArrows: newMoveArrows, threeDots: newThreeDots });
     }
@@ -756,7 +756,7 @@ export class TaskOptionsCustomizer {
             cb.checked = defaultValue ?? false;
         });
 
-        this.deps.showNotification?.('🔄 ' + getLabel('notify.taskOptionsReset'), 'info', 2000);
+        this.deps.showNotification?.('🔄 ' + getLabel('notify.taskOptionsReset'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 
     /**

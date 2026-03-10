@@ -15,7 +15,7 @@
     background: var(--theme-input-bg, rgb(255, 255, 255));
     border-radius: var(--radius-md);
     padding: var(--space-1-25) var(--space-1-25) var(--space-1-25) var(--space-2-5); /* Less right padding since button has its own */
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-input);
     margin-bottom: var(--space-4);
     max-width: 450px;
     width: 80%;
@@ -26,7 +26,7 @@
 
 /* Focus ring on the entire container when input is focused */
 .task-input:focus-within {
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2), 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+    box-shadow: var(--shadow-input), var(--shadow-focus-ring);
 }
 
 /* Hidden state - use visibility to reserve space and prevent CLS */

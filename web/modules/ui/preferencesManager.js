@@ -758,13 +758,13 @@ export class PreferencesManager {
             const themeName = root.dataset.vocabThemeName || vocabTheme;
             const textNode = notice.firstChild;
             if (textNode?.nodeType === Node.TEXT_NODE) {
-                textNode.textContent = `${themeName} theme colors are active. Switch to Classic to customize. `;
+                textNode.textContent = getLabel('prefs.vocabThemeNotice', { vars: { name: themeName } }) + ' ';
             }
             notice.style.display = 'flex';
         } else if (!this.isDefaultTheme()) {
             const textNode = notice.firstChild;
             if (textNode?.nodeType === Node.TEXT_NODE) {
-                textNode.textContent = 'Custom colors only apply in the Default theme. ';
+                textNode.textContent = getLabel('prefs.themeNotice') + ' ';
             }
             notice.style.display = 'flex';
         } else {
@@ -782,6 +782,19 @@ export class PreferencesManager {
         return !body.classList.contains('theme-dark-ocean') &&
                !body.classList.contains('theme-golden-glow') &&
                !body.classList.contains('dark-mode') &&
+               (!root.dataset.vocabTheme || root.dataset.vocabTheme === 'classic');
+    }
+
+    /**
+     * Check if pattern customization is allowed (default theme OR dark mode with classic vocab)
+     * Pattern slider works in dark mode unlike other color pickers
+     * @returns {boolean}
+     */
+    isPatternCustomizable() {
+        const body = _deps.getBody();
+        const root = _deps.getRootElement();
+        return !body.classList.contains('theme-dark-ocean') &&
+               !body.classList.contains('theme-golden-glow') &&
                (!root.dataset.vocabTheme || root.dataset.vocabTheme === 'classic');
     }
 
@@ -876,8 +889,8 @@ export class PreferencesManager {
             if (opacityDisplay) opacityDisplay.textContent = `${savedOpacity}%`;
         }
 
-        // Apply pattern if color or opacity differs from defaults
-        if (this.isDefaultTheme()) {
+        // Apply pattern if color or opacity differs from defaults (works in dark mode too)
+        if (this.isPatternCustomizable()) {
             this.applyPatternWithCurrentSettings();
         }
     }
@@ -1073,8 +1086,8 @@ export class PreferencesManager {
             });
         }
 
-        // Apply the pattern with current settings (only if in default theme)
-        if (this.isDefaultTheme()) {
+        // Apply the pattern with current settings (works in dark mode too)
+        if (this.isPatternCustomizable()) {
             this.applyPatternWithCurrentSettings();
         }
 
@@ -1099,8 +1112,8 @@ export class PreferencesManager {
             });
         }
 
-        // Apply the pattern with current settings (only if in default theme)
-        if (this.isDefaultTheme()) {
+        // Apply the pattern with current settings (works in dark mode too)
+        if (this.isPatternCustomizable()) {
             this.applyPatternWithCurrentSettings();
         }
 
@@ -1458,10 +1471,10 @@ export class PreferencesManager {
 
         // Apply localised labels to <option> elements (HTML has placeholder text)
         const labelMap = {
-            fitted: getLabel('preferences.checkmarkFitted'),
-            minimal: getLabel('preferences.checkmarkMinimal'),
-            standard: getLabel('preferences.checkmarkLarger'),
-            circle: getLabel('preferences.checkmarkNoCheckmark')
+            fitted: getLabel('prefs.checkmarkFitted'),
+            minimal: getLabel('prefs.checkmarkMinimal'),
+            standard: getLabel('prefs.checkmarkLarger'),
+            circle: getLabel('prefs.checkmarkNoCheckmark')
         };
         for (const option of select.options) {
             if (labelMap[option.value]) {
@@ -1493,7 +1506,7 @@ export class PreferencesManager {
             _deps.showNotification?.(
                 getLabel('notify.checkmarkStyleChanged'),
                 'info',
-                2000
+                UI_TIMEOUTS.NOTIFICATION_SHORT
             );
         };
         if (safeAdd) safeAdd(select, 'change', select._changeHandler);

@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { LIMITS, DOM_SELECTORS, Z_INDEX, APP_VERSION } from '../core/constants.js';
+import { LIMITS, DOM_SELECTORS, Z_INDEX, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -108,7 +108,7 @@ export function setupImportButtons() {
             localStorage.removeItem('miniCycle_importNotification');
             const { message, type } = JSON.parse(pending);
             if (message) {
-                _deps.showNotification?.(message, type || 'success', 4000);
+                _deps.showNotification?.(message, type || 'success', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
             }
         }
     } catch (e) {
@@ -391,7 +391,7 @@ export async function processImportedData(fileContent) {
         importedData = JSON.parse(fileContent);
     } catch (parseErr) {
         console.error('Import JSON parse failed:', parseErr.message);
-        _deps.showNotification?.(getLabel('notify.invalidJson'), "error", 4000);
+        _deps.showNotification?.(getLabel('notify.invalidJson'), "error", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
         return;
     }
 
@@ -420,7 +420,7 @@ export async function processImportedData(fileContent) {
                     ? getStorageShortageMessage(storageCheck.shortfall)
                     : getLabel('notify.importNoStorage'),
                 'error',
-                5000
+                UI_TIMEOUTS.NOTIFICATION_SLOW
             );
             return;
         }
@@ -748,7 +748,7 @@ export async function processImportedData(fileContent) {
         setTimeout(() => {
             _deps.loadMiniCycle();
             _deps.hideLoader?.();
-            _deps.showNotification?.(importMessage, messageType, 4000);
+            _deps.showNotification?.(importMessage, messageType, UI_TIMEOUTS.NOTIFICATION_EXTENDED);
         }, 400);
     } else {
         // Fallback: full page reload if loadMiniCycle not wired

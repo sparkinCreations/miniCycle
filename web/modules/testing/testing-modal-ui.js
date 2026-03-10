@@ -13,7 +13,7 @@ import {
     safeAddEventListener,
     setupTestingTabs
 } from './testing-modal-core.js';
-import { DOM_IDS, DOM_SELECTORS, Z_INDEX } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, Z_INDEX, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ==========================================
@@ -257,7 +257,7 @@ export function initTestingModalDrag() {
         if (!dragHandle) {
             dragHandle = document.createElement("div");
             dragHandle.className = "testing-modal-drag-handle";
-            dragHandle.innerHTML = ':: Drag to Move ::';
+            dragHandle.textContent = getLabel('test.dragHandle');
             modalContent.style.position = "relative";
             modalContent.appendChild(dragHandle);
         }
@@ -337,7 +337,7 @@ function makeTestingModalDraggable(modalContent, dragHandle) {
             dragHandle.classList.remove("dragging");
 
             if (hasMoved) {
-                showNotification(getLabel('notify.testingModalRepositioned'), "info", 1500);
+                showNotification(getLabel('notify.testingModalRepositioned'), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
             }
         }
     }
@@ -396,10 +396,10 @@ export function addTestingModalDoubleClickToCenter() {
                 modalContent.style.transition = "";
             }, 300);
 
-            showNotification(getLabel('notify.testingModalCentered'), "info", 1500);
+            showNotification(getLabel('notify.testingModalCentered'), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
         });
 
-        dragHandle.title = "Double-click to center modal";
+        dragHandle.title = getLabel('test.centerHint');
     }
 }
 
@@ -418,7 +418,7 @@ export function setupTestResultsEnhancements() {
         openTestResultsInModal();
     });
 
-    testingOutput.title = "Double-click to open in expanded view";
+    testingOutput.title = getLabel('test.expandedViewHint');
     testingOutput.style.cursor = "pointer";
 }
 
@@ -428,7 +428,7 @@ export function setupTestResultsEnhancements() {
 export function openTestResultsInModal() {
     const testingOutput = document.getElementById(DOM_IDS.TESTING_OUTPUT);
     if (!testingOutput || !testingOutput.textContent.trim()) {
-        showNotification(getLabel('notify.noTestResults'), "warning", 2000);
+        showNotification(getLabel('notify.noTestResults'), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
         return;
     }
 
@@ -448,24 +448,36 @@ export function openTestResultsInModal() {
     const header = document.createElement("div");
     header.className = "test-results-header";
 
-    header.innerHTML = `
-        <div>
-            <h2 class="test-results-title">Test Results - Expanded View</h2>
-            <p class="test-results-timestamp">Generated: ${timestamp}</p>
-        </div>
-        <button id="close-results-modal" class="test-results-close-btn">Close</button>
-    `;
+    const titleEl = document.createElement('h2');
+    titleEl.className = 'test-results-title';
+    titleEl.textContent = getLabel('test.resultsTitle');
+
+    const timestampEl = document.createElement('p');
+    timestampEl.className = 'test-results-timestamp';
+    timestampEl.textContent = getLabel('test.resultsGenerated', { vars: { timestamp } });
+
+    const closeBtn = document.createElement('button');
+    closeBtn.id = 'close-results-modal';
+    closeBtn.className = 'test-results-close-btn';
+    closeBtn.textContent = getLabel('test.close');
+
+    const headerInner = document.createElement('div');
+    headerInner.appendChild(titleEl);
+    headerInner.appendChild(timestampEl);
+
+    header.appendChild(headerInner);
+    header.appendChild(closeBtn);
 
     // Controls bar
     const controlsBar = document.createElement("div");
     controlsBar.className = "test-results-controls";
 
     const controls = [
-        { id: "copy-results", text: "Copy", class: "success" },
-        { id: "save-results", text: "Save as File", class: "primary" },
-        { id: "print-results", text: "Print", class: "primary" },
-        { id: "clear-selection", text: "Clear Selection", class: "secondary" },
-        { id: "search-results", text: "Find", class: "info" }
+        { id: "copy-results", text: getLabel('test.copy'), class: "success" },
+        { id: "save-results", text: getLabel('test.saveAsFile'), class: "primary" },
+        { id: "print-results", text: getLabel('test.print'), class: "primary" },
+        { id: "clear-selection", text: getLabel('test.clearSelection'), class: "secondary" },
+        { id: "search-results", text: getLabel('test.find'), class: "info" }
     ];
 
     controls.forEach(control => {
@@ -480,10 +492,19 @@ export function openTestResultsInModal() {
     const searchBar = document.createElement("div");
     searchBar.id = "search-bar";
     searchBar.className = "test-results-search-bar";
-    searchBar.innerHTML = `
-        <input type="text" id="search-input" name="search-input" placeholder="Search in results..." class="test-results-search-input">
-        <div class="test-results-search-info" id="search-info"></div>
-    `;
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.id = 'search-input';
+    searchInput.name = 'search-input';
+    searchInput.placeholder = getLabel('test.searchPlaceholder');
+    searchInput.className = 'test-results-search-input';
+
+    const searchInfoEl = document.createElement('div');
+    searchInfoEl.className = 'test-results-search-info';
+    searchInfoEl.id = 'search-info';
+
+    searchBar.appendChild(searchInput);
+    searchBar.appendChild(searchInfoEl);
 
     // Results area
     const resultsArea = document.createElement("div");
@@ -504,12 +525,12 @@ export function openTestResultsInModal() {
     };
 
     // Event listeners
-    const closeBtn = modalOverlay.querySelector("#close-results-modal");
-    closeBtn.addEventListener("click", closeResultsModal);
+    const closeBtnEl = modalOverlay.querySelector("#close-results-modal");
+    closeBtnEl.addEventListener("click", closeResultsModal);
 
     modalOverlay.querySelector("#copy-results").addEventListener("click", () => {
         navigator.clipboard.writeText(content).then(() => {
-            showNotification(getLabel('notify.testResultsCopied'), "success", 2000);
+            showNotification(getLabel('notify.testResultsCopied'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
         });
     });
 
@@ -521,7 +542,7 @@ export function openTestResultsInModal() {
         a.download = `minicycle-test-results-${Date.now()}.txt`;
         a.click();
         URL.revokeObjectURL(url);
-        showNotification(getLabel('notify.testResultsSaved'), "success", 2000);
+        showNotification(getLabel('notify.testResultsSaved'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
     });
 
     modalOverlay.querySelector("#print-results").addEventListener("click", () => {
@@ -531,7 +552,7 @@ export function openTestResultsInModal() {
         const html = doc.createElement('html');
         const head = doc.createElement('head');
         const title = doc.createElement('title');
-        title.textContent = 'miniCycle Test Results';
+        title.textContent = getLabel('test.printTitle');
         head.appendChild(title);
         html.appendChild(head);
         const body = doc.createElement('body');
@@ -556,20 +577,20 @@ export function openTestResultsInModal() {
 
     modalOverlay.querySelector("#clear-selection").addEventListener("click", () => {
         window.getSelection().removeAllRanges();
-        showNotification(getLabel('notify.selectionCleared'), "info", 1500);
+        showNotification(getLabel('notify.selectionCleared'), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
     });
 
     // Search functionality
-    const searchInput = modalOverlay.querySelector("#search-input");
-    const searchInfo = modalOverlay.querySelector("#search-info");
+    const searchInputEl = modalOverlay.querySelector("#search-input");
+    const searchInfoNode = modalOverlay.querySelector("#search-info");
 
-    searchInput.addEventListener("input", (e) => {
+    searchInputEl.addEventListener("input", (e) => {
         const query = e.target.value.toLowerCase();
         const resultsEl = modalOverlay.querySelector("#modal-results-content");
 
         if (!query) {
             resultsEl.textContent = content;
-            searchInfo.textContent = "";
+            searchInfoNode.textContent = "";
             return;
         }
 
@@ -584,7 +605,7 @@ export function openTestResultsInModal() {
         }).join('\n');
 
         resultsEl.textContent = highlighted;
-        searchInfo.textContent = `Found ${matchingLines} matching lines`;
+        searchInfoNode.textContent = getLabel('test.searchResults', { vars: { count: matchingLines } });
     });
 
     // Keyboard shortcuts
@@ -626,7 +647,7 @@ export function openTestResultsInModal() {
 
     document.body.appendChild(modalOverlay);
     modalOverlay.showModal();
-    showNotification(getLabel('notify.testResultsExpanded'), "success", 2000);
+    showNotification(getLabel('notify.testResultsExpanded'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
 }
 
 /**
@@ -638,7 +659,7 @@ export function addTestResultsHint() {
 
     const hint = document.createElement("small");
     hint.className = "test-results-hint";
-    hint.textContent = "Double-click to expand";
+    hint.textContent = getLabel('test.expandHint');
 
     // Insert after the h3 title
     const title = resultsHeader.querySelector('h3');
@@ -672,12 +693,12 @@ export function initTestingModalEnhancements(callbacks = {}) {
                 if (testingModal.open) {
                     testingModal.close();
                     testingModal._previousFocus?.focus({ focusVisible: false });
-                    showNotification(getLabel('notify.testingPanelClosed'), "info", 1500);
+                    showNotification(getLabel('notify.testingPanelClosed'), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
                 } else {
                     testingModal._previousFocus = document.activeElement;
                     testingModal.showModal();
                     initTestingModalDrag();
-                    showNotification(getLabel('notify.testingPanelOpened'), "success", 2000);
+                    showNotification(getLabel('notify.testingPanelOpened'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
 
                     setTimeout(() => {
                         setupTestingTabs();
@@ -687,7 +708,7 @@ export function initTestingModalEnhancements(callbacks = {}) {
                 }
             } else {
                 console.warn("Testing modal not found");
-                showNotification(getLabel('notify.testingPanelNotAvailable'), "error", 2000);
+                showNotification(getLabel('notify.testingPanelNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_SHORT);
             }
         }
     });

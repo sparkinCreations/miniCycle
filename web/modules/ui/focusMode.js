@@ -15,7 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_CLASSES } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getIcon } from '../utils/icons.js';
 
@@ -156,7 +156,7 @@ export class FocusMode {
             this._button.setAttribute('aria-label', getLabel('focusMode.exitAria'));
         }
 
-        this.deps.showNotification?.(getLabel('focusMode.activated'), 'info', 1500);
+        this.deps.showNotification?.(getLabel('focusMode.activated'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);
     }
 
     /**
@@ -199,7 +199,7 @@ export class FocusMode {
             }
         }, 400);
 
-        this.deps.showNotification?.(getLabel('focusMode.deactivated'), 'info', 1500);
+        this.deps.showNotification?.(getLabel('focusMode.deactivated'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);
     }
 
     /**

@@ -45,7 +45,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
 import { getLabel } from '../labels/labelResolver.js';
 
@@ -267,7 +267,7 @@ export class ModalManager {
 
                 // Manual validation (novalidate on form prevents browser flicker)
                 if (feedbackText && feedbackText.value.trim().length < 10) {
-                    this.deps.showNotification("⚠️ " + getLabel('feedback.minLength'), "warning", 3000);
+                    this.deps.showNotification("⚠️ " + getLabel('feedback.minLength'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                     feedbackText.focus();
                     return;
                 }

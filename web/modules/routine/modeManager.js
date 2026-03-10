@@ -14,7 +14,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -589,7 +589,7 @@ export class ModeManager {
             }
 
             if (this.deps.showNotification) {
-                this.deps.showNotification(getLabel('notify.modeSwitched', { vars: { mode: this.getModeName(e.target.value) } }), 'success', 2000);
+                this.deps.showNotification(getLabel('notify.modeSwitched', { vars: { mode: this.getModeName(e.target.value) } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
             }
 
             console.log('✅ ModeManager: Mode change applied without reload');
@@ -658,7 +658,7 @@ export class ModeManager {
                 this.updateCycleModeDescription();
 
                 if (this.deps.showNotification) {
-                    this.deps.showNotification(getLabel('notify.modeSwitched', { vars: { mode: this.getModeName(modeToRestore) } }), 'success', 3000);
+                    this.deps.showNotification(getLabel('notify.modeSwitched', { vars: { mode: this.getModeName(modeToRestore) } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
                 }
             }, 500);
         }
@@ -879,7 +879,7 @@ export class ModeManager {
                     this.deps.showNotification(
                         getLabel(newVisible ? 'notify.taskInputShown' : 'notify.taskInputHidden'),
                         'info',
-                        4000
+                        UI_TIMEOUTS.NOTIFICATION_EXTENDED
                     );
                 }
             });
@@ -895,7 +895,7 @@ export class ModeManager {
                 } else {
                     console.warn('⚠️ ModeManager: createNewMiniCycle not available');
                     if (this.deps.showNotification) {
-                        this.deps.showNotification(getLabel('notify.createRoutineUnavailable'), 'warning', 2000);
+                        this.deps.showNotification(getLabel('notify.createRoutineUnavailable'), 'warning', UI_TIMEOUTS.NOTIFICATION_SHORT);
                     }
                 }
             });

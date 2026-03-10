@@ -195,8 +195,8 @@ class EducationalTipManager {
   createTip(tipId, tipText, options = {}) {
     const {
       icon = '💡',
-      borderColor = 'rgba(255, 255, 255, 0.3)',
-      backgroundColor = 'rgba(255, 255, 255, 0.1)',
+      borderColor = 'var(--tip-border-color, rgba(255, 255, 255, 0.3))',
+      backgroundColor = 'var(--tip-bg-color, rgba(255, 255, 255, 0.1))',
       className = 'educational-tip'
     } = options;
 
@@ -436,7 +436,7 @@ export class MiniCycleNotifications {
           border: "none",
           fontSize: "16px",
           cursor: "pointer",
-          color: "#fff",
+          color: "var(--theme-notification-text, #fff)",
           lineHeight: "1",
           padding: "0"
         });
@@ -1471,7 +1471,7 @@ async setDefaultPosition(notificationContainer) {
   showApplyConfirmation(targetElement) {
     const tempConfirm = document.createElement("span");
     tempConfirm.textContent = "✨  " + getLabel('notify.applied');
-    tempConfirm.style.color = "#209b17ff";
+    tempConfirm.style.color = "var(--color-success, #28a745)";
     tempConfirm.style.fontWeight = "bold";
     tempConfirm.style.marginLeft = "8px";
     tempConfirm.style.opacity = "0";

@@ -281,13 +281,13 @@ export class MiniCycleReminders {
         if (globalReminderState) {
             console.log("🔔 Global Reminders Enabled — Starting reminders...");
             if (!wasEnabled) {
-                this.deps.showNotification('🔔 ' + getLabel('notify.reminderEnabled'), "success", 2500);
+                this.deps.showNotification('🔔 ' + getLabel('notify.reminderEnabled'), "success", UI_TIMEOUTS.NOTIFICATION_MEDIUM);
             }
             setTimeout(() => this.startReminders(), UI_TIMEOUTS.ANIMATION_SHORT);
         } else {
             console.log("🔕 Global Reminders Disabled — Stopping reminders...");
             if (wasEnabled) {
-                this.deps.showNotification('🔕 ' + getLabel('notify.reminderDisabled'), "error", 2500);
+                this.deps.showNotification('🔕 ' + getLabel('notify.reminderDisabled'), "error", UI_TIMEOUTS.NOTIFICATION_MEDIUM);
             }
             this.stopReminders();
         }
@@ -856,7 +856,7 @@ export class MiniCycleReminders {
                     : getLabel('notify.reminderCustomSettings');
 
                 const message = `🔔 ${getLabel('notify.reminderEnabled', { vars: { settings: settingsText } })}\n${getLabel('notify.reminderClickToConfigure')}`;
-                const notificationElement = this.deps.showNotification(message, "success", 5000);
+                const notificationElement = this.deps.showNotification(message, "success", UI_TIMEOUTS.NOTIFICATION_SLOW);
 
                 // Add click listener to open reminders modal
                 if (notificationElement) {
@@ -886,7 +886,7 @@ export class MiniCycleReminders {
                     }
                 }
             } else {
-                this.deps.showNotification('🔕 ' + getLabel('notify.taskReminderDisabled'), 'info', 1500);
+                this.deps.showNotification('🔕 ' + getLabel('notify.taskReminderDisabled'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);
             }
         };
         safeAdd(button, "click", button._reminderClickHandler);
@@ -1035,13 +1035,13 @@ export class MiniCycleReminders {
 
                     // Case 1: Browser doesn't support Notification API
                     if (typeof Notification === 'undefined') {
-                        this.deps.showNotification(getLabel('reminders.permissionUnsupported'), 'warning', 3000);
+                        this.deps.showNotification(getLabel('reminders.permissionUnsupported'), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
                         return;
                     }
 
                     // Case 2: Permission was previously denied/blocked — can't re-prompt
                     if (Notification.permission === 'denied') {
-                        this.deps.showNotification(getLabel('reminders.permissionBlocked'), 'warning', 5000);
+                        this.deps.showNotification(getLabel('reminders.permissionBlocked'), 'warning', UI_TIMEOUTS.NOTIFICATION_SLOW);
                         return;
                     }
 
@@ -1049,7 +1049,7 @@ export class MiniCycleReminders {
                     if (Notification.permission === 'granted') {
                         browserNotificationsCheckbox.checked = true;
                         this.autoSaveReminders();
-                        this.deps.showNotification(getLabel('reminders.permissionGranted'), 'success', 2500);
+                        this.deps.showNotification(getLabel('reminders.permissionGranted'), 'success', UI_TIMEOUTS.NOTIFICATION_MEDIUM);
                         return;
                     }
 
@@ -1077,27 +1077,27 @@ export class MiniCycleReminders {
                                         test.close();
                                         browserNotificationsCheckbox.checked = true;
                                         this.autoSaveReminders();
-                                        this.deps.showNotification(getLabel('reminders.permissionGranted'), 'success', 2500);
+                                        this.deps.showNotification(getLabel('reminders.permissionGranted'), 'success', UI_TIMEOUTS.NOTIFICATION_MEDIUM);
                                     } catch (testErr) {
                                         console.warn('⚠️ Test notification failed:', testErr);
-                                        this.deps.showNotification(getLabel('reminders.permissionTestFailed'), 'warning', 5000);
+                                        this.deps.showNotification(getLabel('reminders.permissionTestFailed'), 'warning', UI_TIMEOUTS.NOTIFICATION_SLOW);
                                     }
                                 } else if (permission === 'denied') {
-                                    this.deps.showNotification(getLabel('reminders.permissionDenied'), 'info', 4000);
+                                    this.deps.showNotification(getLabel('reminders.permissionDenied'), 'info', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
                                 } else {
                                     // "default" — user dismissed the prompt without choosing
-                                    this.deps.showNotification(getLabel('reminders.permissionDenied'), 'info', 4000);
+                                    this.deps.showNotification(getLabel('reminders.permissionDenied'), 'info', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
                                 }
                             } catch (e) {
                                 console.warn('⚠️ Notification permission request failed:', e);
-                                this.deps.showNotification(getLabel('reminders.permissionUnsupported'), 'warning', 3000);
+                                this.deps.showNotification(getLabel('reminders.permissionUnsupported'), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
                             }
                         }
                     });
                 } else {
                     // Toggling OFF — save and confirm
                     this.autoSaveReminders();
-                    this.deps.showNotification(getLabel('reminders.browserNotificationsDisabled'), 'info', 2000);
+                    this.deps.showNotification(getLabel('reminders.browserNotificationsDisabled'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
                 }
             });
         }

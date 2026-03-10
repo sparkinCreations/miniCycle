@@ -21,7 +21,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { Z_INDEX } from '../core/constants.js';
+import { Z_INDEX, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -729,7 +729,7 @@ async function performAutoMigration(options = {}) {
             const migrationResult = performSchema25Migration();
 
             if (migrationResult.success || migrationResult.partialSuccess) {
-                _deps.showNotification('✅ ' + getLabel('notify.forceMigrationComplete'), 'success', 6000);
+                _deps.showNotification('✅ ' + getLabel('notify.forceMigrationComplete'), 'success', UI_TIMEOUTS.NOTIFICATION_EXTRA_LONG);
                 return {
                     success: true,
                     forced: true,
@@ -791,7 +791,7 @@ async function performAutoMigration(options = {}) {
         if (fixResult.success && fixResult.fixedCount > 0) {
             console.log(`✅ Successfully fixed ${fixResult.fixedCount} data issues:`);
             fixResult.details?.forEach(detail => console.log(`   - ${detail}`));
-            _deps.showNotification(`🔧 ${getLabel('notify.dataIssuesFixed', { vars: { count: fixResult.fixedCount } })}`, 'info', 3000);
+            _deps.showNotification(`🔧 ${getLabel('notify.dataIssuesFixed', { vars: { count: fixResult.fixedCount } })}`, 'info', UI_TIMEOUTS.NOTIFICATION_LONG);
         } else if (!fixResult.success) {
             console.warn('⚠️ Data fixing encountered issues, but continuing with migration');
             console.warn('🔧 Fix error:', fixResult.message);
@@ -907,7 +907,7 @@ async function performAutoMigration(options = {}) {
         const successMessage = fixResult.fixedCount > 0
             ? '✅ ' + getLabel('notify.dataUpdatedWithFixes', { vars: { count: fixResult.fixedCount } })
             : '✅ ' + getLabel('notify.dataFormatUpdated');
-        _deps.showNotification(successMessage, 'success', 4000);
+        _deps.showNotification(successMessage, 'success', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
 
         // Step 8: Store migration completion info
         const legacyData = _deps.storage.getItem('miniCycleStorage') || '{}';
@@ -1013,7 +1013,7 @@ function createMinimalSchema25() {
 
     _deps.storage.setItem("miniCycleData", JSON.stringify(minimalData));
 
-    _deps.showNotification('⚠️ ' + getLabel('notify.freshCycleCreated'), 'warning', 8000);
+    _deps.showNotification('⚠️ ' + getLabel('notify.freshCycleCreated'), 'warning', UI_TIMEOUTS.NOTIFICATION_PERSISTENT);
 
     return {
         success: true,
@@ -1090,7 +1090,7 @@ async function handleMigrationFailure(reason, backupKey) {
             _deps.showNotification(
                 '⚠️ ' + getLabel('notify.migrationFailed'),
                 'warning',
-                8000
+                UI_TIMEOUTS.NOTIFICATION_PERSISTENT
             );
 
             console.log('✅ Fallback to legacy data successful');
@@ -1643,7 +1643,7 @@ export async function initAppWithAutoMigration(options = {}) {
         _deps.showNotification(
             '⚠️ ' + getLabel('notify.compatibilityMode', { vars: { reason: failureReason } }),
             'warning',
-            5000
+            UI_TIMEOUTS.NOTIFICATION_SLOW
         );
 
         // Load app with legacy data

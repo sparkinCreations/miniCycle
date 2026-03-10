@@ -15,7 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS } from '../core/constants.js';
+import { DOM_IDS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -389,7 +389,7 @@ export class OnboardingManager {
 
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for reset onboarding');
-            this.deps.showNotification("❌ " + getLabel('notify.appStateNotReady'), "error", 2000);
+            this.deps.showNotification("❌ " + getLabel('notify.appStateNotReady'), "error", UI_TIMEOUTS.NOTIFICATION_SHORT);
             return;
         }
 
@@ -403,7 +403,7 @@ export class OnboardingManager {
         this.deps.showNotification(
             "✅ " + getLabel('notify.onboardingReset'),
             "success",
-            3000
+            UI_TIMEOUTS.NOTIFICATION_LONG
         );
     }
 

@@ -25,8 +25,7 @@ import {
     DEFAULT_RECURRING_DELETE_SETTINGS,
     DEBOUNCE,
     DOM_IDS,
-    STORAGE_KEYS
-} from './constants.js';
+    STORAGE_KEYS, UI_TIMEOUTS } from './constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -304,7 +303,7 @@ class MiniCycleState {
                     this.deps.showNotification(
                         getLabel('notify.dataCorrupted'),
                         'error',
-                        10000
+                        UI_TIMEOUTS.NOTIFICATION_OVERLAY
                     );
                     return this.data;
                 }
@@ -379,9 +378,9 @@ class MiniCycleState {
                 console.warn('⚠️ Could not parse existing data — creating fallback state:', parseError);
                 existingData = this.createMinimalFallbackState();
                 this.deps.showNotification(
-                    'Data was corrupted and has been reset. Your previous data could not be recovered.',
+                    getLabel('notify.dataCorruptedReset'),
                     'error',
-                    10000
+                    UI_TIMEOUTS.NOTIFICATION_OVERLAY
                 );
             }
 
@@ -493,7 +492,7 @@ class MiniCycleState {
                                 this.deps.showNotification(
                                     getLabel('notify.multiTabConflict'),
                                     'warning',
-                                    5000
+                                    UI_TIMEOUTS.NOTIFICATION_SLOW
                                 );
                             }
                         }
@@ -743,7 +742,7 @@ class MiniCycleState {
                     this.deps.showNotification(
                         getLabel('notify.storageFull'),
                         'warning',
-                        8000
+                        UI_TIMEOUTS.NOTIFICATION_PERSISTENT
                     );
                     this._hideSavingIndicator();
                     return;

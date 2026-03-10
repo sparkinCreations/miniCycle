@@ -13,7 +13,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -198,7 +198,7 @@ export class RoutineManager {
                     const appState = this.deps.AppState;
 
                     if (!this._ensureAppStateReady('cycle creation')) {
-                        this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", 3000);
+                        this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                         return;
                     }
 
@@ -208,7 +208,7 @@ export class RoutineManager {
 
                     if (wasModified) {
                         console.log(`⚠️ Name collision: "${newCycleName}" → "${finalTitle}"`);
-                        this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", 3000);
+                        this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                     }
 
                     // ✅ Create cycle via AppState.update() - use title as key
@@ -344,7 +344,7 @@ export class RoutineManager {
             existingModals.forEach(modal => { if (modal.open) modal.close(); modal.remove(); });
 
             if (!options.silent) {
-                this.deps.showNotification('✨ ' + getLabel('notify.samplePreloaded'), "success", 5000);
+                this.deps.showNotification('✨ ' + getLabel('notify.samplePreloaded'), "success", UI_TIMEOUTS.NOTIFICATION_SLOW);
             }
 
             // ✅ COMPLETE SETUP AFTER LOADING SAMPLE
@@ -380,7 +380,7 @@ export class RoutineManager {
         const appState = this.deps.AppState;
 
         if (!this._ensureAppStateReady('fallback cycle creation')) {
-            this.deps.showNotification('⚠️ ' + getLabel('notify.failedToCreateCycle'), "error", 5000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.failedToCreateCycle'), "error", UI_TIMEOUTS.NOTIFICATION_SLOW);
             return;
         }
 
@@ -444,7 +444,7 @@ export class RoutineManager {
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for createNewMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", 3000);
+            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -455,7 +455,7 @@ export class RoutineManager {
             this.deps.showNotification(
                 getStorageShortageMessage(storageCheck.shortfall),
                 'error',
-                5000
+                UI_TIMEOUTS.NOTIFICATION_SLOW
             );
             return;
         }
@@ -471,7 +471,7 @@ export class RoutineManager {
             callback: (result) => {
                 if (!result) {
                     console.log('❌ User cancelled creation');
-                    this.deps.showNotification("❌ " + getLabel('notify.creationCancelled'), 'info', 3000);
+                    this.deps.showNotification("❌ " + getLabel('notify.creationCancelled'), 'info', UI_TIMEOUTS.NOTIFICATION_LONG);
                     return;
                 }
 
@@ -488,7 +488,7 @@ export class RoutineManager {
 
                 if (wasModified) {
                     console.log(`⚠️ Name collision: "${newCycleName}" → "${finalTitle}"`);
-                    this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", 3000);
+                    this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                 }
 
                 const storageKey = finalTitle;
@@ -592,7 +592,7 @@ export class RoutineManager {
 
                 if (finalResult) {
                     console.log(`✅ Created and switched to new miniCycle (state-based): "${finalResult.finalTitle}" (key: ${finalResult.storageKey})`);
-                    this.deps.showNotification(`✅ ${getLabel('notify.routineCreated', { vars: { name: finalResult.finalTitle } })}`, "success", 3000);
+                    this.deps.showNotification(`✅ ${getLabel('notify.routineCreated', { vars: { name: finalResult.finalTitle } })}`, "success", UI_TIMEOUTS.NOTIFICATION_LONG);
                 }
             }
         });

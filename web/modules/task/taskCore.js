@@ -41,7 +41,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { TASK_TIMEOUTS } from '../core/constants.js';
+import { TASK_TIMEOUTS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -572,7 +572,7 @@ export async function initTaskCore(dependencies = {}) {
             taskCoreInstance = null;
 
             if (dependencies.showNotification) {
-                dependencies.showNotification(getLabel('notify.taskSystemInitFailed'), 'error', 5000);
+                dependencies.showNotification(getLabel('notify.taskSystemInitFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SLOW);
             }
             throw e;
         }

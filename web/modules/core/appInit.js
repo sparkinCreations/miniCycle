@@ -36,7 +36,7 @@
  */
 
 import { createDIModule, optional } from './diBase.js';
-import { DOM_IDS, STORAGE_KEYS, Z_INDEX } from './constants.js';
+import { DOM_IDS, STORAGE_KEYS, Z_INDEX, UI_TIMEOUTS } from './constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -391,7 +391,7 @@ class AppInit {
 				onboardingManager.showOnboarding(cycles, activeCycle, schemaData);
 			} else {
 				// Fallback if onboarding manager not available
-				_deps.showNotification?.(getLabel('notify.noRoutinesFound'), 'warning', 5000);
+				_deps.showNotification?.(getLabel('notify.noRoutinesFound'), 'warning', UI_TIMEOUTS.NOTIFICATION_SLOW);
 				_deps.showCycleCreationModal?.();
 			}
 			return;
@@ -415,7 +415,7 @@ class AppInit {
 					// Reload schemaData with fixed activeCycle
 					schemaData = miniCycleState.load();
 					const recoveredActiveCycle = schemaData?.activeCycle || firstCycle;
-					_deps.showNotification?.(getLabel('notify.recoveredRoutine', { vars: { name: recoveredActiveCycle } }), 'success', 3000);
+					_deps.showNotification?.(getLabel('notify.recoveredRoutine', { vars: { name: recoveredActiveCycle } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
 					await this.runCompleteInitialSetup(recoveredActiveCycle, null, schemaData);
 					return;
 				}
@@ -423,7 +423,7 @@ class AppInit {
 
 			// Recovery failed - show creation modal
 			console.warn('⚠️ DATA INTEGRITY: Recovery failed - showing creation modal');
-			_deps.showNotification?.(getLabel('notify.noActiveRoutine'), 'warning', 5000);
+			_deps.showNotification?.(getLabel('notify.noActiveRoutine'), 'warning', UI_TIMEOUTS.NOTIFICATION_SLOW);
 			_deps.showCycleCreationModal?.();
 			return;
 		}

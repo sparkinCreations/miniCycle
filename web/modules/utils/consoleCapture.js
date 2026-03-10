@@ -11,7 +11,7 @@
  * @module consoleCapture
  */
 
-import { STORAGE_KEYS } from '../core/constants.js';
+import { STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { createDIModule, optional } from '../core/diBase.js';
 
@@ -296,7 +296,7 @@ export class MiniCycleConsoleCapture {
         this.appendToTestResults("\n==========================================\n");
         this.appendToTestResults(`📊 Console capture complete - ${allLogs.length} messages displayed\n\n`);
 
-        this.deps.showNotification(`📊 ${getLabel('notify.consoleCaptureDisplayed', { vars: { count: allLogs.length } })}`, "success", 4000);
+        this.deps.showNotification(`📊 ${getLabel('notify.consoleCaptureDisplayed', { vars: { count: allLogs.length } })}`, "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
     }
 
     clearAllConsoleLogs() {
@@ -305,7 +305,7 @@ export class MiniCycleConsoleCapture {
         this.appendToTestResults("🧹 All console logs cleared (including stored buffer)\n");
         this.appendToTestResults("✨ Ready to capture new migration activity\n\n");
 
-        this.deps.showNotification(`🧹 ${getLabel('notify.logsCleared')}`, "info", 2000);
+        this.deps.showNotification(`🧹 ${getLabel('notify.logsCleared')}`, "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 
     // Enhanced error filtering with more sophisticated detection
@@ -393,13 +393,13 @@ export class MiniCycleConsoleCapture {
         
         if (categories['Critical Errors'].length > 0) {
             this.appendToTestResults("🚨 ATTENTION: Critical errors detected! Review the error messages above.\n\n");
-            this.deps.showNotification(`🚨 ${getLabel('notify.migrationErrorsFound', { vars: { count: errorMessages.length, errorCount: categories['Critical Errors'].length } })}`, "error", 6000);
+            this.deps.showNotification(`🚨 ${getLabel('notify.migrationErrorsFound', { vars: { count: errorMessages.length, errorCount: categories['Critical Errors'].length } })}`, "error", UI_TIMEOUTS.NOTIFICATION_EXTRA_LONG);
         } else if (categories['Warnings'].length > 0) {
             this.appendToTestResults("⚠️ Warnings found but no critical errors detected.\n\n");
-            this.deps.showNotification(`⚠️ ${getLabel('notify.migrationWarningsFound', { vars: { count: errorMessages.length, warningCount: categories['Warnings'].length } })}`, "warning", 4000);
+            this.deps.showNotification(`⚠️ ${getLabel('notify.migrationWarningsFound', { vars: { count: errorMessages.length, warningCount: categories['Warnings'].length } })}`, "warning", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
         } else {
             this.appendToTestResults("✅ No critical errors found in migration messages.\n\n");
-            this.deps.showNotification(`📊 ${getLabel('notify.migrationNoErrors', { vars: { count: errorMessages.length } })}`, "success", 4000);
+            this.deps.showNotification(`📊 ${getLabel('notify.migrationNoErrors', { vars: { count: errorMessages.length } })}`, "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
         }
     }
 

@@ -12,7 +12,8 @@ import {
     appendToTestResults,
     safeAddEventListenerById
 } from './testing-modal-core.js';
-import { STORAGE_KEYS } from '../core/constants.js';
+import { STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ==========================================
 // BUTTON SETUP
@@ -47,12 +48,12 @@ export function runFullAnalysis() {
     appendToTestResults("=".repeat(50) + "\n");
     appendToTestResults("RUNNING FULL DATA ANALYSIS\n");
     appendToTestResults("=".repeat(50) + "\n\n");
-    showNotification("Running full data analysis...", "info", 3000);
+    showNotification(getLabel('notify.analysisRunning'), "info", UI_TIMEOUTS.NOTIFICATION_LONG);
 
     const state = deps.AppState?.get();
     if (!state) {
         appendToTestResults("No state data available\n\n");
-        showNotification("No data available", "error", 3000);
+        showNotification(getLabel('notify.diagNoData'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
         return;
     }
 
@@ -148,7 +149,7 @@ export function runFullAnalysis() {
     appendToTestResults("=".repeat(50) + "\n\n");
 
     const status = issues.length === 0 ? "success" : "warning";
-    showNotification(`Analysis complete: ${totalCycles} routines, ${totalTasks} tasks, ${issues.length} issues`, status, 4000);
+    showNotification(getLabel('notify.analysisComplete', { vars: { routineCount: totalCycles, taskCount: totalTasks, issueCount: issues.length } }), status, UI_TIMEOUTS.NOTIFICATION_EXTENDED);
 }
 
 /**
@@ -184,7 +185,7 @@ export function exportDebugData() {
     appendToTestResults(`Debug package exported successfully\n`);
     appendToTestResults(`File: minicycle-debug-${Date.now()}.json\n\n`);
 
-    showNotification("Debug package exported to downloads", "success", 3000);
+    showNotification(getLabel('notify.debugPackageExported'), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
 }
 
 // Test data patterns to detect and remove
@@ -221,7 +222,7 @@ function isTestDataCycle(cycleId, cycle) {
 export function repairData() {
     const deps = getDeps();
     appendToTestResults("Repairing Data Issues...\n");
-    showNotification("Attempting to repair data issues...", "warning", 3000);
+    showNotification(getLabel('notify.analysisRepairing'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
 
     setTimeout(() => {
         // Debug: Log what deps contains
@@ -402,11 +403,11 @@ export function repairData() {
         appendToTestResults("\n");
 
         if (testDataFound.length > 0) {
-            showNotification(`Removed ${testDataFound.length} test cycle(s), made ${repairs.length} total repairs`, "success", 4000);
+            showNotification(`Removed ${testDataFound.length} test cycle(s), made ${repairs.length} total repairs`, "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
         } else if (repairs.length > 0) {
-            showNotification(`Made ${repairs.length} repairs`, "success", 3000);
+            showNotification(`Made ${repairs.length} repairs`, "success", UI_TIMEOUTS.NOTIFICATION_LONG);
         } else {
-            showNotification("No repairs needed", "success", 2000);
+            showNotification(getLabel('notify.analysisNoRepairs'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
         }
     }, 1000);
 }

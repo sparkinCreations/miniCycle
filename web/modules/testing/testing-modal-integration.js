@@ -202,7 +202,7 @@ function createTestRunnerModal() {
         testRunnerModal = null;
     }
 
-    const modal = document.createElement('div');
+    const modal = document.createElement('dialog');
     modal.id = 'test-runner-modal';
     modal.className = 'test-runner-overlay';
 
@@ -254,24 +254,21 @@ function createTestRunnerModal() {
     const closeBtn = header.querySelector('#close-test-runner');
     closeBtn.addEventListener('click', () => closeTestRunnerModal());
 
-    // Click outside to close
+    // Click on backdrop (::backdrop) fires click on dialog itself
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             closeTestRunnerModal();
         }
     });
 
-    // Escape key to close
-    const escHandler = (e) => {
-        if (e.key === 'Escape') {
-            closeTestRunnerModal();
-            document.removeEventListener('keydown', escHandler);
-        }
-    };
-    document.addEventListener('keydown', escHandler);
-    modal._escHandler = escHandler;
+    // Native dialog handles Escape via 'cancel' event
+    modal.addEventListener('cancel', (e) => {
+        e.preventDefault(); // Prevent default close so we run our cleanup
+        closeTestRunnerModal();
+    });
 
     document.body.appendChild(modal);
+    modal.showModal();
     testRunnerModal = modal;
 
     return { modal, iframe };
@@ -280,8 +277,8 @@ function createTestRunnerModal() {
 // Close the test runner modal
 async function closeTestRunnerModal() {
     if (testRunnerModal) {
-        if (testRunnerModal._escHandler) {
-            document.removeEventListener('keydown', testRunnerModal._escHandler);
+        if (testRunnerModal.open) {
+            testRunnerModal.close();
         }
         testRunnerModal.remove();
         testRunnerModal = null;

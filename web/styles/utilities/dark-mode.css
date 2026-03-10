@@ -15,6 +15,21 @@ html.dark-mode,
 body.dark-mode {
     background: linear-gradient(135deg, var(--dark-bg-start), var(--dark-surface-primary));
     color: var(--theme-text-primary);
+
+    /* Shadow overrides — darker shadows for dark backgrounds */
+    --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 1px 4px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 2px 4px rgba(0, 0, 0, 0.3);
+    --shadow-button: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-button-hover: 0 2px 4px rgba(0, 0, 0, 0.4);
+    --shadow-input: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-dropdown: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-toast: 0 8px 20px rgba(0, 0, 0, 0.5);
+    --shadow-modal-heavy: 0 0 24px rgba(0, 0, 0, 0.7);
+    --shadow-modal-compound: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    --shadow-inner-border: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+    --text-shadow-md: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 /* =============================================================================
@@ -141,7 +156,7 @@ body.dark-mode .task {
     background: var(--theme-task-bg);
     color: var(--theme-task-text);
     border: 1px solid var(--theme-task-border);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--shadow-sm);
 }
 
 body.dark-mode .task:hover {
@@ -218,7 +233,7 @@ body.dark-mode .task-options .task-btn,
 body.dark-mode .task-options .move-btn {
     background: var(--dark-button-hover-bg);
     border: 1px solid var(--dark-border-subtle);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-md);
 }
 
 body.dark-mode .complete-all-btn.todo-mode-btn {
@@ -312,7 +327,7 @@ body.dark-mode .global-stats-container strong {
 
 body.dark-mode .stats-feature-btn,
 body.dark-mode #achievement-badges-btn {
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-lg);
 }
 
 body.dark-mode .stats-feature-btn:hover,
@@ -683,7 +698,7 @@ body.dark-mode .confirm-add-recurring-btn:disabled {
 body.dark-mode .mini-modal-box {
     background: var(--dark-mini-modal-bg);
     color: var(--theme-text-primary);
-    box-shadow: 0 0 24px rgba(0, 0, 0, 0.7);
+    box-shadow: var(--shadow-modal-heavy);
 }
 
 body.dark-mode .mini-modal-header {
@@ -745,7 +760,7 @@ body.dark-mode .testing-tab:hover {
 body.dark-mode .testing-tab.active {
     background: var(--dark-test-surface);
     color: var(--dark-test-text);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-button);
 }
 
 body.dark-mode .testing-tab-content {
@@ -759,7 +774,7 @@ body.dark-mode .testing-section {
 
 body.dark-mode .testing-section:hover {
     border-color: var(--dark-test-accent-hover);
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+    box-shadow: var(--shadow-glow-purple);
 }
 
 body.dark-mode .testing-section h3 {
@@ -1072,7 +1087,7 @@ body.dark-mode .miniCycle-prompt-input {
 body.dark-mode .task-input {
     background: var(--color-slate-800);
     border: 1px solid var(--color-slate-700);
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-input);
 }
 
 body.dark-mode #taskInput {
@@ -1085,7 +1100,7 @@ body.dark-mode #taskInput::placeholder {
 }
 
 body.dark-mode .task-input:focus-within {
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.4), 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+    box-shadow: var(--shadow-input), var(--shadow-focus-ring);
 }
 
 body.dark-mode #addTaskBtn {

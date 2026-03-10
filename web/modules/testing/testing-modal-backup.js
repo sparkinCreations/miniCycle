@@ -14,7 +14,7 @@ import {
     safeShowConfirmationModal,
     escapeHtml
 } from './testing-modal-core.js';
-import { DOM_SELECTORS, STORAGE_KEYS } from '../core/constants.js';
+import { DOM_SELECTORS, STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ==========================================
@@ -144,9 +144,9 @@ export async function listAvailableBackups() {
 
     if (totalBackups === 0) {
         appendToTestResults("No backups found\n\n");
-        showNotification(getLabel('notify.noBackupsAvailable'), "info", 2000);
+        showNotification(getLabel('notify.noBackupsAvailable'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
     } else {
-        showNotification(getLabel('notify.backupsFoundCount', { vars: { count: totalBackups } }), "info", 2000);
+        showNotification(getLabel('notify.backupsFoundCount', { vars: { count: totalBackups } }), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 }
 
@@ -241,7 +241,7 @@ export async function restoreFromBackup() {
 
     if (allBackups.length === 0) {
         appendToTestResults("No backups available to restore\n\n");
-        showNotification(getLabel('notify.noBackupsRestore'), "error", 3000);
+        showNotification(getLabel('notify.noBackupsRestore'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
         return;
     }
 
@@ -256,12 +256,17 @@ export async function restoreFromBackup() {
     modalContent.className = "backup-restore-content";
 
     const header = document.createElement("div");
-    header.innerHTML = `
-        <h3 class="backup-restore-title">Restore from Backup</h3>
-        <p class="backup-restore-description">
-            Choose a backup to restore. <strong>Warning:</strong> This will replace all current data.
-        </p>
-    `;
+
+    const restoreTitle = document.createElement('h3');
+    restoreTitle.className = 'backup-restore-title';
+    restoreTitle.textContent = getLabel('test.restoreTitle');
+
+    const restoreDesc = document.createElement('p');
+    restoreDesc.className = 'backup-restore-description';
+    restoreDesc.innerHTML = getLabel('test.restoreDescription').replace('Warning:', '<strong>Warning:</strong>');
+
+    header.appendChild(restoreTitle);
+    header.appendChild(restoreDesc);
 
     const backupList = document.createElement("div");
     backupList.className = "backup-restore-list";
@@ -330,11 +335,11 @@ export async function restoreFromBackup() {
     buttonsContainer.className = "backup-restore-buttons";
 
     const cancelBtn = document.createElement("button");
-    cancelBtn.textContent = "Cancel";
+    cancelBtn.textContent = getLabel('test.cancel');
     cancelBtn.className = "backup-restore-cancel";
 
     const restoreBtn = document.createElement("button");
-    restoreBtn.textContent = "Restore Selected";
+    restoreBtn.textContent = getLabel('test.restoreSelected');
     restoreBtn.disabled = true;
     restoreBtn.className = "backup-restore-confirm";
 
@@ -354,15 +359,15 @@ export async function restoreFromBackup() {
         const storage = selectedBackup.type.includes('indexeddb') ? 'IndexedDB' : 'localStorage';
 
         safeShowConfirmationModal({
-            title: "Confirm Restore",
+            title: getLabel('test.confirmRestoreTitle'),
             message: `WARNING: This will completely replace all your current miniCycle data!\n\n` +
                      `Selected backup: ${selectedBackup.name}\n` +
                      `Date: ${backupDate}\n` +
                      `Type: ${backupType} (${storage})\n\n` +
                      `Are you absolutely sure you want to proceed?\n\n` +
                      `This action cannot be undone!`,
-            confirmText: "Restore",
-            cancelText: "Cancel",
+            confirmText: getLabel('test.restore'),
+            cancelText: getLabel('test.cancel'),
             callback: async (confirmed) => {
                 if (!confirmed) {
                     appendToTestResults("User cancelled restore confirmation\n\n");
@@ -480,13 +485,13 @@ export async function restoreFromBackup() {
 
                     if (modal.open) modal.close();
                     modal.remove();
-                    showNotification(getLabel('notify.testRestoreSuccess'), "success", 3000);
+                    showNotification(getLabel('notify.testRestoreSuccess'), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
 
                     setTimeout(() => location.reload(), 1500);
 
                 } catch (error) {
                     appendToTestResults(`Restore failed: ${error.message}\n\n`);
-                    showNotification(getLabel('notify.testRestoreFailed'), "error", 3000);
+                    showNotification(getLabel('notify.testRestoreFailed'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
                     console.error("Backup restore error:", error);
                 }
             }
@@ -526,7 +531,7 @@ export async function restoreFromBackup() {
     appendToTestResults(`Found ${allBackups.length} available backups (${autoCount} auto, ${manualCount} manual)\n`);
     appendToTestResults("Select a backup above to restore\n\n");
 
-    showNotification(getLabel('notify.selectBackupRestore', { vars: { count: allBackups.length } }), "info", 3000);
+    showNotification(getLabel('notify.selectBackupRestore', { vars: { count: allBackups.length } }), "info", UI_TIMEOUTS.NOTIFICATION_LONG);
 }
 
 /**
@@ -538,7 +543,7 @@ export async function createManualBackup() {
 
     if (!deps.backupManager) {
         appendToTestResults("BackupManager not available\n\n");
-        showNotification(getLabel('notify.backupSystemNotLoaded'), "error", 3000);
+        showNotification(getLabel('notify.backupSystemNotLoaded'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
         return;
     }
 
@@ -547,7 +552,7 @@ export async function createManualBackup() {
 
     if (!backupName) {
         appendToTestResults("Backup cancelled - no name provided\n\n");
-        showNotification(getLabel('notify.backupCancelled'), "info", 2000);
+        showNotification(getLabel('notify.backupCancelled'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
         return;
     }
 
@@ -562,14 +567,14 @@ export async function createManualBackup() {
             appendToTestResults(`Name: ${backupName}\n`);
             appendToTestResults(`Total backups: ${totalBackups}\n\n`);
 
-            showNotification(getLabel('notify.testBackupCreated', { vars: { name: backupName } }), "success", 3000);
+            showNotification(getLabel('notify.testBackupCreated', { vars: { name: backupName } }), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
         } else {
             throw new Error('Backup creation returned false');
         }
 
     } catch (error) {
         appendToTestResults(`Backup failed: ${error.message}\n\n`);
-        showNotification(getLabel('notify.testBackupFailed'), "error", 3000);
+        showNotification(getLabel('notify.testBackupFailed'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
         console.error('Manual backup error:', error);
     }
 }
@@ -594,7 +599,7 @@ export function cleanOldBackups() {
 
     appendToTestResults(`Cleaned ${cleaned} old backups\n`);
     appendToTestResults(`Remaining backups: ${backupKeys.length - cleaned}\n\n`);
-    showNotification(getLabel('notify.backupsCleaned', { vars: { count: cleaned } }), "success", 2000);
+    showNotification(getLabel('notify.backupsCleaned', { vars: { count: cleaned } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
 }
 
 console.log('Testing Modal Backup loaded (DI-pure)');

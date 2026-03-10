@@ -368,11 +368,11 @@ export class GesturePanelManager {
         if (event.key === "ArrowRight" && !this.state.isStatsVisible) {
             event.preventDefault();
             this._triggerShowStatsPanel();
-            showNotification(`⌨️ ${getLabel('notify.keyboardStatsOpened')}`, "info", 1500);
+            showNotification(`⌨️ ${getLabel('notify.keyboardStatsOpened')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
         } else if (event.key === "ArrowLeft" && this.state.isStatsVisible) {
             event.preventDefault();
             this._triggerShowTaskView();
-            showNotification(`⌨️ ${getLabel('notify.keyboardTaskOpened')}`, "info", 1500);
+            showNotification(`⌨️ ${getLabel('notify.keyboardTaskOpened')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
         }
 
         // Shift+Tab for quick toggle (only when nothing is focused — preserve normal tab navigation)
@@ -384,10 +384,10 @@ export class GesturePanelManager {
             event.preventDefault();
             if (this.state.isStatsVisible) {
                 this._triggerShowTaskView();
-                showNotification(`⌨️ ${getLabel('notify.quickToggleTask')}`, "info", 1500);
+                showNotification(`⌨️ ${getLabel('notify.quickToggleTask')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
             } else {
                 this._triggerShowStatsPanel();
-                showNotification(`⌨️ ${getLabel('notify.quickToggleStats')}`, "info", 1500);
+                showNotification(`⌨️ ${getLabel('notify.quickToggleStats')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
             }
         }
     }
