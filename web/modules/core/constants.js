@@ -528,6 +528,8 @@ export const DOM_IDS = Object.freeze({
     THANK_YOU_MESSAGE: 'thank-you-message',
     ABOUT_MODAL: 'about-modal',
     OPEN_ABOUT_MODAL: 'open-about-modal',
+    ABOUT_VERSION: 'about-version',
+    ABOUT_SW_VERSION: 'about-sw-version',
     TASK_OPTIONS_CUSTOMIZER_MODAL: 'task-options-customizer-modal',
     OPEN_TASK_OPTIONS_CUSTOMIZER: 'open-task-options-customizer',
     CLOSE_TASK_OPTIONS_BTN: 'close-task-options-btn',
@@ -608,6 +610,7 @@ export const DOM_IDS = Object.freeze({
     STORAGE_BAR_TEXT: 'storage-bar-text',
     SWITCH_PREVIEW_WINDOW: 'switch-preview-window',
     SWITCH_PREVIEW_DATE: 'switch-preview-date',
+    DESKTOP_PREVIEW_WINDOW: 'desktop-preview-window',
     STORAGE_REFRESH_BTN: 'storage-refresh-btn',
     PREVIEW_REVIEW_OVERLAY: 'preview-review-overlay',
 
@@ -856,6 +859,8 @@ export const DOM_SELECTORS = Object.freeze({
     MINI_CYCLE_OVERLAY: '.miniCycle-prompt-dialog',
     MINI_MODAL_OVERLAY: '.mini-modal-dialog',
     SWITCH_PREVIEW_WINDOW: '.switch-preview-window',
+    DESKTOP_PREVIEW_WINDOW: '.desktop-preview-window',
+    ROUTINE_SWITCHER_RIGHT: '.routine-switcher-right',
     PREVIEW_REVIEW_CLOSE: '.preview-review-close',
 
     // ---- Progress ----

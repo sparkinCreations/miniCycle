@@ -596,10 +596,95 @@ dialog.mini-cycle-switch-modal::backdrop {
 }
 
 /* =============================================================================
+   TWO-PANEL BODY (flex container for left + right panels)
+   ============================================================================= */
+
+.routine-switcher-body {
+    display: block;
+}
+
+.routine-switcher-left {
+    min-width: 0;
+}
+
+/* Right panel — hidden on mobile, visible on desktop */
+.routine-switcher-right {
+    display: none;
+}
+
+.desktop-preview-window {
+    padding: var(--space-3);
+    background: var(--theme-input-bg, #fafafa);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-md);
+    color: var(--theme-text-muted);
+    font-size: 0.85rem;
+    text-align: left;
+    overflow-y: auto;
+    max-height: 340px;
+    min-height: 120px;
+    box-shadow: var(--shadow-inner-subtle);
+}
+
+.desktop-preview-window .preview-task {
+    font-size: 0.85rem;
+    padding: var(--space-0-75);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.desktop-preview-window .preview-task:last-child {
+    border-bottom: none;
+}
+
+.desktop-preview-date {
+    font-size: 0.7rem;
+    color: var(--theme-text-muted);
+    text-align: center;
+    margin-top: var(--space-2);
+    font-style: italic;
+}
+
+/* =============================================================================
+   DESKTOP LAYOUT — two-panel side-by-side
+   ============================================================================= */
+
+@media (min-width: 768px) {
+    .mini-cycle-switch-modal-content {
+        max-width: 680px;
+    }
+
+    .routine-switcher-body {
+        display: flex;
+        gap: var(--space-4);
+        align-items: flex-start;
+    }
+
+    .routine-switcher-left {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .routine-switcher-right {
+        display: block;
+        width: 220px;
+        flex-shrink: 0;
+        position: sticky;
+        top: 0;
+    }
+
+    /* Hide the inline mobile preview on desktop */
+    .switch-preview-window,
+    .switch-preview-date,
+    .switch-preview-hint {
+        display: none;
+    }
+}
+
+/* =============================================================================
    MOBILE ADJUSTMENTS
    ============================================================================= */
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .routine-switcher-btn {
         width: 70px;
         height: 20px;

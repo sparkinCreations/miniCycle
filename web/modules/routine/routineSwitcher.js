@@ -163,6 +163,9 @@ export class RoutineSwitcher {
         if (!switchModal.open) switchModal.showModal();
         switchRow.style.display = "none";
 
+        // Reset desktop preview to placeholder
+        this._resetDesktopPreview();
+
         // ✅ Let loadMiniCycleList() handle all the population logic
         this.loadMiniCycleList();
 
@@ -1269,6 +1272,8 @@ export class RoutineSwitcher {
             previewWindow.innerHTML = '<br>';
             previewWindow.appendChild(noTasksMsg);
             dateDisplay.textContent = '';
+            // Also update desktop preview
+            this._updateDesktopPreview(null);
             console.log('⚠️ No tasks found for preview');
             return;
         }
@@ -1284,110 +1289,164 @@ export class RoutineSwitcher {
 
         // ✅ Show last modified date (falls back to created date if not yet set)
         const timestamp = cycleData.lastModified || cycleData.createdAt;
+        let formattedDate = '';
+        let dateLabel = '';
         if (timestamp) {
             const date = new Date(timestamp);
-            const formattedDate = date.toLocaleDateString(undefined, {
+            formattedDate = date.toLocaleDateString(undefined, {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric'
             });
-            const label = cycleData.lastModified ? getLabel('switcher.modified') : getLabel('switcher.created');
-            dateDisplay.textContent = `${label}: ${formattedDate}`;
+            dateLabel = cycleData.lastModified ? getLabel('switcher.modified') : getLabel('switcher.created');
+            dateDisplay.textContent = `${dateLabel}: ${formattedDate}`;
         } else {
             dateDisplay.textContent = '';
         }
+
+        // Also update desktop preview panel
+        this._updateDesktopPreview(cycleData, tasksPreview, dateLabel, formattedDate);
 
         console.log('✅ Preview updated successfully');
     }
 
     /**
-     * Setup double-click on preview window to open it in a review modal
+     * Update the desktop right-panel preview with task data
+     * @param {Object|null} cycleData - The cycle data, or null for empty state
+     * @param {string} [tasksHTML] - Pre-built tasks HTML
+     * @param {string} [dateLabel] - "Modified" or "Created" label
+     * @param {string} [formattedDate] - Formatted date string
+     */
+    _updateDesktopPreview(cycleData, tasksHTML, dateLabel, formattedDate) {
+        const desktopPreview = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_WINDOW);
+        if (!desktopPreview) return;
+
+        if (!cycleData || !cycleData.tasks) {
+            desktopPreview.innerHTML = '';
+            const noTasksMsg = document.createElement('strong');
+            noTasksMsg.textContent = getLabel('empty.noTasksPreview');
+            desktopPreview.appendChild(noTasksMsg);
+            return;
+        }
+
+        let html = `<strong>${getLabel('switcher.tasksPreviewLabel')}:</strong><br>${tasksHTML}`;
+        if (dateLabel && formattedDate) {
+            html += `<div class="desktop-preview-date">${dateLabel}: ${formattedDate}</div>`;
+        }
+        desktopPreview.innerHTML = html;
+    }
+
+    /**
+     * Reset desktop preview panel to placeholder state
+     */
+    _resetDesktopPreview() {
+        const desktopPreview = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_WINDOW);
+        if (desktopPreview) {
+            desktopPreview.textContent = getLabel('switcher.selectPreview');
+        }
+    }
+
+    /**
+     * Setup double-click on preview windows to open in a review modal
      */
     setupPreviewPopout() {
         const previewWindow = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_WINDOW);
-        if (!previewWindow) return;
+        const desktopPreview = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_WINDOW);
 
         const safeAdd = this.deps.safeAddEventListener;
         if (!safeAdd) return;
 
-        // Show subtle hint below preview if user hasn't used the feature yet
-        const _state = this.deps.AppState?.get();
-        const _dismissed = _state?.settings?.dismissedEducationalTips?.['tip.routinePreview'];
-        if (!_dismissed) {
-            let hint = document.getElementById('switch-preview-hint');
-            if (!hint) {
-                hint = document.createElement('div');
-                hint.id = 'switch-preview-hint';
-                hint.className = 'switch-preview-hint';
-                hint.textContent = getLabel('notify.routinePreviewTip');
-                previewWindow.insertAdjacentElement('afterend', hint);
+        // Show subtle hint below inline preview if user hasn't used the feature yet
+        if (previewWindow) {
+            const _state = this.deps.AppState?.get();
+            const _dismissed = _state?.settings?.dismissedEducationalTips?.['tip.routinePreview'];
+            if (!_dismissed) {
+                let hint = document.getElementById('switch-preview-hint');
+                if (!hint) {
+                    hint = document.createElement('div');
+                    hint.id = 'switch-preview-hint';
+                    hint.className = 'switch-preview-hint';
+                    hint.textContent = getLabel('notify.routinePreviewTip');
+                    previewWindow.insertAdjacentElement('afterend', hint);
+                }
             }
+
+            safeAdd(previewWindow, "dblclick", () => this._openPreviewReviewModal());
         }
 
-        safeAdd(previewWindow, "dblclick", () => {
-            // Dismiss hint on first use
-            const hintEl = document.getElementById('switch-preview-hint');
-            if (hintEl) {
-                hintEl.remove();
-                this.deps.AppState?.update(s => {
-                    if (!s.settings.dismissedEducationalTips) s.settings.dismissedEducationalTips = {};
-                    s.settings.dismissedEducationalTips['tip.routinePreview'] = true;
-                }, false);
-            }
-            const selected = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
-            if (!selected) return;
+        // Also attach to desktop preview panel
+        if (desktopPreview) {
+            safeAdd(desktopPreview, "dblclick", () => this._openPreviewReviewModal());
+        }
+    }
 
-            const cycleKey = selected.dataset.cycleKey;
-            const currentState = this.deps.AppState?.get();
-            const cycleData = currentState?.data?.cycles?.[cycleKey];
-            if (!cycleData?.tasks) return;
+    /**
+     * Open the full-screen review modal for the currently selected routine's tasks
+     */
+    _openPreviewReviewModal() {
+        // Dismiss hint on first use
+        const hintEl = document.getElementById('switch-preview-hint');
+        if (hintEl) {
+            hintEl.remove();
+            this.deps.AppState?.update(s => {
+                if (!s.settings.dismissedEducationalTips) s.settings.dismissedEducationalTips = {};
+                s.settings.dismissedEducationalTips['tip.routinePreview'] = true;
+            }, false);
+        }
 
-            const cycleName = cycleData.title || cycleKey;
-            const timestamp = cycleData.lastModified || cycleData.createdAt;
-            const dateStr = timestamp
-                ? new Date(timestamp).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-                : '';
-            const dateLabel = cycleData.lastModified ? getLabel('switcher.modified') : getLabel('switcher.created');
+        const selected = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
+        if (!selected) return;
 
-            const escDiv = document.createElement("div");
-            const escapeText = (str) => { escDiv.textContent = str; return escDiv.innerHTML; };
+        const cycleKey = selected.dataset.cycleKey;
+        const currentState = this.deps.AppState?.get();
+        const cycleData = currentState?.data?.cycles?.[cycleKey];
+        if (!cycleData?.tasks) return;
 
-            const completedCount = cycleData.tasks.filter(t => t.completed).length;
-            const taskRows = cycleData.tasks.map(task => {
-                const check = task.completed ? '&#10004;' : '&mdash;';
-                const cls = task.completed ? ' completed' : '';
-                return `<div class="preview-modal-task${cls}"><span class="preview-modal-check">${check}</span> ${escapeText(task.text)}</div>`;
-            }).join('');
+        const cycleName = cycleData.title || cycleKey;
+        const timestamp = cycleData.lastModified || cycleData.createdAt;
+        const dateStr = timestamp
+            ? new Date(timestamp).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+            : '';
+        const dateLabel = cycleData.lastModified ? getLabel('switcher.modified') : getLabel('switcher.created');
 
-            // Remove existing preview modal if any
-            const existing = document.getElementById(DOM_IDS.PREVIEW_REVIEW_OVERLAY);
-            if (existing) existing.remove();
+        const escDiv = document.createElement("div");
+        const escapeText = (str) => { escDiv.textContent = str; return escDiv.innerHTML; };
 
-            // Create modal as native dialog for proper top-layer stacking
-            const overlay = document.createElement('dialog');
-            overlay.id = 'preview-review-overlay';
-            overlay.className = 'preview-review-dialog';
-            overlay.innerHTML = `
-                <div class="modal-content preview-review-modal">
-                    <button class="close-modal preview-review-close" aria-label="${getLabel('button.close')}">&times;</button>
-                    <h3 class="preview-review-title">${escapeText(cycleName)}</h3>
-                    <div class="preview-review-meta">
-                        ${cycleData.tasks.length} task${cycleData.tasks.length !== 1 ? 's' : ''} &middot; ${completedCount} completed${dateStr ? ` &middot; ${dateLabel}: ${dateStr}` : ''}
-                    </div>
-                    <div class="preview-review-body">${taskRows}</div>
+        const completedCount = cycleData.tasks.filter(t => t.completed).length;
+        const taskRows = cycleData.tasks.map(task => {
+            const check = task.completed ? '&#10004;' : '&mdash;';
+            const cls = task.completed ? ' completed' : '';
+            return `<div class="preview-modal-task${cls}"><span class="preview-modal-check">${check}</span> ${escapeText(task.text)}</div>`;
+        }).join('');
+
+        // Remove existing preview modal if any
+        const existing = document.getElementById(DOM_IDS.PREVIEW_REVIEW_OVERLAY);
+        if (existing) existing.remove();
+
+        // Create modal as native dialog for proper top-layer stacking
+        const overlay = document.createElement('dialog');
+        overlay.id = 'preview-review-overlay';
+        overlay.className = 'preview-review-dialog';
+        overlay.innerHTML = `
+            <div class="modal-content preview-review-modal">
+                <button class="close-modal preview-review-close" aria-label="${getLabel('button.close')}">&times;</button>
+                <h3 class="preview-review-title">${escapeText(cycleName)}</h3>
+                <div class="preview-review-meta">
+                    ${cycleData.tasks.length} task${cycleData.tasks.length !== 1 ? 's' : ''} &middot; ${completedCount} completed${dateStr ? ` &middot; ${dateLabel}: ${dateStr}` : ''}
                 </div>
-            `;
+                <div class="preview-review-body">${taskRows}</div>
+            </div>
+        `;
 
-            document.body.appendChild(overlay);
-            overlay.showModal();
+        document.body.appendChild(overlay);
+        overlay.showModal();
 
-            // Close handlers
-            const close = () => { if (overlay.open) overlay.close(); overlay.remove(); };
-            overlay.querySelector(DOM_SELECTORS.PREVIEW_REVIEW_CLOSE).addEventListener('click', close);
-            overlay.addEventListener('click', (e) => {
-                e.stopPropagation(); // prevent routine switcher's document-level handler from closing
-                if (e.target === overlay) close();
-            });
+        // Close handlers
+        const close = () => { if (overlay.open) overlay.close(); overlay.remove(); };
+        overlay.querySelector(DOM_SELECTORS.PREVIEW_REVIEW_CLOSE).addEventListener('click', close);
+        overlay.addEventListener('click', (e) => {
+            e.stopPropagation(); // prevent routine switcher's document-level handler from closing
+            if (e.target === overlay) close();
         });
     }
 
@@ -1700,6 +1759,7 @@ export class RoutineSwitcher {
             // Selected item is now hidden, deselect it
             selectedItem.classList.remove('selected');
             switchRow.style.display = 'none';
+            this._resetDesktopPreview();
         }
     }
 

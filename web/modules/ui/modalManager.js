@@ -367,6 +367,28 @@ export class ModalManager {
         // Open Modal
         openAboutBtn._clickHandler = () => {
             aboutModal._previousFocus = document.activeElement;
+
+            // Refresh app version from live globalThis (set by version.js)
+            const aboutSpan = document.getElementById(DOM_IDS.ABOUT_VERSION);
+            if (aboutSpan && globalThis.APP_VERSION) {
+                aboutSpan.textContent = globalThis.APP_VERSION;
+            }
+
+            // Re-query SW for latest cache version
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistration().then(reg => {
+                    if (!reg?.active) return;
+                    const ch = new globalThis.MessageChannel();
+                    ch.port1.onmessage = (evt) => {
+                        const swSpan = document.getElementById(DOM_IDS.ABOUT_SW_VERSION);
+                        if (swSpan && evt.data) {
+                            swSpan.textContent = evt.data.version || 'Unknown';
+                        }
+                    };
+                    try { reg.active.postMessage({ type: 'GET_VERSION' }, [ch.port2]); } catch (_e) { /* SW comm error */ }
+                }).catch(() => {});
+            }
+
             if (!aboutModal.open) aboutModal.showModal();
         };
         safeAdd(openAboutBtn, "click", openAboutBtn._clickHandler);
