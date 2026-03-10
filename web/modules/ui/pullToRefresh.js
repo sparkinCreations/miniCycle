@@ -26,6 +26,7 @@ import { getLabel } from '../labels/labelResolver.js';
 
 const di = createDIModule('PullToRefresh', {
     refreshUIFromState: optional(null),
+    loadMiniCycle: optional(null),
     checkRecurringTasksNow: optional(null),
     watchRecurringTasks: optional(null),
     promptServiceWorkerUpdate: optional(null),
@@ -428,8 +429,22 @@ export class PullToRefresh {
             }
         }
 
-        // 2. Refresh UI from state
-        if (this.deps.refreshUIFromState) {
+        // 2. Full reload from localStorage (syncs in-memory state + re-renders UI)
+        if (this.deps.loadMiniCycle) {
+            try {
+                await this.deps.loadMiniCycle();
+                results.uiRefreshed = true;
+            } catch (err) {
+                console.warn('Full reload failed, falling back to UI refresh:', err);
+                // Fallback to lighter in-memory refresh
+                try {
+                    this.deps.refreshUIFromState?.();
+                    results.uiRefreshed = true;
+                } catch (err2) {
+                    console.warn('UI refresh also failed:', err2);
+                }
+            }
+        } else if (this.deps.refreshUIFromState) {
             try {
                 this.deps.refreshUIFromState();
                 results.uiRefreshed = true;

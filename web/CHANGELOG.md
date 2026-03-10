@@ -1,3 +1,7 @@
+## [2.067] - 2026-03-10
+- Refactor notification timeouts and improve shadow variables across components
+
+
 ## [2.066] - 2026-03-10
 - feat: add milestone celebration overlays for 100 cycles and 500 tasks; update related labels and preferences
 
