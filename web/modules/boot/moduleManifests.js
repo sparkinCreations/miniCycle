@@ -350,7 +350,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/settingsManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
-        optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals'],
+        optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hideMainMenu'],
         provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData'],
         provideInstance: 'settingsManager',
         api: 'ui',
@@ -487,6 +487,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/pullToRefresh.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['showNotification'],
+        optionalDeps: ['refreshUIFromState', 'loadMiniCycle', 'watchRecurringTasks', 'isModalOpen'],
         provides: ['pullToRefresh'],
         api: 'ui',
         optional: true
