@@ -28,7 +28,7 @@
  * @property {string} unlockKey - Key used for unlock tracking
  */
 
-import { DOM_IDS, DOM_SELECTORS, STORAGE_KEYS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 
@@ -775,7 +775,7 @@ export class ThemeManager {
                         vtm.setRoutineTheme(currentCycleId, id);
                         _deps.showNotification?.(
                             getLabel('unlock.vocabThemeApplied', { vars: { name: def.name } }),
-                            'success', 2000
+                            'success', UI_TIMEOUTS.NOTIFICATION_SHORT
                         );
                         _deps.logHistoryEvent?.('theme_changed', { themeName: def.name, themeId: id });
                         _refreshLiveLensLabels();

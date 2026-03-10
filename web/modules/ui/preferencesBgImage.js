@@ -9,7 +9,7 @@
  * @module ui/preferencesBgImage
  */
 
-import { DOM_IDS } from '../core/constants.js';
+import { DOM_IDS, UI_TIMEOUTS } from '../core/constants.js';
 import { updateThemeColor } from '../features/themeManager.js';
 import { getLabel } from '../labels/labelResolver.js';
 
@@ -337,11 +337,11 @@ export async function removeBgImage(deps) {
         // Update status bar color (back to blue for default view)
         updateThemeColor();
 
-        deps.showNotification?.(getLabel('notify.bgImageRemoved'), 'info', 2000);
+        deps.showNotification?.(getLabel('notify.bgImageRemoved'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
         return true;
     } catch (error) {
         console.error('Failed to remove background image:', error);
-        deps.showNotification?.(getLabel('notify.bgImageRemoveFailed'), 'error', 3000);
+        deps.showNotification?.(getLabel('notify.bgImageRemoveFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
         return false;
     }
 }
@@ -369,7 +369,7 @@ export async function handleBgImageUpload(event, deps) {
     // Security validation
     const validation = validateImageFile(file);
     if (!validation.valid) {
-        deps.showNotification?.(validation.error, 'error', 4000);
+        deps.showNotification?.(validation.error, 'error', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
         console.warn('🚫 Image upload rejected:', validation.error);
         return null;
     }
@@ -383,7 +383,7 @@ export async function handleBgImageUpload(event, deps) {
 
         // Compress if over size limit, otherwise read directly
         if (file.size > BG_IMAGE_MAX_SIZE) {
-            deps.showNotification?.(getLabel('notify.compressingImage', { vars: { size: fileSizeMB } }), 'info', 3000);
+            deps.showNotification?.(getLabel('notify.compressingImage', { vars: { size: fileSizeMB } }), 'info', UI_TIMEOUTS.NOTIFICATION_LONG);
 
             const result = await compressImage(file);
             dataUrl = result.dataUrl;
@@ -415,10 +415,10 @@ export async function handleBgImageUpload(event, deps) {
             deps.showNotification?.(
                 `Image set! Compressed ${savedKB}KB (${compressionInfo.quality}% quality)`,
                 'success',
-                3000
+                UI_TIMEOUTS.NOTIFICATION_LONG
             );
         } else {
-            deps.showNotification?.(getLabel('notify.bgImageSet'), 'success', 2000);
+            deps.showNotification?.(getLabel('notify.bgImageSet'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
         }
 
         console.log('✅ Background image uploaded successfully');
@@ -439,7 +439,7 @@ export async function handleBgImageUpload(event, deps) {
             errorMessage = error.message;
         }
 
-        deps.showNotification?.(errorMessage, 'error', 4000);
+        deps.showNotification?.(errorMessage, 'error', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
         return null;
     }
 }

@@ -170,7 +170,7 @@ dialog.quick-actions-picker-overlay[open] {
     background: linear-gradient(135deg, #7ec8e3 0%, #4aa3df 100%);
     border-radius: var(--radius-10);
     padding: var(--space-1-5);
-    box-shadow: 0 2px 8px rgba(74, 163, 223, 0.3);
+    box-shadow: var(--shadow-glow-info);
 }
 
 .about-modal-content h2 {
@@ -291,7 +291,7 @@ dialog.quick-actions-picker-overlay[open] {
     border-radius: var(--radius-15);
     padding: var(--space-5) 25px;
     z-index: var(--z-modal);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--shadow-modal-heavy);
     text-align: center;
     font-family: var(--font-family);
     animation: fadeInScale var(--transition-normal) ease;
@@ -433,7 +433,7 @@ dialog.mini-modal-dialog::backdrop {
     max-width: 380px;
     width: 90%;
     text-align: center;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-modal-compound);
     animation: popIn var(--transition-normal) ease;
 }
 
@@ -554,7 +554,7 @@ dialog.mini-modal-dialog::backdrop {
 body.dark-mode .mini-modal-box {
     background: var(--theme-modal-bg);
     color: var(--color-gray-100);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    box-shadow: var(--shadow-modal-compound);
 }
 
 body.dark-mode .mini-modal-header {

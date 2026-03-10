@@ -147,42 +147,42 @@ button.icon-only i {
     position: relative;
     z-index: var(--z-content);
     margin-bottom: 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-button);
+    text-shadow: var(--text-shadow-sm);
 }
 
 .complete-all-btn:hover {
     background: var(--color-complete-btn-hover);
     transform: translateY(-1px);
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.18);
+    box-shadow: var(--shadow-button-hover);
 }
 
 .complete-all-btn:active {
     transform: translateY(1px);
     border-bottom-width: 2px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-sm);
 }
 
 /* To-Do Mode button style - blue color */
 .complete-all-btn.todo-mode-btn {
     background: var(--color-todo-btn);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-button);
 }
 
 .complete-all-btn.todo-mode-btn:hover {
     background: var(--color-todo-btn-hover);
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.18);
+    box-shadow: var(--shadow-button-hover);
 }
 
 /* Custom preference colors (Default theme only) */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn:not(.todo-mode-btn) {
     background: var(--pref-complete-btn, var(--color-complete-btn));
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-button);
 }
 
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn.todo-mode-btn {
     background: var(--pref-clear-btn, var(--color-todo-btn));
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-button);
 }
 
 /* Complete All and Help Window Container */
@@ -530,7 +530,7 @@ body.hide-help-window .help-window {
     font-size: 56px;
     font-weight: bold;
     border-radius: 50%;
-    box-shadow: 0 6px 24px var(--pref-celebration-shadow, rgba(76, 175, 79, 0.4));
+    box-shadow: 0 6px 24px var(--pref-celebration-shadow, var(--shadow-celebration));
     animation: completionBounce 1.5s ease-out;
     z-index: var(--z-modal);
 }

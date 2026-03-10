@@ -539,7 +539,7 @@ export class QuickActionsManager {
 
     _warnMissingDep(depName, actionId) {
         console.warn(`⚡ QuickActionsManager: '${depName}' is null — action '${actionId}' cannot execute`);
-        this.deps.showNotification?.(getLabel('notify.actionUnavailable'), 'warning', 3000);
+        this.deps.showNotification?.(getLabel('notify.actionUnavailable'), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
     }
 
     executeAction(actionId) {
@@ -570,7 +570,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -586,7 +586,7 @@ export class QuickActionsManager {
                             this.deps.hideMainMenu?.();
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -603,7 +603,7 @@ export class QuickActionsManager {
                             this.deps.hideMainMenu?.();
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -620,7 +620,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -637,7 +637,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -654,7 +654,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -671,7 +671,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -687,7 +687,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -704,7 +704,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -721,7 +721,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -738,7 +738,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -755,7 +755,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -772,7 +772,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -789,7 +789,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -806,7 +806,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -823,7 +823,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -840,7 +840,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -857,7 +857,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -874,7 +874,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -891,7 +891,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -908,7 +908,7 @@ export class QuickActionsManager {
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                     }, 0);
                     break;
@@ -916,7 +916,7 @@ export class QuickActionsManager {
             }
         } catch (err) {
             console.error(`⚡ Quick action '${actionId}' failed:`, err);
-            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', 3000);
+            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
         }
     }
 

@@ -17,7 +17,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -381,7 +381,7 @@ export class PullToRefresh {
             await this.onRefresh();
         } catch (error) {
             console.error('Pull-to-refresh error:', error);
-            this.deps.showNotification(getLabel('notify.refreshFailed'), 'error', 3000);
+            this.deps.showNotification(getLabel('notify.refreshFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
         } finally {
             // Small delay for visual feedback
             this._resetTimerId = setTimeout(() => {
@@ -419,7 +419,7 @@ export class PullToRefresh {
                         if (this.deps.promptServiceWorkerUpdate) {
                             this.deps.promptServiceWorkerUpdate();
                         } else {
-                            this.deps.showNotification(getLabel('notify.updateAvailableReload'), 'info', 5000);
+                            this.deps.showNotification(getLabel('notify.updateAvailableReload'), 'info', UI_TIMEOUTS.NOTIFICATION_SLOW);
                         }
                     }
                 }
@@ -459,7 +459,7 @@ export class PullToRefresh {
         if (results.swUpdate) {
             // Already showed update notification
         } else if (results.uiRefreshed || results.recurringChecked) {
-            this.deps.showNotification(getLabel('notify.refreshed'), 'success', 2000);
+            this.deps.showNotification(getLabel('notify.refreshed'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
         }
 
         return results;

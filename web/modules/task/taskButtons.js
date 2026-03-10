@@ -17,7 +17,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_CLASSES, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 
@@ -387,13 +387,13 @@ export class TaskButtons {
                 this.deps.showNotification?.(
                     "📌 This recurring task will be kept on reset instead of respawning.",
                     "info",
-                    3000
+                    UI_TIMEOUTS.NOTIFICATION_LONG
                 );
             }
 
             if (!this.deps.AppState?.isReady?.()) {
                 console.error('❌ AppState not available for delete-when-complete toggle');
-                this.deps.showNotification?.(getLabel('notify.featureUnavailable'), 'error', 3000);
+                this.deps.showNotification?.(getLabel('notify.featureUnavailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                 return;
             }
 
@@ -468,7 +468,7 @@ export class TaskButtons {
                     ? "📌 Task will be kept on complete (pinned)"
                     : "Task will remain in list on auto-reset";
             }
-            this.deps.showNotification?.(message, "info", 2000);
+            this.deps.showNotification?.(message, "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
         };
         safeAdd(button, "click", button._deleteWhenCompleteClickHandler);
     }
@@ -528,7 +528,7 @@ export class TaskButtons {
             );
         }
 
-        this.deps.showNotification?.(getLabel('notify.recurringDisabled'), "info", 2000);
+        this.deps.showNotification?.(getLabel('notify.recurringDisabled'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 }
 

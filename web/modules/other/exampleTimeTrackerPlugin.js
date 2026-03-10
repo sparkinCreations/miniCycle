@@ -17,7 +17,7 @@
  */
 
 import { MiniCyclePlugin } from './basicPluginSystem.js';
-import { STORAGE_KEYS } from '../core/constants.js';
+import { STORAGE_KEYS, Z_INDEX } from '../core/constants.js';
 
 /**
  * Time Tracker Plugin - tracks time spent on tasks
@@ -93,7 +93,7 @@ class TimeTrackerPlugin extends MiniCyclePlugin {
             padding: 10px;
             border-radius: 5px;
             font-family: monospace;
-            z-index: 1000;
+            z-index: ${Z_INDEX.MODAL};
             max-width: 250px;
         `;
         display.innerHTML = `

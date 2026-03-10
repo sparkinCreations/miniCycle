@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -159,12 +159,12 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
 
         // Show success notifications
         if (_deps.getElementById(DOM_IDS.SET_DEFAULT_RECURRING)?.checked) {
-            _deps.showNotification('✅ ' + getLabel('notify.recurringDefaultSaved'), "success", 1500);
+            _deps.showNotification('✅ ' + getLabel('notify.recurringDefaultSaved'), "success", UI_TIMEOUTS.NOTIFICATION_BRIEF);
         }
 
         // Call panel methods for UI updates
         panel.updateRecurringSummary();
-        _deps.showNotification('✅ ' + getLabel('notify.recurringApplied'), "success", 2000);
+        _deps.showNotification('✅ ' + getLabel('notify.recurringApplied'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
         await panel.updateRecurringPanel();
 
         // Post-apply UI updates with delay for DOM to settle
@@ -196,7 +196,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
 
     } catch (error) {
         console.error('❌ Failed to apply recurring settings:', error);
-        _deps.showNotification('❌ ' + getLabel('notify.recurringApplyFailed'), 'error', 5000);
+        _deps.showNotification('❌ ' + getLabel('notify.recurringApplyFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SLOW);
 
         // Cleanup on error
         const settingsPanel = _deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);

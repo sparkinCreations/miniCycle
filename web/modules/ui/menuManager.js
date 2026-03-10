@@ -461,14 +461,14 @@ export class MenuManager {
         const AppState = this.deps.AppState();
         if (!AppState?.isReady?.()) {
             console.error('❌ AppState not ready for saveMiniCycleAsNew');
-            this.deps.showNotification("⚠️ " + getLabel('notify.appNotReady'), "warning", 3000);
+            this.deps.showNotification("⚠️ " + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
         const currentState = AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for saveMiniCycleAsNew');
-            this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), "error", 3000);
+            this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -492,7 +492,7 @@ export class MenuManager {
             this.deps.showNotification(
                 getStorageShortageMessage(storageCheck.shortfall),
                 'error',
-                5000
+                UI_TIMEOUTS.NOTIFICATION_SLOW
             );
             return;
         }
@@ -531,7 +531,7 @@ export class MenuManager {
 
                 if (wasModified) {
                     console.log(`⚠️ Name collision: "${sanitizedName}" → "${finalCycleName}"`);
-                    this.deps.showNotification(getLabel('notify.nameExists', { vars: { name: finalCycleName } }), "warning", 3000);
+                    this.deps.showNotification(getLabel('notify.nameExists', { vars: { name: finalCycleName } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                 }
 
                 // ✅ Update through state system
@@ -591,7 +591,7 @@ export class MenuManager {
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
             console.error('❌ Schema 2.5 data required for clearAllTasks');
-            this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), 'error', 3000);
+            this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -646,7 +646,7 @@ export class MenuManager {
         this.deps.updateUndoRedoButtons();
 
         console.log(`✅ All tasks unchecked for miniCycle: "${currentCycle.title}"`);
-        this.deps.showNotification("✅ " + getLabel('notify.allTasksUnchecked', { vars: { name: currentCycle.title } }), "success", 2000);
+        this.deps.showNotification("✅ " + getLabel('notify.allTasksUnchecked', { vars: { name: currentCycle.title } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 
     /**
@@ -661,7 +661,7 @@ export class MenuManager {
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
             console.error('❌ Schema 2.5 data required for deleteAllTasks');
-            this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), 'error', 3000);
+            this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -730,7 +730,7 @@ export class MenuManager {
                 this.deps.updateUndoRedoButtons();
 
                 console.log(`✅ All tasks deleted for miniCycle: "${currentCycle.title}"`);
-                this.deps.showNotification("✅ " + getLabel('notify.allTasksDeleted', { vars: { name: currentCycle.title } }), "success", 3000);
+                this.deps.showNotification("✅ " + getLabel('notify.allTasksDeleted', { vars: { name: currentCycle.title } }), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
             }
         });
     }

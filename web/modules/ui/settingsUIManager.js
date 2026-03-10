@@ -19,7 +19,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { loadPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
@@ -462,7 +462,7 @@ export function setupThreeDotsToggle() {
         // Show tip when disabling on touch devices
         if (!enabled && ('ontouchstart' in window)) {
             setTimeout(() => {
-                _deps.showNotification?.('💡 ' + getLabel('notify.threeDotsDisabledTip'), 'info', 4000);
+                _deps.showNotification?.('💡 ' + getLabel('notify.threeDotsDisabledTip'), 'info', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
             }, 300);
         }
     };
@@ -769,10 +769,10 @@ export function setupDebugModeToggle() {
 
         if (enabled) {
             _deps.enableDebug?.();
-            _deps.showNotification?.(getLabel('notify.debugEnabled'), 'success', 3000);
+            _deps.showNotification?.(getLabel('notify.debugEnabled'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
         } else {
             _deps.disableDebug?.();
-            _deps.showNotification?.(getLabel('notify.debugDisabled'), 'info', 3000);
+            _deps.showNotification?.(getLabel('notify.debugDisabled'), 'info', UI_TIMEOUTS.NOTIFICATION_LONG);
         }
     };
 
@@ -895,7 +895,7 @@ export function setupResetAchievementProgressButton() {
                     if (confirmed) {
                         await doReset();
                     } else {
-                        _deps.showNotification?.(getLabel('notify.achievementResetCancelled'), "info", 2000);
+                        _deps.showNotification?.(getLabel('notify.achievementResetCancelled'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
                     }
                 }
             });
@@ -1079,7 +1079,7 @@ export function setupReducedMotionToggle() {
         _deps.showNotification?.(
             enabled ? getLabel('notify.reducedMotionEnabled') : getLabel('notify.reducedMotionDisabled'),
             'info',
-            2000
+            UI_TIMEOUTS.NOTIFICATION_SHORT
         );
     };
 
@@ -1138,7 +1138,7 @@ export function setupHighContrastToggle() {
         _deps.showNotification?.(
             enabled ? getLabel('notify.highContrastEnabled') : getLabel('notify.highContrastDisabled'),
             'info',
-            2000
+            UI_TIMEOUTS.NOTIFICATION_SHORT
         );
     };
 
@@ -1200,7 +1200,7 @@ export function setupFontSizeSelect() {
         _deps.showNotification?.(
             getLabel('notify.fontSizeChanged', { vars: { size: getLabel(labelKey) } }),
             'info',
-            2000
+            UI_TIMEOUTS.NOTIFICATION_SHORT
         );
     };
 
@@ -1246,7 +1246,7 @@ export function setupNotificationsToggle() {
         _deps.showNotification?.(
             enabled ? getLabel('notify.notificationsEnabled') : getLabel('notify.notificationsDisabled'),
             'info',
-            2000
+            UI_TIMEOUTS.NOTIFICATION_SHORT
         );
     };
 

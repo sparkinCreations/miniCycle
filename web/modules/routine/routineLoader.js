@@ -19,6 +19,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
 // ============================================================================
@@ -370,7 +371,7 @@ function renderTasksToDOM(tasks = []) {
 function updateCycleUIState(currentCycle, settings) {
   const titleElement = document.getElementById(DOM_IDS.MINI_CYCLE_TITLE);
   if (titleElement) {
-    titleElement.textContent = currentCycle.title || 'Untitled Cycle';
+    titleElement.textContent = currentCycle.title || getLabel('routine.untitledCycle');
   }
 
   const toggleAutoReset = document.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);

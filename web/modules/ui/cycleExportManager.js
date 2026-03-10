@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS } from '../core/constants.js';
+import { DOM_IDS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -89,7 +89,7 @@ export function exportMiniCycleData(miniCycleData, cycleName) {
 
     } catch (error) {
         console.error('Export failed:', error);
-        _deps.showNotification?.(getLabel('notify.exportFailed'), "error", 3000);
+        _deps.showNotification?.(getLabel('notify.exportFailed'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
     }
 }
 

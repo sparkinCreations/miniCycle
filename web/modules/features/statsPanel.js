@@ -751,11 +751,11 @@ export class StatsPanelManager {
         if (event.key === "ArrowRight" && !this.state.isStatsVisible) {
             event.preventDefault();
             this.showStatsPanel();
-            this.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.keyboardStatsOpened')}`, "info", 1500);
+            this.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.keyboardStatsOpened')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
         } else if (event.key === "ArrowLeft" && this.state.isStatsVisible) {
             event.preventDefault();
             this.showTaskView();
-            this.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.keyboardTaskOpened')}`, "info", 1500);
+            this.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.keyboardTaskOpened')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
         }
 
         // Shift+Tab for quick toggle (only when nothing is focused — preserve normal tab navigation)
@@ -767,10 +767,10 @@ export class StatsPanelManager {
             event.preventDefault();
             if (this.state.isStatsVisible) {
                 this.showTaskView();
-                this.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.quickToggleTask')}`, "info", 1500);
+                this.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.quickToggleTask')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
             } else {
                 this.showStatsPanel();
-                this.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.quickToggleStats')}`, "info", 1500);
+                this.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.quickToggleStats')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
             }
         }
     }

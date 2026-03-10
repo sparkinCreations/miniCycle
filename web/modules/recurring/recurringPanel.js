@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
@@ -998,7 +998,7 @@ export class RecurringPanelManager {
                         this.deps.deactivateTaskRecurringState(cycle, task.id, currentMode);
                     }, true); // ✅ Immediate save when removing recurring from panel
 
-                    this.deps.showNotification(`↩️ ${getLabel('notify.recurringTurnedOff')}`, "info", 5000);
+                    this.deps.showNotification(`↩️ ${getLabel('notify.recurringTurnedOff')}`, "info", UI_TIMEOUTS.NOTIFICATION_SLOW);
 
                     // Remove recurring visual state
                     const matchingTaskItem = this.deps.querySelector(DATA_SELECTORS.taskById(task.id));

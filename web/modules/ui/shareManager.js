@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, APP_URL } from '../core/constants.js';
+import { DOM_IDS, APP_URL, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -60,10 +60,10 @@ function _downloadRoutineFile(dataBlob, fileName) {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(link.href);
-        _deps.showNotification?.('📥 ' + getLabel('notify.shareRoutineFallback'), 'success', 3000);
+        _deps.showNotification?.('📥 ' + getLabel('notify.shareRoutineFallback'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
     } catch (error) {
         console.error('Routine file download failed:', error);
-        _deps.showNotification?.(getLabel('notify.shareRoutineFailed'), 'error', 3000);
+        _deps.showNotification?.(getLabel('notify.shareRoutineFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
     }
 }
 
@@ -164,7 +164,7 @@ export function setupShareRoutineButton() {
                     text: `Check out my "${cycleName}" routine on miniCycle!\n${APP_URL}`
                 });
                 _deps.hideMainMenu?.();
-                _deps.showNotification?.('✅ ' + getLabel('notify.shareRoutineSuccess'), 'success', 3000);
+                _deps.showNotification?.('✅ ' + getLabel('notify.shareRoutineSuccess'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
                 return; // Success — don't fall through to download
             } catch (error) {
                 // User dismissed share sheet — silently ignore
@@ -239,13 +239,13 @@ export function setupShareAppButton() {
                     url: appUrl
                 });
                 _deps.hideMainMenu?.();
-                _deps.showNotification?.('✅ ' + getLabel('notify.shareAppSuccess'), 'success', 3000);
+                _deps.showNotification?.('✅ ' + getLabel('notify.shareAppSuccess'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
             } catch (error) {
                 _deps.hideMainMenu?.();
                 // User dismissed share sheet — silently ignore
                 if (error.name === 'AbortError') return;
                 console.error('Share app failed:', error);
-                _deps.showNotification?.(getLabel('notify.shareAppFailed'), 'error', 3000);
+                _deps.showNotification?.(getLabel('notify.shareAppFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
             }
             return;
         }
@@ -254,10 +254,10 @@ export function setupShareAppButton() {
         _deps.hideMainMenu?.();
         try {
             await navigator.clipboard.writeText(appUrl);
-            _deps.showNotification?.('📋 ' + getLabel('notify.shareAppCopied'), 'success', 3000);
+            _deps.showNotification?.('📋 ' + getLabel('notify.shareAppCopied'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
         } catch (error) {
             console.error('Share app clipboard fallback failed:', error);
-            _deps.showNotification?.(getLabel('notify.shareAppFailed'), 'error', 3000);
+            _deps.showNotification?.(getLabel('notify.shareAppFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
         }
     };
 

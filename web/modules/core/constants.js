@@ -91,7 +91,13 @@ export const UI_TIMEOUTS = Object.freeze({
     POST_RESTORE_RELOAD: 2500,     // 2500ms - Page reload after backup restoration
     NOTIFICATION_BRIEF: 1500,      // 1500ms - Brief notification (undo, quick actions)
     NOTIFICATION_SHORT: 2000,      // 2000ms - Standard notification duration
+    NOTIFICATION_MEDIUM: 2500,     // 2500ms - Medium notification (permissions, confirmations)
     NOTIFICATION_LONG: 3000,       // 3000ms - Long notification duration
+    NOTIFICATION_EXTENDED: 4000,   // 4000ms - Extended notification (errors, important info)
+    NOTIFICATION_SLOW: 5000,       // 5000ms - Slow notification (critical errors, init failures)
+    NOTIFICATION_EXTRA_LONG: 6000, // 6000ms - Extra-long notification (migration, milestones)
+    NOTIFICATION_PERSISTENT: 8000, // 8000ms - Near-persistent notification (data loss warnings)
+    NOTIFICATION_OVERLAY: 10000,   // 10000ms - Overlay/celebration auto-dismiss
     TOOLTIP_HIDE: 3000             // 3000ms - Tooltip auto-hide delay
 });
 

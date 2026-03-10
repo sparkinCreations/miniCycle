@@ -236,7 +236,7 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
                 showNotification?.(
                     getLabel('notify.taskLimitReached', { vars: { limit: LIMITS.TASKS_PER_CYCLE } }),
                     'warning',
-                    5000
+                    UI_TIMEOUTS.NOTIFICATION_SLOW
                 );
                 return;
             }
@@ -250,7 +250,7 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
                 showNotification?.(
                     getStorageShortageMessage(storageCheck.shortfall),
                     'error',
-                    5000
+                    UI_TIMEOUTS.NOTIFICATION_SLOW
                 );
                 return;
             }
@@ -404,7 +404,7 @@ export async function editTaskImpl(taskItem, deps = {}) {
                 console.warn('⚠️ AppState not ready for task edit - state may be lost');
             }
 
-            _deps.showNotification?.(getLabel('notify.taskRenamed', { vars: { name: newText } }), "info", 1500);
+            _deps.showNotification?.(getLabel('notify.taskRenamed', { vars: { name: newText } }), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
 
             // Log history event for task edit
             if (typeof _deps.logHistoryEvent === 'function') {
@@ -465,7 +465,7 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
             destructive: true,
             callback: async (confirmDelete) => {
                 if (!confirmDelete) {
-                    _deps.showNotification?.(getLabel('notify.taskDeleteCancelled', { vars: { name: taskName } }), "show", 2500);
+                    _deps.showNotification?.(getLabel('notify.taskDeleteCancelled', { vars: { name: taskName } }), "show", UI_TIMEOUTS.NOTIFICATION_MEDIUM);
                     return;
                 }
 
@@ -499,7 +499,7 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
                     // Remove from DOM
                     taskItem.remove();
 
-                    _deps.showNotification?.(getLabel('notify.taskDeleted', { vars: { name: taskName } }), "show", 2500);
+                    _deps.showNotification?.(getLabel('notify.taskDeleted', { vars: { name: taskName } }), "show", UI_TIMEOUTS.NOTIFICATION_MEDIUM);
 
                     // Log history event for task deletion
                     if (typeof _deps.logHistoryEvent === 'function') {
@@ -652,14 +652,14 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
                     };
                     notifications.showPriorityColorPickerNotification(taskColor, 8000, taskId, onColorSelect);
                 } else {
-                    _deps.showNotification?.(getLabel('notify.priorityEnabled'), 'warning', 1500);
+                    _deps.showNotification?.(getLabel('notify.priorityEnabled'), 'warning', UI_TIMEOUTS.NOTIFICATION_BRIEF);
                 }
                 _deps.logHistoryEvent?.('task_priority_set', {
                     taskName: task.text,
                     priorityColor: taskColor
                 });
             } else {
-                _deps.showNotification?.(getLabel('notify.priorityRemoved'), 'info', 1500);
+                _deps.showNotification?.(getLabel('notify.priorityRemoved'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);
                 _deps.logHistoryEvent?.('task_priority_removed', {
                     taskName: task.text
                 });

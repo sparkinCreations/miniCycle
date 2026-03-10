@@ -7,12 +7,14 @@
  * @module testing-modal-debug
  */
 
+import { UI_TIMEOUTS } from '../core/constants.js';
 import {
     getDeps,
     showNotification,
     appendToTestResults,
     safeAddEventListenerById
 } from './testing-modal-core.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ==========================================
 // BUTTON SETUP
@@ -53,7 +55,7 @@ export function setupConsoleCaptureButtons() {
             cc.startAutoConsoleCapture();
         }
         appendToTestResults("Auto console capture enabled - will start automatically on next refresh\n\n");
-        showNotification("Auto-capture enabled for migrations", "success", 3000);
+        showNotification(getLabel('notify.debugAutoCaptureEnabled'), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
     });
 
     safeAddEventListenerById("show-all-console-logs", "click", () => {
@@ -90,7 +92,7 @@ export function setupConsoleCaptureButtons() {
             cc.stopConsoleCapture();
         }
         appendToTestResults("Auto console capture disabled\n\n");
-        showNotification("Auto-capture disabled", "info", 2000);
+        showNotification(getLabel('notify.debugAutoCaptureDisabled'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
     });
 }
 
@@ -104,7 +106,7 @@ export function setupConsoleCaptureButtons() {
 export function generateDebugReport() {
     const deps = getDeps();
     appendToTestResults("Generating Debug Report...\n");
-    showNotification("Generating comprehensive debug report...", "info", 3000);
+    showNotification(getLabel('notify.debugReportGenerating'), "info", UI_TIMEOUTS.NOTIFICATION_LONG);
 
     setTimeout(() => {
         const state = deps.AppState?.get();
@@ -144,7 +146,7 @@ export function generateDebugReport() {
         appendToTestResults(JSON.stringify(report, null, 2));
         appendToTestResults("\n====================\n\n");
 
-        showNotification("Debug report generated successfully", "success", 3000);
+        showNotification(getLabel('notify.debugReportGenerated'), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
     }, 2000);
 }
 
@@ -161,7 +163,7 @@ export function showBrowserInfo() {
     appendToTestResults(`- Viewport: ${window.innerWidth}x${window.innerHeight}\n`);
     appendToTestResults(`- Screen: ${screen.width}x${screen.height}\n\n`);
 
-    showNotification("Browser info displayed", "info", 2000);
+    showNotification(getLabel('notify.debugBrowserInfo'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
 }
 
 // ==========================================
@@ -191,7 +193,7 @@ export function showServiceWorkerInfo() {
         }
 
         appendToTestResults("\n");
-        showNotification("Service Worker info displayed", "info", 2000);
+        showNotification(getLabel('notify.debugSwInfo'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
     });
 }
 
@@ -200,11 +202,11 @@ export function showServiceWorkerInfo() {
  */
 export function testServiceWorkerUpdate() {
     appendToTestResults("Testing Service Worker Update...\n");
-    showNotification("Testing service worker update functionality", "info", 3000);
+    showNotification(getLabel('notify.debugSwTesting'), "info", UI_TIMEOUTS.NOTIFICATION_LONG);
 
     if (!('serviceWorker' in navigator)) {
         appendToTestResults("Service Workers not supported in this browser\n\n");
-        showNotification("Service Workers not supported", "error", 3000);
+        showNotification(getLabel('notify.debugSwNotSupported'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
         return;
     }
 
@@ -212,7 +214,7 @@ export function testServiceWorkerUpdate() {
         if (!registration) {
             appendToTestResults("No Service Worker registered\n");
             appendToTestResults("Try refreshing the page to register the Service Worker\n\n");
-            showNotification("No Service Worker found", "error", 3000);
+            showNotification(getLabel('notify.debugSwNotFound'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -231,7 +233,7 @@ export function testServiceWorkerUpdate() {
             setTimeout(() => {
                 appendToTestResults("Update process initiated\n");
                 appendToTestResults("Page will refresh to complete update\n\n");
-                showNotification("Service Worker update test complete", "success", 2000);
+                showNotification(getLabel('notify.debugSwTestComplete'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
             }, 1000);
 
         } else {
@@ -245,10 +247,10 @@ export function testServiceWorkerUpdate() {
                         if (updatedReg && updatedReg.waiting) {
                             appendToTestResults("New version found and installed!\n");
                             appendToTestResults("Ready to activate on next refresh\n");
-                            showNotification("Service Worker update available!", "success", 4000);
+                            showNotification(getLabel('notify.debugSwUpdateAvailable'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
                         } else {
                             appendToTestResults("No updates available - you're on the latest version\n");
-                            showNotification("Service Worker is up to date", "info", 3000);
+                            showNotification(getLabel('notify.debugSwUpToDate'), "info", UI_TIMEOUTS.NOTIFICATION_LONG);
                         }
                         appendToTestResults("\n");
                     });
@@ -256,13 +258,13 @@ export function testServiceWorkerUpdate() {
 
             }).catch(error => {
                 appendToTestResults(`Update check failed: ${error.message}\n\n`);
-                showNotification("Service Worker update check failed", "error", 3000);
+                showNotification(getLabel('notify.debugSwCheckFailed'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             });
         }
 
     }).catch(error => {
         appendToTestResults(`Error accessing Service Worker: ${error.message}\n\n`);
-        showNotification("Service Worker access error", "error", 3000);
+        showNotification(getLabel('notify.debugSwAccessError'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
     });
 }
 

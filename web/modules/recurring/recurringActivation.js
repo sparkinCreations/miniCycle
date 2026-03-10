@@ -12,8 +12,7 @@ import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS,
     DOM_SELECTORS,
-    DATA_SELECTORS
-} from '../core/constants.js';
+    DATA_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -222,14 +221,14 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
             }
         } else {
             assertInjected('showNotification', Deps.showNotification);
-            const notification = Deps.showNotification(notificationContent, "recurring", 10000);
+            const notification = Deps.showNotification(notificationContent, "recurring", UI_TIMEOUTS.NOTIFICATION_OVERLAY);
             if (notification && Deps.notifications.initRecurringNotificationListeners) {
                 Deps.notifications.initRecurringNotificationListeners(notification);
             }
         }
     } else {
         assertInjected('showNotification', Deps.showNotification);
-        Deps.showNotification(`✅ ${getLabel('notify.taskSetRecurring', { vars: { frequency } })}`, "success", 5000);
+        Deps.showNotification(`✅ ${getLabel('notify.taskSetRecurring', { vars: { frequency } })}`, "success", UI_TIMEOUTS.NOTIFICATION_SLOW);
     }
 
     console.log('✅ Task activated as recurring:', assignedTaskId);
@@ -321,7 +320,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
     }
 
     assertInjected('showNotification', Deps.showNotification);
-    Deps.showNotification(`↩️ ${getLabel('notify.recurringTurnedOff')}`, "info", 2000);
+    Deps.showNotification(`↩️ ${getLabel('notify.recurringTurnedOff')}`, "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
 
     console.log('✅ Task deactivated from recurring:', assignedTaskId);
 

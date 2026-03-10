@@ -56,7 +56,7 @@
 // NOTE: No appContext fallback - all dependencies come through initUIBoot
 // This avoids versioned/unversioned module instance mismatch issues
 
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 let _appContextMod = null;
@@ -222,7 +222,7 @@ export function attachMenuButtonListener(GlobalUtils, menuButton, menu) {
         if (_AppState && _showNotification) {
           const _state = _AppState.get();
           if (!_state?.settings?.dismissedEducationalTips?.['tip.menuSections']) {
-            _showNotification(getLabel('notify.menuSectionsTip'), 'info', 4000);
+            _showNotification(getLabel('notify.menuSectionsTip'), 'info', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
             _AppState.update(s => {
               if (!s.settings.dismissedEducationalTips) s.settings.dismissedEducationalTips = {};
               s.settings.dismissedEducationalTips['tip.menuSections'] = true;
@@ -371,7 +371,7 @@ async function handleResetNotificationPosition() {
 
   if (!AppState?.isReady?.()) {
     console.error('❌ AppState not ready for reset notification position');
-    showNotification?.('❌ ' + getLabel('notify.positionResetFailed'), 'error', 2000);
+    showNotification?.('❌ ' + getLabel('notify.positionResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
     return;
   }
 
@@ -393,10 +393,10 @@ async function handleResetNotificationPosition() {
       console.warn('⚠️ Could not reset notification position UI:', e);
     }
 
-    showNotification?.('🔄 ' + getLabel('notify.positionReset'), 'success', 2000);
+    showNotification?.('🔄 ' + getLabel('notify.positionReset'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
   } catch (error) {
     console.error('❌ Failed to reset notification position:', error);
-    showNotification?.('❌ ' + getLabel('notify.positionResetFailed'), 'error', 2000);
+    showNotification?.('❌ ' + getLabel('notify.positionResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
   }
 }
 
@@ -573,7 +573,7 @@ export function hideLoader() {
 
     // Restore original text and tip visibility for next boot
     const textElement = appLoader.querySelector(DOM_SELECTORS.LOADER_TEXT);
-    if (textElement) textElement.textContent = 'Loading miniCycle...';
+    if (textElement) textElement.textContent = getLabel('boot.loadingApp');
     const tip = appLoader.querySelector('#loader-tip');
     if (tip) tip.style.display = '';
   }, 500);

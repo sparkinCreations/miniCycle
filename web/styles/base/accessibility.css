@@ -191,7 +191,7 @@ body.high-contrast:not(.dark-mode) .routine-search-input::placeholder {
 }
 
 body.high-contrast:not(.dark-mode) .routine-search-input:focus {
-    box-shadow: 0 0 0 2px rgba(76, 121, 255, 0.4);
+    box-shadow: var(--shadow-focus-ring);
 }
 
 body.high-contrast:not(.dark-mode) .routine-sort-btn {
@@ -763,7 +763,7 @@ body.high-contrast.dark-mode .routine-search-input::placeholder {
 }
 
 body.high-contrast.dark-mode .routine-search-input:focus {
-    box-shadow: 0 0 0 2px rgba(76, 121, 255, 0.4);
+    box-shadow: var(--shadow-focus-ring);
 }
 
 body.high-contrast.dark-mode .routine-sort-btn {

@@ -186,10 +186,10 @@
 /* Glow pulse (for highlights) */
 @keyframes glowPulse {
     0%, 100% {
-        box-shadow: 0 0 5px rgba(76, 121, 255, 0.3);
+        box-shadow: var(--shadow-glow-blue-sm);
     }
     50% {
-        box-shadow: 0 0 20px rgba(76, 121, 255, 0.6);
+        box-shadow: var(--shadow-glow-blue-lg);
     }
 }
 

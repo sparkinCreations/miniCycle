@@ -134,7 +134,7 @@ export class AchievementsManager {
                 this.deps.showNotification(
                     getLabel('notify.achievementUnlocked', { vars: { name: milestone.name } }),
                     'success',
-                    5000
+                    UI_TIMEOUTS.NOTIFICATION_SLOW
                 );
             }
         }

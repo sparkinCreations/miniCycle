@@ -7,7 +7,7 @@
  * @module testing-modal-core
  */
 
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ==========================================
@@ -223,7 +223,7 @@ export function clearTestResults() {
     const testingOutput = document.getElementById(DOM_IDS.TESTING_OUTPUT);
     if (testingOutput) {
         testingOutput.textContent = "";
-        showNotification(getLabel('notify.resultsCleared'), "info", 1500);
+        showNotification(getLabel('notify.resultsCleared'), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
     }
 }
 
@@ -233,7 +233,7 @@ export function clearTestResults() {
 export function exportTestResults() {
     const testingOutput = document.getElementById(DOM_IDS.TESTING_OUTPUT);
     if (!testingOutput || !testingOutput.textContent.trim()) {
-        showNotification(getLabel('notify.noResultsToExport'), "warning", 2000);
+        showNotification(getLabel('notify.noResultsToExport'), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
         return;
     }
 
@@ -250,7 +250,7 @@ export function exportTestResults() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    showNotification(getLabel('notify.resultsExported'), "success", 3000);
+    showNotification(getLabel('notify.resultsExported'), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
 }
 
 /**
@@ -259,15 +259,15 @@ export function exportTestResults() {
 export function copyTestResults() {
     const testingOutput = document.getElementById(DOM_IDS.TESTING_OUTPUT);
     if (!testingOutput || !testingOutput.textContent.trim()) {
-        showNotification(getLabel('notify.noResultsToCopy'), "warning", 2000);
+        showNotification(getLabel('notify.noResultsToCopy'), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
         return;
     }
 
     navigator.clipboard.writeText(testingOutput.textContent).then(() => {
-        showNotification(getLabel('notify.resultsCopied'), "success", 2000);
+        showNotification(getLabel('notify.resultsCopied'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
     }).catch(err => {
         console.error('Failed to copy test results:', err);
-        showNotification(getLabel('notify.copyFailed'), "error", 2000);
+        showNotification(getLabel('notify.copyFailed'), "error", UI_TIMEOUTS.NOTIFICATION_SHORT);
     });
 }
 

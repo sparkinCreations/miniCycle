@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { INTERVALS, DEFAULT_RECURRING_DELETE_SETTINGS, LIMITS } from '../core/constants.js';
+import { INTERVALS, DEFAULT_RECURRING_DELETE_SETTINGS, LIMITS, UI_TIMEOUTS } from '../core/constants.js';
 import { getIcon } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -115,7 +115,7 @@ function showTaskLimitNotification(blockedCount) {
     Deps.showNotification?.(
         `${getIcon('warning')} ${blockedCount} recurring task${blockedCount > 1 ? 's' : ''} couldn't spawn - task list full (${LIMITS.TASKS_PER_CYCLE} limit).\nComplete or delete tasks to allow more recurring tasks.`,
         'warning',
-        8000
+        UI_TIMEOUTS.NOTIFICATION_PERSISTENT
     );
 }
 
@@ -353,7 +353,7 @@ export async function catchUpMissedRecurringTasks() {
             Deps.showNotification(
                 `⏰ Added ${tasksToActuallyAdd.length} missed recurring task${tasksToActuallyAdd.length > 1 ? 's' : ''}`,
                 'info',
-                3000
+                UI_TIMEOUTS.NOTIFICATION_LONG
             );
         }
 

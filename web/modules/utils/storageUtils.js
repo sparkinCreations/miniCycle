@@ -35,7 +35,7 @@
  * @property {number} percentUsed - Usage percentage
  */
 
-import { APP_VERSION } from '../core/constants.js';
+import { APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel } from '../labels/labelResolver.js';
 
@@ -334,7 +334,7 @@ export function checkStorageWarning(info, showNotification) {
         showNotification(
             getLabel('notify.storageTight'),
             'warning',
-            5000
+            UI_TIMEOUTS.NOTIFICATION_SLOW
         );
     }
 

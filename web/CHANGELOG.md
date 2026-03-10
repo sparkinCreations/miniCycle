@@ -1,3 +1,7 @@
+## [2.066] - 2026-03-10
+- feat: add milestone celebration overlays for 100 cycles and 500 tasks; update related labels and preferences
+
+
 ## [2.065] - 2026-03-09
 - feat: update checkmark style options to set 'fitted' as default and adjust preferences modal accordingly
 

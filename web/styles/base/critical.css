@@ -62,7 +62,7 @@ html, body {
   line-height: 1.4;
   opacity: 0;
   transition: opacity 0.4s ease;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 12px rgba(0, 0, 0, 0.25);
+  text-shadow: var(--text-shadow-lg);
 }
 .loader-tip.visible {
   opacity: 0.85;

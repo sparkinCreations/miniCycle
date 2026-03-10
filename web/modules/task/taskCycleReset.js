@@ -613,7 +613,7 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     completedTaskElements.forEach(processTaskElement);
 
     if (tasksToDelete.length === 0) {
-        _deps.showNotification?.(getLabel('notify.noCompletedToDelete'), "default", 3000);
+        _deps.showNotification?.(getLabel('notify.noCompletedToDelete'), "default", UI_TIMEOUTS.NOTIFICATION_LONG);
         return { aborted: true, reason: 'no_tasks' };
     }
 

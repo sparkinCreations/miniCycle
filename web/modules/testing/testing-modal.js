@@ -54,7 +54,7 @@ import { setupAnalysisButtons } from './testing-modal-analysis.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { openStorageViewer, closeStorageViewer, setupStorageViewerButton } from './testing-modal-storage-viewer.js';
 import { setupDebugButtons, setupConsoleCaptureButtons } from './testing-modal-debug.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 
 // ==========================================
 // DEPENDENCY INJECTION WRAPPER
@@ -92,12 +92,9 @@ function setupTestingModal() {
             testingModal._previousFocus = document.activeElement;
             testingModal.showModal();
         }
-        // Move notification container into dialog so toasts appear above the top-layer
-        const notifContainer = document.getElementById(DOM_IDS.NOTIFICATION_CONTAINER);
-        if (notifContainer) testingModal.appendChild(notifContainer);
 
         initTestingModalDrag();
-        showNotification(getLabel('notify.testingPanelOpened'), "info", 2000);
+        showNotification(getLabel('notify.testingPanelOpened'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
 
         // Setup ALL functionality AFTER modal is visible
         setTimeout(() => {
@@ -116,13 +113,9 @@ function setupTestingModal() {
 
     // Close testing modal
     const closeTesting = () => {
-        // Move notification container back to body before closing
-        const notifContainer = document.getElementById(DOM_IDS.NOTIFICATION_CONTAINER);
-        if (notifContainer) document.body.appendChild(notifContainer);
-
         if (testingModal.open) testingModal.close();
         testingModal._previousFocus?.focus({ focusVisible: false });
-        showNotification(getLabel('notify.testingPanelClosed'), "default", 2000);
+        showNotification(getLabel('notify.testingPanelClosed'), "default", UI_TIMEOUTS.NOTIFICATION_SHORT);
     };
 
     closeTestingBtns.forEach(btn => {

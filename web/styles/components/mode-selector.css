@@ -262,7 +262,7 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
     background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
     border: 1px solid rgba(12, 32, 145, 0.3);
     border-radius: var(--radius-md);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-dropdown);
     min-width: 180px;
     z-index: var(--z-notification); /* High z-index to appear above task list */
     overflow: visible;

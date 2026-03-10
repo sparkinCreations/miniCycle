@@ -8,7 +8,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { LIMITS, DOM_IDS, APP_VERSION } from '../core/constants.js';
+import { LIMITS, DOM_IDS, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -139,7 +139,7 @@ async function handleMiniCycleTitleBlur() {
         console.log(`Title exceeds ${maxLength} chars, truncating...`);
         newTitle = newTitle.substring(0, maxLength);
         titleElement.textContent = newTitle;
-        showNotification?.(getLabel('notify.titleTruncated', { vars: { limit: maxLength } }), "warning", 2000);
+        showNotification?.(getLabel('notify.titleTruncated', { vars: { limit: maxLength } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 
     // No change - exit early
@@ -164,7 +164,7 @@ async function handleMiniCycleTitleBlur() {
 
     if (wasModified) {
         console.log(`⚠️ Name collision: "${newTitle}" → "${finalTitle}"`);
-        showNotification?.(getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", 3000);
+        showNotification?.(getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
         titleElement.textContent = finalTitle; // Update UI to show final name
     }
 
@@ -212,7 +212,7 @@ async function handleMiniCycleTitleBlur() {
 
     console.log(`✅ Title updated: "${oldTitle}" → "${finalTitle}"`);
     if (!wasModified) {
-        showNotification?.(getLabel('notify.renamedTo', { vars: { name: finalTitle } }), "success", 1500);
+        showNotification?.(getLabel('notify.renamedTo', { vars: { name: finalTitle } }), "success", UI_TIMEOUTS.NOTIFICATION_BRIEF);
     }
 }
 
