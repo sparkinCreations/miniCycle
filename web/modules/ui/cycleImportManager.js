@@ -145,7 +145,7 @@ export function setupImportButtons() {
         fileInput.type = "file";
         fileInput.id = "import-data-file-input";
         fileInput.name = "dataImport";
-        fileInput.accept = ".mcyc,.json,application/json";
+        fileInput.accept = ".mcyc,.json,application/json,application/octet-stream";
         fileInput.style.display = "none";
         document.body.appendChild(fileInput);
 

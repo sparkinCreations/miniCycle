@@ -218,7 +218,7 @@ export function setupRestoreButton() {
         fileInput.type = "file";
         fileInput.id = "import-cycle-file-input";
         fileInput.name = "cycleImport";
-        fileInput.accept = "application/json,.json,.mcyc";
+        fileInput.accept = ".mcyc,.json,application/json,application/octet-stream";
         fileInput.style.display = "none";
         document.body.appendChild(fileInput);
 
