@@ -1212,6 +1212,19 @@ export class RoutineSwitcher {
         };
         safeAdd(document, "click", this._clickOutsideHandler);
 
+        // Reset desktop preview when clicking inside modal but not on a list item
+        const switchModalContent = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT);
+        if (switchModalContent) {
+            this._modalContentClickHandler = (event) => {
+                const clickedItem = event.target.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
+                const clickedPreview = event.target.closest(DOM_SELECTORS.DESKTOP_PREVIEW_WINDOW);
+                if (!clickedItem && !clickedPreview) {
+                    this._resetDesktopPreview();
+                }
+            };
+            safeAdd(switchModalContent, "click", this._modalContentClickHandler);
+        }
+
         // Restore focus when dialog closes (including native ESC)
         const switchModal = this.deps.getModal('routineSwitcher');
         if (switchModal) {
@@ -1273,7 +1286,7 @@ export class RoutineSwitcher {
             previewWindow.appendChild(noTasksMsg);
             dateDisplay.textContent = '';
             // Also update desktop preview
-            this._updateDesktopPreview(null);
+            this._updateDesktopPreview(null, cycleName);
             console.log('⚠️ No tasks found for preview');
             return;
         }
@@ -1305,7 +1318,7 @@ export class RoutineSwitcher {
         }
 
         // Also update desktop preview panel
-        this._updateDesktopPreview(cycleData, tasksPreview, dateLabel, formattedDate);
+        this._updateDesktopPreview(cycleData, cycleName, tasksPreview, dateLabel, formattedDate);
 
         console.log('✅ Preview updated successfully');
     }
@@ -1313,13 +1326,27 @@ export class RoutineSwitcher {
     /**
      * Update the desktop right-panel preview with task data
      * @param {Object|null} cycleData - The cycle data, or null for empty state
+     * @param {string} [cycleName] - The routine name to display in the title
      * @param {string} [tasksHTML] - Pre-built tasks HTML
      * @param {string} [dateLabel] - "Modified" or "Created" label
      * @param {string} [formattedDate] - Formatted date string
      */
-    _updateDesktopPreview(cycleData, tasksHTML, dateLabel, formattedDate) {
+    _updateDesktopPreview(cycleData, cycleName, tasksHTML, dateLabel, formattedDate) {
         const desktopPreview = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_WINDOW);
         if (!desktopPreview) return;
+
+        // Update the preview title to show the routine name
+        const previewTitle = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_TITLE);
+        if (previewTitle) {
+            previewTitle.textContent = cycleName || getLabel('switcher.preview');
+        }
+
+        // Show the double-click hint
+        const hint = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_HINT);
+        if (hint) {
+            hint.textContent = getLabel('switcher.doubleClickEnlarge');
+            hint.style.display = 'block';
+        }
 
         if (!cycleData || !cycleData.tasks) {
             desktopPreview.innerHTML = '';
@@ -1343,6 +1370,16 @@ export class RoutineSwitcher {
         const desktopPreview = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_WINDOW);
         if (desktopPreview) {
             desktopPreview.textContent = getLabel('switcher.selectPreview');
+        }
+        // Reset the title back to generic "Preview"
+        const previewTitle = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_TITLE);
+        if (previewTitle) {
+            previewTitle.textContent = getLabel('switcher.preview');
+        }
+        // Hide the double-click hint
+        const hint = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_HINT);
+        if (hint) {
+            hint.style.display = 'none';
         }
     }
 
@@ -1376,6 +1413,12 @@ export class RoutineSwitcher {
 
         // Also attach to desktop preview panel
         if (desktopPreview) {
+            // Stop click propagation so clicks inside the preview don't bubble up
+            // to the modal and deselect the currently selected routine
+            if (!desktopPreview._clickGuard) {
+                desktopPreview._clickGuard = (e) => e.stopPropagation();
+            }
+            safeAdd(desktopPreview, "click", desktopPreview._clickGuard);
             safeAdd(desktopPreview, "dblclick", () => this._openPreviewReviewModal());
         }
     }
@@ -1582,7 +1625,10 @@ export class RoutineSwitcher {
 
             // 🖱️ Handle selection with safeAddEventListener
             const safeAdd = this.deps.safeAddEventListener;
-            listItem._clickHandler = () => {
+            listItem._clickHandler = (event) => {
+                // Skip selection when clicking inside an inline edit input
+                if (event?.target?.classList?.contains('cycle-item-edit-input')) return;
+
                 console.log('🎯 Cycle selected:', cycleData.title || cycleKey, 'Key:', cycleKey);
 
                 this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => {

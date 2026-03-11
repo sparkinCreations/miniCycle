@@ -1,3 +1,7 @@
+## [2.069] - 2026-03-11
+- feat: implement two-panel layout for routine switcher modal on desktop; restructure HTML and update styles
+
+
 ## [2.068] - 2026-03-10
 - docs: rewrite README with screenshots, updated feature sections, and current stats
 - feat: add 'loadMiniCycle' to optional dependencies in pullToRefresh module; enhance UI refresh logic

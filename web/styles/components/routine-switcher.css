@@ -314,6 +314,8 @@ dialog.mini-cycle-switch-modal::backdrop {
     min-width: 100px;
     max-width: 200px;
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    pointer-events: auto;
+    cursor: text;
 }
 
 .cycle-item-edit-input:focus-visible {
@@ -450,7 +452,8 @@ dialog.mini-cycle-switch-modal::backdrop {
     align-items: center;
     justify-content: center;
     gap: var(--space-1-5);
-    padding: var(--space-2) var(--space-4);
+    height: 30px;
+    padding: 0 var(--space-4);
     margin: var(--space-2) auto;
     font-size: 0.85rem;
     font-weight: 500;
@@ -607,6 +610,11 @@ dialog.mini-cycle-switch-modal::backdrop {
     min-width: 0;
 }
 
+/* Panel titles — hidden on mobile, shown on desktop */
+.routine-panel-title {
+    display: none;
+}
+
 /* Right panel — hidden on mobile, visible on desktop */
 .routine-switcher-right {
     display: none;
@@ -621,9 +629,8 @@ dialog.mini-cycle-switch-modal::backdrop {
     font-size: 0.85rem;
     text-align: left;
     overflow-y: auto;
-    max-height: 340px;
-    min-height: 120px;
     box-shadow: var(--shadow-inner-subtle);
+    cursor: pointer;
 }
 
 .desktop-preview-window .preview-task {
@@ -634,6 +641,16 @@ dialog.mini-cycle-switch-modal::backdrop {
 
 .desktop-preview-window .preview-task:last-child {
     border-bottom: none;
+}
+
+.desktop-preview-hint {
+    display: none;
+    font-size: var(--font-size-xs);
+    color: var(--theme-text-muted);
+    text-align: center;
+    margin-top: var(--space-1);
+    font-style: italic;
+    opacity: 0.7;
 }
 
 .desktop-preview-date {
@@ -650,7 +667,13 @@ dialog.mini-cycle-switch-modal::backdrop {
 
 @media (min-width: 768px) {
     .mini-cycle-switch-modal-content {
-        max-width: 680px;
+        width: 680px;
+        max-width: 90%;
+    }
+
+    /* Sort controls next to filter on desktop */
+    .routine-sort-filter-row {
+        justify-content: flex-start;
     }
 
     .routine-switcher-body {
@@ -660,16 +683,32 @@ dialog.mini-cycle-switch-modal::backdrop {
     }
 
     .routine-switcher-left {
-        flex: 1;
+        flex: 2;
         min-width: 0;
+    }
+
+    .routine-switcher-left .mini-cycle-switch-list {
+        min-height: 240px;
     }
 
     .routine-switcher-right {
         display: block;
-        width: 220px;
+        flex: 1;
         flex-shrink: 0;
-        position: sticky;
-        top: 0;
+    }
+
+    .routine-panel-title {
+        display: block;
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+        color: var(--theme-text-muted);
+        margin-bottom: var(--space-1-5);
+        text-align: left;
+    }
+
+    /* Preview matches the list height */
+    .routine-switcher-right .desktop-preview-window {
+        height: 240px;
     }
 
     /* Hide the inline mobile preview on desktop */
