@@ -44,15 +44,12 @@ let _injectedCreateInitialSchema25Data = null;
 export function setDataAccessDeps(deps) {
     if (deps.AppState) {
         _injectedAppState = deps.AppState;
-        console.log('✅ DataAccess: AppState injected');
     }
     if (deps.getExtractTaskDataFromDOM) {
         _injectedGetExtractTaskDataFromDOM = deps.getExtractTaskDataFromDOM;
-        console.log('✅ DataAccess: getExtractTaskDataFromDOM injected');
     }
     if (deps.createInitialSchema25Data) {
         _injectedCreateInitialSchema25Data = deps.createInitialSchema25Data;
-        console.log('✅ DataAccess: createInitialSchema25Data injected');
     }
 }
 
@@ -122,7 +119,6 @@ export function loadMiniCycleData() {
         return null;
     }
 
-    console.log('🆕 No data found in localStorage - Creating initial Schema 2.5 structure...');
     _injectedCreateInitialSchema25Data?.();
 
     // Try again after creating
@@ -257,4 +253,3 @@ export function createDataAccess() {
     };
 }
 
-console.log('📦 dataAccess module loaded');

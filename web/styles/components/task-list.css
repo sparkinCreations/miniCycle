@@ -308,9 +308,9 @@ body.onboarding-active .complete-all-and-help-window-container {
    TASK INDICATORS
    ============================================================================= */
 
-/* Task marked for deletion on reset (Cycle mode) */
+/* Task marked for clearing on reset (Cycle mode) */
 .task.show-delete-indicator::after {
-    content: "❌";
+    content: "🧹";
     position: absolute;
     right: 40px;
     top: 50%;

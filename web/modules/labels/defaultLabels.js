@@ -133,7 +133,8 @@ export const DEFAULT_LABELS = deepFreeze({
         priority:         'Mark task as high priority',
         edit:             'Rename task',
         delete:           'Delete task',
-        deleteOnComplete: 'Marked for removal (removes task on reset or clear)',
+        clearOnReset:     'Clear on Reset (removes task when cycle resets)',
+        markedForClearing: 'Marked for Clearing (removes task when cleared)',
         showOptions:      'Show task options',
         customize:        'Add or remove task buttons',
         customizeAria:    'Add or remove which task option buttons are visible'
@@ -168,8 +169,11 @@ export const DEFAULT_LABELS = deepFreeze({
         recurringDescription:     'Schedule task to repeat automatically',
         dueDateDescription:       'Add deadline to task',
         remindersDescription:     'Set notification reminders',
-        markedForRemoval:         'Marked for Removal',
-        markedForRemovalDescription: 'When enabled, removes this task on cycle reset or task clearing',
+        clearOnReset:             'Clear on Reset',
+        clearOnResetDescription:  'When enabled, removes this task when the cycle resets',
+        markedForClearing:        'Marked for Clearing',
+        markedForClearingDescription: 'When enabled, removes this task when completed tasks are cleared',
+        achievementNote:          'Only cleared tasks in To-Do mode count towards achievements',
         global:                   'Global',
         previewHover:             'Hover over',
         previewTap:               'Tap',
@@ -306,6 +310,7 @@ export const DEFAULT_LABELS = deepFreeze({
         badgeUnlocks:    'Unlocks {reward}',
         threshold:       '{cycles} cycles or {tasks} cleared tasks',
         description:     'Complete {cycles} cycles or {tasks} cleared tasks',
+        progressNote:    'Only completed cycles and cleared tasks in To-Do mode count towards achievements',
     },
 
     // ========================================================================
@@ -348,6 +353,10 @@ export const DEFAULT_LABELS = deepFreeze({
         deletionCancelled:      'Deletion cancelled.',
         saveCancelled:          'Save cancelled.',
         noRoutineToSave:        'No routine found to save.',
+        recurringKeptOnReset:   'This recurring task will be kept on reset instead of respawning.',
+        taskRemovedOnReset:     'Task will be removed on reset',
+        taskKeptOnComplete:     'Task will be kept on complete (pinned)',
+        taskRemainOnReset:      'Task will remain in list on reset',
 
         // Mode notifications
         modeSwitched:           'Switched to {mode}',
@@ -455,7 +464,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Settings notifications
         settingSaveFailed:       'Failed to save setting',
-        debugEnabled:            'Debug mode enabled - console.log output visible',
+        debugEnabled:            'Debug mode enabled - diagnostic snapshot in console',
         debugDisabled:           'Debug mode disabled - console.log output suppressed',
         reducedMotionEnabled:    'Reduced motion enabled',
         reducedMotionDisabled:   'Reduced motion disabled',
@@ -1394,7 +1403,7 @@ export const DEFAULT_LABELS = deepFreeze({
         noHistoryYet:         'No history yet',
         noHistoryHint:        'Complete cycles or clear tasks to see history here',
         noClearedTasks:       'No cleared tasks',
-        noClearedHint:        'Tasks you clear in To-Do mode will appear here',
+        noClearedHint:        'Tasks you clear will appear here',
         highPriority:         'High Priority',
         dateToday:            'Today',
         dateYesterday:        'Yesterday',
@@ -1414,7 +1423,9 @@ export const DEFAULT_LABELS = deepFreeze({
         themeChanged:         'Theme Changed',
         recreate:             'Recreate',
         clearedTotal:         'cleared total',
-        showingRecent:        'Showing last {count} ({days} days)'
+        showingRecent:        'Showing last {count} ({days} days)',
+        recurringNote:        'Cleared tasks set to recur are not included in this list. They will reappear in your routine on their schedule.',
+        viewRecurring:        'View recurring settings'
     },
 
     // ========================================================================
@@ -1700,7 +1711,8 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'taskOption.priority',
     'taskOption.edit',
     'taskOption.delete',
-    'taskOption.deleteOnComplete',
+    'taskOption.clearOnReset',
+    'taskOption.markedForClearing',
     'taskOption.showOptions',
     'taskOption.customize',
     'taskOption.customizeAria',
@@ -1946,7 +1958,8 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'taskOptions.customizeLabel',
     'taskOptions.moveArrowsLabel',
     'taskOptions.threeDotsLabel',
-    'taskOptions.markedForRemoval',
+    'taskOptions.clearOnReset',
+    'taskOptions.markedForClearing',
     'taskOptions.global',
 
     // Focus mode
@@ -2214,4 +2227,3 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
 
 export const LABELS_VERSION = globalThis.APP_VERSION;
 
-console.log(`🏷️ Default labels loaded (v${LABELS_VERSION})`);

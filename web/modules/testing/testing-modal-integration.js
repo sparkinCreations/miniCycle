@@ -23,7 +23,6 @@ const di = createDIModule('TestingModalIntegration', {
 export const setTestingModalDependencies = di.setDependencies;
 
 function fallbackShowNotification(message, type, duration) {
-    console.log(`[Notification ${type}] ${message}`);
 }
 
 function getSafeAddEventListenerById() {
@@ -44,7 +43,6 @@ function getBackupManager() {
 
 // Setup automated testing event listeners
 function setupAutomatedTestingFunctions() {
-    console.log('🔧 Setting up automated testing functions...');
 
     const safeAddEventListenerById = getSafeAddEventListenerById();
 
@@ -53,7 +51,6 @@ function setupAutomatedTestingFunctions() {
         await runAllAutomatedTests();
     });
 
-    console.log('✅ Automated testing functions ready');
 }
 
 // IndexedDB helpers for test results
@@ -87,7 +84,6 @@ async function storeTestResults(resultData) {
             tx.onerror = () => reject(tx.error);
         });
         db.close();
-        console.log('💾 Stored test results in IndexedDB');
     } catch (e) {
         console.warn('Failed to store test results:', e);
     }
@@ -172,7 +168,6 @@ function displayTestResults(resultData) {
         getShowNotification()(`⚠️ ${failedModules.length} module(s) have failures`, "warning", 5000);
     }
 
-    console.log('📥 Displayed test results');
 }
 
 // Get the automated test output element
@@ -188,7 +183,6 @@ function appendToAutomatedTestResults(message) {
         output.textContent += message;
         output.scrollTop = output.scrollHeight;
     }
-    console.log("🔬 Automated Test:", message.replace(/\n/g, ''));
 }
 
 // Current test runner modal reference
@@ -284,7 +278,6 @@ async function closeTestRunnerModal() {
         testRunnerModal = null;
         // Clear any stored results to prevent modal from reopening on page refresh
         await clearStoredTestResults();
-        console.log('🧪 Test runner modal closed');
     }
 }
 
@@ -310,7 +303,6 @@ async function runAllAutomatedTests() {
     if (AppState && AppState.isReady && AppState.isReady()) {
         try {
             await AppState.forceSave();
-            console.log('💾 Forced AppState save before tests');
         } catch (e) {
             console.warn('Could not force save AppState:', e);
         }
@@ -395,8 +387,6 @@ async function runAllAutomatedTests() {
             resultsReceived = true;
             window.removeEventListener('message', handleTestMessages);
 
-            console.log('📊 Received test results from iframe');
-
             // Update progress to 100%
             const progressBar = document.getElementById(DOM_IDS.TEST_PROGRESS_BAR);
             const statusText = document.getElementById(DOM_IDS.TEST_STATUS_TEXT);
@@ -429,7 +419,6 @@ async function runAllAutomatedTests() {
                     const AppState = getAppState();
                     if (AppState?.reload) {
                         AppState.reload();
-                        console.log('🔄 AppState reloaded from restored localStorage');
                     }
 
                     getShowNotification()(
@@ -458,7 +447,6 @@ async function runAllAutomatedTests() {
 }
 
 // DI-pure module (no window.* fallbacks for dependencies)
-console.log('🧪 Testing modal integration loaded (DI-pure)');
 
 /**
  * Initialize testing modal integration (called by moduleLoader)
@@ -473,8 +461,6 @@ export function initTestingModalIntegration(dependencies = {}) {
 
     // Check for pending test results and auto-open modal if found
     checkForPendingResultsOnLoad();
-
-    console.log('✅ TestingModalIntegration initialized');
 
     return {
         runAllAutomatedTests,
@@ -493,8 +479,6 @@ async function checkForPendingResultsOnLoad() {
         await clearStoredTestResults();
         return;
     }
-
-    console.log('📊 Found pending test results, auto-opening modal...');
 
     // Wait a moment for page to settle, then open modal and show results
     setTimeout(async () => {

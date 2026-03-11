@@ -66,14 +66,12 @@ const _deps = new Proxy({}, {
     }
 });
 
-
 /**
  * Set dependencies for ThemeManager
  * Call this after AppState is available
  */
 export function setThemeManagerDependencies(deps) {
     di.setDependencies(deps);
-    console.log('🎨 ThemeManager dependencies injected');
 }
 
 // Mapping from colorPreset keys to --pref-* CSS variable names
@@ -233,7 +231,6 @@ function _refreshLiveLensLabels() {
 
 export class ThemeManager {
     constructor() {
-        console.log('🎨 ThemeManager initializing...');
 
         this.themes = [
             {
@@ -271,7 +268,6 @@ export class ThemeManager {
         try {
             // Set initial theme color on startup
             this.updateThemeColor();
-            console.log('🎨 ThemeManager ready');
         } catch (error) {
             console.warn('⚠️ ThemeManager init warning:', error.message);
         }
@@ -286,7 +282,6 @@ export class ThemeManager {
      */
     async applyTheme(themeName, shouldSave = true) {
         try {
-            console.log('🎨 Applying theme...', themeName);
 
             // Step 1: Remove all theme classes
             const allThemes = ['theme-dark-ocean', 'theme-golden-glow', 'theme-dark'];
@@ -317,7 +312,6 @@ export class ThemeManager {
             // Step 6: Update UI checkboxes
             this.updateThemeToggles(themeName);
 
-            console.log('✅ Theme application completed');
         } catch (error) {
             console.warn('⚠️ Theme application failed:', error.message, '- using defaults');
         }
@@ -388,7 +382,6 @@ export class ThemeManager {
             // iOS reads the actual CSS background-color, not just the meta tag
             body.style.backgroundColor = themeColor;
 
-            console.log(`🎨 Theme color updated to: ${themeColor}, Status bar: ${statusBarStyle}`);
         } catch (error) {
             console.warn('⚠️ Theme color update failed:', error.message);
         }
@@ -411,12 +404,10 @@ export class ThemeManager {
 
             // ✅ Idempotency guard (per-toggle)
             if (thisToggle.dataset.darkModeSetup) {
-                console.log(`✅ Dark mode toggle '${toggleId}' already set up`);
                 return;
             }
             thisToggle.dataset.darkModeSetup = 'true';
 
-            console.log('🌙 Setting up dark mode toggle (Schema 2.5 only)...');
             
             const schemaData = this.loadSchemaData();
             if (!schemaData) {
@@ -426,7 +417,6 @@ export class ThemeManager {
             
             const isDark = schemaData.settings?.darkMode || false;
             
-            console.log('📊 Loading dark mode state from Schema 2.5:', isDark);
 
             // Set initial state
             thisToggle.checked = isDark;
@@ -445,7 +435,6 @@ export class ThemeManager {
             };
             safeAdd(thisToggle, "change", thisToggle._darkModeChangeHandler);
 
-            console.log('✅ Dark mode toggle setup completed');
         } catch (error) {
             console.warn('⚠️ Dark mode toggle setup failed:', error.message);
         }
@@ -464,12 +453,10 @@ export class ThemeManager {
 
             // ✅ Idempotency guard
             if (quickToggle.dataset.quickToggleSetup) {
-                console.log('✅ Quick dark toggle already set up');
                 return;
             }
             quickToggle.dataset.quickToggleSetup = 'true';
 
-            console.log('🌙 Setting up quick dark toggle...');
             
             // Get current dark mode state
             const schemaData = this.loadSchemaData();
@@ -487,25 +474,20 @@ export class ThemeManager {
                 e.preventDefault();
                 e.stopPropagation();
 
-                console.log('🌙 Quick dark toggle clicked');
-
                 // Find primary toggle and simulate change
                 const primaryToggle = _deps.getElementById(DOM_IDS.DARK_MODE_TOGGLE);
                 if (primaryToggle) {
-                    console.log('🔄 Triggering primary toggle, current state:', primaryToggle.checked);
                     primaryToggle.checked = !primaryToggle.checked;
 
                     const changeEvent = new Event("change", { bubbles: true, cancelable: true });
                     primaryToggle.dispatchEvent(changeEvent);
 
-                    console.log('🔄 Primary toggle new state:', primaryToggle.checked);
                 } else {
                     console.warn('⚠️ Primary dark mode toggle not found');
                 }
             };
             safeAdd(newQuickToggle, "click", newQuickToggle._clickHandler);
 
-            console.log('✅ Quick dark toggle setup completed');
         } catch (error) {
             console.warn('⚠️ Quick dark toggle setup failed:', error.message);
         }
@@ -519,7 +501,6 @@ export class ThemeManager {
             _deps.getBody()?.classList.toggle("dark-mode", enabled);
             _deps.getRootElement()?.classList.toggle("dark-mode", enabled);
 
-            console.log('🌙 Dark mode toggle changed:', enabled);
             
             // Save to storage
             this.saveDarkModeToStorage(enabled);
@@ -575,7 +556,6 @@ export class ThemeManager {
      */
     unlockThemeFallback(themeKey, themeName) {
         try {
-            console.log(`🎨 Using fallback unlock for ${themeName} theme...`);
             
             const schemaData = this.loadSchemaData();
             if (schemaData && !schemaData.settings.unlockedThemes.includes(themeKey)) {
@@ -586,7 +566,6 @@ export class ThemeManager {
                 this.showThemeContainer();
                 this.showThemeButton();
                 
-                console.log(`🎨 ${themeName} theme unlocked (fallback)!`);
             }
         } catch (error) {
             console.warn(`⚠️ ${themeName} theme fallback unlock failed:`, error.message);
@@ -610,12 +589,10 @@ export class ThemeManager {
      */
     refreshThemeToggles() {
         try {
-            console.log('🎨 Refreshing theme toggles (Schema 2.5 only)...');
             
             const container = _deps.getElementById(DOM_IDS.THEME_OPTION_CONTAINER);
             if (!container) {
                 // Settings panel not open - skip UI refresh (theme is still unlocked in state)
-                console.log('ℹ️ Theme panel not visible - skipping toggle refresh');
                 return;
             }
             
@@ -623,18 +600,12 @@ export class ThemeManager {
 
             const schemaData = this.loadSchemaData();
             if (!schemaData) {
-                console.log('ℹ️ Schema data not yet loaded for refreshThemeToggles — will populate when settings open');
                 return;
             }
 
             const unlockedThemes = schemaData.settings?.unlockedThemes || [];
             const currentTheme = schemaData.settings?.theme || 'default';
             
-            console.log('📊 Theme data from Schema 2.5:', {
-                unlockedThemes,
-                currentTheme,
-                unlockedCount: unlockedThemes.length
-            });
 
             // Add default theme option
             this.addThemeToggle(container, {
@@ -652,7 +623,6 @@ export class ThemeManager {
                 }
             });
             
-            console.log('✅ Theme toggles refreshed');
         } catch (error) {
             console.warn('⚠️ Theme toggles refresh failed:', error.message);
         }
@@ -785,7 +755,6 @@ export class ThemeManager {
                 section.appendChild(option);
             });
 
-            console.log('✅ Vocab themes rendered in Themes modal');
         } catch (error) {
             console.warn('⚠️ renderVocabThemes failed:', error.message);
         }
@@ -813,18 +782,15 @@ export class ThemeManager {
     setupThemesPanel() {
         // ✅ Idempotency guard — only set after successful setup so Phase 3 can retry
         if (this._setupThemesPanelInitialized) {
-            console.log('✅ Themes panel already set up');
             return;
         }
 
         try {
-            console.log('🎨 Setting up themes panel (Schema 2.5 only)...');
 
             const schemaData = this.loadSchemaData();
             if (!schemaData) {
                 // AppState not ready yet. Orchestrator calls setupThemesPanel() again
                 // after initAppWithAutoMigration() creates data for new users.
-                console.log('ℹ️ Schema data not yet loaded for setupThemesPanel — will retry from Phase 3');
                 return;
             }
 
@@ -903,7 +869,6 @@ export class ThemeManager {
             // Setup dark mode toggle inside themes modal
             this.setupDarkModeToggle("darkModeToggleThemes", ["darkModeToggle", "darkModeToggleThemes"]);
 
-            console.log('✅ Themes panel setup completed (Schema 2.5)');
         } catch (error) {
             console.warn('⚠️ Themes panel setup with data failed:', error.message);
         }
@@ -1027,7 +992,6 @@ export class ThemeManager {
             schemaData.settings.theme = themeName || 'default';
             this.saveSchemaData(schemaData);
             
-            console.log("✅ Theme saved to Schema 2.5:", themeName);
         } catch (error) {
             console.warn('⚠️ Theme save failed:', error.message);
         }
@@ -1048,7 +1012,6 @@ export class ThemeManager {
             schemaData.settings.darkMode = enabled;
             this.saveSchemaData(schemaData);
             
-            console.log("✅ Dark mode saved to Schema 2.5:", enabled);
         } catch (error) {
             console.warn('⚠️ Dark mode save failed:', error.message);
         }
@@ -1086,14 +1049,12 @@ export async function initThemeManager(dependencies = {}) {
     const schemaData = themeManager.loadSchemaData();
     const savedTheme = schemaData?.settings?.theme;
     if (savedTheme && savedTheme !== 'default') {
-        console.log('🎨 Applying saved theme from storage:', savedTheme);
         await themeManager.applyTheme(savedTheme, false); // false = don't save again
     } else {
         // For default theme, still update the theme color (status bar)
         themeManager.updateThemeColor();
     }
 
-    console.log('✅ ThemeManager initialized via initThemeManager');
     return themeManager;
 }
 
@@ -1170,8 +1131,6 @@ function renderVocabThemes(...args) {
 }
 
 // ===== MODULE EXPORTS (Phase 2 - No window.* pollution) =====
-
-console.log('🎨 ThemeManager module loaded (Phase 2 - no window.* exports)');
 
 // Export singleton and wrapper functions
 // Note: ThemeManager class and initThemeManager are already exported at declaration

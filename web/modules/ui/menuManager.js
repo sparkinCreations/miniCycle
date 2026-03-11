@@ -82,7 +82,6 @@ const _deps = new Proxy({}, {
  */
 export function setMenuManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🎛️ MenuManager dependencies set:', Object.keys(dependencies));
 }
 
 export class MenuManager {
@@ -147,7 +146,6 @@ export class MenuManager {
             // Setup menu
             this.setupMainMenu();
             this._initialized = true;
-            console.log('🎛️ Menu Manager initialized');
         } catch (error) {
             console.warn('Menu Manager initialization failed:', error);
             this.deps.showNotification(getLabel('notify.menuLimited'), 'warning');
@@ -161,7 +159,6 @@ export class MenuManager {
     setupMainMenu() {
         // ✅ Idempotency guard
         if (this._setupMainMenuInitialized) {
-            console.log('✅ Main menu already set up');
             return;
         }
         this._setupMainMenuInitialized = true;
@@ -356,7 +353,6 @@ export class MenuManager {
      * Ensures proper display of selected miniCycle.
      */
     updateMainMenuHeader() {
-        console.log('📰 Updating main menu header (Schema 2.5 only)...');
 
         const menuHeaderTitle = this.deps.getElementById(DOM_IDS.MAIN_MENU_TITLE);
         const dateElement = this.deps.getElementById(DOM_IDS.CURRENT_DATE);
@@ -370,12 +366,9 @@ export class MenuManager {
         const { cycles, activeCycle } = schemaData;
         let activeCycleTitle = getLabel('routine.noSelected');
 
-        console.log('📊 Looking up active cycle:', activeCycle);
-
         if (activeCycle && cycles[activeCycle]) {
             const currentCycle = cycles[activeCycle];
             activeCycleTitle = currentCycle.title || activeCycle;
-            console.log('✅ Found active cycle title:', activeCycleTitle);
         } else {
             console.warn('⚠️ No active cycle found for header update');
         }
@@ -389,19 +382,15 @@ export class MenuManager {
             year: 'numeric' // "2025"
         });
 
-        console.log('📅 Formatted date:', formattedDate);
-
         // ✅ Update Title & Date
         if (menuHeaderTitle) {
             menuHeaderTitle.textContent = activeCycleTitle;
-            console.log('🏷️ Updated menu header title');
         } else {
             console.warn('⚠️ Menu header title element not found');
         }
 
         if (dateElement) {
             dateElement.textContent = formattedDate;
-            console.log('📅 Updated date element');
         } else {
             console.warn('⚠️ Date element not found');
         }
@@ -409,10 +398,8 @@ export class MenuManager {
         // ✅ Update mode description (DI-pure, no window.* fallback)
         if (typeof this.deps.updateCycleModeDescription === 'function') {
             this.deps.updateCycleModeDescription();
-            console.log('🎯 Mode description updated');
         }
 
-        console.log('✅ Main menu header update completed');
     }
 
     /**
@@ -455,7 +442,6 @@ export class MenuManager {
      * Ensures that the new name is unique before saving.
      */
     saveMiniCycleAsNew() {
-        console.log('💾 Saving miniCycle as new (state-based)...');
 
         // ✅ Use state-based data access
         const AppState = this.deps.AppState();
@@ -476,8 +462,6 @@ export class MenuManager {
         const activeCycle = appState.activeCycleId;
         const currentCycle = data.cycles[activeCycle];
 
-        console.log('📊 Checking active cycle:', activeCycle);
-
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active miniCycle found to save');
             this.deps.showNotification("⚠ " + getLabel('notify.noRoutineToSave'));
@@ -497,8 +481,6 @@ export class MenuManager {
             return;
         }
 
-        console.log('📝 Prompting user for new cycle name');
-
         // Generate suggested name with increment
         const { name: suggestedName } = getUniqueCycleName(currentCycle.title, data.cycles || {});
 
@@ -512,13 +494,11 @@ export class MenuManager {
             required: true,
             callback: (input) => {
                 if (!input) {
-                    console.log('❌ User cancelled save operation');
                     this.deps.showNotification("❌ " + getLabel('notify.saveCancelled'));
                     return;
                 }
 
                 const sanitizedName = this.deps.sanitizeInput(input.trim());
-                console.log('🔍 Processing new cycle name:', sanitizedName);
 
                 if (!sanitizedName) {
                     console.warn('⚠️ Invalid cycle name provided');
@@ -530,18 +510,14 @@ export class MenuManager {
                 const { name: finalCycleName, wasModified } = getUniqueCycleName(sanitizedName, data.cycles || {});
 
                 if (wasModified) {
-                    console.log(`⚠️ Name collision: "${sanitizedName}" → "${finalCycleName}"`);
                     this.deps.showNotification(getLabel('notify.nameExists', { vars: { name: finalCycleName } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                 }
 
                 // ✅ Update through state system
                 AppState.update(state => {
-                    console.log('🔄 Creating new cycle copy...');
 
                     // ✅ Create new cycle with title as key for Schema 2.5
                     const newCycleId = `copy_${Date.now()}`;
-
-                    console.log('📊 Deep copying current cycle data');
 
                     // ✅ Deep copy the current cycle with new title as storage key
                     state.data.cycles[finalCycleName] = {
@@ -551,15 +527,10 @@ export class MenuManager {
                         createdAt: Date.now()
                     };
 
-                    console.log('🎯 Setting new cycle as active:', finalCycleName);
-
                     // ✅ Set as active cycle using the title as key
                     state.appState.activeCycleId = finalCycleName;
                     state.metadata.lastModified = Date.now();
                     state.metadata.totalCyclesCreated++;
-
-                    console.log(`✅ Successfully created cycle copy: "${currentCycle.title}" → "${finalCycleName}"`);
-                    console.log('📈 Total cycles created:', state.metadata.totalCyclesCreated);
 
                 }, true); // immediate save
 
@@ -586,7 +557,6 @@ export class MenuManager {
      * @returns {Promise<void>}
      */
     async clearAllTasks() {
-        console.log('🧹 Clearing all tasks (Schema 2.5 only)...');
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
@@ -604,8 +574,6 @@ export class MenuManager {
             return;
         }
 
-        console.log('📊 Clearing tasks for cycle:', activeCycle);
-
         // ✅ Create undo snapshot before making changes
 
         // ✅ Uncheck all tasks (DO NOT DELETE) - Use helper to prevent race conditions
@@ -619,8 +587,6 @@ export class MenuManager {
             this.deps.showNotification("❌ " + getLabel('notify.clearTasksFailed'), "error");
             return;
         }
-
-        console.log('💾 Tasks unchecked and saved to Schema 2.5');
 
         // ✅ Uncheck tasks in the UI and remove overdue styling
         this.deps.querySelectorAll("#taskList .task").forEach(taskElement => {
@@ -645,7 +611,6 @@ export class MenuManager {
         // ✅ Update undo/redo button states
         this.deps.updateUndoRedoButtons();
 
-        console.log(`✅ All tasks unchecked for miniCycle: "${currentCycle.title}"`);
         this.deps.showNotification("✅ " + getLabel('notify.allTasksUnchecked', { vars: { name: currentCycle.title } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 
@@ -656,7 +621,6 @@ export class MenuManager {
      * @returns {void}
      */
     deleteAllTasks() {
-        console.log('🗑️ Deleting all tasks (Schema 2.5 only)...');
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
@@ -674,8 +638,6 @@ export class MenuManager {
             return;
         }
 
-        console.log('📊 Preparing to delete tasks for cycle:', activeCycle);
-
         // ✅ Use callback pattern with showConfirmationModal
         this.deps.showConfirmationModal({
             title: getLabel('modal.deleteAllTasks'),
@@ -685,12 +647,9 @@ export class MenuManager {
             destructive: true,
             callback: async (confirmed) => {
                 if (!confirmed) {
-                    console.log('❌ User cancelled deletion');
                     this.deps.showNotification("❌ " + getLabel('notify.deletionCancelled'));
                     return;
                 }
-
-                console.log('🔄 Proceeding with task deletion...');
 
                 // ✅ Push undo snapshot before deletion
 
@@ -710,8 +669,6 @@ export class MenuManager {
                     return;
                 }
 
-                console.log('💾 All tasks deleted and saved to Schema 2.5');
-
                 // ✅ Clear UI & update progress
                 const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
                 if (taskList) {
@@ -729,7 +686,6 @@ export class MenuManager {
                 // ✅ Update undo/redo button states
                 this.deps.updateUndoRedoButtons();
 
-                console.log(`✅ All tasks deleted for miniCycle: "${currentCycle.title}"`);
                 this.deps.showNotification("✅ " + getLabel('notify.allTasksDeleted', { vars: { name: currentCycle.title } }), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
             }
         });
@@ -737,7 +693,6 @@ export class MenuManager {
 
     // Fallback methods (for modals - uses native browser dialogs)
     fallbackNotification(message, type) {
-        console.log(`[Menu] ${message}`);
     }
 
     fallbackPromptModal(options) {
@@ -763,8 +718,6 @@ export async function initMenuManager(dependencies) {
     // Dynamically import utilities with version for cache-busting
     const version = APP_VERSION;
 
-    console.log(`📦 MenuManager: Loading utilities with version ${version}...`);
-
     // Import storage utilities
     const storageUtils = await import(`../utils/storageUtils.js?v=${version}`);
     getObjectSizeBytes = storageUtils.getObjectSizeBytes;
@@ -775,12 +728,9 @@ export async function initMenuManager(dependencies) {
     const nameUtils = await import(`../utils/nameUtils.js?v=${version}`);
     getUniqueCycleName = nameUtils.getUniqueCycleName;
 
-    console.log('✅ MenuManager: Utilities loaded');
-
     // Create instance and initialize
     menuManager = new MenuManager(dependencies);
     return menuManager.init().then(() => menuManager);
 }
 
 // DI-pure module (no window.* fallbacks for dependencies)
-console.log('🎛️ Menu Manager loaded (DI-pure, no window.* exports)');

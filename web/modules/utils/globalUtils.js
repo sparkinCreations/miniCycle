@@ -36,7 +36,6 @@ let _deps = {};
  */
 export function setGlobalUtilsDependencies(dependencies) {
     _deps = { ..._deps, ...dependencies };
-    console.log('🛠️ GlobalUtils dependencies set:', Object.keys(dependencies));
 }
 
 export class GlobalUtils {
@@ -93,7 +92,6 @@ export class GlobalUtils {
             GlobalUtils.safeAddEventListener(element, event, handler, options);
         });
 
-        console.log(`✅ Attached ${event} listeners to ${elements.length} elements matching "${selector}"`);
     }
 
     /**
@@ -632,8 +630,8 @@ export class GlobalUtils {
                 taskElement.classList.remove('kept-task');
             }
         } else {
-            // Cycle mode: show red X if deleted (deleteWhenComplete=true)
-            // BUT recurring tasks never show ❌ (recurring symbol indicates deletion)
+            // Cycle mode: show 🧹 indicator if cleared on reset (deleteWhenComplete=true)
+            // BUT recurring tasks never show 🧹 (recurring symbol indicates deletion)
             if (finalDeleteWhenComplete && !isRecurring) {
                 taskElement.classList.add('show-delete-indicator');
                 taskElement.classList.remove('kept-task');
@@ -662,11 +660,13 @@ export class GlobalUtils {
             return;
         }
 
+        const completedTaskList = document.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
         const allTasks = taskList.querySelectorAll('.task');
+        const completedTasks = completedTaskList?.querySelectorAll('.task') || [];
         let syncedCount = 0;
         let removedCount = 0;
 
-        allTasks.forEach(taskEl => {
+        const syncTask = (taskEl) => {
             const taskId = taskEl.dataset.taskId;
             const taskData = tasksData[taskId];
 
@@ -680,9 +680,11 @@ export class GlobalUtils {
                 taskEl.remove();
                 removedCount++;
             }
-        });
+        };
 
-        console.log(`✅ Synced ${syncedCount} tasks with ${currentMode} mode${removedCount > 0 ? `, removed ${removedCount} orphaned elements` : ''}`);
+        allTasks.forEach(syncTask);
+        completedTasks.forEach(syncTask);
+
         return syncedCount;
     }
 
@@ -742,7 +744,7 @@ export const DEFAULT_TASK_OPTION_BUTTONS = {
     recurring: false,       // 🔁 Recurring task
     dueDate: false,         // 📅 Set due date
     reminders: false,       // 🔔 Task reminders
-    deleteWhenComplete: false  // ❌ Delete when complete (auto-remove on reset)
+    deleteWhenComplete: false  // 🧹 Clear on reset / Marked for clearing (per-mode auto-remove)
 };
 
 // ===========================================
@@ -752,7 +754,6 @@ export const DEFAULT_TASK_OPTION_BUTTONS = {
 // ===========================================
 
 // DI-pure module (no window.* fallbacks for dependencies)
-console.log('🛠️ GlobalUtils module loaded (DI-pure, no window.* exports)');
 
 // Note: GlobalUtils is exported at class declaration (line 27)
 
@@ -834,7 +835,6 @@ MODULE INFORMATION:
 
 16. Get Module Info:
     const info = GlobalUtils.getModuleInfo();
-    console.log(info); // { version, name, functionsCount, loadedAt }
 
 ===========================================
 MIGRATION FROM OLD CODE:

@@ -47,7 +47,6 @@ const _deps = new Proxy({}, {
  */
 export function setDueDatesDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('📅 DueDates dependencies set:', Object.keys(dependencies));
 }
 
 export class MiniCycleDueDates {
@@ -62,9 +61,9 @@ export class MiniCycleDueDates {
         this.deps = {
             loadMiniCycleData: resolvedDeps.loadMiniCycleData || this.fallbackLoadData,
             showNotification: resolvedDeps.showNotification || this.fallbackNotification,
-            updateStatsPanel: resolvedDeps.updateStatsPanel || (() => console.log('⏭️ updateStatsPanel not available')),
-            updateProgressBar: resolvedDeps.updateProgressBar || (() => console.log('⏭️ updateProgressBar not available')),
-            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || (() => console.log('⏭️ checkCompleteAllButton not available')),
+            updateStatsPanel: resolvedDeps.updateStatsPanel || (() => {}),
+            updateProgressBar: resolvedDeps.updateProgressBar || (() => {}),
+            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || (() => {}),
             saveTaskToSchema25: resolvedDeps.saveTaskToSchema25 || this.fallbackSave,
             getElementById: resolvedDeps.getElementById || ((id) => document.getElementById(id)),
             querySelectorAll: resolvedDeps.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
@@ -75,7 +74,6 @@ export class MiniCycleDueDates {
         // Store reference to auto reset toggle element (will be set in init)
         this.toggleAutoReset = null;
 
-        console.log('📅 MiniCycle Due Dates module initialized');
     }
 
     /**
@@ -83,7 +81,6 @@ export class MiniCycleDueDates {
      * Must be called after DOM is ready and appInit core is ready
      */
     async init() {
-        console.log('🔄 Initializing due dates system...');
 
         // Wait for core systems to be ready
         await _deps.appInit?.waitForCore();
@@ -100,12 +97,10 @@ export class MiniCycleDueDates {
 
             // ✅ Add hook to check overdue tasks after app is fully ready
             _deps.appInit?.addHook?.('afterApp', async () => {
-                console.log('🔄 Checking overdue tasks after app ready (hook)...');
 
                 // Check if tasks exist in DOM before proceeding
                 const tasks = this.deps.querySelectorAll(DOM_SELECTORS.TASK);
                 if (tasks.length === 0) {
-                    console.log('⏭️ No tasks in DOM yet, skipping (will run after loadMiniCycle)');
                     return;
                 }
 
@@ -113,11 +108,9 @@ export class MiniCycleDueDates {
                 setTimeout(async () => {
                     await this.checkOverdueTasks();
                     this.remindOverdueTasks();
-                    console.log('✅ Overdue tasks checked and reminded on page load (hook)');
                 }, 300);
             });
 
-            console.log('✅ Due dates system initialized successfully');
         } catch (error) {
             console.warn('⚠️ Due dates system initialization failed:', error);
             this.deps.showNotification(getLabel('notify.featureUnavailable'), 'warning');
@@ -130,7 +123,6 @@ export class MiniCycleDueDates {
      * @param {string|null} newDueDate - The due date to assign, or null to clear
      */
     async saveTaskDueDate(taskId, newDueDate) {
-        console.log('📅 Saving task due date (Schema 2.5 only)...');
 
         await _deps.appInit?.waitForCore();
 
@@ -146,21 +138,12 @@ export class MiniCycleDueDates {
             return;
         }
 
-        console.log('🔍 Finding task:', taskId);
-
         const task = cycles[activeCycle].tasks?.find(t => t.id === taskId);
 
         if (!task) {
             console.warn(`⚠️ Task with ID "${taskId}" not found in active cycle`);
             return;
         }
-
-        console.log('📊 Updating due date:', {
-            taskId,
-            taskText: task.text,
-            oldDueDate: task.dueDate,
-            newDueDate
-        });
 
         // Update task due date
         task.dueDate = newDueDate;
@@ -181,7 +164,6 @@ export class MiniCycleDueDates {
                     }
                 }
             }, true);
-            console.log(`✅ Due date updated for task "${task.text}": ${newDueDate || 'cleared'}`);
         } catch (error) {
             console.error('❌ Error saving task due date:', error);
         }
@@ -347,7 +329,6 @@ export class MiniCycleDueDates {
         dueDateButton._clickHandler = () => {
             dueDateInput.classList.toggle("hidden");
             dueDateButton.classList.toggle("active", !dueDateInput.classList.contains("hidden"));
-            console.log('📅 Due date button clicked:', buttonContainer.closest('.task')?.dataset.taskId);
         };
         safeAdd(dueDateButton, "click", dueDateButton._clickHandler);
 
@@ -359,7 +340,6 @@ export class MiniCycleDueDates {
      * Attaches event listeners and initializes visibility
      */
     setupDueDateSystem() {
-        console.log('📅 Setting up due date system (Schema 2.5 only)...');
 
         if (!this.toggleAutoReset) {
             console.warn('⚠️ toggleAutoReset not available, skipping setup');
@@ -373,7 +353,6 @@ export class MiniCycleDueDates {
             this.toggleAutoReset.dataset.dueDateListenerAdded = true;
 
             this.toggleAutoReset._dueDateChangeHandler = async () => {
-                console.log('🔄 Auto reset toggle changed for due dates:', this.toggleAutoReset.checked);
 
                 let autoReset = this.toggleAutoReset.checked;
                 this.updateDueDateVisibility(autoReset);
@@ -387,7 +366,6 @@ export class MiniCycleDueDates {
                 const { activeCycle } = schemaData;
 
                 if (activeCycle) {
-                    console.log('💾 Updating auto reset setting via AppState');
 
                     // ✅ Use AppState only (no localStorage fallback)
                     const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
@@ -402,7 +380,6 @@ export class MiniCycleDueDates {
                                 state.data.cycles[activeCycle].autoReset = autoReset;
                             }
                         }, true);
-                        console.log('✅ Auto reset setting saved via AppState');
                     } catch (error) {
                         console.error('❌ Error saving auto reset setting:', error);
                     }
@@ -420,7 +397,6 @@ export class MiniCycleDueDates {
         let autoReset = this.toggleAutoReset.checked;
         this.updateDueDateVisibility(autoReset);
 
-        console.log('✅ Due date system setup completed');
     }
 
     /**
@@ -433,8 +409,6 @@ export class MiniCycleDueDates {
         let taskItem = event.target.closest(".task");
         let taskId = taskItem?.dataset.taskId;
         let dueDateValue = event.target.value;
-
-        console.log('📅 Handling due date change (Schema 2.5 only)...');
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
@@ -449,21 +423,12 @@ export class MiniCycleDueDates {
             return;
         }
 
-        console.log('🔍 Finding task for due date update:', taskId);
-
         const task = cycles[activeCycle].tasks?.find(t => t.id === taskId);
 
         if (!task) {
             console.warn(`⚠️ Task with ID "${taskId}" not found in active cycle`);
             return;
         }
-
-        console.log('📊 Updating due date:', {
-            taskId,
-            taskText: task.text,
-            oldDueDate: task.dueDate,
-            newDueDate: dueDateValue
-        });
 
         // ✅ Use AppState only (no localStorage fallback)
         const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
@@ -479,7 +444,6 @@ export class MiniCycleDueDates {
                     taskToUpdate.dueDate = dueDateValue;
                 }
             }, true);
-            console.log(`✅ Due date updated via AppState: "${task.text}" → ${dueDateValue || 'cleared'}`);
         } catch (error) {
             console.error('❌ Error saving due date:', error);
             return;
@@ -491,10 +455,7 @@ export class MiniCycleDueDates {
         const remindersSettings = reminders || {};
         const dueDatesRemindersEnabled = remindersSettings.dueDatesReminders;
 
-        console.log('📢 Due date reminders enabled:', dueDatesRemindersEnabled);
-
         if (!dueDatesRemindersEnabled) {
-            console.log('⏭️ Skipping due date notification - reminders disabled');
             return;
         }
 
@@ -511,7 +472,6 @@ export class MiniCycleDueDates {
             if (daysUntilDue > 0 && daysUntilDue <= threeDaysMs) {
                 const taskText = task.text || getLabel('notify.dueDateUnnamed');
                 this.deps.showNotification("📅 " + getLabel('notify.dueDateDueSoon', { vars: { name: taskText } }), "default");
-                console.log('📢 Due date notification shown for:', taskText);
             }
         }
     }
@@ -521,7 +481,6 @@ export class MiniCycleDueDates {
      * Checks reminder settings and displays notification if due date reminders are enabled
      */
     remindOverdueTasks() {
-        console.log('⚠️ Checking for overdue tasks (Schema 2.5 only)...');
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
@@ -532,33 +491,21 @@ export class MiniCycleDueDates {
         const { reminders } = schemaData;
         const remindersSettings = reminders || {};
 
-        console.log('📊 Reminder settings:', {
-            enabled: remindersSettings.enabled,
-            dueDatesReminders: remindersSettings.dueDatesReminders
-        });
-
         const dueDatesRemindersEnabled = remindersSettings.dueDatesReminders;
 
         // Only proceed if due date notifications are enabled
         if (!dueDatesRemindersEnabled) {
-            console.log("❌ Due date notifications are disabled. Exiting remindOverdueTasks().");
             return;
         }
-
-        console.log('🔍 Scanning for overdue tasks...');
 
         let overdueTasks = [...this.deps.querySelectorAll(DOM_SELECTORS.TASK)]
             .filter(task => task.classList.contains(DOM_CLASSES.OVERDUE_TASK))
             .map(task => task.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent)
             .filter(Boolean);
 
-        console.log('📋 Found overdue tasks:', overdueTasks.length);
-
         if (overdueTasks.length > 0) {
-            console.log('⚠️ Showing overdue notification for tasks:', overdueTasks);
             this.deps.showNotification("⚠️ " + getLabel('notify.dueDateOverdue') + `\n~ ${overdueTasks.join("\n~ ")}`, "error");
         } else {
-            console.log('✅ No overdue tasks found');
         }
     }
 
@@ -593,7 +540,6 @@ export class MiniCycleDueDates {
         // Recheck and reapply overdue classes as needed
         this.checkOverdueTasks();
 
-        console.log('✅ Due date visibility updated');
     }
 
     // ============================================
@@ -623,7 +569,6 @@ export class MiniCycleDueDates {
         const checkbox = this.deps.getElementById(DOM_IDS.DUE_DATES_REMINDERS);
         if (checkbox) checkbox.checked = true;
 
-        console.log('📅 Auto-enabled due date reminders');
     }
 
     // ============================================
@@ -635,7 +580,6 @@ export class MiniCycleDueDates {
      */
     destroy() {
         document.removeEventListener("change", this.handleDueDateChange);
-        console.log('📅 DueDates destroyed — document listener removed');
     }
 
     // ============================================
@@ -643,7 +587,6 @@ export class MiniCycleDueDates {
     // ============================================
 
     fallbackNotification(message, type) {
-        console.log(`[Due Dates Notification - ${type}] ${message}`);
     }
 
     fallbackLoadData() {
@@ -670,7 +613,6 @@ export class MiniCycleDueDates {
 // ============================================
 
 // DI-pure module (no window.* fallbacks for dependencies)
-console.log('📅 DueDates module loaded (DI-pure, no window.* exports)');
 
 let dueDatesManager = null;
 
@@ -680,10 +622,8 @@ let dueDatesManager = null;
  * @returns {Promise<MiniCycleDueDates>} The initialized due dates manager
  */
 export async function initDueDatesManager(dependencies = {}) {
-    console.log('📅 Initializing Due Dates Manager...');
 
     if (dueDatesManager) {
-        console.log('⚠️ Due dates manager already initialized, returning existing instance');
         return dueDatesManager;
     }
 
@@ -691,7 +631,6 @@ export async function initDueDatesManager(dependencies = {}) {
     await dueDatesManager.init();
 
     // Phase 3 - No window.* exports (main script handles exposure)
-    console.log('✅ Due Dates Manager initialized');
 
     return dueDatesManager;
 }

@@ -48,7 +48,6 @@ const _deps = new Proxy({}, {
  */
 export function setDragDropManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🔄 DragDropManager dependencies set:', Object.keys(dependencies));
 }
 
 export class DragDropManager {
@@ -97,7 +96,6 @@ export class DragDropManager {
         // Initialization flag
         this.initialized = false;
 
-        console.log('🔄 DragDropManager created with dependencies');
     }
 
     /**
@@ -120,14 +118,11 @@ export class DragDropManager {
             }
 
             // ✅ Wait for core systems (AppState + data) to be ready
-            console.log('⏳ DragDropManager waiting for core systems...');
             await _deps.appInit?.waitForCore();
-            console.log('✅ Core systems ready, initializing drag & drop...');
 
             this.setupRearrange();
             this.setupVisibilityCleanup();
             this.initialized = true;
-            console.log('✅ DragDropManager initialized successfully');
         } catch (error) {
             console.warn('⚠️ DragDropManager initialization failed:', error);
             this.deps.showNotification(getLabel('notify.dragDropWarning'), 'warning');
@@ -145,7 +140,6 @@ export class DragDropManager {
             // Cleanup drag state when page becomes hidden (tab switch, minimize, etc.)
             this._dragVisibilityHandler = () => {
                 if (document.hidden && this.draggedTask) {
-                    console.log('🧹 Cleaning up drag state due to visibility change');
                     this.cleanupDragState();
                 }
             };
@@ -154,13 +148,11 @@ export class DragDropManager {
             // Also cleanup on window blur (user clicks outside browser)
             this._dragBlurHandler = () => {
                 if (this.draggedTask) {
-                    console.log('🧹 Cleaning up drag state due to window blur');
                     this.cleanupDragState();
                 }
             };
             safeAdd(window, 'blur', this._dragBlurHandler);
 
-            console.log('✅ Drag visibility cleanup handlers installed');
         } catch (error) {
             console.warn('⚠️ Failed to setup visibility cleanup:', error);
         }
@@ -171,7 +163,6 @@ export class DragDropManager {
      */
     setupRearrange() {
         if (this.rearrangeInitialized) {
-            console.log('ℹ️ Rearrange already initialized');
             return;
         }
 
@@ -219,7 +210,6 @@ export class DragDropManager {
             };
             safeAdd(document, "drop", this._dropHandler);
 
-            console.log('✅ Rearrange event handlers setup complete');
         } catch (error) {
             console.warn('⚠️ Failed to setup rearrange handlers:', error);
         }
@@ -457,7 +447,6 @@ export class DragDropManager {
             };
             safeAdd(taskElement, "dragstart", taskElement._dragstartHandler);
 
-            console.log('✅ Drag and drop enabled on task element');
         } catch (error) {
             console.warn('⚠️ Failed to enable drag and drop on task:', error);
         }
@@ -679,7 +668,6 @@ export class DragDropManager {
                         : 'accessibility.taskMovedDown');
                 }
 
-                console.log(`✅ Task moved from position ${currentIndex} to ${newIndex} via arrows`);
             } else {
                 console.warn('⚠️ AppState not ready for arrow reordering');
                 this.deps.showNotification(getLabel('notify.reorderFailed'), 'warning');
@@ -734,7 +722,6 @@ export class DragDropManager {
                 }
             }, true); // immediate save
 
-            console.log("🔁 Drag reorder: state updated with new order");
         }
 
         // Update UI elements
@@ -792,23 +779,19 @@ export class DragDropManager {
      */
     updateMoveArrowsVisibility() {
         try {
-            console.log('🔄 Updating move arrows visibility (state-based)...');
 
             const AppState = this._getAppState();
 
             if (!AppState?.isReady?.()) {
-                console.log('⏳ AppState not ready, deferring arrow visibility update');
                 return;
             }
 
             const currentState = AppState.get();
             const showArrows = currentState?.ui?.moveArrowsVisible || false;
-            console.log('📊 Arrow visibility from AppState:', showArrows);
 
             // Update DOM to reflect current state
             this.updateArrowsInDOM(showArrows);
 
-            console.log(`✅ Move arrows visibility updated: ${showArrows ? "visible" : "hidden"}`);
         } catch (error) {
             console.warn('⚠️ Failed to update arrow visibility:', error);
         }
@@ -819,12 +802,10 @@ export class DragDropManager {
      */
     toggleArrowVisibility() {
         try {
-            console.log('🔄 Toggling arrow visibility (state-based)...');
 
             const AppState = this._getAppState();
 
             if (!AppState?.isReady?.()) {
-                console.log('⚠️ AppState not ready yet, deferring toggle until ready');
                 setTimeout(() => {
                     const AppStateRetry = this._getAppState();
                     if (AppStateRetry?.isReady?.()) {
@@ -855,7 +836,6 @@ export class DragDropManager {
             // Update DOM to reflect new state
             this.updateArrowsInDOM(newVisibility);
 
-            console.log(`✅ Move arrows toggled to ${newVisibility ? "visible" : "hidden"} via state system`);
         } catch (error) {
             console.warn('⚠️ Failed to toggle arrow visibility:', error);
             this.deps.showNotification(getLabel('notify.arrowToggleFailed'), 'warning');
@@ -906,7 +886,6 @@ export class DragDropManager {
             // O(1) operations - CSS handles per-task visibility
             this.setArrowsEnabled(showArrows);
             this.updateFirstLastMarkers();
-            console.log(`✅ Arrow visibility updated via CSS (O(1)): ${showArrows ? 'visible' : 'hidden'}`);
         } catch (error) {
             console.warn('⚠️ Failed to update arrows in DOM:', error);
         }
@@ -914,7 +893,6 @@ export class DragDropManager {
 
     // Fallback for notification (logs to console)
     fallbackNotification(message, type) {
-        console.log(`[DragDrop] ${message}`);
     }
 }
 
@@ -1012,7 +990,6 @@ function updateFirstLastMarkers() {
 }
 
 // Phase 3 - DI-pure pattern (no window.* in module code)
-console.log('🔄 DragDropManager module loaded (Phase 3 - DI-pure)');
 
 // Export for ES6 modules
 export { initDragDropManager, enableDragAndDropOnTask, updateMoveArrowsVisibility, toggleArrowVisibility, updateArrowsInDOM, setArrowsEnabled, updateFirstLastMarkers };

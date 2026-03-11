@@ -275,4 +275,3 @@ export function showPerformanceInfo() {
     showNotification(getLabel('notify.diagPerfInfo'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
 }
 
-console.log('Testing Modal Diagnostics loaded (DI-pure)');

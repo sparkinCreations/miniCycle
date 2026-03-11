@@ -14,7 +14,6 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('CycleFlow: Cache opened');
         return cache.addAll(urlsToCache);
       })
   );
@@ -38,7 +37,6 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            console.log('CycleFlow: Deleting old cache', cacheName);
             return caches.delete(cacheName);
           }
         })

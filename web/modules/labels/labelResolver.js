@@ -311,4 +311,3 @@ export function getLabelDiagnostics() {
     };
 }
 
-console.log(`🏷️ Label resolver loaded (v${LABEL_RESOLVER_VERSION})`);

@@ -104,7 +104,6 @@ const _deps = new Proxy({}, {
  */
 export function setTaskCRUDDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('Task CRUD dependencies set:', Object.keys(dependencies));
 }
 
 // ============================================================================
@@ -173,7 +172,6 @@ function fallbackConfirmModal(config) {
         config.callback(result);
     }
 }
-
 
 // ============================================================================
 // CRUD OPERATIONS
@@ -297,8 +295,6 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
             deferAppend,
             targetContainer
         });
-
-        console.log('Task creation completed (Schema 2.5)');
 
         // Announce task addition to screen readers (skip during bulk loading)
         if (!isLoading) {
@@ -509,7 +505,6 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
                         // Also delete any corresponding recurring template
                         if (cycle?.recurringTemplates?.[taskId]) {
                             delete cycle.recurringTemplates[taskId];
-                            console.log(`🗑️ Removed recurring template for deleted task ${taskId}`);
                         }
                     }, true);
 
@@ -594,12 +589,6 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
         // Toggle based on AppState, not DOM
         const isCurrentlyHighPriority = task.highPriority === true;
         const newHighPriority = !isCurrentlyHighPriority;
-
-        console.log('Toggling priority state:', {
-            taskId: taskId,
-            wasHighPriority: isCurrentlyHighPriority,
-            willBeHighPriority: newHighPriority
-        });
 
         // Capture snapshot BEFORE changing priority
         if (AppState?.isReady?.()) {
@@ -704,19 +693,15 @@ export async function initTaskCRUD() {
     // Dynamically import utilities with version for cache-busting
     const version = APP_VERSION;
 
-    console.log(`📦 TaskCRUD: Loading utilities with version ${version}...`);
-
     // Import storage utilities
     const storageUtils = await import(`../utils/storageUtils.js?v=${version}`);
     estimateTaskSize = storageUtils.estimateTaskSize;
     canAddToStorage = storageUtils.canAddToStorage;
     getStorageShortageMessage = storageUtils.getStorageShortageMessage;
 
-    console.log('✅ TaskCRUD: Utilities loaded');
 }
 
 // ============================================================================
 // MODULE INFO
 // ============================================================================
 
-console.log('Task CRUD module loaded (DI-pure)');

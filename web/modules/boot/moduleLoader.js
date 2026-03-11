@@ -60,7 +60,6 @@ async function loadAppContext(withV) {
         // Use versioned import to match coreBoot's appContext instance
         _appContextModule = await import(_withV('../core/appContext.js'));
         registerApi = _appContextModule.registerApi;
-        console.log('✅ ModuleLoader: appContext loaded (versioned)');
     }
     return _appContextModule;
 }
@@ -92,7 +91,6 @@ export async function loadManifests(withV) {
     // Also load appContext with versioning (must match coreBoot's instance)
     await loadAppContext(withV);
 
-    console.log('📋 Module manifests loaded with version cache-busting');
 }
 
 // ============================================================================
@@ -280,7 +278,6 @@ function findCycles(graph) {
  * @returns {boolean} - True if no cycles found, false if cycles exist
  */
 export function detectCircularDeps(manifests) {
-    console.log('🔍 Checking for circular dependencies...');
 
     const graph = buildDependencyGraph(manifests);
     const cycles = findCycles(graph);
@@ -294,7 +291,6 @@ export function detectCircularDeps(manifests) {
         return false;
     }
 
-    console.log('✅ No circular dependencies found');
     return true;
 }
 
@@ -327,7 +323,6 @@ export async function loadModule(name, deps, coreResult, withV) {
     }
 
     try {
-        console.log(`📦 Loading: ${name}...`);
 
         // Import the module
         const mod = await import(withV(manifest.path));
@@ -340,7 +335,6 @@ export async function loadModule(name, deps, coreResult, withV) {
             setDepsFn(moduleDeps);
         }
 
-        console.log(`✅ ${name} loaded`);
         return mod;
     } catch (error) {
         if (manifest.optional) {
@@ -407,7 +401,6 @@ export async function initializeModule(name, mod, deps, coreResult) {
                 if (exportedInstance && typeof exportedInstance.init === 'function' && !exportedInstance.initialized) {
                     try {
                         await exportedInstance.init();
-                        console.log(`✅ ${name}.${provided}.init() called`);
                     } catch (initError) {
                         console.warn(`⚠️ ${name}.${provided}.init() failed:`, initError.message);
                     }
@@ -447,8 +440,6 @@ export async function loadPhase(deps, coreResult, phase) {
     const modules = getModulesByPhase(phase);
     const results = new Map();
 
-    console.log(`🚀 Loading Phase ${phase} (${modules.length} modules)...`);
-
     for (const [name, manifest] of modules) {
         const mod = await loadModule(name, deps, coreResult, withV);
         if (mod) {
@@ -481,7 +472,6 @@ export async function loadAllModules(deps, coreResult) {
 
     // Ensure core systems (AppState, Schema 2.5 data) are ready before loading modules
     if (appInit && !appInit.isCoreReady()) {
-        console.log('⏳ moduleLoader: Waiting for core systems...');
         await appInit.waitForCore();
     }
 
@@ -512,7 +502,6 @@ export async function loadAllModules(deps, coreResult) {
     if (deps.task?.taskDOMManager && deps.ui?.taskOptionsCustomizer) {
         if (typeof deps.task.taskDOMManager.injectDependency === 'function') {
             deps.task.taskDOMManager.injectDependency('taskOptionsCustomizer', deps.ui.taskOptionsCustomizer);
-            console.log('✅ moduleLoader: Injected taskOptionsCustomizer into taskDOMManager');
         }
     }
 
@@ -527,7 +516,6 @@ export async function loadAllModules(deps, coreResult) {
     if (deps.task?.taskDOMManager?.renderer && deps.ui?.updateSearchVisibility) {
         if (typeof deps.task.taskDOMManager.renderer.injectDependency === 'function') {
             deps.task.taskDOMManager.renderer.injectDependency('updateSearchVisibility', deps.ui.updateSearchVisibility);
-            console.log('✅ moduleLoader: Injected updateSearchVisibility into TaskRenderer');
         }
     }
 
@@ -1323,4 +1311,3 @@ export function clearLoadedModules() {
     moduleInstances.clear();
 }
 
-console.log('📦 moduleLoader loaded');

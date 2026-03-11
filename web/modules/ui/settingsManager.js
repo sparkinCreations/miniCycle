@@ -70,7 +70,6 @@ const _deps = new Proxy({}, {
  */
 export function setSettingsManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('SettingsManager dependencies set:', Object.keys(dependencies));
 }
 
 // ============================================================================
@@ -83,8 +82,6 @@ export function setSettingsManagerDependencies(dependencies) {
  */
 async function loadSubModules(version) {
     if (_subModules) return _subModules;
-
-    console.log(`📦 SettingsManager: Loading sub-modules with version ${version}`);
 
     const [
         settingsUIModule,
@@ -159,7 +156,6 @@ async function loadSubModules(version) {
         setupShareAppButton: shareModule.setupShareAppButton
     };
 
-    console.log('✅ SettingsManager: All sub-modules loaded');
     return _subModules;
 }
 
@@ -246,7 +242,6 @@ function wireSubModuleDependencies(dependencies) {
         hideMainMenu: dependencies.hideMainMenu
     });
 
-    console.log('✅ SettingsManager: Sub-module dependencies wired');
 }
 
 // ============================================================================
@@ -292,7 +287,6 @@ export class SettingsManager {
 
             this.initialized = true;
             _initialized = true;
-            console.log('✅ Settings Manager initialized');
         } catch (error) {
             console.warn('Settings Manager initialization failed:', error);
             _deps.showNotification?.(getLabel('notify.settingsLimited'), 'warning');
@@ -329,7 +323,6 @@ export class SettingsManager {
     }
 
     async resetDefaultRecurringSettings() {
-        console.log('Resetting recurring defaults...');
 
         const defaultSettings = {
             frequency: "daily",
@@ -405,4 +398,3 @@ export function _resetForTesting() { _subModules?._resetForTesting?.(); }
 export function setupShareRoutineButton() { _subModules?.setupShareRoutineButton?.(); }
 export function setupShareAppButton() { _subModules?.setupShareAppButton?.(); }
 
-console.log('Settings Manager loaded (facade pattern with dynamic versioned imports)');

@@ -20,7 +20,6 @@ import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 const MAX_ENTRIES = 500;
 const PRUNE_DAYS = 90;
 
-
 // ============================================================================
 // DEPENDENCY INJECTION
 // ============================================================================
@@ -49,7 +48,6 @@ export class ClearedTasksManager {
         this.isRecreateMode = false;
         this.selectedTasks = new Set();
         this._idCounter = 0;
-        console.log('ClearedTasksManager initialized');
     }
 
     // ========================================================================
@@ -110,7 +108,6 @@ export class ClearedTasksManager {
             }
         }, true);
 
-        console.log('ClearedTasksManager: Recorded cleared task', task.text);
     }
 
     /**
@@ -157,7 +154,6 @@ export class ClearedTasksManager {
             }
         }, true);
 
-        console.log(`ClearedTasksManager: Recorded ${tasks.length} cleared tasks`);
     }
 
     /**
@@ -235,7 +231,6 @@ export class ClearedTasksManager {
 
         const pruned = originalLength - clearedTasks.entries.length;
         if (pruned > 0) {
-            console.log(`ClearedTasksManager: Pruned ${pruned} entries older than ${PRUNE_DAYS} days`);
         }
     }
 
@@ -253,7 +248,6 @@ export class ClearedTasksManager {
         }
 
         const addTask = this.deps.addTask;
-        console.log('🔄 ClearedTasksManager: addTask dependency:', typeof addTask, addTask);
 
         if (!addTask || typeof addTask !== 'function') {
             console.error('❌ ClearedTasksManager: addTask not available or not a function');
@@ -263,16 +257,13 @@ export class ClearedTasksManager {
 
         const { entries } = this.getClearedTasks();
         const toRecreate = entries.filter(e => this.selectedTasks.has(e.id));
-        console.log('🔄 ClearedTasksManager: Tasks to recreate:', toRecreate.length, toRecreate);
 
         let created = 0;
         for (const entry of toRecreate) {
             try {
-                console.log(`🔄 ClearedTasksManager: Recreating task "${entry.taskText}" (highPriority: ${entry.wasHighPriority})`);
                 const result = await addTask(entry.taskText, {
                     highPriority: entry.wasHighPriority
                 });
-                console.log('🔄 ClearedTasksManager: addTask result:', result);
                 if (result) {
                     created++;
                 } else {
@@ -747,4 +738,3 @@ export function getClearedTasksManager() {
     return instance;
 }
 
-console.log('ClearedTasksManager module loaded (DI-pure)');

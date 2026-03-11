@@ -37,7 +37,6 @@ const _deps = new Proxy({}, {
  */
 export function setBackupManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('💾 BackupManager dependencies set:', Object.keys(dependencies));
 }
 
 // ==========================================
@@ -110,7 +109,6 @@ class BackupManager {
                 clearTimeout(timeout);
                 this.db = request.result;
                 this.isInitialized = true;
-                console.log('✅ BackupManager: IndexedDB initialized');
                 resolve(this.db);
             };
 
@@ -121,7 +119,6 @@ class BackupManager {
                 if (!db.objectStoreNames.contains(AUTO_BACKUP_STORE)) {
                     const autoStore = db.createObjectStore(AUTO_BACKUP_STORE, { keyPath: 'timestamp' });
                     autoStore.createIndex('timestamp', 'timestamp', { unique: true });
-                    console.log('✅ Created auto_backups store');
                 }
 
                 // Create manual-backups store
@@ -129,21 +126,18 @@ class BackupManager {
                     const manualStore = db.createObjectStore(MANUAL_BACKUP_STORE, { keyPath: 'id' });
                     manualStore.createIndex('timestamp', 'timestamp', { unique: false });
                     manualStore.createIndex('name', 'name', { unique: false });
-                    console.log('✅ Created manual_backups store');
                 }
 
                 // Create session-backups store (v2) - backups on every app open
                 if (!db.objectStoreNames.contains(SESSION_BACKUP_STORE)) {
                     const sessionStore = db.createObjectStore(SESSION_BACKUP_STORE, { keyPath: 'timestamp' });
                     sessionStore.createIndex('timestamp', 'timestamp', { unique: true });
-                    console.log('✅ Created session_backups store');
                 }
 
                 // Create test-backups store (v3) - backups before running tests
                 if (!db.objectStoreNames.contains(TEST_BACKUP_STORE)) {
                     const testStore = db.createObjectStore(TEST_BACKUP_STORE, { keyPath: 'timestamp' });
                     testStore.createIndex('timestamp', 'timestamp', { unique: true });
-                    console.log('✅ Created test_backups store');
                 }
             };
         });
@@ -164,7 +158,6 @@ class BackupManager {
             if (lastBackup) {
                 const timeSinceLastBackup = Date.now() - lastBackup.timestamp;
                 if (timeSinceLastBackup < BACKUP_INTERVAL_MS) {
-                    console.log('⏭️ BackupManager: Skipping auto-backup (last backup was recent)');
                     return false;
                 }
             }
@@ -201,7 +194,6 @@ class BackupManager {
             // Clean up old backups
             await this.enforceRetentionPolicy();
 
-            console.log(`✅ BackupManager: Auto-backup created (${(backup.metadata.size / 1024).toFixed(2)} KB)`);
             return true;
 
         } catch (error) {
@@ -225,7 +217,6 @@ class BackupManager {
             if (lastSessionBackup) {
                 const timeSinceLastBackup = Date.now() - lastSessionBackup.timestamp;
                 if (timeSinceLastBackup < MIN_SESSION_INTERVAL_MS) {
-                    console.log(`⏭️ BackupManager: Skipping session backup (last was ${Math.round(timeSinceLastBackup / 1000)}s ago)`);
                     return false;
                 }
             }
@@ -246,7 +237,6 @@ class BackupManager {
             // Check if data is meaningful (has at least one cycle)
             const cycleCount = Object.keys(currentState?.data?.cycles || {}).length;
             if (cycleCount === 0) {
-                console.log('⏭️ BackupManager: Skipping session backup (no cycles to backup)');
                 return false;
             }
 
@@ -270,7 +260,6 @@ class BackupManager {
             // Clean up old session backups (keep only last 5)
             await this.enforceSessionRetentionPolicy();
 
-            console.log(`✅ BackupManager: Session backup created (${(backup.metadata.size / 1024).toFixed(2)} KB, ${cycleCount} cycles)`);
             return true;
 
         } catch (error) {
@@ -293,7 +282,6 @@ class BackupManager {
 
                 await Promise.all(toDelete.map(backup => this.deleteBackup(backup.timestamp, 'session')));
 
-                console.log(`🧹 BackupManager: Cleaned up ${toDelete.length} old session backups`);
             }
 
         } catch (error) {
@@ -316,7 +304,6 @@ class BackupManager {
             if (lastTestBackup) {
                 const timeSinceLastBackup = Date.now() - lastTestBackup.timestamp;
                 if (timeSinceLastBackup < MIN_TEST_INTERVAL_MS) {
-                    console.log(`⏭️ BackupManager: Skipping test backup (last was ${Math.round(timeSinceLastBackup / 1000)}s ago)`);
                     return false;
                 }
             }
@@ -337,7 +324,6 @@ class BackupManager {
             // Check if data is meaningful (has at least one cycle)
             const cycleCount = Object.keys(currentState?.data?.cycles || {}).length;
             if (cycleCount === 0) {
-                console.log('⏭️ BackupManager: Skipping test backup (no cycles to backup)');
                 return false;
             }
 
@@ -361,7 +347,6 @@ class BackupManager {
             // Clean up old test backups (keep only last 5)
             await this.enforceTestRetentionPolicy();
 
-            console.log(`✅ BackupManager: Test backup created (${(backup.metadata.size / 1024).toFixed(2)} KB, ${cycleCount} cycles)`);
             return true;
 
         } catch (error) {
@@ -384,7 +369,6 @@ class BackupManager {
 
                 await Promise.all(toDelete.map(backup => this.deleteBackup(backup.timestamp, 'test')));
 
-                console.log(`🧹 BackupManager: Cleaned up ${toDelete.length} old test backups`);
             }
 
         } catch (error) {
@@ -432,7 +416,6 @@ class BackupManager {
             // Clean up old manual backups (keep only last 50)
             await this.enforceManualRetentionPolicy();
 
-            console.log(`✅ BackupManager: Manual backup created: "${backup.name}"`);
             return true;
 
         } catch (error) {
@@ -454,7 +437,6 @@ class BackupManager {
 
                 await Promise.all(toDelete.map(backup => this.deleteBackup(backup.id, 'manual')));
 
-                console.log(`🧹 BackupManager: Cleaned up ${toDelete.length} old manual backups`);
             }
 
         } catch (error) {
@@ -574,7 +556,6 @@ class BackupManager {
                 throw new Error(`Backup not found: ${identifier}`);
             }
 
-            console.log(`🔄 BackupManager: Restoring backup from ${new Date(backup.timestamp).toLocaleString()}`);
             return backup.data;
 
         } catch (error) {
@@ -618,7 +599,6 @@ class BackupManager {
                 const request = store.delete(identifier);
 
                 request.onsuccess = () => {
-                    console.log(`✅ BackupManager: Deleted ${type} backup: ${identifier}`);
                     resolve(true);
                 };
 
@@ -645,7 +625,6 @@ class BackupManager {
 
                 await Promise.all(toDelete.map(backup => this.deleteBackup(backup.timestamp, 'auto')));
 
-                console.log(`🧹 BackupManager: Cleaned up ${toDelete.length} old auto-backups`);
             }
 
         } catch (error) {
@@ -680,7 +659,6 @@ class BackupManager {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            console.log(`✅ BackupManager: Exported backup as ${filename}`);
             return true;
 
         } catch (error) {
@@ -727,7 +705,6 @@ class BackupManager {
 const backupManager = new BackupManager();
 
 // DI-pure module (no window.* fallbacks for dependencies)
-console.log('💾 BackupManager module loaded (DI-pure, no window.* exports)');
 
 // Named export (preferred over default export)
 export { backupManager };

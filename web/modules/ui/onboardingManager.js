@@ -49,7 +49,6 @@ const _deps = new Proxy({}, {
  */
 export function setOnboardingManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🎓 OnboardingManager dependencies set:', Object.keys(dependencies));
 }
 
 export class OnboardingManager {
@@ -85,7 +84,6 @@ export class OnboardingManager {
      * Fallback notification (console only)
      */
     fallbackNotification(message, type = 'info', duration = 3000) {
-        console.log(`[OnboardingManager] ${type.toUpperCase()}: ${message}`);
     }
 
     async init() {
@@ -94,7 +92,6 @@ export class OnboardingManager {
         this.setupEventListeners();
 
         this.initialized = true;
-        console.log('🎓 Onboarding Manager initialized');
     }
 
     /**
@@ -103,7 +100,6 @@ export class OnboardingManager {
     setupEventListeners() {
         // ✅ Idempotency guard
         if (this._eventListenersInitialized) {
-            console.log('✅ Onboarding event listeners already set up');
             return;
         }
         this._eventListenersInitialized = true;
@@ -111,7 +107,6 @@ export class OnboardingManager {
         if (this.deps.safeAddEventListenerById) {
             this._resetOnboardingHandler = () => this.resetOnboarding();
             this.deps.safeAddEventListenerById("reset-onboarding", "click", this._resetOnboardingHandler);
-            console.log('✅ Onboarding event listeners attached');
         } else {
             console.warn('⚠️ safeAddEventListenerById not available yet');
         }
@@ -149,7 +144,6 @@ export class OnboardingManager {
      * @param {Object} [schemaData] - Optional schema data (avoids AppState race condition on first load)
      */
     showOnboarding(cycles, activeCycle, schemaData = null) {
-        console.log('🎯 Starting onboarding flow...');
 
         // ✅ Hide task list area during onboarding (show placeholder instead)
         document.body.classList.add('onboarding-active');
@@ -299,7 +293,6 @@ export class OnboardingManager {
      * @param {string} activeCycle - Currently active cycle name
      */
     completeOnboarding(modal, cycles, activeCycle) {
-        console.log('✅ Onboarding completed, transitioning...');
 
         // Remove onboarding body class to restore normal UI
         document.body.classList.remove('onboarding-active');
@@ -316,7 +309,6 @@ export class OnboardingManager {
             appState.update(state => {
                 state.settings.onboardingCompleted = true;
             }, true);
-            console.log('✅ Onboarding flag set in AppState');
         } else {
             console.warn('⚠️ AppState not ready - onboarding flag not persisted');
         }
@@ -385,7 +377,6 @@ export class OnboardingManager {
      * Reset onboarding flag (for reset button in settings)
      */
     resetOnboarding() {
-        console.log('🎯 Resetting onboarding (Schema 2.5 only)...');
 
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for reset onboarding');
@@ -397,8 +388,6 @@ export class OnboardingManager {
         this.deps.AppState.update(state => {
             state.settings.onboardingCompleted = false;
         }, true);
-
-        console.log('✅ Onboarding flag reset in AppState');
 
         this.deps.showNotification(
             "✅ " + getLabel('notify.onboardingReset'),
@@ -447,12 +436,10 @@ export async function initOnboardingManager(dependencies = {}) {
     // Initialize the manager
     await onboardingManager.init();
 
-    console.log('✅ OnboardingManager initialized via initOnboardingManager');
     return onboardingManager;
 }
 
 // DI-pure module (no window.* fallbacks for dependencies)
-console.log('🎓 Onboarding Manager module loaded (DI-pure, awaiting init)');
 
 // Named exports only (no default export)
 // Note: initOnboardingManager is already exported via 'export async function' declaration

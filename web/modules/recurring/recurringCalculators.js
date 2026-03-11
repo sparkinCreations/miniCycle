@@ -491,7 +491,6 @@ export function calculateNextOccurrence(settings, fromTime = Date.now()) {
             );
 
             if (next === null) {
-                console.log('calculateNextOccurrence: No future specific dates found');
             }
 
             return next;
@@ -634,4 +633,3 @@ export function formatNextOccurrence(nextOccurrence) {
     return `Next: ${dateStr} at ${timeStr}`;
 }
 
-console.log('🔢 RecurringCalculators module loaded');

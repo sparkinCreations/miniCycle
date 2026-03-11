@@ -537,4 +537,3 @@
 // This file contains only JSDoc typedefs - no runtime exports needed
 // Types are available via: @typedef {import('./types.js').TypeName} TypeName
 
-console.log('📘 Types module loaded - JSDoc type definitions available');

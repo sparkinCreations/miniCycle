@@ -123,7 +123,6 @@ class UIOrchestrator {
             lastFlushTime: 0
         };
 
-        console.log('🎭 UIOrchestrator created');
     }
 
     /**
@@ -336,7 +335,6 @@ class UIOrchestrator {
         const activeCycleId = state?.appState?.activeCycleId;
         const tasks = state?.data?.cycles?.[activeCycleId]?.tasks || [];
 
-        console.log(`🎭 Executing full render (${tasks.length} tasks)`);
         TaskRenderer.renderTasks(tasks);
     }
 
@@ -360,8 +358,6 @@ class UIOrchestrator {
             return;
         }
 
-        console.log(`🎭 Patching ${taskIds.length} task(s):`, taskIds);
-
         // Build task map for quick lookup
         const taskMap = new Map(cycle.tasks.map(t => [t.id, t]));
 
@@ -382,8 +378,6 @@ class UIOrchestrator {
         if (!taskIds?.length) return;
 
         const TaskDOMManager = _deps.TaskDOMManager;
-
-        console.log(`🎭 Removing ${taskIds.length} task(s):`, taskIds);
 
         taskIds.forEach(taskId => {
             TaskDOMManager.removeTask(taskId);
@@ -485,7 +479,6 @@ export function initUIOrchestrator(dependencies = {}) {
     di.setDependencies(dependencies);
     orchestrator = new UIOrchestrator();
 
-    console.log('🎭 UIOrchestrator initialized');
     return orchestrator;
 }
 
@@ -581,7 +574,5 @@ export const ui = {
         });
     }
 };
-
-console.log('🎭 UIOrchestrator module loaded');
 
 export { UIOrchestrator };

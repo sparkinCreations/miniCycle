@@ -147,11 +147,8 @@ export let deactivateTaskRecurringState = null;
  */
 async function loadSubModules(version) {
     if (_subModulesLoaded) {
-        console.log('✅ RecurringCore sub-modules already loaded');
         return;
     }
-
-    console.log(`🔧 RecurringCore: Loading sub-modules with v=${version}...`);
 
     try {
         // Load all sub-modules in parallel with version cache-busting
@@ -239,7 +236,6 @@ async function loadSubModules(version) {
         deactivateTaskRecurringState = activation.deactivateTaskRecurringState;
 
         _subModulesLoaded = true;
-        console.log('✅ RecurringCore: All sub-modules loaded successfully');
 
     } catch (error) {
         console.error('❌ RecurringCore: Failed to load sub-modules:', error);
@@ -297,8 +293,6 @@ export async function setRecurringCoreDependencies(overrides = {}) {
             restartRecurringWatcher: _watcher?.restartRecurringWatcher
         });
     }
-
-    console.log('🔧 RecurringCore dependencies configured (propagated to sub-modules)');
 
     // Return loaded functions for callers that need them immediately
     // (workaround for dynamic import namespace object binding issues)
@@ -370,4 +364,3 @@ export function isSubModulesLoaded() {
 // MODULE INITIALIZATION
 // ============================================================================
 
-console.log('🔧 RecurringCore module loaded (Coordinator v2.0 - Dynamic Import Architecture)');

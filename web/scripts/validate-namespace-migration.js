@@ -291,75 +291,42 @@ deprecatedPatterns.forEach(([pattern, namespacePath, category]) => {
 });
 
 // Print results
-console.log('\n' + colors.bold + '🔍 Namespace Migration Validator' + colors.reset);
-console.log('━'.repeat(60) + '\n');
 
 // Check if migration is complete (no unexpected violations)
 if (violations.length === 0) {
-  console.log(colors.green + colors.bold + '✅ Step 0 Complete!' + colors.reset);
-  console.log(colors.green + 'No unexpected global calls found in miniCycle-scripts.js' + colors.reset);
-  console.log(colors.green + 'All migrated code is using the namespace API.' + colors.reset);
 
   if (expectedCount > 0) {
-    console.log('\n' + colors.cyan + `ℹ️  ${expectedCount} expected leftovers (intentional wrappers/fallbacks)` + colors.reset);
-    console.log(colors.cyan + 'Expected Leftovers by Category:' + colors.reset);
     Object.keys(expectedStats).sort().forEach(category => {
-      console.log(`  ${colors.cyan}${category}:${colors.reset} ${expectedStats[category]} occurrences`);
     });
   }
 
-  console.log('\n' + colors.cyan + '🎉 Ready to proceed to Phase 2 Step 1!' + colors.reset + '\n');
   process.exit(0);
 }
 
 // Print unexpected violations
-console.log(colors.red + `❌ Found ${totalCount} unexpected global calls remaining\n` + colors.reset);
 
-console.log(colors.bold + 'Unexpected Violations by Category:' + colors.reset);
 Object.keys(categoryStats).sort().forEach(category => {
-  console.log(`  ${colors.red}${category}:${colors.reset} ${categoryStats[category]} calls`);
 });
 
-console.log('\n' + colors.bold + 'Detailed Violations:' + colors.reset + '\n');
-
 violations.forEach(({ pattern, namespacePath, category, count, matches }) => {
-  console.log(colors.red + `❌ ${pattern}` + colors.reset);
-  console.log(`   ${colors.cyan}Replace with:${colors.reset} window.${namespacePath}`);
-  console.log(`   ${colors.yellow}Found ${count} occurrence(s)${colors.reset}`);
 
   // Show first 3 matches with line numbers
   matches.slice(0, 3).forEach(({ line, content }) => {
-    console.log(`   ${colors.blue}Line ${line}:${colors.reset} ${content.substring(0, 80)}...`);
   });
 
   if (matches.length > 3) {
-    console.log(`   ${colors.yellow}... and ${matches.length - 3} more${colors.reset}`);
   }
 
-  console.log('');
 });
 
 // Show expected leftovers summary
 if (expectedCount > 0) {
-  console.log('━'.repeat(60));
-  console.log(colors.cyan + `\nℹ️  Expected Leftovers: ${expectedCount} occurrences (intentional)\n` + colors.reset);
-  console.log(colors.bold + 'Expected Leftovers by Category:' + colors.reset);
   Object.keys(expectedStats).sort().forEach(category => {
-    console.log(`  ${colors.cyan}${category}:${colors.reset} ${expectedStats[category]} occurrences`);
   });
 }
 
 // Summary
-console.log('━'.repeat(60));
-console.log(colors.bold + '\nSummary:' + colors.reset);
-console.log(`  Unexpected violations: ${colors.red}${totalCount}${colors.reset}`);
-console.log(`  Expected leftovers: ${colors.cyan}${expectedCount}${colors.reset}`);
 const totalOccurrences = 163; // Original count
 const migrated = totalOccurrences - totalCount - expectedCount;
-console.log(`  Migrated occurrences: ${colors.green}${migrated}/${totalOccurrences}${colors.reset}`);
-console.log(`  Progress: ${colors.yellow}${Math.round((migrated / totalOccurrences) * 100)}%${colors.reset} complete`);
-console.log('\n' + colors.cyan + '📖 See docs/future-work/NAMESPACE_STEP0_PROGRESS.md for tracking' + colors.reset);
-console.log(colors.cyan + '📖 See docs/future-work/NAMESPACE_ARCHITECTURE.md for full guide' + colors.reset);
-console.log('');
 
 process.exit(1);

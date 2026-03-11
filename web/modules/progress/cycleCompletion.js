@@ -95,7 +95,6 @@ const deps = new Proxy({}, {
  */
 export function setCycleCompletionDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🎯 CycleCompletion dependencies set:', Object.keys(dependencies));
 }
 
 /**
@@ -241,7 +240,6 @@ function showMilestoneMessage(miniCycleName, cycleCount) {
  * @param {number} globalCyclesCompleted - Total cycles completed across all cycles
  */
 function handleMilestoneUnlocks(miniCycleName, globalCyclesCompleted) {
-    console.log('🏆 Handling milestone unlocks (global cycles)...', globalCyclesCompleted);
 
     if (!deps.AppState?.isReady?.()) {
         console.error('❌ AppState not ready for milestone unlocks');
@@ -282,7 +280,6 @@ function handleMilestoneUnlocks(miniCycleName, globalCyclesCompleted) {
         }
     }
 
-    console.log('✅ Milestone unlocks processed (global cycles)');
 }
 
 /**
@@ -293,7 +290,6 @@ function handleMilestoneUnlocks(miniCycleName, globalCyclesCompleted) {
  * @param {Object} savedMiniCycles - Deprecated, kept for backwards compatibility
  */
 export function incrementCycleCount(miniCycleName, savedMiniCycles) {
-    console.log('🔢 Incrementing cycle count (Schema 2.5 state-based)...');
 
     if (!deps.AppState?.isReady?.()) {
         console.error('❌ AppState not ready for incrementCycleCount');
@@ -315,8 +311,6 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
         return;
     }
 
-    console.log('📊 Current cycle count:', cycleData.cycleCount || 0);
-
     // Update through state module and get the actual new count
     let actualNewCount;
     deps.AppState.update(state => {
@@ -329,8 +323,6 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
             state.userProgress.cyclesCompleted = (state.userProgress.cyclesCompleted || 0) + 1;
         }
     }, true); // immediate save
-
-    console.log(`✅ Cycle count updated (state-based) for "${activeCycle}": ${actualNewCount}`);
 
     // Handle milestone rewards with the global cycle count
     const updatedState = deps.AppState.get();
@@ -525,7 +517,6 @@ export function checkMiniCycle(options = {}) {
     const { lastToggledElement } = options;
     // Early return if AppState not ready to prevent initialization race conditions
     if (!deps.AppState?.isReady?.()) {
-        console.log('⏳ checkMiniCycle deferred - AppState not ready');
         return;
     }
 
@@ -564,7 +555,6 @@ export function checkMiniCycle(options = {}) {
     // Only trigger reset if ALL tasks are completed AND autoReset is enabled
     // Use allTasks.length which includes both main list and completed dropdown
     if (allCompleted && allTasks.length > 0) {
-        console.log(`✅ All tasks completed for "${lastUsedMiniCycle}"`);
 
         // ✅ FIX: Read autoReset from FRESH AppState, not potentially stale cycleVars
         // This ensures mode changes are respected immediately
@@ -584,7 +574,6 @@ export function checkMiniCycle(options = {}) {
             // Show warning modal if due dates exist (guard prevents double-modal)
             if (hasDueDates && deps.showConfirmationModal && !_showingDueDateModal) {
                 _showingDueDateModal = true;
-                console.log('⚠️ Tasks have due dates — showing confirmation before auto-reset');
                 deps.showConfirmationModal({
                     title: getLabel('modal.resetTasksTitle'),
                     message: getLabel('modal.resetTasksMessage'),
@@ -625,7 +614,6 @@ export function checkMiniCycle(options = {}) {
             }
 
             // No due dates — auto-reset after 1 second (existing behavior)
-            console.log(`🔄 AutoReset is ON. Resetting tasks for "${lastUsedMiniCycle}"...`);
             // Store expected cycle to verify it hasn't changed during delay
             const expectedCycleId = activeCycleId;
             setTimeout(() => {
@@ -651,7 +639,6 @@ export function checkMiniCycle(options = {}) {
             }, 1000);
             return;
         } else {
-            console.log(`⏸️ AutoReset is OFF (manual mode). Not resetting tasks.`);
         }
     }
 
@@ -676,17 +663,13 @@ export async function initCycleCompletion(dependencies = {}) {
     // Dynamically import MILESTONES with version for cache-busting
     if (!MILESTONES) {
         const version = APP_VERSION;
-        console.log(`📦 CycleCompletion: Loading MILESTONES with version ${version}...`);
 
         const constantsMod = await import(`../core/constants.js?v=${version}`);
         MILESTONES = constantsMod.MILESTONES;
 
-        console.log('✅ CycleCompletion: MILESTONES loaded');
     }
 
     setCycleCompletionDependencies(dependencies);
-
-    console.log('✅ CycleCompletion initialized via initCycleCompletion');
 
     return {
         incrementCycleCount,

@@ -280,7 +280,7 @@ body.dark-mode .task-options .task-btn.set-due-date.active {
 
 body.dark-mode .task-options .delete-when-complete-btn.active,
 body.dark-mode .task-options .delete-when-complete-btn.delete-when-complete-active {
-    background-color: var(--color-error-light);
+    background-color: var(--color-blue-medium);
     border-color: transparent;
 }
 

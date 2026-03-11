@@ -41,4 +41,3 @@ export function cycleNameExists(name, existingCycles = {}) {
     return !!existingCycles[name];
 }
 
-console.log('Name Utils loaded');

@@ -70,7 +70,6 @@ export async function isTestModeActive() {
                         const isActive = getRequest.result?.active === true;
                         db.close();
                         if (isActive) {
-                            console.log('🚦 Test mode detected via IndexedDB flag');
                         }
                         resolve(isActive);
                     };
@@ -119,7 +118,6 @@ export async function getBackedUpRealData() {
                         const data = getRequest.result;
                         db.close();
                         if (data?.localStorageBackup) {
-                            console.log('📦 Found backup in IndexedDB');
                             resolve(data.localStorageBackup);
                         } else {
                             resolve(null);
@@ -170,7 +168,6 @@ export async function clearTestModeAndBackup() {
     });
 
     await clearResultsDB();
-    console.log('🧹 Cleared all test mode flags and backups');
 }
 
 // NOTE: Uses plain _deps instead of createDIModule() because AppState is Phase 1 core
@@ -189,7 +186,6 @@ let _deps = {};
  */
 export function setAppStateDependencies(dependencies) {
     _deps = { ..._deps, ...dependencies };
-    console.log('🏗️ AppState dependencies set:', Object.keys(dependencies));
 }
 
 /**
@@ -220,7 +216,7 @@ class MiniCycleState {
 
         // ✅ Add dependency injection with fallbacks
         this.deps = {
-            showNotification: mergedDeps.showNotification || console.log.bind(console),
+            showNotification: mergedDeps.showNotification || (() => {}),
             storage: mergedDeps.storage || localStorage,
             loadInitialData: mergedDeps.loadInitialData || (() => null),
             createInitialData: mergedDeps.createInitialData || (() => this.createInitialState()),
@@ -289,7 +285,6 @@ class MiniCycleState {
      * @returns {Schema25Data|null} The loaded data or null if not found/invalid
      */
     reload() {
-        console.log('🔄 Reloading AppState from localStorage...');
         try {
             const stored = this.deps.storage.getItem(STORAGE_KEYS.DATA);
             if (stored) {
@@ -310,7 +305,6 @@ class MiniCycleState {
                 if (this.validateSchema25Structure(parsed)) {
                     this.data = parsed;
                     this.isInitialized = true;
-                    console.log('✅ AppState reloaded successfully');
                     return this.data;
                 }
             }
@@ -331,13 +325,11 @@ class MiniCycleState {
     async init() {
         // Already initialized - return immediately
         if (this.isInitialized) {
-            console.log('✅ State already initialized');
             return this.data;
         }
 
         // Initialization in progress - wait for it
         if (this._initPromise) {
-            console.log('⏳ Waiting for existing initialization...');
             return this._initPromise;
         }
 
@@ -354,7 +346,6 @@ class MiniCycleState {
 
     // ✅ FIX #1: Internal initialization method (called only once)
     async _initializeInternal() {
-        console.log('🏗️ Initializing MiniCycle state...');
 
         try {
             // Note: Interrupted test recovery is handled by coreBoot.js BEFORE appState loads
@@ -369,7 +360,6 @@ class MiniCycleState {
                     // ✅ Validate the structure before using
                     if (this.validateSchema25Structure(parsed)) {
                         existingData = parsed;
-                        console.log('📦 Found valid existing Schema 2.5 data');
                     } else {
                         console.warn('⚠️ Existing data structure is invalid');
                     }
@@ -387,7 +377,6 @@ class MiniCycleState {
             // Use existing data or create initial data
             if (existingData) {
                 this.data = existingData;
-                console.log('✅ Loaded existing Schema 2.5 data');
 
                 // ✅ Initialize deleteWhenCompleteSettings for existing tasks
                 let tasksInitialized = 0;
@@ -418,7 +407,6 @@ class MiniCycleState {
                 }
 
                 if (tasksInitialized > 0 || templatesInitialized > 0) {
-                    console.log(`✅ Initialized deleteWhenCompleteSettings for ${tasksInitialized} tasks and ${templatesInitialized} templates`);
 
                     // Defer the save operation to avoid blocking the main thread during init
                     const saveData = () => {
@@ -445,7 +433,6 @@ class MiniCycleState {
                 }
             } else {
                 // ✅ Don't create data if none exists - let the main app handle this
-                console.log('⚠️ No valid Schema 2.5 data found - deferring to main app initialization');
                 this.data = null;
                 this.isInitialized = false;
                 return null;
@@ -460,7 +447,6 @@ class MiniCycleState {
                     this.saveTimeout = null;
                 }
                 if (this.isDirty) {
-                    console.log('💾 beforeunload: Flushing pending state save');
                     this.save();
                 }
             });
@@ -472,7 +458,6 @@ class MiniCycleState {
 
                 // Skip sync if tests are running in another tab — test data is mock/temporary
                 if (localStorage.getItem(STORAGE_KEYS.TEST_RUNNING) === 'true') {
-                    console.log('🔄 Multi-tab sync: Skipped — tests running in another tab');
                     return;
                 }
 
@@ -483,7 +468,6 @@ class MiniCycleState {
 
                     // Only reload if external data is newer
                     if (externalTimestamp > ourTimestamp) {
-                        console.log('🔄 Multi-tab sync: Detected newer data from another tab');
 
                         // If we have unsaved changes, warn user
                         if (this.isDirty) {
@@ -505,14 +489,12 @@ class MiniCycleState {
                         // Notify subscribers of the change
                         this.notifyListeners();
 
-                        console.log('✅ Multi-tab sync: State reloaded from other tab');
                     }
                 } catch (error) {
                     console.warn('⚠️ Multi-tab sync: Failed to parse external data', error);
                 }
             });
 
-            console.log('✅ State initialization completed');
             return this.data;
 
         } catch (error) {
@@ -595,7 +577,6 @@ class MiniCycleState {
      */
     async update(updateFn, immediate = false) {
         if (!this.isInitialized) {
-            console.log('ℹ️ State not initialized yet, initializing first...');
             await this.init();
         }
         
@@ -609,13 +590,11 @@ class MiniCycleState {
 
         try {
             // ✅ FIXED: Call updateFn with this.data, not as async
-            console.log('🔄 Updating state...', { immediate });
             const result = updateFn(this.data);
 
             this.isDirty = true;
             this.data.metadata.lastModified = Date.now();
 
-            console.log('📊 State updated, scheduling save...', { isDirty: this.isDirty, immediate });
             this.scheduleSave(immediate);
             this.notifyListeners(oldData, this.data);
 
@@ -644,7 +623,6 @@ class MiniCycleState {
         if (!isTestIframe) {
             const testMode = await getCachedTestMode();
             if (testMode) {
-                console.log('⏭️ Save skipped - tests running in iframe (testModeActive flag in IndexedDB)');
                 return;
             }
         }
@@ -655,9 +633,7 @@ class MiniCycleState {
 
         if (immediate) {
             // ✅ For immediate saves, call save() synchronously to prevent data loss on quick refresh
-            console.log('💾 Immediate save requested - saving synchronously...');
             this.save();
-            console.log('✅ Immediate save completed');
         } else {
             // ✅ For normal saves, use debounce delay
             this.saveTimeout = setTimeout(() => {
@@ -673,12 +649,10 @@ class MiniCycleState {
      */
     save() {
         if (!this.isDirty) {
-            console.log('⏭️ Save skipped - not dirty');
             return;
         }
 
         if (!this.data) {
-            console.log('⏭️ Save skipped - no data');
             return;
         }
 
@@ -709,15 +683,12 @@ class MiniCycleState {
                             });
 
                             // Reload the newer data to prevent overwriting
-                            console.log('🔄 Reloading newer data from storage...');
                             this.data = storedData;
                             this.isDirty = false;
-                            console.log('✅ Data reloaded, save cancelled to prevent data loss');
                             this._hideSavingIndicator();
                             return;
                         } else {
                             // Small diff - just our own rapid saves, proceed with save
-                            console.log('⏭️ Ignoring small timestamp diff (rapid saves):', diff, 'ms');
                         }
                     }
                 } catch (parseError) {
@@ -725,12 +696,6 @@ class MiniCycleState {
                     // Continue with save if we can't parse stored data
                 }
             }
-
-            console.log('💾 Saving to localStorage...', {
-                isDirty: this.isDirty,
-                dataSize: JSON.stringify(this.data).length,
-                timestamp: Date.now()
-            });
 
             try {
                 this.deps.storage.setItem(STORAGE_KEYS.DATA, JSON.stringify(this.data));
@@ -752,7 +717,6 @@ class MiniCycleState {
             this.isDirty = false;
             this.saveTimeout = null;
 
-            console.log('✅ State saved to localStorage successfully');
             this._hideSavingIndicator();
         } catch (error) {
             console.error('❌ Save failed:', error);
@@ -784,7 +748,6 @@ class MiniCycleState {
             this.listeners.set(key, []);
         }
         this.listeners.get(key).push(callback);
-        console.log(`✅ Subscribed to: ${key}`);
     }
 
     /**
@@ -808,12 +771,10 @@ class MiniCycleState {
         }
         
         callbacks.splice(index, 1);
-        console.log(`✅ Unsubscribed from: ${key}`);
         
         // Clean up empty listener arrays
         if (callbacks.length === 0) {
             this.listeners.delete(key);
-            console.log(`🧹 Cleaned up empty listener array for: ${key}`);
         }
         
         return true;
@@ -829,7 +790,6 @@ class MiniCycleState {
         this.unsubscribe(key, callback);
         // Then add it fresh
         this.subscribe(key, callback);
-        console.log(`✅ Safe subscribed to: ${key}`);
     }
 
     /**
@@ -841,7 +801,6 @@ class MiniCycleState {
         if (this.listeners.has(key)) {
             const count = this.listeners.get(key).length;
             this.listeners.delete(key);
-            console.log(`🧹 Unsubscribed ${count} callbacks for: ${key}`);
             return count;
         }
         console.warn(`⚠️ No listeners found for key: ${key}`);
@@ -1045,7 +1004,6 @@ class MiniCycleState {
  * @returns {{lastUsedMiniCycle: string|null, savedMiniCycles: Object.<string, Cycle>}} Cycle data
  */
 export function assignCycleVariables() {
-    console.log('🔄 Assigning cycle variables (state-based)...');
 
     if (!AppState?.isReady?.()) {
         console.error('❌ AppState not ready for assignCycleVariables');
@@ -1059,11 +1017,6 @@ export function assignCycleVariables() {
     }
 
     const { data, appState } = currentState;
-
-    console.log('📊 Retrieved cycle data:', {
-        activeCycle: appState.activeCycleId,
-        cycleCount: Object.keys(data.cycles).length
-    });
 
     return {
         lastUsedMiniCycle: appState.activeCycleId,

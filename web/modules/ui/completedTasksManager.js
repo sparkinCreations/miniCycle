@@ -40,12 +40,10 @@ const di = createDIModule('CompletedTasksManager', {
  */
 export function setCompletedTasksManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🎯 CompletedTasksManager dependencies set:', Object.keys(dependencies));
 }
 
 export class CompletedTasksManager {
     constructor(dependencies = {}) {
-        console.log('🎯 CompletedTasksManager: Constructing with dependencies');
 
         // Resolve deps from diBase, with constructor overrides
         this.deps = di.resolve(dependencies);
@@ -60,11 +58,8 @@ export class CompletedTasksManager {
     init() {
         // ✅ Idempotency guard
         if (this._initialized) {
-            console.log('✅ CompletedTasksManager already initialized');
             return;
         }
-
-        console.log('🎯 CompletedTasksManager: Initializing completed tasks section...');
 
         const header = this.deps.getElementById(DOM_IDS.COMPLETED_TASKS_HEADER);
         const completedList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
@@ -84,7 +79,6 @@ export class CompletedTasksManager {
         this.updateCount();
 
         this._initialized = true;
-        console.log('✅ CompletedTasksManager: Completed tasks section initialized');
     }
 
     /**
@@ -112,7 +106,6 @@ export class CompletedTasksManager {
             }, true);
         }
 
-        console.log(`✅ CompletedTasksManager: Completed tasks section ${isVisible ? 'expanded' : 'collapsed'}`);
     }
 
     /**
@@ -172,7 +165,6 @@ export class CompletedTasksManager {
         // Update count
         this.updateCount();
 
-        console.log('✅ CompletedTasksManager: Task moved to completed section');
     }
 
     /**
@@ -202,14 +194,12 @@ export class CompletedTasksManager {
             delete taskElement.dataset.originalIndex;
 
             this.updateCount();
-            console.log(`✅ CompletedTasksManager: Task restored to position ${insertIndex}`);
             return;
         }
 
         // Fallback: append to end if no original position stored
         taskList.appendChild(taskElement);
         this.updateCount();
-        console.log('✅ CompletedTasksManager: Task moved back to active list (end)');
     }
 
     /**
@@ -278,14 +268,11 @@ export class CompletedTasksManager {
     organize() {
         // Check if feature is enabled first
         if (!this.isEnabled()) {
-            console.log('⏭️ CompletedTasksManager: Completed dropdown disabled, skipping organization');
             return;
         }
 
         const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
         if (!taskList) return;
-
-        console.log('🔄 CompletedTasksManager: Organizing completed tasks on load...');
 
         // Get all tasks in the main list
         const tasks = Array.from(taskList.querySelectorAll(DOM_SELECTORS.TASK));
@@ -298,12 +285,10 @@ export class CompletedTasksManager {
             }
         });
 
-        console.log(`✅ CompletedTasksManager: Organized ${taskList.querySelectorAll(DOM_SELECTORS.TASK).length} active and completed tasks`);
     }
 }
 
 // DI-pure module (no window.* fallbacks for dependencies)
-console.log('🎯 CompletedTasksManager module loaded (DI-pure, no window.* exports)');
 
 /**
  * Initialize and return a configured CompletedTasksManager instance
@@ -322,6 +307,5 @@ export async function initCompletedTasksManager(dependencies = {}) {
 
     const manager = new CompletedTasksManager(adaptedDeps);
     manager.init();
-    console.log('✅ CompletedTasksManager initialized via initCompletedTasksManager');
     return manager;
 }

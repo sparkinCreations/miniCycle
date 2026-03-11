@@ -78,7 +78,6 @@ function reloadWithLoader(logContext, options = {}) {
 
     setTimeout(async () => {
         try {
-            console.log(`🔄 ${logContext} complete — re-rendering UI in place`);
 
             // Clear the task list DOM so stale tasks don't linger
             const taskList = document.getElementById(DOM_IDS.TASK_LIST);
@@ -107,11 +106,9 @@ function reloadWithLoader(logContext, options = {}) {
 export function neutralizeAppState() {
     const AppState = _deps.AppState?.();
     if (!AppState) {
-        console.log('No AppState to neutralize');
         return;
     }
 
-    console.log('Neutralizing AppState to prevent auto-save...');
     try {
         if (AppState.saveTimeout) {
             clearTimeout(AppState.saveTimeout);
@@ -120,7 +117,6 @@ export function neutralizeAppState() {
         AppState.data = null;
         AppState.isDirty = false;
         AppState.isInitialized = false;
-        console.log('AppState neutralized');
     } catch (e) {
         console.warn('AppState neutralization warning:', e);
     }
@@ -136,7 +132,6 @@ export function neutralizeAppState() {
 export function setupBackupButton() {
     // ✅ Idempotency guard
     if (_initialized.backupButton) {
-        console.log('✅ Backup button already set up');
         return;
     }
     _initialized.backupButton = true;
@@ -151,7 +146,6 @@ export function setupBackupButton() {
     if (!backupBtn) return;
 
     backupBtn._clickHandler = () => {
-        console.log('Creating backup...');
 
         const schemaData = localStorage.getItem(STORAGE_KEYS.DATA);
         if (!schemaData) {
@@ -190,7 +184,6 @@ export function setupBackupButton() {
 export function setupRestoreButton() {
     // ✅ Idempotency guard
     if (_initialized.restoreButton) {
-        console.log('✅ Restore button already set up');
         return;
     }
     _initialized.restoreButton = true;
@@ -211,9 +204,7 @@ export function setupRestoreButton() {
     const resetPicker = () => { isPickerOpen = false; };
 
     const handleRestore = () => {
-        console.log('Restore button clicked');
         if (isPickerOpen) {
-            console.log('Picker already open, ignoring click');
             return;
         }
         isPickerOpen = true;
@@ -286,7 +277,6 @@ export function setupRestoreButton() {
  * @param {string} fileContent - Raw file content
  */
 async function processRestoreData(fileContent) {
-    console.log('Starting backup restore process...');
 
     // Validate file size (max 10MB)
     const maxSize = 10 * 1024 * 1024;
@@ -313,7 +303,6 @@ async function processRestoreData(fileContent) {
     }
 
     // Sanitize imported data (dynamic import to match settingsManager's versioned import)
-    console.log('Sanitizing imported data...');
     const version = _deps.AppMeta?.version;
     const { sanitizeImportedData } = await import(`../utils/dataSanitizer.js?v=${version}`);
     try {
@@ -350,7 +339,6 @@ async function processRestoreData(fileContent) {
                     const BackupManager = _deps.BackupManager?.();
                     if (BackupManager) {
                         await BackupManager.createManualBackup(`Pre-Restore Safety Backup ${new Date().toLocaleString()}`);
-                        console.log('Safety backup created successfully');
                     }
                 } catch (backupErr) {
                     console.warn('Could not create safety backup:', backupErr);
@@ -361,7 +349,6 @@ async function processRestoreData(fileContent) {
 
                 // Handle Schema 2.5 backup
                 if (backupData.schemaVersion === "2.5" && backupData.miniCycleData) {
-                    console.log('Detected Schema 2.5 backup format');
 
                     // Validate miniCycleData is valid JSON before writing
                     try {
@@ -384,7 +371,6 @@ async function processRestoreData(fileContent) {
 
                 // Handle legacy backup - convert to Schema 2.5
                 if (backupData.schemaVersion === "legacy" || backupData.miniCycleStorage) {
-                    console.log('Detected legacy backup format');
                     _deps.showNotification?.(getLabel('notify.backupConvertingLegacy'), "info", UI_TIMEOUTS.NOTIFICATION_LONG);
 
                     if (!backupData.miniCycleStorage) {
@@ -432,7 +418,6 @@ async function processRestoreData(fileContent) {
 
                     // Migrate to 2.5
                     setTimeout(() => {
-                        console.log('Running Schema 2.5 migration...');
                         const performSchema25Migration = _deps.performSchema25Migration;
                         const migrationResults = performSchema25Migration?.() || { success: false };
 
@@ -468,7 +453,6 @@ async function processRestoreData(fileContent) {
 export function setupFactoryResetButton() {
     // ✅ Idempotency guard
     if (_initialized.resetButton) {
-        console.log('✅ Factory reset button already set up');
         return;
     }
     _initialized.resetButton = true;
@@ -484,7 +468,6 @@ export function setupFactoryResetButton() {
     if (!resetBtn) return;
 
     const runFactoryReset = async () => {
-        console.log('Performing bulletproof Schema 2.5 factory reset...');
 
         // Neutralize AppState first
         neutralizeAppState();
@@ -530,12 +513,10 @@ export function setupFactoryResetButton() {
                 }
                 const keyLower = key.toLowerCase();
                 if (keyLower.includes('minicycle') || keyLower.includes('taskcycle')) {
-                    console.log('Removing additional key:', key);
                     localStorage.removeItem(key);
                     dynamicKeysRemoved++;
                 }
             });
-            console.log(`Removed ${dynamicKeysRemoved} additional dynamic keys`);
         } catch (e) {
             console.warn('Local storage cleanup encountered an issue:', e);
         }
@@ -544,7 +525,6 @@ export function setupFactoryResetButton() {
         try {
             if (typeof sessionStorage !== 'undefined') {
                 sessionStorage.clear();
-                console.log('sessionStorage cleared');
             }
         } catch (e) {
             console.warn('sessionStorage cleanup failed:', e);
@@ -559,7 +539,6 @@ export function setupFactoryResetButton() {
                         if (registration.pushManager && typeof registration.pushManager.getSubscription === 'function') {
                             const sub = await registration.pushManager.getSubscription();
                             if (sub) {
-                                console.log('Unsubscribing push subscription');
                                 await sub.unsubscribe();
                             }
                         }
@@ -567,7 +546,6 @@ export function setupFactoryResetButton() {
                         console.warn('Push unsubscribe failed:', e);
                     }
                     try {
-                        console.log('Unregistering service worker:', registration.scope);
                         await registration.unregister();
                     } catch (e) {
                         console.warn('Service worker unregister failed:', e);
@@ -585,7 +563,6 @@ export function setupFactoryResetButton() {
                 await Promise.allSettled(
                     cacheNames.map((cacheName) => {
                         if (cacheName.includes('miniCycle') || cacheName.includes('taskCycle')) {
-                            console.log('Clearing cache:', cacheName);
                             return caches.delete(cacheName);
                         }
                         return Promise.resolve(false);
@@ -607,7 +584,6 @@ export function setupFactoryResetButton() {
                 ];
                 await Promise.allSettled(
                     idbDatabases.map(dbName => {
-                        console.log('Deleting IndexedDB:', dbName);
                         return new Promise((resolve, reject) => {
                             const req = indexedDB.deleteDatabase(dbName);
                             req.onsuccess = () => resolve();
@@ -619,7 +595,6 @@ export function setupFactoryResetButton() {
                         });
                     })
                 );
-                console.log('IndexedDB cleanup complete');
             }
         } catch (e) {
             console.warn('IndexedDB cleanup failed:', e);
@@ -664,4 +639,3 @@ export function setupFactoryResetButton() {
     safeAddEventListener(resetBtn, "click", resetBtn._clickHandler);
 }
 
-console.log('Backup & Restore Manager loaded');

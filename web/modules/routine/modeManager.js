@@ -50,12 +50,10 @@ const di = createDIModule('ModeManager', {
  */
 export function setModeManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🎯 ModeManager dependencies set:', Object.keys(dependencies));
 }
 
 export class ModeManager {
     constructor(dependencies = {}) {
-        console.log('🎯 ModeManager: Constructing with dependencies');
 
         // Resolve deps from diBase, with constructor overrides
         const resolvedDeps = di.resolve(dependencies);
@@ -77,14 +75,11 @@ export class ModeManager {
      * Waits for core systems to be ready, then sets up mode selector with delay
      */
     async init() {
-        console.log('🎯 ModeManager: Initializing...');
 
         // Wait for core systems to be ready
         await this.deps.appInit?.waitForCore();
 
-        console.log('⏰ ModeManager: Initializing mode selector with 200ms delay...');
         setTimeout(() => {
-            console.log('⏰ ModeManager: Delay complete, calling setupModeSelector...');
             this.setupModeSelector();
             // ✅ Also set up the mode listener that syncs visual indicators
             this.setupDeleteCheckedTasksModeListener();
@@ -94,7 +89,6 @@ export class ModeManager {
         this.setupVisibilityChangeListener();
 
         this._initialized = true;
-        console.log('✅ ModeManager: Initialized');
     }
 
     /**
@@ -110,7 +104,6 @@ export class ModeManager {
         };
 
         const result = modeNames[mode] || getLabel('mode.auto') + ' ' + getLabel('mode.autoEmoji');
-        console.log('📝 ModeManager: Getting mode name:', { input: mode, output: result });
         return result;
     }
 
@@ -127,14 +120,12 @@ export class ModeManager {
 
         // Debounce the refresh to prevent forced reflows
         this.refreshDebounceTimer = setTimeout(async () => {
-            console.log('🔄 ModeManager: Refreshing task buttons for mode change...');
 
             // Wait for core if needed
             await this.deps.appInit?.waitForCore();
 
             const tasks = this.deps.querySelectorAll(DOM_SELECTORS.TASK);
             if (tasks.length === 0) {
-                console.log('⚠️ ModeManager: No tasks found to refresh');
                 return;
             }
 
@@ -147,8 +138,6 @@ export class ModeManager {
         const deleteCheckedTasks = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
         const autoResetEnabled = toggleAutoReset?.checked || false;
         const deleteCheckedEnabled = deleteCheckedTasks?.checked || false;
-
-        console.log('🔍 ModeManager: Current mode settings:', { autoResetEnabled, deleteCheckedEnabled });
 
         // Get settings for button visibility
         const AppState = this.deps.AppState;
@@ -227,7 +216,6 @@ export class ModeManager {
                     delete dueDateButton.dataset.listenerAttached;
                 }
                 this.deps.setupDueDateButtonInteraction(newButtonContainer, dueDateInput);
-                console.log('✅ ModeManager: Attached due date listener for task:', taskId);
             }
 
             successCount++;
@@ -235,7 +223,6 @@ export class ModeManager {
 
             // Summary logging instead of per-task spam
             if (successCount > 0) {
-                console.log(`✅ ModeManager: Task button refresh complete (${successCount} tasks)`);
 
                 // ✅ Sync delete-when-complete button visual states after buttons are recreated
                 if (this.deps.syncAllTasksWithMode && currentCycle?.tasks) {
@@ -247,11 +234,9 @@ export class ModeManager {
                         DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: this.deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
                     };
                     this.deps.syncAllTasksWithMode(currentMode, tasksData, constants);
-                    console.log('✅ ModeManager: Synced delete-when-complete button states');
                 }
             } else if (tasks.length > 0) {
                 // Only log if there were tasks but none had buttons yet (initial load)
-                console.log('ℹ️ ModeManager: Task buttons not yet rendered, will be created by taskDOM');
             }
         }, 150); // 150ms debounce delay - prevents multiple rapid reflows
     }
@@ -261,7 +246,6 @@ export class ModeManager {
      * Updates mode selector and UI based on current toggle settings
      */
     async syncModeFromToggles() {
-        console.log('🔄 ModeManager: Syncing mode from toggles (state-based)...');
 
         // Wait for core
         await this.deps.appInit?.waitForCore();
@@ -270,7 +254,6 @@ export class ModeManager {
         const currentState = AppState?.get();
         if (!currentState) {
             // ✅ Normal during Phase 2 - data loads in Phase 3, syncModeFromToggles will be called again
-            console.log('⏳ ModeManager: State not yet available, will sync when data loads');
             return;
         }
 
@@ -294,12 +277,6 @@ export class ModeManager {
             autoReset = currentCycle.autoReset || false;
             deleteChecked = currentCycle.deleteCheckedTasks || false;
 
-            console.log('📊 ModeManager: Mode settings from state:', {
-                activeCycle,
-                autoReset,
-                deleteChecked
-            });
-
             // ✅ CRITICAL FIX: Update DOM to match data
             toggleAutoReset.checked = autoReset;
             deleteCheckedTasks.checked = deleteChecked;
@@ -310,13 +287,10 @@ export class ModeManager {
             }
         } else {
             // ✅ Normal during Phase 2 - data loads in Phase 3
-            console.log('ℹ️ No active cycle yet - using DOM defaults until data loads');
             // ✅ Fallback to DOM state only if no saved data exists
             autoReset = toggleAutoReset.checked;
             deleteChecked = deleteCheckedTasks.checked;
         }
-
-        console.log('🔄 ModeManager: Syncing mode from data source:', { autoReset, deleteChecked });
 
         let mode = 'auto-cycle';
 
@@ -328,8 +302,6 @@ export class ModeManager {
         } else if (!autoReset && !deleteChecked) {
             mode = 'manual-cycle';
         }
-
-        console.log('📝 ModeManager: Setting selector to:', mode);
 
         // Update selector
         modeSelector.value = mode;
@@ -351,7 +323,6 @@ export class ModeManager {
             autoResetContainer.style.display = 'none';
         }
 
-        console.log('✅ ModeManager: Mode selectors synced to Schema 2.5:', mode);
     }
 
     /**
@@ -359,7 +330,6 @@ export class ModeManager {
      * Persists current toggle states to AppState
      */
     async updateStorageFromToggles() {
-        console.log('💾 ModeManager: Updating storage from toggles (state-based)...');
 
         // Wait for core
         await this.deps.appInit?.waitForCore();
@@ -391,7 +361,6 @@ export class ModeManager {
             }
         }, true); // immediate save
 
-        console.log('✅ ModeManager: Storage updated from toggles (state-based)');
     }
 
     /**
@@ -399,7 +368,6 @@ export class ModeManager {
      * Updates the mode description box with current mode information
      */
     async updateCycleModeDescription() {
-        console.log('📝 ModeManager: Updating cycle mode description (Schema 2.5 only)...');
 
         // Wait for core
         await this.deps.appInit?.waitForCore();
@@ -427,8 +395,6 @@ export class ModeManager {
             autoReset = currentCycle.autoReset || false;
             deleteChecked = currentCycle.deleteCheckedTasks || false;
         }
-
-        console.log('📊 ModeManager: Mode settings:', { autoReset, deleteChecked });
 
         const descriptionBox = this.deps.getElementById(DOM_IDS.MODE_DESCRIPTION);
         if (!descriptionBox) {
@@ -465,7 +431,6 @@ export class ModeManager {
             }
         }
 
-        console.log('✅ ModeManager: Mode description updated:', currentMode);
     }
 
     /**
@@ -475,11 +440,8 @@ export class ModeManager {
     async setupModeSelector() {
         // ✅ Guard against duplicate setup - prevents double notifications
         if (this._modeSelectorSetupComplete) {
-            console.log('⏭️ ModeManager: Mode selector already set up, skipping');
             return;
         }
-
-        console.log('🎯 ModeManager: Setting up mode selector (state-based)...');
 
         // Wait for core
         await this.deps.appInit?.waitForCore();
@@ -487,12 +449,6 @@ export class ModeManager {
         const modeSelector = this.deps.getElementById(DOM_IDS.MODE_SELECTOR);
         const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
         const deleteCheckedTasks = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
-
-        console.log('🔍 ModeManager: Element detection:', {
-            modeSelector: !!modeSelector,
-            toggleAutoReset: !!toggleAutoReset,
-            deleteCheckedTasks: !!deleteCheckedTasks
-        });
 
         if (!modeSelector || !toggleAutoReset || !deleteCheckedTasks) {
             console.warn('⚠️ ModeManager: Mode selector elements not found');
@@ -505,7 +461,6 @@ export class ModeManager {
         // ✅ Function to sync toggles from either selector (NESTED FUNCTION - stays inside)
         // ✅ FIXED: Made async to properly await storage update before UI sync
         const syncTogglesFromMode = async (selectedMode) => {
-            console.log('🔄 ModeManager: Syncing toggles from mode selector:', selectedMode);
 
             switch(selectedMode) {
                 case 'auto-cycle':
@@ -529,7 +484,6 @@ export class ModeManager {
             await this.updateStorageFromToggles();
 
             // ✅ THEN trigger change events (but prevent them from updating storage again)
-            console.log('🔔 ModeManager: Dispatching change events to update storage...');
             toggleAutoReset.dispatchEvent(new Event('change'));
             deleteCheckedTasks.dispatchEvent(new Event('change'));
 
@@ -552,15 +506,12 @@ export class ModeManager {
                 helpMgr.showModeDescription(selectedMode);
             }
 
-            console.log('✅ ModeManager: Toggles synced from mode selector');
         };
 
         // ✅ Set up event listeners for both selectors using safeAddEventListener
-        console.log('📡 ModeManager: Setting up event listeners for both selectors...');
         const safeAdd = this.deps.safeAddEventListener;
 
         modeSelector._changeHandler = async (e) => {
-            console.log('🎯 ModeManager: Desktop mode selector changed:', e.target.value);
             await syncTogglesFromMode(e.target.value);
             this.updateCycleModeDescription();
 
@@ -573,16 +524,13 @@ export class ModeManager {
 
             // ✅ Update recurring button visibility for mode change (DI-pure)
             if (this.deps.recurringCore?.updateRecurringButtonVisibility) {
-                console.log('🔁 ModeManager: Updating recurring button visibility for mode change...');
                 setTimeout(() => {
                     this.deps.recurringCore.updateRecurringButtonVisibility();
-                    console.log('🔁 ModeManager: Recurring button visibility update completed');
                 }, 100);
             }
 
             // ✅ If switching to auto-cycle mode, check if cycle should complete
             if (e.target.value === 'auto-cycle' && this.deps.checkMiniCycle) {
-                console.log('🔄 ModeManager: Auto-cycle mode enabled - checking if cycle should complete...');
                 setTimeout(() => {
                     this.deps.checkMiniCycle();
                 }, 150); // Small delay to ensure UI is updated first
@@ -592,7 +540,6 @@ export class ModeManager {
                 this.deps.showNotification(getLabel('notify.modeSwitched', { vars: { mode: this.getModeName(e.target.value) } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
             }
 
-            console.log('✅ ModeManager: Mode change applied without reload');
         };
         safeAdd(modeSelector, 'change', modeSelector._changeHandler);
 
@@ -605,7 +552,6 @@ export class ModeManager {
         });
 
         toggleAutoReset._modeChangeHandler = (e) => {
-            console.log('🔘 ModeManager: Auto Reset toggle changed:', e.target.checked);
             this.syncModeFromToggles();
             this.updateCycleModeDescription();
 
@@ -619,7 +565,6 @@ export class ModeManager {
         safeAdd(toggleAutoReset, 'change', toggleAutoReset._modeChangeHandler);
 
         deleteCheckedTasks._modeChangeHandler = (e) => {
-            console.log('🗑️ ModeManager: Delete Checked Tasks toggle changed:', e.target.checked);
             this.syncModeFromToggles();
             this.updateCycleModeDescription();
 
@@ -632,10 +577,8 @@ export class ModeManager {
 
             // ✅ Update recurring button visibility when switching to/from to-do mode (DI-pure)
             if (this.deps.recurringCore?.updateRecurringButtonVisibility) {
-                console.log('🔁 ModeManager: Updating recurring button visibility for mode change...');
                 setTimeout(() => {
                     this.deps.recurringCore.updateRecurringButtonVisibility();
-                    console.log('🔁 ModeManager: Recurring button visibility update completed');
                 }, 100); // Small delay to ensure DOM updates complete
             }
         };
@@ -647,7 +590,6 @@ export class ModeManager {
         // ✅ Check if we need to restore mode after reload
         const modeToRestore = sessionStorage.getItem('restoreModeAfterReload');
         if (modeToRestore) {
-            console.log('🔄 ModeManager: Restoring mode after reload:', modeToRestore);
             sessionStorage.removeItem('restoreModeAfterReload');
 
             // Small delay to ensure DOM is ready
@@ -677,7 +619,6 @@ export class ModeManager {
         // ✅ Setup mode description toggle (collapsible)
         this.setupModeDescriptionToggle();
 
-        console.log('✅ ModeManager: Mode selector setup complete');
     }
 
     /**
@@ -726,11 +667,9 @@ export class ModeManager {
                 await AppState.update(state => {
                     state.settings.modeDescriptionCollapsed = newCollapsed;
                 });
-                console.log('💾 ModeManager: Mode description collapsed state saved:', newCollapsed);
             }
         });
 
-        console.log('✅ ModeManager: Mode description toggle setup complete');
     }
 
     /**
@@ -901,7 +840,6 @@ export class ModeManager {
             });
         }
 
-        console.log('✅ ModeManager: Quick actions button setup complete');
     }
 
     /**
@@ -909,7 +847,6 @@ export class ModeManager {
      * Handles auto-reset toggle, delete-checked-tasks toggle, and their event handlers
      */
     setupToggleAutoReset() {
-        console.log('⚙️ ModeManager: Setting up toggle auto reset (state-based)...');
 
         const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
         const deleteCheckedTasksContainer = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS_CONTAINER);
@@ -937,14 +874,10 @@ export class ModeManager {
         const activeCycle = appState.activeCycleId;
         const currentCycle = data.cycles[activeCycle];
 
-        console.log('📊 ModeManager: Setting up toggles for cycle:', activeCycle);
-
         // ✅ Ensure AutoReset reflects the correct state from state system
         if (activeCycle && currentCycle) {
             toggleAutoReset.checked = currentCycle.autoReset || false;
             deleteCheckedTasks.checked = currentCycle.deleteCheckedTasks || false;
-            console.log('🔄 Auto reset state:', currentCycle.autoReset);
-            console.log('🗑️ Delete checked tasks state:', currentCycle.deleteCheckedTasks);
         } else {
             console.warn('⚠️ No active cycle found, defaulting to false');
             toggleAutoReset.checked = false;
@@ -961,7 +894,6 @@ export class ModeManager {
 
         // ✅ Define event listener functions for state-based system
         function handleAutoResetChange(event) {
-            console.log('🔄 Auto reset toggle changed (state-based):', event.target.checked);
 
             // Fix #34: Read current activeCycleId inside handler, not from closure
             const currentState = AppState?.get?.();
@@ -983,7 +915,6 @@ export class ModeManager {
                     if (event.target.checked) {
                         cycle.deleteCheckedTasks = false;
                         deleteCheckedTasks.checked = false; // ✅ Update UI
-                        console.log('🔄 Auto reset ON - disabling delete checked tasks');
                     }
                 }
             }, true); // immediate save
@@ -995,7 +926,6 @@ export class ModeManager {
 
             // ✅ Only trigger miniCycle reset if AutoReset is enabled
             if (event.target.checked) {
-                console.log('🔄 Auto reset enabled - checking cycle state');
                 self.deps.checkMiniCycle();
             }
 
@@ -1009,11 +939,9 @@ export class ModeManager {
             }
             self.deps.updateRecurringButtonVisibility();
 
-            console.log('✅ Auto reset settings saved (state-based)');
         }
 
         function handleDeleteCheckedTasksChange(event) {
-            console.log('🗑️ Delete checked tasks toggle changed (state-based):', event.target.checked);
 
             if (!activeCycle || !currentCycle) {
                 console.warn('⚠️ No active cycle available for delete checked tasks change');
@@ -1034,7 +962,6 @@ export class ModeManager {
             // ✅ FIX: Refresh task buttons to show/hide delete-when-complete button
             self.refreshTaskButtonsForModeChange();
 
-            console.log('✅ Delete checked tasks setting saved (state-based)');
         }
 
         // ✅ Use safeAddEventListener to prevent duplicate listeners
@@ -1048,7 +975,6 @@ export class ModeManager {
         safeAdd(toggleAutoReset, "change", handleAutoResetChange);
         safeAdd(deleteCheckedTasks, "change", handleDeleteCheckedTasksChange);
 
-        console.log('✅ ModeManager: Toggle auto reset setup completed (state-based)');
     }
 
     /**
@@ -1064,7 +990,6 @@ export class ModeManager {
 
         // ✅ Idempotency guard
         if (this._setupDeleteCheckedTasksModeListenerInitialized) {
-            console.log('✅ Delete checked tasks mode listener already set up');
             return;
         }
         this._setupDeleteCheckedTasksModeListenerInitialized = true;
@@ -1074,7 +999,6 @@ export class ModeManager {
 
         deleteCheckedTasks._deleteCheckedTasksModeHandler = async (event) => {
             // ✅ Schema 2.5 only
-            console.log('🗑️ Delete checked tasks toggle changed (Schema 2.5 only)...');
 
             const schemaData = self.deps.loadMiniCycleData();
             if (!schemaData) {
@@ -1119,7 +1043,6 @@ export class ModeManager {
                             // Sync active value from mode-specific setting
                             task.deleteWhenComplete = task.deleteWhenCompleteSettings[currentMode];
                         });
-                        console.log(`✅ Synced deleteWhenComplete for all tasks to ${currentMode} mode settings`);
                     }
 
                     // ✅ Capture updated cycle to avoid race condition
@@ -1134,8 +1057,6 @@ export class ModeManager {
                     updatedCycle.tasks.forEach(task => {
                         tasksDataMap[task.id] = task;
                     });
-
-                    console.log(`🔄 Mode switch: Syncing ${Object.keys(tasksDataMap).length} tasks to ${currentMode} mode`);
 
                     // Sync immediately AND after a small delay to catch any late DOM updates
                     syncAllTasksWithMode(currentMode, tasksDataMap, {
@@ -1163,7 +1084,6 @@ export class ModeManager {
             // This re-renders task buttons so the delete-when-complete button appears
             self.refreshTaskButtonsForModeChange();
 
-            console.log('✅ Delete checked tasks setting saved (Schema 2.5)');
         };
         safeAdd(deleteCheckedTasks, "change", deleteCheckedTasks._deleteCheckedTasksModeHandler);
     }
@@ -1174,11 +1094,9 @@ export class ModeManager {
      * This is a safety net to catch stale state issues
      */
     validateModeEnforcement() {
-        console.log('🔍 ModeManager: Validating mode enforcement...');
 
         const AppState = this.deps.AppState;
         if (!AppState?.isReady?.()) {
-            console.log('⏳ ModeManager: AppState not ready for validation');
             return;
         }
 
@@ -1245,12 +1163,9 @@ export class ModeManager {
             body.className = body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode)\b/g, '');
             body.classList.add(correctMode + '-mode');
 
-            console.log('✅ ModeManager: Mode enforcement corrected to:', correctMode);
-
             // Refresh UI to reflect correct mode
             this.refreshTaskButtonsForModeChange();
         } else {
-            console.log('✅ ModeManager: Mode enforcement validated - no issues');
         }
     }
 
@@ -1261,17 +1176,13 @@ export class ModeManager {
     setupVisibilityChangeListener() {
         // ✅ FIX: Idempotency guard to prevent duplicate listeners
         if (this._visibilityListenerInitialized) {
-            console.log('✅ ModeManager: Visibility listener already set up');
             return;
         }
         this._visibilityListenerInitialized = true;
 
-        console.log('👁️ ModeManager: Setting up visibility change listener...');
-
         // Store reference for potential cleanup
         this._visibilityHandler = () => {
             if (document.visibilityState === 'visible') {
-                console.log('👁️ ModeManager: App became visible - validating mode...');
                 // Small delay to ensure app state is fully restored
                 setTimeout(() => {
                     this.validateModeEnforcement();
@@ -1284,7 +1195,6 @@ export class ModeManager {
         };
 
         document.addEventListener('visibilitychange', this._visibilityHandler);
-        console.log('✅ ModeManager: Visibility change listener registered');
     }
 
     /**
@@ -1299,7 +1209,6 @@ export class ModeManager {
 }
 
 // DI-pure module (no window.* fallbacks for dependencies)
-console.log('🎯 ModeManager module loaded (DI-pure, no window.* exports)');
 
 /**
  * Initialize and configure the mode manager
@@ -1307,12 +1216,9 @@ console.log('🎯 ModeManager module loaded (DI-pure, no window.* exports)');
  * @returns {Promise<ModeManager>} Initialized mode manager instance
  */
 export async function initModeManager(dependencies = {}) {
-    console.log('🎯 Initializing Mode Manager module...');
 
     const manager = new ModeManager(dependencies);
     await manager.init();
-
-    console.log('✅ Mode Manager initialized');
 
     return manager;
 }

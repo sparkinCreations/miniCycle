@@ -179,8 +179,6 @@ export function initTestingModal(dependencies = {}) {
         setupResultsControls: () => setupResultsControls(setupResultsAreaResize)
     });
 
-    console.log('TestingModal initialized via initTestingModal');
-
     // Return exports for registration
     return {
         openStorageViewer,
@@ -195,8 +193,6 @@ export function initTestingModal(dependencies = {}) {
 // ==========================================
 // EXPORTS
 // ==========================================
-
-console.log('Testing Modal orchestrator loaded (DI-pure)');
 
 export {
     setupTestingModal,

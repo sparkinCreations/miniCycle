@@ -8,7 +8,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav, handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 
@@ -17,7 +17,6 @@ import { handleVerticalArrowNav, handleHorizontalArrowNav } from '../utils/keybo
 // ============================================================================
 
 const MAX_EVENTS = 100;
-
 
 // ============================================================================
 // DEPENDENCY INJECTION
@@ -50,7 +49,6 @@ export class HistoryManager {
         this.activeTab = 'events'; // 'events' or 'cleared'
         this.isRecreateMode = false;
         this.selectedTasks = new Set();
-        console.log('HistoryManager initialized');
     }
 
     // ========================================================================
@@ -133,7 +131,6 @@ export class HistoryManager {
             }
         }, true);
 
-        console.log(`HistoryManager: Logged ${type} event`, details);
     }
 
     /**
@@ -452,6 +449,10 @@ export class HistoryManager {
             this.modalOverlay.querySelector('.history-modal-content')?.removeEventListener('keydown', this._contentKeyHandler);
             this._contentKeyHandler = null;
         }
+        if (this._recurringLinkHandler) {
+            this.modalOverlay.querySelector('.cleared-view-recurring')?.removeEventListener('click', this._recurringLinkHandler);
+            this._recurringLinkHandler = null;
+        }
 
         this.modalOverlay.style.opacity = '0';
         this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_MODAL).style.transform = 'translateY(20px)';
@@ -677,6 +678,20 @@ export class HistoryManager {
             `;
         }
 
+        // Show achievement note if any cleared task events exist
+        const hasClearedEvents = events.some(evt => evt.type === 'tasks_cleared' || evt.type === 'tasks_removed_on_reset');
+        if (hasClearedEvents) {
+            html += `
+                <p style="
+                    font-size: 12px;
+                    color: var(--text-secondary, #666);
+                    text-align: center;
+                    margin: 16px 0 0;
+                    font-style: italic;
+                ">${getLabel('taskOptions.achievementNote')}</p>
+            `;
+        }
+
         content.innerHTML = html;
     }
 
@@ -704,7 +719,47 @@ export class HistoryManager {
         }
 
         const html = entries.map(entry => this._renderClearedEntry(entry)).join('');
-        content.innerHTML = html;
+
+        // Add recurring tasks note below entries
+        const state = this.deps.AppState?.get?.();
+        const activeCycleId = state?.appState?.activeCycleId;
+        const activeCycle = activeCycleId ? state?.data?.cycles?.[activeCycleId] : null;
+        const hasRecurring = Object.keys(activeCycle?.recurringTemplates || {}).length > 0;
+        const recurringNote = `
+            <div style="
+                padding: 12px;
+                margin-top: 8px;
+                background: var(--bg-secondary, #f5f5f5);
+                border-radius: 8px;
+                font-size: 13px;
+                color: var(--text-secondary, #888);
+                line-height: 1.4;
+            ">
+                <span style="margin-right: 4px;">↻</span>
+                ${getLabel('history.recurringNote')}
+                ${hasRecurring ? `<br><a href="#" class="cleared-view-recurring" style="
+                    color: var(--primary-color, #4c79ff);
+                    text-decoration: none;
+                    font-weight: 500;
+                    margin-top: 4px;
+                    display: inline-block;
+                ">${getLabel('history.viewRecurring')}</a>` : ''}
+            </div>
+        `;
+
+        content.innerHTML = html + recurringNote;
+
+        // Wire recurring panel link if present
+        const recurringLink = content.querySelector('.cleared-view-recurring');
+        if (recurringLink) {
+            this._recurringLinkHandler = (e) => {
+                e.preventDefault();
+                this.closeModal();
+                const recurringBtn = document.getElementById(DOM_IDS.RECURRING_INFO_LINK);
+                if (recurringBtn) recurringBtn.click();
+            };
+            recurringLink.addEventListener('click', this._recurringLinkHandler);
+        }
 
         // Setup click handlers for entries in recreate mode
         if (this.isRecreateMode) {
@@ -858,7 +913,7 @@ export class HistoryManager {
             'task_deleted': '🗑️',
             'task_edited': '✏️',
             'recurring_tasks_removed': '🔁',
-            'tasks_removed_on_reset': '❌',
+            'tasks_removed_on_reset': '🧹',
             'task_priority_set': '⚠️',
             'task_priority_removed': '➖',
             'task_priority_color_changed': '🎨',
@@ -1052,7 +1107,6 @@ export class HistoryManager {
         if (this.selectedTasks.size === 0) return;
 
         const addTask = this.deps.addTask;
-        console.log('🔄 HistoryManager: addTask dependency:', typeof addTask, addTask);
 
         if (!addTask || typeof addTask !== 'function') {
             console.error('❌ HistoryManager: addTask not available');
@@ -1063,16 +1117,13 @@ export class HistoryManager {
         const clearedData = this._getClearedTasks();
         const entries = clearedData.entries || [];
         const toRecreate = entries.filter(e => this.selectedTasks.has(e.id));
-        console.log('🔄 HistoryManager: Tasks to recreate:', toRecreate.length);
 
         let created = 0;
         for (const entry of toRecreate) {
             try {
-                console.log(`🔄 HistoryManager: Recreating task "${entry.taskText}"`);
                 const result = await addTask(entry.taskText, {
                     highPriority: entry.wasHighPriority || false
                 });
-                console.log('🔄 HistoryManager: addTask result:', result);
 
                 if (result) {
                     created++;
@@ -1156,4 +1207,3 @@ export function getHistoryManager() {
     return instance;
 }
 
-console.log('HistoryManager module loaded (DI-pure)');

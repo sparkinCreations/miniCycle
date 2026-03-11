@@ -106,11 +106,9 @@ class MiniCyclePlugin {
     async onLoad() {
         // ✅ Automatically wait for core systems before plugin loads
         await this.waitForCore();
-        console.log(`🔌 Plugin ${this.name} loaded (core systems ready)`);
     }
 
     async onUnload() {
-        console.log(`🔌 Plugin ${this.name} unloaded`);
     }
 
     // Event hooks (override in your plugins)
@@ -125,7 +123,6 @@ class MiniCyclePlugin {
         if (this.deps.showNotification) {
             this.deps.showNotification(message, type);
         } else {
-            console.log(`[Plugin ${this.name}] ${type}: ${message}`);
         }
     }
 
@@ -189,7 +186,6 @@ class PluginManager {
         }
 
         this.plugins.set(plugin.name, plugin);
-        console.log(`✅ Plugin registered: ${plugin.name} v${plugin.version}`);
         return true;
     }
 
@@ -213,7 +209,6 @@ class PluginManager {
             // Register plugin hooks
             this.registerPluginHooks(plugin);
             
-            console.log(`✅ Plugin enabled: ${pluginName}`);
             return true;
         } catch (error) {
             console.error(`Failed to enable plugin ${pluginName}:`, error);
@@ -234,7 +229,6 @@ class PluginManager {
             // Unregister plugin hooks
             this.unregisterPluginHooks(plugin);
             
-            console.log(`✅ Plugin disabled: ${pluginName}`);
             return true;
         } catch (error) {
             console.error(`Failed to disable plugin ${pluginName}:`, error);
@@ -319,8 +313,6 @@ class PluginManager {
 
 // Create plugin manager instance
 const pluginManager = new PluginManager();
-
-console.log('🔌 Basic Plugin System loaded (DI-pure, no window.* exports)');
 
 // Export for module use
 export { PluginManager, MiniCyclePlugin, EventBus, pluginManager };

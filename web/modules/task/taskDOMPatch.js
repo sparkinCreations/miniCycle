@@ -83,7 +83,6 @@ export class TaskDOMPatch {
                 }
             });
 
-            console.log(`🎨 Patched task ${taskId}:`, changedFields || 'all fields');
             return true;
         } catch (error) {
             console.error(`🎨 patchTask failed for ${taskId}:`, error);
@@ -207,7 +206,6 @@ export class TaskDOMPatch {
         }
 
         taskElement.remove();
-        console.log(`🎨 Removed task ${taskId} from DOM`);
         return true;
     }
 
@@ -248,7 +246,6 @@ export class TaskDOMPatch {
         if (reorderNeeded) {
             // Atomic swap - single reflow
             taskList.replaceChildren(fragment);
-            console.log(`🎨 Reordered ${taskIds.length} tasks`);
         }
 
         return true;
@@ -279,4 +276,3 @@ export class TaskDOMPatch {
     }
 }
 
-console.log('🔧 TaskDOMPatch module loaded');

@@ -1061,4 +1061,3 @@ export const APP_URL = 'https://minicycle.app';
 export const CONSTANTS_VERSION = globalThis.APP_VERSION;
 
 // Phase 2 Step 6 - Clean exports (no window.* pollution)
-console.log(`🔧 Core constants loaded (v${CONSTANTS_VERSION})`);

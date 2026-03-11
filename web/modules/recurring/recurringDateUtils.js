@@ -34,13 +34,11 @@ export function convert12To24(hour, meridiem) {
  * @returns {Date} Parsed date object
  */
 export function parseDateAsLocal(dateStr) {
-    console.log('📅 Parsing date as local:', dateStr);
 
     try {
         const [year, month, day] = dateStr.split("-").map(Number);
         const result = new Date(year, month - 1, day); // month is 0-indexed
 
-        console.log('✅ Date parsed successfully:', result);
         return result;
     } catch (error) {
         console.error('❌ Error parsing date:', error);
@@ -205,4 +203,3 @@ export function calculateNthWeekdayOfMonth(year, month, weekday, ordinal) {
     return null;
 }
 
-console.log('📅 RecurringDateUtils module loaded');

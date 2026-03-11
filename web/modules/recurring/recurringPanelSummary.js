@@ -179,4 +179,3 @@ export function buildRecurringSummaryFromSettings(settings = {}) {
     return summaryText;
 }
 
-console.log('recurringPanelSummary module loaded');

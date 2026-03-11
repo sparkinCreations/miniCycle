@@ -100,9 +100,7 @@ export function safeShowNotification(message, type = "info", duration) {
         if (typeof deps.showNotification === 'function') {
             return deps.showNotification(message, type, duration);
         }
-        console.log(`[Notification Fallback] ${message}`);
     } catch (error) {
-        console.log(`[Notification Fallback] ${message}`);
         console.warn('Notification system error:', error);
     }
 }
@@ -213,7 +211,6 @@ export function appendToTestResults(message) {
 
     testingOutput.textContent += message;
     testingOutput.scrollTop = testingOutput.scrollHeight;
-    console.log("Test:", message.replace(/\n/g, ''));
 }
 
 /**
@@ -365,4 +362,3 @@ export function setupResultsControls(setupResultsAreaResize) {
     }
 }
 
-console.log('Testing Modal Core loaded (DI-pure)');

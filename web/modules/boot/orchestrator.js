@@ -39,7 +39,7 @@ const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
 
 // Module references (populated by loadDependencies)
 let installDebugFilter, setDebugModeDependencies, refreshDebugState, enableDebugFn, disableDebugFn, isDebugFn;
-let setStorageDependencies;
+let setStorageDependencies, getLocalStorageUsedBytesFn, getLocalStorageQuotaFn;
 let BOOT_TIMEOUTS;
 let attemptCacheRecovery, clearAllCaches, clearRecoveryFlags, isRecoveryExhausted;
 
@@ -49,7 +49,6 @@ let deps = null;
 
 // Load all dependencies with version params (Safari memory cache fix)
 async function loadDependencies() {
-  console.log('🔄 Loading orchestrator dependencies...');
 
   try {
     const [debugMod, storageMod, constantsMod, coreBootMod] = await Promise.all([
@@ -58,9 +57,6 @@ async function loadDependencies() {
       import(`../core/constants.js?v=${APP_VERSION}`),
       import(`./coreBoot.js?v=${APP_VERSION}`)
     ]);
-
-    console.log('📦 Modules loaded, extracting exports...');
-    console.log('   constants exports:', Object.keys(constantsMod));
 
     // Assign from debugMode
     installDebugFilter = debugMod.installDebugFilter;
@@ -72,6 +68,8 @@ async function loadDependencies() {
 
     // Assign from storageUtils
     setStorageDependencies = storageMod.setStorageDependencies;
+    getLocalStorageUsedBytesFn = storageMod.getLocalStorageUsedBytes;
+    getLocalStorageQuotaFn = storageMod.getLocalStorageQuota;
 
     // Assign from constants - with validation
     BOOT_TIMEOUTS = constantsMod.BOOT_TIMEOUTS;
@@ -100,7 +98,6 @@ async function loadDependencies() {
       installDebugFilter();
     }
 
-    console.log('✅ Orchestrator dependencies loaded (BOOT_TIMEOUTS.MODULE_IMPORT =', BOOT_TIMEOUTS?.MODULE_IMPORT, ')');
   } catch (error) {
     console.error('❌ Failed to load orchestrator dependencies:', error);
     // Use fallback BOOT_TIMEOUTS to allow boot to continue
@@ -163,7 +160,6 @@ function withTimeout(promise, ms, phaseName) {
  * Redirect to lite version as fallback
  */
 function redirectToLite() {
-  console.log('🔄 Redirecting to lite version...');
   // Preserve any query params except mode
   const url = new URL(LITE_VERSION_PATH, window.location.origin);
   url.searchParams.set('fallback', 'true');
@@ -409,7 +405,6 @@ async function runBootSequence() {
 
   // ========== LOAD BOOT MODULES (with timeout) ==========
   updateLoaderProgress(getLabel('boot.loadingCore'), 15);
-  console.log(`📥 Loading boot modules... (online: ${navigator.onLine}, SW: ${!!navigator.serviceWorker?.controller})`);
   const importStart = Date.now();
   const [coreBoot, featureBoot, uiBoot] = await withTimeout(
     Promise.all([
@@ -420,7 +415,6 @@ async function runBootSequence() {
     BOOT_TIMEOUTS.MODULE_IMPORT,
     'Module import'
   );
-  console.log(`✅ Boot modules loaded in ${Date.now() - importStart}ms`);
 
   const { initCoreBoot, initAppState } = coreBoot;
   const { bootFeatures, bootEarlyDeps } = featureBoot;
@@ -439,12 +433,10 @@ async function runBootSequence() {
       utils: {}, features: {}, ui: {}, core: {}, task: {},
       cycle: {}, recurring: {}, progress: {}, storage: {}, testing: {}
     };
-    console.log('📦 Created fresh deps container');
   } else {
     // ✅ CRITICAL FIX: Clear module loader cache on retry
     // Cached modules have DI closures that captured the old deps from attempt 1
     // We need to reload all modules so they get fresh closures with the current deps
-    console.log('♻️ Retry detected - clearing module cache to refresh DI closures');
     clearLoadedModules();
 
     // ✅ CRITICAL FIX 3: Reset appInit state on retry
@@ -455,7 +447,6 @@ async function runBootSequence() {
     // On retry, we need to rebuild all deps from scratch so Proxy getters work correctly
     // IMPORTANT: We must CLEAR properties, not replace objects, because moduleLoader
     // creates Proxies with closures that capture deps.core reference
-    console.log('🧹 Clearing nested deps object properties for fresh DI wiring');
     Object.keys(deps.utils || {}).forEach(key => delete deps.utils[key]);
     Object.keys(deps.features || {}).forEach(key => delete deps.features[key]);
     Object.keys(deps.ui || {}).forEach(key => delete deps.ui[key]);
@@ -470,20 +461,25 @@ async function runBootSequence() {
 
   // ========== PHASE 1: CORE (with timeout) ==========
   updateLoaderProgress(getLabel('boot.startingSystems'), 30);
-  console.log('🔧 Phase 1: Core systems...');
   const coreResult = await withTimeout(
     initCoreBoot(deps, versionSuffix),
     BOOT_TIMEOUTS.PHASE_1,
     'Phase 1 (Core)'
   );
-  if (!coreResult) { console.log('⏳ Core boot initiated reload...'); return false; }
+  if (!coreResult) { return false; }
 
   const { GlobalUtils } = coreResult;
   await bootEarlyDeps(deps, coreResult);
   await initAppState(deps, deps.utils.showNotification);
 
-  // Wire AppState into debugMode for state-based persistence
-  setDebugModeDependencies({ AppState: deps.core.AppState });
+  // Wire AppState + diagnostic deps into debugMode
+  setDebugModeDependencies({
+      AppState: deps.core.AppState,
+      getLocalStorageUsedBytes: getLocalStorageUsedBytesFn,
+      getLocalStorageQuota: getLocalStorageQuotaFn,
+      AppGlobalState: deps.core.AppGlobalState,
+      FeatureFlags: deps.core.FeatureFlags
+  });
   refreshDebugState();
 
   // Store versioned debug functions in deps for DI chain
@@ -495,8 +491,6 @@ async function runBootSequence() {
   // Wire AppState into storageUtils for quota caching
   setStorageDependencies({ AppState: deps.core.AppState });
 
-  console.log(`✅ Phase 1 complete (${Date.now() - bootStart}ms)`);
-
   // Inject large dialog modals BEFORE Phase 2 — modules query these elements during init
   const { RECURRING_PANEL_HTML, PREFERENCES_MODAL_HTML, SETTINGS_MODAL_HTML } =
       await import(`./modalTemplates.js${vParam}`);
@@ -506,11 +500,9 @@ async function runBootSequence() {
       ?.insertAdjacentHTML('beforebegin', PREFERENCES_MODAL_HTML);
   document.getElementById('testing-modal')
       ?.insertAdjacentHTML('beforebegin', SETTINGS_MODAL_HTML);
-  console.log('✅ Modal templates injected');
 
   // ========== PHASE 2: FEATURES (with timeout) ==========
   updateLoaderProgress(getLabel('boot.loadingFeatures'), 55);
-  console.log('🔌 Phase 2: Feature modules...');
   await withTimeout(
     bootFeatures(deps, coreResult),
     BOOT_TIMEOUTS.PHASE_2,
@@ -520,11 +512,9 @@ async function runBootSequence() {
   // ✅ Use version param for cache-busting (like appInit pattern)
   const appContextMod = await import(`../core/appContext.js${vParam}`);
   appContextMod.validateAllApisRegistered();
-  console.log(`✅ Phase 2 complete (${Date.now() - bootStart}ms)`);
 
   // ========== PHASE 3: DATA & UI (with timeout) ==========
   updateLoaderProgress(getLabel('boot.startingUp'), 85);
-  console.log('🎨 Phase 3: Data & UI...');
 
   await withTimeout(
     (async () => {
@@ -550,7 +540,6 @@ async function runBootSequence() {
 
   updateLoaderProgress(getLabel('boot.ready'), 100);
   const totalTime = Date.now() - bootStart;
-  console.log(`✅ miniCycle initialization complete (${totalTime}ms)`);
 
   // Clear recovery flags on successful boot
   clearRecoveryFlags();
@@ -566,7 +555,6 @@ async function runBootSequence() {
   if (navigator.onLine && 'serviceWorker' in navigator && navigator.serviceWorker.controller) {
     try {
       navigator.serviceWorker.controller.postMessage({ type: 'WARM_CACHE' });
-      console.log('🔥 Warm cache request sent to SW');
     } catch (e) {
       // Non-critical — don't let cache warming break boot
     }
@@ -641,7 +629,6 @@ async function initApp() {
   if (needsReload) return;
 
   bootAttempt++;
-  console.log(`🚀 Starting miniCycle initialization (attempt ${bootAttempt})...`);
 
   try {
     const success = await runBootSequence();
@@ -654,7 +641,6 @@ async function initApp() {
       // after being killed while backgrounded. The retry delay gives it time to spin up.
       // Version suffix is already suppressed when offline (no version mismatch risk).
       showBootError(phase, error, true);
-      console.log(`🔄 Retrying boot in ${BOOT_TIMEOUTS.RETRY_DELAY}ms...`);
       await new Promise(resolve => setTimeout(resolve, BOOT_TIMEOUTS.RETRY_DELAY));
       return initApp(); // Retry
     } else {
@@ -692,21 +678,17 @@ async function waitForServiceWorker(timeoutMs = 3000) {
 
     // If there's a waiting worker, it means an update is pending - don't wait
     if (registration.waiting) {
-      console.log('⚠️ SW update pending, proceeding with boot');
       return;
     }
     // If controller exists, SW is active and ready
     if (navigator.serviceWorker.controller) {
-      console.log('✅ Service worker ready');
       return;
     }
     // Wait for controller to be set
-    console.log(`⏳ Waiting for SW controller (offline: ${isOffline}, timeout: ${effectiveTimeout}ms)`);
     await new Promise((resolve) => {
       const timeout = setTimeout(resolve, effectiveTimeout);
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         clearTimeout(timeout);
-        console.log('✅ SW controller acquired');
         resolve();
       }, { once: true });
     });
@@ -714,7 +696,6 @@ async function waitForServiceWorker(timeoutMs = 3000) {
     console.warn('SW ready check failed:', e.message);
     // If offline and SW isn't ready, wait a bit more for iOS to spin it up
     if (isOffline && !navigator.serviceWorker.controller) {
-      console.log('⏳ Offline with no SW controller, extra wait...');
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
   }

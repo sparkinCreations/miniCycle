@@ -168,8 +168,6 @@ export async function debugAppState() {
     return;
   }
 
-  console.log('Ready:', AppState.isReady());
-
   const state = AppState.get();
   if (!state) {
     console.error('❌ No state data');
@@ -177,27 +175,11 @@ export async function debugAppState() {
     return;
   }
 
-  console.log('📊 Full State:', state);
-  console.log('🎯 Active Cycle:', state.appState?.activeCycleId);
-
   const activeCycle = state.appState?.activeCycleId;
   const cycleData = state.data?.cycles?.[activeCycle];
-  console.log('🔢 Cycle Count:', cycleData?.cycleCount || 0);
-  console.log('🎨 Unlocked Themes:', state.settings?.unlockedThemes || []);
-  console.log('🎮 Unlocked Features:', state.settings?.unlockedFeatures || []);
-  console.log('👤 User Progress:', state.userProgress || {});
-  console.log('🏆 Reward Milestones:', state.userProgress?.rewardMilestones || []);
-
-  // Check milestone eligibility
-  const currentCount = cycleData?.cycleCount || 0;
-  console.log(`🏆 Milestone Status:
-    - Dark Ocean (5 cycles): ${currentCount >= 5 ? '✅ Eligible' : `❌ Need ${5 - currentCount} more`}
-    - Golden Glow (50 cycles): ${currentCount >= 50 ? '✅ Eligible' : `❌ Need ${50 - currentCount} more`}
-    - Mini Game (100 cycles): ${currentCount >= 100 ? '✅ Eligible' : `❌ Need ${100 - currentCount} more`}`);
 
   console.groupEnd();
 }
 
 // ✅ debugAppState requires AppState to be set first via setDebugAppState(AppState)
 
-console.log('✅ appGlobalState.js loaded');

@@ -250,7 +250,6 @@ export function registerApi(name, api) {
         return;
     }
     apis[name] = api;
-    console.log(`✅ appContext: ${name} API registered`);
 }
 
 /**
@@ -331,7 +330,6 @@ export function initAppContext(deps) {
         }
     });
     isInitialized = true;
-    console.log('✅ appContext initialized with:', Object.keys(deps).filter(k => deps[k] != null));
 }
 
 /**
@@ -391,7 +389,6 @@ export function validateAllApisRegistered() {
         return false;
     }
 
-    console.log('✅ appContext validation passed - all APIs registered');
     return true;
 }
 
@@ -430,4 +427,3 @@ export function createLazyDeps() {
 // Version constant for cache validation (derives from Single Source of Truth)
 export const APPCONTEXT_VERSION = globalThis.APP_VERSION;
 
-console.log(`📦 appContext module loaded (v${APPCONTEXT_VERSION} - grouped APIs)`);

@@ -47,7 +47,6 @@ export function shouldTaskRecurNow(settings, now = new Date()) {
         endDate.setHours(23, 59, 59, 999);
 
         if (now > endDate) {
-            console.log('⏸️ Recurring task past end date:', settings.untilDate);
             return false; // Past the end date, don't recur
         }
     }
@@ -320,7 +319,6 @@ export function shouldRecreateRecurringTask(template, taskList, now) {
 
     // Suppressed?
     if (suppressUntil && new Date(suppressUntil) > now) {
-        console.log(`⏸ Skipping "${text}" — suppressed until ${suppressUntil}`);
         return false;
     }
 
@@ -340,4 +338,3 @@ export function shouldRecreateRecurringTask(template, taskList, now) {
     return shouldTaskRecurNow(recurringSettings, now);
 }
 
-console.log('🎯 RecurringMatcher module loaded');

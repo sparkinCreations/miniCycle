@@ -24,7 +24,6 @@ let _actions = {};
  */
 export function setFormActions(actions) {
     _actions = actions;
-    console.log('recurringPanelForm actions set');
 }
 
 // ============================================================================
@@ -256,7 +255,6 @@ export function buildRecurringSettingsFromPanel(deps, state) {
  * @param {Object} settings - Recurring settings to populate
  */
 export function populateRecurringFormWithSettings(deps, settings) {
-    console.log('Populating recurring form with settings:', settings);
 
     try {
         // Frequency dropdown
@@ -283,8 +281,6 @@ export function populateRecurringFormWithSettings(deps, settings) {
         // Update the summary display via callback
         _actions.updateRecurringSummary?.();
 
-        console.log('Form populated successfully');
-
     } catch (error) {
         console.error('Error populating form with settings:', error);
     }
@@ -295,7 +291,6 @@ export function populateRecurringFormWithSettings(deps, settings) {
  * @param {Object} deps - Dependencies (getElementById)
  */
 export function clearRecurringForm(deps) {
-    console.log('Clearing recurring form');
 
     try {
         // Reset frequency to default
@@ -317,11 +312,8 @@ export function clearRecurringForm(deps) {
             countInput.value = '';
         }
 
-        console.log('Form cleared successfully');
-
     } catch (error) {
         console.error('Error clearing form:', error);
     }
 }
 
-console.log('recurringPanelForm module loaded');

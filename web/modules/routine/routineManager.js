@@ -69,7 +69,6 @@ const _deps = new Proxy({}, {
  */
 export function setRoutineManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🔄 RoutineManager dependencies set:', Object.keys(dependencies));
 }
 
 export class RoutineManager {
@@ -118,7 +117,6 @@ export class RoutineManager {
 
         // Instance version - uses injected AppMeta (no hardcoded fallback)
         this.version = resolvedDeps.AppMeta?.version;
-        console.log('✅ RoutineManager initialized');
     }
 
     /**
@@ -166,14 +164,12 @@ export class RoutineManager {
      * Fallback notification for when showNotification isn't available
      */
     fallbackNotification(message, type, duration) {
-        console.log(`[${type?.toUpperCase() || 'INFO'}] ${message}`);
     }
 
     /**
      * Show cycle creation modal for onboarding
      */
     showCycleCreationModal() {
-        console.log('🆕 Showing cycle creation modal...');
 
         setTimeout(() => {
             this.deps.showPromptModal({
@@ -184,15 +180,12 @@ export class RoutineManager {
                 cancelText: getLabel('button.loadSample'),
                 callback: async (input) => {
                     if (!input || input.trim() === "") {
-                        console.log('📥 User chose sample cycle');
                         await this.preloadGettingStartedCycle();
                         return;
                     }
 
                     const newCycleName = this.deps.sanitizeInput(input.trim());
                     const cycleId = `cycle_${Date.now()}`;
-
-                    console.log('🔄 Creating new cycle:', newCycleName);
 
                     // ✅ Use AppState as source of truth
                     const appState = this.deps.AppState;
@@ -207,7 +200,6 @@ export class RoutineManager {
                     const { name: finalTitle, wasModified } = getUniqueCycleName(newCycleName, existingCycles);
 
                     if (wasModified) {
-                        console.log(`⚠️ Name collision: "${newCycleName}" → "${finalTitle}"`);
                         this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                     }
 
@@ -237,8 +229,6 @@ export class RoutineManager {
                         state.metadata.lastModified = Date.now();
                         state.metadata.totalCyclesCreated++;
                     }, true); // immediate save
-
-                    console.log('💾 New cycle saved via AppState');
 
                     // ✅ Notify undo system of new cycle (onboarding path)
                     if (typeof this.deps.onCycleCreated === 'function') {
@@ -277,7 +267,6 @@ export class RoutineManager {
      * @returns {Promise<boolean>} True if sample loaded successfully, false on failure
      */
     async preloadGettingStartedCycle(options = {}) {
-        console.log('📥 Preloading getting started cycle (Schema 2.5 only)...');
 
         try {
             const response = await fetch("examples/routines/sample-getting-started.mcyc");
@@ -287,11 +276,6 @@ export class RoutineManager {
             }
 
             const sample = await response.json();
-
-            console.log('📄 Sample data loaded:', {
-                title: sample.title || sample.name,
-                taskCount: sample.tasks?.length || 0
-            });
 
             // ✅ Use AppState as source of truth
             const appState = this.deps.AppState;
@@ -306,8 +290,6 @@ export class RoutineManager {
             // ✅ Get unique name (uses centralized utility)
             const existingCycles = appState.get()?.data?.cycles || {};
             const { name: finalTitle, wasModified } = getUniqueCycleName(sampleTitle, existingCycles);
-
-            console.log('🔄 Creating sample cycle:', finalTitle);
 
             // ✅ Create sample cycle via AppState.update() - use title as key
             await appState.update(state => {
@@ -335,9 +317,6 @@ export class RoutineManager {
                 state.metadata.lastModified = Date.now();
                 state.metadata.totalCyclesCreated++;
             }, true); // immediate save
-
-            console.log('💾 Sample cycle saved via AppState');
-            console.log('📈 Total cycles created:', appState.get().metadata.totalCyclesCreated);
 
             // ✅ CLOSE ANY OPEN MODALS
             const existingModals = this.deps.querySelectorAll('dialog.miniCycle-prompt-dialog, dialog.mini-modal-dialog');
@@ -374,7 +353,6 @@ export class RoutineManager {
      * Create a basic fallback cycle if sample loading fails
      */
     async createBasicFallbackCycle() {
-        console.log('🆘 Creating basic fallback cycle...');
 
         // ✅ Use AppState as source of truth
         const appState = this.deps.AppState;
@@ -423,8 +401,6 @@ export class RoutineManager {
             state.metadata.totalCyclesCreated++;
         }, true); // immediate save
 
-        console.log('✅ Basic fallback cycle created via AppState');
-
         // ✅ Notify undo system of new cycle (fallback path)
         if (typeof this.deps.onCycleCreated === 'function') {
             this.deps.onCycleCreated(finalTitle).catch(err => {
@@ -439,7 +415,6 @@ export class RoutineManager {
      * Create a new miniCycle from the main menu
      */
     createNewMiniCycle() {
-        console.log('🆕 Creating new miniCycle (state-based)...');
 
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
@@ -470,24 +445,20 @@ export class RoutineManager {
             required: true,
             callback: (result) => {
                 if (!result) {
-                    console.log('❌ User cancelled creation');
                     this.deps.showNotification("❌ " + getLabel('notify.creationCancelled'), 'info', UI_TIMEOUTS.NOTIFICATION_LONG);
                     return;
                 }
 
                 const newCycleName = this.deps.sanitizeInput(result.trim());
-                console.log('🔍 Processing new cycle name:', newCycleName);
 
                 // ✅ Create unique ID first
                 const cycleId = `cycle_${Date.now()}`;
-                console.log('🆔 Generated cycle ID:', cycleId);
 
                 // ✅ Get unique name before update (uses centralized utility)
                 const existingCycles = this.deps.AppState.get()?.data?.cycles || {};
                 const { name: finalTitle, wasModified } = getUniqueCycleName(newCycleName, existingCycles);
 
                 if (wasModified) {
-                    console.log(`⚠️ Name collision: "${newCycleName}" → "${finalTitle}"`);
                     this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                 }
 
@@ -496,7 +467,6 @@ export class RoutineManager {
 
                 // ✅ Update through state system
                 this.deps.AppState.update(state => {
-                    console.log('🔄 Creating new cycle with storage key:', storageKey);
 
                     // ✅ Create new cycle in Schema 2.5 format
                     state.data.cycles[storageKey] = {
@@ -517,15 +487,10 @@ export class RoutineManager {
                     state.metadata.lastModified = Date.now();
                     state.metadata.totalCyclesCreated++;
 
-                    console.log('💾 Saving through state system...');
-                    console.log('📈 Total cycles created:', state.metadata.totalCyclesCreated);
-
                     // Store result for UI updates (avoiding window hack)
                     finalResult = { storageKey, finalTitle };
 
                 }, true); // immediate save
-
-                console.log('🔄 Updating UI elements...');
 
                 // ✅ Clear UI & Load new miniCycle
                 const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
@@ -591,7 +556,6 @@ export class RoutineManager {
                 }
 
                 if (finalResult) {
-                    console.log(`✅ Created and switched to new miniCycle (state-based): "${finalResult.finalTitle}" (key: ${finalResult.storageKey})`);
                     this.deps.showNotification(`✅ ${getLabel('notify.routineCreated', { vars: { name: finalResult.finalTitle } })}`, "success", UI_TIMEOUTS.NOTIFICATION_LONG);
                 }
             }
@@ -603,7 +567,6 @@ export class RoutineManager {
 let routineManager = null;
 
 // Phase 3 - No window.* exports (main script handles exposure)
-console.log('✅ RoutineManager module loaded (Phase 3 - no window.* exports)');
 
 /**
  * Initialize the RoutineManager module
@@ -615,8 +578,6 @@ export async function initRoutineManager(dependencies) {
     // Dynamically import utilities with version for cache-busting
     const version = APP_VERSION;
 
-    console.log(`📦 RoutineManager: Loading utilities with version ${version}...`);
-
     // Import storage utilities
     const storageUtils = await import(`../utils/storageUtils.js?v=${version}`);
     canAddToStorage = storageUtils.canAddToStorage;
@@ -626,11 +587,8 @@ export async function initRoutineManager(dependencies) {
     const nameUtils = await import(`../utils/nameUtils.js?v=${version}`);
     getUniqueCycleName = nameUtils.getUniqueCycleName;
 
-    console.log('✅ RoutineManager: Utilities loaded');
-
     // Now create the instance
     routineManager = new RoutineManager(dependencies);
-    console.log('✅ RoutineManager instance created');
     return routineManager;
 }
 

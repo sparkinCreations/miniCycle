@@ -39,7 +39,6 @@ const _deps = new Proxy({}, {
  */
 export function setTaskInteractionsDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('TaskInteractions dependencies set:', Object.keys(dependencies));
 }
 
 /**
@@ -102,4 +101,3 @@ export function attachKeyboardTaskOptionToggle(taskItem) {
 }
 
 // DI-pure module (no window.* exports)
-console.log('TaskInteractions module loaded (DI-pure, no window.* exports)');

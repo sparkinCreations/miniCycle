@@ -77,7 +77,6 @@ function _downloadRoutineFile(dataBlob, fileName) {
  */
 export function setupShareRoutineButton() {
     if (_shareRoutineInitialized) {
-        console.log('✅ Share routine button already set up');
         return;
     }
     _shareRoutineInitialized = true;
@@ -211,7 +210,6 @@ export function setupShareRoutineButton() {
  */
 export function setupShareAppButton() {
     if (_shareAppInitialized) {
-        console.log('✅ Share app button already set up');
         return;
     }
     _shareAppInitialized = true;
@@ -264,4 +262,3 @@ export function setupShareAppButton() {
     safeAddEventListener(shareAppBtn, 'click', shareAppBtn._clickHandler);
 }
 
-console.log('Share Manager loaded');

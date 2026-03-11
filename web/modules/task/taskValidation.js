@@ -45,7 +45,6 @@ const _deps = new Proxy({}, {
  */
 export function setTaskValidationDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🔒 TaskValidation dependencies set:', Object.keys(dependencies));
 }
 
 export class TaskValidator {
@@ -61,7 +60,7 @@ export class TaskValidator {
         // Store dependencies - showNotification is optional
         this.deps = {
             sanitizeInput: resolvedDeps.sanitizeInput,
-            showNotification: resolvedDeps.showNotification || ((msg) => console.log(msg))
+            showNotification: resolvedDeps.showNotification || (() => {})
         };
 
         // Constants
@@ -70,7 +69,6 @@ export class TaskValidator {
         // Instance version - uses injected AppMeta (no hardcoded fallback)
         this.version = resolvedDeps.AppMeta?.version;
 
-        console.log('🔒 TaskValidator created');
     }
 
     /**
@@ -163,4 +161,3 @@ function validateAndSanitizeTaskInput(taskText) {
 export { validateAndSanitizeTaskInput };
 
 // Phase 2 Step 6 - Clean exports (no window.* pollution)
-console.log('🔒 TaskValidation module loaded (Phase 2 - no window.* exports)');

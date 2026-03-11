@@ -228,7 +228,6 @@ const _deps = new Proxy({}, {
  */
 export function setPreferencesManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🎨 PreferencesManager dependencies set:', Object.keys(dependencies));
 }
 
 // ============================================================================
@@ -251,8 +250,6 @@ async function loadPreferencesSubModules(version) {
         return; // Already loaded
     }
 
-    console.log(`Loading preferencesManager sub-modules with v=${version}...`);
-
     const [bgImageMod, presetsMod] = await Promise.all([
         import(`./preferencesBgImage.js?v=${version}`),
         import(`./preferencesPresets.js?v=${version}`)
@@ -261,7 +258,6 @@ async function loadPreferencesSubModules(version) {
     _bgImageModule = bgImageMod;
     _presetsModule = presetsMod;
 
-    console.log('🎨 preferencesManager sub-modules loaded');
 }
 
 // ============================================================================
@@ -309,7 +305,6 @@ export class PreferencesManager {
             _bgImageModule.initBgImage(_deps.AppState); // Load saved background image
 
             this._initialized = true;
-            console.log('🎨 PreferencesManager initialized');
         } catch (error) {
             console.warn('⚠️ PreferencesManager initialization failed:', error);
         }
@@ -926,7 +921,6 @@ export class PreferencesManager {
      * @param {boolean} visible - Whether the checkbox fill should be visible
      */
     handleCheckboxFillToggle(visible) {
-        console.log('🎨 Checkbox fill toggle:', visible);
 
         // Save to appState
         if (_deps.AppState) {
@@ -958,7 +952,6 @@ export class PreferencesManager {
      * @param {boolean} visible - Whether the incomplete checkbox should be visible
      */
     handleCheckboxIncompleteToggle(visible) {
-        console.log('🎨 Checkbox incomplete toggle:', visible);
 
         // Save to appState
         if (_deps.AppState) {
@@ -990,7 +983,6 @@ export class PreferencesManager {
      * @param {boolean} visible - Whether the background pattern should be visible
      */
     handleBackgroundPatternToggle(visible) {
-        console.log('🎨 Background pattern toggle:', visible);
 
         // Save to appState
         if (_deps.AppState) {
@@ -1074,7 +1066,6 @@ export class PreferencesManager {
      * @param {string} color - The hex color value
      */
     handlePatternColorChange(color) {
-        console.log('🎨 Pattern color change:', color);
 
         // Save to appState
         if (_deps.AppState) {
@@ -1100,7 +1091,6 @@ export class PreferencesManager {
      * @param {number} percent - Opacity percentage (1-25)
      */
     handlePatternOpacityChange(percent) {
-        console.log('🎨 Pattern opacity change:', percent + '%');
 
         // Save to appState
         if (_deps.AppState) {

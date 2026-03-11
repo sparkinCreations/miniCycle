@@ -64,7 +64,6 @@ const _deps = new Proxy({}, {
  */
 export function setTaskRendererDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🎨 TaskRenderer dependencies set:', Object.keys(dependencies));
 }
 
 export class TaskRenderer {
@@ -117,7 +116,6 @@ export class TaskRenderer {
         // Instance version - uses injected AppMeta (no hardcoded fallback)
         this.version = resolvedDeps.AppMeta?.version;
 
-        console.log('🎨 TaskRenderer created');
     }
 
     /**
@@ -127,7 +125,6 @@ export class TaskRenderer {
      */
     injectDependency(name, value) {
         this.deps[name] = value;
-        console.log(`💉 TaskRenderer: Injected dependency '${name}'`);
     }
 
     /**
@@ -164,7 +161,6 @@ export class TaskRenderer {
      * @returns {Promise<void>}
      */
     async renderTasks(tasksArray = []) {
-        console.log('🔄 Rendering tasks (Schema 2.5 only)...');
 
         const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
         if (!taskList) {
@@ -176,8 +172,6 @@ export class TaskRenderer {
             console.warn('⚠️ Invalid tasks array provided to renderTasks');
             return;
         }
-
-        console.log(`📋 Rendering ${tasksArray.length} tasks`);
 
         // ✅ Create DocumentFragment for batched DOM operations
         // Using try/catch to preserve existing DOM if rendering fails mid-way
@@ -246,7 +240,6 @@ export class TaskRenderer {
         // Update task search visibility based on count
         this.deps.updateSearchVisibility?.(tasksArray.length);
 
-        console.log('✅ Tasks rendered successfully (atomic replaceChildren)');
     }
 
     /**
@@ -339,7 +332,6 @@ export class TaskRenderer {
                 taskOptions.querySelectorAll('button.task-btn').forEach(btn => {
                     btn.tabIndex = 0;
                 });
-                console.log(`✅ Restored active task options for: ${activeTaskId}`);
             }
         }
     }
@@ -404,7 +396,6 @@ async function refreshTaskListUI() {
 // ============================================
 
 // Phase 2 Step 8 - Clean exports (no window.* pollution)
-console.log('🎨 TaskRenderer module loaded (Phase 2 - no window.* exports)');
 
 // ES6 exports
 export {

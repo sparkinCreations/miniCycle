@@ -110,7 +110,6 @@ class ErrorHandler {
             event.preventDefault();
         });
 
-        console.log('🛡️ Global error handlers initialized');
     }
 
     /**
@@ -256,4 +255,3 @@ const errorHandler = new ErrorHandler();
 // Named export (preferred over default export)
 export { errorHandler };
 
-console.log('📦 ErrorHandler module loaded (using diBase)');

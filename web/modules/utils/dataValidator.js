@@ -284,4 +284,3 @@ export class DataValidator {
     }
 }
 
-console.log('📦 DataValidator module loaded (using diBase)');

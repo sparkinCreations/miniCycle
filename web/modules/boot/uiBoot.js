@@ -106,7 +106,6 @@ export function attachGlobalEventListeners(GlobalUtils, options = {}) {
   // ========== Passive Touchstart (for scroll performance) ==========
   safeAddEventListener(document, 'touchstart', handlePassiveTouchstart, { passive: true });
 
-  console.log('✅ Global event listeners attached via uiBoot.js');
 }
 
 /**
@@ -122,7 +121,6 @@ export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton, 
   // Add Task Button (Click)
   if (addTaskButton) {
     safeAddEventListener(addTaskButton, 'click', () => {
-      console.log('🔘 Add Task button clicked');
       // Enable undo system on first user interaction
       try {
         appContextMod?.getUndoApi?.()?.enableOnFirstInteraction?.();
@@ -131,7 +129,6 @@ export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton, 
       }
 
       const taskText = taskInput?.value?.trim() || '';
-      console.log('📝 Task text:', taskText);
       if (!taskText) {
         console.warn('⚠ Cannot add an empty task.');
         return;
@@ -139,8 +136,6 @@ export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton, 
 
       try {
         const taskApi = appContextMod.getTaskApi();
-        console.log('🔍 TaskAPI:', taskApi);
-        console.log('🔍 TaskAPI.add:', taskApi?.add);
         taskApi?.add?.(taskText);
       } catch (e) {
         console.error('❌ Failed to add task:', e);
@@ -156,7 +151,6 @@ export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton, 
   if (taskInput) {
     safeAddEventListener(taskInput, 'keypress', (event) => {
       if (event.key === 'Enter') {
-        console.log('⌨️ Enter key pressed');
         // Enable undo system on first user interaction
         try {
           appContextMod?.getUndoApi?.()?.enableOnFirstInteraction?.();
@@ -183,7 +177,6 @@ export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton, 
     });
   }
 
-  console.log('✅ Task input listeners attached');
 }
 
 /**
@@ -363,7 +356,6 @@ function handleGlobalClickForSwitchModal(event) {
  * Handle reset notification position click
  */
 async function handleResetNotificationPosition() {
-  console.log('🔄 Resetting notification position (Schema 2.5 only)...');
 
   // Use appContext getters
   const AppState = getAppState();
@@ -384,8 +376,6 @@ async function handleResetNotificationPosition() {
       state.settings.notificationPositionModified = false;
     }, true);
 
-    console.log('✅ Notification position reset in Schema 2.5');
-
     // Use grouped API
     try {
       getUiApi()?.resetNotificationPosition?.();
@@ -404,7 +394,6 @@ async function handleResetNotificationPosition() {
  * Handle open reminders modal click
  */
 function handleOpenRemindersModalClick() {
-  console.log('🔔 Opening reminders modal (Schema 2.5 only)...');
 
   // Use grouped APIs
   try {
@@ -425,7 +414,6 @@ function handleOpenRemindersModalClick() {
     // Menu API not ready - ok
   }
 
-  console.log('✅ Reminders modal opened');
 }
 
 /**
@@ -442,7 +430,6 @@ function handleFirstTouchInteraction() {
     // stateApi not registered yet - fallback silently
     console.warn('⚠️ First touch before stateApi ready');
   }
-  console.log('✅ First touch interaction detected');
 }
 
 /**
@@ -627,7 +614,6 @@ export function detectDeviceType() {
     document.body.classList.remove('desktop-mode');
   }
 
-  console.log('✅ Device type detected (fallback):', isFinePointer ? 'desktop' : 'touch');
 }
 
 /**
@@ -779,7 +765,6 @@ export async function finalizeUI(options) {
   // earlier. By running last in finalizeUI(), we guarantee the themed values win.
   deps.features?.themeManager?.refreshThemeLabels?.();
 
-  console.log('✅ UI finalized');
 }
 
 // ============================================================================
@@ -847,8 +832,6 @@ export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
   hideAppLoader();
   requestAnimationFrame(() => taskInput?.focus({ focusVisible: false }));
 
-  console.log('✅ UI boot complete');
-
   // ========== SESSION BACKUP (non-blocking) ==========
   // Create a session backup on every app open (keeps last 5)
   // This runs after UI is fully loaded to avoid blocking boot
@@ -867,4 +850,3 @@ export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
 // MODULE INFO
 // ============================================================================
 
-console.log('📱 uiBoot.js loaded (UI event handlers & helpers)');

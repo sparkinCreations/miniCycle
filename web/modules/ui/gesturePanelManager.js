@@ -69,7 +69,6 @@ export class GesturePanelManager {
         // Initialization flag
         this._eventListenersInitialized = false;
 
-        console.log('📱 GesturePanelManager initializing...');
     }
 
     /**
@@ -77,7 +76,6 @@ export class GesturePanelManager {
      */
     init() {
         this.setupEventListeners();
-        console.log('✅ GesturePanelManager initialized');
     }
 
     /**
@@ -86,7 +84,6 @@ export class GesturePanelManager {
     setupEventListeners() {
         // Idempotency guard
         if (this._eventListenersInitialized) {
-            console.log('✅ GesturePanelManager event listeners already set up');
             return;
         }
         this._eventListenersInitialized = true;
@@ -451,7 +448,6 @@ export class GesturePanelManager {
      * Cleanup event listeners
      */
     destroy() {
-        console.log('🧹 Cleaning up GesturePanelManager...');
 
         // Remove event listeners
         document.removeEventListener("touchstart", this.boundHandlers.handleTouchStart);
@@ -473,7 +469,6 @@ export class GesturePanelManager {
         }
 
         this._eventListenersInitialized = false;
-        console.log('✅ GesturePanelManager cleanup completed');
     }
 }
 
@@ -505,4 +500,3 @@ export function getGesturePanelManager() {
     return instance;
 }
 
-console.log('📱 GesturePanelManager module loaded (DI-pure)');

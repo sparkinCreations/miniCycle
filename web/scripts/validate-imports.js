@@ -156,7 +156,6 @@ function validateFile(filePath) {
  * Main validation function
  */
 function validate() {
-    console.log('🔍 Validating imports in miniCycle modules...\n');
 
     const allErrors = [];
     const allWarnings = [];
@@ -174,40 +173,21 @@ function validate() {
         }
     }
 
-    console.log(`📁 Checked ${filesChecked} files\n`);
-
     // Report warnings
     if (allWarnings.length > 0) {
-        console.log('⚠️  WARNINGS:\n');
         allWarnings.forEach(w => {
-            console.log(`  ${w.file}:${w.line}`);
-            console.log(`    ${w.message}`);
-            console.log('');
         });
     }
 
     // Report errors
     if (allErrors.length > 0) {
-        console.log('❌ ERRORS:\n');
         allErrors.forEach(e => {
-            console.log(`  ${e.file}:${e.line}`);
-            console.log(`    ${e.message}`);
-            console.log('');
         });
-
-        console.log(`\n❌ Validation FAILED: ${allErrors.length} error(s) found`);
-        console.log('\nTo fix static import errors:');
-        console.log('1. Remove the static import from the module');
-        console.log('2. Add a dependency injection function to receive the dependency');
-        console.log('3. Import and inject the dependency from miniCycle-scripts.js');
-        console.log('\nSee docs/architecture/NO_BUILD_MODULE_SYSTEM.md for details.');
 
         process.exit(1);
     } else {
-        console.log('✅ All imports validated successfully!');
 
         if (allWarnings.length > 0) {
-            console.log(`   (${allWarnings.length} warning(s) - review recommended)`);
         }
 
         process.exit(0);

@@ -226,10 +226,6 @@ export function repairData() {
 
     setTimeout(() => {
         // Debug: Log what deps contains
-        console.log('🔧 Repair: deps object:', deps);
-        console.log('🔧 Repair: deps.AppState:', deps.AppState);
-        console.log('🔧 Repair: deps.AppState?.isReady:', deps.AppState?.isReady);
-        console.log('🔧 Repair: deps.AppState?.isReady?.():', deps.AppState?.isReady?.());
 
         let state = deps.AppState?.get?.();
 
@@ -242,7 +238,6 @@ export function repairData() {
                 const rawData = localStorage.getItem(STORAGE_KEYS.DATA);
                 if (rawData) {
                     state = JSON.parse(rawData);
-                    console.log('🔧 Repair: Found data in localStorage:', state);
                     appendToTestResults(`Found data in localStorage (${rawData.length} chars)\n`);
                 }
             } catch (e) {
@@ -366,7 +361,6 @@ export function repairData() {
 
         // Perform repairs using AppState or localStorage
         if (useLocalStorage) {
-            console.log('🔧 Repair: Using localStorage fallback');
             appendToTestResults("Using localStorage fallback for repairs...\n");
             performRepairs(state.data, state.appState);
 
@@ -375,7 +369,6 @@ export function repairData() {
                 state.metadata = state.metadata || {};
                 state.metadata.lastModified = Date.now();
                 localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(state));
-                console.log('🔧 Repair: Saved repairs to localStorage');
             } catch (e) {
                 console.error('❌ Repair: Failed to save to localStorage:', e);
                 appendToTestResults(`ERROR: Failed to save repairs: ${e.message}\n`);
@@ -412,4 +405,3 @@ export function repairData() {
     }, 1000);
 }
 
-console.log('Testing Modal Analysis loaded (DI-pure)');

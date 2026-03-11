@@ -139,7 +139,6 @@ export function iconHTML(name) {
 export function initIcons() {
     const count = replaceAllFAIcons();
     if (count > 0) {
-        console.log(`[Icons] Replaced ${count} Font Awesome icons with SVGs`);
     }
 }
 

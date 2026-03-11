@@ -59,7 +59,6 @@ function saveToUndoCache(cycleId, undoStack, redoStack) {
       timestamp: Date.now()
     };
     localStorage.setItem(UNDO_CACHE_KEY, JSON.stringify(cacheData));
-    console.log(`💾 Undo cache saved for "${cycleId}" (${undoStack?.length || 0} undo, ${redoStack?.length || 0} redo)`);
   } catch (e) {
     // Graceful degradation - cache is optional
     console.warn('⚠️ Failed to save undo cache:', e.message);
@@ -82,7 +81,6 @@ function loadFromUndoCache(expectedCycleId) {
 
     // Validate cache matches expected cycle
     if (data.cycleId !== expectedCycleId) {
-      console.log(`ℹ️ Undo cache is for different cycle ("${data.cycleId}" vs "${expectedCycleId}")`);
       return null;
     }
 
@@ -96,7 +94,6 @@ function loadFromUndoCache(expectedCycleId) {
     const validUndoStack = filterValidSnapshots(data.undoStack, expectedCycleId);
     const validRedoStack = filterValidSnapshots(data.redoStack, expectedCycleId);
 
-    console.log(`✅ Loaded undo cache for "${expectedCycleId}" (${validUndoStack.length} undo, ${validRedoStack.length} redo)`);
     return {
       ...data,
       undoStack: validUndoStack,
@@ -180,7 +177,6 @@ function filterValidSnapshots(snapshots, cycleId) {
 export function clearUndoCache() {
   try {
     localStorage.removeItem(UNDO_CACHE_KEY);
-    console.log('🗑️ Undo cache cleared');
   } catch (e) {
     console.warn('⚠️ Failed to clear undo cache:', e.message);
   }
@@ -200,7 +196,6 @@ function scheduleIdleSave() {
   }
 
   const doSave = () => {
-    console.log('💾 Idle-time save after undo/redo');
     AppState.forceSave();
   };
 
@@ -252,7 +247,6 @@ const _deps = new Proxy({ wrapperActive: false }, {
 
 export function setUndoRedoManagerDependencies(overrides = {}) {
   di.setDependencies(overrides);
-  console.log('🔄 UndoRedoManager dependencies configured');
 }
 
 function assertInjected(name, value) {
@@ -279,7 +273,6 @@ const _initialized = {
 export function wireUndoRedoUI() {
   // ✅ Idempotency guard
   if (_initialized.undoRedoUI) {
-    console.log('✅ Undo/redo UI already wired');
     return;
   }
   _initialized.undoRedoUI = true;
@@ -299,7 +292,6 @@ export function wireUndoRedoUI() {
   _deps.safeAddEventListener(undoBtn, 'click', () => performStateBasedUndo());
   _deps.safeAddEventListener(redoBtn, 'click', () => performStateBasedRedo());
 
-  console.log('✅ Undo/redo UI wired');
 }
 
 /**
@@ -309,7 +301,6 @@ export function wireUndoRedoUI() {
 export function wireUndoRedoKeyboardShortcuts() {
   // ✅ Idempotency guard
   if (_initialized.undoRedoKeyboard) {
-    console.log('✅ Undo/redo keyboard shortcuts already wired');
     return;
   }
   _initialized.undoRedoKeyboard = true;
@@ -327,7 +318,6 @@ export function wireUndoRedoKeyboardShortcuts() {
   }
 
   _deps.safeAddEventListener(document, 'keydown', handleUndoRedoKeydown);
-  console.log('⌨️ Undo/redo keyboard shortcuts wired (Ctrl+Z, Ctrl+Y)');
 }
 
 /**
@@ -346,7 +336,6 @@ export function initUndoRedoButtons() {
     redoBtn.disabled = true;
   }
 
-  console.log('🔘 Undo/redo buttons initialized (hidden by default)');
 }
 
 /**
@@ -357,7 +346,6 @@ export async function captureInitialSnapshot() {
 
   const currentState = _deps.AppState.get();
   if (currentState) {
-    console.log('📸 Capturing initial snapshot...');
     await captureStateSnapshot(currentState);
   }
 }
@@ -376,7 +364,6 @@ export function wrapAppStateForUndo(appInit) {
 
   // Already wrapped - skip
   if (_deps.AppGlobalState.wrappedAppStateUpdate) {
-    console.log('ℹ️ AppState.update already wrapped for undo');
     return false;
   }
 
@@ -411,7 +398,6 @@ export function wrapAppStateForUndo(appInit) {
     globalState.useUpdateWrapper = true;  // wrapper becomes single snapshot source
     _deps.wrapperActive = true;  // update internal flag
 
-    console.log('🧰 Undo snapshots centralized on AppState.update');
     return true;
   } catch (e) {
     console.error('❌ Failed to wrap AppState.update:', e);
@@ -426,13 +412,11 @@ export function setupStateBasedUndoRedo() {
   assertInjected('AppState', _deps.AppState);
 
   if (!_deps.AppState.isReady?.()) {
-    console.log('ℹ️ State module not ready for undo/redo setup — will initialize when data loads');
     return;
   }
 
   // Skip installing when wrapper is active
   if (_deps.wrapperActive) {
-    console.log('ℹ️ Undo subscriber skipped (wrapper handles snapshots)');
     return;
   }
 
@@ -462,7 +446,6 @@ export function setupStateBasedUndoRedo() {
         }
       }
     });
-    console.log('✅ State-based undo/redo system initialized');
   } catch (subscriptionError) {
     console.warn('⚠️ Failed to subscribe to state changes:', subscriptionError);
   }
@@ -476,7 +459,6 @@ export function enableUndoSystemOnFirstInteraction() {
   assertInjected('AppGlobalState', _deps.AppGlobalState);
 
   if (_deps.AppGlobalState.isInitializing) {
-    console.log('✅ First user interaction detected - enabling undo system');
     _deps.AppGlobalState.isInitializing = false;
   }
 }
@@ -491,19 +473,16 @@ export function captureStateSnapshot(state) {
 
   // Don't capture snapshots during initial app load
   if (_deps.AppGlobalState.isInitializing) {
-    console.log('⏭️ Skipping snapshot during initialization');
     return;
   }
 
   // Don't capture snapshots during cycle switches
   if (_deps.AppGlobalState.isSwitchingCycles) {
-    console.log('⏭️ Skipping snapshot during cycle switch');
     return;
   }
 
   // ✅ FIX #8: Don't capture snapshots during batch operations (reset, complete all)
   if (_deps.AppGlobalState.isResetting) {
-    console.log('⏭️ Skipping snapshot during batch reset operation');
     return;
   }
 
@@ -555,12 +534,6 @@ export function captureStateSnapshot(state) {
     const lastSig = last._sig || buildSnapshotSignature(last);
     if (lastSig === sig) return;
   }
-
-  console.log('📸 Capturing snapshot:', {
-    taskCount: snapshot.tasks.length,
-    title: snapshot.title,
-    stackSize: _deps.AppGlobalState.activeUndoStack.length
-  });
 
   _deps.AppGlobalState.activeUndoStack.push(snapshot);
   if (_deps.AppGlobalState.activeUndoStack.length > UNDO_LIMIT) {
@@ -837,7 +810,6 @@ function handleUndoRedoUIUpdate(diff, newState) {
 
   if (orchestrator?.request) {
     // Use UIOrchestrator for smart updates
-    console.log('🎭 Undo/redo using UIOrchestrator:', diff.requiresFullRender ? 'full render' : 'patch');
 
     if (diff.requiresFullRender) {
       // Full render needed
@@ -872,7 +844,6 @@ function handleUndoRedoUIUpdate(diff, newState) {
     }
   } else {
     // Fallback to refreshUIFromState
-    console.log('🔄 Undo/redo using refreshUIFromState (UIOrchestrator not available)');
     _deps.refreshUIFromState(newState);
   }
 }
@@ -928,7 +899,6 @@ export async function performStateBasedUndo() {
       }
       skippedDuplicates++;
     }
-    console.log(`🔍 Undo: skipped ${skippedDuplicates} duplicates, found snapshot:`, !!snap);
     if (!snap) {
       console.warn('⚠️ No valid undo snapshot found');
       updateUndoRedoButtons();
@@ -994,7 +964,6 @@ export async function performStateBasedUndo() {
     _deps.AppGlobalState.lastSnapshotSignature = null;
     _deps.AppGlobalState.lastSnapshotTs = 0;
 
-    console.log('✅ Undo completed');
   } catch (e) {
     console.error('❌ Undo failed, rolling back:', e);
 
@@ -1073,7 +1042,6 @@ export async function performStateBasedRedo() {
       }
       skippedDuplicates++;
     }
-    console.log(`🔍 Redo: skipped ${skippedDuplicates} duplicates, found snapshot:`, !!snap);
     if (!snap) {
       console.warn('⚠️ No valid redo snapshot found');
       updateUndoRedoButtons();
@@ -1139,7 +1107,6 @@ export async function performStateBasedRedo() {
     _deps.AppGlobalState.lastSnapshotSignature = null;
     _deps.AppGlobalState.lastSnapshotTs = 0;
 
-    console.log('✅ Redo completed');
   } catch (e) {
     console.error('❌ Redo failed, rolling back:', e);
 
@@ -1228,11 +1195,8 @@ export async function onCycleSwitched(newCycleId) {
   const oldCycleId = _deps.AppGlobalState.activeCycleIdForUndo;
 
   if (oldCycleId === newCycleId) {
-    console.log('ℹ️ Same cycle, no undo stack swap needed');
     return;
   }
-
-  console.log(`🔄 Switching undo context: "${oldCycleId}" → "${newCycleId}"`);
 
   // ✅ Set flag to block snapshot capture during transition
   _deps.AppGlobalState.isSwitchingCycles = true;
@@ -1253,7 +1217,6 @@ export async function onCycleSwitched(newCycleId) {
     _deps.AppGlobalState.activeRedoStack = [];
     _deps.AppGlobalState.activeCycleIdForUndo = null;
     clearUndoCache();
-    console.log('🧹 Cleared undo stack, active ID, and cache');
 
     // 3. Load new cycle's stacks from IndexedDB
     const loaded = await loadUndoStackFromIndexedDB(newCycleId);
@@ -1268,13 +1231,10 @@ export async function onCycleSwitched(newCycleId) {
     _deps.AppGlobalState.activeRedoStack = validRedoStack;
 
     // 6. Save validated data to cache for instant boot
-    console.log(`📦 Updating cache with validated data for "${newCycleId}"`);
     saveToUndoCache(newCycleId, validUndoStack, validRedoStack);
 
     // 7. Update UI
     updateUndoRedoButtons();
-
-    console.log(`✅ Switched to "${newCycleId}": ${validUndoStack.length} undo, ${validRedoStack.length} redo steps`);
 
     // ✅ Small delay to let cycle fully load before re-enabling snapshots
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -1294,7 +1254,6 @@ export async function onCycleSwitched(newCycleId) {
   } finally {
     // ✅ Always clear the flag, even on error
     _deps.AppGlobalState.isSwitchingCycles = false;
-    console.log('🔓 Cycle switch complete, snapshots re-enabled');
   }
 }
 
@@ -1303,7 +1262,6 @@ export async function onCycleSwitched(newCycleId) {
  * Called by cycleManager when new cycle is created
  */
 export async function onCycleCreated(cycleId) {
-  console.log(`🆕 New cycle created: "${cycleId}" - initializing empty undo stack`);
 
   try {
     // Initialize empty stacks in IndexedDB (also updates cache)
@@ -1334,7 +1292,6 @@ export async function onCycleCreated(cycleId) {
  * Called by cycleManager when cycle is deleted
  */
 export async function onCycleDeleted(cycleId) {
-  console.log(`🗑️ Cycle deleted: "${cycleId}" - removing undo history`);
 
   try {
     // Remove from IndexedDB
@@ -1370,7 +1327,6 @@ export async function onCycleDeleted(cycleId) {
  * Called by cycleSwitcher when cycle is renamed
  */
 export async function onCycleRenamed(oldCycleId, newCycleId) {
-  console.log(`📝 Cycle renamed: "${oldCycleId}" → "${newCycleId}"`);
 
   try {
     // Migrate in IndexedDB
@@ -1401,8 +1357,6 @@ export async function initUndoSystemForApp() {
   assertInjected('AppState', _deps.AppState);
   assertInjected('AppGlobalState', _deps.AppGlobalState);
 
-  console.log('🔄 Initializing undo system...');
-
   try {
     // 1. Always initialize IndexedDB (even if no active cycle yet — first-time users
     //    complete onboarding later, and cycle lifecycle hooks need undoDB ready)
@@ -1414,7 +1368,6 @@ export async function initUndoSystemForApp() {
 
     if (!activeCycleId) {
       // Normal for first-time users — onboarding hasn't completed yet
-      console.log('ℹ️ No active cycle yet - IndexedDB initializing, undo stacks will be set on first routine creation');
       return;
     }
 
@@ -1426,13 +1379,11 @@ export async function initUndoSystemForApp() {
       _deps.AppGlobalState.activeRedoStack = cached.redoStack;
       _deps.AppGlobalState.activeCycleIdForUndo = activeCycleId;
       updateUndoRedoButtons();
-      console.log(`✅ Undo system initialized from cache (instant)`);
     } else {
       // Cache miss - will load from IndexedDB
       _deps.AppGlobalState.activeUndoStack = [];
       _deps.AppGlobalState.activeRedoStack = [];
       _deps.AppGlobalState.activeCycleIdForUndo = activeCycleId;
-      console.log('ℹ️ No cache found, will load from IndexedDB');
     }
 
     // 4. After IndexedDB is ready, load stacks if cache missed
@@ -1445,7 +1396,6 @@ export async function initUndoSystemForApp() {
 
         // Update cache for next boot
         saveToUndoCache(activeCycleId, loaded.undoStack || [], loaded.redoStack || []);
-        console.log(`✅ Undo system loaded from IndexedDB (${loaded.undoStack?.length || 0} undo steps)`);
       }
     }).catch(e => {
       console.warn('⚠️ IndexedDB background init failed:', e);
@@ -1484,7 +1434,6 @@ export async function initUndoSystemForApp() {
           };
 
           objectStore.put(data);
-          console.log('💾 Force-saved undo history on page unload');
         } catch (e) {
           console.warn('⚠️ Failed to force-save undo history:', e);
         }
@@ -1545,7 +1494,6 @@ async function isTestModeActive() {
             if (data && data.active) {
               // Only consider active if set within last 10 minutes
               if (Date.now() - data.timestamp < 600000) {
-                console.log('🚦 Test mode active - skipping IndexedDB restore');
                 resolve(true);
                 return;
               }
@@ -1602,7 +1550,6 @@ export async function initUndoIndexedDB() {
       request.onsuccess = (event) => {
         clearTimeout(timeout);
         undoDB = event.target.result;
-        console.log('✅ IndexedDB undo persistence enabled');
         resolve(true);
       };
 
@@ -1619,7 +1566,6 @@ export async function initUndoIndexedDB() {
         // Create object store if it doesn't exist
         if (!db.objectStoreNames.contains("undoStacks")) {
           const objectStore = db.createObjectStore("undoStacks", { keyPath: "cycleId" });
-          console.log('🔧 Created undoStacks object store');
         }
       };
     });
@@ -1666,7 +1612,6 @@ export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack, options 
 
       await new Promise((resolve, reject) => {
         request.onsuccess = () => {
-          console.log(`💾 Saved undo history for "${cycleId}" (${undoStack?.length || 0} undo, ${redoStack?.length || 0} redo)`);
           resolve();
         };
 
@@ -1699,7 +1644,6 @@ export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack, options 
 export async function loadUndoStackFromIndexedDB(cycleId) {
   // 🚦 Skip IndexedDB restore if tests are running
   if (await isTestModeActive()) {
-    console.log(`🚦 Test mode active - returning empty undo history for "${cycleId}"`);
     return { undoStack: [], redoStack: [] };
   }
 
@@ -1726,13 +1670,11 @@ export async function loadUndoStackFromIndexedDB(cycleId) {
         clearTimeout(timeout);
         const data = event.target.result;
         if (data) {
-          console.log(`📂 Loaded undo history for "${cycleId}" (${data.undoStack?.length || 0} undo, ${data.redoStack?.length || 0} redo)`);
           resolve({
             undoStack: data.undoStack || [],
             redoStack: data.redoStack || []
           });
         } else {
-          console.log(`📂 No undo history found for "${cycleId}" - starting fresh`);
           resolve({ undoStack: [], redoStack: [] });
         }
       };
@@ -1764,7 +1706,6 @@ export async function deleteUndoStackFromIndexedDB(cycleId) {
     // ✅ FIX #11: Properly await IndexedDB operation
     await new Promise((resolve, reject) => {
       request.onsuccess = () => {
-        console.log(`🗑️ Deleted undo history for "${cycleId}"`);
         resolve();
       };
 
@@ -1815,7 +1756,6 @@ export async function renameUndoStackInIndexedDB(oldCycleId, newCycleId) {
       deleteRequest.onerror = () => reject(deleteRequest.error);
     });
 
-    console.log(`📝 Renamed undo history: "${oldCycleId}" → "${newCycleId}"`);
   } catch (e) {
     console.error('❌ IndexedDB rename failed:', e);
   }
@@ -1835,7 +1775,6 @@ export async function clearAllUndoHistoryFromIndexedDB() {
     // ✅ FIX #11: Properly await IndexedDB operation
     await new Promise((resolve, reject) => {
       request.onsuccess = () => {
-        console.log('🧹 Cleared all undo history from IndexedDB');
         resolve();
       };
 
@@ -1889,7 +1828,6 @@ export async function clearAllUndoHistory() {
     }, 0);
   }
 
-  console.log('✅ All undo history cleared');
 }
 
 // ============ INIT FUNCTION (for moduleLoader) ============
@@ -1920,8 +1858,6 @@ export async function initUndoRedoManager(dependencies = {}) {
   // Initialize undo system for the app
   await initUndoSystemForApp();
 
-  console.log('✅ UndoRedoManager initialized via initUndoRedoManager');
-
   // Return exports for registration
   return {
     performStateBasedUndo,
@@ -1947,4 +1883,3 @@ export async function initUndoRedoManager(dependencies = {}) {
 
 // ============ EXPORTS ============
 
-console.log('🔄 UndoRedoManager module loaded');

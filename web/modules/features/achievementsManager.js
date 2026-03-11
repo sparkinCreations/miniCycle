@@ -24,8 +24,6 @@ let MILESTONES = null;
 // CONSTANTS
 // ============================================================================
 
-
-
 // ============================================================================
 // DEPENDENCY INJECTION
 // ============================================================================
@@ -61,7 +59,6 @@ export class AchievementsManager {
         this.deps = di.resolve(overrides);
         this.modalOverlay = null;
         this.milestones = MILESTONES;
-        console.log('AchievementsManager initialized');
     }
 
     // ========================================================================
@@ -148,8 +145,6 @@ export class AchievementsManager {
      */
     _triggerReward(milestone, unlockedVia) {
         if (!milestone.reward) return;
-
-        console.log(`Triggering reward: ${milestone.reward} (${milestone.rewardType})`);
 
         switch (milestone.rewardType) {
             case 'game':
@@ -459,6 +454,17 @@ export class AchievementsManager {
             `;
         }
 
+        // Achievement progress note
+        html += `
+            <p style="
+                font-size: 12px;
+                color: var(--text-secondary, #666);
+                text-align: center;
+                margin: 16px 0 0;
+                font-style: italic;
+            ">${getLabel('achievement.progressNote')}</p>
+        `;
+
         content.innerHTML = html;
     }
 
@@ -667,7 +673,6 @@ export class AchievementsManager {
             });
         }
 
-        console.log('✅ Badge tooltips and click handlers initialized from constants');
     }
 
     /**
@@ -1123,7 +1128,6 @@ export async function initAchievementsManager(deps = {}) {
     // Load MILESTONES from constants.js dynamically on first init
     if (!MILESTONES) {
         const version = APP_VERSION;
-        console.log(`📦 AchievementsManager: Loading MILESTONES with version ${version}...`);
 
         const constantsMod = await import(`../core/constants.js?v=${version}`);
         const MILESTONE_CONFIG = constantsMod.MILESTONES;
@@ -1141,7 +1145,6 @@ export async function initAchievementsManager(deps = {}) {
             rewardLabel: tier.rewardLabel || null
         }));
 
-        console.log('✅ AchievementsManager: MILESTONES loaded');
     }
 
     if (!instance) {
@@ -1161,4 +1164,3 @@ export function getAchievementsManager() {
     return instance;
 }
 
-console.log('AchievementsManager module loaded (DI-pure)');
