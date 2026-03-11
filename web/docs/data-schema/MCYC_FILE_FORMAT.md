@@ -1,8 +1,7 @@
 # .mcyc File Format Documentation
 
-**Version:** 1.330
 **Schema Version:** 2.5
-**Last Updated:** January 2025
+**Last Updated:** March 2026
 
 ---
 
@@ -172,7 +171,12 @@ Every task in the `tasks` array uses this structure:
   "highPriority": false,
   "remindersEnabled": false,
   "recurring": false,
-  "recurringSettings": {}
+  "recurringSettings": {},
+  "deleteWhenComplete": false,
+  "deleteWhenCompleteSettings": {
+    "cycle": false,
+    "todo": true
+  }
 }
 ```
 
@@ -189,6 +193,8 @@ Every task in the `tasks` array uses this structure:
 | `remindersEnabled` | boolean | No | `false` | Enable reminders for this task |
 | `recurring` | boolean | No | `false` | Is this a recurring task? |
 | `recurringSettings` | object | No | `{}` | Recurring configuration (see below) |
+| `deleteWhenComplete` | boolean | No | `false` | Active deletion flag (synced from mode settings) |
+| `deleteWhenCompleteSettings` | object | No | `{"cycle": false, "todo": true}` | Per-mode deletion behavior |
 
 ---
 
@@ -205,7 +211,10 @@ When using the complete format, each cycle is stored in `data.cycles`:
   "deleteCheckedTasks": false,
   "cycleCount": 0,
   "createdAt": 1234567890,
+  "taskOptionButtons": null,
   "recurringTemplates": {},
+  "reminders": null,
+  "theme": "classic",
   "history": {
     "events": [],
     "maxEvents": 100
@@ -229,7 +238,10 @@ When using the complete format, each cycle is stored in `data.cycles`:
 | `deleteCheckedTasks` | boolean | No | To-Do mode behavior |
 | `cycleCount` | number | No | Times completed |
 | `createdAt` | number | No | Unix timestamp (milliseconds) |
+| `taskOptionButtons` | object\|null | No | Per-cycle task button visibility settings |
 | `recurringTemplates` | object | No | Recurring task templates |
+| `reminders` | object\|null | No | Per-routine reminder configuration |
+| `theme` | string | No | Vocabulary theme identifier (default: `"classic"`) |
 | `history` | object | No | Per-routine activity log (v1.685+) |
 | `clearedTasks` | object | No | Cleared tasks tracking (To-Do mode + cycle reset auto-removes) (v1.685+) |
 
@@ -1099,8 +1111,8 @@ python3 create_mcyc.py
 ## Resources
 
 **Sample Files:**
-- `/data/*.mcyc` - Example routines
-- `/data/example-routine-schema25.mcyc` - Schema 2.5 reference
+- `examples/sample-routines/*.mcyc` - Sample routines (auto-discovered via `manifest.json`)
+- See [Sample Routines Guide](../developer-guides/SAMPLE_ROUTINES.md) for adding new samples
 
 **Documentation:**
 - `WHAT_IS_MINICYCLE.md` - App overview
@@ -1108,18 +1120,17 @@ python3 create_mcyc.py
 - `DEVELOPER_DOCUMENTATION.md` - Technical details
 
 **Support:**
-- GitHub: https://github.com/anthropics/claude-code/issues
+- GitHub: https://github.com/sparkinCreations/miniCycle
 - In-app: Settings → Diagnostics & Testing
 
 ---
 
 ## Version
 
-**Document Version:** 1.1
+**Document Version:** 1.2
 **Schema Version:** 2.5
-**miniCycle Version:** 1.685
 
-**Last Updated:** January 7, 2026
+**Last Updated:** March 2026
 
 ---
 
