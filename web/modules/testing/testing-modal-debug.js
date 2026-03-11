@@ -313,4 +313,3 @@ export function getServiceWorkerInfo() {
     });
 }
 
-console.log('Testing Modal Debug loaded (DI-pure)');

@@ -187,7 +187,6 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
             // Invalidate resolve cache — deps changed
             _resolveCache = null;
 
-            console.log(`✅ ${moduleName} deps set:`, Object.keys(dependencies));
         },
 
         /**
@@ -198,7 +197,6 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
             _injected = {};
             _setKeys.clear();
             _resolveCache = null;
-            console.log(`🔄 ${moduleName} deps reset`);
         },
 
         /**
@@ -273,7 +271,6 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
             }
 
             if (logResolution) {
-                console.log(`🔧 ${moduleName} resolved:`, Object.keys(resolved));
             }
 
             // Cache result only when no overrides (standard Proxy access path)
@@ -430,7 +427,6 @@ export function createFallback(name) {
     let logged = false;
     return (...args) => {
         if (!logged) {
-            console.log(`⏭️ ${name} not available (fallback)`);
             logged = true;
         }
         return undefined;
@@ -447,7 +443,6 @@ export function createFallbackWithValue(name, returnValue) {
     let logged = false;
     return (...args) => {
         if (!logged) {
-            console.log(`⏭️ ${name} not available, returning default`);
             logged = true;
         }
         return returnValue;
@@ -499,4 +494,3 @@ export function safeGet(getter, name = 'dependency') {
  * @property {boolean} [logResolution=false] - Log dependency resolution
  */
 
-console.log('📦 diBase module loaded');

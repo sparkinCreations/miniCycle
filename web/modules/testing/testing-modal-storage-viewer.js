@@ -416,4 +416,3 @@ export function closeStorageViewer() {
     }
 }
 
-console.log('Testing Modal Storage Viewer loaded (DI-pure)');

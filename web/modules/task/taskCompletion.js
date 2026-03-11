@@ -59,7 +59,6 @@ const _deps = new Proxy({}, {
  */
 export function setTaskCompletionDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('Task Completion dependencies set:', Object.keys(dependencies));
 }
 
 // ============================================================================
@@ -123,7 +122,6 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
             const currentState = AppState?.get?.();
             if (currentState) {
                 captureStateSnapshot(currentState);
-                console.log('Captured snapshot before task completion change');
             }
         }
 
@@ -139,7 +137,6 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
                     const task = cycle.tasks.find(t => t.id === taskId);
                     if (task) {
                         task.completed = isCompleted;
-                        console.log(`Task completion saved to AppState: ${task.text} = ${isCompleted}`);
                     }
                 }, false); // Don't force immediate save, let debounce handle it
             } else {
@@ -201,7 +198,6 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
                 // Small delay to allow state to settle after completion
                 setTimeout(async () => {
                     try {
-                        console.log('🔄 Triggering recurring check after task completion...');
                         await watchRecurringTasks();
                     } catch (error) {
                         console.warn('Recurring check after completion failed:', error);
@@ -288,4 +284,3 @@ export function saveTaskToSchema25Impl(activeCycle, currentCycle, deps = {}) {
 // MODULE INFO
 // ============================================================================
 
-console.log('Task Completion module loaded (DI-pure)');

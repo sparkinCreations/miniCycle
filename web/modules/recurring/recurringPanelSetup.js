@@ -353,4 +353,3 @@ export function setupAdditionalListeners(deps, callbacks) {
     });
 }
 
-console.log('recurringPanelSetup module loaded');

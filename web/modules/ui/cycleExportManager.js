@@ -52,7 +52,6 @@ let _exportButtonInitialized = false;
  * @param {string} cycleName - Name for the file
  */
 export function exportMiniCycleData(miniCycleData, cycleName) {
-    console.log('Exporting miniCycle data...');
 
     try {
         const dataStr = JSON.stringify(miniCycleData, null, 2);
@@ -67,8 +66,6 @@ export function exportMiniCycleData(miniCycleData, cycleName) {
         document.body.removeChild(link);
 
         URL.revokeObjectURL(link.href);
-
-        console.log('Export completed successfully');
 
         // Notification must wait for save dialog to close — it covers the browser
         // and the 3s auto-dismiss expires before the user can see it.
@@ -99,7 +96,6 @@ export function exportMiniCycleData(miniCycleData, cycleName) {
 export function setupExportButton() {
     // ✅ Idempotency guard
     if (_exportButtonInitialized) {
-        console.log('✅ Export button already set up');
         return;
     }
     _exportButtonInitialized = true;
@@ -114,7 +110,6 @@ export function setupExportButton() {
     if (!exportBtn) return;
 
     exportBtn._clickHandler = () => {
-        console.log('Exporting miniCycle...');
 
         const loadMiniCycleData = _deps.loadMiniCycleData;
         const schemaData = loadMiniCycleData?.();
@@ -133,7 +128,6 @@ export function setupExportButton() {
             return;
         }
 
-        console.log('Exporting cycle:', activeCycle);
         const cycleName = cycle.title || activeCycle;
 
         _deps.showConfirmationModal({
@@ -193,4 +187,3 @@ export function setupExportButton() {
     safeAddEventListener(exportBtn, "click", exportBtn._clickHandler);
 }
 
-console.log('Cycle Export Manager loaded');

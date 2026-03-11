@@ -57,7 +57,6 @@ const _deps = new Proxy({}, {
  */
 export function setTaskUIDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🎯 TaskUI dependencies set:', Object.keys(dependencies));
 }
 
 /**
@@ -124,7 +123,6 @@ export class TaskOptionsVisibilityController {
 
         // Check if this caller is allowed to change visibility in current mode
         if (!this.canHandle(caller)) {
-            console.log(`${caller}: Skipping visibility change in ${this.getMode()} mode`);
             return false;
         }
 
@@ -148,7 +146,6 @@ export class TaskOptionsVisibilityController {
             btn.tabIndex = visible ? 0 : -1;
         });
 
-        console.log(`${caller}: visibility -> ${visible ? 'visible' : 'hidden'} (mode: ${this.getMode()})`);
         return true;
     }
 
@@ -178,7 +175,6 @@ export class TaskOptionsVisibilityController {
  * Clears and re-renders all tasks from the current cycle.
  */
 export async function refreshTaskListUI() {
-    console.log('Refreshing task list UI (Schema 2.5 only)...');
 
     const loadMiniCycleData = _deps.loadMiniCycleData;
     if (typeof loadMiniCycleData !== 'function') {
@@ -229,7 +225,6 @@ export async function refreshTaskListUI() {
         updateRecurringButtonVisibility();
     }
 
-    console.log("Task list UI refreshed from Schema 2.5");
 }
 
 /**
@@ -239,13 +234,11 @@ export async function refreshTaskListUI() {
  */
 export function hideTaskButtons(taskItem) {
     if (taskItem.classList.contains("rearranging")) {
-        console.log("Skipping hide during task rearrangement");
         return;
     }
 
     // Don't hide if task is long-pressed (mobile long-press in progress)
     if (taskItem.classList.contains("long-pressed")) {
-        console.log("Skipping hide during long-press");
         return;
     }
 
@@ -256,7 +249,6 @@ export function hideTaskButtons(taskItem) {
     const wasHidden = TaskOptionsVisibilityController.hide(taskItem, 'hideTaskButtons');
 
     if (!wasHidden) {
-        console.log('hideTaskButtons: Skipped by controller (three-dots mode protection)');
         return;
     }
 
@@ -296,14 +288,6 @@ export function showTaskOptions(event) {
     const isMobile = typeof isTouchDevice === 'function' ? isTouchDevice() : false;
     const allowShow = !isMobile || taskElement.classList.contains("long-pressed");
 
-    console.log('showTaskOptions (hover handler) called:', {
-        taskId: taskElement.dataset.id || 'unknown',
-        eventType: event.type,
-        isMobile,
-        isLongPressed: taskElement.classList.contains("long-pressed"),
-        allowShow
-    });
-
     if (allowShow) {
         // Use centralized controller (handles mode checking automatically)
         TaskOptionsVisibilityController.show(taskElement, 'mouseenter');
@@ -325,14 +309,6 @@ export function hideTaskOptions(event) {
     const isTouchDevice = _deps.isTouchDevice;
     const isMobile = typeof isTouchDevice === 'function' ? isTouchDevice() : false;
     const allowHide = !isMobile || !taskElement.classList.contains("long-pressed");
-
-    console.log('hideTaskOptions (mouseleave handler) called:', {
-        taskId: taskElement.dataset.id || 'unknown',
-        eventType: event.type,
-        isMobile,
-        isLongPressed: taskElement.classList.contains("long-pressed"),
-        allowHide
-    });
 
     if (allowHide) {
         // Use centralized controller (handles mode checking automatically)
@@ -385,4 +361,3 @@ export function checkCompleteAllButton() {
 }
 
 // DI-pure module (no window.* exports)
-console.log('TaskUI module loaded (DI-pure, no window.* exports)');

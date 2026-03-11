@@ -108,8 +108,6 @@ let taskCoreInstance = null;
 async function loadSubModules(version) {
     if (_subModules) return _subModules;
 
-    console.log(`📦 TaskCore: Loading sub-modules with version ${version}`);
-
     const [
         taskCRUDModule,
         taskCompletionModule,
@@ -144,7 +142,6 @@ async function loadSubModules(version) {
         isResetInProgress: taskCycleResetModule.isResetInProgress
     };
 
-    console.log('✅ TaskCore: All sub-modules loaded');
     return _subModules;
 }
 
@@ -162,7 +159,6 @@ function wireSubModuleDependencies(dependencies) {
     _subModules.setTaskCompletionDependencies(dependencies);
     _subModules.setTaskCycleResetDependencies(dependencies);
 
-    console.log('✅ TaskCore: Sub-module dependencies wired');
 }
 
 /**
@@ -190,9 +186,7 @@ export function setTaskCoreDependencies(dependencies) {
                 taskCoreInstance.deps[key] = value;
             }
         }
-        console.log('TaskCore instance deps updated:', Object.keys(dependencies));
     } else {
-        console.log('TaskCore module deps set (pre-init):', Object.keys(dependencies));
     }
 }
 
@@ -239,13 +233,13 @@ export class TaskCore {
 
             // UI updates
             showNotification: resolvedDeps.showNotification || this.fallbackNotification,
-            updateStatsPanel: resolvedDeps.updateStatsPanel || (() => console.log('updateStatsPanel not available')),
-            updateProgressBar: resolvedDeps.updateProgressBar || (() => console.log('updateProgressBar not available')),
-            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || (() => console.log('checkCompleteAllButton not available')),
-            refreshUIFromState: resolvedDeps.refreshUIFromState || (() => console.log('refreshUIFromState not available')),
+            updateStatsPanel: resolvedDeps.updateStatsPanel || (() => {}),
+            updateProgressBar: resolvedDeps.updateProgressBar || (() => {}),
+            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || (() => {}),
+            refreshUIFromState: resolvedDeps.refreshUIFromState || (() => {}),
 
             // Undo system
-            captureStateSnapshot: resolvedDeps.captureStateSnapshot || (() => console.log('captureStateSnapshot not available')),
+            captureStateSnapshot: resolvedDeps.captureStateSnapshot || (() => {}),
             enableUndoSystemOnFirstInteraction: resolvedDeps.enableUndoSystemOnFirstInteraction || (() => {}),
 
             // Modal system
@@ -266,7 +260,7 @@ export class TaskCore {
             finalizeTaskCreation: resolvedDeps.finalizeTaskCreation || null,
 
             // Auto-save
-            autoSave: resolvedDeps.autoSave || (() => console.log('autoSave not available')),
+            autoSave: resolvedDeps.autoSave || (() => {}),
 
             // Cycle completion
             incrementCycleCount: resolvedDeps.incrementCycleCount || null,
@@ -295,7 +289,6 @@ export class TaskCore {
         // Local instance state
         this.isResetting = false;
 
-        console.log('TaskCore module initialized');
     }
 
     // ========================================================================
@@ -308,7 +301,6 @@ export class TaskCore {
      * @returns {Promise<void>}
      */
     async init() {
-        console.log('Initializing task core system...');
 
         try {
             await Promise.race([
@@ -323,7 +315,6 @@ export class TaskCore {
             wireSubModuleDependencies(di.resolve());
 
             _initialized = true;
-            console.log('Task core system initialized successfully');
         } catch (error) {
             console.warn('Task core system initialization failed:', error);
             _deps.showNotification?.(getLabel('notify.taskSystemLimited'), 'warning');
@@ -345,7 +336,6 @@ export class TaskCore {
     }
 
     clearAllTimeouts() {
-        console.log(`Clearing ${this.activeTimeouts.size} active timeouts`);
         for (const timeoutId of this.activeTimeouts) {
             clearTimeout(timeoutId);
         }
@@ -359,7 +349,6 @@ export class TaskCore {
     // ========================================================================
 
     fallbackNotification(message, type = 'info') {
-        console.log(`[TaskCore] ${message}`);
     }
 
     fallbackLoadData() {
@@ -497,7 +486,6 @@ export class TaskCore {
      */
     async resetTasks() {
         if (_subModules?.isResetInProgress?.()) {
-            console.log('Reset already in progress, skipping');
             return;
         }
         if (!_subModules?.resetTasksImpl) {
@@ -566,7 +554,6 @@ export async function initTaskCore(dependencies = {}) {
         try {
             taskCoreInstance = new TaskCore(dependencies);
             await taskCoreInstance.init();
-            console.log('TaskCore initialized (Phase 3)');
         } catch (e) {
             console.error('TaskCore initialization failed:', e);
             taskCoreInstance = null;
@@ -680,8 +667,6 @@ function handleCompleteAllTasks() {
 // ============================================================================
 // EXPORTS
 // ============================================================================
-
-console.log('TaskCore module loaded (DI-pure, dynamic versioned imports)');
 
 export {
     taskCoreInstance,

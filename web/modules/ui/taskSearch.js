@@ -152,7 +152,6 @@ export function initTaskSearch() {
     }
 
     isInitialized = true;
-    console.log('✅ TaskSearch initialized');
 
     // Check initial task count - tasks are already rendered by coreBoot before this runs
     const initialCount = getTaskCount();
@@ -414,4 +413,3 @@ if (document.readyState === 'loading') {
     initTaskSearch();
 }
 
-console.log('📦 TaskSearch module loaded');

@@ -159,7 +159,6 @@ function validateTheme(theme) {
 async function loadTheme(themeId) {
   // Check cache first
   if (themeCache.has(themeId)) {
-    console.log(`🎨 Theme loaded from cache: ${themeId}`);
     return themeCache.get(themeId);
   }
 
@@ -177,7 +176,6 @@ async function loadTheme(themeId) {
 
     // Cache for future use
     themeCache.set(themeId, theme);
-    console.log(`🎨 Theme loaded: ${theme.name} (${themeId})`);
     return theme;
   } catch (error) {
     console.error(`❌ Failed to load theme: ${themeId}`, error);
@@ -197,7 +195,6 @@ function applyThemeTokens(theme) {
   }
 
   if (!theme.tokens) {
-    console.log(`ℹ️ Theme "${theme.name}" has no tokens - using defaults`);
     return true;
   }
 
@@ -221,7 +218,6 @@ function applyThemeTokens(theme) {
     document.body.classList.add('theme-active');
   }
 
-  console.log(`🎨 Applied ${appliedCount} theme tokens for: ${theme.name}`);
   return true;
 }
 
@@ -243,7 +239,6 @@ function resetThemeTokens() {
     document.body.classList.remove('theme-active');
   }
 
-  console.log('🎨 Theme tokens reset to defaults');
 }
 
 /**
@@ -302,7 +297,6 @@ function importTheme(jsonString) {
     }
     // Add to cache
     themeCache.set(theme.id, theme);
-    console.log(`🎨 Theme imported: ${theme.name}`);
     return theme;
   } catch (error) {
     console.error('❌ Failed to import theme:', error);
@@ -315,7 +309,6 @@ function importTheme(jsonString) {
  */
 function clearCache() {
   themeCache.clear();
-  console.log('🎨 Theme cache cleared');
 }
 
 // ============================================================================
@@ -350,4 +343,3 @@ export {
 
 export default JSONThemeManager;
 
-console.log('🎨 JSON Theme Manager loaded');

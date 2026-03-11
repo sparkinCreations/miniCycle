@@ -83,7 +83,6 @@ const di = createDIModule('RoutineSwitcher', {
  */
 export function setRoutineSwitcherDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🔄 RoutineSwitcher dependencies set:', Object.keys(dependencies));
 }
 
 export class RoutineSwitcher {
@@ -118,14 +117,12 @@ export class RoutineSwitcher {
         // ✅ Automatically setup click-outside handler
         this.setupModalClickOutside();
 
-        console.log('🔄 RoutineSwitcher initialized');
     }
 
     /**
      * Open switch miniCycle modal
      */
     switchMiniCycle() {
-        console.log('🔄 Opening switch miniCycle modal (state-based)...');
 
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
@@ -148,8 +145,6 @@ export class RoutineSwitcher {
         const renameButton = this.deps.getElementById(DOM_IDS.SWITCH_RENAME);
         const deleteButton = this.deps.getElementById(DOM_IDS.SWITCH_DELETE);
 
-        console.log('📊 Found cycles:', Object.keys(cycles).length);
-
         this.deps.hideMainMenu();
 
         if (Object.keys(cycles).length === 0) {
@@ -158,7 +153,6 @@ export class RoutineSwitcher {
             return;
         }
 
-        console.log('📂 Showing switch modal...');
         switchModal._previousFocus = document.activeElement;
         if (!switchModal.open) switchModal.showModal();
         switchRow.style.display = "none";
@@ -183,8 +177,6 @@ export class RoutineSwitcher {
 
         // ✅ Preview popout on double-click
         this.setupPreviewPopout();
-
-        console.log('🔗 Setting up event listeners...');
 
         // ✅ Use safeAddEventListener to prevent duplicate handlers
         const safeAdd = this.deps.safeAddEventListener;
@@ -251,14 +243,12 @@ export class RoutineSwitcher {
         }
         safeAdd(cancelBtn, "click", cancelBtn._clickHandler);
 
-        console.log('✅ Switch miniCycle modal setup completed');
     }
 
     /**
      * Rename a miniCycle (inline edit)
      */
     renameMiniCycle() {
-        console.log('📝 Renaming miniCycle (inline edit)...');
 
         const selectedCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
 
@@ -291,8 +281,6 @@ export class RoutineSwitcher {
             return;
         }
 
-        console.log('🔍 Starting inline rename for:', cycleKey);
-
         // ✅ Use inline edit (same as duplicate)
         this._startInlineEdit(selectedCycle, cycleKey);
     }
@@ -301,7 +289,6 @@ export class RoutineSwitcher {
      * Delete a miniCycle
      */
     deleteMiniCycle() {
-        console.log('🗑️ Deleting miniCycle (state-based)...');
 
         const selectedCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
         if (!selectedCycle) {
@@ -330,9 +317,6 @@ export class RoutineSwitcher {
         const cycleKey = selectedCycle.dataset.cycleKey;
         const currentCycle = cycles[cycleKey];
 
-        console.log('🔍 Deleting cycle:', cycleKey);
-        console.log('📊 Current cycles count:', Object.keys(cycles).length);
-
         if (!cycleKey || !currentCycle) {
             console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!currentCycle });
             this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
@@ -340,11 +324,9 @@ export class RoutineSwitcher {
         }
 
         const cycleToDelete = currentCycle.title;
-        console.log('📊 Cycle to delete:', { title: cycleToDelete, isActive: cycleKey === activeCycle });
 
         // Calculate the size of the routine being deleted (for storage estimate)
         const routineSizeBytes = getObjectSizeBytes(currentCycle);
-        console.log(`📊 Routine size to delete: ${formatBytes(routineSizeBytes)}`);
 
         this.deps.showConfirmationModal({
             title: getLabel('switcher.deleteTitle'),
@@ -354,11 +336,8 @@ export class RoutineSwitcher {
             destructive: true,
             callback: (confirmed) => {
                 if (!confirmed) {
-                    console.log('❌ User cancelled deletion');
                     return;
                 }
-
-                console.log('🔄 Performing deletion...');
 
                 // Track if we're deleting the active cycle
                 const wasActiveCycle = cycleKey === activeCycle;
@@ -369,12 +348,8 @@ export class RoutineSwitcher {
                     // Remove the selected miniCycle
                     delete state.data.cycles[cycleKey];
 
-                    console.log(`✅ miniCycle "${cycleToDelete}" deleted from state`);
-                    console.log('📊 Remaining cycles:', Object.keys(state.data.cycles));
-
                     // If the deleted cycle was the active one, handle fallback
                     if (wasActiveCycle) {
-                        console.log('🎯 Deleted cycle was active, handling fallback...');
                         const remainingCycleKeys = Object.keys(state.data.cycles);
 
                         if (remainingCycleKeys.length > 0) {
@@ -384,17 +359,13 @@ export class RoutineSwitcher {
 
                             const newActiveCycle = state.data.cycles[newActiveCycleKey];
                             newActiveCycleName = newActiveCycle.title;
-                            console.log(`🔄 Switched to miniCycle: "${newActiveCycleName}"`);
                         } else {
-                            console.log('⚠️ No cycles remaining, resetting app...');
                             state.appState.activeCycleId = null;
                         }
                     }
 
                     state.metadata.lastModified = Date.now();
                 }, true); // immediate save
-
-                console.log('💾 Deletion saved through state system');
 
                 // ✅ Update storage estimate (subtract deleted routine size)
                 adjustStorageEstimate(-routineSizeBytes);
@@ -410,8 +381,6 @@ export class RoutineSwitcher {
                         console.warn('⚠️ Undo system cycle deletion notification failed:', err);
                     });
                 }
-
-                console.log('🔄 Refreshing UI...');
 
                 // ✅ Check if any cycles remain
                 const finalState = this.deps.AppState.get();
@@ -456,12 +425,10 @@ export class RoutineSwitcher {
                         if (firstCycle) {
                             firstCycle.classList.add("selected");
                             firstCycle.click();
-                            console.log('✅ First remaining cycle selected');
                         }
                     }, 50);
                 }
 
-                console.log(`✅ Successfully deleted: "${cycleToDelete}"`);
                 if (wasActiveCycle && newActiveCycleName) {
                     this.deps.showNotification('🗑️ ' + getLabel('notify.cycleDeletedSwitch', { vars: { deleted: cycleToDelete, active: newActiveCycleName } }), "info", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
                 } else {
@@ -553,7 +520,6 @@ export class RoutineSwitcher {
      * Duplicate the selected miniCycle and show it in inline edit mode
      */
     duplicateMiniCycle() {
-        console.log('📋 Duplicating miniCycle (state-based)...');
 
         const selectedCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
 
@@ -582,8 +548,6 @@ export class RoutineSwitcher {
         const cycleKey = selectedCycle.dataset.cycleKey;
         const originalCycle = cycles[cycleKey];
 
-        console.log('🔍 Duplicating cycle:', cycleKey);
-
         if (!cycleKey || !originalCycle) {
             console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!originalCycle });
             this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
@@ -593,8 +557,6 @@ export class RoutineSwitcher {
         // ✅ Generate unique name for the copy
         const baseName = `${originalCycle.title} Copy`;
         const { name: uniqueName } = getUniqueCycleName(baseName, cycles);
-
-        console.log(`📋 Creating copy: "${originalCycle.title}" → "${uniqueName}"`);
 
         // ✅ Deep copy the cycle data
         const copiedCycle = structuredClone(originalCycle);
@@ -619,8 +581,6 @@ export class RoutineSwitcher {
             state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
         }, true); // immediate save
 
-        console.log(`✅ Cycle duplicated: "${uniqueName}"`);
-
         // ✅ Update storage estimate (add duplicated routine size)
         const duplicatedSizeBytes = getObjectSizeBytes(copiedCycle);
         adjustStorageEstimate(duplicatedSizeBytes);
@@ -629,7 +589,6 @@ export class RoutineSwitcher {
         if (barElement && textElement) {
             updateStorageBarUIEstimated(barElement, textElement);
         }
-        console.log(`📊 Storage estimate updated: +${formatBytes(duplicatedSizeBytes)}`);
 
         // ✅ Refresh the list and put the new item in inline edit mode
         this.loadMiniCycleList();
@@ -656,7 +615,6 @@ export class RoutineSwitcher {
                 // ✅ Put the item in inline edit mode
                 this._startInlineEdit(newItem, uniqueName);
 
-                console.log('✅ New cycle selected and in edit mode');
             }
         }, 100);
 
@@ -728,7 +686,6 @@ export class RoutineSwitcher {
 
         // If name unchanged or empty, just restore
         if (!newName || newName === oldName) {
-            console.log('ℹ️ Name unchanged or empty');
             return;
         }
 
@@ -740,11 +697,8 @@ export class RoutineSwitcher {
         const { name: uniqueName, wasModified } = getUniqueCycleName(newName, cycles);
 
         if (wasModified) {
-            console.log(`⚠️ Name collision: "${newName}" → "${uniqueName}"`);
             this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: uniqueName } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
         }
-
-        console.log(`📝 Renaming inline: "${oldKey}" → "${uniqueName}"`);
 
         // ✅ Update through state system
         this.deps.AppState.update(state => {
@@ -912,10 +866,8 @@ export class RoutineSwitcher {
     }
 
     hideSwitchMiniCycleModal() {
-        console.log("🔍 Hiding switch miniCycle modal (Schema 2.5 only)...");
 
         const switchModal = this.deps.getModal('routineSwitcher');
-        console.log("🔍 Modal Found?", switchModal);
 
         if (!switchModal) {
             console.error("❌ Error: Modal not found.");
@@ -925,14 +877,12 @@ export class RoutineSwitcher {
         if (switchModal.open) switchModal.close();
         this.closeThemePicker();
         switchModal._previousFocus?.focus({ focusVisible: false });
-        console.log("✅ Modal hidden successfully");
     }
 
     /**
      * Confirm miniCycle selection and switch to it
      */
     confirmMiniCycle() {
-        console.log("✅ Confirming miniCycle selection (state-based)...");
 
         const selectedCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
 
@@ -956,19 +906,14 @@ export class RoutineSwitcher {
             return;
         }
 
-        console.log(`🔄 Switching to cycle: ${cycleKey}`);
-        console.log('🔍 Current active cycle before switch:', this.deps.AppState.get()?.appState?.activeCycleId);
-
         // ✅ Validate and repair cycle data before switching (like import does)
         const repaired = this._validateAndRepairCycleData(cycleKey);
         if (repaired) {
-            console.log('🔧 Cycle data was repaired before switching');
         }
 
         // ✅ Update through state system
         this.deps.AppState.update(state => {
             const oldCycleId = state.appState.activeCycleId;
-            console.log('🔍 Inside state update - changing from:', oldCycleId, 'to:', cycleKey);
 
             // ✅ Save lastModified and undoSizeBytes to the OLD cycle before switching
             // This captures when the user last worked on that routine and its undo storage footprint
@@ -979,10 +924,8 @@ export class RoutineSwitcher {
                 const undoCacheCycleId = getUndoCacheCycleId();
                 if (undoCacheCycleId === oldCycleId) {
                     state.data.cycles[oldCycleId].undoSizeBytes = getUndoCacheSizeBytes();
-                    console.log(`💾 Saved undoSizeBytes to "${oldCycleId}":`, state.data.cycles[oldCycleId].undoSizeBytes);
                 }
 
-                console.log(`📅 Saved lastModified to "${oldCycleId}":`, state.data.cycles[oldCycleId].lastModified);
             }
 
             state.appState.activeCycleId = cycleKey;
@@ -994,15 +937,12 @@ export class RoutineSwitcher {
 
         // ✅ Verify the change took effect
         const newActiveId = this.deps.AppState.get()?.appState?.activeCycleId;
-        console.log('🔍 Active cycle after state update:', newActiveId);
 
         if (newActiveId !== cycleKey) {
             console.error('❌ State update failed! Expected:', cycleKey, 'Got:', newActiveId);
             this.deps.showNotification('⚠️ ' + getLabel('notify.failedToSwitch'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
-
-        console.log(`✅ Switched to cycle (state-based): ${cycleKey}`);
 
         // ✅ Notify undo system of cycle switch (DI-pure)
         if (typeof this.deps.onCycleSwitched === 'function') {
@@ -1026,9 +966,6 @@ export class RoutineSwitcher {
                 console.warn('⚠️ Cycle changed during switch delay, aborting stale load');
                 return;
             }
-
-            console.log('🔄 Loading new cycle after delay...');
-            console.log('🔍 Final active cycle check before loading:', currentActiveCycle);
 
             // Load the new cycle
             if (typeof this.deps.loadMiniCycle === 'function') {
@@ -1162,12 +1099,10 @@ export class RoutineSwitcher {
 
         // ✅ Apply repairs through AppState.update() - never mutate outside transaction
         if (repaired) {
-            console.log(`🔧 Repairing cycle data for "${cycleKey}"...`);
             this.deps.AppState.update(state => {
                 state.data.cycles[cycleKey] = cycle;
                 state.metadata.lastModified = Date.now();
             }, true);
-            console.log(`✅ Cycle "${cycleKey}" data repaired and saved`);
         }
 
         return repaired;
@@ -1238,7 +1173,6 @@ export class RoutineSwitcher {
      * Update preview window with cycle tasks
      */
     updatePreview(cycleName) {
-        console.log('👁️ Updating preview (state-based)...');
 
         // ✅ Use AppState instead of loadMiniCycleData()
         if (!this.deps.AppState?.isReady?.()) {
@@ -1254,8 +1188,6 @@ export class RoutineSwitcher {
 
         const cycles = currentState.data?.cycles || {};
         const cycleData = cycles[cycleName];
-
-        console.log('🔍 Preview for cycle:', cycleName);
 
         const previewWindow = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_WINDOW);
 
@@ -1287,11 +1219,8 @@ export class RoutineSwitcher {
             dateDisplay.textContent = '';
             // Also update desktop preview
             this._updateDesktopPreview(null, cycleName);
-            console.log('⚠️ No tasks found for preview');
             return;
         }
-
-        console.log('📋 Generating preview for', cycleData.tasks.length, 'tasks');
 
         // ✅ Create a simple list of tasks for preview
         const tasksPreview = cycleData.tasks
@@ -1320,7 +1249,6 @@ export class RoutineSwitcher {
         // Also update desktop preview panel
         this._updateDesktopPreview(cycleData, cycleName, tasksPreview, dateLabel, formattedDate);
 
-        console.log('✅ Preview updated successfully');
     }
 
     /**
@@ -1512,7 +1440,6 @@ export class RoutineSwitcher {
      * Load miniCycle list (actual implementation)
      */
     loadMiniCycleListActual() {
-        console.log('📋 Loading miniCycle list (state-based)...');
 
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
@@ -1546,8 +1473,6 @@ export class RoutineSwitcher {
             });
         });
 
-        console.log('📊 Found cycles:', Object.keys(cycles).length);
-
         // ✅ Ensure we have cycles to display
         if (Object.keys(cycles).length === 0) {
             console.warn('⚠️ No cycles found to display');
@@ -1557,7 +1482,6 @@ export class RoutineSwitcher {
 
         // ✅ Filter cycles based on current filter mode
         const filteredCycles = this._filterCycles(Object.entries(cycles));
-        console.log('🔍 Filtered cycles by mode:', this._filterMode, `(${filteredCycles.length}/${Object.keys(cycles).length})`);
 
         // ✅ Handle no matches for filter
         if (filteredCycles.length === 0) {
@@ -1568,7 +1492,6 @@ export class RoutineSwitcher {
 
         // ✅ Sort cycles based on current sort mode
         const sortedCycles = this._sortCycles(filteredCycles);
-        console.log('🔀 Sorted cycles by:', this._sortMode);
 
         // ✅ Use sorted entries to render list
         sortedCycles.forEach(([cycleKey, cycleData], index) => {
@@ -1629,8 +1552,6 @@ export class RoutineSwitcher {
                 // Skip selection when clicking inside an inline edit input
                 if (event?.target?.classList?.contains('cycle-item-edit-input')) return;
 
-                console.log('🎯 Cycle selected:', cycleData.title || cycleKey, 'Key:', cycleKey);
-
                 this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => {
                     item.classList.remove("selected");
                     item.setAttribute("aria-selected", "false");
@@ -1689,7 +1610,6 @@ export class RoutineSwitcher {
 
         this.deps.updateReminderButtons();
 
-        console.log('✅ MiniCycle list loaded successfully (state-based), final count:', miniCycleList.children.length);
     }
 
     /**
@@ -1704,7 +1624,6 @@ export class RoutineSwitcher {
             resetStorageEstimate();
             // ✅ Pass showNotification for one-time 75% storage warning
             const info = updateStorageBarUI(barElement, textElement, this.deps.showNotification);
-            console.log('📊 Storage bar updated:', info);
         } else {
             console.warn('⚠️ Storage bar elements not found');
         }
@@ -2014,7 +1933,6 @@ export class RoutineSwitcher {
         const doSave = () => {
             this._idleSaveScheduled = false;
             if (AppState.isReady?.()) {
-                console.log('💾 Idle-time save for routine operation');
                 AppState.forceSave();
             }
         };
@@ -2028,7 +1946,6 @@ export class RoutineSwitcher {
 
     // Fallback methods for graceful degradation
     fallbackNotification(msg) {
-        console.log(`[RoutineSwitcher] ${msg}`);
     }
 
     fallbackPrompt(options) {
@@ -2070,8 +1987,6 @@ export async function initRoutineSwitcher(dependencies) {
     // This prevents ES module cache from serving stale versions
     const version = APP_VERSION;
 
-    console.log(`📦 RoutineSwitcher: Loading utilities with version ${version}...`);
-
     // Import storage utilities
     const storageUtils = await import(`../utils/storageUtils.js?v=${version}`);
     updateStorageBarUI = storageUtils.updateStorageBarUI;
@@ -2091,11 +2006,8 @@ export async function initRoutineSwitcher(dependencies) {
     getUndoCacheSizeBytes = undoManager.getUndoCacheSizeBytes;
     getUndoCacheCycleId = undoManager.getUndoCacheCycleId;
 
-    console.log('✅ RoutineSwitcher: Utilities loaded');
-
     // Now create the instance
     routineSwitcher = new RoutineSwitcher(dependencies);
-    console.log('✅ RoutineSwitcher instance created');
     return routineSwitcher;
 }
 
@@ -2148,7 +2060,6 @@ function setupModalClickOutside() {
 // ============================================
 
 // Phase 2 Step 11 - Clean exports
-console.log('🔄 RoutineSwitcher module loaded');
 
 export {
     switchMiniCycle,

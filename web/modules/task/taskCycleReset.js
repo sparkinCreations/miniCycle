@@ -46,7 +46,7 @@
  * ### Important: To-Do Mode vs Cycle Reset
  * - **To-Do Mode clearing** → `deleteCompletedTasksImpl()` → records to clearedTasks
  * - **Cycle reset (Auto/Manual)** → `resetTasks()` → does NOT record to clearedTasks
- * - **Mark for Removal tasks** → deleted during reset, NOT recorded to clearedTasks
+ * - **Clear on Reset tasks** → deleted during reset, recorded to clearedTasks for recreate
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
@@ -105,9 +105,7 @@ const _deps = new Proxy({}, {
  */
 export function setTaskCycleResetDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('Task Cycle Reset dependencies set:', Object.keys(dependencies));
 }
-
 
 // ============================================================================
 // MODULE STATE
@@ -130,7 +128,6 @@ function trackTimeout(timeoutId) {
  * Clear all tracked timeouts
  */
 export function clearAllTimeouts() {
-    console.log(`Clearing ${activeTimeouts.size} active timeouts`);
     for (const timeoutId of activeTimeouts) {
         clearTimeout(timeoutId);
     }
@@ -179,7 +176,6 @@ async function waitForUIFunctions(deps, maxWaitMs = TASK_TIMEOUTS.UI_FUNC_WAIT_T
         const hasShowCompletionAnimation = typeof deps.showCompletionAnimation === 'function';
 
         if (hasIncrementCycleCount && hasHelpWindowManager && hasShowCompletionAnimation) {
-            console.log('All UI functions available for resetTasks');
             return true;
         }
 
@@ -316,7 +312,6 @@ function resetTasksData(context, deps) {
 
         // Check if task should be deleted
         if (task?.deleteWhenComplete === true) {
-            console.log(`Marking task for deletion: ${task.text}`);
             tasksToDelete.push(taskId);
             if (task.text) tasksToDeleteNames.push(task.text);
             taskEl.remove();
@@ -346,6 +341,23 @@ function resetTasksData(context, deps) {
         animationIndex++;
     });
 
+    // Record deleteWhenComplete tasks to cleared tasks before deletion
+    if (tasksToDelete.length > 0) {
+        const tasksToRecord = tasksToDelete.map(taskId => {
+            const task = freshCycleData?.tasks?.find(t => t.id === taskId);
+            return task ? {
+                text: task.text,
+                highPriority: task.highPriority || false,
+                dueDate: task.dueDate
+            } : null;
+        }).filter(Boolean);
+
+        const recordFn = deps.recordMultipleClearedTasks || _deps.recordMultipleClearedTasks;
+        if (tasksToRecord.length > 0 && typeof recordFn === 'function') {
+            recordFn(tasksToRecord);
+        }
+    }
+
     // ✅ Use AppState only (no localStorage fallback) - DI-pure
     if (AppState?.isReady?.()) {
         AppState.update(state => {
@@ -362,7 +374,6 @@ function resetTasksData(context, deps) {
                 });
             }
         }, true); // immediate save - required for stats panel to read correct data
-        console.log('Reset data saved to AppState');
     } else {
         console.warn('⚠️ AppState not ready for cycle reset - state may be lost');
     }
@@ -408,7 +419,6 @@ function moveCompletedTasksBack(context, deps) {
     });
 
     if (completedTaskElements.length > 0) {
-        console.log(`Moved ${completedTaskElements.length} task(s) back to active list`);
     }
 
     // Restore original task order from AppState
@@ -429,7 +439,6 @@ function moveCompletedTasksBack(context, deps) {
                     taskList.appendChild(taskEl);
                 }
             });
-            console.log('✅ Restored original task order after reset');
         }
     }
 
@@ -450,8 +459,6 @@ export async function resetTasksImpl(deps = {}) {
     try {
         if (isResetting) return;
         isResetting = true;
-
-        console.log('Resetting tasks (Schema 2.5 only)...');
 
         // Merge deps with module-level deps
         const mergedDeps = {
@@ -485,14 +492,12 @@ export async function resetTasksImpl(deps = {}) {
         }
 
         const { activeCycle, cycles } = context;
-        console.log('Resetting tasks for cycle:', activeCycle);
 
         // Step 2: Capture undo snapshot BEFORE modifications
         if (typeof mergedDeps.captureStateSnapshot === 'function' && !mergedDeps.isPerformingUndoRedo()) {
             const currentState = mergedDeps.AppState?.get?.();
             if (currentState) {
                 mergedDeps.captureStateSnapshot(currentState);
-                console.log('Undo snapshot captured');
             }
         }
 
@@ -562,7 +567,6 @@ export async function resetTasksImpl(deps = {}) {
             }
             // Note: autoSave removed - resetTasksData already calls AppState.update()
             mergedDeps.updateStatsPanel?.();
-            console.log('Reset tasks completed');
         }, TASK_TIMEOUTS.POST_RESET_CLEANUP));
 
         trackTimeout(setTimeout(() => {
@@ -623,8 +627,6 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
         return task?.recurring === true;
     }).length;
 
-    console.log(`Deleting ${tasksToDelete.length} tasks marked for deletion`);
-
     // Trigger logo scan effect for to-do mode task clearing
     if (typeof _deps.triggerLogoScan === 'function') {
         _deps.triggerLogoScan(500);
@@ -660,9 +662,9 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
 
     // Chain recurring-removed message after tasks-cleared message (if applicable)
     if (recurringDeleteCount > 0) {
-        setTimeout(() => {
+        trackTimeout(setTimeout(() => {
             resolvedHelpMgr?.showRecurringRemovedMessage?.();
-        }, 2100); // fires after 2s tasks-cleared message ends
+        }, 2100)); // fires after 2s tasks-cleared message ends
     }
 
     // Animate and remove from DOM, collect IDs
@@ -679,10 +681,10 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     const lastIndex = tasksToDelete.length - 1;
     tasksToDelete.forEach(({ taskElement }, index) => {
         const delay = index * CLEAR_STAGGER_DELAY;
-        setTimeout(() => {
+        trackTimeout(setTimeout(() => {
             taskElement.classList.add("task-clearing");
             // Remove from DOM after animation completes
-            setTimeout(() => {
+            trackTimeout(setTimeout(() => {
                 taskElement.remove();
                 // After last task is removed, update DOM-dependent UI
                 if (index === lastIndex) {
@@ -691,8 +693,8 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
                     }
                     requestUIUpdate?.({ progress: true, stats: true });
                 }
-            }, CLEAR_ANIMATION_DURATION);
-        }, delay);
+            }, CLEAR_ANIMATION_DURATION));
+        }, delay));
     });
 
     // ✅ Use AppState only (no localStorage fallback) - DI-pure
@@ -752,13 +754,10 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
  */
 export function markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps = {}) {
     if (isResetting) {
-        console.log('⏳ Reset already in progress, ignoring duplicate mark-all-complete');
         return;
     }
 
     const checkMiniCycle = deps.checkMiniCycle || _deps.checkMiniCycle;
-
-    console.log('Marking all tasks as complete');
 
     taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
 
@@ -816,11 +815,8 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
     try {
         // Guard against rapid clicks while a reset is already in progress
         if (isResetting) {
-            console.log('⏳ Reset already in progress, ignoring duplicate complete-all');
             return;
         }
-
-        console.log('Handling complete all tasks (Schema 2.5 only)...');
 
         // Merge deps with module-level deps
         const mergedDeps = {
@@ -840,7 +836,6 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
         if (!context) return;
 
         const { activeCycle, cycleData, taskList } = context;
-        console.log('Processing complete all tasks for cycle:', activeCycle);
 
         // Step 2: Check if confirmation modal is needed (due dates in cycle mode)
         if (!cycleData.deleteCheckedTasks) {
@@ -880,8 +875,6 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
         // Step 3: Execute the appropriate action
         await executeCompleteAll(activeCycle, cycleData, taskList, resetTasksFn, mergedDeps);
 
-        console.log('Complete all tasks handled (Schema 2.5)');
-
     } catch (error) {
         console.warn('Complete all tasks failed:', error);
         _deps.showNotification?.(getLabel('notify.completeAllFailed'), 'warning');
@@ -910,4 +903,3 @@ async function executeCompleteAll(activeCycle, cycleData, taskList, resetTasksFn
 // MODULE INFO
 // ============================================================================
 
-console.log('Task Cycle Reset module loaded (DI-pure)');

@@ -36,7 +36,6 @@ export class DeviceDetectionManager {
   constructor(dependencies = {}) {
     // Store constructor-provided version (can be overridden by DI-injected AppMeta)
     this._constructorVersion = dependencies.AppMeta?.version;
-    console.log('[DeviceDetection] Constructor: set version =', this._constructorVersion);
   }
 
   /**
@@ -57,8 +56,6 @@ export class DeviceDetectionManager {
   async runDeviceDetection() {
     const userAgent = navigator.userAgent;
 
-    console.log('🔍 Running device detection (Schema 2.5 only)...', userAgent);
-
     // Check manual override first
     if (await this.checkManualOverride(userAgent)) {
       return;
@@ -71,7 +68,6 @@ export class DeviceDetectionManager {
   async checkManualOverride(userAgent) {
     const manualOverride = localStorage.getItem(STORAGE_KEYS.FORCE_FULL_VERSION);
     if (manualOverride === 'true') {
-      console.log('🚀 Manual override detected - user chose full version');
 
       // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
       const appInitModule = this.deps.appInit;
@@ -91,7 +87,6 @@ export class DeviceDetectionManager {
         userAgent: userAgent
       });
 
-      console.log('✅ Manual override saved to Schema 2.5');
       this.deps.showNotification('✅ ' + getLabel('notify.deviceDetectionComplete'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
       return true;
     }
@@ -137,12 +132,9 @@ export class DeviceDetectionManager {
 
     await this.saveCompatibilityData(compatibilityData);
 
-    console.log('✅ Device detection saved to Schema 2.5:', compatibilityData);
-
     if (shouldUseLite) {
       this.redirectToLite();
     } else {
-      console.log('💻 Device is capable - staying on full version');
     }
   }
 
@@ -171,7 +163,6 @@ export class DeviceDetectionManager {
         };
       }, true);
 
-      console.log('✅ Device compatibility data saved via AppState');
     } catch (error) {
       console.error('❌ Error saving compatibility data:', error);
     }
@@ -179,7 +170,6 @@ export class DeviceDetectionManager {
 
   redirectToLite() {
     const cacheBuster = `?redirect=auto&v=${this.currentVersion}&t=${Date.now()}`;
-    console.log('📱 Redirecting to lite version:', LITE_VERSION_PATH + cacheBuster);
 
     this.deps.showNotification('📱 ' + getLabel('notify.redirectingToLite'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
     setTimeout(() => {
@@ -189,7 +179,6 @@ export class DeviceDetectionManager {
 
   // Auto-redetection on version change
   async autoRedetectOnVersionChange() {
-    console.log('🔄 Checking version change (Schema 2.5 only)...');
 
     // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
     const appInitModule = this.deps.appInit;
@@ -213,20 +202,15 @@ export class DeviceDetectionManager {
     
     // If version changed or first time, re-run detection
     if (lastDetectionVersion !== this.currentVersion) {
-      console.log('🔄 Version changed or first run - running device detection');
-      console.log('   Previous version:', lastDetectionVersion || 'None');
-      console.log('   Current version:', this.currentVersion);
 
       // ✅ No need for setTimeout - appInit.waitForCore() already handles timing
       await this.runDeviceDetection();
     } else {
-      console.log('✅ Device detection up-to-date for version', this.currentVersion);
     }
   }
 
   // Generate compatibility report
   async reportDeviceCompatibility() {
-    console.log('📊 Generating device compatibility report (Schema 2.5 only)...');
 
     // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
     const appInitModule = this.deps.appInit;
@@ -270,7 +254,6 @@ export class DeviceDetectionManager {
     
     this.displayCompatibilityReport(deviceInfo, storedDecision);
     
-    console.log('📊 Device Compatibility Report (Schema 2.5):', deviceInfo);
     return deviceInfo;
   }
 
@@ -320,7 +303,6 @@ export class DeviceDetectionManager {
     this.clearDetectionData();
 
     // ✅ No need for setTimeout - appInit.waitForCore() already handles timing
-    console.log('🔄 Running fresh device detection...');
     await this.runDeviceDetection();
   }
 
@@ -332,7 +314,6 @@ export class DeviceDetectionManager {
         await AppState.update(state => {
           if (state?.settings?.deviceCompatibility) {
             delete state.settings.deviceCompatibility;
-            console.log('🧹 Cleared device compatibility from Schema 2.5');
           }
         }, true);
       } catch (error) {
@@ -342,7 +323,6 @@ export class DeviceDetectionManager {
 
     // Also clear legacy keys for cleanup
     localStorage.removeItem(STORAGE_KEYS.FORCE_FULL_VERSION);
-    console.log('🧹 Cleared device detection cache');
   }
 }
 
@@ -383,8 +363,6 @@ function isTouchDevice() {
   const touchPoints = navigator.maxTouchPoints || navigator.msMaxTouchPoints;
   const isFinePointer = window.matchMedia("(pointer: fine)").matches;
 
-  console.log(`touch detected: hasTouchEvents=${hasTouchEvents}, maxTouchPoints=${touchPoints}, isFinePointer=${isFinePointer}`);
-
   // Fine pointer (mouse/trackpad) means NOT primarily touch
   if (isFinePointer) return false;
 
@@ -392,7 +370,6 @@ function isTouchDevice() {
 }
 
 // DI-pure module (no window.* fallbacks for dependencies)
-console.log('📱 DeviceDetection module loaded (DI-pure, no window.* exports)');
 
 // ES6 exports (DeviceDetectionManager class already exported at line 19)
 export {

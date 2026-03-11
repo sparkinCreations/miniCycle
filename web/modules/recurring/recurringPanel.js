@@ -79,7 +79,6 @@ export function setRecurringPanelDependencies(dependencies) {
  */
 export class RecurringPanelManager {
     constructor(dependencies = {}) {
-        console.log('🎛️ Initializing RecurringPanelManager...');
 
         // Resolve and spread — schema defines required vs optional, no manual mapping needed
         this.deps = { ...di.resolve(dependencies) };
@@ -95,7 +94,6 @@ export class RecurringPanelManager {
         // ✅ MEMORY LEAK FIX: Track event delegation initialization
         this._eventDelegationInitialized = false;
 
-        console.log('✅ RecurringPanelManager initialized');
     }
 
     // ============================================
@@ -129,7 +127,6 @@ export class RecurringPanelManager {
      * Should be called once during app initialization
      */
     setup() {
-        console.log('⚙️ Setting up recurring panel...');
 
         // Inject form actions for callback pattern
         if (_formModule?.setFormActions) {
@@ -175,7 +172,6 @@ export class RecurringPanelManager {
             const changeSettingsBtn = this.deps.getElementById(DOM_IDS.CHANGE_RECURRING_SETTINGS);
             if (changeSettingsBtn) {
                 this.deps.safeAddEventListener(changeSettingsBtn, "click", () => {
-                    console.log('🔧 Change recurring settings clicked');
                     if (this.state.selectedTaskId) {
                         this.openRecurringSettingsPanelForTask(this.state.selectedTaskId);
                     } else {
@@ -323,7 +319,6 @@ export class RecurringPanelManager {
             });
 
             this.state.isInitialized = true;
-            console.log('✅ Recurring panel setup complete');
 
         } catch (error) {
             console.error('❌ Error setting up recurring panel:', error);
@@ -738,7 +733,6 @@ export class RecurringPanelManager {
      * Open the recurring panel
      */
     async openPanel() {
-        console.log('🔁 Opening recurring panel...');
 
         try {
             // ✅ Wait for core systems to be ready (AppState + data)
@@ -763,7 +757,6 @@ export class RecurringPanelManager {
             this.updateRecurringSettingsVisibility();
 
             this.state.panelOpen = true;
-            console.log('✅ Recurring panel opened successfully');
 
         } catch (error) {
             console.error('❌ Error opening recurring panel:', error);
@@ -775,7 +768,6 @@ export class RecurringPanelManager {
      * Close the recurring panel
      */
     closePanel() {
-        console.log('🔁 Closing recurring panel...');
 
         try {
             const overlay = this.deps.getModal('recurringOverlay');
@@ -794,7 +786,6 @@ export class RecurringPanelManager {
 
             this.state.panelOpen = false;
             this.state.selectedTaskId = null;
-            console.log('✅ Recurring panel closed');
 
         } catch (error) {
             console.error('❌ Error closing recurring panel:', error);
@@ -810,7 +801,6 @@ export class RecurringPanelManager {
      * @param {Object} currentCycleData - Optional cycle data override
      */
     async updateRecurringPanel(currentCycleData = null) {
-        console.log('🔄 Updating recurring panel...');
 
         try {
             const recurringList = this.deps.getElementById(DOM_IDS.RECURRING_TASK_LIST);
@@ -838,12 +828,8 @@ export class RecurringPanelManager {
                 return;
             }
 
-            console.log('📊 Processing recurring templates:', Object.keys(cycleData.recurringTemplates || {}).length);
-            console.log('🔍 Template IDs found:', Object.keys(cycleData.recurringTemplates || {}));
-
             // Use templates directly - they are the source of truth, independent of tasks array
             const recurringTasks = Object.values(cycleData.recurringTemplates || {});
-            console.log('📋 Recurring templates:', recurringTasks.map(t => ({ id: t.id, text: t.text })));
 
             // Clear existing list
             recurringList.innerHTML = "";
@@ -865,7 +851,6 @@ export class RecurringPanelManager {
             const panelHint = recurringList.parentElement?.querySelector('.recurring-panel-hint');
 
             if (recurringTasks.length === 0) {
-                console.log('📋 No recurring tasks found, showing empty state');
                 if (emptyState) emptyState.classList.remove("hidden");
                 if (panelHint) panelHint.classList.add("hidden");
 
@@ -906,7 +891,6 @@ export class RecurringPanelManager {
             }
 
             this.updateRecurringSummary();
-            console.log('✅ Recurring panel updated successfully');
 
         } catch (error) {
             console.error('❌ Error updating recurring panel:', error);
@@ -1133,7 +1117,6 @@ export class RecurringPanelManager {
      * @param {Object} task - The task to preview
      */
     showTaskSummaryPreview(task) {
-        console.log('👁️ Showing task summary preview...', task?.id);
 
         try {
             if (!task || !task.id) {
@@ -1263,7 +1246,6 @@ export class RecurringPanelManager {
         // Attach click listener to button (guard for tests)
         if (this.deps.safeAddEventListener) {
             this.deps.safeAddEventListener(changeBtn, 'click', () => {
-                console.log('🔧 Change recurring settings clicked');
                 if (this.state.selectedTaskId) {
                     this.openRecurringSettingsPanelForTask(this.state.selectedTaskId);
                 } else {
@@ -1292,7 +1274,6 @@ export class RecurringPanelManager {
      * Update recurring summary text
      */
     updateRecurringSummary() {
-        console.log('📝 Updating recurring summary...');
 
         try {
             const summaryEl = this.deps.getElementById(DOM_IDS.RECURRING_SUMMARY);
@@ -1304,8 +1285,6 @@ export class RecurringPanelManager {
             // Build settings from the panel input
             const settings = this.buildRecurringSettingsFromPanel();
 
-            console.log('📊 Built settings from panel:', settings);
-
             // Simulate fallback default time (for preview only)
             if (!settings.useSpecificTime && !settings.defaultRecurTime) {
                 settings.defaultRecurTime = new Date().toISOString();
@@ -1314,13 +1293,9 @@ export class RecurringPanelManager {
             // Generate summary text using the shared utility
             const summaryText = this.deps.buildRecurringSummary(settings);
 
-            console.log('📄 Generated summary text:', summaryText);
-
             // Apply to DOM
             summaryEl.textContent = summaryText;
             summaryEl.classList.remove("hidden");
-
-            console.log('✅ Recurring summary updated successfully');
 
         } catch (error) {
             console.error('❌ Error updating recurring summary:', error);
@@ -1372,7 +1347,6 @@ export class RecurringPanelManager {
 
             // Always show the recurring button - users can now add tasks from the panel
             panelButton.classList.remove("hidden");
-            console.log('🔘 Recurring button always visible');
 
         } catch (error) {
             console.error('❌ Error updating panel button visibility:', error);
@@ -1531,7 +1505,6 @@ export class RecurringPanelManager {
             });
         }
 
-        console.log('✅ Add task section setup complete');
     }
 
     /**
@@ -1633,8 +1606,6 @@ export class RecurringPanelManager {
                 nonRecurringList.appendChild(li);
             });
 
-            console.log(`📋 Populated ${nonRecurringTasks.length} available tasks`);
-
         } catch (error) {
             console.error('❌ Error populating available tasks:', error);
             noTasksMessage.classList.remove("hidden");
@@ -1647,7 +1618,6 @@ export class RecurringPanelManager {
      * Adds all selected tasks with default recurring settings
      */
     async handleConfirmAddRecurring() {
-        console.log('➕ Confirming add tasks as recurring...');
 
         try {
             if (!this.deps.AppState?.isReady?.()) {
@@ -1714,8 +1684,6 @@ export class RecurringPanelManager {
             const taskWord = selectedTaskIds.length === 1 ? 'task' : 'tasks';
             this.deps.showNotification(`🔁 ${getLabel('notify.recurringAdded', { vars: { count: selectedTaskIds.length, taskWord } })}`, 'success');
 
-            console.log(`✅ Added ${selectedTaskIds.length} tasks as recurring`);
-
         } catch (error) {
             console.error('❌ Error adding tasks as recurring:', error);
             this.deps.showNotification(getLabel('notify.recurringAddFailed'), 'error');
@@ -1731,7 +1699,6 @@ export class RecurringPanelManager {
      */
     attachRecurringSummaryListeners() {
         if (!this.deps.safeAddEventListener) return; // Guard: dependency not injected (e.g., in tests)
-        console.log('🔗 Attaching recurring summary listeners...');
 
         try {
             const panel = this.deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
@@ -1743,8 +1710,6 @@ export class RecurringPanelManager {
             // Listen for changes in the panel
             this.deps.safeAddEventListener(panel, "change", () => this.updateRecurringSummary());
             this.deps.safeAddEventListener(panel, "click", () => this.updateRecurringSummary());
-
-            console.log('✅ Recurring summary listeners attached successfully');
 
         } catch (error) {
             console.error('❌ Error attaching summary listeners:', error);
@@ -1766,7 +1731,6 @@ export class RecurringPanelManager {
 
             this.openRecurringSettingsPanelForTask(taskId);
         });
-        console.log('✅ Recurring settings click listener wired');
     }
 
     // ============================================
@@ -1778,7 +1742,6 @@ export class RecurringPanelManager {
      * @param {string} taskIdToPreselect - Task ID to preselect
      */
     async openRecurringSettingsPanelForTask(taskIdToPreselect) {
-        console.log('⚙️ Opening recurring settings panel for task:', taskIdToPreselect);
 
         try {
             await this.updateRecurringPanel(); // Render panel fresh
@@ -1822,8 +1785,6 @@ export class RecurringPanelManager {
 
             // Make sure checkboxes and toggle show correctly
             this.updateRecurringSettingsVisibility();
-
-            console.log('✅ Recurring settings panel opened successfully');
 
         } catch (error) {
             console.error('❌ Error opening settings panel:', error);
@@ -1872,8 +1833,6 @@ export async function loadPanelSubModules(version) {
         return; // Already loaded
     }
 
-    console.log(`Loading recurringPanel sub-modules with v=${version}...`);
-
     const [summaryModule, gridsModule, formModule, eventsModule, setupModule] = await Promise.all([
         import(`./recurringPanelSummary.js?v=${version}`),
         import(`./recurringPanelGrids.js?v=${version}`),
@@ -1912,7 +1871,6 @@ export async function loadPanelSubModules(version) {
     _setupMonthlyMutualExclusion = setupModule.setupMonthlyMutualExclusion;
     _setupAdditionalListeners = setupModule.setupAdditionalListeners;
 
-    console.log('recurringPanel sub-modules loaded');
 }
 
 /**
@@ -1935,4 +1893,3 @@ export function buildRecurringSummaryFromSettings(settings = {}) {
 // ============================================
 
 // DI-pure module (no window.* fallbacks)
-console.log('🛡️ RecurringPanel module loaded (DI-pure, no window.* exports)');

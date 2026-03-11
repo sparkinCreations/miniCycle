@@ -109,4 +109,3 @@ export function normalizeRecurringSettings(settings = {}) {
     return structuredClone(normalized);
 }
 
-console.log('⚙️ RecurringSettings module loaded');

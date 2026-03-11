@@ -26,7 +26,6 @@ let migrationModule = null;
  */
 export function initMigrationFacade(migrationMod) {
     migrationModule = migrationMod;
-    console.log('✅ Migration facade initialized');
 }
 
 /**
@@ -159,4 +158,3 @@ export function forceAppMigration() {
     return MigrationFacade.forceMigration();
 }
 
-console.log('📦 migrationFacade module loaded');

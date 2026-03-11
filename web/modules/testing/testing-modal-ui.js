@@ -718,4 +718,3 @@ export function initTestingModalEnhancements(callbacks = {}) {
     }, 100);
 }
 
-console.log('Testing Modal UI loaded (DI-pure)');

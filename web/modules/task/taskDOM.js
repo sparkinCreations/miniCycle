@@ -68,7 +68,6 @@ const _deps = new Proxy({}, {
  */
 export function setTaskDOMManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🎨 TaskDOMManager dependencies set:', Object.keys(dependencies));
 }
 
 // ✅ Module classes will be loaded dynamically with versioning
@@ -218,7 +217,6 @@ export class TaskDOMManager {
         // Uses injected AppMeta (no window.* in modules, no hardcoded fallback)
         this.version = resolvedDeps.AppMeta?.version;
 
-        console.log('🎨 TaskDOMManager created with dependencies');
     }
 
     /**
@@ -228,7 +226,6 @@ export class TaskDOMManager {
      */
     injectDependency(name, value) {
         this.deps[name] = value;
-        console.log(`💉 TaskDOMManager: Injected dependency '${name}'`);
 
         // ✅ Also inject into renderer if it exists (for deps like enableDragAndDropOnTask)
         if (this.renderer && typeof this.renderer.injectDependency === 'function') {
@@ -249,17 +246,14 @@ export class TaskDOMManager {
 
             // ✅ STEP 1: Load sub-modules dynamically with versioning
             if (!this.modulesLoaded) {
-                console.log('📦 Loading task sub-modules with versioning...');
 
                 // Get version for cache busting - use injected version only (strict DI)
                 if (!this.version) {
                     console.warn('⚠️ TaskDOMManager: AppMeta.version not provided');
                 }
                 const version = this.version;
-                console.log(`📦 Using version ${version} for sub-module imports`);
 
                 // Load all 6 sub-modules with versioned imports
-                console.log('📦 Starting Promise.all for sub-module imports...');
                 const [
                     { TaskValidator: ValidatorClass },
                     { TaskUtils: UtilsClass, setTaskUtilsDependencies, createOrUpdateTaskData: createOrUpdateTaskDataWrapper, taskToAddTaskOptions },
@@ -275,7 +269,6 @@ export class TaskDOMManager {
                     import(`./taskButtons.js?v=${version}`),
                     import(`./taskDOMPatch.js?v=${version}`)
                 ]);
-                console.log('✅ All 6 sub-modules imported successfully');
 
                 // Store classes for module-level access
                 TaskValidator = ValidatorClass;
@@ -300,15 +293,6 @@ export class TaskDOMManager {
                     get enableDragAndDropOnTask() { return instanceDeps.enableDragAndDropOnTask; },
                     get updateMoveArrowsVisibility() { return instanceDeps.updateMoveArrowsVisibility; },
                     get saveTaskToSchema25() { return instanceDeps.saveTaskToSchema25; }
-                });
-
-                console.log('✅ Module-level classes stored:', {
-                    TaskValidator: !!TaskValidator,
-                    TaskUtils: !!TaskUtils,
-                    TaskRenderer: !!TaskRenderer,
-                    TaskEvents: !!TaskEvents,
-                    TaskButtons: !!TaskButtons,
-                    TaskDOMPatch: !!TaskDOMPatch
                 });
 
                 // Initialize validator module - no window.* fallbacks (Phase 2)
@@ -378,7 +362,6 @@ export class TaskDOMManager {
                 // This sets up ONE listener for all tasks (memory leak fix)
                 if (this.events && typeof this.events.initEventDelegation === 'function') {
                     this.events.initEventDelegation();
-                    console.log('✅ Task click event delegation initialized');
                 }
 
                 // Initialize buttons module - handles all button creation and setup
@@ -393,13 +376,11 @@ export class TaskDOMManager {
                     GlobalUtils: this.deps.GlobalUtils,
                     DEFAULT_TASK_OPTION_BUTTONS: this.deps.DEFAULT_TASK_OPTION_BUTTONS
                 });
-                console.log('✅ TaskButtons module initialized');
 
                 // Initialize patcher module - handles DOM patching without full re-renders
                 this.patcher = this._rawDeps.patcher || new TaskDOMPatch({
                     sanitizeInput: this.deps.sanitizeInput
                 });
-                console.log('✅ TaskDOMPatch module initialized');
 
                 // Phase 3 - No window.* exports (main script handles exposure)
                 // Expose classes on instance so main script can assign to window.__*
@@ -411,16 +392,12 @@ export class TaskDOMManager {
                 this.TaskDOMPatch = TaskDOMPatch;
 
                 this.modulesLoaded = true;
-                console.log('✅ Task sub-modules loaded successfully (versioned)');
             }
 
             // ✅ STEP 2: Wait for core systems (AppState + data) to be ready
-            console.log('⏳ TaskDOMManager waiting for core systems...');
             await _deps.appInit?.waitForCore();
-            console.log('✅ Core systems ready, TaskDOM ready for rendering');
 
             this.initialized = true;
-            console.log('✅ TaskDOMManager initialized successfully');
         } catch (error) {
             console.error('❌ TaskDOMManager initialization failed:', error);
             console.error('❌ Error stack:', error.stack);
@@ -437,7 +414,6 @@ export class TaskDOMManager {
      */
     destroy() {
         try {
-            console.log('🧹 Cleaning up TaskDOMManager...');
 
             // Remove hover event listeners from all tasks
             const tasks = this.deps.querySelectorAll?.('.task.hover-enabled') || [];
@@ -459,7 +435,6 @@ export class TaskDOMManager {
             // Mark as uninitialized
             this.initialized = false;
 
-            console.log('✅ TaskDOMManager cleanup complete');
         } catch (error) {
             console.warn('⚠️ TaskDOMManager cleanup failed:', error);
         }
@@ -514,7 +489,6 @@ export class TaskDOMManager {
     }
 
     fallbackNotification(message, type) {
-        console.log(`[TaskDOM] ${message}`);
     }
 
     fallbackGetMode() {
@@ -719,12 +693,6 @@ export class TaskDOMManager {
      * @param {Event} event - Click event
      */
     handleThreeDotsClick(taskItem, event) {
-        console.log('🔵 Three-dots button clicked:', {
-            taskId: taskItem.dataset.id || 'unknown',
-            eventType: event.type,
-            target: event.target.className,
-            timestamp: Date.now()
-        });
 
         // stopImmediatePropagation stops other handlers on this same element too,
         // not just bubbling. Belt-and-suspenders against duplicate handler registrations.
@@ -900,7 +868,6 @@ export class TaskDOMManager {
                 this.deps.updateUndoRedoButtons();
             }
 
-            console.log("✅ Task completion toggled — undo snapshot pushed.");
         });
 
         addListener(checkbox, "keydown", (e) => {
@@ -996,13 +963,6 @@ export class TaskDOMManager {
             const isCurrentlyRecurring = !!hasRecurringTemplate || isButtonActive;
             const isNowRecurring = !isCurrentlyRecurring;
 
-            console.log('🔄 Toggling recurring state:', {
-                taskId: assignedTaskId,
-                wasRecurring: isCurrentlyRecurring,
-                willBeRecurring: isNowRecurring,
-                hadTemplate: !!hasRecurringTemplate
-            });
-
             task.recurring = isNowRecurring;
             button.classList.toggle("active", isNowRecurring);
             button.setAttribute("aria-pressed", isNowRecurring.toString());
@@ -1019,10 +979,8 @@ export class TaskDOMManager {
                         icon.className = "recurring-indicator";
                         icon.innerHTML = `<span class="icon" aria-hidden="true">${ICONS['sync-alt']}</span>`;
                         taskLabel.appendChild(icon);
-                        console.log('✅ Added recurring icon to task:', assignedTaskId);
                     } else if (!isNowRecurring && existingIcon) {
                         existingIcon.remove();
-                        console.log('✅ Removed recurring icon from task:', assignedTaskId);
                     }
                 }
             }
@@ -1365,7 +1323,6 @@ async function initTaskDOMManager(dependencies = {}) {
     }
 
     // DI-pure - No window.* exports (main script handles exposure)
-    console.log('✅ TaskDOMManager initialization verified - all sub-modules loaded');
     return taskDOMManager;
 }
 
@@ -1856,4 +1813,3 @@ export {
 };
 
 // DI-pure module (no window.* fallbacks in wrappers)
-console.log('🎨 TaskDOM module loaded (DI-pure, no window.* exports)');

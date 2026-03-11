@@ -98,7 +98,6 @@ function simpleHash(str) {
  */
 export function setNotificationsDependencies(dependencies) {
   di.setDependencies(dependencies);
-  console.log('🔔 Notifications dependencies set:', Object.keys(dependencies));
 }
 
 /**
@@ -117,7 +116,6 @@ class EducationalTipManager {
   }
 
   loadDismissedTips() {
-    console.log('📚 Loading dismissed tips (Schema 2.5 only)...');
 
     try {
       // Check if loadMiniCycleData is available (DI-pure)
@@ -148,7 +146,6 @@ class EducationalTipManager {
   }
 
   async saveDismissedTips() {
-    console.log('💾 Saving dismissed tips (Schema 2.5 only)...');
 
     try {
       // ✅ DEFENSIVE CHECK: Ensure deps and AppState exist before accessing
@@ -170,7 +167,6 @@ class EducationalTipManager {
         state.settings.dismissedEducationalTips = this.getDismissedTips();
       }, true);
 
-      console.log('✅ Dismissed tips saved to Schema 2.5');
     } catch (e) {
       console.error('❌ Error saving dismissed tips to Schema 2.5:', e);
     }
@@ -181,13 +177,11 @@ class EducationalTipManager {
   }
 
   dismissTip(tipId) {
-    console.log('🚫 Dismissing tip (Schema 2.5):', tipId);
     this.getDismissedTips()[tipId] = true;
     this.saveDismissedTips();
   }
 
   showTip(tipId) {
-    console.log('👁️ Showing tip (Schema 2.5):', tipId);
     delete this.getDismissedTips()[tipId];
     this.saveDismissedTips();
   }
@@ -390,7 +384,6 @@ export class MiniCycleNotifications {
       const newId = _deps.generateHashId?.(message) || `notif-${simpleHash(message)}`;
       if ([...notificationContainer.querySelectorAll(DOM_SELECTORS.NOTIFICATION)]
           .some(n => n.dataset.id === newId)) {
-        console.log("🔄 Notification already exists, skipping duplicate.");
         return;
       }
 
@@ -482,12 +475,9 @@ export class MiniCycleNotifications {
       this.restoreNotificationPosition(notificationContainer);
 
       // Auto-remove after duration (hover pause)
-      console.log(`🔍 Notification debug - Type: "${type}", Duration: ${duration} (type: ${typeof duration}), Will auto-dismiss: ${!!duration}, Truthy check: ${Boolean(duration)}`);
       if (duration) {
-        console.log(`⏱️ Setting up auto-remove with duration: ${duration}ms`);
         cleanupTimeouts = this.setupAutoRemove(notification, duration);
       } else {
-        console.log(`♾️ No duration set - notification requires manual dismissal (received: ${duration})`);
       }
 
       // Setup drag support
@@ -547,7 +537,6 @@ export class MiniCycleNotifications {
 
       // Prevent duplicates
       if (existing.some(n => n.dataset.id === newId)) {
-        console.log("🔄 Notification already exists, skipping duplicate.");
         return;
       }
 
@@ -626,7 +615,6 @@ export class MiniCycleNotifications {
    * 🔄 Reset notification position
    */
   async resetPosition() {
-    console.log("🔄 Resetting notification position (Schema 2.5 only)...");
 
     // Apply the calculated default position (top-right, below logo)
     // setDefaultPosition handles waitForCore + saves position with modified=false
@@ -637,7 +625,6 @@ export class MiniCycleNotifications {
       console.warn('⚠️ Notification container not found for resetPosition');
     }
 
-    console.log("✅ Notification position reset completed (Schema 2.5)");
   }
 
   /**
@@ -647,14 +634,12 @@ restoreNotificationPosition(notificationContainer) {
     try {
         // ✅ Check if loadMiniCycleData is available (DI-pure)
         if (typeof this.deps.loadMiniCycleData !== 'function') {
-            console.log('⏳ loadMiniCycleData not yet available, using default position');
             this.setDefaultPosition(notificationContainer);
             return;
         }
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
-            console.log('📋 No schema data available, using default position');
             this.setDefaultPosition(notificationContainer);
             return;
         }
@@ -682,7 +667,6 @@ restoreNotificationPosition(notificationContainer) {
         this.setDefaultPosition(notificationContainer);
     }
 }
-
 
 /**
  * 📍 Set smart default notification position
@@ -715,7 +699,6 @@ async setDefaultPosition(notificationContainer) {
     try {
         // ✅ Only save if AppState is available (DI-pure)
         if (!this.deps.AppState || typeof this.deps.AppState.update !== 'function') {
-            console.log('⏳ AppState not ready, position not saved (will use default next time)');
             return;
         }
 
@@ -729,7 +712,6 @@ async setDefaultPosition(notificationContainer) {
             }
         }, true);
     } catch (error) {
-        console.log('⏭️ Could not save default notification position (not critical):', error.message);
     }
 }
   /**
@@ -737,7 +719,6 @@ async setDefaultPosition(notificationContainer) {
    * Returns cleanup function to clear timeouts
    */
   setupAutoRemove(notification, duration) {
-    console.log(`🔧 setupAutoRemove called with duration: ${duration} (type: ${typeof duration})`);
     let hoverPaused = false;
     let focusPaused = false;
     let remaining = duration;
@@ -746,7 +727,6 @@ async setDefaultPosition(notificationContainer) {
     let startTime = Date.now();
 
     const clearNotification = () => {
-      console.log(`🗑️ Auto-removing notification after ${duration}ms`);
       notification.classList.remove("show");
       removeDelayTimeout = setTimeout(() => notification.remove(), UI_TIMEOUTS.NOTIFICATION_FADE);
     };
@@ -805,7 +785,6 @@ async setDefaultPosition(notificationContainer) {
     return () => {
       if (removeTimeout) clearTimeout(removeTimeout);
       if (removeDelayTimeout) clearTimeout(removeDelayTimeout);
-      console.log('🧹 Cleared notification timeouts');
     };
   }
 
@@ -866,7 +845,6 @@ async setDefaultPosition(notificationContainer) {
           state.settings.notificationPositionModified = true;
         }, true); // Immediate save to prevent race conditions
 
-        console.log('💾 Notification position saved via AppState:', { x, y });
       } catch (error) {
         console.warn("⚠️ Failed to save notification position:", error);
       }
@@ -1020,7 +998,6 @@ async setDefaultPosition(notificationContainer) {
 
     // ✅ FIX #2: Watch for notification removal and cleanup listeners
     const cleanup = () => {
-      console.log('🧹 Cleaning up notification listeners');
       // Clear any pending throttled save
       if (pendingSave) {
         clearTimeout(pendingSave);
@@ -1764,5 +1741,3 @@ async setDefaultPosition(notificationContainer) {
 
 // Phase 2 Step 3 - Clean exports (no window.* pollution)
 export { EducationalTipManager };
-
-console.log('🔔 Notification system loaded (Phase 2 - no window.* exports)');

@@ -96,7 +96,6 @@ let _dragDropInitialized = false;
 export function setupImportButtons() {
     // ✅ Idempotency guard
     if (_importButtonsInitialized) {
-        console.log('✅ Import buttons already set up');
         return;
     }
     _importButtonsInitialized = true;
@@ -229,7 +228,6 @@ export function setupImportButtons() {
 export function setupDragDropImport() {
     // Idempotency guard
     if (_dragDropInitialized) {
-        console.log('Drag-drop import already set up');
         return;
     }
     _dragDropInitialized = true;
@@ -378,7 +376,6 @@ export function setupDragDropImport() {
         reader.readAsText(file);
     });
 
-    console.log('Drag-drop import enabled');
 }
 
 /**
@@ -428,8 +425,6 @@ export async function processImportedData(fileContent) {
         console.warn('Storage utilities not initialized — skipping quota check');
     }
 
-    console.log("Importing miniCycle with auto-conversion to Schema 2.5...");
-
     // ✅ Use AppState as source of truth
     const appState = typeof _deps.AppState === 'function' ? _deps.AppState() : _deps.AppState;
 
@@ -464,14 +459,11 @@ export async function processImportedData(fileContent) {
         });
 
         if (importMode === null) {
-            console.log('Import cancelled by user');
             return;
         }
     }
 
     const cycleId = `imported_${Date.now()}`;
-
-    console.log("Creating imported cycle with ID:", cycleId);
 
     // Validate and sanitize all task data
     const importTimestamp = Date.now();
@@ -537,7 +529,6 @@ export async function processImportedData(fileContent) {
                     nextScheduledOccurrence: nextOccurrence,
                     schemaVersion: 2
                 };
-                console.log(`Created recurring template for imported task: ${task.id}`);
             } catch (error) {
                 console.warn(`Failed to create template for task ${task.id}:`, error);
             }
@@ -553,7 +544,6 @@ export async function processImportedData(fileContent) {
         importedData.cycleCount = 0;
         importedData.history = null;
         importedData.clearedTasks = null;
-        console.log('📋 Template mode: reset task completion, due dates, cycle count, history, and cleared tasks');
     }
 
     // Security: Always sanitize cycle title, with or without DataValidator
@@ -577,7 +567,6 @@ export async function processImportedData(fileContent) {
     const { name: finalCycleTitle, wasModified: titleWasModified } = getUniqueCycleName(cycleTitle, existingCycles);
 
     if (titleWasModified) {
-        console.log(`⚠️ Import name collision: "${cycleTitle}" → "${finalCycleTitle}"`);
     }
 
     // Security: Merge imported template metadata with sanitized text from tasks.
@@ -712,10 +701,7 @@ export async function processImportedData(fileContent) {
         state.metadata.totalCyclesCreated++;
     }, true); // immediate save
 
-    console.log('✅ Imported cycle saved via AppState');
-
     const recurringCount = Object.keys(recurringTemplates).length;
-    console.log(`Import completed successfully to Schema 2.5${recurringCount > 0 ? ` (${recurringCount} recurring templates created)` : ''}`);
 
     // Fix #50-51: Store notification message in sessionStorage so it survives reload
     // The notification will be shown after the page reloads
@@ -775,8 +761,6 @@ export async function initCycleImportManager() {
     // Dynamically import utilities with version for cache-busting
     const version = APP_VERSION;
 
-    console.log(`📦 CycleImportManager: Loading utilities with version ${version}...`);
-
     // Import storage utilities
     const storageUtils = await import(`../utils/storageUtils.js?v=${version}`);
     getObjectSizeBytes = storageUtils.getObjectSizeBytes;
@@ -787,7 +771,5 @@ export async function initCycleImportManager() {
     const nameUtils = await import(`../utils/nameUtils.js?v=${version}`);
     getUniqueCycleName = nameUtils.getUniqueCycleName;
 
-    console.log('✅ CycleImportManager: Utilities loaded');
 }
 
-console.log('Cycle Import Manager loaded');

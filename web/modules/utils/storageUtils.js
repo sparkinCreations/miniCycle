@@ -93,7 +93,6 @@ function getCachedQuotaFromState() {
 function saveCachedQuotaToState(bytes) {
     try {
         if (!di.resolve().AppState?.isReady?.()) {
-            console.log('📊 AppState not ready, quota will only be cached in session');
             return;
         }
 
@@ -105,7 +104,6 @@ function saveCachedQuotaToState(bytes) {
                 detectedVersion: APP_VERSION
             };
         });
-        console.log(`📊 Quota cached to AppState: ${formatBytes(bytes)}`);
     } catch (error) {
         console.warn('Could not save quota to state:', error);
     }
@@ -127,13 +125,11 @@ function isCachedQuotaValid(cached) {
 
     // Invalid if older than 14 days
     if (age > QUOTA_CACHE_VALIDITY_MS) {
-        console.log('📊 Cached quota expired (age > 14 days)');
         return false;
     }
 
     // Invalid if app version changed
     if (cached.detectedVersion !== currentVersion) {
-        console.log(`📊 Cached quota invalid (version changed: ${cached.detectedVersion} → ${currentVersion})`);
         return false;
     }
 
@@ -150,7 +146,6 @@ let _cachedQuota = null;
  * @returns {number} Newly detected quota in bytes
  */
 export function forceQuotaRedetection() {
-    console.log('📊 Force re-detecting storage quota...');
     _cachedQuota = null;
     return detectStorageQuota(true);
 }
@@ -211,14 +206,12 @@ export function detectStorageQuota(forceRedetect = false) {
         const cachedFromState = getCachedQuotaFromState();
         if (isCachedQuotaValid(cachedFromState)) {
             _cachedQuota = cachedFromState.detectedBytes;
-            console.log(`📊 Using cached quota from AppState: ${formatBytes(_cachedQuota)}`);
             return _cachedQuota;
         }
     }
 
     // Mark as requested
     _quotaDetectionRequested = true;
-    console.log('📊 Running storage quota detection (fill-test)...');
 
     try {
         const testKey = '__storage_quota_test__';
@@ -249,7 +242,6 @@ export function detectStorageQuota(forceRedetect = false) {
 
         // Cache detected quota (session)
         _cachedQuota = Math.max(testSize * 1024 * 2, DEFAULT_QUOTA_BYTES);
-        console.log(`📊 Storage quota detected: ${formatBytes(_cachedQuota)}`);
 
         // Persist to AppState for future sessions
         saveCachedQuotaToState(_cachedQuota);
@@ -338,7 +330,6 @@ export function checkStorageWarning(info, showNotification) {
         );
     }
 
-    console.log('⚠️ Storage warning shown (75%+ usage)');
     return true;
 }
 
@@ -473,7 +464,6 @@ export function adjustStorageEstimate(deltaBytes) {
     }
 
     _storageDeltaBytes += deltaBytes;
-    console.log(`📊 Storage estimate adjusted by ${deltaBytes >= 0 ? '+' : ''}${formatBytes(Math.abs(deltaBytes))} (delta now: ${_storageDeltaBytes >= 0 ? '+' : ''}${formatBytes(Math.abs(_storageDeltaBytes))})`);
 }
 
 /**
@@ -494,7 +484,6 @@ export function getEstimatedUsedBytes() {
 export function resetStorageEstimate() {
     _lastMeasuredUsedBytes = getLocalStorageUsedBytes();
     _storageDeltaBytes = 0;
-    console.log(`📊 Storage estimate reset to actual: ${formatBytes(_lastMeasuredUsedBytes)}`);
 }
 
 /**
@@ -568,4 +557,3 @@ export function getStorageShortageMessage(shortfall) {
     return `Not enough storage space. Need ${shortfallStr} more. Delete some tasks or routines to free up space.`;
 }
 
-console.log('Storage Utils loaded');

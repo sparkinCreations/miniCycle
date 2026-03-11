@@ -61,7 +61,6 @@ const _deps = new Proxy({}, {
  */
 export function setTaskUtilsDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🛠️ TaskUtils dependencies set:', Object.keys(dependencies));
 }
 
 /**
@@ -200,7 +199,6 @@ export class TaskUtils {
      * @returns {Object} - Task context object
      */
     static loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false, loadMiniCycleData, generateId) {
-        console.log('📝 Loading task context (Schema 2.5 only)...');
 
         const schemaData = loadMiniCycleData();
         if (!schemaData) {
@@ -216,10 +214,7 @@ export class TaskUtils {
             throw new Error('No active cycle found');
         }
 
-        console.log('📊 Active cycle found:', activeCycle);
-
         const assignedTaskId = taskId || (generateId ? generateId() : `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`);
-        console.log('🆔 Assigned task ID:', assignedTaskId);
 
         return {
             taskTextTrimmed,
@@ -256,7 +251,6 @@ export class TaskUtils {
         let existingTask = cycleTasks.find(task => task.id === assignedTaskId);
 
         if (!existingTask) {
-            console.log('📋 Creating new task in Schema 2.5');
 
             // Mode-specific deleteWhenComplete architecture:
             // - Active value synced with current mode
@@ -290,12 +284,10 @@ export class TaskUtils {
             if (!isLoading) {
                 currentCycle.tasks.push(existingTask);
             } else {
-                console.log('⏭️ Skipping push to currentCycle.tasks during load (task already in AppState)');
             }
 
             // Handle recurring template creation
             if (recurring && recurringSettings) {
-                console.log('🔁 Saving recurring template');
 
                 if (!currentCycle.recurringTemplates) {
                     currentCycle.recurringTemplates = {};
@@ -319,11 +311,9 @@ export class TaskUtils {
             // Only save to AppState if NOT loading from saved data
             if (!isLoading && saveTaskToSchema25) {
                 saveTaskToSchema25(activeCycle, currentCycle);
-                console.log('💾 Task saved to Schema 2.5');
             } else if (!isLoading) {
                 console.warn('⚠️ saveTaskToSchema25 not available - task not persisted');
             } else {
-                console.log('⏭️ Skipping save during load (isLoading=true)');
             }
         }
 
@@ -451,7 +441,6 @@ function createOrUpdateTaskData(taskContext) {
 // ============================================
 
 // DI-pure module (no window.* fallbacks for dependencies)
-console.log('🛠️ TaskUtils module loaded (DI-pure, no window.* exports)');
 
 // ES6 exports
 export {

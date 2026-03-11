@@ -122,4 +122,3 @@ export function clearModalCache() {
     _cache.clear();
 }
 
-console.log('Modal Registry module loaded');

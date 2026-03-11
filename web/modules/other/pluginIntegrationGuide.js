@@ -104,7 +104,6 @@ export const pluginIntegrationHelpers = {
             const timeTracker = new deps.TimeTrackerPlugin();
             await deps.pluginManager.register(timeTracker);
             await deps.pluginManager.enable('TimeTracker');
-            console.log('✅ Time Tracker plugin enabled');
         }
 
         return true;
@@ -113,7 +112,6 @@ export const pluginIntegrationHelpers = {
     // Add plugin hooks to existing functions
     addPluginHooks() {
         // This would wrap your existing functions with plugin hooks
-        console.log('🔌 Plugin hooks would be added here');
     },
 
     // Get plugin status (DI-pure)
@@ -135,5 +133,3 @@ export const pluginIntegrationHelpers = {
         deps.pluginManager.triggerHook(hookName, data);
     }
 };
-
-console.log('🔌 PluginIntegrationGuide loaded (DI-pure, no window.* exports)');

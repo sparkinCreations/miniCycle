@@ -495,7 +495,6 @@ export class VocabThemeManager {
             s.metadata.lastModified = Date.now();
         }, false);
 
-        console.log(`🎨 VocabThemeManager: Theme '${themeId}' unlocked via achievement`);
         return true;
     }
 
@@ -555,8 +554,6 @@ export class VocabThemeManager {
         // Already initialised (check length — empty array [] is truthy but means not yet set up)
         if (state.settings?.unlockedThemes?.length > 0) return;
 
-        console.log('🎨 VocabThemeManager: Initialising theme system...');
-
         const progress = state.userProgress?.cyclesCompleted ?? 0;
         const unlockedThemes = this._computeUnlockedFromProgress(progress);
 
@@ -573,7 +570,6 @@ export class VocabThemeManager {
             }
         }, false);
 
-        console.log(`✅ VocabThemeManager: Unlocked themes — ${unlockedThemes.join(', ')}`);
     }
 
     /**
@@ -669,4 +665,3 @@ setLabelResolverDependencies({
     getRoutineLens: (routineId) => vocabThemeManager.getRoutineTheme(routineId)
 });
 
-console.log('🎨 Vocabulary theme system loaded');

@@ -58,7 +58,6 @@ const Deps = new Proxy({}, {
  */
 export function setRecurringWatcherDependencies(overrides = {}) {
     di.setDependencies(overrides);
-    console.log('🔧 RecurringWatcher dependencies configured');
 }
 
 /**
@@ -156,7 +155,6 @@ function switchInterval(hasTemplates) {
         _currentIntervalMs = targetInterval;
 
         const intervalDesc = hasTemplates ? '15 seconds (active)' : '2 hours (idle)';
-        console.log(`⏱️ Recurring watcher interval: ${intervalDesc}`);
     }
 }
 
@@ -166,11 +164,9 @@ function switchInterval(hasTemplates) {
  */
 export function restartRecurringWatcher() {
     if (!_recurringWatcherInitialized) {
-        console.log('🔄 Watcher not initialized yet, will start on setup');
         return;
     }
 
-    console.log('🔄 Restarting recurring watcher at active interval...');
     switchInterval(true);
 
     // Run an immediate check
@@ -189,12 +185,10 @@ export function restartRecurringWatcher() {
  * @returns {Promise<Object>} Stats { added: number, updated: number }
  */
 export async function catchUpMissedRecurringTasks() {
-    console.log('⏰ Catching up on missed recurring tasks...');
 
     // Check feature flag
     assertInjected('isEnabled', Deps.isEnabled);
     if (!Deps.isEnabled()) {
-        console.log('🚫 Recurring feature disabled via FeatureFlags');
         return { added: 0, updated: 0 };
     }
 
@@ -221,7 +215,6 @@ export async function catchUpMissedRecurringTasks() {
     const taskList = cycleData.tasks || [];
 
     if (!Object.keys(templates).length) {
-        console.log('📋 No recurring templates for catch-up');
         return { added: 0, updated: 0 };
     }
 
@@ -232,36 +225,24 @@ export async function catchUpMissedRecurringTasks() {
 
     // Check each template for missed occurrences
     Object.values(templates).forEach(template => {
-        console.log(`\n🔍 Checking template: "${template.text}" (ID: ${template.id})`);
 
         // Skip if task already exists
         if (taskList.some(t => t.id === template.id)) {
-            console.log(`  ⏭️  SKIP: Task already exists in task list`);
             return;
         }
 
         // FAST PATH: Skip if nextScheduledOccurrence is null or in the future
         if (!template.nextScheduledOccurrence) {
-            console.log(`  ⏭️  SKIP (Fast Path): nextScheduledOccurrence is null`);
             return;
         }
 
         if (template.nextScheduledOccurrence > now.getTime()) {
             const nextDate = new Date(template.nextScheduledOccurrence).toLocaleString();
             const nowDate = new Date(now.getTime()).toLocaleString();
-            console.log(`  ⏭️  SKIP (Fast Path): Not due yet`);
-            console.log(`     Next scheduled: ${nextDate} (${template.nextScheduledOccurrence})`);
-            console.log(`     Current time:   ${nowDate} (${now.getTime()})`);
             return;
         }
 
-        console.log(`  ✅ Fast Path PASSED: Task is potentially due`);
-        console.log(`     Next scheduled: ${new Date(template.nextScheduledOccurrence).toLocaleString()}`);
-        console.log(`     Current time:   ${new Date(now.getTime()).toLocaleString()}`);
-
         // MISSED OCCURRENCE - Add task once
-        console.log(`  🎯 MISSED OCCURRENCE DETECTED!`);
-        console.log(`  ⏰ Catching up missed task: ${template.text}`);
 
         // RECREATION SAFETY POLICY:
         // Template stores user's deleteWhenComplete preference (may be false for persistent tasks).
@@ -290,11 +271,6 @@ export async function catchUpMissedRecurringTasks() {
         // Calculate NEXT future occurrence
         const nextFuture = Deps.calculateNextOccurrence(template.recurringSettings, now);
 
-        console.log(`  📅 Updating template timestamps:`);
-        console.log(`     Previous next occurrence: ${new Date(template.nextScheduledOccurrence).toLocaleString()}`);
-        console.log(`     New next occurrence:      ${nextFuture ? new Date(nextFuture).toLocaleString() : 'null'}`);
-        console.log(`     Last triggered:           ${new Date(now.getTime()).toLocaleString()}`);
-
         templateUpdates[template.id] = {
             ...template,
             lastTriggeredTimestamp: now.getTime(),
@@ -306,12 +282,6 @@ export async function catchUpMissedRecurringTasks() {
     const limitCheck = checkTaskLimit(taskList.length, tasksToAdd.length);
 
     // Add summary log
-    console.log(`\n📊 Catch-up Summary:`);
-    console.log(`   Total templates checked: ${Object.keys(templates).length}`);
-    console.log(`   Tasks to add: ${tasksToAdd.length}`);
-    console.log(`   Tasks allowed by limit: ${limitCheck.allowed}`);
-    console.log(`   Tasks blocked by limit: ${limitCheck.blocked}`);
-    console.log(`   Templates to update: ${Object.keys(templateUpdates).length}`);
 
     // Only add tasks up to the limit (templates are NOT deleted - they just won't spawn)
     const tasksToActuallyAdd = tasksToAdd.slice(0, limitCheck.allowed);
@@ -338,13 +308,11 @@ export async function catchUpMissedRecurringTasks() {
         }, true); // Immediate save
 
         if (tasksToActuallyAdd.length > 0) {
-            console.log(`✅ Caught up ${tasksToActuallyAdd.length} missed recurring task${tasksToActuallyAdd.length > 1 ? 's' : ''}`);
 
             // Refresh DOM
             setTimeout(() => {
                 if (Deps.refreshUIFromState && typeof Deps.refreshUIFromState === 'function') {
                     Deps.refreshUIFromState();
-                    console.log('🔄 DOM refreshed after catching up tasks');
                 }
             }, 0);
 
@@ -359,11 +327,9 @@ export async function catchUpMissedRecurringTasks() {
 
         // Show limit notification if any tasks were blocked
         if (limitCheck.blocked > 0) {
-            console.log(`⚠️ ${limitCheck.blocked} recurring task(s) blocked by ${LIMITS.TASKS_PER_CYCLE} task limit`);
             showTaskLimitNotification(limitCheck.blocked);
         }
     } else {
-        console.log('✅ No missed recurring tasks to catch up');
     }
 
     return { added: tasksToActuallyAdd.length, updated: Object.keys(templateUpdates).length, blocked: limitCheck.blocked };
@@ -378,12 +344,10 @@ export async function catchUpMissedRecurringTasks() {
  * Runs as part of the 30-second interval check
  */
 export async function watchRecurringTasks() {
-    console.log('👁️ Watching recurring tasks (AppState-based)...');
 
     // Check feature flag
     assertInjected('isEnabled', Deps.isEnabled);
     if (!Deps.isEnabled()) {
-        console.log('🚫 Recurring feature disabled via FeatureFlags');
         return;
     }
 
@@ -415,11 +379,8 @@ export async function watchRecurringTasks() {
     switchInterval(hasTemplates);
 
     if (!hasTemplates) {
-        console.log('📋 No recurring templates found - watcher idle');
         return;
     }
-
-    console.log('🔍 Checking recurring templates:', Object.keys(templates).length);
 
     assertInjected('now', Deps.now);
     const now = new Date(Deps.now());
@@ -438,8 +399,6 @@ export async function watchRecurringTasks() {
 
         // SLOW PATH: Pattern matching validation
         if (!Deps.shouldRecreateRecurringTask(template, taskList, now)) return;
-
-        console.log("⏱ Auto-recreating recurring task:", template.text);
 
         // RECREATION SAFETY POLICY: (see catchUpMissedRecurringTasks for full explanation)
         // Force deleteWhenComplete=true on recreated instances to prevent duplicate accumulation.
@@ -498,13 +457,11 @@ export async function watchRecurringTasks() {
         });
 
         if (tasksToActuallyAdd.length > 0) {
-            console.log(`✅ Added ${tasksToActuallyAdd.length} recurring tasks via AppState`);
 
             // Refresh DOM
             setTimeout(() => {
                 if (Deps.refreshUIFromState && typeof Deps.refreshUIFromState === 'function') {
                     Deps.refreshUIFromState();
-                    console.log('🔄 DOM refreshed after adding recurring tasks');
                 } else {
                     console.warn('⚠️ refreshUIFromState not available');
                 }
@@ -513,7 +470,6 @@ export async function watchRecurringTasks() {
 
         // Show limit notification if any tasks were blocked
         if (limitCheck.blocked > 0) {
-            console.log(`⚠️ ${limitCheck.blocked} recurring task(s) blocked by ${LIMITS.TASKS_PER_CYCLE} task limit`);
             showTaskLimitNotification(limitCheck.blocked);
         }
     }
@@ -530,42 +486,34 @@ export async function watchRecurringTasks() {
 export async function setupRecurringWatcher() {
     // Idempotency guard
     if (_recurringWatcherInitialized) {
-        console.log('✅ Recurring watcher already initialized');
         return;
     }
-
-    console.log('⚙️ Setting up recurring watcher (AppState-based)...');
 
     // Check feature flag
     assertInjected('isEnabled', Deps.isEnabled);
     if (!Deps.isEnabled()) {
-        console.log('🚫 Recurring feature disabled via FeatureFlags');
         return;
     }
 
     // Wait for core systems
     await Deps.appInit?.waitForCore();
-    console.log('✅ Core systems ready - setting up recurring watcher');
 
     // Read from AppState
     assertInjected('AppState', Deps.AppState);
     const state = Deps.AppState?.get();
 
     if (!state) {
-        console.log('ℹ️ State not loaded yet - recurring watcher will initialize after data loads');
         return;
     }
 
     const activeCycleId = state.appState?.activeCycleId;
 
     if (!activeCycleId) {
-        console.log('ℹ️ No active cycle yet - recurring watcher will initialize after data loads');
         return;
     }
 
     const cycleData = state.data?.cycles?.[activeCycleId];
     if (!cycleData) {
-        console.log('ℹ️ No cycle data yet - recurring watcher will initialize after data loads');
         return;
     }
 
@@ -573,12 +521,10 @@ export async function setupRecurringWatcher() {
     const hasTemplates = Object.keys(recurringTemplates).length > 0;
 
     if (hasTemplates) {
-        console.log('🔄 Setting up recurring task watcher with', Object.keys(recurringTemplates).length, 'templates');
         // Initial check only if templates exist
         await catchUpMissedRecurringTasks();
         await watchRecurringTasks();
     } else {
-        console.log('📋 No recurring templates - watcher starting in idle mode');
     }
 
     // Setup interval (active or idle based on template count)
@@ -591,7 +537,6 @@ export async function setupRecurringWatcher() {
     }
     _visibilityChangeHandler = async () => {
         if (document.visibilityState === "visible") {
-            console.log('👁️ Tab visible again, checking for missed tasks...');
             await catchUpMissedRecurringTasks();
             await watchRecurringTasks();
         }
@@ -599,7 +544,6 @@ export async function setupRecurringWatcher() {
     document.addEventListener("visibilitychange", _visibilityChangeHandler);
 
     _recurringWatcherInitialized = true;
-    console.log('✅ Recurring watcher initialized successfully');
 }
 
 /**
@@ -625,4 +569,3 @@ export function resetWatcherState() {
     }
 }
 
-console.log('👁️ RecurringWatcher module loaded');

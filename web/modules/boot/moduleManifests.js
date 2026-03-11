@@ -946,11 +946,8 @@ export function getDependencyGraph() {
  */
 export function printLoadOrder() {
     const order = getLoadOrder();
-    console.log('📦 Module Load Order:');
     order.forEach((name, i) => {
         const manifest = MODULE_MANIFESTS[name];
-        console.log(`  ${i + 1}. [Phase ${manifest.phase}] ${name}`);
     });
 }
 
-console.log('📦 moduleManifests loaded');

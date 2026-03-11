@@ -17,7 +17,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 
@@ -32,11 +32,7 @@ const TASK_ICONS = {
     'bell': '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 448 512" fill="currentColor"><path d="M224 0c-17.7 0-32 14.3-32 32V51.2C119 66 64 130.6 64 208v18.8c0 47-17.3 92.4-48.5 127.6l-7.4 8.3c-8.4 9.4-10.4 22.9-5.3 34.4S19.4 416 32 416H416c12.6 0 24-7.4 29.2-18.9s3.1-25-5.3-34.4l-7.4-8.3C401.3 319.2 384 273.9 384 226.8V208c0-77.4-55-142-128-156.8V32c0-17.7-14.3-32-32-32zm45.3 493.3c12-12 18.7-28.3 18.7-45.3H224 160c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7z"/></svg>'
 };
 
-// Default delete-when-complete settings (imported where needed)
-const DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = {
-    cycle: true,
-    todo: false
-};
+// DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS imported from constants.js
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -68,7 +64,6 @@ const _deps = new Proxy({}, {
  */
 export function setTaskButtonsDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🔘 TaskButtons dependencies set:', Object.keys(dependencies));
 }
 
 // ============================================================================
@@ -78,7 +73,6 @@ export function setTaskButtonsDependencies(dependencies) {
 export class TaskButtons {
     constructor(dependencies = {}) {
         this.deps = di.resolve(dependencies);
-        console.log('🔘 TaskButtons created');
     }
 
     /**
@@ -120,7 +114,7 @@ export class TaskButtons {
             { class: "set-due-date", iconClass: "fas fa-calendar-alt", show: visibleOptions.dueDate ?? false },
             { class: "enable-task-reminders", iconClass: "fas fa-bell", show: visibleOptions.reminders ?? false, toggle: true },
             { class: "delete-btn", iconClass: "fas fa-trash", show: visibleOptions.delete ?? true },
-            { class: "delete-when-complete-btn", icon: "❌", show: visibleOptions.deleteWhenComplete ?? false, toggle: true }
+            { class: "delete-when-complete-btn", icon: "🧹", show: visibleOptions.deleteWhenComplete ?? false, toggle: true }
         ];
 
         buttons.forEach(buttonConfig => {
@@ -286,10 +280,18 @@ export class TaskButtons {
             "enable-task-reminders": 'taskOption.reminders',
             "priority-btn": 'taskOption.priority',
             "edit-btn": 'taskOption.edit',
-            "delete-btn": 'taskOption.delete',
-            "delete-when-complete-btn": 'taskOption.deleteOnComplete'
+            "delete-btn": 'taskOption.delete'
         };
-        const label = ariaLabelKeys[btnClass] ? getLabel(ariaLabelKeys[btnClass]) : getLabel('taskOption.showOptions');
+
+        // Mode-aware label for delete-when-complete button
+        let labelKey = ariaLabelKeys[btnClass];
+        if (btnClass === 'delete-when-complete-btn') {
+            const state = this.deps.AppState?.get?.();
+            const activeCycle = state?.data?.cycles?.[state?.appState?.activeCycleId];
+            const isToDoMode = activeCycle?.deleteCheckedTasks === true;
+            labelKey = isToDoMode ? 'taskOption.markedForClearing' : 'taskOption.clearOnReset';
+        }
+        const label = labelKey ? getLabel(labelKey) : getLabel('taskOption.showOptions');
         button.setAttribute("aria-label", label);
         button.setAttribute("title", label);
     }
@@ -385,7 +387,7 @@ export class TaskButtons {
 
             if (isRecurring && !newState) {
                 this.deps.showNotification?.(
-                    "📌 This recurring task will be kept on reset instead of respawning.",
+                    `📌 ${getLabel('notify.recurringKeptOnReset')}`,
                     "info",
                     UI_TIMEOUTS.NOTIFICATION_LONG
                 );
@@ -462,11 +464,11 @@ export class TaskButtons {
 
             let message;
             if (newState) {
-                message = "Task will be removed on auto-reset";
+                message = getLabel('notify.taskRemovedOnReset');
             } else {
                 message = currentMode === 'todo'
-                    ? "📌 Task will be kept on complete (pinned)"
-                    : "Task will remain in list on auto-reset";
+                    ? `📌 ${getLabel('notify.taskKeptOnComplete')}`
+                    : getLabel('notify.taskRemainOnReset');
             }
             this.deps.showNotification?.(message, "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
         };
@@ -560,4 +562,3 @@ export function getTaskButtons() {
     return taskButtonsInstance;
 }
 
-console.log('🔘 TaskButtons module loaded');

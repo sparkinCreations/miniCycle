@@ -40,7 +40,6 @@ const di = createDIModule('PullToRefresh', {
  */
 export function setPullToRefreshDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🔄 PullToRefresh dependencies set:', Object.keys(dependencies));
 }
 
 export class PullToRefresh {
@@ -84,7 +83,6 @@ export class PullToRefresh {
         this.createIndicator();
         this.attachEventListeners();
 
-        console.log('Pull-to-refresh initialized');
     }
 
     /**
@@ -102,7 +100,6 @@ export class PullToRefresh {
      * Fallback notification (console log)
      */
     fallbackNotification(message, type, duration) {
-        console.log(`[PullToRefresh - ${type}] ${message}`);
     }
 
     /**
@@ -520,7 +517,6 @@ let pullToRefreshInstance = null;
  */
 export function initPullToRefresh(options = {}) {
     if (pullToRefreshInstance) {
-        console.log('Pull-to-refresh already initialized');
         return pullToRefreshInstance;
     }
 
@@ -537,4 +533,3 @@ export function getPullToRefresh() {
 }
 
 // DI-pure module (no window.* fallbacks for dependencies)
-console.log('🔄 PullToRefresh module loaded (DI-pure, no window.* exports)');

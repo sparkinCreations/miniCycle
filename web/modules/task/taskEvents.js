@@ -65,7 +65,6 @@ const _deps = new Proxy({}, {
  */
 export function setTaskEventsDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🎮 TaskEvents dependencies set:', Object.keys(dependencies));
 }
 
 export class TaskEvents {
@@ -93,7 +92,6 @@ export class TaskEvents {
         // Track if event delegation is initialized
         this._eventDelegationInitialized = false;
 
-        console.log('🎮 TaskEvents created');
     }
 
     /**
@@ -158,8 +156,6 @@ export class TaskEvents {
             if (buttonContainer?.contains(event.target)) return;
             if (event.target === dueDateInput) return;
             if (event.target.closest(DOM_SELECTORS.TASK_EDIT_INPUT)) return;
-
-            console.log('🟢 Task delegation: Processing task click (will toggle checkbox)');
 
             // ✅ Enable undo system on first user interaction (DI-pure)
             if (typeof this.deps.enableUndoSystemOnFirstInteraction === 'function') {
@@ -232,7 +228,6 @@ export class TaskEvents {
      */
     initEventDelegation() {
         if (this._eventDelegationInitialized) {
-            console.log('⚠️ Task click event delegation already initialized');
             return;
         }
 
@@ -258,16 +253,13 @@ export class TaskEvents {
             completedTaskList._taskClickHandler = this._createTaskClickHandler();
             safeAdd(completedTaskList, "click", completedTaskList._taskClickHandler);
             safeAdd(completedTaskList, "keydown", taskKeydownHandler);
-            console.log('✅ Task click delegation also added to completed tasks list');
         }
 
         this._eventDelegationInitialized = true;
-        console.log('✅ Task click event delegation initialized (memory leak fix applied)');
     }
 
     // Fallback functions
     fallbackNotification(msg, type) {
-        console.log(`[Notification] ${msg}`);
     }
 
     fallbackAutoSave() {
@@ -298,7 +290,6 @@ export class TaskEvents {
 
         // ✅ DISABLED: Old arrow handling logic - now using event delegation
         if (button.classList.contains("move-up") || button.classList.contains("move-down")) {
-            console.log('⚠️ Arrow click handled by legacy handler - should use event delegation instead');
             return;
         }
 
@@ -338,7 +329,6 @@ export class TaskEvents {
                     // Focus the input when showing
                     dueDateInput.focus();
                 }
-                console.log('📅 Due date input toggled:', isHidden ? 'shown' : 'hidden');
             } else {
                 console.warn('⚠️ Due date input not found for task');
             }
@@ -346,7 +336,6 @@ export class TaskEvents {
         }
 
         // Note: autoSave removed - each operation updates AppState directly
-        console.log("✅ Task button clicked:", button.className);
     }
 
     /**
@@ -394,14 +383,6 @@ export class TaskEvents {
         const isCurrentlyVisible = taskOptions.classList.contains('task-options-visible');
         const taskId = taskItem.dataset.taskId || taskItem.dataset.id;
 
-        console.log('🔍 revealTaskButtons called:', {
-            taskId: taskId || 'unknown',
-            caller,
-            hasVisibleClass: taskOptions.classList.contains('task-options-visible'),
-            isCurrentlyVisible,
-            willToggle: isCurrentlyVisible ? 'OFF' : 'ON'
-        });
-
         // DI-pure: use injected TaskOptionsVisibilityController
         const controller = this.deps.TaskOptionsVisibilityController;
 
@@ -420,7 +401,6 @@ export class TaskEvents {
         });
 
         if (hiddenCount > 0) {
-            console.log(`🧹 Hidden ${hiddenCount} other task option menus`);
         }
 
         // Determine new active task ID
@@ -429,14 +409,12 @@ export class TaskEvents {
         // Toggle visibility using centralized controller
         if (isCurrentlyVisible && caller !== 'arrow-move') {
             // Hide if already visible (clicking same task again) - but not for arrow moves
-            console.log('👆 TOGGLING OFF (same task clicked twice)');
             controller?.hide(taskItem, caller);
             newActiveTaskId = null;
             const dotsBtn = taskItem.querySelector('.three-dots-btn');
             if (dotsBtn) dotsBtn.setAttribute('aria-expanded', 'false');
         } else {
             // Show if hidden (first click or switching tasks)
-            console.log('✨ TOGGLING ON (first click or switching tasks)');
             controller?.show(taskItem, caller);
             newActiveTaskId = taskId || null;
             const dotsBtn = taskItem.querySelector('.three-dots-btn');
@@ -475,7 +453,6 @@ export class TaskEvents {
                 icon.className = "recurring-indicator";
                 icon.innerHTML = `<span class="icon" aria-hidden="true">${ICONS['sync-alt']}</span>`;
                 taskLabel.appendChild(icon);
-                console.log('✅ Added recurring icon via syncRecurringStateToDOM');
             }
         }
     }
@@ -661,8 +638,6 @@ function setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateI
 // ============================================
 // Exports
 // ============================================
-
-console.log('🎮 TaskEvents module loaded (DI-pure, no window.* exports)');
 
 // ES6 exports
 export {

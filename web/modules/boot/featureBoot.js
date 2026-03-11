@@ -40,13 +40,10 @@
 export async function bootEarlyDeps(deps, coreResult) {
   const { GlobalUtils, appInit, AppGlobalState, withV } = coreResult;
 
-  console.log('🔧 bootEarlyDeps: Loading notifications (pre-AppState)...');
-
   // ========== Error Handler (needed for notifications error handling) ==========
   try {
     const errorHandlerMod = await import(withV('../utils/errorHandler.js'));
     deps.utils.setErrorHandlerDependencies = errorHandlerMod.setErrorHandlerDependencies;
-    console.log('✅ ErrorHandler loaded (early)');
   } catch (error) {
     console.error('❌ Failed to load ErrorHandler:', error);
   }
@@ -55,7 +52,6 @@ export async function bootEarlyDeps(deps, coreResult) {
   try {
     const consoleCaptureMod = await import(withV('../utils/consoleCapture.js'));
     deps.utils.consoleCapture = consoleCaptureMod.consoleCapture;
-    console.log('✅ ConsoleCapture loaded (early)');
   } catch (error) {
     console.error('❌ Failed to load ConsoleCapture:', error);
   }
@@ -94,8 +90,6 @@ export async function bootEarlyDeps(deps, coreResult) {
     showNotification = deps.utils.showNotification;
     deps.earlyDeps = { notificationsMod, notifications }; // Store for bootFeatures to skip
 
-    console.log('✅ Notifications loaded (early)');
-
     // Show deferred cache notification if needed
     if (AppGlobalState.pendingCacheNotification) {
       notifications.show('App updated! Cache refreshed automatically.', 'info', 4000);
@@ -130,8 +124,6 @@ export async function bootEarlyDeps(deps, coreResult) {
   const { setContextValue } = await import(withV('../core/appContext.js'));
   setContextValue('showNotification', deps.utils.showNotification);
 
-  console.log('✅ bootEarlyDeps complete');
-
   return { showNotification, notifications };
 }
 
@@ -144,8 +136,6 @@ export async function bootEarlyDeps(deps, coreResult) {
  */
 export async function bootFeatures(deps, coreResult) {
   const { GlobalUtils, appInit, withV } = coreResult;
-
-  console.log('🚀 bootFeatures: Starting moduleLoader-based boot...');
 
   // Import moduleLoader (which re-exports moduleManifests to avoid duplicate loading)
   const { loadAllModules, loadPhase, PHASES, MODULE_MANIFESTS, getLoadOrder } = await import(withV('./moduleLoader.js'));
@@ -161,12 +151,9 @@ export async function bootFeatures(deps, coreResult) {
   try {
     // Log load order for debugging
     const loadOrder = getLoadOrder();
-    console.log(`📦 Will load ${loadOrder.length} modules in order:`, loadOrder.slice(0, 5).join(', ') + '...');
 
     // Load all modules using moduleLoader
     const result = await loadAllModules(deps, coreResult);
-
-    console.log(`✅ moduleLoader loaded ${result.modules.size} modules`);
 
     // Copy loaded modules to features container
     for (const [name, mod] of result.modules) {
@@ -185,7 +172,6 @@ export async function bootFeatures(deps, coreResult) {
     // =========================================================================
     if (deps.features?.vocabThemeManager) {
       deps.features.vocabThemeManager.init();
-      console.log('✅ Vocabulary theme system initialised');
     }
 
     // =========================================================================
@@ -197,7 +183,6 @@ export async function bootFeatures(deps, coreResult) {
         openRecurringSettingsPanelForTask: (taskId) => deps.recurring?.panel?.openRecurringSettingsPanelForTask?.(taskId),
         updateRecurringPanel: () => deps.recurring?.panel?.updateRecurringPanel?.()
       });
-      console.log('✅ Recurring functions injected into Notifications');
     }
 
     // =========================================================================
@@ -205,7 +190,6 @@ export async function bootFeatures(deps, coreResult) {
     // =========================================================================
     // These listeners allow HTML inline scripts (like service worker update UI)
     // to communicate with the app via CustomEvents instead of window.* globals.
-    console.log('🔧 Setting up HTML event listeners...');
 
     // Listen for notification requests from HTML/service worker
     document.addEventListener('app:showNotification', (e) => {
@@ -234,8 +218,6 @@ export async function bootFeatures(deps, coreResult) {
         document.dispatchEvent(new CustomEvent('app:closeStorageViewer'));
       }
     });
-
-    console.log('✅ HTML event listeners configured');
 
     // =========================================================================
     // LOAD TASK SEARCH MODULE
@@ -270,7 +252,6 @@ export async function bootFeatures(deps, coreResult) {
         logHistoryEvent: (...args) => deps.features?.historyManager?.logEvent?.(...args)
       });
 
-      console.log('✅ TaskSearch module loaded');
     } catch (err) {
       console.warn('⚠️ TaskSearch module failed to load:', err);
     }
@@ -279,9 +260,6 @@ export async function bootFeatures(deps, coreResult) {
     // VALIDATE CRITICAL DI WIRING
     // =========================================================================
     validateCriticalDIWiring(deps);
-
-    console.log('✅ bootFeatures: Complete');
-    console.log(`📦 Loaded ${Object.keys(features.managers).length} managers, ${Object.keys(features.modules).length} modules`);
 
     return features;
 
@@ -310,7 +288,6 @@ export function createDepsContainer() {
     plugins: {}
   };
 }
-
 
 /**
  * Register grouped APIs from moduleLoader results
@@ -486,7 +463,6 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
   appContextMod.setContextValue('captureStateSnapshot', deps.ui?.captureStateSnapshot);
   appContextMod.setContextValue('enableUndoSystemOnFirstInteraction', deps.ui?.enableUndoSystemOnFirstInteraction);
 
-  console.log('✅ Grouped APIs registered via moduleLoader');
 }
 
 /**
@@ -496,7 +472,6 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
  * @param {Object} deps - The deps container
  */
 function validateCriticalDIWiring(deps) {
-  console.log('🔍 Validating critical DI wiring...');
 
   const warnings = [];
 
@@ -552,6 +527,5 @@ function validateCriticalDIWiring(deps) {
       console.warn(`  ❌ ${name}: ${fix}${error ? ` (Error: ${error})` : ''}`);
     }
   } else {
-    console.log('✅ All critical DI wiring validated');
   }
 }

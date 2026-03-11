@@ -39,7 +39,6 @@ class TimeTrackerPlugin extends MiniCyclePlugin {
         // Load saved data
         this.loadSavedData();
         
-        console.log('⏱️ Time Tracker Plugin loaded');
     }
 
     async onUnload() {
@@ -51,11 +50,9 @@ class TimeTrackerPlugin extends MiniCyclePlugin {
         // Remove UI elements
         this.removeTimeTrackerUI();
         
-        console.log('⏱️ Time Tracker Plugin unloaded');
     }
 
     onTaskAdded(task) {
-        console.log('⏱️ New task added, time tracking available:', task.text);
     }
 
     onTaskCompleted(task) {
@@ -212,12 +209,10 @@ class TimeTrackerPlugin extends MiniCyclePlugin {
             console.warn('⚠️ Corrupted time tracker data');
             timeData = {};
         }
-        console.log('⏱️ Loaded time tracking data:', Object.keys(timeData).length, 'tasks tracked');
     }
 
     saveData() {
         // Data is saved automatically in saveTimeData
-        console.log('⏱️ Time tracking data saved');
     }
 
     formatDuration(ms) {
@@ -264,7 +259,6 @@ class TimeTrackerPlugin extends MiniCyclePlugin {
         report += `TOTAL TIME TRACKED: ${this.formatDuration(totalTime)}`;
 
         // Show in console and notification
-        console.log(report);
         this.addNotification('Time report generated (check console)', 'success');
     }
 
@@ -292,7 +286,6 @@ class TimeTrackerPlugin extends MiniCyclePlugin {
 }
 
 // Phase 2 Step 7 - Clean exports (no window.* pollution)
-console.log('⏱️ TimeTrackerPlugin module loaded (Phase 2 - no window.* exports)');
 
 // Export for use
 export { TimeTrackerPlugin };

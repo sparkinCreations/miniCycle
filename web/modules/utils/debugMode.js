@@ -10,7 +10,7 @@
  * @module utils/debugMode
  */
 
-import { STORAGE_KEYS } from '../core/constants.js';
+import { STORAGE_KEYS, APP_VERSION } from '../core/constants.js';
 
 // Store original console methods
 const originalConsole = {
@@ -26,13 +26,21 @@ const originalConsole = {
 // ============================================================================
 
 let _AppState = null;
+let _getLocalStorageUsedBytes = null;
+let _getLocalStorageQuota = null;
+let _AppGlobalState = null;
+let _FeatureFlags = null;
 
 /**
- * Set AppState dependency for state-based persistence
- * @param {Object} AppState - The AppState module
+ * Set dependencies for state-based persistence and diagnostics
+ * @param {Object} deps - Dependencies object
  */
-export function setDebugModeDependencies({ AppState }) {
+export function setDebugModeDependencies({ AppState, getLocalStorageUsedBytes, getLocalStorageQuota, AppGlobalState, FeatureFlags }) {
     _AppState = AppState;
+    if (getLocalStorageUsedBytes) _getLocalStorageUsedBytes = getLocalStorageUsedBytes;
+    if (getLocalStorageQuota) _getLocalStorageQuota = getLocalStorageQuota;
+    if (AppGlobalState) _AppGlobalState = AppGlobalState;
+    if (FeatureFlags) _FeatureFlags = FeatureFlags;
 }
 
 // ============================================================================
@@ -127,12 +135,161 @@ export function installDebugFilter() {
 }
 
 /**
+ * Dump a one-time diagnostic snapshot to the console.
+ * Called automatically when debug mode is toggled ON.
+ * Read-only — no state mutations.
+ * @private
+ */
+function dumpDiagnosticSnapshot() {
+    const log = originalConsole.log;
+
+    log('');
+    log('========================================');
+    log('  miniCycle Diagnostic Snapshot');
+    log('========================================');
+
+    // --- App Version ---
+    log(`  Version: ${APP_VERSION}`);
+    log(`  Time: ${new Date().toISOString()}`);
+
+    // --- Storage ---
+    if (_getLocalStorageUsedBytes && _getLocalStorageQuota) {
+        const usedBytes = _getLocalStorageUsedBytes();
+        const quotaBytes = _getLocalStorageQuota();
+        const usedKB = (usedBytes / 1024).toFixed(1);
+        const quotaKB = (quotaBytes / 1024).toFixed(1);
+        const pct = quotaBytes > 0 ? ((usedBytes / quotaBytes) * 100).toFixed(1) : '?';
+        log(`  Storage: ${usedKB} KB / ${quotaKB} KB (${pct}%)`);
+    } else {
+        log('  Storage: (unavailable)');
+    }
+
+    // --- State-dependent sections ---
+    if (!_AppState?.isReady?.()) {
+        log('  AppState: NOT READY');
+        log('========================================');
+        log('');
+        return;
+    }
+
+    const state = _AppState.get();
+    if (!state) {
+        log('  AppState: NO DATA');
+        log('========================================');
+        log('');
+        return;
+    }
+
+    // --- Routines & Tasks ---
+    const cycles = state.data?.cycles || {};
+    const cycleIds = Object.keys(cycles);
+    const activeCycleId = state.appState?.activeCycleId;
+    const activeCycle = cycles[activeCycleId];
+    const activeRoutineName = activeCycle?.name || '(unnamed)';
+    const activeMode = activeCycle?.mode || '?';
+
+    let totalTasks = 0;
+    let totalCompleted = 0;
+    let totalRecurring = 0;
+    for (const id of cycleIds) {
+        const c = cycles[id];
+        const tasks = c.tasks || [];
+        totalTasks += tasks.length;
+        totalCompleted += tasks.filter(t => t.completed).length;
+        totalRecurring += (c.recurringTemplates || []).length;
+    }
+
+    log('  --- Routines & Tasks ---');
+    log(`  Routines: ${cycleIds.length}`);
+    log(`  Active: "${activeRoutineName}" (${activeMode} mode)`);
+    log(`  Tasks: ${totalTasks} total, ${totalCompleted} done, ${totalRecurring} recurring`);
+
+    // --- Progress ---
+    const progress = state.userProgress || {};
+    const achievements = state.achievements?.unlocked || [];
+    log('  --- Progress ---');
+    log(`  Cycles completed: ${progress.totalCyclesCompleted || 0}`);
+    log(`  Tasks cleared: ${progress.totalTasksCleared || 0}`);
+    log(`  Achievements: ${achievements.length} unlocked`);
+
+    // --- Device ---
+    log('  --- Device ---');
+    const device = state.settings?.deviceCompatibility;
+    if (device?.deviceInfo) {
+        const info = device.deviceInfo;
+        log(`  Screen: ${info.screenWidth || '?'}x${info.screenHeight || '?'}`);
+        log(`  Cores: ${info.hardwareConcurrency || '?'}, Connection: ${info.connectionType || '?'}`);
+    }
+    log(`  UA: ${navigator.userAgent}`);
+
+    // --- Settings Summary ---
+    const s = state.settings || {};
+    const flags = [
+        s.darkMode && 'darkMode',
+        s.showThreeDots && 'threeDots',
+        s.showCompletedDropdown && 'completedDropdown',
+        s.accessibility?.reducedMotion && 'reducedMotion',
+        s.accessibility?.highContrast && 'highContrast',
+        s.scrollToNewTask && 'scrollToNew',
+        s.scrollOnLoad && 'scrollOnLoad',
+    ].filter(Boolean);
+    log('  --- Settings ---');
+    log(`  Active: [${flags.join(', ') || 'defaults'}]`);
+    log(`  Theme: ${s.theme || 'default'}, Font: ${s.accessibility?.fontSize || 'default'}`);
+    log(`  Vocab theme: ${activeCycle?.theme || 'classic'}`);
+
+    // --- Feature Flags ---
+    if (_FeatureFlags) {
+        log('  --- Feature Flags ---');
+        log(`  recurring=${_FeatureFlags.recurringEnabled}, moveArrows=${_FeatureFlags.moveArrowsEnabled}`);
+    }
+
+    // --- Boot Time ---
+    if (_AppGlobalState?.bootStartTime) {
+        const elapsed = Date.now() - _AppGlobalState.bootStartTime;
+        log(`  Boot time: ~${elapsed}ms`);
+    }
+
+    // --- Detected Issues ---
+    const issues = [];
+    if (!activeCycleId) {
+        issues.push('No active routine set');
+    }
+    if (activeCycleId && !cycles[activeCycleId]) {
+        issues.push('activeCycleId points to missing cycle');
+    }
+    if (totalTasks === 0 && cycleIds.length > 0) {
+        issues.push('All routines empty (0 tasks)');
+    }
+    if (_getLocalStorageUsedBytes && _getLocalStorageQuota) {
+        const pctUsed = (_getLocalStorageUsedBytes() / _getLocalStorageQuota()) * 100;
+        if (pctUsed > 75) {
+            issues.push(`Storage over 75% (${pctUsed.toFixed(1)}%)`);
+        }
+    }
+    if (state.schemaVersion !== '2.5') {
+        issues.push(`Schema version: ${state.schemaVersion} (expected 2.5)`);
+    }
+
+    if (issues.length > 0) {
+        log('  --- Issues Detected ---');
+        issues.forEach(issue => log(`  ! ${issue}`));
+    } else {
+        log('  No issues detected');
+    }
+
+    log('========================================');
+    log('');
+}
+
+/**
  * Enable debug mode (shows all console.log output)
  */
 export function enableDebug() {
     debugEnabled = true;
     setDebugInState(true);
     originalConsole.log('🐛 Debug mode: ON');
+    dumpDiagnosticSnapshot();
 }
 
 /**

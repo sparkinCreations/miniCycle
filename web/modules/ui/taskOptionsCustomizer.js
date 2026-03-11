@@ -44,7 +44,6 @@ const di = createDIModule('TaskOptionsCustomizer', {
  */
 export function setTaskOptionsCustomizerDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('⚙️ TaskOptionsCustomizer dependencies set:', Object.keys(dependencies));
 }
 
 // Inline fallback for DEFAULT_TASK_OPTION_BUTTONS (used if not injected)
@@ -139,10 +138,10 @@ const BUTTON_CONFIG = [
     },
     {
         key: 'deleteWhenComplete',
-        labelKey: 'taskOptions.markedForRemoval',
-        icon: '❌',
+        labelKey: 'taskOptions.clearOnReset',
+        icon: '🧹',
         scope: 'cycle',
-        descriptionKey: 'taskOptions.markedForRemovalDescription'
+        descriptionKey: 'taskOptions.clearOnResetDescription'
     }
 ];
 
@@ -152,7 +151,6 @@ export class TaskOptionsCustomizer {
         this._refreshDebounceMs = 150;
         this._modalRemoveTimerId = null;
 
-        console.log('✅ TaskOptionsCustomizer initialized');
     }
 
     /**
@@ -183,7 +181,6 @@ export class TaskOptionsCustomizer {
     setupEventListeners() {
         // ✅ Idempotency guard to prevent duplicate listeners
         if (this._eventListenersInitialized) {
-            console.log('✅ TaskOptionsCustomizer event listeners already set up');
             return;
         }
         this._eventListenersInitialized = true;
@@ -213,7 +210,6 @@ export class TaskOptionsCustomizer {
                     }
                 };
                 safeAdd(openButton, 'click', openButton._clickHandler);
-                console.log('✅ Task options customizer event listeners attached');
             } else {
                 console.warn('⚠️ open-task-options-customizer button not found');
             }
@@ -239,7 +235,6 @@ export class TaskOptionsCustomizer {
                     }
                 };
                 safeAdd(menuButton, 'click', menuButton._clickHandler);
-                console.log('✅ Task options menu button listener attached');
             }
 
             // ✅ Check if we need to re-open customizer after page reload
@@ -273,7 +268,6 @@ export class TaskOptionsCustomizer {
             const currentCycleId = state?.appState?.activeCycleId;
 
             if (currentCycleId) {
-                console.log('🔄 Re-opening task customizer after reload...');
                 this.showCustomizationModal(currentCycleId);
             }
         }
@@ -409,8 +403,18 @@ export class TaskOptionsCustomizer {
         const buildOption = (option) => {
             const isChecked = currentOptions[option.key] ?? defaultButtons[option.key];
             const isDisabled = option.disabled || false;
-            const label = getLabel(option.labelKey);
-            const description = getLabel(option.descriptionKey);
+            let label = getLabel(option.labelKey);
+            let description = getLabel(option.descriptionKey);
+
+            // Mode-aware labels for deleteWhenComplete
+            if (option.key === 'deleteWhenComplete') {
+                const state = this.deps.AppState?.get?.();
+                const activeCycle = state?.data?.cycles?.[state?.appState?.activeCycleId];
+                if (activeCycle?.deleteCheckedTasks === true) {
+                    label = getLabel('taskOptions.markedForClearing');
+                    description = getLabel('taskOptions.markedForClearingDescription');
+                }
+            }
 
             // Store the icon index instead of HTML to avoid escaping issues
             const iconIndex = BUTTON_CONFIG.findIndex(cfg => cfg.key === option.key);
@@ -527,10 +531,20 @@ export class TaskOptionsCustomizer {
             // Get icon from BUTTON_CONFIG to avoid HTML escaping issues
             const icon = BUTTON_CONFIG[optionIndex]?.icon || '';
 
+            const achievementNote = item.dataset.optionKey === 'deleteWhenComplete'
+                ? `<p class="preview-option-note" style="
+                    font-size: 12px;
+                    color: var(--text-secondary, #666);
+                    margin: 8px 0 0;
+                    font-style: italic;
+                ">${getLabel('taskOptions.achievementNote')}</p>`
+                : '';
+
             previewContent.innerHTML = `
                 <div class="preview-option-icon">${icon}</div>
                 <h4 class="preview-option-title">${label}</h4>
                 <p class="preview-option-description">${description}</p>
+                ${achievementNote}
             `;
         };
 
@@ -655,20 +669,17 @@ export class TaskOptionsCustomizer {
             if (moveArrowsChanged) {
                 if (!state.ui) state.ui = {};
                 state.ui.moveArrowsVisible = newMoveArrows;
-                console.log(`✅ Synced global move arrows: ${newMoveArrows}`);
             }
 
             // Sync three dots global setting
             if (threeDotsChanged) {
                 if (!state.settings) state.settings = {};
                 state.settings.showThreeDots = newThreeDots;
-                console.log(`✅ Synced global three dots: ${newThreeDots}`);
             }
 
             // Sync reminders enabled for this cycle
             if (remindersChanged && state.data.cycles[cycleId]?.reminders) {
                 state.data.cycles[cycleId].reminders.enabled = newRemindersEnabled;
-                console.log(`✅ Set reminders enabled: ${newRemindersEnabled}`);
             }
 
             state.metadata.lastModified = Date.now();
@@ -742,7 +753,6 @@ export class TaskOptionsCustomizer {
         } else {
             this.deps.showNotification?.(getLabel('notify.taskOptionsUpdated'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
         }
-        console.log(`✅ Saved task options for cycle: ${cycleId}`, { cycleOnlyOptions, moveArrows: newMoveArrows, threeDots: newThreeDots });
     }
 
     /**
@@ -813,7 +823,6 @@ export class TaskOptionsCustomizer {
 
         if (typeof renderFn === "function") {
             await renderFn();
-            console.log("✅ Task list re-rendered with updated button visibility");
             return;
         }
 
@@ -821,7 +830,6 @@ export class TaskOptionsCustomizer {
         const modeManager = this.deps.modeManager;
         if (modeManager?.refreshTaskButtonsForModeChange) {
             modeManager.refreshTaskButtonsForModeChange();
-            console.log("✅ ModeManager button refresh triggered");
             return;
         }
 
@@ -884,4 +892,3 @@ export async function initTaskOptionsCustomizer() {
 export { taskOptionsCustomizer };
 
 // DI-pure module (no window.* fallbacks)
-console.log('✅ TaskOptionsCustomizer module loaded (DI-pure, no window.* exports)');

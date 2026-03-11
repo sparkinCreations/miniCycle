@@ -61,14 +61,6 @@ const _deps = new Proxy({}, {
 export function setMigrationManagerDependencies(overrides = {}) {
     di.setDependencies(overrides);
     const resolved = di.resolve();
-    console.log('🔄 Migration Manager dependencies configured:', {
-        storage: !!resolved.storage,
-        sessionStorage: !!resolved.sessionStorage,
-        showNotification: typeof resolved.showNotification === 'function',
-        initialSetup: typeof resolved.initialSetup === 'function',
-        now: typeof resolved.now === 'function',
-        document: !!resolved.document
-    });
 }
 
 /**
@@ -162,7 +154,6 @@ export function createInitialSchema25Data() {
     };
 
     _deps.storage.setItem("miniCycleData", JSON.stringify(initialData));
-    console.log('✅ Initial Schema 2.5 data created');
 }
 
 // ==========================================
@@ -496,12 +487,9 @@ export function validateAllMiniCycleTasksLenient() {
 export function fixTaskValidationIssues() {
     assertInjected('storage', _deps.storage);
 
-    console.log('🔧 Fixing task validation issues...');
-
     try {
         const legacyData = _deps.storage.getItem('miniCycleStorage');
         if (!legacyData) {
-            console.log('⚠️ No legacy data found');
             return { success: false, message: 'No legacy data found' };
         }
 
@@ -515,7 +503,6 @@ export function fixTaskValidationIssues() {
 
             cycle.tasks.forEach(task => {
                 const taskId = task.id || 'unknown';
-                console.log(`🔍 Checking task: "${task.taskText}" (${taskId})`);
 
                 // ✅ NEW: Handle tasks that SHOULD have recurring but don't
                 if (!task.recurring && (task.taskText || task.id)) {
@@ -532,21 +519,18 @@ export function fixTaskValidationIssues() {
                         task.recurring.recurCount = 1;
                         fixedTasks++;
                         fixedDetails.push(`${task.taskText}: Added recurCount`);
-                        console.log('  ✅ Fixed: Added recurCount = 1');
                     }
 
                     if (task.recurring.recurIndefinitely === undefined) {
                         task.recurring.recurIndefinitely = true;
                         fixedTasks++;
                         fixedDetails.push(`${task.taskText}: Added recurIndefinitely`);
-                        console.log('  ✅ Fixed: Added recurIndefinitely = true');
                     }
 
                     if (task.recurring.useSpecificTime === undefined) {
                         task.recurring.useSpecificTime = false;
                         fixedTasks++;
                         fixedDetails.push(`${task.taskText}: Added useSpecificTime`);
-                        console.log('  ✅ Fixed: Added useSpecificTime = false');
                     }
 
                     // ✅ Set frequency if missing
@@ -554,7 +538,6 @@ export function fixTaskValidationIssues() {
                         task.recurring.frequency = 'daily'; // Most common default
                         fixedTasks++;
                         fixedDetails.push(`${task.taskText}: Added default frequency`);
-                        console.log('  ✅ Fixed: Added frequency = daily');
                     }
 
                     // Fix missing frequency blocks based on actual frequency
@@ -567,7 +550,6 @@ export function fixTaskValidationIssues() {
                         };
                         fixedTasks++;
                         fixedDetails.push(`${task.taskText}: Added hourly block`);
-                        console.log('  ✅ Fixed: Added hourly block');
                     }
 
                     if (freq === 'daily' && !task.recurring.daily) {
@@ -580,7 +562,6 @@ export function fixTaskValidationIssues() {
                         };
                         fixedTasks++;
                         fixedDetails.push(`${task.taskText}: Added daily block`);
-                        console.log('  ✅ Fixed: Added daily block');
                     }
 
                     if (freq === 'weekly' && !task.recurring.weekly) {
@@ -595,7 +576,6 @@ export function fixTaskValidationIssues() {
                         };
                         fixedTasks++;
                         fixedDetails.push(`${task.taskText}: Added weekly block`);
-                        console.log('  ✅ Fixed: Added weekly block');
                     }
 
                     if (freq === 'biweekly' && !task.recurring.biweekly) {
@@ -610,7 +590,6 @@ export function fixTaskValidationIssues() {
                         };
                         fixedTasks++;
                         fixedDetails.push(`${task.taskText}: Added biweekly block`);
-                        console.log('  ✅ Fixed: Added biweekly block');
                     }
 
                     if (freq === 'monthly' && !task.recurring.monthly) {
@@ -625,7 +604,6 @@ export function fixTaskValidationIssues() {
                         };
                         fixedTasks++;
                         fixedDetails.push(`${task.taskText}: Added monthly block`);
-                        console.log('  ✅ Fixed: Added monthly block');
                     }
 
                     if (freq === 'yearly' && !task.recurring.yearly) {
@@ -642,7 +620,6 @@ export function fixTaskValidationIssues() {
                         };
                         fixedTasks++;
                         fixedDetails.push(`${task.taskText}: Added yearly block`);
-                        console.log('  ✅ Fixed: Added yearly block');
                     }
                 }
             });
@@ -650,8 +627,7 @@ export function fixTaskValidationIssues() {
 
         if (fixedTasks > 0) {
             _deps.storage.setItem('miniCycleStorage', JSON.stringify(cycles));
-            console.log(`✅ Fixed ${fixedTasks} task validation issues:`);
-            fixedDetails.forEach(detail => console.log(`   - ${detail}`));
+            // Details available in fixedDetails array if needed for debugging
 
             return {
                 success: true,
@@ -660,7 +636,6 @@ export function fixTaskValidationIssues() {
                 message: `Fixed ${fixedTasks} validation issues`
             };
         } else {
-            console.log('✅ No fixes needed');
             return {
                 success: true,
                 fixedCount: 0,
@@ -706,24 +681,16 @@ async function performAutoMigration(options = {}) {
     } = options;
 
     try {
-        console.log('🔄 Starting auto-migration process…', {
-            forceMode,
-            skipValidation,
-            skipBackup
-        });
 
         // ✅ FORCE MODE: Skip all safety checks
         if (forceMode) {
-            console.log('🚨 FORCE MODE ACTIVE - Bypassing all safety checks');
 
             if (!skipBackup) {
                 const backupResult = await createAutomaticMigrationBackup();
-                console.log('💾 Emergency backup created:', backupResult.backupKey);
             }
 
             // ✅ Apply fixes without validation
             const fixResult = fixTaskValidationIssues();
-            console.log('🔧 Applied fixes:', fixResult);
 
             // ✅ Force the migration
             const migrationResult = performSchema25Migration();
@@ -742,34 +709,19 @@ async function performAutoMigration(options = {}) {
             }
         }
 
-        console.log('📊 Current localStorage keys:', Object.keys(_deps.storage));
-
         // Step 1: Check if migration is needed
-        console.log('🔍 Checking if migration is needed...');
         const migrationCheck = checkMigrationNeeded();
-        console.log('📋 Migration check result:', migrationCheck);
 
         if (!migrationCheck.needed) {
-            console.log('✅ No migration needed - user already on Schema 2.5');
-            console.log('📦 Current miniCycleData exists:', !!_deps.storage.getItem("miniCycleData"));
             return { success: true, message: 'Already on latest schema' };
         }
 
-        console.log('🚨 Migration needed. Old data found:', migrationCheck.oldDataFound);
-
         // Step 2: Show user notification
-        console.log('📢 Showing migration notification to user...');
         _deps.showNotification('🔄 ' + getLabel('notify.dataFormatUpdating'), 'info', 200);
 
         // Step 3: Create automatic backup before migration
-        console.log('📥 Creating automatic backup before migration...');
-        console.log('💾 Available storage before backup:', {
-            used: JSON.stringify(_deps.storage).length,
-            limit: '~5-10MB (browser dependent)'
-        });
 
         const backupResult = await createAutomaticMigrationBackup();
-        console.log('💾 Backup result:', backupResult);
 
         if (!backupResult.success) {
             console.error('❌ Backup creation failed:', backupResult.message);
@@ -777,35 +729,22 @@ async function performAutoMigration(options = {}) {
             return await handleMigrationFailure('Backup creation failed', null);
         }
 
-        console.log('✅ Backup created successfully:', {
-            backupKey: backupResult.backupKey,
-            size: backupResult.size,
-            sizeKB: Math.round(backupResult.size / 1024)
-        });
-
         // Step 3.5: ✅ ENHANCED - Pre-fix data validation issues with detailed reporting
-        console.log('🔧 Pre-fixing known data validation issues...');
         const fixResult = fixTaskValidationIssues();
-        console.log('🔧 Data fix result:', fixResult);
 
         if (fixResult.success && fixResult.fixedCount > 0) {
-            console.log(`✅ Successfully fixed ${fixResult.fixedCount} data issues:`);
-            fixResult.details?.forEach(detail => console.log(`   - ${detail}`));
+            // Details available in fixResult.details if needed for debugging
             _deps.showNotification(`🔧 ${getLabel('notify.dataIssuesFixed', { vars: { count: fixResult.fixedCount } })}`, 'info', UI_TIMEOUTS.NOTIFICATION_LONG);
         } else if (!fixResult.success) {
             console.warn('⚠️ Data fixing encountered issues, but continuing with migration');
             console.warn('🔧 Fix error:', fixResult.message);
         } else {
-            console.log('✅ No data fixes needed - all data is already compatible');
         }
 
         // Step 4: ✅ ENHANCED - Use lenient validation for auto-migration
-        console.log('🔍 Performing lenient validation for auto-migration...');
-        console.log('📋 Using lenient validation approach for better migration success...');
 
         // ✅ Use lenient validation instead of strict validation
         const legacyValidationResults = validateAllMiniCycleTasksLenient();
-        console.log('📊 Lenient validation results:', legacyValidationResults);
 
         if (legacyValidationResults.length > 0) {
             console.error('❌ Critical data issues found even after fixes:', legacyValidationResults);
@@ -822,14 +761,9 @@ async function performAutoMigration(options = {}) {
             return await handleMigrationFailure(`Data validation failed: ${errorSummary}`, backupResult.backupKey);
         }
 
-        console.log('✅ Lenient validation passed - data is ready for migration');
-
         // Step 5: Perform the actual migration using your existing function
-        console.log('🔄 Performing Schema 2.5 migration...');
-        console.log('📦 Calling performSchema25Migration()...');
 
         const migrationResult = performSchema25Migration();
-        console.log('🔄 Migration process result:', migrationResult);
 
         if (!migrationResult.success) {
             console.error('❌ Migration failed:', migrationResult.errors || migrationResult);
@@ -842,14 +776,8 @@ async function performAutoMigration(options = {}) {
             return await handleMigrationFailure('Migration process failed', backupResult.backupKey);
         }
 
-        console.log('✅ Migration process completed successfully');
-        console.log('📋 Changes applied:', migrationResult.changes || 'No changes array provided');
-
         // Step 6: ✅ Simple post-migration validation
-        console.log('✅ Validating migrated data...');
         const newSchemaData = _deps.storage.getItem("miniCycleData");
-        console.log('📦 New schema data exists:', !!newSchemaData);
-        console.log('📏 New schema data size:', newSchemaData ? newSchemaData.length : 0);
 
         if (!newSchemaData) {
             console.error('❌ Post-migration validation failed: No Schema 2.5 data found');
@@ -859,17 +787,7 @@ async function performAutoMigration(options = {}) {
         }
 
         try {
-            console.log('🔍 Parsing and validating new schema structure...');
             const parsed = JSON.parse(newSchemaData);
-            console.log('📊 Parsed schema structure:', {
-                schemaVersion: parsed.schemaVersion,
-                hasMetadata: !!parsed.metadata,
-                hasData: !!parsed.data,
-                hasCycles: !!parsed.data?.cycles,
-                cycleCount: parsed.data?.cycles ? Object.keys(parsed.data.cycles).length : 0,
-                hasAppState: !!parsed.appState,
-                activeCycleId: parsed.appState?.activeCycleId
-            });
 
             if (!parsed.schemaVersion || parsed.schemaVersion !== '2.5') {
                 throw new Error(`Schema version missing or incorrect: ${parsed.schemaVersion}`);
@@ -877,9 +795,6 @@ async function performAutoMigration(options = {}) {
             if (!parsed.data || !parsed.data.cycles) {
                 throw new Error('Missing cycles data structure');
             }
-
-            console.log('✅ Post-migration validation passed');
-            console.log('🎯 Final data structure validated successfully');
 
         } catch (validationError) {
             console.error('❌ Post-migration validation failed:', validationError.message);
@@ -889,19 +804,9 @@ async function performAutoMigration(options = {}) {
         }
 
         // Step 7: Success!
-        console.log('✅ Auto-migration completed successfully');
-        console.log('🎉 Migration summary:', {
-            backupKey: backupResult.backupKey,
-            migrationChanges: migrationResult.changes?.length || 0,
-            finalDataSize: newSchemaData.length,
-            dataFixesApplied: fixResult.fixedCount || 0,
-            timestamp: new Date().toISOString()
-        });
 
         // ✅ Clean up old separate localStorage keys
-        console.log('🧹 Cleaning up legacy localStorage keys...');
         _deps.storage.removeItem("overdueTaskStates"); // Clean up old separate key
-        console.log('✅ Removed old overdueTaskStates key');
 
         // ✅ Enhanced success notification with fix details
         const successMessage = fixResult.fixedCount > 0
@@ -925,7 +830,6 @@ async function performAutoMigration(options = {}) {
             }
         };
 
-        console.log('💾 Storing migration completion info:', migrationInfo);
         _deps.storage.setItem('miniCycleMigrationInfo', JSON.stringify(migrationInfo));
 
         return {
@@ -956,8 +860,6 @@ function createMinimalSchema25() {
     assertInjected('storage', _deps.storage);
     assertInjected('showNotification', _deps.showNotification);
     assertInjected('now', _deps.now);
-
-    console.log('🆘 Creating minimal Schema 2.5 structure as last resort');
 
     const minimalData = {
         schemaVersion: "2.5",
@@ -1043,21 +945,13 @@ async function handleMigrationFailure(reason, backupKey) {
     assertInjected('showNotification', _deps.showNotification);
 
     try {
-        console.log('🔄 Handling migration failure, attempting to maintain legacy data access…');
-        console.log('❌ Failure reason:', reason);
-        console.log('📦 Backup key available:', backupKey);
 
         // Step 1: Try to restore from backup if available
         if (backupKey) {
-            console.log('📥 Attempting to restore from backup:', backupKey);
-            console.log('🔍 Checking if backup exists in localStorage...');
             const backupExists = !!_deps.storage.getItem(backupKey);
-            console.log('💾 Backup exists:', backupExists);
 
             try {
                 await restoreFromAutomaticBackup(backupKey);
-                console.log('✅ Successfully restored from backup');
-                console.log('📊 Post-restore localStorage keys:', Object.keys(_deps.storage));
             } catch (restoreError) {
                 console.error('❌ Failed to restore from backup:', restoreError);
                 console.error('🔧 Restore error details:', restoreError.message);
@@ -1065,26 +959,16 @@ async function handleMigrationFailure(reason, backupKey) {
                 // Continue with fallback - don't fail here
             }
         } else {
-            console.log('⚠️ No backup key provided, skipping restore attempt');
         }
 
         // Step 2: Ensure legacy data is accessible
-        console.log('🔍 Checking legacy data accessibility...');
         const legacyDataExists = ensureLegacyDataAccess();
-        console.log('📦 Legacy data accessible:', legacyDataExists);
 
         if (legacyDataExists) {
-            console.log('✅ Legacy data found and accessible');
 
             // Step 3: Set session flag to use legacy mode until reload
-            console.log('🚩 Setting legacy fallback mode flags...');
             _deps.sessionStorage.setItem('miniCycleLegacyModeActive', 'true');
             _deps.sessionStorage.setItem('miniCycleMigrationFailureReason', reason);
-
-            console.log('📊 Session storage flags set:', {
-                legacyMode: _deps.sessionStorage.getItem('miniCycleLegacyModeActive'),
-                failureReason: _deps.sessionStorage.getItem('miniCycleMigrationFailureReason')
-            });
 
             // Step 4: Show user-friendly notification
             _deps.showNotification(
@@ -1092,8 +976,6 @@ async function handleMigrationFailure(reason, backupKey) {
                 'warning',
                 UI_TIMEOUTS.NOTIFICATION_PERSISTENT
             );
-
-            console.log('✅ Fallback to legacy data successful');
 
             return {
                 success: false,
@@ -1150,12 +1032,9 @@ function ensureLegacyDataAccess() {
     assertInjected('storage', _deps.storage);
 
     try {
-        console.log('🔍 Checking legacy data access...');
 
         // Check if legacy data exists
         const legacyStorage = _deps.storage.getItem('miniCycleStorage');
-        console.log('📦 Legacy storage exists:', !!legacyStorage);
-        console.log('📏 Legacy storage size:', legacyStorage ? legacyStorage.length : 0);
 
         if (!legacyStorage) {
             console.error('❌ No legacy data found in localStorage');
@@ -1165,31 +1044,15 @@ function ensureLegacyDataAccess() {
 
         // Try to parse the legacy data to ensure it's valid
         try {
-            console.log('🔍 Attempting to parse legacy data...');
             const parsedData = JSON.parse(legacyStorage);
-            console.log('📊 Parsed legacy data structure:', {
-                type: typeof parsedData,
-                isObject: typeof parsedData === 'object',
-                isNull: parsedData === null,
-                keys: typeof parsedData === 'object' && parsedData !== null ? Object.keys(parsedData) : 'N/A',
-                cycleCount: typeof parsedData === 'object' && parsedData !== null ? Object.keys(parsedData).length : 0
-            });
 
             if (typeof parsedData === 'object' && parsedData !== null) {
-                console.log('✅ Legacy data is accessible and valid');
 
                 // Additional validation
                 const cycleKeys = Object.keys(parsedData);
-                console.log('📋 Available legacy cycles:', cycleKeys);
 
                 if (cycleKeys.length > 0) {
                     const firstCycle = parsedData[cycleKeys[0]];
-                    console.log('📊 First cycle structure:', {
-                        hasTasks: !!firstCycle.tasks,
-                        taskCount: Array.isArray(firstCycle.tasks) ? firstCycle.tasks.length : 'Not array',
-                        hasTitle: !!firstCycle.title,
-                        hasAutoReset: 'autoReset' in firstCycle
-                    });
                 }
 
                 return true;
@@ -1225,11 +1088,6 @@ function isLegacyFallbackModeActive() {
     assertInjected('sessionStorage', _deps.sessionStorage);
 
     const isActive = _deps.sessionStorage.getItem('miniCycleLegacyModeActive') === 'true';
-    console.log('🚩 Legacy fallback mode check:', {
-        isActive: isActive,
-        sessionFlag: _deps.sessionStorage.getItem('miniCycleLegacyModeActive'),
-        failureReason: _deps.sessionStorage.getItem('miniCycleMigrationFailureReason')
-    });
     return isActive;
 }
 
@@ -1250,16 +1108,11 @@ async function createAutomaticMigrationBackup() {
     assertInjected('now', _deps.now);
 
     try {
-        console.log('📥 Starting automatic backup creation...');
         const timestamp = _deps.now();
         const backupKey = `auto_migration_backup_${timestamp}`;
-        console.log('🏷️ Generated backup key:', backupKey);
 
         // Check if we have data to backup
-        console.log('🔍 Checking for legacy data to backup...');
         const legacyData = _deps.storage.getItem('miniCycleStorage');
-        console.log('📦 Legacy data found:', !!legacyData);
-        console.log('📏 Legacy data size:', legacyData ? legacyData.length : 0);
 
         if (!legacyData) {
             console.error('❌ No legacy data found to backup');
@@ -1268,13 +1121,9 @@ async function createAutomaticMigrationBackup() {
         }
 
         // Gather all data to backup
-        console.log('📋 Gathering additional data for backup...');
         const remindersData = _deps.storage.getItem('miniCycleReminders');
         const lastUsed = _deps.storage.getItem('lastUsedMiniCycle');
         const milestones = _deps.storage.getItem('milestoneUnlocks');
-        console.log('🔔 Reminders data:', !!remindersData);
-        console.log('📌 Last used cycle:', !!lastUsed);
-        console.log('🏆 Milestones:', !!milestones);
 
         const settingsData = {
             threeDots: _deps.storage.getItem('miniCycleThreeDots'),
@@ -1286,8 +1135,6 @@ async function createAutomaticMigrationBackup() {
             onboarding: _deps.storage.getItem('miniCycleOnboarding'),
             notificationPosition: _deps.storage.getItem('miniCycleNotificationPosition')
         };
-
-        console.log('⚙️ Settings data collected:', Object.keys(settingsData).filter(key => settingsData[key] !== null));
 
         const backupData = {
             version: 'legacy',
@@ -1308,20 +1155,9 @@ async function createAutomaticMigrationBackup() {
         };
 
         const backupSize = JSON.stringify(backupData).length;
-        console.log('📊 Backup data prepared:', {
-            totalSize: backupSize,
-            totalSizeKB: Math.round(backupSize / 1024),
-            legacyDataSize: legacyData.length,
-            remindersSize: remindersData ? remindersData.length : 0,
-            lastUsedSize: lastUsed ? lastUsed.length : 0,
-            milestonesSize: milestones ? milestones.length : 0,
-            settingsCount: Object.keys(settingsData).filter(key => settingsData[key] !== null).length
-        });
 
         try {
-            console.log('💾 Attempting to store backup in localStorage...');
             _deps.storage.setItem(backupKey, JSON.stringify(backupData));
-            console.log('✅ Backup stored successfully');
         } catch (storageError) {
             console.error('❌ Storage error during backup:', storageError);
             console.error('🔧 Storage error details:', storageError.message);
@@ -1335,9 +1171,7 @@ async function createAutomaticMigrationBackup() {
 
         // Add to backup index for management
         try {
-            console.log('📋 Updating backup index...');
             const backupIndex = JSON.parse(_deps.storage.getItem('miniCycleBackupIndex') || '[]');
-            console.log('📊 Current backup index size:', backupIndex.length);
 
             backupIndex.push({
                 key: backupKey,
@@ -1348,18 +1182,14 @@ async function createAutomaticMigrationBackup() {
 
             // Keep only last 5 automatic backups to prevent storage bloat
             const autoBackups = backupIndex.filter(b => b.type === 'auto_migration');
-            console.log('🗂️ Auto backup count:', autoBackups.length);
 
             if (autoBackups.length > 5) {
-                console.log('🧹 Cleaning up old backups...');
                 const oldestAutoBackup = autoBackups.sort((a, b) => a.created - b.created)[0];
-                console.log('🗑️ Removing oldest backup:', oldestAutoBackup.key);
 
                 try {
                     _deps.storage.removeItem(oldestAutoBackup.key);
                     const index = backupIndex.findIndex(b => b.key === oldestAutoBackup.key);
                     backupIndex.splice(index, 1);
-                    console.log('✅ Old backup cleaned up successfully');
                 } catch (cleanupError) {
                     console.warn('⚠️ Failed to cleanup old backup:', cleanupError);
                     console.warn('🔧 Cleanup error details:', cleanupError.message);
@@ -1368,7 +1198,6 @@ async function createAutomaticMigrationBackup() {
             }
 
             _deps.storage.setItem('miniCycleBackupIndex', JSON.stringify(backupIndex));
-            console.log('✅ Backup index updated successfully');
 
         } catch (indexError) {
             console.warn('⚠️ Failed to update backup index:', indexError);
@@ -1376,7 +1205,6 @@ async function createAutomaticMigrationBackup() {
             // Continue anyway - backup was created successfully
         }
 
-        console.log('✅ Automatic backup created successfully:', backupKey);
         return {
             success: true,
             backupKey: backupKey,
@@ -1410,12 +1238,8 @@ async function restoreFromAutomaticBackup(backupKey) {
     assertInjected('storage', _deps.storage);
 
     try {
-        console.log('🔄 Restoring from automatic backup:', backupKey);
 
-        console.log('🔍 Checking if backup exists...');
         const backupData = _deps.storage.getItem(backupKey);
-        console.log('📦 Backup data found:', !!backupData);
-        console.log('📏 Backup data size:', backupData ? backupData.length : 0);
 
         if (!backupData) {
             console.error('❌ Backup not found in localStorage');
@@ -1425,15 +1249,7 @@ async function restoreFromAutomaticBackup(backupKey) {
 
         let backup;
         try {
-            console.log('🔍 Parsing backup data...');
             backup = JSON.parse(backupData);
-            console.log('📊 Backup structure:', {
-                version: backup.version,
-                type: backup.type,
-                created: new Date(backup.created).toISOString(),
-                hasData: !!backup.data,
-                hasMetadata: !!backup.metadata
-            });
         } catch (parseError) {
             console.error('❌ Backup data is corrupted:', parseError);
             console.error('🔧 Parse error details:', parseError.message);
@@ -1443,38 +1259,29 @@ async function restoreFromAutomaticBackup(backupKey) {
 
         // Restore legacy data
         if (backup.data.miniCycleStorage) {
-            console.log('📦 Restoring miniCycleStorage...');
             _deps.storage.setItem('miniCycleStorage', backup.data.miniCycleStorage);
-            console.log('✅ miniCycleStorage restored');
         } else {
             console.warn('⚠️ No miniCycleStorage found in backup');
         }
 
         // Restore last used cycle
         if (backup.data.lastUsedMiniCycle) {
-            console.log('📌 Restoring lastUsedMiniCycle...');
             _deps.storage.setItem('lastUsedMiniCycle', backup.data.lastUsedMiniCycle);
-            console.log('✅ lastUsedMiniCycle restored');
         }
 
         if (backup.data.miniCycleReminders) {
-            console.log('🔔 Restoring miniCycleReminders...');
             _deps.storage.setItem('miniCycleReminders', backup.data.miniCycleReminders);
-            console.log('✅ miniCycleReminders restored');
         } else {
             console.warn('⚠️ No miniCycleReminders found in backup');
         }
 
         // Restore milestones
         if (backup.data.milestoneUnlocks) {
-            console.log('🏆 Restoring milestoneUnlocks...');
             _deps.storage.setItem('milestoneUnlocks', backup.data.milestoneUnlocks);
-            console.log('✅ milestoneUnlocks restored');
         }
 
         // Restore settings
         if (backup.data.settings) {
-            console.log('⚙️ Restoring settings...');
             const settings = backup.data.settings;
             const settingsRestored = [];
 
@@ -1496,7 +1303,6 @@ async function restoreFromAutomaticBackup(backupKey) {
 
                         _deps.storage.setItem(storageKey, settings[key]);
                         settingsRestored.push(key);
-                        console.log(`   ✅ Restored setting: ${key} -> ${storageKey}`);
                     } catch (settingError) {
                         console.warn(`⚠️ Failed to restore setting ${key}:`, settingError);
                         // Continue with other settings
@@ -1504,24 +1310,18 @@ async function restoreFromAutomaticBackup(backupKey) {
                 }
             });
 
-            console.log('✅ Settings restoration complete:', settingsRestored);
         } else {
             console.warn('⚠️ No settings found in backup');
         }
 
         // Remove any Schema 2.5 data that might have been created
         try {
-            console.log('🧹 Cleaning up any Schema 2.5 data...');
             const schema25Existed = !!_deps.storage.getItem('miniCycleData');
             _deps.storage.removeItem('miniCycleData');
-            console.log('🧹 Schema 2.5 data cleanup:', schema25Existed ? 'removed' : 'none found');
         } catch (removeError) {
             console.warn('⚠️ Failed to remove Schema 2.5 data:', removeError);
             // Continue anyway
         }
-
-        console.log('✅ Data restored from automatic backup successfully');
-        console.log('📊 Post-restore localStorage keys:', Object.keys(_deps.storage));
 
         return { success: true };
 
@@ -1548,14 +1348,6 @@ async function restoreFromAutomaticBackup(backupKey) {
 function showCriticalError(message) {
     assertInjected('document', _deps.document);
     assertInjected('now', _deps.now);
-
-    console.log('🚨 Showing critical error to user:', message);
-    console.log('📊 System state at critical error:', {
-        localStorage: _deps.storage ? Object.keys(_deps.storage) : 'N/A',
-        sessionStorage: _deps.sessionStorage ? Object.keys(_deps.sessionStorage) : 'N/A',
-        url: window.location.href,
-        timestamp: new Date(_deps.now()).toISOString()
-    });
 
     const errorContainer = _deps.document.createElement('div');
     errorContainer.style.cssText = `position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ff4444; color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: ${Z_INDEX.OVERLAY_CRITICAL}; max-width: 400px; text-align: center; font-family: Inter, sans-serif; line-height: 1.5;`;
@@ -1593,13 +1385,10 @@ function showCriticalError(message) {
 
     _deps.document.body.appendChild(errorContainer);
 
-    console.log('📢 Critical error dialog displayed to user');
-
     // Auto-remove after 15 seconds
     setTimeout(() => {
         if (errorContainer.parentElement) {
             errorContainer.remove();
-            console.log('⏰ Critical error dialog auto-removed after timeout');
         }
     }, 15000);
 }
@@ -1625,20 +1414,9 @@ export async function initAppWithAutoMigration(options = {}) {
     assertInjected('initialSetup', _deps.initialSetup);
     assertInjected('now', _deps.now);
 
-    console.log('🚀 Initializing app with auto-migration check…');
-    console.log('📊 Initial system state:', {
-        localStorage: Object.keys(_deps.storage),
-        sessionStorage: Object.keys(_deps.sessionStorage),
-        userAgent: navigator.userAgent,
-        timestamp: new Date(_deps.now()).toISOString()
-    });
-
     // Check if we're already in legacy fallback mode
-    console.log('🚩 Checking for existing legacy fallback mode...');
     if (isLegacyFallbackModeActive()) {
-        console.log('⚠️ App is running in legacy fallback mode');
         const failureReason = _deps.sessionStorage.getItem('miniCycleMigrationFailureReason') || 'Unknown reason';
-        console.log('❌ Previous failure reason:', failureReason);
 
         _deps.showNotification(
             '⚠️ ' + getLabel('notify.compatibilityMode', { vars: { reason: failureReason } }),
@@ -1647,44 +1425,22 @@ export async function initAppWithAutoMigration(options = {}) {
         );
 
         // Load app with legacy data
-        console.log('📱 Loading app in legacy fallback mode...');
         await _deps.initialSetup();
         _deps.onInitialSetupComplete?.();
         return;
     }
 
-    console.log('✅ No existing fallback mode detected');
-
     // Run migration check
-    console.log('🔍 Running migration check...');
     const migrationCheck = checkMigrationNeeded();
-    console.log('📋 Migration check complete:', migrationCheck);
 
     if (migrationCheck.needed) {
         try{
         const result = await performAutoMigration(options);
-        console.log('📋 Migration needed - starting auto-migration process...');
-        console.log('🔄 Auto-migration will be performed asynchronously...');
-
-
-            console.log('🏁 Auto-migration promise resolved:', result);
 
             if (result.success) {
-                console.log('✅ Auto-migration successful, loading app...');
-                console.log('📊 Migration success details:', {
-                    backupKey: result.backupKey,
-                    message: result.message,
-                    forced: result.forced || false,
-                    minimal: result.minimal || false
-                });
                 await _deps.initialSetup();
                 _deps.onInitialSetupComplete?.();
             } else if (result.fallbackActive) {
-                console.log('⚠️ Migration failed but fallback active, loading app with legacy data...');
-                console.log('📊 Fallback details:', {
-                    reason: result.reason,
-                    message: result.message
-                });
                 await _deps.initialSetup();
                 _deps.onInitialSetupComplete?.();
             } else {
@@ -1698,8 +1454,6 @@ export async function initAppWithAutoMigration(options = {}) {
          showCriticalError('An unexpected error occurred. Please refresh the page.');
         }
     } else {
-        console.log('✅ No migration needed, loading app normally...');
-        console.log('📦 Current schema status:', migrationCheck.currentVersion);
         await _deps.initialSetup();
         _deps.onInitialSetupComplete?.();
     }
@@ -1714,7 +1468,6 @@ export async function initAppWithAutoMigration(options = {}) {
  * @public
  */
 export function forceAppMigration() {
-    console.log('🚨 Forcing app migration...');
     return initAppWithAutoMigration({
         forceMode: true,
         skipValidation: true
@@ -1725,4 +1478,3 @@ export function forceAppMigration() {
 // 🎯 MODULE LOADED
 // ==========================================
 
-console.log('🔄 Migration Manager module loaded');

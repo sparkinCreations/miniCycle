@@ -602,4 +602,3 @@ export function cleanOldBackups() {
     showNotification(getLabel('notify.backupsCleaned', { vars: { count: cleaned } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
 }
 
-console.log('Testing Modal Backup loaded (DI-pure)');

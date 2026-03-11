@@ -51,7 +51,6 @@ const Deps = new Proxy({}, {
  */
 export function setRecurringActivationDependencies(overrides = {}) {
     di.setDependencies(overrides);
-    console.log('🔧 RecurringActivation dependencies configured');
 }
 
 /**
@@ -200,12 +199,6 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
         );
     }
 
-    console.log('✅ Recurring template created via AppState:', {
-        taskId: assignedTaskId,
-        taskText: task.text,
-        settings: task.recurringSettings
-    });
-
     // Show notification
     const frequency = task.recurringSettings?.frequency || 'daily';
     const pattern = task.recurringSettings?.indefinitely ? 'Indefinitely' : 'Limited';
@@ -230,8 +223,6 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
         assertInjected('showNotification', Deps.showNotification);
         Deps.showNotification(`✅ ${getLabel('notify.taskSetRecurring', { vars: { frequency } })}`, "success", UI_TIMEOUTS.NOTIFICATION_SLOW);
     }
-
-    console.log('✅ Task activated as recurring:', assignedTaskId);
 
     // Restart watcher at active interval since a template was created
     Deps.restartRecurringWatcher?.();
@@ -321,8 +312,6 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
 
     assertInjected('showNotification', Deps.showNotification);
     Deps.showNotification(`↩️ ${getLabel('notify.recurringTurnedOff')}`, "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
-
-    console.log('✅ Task deactivated from recurring:', assignedTaskId);
 
     if (Deps.updatePanelButtonVisibility && typeof Deps.updatePanelButtonVisibility === 'function') {
         Deps.updatePanelButtonVisibility();
@@ -446,7 +435,6 @@ export async function applyRecurringToTaskSchema25(taskId, newSettings) {
     // Restart watcher at active interval since a template was created/updated
     Deps.restartRecurringWatcher?.();
 
-    console.log('✅ Recurring settings applied to task:', taskId);
 }
 
 // ============================================================================
@@ -458,7 +446,6 @@ export async function applyRecurringToTaskSchema25(taskId, newSettings) {
  * @param {string} taskId - The task ID
  */
 export async function deleteRecurringTemplate(taskId) {
-    console.log('🗑️ Deleting recurring template (AppState-based)...');
 
     assertInjected('updateAppState', Deps.updateAppState);
     assertInjected('AppState', Deps.AppState);
@@ -494,7 +481,6 @@ export async function deleteRecurringTemplate(taskId) {
         }
     }, true);
 
-    console.log('✅ Recurring template deleted via AppState');
 }
 
 /**
@@ -515,7 +501,6 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
             const shouldDelete = task?.deleteWhenComplete !== false;
 
             if (!shouldDelete) {
-                console.log(`📌 Keeping recurring task (deleteWhenComplete=false): ${task?.text || taskId}`);
                 const checkbox = taskEl.querySelector("input[type='checkbox']");
                 if (checkbox) checkbox.checked = false;
                 if (task) task.completed = false;
@@ -546,9 +531,6 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
 
                 template.nextScheduledOccurrence = nextOccurrence;
                 template.lastTriggeredTimestamp = null;
-
-                console.log(`✅ Recalculated nextScheduledOccurrence for "${template.text}":`,
-                    new Date(nextOccurrence || 0).toLocaleString());
             }
         }
     });
@@ -556,11 +538,9 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
     // Update progress bar
     if (removedCount > 0 && Deps.updateProgressBar) {
         Deps.updateProgressBar();
-        console.log(`✅ Progress bar updated after removing ${removedCount} recurring task(s)`);
     }
 
     if (keptCount > 0) {
-        console.log(`📌 Kept ${keptCount} recurring task(s) with deleteWhenComplete=false`);
     }
 }
 
@@ -568,7 +548,6 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
  * Handle recurring tasks after cycle reset
  */
 export function handleRecurringTasksAfterReset() {
-    console.log('🔄 Handling recurring tasks after reset (AppState-based)...');
 
     assertInjected('AppState', Deps.AppState);
 
@@ -595,10 +574,7 @@ export function handleRecurringTasksAfterReset() {
     const templateCount = Object.keys(recurringTemplates).length;
 
     if (templateCount > 0) {
-        console.log(`✅ ${templateCount} recurring templates preserved for future recreation`);
     } else {
-        console.log('📋 No recurring templates to preserve');
     }
 }
 
-console.log('🔄 RecurringActivation module loaded');

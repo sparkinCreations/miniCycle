@@ -38,7 +38,6 @@ const _deps = new Proxy({}, {
 
 export function setRecurringSettingsApplicatorDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('✅ RecurringSettingsApplicator deps set:', Object.keys(dependencies));
 }
 
 // ============================================================================
@@ -53,7 +52,6 @@ export function setRecurringSettingsApplicatorDependencies(dependencies) {
  * @returns {Promise<void>}
  */
 export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
-    console.log('📝 Applying recurring settings (AppState-based)...');
 
     try {
         // Wait for core systems to be ready
@@ -192,8 +190,6 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
         // Restart watcher at active interval since templates now exist
         _deps.restartRecurringWatcher?.();
 
-        console.log('✅ Recurring settings applied successfully');
-
     } catch (error) {
         console.error('❌ Failed to apply recurring settings:', error);
         _deps.showNotification('❌ ' + getLabel('notify.recurringApplyFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SLOW);
@@ -221,8 +217,6 @@ function updateUIAfterApply(panel) {
     const checkedTasks = _deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM_CHECKED);
     let firstCheckedTask = null;
 
-    console.log('🔍 Looking for checked tasks after apply:', checkedTasks.length);
-
     if (checkedTasks.length > 0) {
         firstCheckedTask = checkedTasks[0];
 
@@ -241,15 +235,12 @@ function updateUIAfterApply(panel) {
 
         if (task) {
             panel.showTaskSummaryPreview(task);
-            console.log('✅ Updated preview with new settings for task:', taskId);
         }
     } else {
         // No checked tasks - clear all selections
         _deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
             el.classList.remove("selected", "checked");
         });
-        console.log('⚠️ No checked tasks found after apply settings');
     }
 }
 
-console.log('📦 recurringSettingsApplicator module loaded');

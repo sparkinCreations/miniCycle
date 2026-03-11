@@ -64,7 +64,6 @@ if (typeof structuredClone === 'undefined') {
         }
         return clone;
     };
-    console.log('🔧 structuredClone polyfill installed (Safari < 15.4)');
 }
 
 // ✅ Single source of truth: Read version from globalThis (set by version.js)
@@ -99,7 +98,6 @@ function withTimeout(promise, timeoutMs, defaultValue) {
     return Promise.race([
         promise,
         new Promise((resolve) => setTimeout(() => {
-            console.log(`⏱️ IndexedDB operation timed out after ${timeoutMs}ms — continuing without IDB`);
             resolve(defaultValue);
         }, timeoutMs))
     ]);
@@ -317,13 +315,11 @@ async function recoverFromInterruptedTests() {
 
         const backup = await getPreTestBackup();
         if (backup) {
-            console.log('🔄 Restoring pre-test localStorage backup...');
             // Clear current localStorage and restore backup
             localStorage.clear();
             Object.entries(backup).forEach(([key, value]) => {
                 localStorage.setItem(key, value);
             });
-            console.log('✅ Pre-test data restored from IndexedDB backup');
 
             // Verify restore succeeded before clearing backup
             const restored = localStorage.getItem(STORAGE_KEYS.DATA);
@@ -331,7 +327,6 @@ async function recoverFromInterruptedTests() {
                 try {
                     JSON.parse(restored); // Verify it's valid JSON
                     await clearTestModeFlags();
-                    console.log('🧹 Restore verified, backup cleared');
                     // Set flag for UI to show notification after boot completes
                     sessionStorage.setItem('__miniCycle_recoveredFromInterruptedTests__', 'true');
                     return true;
@@ -352,7 +347,6 @@ async function recoverFromInterruptedTests() {
             console.warn('⚠️ No backup found - test mode flag may be stale, preserving existing data');
             const existingData = localStorage.getItem(STORAGE_KEYS.DATA);
             if (existingData) {
-                console.log('📦 Existing data found, keeping it intact');
             }
             await clearTestModeFlags();
             return true;
@@ -410,7 +404,6 @@ let withV = (path) => `${path}?v=${APP_VERSION}`;
  * }
  */
 export async function initCoreBoot(deps, versionSuffix = null) {
-  console.log('🚀 coreBoot: Starting core initialization...');
 
   // ✅ Use version suffix for retry cache busting (bypasses ES module cache)
   // When versionSuffix is '' (empty string), it means "offline retry — drop all ?v= params"
@@ -424,7 +417,6 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   // This MUST happen before any modules load to ensure localStorage has correct data
   const recovered = await recoverFromInterruptedTests();
   if (recovered) {
-    console.log('🔄 Recovered from interrupted tests - localStorage restored');
   }
 
   // ========== Load AppGlobalState ==========
@@ -442,8 +434,6 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   deps.core.FeatureFlags = FeatureFlags;
   deps.core.UNDO_LIMIT = UNDO_LIMIT;
   deps.core.UNDO_MIN_INTERVAL_MS = UNDO_MIN_INTERVAL_MS;
-
-  console.log('✅ AppGlobalState loaded');
 
   // ========== Clean up cache-clearing URL parameters ==========
   const urlParams = new URLSearchParams(window.location.search);
@@ -529,8 +519,6 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   deps.core.DEFAULT_RECURRING_DELETE_SETTINGS = DEFAULT_RECURRING_DELETE_SETTINGS;
   deps.core.TASK_LIMIT = TASK_LIMIT;
 
-  console.log('✅ Constants loaded');
-
   // ========== Update withV helper ==========
   // When offline retry (dropVersionParam), withV returns bare path — no ?v= suffix
   // This lets browser HTTP cache serve files when SW is dead (iOS kills SW between sessions)
@@ -547,8 +535,6 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   };
   deps.core.AppMeta = AppMeta;
   // ✅ AppMeta accessible via deps.core.AppMeta and appContext - no window.* exposure
-
-  console.log('🚀 appInit and constants loaded (2-phase initialization system)');
 
   // ========== Load GlobalUtils ==========
   const globalUtilsModule = await import(withV('../utils/globalUtils.js'));
@@ -570,10 +556,7 @@ export async function initCoreBoot(deps, versionSuffix = null) {
 
   // ✅ GlobalUtils accessible via deps.utils and appContext.getGlobalUtils() - no window.* exposure
 
-  console.log('🛠️ Global utilities loaded');
-
   // ========== Load Migration Manager ==========
-  console.log('🔄 Loading migration manager (core system)...');
   const migrationMod = await import(withV('../routine/migrationManager.js'));
 
   deps.core.migrationMod = migrationMod;
@@ -588,8 +571,6 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   deps.core.MigrationFacade = migrationFacadeMod.MigrationFacade;
 
   // ✅ Migration functions accessible via deps.core and MigrationFacade - no window.* exposure
-
-  console.log('✅ Migration Manager loaded (with facade)');
 
   // ========== Initialize appContext early ==========
   // This allows modules loaded between initCoreBoot and initAppState
@@ -608,8 +589,6 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   const completeInitialSetup = (activeCycle, fullSchemaData, schemaData) =>
     appInit.runCompleteInitialSetup(activeCycle, fullSchemaData, schemaData);
   appContextMod.setContextValue('completeInitialSetup', completeInitialSetup);
-
-  console.log('✅ appContext initialized (early) with appInit, AppGlobalState, GlobalUtils, fixTaskValidationIssues, completeInitialSetup');
 
   return {
     AppGlobalState,
@@ -650,7 +629,6 @@ export async function initCoreBoot(deps, versionSuffix = null) {
  * });
  */
 export async function initAppState(deps, showNotification) {
-  console.log('🗃️ Initializing AppState...');
 
   const { appInit, migrationMod, setAppInitDependencies, withV } = deps.core;
 
@@ -689,7 +667,6 @@ export async function initAppState(deps, showNotification) {
       addBodyClass: (cls) => document.body.classList.add(cls),
       removeBodyClass: (cls) => document.body.classList.remove(cls)
     });
-    console.log('✅ AppInit setup dependencies configured');
   }
 
   // Wire migration manager dependencies
@@ -708,8 +685,6 @@ export async function initAppState(deps, showNotification) {
     document: document
   });
 
-  console.log('✅ Migration manager dependencies configured');
-
   // Load and create AppState
   const { createStateManager, assignCycleVariables } = await import(withV('../core/appState.js'));
 
@@ -717,7 +692,7 @@ export async function initAppState(deps, showNotification) {
   deps.core.assignCycleVariables = assignCycleVariables;
 
   AppState = createStateManager({
-    showNotification: showNotification || console.log.bind(console),
+    showNotification: showNotification || (() => {}),
     storage: localStorage,
     createInitialData: migrationMod.createInitialSchema25Data,
     AppMeta: deps.core.AppMeta  // Use deps, not window.*
@@ -729,21 +704,18 @@ export async function initAppState(deps, showNotification) {
   // Initialize AppState
   // Note: AppState._initializeInternal() handles interrupted test restoration from IndexedDB
   await AppState.init();
-  console.log('✅ AppState initialized');
 
   // ========== Add AppState to appContext ==========
   // appContext was already initialized in initCoreBoot with appInit, AppGlobalState, GlobalUtils
   // Now we add AppState which is created here
   // Note: appContextMod already imported at start of initAppState
   appContextMod.setContextValue('AppState', AppState);
-  console.log('✅ AppState added to appContext');
 
   // ========== Inject AppState into Notifications ==========
   // Notifications was loaded early (pre-AppState) with AppState: null
   // Now that AppState exists, inject it so recurring notifications work
   if (deps.utils?.setNotificationsDependencies) {
     deps.utils.setNotificationsDependencies({ AppState });
-    console.log('✅ AppState injected into Notifications');
   }
 
   // ========== Initialize data access functions ==========
@@ -764,7 +736,6 @@ export async function initAppState(deps, showNotification) {
     autoSave,
     fixTaskValidationIssues: migrationMod.fixTaskValidationIssues
   });
-  console.log('✅ stateApi registered in appContext');
 
   // Update deps.core with data functions
   deps.core.loadMiniCycleData = loadMiniCycleData;
@@ -773,7 +744,6 @@ export async function initAppState(deps, showNotification) {
 
   // Mark core systems ready
   await appInit.markCoreSystemsReady();
-  console.log('✅ Core systems ready');
 
   return AppState;
 }
@@ -809,7 +779,6 @@ async function initDataAccess(deps) {
 
   // ✅ Data functions accessible via appContext.getStateApi() and deps.core - no window.* exposure
 
-  console.log('✅ Data access functions loaded from dataAccess.js');
 }
 
 // Export the functions (they'll be populated after initDataAccess)
@@ -834,7 +803,6 @@ export async function clearAllCaches() {
     const cacheNames = await caches.keys();
     await Promise.all(cacheNames.map(name => caches.delete(name)));
     cleared = cacheNames.length;
-    console.log('🗑️ Cleared', cleared, 'caches');
   }
 
   if ('serviceWorker' in navigator) {
@@ -843,7 +811,6 @@ export async function clearAllCaches() {
       await reg.unregister();
     }
     if (registrations.length > 0) {
-      console.log('🗑️ Unregistered', registrations.length, 'service worker(s)');
     }
   }
 
@@ -893,7 +860,6 @@ export async function attemptCacheRecovery(source = 'unknown') {
   const attempts = getRecoveryAttemptCount();
 
   if (attempts < MAX_RECOVERY_ATTEMPTS) {
-    console.log(`🔄 Cache recovery attempt ${attempts + 1}/${MAX_RECOVERY_ATTEMPTS} from ${source}`);
     sessionStorage.setItem(CACHE_RECOVERY_FLAG, (attempts + 1).toString());
 
     await clearAllCaches();
@@ -980,7 +946,6 @@ async function cleanLegacyAppInitCache() {
         const match = await cache.match(appInitRequest);
         if (match) {
           await cache.delete(appInitRequest);
-          console.log(`🧹 Removed /modules/core/appInit.js from cache "${name}"`);
         }
       }
     } catch (err) {
@@ -1019,7 +984,6 @@ async function runFallbackInitialSetup(deps) {
     let schemaData = loadMiniCycleData?.();
 
     if (!schemaData) {
-      console.log('🆕 No data found - creating initial structure...');
       createData?.();
       schemaData = loadMiniCycleData?.();
     }
@@ -1037,15 +1001,12 @@ async function runFallbackInitialSetup(deps) {
     const appContextMod = await import(withV('../core/appContext.js'));
 
     if (!activeCycle || !cycles?.[activeCycle]) {
-      console.log('🆕 No active cycle - showing cycle creation modal...');
       appContextMod.getCycleApi?.()?.create?.();
       return;
     }
 
-    console.log('📦 Loading cycle:', activeCycle);
     await appContextMod.getCycleApi?.()?.load?.(activeCycle);
 
-    console.log('✅ Fallback initialization complete');
   } catch (error) {
     console.error('❌ Fallback initialization failed:', error);
   }
@@ -1069,4 +1030,3 @@ export {
   UNDO_MIN_INTERVAL_MS
 };
 
-console.log('✅ coreBoot.js loaded');

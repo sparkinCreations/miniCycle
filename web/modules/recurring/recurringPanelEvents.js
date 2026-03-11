@@ -24,7 +24,6 @@ import { handleGridArrowNav, handleVerticalArrowNav } from '../utils/keyboardNav
  */
 export function initEventDelegation(deps, state, callbacks) {
     if (state._eventDelegationInitialized) {
-        console.log('Recurring panel event delegation already initialized');
         return false;
     }
 
@@ -44,7 +43,6 @@ export function initEventDelegation(deps, state, callbacks) {
     setupTaskListDelegation(deps, state, callbacks);
 
     state._eventDelegationInitialized = true;
-    console.log('Recurring panel event delegation initialized (memory leak fix applied)');
     return true;
 }
 
@@ -354,4 +352,3 @@ function selectTaskItem(item, deps, state, callbacks) {
     }
 }
 
-console.log('recurringPanelEvents module loaded');

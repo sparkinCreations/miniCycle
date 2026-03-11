@@ -112,4 +112,3 @@ export function generateYearlyDayGrid(deps, state, monthNumber) {
     }
 }
 
-console.log('recurringPanelGrids module loaded');

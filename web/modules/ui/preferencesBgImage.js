@@ -147,8 +147,6 @@ async function compressImage(file, maxSize = BG_IMAGE_MAX_SIZE, maxDimension = B
 
                 const compressedSize = Math.round(dataUrl.length * 0.75); // Approximate actual size (base64 overhead)
 
-                console.log(`📸 Image compressed: ${originalWidth}x${originalHeight} → ${canvas.width}x${canvas.height}, ${(file.size / 1024).toFixed(0)}KB → ${(compressedSize / 1024).toFixed(0)}KB (quality: ${(quality * 100).toFixed(0)}%)`);
-
                 cleanup();
                 resolve({
                     dataUrl,
@@ -375,7 +373,6 @@ export async function handleBgImageUpload(event, deps) {
     }
 
     const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
-    console.log(`📤 Processing image: ${file.name} (${fileSizeMB}MB, ${file.type})`);
 
     try {
         let dataUrl;
@@ -421,7 +418,6 @@ export async function handleBgImageUpload(event, deps) {
             deps.showNotification?.(getLabel('notify.bgImageSet'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
         }
 
-        console.log('✅ Background image uploaded successfully');
         return { dataUrl, mode };
 
     } catch (error) {
@@ -517,7 +513,6 @@ export function updateBgImageUI(dataUrl, mode, AppState, deps = {}) {
  * @param {Object} AppState - AppState dependency
  */
 export function handleBgImageVisibleToggle(visible, AppState) {
-    console.log('🖼️ Background image visibility toggle:', visible);
 
     // Save to appState
     if (AppState) {

@@ -45,7 +45,6 @@ const _deps = new Proxy({}, {
  */
 export function setHelpWindowManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🎯 HelpWindowManager dependencies set:', Object.keys(dependencies));
 }
 
 /**
@@ -87,7 +86,6 @@ export class HelpWindowManager {
             if (this.sideLayoutEnabled) {
                 this.sideLayoutEnabled = false;
                 taskView.classList.remove('help-window-side');
-                console.log('📐 Help window layout: bottom (not desktop)');
             }
             return;
         }
@@ -118,7 +116,6 @@ export class HelpWindowManager {
         if (shouldEnableSideLayout !== this.sideLayoutEnabled) {
             this.sideLayoutEnabled = shouldEnableSideLayout;
             taskView.classList.toggle('help-window-side', shouldEnableSideLayout);
-            console.log(`📐 Help window layout: ${shouldEnableSideLayout ? 'side' : 'bottom'} (scrollH: ${scrollHeight}, clientH: ${clientHeight})`);
         }
     }
 
@@ -148,7 +145,6 @@ export class HelpWindowManager {
     setupEventListeners() {
         // ✅ FIX: Only set up handlers once - idempotency guard to prevent accumulation
         if (this._eventListenersInitialized) {
-            console.log('✅ HelpWindowManager event listeners already set up');
             return;
         }
         this._eventListenersInitialized = true;
@@ -197,7 +193,6 @@ export class HelpWindowManager {
                 });
 
                 if (shouldUpdate) {
-                    console.log('📝 Help window: Task list changed');
                     this._pendingTimeouts.push(setTimeout(() => {
                         this.updateConstantMessage();
                         this.updateSideLayout();
@@ -342,7 +337,6 @@ export class HelpWindowManager {
             this.updateConstantMessage();
         }, 30000);
 
-        console.log(`📖 Showing mode description for: ${mode}`);
     }
 
     /**
@@ -670,8 +664,6 @@ export async function initHelpWindowManager(dependencies = {}) {
     // Dynamically import utilities with version for cache-busting
     const version = APP_VERSION;
 
-    console.log(`📦 HelpWindowManager: Loading utilities with version ${version}...`);
-
     // Import storage utilities
     const storageUtils = await import(`../utils/storageUtils.js?v=${version}`);
     getObjectSizeBytes = storageUtils.getObjectSizeBytes;
@@ -680,8 +672,6 @@ export async function initHelpWindowManager(dependencies = {}) {
     // Import undo manager utilities
     const undoManager = await import(`./undoRedoManager.js?v=${version}`);
     getUndoCacheSizeBytes = undoManager.getUndoCacheSizeBytes;
-
-    console.log('✅ HelpWindowManager: Utilities loaded');
 
     // Set dependencies
     if (dependencies && Object.keys(dependencies).length > 0) {

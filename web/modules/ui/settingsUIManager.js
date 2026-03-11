@@ -124,7 +124,6 @@ const _initialized = {
 export function setupSettingsMenu() {
     // ✅ Idempotency guard
     if (_initialized.settingsMenu) {
-        console.log('✅ Settings menu already set up');
         return;
     }
     _initialized.settingsMenu = true;
@@ -342,7 +341,6 @@ export function setupDarkModeToggle() {
 export function setupMoveArrowsToggle() {
     // ✅ Idempotency guard
     if (_initialized.moveArrowsToggle) {
-        console.log('✅ Move arrows toggle already set up');
         return;
     }
     _initialized.moveArrowsToggle = true;
@@ -355,8 +353,6 @@ export function setupMoveArrowsToggle() {
 
     const moveArrowsToggle = document.getElementById(DOM_IDS.TOGGLE_MOVE_ARROWS);
     if (!moveArrowsToggle) return;
-
-    console.log('Setting up move arrows toggle...');
 
     // Load current state
     let moveArrowsEnabled = false;
@@ -373,7 +369,6 @@ export function setupMoveArrowsToggle() {
 
     moveArrowsToggle._changeHandler = async () => {
         const enabled = moveArrowsToggle.checked;
-        console.log('Move arrows toggle changed:', enabled);
 
         const AppState = _deps.AppState?.();
         if (AppState?.isReady?.()) {
@@ -381,7 +376,6 @@ export function setupMoveArrowsToggle() {
                 if (!state.ui) state.ui = {};
                 state.ui.moveArrowsVisible = enabled;
             }, true);
-            console.log('Move arrows setting saved to state:', enabled);
         } else {
             console.error('AppState not ready - setting not saved');
             _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
@@ -402,7 +396,6 @@ export function setupMoveArrowsToggle() {
     };
 
     safeAddEventListener(moveArrowsToggle, "change", moveArrowsToggle._changeHandler);
-    console.log('Move arrows toggle setup completed');
 }
 
 /**
@@ -411,7 +404,6 @@ export function setupMoveArrowsToggle() {
 export function setupThreeDotsToggle() {
     // ✅ Idempotency guard
     if (_initialized.threeDotsToggle) {
-        console.log('✅ Three dots toggle already set up');
         return;
     }
     _initialized.threeDotsToggle = true;
@@ -425,8 +417,6 @@ export function setupThreeDotsToggle() {
     const threeDotsToggle = document.getElementById(DOM_IDS.TOGGLE_THREE_DOTS);
     if (!threeDotsToggle) return;
 
-    console.log('Setting up three dots toggle...');
-
     const schemaData = _deps.loadMiniCycleData?.();
     if (!schemaData) {
         console.error('Schema 2.5 data required for three dots toggle');
@@ -439,7 +429,6 @@ export function setupThreeDotsToggle() {
 
     threeDotsToggle._changeHandler = async () => {
         const enabled = threeDotsToggle.checked;
-        console.log('Three dots toggle changed:', enabled);
 
         const AppState = _deps.AppState?.();
         if (AppState?.isReady?.()) {
@@ -447,7 +436,6 @@ export function setupThreeDotsToggle() {
                 if (!state.settings) state.settings = {};
                 state.settings.showThreeDots = enabled;
             }, true);
-            console.log('Three dots setting saved to AppState:', enabled);
         } else {
             console.error('AppState not ready - setting not saved');
             _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
@@ -468,7 +456,6 @@ export function setupThreeDotsToggle() {
     };
 
     safeAddEventListener(threeDotsToggle, "change", threeDotsToggle._changeHandler);
-    console.log('Three dots toggle setup completed');
 }
 
 /**
@@ -477,7 +464,6 @@ export function setupThreeDotsToggle() {
 export function setupCompletedDropdownToggle() {
     // ✅ Idempotency guard
     if (_initialized.completedDropdownToggle) {
-        console.log('✅ Completed dropdown toggle already set up');
         return;
     }
     _initialized.completedDropdownToggle = true;
@@ -491,8 +477,6 @@ export function setupCompletedDropdownToggle() {
     const completedDropdownToggle = document.getElementById(DOM_IDS.TOGGLE_COMPLETED_DROPDOWN);
     if (!completedDropdownToggle) return;
 
-    console.log('Setting up completed dropdown toggle...');
-
     let completedDropdownEnabled = false;
     const AppState = _deps.AppState?.();
     if (AppState?.isReady?.()) {
@@ -504,7 +488,6 @@ export function setupCompletedDropdownToggle() {
 
     completedDropdownToggle._changeHandler = async () => {
         const enabled = completedDropdownToggle.checked;
-        console.log('Completed dropdown toggle changed:', enabled);
 
         const AppState = _deps.AppState?.();
         if (AppState?.isReady?.()) {
@@ -512,7 +495,6 @@ export function setupCompletedDropdownToggle() {
                 if (!state.settings) state.settings = {};
                 state.settings.showCompletedDropdown = enabled;
             }, true);
-            console.log('Completed dropdown setting saved to state:', enabled);
         } else {
             console.error('AppState not ready - setting not saved');
             _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
@@ -540,7 +522,6 @@ export function setupCompletedDropdownToggle() {
     };
 
     safeAddEventListener(completedDropdownToggle, "change", completedDropdownToggle._changeHandler);
-    console.log('Completed dropdown toggle setup completed');
 }
 
 /**
@@ -548,7 +529,6 @@ export function setupCompletedDropdownToggle() {
  */
 export function setupHelpWindowToggle() {
     if (_initialized.helpWindowToggle) {
-        console.log('✅ Help window toggle already set up');
         return;
     }
     _initialized.helpWindowToggle = true;
@@ -597,7 +577,6 @@ export function setupHelpWindowToggle() {
  */
 export function setupQuickActionsToggle() {
     if (_initialized.quickActionsToggle) {
-        console.log('✅ Quick actions toggle already set up');
         return;
     }
     _initialized.quickActionsToggle = true;
@@ -654,8 +633,6 @@ export function setupScrollToNewTaskToggle() {
     const scrollToggle = document.getElementById(DOM_IDS.TOGGLE_SCROLL_TO_NEW_TASK);
     if (!scrollToggle) return;
 
-    console.log('Setting up scroll to new task toggle...');
-
     // Default to true (enabled) if not set
     let scrollEnabled = true;
     const AppState = _deps.AppState?.();
@@ -669,7 +646,6 @@ export function setupScrollToNewTaskToggle() {
 
     scrollToggle._changeHandler = async () => {
         const enabled = scrollToggle.checked;
-        console.log('Scroll to new task toggle changed:', enabled);
 
         const AppState = _deps.AppState?.();
         if (AppState?.isReady?.()) {
@@ -677,7 +653,6 @@ export function setupScrollToNewTaskToggle() {
                 if (!state.settings) state.settings = {};
                 state.settings.scrollToNewTask = enabled;
             }, true);
-            console.log('Scroll to new task setting saved to state:', enabled);
         } else {
             console.error('AppState not ready - setting not saved');
             _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
@@ -687,7 +662,6 @@ export function setupScrollToNewTaskToggle() {
     };
 
     safeAddEventListener(scrollToggle, "change", scrollToggle._changeHandler);
-    console.log('Scroll to new task toggle setup completed');
 }
 
 /**
@@ -703,8 +677,6 @@ export function setupScrollOnLoadToggle() {
     const scrollToggle = document.getElementById(DOM_IDS.TOGGLE_SCROLL_ON_LOAD);
     if (!scrollToggle) return;
 
-    console.log('Setting up scroll on load toggle...');
-
     // Default to false (disabled for performance)
     let scrollEnabled = false;
     const AppState = _deps.AppState?.();
@@ -717,7 +689,6 @@ export function setupScrollOnLoadToggle() {
 
     scrollToggle._changeHandler = async () => {
         const enabled = scrollToggle.checked;
-        console.log('Scroll on load toggle changed:', enabled);
 
         const AppState = _deps.AppState?.();
         if (AppState?.isReady?.()) {
@@ -725,7 +696,6 @@ export function setupScrollOnLoadToggle() {
                 if (!state.settings) state.settings = {};
                 state.settings.scrollOnLoad = enabled;
             }, true);
-            console.log('Scroll on load setting saved to state:', enabled);
         } else {
             console.error('AppState not ready - setting not saved');
             _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
@@ -735,7 +705,6 @@ export function setupScrollOnLoadToggle() {
     };
 
     safeAddEventListener(scrollToggle, "change", scrollToggle._changeHandler);
-    console.log('Scroll on load toggle setup completed');
 }
 
 /**
@@ -744,7 +713,6 @@ export function setupScrollOnLoadToggle() {
 export function setupDebugModeToggle() {
     // ✅ Idempotency guard
     if (_initialized.debugToggle) {
-        console.log('✅ Debug mode toggle already set up');
         return;
     }
     _initialized.debugToggle = true;
@@ -758,14 +726,11 @@ export function setupDebugModeToggle() {
     const debugModeToggle = document.getElementById(DOM_IDS.TOGGLE_DEBUG_MODE);
     if (!debugModeToggle) return;
 
-    console.log('Setting up debug mode toggle...');
-
     const debugEnabled = _deps.isDebug?.() ?? false;
     debugModeToggle.checked = debugEnabled;
 
     debugModeToggle._changeHandler = () => {
         const enabled = debugModeToggle.checked;
-        console.log('Debug mode toggle changed:', enabled);
 
         if (enabled) {
             _deps.enableDebug?.();
@@ -777,7 +742,6 @@ export function setupDebugModeToggle() {
     };
 
     safeAddEventListener(debugModeToggle, "change", debugModeToggle._changeHandler);
-    console.log('Debug mode toggle setup completed');
 }
 
 /**
@@ -786,7 +750,6 @@ export function setupDebugModeToggle() {
 export function setupResetRecurringButton() {
     // ✅ Idempotency guard
     if (_initialized.resetRecurringDefaults) {
-        console.log('✅ Reset recurring button already set up');
         return;
     }
     _initialized.resetRecurringDefaults = true;
@@ -801,7 +764,6 @@ export function setupResetRecurringButton() {
     if (!resetRecurringBtn) return;
 
     resetRecurringBtn._clickHandler = async () => {
-        console.log('Resetting recurring defaults...');
 
         const defaultSettings = {
             frequency: "daily",
@@ -833,7 +795,6 @@ export function setupResetRecurringButton() {
 export function setupResetAchievementProgressButton() {
     // ✅ Idempotency guard
     if (_initialized.resetAchievementProgress) {
-        console.log('✅ Reset achievement progress button already set up');
         return;
     }
     _initialized.resetAchievementProgress = true;
@@ -852,7 +813,6 @@ export function setupResetAchievementProgressButton() {
 
         // Use confirmation modal if available, otherwise use browser confirm
         const doReset = async () => {
-            console.log('🏆 Resetting achievement progress...');
 
             const AppState = _deps.AppState?.();
             if (AppState?.isReady?.()) {
@@ -878,7 +838,6 @@ export function setupResetAchievementProgressButton() {
                 _deps.updateStatsPanel?.();
 
                 _deps.showNotification?.(getLabel('notify.achievementReset'), "success");
-                console.log('✅ Achievement progress reset complete');
             } else {
                 console.error('AppState not ready - achievement reset failed');
                 _deps.showNotification?.(getLabel('notify.achievementResetFailed'), "error");
@@ -917,7 +876,6 @@ export function setupResetAchievementProgressButton() {
  */
 export function setupClearUndoHistoryButton() {
     if (_initialized.clearUndoHistory) {
-        console.log('✅ Clear undo history button already set up');
         return;
     }
     _initialized.clearUndoHistory = true;
@@ -971,7 +929,6 @@ export function setupClearUndoHistoryButton() {
  * Sync current settings to storage
  */
 export async function syncCurrentSettingsToStorage() {
-    console.log('Syncing current settings to storage...');
 
     const schemaData = _deps.loadMiniCycleData?.();
 
@@ -994,12 +951,6 @@ export async function syncCurrentSettingsToStorage() {
         return;
     }
 
-    console.log('Syncing settings:', {
-        activeCycle,
-        autoReset: toggleAutoReset.checked,
-        deleteCheckedTasks: deleteCheckedTasks.checked
-    });
-
     const AppState = _deps.AppState?.();
     if (AppState?.isReady?.()) {
         await AppState.update(state => {
@@ -1009,7 +960,6 @@ export async function syncCurrentSettingsToStorage() {
                 cycle.deleteCheckedTasks = deleteCheckedTasks.checked;
             }
         }, true);
-        console.log('Settings synced to Schema 2.5 successfully');
     } else {
         console.error('AppState not ready - settings not synced');
     }
@@ -1033,7 +983,6 @@ const FONT_SIZE_LABELS = {
 export function setupReducedMotionToggle() {
     // ✅ Idempotency guard
     if (_initialized.reducedMotionToggle) {
-        console.log('✅ Reduced motion toggle already set up');
         return;
     }
     _initialized.reducedMotionToggle = true;
@@ -1047,8 +996,6 @@ export function setupReducedMotionToggle() {
     const toggle = document.getElementById(DOM_IDS.TOGGLE_REDUCED_MOTION);
     if (!toggle) return;
 
-    console.log('Setting up reduced motion toggle...');
-
     const schemaData = _deps.loadMiniCycleData?.();
     const enabled = schemaData?.settings?.reducedMotion || false;
     toggle.checked = enabled;
@@ -1057,7 +1004,6 @@ export function setupReducedMotionToggle() {
 
     toggle._changeHandler = async () => {
         const enabled = toggle.checked;
-        console.log('Reduced motion toggle changed:', enabled);
 
         const AppState = _deps.AppState?.();
         if (AppState?.isReady?.()) {
@@ -1065,7 +1011,6 @@ export function setupReducedMotionToggle() {
                 if (!state.settings) state.settings = {};
                 state.settings.reducedMotion = enabled;
             }, true);
-            console.log('Reduced motion setting saved to AppState:', enabled);
         } else {
             console.error('AppState not ready - setting not saved');
             _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
@@ -1084,7 +1029,6 @@ export function setupReducedMotionToggle() {
     };
 
     safeAddEventListener(toggle, "change", toggle._changeHandler);
-    console.log('Reduced motion toggle setup completed');
 }
 
 /**
@@ -1094,7 +1038,6 @@ export function setupReducedMotionToggle() {
 export function setupHighContrastToggle() {
     // ✅ Idempotency guard
     if (_initialized.highContrastToggle) {
-        console.log('✅ High contrast toggle already set up');
         return;
     }
     _initialized.highContrastToggle = true;
@@ -1108,8 +1051,6 @@ export function setupHighContrastToggle() {
     const toggle = document.getElementById(DOM_IDS.TOGGLE_HIGH_CONTRAST);
     if (!toggle) return;
 
-    console.log('Setting up high contrast toggle...');
-
     const schemaData = _deps.loadMiniCycleData?.();
     const enabled = schemaData?.settings?.highContrast || false;
     toggle.checked = enabled;
@@ -1117,7 +1058,6 @@ export function setupHighContrastToggle() {
 
     toggle._changeHandler = async () => {
         const enabled = toggle.checked;
-        console.log('High contrast toggle changed:', enabled);
 
         const AppState = _deps.AppState?.();
         if (AppState?.isReady?.()) {
@@ -1125,7 +1065,6 @@ export function setupHighContrastToggle() {
                 if (!state.settings) state.settings = {};
                 state.settings.highContrast = enabled;
             }, true);
-            console.log('High contrast setting saved to AppState:', enabled);
         } else {
             console.error('AppState not ready - setting not saved');
             _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
@@ -1143,7 +1082,6 @@ export function setupHighContrastToggle() {
     };
 
     safeAddEventListener(toggle, "change", toggle._changeHandler);
-    console.log('High contrast toggle setup completed');
 }
 
 /**
@@ -1153,7 +1091,6 @@ export function setupHighContrastToggle() {
 export function setupFontSizeSelect() {
     // ✅ Idempotency guard
     if (_initialized.fontSizeSelect) {
-        console.log('✅ Font size select already set up');
         return;
     }
     _initialized.fontSizeSelect = true;
@@ -1167,8 +1104,6 @@ export function setupFontSizeSelect() {
     const select = document.getElementById(DOM_IDS.FONT_SIZE_SELECT);
     if (!select) return;
 
-    console.log('Setting up font size select...');
-
     const schemaData = _deps.loadMiniCycleData?.();
     const savedSize = schemaData?.settings?.fontSize || '16';
     select.value = savedSize;
@@ -1178,7 +1113,6 @@ export function setupFontSizeSelect() {
 
     select._changeHandler = async () => {
         const size = select.value;
-        console.log('Font size changed:', size);
 
         const AppState = _deps.AppState?.();
         if (AppState?.isReady?.()) {
@@ -1186,7 +1120,6 @@ export function setupFontSizeSelect() {
                 if (!state.settings) state.settings = {};
                 state.settings.fontSize = size;
             }, true);
-            console.log('Font size setting saved to AppState:', size);
         } else {
             console.error('AppState not ready - setting not saved');
             _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
@@ -1205,7 +1138,6 @@ export function setupFontSizeSelect() {
     };
 
     safeAddEventListener(select, "change", select._changeHandler);
-    console.log('Font size select setup completed');
 }
 
 /**
@@ -1302,4 +1234,3 @@ export function initAllToggles() {
     applyPriorityColor();
 }
 
-console.log('Settings UI Manager loaded');

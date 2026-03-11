@@ -78,7 +78,6 @@ function scheduleIdleSave() {
     const doSave = () => {
         _idleSaveScheduled = false;
         if (AppState.isReady?.()) {
-            console.log('💾 Idle-time save for title update');
             AppState.forceSave();
         }
     };
@@ -127,7 +126,6 @@ async function handleMiniCycleTitleBlur() {
 
     // Handle empty title - revert
     if (newTitle === "") {
-        console.log('Empty title detected, reverting...');
         showNotification?.(getLabel('notify.titleEmpty'));
         titleElement.textContent = oldTitle;
         return;
@@ -136,7 +134,6 @@ async function handleMiniCycleTitleBlur() {
     // ✅ FIX #2: Enforce character limit
     const maxLength = LIMITS.CYCLE_NAME_CHARACTER || 100;
     if (newTitle.length > maxLength) {
-        console.log(`Title exceeds ${maxLength} chars, truncating...`);
         newTitle = newTitle.substring(0, maxLength);
         titleElement.textContent = newTitle;
         showNotification?.(getLabel('notify.titleTruncated', { vars: { limit: maxLength } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
@@ -144,11 +141,8 @@ async function handleMiniCycleTitleBlur() {
 
     // No change - exit early
     if (newTitle === oldTitle) {
-        console.log('Title unchanged');
         return;
     }
-
-    console.log(`Title change detected: "${oldTitle}" → "${newTitle}"`);
 
     // Check AppState readiness
     if (!AppState?.isReady?.()) {
@@ -163,7 +157,6 @@ async function handleMiniCycleTitleBlur() {
     const { name: finalTitle, wasModified } = getUniqueCycleName(newTitle, currentState?.data?.cycles || {});
 
     if (wasModified) {
-        console.log(`⚠️ Name collision: "${newTitle}" → "${finalTitle}"`);
         showNotification?.(getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
         titleElement.textContent = finalTitle; // Update UI to show final name
     }
@@ -190,7 +183,6 @@ async function handleMiniCycleTitleBlur() {
         if (finalTitle !== oldKey) {
             delete state.data.cycles[oldKey];
             state.appState.activeCycleId = finalTitle;
-            console.log(`Storage key updated: "${oldKey}" → "${finalTitle}"`);
         }
 
         state.metadata.lastModified = Date.now();
@@ -210,7 +202,6 @@ async function handleMiniCycleTitleBlur() {
     _deps.updateMainMenuHeader?.();
     _deps.updateUndoRedoButtons?.();
 
-    console.log(`✅ Title updated: "${oldTitle}" → "${finalTitle}"`);
     if (!wasModified) {
         showNotification?.(getLabel('notify.renamedTo', { vars: { name: finalTitle } }), "success", UI_TIMEOUTS.NOTIFICATION_BRIEF);
     }
@@ -227,7 +218,6 @@ async function handleMiniCycleTitleBlur() {
 export function setupMiniCycleTitleListener() {
     // Idempotency guard to prevent duplicate listeners
     if (_titleListenerInitialized) {
-        console.log('✅ Title listener already set up');
         return;
     }
 
@@ -247,7 +237,6 @@ export function setupMiniCycleTitleListener() {
         titleElement.addEventListener("blur", handleMiniCycleTitleBlur);
     }
 
-    console.log('✅ Title manager initialized');
 }
 
 /**
@@ -260,13 +249,9 @@ export async function initTitleManager(dependencies = {}) {
     // Dynamically import utilities with version for cache-busting
     const version = APP_VERSION;
 
-    console.log(`📦 TitleManager: Loading utilities with version ${version}...`);
-
     // Import name utilities
     const nameUtils = await import(`../utils/nameUtils.js?v=${version}`);
     getUniqueCycleName = nameUtils.getUniqueCycleName;
-
-    console.log('✅ TitleManager: Utilities loaded');
 
     const adaptedDeps = {
         GlobalUtils: dependencies.GlobalUtils,
@@ -283,8 +268,6 @@ export async function initTitleManager(dependencies = {}) {
 
     setTitleManagerDependencies(adaptedDeps);
     setupMiniCycleTitleListener();
-
-    console.log('✅ TitleManager initialized via initTitleManager');
 
     return {
         setupMiniCycleTitleListener,

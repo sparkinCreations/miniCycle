@@ -56,7 +56,6 @@ export function setRemindersDependencies(dependencies) {
     if (reminderManager?._cachedDeps) {
         reminderManager._cachedDeps = null;
     }
-    console.log('🔔 Reminders dependencies set:', Object.keys(dependencies));
 }
 
 export class MiniCycleReminders {
@@ -74,7 +73,6 @@ export class MiniCycleReminders {
         // Track active reminder notification to prevent stacking
         this._activeReminderNotification = null;
 
-        console.log('🔔 MiniCycle Reminders module initialized');
     }
 
     /**
@@ -87,7 +85,7 @@ export class MiniCycleReminders {
             loadMiniCycleData: _deps.loadMiniCycleData || this.fallbackLoadData,
             appInit: _deps.appInit,
             refreshTaskListUI: _deps.refreshTaskListUI,
-            updateUndoRedoButtons: _deps.updateUndoRedoButtons || (() => console.log('⏭️ updateUndoRedoButtons not available')),
+            updateUndoRedoButtons: _deps.updateUndoRedoButtons || (() => {}),
             autoSave: _deps.autoSave || (() => console.warn('⚠️ autoSave not available')),
             getModal: _deps.getModal,
             showConfirmationModal: _deps.showConfirmationModal,
@@ -143,7 +141,6 @@ export class MiniCycleReminders {
      * Must be called after DOM is ready and appInit core is ready
      */
     async init() {
-        console.log('🔄 Initializing reminder system...');
 
         // Wait for core systems to be ready (DI-pure)
         const appInitModule = this.deps.appInit;
@@ -160,12 +157,10 @@ export class MiniCycleReminders {
             // ✅ Add hook to update reminder buttons after app is fully ready (DI-pure)
             if (appInitModule?.addHook) {
                 appInitModule.addHook('afterApp', async () => {
-                console.log('🔄 Updating reminder buttons after app ready (hook)...');
 
                 // Check if tasks exist in DOM before proceeding
                 const tasks = this.deps.querySelectorAll(DOM_SELECTORS.TASK);
                 if (tasks.length === 0) {
-                    console.log('⏭️ No tasks in DOM yet, skipping (will run after loadMiniCycle)');
                     return;
                 }
 
@@ -179,16 +174,13 @@ export class MiniCycleReminders {
 
                     // Start reminders if they were enabled
                     if (reminderSettings.enabled) {
-                        console.log('🔔 Reminders enabled, starting system...');
                         await this.startReminders();
                     }
                 }
 
-                console.log('✅ Reminder buttons updated on page load (hook)');
                 });
             }
 
-            console.log('✅ Reminder system initialized successfully');
         } catch (error) {
             console.warn('⚠️ Reminder system initialization failed:', error);
             this.deps.showNotification(getLabel('notify.reminderLimited'), 'warning');
@@ -199,7 +191,6 @@ export class MiniCycleReminders {
      * Handle reminder toggle (enable/disable globally)
      */
     async handleReminderToggle() {
-        console.log('🔔 Handling reminder toggle (Schema 2.5 only)...');
 
         // Wait for core systems (DI-pure)
         const appInitModule = this.deps.appInit;
@@ -225,12 +216,6 @@ export class MiniCycleReminders {
         const previousSettings = schemaData.reminders || {};
         const wasEnabled = previousSettings.enabled === true;
 
-        console.log('📊 Reminder toggle state:', {
-            wasEnabled,
-            nowEnabled: isEnabled,
-            changed: wasEnabled !== isEnabled
-        });
-
         // Update the visibility of the frequency section
         const frequencySection = this.deps.getElementById(DOM_IDS.FREQUENCY_SECTION);
         if (frequencySection) {
@@ -247,7 +232,6 @@ export class MiniCycleReminders {
             const remindersCheckbox = customizerModal.querySelector('[data-option="reminders"]');
             if (remindersCheckbox) {
                 remindersCheckbox.checked = isEnabled;
-                console.log('🔄 Synced customizer modal checkbox:', isEnabled);
             }
         }
 
@@ -263,7 +247,6 @@ export class MiniCycleReminders {
                     }
                     s.data.cycles[activeCycleId].taskOptionButtons.reminders = isEnabled;
                 });
-                console.log(`✅ Updated cycle taskOptionButtons.reminders to: ${isEnabled}`);
             }
         }
 
@@ -274,33 +257,27 @@ export class MiniCycleReminders {
         const refreshTaskListUI = this.deps.refreshTaskListUI;
         if (typeof refreshTaskListUI === 'function') {
             refreshTaskListUI();
-            console.log('🔄 Refreshed task list to update button visibility');
         }
 
         // Start or stop reminders
         if (globalReminderState) {
-            console.log("🔔 Global Reminders Enabled — Starting reminders...");
             if (!wasEnabled) {
                 this.deps.showNotification('🔔 ' + getLabel('notify.reminderEnabled'), "success", UI_TIMEOUTS.NOTIFICATION_MEDIUM);
             }
             setTimeout(() => this.startReminders(), UI_TIMEOUTS.ANIMATION_SHORT);
         } else {
-            console.log("🔕 Global Reminders Disabled — Stopping reminders...");
             if (wasEnabled) {
                 this.deps.showNotification('🔕 ' + getLabel('notify.reminderDisabled'), "error", UI_TIMEOUTS.NOTIFICATION_MEDIUM);
             }
             this.stopReminders();
         }
 
-
-        console.log('✅ Reminder toggle handled successfully');
     }
 
     /**
      * Set up reminder toggle event listener
      */
     setupReminderToggle() {
-        console.log('⚙️ Setting up reminder toggle (Schema 2.5 only)...');
 
         const enableReminders = this.deps.getElementById(DOM_IDS.ENABLE_REMINDERS);
         if (!enableReminders) {
@@ -326,8 +303,6 @@ export class MiniCycleReminders {
             frequencyUnit: "hours"
         };
 
-        console.log('📊 Loading reminder settings from Schema 2.5:', reminderSettings);
-
         // Apply settings to UI elements
         enableReminders.checked = reminderSettings.enabled === true;
 
@@ -338,24 +313,19 @@ export class MiniCycleReminders {
 
         // ✅ NOTE: updateReminderButtons() and startReminders() are now called via afterApp hook
         // This ensures tasks are rendered before we try to update their reminder buttons
-        console.log('✅ Reminder toggle setup completed (buttons will update via afterApp hook)');
     }
 
     /**
      * Stop the reminder system
      */
     stopReminders() {
-        console.log('🛑 Stopping reminder system (Schema 2.5 only)...');
 
         if (this.state.reminderTimeoutId) {
             clearTimeout(this.state.reminderTimeoutId);
             this.state.reminderTimeoutId = null;
-            console.log("🛑 Reminder timeout cleared");
         } else {
-            console.log("ℹ️ No active reminder timeout to stop");
         }
 
-        console.log("✅ Reminder system stopped successfully");
     }
 
     /**
@@ -363,7 +333,6 @@ export class MiniCycleReminders {
      * @returns {Promise<boolean>} - Returns the enabled state
      */
     async autoSaveReminders() {
-        console.log('💾 Auto-saving reminders (Schema 2.5 only)...');
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
@@ -418,7 +387,6 @@ export class MiniCycleReminders {
             return false;
         }
 
-        console.log("✅ Reminders settings saved automatically (Schema 2.5):", remindersToSave);
         return enabled;
     }
 
@@ -426,7 +394,6 @@ export class MiniCycleReminders {
      * Load reminder settings from storage and update UI
      */
     async loadRemindersSettings() {
-        console.log('📥 Loading reminders settings (Schema 2.5 only)...');
 
         // Wait for core systems (DI-pure)
         const appInitModule = this.deps.appInit;
@@ -448,8 +415,6 @@ export class MiniCycleReminders {
             frequencyValue: 0,
             frequencyUnit: "hours"
         };
-
-        console.log('📊 Loading reminder settings from Schema 2.5:', reminders);
 
         // Apply settings to UI
         const enableReminders = this.deps.getElementById(DOM_IDS.ENABLE_REMINDERS);
@@ -489,7 +454,6 @@ export class MiniCycleReminders {
         // Show/hide reminder buttons on load
         this.updateReminderButtons();
 
-        console.log("✅ Reminder settings loaded from Schema 2.5");
     }
 
     /**
@@ -498,7 +462,6 @@ export class MiniCycleReminders {
      * @param {boolean} isEnabled - Whether reminders are enabled for this task
      */
     async saveTaskReminderState(taskId, isEnabled) {
-        console.log('🔔 Saving task reminder state (Schema 2.5 only)...');
 
         // Wait for core systems (DI-pure)
         const appInitModule = this.deps.appInit;
@@ -521,21 +484,12 @@ export class MiniCycleReminders {
             return;
         }
 
-        console.log('🔍 Finding task for reminder state update:', taskId);
-
         const task = cycles[activeCycle].tasks?.find(t => t.id === taskId);
 
         if (!task) {
             console.warn(`⚠️ Task with ID "${taskId}" not found in active cycle`);
             return;
         }
-
-        console.log('📊 Updating reminder state:', {
-            taskId,
-            taskText: task.text,
-            oldState: task.remindersEnabled,
-            newState: isEnabled
-        });
 
         // Update task reminder state
         task.remindersEnabled = isEnabled;
@@ -553,14 +507,12 @@ export class MiniCycleReminders {
             return;
         }
 
-        console.log(`✅ Task reminder state saved successfully (Schema 2.5) for task: ${taskId}`);
     }
 
     /**
      * Send reminder notification and schedule next one
      */
     async sendReminderNotificationIfNeeded() {
-        console.log('🔔 Sending reminder notification if needed (Schema 2.5 only)...');
 
         // Wait for core systems (DI-pure)
         const appInitModule = this.deps.appInit;
@@ -578,19 +530,14 @@ export class MiniCycleReminders {
         const { reminders } = schemaData;
         const remindersSettings = reminders || {};
 
-        console.log('📊 Reminder settings:', remindersSettings);
-
         let tasksWithReminders = [...this.deps.querySelectorAll(DOM_SELECTORS.TASK)]
             .filter(task => task.querySelector(".enable-task-reminders.reminder-active"));
-
-        console.log("🔍 Tasks With Active Reminders:", tasksWithReminders.length);
 
         let incompleteTasks = tasksWithReminders
             .filter(task => !task.querySelector("input[type='checkbox']").checked)
             .map(task => task.querySelector(DOM_SELECTORS.TASK_TEXT).textContent);
 
         if (incompleteTasks.length === 0) {
-            console.log("✅ All tasks complete. Stopping reminders.");
             this.stopReminders();
             return;
         }
@@ -598,13 +545,11 @@ export class MiniCycleReminders {
         // Check if max reminders reached
         const timesReminded = remindersSettings.timesReminded || 0;
         if (!remindersSettings.indefinite && timesReminded >= remindersSettings.repeatCount) {
-            console.log("✅ Max reminders sent. Stopping reminders.");
             this.stopReminders();
             return;
         }
 
         // Send notification
-        console.log('📢 Showing reminder notification for tasks:', incompleteTasks);
         // Dismiss previous reminder notification to prevent stacking
         if (this._activeReminderNotification?.parentNode) {
             this._activeReminderNotification.remove();
@@ -614,11 +559,6 @@ export class MiniCycleReminders {
         this._activeReminderNotification = this.deps.showNotification(`🔔 ${getLabel('notify.reminderTasksToComplete')}\n~ ${incompleteTasks.join("\n~ ")}`, "info");
 
         // Send browser notification if enabled and permission granted
-        console.log('🔔 Browser notification check:', {
-            settingEnabled: remindersSettings.browserNotifications,
-            apiAvailable: typeof Notification !== 'undefined',
-            permission: typeof Notification !== 'undefined' ? Notification.permission : 'N/A'
-        });
         if (remindersSettings.browserNotifications && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
             const notificationBody = incompleteTasks.map(t => `~ ${t}`).join('\n');
             try {
@@ -630,14 +570,12 @@ export class MiniCycleReminders {
                         icon: './assets/images/logo/taskcycle_logo_blackandwhite_transparent.png',
                         tag: 'minicycle-reminder'
                     });
-                    console.log('✅ Browser notification sent via ServiceWorker');
                 } else {
                     // Fallback to basic Notification API
                     new Notification('miniCycle Reminder', {
                         body: notificationBody,
                         icon: './assets/images/logo/taskcycle_logo_blackandwhite_transparent.png'
                     });
-                    console.log('✅ Browser notification sent via Notification API');
                 }
             } catch (e) {
                 console.warn('⚠️ Browser notification failed:', e);
@@ -665,11 +603,6 @@ export class MiniCycleReminders {
             return;
         }
 
-        console.log('✅ Reminder notification sent (Schema 2.5)', {
-            timesReminded: timesReminded + 1,
-            nextReminderTime: new Date(now + intervalMs).toLocaleString()
-        });
-
         // Schedule next reminder
         this.scheduleNextReminder();
     }
@@ -678,7 +611,6 @@ export class MiniCycleReminders {
      * Start the reminder system
      */
     async startReminders() {
-        console.log("🔄 Starting Reminder System (Schema 2.5 only)...");
 
         // Wait for core systems (DI-pure)
         const appInitModule = this.deps.appInit;
@@ -690,7 +622,6 @@ export class MiniCycleReminders {
         if (this.state.reminderTimeoutId) {
             clearTimeout(this.state.reminderTimeoutId);
             this.state.reminderTimeoutId = null;
-            console.log('🛑 Cleared existing reminder timeout');
         }
 
         // Schema 2.5 only
@@ -703,10 +634,7 @@ export class MiniCycleReminders {
         const { reminders } = schemaData;
         const remindersSettings = reminders || {};
 
-        console.log('📊 Loading reminder settings from Schema 2.5:', remindersSettings);
-
         if (!remindersSettings.enabled) {
-            console.log('🔕 Reminders disabled in settings');
             return;
         }
 
@@ -714,22 +642,13 @@ export class MiniCycleReminders {
         const nextReminderTime = remindersSettings.nextReminderTime || now;
         const timesReminded = remindersSettings.timesReminded || 0;
 
-        console.log('⏰ Reminder state:', {
-            nextReminderTime: new Date(nextReminderTime).toLocaleString(),
-            timesReminded,
-            indefinite: remindersSettings.indefinite,
-            repeatCount: remindersSettings.repeatCount
-        });
-
         // Check if max reminders already sent
         if (!remindersSettings.indefinite && timesReminded >= remindersSettings.repeatCount) {
-            console.log("✅ Max reminders already reached. Skipping further reminders.");
             return;
         }
 
         // Check if we're overdue for a reminder (catch-up)
         if (now >= nextReminderTime) {
-            console.log("⏰ Catch-up needed - sending reminder now.");
             await this.sendReminderNotificationIfNeeded();
         }
 
@@ -737,7 +656,6 @@ export class MiniCycleReminders {
         // ✅ This ensures the interval is created for tests and normal operation
         this.scheduleNextReminder();
 
-        console.log('✅ Reminder system started successfully (Schema 2.5)');
     }
 
     /**
@@ -760,7 +678,6 @@ export class MiniCycleReminders {
         const remindersSettings = reminders || {};
 
         if (!remindersSettings.enabled) {
-            console.log('🔕 Reminders disabled, not scheduling next reminder');
             return;
         }
 
@@ -770,12 +687,10 @@ export class MiniCycleReminders {
 
         // ✅ If no future reminder time is set, calculate it from frequency settings
         if (timeUntilNext <= 0) {
-            console.log("⏰ No future reminder time set, calculating from frequency settings");
             const multiplier = FREQUENCY_MS[remindersSettings.frequencyUnit] || FREQUENCY_MS.minutes;
             const intervalMs = (remindersSettings.frequencyValue || 1) * multiplier;
             nextReminderTime = now + intervalMs;
             timeUntilNext = intervalMs;
-            console.log(`⏰ Calculated next reminder time: ${new Date(nextReminderTime).toLocaleString()}`);
         }
 
         // Clear any existing timeout
@@ -784,14 +699,11 @@ export class MiniCycleReminders {
         }
 
         // Schedule the next reminder
-        console.log(`⏳ Next reminder scheduled in ${Math.round(timeUntilNext / 1000 / 60)} minutes at ${new Date(nextReminderTime).toLocaleString()}`);
 
         this.state.reminderTimeoutId = setTimeout(async () => {
-            console.log('🔔 Reminder timeout triggered');
             await this.sendReminderNotificationIfNeeded();
         }, timeUntilNext);
 
-        console.log('✅ Next reminder scheduled successfully');
     }
 
     /**
@@ -829,12 +741,6 @@ export class MiniCycleReminders {
             // Toggle based on AppState, not DOM
             const isCurrentlyEnabled = task.remindersEnabled === true;
             const isActive = !isCurrentlyEnabled;
-
-            console.log('🔔 Toggling reminder state:', {
-                taskId: assignedTaskId,
-                wasEnabled: isCurrentlyEnabled,
-                willBeEnabled: isActive
-            });
 
             button.classList.toggle("reminder-active", isActive);
             button.setAttribute("aria-pressed", isActive.toString());
@@ -896,7 +802,6 @@ export class MiniCycleReminders {
      * Update visibility and state of all reminder buttons
      */
     async updateReminderButtons() {
-        console.log("🔍 Running updateReminderButtons() (Schema 2.5 only)...");
 
         // Wait for core systems (DI-pure)
         const appInitModule = this.deps.appInit;
@@ -916,12 +821,6 @@ export class MiniCycleReminders {
         const reminderSettings = reminders || {};
         const remindersGloballyEnabled = reminderSettings.enabled === true;
 
-        console.log('📊 Reminder settings from Schema 2.5:', {
-            globallyEnabled: remindersGloballyEnabled,
-            activeCycle,
-            hasCycle: !!currentCycle
-        });
-
         this.deps.querySelectorAll(DOM_SELECTORS.TASK).forEach(taskItem => {
           const buttonContainer = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
           let reminderButton = buttonContainer?.querySelector(DOM_SELECTORS.ENABLE_TASK_REMINDERS);
@@ -936,33 +835,26 @@ export class MiniCycleReminders {
           const taskData = currentCycle?.tasks?.find(t => t.id === taskId);
           const isActive = taskData?.remindersEnabled === true;
 
-          console.log(`🔍 Task ${taskId}: reminders enabled = ${isActive}`);
-
           // ✅ NO LONGER control button visibility based on global settings
           // Button visibility is now controlled by taskOptionButtons customization
           // Only update the button state (active/inactive) if it exists
           if (reminderButton) {
-            console.log(`   🔄 Updating reminder button state for task ${taskId} - setting active: ${isActive}`);
             reminderButton.classList.toggle("reminder-active", isActive);
             reminderButton.setAttribute("aria-pressed", isActive.toString());
-            console.log(`   ✅ Reminder Button Updated - Active: ${isActive}`);
           }
         });
 
-        console.log("✅ Finished updateReminderButtons() (Schema 2.5).");
     }
 
     /**
      * Set up event listeners for reminder input changes
      */
     setupReminderInputListeners() {
-        console.log('⚙️ Setting up reminder input listeners...');
 
         // Indefinite checkbox listener
         const indefiniteCheckbox = this.deps.getElementById(DOM_IDS.INDEFINITE_CHECKBOX);
         if (indefiniteCheckbox) {
             this.deps.safeAddEventListener(indefiniteCheckbox, "change", () => {
-                console.log('🔄 Indefinite checkbox changed (Schema 2.5 only)');
 
                 const repeatCountRow = this.deps.getElementById(DOM_IDS.REPEAT_COUNT_ROW);
                 if (repeatCountRow) {
@@ -978,7 +870,6 @@ export class MiniCycleReminders {
         const dueDatesReminders = this.deps.getElementById(DOM_IDS.DUE_DATES_REMINDERS);
         if (dueDatesReminders) {
             this.deps.safeAddEventListener(dueDatesReminders, "change", () => {
-                console.log('📅 Due dates reminders changed (Schema 2.5 only)');
 
                 const schemaData = this.deps.loadMiniCycleData();
                 if (!schemaData) {
@@ -996,7 +887,6 @@ export class MiniCycleReminders {
                         }
                         state.metadata.lastModified = Date.now();
                     }, true); // immediate save
-                    console.log(`💾 Saved Due Dates Reminders setting via AppState: ${dueDatesReminders.checked}`);
                 } else {
                     console.error('❌ AppState not ready for dueDatesReminders toggle - setting not saved');
                 }
@@ -1008,7 +898,6 @@ export class MiniCycleReminders {
             const element = this.deps.getElementById(id);
             if (element) {
                 this.deps.safeAddEventListener(element, "input", () => {
-                    console.log(`🔄 Reminder input changed: ${id} (Schema 2.5 only)`);
 
                     const schemaData = this.deps.loadMiniCycleData();
                     if (!schemaData) {
@@ -1110,7 +999,6 @@ export class MiniCycleReminders {
             });
         }
 
-        console.log('✅ Reminder input listeners set up');
     }
 
     /**
@@ -1149,7 +1037,6 @@ export class MiniCycleReminders {
             remindersModal._previousFocus?.focus({ focusVisible: false });
         });
 
-        console.log('✅ Reminder modal close listeners set up');
     }
 
     /**
@@ -1165,7 +1052,6 @@ export class MiniCycleReminders {
 
         this.deps.safeAddEventListener(openBtn, "click", () => {
             _deps.trackAction?.('reminders');
-            console.log('🔔 Opening reminders modal (Schema 2.5 only)...');
 
             // Load current settings from Schema 2.5 before opening
             this.loadRemindersSettings();
@@ -1181,10 +1067,8 @@ export class MiniCycleReminders {
                 this.deps.hideMainMenu();
             }
 
-            console.log('✅ Reminders modal opened');
         });
 
-        console.log('✅ open-reminders-modal listener wired');
     }
 
     // ============================================
@@ -1192,7 +1076,6 @@ export class MiniCycleReminders {
     // ============================================
 
     fallbackNotification(message, type) {
-        console.log(`[Reminder Notification - ${type}] ${message}`);
     }
 
     fallbackLoadData() {
@@ -1215,7 +1098,6 @@ export class MiniCycleReminders {
 // ============================================
 
 // DI-pure module (no window.* fallbacks for dependencies)
-console.log('🔔 Reminders module loaded (DI-pure, no window.* exports)');
 
 let reminderManager = null;
 
@@ -1225,10 +1107,8 @@ let reminderManager = null;
  * @returns {Promise<MiniCycleReminders>} The initialized reminder manager
  */
 export async function initReminderManager(dependencies = {}) {
-    console.log('🔔 Initializing Reminder Manager...');
 
     if (reminderManager) {
-        console.log('⚠️ Reminder manager already initialized, returning existing instance');
         return reminderManager;
     }
 
@@ -1236,7 +1116,6 @@ export async function initReminderManager(dependencies = {}) {
     await reminderManager.init();
 
     // Phase 3 - No window.* exports (main script handles exposure)
-    console.log('✅ Reminder Manager initialized');
 
     return reminderManager;
 }

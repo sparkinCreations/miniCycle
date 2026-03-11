@@ -77,7 +77,6 @@ const _deps = new Proxy({}, {
  */
 export function setModalManagerDependencies(deps) {
     di.setDependencies(deps);
-    console.log('🎭 ModalManager dependencies injected');
 }
 
 export class ModalManager {
@@ -103,7 +102,6 @@ export class ModalManager {
      * Fallback notification (console only)
      */
     fallbackNotification(message, type = 'info', duration = 3000) {
-        console.log(`[ModalManager] ${type.toUpperCase()}: ${message}`);
     }
 
     async init() {
@@ -112,7 +110,6 @@ export class ModalManager {
         this.setupEventListeners();
 
         this.initialized = true;
-        console.log('🎭 Modal Manager initialized');
     }
 
     /**
@@ -121,7 +118,6 @@ export class ModalManager {
     setupEventListeners() {
         // ✅ FIX: Idempotency guard to prevent duplicate listeners
         if (this._eventListenersInitialized) {
-            console.log('✅ Modal event listeners already set up');
             return;
         }
         this._eventListenersInitialized = true;
@@ -132,7 +128,6 @@ export class ModalManager {
         this.setupRemindersModalHandlers();
         this.setupGlobalKeyHandlers();
 
-        console.log('✅ Modal event listeners attached');
     }
 
     /**
@@ -441,7 +436,6 @@ export class ModalManager {
         }
 
         // This is handled in setupSettingsMenu, but we track it here for closeAllModals
-        console.log('✅ Settings modal tracked by modal manager');
     }
 
     /**
@@ -504,7 +498,6 @@ export class ModalManager {
                 }
             });
 
-            console.log('✅ Global ESC key handler attached');
         } else {
             console.warn('⚠️ safeAddEventListener not available for global key handlers');
         }
@@ -562,7 +555,6 @@ export async function initModalManager(dependencies = {}) {
     modalManager = new ModalManager(dependencies);
     await modalManager.init();
 
-    console.log('✅ ModalManager instance created and initialized');
     return modalManager;
 }
 
@@ -575,7 +567,6 @@ export function getModalManager() {
 }
 
 // Phase 3 - Clean exports (no window.* pollution, no auto-init)
-console.log('✅ Modal Manager module loaded (Phase 3 - no window.* exports, no auto-init)');
 
 // Named exports only (no default export)
 // Note: ModalManager class is already exported at declaration

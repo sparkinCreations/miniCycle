@@ -101,7 +101,6 @@ function assertInjected(name, fn) {
  * @throws {Error} If addTask dependency is missing
  */
 async function loadMiniCycle() {
-  console.log('🔄 Loading miniCycle (Schema 2.5 only)...');
 
   assertInjected('loadMiniCycleData', _deps.loadMiniCycleData);
   assertInjected('addTask', _deps.addTask);
@@ -132,7 +131,6 @@ async function loadMiniCycle() {
   // 1) Validate and repair cycle + task data (comprehensive, like import does)
   const cleaned = repairAndCleanTasks(currentCycle, activeCycleId);
   if (cleaned.wasModified) {
-    console.log(`🔧 Saving repaired data for cycle "${activeCycleId}"`);
     await saveCycleData(activeCycleId, currentCycle);
   }
 
@@ -155,7 +153,6 @@ async function loadMiniCycle() {
     syncFn(currentMode, tasksDataMap, {
       DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
     });
-    console.log(`✅ Synced all task visual indicators with ${currentMode} mode`);
   }
 
   // 3) Update UI state
@@ -170,7 +167,6 @@ async function loadMiniCycle() {
   // 6) Organize completed tasks into dropdown (if feature enabled)
   _deps.completedTasksManager?.organize?.();
 
-  console.log('✅ Cycle loading completed');
 }
 
 /**
@@ -304,7 +300,6 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
     if (task.deleteWhenComplete !== expectedValue) {
       task.deleteWhenComplete = expectedValue;
       tasksModified = true;
-      console.log(`🔄 Synced task ${task.id} deleteWhenComplete to ${currentMode} mode: ${expectedValue}`);
     }
   });
 
@@ -325,7 +320,6 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
   }
 
   if (tasksModified) {
-    console.log(`🔧 Cycle "${cycleKey}" data was repaired during load`);
   }
 
   return {
@@ -346,7 +340,6 @@ function renderTasksToDOM(tasks = []) {
 
   // ✅ FIX: Don't call addTask during loading - it creates NEW tasks with NEW IDs
   // Instead, render tasks directly to DOM from the data already in AppState
-  console.log(`🔄 Rendering ${tasks.length} existing tasks to DOM (without creating new ones)`);
 
   const taskToAddTaskOptions = _deps.taskToAddTaskOptions;
   if (typeof taskToAddTaskOptions !== 'function') {
@@ -362,7 +355,6 @@ function renderTasksToDOM(tasks = []) {
   // Update task search visibility based on count
   _deps.updateSearchVisibility?.(tasks.length);
 
-  console.log('✅ Tasks rendered to DOM with original IDs and states preserved');
 }
 
 /**
@@ -396,7 +388,6 @@ function updateCycleUIState(currentCycle, settings) {
 function applyThemeSettings(settings) {
   document.body.classList.toggle('dark-mode', !!settings.darkMode);
   document.documentElement.classList.toggle('dark-mode', !!settings.darkMode);
-  console.log('applyThemes applied!!!');
 
   const allThemes = ['theme-dark-ocean', 'theme-golden-glow'];
   allThemes.forEach(t => document.body.classList.remove(t));
@@ -414,10 +405,6 @@ function applyThemeSettings(settings) {
   document.documentElement.style.setProperty('--font-size-base',
       (settings.fontSize && settings.fontSize !== '16') ? `${settings.fontSize}px` : '16px');
 }
-
-
-
-
 
 /**
  * Reminders
@@ -439,7 +426,6 @@ async function setupRemindersForCycle(reminders) {
 
   // ✅ Catch up on missed recurring tasks when switching cycles
   if (_deps.catchUpMissedRecurringTasks) {
-    console.log('🔄 Catching up on missed recurring tasks after cycle switch...');
     await _deps.catchUpMissedRecurringTasks();
   }
 }
@@ -478,7 +464,6 @@ async function saveCycleData(activeCycle, currentCycle) {
     await appState.update((state) => {
       if (state?.data?.cycles?.[activeCycle]) {
         state.data.cycles[activeCycle] = currentCycle;
-        console.log(`💾 Saved cycle "${activeCycle}" via AppState`);
       }
     }, true); // immediate = true for cycle repairs
   } catch (e) {

@@ -42,7 +42,6 @@ const _deps = new Proxy({}, {
  */
 export function setGamesManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🎮 GamesManager dependencies set:', Object.keys(dependencies));
 }
 
 class GamesManager {
@@ -88,7 +87,6 @@ class GamesManager {
         this.deferredCheckGamesUnlock();
 
         this.initialized = true;
-        console.log('🎮 Games Manager initialized');
     }
 
     /**
@@ -150,8 +148,6 @@ class GamesManager {
             return;
         }
 
-        console.log('🎮 Checking games unlock (Schema 2.5 only)...');
-
         const currentState = AppState.get();
         if (!currentState) {
             console.warn('⚠️ No state data for checkGamesUnlock');
@@ -161,12 +157,9 @@ class GamesManager {
         const unlockedFeatures = currentState.settings?.unlockedFeatures || [];
         const hasGameUnlock = unlockedFeatures.includes("task-order-game");
 
-        console.log('🔍 Game unlock status:', hasGameUnlock);
-
         const gamesMenuOption = document.getElementById(DOM_IDS.GAMES_MENU_OPTION);
         if (gamesMenuOption) {
             gamesMenuOption.style.display = hasGameUnlock ? "block" : "none";
-            console.log(hasGameUnlock ? '✅ Games menu displayed' : '🔒 Games still locked');
         }
     }
 
@@ -174,7 +167,6 @@ class GamesManager {
      * Unlock the mini game and update AppState
      */
     unlockMiniGame() {
-        console.log('🎮 Unlocking mini game (state-based)...');
 
         const AppState = this._getAppState();
 
@@ -199,7 +191,6 @@ class GamesManager {
                 state.userProgress.rewardMilestones.push("task-order-game-100");
             }, true);
 
-            console.log("🎮 Task Order Game unlocked (state-based)!");
         }
 
         this.checkGamesUnlock();
@@ -220,11 +211,8 @@ class GamesManager {
 
         // ✅ FIX: Only set up handler once - reuse stored reference to prevent accumulation
         if (this._gamesOutsideClickHandler) {
-            console.log('✅ Games outside click already set up');
             return;
         }
-
-        console.log("✅ Games outside click ready");
 
         // ✅ FIX: Store handler as instance property for reuse
         this._gamesOutsideClickHandler = (event) => {
@@ -253,7 +241,6 @@ class GamesManager {
     setupEventListeners() {
         // ✅ Idempotency guard
         if (this._eventListenersInitialized) {
-            console.log('✅ Games event listeners already set up');
             return;
         }
         this._eventListenersInitialized = true;
@@ -310,7 +297,6 @@ class GamesManager {
             safeAdd(gameButton, "click", gameButton._clickHandler);
         }
 
-        console.log('✅ Games event listeners attached');
     }
 
     /**
@@ -356,7 +342,6 @@ class GamesManager {
         }
 
         this._eventListenersInitialized = false;
-        console.log('🧹 GamesManager cleanup completed');
     }
 }
 
@@ -375,12 +360,10 @@ export async function initGamesManager(dependencies = {}) {
     // Initialize the manager
     await gamesManager.init();
 
-    console.log('✅ GamesManager initialized via initGamesManager');
     return gamesManager;
 }
 
 // DI-pure module (no window.* fallbacks for dependencies)
-console.log('🎮 Games Manager module loaded (DI-pure, awaiting init)');
 
 // Named exports only (no default export)
 // Note: initGamesManager is already exported via 'export async function' declaration

@@ -55,7 +55,6 @@ export class MiniCycleConsoleCapture {
         if (this.originalConsole.log) {
             this.originalConsole.log(`[ConsoleCapture] ${type.toUpperCase()}: ${message}`);
         } else {
-            console.log(`[ConsoleCapture] ${type.toUpperCase()}: ${message}`);
         }
     }
 
@@ -86,7 +85,6 @@ export class MiniCycleConsoleCapture {
             if (storedBuffer) {
                 const storedLogs = JSON.parse(storedBuffer);
                 this.consoleLogBuffer = Array.isArray(storedLogs) ? storedLogs : [];
-                console.log(`🔄 Restored ${this.consoleLogBuffer.length} previous console messages`);
             }
         } catch (e) {
             console.warn("⚠️ Could not restore previous console buffer");
@@ -153,7 +151,6 @@ export class MiniCycleConsoleCapture {
             this.originalConsole.table.apply(console, args);
         };
         
-        console.log("🎯 Enhanced console capture started - monitoring migration activity with detailed logging");
         
         // Store captured logs in localStorage periodically
         this.captureInterval = setInterval(() => {
@@ -231,7 +228,6 @@ export class MiniCycleConsoleCapture {
         // Clear the stored buffer
         localStorage.removeItem(STORAGE_KEYS.CONSOLE_CAPTURE_BUFFER);
         
-        console.log("⏹️ Enhanced console capture stopped - all logging restored to normal");
     }
 
     // Enhanced log display with better filtering and search
@@ -408,7 +404,6 @@ export class MiniCycleConsoleCapture {
         if (this.deps.appendToTestResults) {
             this.deps.appendToTestResults(text);
         } else {
-            console.log('Testing Results:', text);
         }
     }
 
@@ -435,8 +430,6 @@ export const {
     stopConsoleCapture,
     startAutoConsoleCapture
 } = consoleCapture;
-
-console.log('🔍 Console Capture module loaded (DI-pure, no window.* exports)');
 
 // Named export (preferred over default export)
 export { consoleCapture };

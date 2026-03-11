@@ -51,7 +51,6 @@ const deps = new Proxy({}, {
  */
 export function setRecurringIntegrationDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🎯 RecurringIntegration dependencies set:', Object.keys(dependencies));
 }
 
 /**
@@ -63,14 +62,12 @@ export function setRecurringIntegrationDependencies(dependencies) {
  * @returns {Promise<Object>} Object containing core and panel instances
  */
 export async function initRecurringModules(options = {}) {
-    console.log('🔄 Initializing recurring task modules...');
 
     // Populate DI container from moduleLoader-provided dependencies
     di.setDependencies(options);
 
     // ✅ Wait for core systems to be ready (AppState + data)
     await deps.appInit?.waitForCore();
-    console.log('✅ Core systems ready - initializing recurring modules');
 
     try {
         // ============================================
@@ -88,13 +85,9 @@ export async function initRecurringModules(options = {}) {
         // Load panel sub-modules with version cache-busting
         await loadPanelSubModules(version);
 
-        console.log('✅ Recurring modules imported');
-
         // ============================================
         // STEP 2: Configure recurringCore dependencies (Strict DI)
         // ============================================
-
-        console.log('🔧 Configuring recurringCore dependencies...');
 
         // Capture returned functions (workaround for dynamic import binding issues)
         const coreFunctions = await recurringCore.setRecurringCoreDependencies({
@@ -124,7 +117,6 @@ export async function initRecurringModules(options = {}) {
                 if (typeof deps.showNotification === 'function') {
                     return deps.showNotification(message, type, duration);
                 }
-                console.log(`[Notification] ${message}`);
             },
 
             // DOM operations (required)
@@ -164,13 +156,9 @@ export async function initRecurringModules(options = {}) {
             showNotificationWithTip: deps.showNotificationWithTip
         });
 
-        console.log('✅ recurringCore dependencies configured');
-
         // ============================================
         // STEP 2.5: Configure settingsApplicator dependencies
         // ============================================
-
-        console.log('🔧 Configuring settingsApplicator dependencies...');
 
         settingsApplicator.setRecurringSettingsApplicatorDependencies({
             appInit: deps.appInit,
@@ -185,13 +173,9 @@ export async function initRecurringModules(options = {}) {
             restartRecurringWatcher: coreFunctions.restartRecurringWatcher
         });
 
-        console.log('✅ settingsApplicator dependencies configured');
-
         // ============================================
         // STEP 3: Initialize RecurringPanelManager (Strict DI)
         // ============================================
-
-        console.log('🎛️ Configuring RecurringPanel dependencies...');
 
         // Wire module-level dependencies BEFORE creating instance
         setRecurringPanelDependencies({
@@ -223,18 +207,12 @@ export async function initRecurringModules(options = {}) {
             getModal: deps.getModal
         });
 
-        console.log('🎛️ Creating RecurringPanelManager instance...');
-
         // Create instance - will validate required deps via DI
         const recurringPanel = new RecurringPanelManager();
-
-        console.log('✅ RecurringPanelManager initialized');
 
         // ============================================
         // STEP 4: Wire up UI callbacks in recurringCore
         // ============================================
-
-        console.log('🔗 Wiring up panel callbacks to core...');
 
         // Update core dependencies with panel methods
         await recurringCore.setRecurringCoreDependencies({
@@ -244,35 +222,24 @@ export async function initRecurringModules(options = {}) {
             updateInfoLink: () => recurringPanel.updateRecurringInfoLink()
         });
 
-        console.log('✅ Panel callbacks wired to core');
-
         // ============================================
         // STEP 5: Setup panel UI
         // ============================================
 
-        console.log('⚙️ Setting up recurring panel UI...');
-
         recurringPanel.setup();
-
-        console.log('✅ Recurring panel UI setup complete');
 
         // ============================================
         // STEP 6: Setup recurring watcher (30-second interval)
         // ============================================
 
-        console.log('⏱️ Setting up recurring task watcher...');
-
         // Initialize the watcher - will start checking every 30 seconds
         await coreFunctions.setupRecurringWatcher();
-
-        console.log('✅ Recurring watcher initialized');
 
         // ============================================
         // STEP 6.5: Wire recurring event listeners
         // ============================================
 
         recurringPanel.wireRecurringSettingsClickListener();
-        console.log('✅ Recurring event listeners wired');
 
         // ============================================
         // STEP 7: Build return object (Phase 3 - no window.* exports)
@@ -315,7 +282,6 @@ export async function initRecurringModules(options = {}) {
         // If there were any deferred recurring setups, run them now (DI-pure)
         const deferredSetups = deps.getDeferredRecurringSetup?.() || [];
         if (deferredSetups.length > 0) {
-            console.log('📊 Processing', deferredSetups.length, 'deferred recurring setups');
             deferredSetups.forEach(setupFn => setupFn());
             deps.clearDeferredRecurringSetup?.();
         }
@@ -324,10 +290,7 @@ export async function initRecurringModules(options = {}) {
         setTimeout(() => {
             recurringPanel.updateRecurringPanelButtonVisibility();
             recurringPanel.updateRecurringInfoLink();
-            console.log('✅ Recurring button visibility and info link updated on init');
         }, 150);
-
-        console.log('✅ Recurring modules initialized (Phase 3)');
 
         return {
             core: recurringCore,
@@ -356,7 +319,6 @@ export async function initRecurringModules(options = {}) {
  * @returns {Object} Test results
  */
 export function testRecurringIntegration(recurringModules = null) {
-    console.log('🧪 Testing recurring integration (DI-pure)...');
 
     const tests = {
         appStateReady: false,
@@ -369,25 +331,19 @@ export function testRecurringIntegration(recurringModules = null) {
     // Test 1: AppState ready (via deps)
     try {
         tests.appStateReady = deps.AppState && deps.AppState.isReady();
-        console.log(tests.appStateReady ? '✅' : '❌', 'AppState ready:', tests.appStateReady);
     } catch (e) {
-        console.log('❌ AppState check failed:', e.message);
     }
 
     // Test 2: Core module loaded
     try {
         tests.coreLoaded = recurringModules?.core && typeof recurringModules.core.applyRecurringToTaskSchema25 === 'function';
-        console.log(tests.coreLoaded ? '✅' : '❌', 'Core module loaded:', tests.coreLoaded);
     } catch (e) {
-        console.log('❌ Core module check failed:', e.message);
     }
 
     // Test 3: Panel loaded
     try {
         tests.panelLoaded = recurringModules?.panel && typeof recurringModules.panel.updateRecurringPanel === 'function';
-        console.log(tests.panelLoaded ? '✅' : '❌', 'Panel module loaded:', tests.panelLoaded);
     } catch (e) {
-        console.log('❌ Panel module check failed:', e.message);
     }
 
     // Test 4: Core API complete
@@ -401,9 +357,7 @@ export function testRecurringIntegration(recurringModules = null) {
         ];
         tests.coreAPIComplete = recurringModules?.coreAPI &&
             requiredCoreFunctions.every(fn => typeof recurringModules.coreAPI[fn] === 'function');
-        console.log(tests.coreAPIComplete ? '✅' : '❌', 'Core API complete:', tests.coreAPIComplete);
     } catch (e) {
-        console.log('❌ Core API check failed:', e.message);
     }
 
     // Test 5: Panel API complete
@@ -419,20 +373,14 @@ export function testRecurringIntegration(recurringModules = null) {
         ];
         tests.panelAPIComplete = recurringModules?.panelAPI &&
             requiredPanelFunctions.every(fn => typeof recurringModules.panelAPI[fn] === 'function');
-        console.log(tests.panelAPIComplete ? '✅' : '❌', 'Panel API complete:', tests.panelAPIComplete);
     } catch (e) {
-        console.log('❌ Panel API check failed:', e.message);
     }
 
     // Summary
     const allPassed = Object.values(tests).every(t => t === true);
-    console.log('\n' + '='.repeat(50));
-    console.log(allPassed ? '✅ ALL TESTS PASSED' : '❌ SOME TESTS FAILED');
-    console.log('='.repeat(50));
 
     return tests;
 }
 
 // Phase 3 - testRecurringIntegration exported via ES modules, DI-pure
 
-console.log('🔗 Recurring integration module loaded (Phase 3)');

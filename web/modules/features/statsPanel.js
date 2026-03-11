@@ -83,7 +83,6 @@ export function setStatsPanelDependencies(dependencies) {
     if (statsPanelManager?._cachedDeps) {
         statsPanelManager._cachedDeps = null;
     }
-    console.log('📊 StatsPanel dependencies set:', Object.keys(dependencies));
 }
 
 export class StatsPanelManager {
@@ -133,8 +132,6 @@ export class StatsPanelManager {
 
         // Event handler bindings (for proper removal)
         this.boundHandlers = {};
-
-        console.log('📊 StatsPanelManager initializing...');
 
         // ✅ Cache DOM elements synchronously (needed for tests)
         this.cacheElements();
@@ -203,7 +200,6 @@ export class StatsPanelManager {
         // NOTE: Badge tooltips are now initialized by achievementsManager during its init (Phase 7)
         // This ensures badges are clickable after achievementsManager loads
 
-        console.log('✅ StatsPanelManager initialized successfully (core ready)');
     }
 
     /**
@@ -251,7 +247,6 @@ export class StatsPanelManager {
         // Initial update
         this.updateFeatureButtons();
 
-        console.log('✅ Feature buttons injected into stats panel');
     }
 
     /**
@@ -362,7 +357,6 @@ export class StatsPanelManager {
     setupEventListeners() {
         // ✅ Idempotency guard
         if (this._eventListenersInitialized) {
-            console.log('✅ StatsPanel event listeners already set up');
             return;
         }
         this._eventListenersInitialized = true;
@@ -519,7 +513,6 @@ export class StatsPanelManager {
         // Create bound handler for cycle:ready if not already created
         if (!this.boundHandlers.handleCycleReady) {
             this.boundHandlers.handleCycleReady = () => {
-                console.log('Stats panel detected data ready - updating stats...');
                 // Delay slightly to ensure DOM is fully updated
                 this._pendingTimers.push(setTimeout(() => this.updateStatsPanel(), UI_TIMEOUTS.STATS_UPDATE_DELAY));
             };
@@ -532,7 +525,6 @@ export class StatsPanelManager {
         const appInitModule = this.dependencies.appInit;
         if (appInitModule && typeof appInitModule.onReady === 'function') {
             appInitModule.onReady(() => {
-                console.log('📊 Stats panel detected AppInit ready - updating stats...');
                 this._pendingTimers.push(setTimeout(() => this.updateStatsPanel(), UI_TIMEOUTS.STATS_UPDATE_DELAY));
             });
         }
@@ -541,7 +533,6 @@ export class StatsPanelManager {
         this._modeSelectorEl = _deps.getElementById(DOM_IDS.MODE_SELECTOR);
         if (this._modeSelectorEl) {
             this.boundHandlers.handleModeSelectorChange = () => {
-                console.log('📊 Stats panel detected mode change - updating stats...');
                 this._pendingTimers.push(setTimeout(() => this.updateStatsPanel(), UI_TIMEOUTS.STATS_UPDATE_DELAY));
             };
             safeAdd(this._modeSelectorEl, 'change', this.boundHandlers.handleModeSelectorChange);
@@ -892,7 +883,6 @@ export class StatsPanelManager {
      * Update stats panel with current data
      */
     async updateStatsPanel() {
-        console.log('📊 Updating stats panel...');
 
         // ✅ Always invalidate cache when explicitly updating stats
         // This fixes stale data when tasks are moved between lists (completed dropdown)
@@ -916,10 +906,8 @@ export class StatsPanelManager {
             console.warn('⚠️ MILESTONES not loaded yet - skipping milestone calculations');
             // Early return or load it now
             const version = APP_VERSION;
-            console.log(`📦 StatsPanel: Loading MILESTONES with version ${version}...`);
             const constantsMod = await import(`../core/constants.js?v=${version}`);
             MILESTONES = constantsMod.MILESTONES;
-            console.log('✅ StatsPanel: MILESTONES loaded');
         }
 
         // Calculate current stats (using cached DOM queries for performance)
@@ -1098,7 +1086,6 @@ export class StatsPanelManager {
         // Update feature buttons (History, Cleared Tasks, Achievements)
         this.updateFeatureButtons();
 
-        console.log(`✅ Stats updated - Global: ${globalCyclesCompleted}, Per-cycle: ${perCycleCount}, Next milestone: ${nextMilestone} (${milestoneProgressPercent})`);
     }
     /**
      * Announce view changes for screen readers
@@ -1179,7 +1166,6 @@ export class StatsPanelManager {
      * @param {number} globalCyclesCompleted - Total cycles across all routines
      */
     updateThemeUnlockStatus(globalCyclesCompleted) {
-        console.log('🎨 Updating theme unlock status (global cycles)...', globalCyclesCompleted);
 
         let unlockedThemes = [];
         let unlockedFeatures = [];
@@ -1212,7 +1198,6 @@ export class StatsPanelManager {
         this.updateThemeMessages(globalCyclesCompleted, milestoneUnlocks);
         // Unlock awarding is handled by cycleCompletion.js - statsPanel is read-only
 
-        console.log('✅ Theme unlock status updated (global cycles)');
     }
 
     /**
@@ -1350,7 +1335,6 @@ export class StatsPanelManager {
         }, true); // Fix #35: needsUpdate evaluated before callback - always save immediately
 
         if (needsUpdate) {
-            console.log('✅ Themes/features unlocked via state system (global cycles)');
         }
     }
 
@@ -1398,8 +1382,6 @@ export class StatsPanelManager {
 
         if (!currentRoutineCycleCount) return;
 
-        console.log('📋 Handling Current Routine toggle...');
-
         // Toggle routine name, doughnut chart, progress text, cycle count, cleared count, and History button container
         if (this.elements.currentRoutineName) this.elements.currentRoutineName.classList.toggle("visible");
         if (currentCycleDoughnutContainer) currentCycleDoughnutContainer.classList.toggle("visible");
@@ -1424,7 +1406,6 @@ export class StatsPanelManager {
             this.saveCollapsiblePreference('currentRoutineExpanded', anyVisible);
         }
 
-        console.log('✅ Current Routine toggle handled');
     }
 
     /**
@@ -1445,7 +1426,6 @@ export class StatsPanelManager {
                     state.settings.statsPanel[key] = value;
                 }, false); // Debounced save
 
-                console.log(`💾 Saved preference to AppState: ${key} = ${value}`);
             }
         } catch (error) {
             console.warn('⚠️ Failed to save collapsible preference:', error);
@@ -1472,8 +1452,6 @@ export class StatsPanelManager {
             // Current Routine: defaults to expanded, Milestone Rewards: defaults to collapsed
             const currentRoutineExpanded = preferences.currentRoutineExpanded !== false;
             const milestonesExpanded = preferences.milestonesExpanded === true;
-
-            console.log(`🔄 Restoring preferences - Current Routine: ${currentRoutineExpanded}, Milestones: ${milestonesExpanded}`);
 
             // Restore Current Routine state
             const { currentCycleDoughnutContainer, currentCycleProgressText,
@@ -1508,7 +1486,6 @@ export class StatsPanelManager {
                 if (clickableHeader) clickableHeader.setAttribute('aria-expanded', 'true');
             }
 
-            console.log('✅ Collapsible preferences restored');
         } catch (error) {
             console.warn('⚠️ Failed to restore collapsible preferences:', error);
         }
@@ -1520,8 +1497,6 @@ export class StatsPanelManager {
     async handleQuickDarkToggle() {
         const body = _deps.getBody();
         const isDark = body.classList.toggle("dark-mode");
-
-        console.log('🌙 Quick dark toggle (Schema 2.5 only)...');
 
         // ✅ Use AppState only (no localStorage fallback) - DI-pure
         const AppState = this.dependencies.AppState;
@@ -1550,7 +1525,6 @@ export class StatsPanelManager {
             this.elements.quickDarkToggle.textContent = isDark ? getIcon('lightMode') : getIcon('darkMode');
         }
         
-        console.log('✅ Quick dark toggle completed');
     }
 
     /**
@@ -1700,7 +1674,6 @@ export class StatsPanelManager {
      * Cleanup event listeners
      */
     destroy() {
-        console.log('🧹 Cleaning up StatsPanelManager...');
 
         // Remove feature button listeners
         if (this._historyClickHandler && this.elements.historyBtn) {
@@ -1779,7 +1752,6 @@ export class StatsPanelManager {
         }
         this._pendingTimers = [];
 
-        console.log('✅ StatsPanelManager cleanup completed');
     }
 
     // ==========================================
@@ -1787,7 +1759,6 @@ export class StatsPanelManager {
     // ==========================================
 
     fallbackNotification(message, type, duration) {
-        console.log(`[Stats Panel Notification] ${message}`);
     }
 
     fallbackLoadData() {
@@ -1835,12 +1806,10 @@ export async function initStatsPanel(dependencies = {}) {
     // Load MILESTONES from constants.js dynamically on first init
     if (!MILESTONES) {
         const version = APP_VERSION;
-        console.log(`📦 StatsPanel: Loading MILESTONES with version ${version}...`);
 
         const constantsMod = await import(`../core/constants.js?v=${version}`);
         MILESTONES = constantsMod.MILESTONES;
 
-        console.log('✅ StatsPanel: MILESTONES loaded');
     }
 
     if (statsPanelManager) {
@@ -1854,7 +1823,6 @@ export async function initStatsPanel(dependencies = {}) {
     // Create and initialize the manager
     statsPanelManager = new StatsPanelManager(dependencies);
 
-    console.log('✅ StatsPanelManager initialized via initStatsPanel');
     return statsPanelManager;
 }
 
@@ -1939,7 +1907,6 @@ export function getFeatureButtonsVisibility() {
 }
 
 // DI-pure module (no window.* fallbacks)
-console.log('📊 Stats Panel module loaded (DI-pure, no window.* exports)');
 
 // Note: StatsPanelManager class is already exported at declaration
 export { statsPanelManager };

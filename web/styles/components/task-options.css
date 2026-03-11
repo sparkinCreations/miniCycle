@@ -147,10 +147,10 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     color: var(--color-white);
 }
 
-/* Delete when complete button */
+/* Clear on Reset / Marked for Clearing button */
 .delete-when-complete-btn.active,
 .delete-when-complete-btn.delete-when-complete-active {
-    background-color: var(--color-error-light);
+    background-color: var(--color-blue-medium);
     color: var(--color-white);
 }
 

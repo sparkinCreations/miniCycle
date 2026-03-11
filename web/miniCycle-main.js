@@ -27,7 +27,6 @@ const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
 // Start the application
 (async () => {
   const bootStart = Date.now();
-  console.log('🚀 miniCycle-main.js: Starting application...');
 
   try {
     // Import the orchestrator - this triggers the boot sequence
@@ -35,7 +34,6 @@ const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
     await import(`./modules/boot/orchestrator.js?v=${APP_VERSION}`);
 
     const bootTime = Date.now() - bootStart;
-    console.log(`✅ miniCycle-main.js: Boot sequence initiated in ${bootTime}ms`);
 
   } catch (error) {
     // This only catches catastrophic failures (orchestrator.js can't load at all)
@@ -53,4 +51,3 @@ const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
   }
 })();
 
-console.log('📦 miniCycle-main.js loaded');

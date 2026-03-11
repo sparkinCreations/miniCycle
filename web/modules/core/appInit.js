@@ -83,7 +83,6 @@ const _deps = new Proxy({}, {
  */
 export function setAppInitDependencies(dependencies) {
 	di.setDependencies(dependencies);
-	console.log('🎯 AppInit dependencies set:', Object.keys(dependencies));
 }
 
 class AppInit {
@@ -113,7 +112,6 @@ class AppInit {
 	 * Called by orchestrator when boot fails and retry is needed
 	 */
 	reset() {
-		console.log('🔄 Resetting AppInit state for retry...');
 		this.coreReady = false;
 		this.appReady = false;
 		this._corePromise = null;
@@ -123,7 +121,6 @@ class AppInit {
 		this.startTime = Date.now();
 		this.phaseTimings = {};
 		// Note: Keep plugins and hooks registered - they should persist across retries
-		console.log('✅ AppInit state reset complete');
 	}
 
 	async markCoreSystemsReady() {
@@ -142,8 +139,6 @@ class AppInit {
 			this._coreResolve();
 		}
 
-		console.log(`✅ Core systems ready (${this.phaseTimings.core}ms)`);
-
 		await this.runHooks('afterCore');
 		document.dispatchEvent(new Event('init:core-ready'));
 	}
@@ -158,8 +153,6 @@ class AppInit {
 				this._coreResolve = resolve;
 			});
 		}
-
-		console.log('⏳ Waiting for core systems...');
 
 		// Timeout safety: don't hang forever if core never becomes ready
 		const timeoutPromise = new Promise((_, reject) => {
@@ -198,8 +191,6 @@ class AppInit {
 			this._appResolve();
 		}
 
-		console.log(`✅ miniCycle app ready (${this.phaseTimings.app}ms) - Total: ${this.phaseTimings.total}ms`);
-
 		await this.runHooks('afterApp');
 		document.dispatchEvent(new Event('init:app-ready'));
 	}
@@ -214,8 +205,6 @@ class AppInit {
 				this._appResolve = resolve;
 			});
 		}
-
-		console.log('⏳ Waiting for miniCycle app...');
 
 		// Timeout safety: don't hang forever if app never becomes ready
 		const timeoutPromise = new Promise((_, reject) => {
@@ -243,7 +232,6 @@ class AppInit {
 		}
 
 		this.plugins.set(name, plugin);
-		console.log(`🔌 Plugin registered: ${name}`);
 		return true;
 	}
 
@@ -269,7 +257,6 @@ class AppInit {
 		}
 
 		this.pluginHooks[hookName].push(callback);
-		console.log(`🪝 Hook added: ${hookName}`);
 	}
 
 	async runHooks(hookName) {
@@ -278,8 +265,6 @@ class AppInit {
 		if (hooks.length === 0) {
 			return;
 		}
-
-		console.log(`🪝 Running ${hooks.length} ${hookName} hook(s)...`);
 
 		for (const hook of hooks) {
 			try {
@@ -302,24 +287,14 @@ class AppInit {
 
 	printStatus() {
 		const status = this.getStatus();
-		console.log('📊 miniCycle AppInit Status:', {
-			'✅ Core Systems Ready': status.coreReady,
-			'✅ App Ready': status.appReady,
-			'🔌 Plugins': status.pluginCount,
-			'⏱️ Timings': status.timings,
-			'📦 Loaded Plugins': status.plugins
-		});
 	}
 
 	async runInitialSetup() {
-		console.log('🚀 Initializing app (Schema 2.5 only)...');
 
 		// Wait for core systems (AppState, etc.) to be ready before loading data
 		// Note: With orchestrator pattern, core is always ready by Phase 3, but we check defensively
 		if (!this.isCoreReady()) {
-			console.log('⏳ Waiting for core systems...');
 			await this.waitForCore();
-			console.log('✅ Core systems ready, proceeding with initialSetup');
 		}
 
 		const miniCycleState = _deps.getMiniCycleState?.();
@@ -338,14 +313,12 @@ class AppInit {
 				return;
 			}
 
-			console.log('🆕 No Schema 2.5 data found - creating initial structure...');
 			_deps.createInitialSchema25Data?.();
 
 			// ✅ FIX: Reload AppState so it picks up the newly created data
 			// This ensures AppState.isReady() returns true for onboarding and subsequent code
 			if (miniCycleState?.reload) {
 				miniCycleState.reload();
-				console.log('✅ AppState reloaded with new data');
 			}
 
 			schemaData = miniCycleState?.load?.() || _deps.loadMiniCycleData?.();
@@ -360,19 +333,11 @@ class AppInit {
 
 		const { cycles, activeCycle, reminders, settings } = schemaData;
 
-		console.log('📦 Loaded Schema 2.5 data:', {
-			activeCycle,
-			cycleCount: Object.keys(cycles).length,
-			hasReminders: !!reminders,
-			hasSettings: !!settings
-		});
-
 		// ✅ FIX: Check onboarding directly from schemaData instead of via AppState
 		// This avoids a race condition where AppState.isReady() returns false on initial load
 		// because data was just created by dataAccess and AppState wasn't re-initialized
 		const hasSeenOnboarding = settings?.onboardingCompleted || false;
 		if (!hasSeenOnboarding) {
-			console.log('👋 First time user - showing onboarding first...');
 			const onboardingManager = _deps.getOnboardingManager?.();
 			// Pass schemaData to avoid AppState race condition
 			onboardingManager?.showOnboarding?.(cycles, activeCycle, schemaData);
@@ -406,7 +371,6 @@ class AppInit {
 			const firstCycle = availableCycles[0];
 
 			if (firstCycle) {
-				console.log(`🔧 Auto-recovering: Setting active routine to "${firstCycle}"`);
 				const miniCycleState = _deps.getMiniCycleState?.();
 				if (miniCycleState?.isReady?.()) {
 					await miniCycleState.update(state => {
@@ -432,7 +396,6 @@ class AppInit {
 	}
 
 	async runCompleteInitialSetup(activeCycle, fullSchemaData = null, schemaData = null) {
-		console.log('✅ Completing initial setup for cycle:', activeCycle);
 
 		// ✅ Remove onboarding-active class to show task list area
 		document.body.classList.remove('onboarding-active');
@@ -440,22 +403,16 @@ class AppInit {
 		// Wait for core systems (TaskDOM is loaded in Phase 2, before Phase 3 runs)
 		// Note: With orchestrator pattern, core is always ready by the time this runs
 		if (!this.isCoreReady()) {
-			console.log('⏳ Waiting for core systems (TaskDOM)...');
 			await this.waitForCore();
 		}
-		console.log('✅ Core ready, proceeding with task loading');
 
-		console.log('🎯 Loading miniCycle...');
 		const loadMiniCycle = _deps.loadMiniCycle?.();
 		if (typeof loadMiniCycle === 'function') {
 			await loadMiniCycle();
 
-			console.log('📋 Tasks rendered, updating reminder buttons, due date visibility, and checking overdue tasks...');
-
 			const updateReminderButtons = _deps.updateReminderButtons?.();
 			if (typeof updateReminderButtons === 'function') {
 				await updateReminderButtons();
-				console.log('✅ Reminder buttons updated after task rendering');
 			}
 
 			const updateDueDateVisibility = _deps.updateDueDateVisibility?.();
@@ -463,22 +420,18 @@ class AppInit {
 				const toggleAutoReset = _deps.getElementById?.(DOM_IDS.TOGGLE_AUTO_RESET);
 				const autoReset = toggleAutoReset?.checked || false;
 				await updateDueDateVisibility(autoReset);
-				console.log('✅ Due date visibility updated after task rendering');
 			}
 
 			const checkOverdueTasks = _deps.checkOverdueTasks?.();
 			if (typeof checkOverdueTasks === 'function') {
 				await checkOverdueTasks();
-				console.log('✅ Overdue tasks checked after task rendering');
 			}
 
 			const organizeCompletedTasks = _deps.organizeCompletedTasks?.();
 			if (typeof organizeCompletedTasks === 'function') {
 				organizeCompletedTasks();
-				console.log('✅ Completed tasks organized after task rendering');
 			}
 		} else {
-			console.log('⏳ Loader not ready yet, flagging pending load');
 		}
 
 		const miniCycleState = _deps.getMiniCycleState?.();
@@ -500,8 +453,6 @@ class AppInit {
 			return;
 		}
 
-		console.log('✅ Loading existing cycle from Schema 2.5:', activeCycle);
-
 		const titleElement = _deps.getElementById?.(DOM_IDS.MINI_CYCLE_TITLE);
 		const toggleAutoReset = _deps.getElementById?.(DOM_IDS.TOGGLE_AUTO_RESET);
 		const deleteCheckedTasks = _deps.getElementById?.(DOM_IDS.DELETE_CHECKED_TASKS);
@@ -520,11 +471,6 @@ class AppInit {
 			deleteCheckedTasks.checked = currentCycle.deleteCheckedTasks || false;
 		}
 
-		console.log('⚙️ Applied cycle settings:', {
-			autoReset: currentCycle.autoReset,
-			deleteCheckedTasks: currentCycle.deleteCheckedTasks
-		});
-
 		// Sync mode selector dropdown to match the toggle states we just set
 		await _deps.syncModeFromToggles?.();
 
@@ -532,24 +478,20 @@ class AppInit {
 			enableReminders.checked = reminders.enabled === true;
 
 			if (reminders.enabled && frequencySection) {
-				console.log('🔔 Starting reminders...');
 				frequencySection.classList.remove('hidden');
 				_deps.startReminders?.();
 			}
 		}
 
 		if (settings.darkMode) {
-			console.log('🌙 Applying dark mode...');
 			_deps.addBodyClass?.('dark-mode');
 			document.documentElement?.classList.add('dark-mode');
 		} else {
-			console.log('☀️ Applying light mode...');
 			_deps.removeBodyClass?.('dark-mode');
 			document.documentElement?.classList.remove('dark-mode');
 		}
 
 		if (settings.theme && settings.theme !== 'default') {
-			console.log('🎨 Applying theme:', settings.theme);
 			const allThemes = ['theme-dark-ocean', 'theme-golden-glow'];
 			allThemes.forEach(theme => _deps.removeBodyClass?.(theme));
 			_deps.addBodyClass?.(`theme-${settings.theme}`);
@@ -559,22 +501,15 @@ class AppInit {
 
 		// Accessibility settings
 		if (settings.reducedMotion) {
-			console.log('♿ Applying reduced motion...');
 			_deps.addBodyClass?.('reduced-motion');
 			document.documentElement?.classList.add('reduced-motion');
 		}
 		if (settings.highContrast) {
-			console.log('♿ Applying high contrast...');
 			_deps.addBodyClass?.('high-contrast');
 		}
 		if (settings.fontSize && settings.fontSize !== '16') {
-			console.log('♿ Applying custom font size:', settings.fontSize);
 			document.documentElement.style.setProperty('--font-size-base', `${settings.fontSize}px`);
 		}
-
-		console.log('✅ miniCycle app is fully initialized and ready (Schema 2.5).');
-		console.log('🎉 Initialization sequence completed successfully!');
-		console.log('✅ Initial setup completed successfully');
 
 		return true;
 	}
@@ -584,7 +519,6 @@ class AppInit {
 	 * Offers options to recover from corrupted localStorage data
 	 */
 	showDataCorruptionRecovery(corruptedData) {
-		console.log('🚨 Showing data corruption recovery modal...');
 
 		// Create modal overlay
 		const modal = document.createElement('div');
@@ -706,4 +640,3 @@ export const appInit = new AppInit();
 
 export const APPINIT_VERSION = '2.0.0';
 
-console.log('🚀 miniCycle AppInit loaded (Phase 2 - no window.* exports)');

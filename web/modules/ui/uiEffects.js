@@ -143,4 +143,3 @@ export function triggerLogoScan(duration = 400) {
     }
 }
 
-console.log('📦 UIEffects module loaded (using diBase)');

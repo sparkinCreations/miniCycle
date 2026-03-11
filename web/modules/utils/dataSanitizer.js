@@ -26,7 +26,6 @@ const _deps = new Proxy({}, {
 
 export function setDataSanitizerDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('DataSanitizer dependencies set:', Object.keys(dependencies));
 }
 
 // ============================================================================
@@ -74,7 +73,6 @@ export function sanitizeText(text, maxLength = 500) {
  * @returns {Object} Sanitized backup data
  */
 export function sanitizeImportedData(backupData) {
-    console.log('Sanitizing imported data for XSS protection...');
 
     // Sanitize Schema 2.5 format
     if (backupData.schemaVersion === '2.5' && backupData.miniCycleData) {
@@ -130,7 +128,6 @@ export function sanitizeImportedData(backupData) {
 
             // Write sanitized data back
             backupData.miniCycleData = JSON.stringify(data);
-            console.log('Schema 2.5 data sanitized successfully');
         } catch (error) {
             console.error('Error sanitizing Schema 2.5 data:', error);
         }
@@ -163,7 +160,6 @@ export function sanitizeImportedData(backupData) {
 
             // Write sanitized data back
             backupData.miniCycleStorage = JSON.stringify(legacyData);
-            console.log('Legacy data sanitized successfully');
         } catch (error) {
             console.error('Error sanitizing legacy data:', error);
         }
@@ -172,4 +168,3 @@ export function sanitizeImportedData(backupData) {
     return backupData;
 }
 
-console.log('Data Sanitizer module loaded');
