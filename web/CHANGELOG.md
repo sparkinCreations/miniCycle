@@ -1,3 +1,7 @@
+## [2.075] - 2026-03-11
+- Add sample routines and manifest generation script
+
+
 ## [2.074] - 2026-03-11
 - Refactor: Remove console.log statements across utility modules
 
