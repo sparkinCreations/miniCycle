@@ -1,3 +1,7 @@
+## [2.070] - 2026-03-11
+- feat: enhance routine switcher modal with improved layout and desktop preview functionality; add new constants and styles
+
+
 ## [2.069] - 2026-03-11
 - feat: implement two-panel layout for routine switcher modal on desktop; restructure HTML and update styles
 

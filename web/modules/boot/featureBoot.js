@@ -228,6 +228,13 @@ export async function bootFeatures(deps, coreResult) {
       deps.testing?.closeStorageViewer?.();
     });
 
+    // Close storage viewer button (replaces inline onclick for CSP compliance)
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('#close-storage-viewer-btn')) {
+        document.dispatchEvent(new CustomEvent('app:closeStorageViewer'));
+      }
+    });
+
     console.log('✅ HTML event listeners configured');
 
     // =========================================================================
