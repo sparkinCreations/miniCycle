@@ -89,7 +89,7 @@ Three different modes for how routines behave when tasks are completed.
 |---------|-------------|--------|
 | Per-Routine Button Visibility | Show/hide specific action buttons per routine | `ui/taskOptionsCustomizer.js` |
 | Global UI Settings | Move arrows and three-dots menu visibility (global) | `ui/taskOptionsCustomizer.js` |
-| Marked for Removal | Remove task on cycle reset or task clearing | `ui/taskOptionsCustomizer.js` |
+| Clear on Reset / Marked for Clearing | 🧹 Per-mode auto-remove on cycle reset or task clearing | `ui/taskOptionsCustomizer.js` |
 
 ### Completed Tasks
 | Feature | Description | Module |

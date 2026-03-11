@@ -358,3 +358,106 @@ dialog.miniCycle-prompt-dialog::backdrop {
 .miniCycle-sample-option input[type="checkbox"] {
     accent-color: #38a169;
 }
+
+/* =============================================================================
+   SAMPLE CREATION DIALOG — Two-View Layout (Name Input ↔ Sample List)
+   ============================================================================= */
+
+/* View container — holds both views, only one visible at a time */
+.creation-view {
+    display: none;
+}
+
+.creation-view.active {
+    display: block;
+}
+
+/* "Load Sample" button on the name-input view */
+.load-sample-btn {
+    display: block;
+    margin: var(--space-3) auto 0;
+    padding: 5px 20px;
+    border-radius: var(--radius-6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.load-sample-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Sample list view — title + back button header */
+.sample-list-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3-75);
+}
+
+.sample-back-btn {
+    padding: 4px 10px;
+    border-radius: var(--radius-6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.sample-back-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.sample-list-title {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Sample list items */
+.sample-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.sample-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: var(--radius-6);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.sample-item:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.sample-item:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+    outline-offset: 2px;
+}
+
+.sample-item-emoji {
+    font-size: 1.4em;
+}
+
+.sample-item-name {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+}

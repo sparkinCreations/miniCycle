@@ -4,7 +4,7 @@
   "tasks": [
     {
       "id": "task-getting-started-1",
-      "text": "✅ Tap here to complete this task!",
+      "text": "✅ Tap or click here to complete this task!",
       "completed": false,
       "dueDate": null,
       "highPriority": false,
@@ -20,7 +20,7 @@
     },
     {
       "id": "task-getting-started-2",
-      "text": "➕ Press the plus button above to add your own tasks",
+      "text": "➕ Press or click the plus button above to add your own tasks",
       "completed": false,
       "dueDate": null,
       "highPriority": false,
@@ -89,5 +89,6 @@
   "taskOptionButtons": null,
   "recurringTemplates": {},
   "reminders": null,
+  "theme": "classic",
   "createdAt": 1769919347634
 }

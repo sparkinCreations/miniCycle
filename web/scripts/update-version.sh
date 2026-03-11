@@ -1,6 +1,6 @@
 #!/bin/bash
 # update-version.sh - Enhanced Interactive Version Updater for miniCycle
-# Version: 5.3 - Lite always uses independent versioning (--lite no longer syncs to main) (Feb 2026)
+# Version: 5.4 - Added --samples flag to regenerate sample routine manifest (Mar 2026)
 #
 # Features:
 #  - Generates version.js as single source of truth (using globalThis)
@@ -15,6 +15,7 @@
 #  - --lite flag for optional lite version updates
 #  - --lite-only flag for updating ONLY the lite version (independent of main app)
 #  - --dry-run flag to preview changes without writing
+#  - --samples flag to regenerate sample routine manifest from .mcyc files
 
 # ============================================
 # INSTRUCTIONS & DOCUMENTATION
@@ -163,6 +164,7 @@ AUTO_GIT_PUSH=false
 INCLUDE_LITE=false
 LITE_ONLY=false
 AUTO_CHANGELOG=false
+AUTO_SAMPLES=false
 DRY_RUN=false
 
 # ============================================
@@ -197,18 +199,23 @@ while [[ $# -gt 0 ]]; do
             AUTO_CHANGELOG=true
             shift
             ;;
+        --samples|-s)
+            AUTO_SAMPLES=true
+            shift
+            ;;
         --dry-run|-n)
             DRY_RUN=true
             shift
             ;;
         --help|-h)
-            echo "🎯 miniCycle Version Updater v5.3"
+            echo "🎯 miniCycle Version Updater v5.4"
             echo ""
             echo "Usage: ./update-version.sh [options]"
             echo ""
             echo "Options:"
             echo "  --auto, -a      Auto-bump versions and update all files (no prompts)"
             echo "  --changelog, -c Auto-generate changelog from git commits"
+            echo "  --samples, -s   Regenerate sample routine manifest from .mcyc files"
             echo "  --lite, -l      Include lite version files (normally static)"
             echo "  --lite-only     Update ONLY lite version files (independent of main app)"
             echo "  --tag, -t       Auto-create git tag (use with --auto)"
@@ -1471,6 +1478,89 @@ if [ "$UPDATE_CHANGELOG" = true ]; then
     fi
 else
     echo "⏭️  Skipping changelog"
+fi
+
+echo ""
+
+# ============================================
+# OPTIONAL: SAMPLE ROUTINE MANIFEST
+# ============================================
+
+echo "📦 Optional: Sample Routine Manifest"
+echo "-------------------------------------"
+
+UPDATE_SAMPLES=false
+if [ "$LITE_ONLY" = true ]; then
+    echo "⏭️  Skipping samples (LITE ONLY mode)"
+elif [ "$AUTO_MODE" = true ]; then
+    if [ "$AUTO_SAMPLES" = true ]; then
+        UPDATE_SAMPLES=true
+        echo "🤖 Auto mode: Regenerating sample manifest..."
+    else
+        echo "⏭️  Skipping samples (use --samples to regenerate)"
+    fi
+else
+    if [ "$AUTO_SAMPLES" = true ]; then
+        UPDATE_SAMPLES=true
+    else
+        read -p "Regenerate sample routine manifest? (y/N): " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            UPDATE_SAMPLES=true
+        fi
+    fi
+fi
+
+if [ "$UPDATE_SAMPLES" = true ]; then
+    SAMPLES_DIR="examples/sample-routines"
+    if [ -d "$SAMPLES_DIR" ]; then
+        if [ "$DRY_RUN" = true ]; then
+            echo "🔍 [DRY RUN] Would regenerate $SAMPLES_DIR/manifest.json"
+            MCYC_COUNT=$(find "$SAMPLES_DIR" -maxdepth 1 -name "*.mcyc" | wc -l | tr -d ' ')
+            echo "   Found $MCYC_COUNT .mcyc files"
+        else
+            python3 -c "
+import json, os, glob, unicodedata
+
+def is_emoji_char(c):
+    return unicodedata.category(c) == 'So' or c in '\uFE0F\u200D' or ord(c) > 0x1F000
+
+def extract_emoji_and_name(title):
+    title = title.strip()
+    # Try leading emoji
+    i = 0
+    while i < len(title) and is_emoji_char(title[i]):
+        i += 1
+    if i > 0:
+        return title[:i].rstrip(), title[i:].strip()
+    # Try trailing emoji
+    j = len(title) - 1
+    while j >= 0 and is_emoji_char(title[j]):
+        j -= 1
+    if j < len(title) - 1:
+        return title[j+1:].lstrip(), title[:j+1].strip()
+    return '\U0001F4CB', title
+
+samples_dir = '$SAMPLES_DIR'
+manifest = []
+for f in sorted(glob.glob(os.path.join(samples_dir, '*.mcyc'))):
+    with open(f) as fh:
+        data = json.load(fh)
+    title = data.get('title', os.path.basename(f).replace('.mcyc', '').replace('_', ' '))
+    emoji, name = extract_emoji_and_name(title)
+    manifest.append({'file': os.path.basename(f), 'name': name, 'emoji': emoji})
+
+with open(os.path.join(samples_dir, 'manifest.json'), 'w') as fh:
+    json.dump(manifest, fh, indent=2, ensure_ascii=False)
+    fh.write('\n')
+print(f'✅ Generated manifest.json ({len(manifest)} samples)')
+"
+        fi
+    else
+        echo "⚠️  $SAMPLES_DIR directory not found"
+    fi
+else
+    echo "⏭️  Skipping samples"
 fi
 
 echo ""

@@ -1,0 +1,32 @@
+[
+  {
+    "file": "Breakfast_Burrito_Recipe.mcyc",
+    "name": "Classic Breakfast Burrito (Recipe)",
+    "emoji": "🍳"
+  },
+  {
+    "file": "Cardio_Core_Routine.mcyc",
+    "name": "Cardio & Core Routine",
+    "emoji": "🏃"
+  },
+  {
+    "file": "Daily_Routine.mcyc",
+    "name": "Daily Routine",
+    "emoji": "☀️"
+  },
+  {
+    "file": "Opening_Closing_Procedures.mcyc",
+    "name": "Opening & Closing Procedures",
+    "emoji": "🔑"
+  },
+  {
+    "file": "QA_Inspection_Checklist.mcyc",
+    "name": "QA Inspection Checklist (Machine Shop)",
+    "emoji": "🔍"
+  },
+  {
+    "file": "getting-started.mcyc",
+    "name": "Getting Started",
+    "emoji": "🚀"
+  }
+]

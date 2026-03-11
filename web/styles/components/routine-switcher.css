@@ -435,7 +435,7 @@ dialog.mini-cycle-switch-modal::backdrop {
 }
 
 .mini-cycle-switch-btn.cancel-btn {
-    background: var(--color-slate-800);
+    background: var(--color-gray-500);
     color: var(--color-white);
 }
 

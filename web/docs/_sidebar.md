@@ -36,6 +36,7 @@
   * [Code Review (Dec 2025)](developer-guides/COMPREHENSIVE_CODE_REVIEW_DEC_2025.md)
   * [Hidden Codebase Insights](developer-guides/HIDDEN_CODEBASE_INSIGHTS.md)
   * [Vocabulary Theme System](developer-guides/VOCAB_THEME_SYSTEM.md)
+  * [Sample Routines](developer-guides/SAMPLE_ROUTINES.md)
   * [Dev Server](DEV_SERVER.md)
 
 * **Architecture**

@@ -861,6 +861,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         getHistory: (...args) => deps.features?.historyManager?.getHistory?.(...args),
         clearHistory: (...args) => deps.features?.historyManager?.clearHistory?.(...args),
         openHistoryModal: (...args) => deps.features?.historyManager?.openModal?.(...args),
+        refreshHistoryIfOpen: (...args) => deps.features?.historyManager?.refreshIfOpen?.(...args),
 
         // Cleared tasks manager (from deps.features) - use Proxy for lazy resolution
         clearedTasksManager: new Proxy({}, {

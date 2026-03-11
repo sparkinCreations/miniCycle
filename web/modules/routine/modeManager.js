@@ -637,7 +637,7 @@ export class ModeManager {
         // ✅ Load initial collapsed state from AppState
         const AppState = this.deps.AppState;
         const currentState = AppState?.get();
-        const isCollapsed = currentState?.settings?.modeDescriptionCollapsed ?? true;
+        const isCollapsed = currentState?.settings?.modeDescriptionCollapsed ?? false;
 
         // Apply initial state
         if (isCollapsed) {

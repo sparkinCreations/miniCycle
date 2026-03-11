@@ -17,6 +17,7 @@
 6. [New Event Listener](#new-event-listener)
 7. [New Dependency Between Modules](#new-dependency-between-modules)
 8. [New Exported Function](#new-exported-function)
+9. [New Sample Routine](#new-sample-routine)
 
 ---
 
@@ -454,6 +455,46 @@ taskList.addEventListener('click', (e) => {
 
 ---
 
+## New Sample Routine
+
+**Files to touch:** 1 file + 1 command
+
+> For full details, see [SAMPLE_ROUTINES.md](./SAMPLE_ROUTINES.md).
+
+### Step 1: Create the .mcyc file
+
+Add a new file to `examples/sample-routines/`. Use the full Schema 2.5 format with **all fields** -- copy an existing sample as a template.
+
+**Title must include an emoji** (at the start or end):
+```json
+{
+  "title": "🔍 QA Inspection Checklist (Machine Shop)",
+  "...": "..."
+}
+```
+
+**File naming:** `Descriptive_Name.mcyc` (underscores, no spaces)
+
+### Step 2: Regenerate the manifest
+
+```bash
+npm run samples
+```
+
+The script scans all `.mcyc` files, extracts title + emoji, and writes `manifest.json`.
+
+### Checklist
+
+- [ ] File is valid JSON (`python3 -m json.tool Your_File.mcyc`)
+- [ ] **All root-level fields** present: name, title, tasks, autoReset, cycleCount, deleteCheckedTasks, taskOptionButtons, recurringTemplates, reminders, theme, createdAt
+- [ ] **All task-level fields** present: id, text, completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings, deleteWhenComplete, deleteWhenCompleteSettings, schemaVersion
+- [ ] Title has emoji (start or end)
+- [ ] Filename uses underscores: `Descriptive_Name.mcyc`
+- [ ] `npm run samples` ran successfully
+- [ ] Sample appears in Create New Routine dialog
+
+---
+
 ## See Also
 
 - [MAKING_CODE_CHANGES.md](./MAKING_CODE_CHANGES.md) — Deep dive on the dependency wiring pipeline
@@ -461,3 +502,4 @@ taskList.addEventListener('click', (e) => {
 - [MODULE_LOADER_GUIDE.md](./MODULE_LOADER_GUIDE.md) — Manifest format and phase system
 - [CONSTANTS_SYSTEM_GUIDE.md](./CONSTANTS_SYSTEM_GUIDE.md) — All constant groups and naming rules
 - [EVENT_LISTENER_GUIDE.md](./EVENT_LISTENER_GUIDE.md) — Detailed listener management patterns
+- [SAMPLE_ROUTINES.md](./SAMPLE_ROUTINES.md) — Full sample routines system documentation

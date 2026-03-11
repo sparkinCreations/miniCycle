@@ -779,6 +779,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Routine management (additional)
         samplePreloaded:         'A sample routine has been preloaded to help you get started!',
+        sampleLoaded:            'Loaded "{name}" sample routine',
         checkmarkStyleChanged:   'Checkmark style updated',
         welcomeSampleLoaded:     'Welcome to miniCycle! A sample routine has been loaded to get you started',
         startBlankRoutine:       'Start with a blank routine',
@@ -850,7 +851,9 @@ export const DEFAULT_LABELS = deepFreeze({
         importAsTemplate:         'Use as Template',
         importAsTemplateDesc:     'Start fresh — all progress reset',
         importWithProgress:       'Import with Progress',
-        importWithProgressDesc:   'Keep cycle count, completed tasks, and due dates'
+        importWithProgressDesc:   'Keep cycle count, completed tasks, and due dates',
+        orStartFromSample:        'or start from a sample',
+        chooseSample:             'Choose a Sample'
     },
 
     // ========================================================================
@@ -1107,7 +1110,8 @@ export const DEFAULT_LABELS = deepFreeze({
         import:     'Import',
         create:     'Create',
         enable:     'Enable',
-        loadSample: 'Load Sample'
+        loadSample: 'Load Sample',
+        back:       'Back'
     },
 
     // ========================================================================

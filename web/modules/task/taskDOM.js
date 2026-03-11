@@ -379,7 +379,8 @@ export class TaskDOMManager {
 
                 // Initialize patcher module - handles DOM patching without full re-renders
                 this.patcher = this._rawDeps.patcher || new TaskDOMPatch({
-                    sanitizeInput: this.deps.sanitizeInput
+                    sanitizeInput: this.deps.sanitizeInput,
+                    AppState: this.deps.AppState
                 });
 
                 // Phase 3 - No window.* exports (main script handles exposure)

@@ -199,7 +199,7 @@ web/
 │   │   ├── statsPanel.js            # Statistics panel
 │   │   ├── achievementsManager.js   # Achievement tracking + badge UI
 │   │   ├── historyManager.js        # History tracking + modal
-│   │   ├── clearedTasksManager.js   # Cleared tasks (To-Do mode)
+│   │   ├── clearedTasksManager.js   # Cleared tasks (To-Do mode + cycle reset auto-removes)
 │   │   ├── reminders.js             # Reminder system
 │   │   └── dueDates.js              # Due date management
 │   │
