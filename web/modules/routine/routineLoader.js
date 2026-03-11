@@ -257,27 +257,32 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
     if (typeof task.completed !== 'boolean') {
       task.completed = Boolean(task.completed);
       tasksModified = true;
+      console.warn('⚠️ Repaired task with invalid completed field:', task.id);
     }
 
     if (typeof task.highPriority !== 'boolean') {
       task.highPriority = Boolean(task.highPriority);
       tasksModified = true;
+      console.warn('⚠️ Repaired task with invalid highPriority field:', task.id);
     }
 
     if (typeof task.remindersEnabled !== 'boolean') {
       task.remindersEnabled = Boolean(task.remindersEnabled);
       tasksModified = true;
+      console.warn('⚠️ Repaired task with invalid remindersEnabled field:', task.id);
     }
 
     if (typeof task.recurring !== 'boolean') {
       task.recurring = Boolean(task.recurring);
       tasksModified = true;
+      console.warn('⚠️ Repaired task with invalid recurring field:', task.id);
     }
 
     // ✅ Repair dueDate (should be null, string, or number)
     if (task.dueDate === undefined) {
       task.dueDate = null;
       tasksModified = true;
+      console.warn('⚠️ Repaired task with missing dueDate:', task.id);
     }
 
     // ✅ Repair recurringSettings (should be object if recurring)
@@ -285,6 +290,13 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
       task.recurringSettings = {};
       tasksModified = true;
       console.warn('⚠️ Repaired missing recurringSettings for recurring task:', task.id);
+    }
+
+    // ✅ Repair schemaVersion (should be a number, default to 2)
+    if (typeof task.schemaVersion !== 'number' || task.schemaVersion < 1) {
+      task.schemaVersion = 2;
+      tasksModified = true;
+      console.warn('⚠️ Repaired task with missing schemaVersion:', task.id);
     }
 
     // ✅ Repair missing deleteWhenCompleteSettings

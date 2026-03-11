@@ -1,6 +1,6 @@
 {
   "name": "minicycle-web",
-  "version": "2.072",
+  "version": "2.074",
   "description": "miniCycle - Turn Your Routine Into Progress",
   "type": "module",
   "private": true,
@@ -17,6 +17,7 @@
     "perf": "node tests/automated/run-performance-benchmarks.cjs",
     "lint": "eslint modules/",
     "lint:fix": "eslint modules/ --fix",
+    "samples": "./scripts/generate-sample-manifest.sh",
     "lighthouse": "lhci autorun",
     "lighthouse:install": "npm install -g @lhci/cli"
   },

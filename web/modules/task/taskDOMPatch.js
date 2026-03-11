@@ -17,13 +17,15 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
+import { ICONS } from '../utils/icons.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
 // ============================================================================
 
 const di = createDIModule('TaskDOMPatch', {
-    sanitizeInput: optional(null)
+    sanitizeInput: optional(null),
+    AppState: optional(null)
 });
 
 /**
@@ -107,10 +109,16 @@ export class TaskDOMPatch {
      * @private
      */
     _patchText(taskElement, taskData) {
-        const label = taskElement.querySelector('label');
-        if (label) {
+        const taskLabel = taskElement.querySelector(DOM_SELECTORS.TASK_TEXT);
+        if (taskLabel) {
             const sanitized = this.deps.sanitizeInput?.(taskData.text) || taskData.text;
-            label.textContent = sanitized;
+            // Preserve child elements (e.g., recurring indicator icon)
+            const firstTextNode = taskLabel.firstChild;
+            if (firstTextNode && firstTextNode.nodeType === Node.TEXT_NODE) {
+                firstTextNode.textContent = sanitized;
+            } else {
+                taskLabel.insertBefore(document.createTextNode(sanitized), taskLabel.firstChild);
+            }
         }
     }
 
@@ -159,12 +167,27 @@ export class TaskDOMPatch {
      * @private
      */
     _patchRecurring(taskElement, taskData) {
-        taskElement.classList.toggle('recurring', taskData.recurring || false);
+        const isRecurring = taskData.recurring || false;
+        taskElement.classList.toggle('recurring', isRecurring);
 
         const recurringBtn = taskElement.querySelector(DOM_SELECTORS.RECURRING_BTN);
         if (recurringBtn) {
-            recurringBtn.classList.toggle('active', taskData.recurring || false);
-            recurringBtn.setAttribute('aria-pressed', String(taskData.recurring || false));
+            recurringBtn.classList.toggle('active', isRecurring);
+            recurringBtn.setAttribute('aria-pressed', String(isRecurring));
+        }
+
+        // Add or remove recurring icon from task label
+        const taskLabel = taskElement.querySelector(DOM_SELECTORS.TASK_TEXT);
+        if (taskLabel) {
+            const existingIcon = taskLabel.querySelector(DOM_SELECTORS.RECURRING_INDICATOR);
+            if (isRecurring && !existingIcon) {
+                const icon = document.createElement('span');
+                icon.className = 'recurring-indicator';
+                icon.innerHTML = `<span class="icon" aria-hidden="true">${ICONS['sync-alt']}</span>`;
+                taskLabel.appendChild(icon);
+            } else if (!isRecurring && existingIcon) {
+                existingIcon.remove();
+            }
         }
     }
 
@@ -185,11 +208,29 @@ export class TaskDOMPatch {
      * @private
      */
     _patchDeleteWhenComplete(taskElement, taskData) {
+        const isActive = taskData.deleteWhenComplete || false;
+        const isRecurring = taskData.recurring || false;
+
         const dwcBtn = taskElement.querySelector(DOM_SELECTORS.DELETE_WHEN_COMPLETE_BTN);
         if (dwcBtn) {
-            const isActive = taskData.deleteWhenComplete || false;
             dwcBtn.classList.toggle('active', isActive);
+            dwcBtn.classList.toggle('delete-when-complete-active', isActive);
             dwcBtn.setAttribute('aria-pressed', String(isActive));
+        }
+
+        // Sync task element data attribute and visual indicator classes
+        taskElement.dataset.deleteWhenComplete = String(isActive);
+        if (!isRecurring) {
+            const state = this.deps.AppState?.get?.();
+            const activeCycleId = state?.appState?.activeCycleId;
+            const isToDoMode = state?.data?.cycles?.[activeCycleId]?.deleteCheckedTasks === true;
+            if (isToDoMode) {
+                taskElement.classList.remove('show-delete-indicator');
+                taskElement.classList.toggle('kept-task', !isActive);
+            } else {
+                taskElement.classList.toggle('show-delete-indicator', isActive);
+                taskElement.classList.remove('kept-task');
+            }
         }
     }
 

@@ -197,7 +197,7 @@ If you add a label value in `defaultLabels.js` but forget to add the key to the 
 
 ## Related modules
 
-- **clearedTasksManager.js** — Tracks cleared To-Do Mode tasks; displayed in the history modal's "Cleared" tab
+- **clearedTasksManager.js** — Tracks cleared tasks (To-Do mode + cycle reset auto-removes); displayed in the history modal's "Cleared" tab
 - **achievementsManager.js** — Logs `achievement_unlocked` events to history when milestones are reached
 - **statsPanel.js** — Contains the "History" button that opens the modal
 

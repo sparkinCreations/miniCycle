@@ -151,6 +151,50 @@ function validateSnapshot(snapshot, expectedCycleId) {
   return true;
 }
 
+// Known valid theme IDs (avoids importing side-effectful themes.js)
+const VALID_THEME_IDS = new Set(['classic', 'habit-tracker', 'fitness', 'scholar', 'cleaning']);
+
+/**
+ * Sanitize a snapshot before restoring to prevent corrupted data from entering state.
+ * Clamps numeric fields, validates task entries, and normalizes theme IDs.
+ * @param {Object} snapshot - The snapshot to sanitize
+ * @returns {Object} The sanitized snapshot (mutated in place for efficiency)
+ */
+function sanitizeSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') return snapshot;
+
+  // Clamp cycleCount to non-negative integer
+  if ('cycleCount' in snapshot) {
+    const cc = snapshot.cycleCount;
+    snapshot.cycleCount = (Number.isFinite(cc) && cc >= 0) ? Math.floor(cc) : 0;
+  }
+
+  // Validate theme is a known ID
+  if ('theme' in snapshot) {
+    if (!VALID_THEME_IDS.has(snapshot.theme)) {
+      snapshot.theme = 'classic';
+    }
+  }
+
+  // Sanitize clearedTasks
+  if (snapshot.clearedTasks && typeof snapshot.clearedTasks === 'object') {
+    const tc = snapshot.clearedTasks.totalCleared;
+    snapshot.clearedTasks.totalCleared = (Number.isFinite(tc) && tc >= 0) ? Math.floor(tc) : 0;
+    if (!Array.isArray(snapshot.clearedTasks.items)) {
+      snapshot.clearedTasks.items = [];
+    }
+  }
+
+  // Validate task entries — filter out malformed tasks
+  if (Array.isArray(snapshot.tasks)) {
+    snapshot.tasks = snapshot.tasks.filter(t =>
+      t && typeof t === 'object' && typeof t.id === 'string' && typeof t.text === 'string'
+    );
+  }
+
+  return snapshot;
+}
+
 /**
  * Filter snapshots to only include those belonging to the specified cycle
  * @param {Array} snapshots - Array of snapshots to filter
@@ -221,7 +265,11 @@ const di = createDIModule('UndoRedoManager', {
   showNotification: optional(null),
   // UIOrchestrator for smart UI updates (optional - falls back to refreshUIFromState)
   UIOrchestrator: optional(null),
-  logHistoryEvent: optional(null)  // (type, details) => void — logs undo/redo to routine history
+  logHistoryEvent: optional(null),  // (type, details) => void — logs undo/redo to routine history
+  refreshHistoryIfOpen: optional(null),  // () => void — re-renders history modal if open (for cleared tasks tab)
+  updateRecurringInfoLink: optional(null),  // () => void — refreshes "X tasks set to recurring" indicator
+  updateHelpWindow: optional(null),  // () => void — refreshes help window status message
+  syncModeFromToggles: optional(null)  // () => void — syncs delete-checked/auto-reset toggles from state
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
@@ -570,13 +618,16 @@ export function buildSnapshotSignature(s) {
   return JSON.stringify({
     c: s.activeCycleId,
     t: (s.tasks || []).map(t => ({
-      id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null
+      id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null,
+      r: !!t.recurring, re: !!t.remindersEnabled, dwc: !!t.deleteWhenComplete, pc: t.priorityColor || null
     })),
     ti: s.title || '',
     ar: !!s.autoReset,
     dc: !!s.deleteCheckedTasks,
     cc: s.cycleCount || 0,
-    th: s.theme || 'classic'
+    th: s.theme || 'classic',
+    rt: Object.keys(s.recurringTemplates || {}).sort(),
+    ct: s.clearedTasks?.totalCleared || 0
   });
 }
 
@@ -886,6 +937,8 @@ export async function performStateBasedUndo() {
       autoReset: currentCycle?.autoReset,
       deleteCheckedTasks: currentCycle?.deleteCheckedTasks,
       cycleCount: currentCycle?.cycleCount || 0,  // ✅ Include cycle count
+      theme: currentCycle?.theme || 'classic',
+      clearedTasks: currentCycle?.clearedTasks ? structuredClone(currentCycle.clearedTasks) : null,
       timestamp: Date.now()
     };
 
@@ -904,6 +957,9 @@ export async function performStateBasedUndo() {
       updateUndoRedoButtons();
       return;
     }
+
+    // Sanitize snapshot before restoring to prevent corrupted data
+    sanitizeSnapshot(snap);
 
     // Cache signature for efficient dedup comparison later
     currentSnapshot._sig = buildSnapshotSignature(currentSnapshot);
@@ -926,6 +982,19 @@ export async function performStateBasedUndo() {
       if ('cycleCount' in snap) cycle.cycleCount = snap.cycleCount;  // ✅ Restore cycle count
       if ('theme' in snap) cycle.theme = snap.theme;
       if ('clearedTasks' in snap) cycle.clearedTasks = snap.clearedTasks ? structuredClone(snap.clearedTasks) : cycle.clearedTasks;
+
+      // ✅ Delta-based userProgress adjustment
+      // Reverse global counters by the per-routine diff between snapshots
+      const cycleDelta = (snap.cycleCount || 0) - (currentSnapshot.cycleCount || 0);
+      if (cycleDelta !== 0 && state.userProgress) {
+        state.userProgress.cyclesCompleted = Math.max(0,
+          (state.userProgress.cyclesCompleted || 0) + cycleDelta);
+      }
+      const clearedDelta = (snap.clearedTasks?.totalCleared || 0) - (currentSnapshot.clearedTasks?.totalCleared || 0);
+      if (clearedDelta !== 0 && state.userProgress) {
+        state.userProgress.totalTasksCompleted = Math.max(0,
+          (state.userProgress.totalTasksCompleted || 0) + clearedDelta);
+      }
     }, false);
 
     // Log undo as a history event
@@ -933,6 +1002,12 @@ export async function performStateBasedUndo() {
 
     // Use UIOrchestrator if available, otherwise fall back to refreshUIFromState
     handleUndoRedoUIUpdate(transactionDiff, _deps.AppState.get());
+
+    // Refresh peripheral UI elements that aren't covered by UIOrchestrator
+    _deps.refreshHistoryIfOpen?.();
+    _deps.updateRecurringInfoLink?.();
+    _deps.updateHelpWindow?.();
+    _deps.syncModeFromToggles?.();
 
     updateUndoRedoButtons();
 
@@ -1029,6 +1104,8 @@ export async function performStateBasedRedo() {
       autoReset: currentCycle?.autoReset,
       deleteCheckedTasks: currentCycle?.deleteCheckedTasks,
       cycleCount: currentCycle?.cycleCount || 0,  // ✅ Include cycle count
+      theme: currentCycle?.theme || 'classic',
+      clearedTasks: currentCycle?.clearedTasks ? structuredClone(currentCycle.clearedTasks) : null,
       timestamp: Date.now()
     };
 
@@ -1047,6 +1124,9 @@ export async function performStateBasedRedo() {
       updateUndoRedoButtons();
       return;
     }
+
+    // Sanitize snapshot before restoring to prevent corrupted data
+    sanitizeSnapshot(snap);
 
     // Cache signature for efficient dedup comparison later
     currentSnapshot._sig = buildSnapshotSignature(currentSnapshot);
@@ -1069,6 +1149,19 @@ export async function performStateBasedRedo() {
       if ('cycleCount' in snap) cycle.cycleCount = snap.cycleCount;  // ✅ Restore cycle count
       if ('theme' in snap) cycle.theme = snap.theme;
       if ('clearedTasks' in snap) cycle.clearedTasks = snap.clearedTasks ? structuredClone(snap.clearedTasks) : cycle.clearedTasks;
+
+      // ✅ Delta-based userProgress adjustment
+      // Restore global counters by the per-routine diff between snapshots
+      const cycleDelta = (snap.cycleCount || 0) - (currentSnapshot.cycleCount || 0);
+      if (cycleDelta !== 0 && state.userProgress) {
+        state.userProgress.cyclesCompleted = Math.max(0,
+          (state.userProgress.cyclesCompleted || 0) + cycleDelta);
+      }
+      const clearedDelta = (snap.clearedTasks?.totalCleared || 0) - (currentSnapshot.clearedTasks?.totalCleared || 0);
+      if (clearedDelta !== 0 && state.userProgress) {
+        state.userProgress.totalTasksCompleted = Math.max(0,
+          (state.userProgress.totalTasksCompleted || 0) + clearedDelta);
+      }
     }, false);
 
     // Log redo as a history event
@@ -1076,6 +1169,12 @@ export async function performStateBasedRedo() {
 
     // Use UIOrchestrator if available, otherwise fall back to refreshUIFromState
     handleUndoRedoUIUpdate(transactionDiff, _deps.AppState.get());
+
+    // Refresh peripheral UI elements that aren't covered by UIOrchestrator
+    _deps.refreshHistoryIfOpen?.();
+    _deps.updateRecurringInfoLink?.();
+    _deps.updateHelpWindow?.();
+    _deps.syncModeFromToggles?.();
 
     updateUndoRedoButtons();
 

@@ -52,7 +52,7 @@
     },
     {
       "id": "task-getting-started-4",
-      "text": "📱 Long press and drag to rearrange tasks",
+      "text": "📱 Long press or click and drag to rearrange tasks",
       "completed": false,
       "dueDate": null,
       "highPriority": false,

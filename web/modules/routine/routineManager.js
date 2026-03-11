@@ -29,6 +29,9 @@ let getUniqueCycleName;
 // Estimated size for a new empty cycle (structure overhead)
 const ESTIMATED_NEW_CYCLE_SIZE = 800; // ~400 chars * 2 bytes
 
+// Cached sample manifest (fetched once per session from manifest.json)
+let _sampleManifestCache = null;
+
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
@@ -106,7 +109,14 @@ export class RoutineManager {
             // Mode sync (must run before refreshThemeLabels on new routine creation)
             syncModeFromToggles: resolvedDeps.syncModeFromToggles || null,
 
+            // Recurring info
+            updateRecurringInfoLink: resolvedDeps.updateRecurringInfoLink || null,
+
+            // Load routine (for non-onboarding sample loading)
+            loadMiniCycle: resolvedDeps.loadMiniCycle || null,
+
             // DOM functions
+            getBody: resolvedDeps.getBody || (() => document.body),
             getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
             querySelector: dependencies.querySelector || ((sel) => document.querySelector(sel)),
             querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel))
@@ -172,22 +182,15 @@ export class RoutineManager {
     showCycleCreationModal() {
 
         setTimeout(() => {
-            this.deps.showPromptModal({
-                title: getLabel('modal.createRoutineTitle'),
-                message: getLabel('modal.createRoutineMessage'),
-                placeholder: getLabel('modal.createRoutinePlaceholder'),
-                confirmText: getLabel('button.create'),
-                cancelText: getLabel('button.loadSample'),
-                callback: async (input) => {
-                    if (!input || input.trim() === "") {
-                        await this.preloadGettingStartedCycle();
-                        return;
-                    }
-
-                    const newCycleName = this.deps.sanitizeInput(input.trim());
+            this._buildCreationDialog({
+                title: 'modal.createRoutineTitle',
+                message: 'modal.createRoutineMessage',
+                placeholder: 'modal.createRoutinePlaceholder',
+                isOnboarding: true,
+                onCreateBlank: async (inputValue) => {
+                    const newCycleName = this.deps.sanitizeInput(inputValue);
                     const cycleId = `cycle_${Date.now()}`;
 
-                    // ✅ Use AppState as source of truth
                     const appState = this.deps.AppState;
 
                     if (!this._ensureAppStateReady('cycle creation')) {
@@ -195,7 +198,6 @@ export class RoutineManager {
                         return;
                     }
 
-                    // ✅ Get unique name (uses centralized utility)
                     const existingCycles = appState.get()?.data?.cycles || {};
                     const { name: finalTitle, wasModified } = getUniqueCycleName(newCycleName, existingCycles);
 
@@ -203,7 +205,6 @@ export class RoutineManager {
                         this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                     }
 
-                    // ✅ Create cycle via AppState.update() - use title as key
                     await appState.update(state => {
                         state.data.cycles[finalTitle] = {
                             id: cycleId,
@@ -228,19 +229,14 @@ export class RoutineManager {
                         state.appState.activeCycleId = finalTitle;
                         state.metadata.lastModified = Date.now();
                         state.metadata.totalCyclesCreated++;
-                    }, true); // immediate save
+                    }, true);
 
-                    // ✅ Notify undo system of new cycle (onboarding path)
                     if (typeof this.deps.onCycleCreated === 'function') {
                         this.deps.onCycleCreated(finalTitle).catch(err => {
                             console.warn('⚠️ Undo system cycle creation notification failed:', err);
                         });
                     }
 
-                    // ✅ Sync mode selector and body class IMMEDIATELY (synchronous).
-                    // New routine defaults to auto-cycle, but the selector still shows
-                    // the previous routine's mode. Must update before refreshThemeLabels,
-                    // which re-renders the help window using the cached mode.
                     const onboardModeSelector = this.deps.getElementById(DOM_IDS.MODE_SELECTOR);
                     if (onboardModeSelector) {
                         onboardModeSelector.value = 'auto-cycle';
@@ -251,9 +247,8 @@ export class RoutineManager {
                     );
                     body.classList.add('auto-cycle-mode');
 
-                    // ✅ Complete the setup after user interaction
-                    this.deps.refreshThemeLabels?.();  // Apply Classic colors immediately (new routine defaults to classic)
-                    this.deps.updateRecurringInfoLink?.();  // Clear stale recurring count from previous routine
+                    this.deps.refreshThemeLabels?.();
+                    this.deps.updateRecurringInfoLink?.();
                     this.deps.completeInitialSetup(finalTitle, appState.get());
                 }
             });
@@ -266,87 +261,8 @@ export class RoutineManager {
      * @param {boolean} [options.silent=false] - When true, suppresses notifications and fallback cycle creation (caller handles messaging)
      * @returns {Promise<boolean>} True if sample loaded successfully, false on failure
      */
-    async preloadGettingStartedCycle(options = {}) {
-
-        try {
-            const response = await fetch("examples/routines/sample-getting-started.mcyc");
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const sample = await response.json();
-
-            // ✅ Use AppState as source of truth
-            const appState = this.deps.AppState;
-
-            if (!this._ensureAppStateReady('sample cycle creation')) {
-                throw new Error('AppState not ready');
-            }
-
-            const cycleId = `cycle_${Date.now()}`;
-            const sampleTitle = sample.title || sample.name || "Getting Started";
-
-            // ✅ Get unique name (uses centralized utility)
-            const existingCycles = appState.get()?.data?.cycles || {};
-            const { name: finalTitle, wasModified } = getUniqueCycleName(sampleTitle, existingCycles);
-
-            // ✅ Create sample cycle via AppState.update() - use title as key
-            await appState.update(state => {
-                state.data.cycles[finalTitle] = {
-                    id: cycleId,
-                    title: finalTitle,
-                    tasks: sample.tasks || [],
-                    autoReset: sample.autoReset !== false, // Default to true if not specified
-                    cycleCount: sample.cycleCount || 0,
-                    deleteCheckedTasks: sample.deleteCheckedTasks || false,
-                    createdAt: Date.now(),
-                    theme: 'classic',
-                    recurringTemplates: {},
-                    reminders: {
-                        enabled: false,
-                        indefinite: false,
-                        dueDatesReminders: false,
-                        repeatCount: 0,
-                        frequencyValue: 30,
-                        frequencyUnit: "minutes"
-                    }
-                };
-
-                state.appState.activeCycleId = finalTitle;
-                state.metadata.lastModified = Date.now();
-                state.metadata.totalCyclesCreated++;
-            }, true); // immediate save
-
-            // ✅ CLOSE ANY OPEN MODALS
-            const existingModals = this.deps.querySelectorAll('dialog.miniCycle-prompt-dialog, dialog.mini-modal-dialog');
-            existingModals.forEach(modal => { if (modal.open) modal.close(); modal.remove(); });
-
-            if (!options.silent) {
-                this.deps.showNotification('✨ ' + getLabel('notify.samplePreloaded'), "success", UI_TIMEOUTS.NOTIFICATION_SLOW);
-            }
-
-            // ✅ COMPLETE SETUP AFTER LOADING SAMPLE
-            this.deps.completeInitialSetup(finalTitle, appState.get());
-
-            return true;
-
-        } catch (err) {
-            console.error('❌ Failed to load sample miniCycle:', err);
-
-            // ✅ CLOSE MODAL ON ERROR TOO
-            const existingModals = this.deps.querySelectorAll('dialog.miniCycle-prompt-dialog, dialog.mini-modal-dialog');
-            existingModals.forEach(modal => { if (modal.open) modal.close(); modal.remove(); });
-
-            if (!options.silent) {
-                this.deps.showNotification("❌ " + getLabel('notify.sampleLoadFailed'), "error");
-
-                // ✅ CREATE A BASIC FALLBACK CYCLE
-                this.createBasicFallbackCycle();
-            }
-
-            return false;
-        }
+    async preloadGettingStartedCycle(_options = {}) {
+        return this.loadSampleRoutine('getting-started.mcyc', { isOnboarding: true });
     }
 
     /**
@@ -435,26 +351,15 @@ export class RoutineManager {
             return;
         }
 
-        this.deps.showPromptModal({
-            title: getLabel('modal.newRoutineTitle'),
-            message: getLabel('modal.newRoutineMessage'),
-            placeholder: getLabel('modal.newRoutinePlaceholder'),
-            defaultValue: "",
-            confirmText: getLabel('button.create'),
-            cancelText: getLabel('button.cancel'),
-            required: true,
-            callback: (result) => {
-                if (!result) {
-                    this.deps.showNotification("❌ " + getLabel('notify.creationCancelled'), 'info', UI_TIMEOUTS.NOTIFICATION_LONG);
-                    return;
-                }
-
-                const newCycleName = this.deps.sanitizeInput(result.trim());
-
-                // ✅ Create unique ID first
+        this._buildCreationDialog({
+            title: 'modal.newRoutineTitle',
+            message: 'modal.newRoutineMessage',
+            placeholder: 'modal.newRoutinePlaceholder',
+            isOnboarding: false,
+            onCreateBlank: (inputValue) => {
+                const newCycleName = this.deps.sanitizeInput(inputValue);
                 const cycleId = `cycle_${Date.now()}`;
 
-                // ✅ Get unique name before update (uses centralized utility)
                 const existingCycles = this.deps.AppState.get()?.data?.cycles || {};
                 const { name: finalTitle, wasModified } = getUniqueCycleName(newCycleName, existingCycles);
 
@@ -465,10 +370,7 @@ export class RoutineManager {
                 const storageKey = finalTitle;
                 let finalResult = null;
 
-                // ✅ Update through state system
                 this.deps.AppState.update(state => {
-
-                    // ✅ Create new cycle in Schema 2.5 format
                     state.data.cycles[storageKey] = {
                         title: finalTitle,
                         id: cycleId,
@@ -482,17 +384,13 @@ export class RoutineManager {
                         taskOptionButtons: { ...this.deps.DEFAULT_TASK_OPTION_BUTTONS }
                     };
 
-                    // ✅ Set as active cycle using the storage key
                     state.appState.activeCycleId = storageKey;
                     state.metadata.lastModified = Date.now();
                     state.metadata.totalCyclesCreated++;
 
-                    // Store result for UI updates (avoiding window hack)
                     finalResult = { storageKey, finalTitle };
+                }, true);
 
-                }, true); // immediate save
-
-                // ✅ Clear UI & Load new miniCycle
                 const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
                 const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
                 const deleteCheckedTasks = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
@@ -505,12 +403,6 @@ export class RoutineManager {
                 if (toggleAutoReset) toggleAutoReset.checked = true;
                 if (deleteCheckedTasks) deleteCheckedTasks.checked = false;
 
-                // ✅ Sync mode selector IMMEDIATELY (synchronous) — new routine defaults
-                // to auto-cycle, but the selector still shows the previous routine's mode.
-                // Must run before refreshThemeLabels, which re-renders the help window
-                // using the cached mode from helpWindowManager.
-                // Note: Cannot use async syncModeFromToggles here because showPromptModal's
-                // callback is not awaited. Do the sync inline instead.
                 const modeSelector = this.deps.getElementById(DOM_IDS.MODE_SELECTOR);
                 if (modeSelector) {
                     modeSelector.value = 'auto-cycle';
@@ -521,7 +413,6 @@ export class RoutineManager {
                 );
                 body.classList.add('auto-cycle-mode');
 
-                // Hide task input bar (new routines default to hidden)
                 const taskInputContainer = this.deps.querySelector(DOM_SELECTORS.TASK_INPUT);
                 if (taskInputContainer) {
                     taskInputContainer.classList.add('hidden');
@@ -530,25 +421,20 @@ export class RoutineManager {
                     taskInputContainer.querySelectorAll('input, button').forEach(el => { el.tabIndex = -1; });
                 }
 
-                // ✅ Ensure UI updates
                 this.deps.hideMainMenu();
                 this.deps.updateProgressBar();
                 this.deps.checkCompleteAllButton();
                 this.deps.updateMainMenuHeader();
                 this.deps.refreshThemeLabels?.();
 
-                // ✅ Clear stale recurring info from previous routine
-                // New routines have empty recurringTemplates, so always hide the link
                 const recurringLink = this.deps.getElementById(DOM_IDS.RECURRING_INFO_LINK);
                 if (recurringLink) recurringLink.classList.remove('show');
 
-                // Also restore default empty state hint
                 const emptyHint = this.deps.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
                 if (emptyHint) {
                     emptyHint.innerHTML = getLabel('empty.noTasksHint').replace('+', '<strong>+</strong>');
                 }
 
-                // ✅ Notify undo system of new cycle
                 if (finalResult && typeof this.deps.onCycleCreated === 'function') {
                     this.deps.onCycleCreated(finalResult.storageKey).catch(err => {
                         console.warn('⚠️ Undo system cycle creation notification failed:', err);
@@ -560,6 +446,387 @@ export class RoutineManager {
                 }
             }
         });
+    }
+
+    /**
+     * Load a sample routine from the examples/sample-routines/ folder
+     * @param {string} filename - The .mcyc filename to fetch
+     * @param {Object} [options={}] - Options
+     * @param {boolean} [options.isOnboarding=false] - True = onboarding path (completeInitialSetup), false = menu path (loadMiniCycle)
+     * @param {HTMLDialogElement} [options.dialog=null] - Dialog to close on completion
+     * @returns {Promise<boolean>} True if sample loaded successfully
+     */
+    async loadSampleRoutine(filename, options = {}) {
+        const { isOnboarding = false, dialog = null } = options;
+
+        try {
+            const response = await fetch(`examples/sample-routines/${filename}`);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const sample = await response.json();
+            const appState = this.deps.AppState;
+
+            if (!this._ensureAppStateReady('sample routine loading')) {
+                throw new Error('AppState not ready');
+            }
+
+            const cycleId = `cycle_${Date.now()}`;
+            const sampleTitle = sample.title || sample.name || 'Sample Routine';
+            const existingCycles = appState.get()?.data?.cycles || {};
+            const { name: finalTitle } = getUniqueCycleName(sampleTitle, existingCycles);
+
+            await appState.update(state => {
+                state.data.cycles[finalTitle] = {
+                    id: cycleId,
+                    title: finalTitle,
+                    tasks: sample.tasks || [],
+                    autoReset: sample.autoReset !== false,
+                    cycleCount: sample.cycleCount || 0,
+                    deleteCheckedTasks: sample.deleteCheckedTasks || false,
+                    createdAt: Date.now(),
+                    theme: 'classic',
+                    recurringTemplates: {},
+                    reminders: {
+                        enabled: false,
+                        indefinite: false,
+                        dueDatesReminders: false,
+                        repeatCount: 0,
+                        frequencyValue: 30,
+                        frequencyUnit: "minutes"
+                    }
+                };
+
+                state.appState.activeCycleId = finalTitle;
+                state.metadata.lastModified = Date.now();
+                state.metadata.totalCyclesCreated++;
+            }, true);
+
+            // Close dialog if provided
+            if (dialog?.open) {
+                dialog.close();
+                dialog.remove();
+            }
+
+            // Notify undo system
+            if (typeof this.deps.onCycleCreated === 'function') {
+                this.deps.onCycleCreated(finalTitle).catch(err => {
+                    console.warn('⚠️ Undo system cycle creation notification failed:', err);
+                });
+            }
+
+            this.deps.showNotification(
+                '✨ ' + getLabel('notify.sampleLoaded', { vars: { name: sampleTitle } }),
+                'success',
+                UI_TIMEOUTS.NOTIFICATION_SLOW
+            );
+
+            if (isOnboarding) {
+                this.deps.completeInitialSetup(finalTitle, appState.get());
+            } else {
+                // Menu path — sync mode, refresh UI, load routine
+                const modeSelector = this.deps.getElementById(DOM_IDS.MODE_SELECTOR);
+                if (modeSelector) modeSelector.value = 'auto-cycle';
+                const body = this.deps.getBody();
+                body.className = body.className.replace(
+                    /\b(auto-cycle-mode|manual-cycle-mode|todo-mode-mode|todo-mode)\b/g, ''
+                );
+                body.classList.add('auto-cycle-mode');
+
+                this.deps.hideMainMenu();
+                this.deps.updateProgressBar();
+                this.deps.checkCompleteAllButton();
+                this.deps.updateMainMenuHeader();
+                this.deps.refreshThemeLabels?.();
+                this.deps.loadMiniCycle?.();
+            }
+
+            return true;
+
+        } catch (err) {
+            console.error('❌ Failed to load sample routine:', err);
+
+            // Close dialog on error too
+            if (dialog?.open) {
+                dialog.close();
+                dialog.remove();
+            }
+
+            this.deps.showNotification(
+                '❌ ' + getLabel('notify.sampleLoadFailed'),
+                'error',
+                UI_TIMEOUTS.NOTIFICATION_LONG
+            );
+
+            if (isOnboarding) {
+                this.createBasicFallbackCycle();
+            }
+
+            return false;
+        }
+    }
+
+    /**
+     * Fetch the sample routine manifest (cached after first load)
+     * @returns {Promise<Array<{file: string, name: string, emoji: string}>>}
+     * @private
+     */
+    async _fetchSampleManifest() {
+        if (_sampleManifestCache) {
+            return _sampleManifestCache;
+        }
+
+        try {
+            const response = await fetch('examples/sample-routines/manifest.json');
+            if (!response.ok) {
+                console.warn('⚠️ Failed to load sample manifest:', response.status);
+                return [];
+            }
+            const manifest = await response.json();
+            _sampleManifestCache = manifest;
+            return manifest;
+        } catch (err) {
+            console.warn('⚠️ Failed to load sample manifest:', err.message);
+            return [];
+        }
+    }
+
+    /**
+     * Build a custom creation dialog with name input + sample routine chips
+     * @param {Object} config - Dialog configuration
+     * @param {string} config.title - Dialog title label key
+     * @param {string} config.message - Dialog message label key
+     * @param {string} config.placeholder - Input placeholder label key
+     * @param {boolean} [config.isOnboarding=false] - True for onboarding path
+     * @param {Function} config.onCreateBlank - Callback when user creates a blank routine with name
+     * @private
+     */
+    async _buildCreationDialog(config) {
+        const { title, message, placeholder, isOnboarding = false, onCreateBlank } = config;
+
+        // Fetch sample manifest (cached after first call)
+        const samples = await this._fetchSampleManifest();
+
+        const dialog = document.createElement('dialog');
+        dialog.className = 'miniCycle-prompt-dialog';
+        dialog.setAttribute('role', 'dialog');
+        dialog.setAttribute('aria-modal', 'true');
+
+        const box = document.createElement('div');
+        box.className = 'miniCycle-prompt-box';
+
+        // =====================================================================
+        // VIEW 1: Name input view
+        // =====================================================================
+        const nameView = document.createElement('div');
+        nameView.className = 'creation-view active';
+
+        const titleEl = document.createElement('div');
+        titleEl.className = 'miniCycle-prompt-title';
+        titleEl.textContent = getLabel(title);
+        nameView.appendChild(titleEl);
+
+        const messageEl = document.createElement('div');
+        messageEl.className = 'miniCycle-prompt-message';
+        messageEl.textContent = getLabel(message);
+        nameView.appendChild(messageEl);
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = DOM_IDS.SAMPLE_CREATION_INPUT;
+        input.className = 'miniCycle-prompt-input';
+        input.placeholder = getLabel(placeholder);
+        nameView.appendChild(input);
+
+        // "Load Sample" button (hidden if no samples available)
+        const loadSampleBtn = document.createElement('button');
+        loadSampleBtn.type = 'button';
+        loadSampleBtn.className = 'load-sample-btn';
+        loadSampleBtn.textContent = getLabel('button.loadSample');
+        if (samples.length > 0) {
+            nameView.appendChild(loadSampleBtn);
+        }
+
+        // Buttons row
+        const buttons = document.createElement('div');
+        buttons.className = 'miniCycle-prompt-buttons';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'miniCycle-btn-cancel';
+        cancelBtn.textContent = getLabel('button.cancel');
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.type = 'button';
+        confirmBtn.className = 'miniCycle-btn-confirm';
+        confirmBtn.textContent = getLabel('button.create');
+
+        buttons.appendChild(cancelBtn);
+        buttons.appendChild(confirmBtn);
+        nameView.appendChild(buttons);
+
+        box.appendChild(nameView);
+
+        // =====================================================================
+        // VIEW 2: Sample list view (only if samples are available)
+        // =====================================================================
+        let sampleView = null;
+        let backBtn = null;
+        let sampleList = null;
+
+        if (samples.length > 0) {
+            sampleView = document.createElement('div');
+            sampleView.className = 'creation-view';
+
+            // Header row: back button + title
+            const header = document.createElement('div');
+            header.className = 'sample-list-header';
+
+            backBtn = document.createElement('button');
+            backBtn.type = 'button';
+            backBtn.className = 'sample-back-btn';
+            backBtn.textContent = getLabel('button.back');
+            header.appendChild(backBtn);
+
+            const sampleTitle = document.createElement('div');
+            sampleTitle.className = 'sample-list-title';
+            sampleTitle.textContent = getLabel('modal.chooseSample');
+            header.appendChild(sampleTitle);
+
+            sampleView.appendChild(header);
+
+            // Sample items list
+            sampleList = document.createElement('div');
+            sampleList.id = DOM_IDS.SAMPLE_CREATION_GRID;
+            sampleList.className = 'sample-list';
+
+            for (const sample of samples) {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'sample-item';
+                item.dataset.filename = sample.file;
+
+                const emojiSpan = document.createElement('span');
+                emojiSpan.className = 'sample-item-emoji';
+                emojiSpan.textContent = sample.emoji;
+                item.appendChild(emojiSpan);
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'sample-item-name';
+                nameSpan.textContent = sample.name;
+                item.appendChild(nameSpan);
+
+                sampleList.appendChild(item);
+            }
+            sampleView.appendChild(sampleList);
+
+            box.appendChild(sampleView);
+        }
+
+        dialog.appendChild(box);
+        document.body.appendChild(dialog);
+
+        // =====================================================================
+        // View switching helpers (only needed when samples exist)
+        // =====================================================================
+        const showNameView = () => {
+            if (sampleView) sampleView.classList.remove('active');
+            nameView.classList.add('active');
+            input.focus();
+        };
+
+        const showSampleView = () => {
+            nameView.classList.remove('active');
+            if (sampleView) sampleView.classList.add('active');
+        };
+
+        // =====================================================================
+        // Event handlers
+        // =====================================================================
+        const handleConfirm = () => {
+            const value = input.value.trim();
+            if (!value) {
+                input.classList.add('miniCycle-input-error');
+                input.focus();
+                return;
+            }
+            cleanup();
+            dialog.close();
+            dialog.remove();
+            onCreateBlank(value);
+        };
+
+        const handleCancel = () => {
+            cleanup();
+            dialog.close();
+            dialog.remove();
+
+            if (isOnboarding) {
+                this.preloadGettingStartedCycle();
+            }
+        };
+
+        const handleSampleClick = (e) => {
+            const item = e.target.closest('.sample-item');
+            if (!item) return;
+            const filename = item.dataset.filename;
+            cleanup();
+            this.loadSampleRoutine(filename, { isOnboarding, dialog });
+        };
+
+        const handleKeydown = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleConfirm();
+            }
+        };
+
+        const handleDialogCancel = (e) => {
+            e.preventDefault();
+            handleCancel();
+        };
+
+        // Close on backdrop click (click on dialog element itself = backdrop)
+        const handleBackdropClick = (e) => {
+            if (e.target === dialog) {
+                handleCancel();
+            }
+        };
+
+        // Wire listeners
+        confirmBtn.addEventListener('click', handleConfirm);
+        cancelBtn.addEventListener('click', handleCancel);
+        input.addEventListener('keydown', handleKeydown);
+        dialog.addEventListener('cancel', handleDialogCancel);
+        dialog.addEventListener('click', handleBackdropClick);
+
+        // Sample-specific listeners (only when samples exist)
+        if (samples.length > 0) {
+            loadSampleBtn.addEventListener('click', showSampleView);
+            backBtn.addEventListener('click', showNameView);
+            sampleList.addEventListener('click', handleSampleClick);
+        }
+
+        // Cleanup — removes ALL listeners
+        const cleanup = () => {
+            confirmBtn.removeEventListener('click', handleConfirm);
+            cancelBtn.removeEventListener('click', handleCancel);
+            input.removeEventListener('keydown', handleKeydown);
+            dialog.removeEventListener('cancel', handleDialogCancel);
+            dialog.removeEventListener('click', handleBackdropClick);
+
+            if (samples.length > 0) {
+                loadSampleBtn.removeEventListener('click', showSampleView);
+                backBtn.removeEventListener('click', showNameView);
+                sampleList.removeEventListener('click', handleSampleClick);
+            }
+        };
+
+        // Show dialog and focus input
+        dialog.showModal();
+        input.focus();
     }
 }
 

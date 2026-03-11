@@ -205,6 +205,7 @@ body.dark-mode .settings-modal-content,
 body.dark-mode .stats-panel,
 body.dark-mode .themes-modal-content,
 body.dark-mode .feedback-modal-content,
+body.dark-mode .mini-cycle-switch-modal-content,
 body.dark-mode .modal-panel {
     background-color: var(--dark-surface-primary);
     color: var(--theme-text-primary);
@@ -213,6 +214,146 @@ body.dark-mode .modal-panel {
 
 body.dark-mode .stats-panel {
     background-color: rgba(42, 42, 42, 0.92);
+}
+
+/* =============================================================================
+   DARK MODE ROUTINE SWITCHER MODAL
+   ============================================================================= */
+
+body.dark-mode .mini-cycle-switch-title {
+    border-bottom-color: rgba(255, 255, 255, 0.15);
+}
+
+/* --- Search --- */
+body.dark-mode .routine-search-input {
+    background: var(--theme-input-bg);
+    color: var(--theme-text-primary);
+    border-color: var(--dark-button-hover-bg);
+}
+
+body.dark-mode .routine-search-input::placeholder {
+    color: var(--theme-text-muted);
+}
+
+/* --- List container --- */
+body.dark-mode .mini-cycle-switch-list {
+    background: var(--theme-input-bg);
+    border-color: var(--dark-button-hover-bg);
+}
+
+/* --- List items --- */
+body.dark-mode .mini-cycle-switch-item {
+    color: var(--theme-text-primary);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .mini-cycle-switch-item:hover,
+body.dark-mode .mini-cycle-switch-item:focus-visible {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* --- Sort / filter controls --- */
+body.dark-mode .routine-sort-btn {
+    background: var(--dark-surface-secondary);
+    color: var(--theme-text-secondary);
+    border-color: var(--dark-button-hover-bg);
+}
+
+body.dark-mode .routine-sort-btn:hover {
+    background: var(--dark-button-bg);
+    border-color: var(--dark-border-subtle);
+}
+
+body.dark-mode .routine-sort-btn.active {
+    border-color: transparent;
+}
+
+body.dark-mode .routine-sort-label {
+    color: var(--theme-text-muted);
+}
+
+body.dark-mode .routine-filter-select {
+    background: var(--dark-surface-secondary);
+    color: var(--theme-text-secondary);
+    border-color: var(--dark-button-hover-bg);
+}
+
+body.dark-mode .routine-filter-select:hover {
+    border-color: var(--dark-border-subtle);
+}
+
+/* --- Preview panels (mobile + desktop) --- */
+body.dark-mode .switch-preview-window,
+body.dark-mode .desktop-preview-window {
+    background: var(--dark-surface-secondary);
+    border-color: var(--dark-button-hover-bg);
+    color: var(--theme-text-secondary);
+}
+
+body.dark-mode .switch-preview-window .preview-task,
+body.dark-mode .desktop-preview-window .preview-task {
+    background: var(--dark-surface-deep);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+    color: var(--theme-text-secondary);
+}
+
+body.dark-mode .desktop-preview-hint,
+body.dark-mode .desktop-preview-date,
+body.dark-mode .switch-preview-date,
+body.dark-mode .switch-preview-hint {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .routine-panel-title {
+    color: var(--dark-text-dim);
+}
+
+/* --- Action buttons (duplicate, edit, delete, theme) --- */
+body.dark-mode .switch-buttons {
+    color: var(--theme-text-secondary);
+}
+
+body.dark-mode .switch-buttons:hover {
+    color: var(--theme-text-primary);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .switch-theme[aria-expanded="true"] {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--color-primary-light);
+}
+
+/* --- Theme picker chips --- */
+body.dark-mode .theme-picker-row {
+    background: var(--dark-surface-secondary);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .theme-chip {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--theme-text-secondary);
+}
+
+body.dark-mode .theme-chip:hover:not([aria-disabled="true"]) {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--theme-text-primary);
+}
+
+/* --- Cancel + Import buttons --- */
+body.dark-mode .mini-cycle-switch-btn.cancel-btn {
+    background: var(--dark-button-bg);
+}
+
+body.dark-mode .mini-cycle-switch-btn.cancel-btn:hover {
+    background: var(--dark-button-hover-bg);
+}
+
+body.dark-mode .mini-cycle-upload-btn {
+    background: var(--dark-button-bg);
+}
+
+body.dark-mode .mini-cycle-upload-btn:hover {
+    background: var(--dark-button-hover-bg);
 }
 
 /* =============================================================================

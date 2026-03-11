@@ -1,0 +1,142 @@
+{
+  "name": "imported_1759571694212",
+  "title": "🏃 Cardio & Core Routine",
+  "tasks": [
+    {
+      "id": "task-1759571694212-631",
+      "text": "🧘 Warm-up: 3 min march in place + arm circles",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-380",
+      "text": "🏃 30 sec high knees → 30 sec rest × 4",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-793",
+      "text": "🦵 Mountain Climbers – 3 rounds × 20 sec on / 20 sec rest",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-735",
+      "text": "🧍 Jump Squats (or Bodyweight Squats) – 3 sets × 12 reps",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-130",
+      "text": "💥 Sit-ups or Crunches – 3 sets × 15 reps",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-113",
+      "text": "🔥 Bicycle Kicks – 3 rounds × 30 sec",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-695",
+      "text": "⏱ 1‑min plank hold (modify as needed)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-292",
+      "text": "🧘 Cooldown: gentle stretch, deep breathing (3–5 min)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": false,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false,
+  "taskOptionButtons": null,
+  "recurringTemplates": {},
+  "reminders": null,
+  "theme": "classic",
+  "createdAt": 1759571694212
+}

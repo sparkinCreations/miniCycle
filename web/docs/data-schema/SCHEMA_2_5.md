@@ -84,10 +84,10 @@ Schema 2.5 represents the current data structure for miniCycle, consolidating al
           recurring: false,                // Recurring task option
           dueDate: false,                  // Due date option
           reminders: false,                // Reminders option
-          deleteWhenComplete: false        // Delete when complete option
+          deleteWhenComplete: false        // 🧹 Clear on Reset / Marked for Clearing (per-mode auto-remove)
         },
         history: [],                       // Per-routine activity log
-        clearedTasks: {                    // For To-Do mode
+        clearedTasks: {                    // Cleared tasks (To-Do mode clears + cycle reset auto-removes)
           items: [],                       // Array of cleared task records
           totalCleared: 0                  // Total tasks cleared in this routine
         }
@@ -217,7 +217,7 @@ Each cycle contains:
 | `lastModified` | number | Last modification timestamp |
 | `taskOptionButtons` | object | Per-cycle button visibility settings |
 | `history` | array | Per-routine activity log entries |
-| `clearedTasks` | object | Cleared tasks tracking (To-Do mode) |
+| `clearedTasks` | object | Cleared tasks tracking (To-Do mode + cycle reset auto-removes) |
 | `clearedTasks.items` | array | Array of cleared task records |
 | `clearedTasks.totalCleared` | number | Total tasks cleared in this routine |
 
@@ -254,7 +254,7 @@ Each item in `clearedTasks.items`:
 | `recurring` | Recurring task option |
 | `dueDate` | Due date option |
 | `reminders` | Reminders option |
-| `deleteWhenComplete` | Delete when complete option |
+| `deleteWhenComplete` | 🧹 Clear on Reset (cycle) / Marked for Clearing (to-do) |
 
 #### Task Object Structure
 
@@ -273,7 +273,8 @@ Each task object in the `tasks` array:
 | `schemaVersion` | number | Schema version (2.5) |
 | `createdAt` | string | ISO timestamp of creation |
 | `completedAt` | string\|null | ISO timestamp of completion |
-| `deleteWhenComplete` | boolean | Auto-remove on reset |
+| `deleteWhenComplete` | boolean | 🧹 Active flag for current mode (synced from deleteWhenCompleteSettings) |
+| `deleteWhenCompleteSettings` | object | Per-mode settings: `{ cycle: boolean, todo: boolean }` |
 
 #### Recurring Settings Structure
 

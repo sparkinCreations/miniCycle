@@ -231,7 +231,7 @@ When using the complete format, each cycle is stored in `data.cycles`:
 | `createdAt` | number | No | Unix timestamp (milliseconds) |
 | `recurringTemplates` | object | No | Recurring task templates |
 | `history` | object | No | Per-routine activity log (v1.685+) |
-| `clearedTasks` | object | No | Cleared tasks tracking for To-Do mode (v1.685+) |
+| `clearedTasks` | object | No | Cleared tasks tracking (To-Do mode + cycle reset auto-removes) (v1.685+) |
 
 ### History Object (v1.685+)
 

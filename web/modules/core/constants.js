@@ -800,7 +800,11 @@ export const DOM_IDS = Object.freeze({
 
     // ---- Modal Root IDs (used by modalRegistry) ----
     ROUTINE_SWITCHER_MODAL: 'routine-switcher-modal',
-    SETTINGS_MODAL: 'settings-modal'
+    SETTINGS_MODAL: 'settings-modal',
+
+    // ---- Sample Creation Dialog ----
+    SAMPLE_CREATION_INPUT: 'sample-creation-input',
+    SAMPLE_CREATION_GRID: 'sample-creation-grid'
 });
 
 // ============================================================================

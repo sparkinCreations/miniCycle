@@ -414,6 +414,16 @@ export class HistoryManager {
     }
 
     /**
+     * Re-render modal content if the modal is currently open.
+     * Called by undo/redo to refresh cleared tasks tab without closing.
+     */
+    refreshIfOpen() {
+        if (this.modalOverlay?.open) {
+            this._renderModalContent();
+        }
+    }
+
+    /**
      * Close the history modal
      */
     closeModal() {

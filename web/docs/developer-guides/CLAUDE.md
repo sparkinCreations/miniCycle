@@ -210,7 +210,7 @@ All notification messages, modal text, ARIA labels, and button text should use `
         taskOptionButtons: { /* per-cycle button visibility */ },
         recurringTemplates: [],
         history: [],           // Per-routine activity log
-        clearedTasks: { items: [], totalCleared: 0 }  // For To-Do mode
+        clearedTasks: { items: [], totalCleared: 0 }  // To-Do mode clears + cycle reset auto-removes
       }
     }
   },

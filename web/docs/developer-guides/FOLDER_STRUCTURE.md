@@ -454,7 +454,7 @@ miniCycle-main.js (entrypoint)
 - `statsPanel.js` (1,841 lines) - Statistics panel and view switching
 - `achievementsManager.js` (1,018 lines) - Achievement/badge system with OR-based unlocking
 - `historyManager.js` (984 lines) - Per-routine activity logging and history modal
-- `clearedTasksManager.js` (675 lines) - Cleared task tracking for To-Do mode
+- `clearedTasksManager.js` (675 lines) - Cleared task tracking (To-Do mode + cycle reset auto-removes)
 
 **Philosophy:** Features should be optional and independently testable. The app works without them.
 

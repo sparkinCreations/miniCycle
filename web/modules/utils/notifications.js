@@ -1640,6 +1640,13 @@ async setDefaultPosition(notificationContainer) {
       cancelBtn.click();
     });
 
+    // Backdrop click-to-close (clicking outside the modal box)
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        cancelBtn.click();
+      }
+    });
+
     // Wire choice buttons
     choiceBtns.forEach(btn => {
       btn.onclick = () => {
@@ -1727,6 +1734,13 @@ async setDefaultPosition(notificationContainer) {
     overlay.addEventListener('cancel', (e) => {
       e.preventDefault();
       cancelBtn.click();
+    });
+
+    // Backdrop click-to-close (clicking outside the prompt box)
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        cancelBtn.click();
+      }
     });
 
     overlay._keydownHandler = (e) => {
