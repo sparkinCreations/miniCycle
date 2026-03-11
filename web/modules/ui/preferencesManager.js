@@ -56,7 +56,7 @@ const DEFAULT_COLORS = {
 
 // Default pattern color (white with 5% opacity)
 const DEFAULT_PATTERN_COLOR = '#ffffff';
-const DEFAULT_PATTERN_OPACITY = 0.05;
+const DEFAULT_PATTERN_OPACITY = 0.04;
 
 // Checkmark style options ('fitted' is the default — ✔ sized to fit inside the circle)
 const CHECKMARK_DEFAULT = 'fitted';

@@ -1,3 +1,7 @@
+## [2.071] - 2026-03-11
+- chore: update version to 2.070 across all relevant files; enhance routine switcher modal and adjust default pattern opacity
+
+
 ## [2.070] - 2026-03-11
 - feat: enhance routine switcher modal with improved layout and desktop preview functionality; add new constants and styles
 
