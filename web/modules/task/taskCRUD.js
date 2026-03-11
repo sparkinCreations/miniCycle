@@ -359,6 +359,17 @@ export async function editTaskImpl(taskItem, deps = {}) {
         input.setAttribute('aria-label', getLabel('action.editTaskTitle'));
         taskLabel.parentNode.insertBefore(input, taskLabel.nextSibling);
 
+        // Disable drag while editing so the text cursor works
+        const wasDraggable = taskItem.getAttribute('draggable');
+        const wasWebkitUserDrag = taskItem.style.webkitUserDrag;
+        const wasUserSelect = taskItem.style.userSelect;
+        const wasCursor = taskItem.style.cursor;
+        taskItem.setAttribute('draggable', 'false');
+        taskItem.style.webkitUserDrag = 'none';
+        taskItem.style.userSelect = 'text';
+        taskItem.style.cursor = 'text';
+        input.style.cursor = 'text';
+
         input.focus();
         input.select();
 
@@ -376,6 +387,12 @@ export async function editTaskImpl(taskItem, deps = {}) {
             input.remove();
             taskLabel.style.display = '';
             if (taskOptions) taskOptions.style.visibility = '';
+            // Restore draggable state
+            if (wasDraggable) taskItem.setAttribute('draggable', wasDraggable);
+            else taskItem.removeAttribute('draggable');
+            taskItem.style.webkitUserDrag = wasWebkitUserDrag;
+            taskItem.style.userSelect = wasUserSelect;
+            taskItem.style.cursor = wasCursor;
 
             if (!newText || newText === oldText) return;
 

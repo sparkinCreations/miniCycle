@@ -611,6 +611,8 @@ export const DOM_IDS = Object.freeze({
     SWITCH_PREVIEW_WINDOW: 'switch-preview-window',
     SWITCH_PREVIEW_DATE: 'switch-preview-date',
     DESKTOP_PREVIEW_WINDOW: 'desktop-preview-window',
+    DESKTOP_PREVIEW_TITLE: 'desktop-preview-title',
+    DESKTOP_PREVIEW_HINT: 'desktop-preview-hint',
     STORAGE_REFRESH_BTN: 'storage-refresh-btn',
     PREVIEW_REVIEW_OVERLAY: 'preview-review-overlay',
 

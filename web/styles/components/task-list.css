@@ -841,6 +841,7 @@ body.checkmark-circle .task input[type="checkbox"]::after {
     max-width: calc(100% - 120px);
     margin-right: var(--space-30);
     box-shadow: 0 0 0 2px rgba(76, 121, 255, 0.25);
+    pointer-events: auto;
 }
 
 .mini-cycle-switch-item input[type="text"]:focus-visible {
