@@ -595,8 +595,8 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                     <div class="preferences-color-row">
                         <span class="pref-color-icon">&#x1F4A7;</span>
                         <label for="pref-pattern-opacity">${getLabel('prefs.patternOpacity')}</label>
-                        <input type="range" id="pref-pattern-opacity" min="1" max="25" value="7" step="1" aria-valuetext="Opacity: 7%" />
-                        <span class="pref-range-value" id="pref-pattern-opacity-value">7%</span>
+                        <input type="range" id="pref-pattern-opacity" min="1" max="25" value="5" step="1" aria-valuetext="Opacity: 5%" />
+                        <span class="pref-range-value" id="pref-pattern-opacity-value">5%</span>
                         <button class="preferences-reset-btn" data-target="pref-pattern-opacity" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <!-- Background Image Upload -->

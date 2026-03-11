@@ -54,9 +54,9 @@ const DEFAULT_COLORS = {
     panelText: '#ffffff'
 };
 
-// Default pattern color (white with 7% opacity)
+// Default pattern color (white with 5% opacity)
 const DEFAULT_PATTERN_COLOR = '#ffffff';
-const DEFAULT_PATTERN_OPACITY = 0.07;
+const DEFAULT_PATTERN_OPACITY = 0.05;
 
 // Checkmark style options ('fitted' is the default — ✔ sized to fit inside the circle)
 const CHECKMARK_DEFAULT = 'fitted';
