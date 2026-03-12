@@ -348,7 +348,13 @@ function resetTasksData(context, deps) {
             return task ? {
                 text: task.text,
                 highPriority: task.highPriority || false,
-                dueDate: task.dueDate
+                dueDate: task.dueDate,
+                priorityColor: task.priorityColor || null,
+                remindersEnabled: task.remindersEnabled || false,
+                deleteWhenComplete: task.deleteWhenComplete || false,
+                deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || null,
+                recurring: task.recurring || false,
+                recurringSettings: task.recurringSettings || null
             } : null;
         }).filter(Boolean);
 
@@ -638,7 +644,13 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
         return task ? {
             text: task.text,
             highPriority: task.highPriority || false,
-            dueDate: task.dueDate
+            dueDate: task.dueDate,
+            priorityColor: task.priorityColor || null,
+            remindersEnabled: task.remindersEnabled || false,
+            deleteWhenComplete: task.deleteWhenComplete || false,
+            deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || null,
+            recurring: task.recurring || false,
+            recurringSettings: task.recurringSettings || null
         } : null;
     }).filter(Boolean);
 

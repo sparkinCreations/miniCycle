@@ -72,12 +72,23 @@ export class ClearedTasksManager {
             return;
         }
 
+        const activeCycle = state.data.cycles[activeCycleId];
+        const clearedInMode = activeCycle?.deleteCheckedTasks ? 'todo' : 'cycle';
+
         const entry = {
             id: `clr-${Date.now()}-${this._idCounter++}-${Math.random().toString(36).substr(2, 5)}`,
             taskText: task.text,
             clearedAt: Date.now(),
             wasHighPriority: task.highPriority || false,
-            hadDueDate: !!task.dueDate
+            hadDueDate: !!task.dueDate,
+            dueDate: task.dueDate || null,
+            priorityColor: task.priorityColor || null,
+            remindersEnabled: task.remindersEnabled || false,
+            deleteWhenComplete: task.deleteWhenComplete || false,
+            deleteWhenCompleteSettings: task.deleteWhenCompleteSettings ? structuredClone(task.deleteWhenCompleteSettings) : null,
+            recurring: task.recurring || false,
+            recurringSettings: task.recurringSettings ? structuredClone(task.recurringSettings) : null,
+            clearedInMode
         };
 
         this.deps.AppState.update(s => {
@@ -122,12 +133,23 @@ export class ClearedTasksManager {
 
         if (!activeCycleId) return;
 
+        const activeCycle = state.data.cycles[activeCycleId];
+        const clearedInMode = activeCycle?.deleteCheckedTasks ? 'todo' : 'cycle';
+
         const entries = tasks.map(task => ({
             id: `clr-${Date.now()}-${this._idCounter++}-${Math.random().toString(36).substr(2, 5)}`,
             taskText: task.text,
             clearedAt: Date.now(),
             wasHighPriority: task.highPriority || false,
-            hadDueDate: !!task.dueDate
+            hadDueDate: !!task.dueDate,
+            dueDate: task.dueDate || null,
+            priorityColor: task.priorityColor || null,
+            remindersEnabled: task.remindersEnabled || false,
+            deleteWhenComplete: task.deleteWhenComplete || false,
+            deleteWhenCompleteSettings: task.deleteWhenCompleteSettings ? structuredClone(task.deleteWhenCompleteSettings) : null,
+            recurring: task.recurring || false,
+            recurringSettings: task.recurringSettings ? structuredClone(task.recurringSettings) : null,
+            clearedInMode
         }));
 
         this.deps.AppState.update(s => {
@@ -261,9 +283,20 @@ export class ClearedTasksManager {
         let created = 0;
         for (const entry of toRecreate) {
             try {
-                const result = await addTask(entry.taskText, {
+                const recreateOptions = {
                     highPriority: entry.wasHighPriority
-                });
+                };
+                // Restore preserved attributes (backward-compatible with older entries)
+                if (entry.dueDate) recreateOptions.dueDate = entry.dueDate;
+                if (entry.priorityColor) recreateOptions.priorityColor = entry.priorityColor;
+                if (entry.remindersEnabled) recreateOptions.remindersEnabled = true;
+                // Pass per-mode settings only — createOrUpdateTaskData derives the active
+                // deleteWhenComplete value from the current mode + these settings
+                if (entry.deleteWhenCompleteSettings) recreateOptions.deleteWhenCompleteSettings = structuredClone(entry.deleteWhenCompleteSettings);
+                if (entry.recurring) recreateOptions.recurring = true;
+                if (entry.recurringSettings) recreateOptions.recurringSettings = structuredClone(entry.recurringSettings);
+
+                const result = await addTask(entry.taskText, recreateOptions);
                 if (result) {
                     created++;
                 } else {
@@ -694,7 +727,11 @@ export class ClearedTasksManager {
                         gap: 8px;
                     ">
                         <span>${dateStr} ${timeStr}</span>
-                        ${entry.wasHighPriority ? `<span style="color: var(--danger-color, #dc3545);">${getLabel('history.highPriority')}</span>` : ''}
+                        ${entry.wasHighPriority ? (() => { const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(entry.priorityColor) ? entry.priorityColor : '#dc3545'; return `<span style="color: var(--danger-color, #dc3545); display: inline-flex; align-items: center; gap: 3px;">${getLabel('history.highPriority')} <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${safeColor};vertical-align:middle;" aria-hidden="true"></span></span>`; })() : ''}
+                        ${entry.dueDate ? `<span style="color: var(--color-blue-medium, #3498db);">${getLabel('history.hasDueDate')} ${new Date(entry.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>` : ''}
+                        ${entry.remindersEnabled ? `<span style="color: var(--color-orange, #e67e22);">${getLabel('history.hasReminders')}</span>` : ''}
+                        ${entry.recurring ? `<span style="color: var(--color-game-primary, #27ae60);">${getLabel('history.isRecurring')}</span>` : ''}
+                        ${entry.clearedInMode ? `<span style="color: var(--color-gray-400, #a3a3a3);">${entry.clearedInMode === 'todo' ? getLabel('history.clearedInToDoMode') : getLabel('history.clearedInCycleMode')}</span>` : ''}
                     </div>
                 </div>
             </div>

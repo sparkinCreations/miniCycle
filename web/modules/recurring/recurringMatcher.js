@@ -7,6 +7,8 @@
  * @module recurringMatcher
  */
 
+import { normalizeRecurringSettings } from './recurringSettings.js';
+
 // ============================================
 // DATE UTILITIES (injected via setDateUtils)
 // ============================================
@@ -40,6 +42,10 @@ const getDateUtils = () => {
  * @returns {boolean} True if task should appear now
  */
 export function shouldTaskRecurNow(settings, now = new Date()) {
+    // Normalize to enforce defaults for empty selections (handles legacy data
+    // saved before the empty-selection fix was added to the normalizer)
+    settings = normalizeRecurringSettings(settings);
+
     // END DATE VALIDATION: Check if we're past the end date
     if (settings.untilDate) {
         const endDate = getDateUtils().parseDateAsLocal(settings.untilDate);
@@ -124,7 +130,7 @@ function matchDaily(settings, now) {
  * Match weekly frequency
  */
 function matchWeekly(settings, now, weekday) {
-    // If no specific days selected, recur every day of the week
+    // Normalizer defaults empty days to weekdays; this guard handles any edge cases
     if (settings.weekly?.days?.length > 0 && !settings.weekly.days.includes(weekday)) {
         return false;
     }
@@ -242,7 +248,7 @@ function matchMonthly(settings, now, day) {
         return true;
     }
 
-    // PATTERN 3: No specific pattern - recur every day
+    // PATTERN 3: Safety fallback — normalizer should have set useSpecificDays + days
     if (settings.time) {
         const hour = settings.time.military
             ? settings.time.hour
@@ -258,7 +264,7 @@ function matchMonthly(settings, now, day) {
  * Match yearly frequency
  */
 function matchYearly(settings, now, day, month) {
-    // If no specific months selected, recur every month of the year
+    // Normalizer defaults empty months to current month; this guard handles edge cases
     if (settings.yearly?.months?.length > 0 && !settings.yearly.months.includes(month)) {
         return false;
     }
@@ -270,7 +276,7 @@ function matchYearly(settings, now, day, month) {
             ? daysByMonth.all || []
             : daysByMonth[month] || [];
 
-        // If no specific days selected, recur every day of the month
+        // Normalizer defaults empty selections; this guard handles edge cases
         if (days.length > 0 && !days.includes(day)) {
             return false;
         }

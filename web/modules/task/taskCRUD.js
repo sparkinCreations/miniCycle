@@ -279,6 +279,12 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         const createDataFn = deps.createOrUpdateTaskData || _deps.createOrUpdateTaskData;
         const taskData = createDataFn?.(taskContext);
 
+        // Sync derived deleteWhenComplete back to context so DOM creation sees it
+        if (taskData && taskContext.deleteWhenComplete === undefined) {
+            taskContext.deleteWhenComplete = taskData.deleteWhenComplete;
+            taskContext.deleteWhenCompleteSettings = taskData.deleteWhenCompleteSettings;
+        }
+
         // Create DOM elements
         const createDOMFn = deps.createTaskDOMElements || _deps.createTaskDOMElements;
         const taskElements = createDOMFn?.(taskContext, taskData);
