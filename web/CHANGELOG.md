@@ -1,3 +1,7 @@
+## [2.079] - 2026-03-12
+- feat: enhance recurring settings normalization with default date anchoring for frequency types
+
+
 ## [2.078] - 2026-03-12
 - fix: update clearedTasks handling in undo/redo functions to reset to null when no tasks are present
 

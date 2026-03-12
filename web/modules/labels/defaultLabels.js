@@ -270,7 +270,7 @@ export const DEFAULT_LABELS = deepFreeze({
     stats: {
         title:              'Stats',
         currentRoutine:     'Current Routine',
-        completion:         '{completed} of {total} {taskWord} Completed',
+        completion:         '{completed} of {total} {taskWord} Completed This Cycle',
         cyclesCompleted:    '{count} {cycleWord} Completed',
         clearedTasks:       '{count} Cleared {taskWord}',
         milestoneRewards:   'Milestone Rewards',
@@ -513,6 +513,7 @@ export const DEFAULT_LABELS = deepFreeze({
         changeThemeChanged:      'Theme changed',
         changeCycleCount:        'Cycle count changed',
         changeClearedTasks:      'Cleared tasks changed',
+        changeMultiple:          '{count} changes',
         changeGeneric:           'Change',
         undoStorageFull:         'Storage full - undo history not saved. Consider exporting your data.',
         taskOptionsUpdated:      'Task options updated',
