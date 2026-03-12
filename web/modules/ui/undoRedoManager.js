@@ -1014,7 +1014,7 @@ export async function performStateBasedUndo() {
       if ('deleteCheckedTasks' in snap) cycle.deleteCheckedTasks = snap.deleteCheckedTasks;
       if ('cycleCount' in snap) cycle.cycleCount = snap.cycleCount;  // ✅ Restore cycle count
       if ('theme' in snap) cycle.theme = snap.theme;
-      if ('clearedTasks' in snap) cycle.clearedTasks = snap.clearedTasks ? structuredClone(snap.clearedTasks) : cycle.clearedTasks;
+      if ('clearedTasks' in snap) cycle.clearedTasks = snap.clearedTasks ? structuredClone(snap.clearedTasks) : null;
 
       // ✅ Delta-based userProgress adjustment
       // Reverse global counters by the per-routine diff between snapshots
@@ -1181,7 +1181,7 @@ export async function performStateBasedRedo() {
       if ('deleteCheckedTasks' in snap) cycle.deleteCheckedTasks = snap.deleteCheckedTasks;
       if ('cycleCount' in snap) cycle.cycleCount = snap.cycleCount;  // ✅ Restore cycle count
       if ('theme' in snap) cycle.theme = snap.theme;
-      if ('clearedTasks' in snap) cycle.clearedTasks = snap.clearedTasks ? structuredClone(snap.clearedTasks) : cycle.clearedTasks;
+      if ('clearedTasks' in snap) cycle.clearedTasks = snap.clearedTasks ? structuredClone(snap.clearedTasks) : null;
 
       // ✅ Delta-based userProgress adjustment
       // Restore global counters by the per-routine diff between snapshots
