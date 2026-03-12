@@ -157,17 +157,16 @@ export function buildRecurringSettingsFromPanel(deps, state) {
             }
         } else {
             // Time block for non-specific-dates
-            const timeId = frequency;
-            const timeEnabled = deps.getElementById(`${timeId}-specific-time`)?.checked;
+            const timeEnabled = deps.getElementById(DOM_IDS.freqSpecificTime(frequency))?.checked;
 
             // Time block for non-specific-dates - EXCLUDE hourly!
             if (frequency !== "hourly" && timeEnabled) {
                 settings.useSpecificTime = true;
                 settings.time = {
-                    hour: parseInt(deps.getElementById(`${timeId}-hour`)?.value) || 0,
-                    minute: parseInt(deps.getElementById(`${timeId}-minute`)?.value) || 0,
-                    meridiem: deps.getElementById(`${timeId}-meridiem`)?.value,
-                    military: deps.getElementById(`${timeId}-military`)?.checked
+                    hour: parseInt(deps.getElementById(DOM_IDS.freqHour(frequency))?.value) || 0,
+                    minute: parseInt(deps.getElementById(DOM_IDS.freqMinute(frequency))?.value) || 0,
+                    meridiem: deps.getElementById(DOM_IDS.freqMeridiem(frequency))?.value,
+                    military: deps.getElementById(DOM_IDS.freqMilitary(frequency))?.checked
                 };
             }
 
@@ -257,7 +256,7 @@ export function buildRecurringSettingsFromPanel(deps, state) {
 export function populateRecurringFormWithSettings(deps, settings) {
 
     try {
-        // Frequency dropdown
+        // Frequency dropdown — dispatches 'change' to show correct frequency section
         const frequencySelect = deps.getElementById(DOM_IDS.RECUR_FREQUENCY);
         if (frequencySelect && settings.frequency) {
             frequencySelect.value = settings.frequency;
@@ -268,14 +267,52 @@ export function populateRecurringFormWithSettings(deps, settings) {
         const indefiniteCheckbox = deps.getElementById(DOM_IDS.RECUR_INDEFINITELY);
         if (indefiniteCheckbox) {
             indefiniteCheckbox.checked = settings.indefinitely !== false;
+            indefiniteCheckbox.dispatchEvent(new Event('change'));
         }
 
-        // Repeat count
-        if (settings.indefinitely === false && settings.count) {
-            const countInput = deps.getElementById(DOM_IDS.RECUR_COUNT_INPUT);
-            if (countInput) {
-                countInput.value = settings.count;
+        // Duration type: count or until date
+        if (settings.indefinitely === false) {
+            if (settings.count) {
+                const countRadio = deps.getElementById(DOM_IDS.RECUR_COUNT_RADIO);
+                if (countRadio) {
+                    countRadio.checked = true;
+                    countRadio.dispatchEvent(new Event('change'));
+                }
+                const countInput = deps.getElementById(DOM_IDS.RECUR_COUNT_INPUT);
+                if (countInput) {
+                    countInput.value = settings.count;
+                }
+            } else if (settings.untilDate) {
+                const untilRadio = deps.getElementById(DOM_IDS.RECUR_UNTIL_RADIO);
+                if (untilRadio) {
+                    untilRadio.checked = true;
+                    untilRadio.dispatchEvent(new Event('change'));
+                }
+                const untilDateInput = deps.getElementById(DOM_IDS.RECUR_UNTIL_DATE);
+                if (untilDateInput) {
+                    untilDateInput.value = settings.untilDate;
+                }
             }
+        }
+
+        // Time settings — populate if a specific time is set
+        if (settings.time && settings.useSpecificTime !== false) {
+            const freq = settings.frequency || 'daily';
+            const timeCheckbox = deps.getElementById(DOM_IDS.freqSpecificTime(freq));
+            if (timeCheckbox) {
+                timeCheckbox.checked = true;
+                timeCheckbox.dispatchEvent(new Event('change'));
+            }
+
+            const hourInput = deps.getElementById(DOM_IDS.freqHour(freq));
+            const minuteInput = deps.getElementById(DOM_IDS.freqMinute(freq));
+            const meridiemSelect = deps.getElementById(DOM_IDS.freqMeridiem(freq));
+            const militaryCheckbox = deps.getElementById(DOM_IDS.freqMilitary(freq));
+
+            if (hourInput) hourInput.value = settings.time.hour;
+            if (minuteInput) minuteInput.value = settings.time.minute;
+            if (meridiemSelect) meridiemSelect.value = settings.time.meridiem || 'AM';
+            if (militaryCheckbox) militaryCheckbox.checked = !!settings.time.military;
         }
 
         // Update the summary display via callback

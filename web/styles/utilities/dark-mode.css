@@ -674,6 +674,10 @@ body.dark-mode #recurring-summary-preview {
     color: var(--theme-text-primary);
 }
 
+body.dark-mode .recurring-scroll-area {
+    border-bottom-color: var(--dark-border-subtle);
+}
+
 /* =============================================================================
    DARK MODE GAMES
    ============================================================================= */

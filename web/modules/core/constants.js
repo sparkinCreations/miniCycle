@@ -723,8 +723,18 @@ export const DOM_IDS = Object.freeze({
     YEARLY_DAY_CONTAINER: 'yearly-day-container',
     YEARLY_SPECIFIC_MONTHS: 'yearly-specific-months',
     YEARLY_SPECIFIC_DAYS_LABEL: 'yearly-specific-days-label',
+    YEARLY_DAYS_FOR_MONTH_LABEL: 'yearly-days-for-month-label',
     YEARLY_APPLY_ALL: 'yearly-apply-all',
+    YEARLY_APPLY_ALL_LABEL: 'yearly-apply-all-label',
     BIWEEKLY_SPECIFIC_DAYS: 'biweekly-specific-days',
+
+    // ---- Frequency Time Inputs (parametric by frequency name) ----
+    freqSpecificTime: (freq) => `${freq}-specific-time`,
+    freqHour: (freq) => `${freq}-hour`,
+    freqMinute: (freq) => `${freq}-minute`,
+    freqMeridiem: (freq) => `${freq}-meridiem`,
+    freqMilitary: (freq) => `${freq}-military`,
+    freqTimeContainer: (freq) => `${freq}-time-container`,
 
     // ---- Time Picker Sections (surfaced outside advanced) ----
     TIME_PICKER_SECTION: 'time-picker-section',

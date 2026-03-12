@@ -22,18 +22,6 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
         <p>${getLabel('recurring.emptyState')}</p>
       </div>
     </div>
-    <!-- Add Task Section -->
-    <div id="add-recurring-task-section">
-      <button id="add-recurring-task-btn" class="add-recurring-task-btn" title="${getLabel('recurring.addTaskTitle')}">
-        ${getLabel('recurring.addToRecurring')}
-      </button>
-      <div id="available-tasks-list" class="available-tasks-list hidden">
-        <p class="available-tasks-header">${getLabel('recurring.selectTasksHeader')} <button id="select-all-add-recurring" class="select-all-add-recurring-btn">${getLabel('recurring.selectAll')}</button></p>
-        <ul id="non-recurring-tasks" aria-label="${getLabel('recurring.ariaAvailableTasks')}"></ul>
-        <p id="no-available-tasks" class="no-available-tasks hidden">${getLabel('recurring.noAvailableTasks')}</p>
-        <button id="confirm-add-recurring" class="confirm-add-recurring-btn hidden">${getLabel('recurring.addToRecurringShort')}</button>
-      </div>
-    </div>
     <div id="recurring-summary-preview" class="hidden">
       <div class="summary-box">
         <p id="recurring-preview-text"></p>
@@ -382,8 +370,14 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
           ${getLabel('recurring.chooseSpecificDaysOfMonth')}
         </label>
 
+        <label id="yearly-apply-all-label" class="apply-all-label hidden">
+          <input type="checkbox" id="yearly-apply-days-to-all" name="yearly-apply-days-to-all" aria-describedby="yearly-apply-description">
+          ${getLabel('recurring.applyDaysToAllMonths')}
+        </label>
+        <p id="yearly-apply-description" class="visually-hidden">${getLabel('recurring.applyDaysToAllMonthsDesc')}</p>
+
         <div id="yearly-day-container" class="hidden" aria-live="polite">
-          <p class="section-label">${getLabel('recurring.selectDays')}</p>
+          <p class="section-label">${getLabel('recurring.selectMonthForDays')}</p>
 
           <select id="yearly-month-select" aria-label="${getLabel('recurring.ariaMonthForDays')}">
             <option value="1">${getLabel('recurring.monthJanuary')}</option>
@@ -400,11 +394,7 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
             <option value="12">${getLabel('recurring.monthDecember')}</option>
           </select>
 
-          <label id="yearly-apply-all-label" class="apply-all-label">
-            <input type="checkbox" id="yearly-apply-days-to-all" name="yearly-apply-days-to-all" aria-describedby="yearly-apply-description">
-            ${getLabel('recurring.applyDaysToAllMonths')}
-          </label>
-          <p id="yearly-apply-description" class="visually-hidden">${getLabel('recurring.applyDaysToAllMonthsDesc')}</p>
+          <p id="yearly-days-for-month-label" class="section-label"></p>
 
           <div class="yearly-days" aria-label="${getLabel('recurring.ariaSpecificDaysOfMonth')}" role="group">
             <!-- Dynamically filled -->
@@ -428,6 +418,18 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
         <button id="apply-recurring-settings" class="apply-btn">${getLabel('button.apply')}</button>
         <button id="cancel-recurring-settings" class="cancel-btn" type="button">${getLabel('button.cancel')}</button>
       </div>
+      </div>
+      <!-- Add Task Section -->
+      <div id="add-recurring-task-section">
+        <button id="add-recurring-task-btn" class="add-recurring-task-btn" title="${getLabel('recurring.addTaskTitle')}">
+          ${getLabel('recurring.addToRecurring')}
+        </button>
+        <div id="available-tasks-list" class="available-tasks-list hidden">
+          <p class="available-tasks-header">${getLabel('recurring.selectTasksHeader')} <button id="select-all-add-recurring" class="select-all-add-recurring-btn">${getLabel('recurring.selectAll')}</button></p>
+          <ul id="non-recurring-tasks" aria-label="${getLabel('recurring.ariaAvailableTasks')}"></ul>
+          <p id="no-available-tasks" class="no-available-tasks hidden">${getLabel('recurring.noAvailableTasks')}</p>
+          <button id="confirm-add-recurring" class="confirm-add-recurring-btn hidden">${getLabel('recurring.addToRecurringShort')}</button>
+        </div>
       </div>
       <button id="close-recurring-panel" class="close-recurring-panel">${getLabel('button.close')}</button>
     </div>

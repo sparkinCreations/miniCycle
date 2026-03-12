@@ -629,11 +629,12 @@ export function formatNextOccurrence(nextOccurrence) {
         return `Next: ${weekday} at ${timeStr}`;
     }
 
-    // Further out - show full date
+    // Further out - show full date (include year for clarity)
     const dateStr = next.toLocaleDateString(undefined, {
         weekday: 'short',
         month: 'short',
-        day: 'numeric'
+        day: 'numeric',
+        year: 'numeric'
     });
 
     return `Next: ${dateStr} at ${timeStr}`;
