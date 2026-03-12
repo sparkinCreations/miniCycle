@@ -7,6 +7,8 @@
  * @module recurringCalculators
  */
 
+import { normalizeRecurringSettings } from './recurringSettings.js';
+
 // ============================================
 // DATE UTILITIES (injected via setDateUtils)
 // ============================================
@@ -95,7 +97,7 @@ export function calculateNextDaily(timeSettings, from) {
 export function calculateNextWeekly(weeklySettings, timeSettings, from) {
     const targetDays = weeklySettings?.days || [];
 
-    // If no days specified, recur every day (fall back to daily)
+    // Safety fallback: normalizer should have defaulted empty days to weekdays
     if (targetDays.length === 0) {
         return calculateNextDaily(timeSettings, from);
     }
@@ -138,7 +140,7 @@ export function calculateNextBiweekly(biweeklySettings, timeSettings, from) {
         ? new Date(biweeklySettings.referenceDate)
         : from;
 
-    // If no days specified in either week, recur every day in even weeks
+    // Safety fallback: normalizer should have defaulted empty weeks to weekdays
     if (week1Days.length === 0 && week2Days.length === 0) {
         // Calculate if we're in an even week (DST-safe)
         const daysSinceReference = getDateUtils().getDaysBetween(referenceDate, from);
@@ -312,7 +314,7 @@ export function calculateNextMonthly(monthlySettings, timeSettings, from) {
         return fallback.getTime();
     }
 
-    // PATTERN 3: No specific pattern - recur every day
+    // PATTERN 3: Safety fallback — normalizer should have set useSpecificDays + days
     return calculateNextDaily(timeSettings, from);
 }
 
@@ -332,7 +334,7 @@ export function calculateNextYearly(yearlySettings, timeSettings, from) {
     const currentMonth = from.getMonth() + 1; // Convert to 1-12
     const currentYear = from.getFullYear();
 
-    // If no months specified, recur every month (fall back to monthly)
+    // Safety fallback: normalizer should have defaulted empty months to current month
     if (targetMonths.length === 0) {
         const monthlyDays = applyDaysToAll ? (daysByMonth.all || []) : [];
         return calculateNextMonthly({ days: monthlyDays }, timeSettings, from);
@@ -472,6 +474,10 @@ export function calculateNextOccurrence(settings, fromTime = Date.now()) {
         console.error('calculateNextOccurrence: No settings provided');
         return null;
     }
+
+    // Normalize to enforce defaults for empty selections (handles legacy data
+    // saved before the empty-selection fix was added to the normalizer)
+    settings = normalizeRecurringSettings(settings);
 
     const from = new Date(fromTime);
 

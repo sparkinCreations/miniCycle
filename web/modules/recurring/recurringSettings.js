@@ -99,6 +99,46 @@ export function normalizeRecurringSettings(settings = {}) {
         }
     };
 
+    // ========================================================================
+    // ENFORCE SENSIBLE DEFAULTS FOR EMPTY SELECTIONS
+    // ========================================================================
+    // When a frequency requires selections (days, months, etc.) but none are
+    // provided, apply sensible defaults instead of silently falling back to
+    // daily. This fixes a regression from the module split where the original
+    // monolith's positive-match behavior ([].includes() → false → no trigger)
+    // was replaced with negative-filter logic that falls through to true.
+
+    const freq = normalized.frequency;
+
+    if (freq === 'weekly' && normalized.weekly.days.length === 0) {
+        normalized.weekly.days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+        console.warn('⚠️ Weekly recurring with no days selected — defaulting to weekdays');
+    }
+
+    if (freq === 'biweekly') {
+        if (normalized.biweekly.week1.length === 0 && normalized.biweekly.week2.length === 0) {
+            normalized.biweekly.week1 = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+            normalized.biweekly.week2 = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+            console.warn('⚠️ Biweekly recurring with no days selected — defaulting to weekdays');
+        }
+    }
+
+    if (freq === 'monthly' && !normalized.monthly.useWeekOfMonth) {
+        if (!normalized.monthly.useSpecificDays) {
+            normalized.monthly.useSpecificDays = true;
+            normalized.monthly.days = [1];
+            console.warn('⚠️ Monthly recurring with no pattern selected — defaulting to 1st of month');
+        } else if (normalized.monthly.days.length === 0 && !normalized.monthly.lastDay) {
+            normalized.monthly.days = [1];
+            console.warn('⚠️ Monthly recurring with specific days enabled but none selected — defaulting to 1st');
+        }
+    }
+
+    if (freq === 'yearly' && normalized.yearly.months.length === 0) {
+        normalized.yearly.months = [new Date().getMonth() + 1];
+        console.warn('⚠️ Yearly recurring with no months selected — defaulting to current month');
+    }
+
     // Bound cache size
     if (normalizationCache.size >= MAX_NORMALIZATION_CACHE_SIZE) {
         const firstKey = normalizationCache.keys().next().value;
