@@ -180,8 +180,8 @@ function sanitizeSnapshot(snapshot) {
   if (snapshot.clearedTasks && typeof snapshot.clearedTasks === 'object') {
     const tc = snapshot.clearedTasks.totalCleared;
     snapshot.clearedTasks.totalCleared = (Number.isFinite(tc) && tc >= 0) ? Math.floor(tc) : 0;
-    if (!Array.isArray(snapshot.clearedTasks.items)) {
-      snapshot.clearedTasks.items = [];
+    if (!Array.isArray(snapshot.clearedTasks.entries)) {
+      snapshot.clearedTasks.entries = [];
     }
   }
 
@@ -626,7 +626,10 @@ export function buildSnapshotSignature(s) {
     dc: !!s.deleteCheckedTasks,
     cc: s.cycleCount || 0,
     th: s.theme || 'classic',
-    rt: Object.keys(s.recurringTemplates || {}).sort(),
+    rt: Object.keys(s.recurringTemplates || {}).sort().map(k => {
+      const tmpl = s.recurringTemplates[k];
+      return { id: k, rs: JSON.stringify(tmpl?.recurringSettings || {}) };
+    }),
     ct: s.clearedTasks?.totalCleared || 0
   });
 }
@@ -638,108 +641,118 @@ export function buildSnapshotSignature(s) {
 function describeChange(fromSnapshot, toSnapshot) {
   if (!fromSnapshot || !toSnapshot) return getLabel('notify.changeGeneric');
 
+  const changes = [];
   const fromTasks = fromSnapshot.tasks || [];
   const toTasks = toSnapshot.tasks || [];
 
-  // Check for cycle-level changes
+  // Cycle-level changes
   if (fromSnapshot.title !== toSnapshot.title) {
-    return getLabel('notify.changeCycleRenamed');
+    changes.push(getLabel('notify.changeCycleRenamed'));
   }
   if (fromSnapshot.autoReset !== toSnapshot.autoReset ||
       fromSnapshot.deleteCheckedTasks !== toSnapshot.deleteCheckedTasks) {
-    return getLabel('notify.changeModeChanged');
+    changes.push(getLabel('notify.changeModeChanged'));
   }
   if ((fromSnapshot.theme || 'classic') !== (toSnapshot.theme || 'classic')) {
-    return getLabel('notify.changeThemeChanged');
+    changes.push(getLabel('notify.changeThemeChanged'));
   }
   if ((fromSnapshot.cycleCount || 0) !== (toSnapshot.cycleCount || 0)) {
-    return getLabel('notify.changeCycleCount');
+    changes.push(getLabel('notify.changeCycleCount'));
   }
   if ((fromSnapshot.clearedTasks?.totalCleared || 0) !== (toSnapshot.clearedTasks?.totalCleared || 0)) {
-    return getLabel('notify.changeClearedTasks');
+    changes.push(getLabel('notify.changeClearedTasks'));
   }
 
-  // Check task count changes
+  // Task count changes
   const countDiff = toTasks.length - fromTasks.length;
   if (countDiff > 0) {
-    return countDiff === 1 ? getLabel('notify.changeTaskAdded') : getLabel('notify.changeTasksAdded', { vars: { count: countDiff } });
-  }
-  if (countDiff < 0) {
+    changes.push(countDiff === 1 ? getLabel('notify.changeTaskAdded') : getLabel('notify.changeTasksAdded', { vars: { count: countDiff } }));
+  } else if (countDiff < 0) {
     const deleted = Math.abs(countDiff);
-    return deleted === 1 ? getLabel('notify.changeTaskDeleted') : getLabel('notify.changeTasksDeleted', { vars: { count: deleted } });
+    changes.push(deleted === 1 ? getLabel('notify.changeTaskDeleted') : getLabel('notify.changeTasksDeleted', { vars: { count: deleted } }));
   }
 
-  // Same count — check for per-task modifications
+  // Per-task modifications
   const fromTaskMap = new Map(fromTasks.map(t => [t.id, t]));
   const toTaskMap = new Map(toTasks.map(t => [t.id, t]));
 
-  // Check for text edits
-  for (const [id, toTask] of toTaskMap) {
-    const fromTask = fromTaskMap.get(id);
-    if (fromTask && fromTask.text !== toTask.text) {
-      return getLabel('notify.changeTaskEdited');
-    }
-  }
+  // Track per-field change counts to avoid duplicate labels
+  const fieldCounts = {
+    edited: 0, completed: 0, uncompleted: 0,
+    prioritySet: 0, priorityRemoved: 0, priorityColor: 0,
+    recurringOn: 0, recurringOff: 0,
+    remindersOn: 0, remindersOff: 0,
+    dueDateSet: 0, dueDateRemoved: 0, dueDateChanged: 0,
+    clearToggled: 0
+  };
 
-  // Check for completion changes
-  let completedCount = 0;
-  let uncompletedCount = 0;
-  for (const [id, toTask] of toTaskMap) {
-    const fromTask = fromTaskMap.get(id);
-    if (fromTask) {
-      if (!fromTask.completed && toTask.completed) completedCount++;
-      if (fromTask.completed && !toTask.completed) uncompletedCount++;
-    }
-  }
-  if (completedCount > 0) {
-    return completedCount === 1 ? getLabel('notify.changeTaskCompleted') : getLabel('notify.changeTasksCompleted', { vars: { count: completedCount } });
-  }
-  if (uncompletedCount > 0) {
-    return uncompletedCount === 1 ? getLabel('notify.changeTaskUncompleted') : getLabel('notify.changeTasksUncompleted', { vars: { count: uncompletedCount } });
-  }
-
-  // Check for reordering
-  const fromOrder = fromTasks.map(t => t.id).join(',');
-  const toOrder = toTasks.map(t => t.id).join(',');
-  if (fromOrder !== toOrder) {
-    return getLabel('notify.changeTasksReordered');
-  }
-
-  // Check per-task field changes (priority, recurring, reminders, due date, delete-when-complete)
   for (const [id, toTask] of toTaskMap) {
     const fromTask = fromTaskMap.get(id);
     if (!fromTask) continue;
 
-    // Priority toggled
+    if (fromTask.text !== toTask.text) fieldCounts.edited++;
+    if (!fromTask.completed && toTask.completed) fieldCounts.completed++;
+    if (fromTask.completed && !toTask.completed) fieldCounts.uncompleted++;
     if (fromTask.highPriority !== toTask.highPriority) {
-      return toTask.highPriority ? getLabel('notify.changePrioritySet') : getLabel('notify.changePriorityRemoved');
+      if (toTask.highPriority) fieldCounts.prioritySet++;
+      else fieldCounts.priorityRemoved++;
     }
-    // Priority color changed (both still high priority)
     if (fromTask.highPriority && toTask.highPriority &&
         (fromTask.priorityColor || null) !== (toTask.priorityColor || null)) {
-      return getLabel('notify.changePriorityColor');
+      fieldCounts.priorityColor++;
     }
-    // Recurring toggled
     if (!!fromTask.recurring !== !!toTask.recurring) {
-      return toTask.recurring ? getLabel('notify.changeRecurringEnabled') : getLabel('notify.changeRecurringDisabled');
+      if (toTask.recurring) fieldCounts.recurringOn++;
+      else fieldCounts.recurringOff++;
     }
-    // Reminders toggled
     if (!!fromTask.remindersEnabled !== !!toTask.remindersEnabled) {
-      return toTask.remindersEnabled ? getLabel('notify.changeRemindersEnabled') : getLabel('notify.changeRemindersDisabled');
+      if (toTask.remindersEnabled) fieldCounts.remindersOn++;
+      else fieldCounts.remindersOff++;
     }
-    // Due date changed
     if ((fromTask.dueDate || null) !== (toTask.dueDate || null)) {
-      if (!fromTask.dueDate && toTask.dueDate) return getLabel('notify.changeDueDateSet');
-      if (fromTask.dueDate && !toTask.dueDate) return getLabel('notify.changeDueDateRemoved');
-      return getLabel('notify.changeDueDateChanged');
+      if (!fromTask.dueDate && toTask.dueDate) fieldCounts.dueDateSet++;
+      else if (fromTask.dueDate && !toTask.dueDate) fieldCounts.dueDateRemoved++;
+      else fieldCounts.dueDateChanged++;
     }
-    // Delete-when-complete toggled
     if (!!fromTask.deleteWhenComplete !== !!toTask.deleteWhenComplete) {
-      return getLabel('notify.changeClearToggled');
+      fieldCounts.clearToggled++;
     }
   }
 
-  return getLabel('notify.changeGeneric');
+  // Map field counts to labels (first match per field type)
+  if (fieldCounts.edited > 0) changes.push(getLabel('notify.changeTaskEdited'));
+  if (fieldCounts.completed > 0) {
+    changes.push(fieldCounts.completed === 1 ? getLabel('notify.changeTaskCompleted') : getLabel('notify.changeTasksCompleted', { vars: { count: fieldCounts.completed } }));
+  }
+  if (fieldCounts.uncompleted > 0) {
+    changes.push(fieldCounts.uncompleted === 1 ? getLabel('notify.changeTaskUncompleted') : getLabel('notify.changeTasksUncompleted', { vars: { count: fieldCounts.uncompleted } }));
+  }
+  if (fieldCounts.prioritySet > 0) changes.push(getLabel('notify.changePrioritySet'));
+  if (fieldCounts.priorityRemoved > 0) changes.push(getLabel('notify.changePriorityRemoved'));
+  if (fieldCounts.priorityColor > 0) changes.push(getLabel('notify.changePriorityColor'));
+  if (fieldCounts.recurringOn > 0) changes.push(getLabel('notify.changeRecurringEnabled'));
+  if (fieldCounts.recurringOff > 0) changes.push(getLabel('notify.changeRecurringDisabled'));
+  if (fieldCounts.remindersOn > 0) changes.push(getLabel('notify.changeRemindersEnabled'));
+  if (fieldCounts.remindersOff > 0) changes.push(getLabel('notify.changeRemindersDisabled'));
+  if (fieldCounts.dueDateSet > 0) changes.push(getLabel('notify.changeDueDateSet'));
+  if (fieldCounts.dueDateRemoved > 0) changes.push(getLabel('notify.changeDueDateRemoved'));
+  if (fieldCounts.dueDateChanged > 0) changes.push(getLabel('notify.changeDueDateChanged'));
+  if (fieldCounts.clearToggled > 0) changes.push(getLabel('notify.changeClearToggled'));
+
+  // Check for reordering (only if no other task-level changes found)
+  if (changes.length === 0) {
+    const fromOrder = fromTasks.map(t => t.id).join(',');
+    const toOrder = toTasks.map(t => t.id).join(',');
+    if (fromOrder !== toOrder) {
+      changes.push(getLabel('notify.changeTasksReordered'));
+    }
+  }
+
+  // Return result
+  if (changes.length === 0) return getLabel('notify.changeGeneric');
+  if (changes.length === 1) return changes[0];
+  // Compound: show primary change + count
+  return changes[0] + ' + ' + getLabel('notify.changeMultiple', { vars: { count: changes.length - 1 } });
 }
 
 /**
