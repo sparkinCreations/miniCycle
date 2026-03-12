@@ -1,3 +1,7 @@
+## [2.078] - 2026-03-12
+- fix: update clearedTasks handling in undo/redo functions to reset to null when no tasks are present
+
+
 ## [2.077] - 2026-03-12
 - feat: enhance task management with additional attributes and improved undo/redo descriptions
 
