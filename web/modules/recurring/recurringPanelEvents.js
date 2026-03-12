@@ -137,10 +137,14 @@ export function setupYearlyMonthDelegation(deps, state, callbacks) {
 
         const selectedMonths = callbacks.getSelectedYearlyMonths();
 
-        // Reveal or hide the specific-days checkbox label
+        // Reveal or hide the specific-days checkbox label and apply-all label
         const specificDaysLabel = deps.getElementById(DOM_IDS.YEARLY_SPECIFIC_DAYS_LABEL);
         if (specificDaysLabel) {
             specificDaysLabel.classList.toggle("hidden", selectedMonths.length === 0);
+        }
+        const applyAllLabel = deps.getElementById(DOM_IDS.YEARLY_APPLY_ALL_LABEL);
+        if (applyAllLabel) {
+            applyAllLabel.classList.toggle("hidden", selectedMonths.length === 0);
         }
 
         // Show/hide day container based on selection + checkbox state
@@ -164,8 +168,8 @@ export function setupYearlyMonthDelegation(deps, state, callbacks) {
                 yearlyMonthSelect.appendChild(option);
             });
 
-            // Trigger month change to update day grid
-            if (selectedMonths.length === 1) {
+            // Trigger month change to update day grid and label
+            if (selectedMonths.length > 0) {
                 yearlyMonthSelect.value = selectedMonths[0];
                 yearlyMonthSelect.dispatchEvent(new Event("change"));
             }

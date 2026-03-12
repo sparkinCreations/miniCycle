@@ -165,13 +165,31 @@ export function buildRecurringSummaryFromSettings(settings = {}) {
         const daysByMonth = settings.yearly?.daysByMonth || {};
 
         if (months.length) {
-            const monthNames = months.map(m => new Date(0, m - 1).toLocaleString("default", { month: "short" }));
-            summaryText += ` in ${monthNames.join(", ")}`;
-        }
+            const useSpecificDays = settings.yearly?.useSpecificDays;
+            const applyToAll = settings.yearly?.applyDaysToAll;
+            const hasSharedDays = useSpecificDays && applyToAll && daysByMonth.all?.length;
 
-        if (settings.yearly?.useSpecificDays) {
-            if (settings.yearly.applyDaysToAll && daysByMonth.all?.length) {
+            if (hasSharedDays) {
+                // Same days for all months: "in Mar, Apr on days 12, 13"
+                const monthNames = months.map(m =>
+                    new Date(0, m - 1).toLocaleString("default", { month: "short" })
+                );
+                summaryText += ` in ${monthNames.join(", ")}`;
                 summaryText += ` on day${daysByMonth.all.length > 1 ? "s" : ""} ${daysByMonth.all.join(", ")}`;
+            } else if (useSpecificDays && !applyToAll) {
+                // Per-month days: "in Apr 12, 13, Mar"
+                const parts = months.map(m => {
+                    const name = new Date(0, m - 1).toLocaleString("default", { month: "short" });
+                    const days = daysByMonth[m] || [];
+                    return days.length > 0 ? `${name} ${days.join(", ")}` : name;
+                });
+                summaryText += ` in ${parts.join(", ")}`;
+            } else {
+                // No specific days: "in Mar, Apr"
+                const monthNames = months.map(m =>
+                    new Date(0, m - 1).toLocaleString("default", { month: "short" })
+                );
+                summaryText += ` in ${monthNames.join(", ")}`;
             }
         }
     }

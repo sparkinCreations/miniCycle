@@ -1,3 +1,7 @@
+## [2.080] - 2026-03-12
+- feat: enhance default labels and improve change description handling in undo/redo manager
+
+
 ## [2.079] - 2026-03-12
 - feat: enhance recurring settings normalization with default date anchoring for frequency types
 

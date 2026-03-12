@@ -173,11 +173,7 @@ export class RecurringPanelManager {
             const changeSettingsBtn = this.deps.getElementById(DOM_IDS.CHANGE_RECURRING_SETTINGS);
             if (changeSettingsBtn) {
                 this.deps.safeAddEventListener(changeSettingsBtn, "click", () => {
-                    if (this.state.selectedTaskId) {
-                        this.openRecurringSettingsPanelForTask(this.state.selectedTaskId);
-                    } else {
-                        console.warn('⚠️ No task selected for changing settings');
-                    }
+                    this.openSettingsFormForSelectedTask();
                 });
             }
 
@@ -193,42 +189,20 @@ export class RecurringPanelManager {
             // Setup advanced settings toggle
             this.setupAdvancedToggle();
 
-            // Setup time conversion for all frequencies
+            // Setup time conversion for specific-date (special case) + all frequencies
             this.setupTimeConversion({
-                hourInputId: "specific-date-hour",
-                minuteInputId: "specific-date-minute",
-                meridiemSelectId: "specific-date-meridiem",
-                militaryCheckboxId: "specific-date-military"
+                hourInputId: DOM_IDS.SPECIFIC_DATE_HOUR,
+                minuteInputId: DOM_IDS.SPECIFIC_DATE_MINUTE,
+                meridiemSelectId: DOM_IDS.SPECIFIC_DATE_MERIDIEM,
+                militaryCheckboxId: DOM_IDS.SPECIFIC_DATE_MILITARY
             });
-            this.setupTimeConversion({
-                hourInputId: "daily-hour",
-                minuteInputId: "daily-minute",
-                meridiemSelectId: "daily-meridiem",
-                militaryCheckboxId: "daily-military"
-            });
-            this.setupTimeConversion({
-                hourInputId: "weekly-hour",
-                minuteInputId: "weekly-minute",
-                meridiemSelectId: "weekly-meridiem",
-                militaryCheckboxId: "weekly-military"
-            });
-            this.setupTimeConversion({
-                hourInputId: "biweekly-hour",
-                minuteInputId: "biweekly-minute",
-                meridiemSelectId: "biweekly-meridiem",
-                militaryCheckboxId: "biweekly-military"
-            });
-            this.setupTimeConversion({
-                hourInputId: "monthly-hour",
-                minuteInputId: "monthly-minute",
-                meridiemSelectId: "monthly-meridiem",
-                militaryCheckboxId: "monthly-military"
-            });
-            this.setupTimeConversion({
-                hourInputId: "yearly-hour",
-                minuteInputId: "yearly-minute",
-                meridiemSelectId: "yearly-meridiem",
-                militaryCheckboxId: "yearly-military"
+            ['daily', 'weekly', 'biweekly', 'monthly', 'yearly'].forEach(freq => {
+                this.setupTimeConversion({
+                    hourInputId: DOM_IDS.freqHour(freq),
+                    minuteInputId: DOM_IDS.freqMinute(freq),
+                    meridiemSelectId: DOM_IDS.freqMeridiem(freq),
+                    militaryCheckboxId: DOM_IDS.freqMilitary(freq)
+                });
             });
 
             // Setup military time toggles
@@ -249,8 +223,10 @@ export class RecurringPanelManager {
                 this.deps.safeAddEventListener(yearlyMonthSelect, "change", (e) => {
                     const selectedMonth = parseInt(e.target.value);
                     this.generateYearlyDayGrid(selectedMonth);
+                    this.updateYearlyDaysForMonthLabel(selectedMonth);
                 });
                 this.generateYearlyDayGrid(1);
+                this.updateYearlyDaysForMonthLabel(1);
             }
 
             const yearlyApplyToAllCheckbox = this.deps.getElementById(DOM_IDS.YEARLY_APPLY_DAYS_TO_ALL);
@@ -362,7 +338,10 @@ export class RecurringPanelManager {
      * Delegates to recurringPanelSetup module
      */
     setupAdvancedToggle() {
-        _setupAdvancedToggle(this.deps);
+        const result = _setupAdvancedToggle(this.deps);
+        if (result?.resetAdvanced) {
+            this._resetAdvanced = result.resetAdvanced;
+        }
     }
 
     /**
@@ -415,17 +394,33 @@ export class RecurringPanelManager {
     }
 
     /**
+     * Update the "Select days for [Month]:" label above the day grid
+     * @param {number} monthNumber - 1-based month number
+     */
+    updateYearlyDaysForMonthLabel(monthNumber) {
+        const label = this.deps.getElementById(DOM_IDS.YEARLY_DAYS_FOR_MONTH_LABEL);
+        if (!label) return;
+
+        const monthName = new Date(0, monthNumber - 1).toLocaleString('default', { month: 'long' });
+        label.textContent = `${getLabel('recurring.selectDaysForMonth')} ${monthName}:`;
+    }
+
+    /**
      * Handle yearly "apply to all months" checkbox change
      */
     handleYearlyApplyToAllChange() {
         const checkbox = this.deps.getElementById(DOM_IDS.YEARLY_APPLY_DAYS_TO_ALL);
         const dropdown = this.deps.getElementById(DOM_IDS.YEARLY_MONTH_SELECT);
+        const daysLabel = this.deps.getElementById(DOM_IDS.YEARLY_DAYS_FOR_MONTH_LABEL);
         const selectedMonths = this.getSelectedYearlyMonths();
 
         if (!checkbox || !dropdown) return;
 
         if (checkbox.checked) {
             dropdown.classList.add("hidden");
+            if (daysLabel) {
+                daysLabel.textContent = getLabel('recurring.selectDaysForAllMonths');
+            }
             if (selectedMonths.length > 0) {
                 this.generateYearlyDayGrid(selectedMonths[0]); // Use any selected month for grid
             }
@@ -433,6 +428,7 @@ export class RecurringPanelManager {
             dropdown.classList.remove("hidden");
             const selectedMonth = parseInt(dropdown.value);
             this.generateYearlyDayGrid(selectedMonth);
+            this.updateYearlyDaysForMonthLabel(selectedMonth);
         }
     }
 
@@ -754,6 +750,9 @@ export class RecurringPanelManager {
             if (settingsPanel) {
                 settingsPanel.classList.add("hidden");
             }
+
+            // Always collapse advanced settings when panel opens
+            this._resetAdvanced?.();
 
             this.updateRecurringSettingsVisibility();
 
@@ -1247,11 +1246,7 @@ export class RecurringPanelManager {
         // Attach click listener to button (guard for tests)
         if (this.deps.safeAddEventListener) {
             this.deps.safeAddEventListener(changeBtn, 'click', () => {
-                if (this.state.selectedTaskId) {
-                    this.openRecurringSettingsPanelForTask(this.state.selectedTaskId);
-                } else {
-                    console.warn('⚠️ No task selected for changing settings');
-                }
+                this.openSettingsFormForSelectedTask();
             });
         }
 
@@ -1737,6 +1732,50 @@ export class RecurringPanelManager {
     // ============================================
     // PUBLIC API METHODS
     // ============================================
+
+    /**
+     * Open the settings form populated with the currently selected task's settings
+     * Called when user clicks "Change Recurring Settings" from the summary preview
+     */
+    openSettingsFormForSelectedTask() {
+        const taskId = this.state.selectedTaskId;
+        if (!taskId) {
+            console.warn('⚠️ No task selected for changing settings');
+            return;
+        }
+
+        // Get the task's current recurring settings from state
+        if (!this.deps.AppState?.isReady?.()) return;
+
+        const state = this.deps.AppState.get();
+        const activeCycleId = state.appState?.activeCycleId;
+        const currentCycle = state.data?.cycles?.[activeCycleId];
+        if (!currentCycle) return;
+
+        const task = currentCycle.tasks.find(t => t.id === taskId);
+        const recurringSettings = task?.recurringSettings ||
+            currentCycle.recurringTemplates?.[taskId]?.recurringSettings;
+
+        // Show the settings panel
+        const settingsPanel = this.deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
+        if (settingsPanel) {
+            settingsPanel.classList.remove("hidden");
+        }
+
+        // Hide the "Change" button while editing
+        const changeBtn = this.deps.getElementById(DOM_IDS.CHANGE_RECURRING_SETTINGS);
+        if (changeBtn) {
+            changeBtn.classList.add("hidden");
+        }
+
+        // Always collapse advanced settings when opening settings form
+        this._resetAdvanced?.();
+
+        // Populate form with task's current settings
+        if (recurringSettings) {
+            this.populateRecurringFormWithSettings(recurringSettings);
+        }
+    }
 
     /**
      * Open recurring settings panel for a specific task

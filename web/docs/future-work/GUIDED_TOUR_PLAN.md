@@ -38,17 +38,17 @@ A lightweight overlay system that:
 3. Shows a tooltip/callout adjacent to the spotlight with a description and Next/Skip buttons
 4. Advances through steps on "Next" click or target element interaction
 
-### Tour Steps (5-7 steps, short and punchy)
+### Tour Steps (7 steps, short and punchy)
 
-| Step | Target Element | Message |
-|------|---------------|---------|
-| 1 | Task input area (`#toggle-task-input`) | "Tap here to add tasks to your routine." |
-| 2 | A task item (first `.task-text`) | "Tap the three dots on a task for options like recurring, priority, and due dates." |
-| 3 | Progress bar (`#progressBar`) | "Complete all tasks to finish a cycle. Your cycle count tracks consistency." |
-| 4 | Help window (`#help-window`) | "This status bar shows your progress and cycle count." |
-| 5 | Hamburger menu button (`#hamburger-menu`) | "Access routine actions, settings, themes, and more from the menu." |
-| 6 | Routine switcher button (`.routine-switcher-btn`) | "Tap here to switch between routines, duplicate, rename, or download them." |
-| 7 | Stats panel swipe area (left edge) | "Swipe left to open the Stats Panel for detailed progress and achievements." |
+| Step | Target Element | Constant | Message |
+|------|---------------|----------|---------|
+| 1 | Task input toggle | `DOM_IDS.TOGGLE_TASK_INPUT` | "Tap here to add tasks to your routine." |
+| 2 | First task item | `DOM_SELECTORS.TASK_TEXT` (first) | "Tap the three dots on a task for options like recurring, priority, and due dates." |
+| 3 | Progress bar | `DOM_IDS.PROGRESS_BAR` | "Complete all tasks to finish a cycle. Your cycle count tracks consistency." |
+| 4 | Help window | `DOM_IDS.HELP_WINDOW` | "This status bar shows your progress and helpful tips." |
+| 5 | Hamburger menu button | `DOM_SELECTORS.HAMBURGER_MENU` | "Open the menu to access settings, personalization, routine actions, and more." |
+| 6 | Undo/Redo buttons | `DOM_IDS.UNDO_BTN` | "Undo and redo buttons let you reverse recent changes to your tasks." |
+| 7 | Stats navigation (arrow + nav dot) | `DOM_IDS.SLIDE_RIGHT` | "Swipe left or click the arrow to open the Stats Panel — swiping works on desktop too!" |
 
 ### Step Object Shape
 
@@ -56,7 +56,7 @@ A lightweight overlay system that:
 {
     target: DOM_IDS.TOGGLE_TASK_INPUT,  // or DOM_SELECTORS for class-based
     message: getLabel('tour.step1'),     // label key
-    position: 'bottom',                  // tooltip position relative to target
+    position: 'auto',                    // tooltip position: 'auto', 'top', 'bottom', 'left', 'right'
     action: 'next',                      // 'next' (button) or 'interact' (wait for click)
     onEnter: null,                       // optional callback before showing step
     onExit: null                         // optional callback after advancing
@@ -81,18 +81,80 @@ A lightweight overlay system that:
 ```
 init()                    — Check flag, show welcome notification if needed
 startTour()               — Create overlay, begin at step 0
-showStep(index)           — Spotlight target, render tooltip
+showStep(index)           — ScrollIntoView target, spotlight it, render tooltip
 nextStep()                — Advance to next step
 skipTour()                — Close overlay, mark completed
 completeTour()            — Final step done, mark completed, show congrats
 destroy()                 — Clean up all listeners and DOM elements
 ```
 
+### Tooltip Auto-Positioning
+
+`showStep()` must compute available viewport space around the target element and choose the best tooltip position automatically when `position: 'auto'`:
+
+```javascript
+_computeTooltipPosition(targetRect) {
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    const tooltipHeight = 160; // estimated max
+    const tooltipWidth = 280;
+    const margin = 12;
+
+    const spaceAbove = targetRect.top;
+    const spaceBelow = viewportHeight - targetRect.bottom;
+    const spaceLeft = targetRect.left;
+    const spaceRight = viewportWidth - targetRect.right;
+
+    // Prefer below, then above, then right, then left
+    if (spaceBelow >= tooltipHeight + margin) return 'bottom';
+    if (spaceAbove >= tooltipHeight + margin) return 'top';
+    if (spaceRight >= tooltipWidth + margin) return 'right';
+    if (spaceLeft >= tooltipWidth + margin) return 'left';
+    return 'bottom'; // fallback
+}
+```
+
+### ScrollIntoView
+
+Before spotlighting a target, ensure it's visible:
+
+```javascript
+const target = this.deps.getElementById(step.target) ||
+               this.deps.querySelector(step.target);
+if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Wait for scroll to settle before positioning spotlight
+    await new Promise(resolve => setTimeout(resolve, 300));
+}
+```
+
+### Modal Conflict Handling
+
+The tour must pause if a modal opens during the tour (e.g., user accidentally triggers something):
+
+- Listen for modal overlay elements appearing (`MutationObserver` or check for `.modal-overlay` elements)
+- When detected: hide tour tooltip, dim spotlight
+- When modal closes: resume tour at current step
+- Alternative: set a `data-tour-active` attribute on `<html>` and prevent modal triggers during tour via guard in modal open functions
+
 ### Listener Cleanup
 - Store all handler references for removal in `destroy()`
 - Overlay click outside tooltip = skip confirmation
 - ESC key = skip tour
-- Window resize = reposition tooltip
+- Window resize = reposition tooltip (debounced via `requestAnimationFrame`)
+
+### Resize Debouncing
+
+```javascript
+_handleResize() {
+    if (this._resizeRAF) cancelAnimationFrame(this._resizeRAF);
+    this._resizeRAF = requestAnimationFrame(() => {
+        if (this._currentStepIndex >= 0) {
+            this.showStep(this._currentStepIndex);
+        }
+    });
+}
+```
 
 ## New CSS: `styles/components/guided-tour.css`
 
@@ -101,7 +163,7 @@ destroy()                 — Clean up all listeners and DOM elements
 .tour-overlay {
     position: fixed;
     inset: 0;
-    z-index: var(--z-modal-high);
+    z-index: var(--z-tour-overlay);
     /* box-shadow inset trick for spotlight cutout */
     transition: box-shadow var(--transition-normal);
 }
@@ -126,7 +188,7 @@ This creates a "hole" where the target element is, with darkness everywhere else
     padding: var(--space-4);
     max-width: 280px;
     box-shadow: var(--shadow-lg);
-    z-index: calc(var(--z-modal-high) + 1);
+    z-index: var(--z-tour-tooltip);
 }
 
 .tour-tooltip-arrow {
@@ -141,7 +203,59 @@ This creates a "hole" where the target element is, with darkness everywhere else
 
 .tour-progress {
     /* Step dots: 1 2 3 4 5 6 7 */
+    display: flex;
+    justify-content: center;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
 }
+
+.tour-progress-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-gray-300);
+    transition: background var(--transition-fast);
+}
+
+.tour-progress-dot.active {
+    background: var(--primary-color, #4c79ff);
+}
+
+.tour-progress-dot.completed {
+    background: var(--color-game-primary, #27ae60);
+}
+```
+
+### Reduced Motion
+```css
+@media (prefers-reduced-motion: reduce) {
+    .tour-overlay,
+    .tour-tooltip {
+        transition: none;
+    }
+}
+```
+
+### Dark Mode
+```css
+[data-dark-mode="true"] .tour-tooltip {
+    background: var(--dark-bg-secondary);
+    color: var(--dark-text-primary);
+}
+```
+
+## New Z-Index Constants
+
+Add to `constants.js` `Z_INDEX` object:
+```javascript
+TOUR_OVERLAY: 10500,    // Above modals
+TOUR_TOOLTIP: 10501     // Above tour overlay
+```
+
+Add to `variables.css`:
+```css
+--z-tour-overlay: 10500;
+--z-tour-tooltip: 10501;
 ```
 
 ## New Labels
@@ -155,13 +269,14 @@ tour: {
     next:             'Next',
     skip:             'Skip Tour',
     done:             'Done',
+    stepOf:           '{current} of {total}',
     step1:            'Tap here to add tasks to your routine.',
     step2:            'Tap the three dots on a task for options like recurring, priority, and due dates.',
     step3:            'Complete all tasks to finish a cycle. Your cycle count tracks consistency.',
-    step4:            'This status bar shows your progress and cycle count.',
-    step5:            'Access routine actions, settings, themes, and more from the menu.',
-    step6:            'Tap here to switch routines, duplicate, rename, or download them.',
-    step7:            'Swipe left to open the Stats Panel for detailed progress and achievements.',
+    step4:            'This status bar shows your progress and helpful tips.',
+    step5:            'Open the menu to access settings, personalization, routine actions, and more.',
+    step6:            'Undo and redo buttons let you reverse recent changes to your tasks.',
+    step7:            'Swipe left or click the arrow to open the Stats Panel — swiping works on desktop too!',
     complete:         'You\'re all set! Enjoy building your routines.',
     retakeTour:       'Retake Guided Tour'
 }
@@ -208,17 +323,19 @@ Add "Retake Guided Tour" button near existing "Reset Onboarding" button. Clickin
 - `role="dialog"` and `aria-modal="true"` on overlay
 - `aria-live="polite"` region for step announcements
 - Focus trapped within tooltip (Next/Skip buttons)
-- Focus restored to target element after each step
+- Focus restored to previously focused element after tour ends
 - ESC to skip tour
 - Keyboard-navigable (Tab between Next/Skip, Enter to activate)
-- Respect `prefers-reduced-motion`: disable spotlight transitions
+- Respect `prefers-reduced-motion`: disable spotlight transitions, no scrollIntoView animation
+- Step progress announced: "Step 3 of 7" via aria-live
 
 ## Mobile Considerations
 
 - Tooltip max-width: 280px (fits 375px viewport with padding)
-- Tooltip repositions automatically if target is near screen edge
+- Auto-positioning algorithm prevents tooltip from going off-screen
 - Touch-friendly button sizes (min 44px tap targets)
-- Swipe step (Stats Panel) may need a "tap here instead" fallback on desktop
+- `scrollIntoView` ensures target is visible before spotlighting
+- Stats panel swipe uses pointer events — works with mouse, touch, and pen on all devices
 
 ## Testing Plan
 
@@ -229,94 +346,21 @@ Add "Retake Guided Tour" button near existing "Reset Onboarding" button. Clickin
 - Next advances through all steps
 - Skip at any point closes tour and marks completed
 - Retake button in Settings restarts tour
-- Resize/orientation change repositions tooltip correctly
+- Resize/orientation change repositions tooltip correctly (debounced)
 - Tour works in both light and dark mode
 - Tour respects vocabulary theme colors
-- All text comes from label system
+- All text comes from label system (`tour.*` keys)
+- All z-index values use `Z_INDEX` constants / CSS variables
+- All selectors use `DOM_IDS` / `DOM_SELECTORS` from constants.js
 - All listeners cleaned up after tour ends
-
-## Main Menu Tour (Optional Extension)
-
-After the main 7-step tour completes, offer an optional "Explore the Menu" mini-tour. This addresses the UX review finding that users struggled to locate features like recurring settings, task options, and export/download within the menu.
-
-### Trigger
-
-After step 5 (hamburger menu spotlight) or at the end of the main tour, show:
-
-```
-"Want a quick walkthrough of the menu sections?"
-[ Show Me ]  [ No Thanks ]
-```
-
-Selecting "Show Me" opens the hamburger menu and begins the menu sub-tour. "No Thanks" skips to the next main tour step or completes the tour.
-
-### Menu Tour Steps
-
-The tour opens the menu, then spotlights each section header one at a time. Each section expands briefly during its spotlight to show what's inside.
-
-| Step | Target Section | Message |
-|------|---------------|---------|
-| M1 | Settings & Personalization (`[data-section="app"]`) | "Customize your app's colors, themes, accessibility options, and display preferences." |
-| M2 | Routine Actions (`[data-section="routines"]`) | "Create new routines, import or export .mcyc files, duplicate, and share routines." |
-| M3 | Task Actions & Features (`[data-section="tasks"]`) | "Manage recurring schedules, reminders, task option buttons, and bulk task actions." |
-| M4 | Rewards & Extras (`[data-section="rewards"]`) | "Unlock vocabulary themes and mini-games as you complete more cycles." |
-| M5 | Help & Support (`[data-section="help"]`) | "Access the user manual, send feedback, check for updates, or share the app." |
-| M6 | Legal & Info (`[data-section="legal"]`) | "Privacy policy, terms of service, accessibility statement, and security info." |
-
-### Behavior
-
-- **Auto-expand**: When a section is spotlighted, temporarily expand it so the user can see the buttons inside. Collapse it when advancing to the next section.
-- **Restore state**: After the menu tour ends, restore each section's original collapsed/expanded state.
-- **Menu stays open**: The hamburger menu remains open throughout the sub-tour. On completion, the menu closes and the main tour continues or finishes.
-- **Skip**: "Skip" during the menu tour skips only the remaining menu steps, not the entire guided tour.
-
-### Step Object Shape (extends main tour)
-
-```javascript
-{
-    target: '[data-section="routines"]',
-    targetType: 'menuSection',           // signals menu must be open
-    message: getLabel('tour.menuStep2'),
-    position: 'right',                   // tooltip to the right of the section
-    action: 'next',
-    onEnter: (section) => section.classList.remove('collapsed'),
-    onExit: (section) => section.classList.add('collapsed')
-}
-```
-
-### New Labels
-
-Add to `tour` section in `defaultLabels.js`:
-
-```javascript
-    menuTourPrompt:   'Want a quick walkthrough of the menu sections?',
-    menuTourStart:    'Show Me',
-    menuTourSkip:     'No Thanks',
-    menuStep1:        'Customize your app\'s colors, themes, accessibility options, and display preferences.',
-    menuStep2:        'Create new routines, import or export .mcyc files, duplicate, and share routines.',
-    menuStep3:        'Manage recurring schedules, reminders, task option buttons, and bulk task actions.',
-    menuStep4:        'Unlock vocabulary themes and mini-games as you complete more cycles.',
-    menuStep5:        'Access the user manual, send feedback, check for updates, or share the app.',
-    menuStep6:        'Privacy policy, terms of service, accessibility statement, and security info.',
-```
-
-### New State
-
-```javascript
-// Extend guided tour state
-state.settings.menuTourCompleted    // boolean, default false (independent of main tour)
-```
-
-### Mobile Considerations
-
-- Menu sections take full width on mobile — tooltip should appear above or below the section, not to the side
-- Scrolling may be needed to reach lower sections — auto-scroll the spotlighted section into view
-- Touch-friendly: same 44px min tap targets as main tour
+- Tour pauses if a modal opens and resumes when it closes
+- `scrollIntoView` runs before spotlight positioning
+- Reduced motion respected
 
 ---
 
 ## Estimated Scope
 
 - **New files**: 2 (guidedTourManager.js, guided-tour.css)
-- **Modified files**: ~6 (defaultLabels.js, constants.js, moduleManifests.js, moduleLoader.js, appInit.js, settingsUIManager.js)
-- **Complexity**: Medium — the spotlight/tooltip positioning is the trickiest part; menu sub-tour adds section expand/collapse orchestration
+- **Modified files**: ~7 (defaultLabels.js, constants.js, variables.css, moduleManifests.js, moduleLoader.js, appInit.js, settingsUIManager.js)
+- **Complexity**: Medium — the spotlight/tooltip auto-positioning is the trickiest part; modal conflict handling adds some orchestration

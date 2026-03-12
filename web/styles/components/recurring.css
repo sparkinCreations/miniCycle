@@ -229,6 +229,9 @@
     overflow-y: auto;
     padding-right: var(--space-1);
     margin-top: var(--space-2-5);
+    padding-bottom: var(--space-2-5);
+    border-bottom: 1px solid var(--theme-border);
+    margin-bottom: var(--space-2-5);
 }
 
 .recurring-scroll-area::-webkit-scrollbar {

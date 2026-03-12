@@ -9,6 +9,7 @@
  */
 
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // FREQUENCY SELECTOR
@@ -86,16 +87,16 @@ export function setupToggleVisibility(deps) {
     };
 
     toggleVisibility(DOM_IDS.HOURLY_SPECIFIC_TIME, "hourly-minute-container");
-    toggleVisibility("daily-specific-time", "daily-time-container");
+    toggleVisibility(DOM_IDS.freqSpecificTime('daily'), DOM_IDS.freqTimeContainer('daily'));
     toggleVisibility("weekly-specific-days", "weekly-day-container");
-    toggleVisibility("weekly-specific-time", "weekly-time-container");
+    toggleVisibility(DOM_IDS.freqSpecificTime('weekly'), DOM_IDS.freqTimeContainer('weekly'));
     toggleVisibility(DOM_IDS.BIWEEKLY_SPECIFIC_DAYS, "biweekly-day-container");
-    toggleVisibility("biweekly-specific-time", "biweekly-time-container");
+    toggleVisibility(DOM_IDS.freqSpecificTime('biweekly'), DOM_IDS.freqTimeContainer('biweekly'));
     toggleVisibility(DOM_IDS.MONTHLY_SPECIFIC_DAYS, DOM_IDS.MONTHLY_DAY_CONTAINER);
     toggleVisibility(DOM_IDS.MONTHLY_WEEK_OF_MONTH, DOM_IDS.MONTHLY_WEEK_CONTAINER);
-    toggleVisibility("monthly-specific-time", "monthly-time-container");
+    toggleVisibility(DOM_IDS.freqSpecificTime('monthly'), DOM_IDS.freqTimeContainer('monthly'));
     toggleVisibility(DOM_IDS.YEARLY_SPECIFIC_MONTHS, "yearly-month-container");
-    toggleVisibility("yearly-specific-time", "yearly-time-container");
+    toggleVisibility(DOM_IDS.freqSpecificTime('yearly'), DOM_IDS.freqTimeContainer('yearly'));
 }
 
 // ============================================================================
@@ -145,7 +146,10 @@ export function setupAdvancedToggle(deps) {
     let advancedVisible = false;
 
     const setAdvancedVisibility = (visible) => {
-        toggleBtn.textContent = visible ? "Hide Advanced Options" : "Show Advanced Options";
+        advancedVisible = visible;
+        toggleBtn.textContent = visible
+            ? getLabel('recurring.hideAdvanced')
+            : getLabel('recurring.showAdvanced');
 
         // Show/hide all `.frequency-options` panels
         deps.querySelectorAll(DOM_SELECTORS.FREQUENCY_OPTIONS).forEach(option => {
@@ -178,12 +182,14 @@ export function setupAdvancedToggle(deps) {
         }
     };
 
-    setAdvancedVisibility(advancedVisible);
+    setAdvancedVisibility(false);
 
     deps.safeAddEventListener(toggleBtn, "click", () => {
-        advancedVisible = !advancedVisible;
-        setAdvancedVisibility(advancedVisible);
+        setAdvancedVisibility(!advancedVisible);
     });
+
+    // Expose reset for use when panel reopens
+    return { resetAdvanced: () => setAdvancedVisibility(false) };
 }
 
 // ============================================================================
@@ -244,9 +250,9 @@ export function setupTimeConversion(deps, { hourInputId, minuteInputId, meridiem
  * @param {Function} onUpdate - Callback when format changes
  */
 export function setupMilitaryTimeToggle(deps, prefix, onUpdate) {
-    const toggle = deps.getElementById(`${prefix}-military`);
-    const hourInput = deps.getElementById(`${prefix}-hour`);
-    const meridiemSelect = deps.getElementById(`${prefix}-meridiem`);
+    const toggle = deps.getElementById(DOM_IDS.freqMilitary(prefix));
+    const hourInput = deps.getElementById(DOM_IDS.freqHour(prefix));
+    const meridiemSelect = deps.getElementById(DOM_IDS.freqMeridiem(prefix));
 
     if (!toggle || !hourInput || !meridiemSelect) {
         console.warn(`Missing elements for military time toggle: ${prefix}`);
