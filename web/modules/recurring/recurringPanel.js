@@ -78,10 +78,7 @@ export function setRecurringPanelDependencies(dependencies) {
  * Uses Strict DI pattern - throws on missing required dependencies
  */
 export class RecurringPanelManager {
-    constructor(dependencies = {}) {
-
-        // Resolve and spread — schema defines required vs optional, no manual mapping needed
-        this.deps = { ...di.resolve(dependencies) };
+    constructor() {
 
         // Internal state
         this.state = {
@@ -94,6 +91,10 @@ export class RecurringPanelManager {
         // ✅ MEMORY LEAK FIX: Track event delegation initialization
         this._eventDelegationInitialized = false;
 
+    }
+
+    get deps() {
+        return di.resolve();
     }
 
     // ============================================

@@ -94,7 +94,7 @@ export function buildRecurringSummaryFromSettings(settings = {}) {
 
     // === HOURLY ===
     if (freq === "hourly" && settings.hourly?.useSpecificMinute) {
-        summaryText += ` every hour at :${settings.hourly.minute.toString().padStart(2, "0")}`;
+        summaryText += ` at the :${settings.hourly.minute.toString().padStart(2, "0")} minute`;
     }
 
     // === WEEKLY ===

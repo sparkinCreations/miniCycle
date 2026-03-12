@@ -110,33 +110,51 @@ export function normalizeRecurringSettings(settings = {}) {
 
     const freq = normalized.frequency;
 
-    if (freq === 'weekly' && normalized.weekly.days.length === 0) {
-        normalized.weekly.days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-        console.warn('⚠️ Weekly recurring with no days selected — defaulting to weekdays');
+    // Use the current date as the reference point for defaults — if you set up
+    // a weekly task on Wednesday, it should recur on Wednesdays, not all weekdays.
+    const now = new Date();
+    const currentWeekday = now.toLocaleDateString("en-US", { weekday: "short" });
+    const currentDayOfMonth = now.getDate();
+    const currentMonth = now.getMonth() + 1;
+
+    if (freq === 'hourly' && !normalized.hourly.useSpecificMinute) {
+        // Anchor to the current minute — 2:47 PM → next at 3:47, 4:47, etc.
+        const currentMinute = now.getMinutes();
+        normalized.hourly.useSpecificMinute = true;
+        normalized.hourly.minute = currentMinute;
+        console.warn(`⚠️ Hourly recurring with no specific minute — defaulting to :${String(currentMinute).padStart(2, '0')}`);
     }
 
-    if (freq === 'biweekly') {
-        if (normalized.biweekly.week1.length === 0 && normalized.biweekly.week2.length === 0) {
-            normalized.biweekly.week1 = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-            normalized.biweekly.week2 = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-            console.warn('⚠️ Biweekly recurring with no days selected — defaulting to weekdays');
-        }
+    if (freq === 'weekly' && normalized.weekly.days.length === 0) {
+        normalized.weekly.days = [currentWeekday];
+        console.warn(`⚠️ Weekly recurring with no days selected — defaulting to ${currentWeekday}`);
+    }
+
+    if (freq === 'biweekly' &&
+        normalized.biweekly.week1.length === 0 && normalized.biweekly.week2.length === 0) {
+        // Only set week 1 — week 2 stays empty so the task recurs every OTHER week
+        normalized.biweekly.week1 = [currentWeekday];
+        console.warn(`⚠️ Biweekly recurring with no days selected — defaulting to ${currentWeekday} every other week`);
     }
 
     if (freq === 'monthly' && !normalized.monthly.useWeekOfMonth) {
         if (!normalized.monthly.useSpecificDays) {
             normalized.monthly.useSpecificDays = true;
-            normalized.monthly.days = [1];
-            console.warn('⚠️ Monthly recurring with no pattern selected — defaulting to 1st of month');
+            normalized.monthly.days = [currentDayOfMonth];
+            console.warn(`⚠️ Monthly recurring with no pattern selected — defaulting to day ${currentDayOfMonth}`);
         } else if (normalized.monthly.days.length === 0 && !normalized.monthly.lastDay) {
-            normalized.monthly.days = [1];
-            console.warn('⚠️ Monthly recurring with specific days enabled but none selected — defaulting to 1st');
+            normalized.monthly.days = [currentDayOfMonth];
+            console.warn(`⚠️ Monthly recurring with specific days enabled but none selected — defaulting to day ${currentDayOfMonth}`);
         }
     }
 
     if (freq === 'yearly' && normalized.yearly.months.length === 0) {
-        normalized.yearly.months = [new Date().getMonth() + 1];
-        console.warn('⚠️ Yearly recurring with no months selected — defaulting to current month');
+        // Default to same month AND same day — April 4th → every April 4th
+        normalized.yearly.months = [currentMonth];
+        normalized.yearly.useSpecificDays = true;
+        normalized.yearly.applyDaysToAll = true;
+        normalized.yearly.daysByMonth = { all: [currentDayOfMonth] };
+        console.warn(`⚠️ Yearly recurring with no months selected — defaulting to month ${currentMonth}, day ${currentDayOfMonth}`);
     }
 
     // Bound cache size
