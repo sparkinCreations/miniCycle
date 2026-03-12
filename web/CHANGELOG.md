@@ -1,3 +1,7 @@
+## [2.077] - 2026-03-12
+- feat: enhance task management with additional attributes and improved undo/redo descriptions
+
+
 ## [2.076] - 2026-03-12
 - fix: update .mcyc file format documentation for new task properties and versioning
 - fix: update file input accept types to include application/octet-stream for backup and import functionalities
