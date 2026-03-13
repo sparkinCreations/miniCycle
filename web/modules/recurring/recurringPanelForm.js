@@ -2,29 +2,30 @@
  * miniCycle Recurring Tasks - Panel Form Operations
  *
  * Purpose: Form data reading, writing, and utility functions
- * Uses callback injection pattern for methods that need panel coordination
+ *
+ * DI PATTERN NOTE: This module uses diBase.js for its callback dependencies
+ * (updateRecurringSummary, normalizeRecurringSettings) which are injected by
+ * RecurringPanel after dynamic import. The exported utility functions also take
+ * explicit `deps` parameters for DOM helpers — this is intentional for the same
+ * reasons documented in recurringPanelSetup.js (pure, testable, no manifest overhead).
  *
  * @module recurringPanelForm
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { createDIModule, optional } from '../core/diBase.js';
 
 // ============================================================================
-// CALLBACK INJECTION
+// DEPENDENCY INJECTION SETUP
 // ============================================================================
 
-let _actions = {};
+const di = createDIModule('RecurringPanelForm', {
+    updateRecurringSummary: optional(null),
+    normalizeRecurringSettings: optional(null),
+});
 
-/**
- * Set form actions for callback injection
- * @param {Object} actions - Callback functions from coordinator
- * @param {Function} actions.updateRecurringSummary - Update summary display
- * @param {Function} actions.normalizeRecurringSettings - Normalize settings object
- */
-export function setFormActions(actions) {
-    _actions = actions;
-}
+export const setFormActions = di.setDependencies;
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -142,7 +143,7 @@ export function buildRecurringSettingsFromPanel(deps, state) {
 
         // Specific Dates Mode
         if (deps.getElementById(DOM_IDS.RECUR_SPECIFIC_DATES)?.checked) {
-            const dateInputs = deps.querySelectorAll("#specific-date-list input[type='date']");
+            const dateInputs = deps.querySelectorAll(`#${DOM_IDS.SPECIFIC_DATE_LIST} input[type='date']`);
             settings.specificDates.enabled = true;
             settings.specificDates.dates = Array.from(dateInputs).map(input => input.value).filter(Boolean);
 
@@ -183,10 +184,9 @@ export function buildRecurringSettingsFromPanel(deps, state) {
 
             // Weekly
             if (frequency === "weekly") {
-                const selector = `.${frequency}-day-box.selected`;
                 settings[frequency] = {
-                    useSpecificDays: deps.getElementById(`${frequency}-specific-days`)?.checked,
-                    days: Array.from(deps.querySelectorAll(selector)).map(el => el.dataset.day)
+                    useSpecificDays: deps.getElementById(DOM_IDS.WEEKLY_SPECIFIC_DAYS)?.checked,
+                    days: Array.from(deps.querySelectorAll(DOM_SELECTORS.WEEKLY_DAY_BOX_SELECTED)).map(el => el.dataset.day)
                 };
             }
 
@@ -233,8 +233,9 @@ export function buildRecurringSettingsFromPanel(deps, state) {
         }
 
         // Normalize if action available
-        if (_actions.normalizeRecurringSettings) {
-            return _actions.normalizeRecurringSettings(settings);
+        const resolved = di.resolve();
+        if (resolved.normalizeRecurringSettings) {
+            return resolved.normalizeRecurringSettings(settings);
         }
         return settings;
 
@@ -316,7 +317,7 @@ export function populateRecurringFormWithSettings(deps, settings) {
         }
 
         // Update the summary display via callback
-        _actions.updateRecurringSummary?.();
+        di.resolve().updateRecurringSummary?.();
 
     } catch (error) {
         console.error('Error populating form with settings:', error);

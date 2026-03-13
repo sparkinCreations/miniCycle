@@ -892,6 +892,10 @@ export class RecurringPanelManager {
 
             this.updateRecurringSummary();
 
+            // Recalculate checkbox/settings visibility after re-render
+            // (new DOM elements have checkboxes hidden by default)
+            this.updateRecurringSettingsVisibility();
+
         } catch (error) {
             console.error('❌ Error updating recurring panel:', error);
             this.deps.showNotification(getLabel('notify.panelUpdateFailed'), 'warning');

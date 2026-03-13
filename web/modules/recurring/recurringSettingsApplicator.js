@@ -122,7 +122,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                     const templateText = task?.text ||
                                        existingTemplate?.text ||
                                        taskEl.querySelector(DOM_SELECTORS.RECURRING_TASK_TEXT)?.textContent ||
-                                       "Untitled Task";
+                                       getLabel('noun.untitledTask');
 
                     cycle.recurringTemplates[taskId] = {
                         id: taskId,

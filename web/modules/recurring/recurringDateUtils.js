@@ -39,10 +39,16 @@ export function parseDateAsLocal(dateStr) {
         const [year, month, day] = dateStr.split("-").map(Number);
         const result = new Date(year, month - 1, day); // month is 0-indexed
 
+        // Guard against Invalid Date (e.g., NaN components)
+        if (isNaN(result.getTime())) {
+            console.error('❌ Invalid date result from:', dateStr);
+            return null;
+        }
+
         return result;
     } catch (error) {
         console.error('❌ Error parsing date:', error);
-        return new Date(); // fallback to today
+        return null;
     }
 }
 

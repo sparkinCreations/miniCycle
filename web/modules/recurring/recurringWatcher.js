@@ -24,7 +24,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { INTERVALS, DEFAULT_RECURRING_DELETE_SETTINGS, LIMITS, UI_TIMEOUTS } from '../core/constants.js';
-import { getIcon } from '../labels/labelResolver.js';
+import { getIcon, getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -111,8 +111,9 @@ function showTaskLimitNotification(blockedCount) {
     if (_taskLimitNotificationShown) return;
     _taskLimitNotificationShown = true;
 
+    const taskWord = getLabel('noun.task', { count: blockedCount });
     Deps.showNotification?.(
-        `${getIcon('warning')} ${blockedCount} recurring task${blockedCount > 1 ? 's' : ''} couldn't spawn - task list full (${LIMITS.TASKS_PER_CYCLE} limit).\nComplete or delete tasks to allow more recurring tasks.`,
+        `${getIcon('warning')} ${getLabel('notify.recurringLimitBlocked', { vars: { count: blockedCount, taskWord, limit: LIMITS.TASKS_PER_CYCLE } })}`,
         'warning',
         UI_TIMEOUTS.NOTIFICATION_PERSISTENT
     );
@@ -153,8 +154,6 @@ function switchInterval(hasTemplates) {
     if (Deps.setInterval) {
         _watcherIntervalId = Deps.setInterval(() => watchRecurringTasks(), targetInterval);
         _currentIntervalMs = targetInterval;
-
-        const intervalDesc = hasTemplates ? '15 seconds (active)' : '2 hours (idle)';
     }
 }
 
@@ -182,7 +181,14 @@ export function restartRecurringWatcher() {
  * Adds tasks that should have appeared while tab was inactive
  * Each template only creates ONE task, even if multiple occurrences were missed
  *
- * @returns {Promise<Object>} Stats { added: number, updated: number }
+ * RECREATION SAFETY POLICY — deleteWhenComplete override:
+ * Templates may store deleteWhenComplete=false (persistent tasks the user wants to keep).
+ * However, recreated instances are ALWAYS forced to deleteWhenComplete=true to prevent
+ * duplicate accumulation. The template's stored preference is never mutated — only the
+ * spawned instance is overridden. This ensures that if a persistent task is deleted by
+ * the user, the recreated copy auto-cleans on completion rather than lingering.
+ *
+ * @returns {Promise<Object>} Stats { added: number, updated: number, blocked: number }
  */
 export async function catchUpMissedRecurringTasks() {
 
@@ -318,8 +324,9 @@ export async function catchUpMissedRecurringTasks() {
 
             // Show notification
             assertInjected('showNotification', Deps.showNotification);
+            const missedTaskWord = getLabel('noun.task', { count: tasksToActuallyAdd.length });
             Deps.showNotification(
-                `⏰ Added ${tasksToActuallyAdd.length} missed recurring task${tasksToActuallyAdd.length > 1 ? 's' : ''}`,
+                `⏰ ${getLabel('notify.recurringMissedAdded', { vars: { count: tasksToActuallyAdd.length, taskWord: missedTaskWord } })}`,
                 'info',
                 UI_TIMEOUTS.NOTIFICATION_LONG
             );
@@ -342,6 +349,10 @@ export async function catchUpMissedRecurringTasks() {
 /**
  * Watch recurring tasks and recreate them when due
  * Runs as part of the 30-second interval check
+ *
+ * Applies the same RECREATION SAFETY POLICY as catchUpMissedRecurringTasks:
+ * recreated instances always have deleteWhenComplete=true regardless of the
+ * template's stored preference, preventing duplicate task accumulation.
  */
 export async function watchRecurringTasks() {
 

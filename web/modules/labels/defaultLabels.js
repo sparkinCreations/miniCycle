@@ -49,7 +49,8 @@ export const DEFAULT_LABELS = deepFreeze({
         task:      { one: 'task',    other: 'tasks' },
         cycle:     { one: 'cycle',   other: 'cycles' },
         routine:   { one: 'routine', other: 'routines' },
-        miniCycle: 'miniCycle'
+        miniCycle: 'miniCycle',
+        untitledTask: 'Untitled Task'
     },
 
     // ========================================================================
@@ -386,6 +387,8 @@ export const DEFAULT_LABELS = deepFreeze({
         recurringNoTasksSelected: 'No tasks selected',
         recurringNoActiveCycle: 'No active routine',
         recurringAdded:         'Added {count} {taskWord} to recurring (daily by default)',
+        recurringMissedAdded:   'Added {count} missed recurring {taskWord}',
+        recurringLimitBlocked:  '{count} recurring {taskWord} couldn\'t spawn — task list full ({limit} limit). Complete or delete tasks to allow more.',
         recurringAddFailed:     'Failed to add tasks',
         recurringDefaultSaved:  'Default recurring settings saved!',
         recurringNoActiveFound: 'No active routine found.',
@@ -1018,7 +1021,36 @@ export const DEFAULT_LABELS = deepFreeze({
         selectDaysForMonth:   'Select days for',
         selectDaysForAllMonths: 'Select days for all selected months:',
         patternIndefinitely:  'Indefinitely',
-        patternLimited:       'Limited'
+        patternLimited:       'Limited',
+        summarySpecificDates: 'Specific dates: {dates}',
+        summaryRepeats:       'Repeats {freq}',
+        summaryIndefinitely:  'indefinitely',
+        summaryForCount:      'for {count} {timeWord}',
+        summaryUntil:         'until {date}',
+        summaryAtTime:        'at {time}',
+        summaryAtMinute:      'at the :{minute} minute',
+        summaryOnDays:        'on {days}',
+        summaryWeek1:         'Week 1: {days}',
+        summaryWeek2:         'Week 2: {days}',
+        summaryOnOrdinalDay:  'on {ordinal} {day}',
+        summaryDayCount:      { one: 'day', other: 'days' },
+        summaryTimeCount:     { one: 'time', other: 'times' },
+        summaryLastDay:       'last day',
+        summaryAnd:           'and',
+        summaryInMonths:      'in {months}',
+        summaryOnDayNumbers:  'on {dayLabel} {days}',
+
+        // Next occurrence display (formatNextOccurrence)
+        nextNone:             'No upcoming occurrences',
+        nextOverdue:          'Overdue',
+        nextUnderMinute:      'Appears in less than 1 minute',
+        nextMinutes:          'Appears in {count} {unit}',
+        nextHours:            'Appears in {count} {unit}',
+        nextMinuteUnit:       { one: 'minute', other: 'minutes' },
+        nextHourUnit:         { one: 'hour', other: 'hours' },
+        nextTomorrow:         'Next: Tomorrow at {time}',
+        nextWeekday:          'Next: {weekday} at {time}',
+        nextDate:             'Next: {date} at {time}'
     },
 
     // ========================================================================

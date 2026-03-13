@@ -153,7 +153,10 @@ export async function initRecurringModules(options = {}) {
             // Utilities (DI-pure)
             GlobalUtils: deps.GlobalUtils,
             notifications: deps.notifications,
-            showNotificationWithTip: deps.showNotificationWithTip
+            showNotificationWithTip: deps.showNotificationWithTip,
+
+            // Label resolver (for sub-modules that need user-facing strings)
+            getLabel
         });
 
         // ============================================
