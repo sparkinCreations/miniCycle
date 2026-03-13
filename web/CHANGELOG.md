@@ -1,3 +1,7 @@
+## [2.083] - 2026-03-13
+- Refactor recurring module for improved dependency injection and label handling
+
+
 ## [2.082] - 2026-03-13
 - feat: enhance recurring task management with improved notification settings and label integration
 

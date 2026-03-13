@@ -414,9 +414,9 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
      
       <!-- This will be filled in dynamically -->
     </div>
-      <div id="recur-settings-actions" class="settings-actions">
-        <button id="apply-recurring-settings" class="apply-btn">${getLabel('button.apply')}</button>
+      <div id="recur-settings-actions" class="recur-settings-actions">
         <button id="cancel-recurring-settings" class="cancel-btn" type="button">${getLabel('button.cancel')}</button>
+        <button id="apply-recurring-settings" class="apply-btn">${getLabel('button.apply')}</button>
       </div>
       </div>
       <!-- Add Task Section -->

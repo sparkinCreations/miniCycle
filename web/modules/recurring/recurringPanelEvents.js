@@ -354,5 +354,8 @@ function selectTaskItem(item, deps, state, callbacks) {
             console.warn('Template not found for task:', taskId);
         }
     }
+
+    // Transition to previewing mode (shows summary + change button)
+    callbacks.setPanelMode?.('previewing');
 }
 

@@ -163,6 +163,11 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
         // Call panel methods for UI updates
         panel.updateRecurringSummary();
         _deps.showNotification('✅ ' + getLabel('notify.recurringApplied'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
+
+        // Transition to browsing mode before re-render (hides settings, checkboxes, toggle)
+        panel.state.selectedTaskId = null;
+        panel.setPanelMode('browsing');
+
         await panel.updateRecurringPanel();
 
         // Post-apply UI updates with delay for DOM to settle
@@ -170,18 +175,10 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
             updateUIAfterApply(panel);
         }, 10);
 
-        // Hide settings panel and reset form
-        const settingsPanel = _deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
-        settingsPanel?.classList.add("hidden");
-
-        // Hide checkboxes
+        // Uncheck all checkboxes (data reset — mode already hides them)
         _deps.querySelectorAll(DOM_SELECTORS.RECURRING_CHECK).forEach(cb => {
-            cb.classList.add("hidden");
             cb.checked = false;
         });
-
-        const toggleContainer = _deps.getElementById(DOM_IDS.RECURRING_TOGGLE_ACTIONS);
-        toggleContainer?.classList.add("hidden");
 
         panel.updateRecurringPanelButtonVisibility();
         panel.updateRecurringInfoLink();
@@ -194,14 +191,11 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
         console.error('❌ Failed to apply recurring settings:', error);
         _deps.showNotification('❌ ' + getLabel('notify.recurringApplyFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SLOW);
 
-        // Cleanup on error
-        const settingsPanel = _deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
-        if (settingsPanel) {
-            settingsPanel.classList.add("hidden");
-        }
+        // Cleanup on error — return to browsing mode
+        panel.state.selectedTaskId = null;
+        panel.setPanelMode('browsing');
 
         _deps.querySelectorAll(DOM_SELECTORS.RECURRING_CHECK).forEach(cb => {
-            cb.classList.add("hidden");
             cb.checked = false;
         });
 
@@ -215,10 +209,9 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
  */
 function updateUIAfterApply(panel) {
     const checkedTasks = _deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM_CHECKED);
-    let firstCheckedTask = null;
 
     if (checkedTasks.length > 0) {
-        firstCheckedTask = checkedTasks[0];
+        const firstCheckedTask = checkedTasks[0];
 
         // Keep first task selected, clear the rest
         _deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
@@ -227,20 +220,29 @@ function updateUIAfterApply(panel) {
             }
         });
 
-        // Update preview with new settings
+        // Select the first checked task and show its preview
         const taskId = firstCheckedTask.dataset.taskId;
+        panel.state.selectedTaskId = taskId;
+        firstCheckedTask.classList.add("selected");
+        firstCheckedTask.setAttribute("aria-selected", "true");
+
+        // Update preview with new settings from template
         const state = _deps.AppState.get();
         const activeCycleId = state.appState?.activeCycleId;
-        const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
+        const template = state.data?.cycles?.[activeCycleId]?.recurringTemplates?.[taskId];
 
-        if (task) {
-            panel.showTaskSummaryPreview(task);
+        if (template) {
+            panel.showTaskSummaryPreview(template);
         }
+
+        panel.setPanelMode('previewing');
     } else {
-        // No checked tasks - clear all selections
+        // No checked tasks — clear all selections, stay in browsing
         _deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
             el.classList.remove("selected", "checked");
         });
+        panel.state.selectedTaskId = null;
+        panel.setPanelMode('browsing');
     }
 }
 
