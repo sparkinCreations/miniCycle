@@ -201,7 +201,7 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
 
     // Show notification
     const frequency = task.recurringSettings?.frequency || 'daily';
-    const pattern = task.recurringSettings?.indefinitely ? 'Indefinitely' : 'Limited';
+    const pattern = task.recurringSettings?.indefinitely ? getLabel('recurring.patternIndefinitely') : getLabel('recurring.patternLimited');
 
     if (Deps.notifications?.createRecurringNotificationWithTip) {
         const notificationContent = Deps.notifications.createRecurringNotificationWithTip(assignedTaskId, frequency, pattern, task.text);

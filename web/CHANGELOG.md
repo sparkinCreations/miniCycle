@@ -1,3 +1,7 @@
+## [2.081] - 2026-03-13
+- feat(guided-tour): enhance tour steps and tooltip functionality
+
+
 ## [2.080] - 2026-03-12
 - feat: enhance default labels and improve change description handling in undo/redo manager
 

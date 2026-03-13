@@ -181,7 +181,8 @@ export async function bootFeatures(deps, coreResult) {
     if (deps.utils?.setNotificationsDependencies && deps.recurring?.panel) {
       deps.utils.setNotificationsDependencies({
         openRecurringSettingsPanelForTask: (taskId) => deps.recurring?.panel?.openRecurringSettingsPanelForTask?.(taskId),
-        updateRecurringPanel: () => deps.recurring?.panel?.updateRecurringPanel?.()
+        updateRecurringPanel: () => deps.recurring?.panel?.updateRecurringPanel?.(),
+        applyRecurringToTaskSchema25: (...args) => deps.recurring?.core?.applyRecurringToTaskSchema25?.(...args)
       });
     }
 

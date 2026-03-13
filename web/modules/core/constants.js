@@ -789,6 +789,7 @@ export const DOM_IDS = Object.freeze({
     FOOTER_CONTAINER: 'footer-container',
     COMPLETE_ALL_CONTAINER: 'complete-all-and-help-window-container',
     NOTIFICATION_CONTAINER: 'notification-container',
+    notificationCurrentSettings: (taskId) => `current-settings-${taskId}`,
     NEW_TASK_INPUT: 'new-task-input',
     PULL_REFRESH_INDICATOR: 'pull-refresh-indicator',
     SAVING_INDICATOR: 'saving-indicator',

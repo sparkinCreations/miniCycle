@@ -1062,7 +1062,7 @@ async setDefaultPosition(notificationContainer) {
 
         ${taskText ? `<div style="margin-bottom: 8px; font-size: 0.95em; opacity: 0.9;">"${escapedTaskText}"</div>` : ''}
 
-        <span id="current-settings-${assignedTaskId}">
+        <span id="${DOM_IDS.notificationCurrentSettings(assignedTaskId)}">
           🔁 ${getLabel('notify.recurringStatus', { vars: { frequency: '<strong>' + frequency + '</strong>', pattern } })}
         </span><br>
 
@@ -1185,9 +1185,11 @@ async setDefaultPosition(notificationContainer) {
           await this.deps.applyRecurringToTaskSchema25(taskId, { frequency: newFrequency });
         }
 
-        const targetTask = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
-        const pattern = targetTask?.recurringSettings?.indefinitely ? "Indefinitely" : "Limited";
-        const currentSettingsText = notification.querySelector(`#current-settings-${taskId}`);
+        // Re-read fresh state after update (state var above is pre-update snapshot)
+        const updatedState = this.deps.AppState.get();
+        const targetTask = updatedState.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
+        const pattern = targetTask?.recurringSettings?.indefinitely ? getLabel('recurring.patternIndefinitely') : getLabel('recurring.patternLimited');
+        const currentSettingsText = notification.querySelector(`#${DOM_IDS.notificationCurrentSettings(taskId)}`);
 
         if (currentSettingsText) {
           currentSettingsText.textContent = `🔁 ${getLabel('notify.recurringStatus', { vars: { frequency: newFrequency, pattern } })}`;
@@ -1448,7 +1450,7 @@ async setDefaultPosition(notificationContainer) {
   showApplyConfirmation(targetElement) {
     const tempConfirm = document.createElement("span");
     tempConfirm.textContent = "✨  " + getLabel('notify.applied');
-    tempConfirm.style.color = "var(--color-success, #28a745)";
+    tempConfirm.style.color = "var(--color-white)";
     tempConfirm.style.fontWeight = "bold";
     tempConfirm.style.marginLeft = "8px";
     tempConfirm.style.opacity = "0";
