@@ -155,21 +155,29 @@
 }
 
 /* =============================================================================
-   APPLY RECURRING SETTINGS BUTTON
+   RECURRING SETTINGS ACTION BUTTONS (Cancel + Apply)
    ============================================================================= */
 
-#apply-recurring-settings {
-    display: inline-block;
+.recur-settings-actions {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+
+.recur-settings-actions button {
+    flex: 1;
     padding: var(--space-2) var(--space-4);
-    background-color: var(--theme-success, var(--color-success));
-    color: var(--color-white);
     font-size: var(--font-size-sm);
     font-weight: 600;
     border: none;
     border-radius: var(--radius-6);
     cursor: pointer;
-    margin-top: var(--space-3);
     transition: background-color var(--transition-fast) ease, transform var(--transition-fast) ease;
+}
+
+#apply-recurring-settings {
+    background-color: var(--theme-success, var(--color-success));
+    color: var(--color-white);
 }
 
 #apply-recurring-settings:hover {
@@ -179,6 +187,20 @@
 
 #apply-recurring-settings:active {
     background-color: var(--color-success);
+    transform: scale(0.98);
+}
+
+#cancel-recurring-settings {
+    background-color: var(--color-gray-500);
+    color: var(--color-white);
+}
+
+#cancel-recurring-settings:hover {
+    background-color: var(--color-slate-600);
+    transform: scale(1.02);
+}
+
+#cancel-recurring-settings:active {
     transform: scale(0.98);
 }
 

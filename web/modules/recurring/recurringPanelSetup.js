@@ -344,7 +344,7 @@ export function setupAdditionalListeners(deps, callbacks) {
         }
     });
 
-    // Document click handler for hiding preview when clicking outside
+    // Document click handler for deselecting task when clicking outside
     deps.safeAddEventListener(document, "click", (e) => {
         const overlay = deps.getModal('recurringOverlay');
         if (!overlay || !overlay.open) return;
@@ -355,12 +355,13 @@ export function setupAdditionalListeners(deps, callbacks) {
 
         if (taskList?.contains(e.target) || settingsPanel?.contains(e.target)) return;
 
-        // Hide summary preview when clicking outside
+        // Deselect task and return to browsing when clicking outside
         if (summaryPreview && !summaryPreview.contains(e.target) && !taskList?.contains(e.target)) {
-            summaryPreview.classList.add("hidden");
             deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
                 el.classList.remove("selected");
+                el.setAttribute("aria-selected", "false");
             });
+            callbacks.deselectAndBrowse?.();
         }
     });
 }

@@ -84,6 +84,7 @@ export class RecurringPanelManager {
         this.state = {
             isInitialized: false,
             panelOpen: false,
+            panelMode: 'browsing', // 'browsing' | 'previewing' | 'editing'
             selectedTaskId: null,
             selectedYearlyDays: {} // key = month number, value = array of selected days
         };
@@ -109,7 +110,8 @@ export class RecurringPanelManager {
         const callbacks = {
             handleRemoveTask: (template, item) => this.handleRemoveTask(template, item),
             showTaskSummaryPreview: (task) => this.showTaskSummaryPreview(task),
-            getSelectedYearlyMonths: () => this.getSelectedYearlyMonths()
+            getSelectedYearlyMonths: () => this.getSelectedYearlyMonths(),
+            setPanelMode: (mode) => this.setPanelMode(mode)
         };
         _initEventDelegation(this.deps, this.state, callbacks);
     }
@@ -610,28 +612,16 @@ export class RecurringPanelManager {
      * Handle canceling recurring settings changes
      */
     handleCancelSettings() {
-        const settingsPanel = this.deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
-        settingsPanel?.classList.add("hidden");
-
-        // Deselect all selected tasks
+        // Deselect all tasks and uncheck checkboxes (data reset)
         this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
-            el.classList.remove("selected");
+            el.classList.remove('selected', 'checked');
+            el.setAttribute('aria-selected', 'false');
             const checkbox = el.querySelector("input[type='checkbox']");
             if (checkbox) checkbox.checked = false;
         });
 
-        // Hide checkboxes and uncheck them
-        this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_CHECK).forEach(cb => {
-            cb.checked = false;
-            cb.classList.add("hidden");
-            cb.closest(".recurring-task-item")?.classList.remove("checked");
-        });
-
-        // Hide the summary preview if visible
-        const preview = this.deps.getElementById(DOM_IDS.RECURRING_SUMMARY_PREVIEW);
-        if (preview) preview.classList.add("hidden");
-
-        this.updateRecurringSettingsVisibility();
+        this.state.selectedTaskId = null;
+        this.setPanelMode('browsing');
     }
 
     /**
@@ -718,7 +708,11 @@ export class RecurringPanelManager {
     setupAdditionalListeners() {
         _setupAdditionalListeners(this.deps, {
             updateRecurringSummary: () => this.updateRecurringSummary(),
-            updateRecurCountVisibility: () => this.updateRecurCountVisibility()
+            updateRecurCountVisibility: () => this.updateRecurCountVisibility(),
+            deselectAndBrowse: () => {
+                this.state.selectedTaskId = null;
+                this.setPanelMode('browsing');
+            }
         });
     }
 
@@ -745,18 +739,11 @@ export class RecurringPanelManager {
                 if (!overlay.open) overlay.showModal();
             }
 
-            // Hide settings panel initially
-            const settingsPanel = this.deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
-            if (settingsPanel) {
-                settingsPanel.classList.add("hidden");
-            }
-
             // Always collapse advanced settings when panel opens
             this._resetAdvanced?.();
 
-            this.updateRecurringSettingsVisibility();
-
             this.state.panelOpen = true;
+            this.setPanelMode('browsing');
 
         } catch (error) {
             console.error('❌ Error opening recurring panel:', error);
@@ -776,16 +763,9 @@ export class RecurringPanelManager {
                 overlay._previousFocus?.focus({ focusVisible: false });
             }
 
-            // ✅ Hide the preview when panel closes
-            const summaryContainer = this.deps.getElementById(DOM_IDS.RECURRING_SUMMARY_PREVIEW);
-            if (summaryContainer) {
-                summaryContainer.classList.add("hidden");
-            }
-
-            this.updateRecurringSettingsVisibility();
-
-            this.state.panelOpen = false;
             this.state.selectedTaskId = null;
+            this.state.panelOpen = false;
+            this.setPanelMode('browsing');
 
         } catch (error) {
             console.error('❌ Error closing recurring panel:', error);
@@ -848,7 +828,7 @@ export class RecurringPanelManager {
 
             // Handle empty state
             const emptyState = this.deps.getElementById(DOM_IDS.RECURRING_EMPTY_STATE);
-            const panelHint = recurringList.parentElement?.querySelector('.recurring-panel-hint');
+            const panelHint = recurringList.parentElement?.querySelector(DOM_SELECTORS.RECURRING_PANEL_HINT);
 
             if (recurringTasks.length === 0) {
                 if (emptyState) emptyState.classList.remove("hidden");
@@ -892,9 +872,9 @@ export class RecurringPanelManager {
 
             this.updateRecurringSummary();
 
-            // Recalculate checkbox/settings visibility after re-render
+            // Reapply current panel mode after re-render
             // (new DOM elements have checkboxes hidden by default)
-            this.updateRecurringSettingsVisibility();
+            this.applyPanelMode();
 
         } catch (error) {
             console.error('❌ Error updating recurring panel:', error);
@@ -1032,6 +1012,14 @@ export class RecurringPanelManager {
                     }
 
                     item.remove();
+
+                    // Clear selected state if the removed task was selected
+                    if (this.state.selectedTaskId === task.id) {
+                        this.state.selectedTaskId = null;
+                        this.setPanelMode('browsing');
+                    } else {
+                        this.applyPanelMode();
+                    }
                     this.updateRecurringPanelButtonVisibility();
                     this.updateRecurringInfoLink();
 
@@ -1063,11 +1051,30 @@ export class RecurringPanelManager {
     // ============================================
 
     /**
-     * Update recurring settings panel visibility
+     * Set the panel mode and apply corresponding visibility
+     * @param {'browsing'|'previewing'|'editing'} mode
      */
-    updateRecurringSettingsVisibility() {
+    setPanelMode(mode) {
+        this.state.panelMode = mode;
+        this.applyPanelMode();
+    }
+
+    /**
+     * Apply visibility rules based on the current panel mode.
+     *
+     * BROWSING:   No task selected. Settings panel hidden, checkboxes hidden,
+     *             change buttons hidden, summary preview hidden.
+     * PREVIEWING: Task selected but not editing. Settings panel hidden,
+     *             checkboxes hidden, change buttons visible, summary preview visible.
+     * EDITING:    Task selected and editing settings. Settings panel visible,
+     *             checkboxes visible, change buttons hidden, toggle visible (if >1 task).
+     */
+    applyPanelMode() {
         try {
-            const anySelected = this.deps.querySelector(DOM_SELECTORS.RECURRING_TASK_ITEM_SELECTED);
+            const mode = this.state.panelMode;
+            const isEditing = mode === 'editing';
+            const isBrowsing = mode === 'browsing';
+
             const settingsPanel = this.deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
             const checkboxes = this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_CHECK);
             const changeBtns = this.deps.querySelectorAll(DOM_SELECTORS.CHANGE_RECURRING_BTN);
@@ -1075,41 +1082,56 @@ export class RecurringPanelManager {
             const toggleBtn = this.deps.getElementById(DOM_IDS.TOGGLE_CHECK_ALL);
             const taskCount = this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).length;
 
-            const show = !!anySelected;
-
+            // Settings panel: only visible in EDITING
             if (settingsPanel) {
-                settingsPanel.classList.toggle("hidden", !show);
-
-                // Show or hide checkboxes
-                checkboxes.forEach(box => {
-                    box.classList.toggle("hidden", !show);
-                });
-
-                // Hide change buttons when panel is open
-                changeBtns.forEach(btn => {
-                    btn.classList.toggle("hidden", show);
-                });
+                settingsPanel.classList.toggle('hidden', !isEditing);
             }
 
-            // Only show toggle if panel is open AND checkboxes are visible AND more than one task
-            const checkboxesVisible = Array.from(checkboxes).some(cb => !cb.classList.contains("hidden"));
-            const shouldShowToggle = show && taskCount > 1 && checkboxesVisible;
+            // Checkboxes: only visible in EDITING
+            checkboxes.forEach(box => {
+                box.classList.toggle('hidden', !isEditing);
+            });
 
+            // Per-item change buttons: only visible in PREVIEWING
+            changeBtns.forEach(btn => {
+                btn.classList.toggle('hidden', mode !== 'previewing');
+            });
+
+            // Toggle container (Check All / Uncheck All): only in EDITING with >1 task
+            const shouldShowToggle = isEditing && taskCount > 1;
             if (toggleContainer) {
-                toggleContainer.classList.toggle("hidden", !shouldShowToggle);
+                toggleContainer.classList.toggle('hidden', !shouldShowToggle);
             }
 
-            // Update button label
+            // Update toggle button label
             if (toggleBtn && shouldShowToggle) {
-                const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked && !cb.classList.contains("hidden"));
-                toggleBtn.textContent = anyUnchecked ? getLabel('recurring.checkAll') : getLabel('recurring.uncheckAll');
+                const anyUnchecked = Array.from(checkboxes).some(
+                    cb => !cb.checked && !cb.classList.contains('hidden')
+                );
+                toggleBtn.textContent = anyUnchecked
+                    ? getLabel('recurring.checkAll')
+                    : getLabel('recurring.uncheckAll');
+            }
+
+            // Summary preview: hidden in BROWSING, visible in PREVIEWING/EDITING
+            const summaryContainer = this.deps.getElementById(DOM_IDS.RECURRING_SUMMARY_PREVIEW);
+            if (summaryContainer) {
+                summaryContainer.classList.toggle('hidden', isBrowsing);
             }
 
             this.updateRecurringSummary();
 
         } catch (error) {
-            console.error('❌ Error updating settings visibility:', error);
+            console.error('❌ Error applying panel mode:', error);
         }
+    }
+
+    /**
+     * @deprecated Use setPanelMode() or applyPanelMode() instead.
+     * Kept as alias for backward safety during migration.
+     */
+    updateRecurringSettingsVisibility() {
+        this.applyPanelMode();
     }
 
     // ============================================
@@ -1203,23 +1225,8 @@ export class RecurringPanelManager {
                 previewText.appendChild(nextSpan);
             }
 
-            // ✅ Only show button if settings panel is NOT currently open
-            const changeBtn = this.deps.getElementById(DOM_IDS.CHANGE_RECURRING_SETTINGS);
-            const settingsPanel = this.deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
-            const isEditingSettings = settingsPanel && !settingsPanel.classList.contains("hidden");
-
-            if (changeBtn) {
-                if (isEditingSettings) {
-                    // Keep button hidden while editing
-                    changeBtn.classList.add("hidden");
-                } else {
-                    // Show button when not editing
-                    changeBtn.style.display = ""; // Remove any display: none
-                    changeBtn.classList.remove("hidden"); // Remove hidden class if present
-                }
-            } else {
-                console.warn('⚠️ Change recurring settings button not found in DOM');
-            }
+            // Change button visibility is managed by applyPanelMode() —
+            // no manual toggle needed here.
 
         } catch (error) {
             console.error('❌ Error showing task summary:', error);
@@ -1232,7 +1239,7 @@ export class RecurringPanelManager {
      */
     createTaskSummaryPreview() {
         const container = document.createElement('div');
-        container.id = 'recurring-summary-preview';
+        container.id = DOM_IDS.RECURRING_SUMMARY_PREVIEW;
         container.className = 'recurring-summary-preview hidden';
 
         // Create inner structure
@@ -1240,10 +1247,10 @@ export class RecurringPanelManager {
         summaryBox.className = 'summary-box';
 
         const previewText = document.createElement('p');
-        previewText.id = 'recurring-preview-text';
+        previewText.id = DOM_IDS.RECURRING_PREVIEW_TEXT;
 
         const changeBtn = document.createElement('button');
-        changeBtn.id = 'change-recurring-settings';
+        changeBtn.id = DOM_IDS.CHANGE_RECURRING_SETTINGS;
         changeBtn.className = 'change-recurring-btn';
         changeBtn.textContent = getLabel('recurring.changeSettings');
 
@@ -1673,8 +1680,16 @@ export class RecurringPanelManager {
             if (addTaskBtn) addTaskBtn.textContent = getLabel('recurring.addToRecurring');
             if (confirmBtn) confirmBtn.classList.add("hidden");
 
+            // If the user wasn't already editing settings, return to browsing
+            // so the panel refreshes cleanly without opening the settings form.
+            // If editing, keep selection so the user can continue editing.
+            if (this.state.panelMode !== 'editing') {
+                this.state.selectedTaskId = null;
+                this.setPanelMode('browsing');
+            }
+
             // Refresh the panel to show new recurring tasks
-            this.updateRecurringPanel();
+            await this.updateRecurringPanel();
 
             // Refresh main task list from state
             setTimeout(() => {
@@ -1760,20 +1775,21 @@ export class RecurringPanelManager {
         const recurringSettings = task?.recurringSettings ||
             currentCycle.recurringTemplates?.[taskId]?.recurringSettings;
 
-        // Show the settings panel
-        const settingsPanel = this.deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
-        if (settingsPanel) {
-            settingsPanel.classList.remove("hidden");
-        }
-
-        // Hide the "Change" button while editing
-        const changeBtn = this.deps.getElementById(DOM_IDS.CHANGE_RECURRING_SETTINGS);
-        if (changeBtn) {
-            changeBtn.classList.add("hidden");
-        }
-
         // Always collapse advanced settings when opening settings form
         this._resetAdvanced?.();
+
+        // Enter editing mode (shows settings panel + checkboxes, hides change buttons)
+        this.setPanelMode('editing');
+
+        // Auto-check the selected task so settings apply to it
+        const taskItem = this.deps.getElementById(DOM_IDS.RECURRING_TASK_LIST)
+            ?.querySelector(`[data-task-id="${taskId}"]`);
+        if (taskItem) {
+            const checkbox = taskItem.querySelector(DOM_SELECTORS.RECURRING_CHECK);
+            if (checkbox) {
+                checkbox.checked = true;
+            }
+        }
 
         // Populate form with task's current settings
         if (recurringSettings) {
@@ -1794,6 +1810,7 @@ export class RecurringPanelManager {
             const itemToSelect = this.deps.querySelector(DATA_SELECTORS.recurringTaskById(taskIdToPreselect));
             if (itemToSelect) {
                 itemToSelect.classList.add("selected");
+                this.state.selectedTaskId = taskIdToPreselect;
 
                 const checkbox = itemToSelect.querySelector("input[type='checkbox']");
                 if (checkbox) {
@@ -1827,8 +1844,8 @@ export class RecurringPanelManager {
                 if (!overlay.open) overlay.showModal();
             }
 
-            // Make sure checkboxes and toggle show correctly
-            this.updateRecurringSettingsVisibility();
+            // Enter editing mode with the preselected task
+            this.setPanelMode('editing');
 
         } catch (error) {
             console.error('❌ Error opening settings panel:', error);
@@ -1855,10 +1872,8 @@ let _buildRecurringSettingsFromPanelForm = null;
 let _populateRecurringFormWithSettings = null;
 let _clearRecurringForm = null;
 // Events module functions
-let _eventsModule = null;
 let _initEventDelegation = null;
 // Setup module functions
-let _setupModule = null;
 let _setupFrequencySelector = null;
 let _setupToggleVisibility = null;
 let _setupToggleCheckAll = null;
@@ -1901,11 +1916,9 @@ export async function loadPanelSubModules(version) {
     _clearRecurringForm = formModule.clearRecurringForm;
 
     // Events module
-    _eventsModule = eventsModule;
     _initEventDelegation = eventsModule.initEventDelegation;
 
     // Setup module
-    _setupModule = setupModule;
     _setupFrequencySelector = setupModule.setupFrequencySelector;
     _setupToggleVisibility = setupModule.setupToggleVisibility;
     _setupToggleCheckAll = setupModule.setupToggleCheckAll;

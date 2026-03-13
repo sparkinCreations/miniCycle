@@ -904,6 +904,7 @@ export const DOM_SELECTORS = Object.freeze({
     // ---- Recurring ----
     FREQUENCY_OPTIONS: '.frequency-options',
     FREQUENCY_TIME_SECTION: '.frequency-time-section',
+    RECURRING_PANEL_HINT: '.recurring-panel-hint',
     RECURRING_TASK_ITEM: '.recurring-task-item',
     RECURRING_CHECK: '.recurring-check',
     RECURRING_CHECK_VISIBLE: '.recurring-check:not(.hidden)',
