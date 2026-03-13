@@ -60,7 +60,8 @@ const di = createDIModule('RecurringCore', {
     now: optional(null),
     setInterval: optional(null),
     isEnabled: optional(null),
-    AppMeta: optional(null)
+    AppMeta: optional(null),
+    getLabel: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -85,6 +86,25 @@ let _activation = null;
 // ============================================================================
 // PUBLIC API - Re-exports from sub-modules (populated after init)
 // ============================================================================
+//
+// INTENTIONAL PATTERN: mutable `let` re-exports + Proxy-based DI
+//
+// Why `let` exports instead of direct re-exports:
+//   Sub-modules are loaded DYNAMICALLY via import() with version cache-busting.
+//   ES module namespace objects have immutable bindings, so static `export { fn }`
+//   cannot be updated after the initial module evaluation. The `let` exports start
+//   as null and are populated in loadSubModules() once dynamic imports resolve.
+//   Callers that import these bindings see the live values after init completes.
+//
+// Why Proxy-based DI (not plain _deps object):
+//   The Proxy + diBase pattern provides late-binding — property lookups on `_deps`
+//   are deferred to `di.resolve()` at call time, not at wire time. This avoids
+//   the "spread evaluates lazy getters" bug documented in CLAUDE.md and ensures
+//   dependencies injected after module load are visible without re-wiring.
+//
+// This pattern is specific to recurringCore's role as a dynamic sub-module
+// coordinator and is NOT suitable for regular modules (use diBase.js directly).
+//
 
 // Date utilities
 export let convert12To24 = null;
@@ -182,6 +202,20 @@ async function loadSubModules(version) {
         }
         if (_matcher.setDateUtils) {
             _matcher.setDateUtils(dateUtils);
+        }
+
+        // Inject normalizer to avoid dual-instance static import problem
+        // (see MEMORY.md: "Static imports of side-effectful modules cause module splits")
+        if (_calculators.setNormalizer) {
+            _calculators.setNormalizer(settings.normalizeRecurringSettings);
+        }
+        if (_matcher.setNormalizer) {
+            _matcher.setNormalizer(settings.normalizeRecurringSettings);
+        }
+
+        // Inject label resolver for user-facing strings (formatNextOccurrence)
+        if (_calculators.setLabelResolver && _deps.getLabel) {
+            _calculators.setLabelResolver(_deps.getLabel);
         }
 
         // Populate exports - Date utilities

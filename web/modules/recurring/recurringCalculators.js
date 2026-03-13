@@ -7,13 +7,27 @@
  * @module recurringCalculators
  */
 
-import { normalizeRecurringSettings } from './recurringSettings.js';
-
 // ============================================
-// DATE UTILITIES (injected via setDateUtils)
+// INJECTED DEPENDENCIES (via setDateUtils / setNormalizer / setLabelResolver)
 // ============================================
+//
+// NOTE: normalizeRecurringSettings is injected via setNormalizer() instead of
+// a static import. This avoids the dual-instance problem documented in MEMORY.md:
+// recurringCore loads this module dynamically with ?v= cache-busting, so a static
+// import of recurringSettings.js would resolve to a SEPARATE unversioned instance
+// with its own normalization cache.
+//
 
 let _dateUtils = null;
+let _normalizeSettings = null;
+// Fallback: return interpolated key if label resolver not yet injected (e.g., tests)
+let _getLabel = (key, opts) => {
+    const base = key.split('.').pop() || key;
+    if (opts?.vars) {
+        return Object.entries(opts.vars).reduce((s, [k, v]) => s.replace(`{${k}}`, v), base);
+    }
+    return base;
+};
 
 /**
  * Set date utilities (called by recurringCore after loading sub-modules)
@@ -21,6 +35,22 @@ let _dateUtils = null;
  */
 export function setDateUtils(utils) {
     _dateUtils = utils;
+}
+
+/**
+ * Set normalizer function (called by recurringCore after loading sub-modules)
+ * @param {Function} fn - normalizeRecurringSettings function
+ */
+export function setNormalizer(fn) {
+    _normalizeSettings = fn;
+}
+
+/**
+ * Set label resolver (called by recurringCore after loading sub-modules)
+ * @param {Function} fn - getLabel function from labelResolver
+ */
+export function setLabelResolver(fn) {
+    _getLabel = fn;
 }
 
 // Helper getters for cleaner code
@@ -427,10 +457,11 @@ export function calculateNextSpecificDate(dates, from, timeSettings) {
     const futureDates = dates
         .map(dateStr => {
             const date = getDateUtils().parseDateAsLocal(dateStr);
+            if (!date) return null;
             getDateUtils().applyTimeToDate(date, timeSettings);
             return date;
         })
-        .filter(date => date > from)
+        .filter(date => date && date > from)
         .sort((a, b) => a - b); // Sort ascending
 
     if (futureDates.length === 0) {
@@ -477,7 +508,10 @@ export function calculateNextOccurrence(settings, fromTime = Date.now()) {
 
     // Normalize to enforce defaults for empty selections (handles legacy data
     // saved before the empty-selection fix was added to the normalizer)
-    settings = normalizeRecurringSettings(settings);
+    if (!_normalizeSettings) {
+        throw new Error('recurringCalculators: Normalizer not initialized. Call setNormalizer first.');
+    }
+    settings = _normalizeSettings(settings);
 
     const from = new Date(fromTime);
 
@@ -577,7 +611,7 @@ export function calculateNextOccurrences(settings, count = 5, fromTime = Date.no
  */
 export function formatNextOccurrence(nextOccurrence) {
     if (!nextOccurrence) {
-        return "No upcoming occurrences";
+        return _getLabel('recurring.nextNone');
     }
 
     const next = new Date(nextOccurrence);
@@ -586,24 +620,26 @@ export function formatNextOccurrence(nextOccurrence) {
 
     // Overdue
     if (msUntil < 0) {
-        return "Overdue";
+        return _getLabel('recurring.nextOverdue');
     }
 
     // Less than 1 minute
     if (msUntil < 60000) {
-        return "Appears in less than 1 minute";
+        return _getLabel('recurring.nextUnderMinute');
     }
 
     // Less than 1 hour
     if (msUntil < 3600000) {
-        const minutes = Math.floor(msUntil / 60000);
-        return `Appears in ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        const count = Math.floor(msUntil / 60000);
+        const unit = _getLabel('recurring.nextMinuteUnit', { count });
+        return _getLabel('recurring.nextMinutes', { vars: { count, unit } });
     }
 
     // Less than 24 hours
     if (msUntil < 86400000) {
-        const hours = Math.floor(msUntil / 3600000);
-        return `Appears in ${hours} hour${hours !== 1 ? 's' : ''}`;
+        const count = Math.floor(msUntil / 3600000);
+        const unit = _getLabel('recurring.nextHourUnit', { count });
+        return _getLabel('recurring.nextHours', { vars: { count, unit } });
     }
 
     // Beyond 24 hours - show specific date/time
@@ -620,13 +656,13 @@ export function formatNextOccurrence(nextOccurrence) {
     if (next.getDate() === tomorrow.getDate() &&
         next.getMonth() === tomorrow.getMonth() &&
         next.getFullYear() === tomorrow.getFullYear()) {
-        return `Next: Tomorrow at ${timeStr}`;
+        return _getLabel('recurring.nextTomorrow', { vars: { time: timeStr } });
     }
 
     // Check if it's within this week (next 7 days)
     if (msUntil < 604800000) {
         const weekday = next.toLocaleDateString(undefined, { weekday: 'long' });
-        return `Next: ${weekday} at ${timeStr}`;
+        return _getLabel('recurring.nextWeekday', { vars: { weekday, time: timeStr } });
     }
 
     // Further out - show full date (include year for clarity)
@@ -637,6 +673,6 @@ export function formatNextOccurrence(nextOccurrence) {
         year: 'numeric'
     });
 
-    return `Next: ${dateStr} at ${timeStr}`;
+    return _getLabel('recurring.nextDate', { vars: { date: dateStr, time: timeStr } });
 }
 

@@ -1,3 +1,7 @@
+## [2.082] - 2026-03-13
+- feat: enhance recurring task management with improved notification settings and label integration
+
+
 ## [2.081] - 2026-03-13
 - feat(guided-tour): enhance tour steps and tooltip functionality
 

@@ -26,14 +26,10 @@ const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
 
 // Start the application
 (async () => {
-  const bootStart = Date.now();
-
   try {
     // Import the orchestrator - this triggers the boot sequence
     // orchestrator.js has its own error handling with retries
     await import(`./modules/boot/orchestrator.js?v=${APP_VERSION}`);
-
-    const bootTime = Date.now() - bootStart;
 
   } catch (error) {
     // This only catches catastrophic failures (orchestrator.js can't load at all)

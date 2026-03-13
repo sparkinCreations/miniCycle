@@ -4,6 +4,12 @@
  * Purpose: Setup functions for recurring panel UI elements
  * Extracted from recurringPanel.js to reduce file size
  *
+ * DI PATTERN NOTE: This module uses explicit parameter-passing (`deps` argument)
+ * instead of diBase.js. This is intentional — these are stateless helper functions
+ * called exclusively by RecurringPanel, which passes its own resolved DI dependencies.
+ * Parameter-passing keeps these helpers pure, testable without global wiring, and
+ * avoids the overhead of separate manifests in featureBoot.js for internal utilities.
+ *
  * @module recurringPanelSetup
  * @version 1.0.0
  */
@@ -86,16 +92,16 @@ export function setupToggleVisibility(deps) {
         }
     };
 
-    toggleVisibility(DOM_IDS.HOURLY_SPECIFIC_TIME, "hourly-minute-container");
+    toggleVisibility(DOM_IDS.HOURLY_SPECIFIC_TIME, DOM_IDS.HOURLY_MINUTE_CONTAINER);
     toggleVisibility(DOM_IDS.freqSpecificTime('daily'), DOM_IDS.freqTimeContainer('daily'));
-    toggleVisibility("weekly-specific-days", "weekly-day-container");
+    toggleVisibility(DOM_IDS.WEEKLY_SPECIFIC_DAYS, DOM_IDS.WEEKLY_DAY_CONTAINER);
     toggleVisibility(DOM_IDS.freqSpecificTime('weekly'), DOM_IDS.freqTimeContainer('weekly'));
-    toggleVisibility(DOM_IDS.BIWEEKLY_SPECIFIC_DAYS, "biweekly-day-container");
+    toggleVisibility(DOM_IDS.BIWEEKLY_SPECIFIC_DAYS, DOM_IDS.BIWEEKLY_DAY_CONTAINER);
     toggleVisibility(DOM_IDS.freqSpecificTime('biweekly'), DOM_IDS.freqTimeContainer('biweekly'));
     toggleVisibility(DOM_IDS.MONTHLY_SPECIFIC_DAYS, DOM_IDS.MONTHLY_DAY_CONTAINER);
     toggleVisibility(DOM_IDS.MONTHLY_WEEK_OF_MONTH, DOM_IDS.MONTHLY_WEEK_CONTAINER);
     toggleVisibility(DOM_IDS.freqSpecificTime('monthly'), DOM_IDS.freqTimeContainer('monthly'));
-    toggleVisibility(DOM_IDS.YEARLY_SPECIFIC_MONTHS, "yearly-month-container");
+    toggleVisibility(DOM_IDS.YEARLY_SPECIFIC_MONTHS, DOM_IDS.YEARLY_MONTH_CONTAINER);
     toggleVisibility(DOM_IDS.freqSpecificTime('yearly'), DOM_IDS.freqTimeContainer('yearly'));
 }
 
@@ -113,7 +119,7 @@ export function setupToggleCheckAll(deps, onUpdate) {
     if (!toggleBtn) return;
 
     deps.safeAddEventListener(toggleBtn, "click", () => {
-        const checkboxes = deps.querySelectorAll(".recurring-check:not(.hidden)");
+        const checkboxes = deps.querySelectorAll(DOM_SELECTORS.RECURRING_CHECK_VISIBLE);
         const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
 
         checkboxes.forEach(cb => {
@@ -125,7 +131,7 @@ export function setupToggleCheckAll(deps, onUpdate) {
         });
 
         // Update button label
-        toggleBtn.textContent = anyUnchecked ? "Uncheck All" : "Check All";
+        toggleBtn.textContent = anyUnchecked ? getLabel('recurring.checkAll') : getLabel('recurring.uncheckAll');
 
         onUpdate?.();
     });

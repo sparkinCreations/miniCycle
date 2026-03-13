@@ -7,13 +7,19 @@
  * @module recurringMatcher
  */
 
-import { normalizeRecurringSettings } from './recurringSettings.js';
-
 // ============================================
-// DATE UTILITIES (injected via setDateUtils)
+// INJECTED DEPENDENCIES (via setDateUtils / setNormalizer)
 // ============================================
+//
+// NOTE: normalizeRecurringSettings is injected via setNormalizer() instead of
+// a static import. This avoids the dual-instance problem documented in MEMORY.md:
+// recurringCore loads this module dynamically with ?v= cache-busting, so a static
+// import of recurringSettings.js would resolve to a SEPARATE unversioned instance
+// with its own normalization cache.
+//
 
 let _dateUtils = null;
+let _normalizeSettings = null;
 
 /**
  * Set date utilities (called by recurringCore after loading sub-modules)
@@ -21,6 +27,14 @@ let _dateUtils = null;
  */
 export function setDateUtils(utils) {
     _dateUtils = utils;
+}
+
+/**
+ * Set normalizer function (called by recurringCore after loading sub-modules)
+ * @param {Function} fn - normalizeRecurringSettings function
+ */
+export function setNormalizer(fn) {
+    _normalizeSettings = fn;
 }
 
 // Helper getter for cleaner code
@@ -44,11 +58,16 @@ const getDateUtils = () => {
 export function shouldTaskRecurNow(settings, now = new Date()) {
     // Normalize to enforce defaults for empty selections (handles legacy data
     // saved before the empty-selection fix was added to the normalizer)
-    settings = normalizeRecurringSettings(settings);
+    if (!_normalizeSettings) {
+        throw new Error('recurringMatcher: Normalizer not initialized. Call setNormalizer first.');
+    }
+    settings = _normalizeSettings(settings);
 
     // END DATE VALIDATION: Check if we're past the end date
     if (settings.untilDate) {
         const endDate = getDateUtils().parseDateAsLocal(settings.untilDate);
+        if (!endDate) return false; // Invalid end date, don't recur
+
         // Set end date to end of day (23:59:59) for comparison
         endDate.setHours(23, 59, 59, 999);
 
@@ -61,6 +80,7 @@ export function shouldTaskRecurNow(settings, now = new Date()) {
     if (settings.specificDates?.enabled) {
         const todayMatch = settings.specificDates.dates?.some(dateStr => {
             const date = getDateUtils().parseDateAsLocal(dateStr);
+            if (!date) return false;
             return date.getFullYear() === now.getFullYear()
                 && date.getMonth()  === now.getMonth()
                 && date.getDate()   === now.getDate();

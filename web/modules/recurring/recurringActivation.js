@@ -91,7 +91,7 @@ export function activateTaskRecurringState(cycle, taskId, normalizedSettings, ca
 
     cycle.recurringTemplates[taskId] = {
         id: taskId,
-        text: task?.text || cycle.recurringTemplates[taskId]?.text || 'Untitled Task',
+        text: task?.text || cycle.recurringTemplates[taskId]?.text || getLabel('noun.untitledTask'),
         recurring: true,
         recurringSettings: structuredClone(normalizedSettings),
         highPriority: task?.highPriority || false,
@@ -158,15 +158,9 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
         task.recurringSettings = Deps.normalizeRecurringSettings(structuredClone(task.recurringSettings));
     }
 
-    // Update DOM if element exists
-    if (taskItem) {
-        taskItem.setAttribute("data-recurring-settings", JSON.stringify(task.recurringSettings));
-        taskItem.classList.add("recurring");
-    }
-
     task.schemaVersion = 2;
 
-    // Update task AND template in AppState
+    // Commit state FIRST (single source of truth), then sync DOM
     assertInjected('updateAppState', Deps.updateAppState);
     await Deps.updateAppState(draft => {
         const activeCycleId = draft.appState?.activeCycleId;
@@ -184,6 +178,12 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
             Deps.calculateNextOccurrence
         );
     }, true);
+
+    // Update DOM AFTER state is committed (prevents desync if state update fails)
+    if (taskItem) {
+        taskItem.setAttribute("data-recurring-settings", JSON.stringify(task.recurringSettings));
+        taskItem.classList.add("recurring");
+    }
 
     // Sync DOM for delete-on-complete state
     if (taskItem && Deps.GlobalUtils?.syncTaskDeleteWhenCompleteDOM) {

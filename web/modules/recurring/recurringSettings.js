@@ -122,29 +122,29 @@ export function normalizeRecurringSettings(settings = {}) {
         const currentMinute = now.getMinutes();
         normalized.hourly.useSpecificMinute = true;
         normalized.hourly.minute = currentMinute;
-        console.warn(`⚠️ Hourly recurring with no specific minute — defaulting to :${String(currentMinute).padStart(2, '0')}`);
+        console.debug(`Hourly recurring with no specific minute — defaulting to :${String(currentMinute).padStart(2, '0')}`);
     }
 
     if (freq === 'weekly' && normalized.weekly.days.length === 0) {
         normalized.weekly.days = [currentWeekday];
-        console.warn(`⚠️ Weekly recurring with no days selected — defaulting to ${currentWeekday}`);
+        console.debug(`Weekly recurring with no days selected — defaulting to ${currentWeekday}`);
     }
 
     if (freq === 'biweekly' &&
         normalized.biweekly.week1.length === 0 && normalized.biweekly.week2.length === 0) {
         // Only set week 1 — week 2 stays empty so the task recurs every OTHER week
         normalized.biweekly.week1 = [currentWeekday];
-        console.warn(`⚠️ Biweekly recurring with no days selected — defaulting to ${currentWeekday} every other week`);
+        console.debug(`Biweekly recurring with no days selected — defaulting to ${currentWeekday} every other week`);
     }
 
     if (freq === 'monthly' && !normalized.monthly.useWeekOfMonth) {
         if (!normalized.monthly.useSpecificDays) {
             normalized.monthly.useSpecificDays = true;
             normalized.monthly.days = [currentDayOfMonth];
-            console.warn(`⚠️ Monthly recurring with no pattern selected — defaulting to day ${currentDayOfMonth}`);
+            console.debug(`Monthly recurring with no pattern selected — defaulting to day ${currentDayOfMonth}`);
         } else if (normalized.monthly.days.length === 0 && !normalized.monthly.lastDay) {
             normalized.monthly.days = [currentDayOfMonth];
-            console.warn(`⚠️ Monthly recurring with specific days enabled but none selected — defaulting to day ${currentDayOfMonth}`);
+            console.debug(`Monthly recurring with specific days enabled but none selected — defaulting to day ${currentDayOfMonth}`);
         }
     }
 
@@ -154,7 +154,7 @@ export function normalizeRecurringSettings(settings = {}) {
         normalized.yearly.useSpecificDays = true;
         normalized.yearly.applyDaysToAll = true;
         normalized.yearly.daysByMonth = { all: [currentDayOfMonth] };
-        console.warn(`⚠️ Yearly recurring with no months selected — defaulting to month ${currentMonth}, day ${currentDayOfMonth}`);
+        console.debug(`Yearly recurring with no months selected — defaulting to month ${currentMonth}, day ${currentDayOfMonth}`);
     }
 
     // Bound cache size
@@ -164,6 +164,9 @@ export function normalizeRecurringSettings(settings = {}) {
     }
 
     normalizationCache.set(cacheKey, normalized);
-    return structuredClone(normalized);
+    // Use structuredClone if available, otherwise JSON round-trip (consistent with cache retrieval)
+    return typeof structuredClone === 'function'
+        ? structuredClone(normalized)
+        : JSON.parse(JSON.stringify(normalized));
 }
 
