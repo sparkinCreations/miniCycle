@@ -34,7 +34,7 @@
 }
 
 .recurring-task-item:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--theme-hover-bg);
 }
 
 .recurring-task-item:focus-visible {
@@ -43,12 +43,12 @@
 }
 
 .recurring-task-item.checked {
-    background-color: #b9b9b9;
+    background-color: var(--color-gray-400);
 }
 
 .recurring-task-item.selected {
-    border: 1px solid var(--theme-success, #4caf4f);
-    background-color: #dfffdf;
+    border: 1px solid var(--theme-success, var(--color-success));
+    background-color: var(--recurring-selected-bg, #dfffdf);
 }
 
 .recurring-task-item input[type="checkbox"] {
@@ -213,12 +213,12 @@
     align-items: center;
     justify-content: center;
     gap: var(--space-2-5);
-    padding: 10px var(--space-5);
+    padding: var(--space-2-5) var(--space-5);
     font-size: var(--font-size-sm);
     font-weight: 500;
     border: none;
     border-radius: var(--radius-2xl);
-    background-color: #d8d8d8;
+    background-color: var(--color-gray-300);
     color: var(--theme-text-on-surface);
     box-shadow: none;
     cursor: pointer;
@@ -228,18 +228,18 @@
 }
 
 #open-recurring-panel:not(.menu-section-grid *):hover:not(:disabled) {
-    background-color: #c8c8c8;
+    background-color: var(--color-gray-400);
 }
 
 #open-recurring-panel:not(.menu-section-grid *):disabled {
-    background-color: #e0e0e0;
-    color: #999;
+    background-color: var(--color-gray-200);
+    color: var(--color-gray-500);
     cursor: not-allowed;
     box-shadow: none;
 }
 
 #open-recurring-panel:not(.menu-section-grid *) i {
-    font-size: 1.1rem;
+    font-size: var(--font-size-lg);
 }
 
 /* =============================================================================
@@ -257,7 +257,7 @@
 }
 
 .recurring-scroll-area::-webkit-scrollbar {
-    width: 6px;
+    width: var(--space-1-5);
 }
 
 .recurring-scroll-area::-webkit-scrollbar-thumb {
@@ -355,7 +355,7 @@
     gap: var(--space-2);
     margin-top: var(--space-2-5);
     padding: var(--space-2);
-    background: #d3d3d3;
+    background: var(--color-gray-300);
     border-radius: var(--radius-10);
 }
 
@@ -420,13 +420,13 @@
 .recurring-summary {
     margin-top: var(--space-3-75);
     padding: var(--space-2-5);
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--theme-hover-bg);
     border-radius: var(--radius-md);
 }
 
 #recurring-summary-preview {
     font-size: var(--font-size-sm);
-    color: var(--theme-text-secondary, #666);
+    color: var(--theme-text-secondary, var(--color-gray-600));
 }
 
 #recurring-preview-text {
@@ -435,7 +435,7 @@
 
 .change-recurring-btn {
     margin-top: var(--space-2);
-    padding: 6px var(--space-3);
+    padding: var(--space-1-5) var(--space-3);
     font-size: var(--font-size-xs);
     background: var(--theme-button-secondary-bg);
     border: 1px solid rgba(0, 0, 0, 0.1);
@@ -468,7 +468,7 @@
 
 .recurring-date-trash-icon,
 .recurring-trash-icon {
-    color: #999;
+    color: var(--theme-text-muted, var(--color-gray-500));
     transition: color var(--transition-fast) ease;
 }
 
@@ -487,7 +487,7 @@
     min-height: 14px;
     max-width: none; /* Override .task span max-width rule */
     font-size: var(--font-size-sm);
-    color: #3498db; /* Blue */
+    color: var(--color-blue-medium);
     margin-left: var(--space-2);
     margin-right: 0; /* Override .task span margin-right rule */
     vertical-align: middle;
@@ -612,7 +612,7 @@ select.hidden {
 }
 
 .time-picker-group input::placeholder {
-    color: #aaa;
+    color: var(--color-gray-400);
     font-style: italic;
     font-size: var(--font-size-sm);
 }
@@ -627,7 +627,7 @@ select.hidden {
     grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
     gap: var(--space-2-5);
     padding: var(--space-2-5);
-    background: #d3d3d3;
+    background: var(--color-gray-300);
     border-radius: var(--radius-10);
 }
 
@@ -647,7 +647,7 @@ select.hidden {
 
 .yearly-month-box.selected,
 .yearly-day-box.selected {
-    background: #b0f1b5;
+    background: var(--recurring-selected-bg, #dfffdf);
     border-color: var(--color-success);
     color: var(--color-black);
 }
@@ -730,11 +730,11 @@ select.hidden {
     justify-content: center;
     gap: var(--space-2);
     width: 100%;
-    padding: 10px var(--space-4);
+    padding: var(--space-2-5) var(--space-4);
     font-size: var(--font-size-sm);
     font-weight: 500;
     color: var(--theme-text-on-surface);
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--theme-hover-bg);
     border: 1px dashed rgba(0, 0, 0, 0.2);
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -766,7 +766,7 @@ select.hidden {
     justify-content: space-between;
     font-size: var(--font-size-xs);
     font-weight: 600;
-    color: #555;
+    color: var(--color-gray-600);
     margin-bottom: var(--space-2);
 }
 
@@ -781,7 +781,7 @@ select.hidden {
     transition: background var(--transition-fast);
 }
 .select-all-add-recurring-btn:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--theme-hover-bg);
 }
 
 #non-recurring-tasks {
@@ -796,7 +796,7 @@ select.hidden {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    padding: var(--space-2) 10px;
+    padding: var(--space-2) var(--space-2-5);
     margin-bottom: var(--space-1);
     background: var(--theme-input-bg, var(--color-white));
     border: 1px solid var(--theme-border);
@@ -811,7 +811,7 @@ select.hidden {
 }
 
 #non-recurring-tasks li.selected {
-    background: #e8f5e9;
+    background: var(--recurring-selected-bg, #dfffdf);
     border-color: var(--theme-success, var(--color-success));
 }
 
@@ -840,7 +840,7 @@ select.hidden {
     justify-content: center;
     width: 100%;
     margin-top: var(--space-2-5);
-    padding: 10px var(--space-4);
+    padding: var(--space-2-5) var(--space-4);
     font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--color-white);
@@ -862,7 +862,7 @@ select.hidden {
 
 .no-available-tasks {
     font-size: var(--font-size-sm);
-    color: #666;
+    color: var(--theme-text-muted, var(--color-gray-600));
     font-style: italic;
     text-align: center;
     padding: var(--space-2-5);
@@ -872,7 +872,7 @@ select.hidden {
 .recurring-empty-state {
     text-align: center;
     padding: var(--space-5);
-    color: #666;
+    color: var(--theme-text-muted, var(--color-gray-600));
     font-style: italic;
 }
 
@@ -891,7 +891,7 @@ select.hidden {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: var(--theme-modal-overlay);
     z-index: var(--z-modal);
     justify-content: center;
     align-items: center;
@@ -900,7 +900,7 @@ select.hidden {
 
 /* Uses show() instead of showModal() so notifications (z-notification) layer above */
 dialog.reminders-modal {
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: var(--theme-modal-overlay);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
 }
@@ -927,8 +927,8 @@ dialog.reminders-modal[open] {
 
 .reminders-modal-content .close-btn {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: var(--space-2);
+    right: var(--space-2);
     background: transparent;
     color: var(--theme-text-muted, #999);
     font-size: var(--font-size-xl);
@@ -973,7 +973,7 @@ dialog.reminders-modal[open] {
 }
 
 .settings-warning-summary {
-    font-size: 0.78rem;
+    font-size: var(--font-size-xs);
     opacity: 0.6;
     cursor: pointer;
     user-select: none;
@@ -994,7 +994,7 @@ dialog.reminders-modal[open] {
 
 /* Privacy/info warning text below settings toggles */
 .settings-warning {
-    font-size: 0.78rem;
+    font-size: var(--font-size-xs);
     opacity: 0.6;
     margin: var(--space-1) 0 0 0;
     padding: 0;

@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -85,8 +85,16 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
             settings.defaultRecurTime = new Date().toISOString();
         }
 
-        // Read DOM state before entering AppState callback (DOM queries shouldn't happen inside state producers)
+        // Read ALL DOM state before entering AppState callback
+        // (DOM queries must not happen inside state producers)
         const saveAsDefault = _deps.getElementById(DOM_IDS.SET_DEFAULT_RECURRING)?.checked || false;
+        const checkedTaskData = Array.from(checkedEls).map(checkbox => {
+            const taskEl = checkbox.closest(DATA_SELECTORS.TASK_ID_ELEMENT);
+            return {
+                taskId: taskEl?.dataset.taskId || null,
+                textFromDOM: taskEl?.querySelector(DOM_SELECTORS.RECURRING_TASK_TEXT)?.textContent || null
+            };
+        }).filter(d => d.taskId);
 
         // Batch all updates in one AppState operation
         if (_deps.updateAppState) {
@@ -102,13 +110,9 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                     cycle.recurringTemplates = {};
                 }
 
-                checkedEls.forEach(checkbox => {
-                    const taskEl = checkbox.closest("[data-task-id]");
-                    const taskId = taskEl?.dataset.taskId;
-                    if (!taskId || !taskEl) return;
-
+                checkedTaskData.forEach(({ taskId, textFromDOM }) => {
                     // Check if task exists in task list
-                    let task = cycle.tasks.find(t => t.id === taskId);
+                    const task = cycle.tasks.find(t => t.id === taskId);
 
                     // Only update task if it exists in the task list
                     if (task) {
@@ -121,7 +125,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                     const existingTemplate = cycle.recurringTemplates[taskId];
                     const templateText = task?.text ||
                                        existingTemplate?.text ||
-                                       taskEl.querySelector(DOM_SELECTORS.RECURRING_TASK_TEXT)?.textContent ||
+                                       textFromDOM ||
                                        getLabel('noun.untitledTask');
 
                     cycle.recurringTemplates[taskId] = {
@@ -142,10 +146,10 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
         // Sync DOM elements with new recurring state
         if (_deps.syncRecurringStateToDOM) {
             checkedEls.forEach(checkbox => {
-                const taskEl = checkbox.closest("[data-task-id]");
+                const taskEl = checkbox.closest(DATA_SELECTORS.TASK_ID_ELEMENT);
                 if (!taskEl) return;
                 taskEl.classList.add("recurring");
-                taskEl.setAttribute("data-recurring-settings", JSON.stringify(settings));
+                taskEl.setAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS, JSON.stringify(settings));
                 const recurringBtn = taskEl.querySelector(DOM_SELECTORS.RECURRING_BTN);
                 if (recurringBtn) {
                     recurringBtn.classList.add("active");

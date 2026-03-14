@@ -1015,6 +1015,7 @@ export const DEFAULT_LABELS = deepFreeze({
         monthOctober:         'October',
         monthNovember:        'November',
         monthDecember:        'December',
+        ariaDay:              'Day {day}',
         applyDaysToAllMonths: 'Apply selected days to all selected months',
         applyDaysToAllMonthsDesc: 'When checked, all selected days will apply to every selected month.',
         selectMonthForDays:   'Select which month to choose days for:',

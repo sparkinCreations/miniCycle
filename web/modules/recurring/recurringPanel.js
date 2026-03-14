@@ -270,7 +270,7 @@ export class RecurringPanelManager {
 
             // Keyboard: Enter toggles checkboxes, Arrow Up/Down navigates
             this.deps.safeAddEventListener(overlay, 'keydown', (e) => {
-                const active = document.activeElement;
+                const active = this.deps.getActiveElement?.() || document.activeElement;
 
                 // Enter toggles checkboxes (native checkboxes only respond to Space)
                 if (e.key === 'Enter' && active?.type === 'checkbox' && !active.disabled) {
@@ -286,7 +286,7 @@ export class RecurringPanelManager {
                 if (active?.tagName === 'INPUT' && (active.type === 'text' || active.type === 'number')) return;
                 e.preventDefault();
                 const focusable = [...overlay.querySelectorAll(
-                    'button, input, select, [tabindex="0"]'
+                    DOM_SELECTORS.FOCUSABLE_ELEMENTS
                 )].filter(el => el.offsetParent !== null && !el.disabled
                     && getComputedStyle(el).display !== 'none');
                 if (focusable.length === 0) return;
@@ -616,7 +616,7 @@ export class RecurringPanelManager {
         this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
             el.classList.remove('selected', 'checked');
             el.setAttribute('aria-selected', 'false');
-            const checkbox = el.querySelector("input[type='checkbox']");
+            const checkbox = el.querySelector(DOM_SELECTORS.RECURRING_CHECK);
             if (checkbox) checkbox.checked = false;
         });
 
@@ -735,7 +735,7 @@ export class RecurringPanelManager {
             // Show overlay
             const overlay = this.deps.getModal('recurringOverlay');
             if (overlay) {
-                overlay._previousFocus = document.activeElement;
+                overlay._previousFocus = this.deps.getActiveElement?.() || document.activeElement;
                 if (!overlay.open) overlay.showModal();
             }
 
@@ -984,7 +984,7 @@ export class RecurringPanelManager {
                             recurringIndicator.remove();
                         }
                         matchingTaskItem.classList.remove("recurring");
-                        matchingTaskItem.removeAttribute("data-recurring-settings");
+                        matchingTaskItem.removeAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS);
 
                         // Restore delete-when-complete state based on cycle mode
                         const updatedState = this.deps.AppState.get();
@@ -1399,13 +1399,13 @@ export class RecurringPanelManager {
             linkEl.textContent = '\u21BB ' + countText;
 
             // Click handler
-            linkEl.onclick = () => this.openPanel();
-            linkEl.onkeydown = (e) => {
+            this.deps.safeAddEventListener(linkEl, 'click', () => this.openPanel());
+            this.deps.safeAddEventListener(linkEl, 'keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     this.openPanel();
                 }
-            };
+            });
 
             // If task list is empty, enhance the empty state hint
             if (hint) {
@@ -1445,7 +1445,7 @@ export class RecurringPanelManager {
                 // Populate and show the list
                 this.populateAvailableTasks();
                 availableTasksList.classList.remove("hidden");
-                addTaskBtn.innerHTML = `<i class="fas fa-times"></i> ${getLabel('button.cancel')}`;
+                addTaskBtn.innerHTML = `<span class="icon" aria-hidden="true">${ICONS['times']}</span> ${getLabel('button.cancel')}`;
             } else {
                 // Hide the list and reset
                 availableTasksList.classList.add("hidden");
@@ -1459,7 +1459,7 @@ export class RecurringPanelManager {
         if (nonRecurringList) {
             this.deps.safeAddEventListener(nonRecurringList, "change", (e) => {
                 if (e.target.type === "checkbox") {
-                    const taskItem = e.target.closest("li[data-task-id]");
+                    const taskItem = e.target.closest(DATA_SELECTORS.TASK_ID_ELEMENT);
                     if (taskItem) {
                         taskItem.classList.toggle("selected", e.target.checked);
                     }
@@ -1472,10 +1472,10 @@ export class RecurringPanelManager {
                 // Don't toggle if clicking directly on checkbox
                 if (e.target.type === "checkbox") return;
 
-                const taskItem = e.target.closest("li[data-task-id]");
+                const taskItem = e.target.closest(DATA_SELECTORS.TASK_ID_ELEMENT);
                 if (!taskItem) return;
 
-                const checkbox = taskItem.querySelector("input[type='checkbox']");
+                const checkbox = taskItem.querySelector(DOM_SELECTORS.TASK_CHECKBOX);
                 if (checkbox) {
                     checkbox.checked = !checkbox.checked;
                     taskItem.classList.toggle("selected", checkbox.checked);
@@ -1495,12 +1495,12 @@ export class RecurringPanelManager {
         const selectAllBtn = this.deps.getElementById(DOM_IDS.SELECT_ALL_ADD_RECURRING);
         if (selectAllBtn && nonRecurringList) {
             this.deps.safeAddEventListener(selectAllBtn, "click", () => {
-                const checkboxes = nonRecurringList.querySelectorAll("input[type='checkbox']");
+                const checkboxes = nonRecurringList.querySelectorAll(DOM_SELECTORS.NON_RECURRING_CHECKBOX);
                 const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
 
                 checkboxes.forEach(cb => {
                     cb.checked = anyUnchecked;
-                    const item = cb.closest("li[data-task-id]");
+                    const item = cb.closest(DATA_SELECTORS.TASK_ID_ELEMENT);
                     if (item) item.classList.toggle("selected", anyUnchecked);
                 });
 
@@ -1696,7 +1696,7 @@ export class RecurringPanelManager {
                 this.deps.refreshUIFromState?.();
             }, 0);
 
-            const taskWord = selectedTaskIds.length === 1 ? 'task' : 'tasks';
+            const taskWord = getLabel('noun.task', { count: selectedTaskIds.length });
             this.deps.showNotification(`🔁 ${getLabel('notify.recurringAdded', { vars: { count: selectedTaskIds.length, taskWord } })}`, 'success');
 
         } catch (error) {
@@ -1738,7 +1738,7 @@ export class RecurringPanelManager {
     wireRecurringSettingsClickListener() {
         if (!this.deps.safeAddEventListener) return; // Guard: dependency not injected (e.g., in tests)
         this.deps.safeAddEventListener(document, "click", (e) => {
-            const target = e.target.closest(".open-recurring-settings");
+            const target = e.target.closest(DOM_SELECTORS.OPEN_RECURRING_SETTINGS);
             if (!target) return;
 
             const taskId = target.dataset.taskId;
@@ -1783,7 +1783,7 @@ export class RecurringPanelManager {
 
         // Auto-check the selected task so settings apply to it
         const taskItem = this.deps.getElementById(DOM_IDS.RECURRING_TASK_LIST)
-            ?.querySelector(`[data-task-id="${taskId}"]`);
+            ?.querySelector(DATA_SELECTORS.elementByTaskId(taskId));
         if (taskItem) {
             const checkbox = taskItem.querySelector(DOM_SELECTORS.RECURRING_CHECK);
             if (checkbox) {
@@ -1812,7 +1812,7 @@ export class RecurringPanelManager {
                 itemToSelect.classList.add("selected");
                 this.state.selectedTaskId = taskIdToPreselect;
 
-                const checkbox = itemToSelect.querySelector("input[type='checkbox']");
+                const checkbox = itemToSelect.querySelector(DOM_SELECTORS.RECURRING_CHECK);
                 if (checkbox) {
                     checkbox.checked = true;
                     itemToSelect.classList.add("checked");
@@ -1820,8 +1820,8 @@ export class RecurringPanelManager {
 
                 // Scroll the selected task into view within the list
                 requestAnimationFrame(() => {
-                    const scrollBehavior = document.body.classList.contains('reduced-motion') ||
-                        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+                    const body = this.deps.getBody?.() || document.body;
+                    const scrollBehavior = body.classList.contains('reduced-motion') ? 'auto' : 'smooth';
                     itemToSelect.scrollIntoView({ behavior: scrollBehavior, block: 'center' });
                 });
 
@@ -1840,9 +1840,12 @@ export class RecurringPanelManager {
             // Show panel
             const overlay = this.deps.getModal('recurringOverlay');
             if (overlay) {
-                overlay._previousFocus = document.activeElement;
+                overlay._previousFocus = this.deps.getActiveElement?.() || document.activeElement;
                 if (!overlay.open) overlay.showModal();
             }
+
+            // Always collapse advanced settings when opening settings form
+            this._resetAdvanced?.();
 
             // Enter editing mode with the preselected task
             this.setPanelMode('editing');
@@ -1940,7 +1943,7 @@ export function buildRecurringSummaryFromSettings(settings = {}) {
     if (!_buildRecurringSummaryFromSettings) {
         console.warn('buildRecurringSummaryFromSettings called before sub-modules loaded, using inline fallback');
         // Minimal fallback
-        return `Repeats ${settings.frequency || 'daily'}`;
+        return getLabel('recurring.summaryRepeats', { vars: { freq: settings.frequency || 'daily' } });
     }
     return _buildRecurringSummaryFromSettings(settings);
 }

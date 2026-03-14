@@ -18,6 +18,26 @@ import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
+// SHARED HELPERS
+// ============================================================================
+
+/**
+ * Build a map of frequency keys to their DOM option panels
+ * @param {Object} deps - Dependencies (getElementById)
+ * @returns {Object} frequencyMap - { hourly: Element, daily: Element, ... }
+ */
+function getFrequencyOptionMap(deps) {
+    return {
+        hourly: deps.getElementById(DOM_IDS.HOURLY_OPTIONS),
+        daily: deps.getElementById(DOM_IDS.DAILY_OPTIONS),
+        weekly: deps.getElementById(DOM_IDS.WEEKLY_OPTIONS),
+        biweekly: deps.getElementById(DOM_IDS.BIWEEKLY_OPTIONS),
+        monthly: deps.getElementById(DOM_IDS.MONTHLY_OPTIONS),
+        yearly: deps.getElementById(DOM_IDS.YEARLY_OPTIONS)
+    };
+}
+
+// ============================================================================
 // FREQUENCY SELECTOR
 // ============================================================================
 
@@ -32,22 +52,17 @@ export function setupFrequencySelector(deps, onUpdate) {
 
     deps.safeAddEventListener(frequencySelect, "change", () => {
         const selectedFrequency = frequencySelect.value;
-        const frequencyMap = {
-            hourly: deps.getElementById(DOM_IDS.HOURLY_OPTIONS),
-            daily: deps.getElementById(DOM_IDS.DAILY_OPTIONS),
-            weekly: deps.getElementById(DOM_IDS.WEEKLY_OPTIONS),
-            biweekly: deps.getElementById(DOM_IDS.BIWEEKLY_OPTIONS),
-            monthly: deps.getElementById(DOM_IDS.MONTHLY_OPTIONS),
-            yearly: deps.getElementById(DOM_IDS.YEARLY_OPTIONS)
-        };
+        const frequencyMap = getFrequencyOptionMap(deps);
 
         // Hide all frequency option sections
         Object.values(frequencyMap).forEach(section => {
             if (section) section.classList.add("hidden");
         });
 
-        // Show selected frequency options
-        if (frequencyMap[selectedFrequency]) {
+        // Show selected frequency options only if advanced toggle is visible
+        const advToggleBtn = deps.getElementById(DOM_IDS.TOGGLE_ADVANCED_SETTINGS);
+        const advancedOn = advToggleBtn?.dataset.advancedVisible === 'true';
+        if (frequencyMap[selectedFrequency] && advancedOn) {
             frequencyMap[selectedFrequency].classList.remove("hidden");
         }
 
@@ -157,14 +172,32 @@ export function setupAdvancedToggle(deps) {
             ? getLabel('recurring.hideAdvanced')
             : getLabel('recurring.showAdvanced');
 
+        // Track state so frequency selector can check it
+        toggleBtn.dataset.advancedVisible = String(visible);
+
         // Show/hide all `.frequency-options` panels
         deps.querySelectorAll(DOM_SELECTORS.FREQUENCY_OPTIONS).forEach(option => {
-            option.style.display = visible ? "block" : "none";
+            option.classList.toggle("hidden", !visible);
         });
+
+        // Re-apply frequency selection so only the active frequency's options show
+        if (visible) {
+            const frequencySelect = deps.getElementById(DOM_IDS.RECUR_FREQUENCY);
+            if (frequencySelect) {
+                const selected = frequencySelect.value;
+                const frequencyMap = getFrequencyOptionMap(deps);
+
+                Object.entries(frequencyMap).forEach(([freq, section]) => {
+                    if (section && freq !== selected) {
+                        section.classList.add("hidden");
+                    }
+                });
+            }
+        }
 
         // Always show frequency dropdown container
         const frequencyContainer = deps.getElementById(DOM_IDS.RECUR_FREQUENCY_CONTAINER);
-        if (frequencyContainer) frequencyContainer.style.display = "block";
+        if (frequencyContainer) frequencyContainer.classList.remove("hidden");
 
         // Handle extras like 'Recur indefinitely' and 'Specific Dates'
         const advancedControls = [
@@ -178,13 +211,13 @@ export function setupAdvancedToggle(deps) {
 
             const label = checkbox.closest("label");
             if (label) {
-                label.style.display = visible ? "flex" : "none";
+                label.classList.toggle("hidden", !visible);
             }
         });
 
         const defaultBoxContainer = deps.getElementById(DOM_IDS.SET_DEFAULT_RECURRING_CONTAINER);
         if (defaultBoxContainer) {
-            defaultBoxContainer.style.display = visible ? "block" : "none";
+            defaultBoxContainer.classList.toggle("hidden", !visible);
         }
     };
 
@@ -318,7 +351,7 @@ export function setupMonthlyMutualExclusion(deps) {
 /**
  * Setup additional event listeners for recurring panel
  * @param {Object} deps - Dependencies
- * @param {Object} callbacks - { updateRecurringSummary, updateRecurCountVisibility }
+ * @param {Object} callbacks - { updateRecurringSummary, updateRecurCountVisibility, deselectAndBrowse }
  */
 export function setupAdditionalListeners(deps, callbacks) {
     // Specific date time checkbox

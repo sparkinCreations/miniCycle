@@ -1,3 +1,7 @@
+## [2.085] - 2026-03-14
+- feat(recurring-panel): enhance panel mode management and UI interactions
+
+
 ## [2.083] - 2026-03-13
 - Refactor recurring module for improved dependency injection and label handling
 

@@ -49,8 +49,9 @@ export function generateYearlyMonthGrid(deps) {
     const container = deps.querySelector(DOM_SELECTORS.YEARLY_MONTHS);
     if (!container) return;
 
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthNames = Array.from({ length: 12 }, (_, i) =>
+        new Date(0, i).toLocaleString(undefined, { month: 'short' })
+    );
 
     container.innerHTML = "";
 
@@ -61,6 +62,7 @@ export function generateYearlyMonthGrid(deps) {
         monthBox.setAttribute("role", "checkbox");
         monthBox.setAttribute("tabindex", index === 0 ? "0" : "-1");
         monthBox.setAttribute("aria-checked", "false");
+        monthBox.setAttribute("aria-label", name);
         monthBox.textContent = name;
 
         // No listener added - handled by setupYearlyMonthDelegation()
@@ -105,6 +107,7 @@ export function generateYearlyDayGrid(deps, state, monthNumber) {
             dayBox.classList.add("selected");
         }
         dayBox.setAttribute("aria-checked", isSelected ? "true" : "false");
+        dayBox.setAttribute("aria-label", getLabel('recurring.ariaDay', { vars: { day: i } }));
 
         // No listener added - handled by setupYearlyDayDelegation()
 

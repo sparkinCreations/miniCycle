@@ -36,6 +36,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { APP_VERSION } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -304,7 +305,7 @@ export async function setRecurringCoreDependencies(overrides = {}) {
     di.setDependencies(overrides);
 
     // Get version for cache-busting
-    const version = overrides.AppMeta?.version || _deps.AppMeta?.version || globalThis.APP_VERSION;
+    const version = overrides.AppMeta?.version || _deps.AppMeta?.version || APP_VERSION;
 
     // Load sub-modules with version
     await loadSubModules(version);

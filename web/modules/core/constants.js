@@ -834,6 +834,7 @@ export const DOM_SELECTORS = Object.freeze({
     TASK_EDIT_INPUT: '.task-edit-input',
     TASK_OPTIONS: '.task-options',
     TASK_BTN: '.task-btn',
+    TASK_CHECKBOX: 'input[type="checkbox"]',
     TASK_INPUT: '.task-input',
     TASK_LIST_CONTAINER: '.task-list-container',
     EMPTY_STATE_TEXT: '.empty-state-text',
@@ -929,6 +930,12 @@ export const DOM_SELECTORS = Object.freeze({
     RECURRING_REMOVE_BTN: '.recurring-remove-btn',
     RECURRING_TASK_TEXT: '.recurring-task-text',
     NON_RECURRING_SELECTED: '#non-recurring-tasks li.selected',
+    OPEN_RECURRING_SETTINGS: '.open-recurring-settings',
+    NON_RECURRING_CHECKBOX: '#non-recurring-tasks input[type="checkbox"]',
+    BIWEEKLY_WEEK1_SELECTED: '.biweekly-day-box.selected[data-week="1"]',
+    BIWEEKLY_WEEK2_SELECTED: '.biweekly-day-box.selected[data-week="2"]',
+    SPECIFIC_DATE_INPUT: `#specific-date-list input[type="date"]`,
+    FOCUSABLE_ELEMENTS: 'button, input, select, [tabindex="0"]',
 
     // ---- Preferences ----
     PREFERENCES_MODAL: '.preferences-modal',
@@ -1063,8 +1070,11 @@ export const DATA_SELECTORS = Object.freeze({
     taskById: (id) => `.task[data-task-id="${id}"]`,
     recurringTaskById: (id) => `.recurring-task-item[data-task-id="${id}"]`,
     elementByTaskId: (id) => `[data-task-id="${id}"]`,
+    TASK_ID_ELEMENT: '[data-task-id]',
     menuSectionByName: (name) => `.menu-section[data-section="${name}"]`,
-    preferencesSectionByName: (name) => `.preferences-section[data-section="${name}"], .preferences-preview-section[data-section="${name}"]`
+    preferencesSectionByName: (name) => `.preferences-section[data-section="${name}"], .preferences-preview-section[data-section="${name}"]`,
+    // Data attribute names (for setAttribute/removeAttribute/getAttribute)
+    ATTR_RECURRING_SETTINGS: 'data-recurring-settings'
 });
 
 // ============================================================================
