@@ -1019,7 +1019,7 @@ export const DEFAULT_LABELS = deepFreeze({
         applyDaysToAllMonths: 'Apply selected days to all selected months',
         applyDaysToAllMonthsDesc: 'When checked, all selected days will apply to every selected month.',
         selectMonthForDays:   'Select which month to choose days for:',
-        selectDaysForMonth:   'Select days for',
+        selectDaysForMonth:   'Select days for {month}:',
         selectDaysForAllMonths: 'Select days for all selected months:',
         patternIndefinitely:  'Indefinitely',
         patternLimited:       'Limited',

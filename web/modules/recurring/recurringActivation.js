@@ -143,6 +143,8 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
     const { assignedTaskId, currentCycle, settings } = taskContext;
 
     assertInjected('querySelector', Deps.querySelector);
+    assertInjected('normalizeRecurringSettings', Deps.normalizeRecurringSettings);
+    assertInjected('calculateNextOccurrence', Deps.calculateNextOccurrence);
     const taskItem = Deps.querySelector(DATA_SELECTORS.elementByTaskId(assignedTaskId));
 
     const defaultSettings = settings.defaultRecurringSettings || {
@@ -484,9 +486,10 @@ export async function deleteRecurringTemplate(taskId) {
 }
 
 /**
- * Remove recurring tasks from cycle during reset
+ * Remove recurring tasks from cycle during reset.
+ * Mutates a transient cycleData object; caller is responsible for persistence via AppState.update().
  * @param {Array} taskElements - Array of task DOM elements
- * @param {Object} cycleData - Current cycle data
+ * @param {Object} cycleData - Transient cycle data snapshot (not a live AppState reference)
  */
 export function removeRecurringTasksFromCycle(taskElements, cycleData) {
     let removedCount = 0;

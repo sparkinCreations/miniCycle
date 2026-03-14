@@ -237,8 +237,8 @@ export async function catchUpMissedRecurringTasks() {
             return;
         }
 
-        // FAST PATH: Skip if nextScheduledOccurrence is null or in the future
-        if (!template.nextScheduledOccurrence) {
+        // FAST PATH: Skip if nextScheduledOccurrence is not set
+        if (template.nextScheduledOccurrence == null) {
             return;
         }
 
@@ -465,7 +465,7 @@ export async function watchRecurringTasks() {
             Object.entries(templateUpdates).forEach(([templateId, updatedTemplate]) => {
                 cycle.recurringTemplates[templateId] = updatedTemplate;
             });
-        });
+        }, true); // Immediate save — consistent with catchUpMissedRecurringTasks
 
         if (tasksToActuallyAdd.length > 0) {
 

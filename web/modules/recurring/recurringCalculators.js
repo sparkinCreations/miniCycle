@@ -367,7 +367,7 @@ export function calculateNextYearly(yearlySettings, timeSettings, from) {
     // Safety fallback: normalizer should have defaulted empty months to current month
     if (targetMonths.length === 0) {
         const monthlyDays = applyDaysToAll ? (daysByMonth.all || []) : [];
-        return calculateNextMonthly({ days: monthlyDays }, timeSettings, from);
+        return calculateNextMonthly({ useSpecificDays: true, days: monthlyDays }, timeSettings, from);
     }
 
     // Sort months ascending
