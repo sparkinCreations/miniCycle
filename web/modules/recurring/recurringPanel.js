@@ -48,13 +48,14 @@ const di = createDIModule('RecurringPanel', {
     querySelector: required(),
     querySelectorAll: required(),
 
+    safeAddEventListener: required(),
+
     // Optional — genuinely nullable, code checks before use
     appInit: optional(null),
     loadData: optional(null),
     escapeHtml: optional(null),
     syncRecurringStateToDOM: optional(null),
     refreshTaskButtonsForModeChange: optional(null),
-    safeAddEventListener: optional(null),
     refreshUIFromState: optional(null),
     activateTaskRecurringState: optional(null),
     deactivateTaskRecurringState: optional(null),
@@ -404,7 +405,7 @@ export class RecurringPanelManager {
         if (!label) return;
 
         const monthName = new Date(0, monthNumber - 1).toLocaleString('default', { month: 'long' });
-        label.textContent = `${getLabel('recurring.selectDaysForMonth')} ${monthName}:`;
+        label.textContent = getLabel('recurring.selectDaysForMonth', { vars: { month: monthName } });
     }
 
     /**
@@ -1398,14 +1399,21 @@ export class RecurringPanelManager {
             linkEl.classList.add('show');
             linkEl.textContent = '\u21BB ' + countText;
 
-            // Click handler
-            this.deps.safeAddEventListener(linkEl, 'click', () => this.openPanel());
-            this.deps.safeAddEventListener(linkEl, 'keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    this.openPanel();
-                }
-            });
+            // Bind handlers once (stable references for safeAddEventListener dedup)
+            if (!this._onInfoLinkClick) {
+                this._onInfoLinkClick = () => this.openPanel();
+            }
+            if (!this._onInfoLinkKeydown) {
+                this._onInfoLinkKeydown = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.openPanel();
+                    }
+                };
+            }
+
+            this.deps.safeAddEventListener(linkEl, 'click', this._onInfoLinkClick);
+            this.deps.safeAddEventListener(linkEl, 'keydown', this._onInfoLinkKeydown);
 
             // If task list is empty, enhance the empty state hint
             if (hint) {

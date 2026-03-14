@@ -1,3 +1,7 @@
+## [2.086] - 2026-03-14
+- feat: Update recurring task features and improve accessibility
+
+
 ## [2.085] - 2026-03-14
 - feat(recurring-panel): enhance panel mode management and UI interactions
 
