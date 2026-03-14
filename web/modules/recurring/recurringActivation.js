@@ -181,7 +181,7 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
 
     // Update DOM AFTER state is committed (prevents desync if state update fails)
     if (taskItem) {
-        taskItem.setAttribute("data-recurring-settings", JSON.stringify(task.recurringSettings));
+        taskItem.setAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS, JSON.stringify(task.recurringSettings));
         taskItem.classList.add("recurring");
     }
 
@@ -294,7 +294,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
 
     // Update DOM
     if (taskItem) {
-        taskItem.removeAttribute("data-recurring-settings");
+        taskItem.removeAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS);
         taskItem.classList.remove("recurring");
 
         if (Deps.GlobalUtils?.syncTaskDeleteWhenCompleteDOM) {
@@ -410,7 +410,7 @@ export async function applyRecurringToTaskSchema25(taskId, newSettings) {
     const taskElement = Deps.querySelector(DATA_SELECTORS.elementByTaskId(taskId));
     if (taskElement) {
         taskElement.classList.add("recurring");
-        taskElement.setAttribute("data-recurring-settings", JSON.stringify(updatedTask?.recurringSettings || task.recurringSettings));
+        taskElement.setAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS, JSON.stringify(updatedTask?.recurringSettings || task.recurringSettings));
         const recurringBtn = taskElement.querySelector(DOM_SELECTORS.RECURRING_BTN);
         if (recurringBtn) {
             recurringBtn.classList.add("active");
@@ -501,7 +501,7 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
             const shouldDelete = task?.deleteWhenComplete !== false;
 
             if (!shouldDelete) {
-                const checkbox = taskEl.querySelector("input[type='checkbox']");
+                const checkbox = taskEl.querySelector(DOM_SELECTORS.TASK_CHECKBOX);
                 if (checkbox) checkbox.checked = false;
                 if (task) task.completed = false;
                 keptCount++;

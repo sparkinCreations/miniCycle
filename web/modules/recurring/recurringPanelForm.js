@@ -143,7 +143,7 @@ export function buildRecurringSettingsFromPanel(deps, state) {
 
         // Specific Dates Mode
         if (deps.getElementById(DOM_IDS.RECUR_SPECIFIC_DATES)?.checked) {
-            const dateInputs = deps.querySelectorAll(`#${DOM_IDS.SPECIFIC_DATE_LIST} input[type='date']`);
+            const dateInputs = deps.querySelectorAll(DOM_SELECTORS.SPECIFIC_DATE_INPUT);
             settings.specificDates.enabled = true;
             settings.specificDates.dates = Array.from(dateInputs).map(input => input.value).filter(Boolean);
 
@@ -194,8 +194,8 @@ export function buildRecurringSettingsFromPanel(deps, state) {
             if (frequency === "biweekly") {
                 settings.biweekly = {
                     useSpecificDays: deps.getElementById(DOM_IDS.BIWEEKLY_SPECIFIC_DAYS)?.checked,
-                    week1: Array.from(deps.querySelectorAll(DOM_SELECTORS.BIWEEKLY_DAY_BOX_SELECTED + "[data-week='1']")).map(el => el.dataset.day),
-                    week2: Array.from(deps.querySelectorAll(DOM_SELECTORS.BIWEEKLY_DAY_BOX_SELECTED + "[data-week='2']")).map(el => el.dataset.day)
+                    week1: Array.from(deps.querySelectorAll(DOM_SELECTORS.BIWEEKLY_WEEK1_SELECTED)).map(el => el.dataset.day),
+                    week2: Array.from(deps.querySelectorAll(DOM_SELECTORS.BIWEEKLY_WEEK2_SELECTED)).map(el => el.dataset.day)
                 };
             }
 

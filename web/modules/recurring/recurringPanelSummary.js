@@ -78,7 +78,7 @@ export function buildRecurringSummaryFromSettings(settings = {}) {
     } else if (!indefinitely && settings.untilDate) {
         // Format date nicely for display
         const dateObj = new Date(settings.untilDate + 'T00:00:00');
-        const formattedDate = dateObj.toLocaleDateString("en-US", {
+        const formattedDate = dateObj.toLocaleDateString(undefined, {
             month: "short",
             day: "numeric",
             year: "numeric"
@@ -125,20 +125,20 @@ export function buildRecurringSummaryFromSettings(settings = {}) {
         // Week-of-month pattern (e.g., "2nd Tuesday", "Last Friday")
         if (monthly.useWeekOfMonth && monthly.weekOfMonth) {
             const ordinalMap = {
-                "1": "1st",
-                "2": "2nd",
-                "3": "3rd",
-                "4": "4th",
-                "last": "Last"
+                "1": getLabel('recurring.ordinal1st'),
+                "2": getLabel('recurring.ordinal2nd'),
+                "3": getLabel('recurring.ordinal3rd'),
+                "4": getLabel('recurring.ordinal4th'),
+                "last": getLabel('recurring.ordinalLast')
             };
             const dayMap = {
-                "Sun": "Sunday",
-                "Mon": "Monday",
-                "Tue": "Tuesday",
-                "Wed": "Wednesday",
-                "Thu": "Thursday",
-                "Fri": "Friday",
-                "Sat": "Saturday"
+                "Sun": getLabel('recurring.daySunday'),
+                "Mon": getLabel('recurring.dayMonday'),
+                "Tue": getLabel('recurring.dayTuesday'),
+                "Wed": getLabel('recurring.dayWednesday'),
+                "Thu": getLabel('recurring.dayThursday'),
+                "Fri": getLabel('recurring.dayFriday'),
+                "Sat": getLabel('recurring.daySaturday')
             };
             const ordinal = ordinalMap[monthly.weekOfMonth.ordinal] || monthly.weekOfMonth.ordinal;
             const day = dayMap[monthly.weekOfMonth.day] || monthly.weekOfMonth.day;

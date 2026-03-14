@@ -14,7 +14,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel } from '../labels/labelResolver.js';
 
-import { UI_TIMEOUTS } from '../core/constants.js';
+import { APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
@@ -74,7 +74,7 @@ export async function initRecurringModules(options = {}) {
         // STEP 1: Import both modules (with version for cache-busting)
         // ============================================
 
-        const version = options.AppMeta?.version || globalThis.APP_VERSION;
+        const version = options.AppMeta?.version || APP_VERSION;
         if (!options.AppMeta?.version) {
             console.warn('⚠️ recurringIntegration: AppMeta.version not provided, using globalThis fallback');
         }
