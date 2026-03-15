@@ -14,6 +14,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { STORAGE_KEYS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -57,6 +58,64 @@ const BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000; // Only backup once per day
 const MIN_SESSION_INTERVAL_MS = 5 * 60 * 1000; // Skip session backup if last was < 5 min ago
 const MIN_TEST_INTERVAL_MS = 5 * 60 * 1000; // Skip test backup if last was < 5 min ago
 
+const LITE_STORAGE_KEYS = Object.freeze([
+    STORAGE_KEYS.LITE_DATA,
+    STORAGE_KEYS.LITE_MODE,
+    STORAGE_KEYS.LITE_THEME,
+    STORAGE_KEYS.LITE_CYCLES,
+    STORAGE_KEYS.LITE_LIFETIME_COMPLETED,
+    STORAGE_KEYS.LITE_TODO_DELETED,
+    STORAGE_KEYS.LITE_CELEBRATED_BADGES,
+    STORAGE_KEYS.LITE_CELEBRATED_CLEARED_BADGES,
+    STORAGE_KEYS.LITE_NOTIFICATIONS
+]);
+
+function collectLiteStorageSnapshot() {
+    const liteStorage = {};
+    let hasLiteData = false;
+
+    LITE_STORAGE_KEYS.forEach((key) => {
+        const value = localStorage.getItem(key);
+        if (value !== null) {
+            liteStorage[key] = value;
+            hasLiteData = true;
+        }
+    });
+
+    return hasLiteData ? liteStorage : null;
+}
+
+function calculateBackupSize(data, liteStorage) {
+    return JSON.stringify({
+        data,
+        liteStorage: liteStorage || undefined
+    }).length;
+}
+
+function buildPortableBackupPayload(backup) {
+    if (!backup?.data) {
+        return null;
+    }
+
+    const payload = {
+        schemaVersion: backup.data.metadata?.schemaVersion || backup.metadata?.schemaVersion || '2.5',
+        miniCycleData: JSON.stringify(backup.data),
+        backupMetadata: {
+            createdAt: backup.timestamp,
+            version: backup.metadata?.version || backup.data.metadata?.version || '2.5',
+            schemaVersion: backup.metadata?.schemaVersion || backup.data.metadata?.schemaVersion || '2.5',
+            includesLiteStorage: Boolean(backup.liteStorage),
+            source: 'miniCycle BackupManager'
+        }
+    };
+
+    if (backup.liteStorage) {
+        payload.liteStorage = backup.liteStorage;
+    }
+
+    return payload;
+}
+
 class BackupManager {
     constructor() {
         this.db = null;
@@ -70,6 +129,38 @@ class BackupManager {
      */
     _getAppState() {
         return _deps.AppState;
+    }
+
+    _buildBackupRecord(currentState, type, { id, name, cycleCount, liteStorage = collectLiteStorageSnapshot(), timestamp = Date.now() } = {}) {
+        const backup = {
+            timestamp,
+            data: currentState,
+            metadata: {
+                version: currentState.metadata?.version || '1.371',
+                schemaVersion: currentState.metadata?.schemaVersion || '2.5',
+                size: calculateBackupSize(currentState, liteStorage),
+                type,
+                created: new Date(timestamp).toISOString(),
+                includesLiteStorage: Boolean(liteStorage)
+            }
+        };
+
+        if (id) backup.id = id;
+        if (name) backup.name = name;
+        if (typeof cycleCount === 'number') {
+            backup.metadata.cycleCount = cycleCount;
+        }
+        if (liteStorage) {
+            backup.liteStorage = liteStorage;
+        }
+
+        return backup;
+    }
+
+    _getStoreName(type = 'auto') {
+        return type === 'test' ? TEST_BACKUP_STORE :
+               type === 'session' ? SESSION_BACKUP_STORE :
+               type === 'manual' ? MANUAL_BACKUP_STORE : AUTO_BACKUP_STORE;
     }
 
     /**
@@ -175,18 +266,7 @@ class BackupManager {
                 return false;
             }
 
-            const timestamp = Date.now();
-            const backup = {
-                timestamp,
-                data: currentState,
-                metadata: {
-                    version: currentState.metadata?.version || '1.371',
-                    schemaVersion: currentState.metadata?.schemaVersion || '2.5',
-                    size: JSON.stringify(currentState).length,
-                    type: 'auto',
-                    created: new Date(timestamp).toISOString()
-                }
-            };
+            const backup = this._buildBackupRecord(currentState, 'auto');
 
             // Save to IndexedDB
             await this.saveBackup(AUTO_BACKUP_STORE, backup);
@@ -236,23 +316,12 @@ class BackupManager {
 
             // Check if data is meaningful (has at least one cycle)
             const cycleCount = Object.keys(currentState?.data?.cycles || {}).length;
-            if (cycleCount === 0) {
+            const liteStorage = collectLiteStorageSnapshot();
+            if (cycleCount === 0 && !liteStorage) {
                 return false;
             }
 
-            const timestamp = Date.now();
-            const backup = {
-                timestamp,
-                data: currentState,
-                metadata: {
-                    version: currentState.metadata?.version || '1.371',
-                    schemaVersion: currentState.metadata?.schemaVersion || '2.5',
-                    size: JSON.stringify(currentState).length,
-                    type: 'session',
-                    created: new Date(timestamp).toISOString(),
-                    cycleCount
-                }
-            };
+            const backup = this._buildBackupRecord(currentState, 'session', { cycleCount, liteStorage });
 
             // Save to IndexedDB
             await this.saveBackup(SESSION_BACKUP_STORE, backup);
@@ -323,23 +392,12 @@ class BackupManager {
 
             // Check if data is meaningful (has at least one cycle)
             const cycleCount = Object.keys(currentState?.data?.cycles || {}).length;
-            if (cycleCount === 0) {
+            const liteStorage = collectLiteStorageSnapshot();
+            if (cycleCount === 0 && !liteStorage) {
                 return false;
             }
 
-            const timestamp = Date.now();
-            const backup = {
-                timestamp,
-                data: currentState,
-                metadata: {
-                    version: currentState.metadata?.version || '1.371',
-                    schemaVersion: currentState.metadata?.schemaVersion || '2.5',
-                    size: JSON.stringify(currentState).length,
-                    type: 'test',
-                    created: new Date(timestamp).toISOString(),
-                    cycleCount
-                }
-            };
+            const backup = this._buildBackupRecord(currentState, 'test', { cycleCount, liteStorage });
 
             // Save to IndexedDB
             await this.saveBackup(TEST_BACKUP_STORE, backup);
@@ -397,19 +455,11 @@ class BackupManager {
             }
 
             const timestamp = Date.now();
-            const backup = {
+            const backup = this._buildBackupRecord(currentState, 'manual', {
                 id: `manual_${timestamp}`,
                 name: name || `Manual Backup ${new Date().toLocaleString()}`,
-                timestamp,
-                data: currentState,
-                metadata: {
-                    version: currentState.metadata?.version || '1.371',
-                    schemaVersion: currentState.metadata?.schemaVersion || '2.5',
-                    size: JSON.stringify(currentState).length,
-                    type: 'manual',
-                    created: new Date(timestamp).toISOString()
-                }
-            };
+                timestamp
+            });
 
             await this.saveBackup(MANUAL_BACKUP_STORE, backup);
 
@@ -543,17 +593,20 @@ class BackupManager {
      * @param {string} type - 'auto', 'manual', or 'session'
      * @returns {Promise<Object>} - Restored data
      */
-    async restoreBackup(identifier, type = 'auto') {
+    async restoreBackup(identifier, type = 'auto', options = {}) {
         try {
-            await this.init();
-
-            const storeName = type === 'test' ? TEST_BACKUP_STORE :
-                              type === 'session' ? SESSION_BACKUP_STORE :
-                              type === 'manual' ? MANUAL_BACKUP_STORE : AUTO_BACKUP_STORE;
-            const backup = await this.getBackup(storeName, identifier);
+            const { format = 'data' } = options;
+            const backup = await this.getBackupBundle(identifier, type);
 
             if (!backup) {
                 throw new Error(`Backup not found: ${identifier}`);
+            }
+
+            if (format === 'bundle') {
+                return backup;
+            }
+            if (format === 'portable') {
+                return buildPortableBackupPayload(backup);
             }
 
             return backup.data;
@@ -562,6 +615,12 @@ class BackupManager {
             console.error('❌ BackupManager: Restore failed', error);
             throw error;
         }
+    }
+
+    async getBackupBundle(identifier, type = 'auto') {
+        await this.init();
+        const storeName = this._getStoreName(type);
+        return this.getBackup(storeName, identifier);
     }
 
     /**
@@ -589,9 +648,7 @@ class BackupManager {
         try {
             await this.init();
 
-            const storeName = type === 'test' ? TEST_BACKUP_STORE :
-                              type === 'session' ? SESSION_BACKUP_STORE :
-                              type === 'manual' ? MANUAL_BACKUP_STORE : AUTO_BACKUP_STORE;
+            const storeName = this._getStoreName(type);
 
             return new Promise((resolve, reject) => {
                 const transaction = this.db.transaction([storeName], 'readwrite');
@@ -639,17 +696,19 @@ class BackupManager {
      */
     async exportBackup(identifier, type = 'auto') {
         try {
-            const storeName = type === 'test' ? TEST_BACKUP_STORE :
-                              type === 'session' ? SESSION_BACKUP_STORE :
-                              type === 'manual' ? MANUAL_BACKUP_STORE : AUTO_BACKUP_STORE;
-            const backup = await this.getBackup(storeName, identifier);
+            const backup = await this.getBackupBundle(identifier, type);
 
             if (!backup) {
                 throw new Error('Backup not found');
             }
 
+            const portablePayload = buildPortableBackupPayload(backup);
+            if (!portablePayload) {
+                throw new Error('Backup payload is empty');
+            }
+
             const filename = `backup_${new Date(backup.timestamp).toISOString().replace(/[:.]/g, '-')}.mcyc`;
-            const blob = new Blob([JSON.stringify(backup.data, null, 2)], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(portablePayload, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;

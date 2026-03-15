@@ -216,6 +216,8 @@ export function setupImportButtons() {
         const button = document.getElementById(buttonId);
         if (!button) return;
 
+        button.title = getLabel('routine.importTitle');
+        button.setAttribute('aria-label', getLabel('routine.importTitle'));
         button._importHandler = handleImport;
         safeAddEventListener(button, "click", button._importHandler);
     });
@@ -772,4 +774,3 @@ export async function initCycleImportManager() {
     getUniqueCycleName = nameUtils.getUniqueCycleName;
 
 }
-

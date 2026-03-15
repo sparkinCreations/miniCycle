@@ -17,6 +17,37 @@ import {
 import { DOM_SELECTORS, STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
+const LITE_STORAGE_KEYS = Object.freeze([
+    STORAGE_KEYS.LITE_DATA,
+    STORAGE_KEYS.LITE_MODE,
+    STORAGE_KEYS.LITE_THEME,
+    STORAGE_KEYS.LITE_CYCLES,
+    STORAGE_KEYS.LITE_LIFETIME_COMPLETED,
+    STORAGE_KEYS.LITE_TODO_DELETED,
+    STORAGE_KEYS.LITE_CELEBRATED_BADGES,
+    STORAGE_KEYS.LITE_CELEBRATED_CLEARED_BADGES,
+    STORAGE_KEYS.LITE_NOTIFICATIONS
+]);
+
+function restoreLiteStorageSnapshot(deps, liteStorage) {
+    if (!liteStorage || typeof liteStorage !== 'object' || Array.isArray(liteStorage)) {
+        return 0;
+    }
+
+    const restorableEntries = Object.entries(liteStorage).filter(([key, value]) =>
+        LITE_STORAGE_KEYS.includes(key) && typeof value === 'string'
+    );
+    if (restorableEntries.length === 0) {
+        return 0;
+    }
+
+    LITE_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+    restorableEntries.forEach(([key, value]) => {
+        deps.safeLocalStorageSet(key, value);
+    });
+    return restorableEntries.length;
+}
+
 // ==========================================
 // BUTTON SETUP
 // ==========================================
@@ -406,15 +437,24 @@ export async function restoreFromBackup() {
                         const backupType = selectedBackup.type === 'indexeddb-test' ? 'test' :
                                            selectedBackup.type === 'indexeddb-session' ? 'session' :
                                            selectedBackup.type === 'indexeddb-auto' ? 'auto' : 'manual';
-                        restoredData = await deps.backupManager.restoreBackup(selectedBackup.id, backupType);
+                        restoredData = await deps.backupManager.restoreBackup(selectedBackup.id, backupType, { format: 'portable' });
 
                         if (!restoredData) {
                             throw new Error('Failed to load backup from IndexedDB');
                         }
 
+                        const isPortableSchema25 = (restoredData.schemaVersion === '2.5' || restoredData.schemaVersion === 2.5) &&
+                            typeof restoredData.miniCycleData === 'string';
                         const isSchema25 = restoredData.schemaVersion === '2.5' || restoredData.schemaVersion === 2.5;
 
-                        if (isSchema25) {
+                        if (isPortableSchema25) {
+                            localStorage.setItem(STORAGE_KEYS.DATA, restoredData.miniCycleData);
+                            appendToTestResults(`Restored Schema 2.5 data to localStorage\n`);
+                            const liteKeysRestored = restoreLiteStorageSnapshot(deps, restoredData.liteStorage);
+                            if (liteKeysRestored > 0) {
+                                appendToTestResults(`Restored ${liteKeysRestored} lite storage key(s)\n`);
+                            }
+                        } else if (isSchema25) {
                             localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(restoredData));
                             appendToTestResults(`Restored Schema 2.5 data to localStorage\n`);
                         } else {
@@ -601,4 +641,3 @@ export function cleanOldBackups() {
     appendToTestResults(`Remaining backups: ${backupKeys.length - cleaned}\n\n`);
     showNotification(getLabel('notify.backupsCleaned', { vars: { count: cleaned } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
 }
-

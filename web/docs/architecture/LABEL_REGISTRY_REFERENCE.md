@@ -195,7 +195,7 @@ These are the foundational terms that define the app's vocabulary. A contextual 
 | `switcher.renameRoutine` | Rename routine | miniCycle.html:2494 (title) | Yes | Action tooltip |
 | `switcher.deleteRoutine` | Delete routine | miniCycle.html:2495 (title) | Yes | Action tooltip |
 | `switcher.preview` | Preview | miniCycle.html:2496 | No | Preview label |
-| `switcher.importExternal` | Import From External | miniCycle.html:2504 | No | Import button |
+| `switcher.importExternal` | Import Routine | miniCycle.html:2504 | No | Import button |
 | `switcher.storage` | Storage | miniCycle.html:2510 | No | Storage label |
 | `switcher.calculating` | Calculating... | miniCycle.html:2518 | No | Storage status |
 | `switcher.deleteTitle` | Delete miniCycle | routineSwitcher.js:306 | Yes | Delete modal title |

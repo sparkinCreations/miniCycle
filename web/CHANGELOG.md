@@ -1,3 +1,7 @@
+## [2.090] - 2026-03-15
+- feat(accessibility): enhance recurring settings panel styles for high contrast mode
+
+
 ## [2.089] - 2026-03-14
 - feat(documentation): add Framework Equivalents guide and enhance README with architectural philosophy
 

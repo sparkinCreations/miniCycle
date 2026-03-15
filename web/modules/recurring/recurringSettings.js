@@ -38,82 +38,105 @@ export function normalizeRecurringSettings(settings = {}) {
     // Generate cache key from settings
     const cacheKey = JSON.stringify(settings);
 
-    // Return cached result if available
-    // Fix #29: Return deep clone to prevent cache corruption from caller mutations
-    if (normalizationCache.has(cacheKey)) {
-        const cached = normalizationCache.get(cacheKey);
-        // Use structuredClone if available, otherwise JSON round-trip
-        return typeof structuredClone === 'function'
+    // Build the time-independent normalized shape (cacheable)
+    let normalized;
+    const cached = normalizationCache.get(cacheKey);
+
+    if (cached) {
+        // Fix #29: Return deep clone to prevent cache corruption from caller mutations
+        normalized = typeof structuredClone === 'function'
             ? structuredClone(cached)
             : JSON.parse(JSON.stringify(cached));
+    } else {
+        normalized = {
+            frequency: settings.frequency || "daily",
+            indefinitely: settings.indefinitely !== false,
+            count: settings.count ?? null,
+            untilDate: settings.untilDate || null,
+            time: settings.time || null,
+            useSpecificTime: settings.useSpecificTime ?? false,
+
+            specificDates: {
+                enabled: settings.specificDates?.enabled || false,
+                dates: Array.isArray(settings.specificDates?.dates) ? settings.specificDates.dates : []
+            },
+
+            hourly: {
+                useSpecificMinute: settings.hourly?.useSpecificMinute || false,
+                minute: settings.hourly?.minute || 0
+            },
+
+            weekly: {
+                days: Array.isArray(settings.weekly?.days) ? settings.weekly.days : []
+            },
+
+            biweekly: {
+                week1: Array.isArray(settings.biweekly?.week1) ? settings.biweekly.week1 : [],
+                week2: Array.isArray(settings.biweekly?.week2) ? settings.biweekly.week2 : [],
+                referenceDate: settings.biweekly?.referenceDate || null
+            },
+
+            monthly: {
+                useSpecificDays: settings.monthly?.useSpecificDays ?? (
+                    (settings.monthly?.days?.length > 0) ||
+                    settings.monthly?.lastDay ||
+                    settings.monthly?.useWeekOfMonth ||
+                    false
+                ),
+                days: Array.isArray(settings.monthly?.days) ? settings.monthly.days : [],
+                lastDay: settings.monthly?.lastDay || false,
+                useWeekOfMonth: settings.monthly?.useWeekOfMonth || false,
+                weekOfMonth: settings.monthly?.weekOfMonth ? {
+                    ordinal: settings.monthly.weekOfMonth.ordinal || "1",
+                    day: settings.monthly.weekOfMonth.day || "Mon"
+                } : null
+            },
+
+            yearly: {
+                months: Array.isArray(settings.yearly?.months) ? settings.yearly.months : [],
+                useSpecificDays: settings.yearly?.useSpecificDays || false,
+                applyDaysToAll: settings.yearly?.applyDaysToAll !== false,
+                daysByMonth: settings.yearly?.daysByMonth || {}
+            }
+        };
+
+        // Bound cache size
+        if (normalizationCache.size >= MAX_NORMALIZATION_CACHE_SIZE) {
+            const firstKey = normalizationCache.keys().next().value;
+            normalizationCache.delete(firstKey);
+        }
+
+        normalizationCache.set(cacheKey, normalized);
+
+        // Return a clone so callers (and the defaults pass below) don't corrupt the cache
+        normalized = typeof structuredClone === 'function'
+            ? structuredClone(normalized)
+            : JSON.parse(JSON.stringify(normalized));
     }
 
-    const normalized = {
-        frequency: settings.frequency || "daily",
-        indefinitely: settings.indefinitely !== false,
-        count: settings.count ?? null,
-        untilDate: settings.untilDate || null,
-        time: settings.time || null,
-        useSpecificTime: settings.useSpecificTime ?? false,
-
-        specificDates: {
-            enabled: settings.specificDates?.enabled || false,
-            dates: Array.isArray(settings.specificDates?.dates) ? settings.specificDates.dates : []
-        },
-
-        hourly: {
-            useSpecificMinute: settings.hourly?.useSpecificMinute || false,
-            minute: settings.hourly?.minute || 0
-        },
-
-        weekly: {
-            days: Array.isArray(settings.weekly?.days) ? settings.weekly.days : []
-        },
-
-        biweekly: {
-            week1: Array.isArray(settings.biweekly?.week1) ? settings.biweekly.week1 : [],
-            week2: Array.isArray(settings.biweekly?.week2) ? settings.biweekly.week2 : [],
-            referenceDate: settings.biweekly?.referenceDate || new Date().toISOString()
-        },
-
-        monthly: {
-            useSpecificDays: settings.monthly?.useSpecificDays ?? (
-                (settings.monthly?.days?.length > 0) ||
-                settings.monthly?.lastDay ||
-                settings.monthly?.useWeekOfMonth ||
-                false
-            ),
-            days: Array.isArray(settings.monthly?.days) ? settings.monthly.days : [],
-            lastDay: settings.monthly?.lastDay || false,
-            useWeekOfMonth: settings.monthly?.useWeekOfMonth || false,
-            weekOfMonth: settings.monthly?.weekOfMonth ? {
-                ordinal: settings.monthly.weekOfMonth.ordinal || "1",
-                day: settings.monthly.weekOfMonth.day || "Mon"
-            } : null
-        },
-
-        yearly: {
-            months: Array.isArray(settings.yearly?.months) ? settings.yearly.months : [],
-            useSpecificDays: settings.yearly?.useSpecificDays || false,
-            applyDaysToAll: settings.yearly?.applyDaysToAll !== false,
-            daysByMonth: settings.yearly?.daysByMonth || {}
-        }
-    };
-
     // ========================================================================
-    // ENFORCE SENSIBLE DEFAULTS FOR EMPTY SELECTIONS
+    // ENFORCE SENSIBLE DEFAULTS FOR EMPTY SELECTIONS (always fresh, never cached)
     // ========================================================================
     // When a frequency requires selections (days, months, etc.) but none are
     // provided, apply sensible defaults instead of silently falling back to
     // daily. This fixes a regression from the module split where the original
     // monolith's positive-match behavior ([].includes() → false → no trigger)
     // was replaced with negative-filter logic that falls through to true.
+    //
+    // These defaults depend on wall-clock time (current weekday, day-of-month,
+    // etc.) so they must NOT be served from the cache.
 
     const freq = normalized.frequency;
 
     // Use the current date as the reference point for defaults — if you set up
     // a weekly task on Wednesday, it should recur on Wednesdays, not all weekdays.
     const now = new Date();
+
+    // Backfill biweekly referenceDate (time-dependent, excluded from cache)
+    if (!normalized.biweekly.referenceDate) {
+        normalized.biweekly.referenceDate = now.toISOString();
+    }
+
     const currentWeekday = now.toLocaleDateString("en-US", { weekday: "short" });
     const currentDayOfMonth = now.getDate();
     const currentMonth = now.getMonth() + 1;
@@ -158,16 +181,6 @@ export function normalizeRecurringSettings(settings = {}) {
         console.debug(`Yearly recurring with no months selected — defaulting to month ${currentMonth}, day ${currentDayOfMonth}`);
     }
 
-    // Bound cache size
-    if (normalizationCache.size >= MAX_NORMALIZATION_CACHE_SIZE) {
-        const firstKey = normalizationCache.keys().next().value;
-        normalizationCache.delete(firstKey);
-    }
-
-    normalizationCache.set(cacheKey, normalized);
-    // Use structuredClone if available, otherwise JSON round-trip (consistent with cache retrieval)
-    return typeof structuredClone === 'function'
-        ? structuredClone(normalized)
-        : JSON.parse(JSON.stringify(normalized));
+    return normalized;
 }
 

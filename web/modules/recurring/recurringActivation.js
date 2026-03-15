@@ -100,6 +100,7 @@ export function activateTaskRecurringState(cycle, taskId, normalizedSettings, ca
         remindersEnabled: task?.remindersEnabled || false,
         deleteWhenComplete: true,
         deleteWhenCompleteSettings: { ...DEFAULT_RECURRING_DELETE_SETTINGS },
+        occurrenceCount: 0,
         lastTriggeredTimestamp: null,
         nextScheduledOccurrence: calculateNextOccurrenceFn(normalizedSettings, Date.now()),
         schemaVersion: 2
@@ -359,47 +360,17 @@ export async function applyRecurringToTaskSchema25(taskId, newSettings) {
         return;
     }
 
-    // Update via AppState
+    // Merge new settings with existing, then normalize
+    const mergedSettings = { ...task.recurringSettings, ...newSettings };
+    const normalizedSettings = Deps.normalizeRecurringSettings
+        ? Deps.normalizeRecurringSettings(mergedSettings)
+        : mergedSettings;
+
+    // Delegate to the canonical activation function (single source of truth
+    // for task + template state shape)
     await Deps.updateAppState(draft => {
         const cycle = draft.data.cycles[activeCycleId];
-        const targetTask = cycle.tasks.find(t => t.id === taskId);
-
-        if (targetTask) {
-            // Merge settings
-            targetTask.recurringSettings = {
-                ...targetTask.recurringSettings,
-                ...newSettings
-            };
-            targetTask.recurring = true;
-            targetTask.schemaVersion = 2;
-
-            // Backfill deleteWhenComplete if missing (tasks activated via older code paths)
-            if (targetTask.deleteWhenComplete === undefined) {
-                targetTask.deleteWhenComplete = true;
-                targetTask.deleteWhenCompleteSettings = { ...DEFAULT_RECURRING_DELETE_SETTINGS };
-            }
-
-            // Keep templates in sync
-            if (!cycle.recurringTemplates) cycle.recurringTemplates = {};
-
-            const isNewRecurring = !cycle.recurringTemplates[taskId] || !cycle.recurringTemplates[taskId].recurring;
-
-            cycle.recurringTemplates[taskId] = {
-                ...(cycle.recurringTemplates[taskId] || {}),
-                id: taskId,
-                text: targetTask.text,
-                recurring: true,
-                schemaVersion: 2,
-                recurringSettings: { ...targetTask.recurringSettings },
-                nextScheduledOccurrence: isNewRecurring ? 0 : Deps.calculateNextOccurrence(targetTask.recurringSettings, Date.now())
-            };
-
-            // Backfill deleteWhenComplete on template if missing
-            if (cycle.recurringTemplates[taskId].deleteWhenComplete === undefined) {
-                cycle.recurringTemplates[taskId].deleteWhenComplete = true;
-                cycle.recurringTemplates[taskId].deleteWhenCompleteSettings = { ...DEFAULT_RECURRING_DELETE_SETTINGS };
-            }
-        }
+        activateTaskRecurringState(cycle, taskId, normalizedSettings, Deps.calculateNextOccurrence);
     }, true);
 
     // Re-read task from updated state (the `task` variable above holds pre-update data)

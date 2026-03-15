@@ -173,6 +173,45 @@ export function restartRecurringWatcher() {
 }
 
 // ============================================================================
+// COUNT ENFORCEMENT
+// ============================================================================
+
+/**
+ * Check if a template has reached its finite repeat limit.
+ * @param {Object} template - Recurring template
+ * @returns {boolean} True if the template's count limit is reached
+ */
+function isCountExhausted(template) {
+    const settings = template.recurringSettings;
+    if (!settings || settings.indefinitely !== false || !settings.count) return false;
+    return (template.occurrenceCount ?? 0) >= settings.count;
+}
+
+/**
+ * Build the template update after a spawn, enforcing count limits.
+ * Increments occurrenceCount and nullifies nextScheduledOccurrence when exhausted.
+ * @param {Object} template - Recurring template (not mutated)
+ * @param {number} nowMs - Current timestamp in ms
+ * @param {Function} calculateNextOccurrence - Next-occurrence calculator
+ * @returns {Object} Updated template fields to merge
+ */
+function buildTemplateUpdate(template, nowMs, calculateNextOccurrence) {
+    const newOccurrenceCount = (template.occurrenceCount ?? 0) + 1;
+    const settings = template.recurringSettings;
+    const isFinite = settings && settings.indefinitely === false && settings.count;
+    const exhausted = isFinite && newOccurrenceCount >= settings.count;
+
+    return {
+        ...template,
+        occurrenceCount: newOccurrenceCount,
+        lastTriggeredTimestamp: nowMs,
+        nextScheduledOccurrence: exhausted
+            ? null
+            : calculateNextOccurrence(settings, new Date(nowMs))
+    };
+}
+
+// ============================================================================
 // CATCH-UP LOGIC
 // ============================================================================
 
@@ -237,14 +276,17 @@ export async function catchUpMissedRecurringTasks() {
             return;
         }
 
-        // FAST PATH: Skip if nextScheduledOccurrence is not set
+        // FAST PATH: Skip if nextScheduledOccurrence is not set (template finished or exhausted)
         if (template.nextScheduledOccurrence == null) {
             return;
         }
 
+        // FAST PATH: Skip if count limit already reached
+        if (isCountExhausted(template)) {
+            return;
+        }
+
         if (template.nextScheduledOccurrence > now.getTime()) {
-            const nextDate = new Date(template.nextScheduledOccurrence).toLocaleString();
-            const nowDate = new Date(now.getTime()).toLocaleString();
             return;
         }
 
@@ -274,14 +316,8 @@ export async function catchUpMissedRecurringTasks() {
             deleteWhenCompleteSettings: template.deleteWhenCompleteSettings ?? { ...DEFAULT_RECURRING_DELETE_SETTINGS }
         });
 
-        // Calculate NEXT future occurrence
-        const nextFuture = Deps.calculateNextOccurrence(template.recurringSettings, now);
-
-        templateUpdates[template.id] = {
-            ...template,
-            lastTriggeredTimestamp: now.getTime(),
-            nextScheduledOccurrence: nextFuture
-        };
+        // Build template update with count enforcement
+        templateUpdates[template.id] = buildTemplateUpdate(template, now.getTime(), Deps.calculateNextOccurrence);
     });
 
     // Check task limit before adding
@@ -336,6 +372,9 @@ export async function catchUpMissedRecurringTasks() {
         if (limitCheck.blocked > 0) {
             showTaskLimitNotification(limitCheck.blocked);
         }
+
+        // Notify for any templates that just exhausted their count
+        notifyExhaustedTemplates(templateUpdates);
     } else {
     }
 
@@ -403,8 +442,11 @@ export async function watchRecurringTasks() {
         // Prevent re-adding if task already exists by ID
         if (taskList.some(task => task.id === template.id)) return;
 
-        // FAST PATH: Skip if there are no more occurrences (template finished)
+        // FAST PATH: Skip if there are no more occurrences (template finished or exhausted)
         if (template.nextScheduledOccurrence == null) return;
+
+        // FAST PATH: Skip if count limit already reached
+        if (isCountExhausted(template)) return;
 
         // FAST PATH: Skip if not due yet
         if (now.getTime() < template.nextScheduledOccurrence) return;
@@ -433,14 +475,8 @@ export async function watchRecurringTasks() {
             deleteWhenCompleteSettings: template.deleteWhenCompleteSettings ?? { ...DEFAULT_RECURRING_DELETE_SETTINGS }
         });
 
-        // Recalculate next occurrence
-        const nextOccurrence = Deps.calculateNextOccurrence(template.recurringSettings, now);
-
-        templateUpdates[template.id] = {
-            ...template,
-            lastTriggeredTimestamp: now.getTime(),
-            nextScheduledOccurrence: nextOccurrence
-        };
+        // Build template update with count enforcement
+        templateUpdates[template.id] = buildTemplateUpdate(template, now.getTime(), Deps.calculateNextOccurrence);
     });
 
     // Check task limit before adding
@@ -484,7 +520,33 @@ export async function watchRecurringTasks() {
         if (limitCheck.blocked > 0) {
             showTaskLimitNotification(limitCheck.blocked);
         }
+
+        // Notify for any templates that just exhausted their count
+        notifyExhaustedTemplates(templateUpdates);
     }
+}
+
+// ============================================================================
+// COUNT EXHAUSTION NOTIFICATION
+// ============================================================================
+
+/**
+ * Show notification for templates that just reached their count limit
+ * @param {Object} templateUpdates - Map of templateId → updated template
+ */
+function notifyExhaustedTemplates(templateUpdates) {
+    Object.values(templateUpdates).forEach(updated => {
+        if (updated.nextScheduledOccurrence !== null) return;
+        const settings = updated.recurringSettings;
+        if (!settings || settings.indefinitely !== false || !settings.count) return;
+        if ((updated.occurrenceCount ?? 0) < settings.count) return;
+
+        Deps.showNotification?.(
+            `${getIcon('recurring')} ${getLabel('notify.recurringCountFinished', { vars: { taskName: updated.text, count: settings.count } })}`,
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_LONG
+        );
+    });
 }
 
 // ============================================================================

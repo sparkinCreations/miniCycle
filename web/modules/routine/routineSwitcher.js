@@ -1150,14 +1150,18 @@ export class RoutineSwitcher {
         // Reset desktop preview when clicking inside modal but not on a list item
         const switchModalContent = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT);
         if (switchModalContent) {
-            this._modalContentClickHandler = (event) => {
-                const clickedItem = event.target.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
-                const clickedPreview = event.target.closest(DOM_SELECTORS.DESKTOP_PREVIEW_WINDOW);
-                if (!clickedItem && !clickedPreview) {
-                    this._resetDesktopPreview();
-                }
-            };
-            safeAdd(switchModalContent, "click", this._modalContentClickHandler);
+            if (!switchModalContent._clickHandler) {
+                switchModalContent._clickHandler = (event) => {
+                    const clickedItem = event.target.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
+                    const clickedPreview = event.target.closest(DOM_SELECTORS.DESKTOP_PREVIEW_WINDOW);
+                    const clickedActions = event.target.closest(`#${DOM_IDS.SWITCH_ITEMS_ROW}`);
+                    const clickedThemePicker = event.target.closest(`#${DOM_IDS.THEME_PICKER_ROW}`);
+                    if (!clickedItem && !clickedPreview && !clickedActions && !clickedThemePicker) {
+                        this._resetDesktopPreview();
+                    }
+                };
+            }
+            safeAdd(switchModalContent, "click", switchModalContent._clickHandler);
         }
 
         // Restore focus when dialog closes (including native ESC)
@@ -1266,7 +1270,7 @@ export class RoutineSwitcher {
         // Update the preview title to show the routine name
         const previewTitle = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_TITLE);
         if (previewTitle) {
-            previewTitle.textContent = cycleName || getLabel('switcher.preview');
+            previewTitle.textContent = cycleData?.title || cycleName || getLabel('switcher.preview');
         }
 
         // Show the double-click hint

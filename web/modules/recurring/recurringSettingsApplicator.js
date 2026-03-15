@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, UI_TIMEOUTS, DEFAULT_RECURRING_DELETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -119,9 +119,15 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                         task.recurring = true;
                         task.schemaVersion = 2;
                         task.recurringSettings = structuredClone(settings);
+                        if (task.deleteWhenComplete === undefined) {
+                            task.deleteWhenComplete = true;
+                        }
+                        if (!task.deleteWhenCompleteSettings) {
+                            task.deleteWhenCompleteSettings = { ...DEFAULT_RECURRING_DELETE_SETTINGS };
+                        }
                     }
 
-                    // Always update the template
+                    // Always update the template — preserve all fields the watcher reads
                     const existingTemplate = cycle.recurringTemplates[taskId];
                     const templateText = task?.text ||
                                        existingTemplate?.text ||
@@ -133,9 +139,16 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                         text: templateText,
                         dueDate: task?.dueDate || existingTemplate?.dueDate || null,
                         highPriority: task?.highPriority || existingTemplate?.highPriority || false,
+                        priorityColor: task?.priorityColor || existingTemplate?.priorityColor || null,
                         remindersEnabled: task?.remindersEnabled || existingTemplate?.remindersEnabled || false,
+                        deleteWhenComplete: task?.deleteWhenComplete ?? existingTemplate?.deleteWhenComplete ?? true,
+                        deleteWhenCompleteSettings: task?.deleteWhenCompleteSettings
+                            || existingTemplate?.deleteWhenCompleteSettings
+                            || { ...DEFAULT_RECURRING_DELETE_SETTINGS },
                         recurring: true,
                         recurringSettings: structuredClone(settings),
+                        occurrenceCount: existingTemplate?.occurrenceCount ?? 0,
+                        lastTriggeredTimestamp: existingTemplate?.lastTriggeredTimestamp ?? null,
                         nextScheduledOccurrence: _deps.calculateNextOccurrence(settings, Date.now()),
                         schemaVersion: 2
                     };
