@@ -441,34 +441,77 @@ Add "Retake Guided Tour" button near existing "Reset Onboarding" button. Clickin
 
 ## Testing Plan
 
-- Tour shows only for first-time users (not returning users)
-- Tour does not show if `guidedTourStep` is `'done'`
-- Tour resumes at correct step if `guidedTourStep` is a number (0-4)
-- Dismissing welcome notification marks tour as done
-- Dismissing resume notification marks tour as done
-- Each step spotlights the correct element
-- Next advances through all steps
-- Back returns to previous step (hidden on step 1)
-- Skip at any point closes tour and marks done
-- Step 2 skips gracefully when no tasks exist (empty routine)
-- Retake button in Settings restarts tour from step 1
-- Resize/orientation change repositions tooltip correctly (debounced)
-- Tour works in both light and dark mode
-- Tour respects vocabulary theme colors (tooltip uses `--pref-*` vars)
-- All text comes from label system (`tour.*` keys)
-- All z-index values use `Z_INDEX` constants / CSS variables
-- All selectors use `DOM_IDS` / `DOM_SELECTORS` from constants.js
-- All listeners cleaned up after tour ends
-- Modals blocked during tour (`data-tour-active` guard)
-- `scrollIntoView` runs before spotlight positioning
-- Reduced motion respected
-- Spotlight target is not clickable (`pointer-events: none`)
-- Progress persists across page refreshes
+### Test File
+`tests/guidedTourManager.tests.js` — DI-pure pattern (same as `onboardingManager.tests.js`)
+
+### Run Command
+```bash
+npm test -- guidedTourManager    # Run only guided tour tests
+```
+
+### Registration
+Add `'guidedTourManager'` to `ALL_MODULES` array in `tests/automated/run-browser-tests.cjs` (after `'onboardingManager'`).
+
+### Test Cases
+
+**Trigger & State Management**
+- `init()` shows welcome notification when `guidedTourStep` is `null`
+- `init()` shows resume notification when `guidedTourStep` is a number (0-4)
+- `init()` does nothing when `guidedTourStep` is `'done'`
+- Dismissing welcome notification sets `guidedTourStep = 'done'`
+- Dismissing resume notification sets `guidedTourStep = 'done'`
+- `startTour()` sets `guidedTourStep = 0`
+
+**Step Navigation**
+- `nextStep()` advances from step 0 to step 1
+- `nextStep()` persists step index to `guidedTourStep`
+- `prevStep()` goes back from step 2 to step 1
+- `prevStep()` is a no-op on step 0
+- `nextStep()` on last step calls `completeTour()`
+- `completeTour()` sets `guidedTourStep = 'done'`
+- `skipTour()` sets `guidedTourStep = 'done'` from any step
+
+**Step Rendering**
+- Each step spotlights the correct target element (verify DOM lookup by constant)
+- Step 2 `onEnter` returns `'skip'` when no `.task` elements exist
+- Step 2 proceeds normally when tasks exist
+- Tooltip renders with correct label text from `getLabel('tour.stepN')`
+- Progress dots reflect current step (active/completed states)
+- Back button is hidden on step 0, visible on steps 1-4
+
+**Overlay & Interaction**
+- `startTour()` creates `.tour-overlay` and `.tour-spotlight` elements
+- `.tour-overlay` has `pointer-events: auto`
+- `.tour-spotlight` has `pointer-events: none`
+- `.tour-tooltip` has `pointer-events: auto`
+- Overlay click calls `skipTour()` (backdrop dismiss)
+- Tooltip click does NOT bubble to overlay (`stopPropagation`)
+- ESC key calls `skipTour()`
+- `data-tour-active` attribute set on `<html>` during tour
+- `data-tour-active` removed after tour ends
+
+**Auto-Positioning**
+- `_computeTooltipPosition()` returns `'bottom'` when space below is sufficient
+- `_computeTooltipPosition()` returns `'top'` when only space above is sufficient
+- `_computeTooltipPosition()` returns `'right'` when only space right is sufficient
+- `_computeTooltipPosition()` returns `'left'` as last resort
+- `_computeTooltipPosition()` returns `'bottom'` as fallback when no space is sufficient
+
+**Cleanup**
+- `destroy()` removes overlay, spotlight, and tooltip from DOM
+- `destroy()` removes all event listeners (resize, keydown, click)
+- `destroy()` cancels pending `requestAnimationFrame`
+- `destroy()` removes `data-tour-active` from `<html>`
+- Tour elements are not present in DOM after `skipTour()`
+- Tour elements are not present in DOM after `completeTour()`
+
+**Settings Integration**
+- "Retake Guided Tour" button sets `guidedTourStep = null` and calls `startGuidedTour()`
 
 ---
 
 ## Estimated Scope
 
-- **New files**: 2 (guidedTourManager.js, guided-tour.css)
-- **Modified files**: ~7 (defaultLabels.js, constants.js, variables.css, moduleManifests.js, moduleLoader.js, appInit.js, settingsUIManager.js)
+- **New files**: 3 (guidedTourManager.js, guided-tour.css, guidedTourManager.tests.js)
+- **Modified files**: ~8 (defaultLabels.js, constants.js, variables.css, moduleManifests.js, moduleLoader.js, appInit.js, settingsUIManager.js, notifications.js, run-browser-tests.cjs)
 - **Complexity**: Medium — the spotlight/tooltip auto-positioning is the trickiest part; the rest is straightforward with the simplified modal guard approach
