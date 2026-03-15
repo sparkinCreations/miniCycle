@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This is the **detailed reference** for working with this repository. The root `CLAUDE.md` is the short operational summary. If either doc conflicts with the actual code, **the code wins**.
 
 > **For current metrics (version, module count, test count, line counts), see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
@@ -23,15 +23,16 @@ Read [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md) first to unders
 
 ## Essential Commands
 
+All commands run from the `web/` directory (where `package.json` lives):
+
 ```bash
-# Development Server
+cd web
 npm start                    # Starts Python HTTP server on port 8080
+npm test                     # Run automated tests (Playwright)
+npm run lint                 # ESLint with security + SonarJS plugins
 
 # Version Management
-./update-version.sh          # Interactive version updater
-
-# Testing
-npm test                     # Run automated tests (Playwright)
+./scripts/update-version.sh  # Interactive version updater
 ```
 
 ### File Access
@@ -62,36 +63,29 @@ npm test                     # Run automated tests (Playwright)
 **All modules use strict dependency injection. No `|| window.*` fallbacks exist in the codebase.**
 
 ```javascript
-// THE PATTERN: All modules follow this structure
-let _deps = {};
+// THE PATTERN: New modules use createDIModule() from diBase.js
+import { createDIModule, required, optional } from '../core/diBase.js';
 
-export function setModuleDependencies(dependencies) {
-    // Preserve lazy getters using Object.defineProperties
-    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
-    Object.defineProperties(_deps, descriptors);
-}
+const di = createDIModule('MyModule', {
+    AppState: required(),
+    showNotification: required(),
+    safeAddEventListener: optional(null),
+});
+
+export const setMyModuleDependencies = di.setDependencies;
 
 export class MyModule {
-    constructor(dependencies = {}) {
-        const mergedDeps = { ..._deps, ...dependencies };
-
-        // Required deps - fail fast if missing
-        if (!mergedDeps.AppState) {
-            throw new Error('MyModule requires AppState');
-        }
-
-        this.deps = {
-            AppState: mergedDeps.AppState,           // ✅ No fallback
-            showNotification: mergedDeps.showNotification || this.fallbackNotification,
-            AppMeta: mergedDeps.AppMeta              // ✅ DI-pure versioning
-        };
+    get deps() {
+        return di.resolve();
     }
 }
 ```
 
+> **Note:** A small number of core/boot modules still use the older `let _deps = {}` with `Object.defineProperties` pattern. These are Phase 1 boot modules (`appState.js`, `globalUtils.js`) and testing infrastructure that load before `diBase.js` is available. **Do not use the old pattern for new modules.**
+
 ### The Wiring Layer
 
-`modules/boot/featureBoot.js` is where dependencies are wired. `orchestrator.js` is a pure sequence controller:
+`modules/boot/featureBoot.js` is where dependencies are wired:
 
 ```javascript
 // In modules/boot/featureBoot.js - THE wiring location
@@ -99,7 +93,7 @@ const { MyModule, setModuleDependencies } = await import('../path/myModule.js');
 
 // Wire BEFORE creating instance
 setModuleDependencies({
-    get AppState() { return getAppState(); },  // Via appContext getter
+    get AppState() { return deps.core?.AppState; },  // Via deps container
     showNotification: deps.utils.showNotification,
     AppMeta: deps.core.AppMeta
 });
@@ -111,7 +105,7 @@ deps.ui.myModule = myModule;  // Store in deps container, NOT window.*
 **Boot File Structure:**
 ```
 miniCycle-main.js (entrypoint)
-  → modules/boot/orchestrator.js (pure sequence controller)
+  → modules/boot/orchestrator.js (sequence control + boot UI + early coordination)
       → modules/boot/coreBoot.js (core state)
       → modules/boot/featureBoot.js (DI wiring + feature loading)
       → modules/boot/uiBoot.js (UI handlers + initUIBoot())
@@ -120,7 +114,7 @@ miniCycle-main.js (entrypoint)
 > See [PROJECT_STATS.md](../PROJECT_STATS.md) for current line counts.
 
 **Key Architecture Points:**
-- `orchestrator.js` is a pure sequence controller - no DI writes, no DOM queries, no UI logic
+- `orchestrator.js` is mainly sequence control, plus boot UI feedback (loader/spinner/error rendering) and early boot coordination (e.g., wiring debugMode deps)
 - All UI setup consolidated into single `initUIBoot()` entrypoint in uiBoot.js
 - DI wiring happens in `featureBoot.js`
 - `miniCycle.html` has an **8-second safety net** — if `dataset.appBooted` isn't set within 8 seconds, it redirects to the lite version as a last-resort fallback
@@ -130,18 +124,18 @@ miniCycle-main.js (entrypoint)
 `modules/core/appContext.js` provides cross-module access without window.* pollution:
 
 ```javascript
-// Instead of window.AppState
-import { getAppState, getShowNotification } from '../core/appContext.js';
+// Instead of window.AppState — use typed API accessors
+import { state, ui, task } from '../core/appContext.js';
 
-const AppState = getAppState();
-const showNotification = getShowNotification();
+const AppState = state().AppState;
+const showNotification = ui().showNotification;
 ```
 
 ### Zero Custom `window.*` Globals in Modules (Dec 2025)
 
 **Module code has zero custom `window.*` globals.** All module communication uses:
 - **ES Module imports** - Direct function/class imports
-- **appContext.js grouped APIs** - `getStateApi()`, `getTaskApi()`, `getUiApi()`, etc.
+- **appContext.js grouped APIs** - `state()`, `task()`, `cycle()`, `ui()`, `undo()`, etc.
 - **CustomEvents** - For HTML-to-module communication (e.g., `app:showNotification`)
 - **Dataset attributes** - For boot flags (`document.documentElement.dataset.appBooted`)
 
@@ -168,7 +162,7 @@ Only standard browser API event handlers remain (`window.onload`, `window.onerro
 
 Centralizes all user-facing strings into a single registry with resolver support:
 
-- **`defaultLabels.js`** — Pure data module with ~600 keys across 32 categories. No DI, no imports — importable anywhere.
+- **`defaultLabels.js`** — Pure data module (see `PROJECT_STATS.md` for current key count) across 32 categories. No DI, no imports — importable anywhere.
 - **`labelResolver.js`** — DI-wired module providing `getLabel(key, options)` with pluralization and variable interpolation.
 
 ```javascript
@@ -268,7 +262,15 @@ export function setModuleDependencies(dependencies) {
 
 **2. Use instance getter when created before deps available:**
 ```javascript
+// New modules: use di.resolve() (preferred)
 class MyModule {
+    get deps() {
+        return di.resolve();
+    }
+}
+
+// Legacy boot modules only: manual getter over _deps
+class LegacyModule {
     get deps() {
         return {
             AppState: _deps.AppState,  // Reads current value at access time
@@ -280,7 +282,7 @@ class MyModule {
 
 **3. Wire dependencies BEFORE creating instances:**
 ```javascript
-// In modules/boot/orchestrator.js
+// In modules/boot/featureBoot.js
 setModuleDependencies({ /* deps */ });  // First!
 const instance = new MyModule();         // Then create
 ```
@@ -309,7 +311,8 @@ Use versioned dynamic imports in the browser console:
 ```javascript
 // Access the state manager (versioned import for cache-busting)
 let _s;
-import('/modules/core/appState.js?v=1.729').then(m => _s = m.getStateManager());
+// Use the current APP_VERSION from version.js for cache-busting
+import('/modules/core/appState.js?v=<APP_VERSION>').then(m => _s = m.getStateManager());
 
 // Then inspect state
 _s.get()                    // Full state object
@@ -339,14 +342,14 @@ Open http://localhost:8080/tests/module-test-suite.html
 
 ### Test Mode Coordination
 
-The test suite uses localStorage flags to coordinate with AppState:
+The test suite uses an IndexedDB flag to coordinate with AppState:
 
 ```javascript
 // Flag checked by appState.js to skip saves during tests
-localStorage.setItem('__miniCycle_testModeActive__', 'true');
+// Stored in IndexedDB (single source of truth), not localStorage
+// See isTestModeActive() in appState.js
 
 // After tests complete, flag is cleared and AppState reloads
-localStorage.removeItem('__miniCycle_testModeActive__');
 AppState.reload();  // Critical! Syncs in-memory state with restored localStorage
 ```
 
@@ -379,7 +382,7 @@ AppState.reload();  // Critical! Syncs in-memory state with restored localStorag
 | `recurring/` | Recurring task scheduling, activation, panel |
 | `ui/` | Modals, menus, settings, onboarding, gestures |
 | `features/` | Themes, stats, achievements, history, reminders |
-| `labels/` | Label registry (~600 keys), resolver with getLabel() |
+| `labels/` | Label registry + resolver with getLabel() |
 | `utils/` | Notifications, device detection, utilities |
 | `storage/` | Backup manager |
 | `progress/` | Cycle completion tracking |
@@ -390,9 +393,11 @@ AppState.reload();  // Critical! Syncs in-memory state with restored localStorag
 
 The core guarantee: **no module uses `|| window.*` fallbacks**. All stateful modules receive dependencies via injection:
 
-- **60 modules** use `diBase.js` (`createDIModule()` with `required()`/`optional()`)
-- **~13 modules** use custom `set*Dependencies()` functions (core/boot modules, testing infrastructure)
-- **~29 modules** are pure utilities, constants, or type definitions that don't require DI
+- **Most modules** use `diBase.js` (`createDIModule()` with `required()`/`optional()`)
+- **A small number of core/boot/testing modules** use custom `set*Dependencies()` functions (loaded before `diBase.js` is available)
+- **The remainder** are pure utilities, constants, or type definitions that don't require DI
+
+> See [PROJECT_STATS.md](../PROJECT_STATS.md) for current module counts.
 
 Every DI module follows this pattern:
 1. Exports `set*Dependencies()` function
@@ -408,7 +413,8 @@ Every DI module follows this pattern:
 |------|------------------|
 | Start dev server | `npm start` |
 | Run tests | `npm test` |
-| Update version | `./update-version.sh` |
+| Lint | `npm run lint` |
+| Update version | `./scripts/update-version.sh` |
 | Main app | `miniCycle.html` |
 | Lite version | `lite/miniCycle-lite.html` ⚠️ Static fallback, not maintained |
 | State management | `modules/core/appState.js` |

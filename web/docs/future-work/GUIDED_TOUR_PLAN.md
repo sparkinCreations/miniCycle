@@ -10,14 +10,22 @@ When a first-time user creates their first routine (via cycle creation modal) or
 
 ### Detection
 
-- Check `settings.guidedTourCompleted` (new flag, default `false`)
+- Check `settings.guidedTourStep` (new field, default `null`)
+  - `null` = tour not started (show welcome notification)
+  - `0–4` = tour in progress at that step (offer to resume on next load)
+  - `'done'` = tour completed or skipped (never show again)
 - Only trigger once, after the first routine is created/loaded and the main UI is visible
-- If the user skips or dismisses, set `guidedTourCompleted = true` so it never shows again
+- If the user skips or dismisses, set `guidedTourStep = 'done'` so it never shows again
 - Add a "Retake Tour" button in Settings (near existing "Reset Onboarding")
 
 ### Welcome Notification
 
-Use the existing notification system with an action button:
+Use the existing notification system with an action button. Delayed ~2 seconds after onboarding completes to avoid notification stacking:
+
+```javascript
+// In init(), after checking the flag
+setTimeout(() => this._showWelcomeNotification(), 2000);
+```
 
 ```
 "Welcome to miniCycle! Ready to learn the basics?"
@@ -26,7 +34,7 @@ Use the existing notification system with an action button:
 
 - Type: `info`, longer duration (e.g. 15 seconds or persistent until dismissed)
 - Clicking "Take a Quick Tour" launches the guided tour
-- Dismissing the notification (X or timeout) marks tour as completed/skipped
+- Dismissing the notification (X or timeout) marks tour as done/skipped
 
 ## Tour Architecture
 
@@ -34,21 +42,38 @@ Use the existing notification system with an action button:
 
 A lightweight overlay system that:
 1. Darkens the screen (reuse `rgba(0,0,0,0.5)` overlay pattern from first-cycle celebration)
-2. Cuts out a "spotlight" hole around the target element using CSS `clip-path` or a box-shadow trick
-3. Shows a tooltip/callout adjacent to the spotlight with a description and Next/Skip buttons
-4. Advances through steps on "Next" click or target element interaction
+2. Cuts out a "spotlight" hole around the target element using the box-shadow trick
+3. Adds `pointer-events: none` on the spotlight hole so users can't accidentally interact with the target element underneath
+4. Shows a tooltip/callout adjacent to the spotlight with a description and Back/Next/Skip buttons
+5. Advances through steps on "Next" click
 
-### Tour Steps (7 steps, short and punchy)
+### Tour Steps (5 steps, short and punchy)
 
 | Step | Target Element | Constant | Message |
 |------|---------------|----------|---------|
 | 1 | Task input toggle | `DOM_IDS.TOGGLE_TASK_INPUT` | "Tap here to add tasks to your routine." |
 | 2 | First task item | `DOM_SELECTORS.TASK_TEXT` (first) | "Tap the three dots on a task for options like recurring, priority, and due dates." |
 | 3 | Progress bar | `DOM_IDS.PROGRESS_BAR` | "Complete all tasks to finish a cycle. Your cycle count tracks consistency." |
-| 4 | Help window | `DOM_IDS.HELP_WINDOW` | "This status bar shows your progress and helpful tips." |
-| 5 | Hamburger menu button | `DOM_SELECTORS.HAMBURGER_MENU` | "Open the menu to access settings, personalization, routine actions, and more." |
-| 6 | Undo/Redo buttons | `DOM_IDS.UNDO_BTN` | "Undo and redo buttons let you reverse recent changes to your tasks." |
-| 7 | Stats navigation (arrow + nav dot) | `DOM_IDS.SLIDE_RIGHT` | "Swipe left or click the arrow to open the Stats Panel — swiping works on desktop too!" |
+| 4 | Hamburger menu button | `DOM_SELECTORS.HAMBURGER_MENU` | "Open the menu to access settings, personalization, routine actions, and more." |
+| 5 | Stats navigation (arrow + nav dot) | `DOM_IDS.SLIDE_RIGHT` | "Swipe left or click the arrow to open the Stats Panel — swiping works on desktop too!" |
+
+**Why 5 instead of 7:** UX research shows engagement drops sharply after 4-5 steps. The help window (self-discoverable status bar) and undo/redo buttons (standard UI pattern) were cut — users find those naturally.
+
+### Empty Task State Handling (Step 2)
+
+Step 2 targets the first `.task-text` element. If no tasks exist (e.g., user created a routine but hasn't added tasks yet), the `onEnter` callback handles it:
+
+```javascript
+onEnter: () => {
+    const firstTask = this.deps.querySelector(DOM_SELECTORS.TASK_TEXT);
+    if (!firstTask) {
+        // Skip to step 3 — user will discover task options after adding tasks
+        return 'skip';
+    }
+}
+```
+
+Returning `'skip'` from `onEnter` advances to the next step automatically. This avoids the complexity of auto-creating sample tasks while keeping the tour smooth.
 
 ### Step Object Shape
 
@@ -57,11 +82,12 @@ A lightweight overlay system that:
     target: DOM_IDS.TOGGLE_TASK_INPUT,  // or DOM_SELECTORS for class-based
     message: getLabel('tour.step1'),     // label key
     position: 'auto',                    // tooltip position: 'auto', 'top', 'bottom', 'left', 'right'
-    action: 'next',                      // 'next' (button) or 'interact' (wait for click)
-    onEnter: null,                       // optional callback before showing step
+    onEnter: null,                       // optional callback before showing step (return 'skip' to advance)
     onExit: null                         // optional callback after advancing
 }
 ```
+
+All steps use Next/Back button navigation — no `'interact'` action type. Keeps the implementation simple and consistent.
 
 ## New Module: `guidedTourManager.js`
 
@@ -69,7 +95,7 @@ A lightweight overlay system that:
 `modules/ui/guidedTourManager.js`
 
 ### DI Dependencies
-- `AppState` (required) — read/write `settings.guidedTourCompleted`
+- `AppState` (required) — read/write `settings.guidedTourStep`
 - `getElementById` (required) — locate target elements
 - `querySelector` (required)
 - `showNotification` (required) — welcome notification
@@ -79,12 +105,13 @@ A lightweight overlay system that:
 ### Key Methods
 
 ```
-init()                    — Check flag, show welcome notification if needed
-startTour()               — Create overlay, begin at step 0
+init()                    — Check flag, show welcome notification if needed; resume if mid-tour
+startTour()               — Create overlay, begin at step 0 (or resume step)
 showStep(index)           — ScrollIntoView target, spotlight it, render tooltip
-nextStep()                — Advance to next step
-skipTour()                — Close overlay, mark completed
-completeTour()            — Final step done, mark completed, show congrats
+nextStep()                — Advance to next step, persist progress
+prevStep()                — Go back one step
+skipTour()                — Close overlay, mark done
+completeTour()            — Final step done, mark done, show congrats
 destroy()                 — Clean up all listeners and DOM elements
 ```
 
@@ -130,12 +157,24 @@ if (target) {
 
 ### Modal Conflict Handling
 
-The tour must pause if a modal opens during the tour (e.g., user accidentally triggers something):
+Use a simple `data-tour-active` attribute guard instead of a MutationObserver. Set the attribute when the tour starts, remove it when the tour ends:
 
-- Listen for modal overlay elements appearing (`MutationObserver` or check for `.modal-overlay` elements)
-- When detected: hide tour tooltip, dim spotlight
-- When modal closes: resume tour at current step
-- Alternative: set a `data-tour-active` attribute on `<html>` and prevent modal triggers during tour via guard in modal open functions
+```javascript
+// In startTour()
+document.documentElement.dataset.tourActive = 'true';
+
+// In destroy()
+delete document.documentElement.dataset.tourActive;
+```
+
+Modal open functions check for this attribute and bail out early:
+
+```javascript
+// Guard at top of modal open functions
+if (document.documentElement.dataset.tourActive) return;
+```
+
+This is far simpler than a MutationObserver approach, requires no cleanup, and prevents the conflict entirely rather than trying to pause/resume around it.
 
 ### Listener Cleanup
 - Store all handler references for removal in `destroy()`
@@ -164,6 +203,7 @@ _handleResize() {
     position: fixed;
     inset: 0;
     z-index: var(--z-tour-overlay);
+    pointer-events: none;
     /* box-shadow inset trick for spotlight cutout */
     transition: box-shadow var(--transition-normal);
 }
@@ -172,23 +212,30 @@ _handleResize() {
 ### Spotlight Cutout Approach
 Use a large `box-shadow` on the overlay with `border-radius` matching the target:
 ```css
-.tour-overlay {
+.tour-spotlight {
+    position: fixed;
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-normal);
+    z-index: var(--z-tour-overlay);
     /* Position and size set via JS inline styles */
 }
 ```
-This creates a "hole" where the target element is, with darkness everywhere else.
+This creates a "hole" where the target element is, with darkness everywhere else. `pointer-events: none` prevents users from accidentally clicking the spotlighted element.
 
 ### Tooltip
 ```css
 .tour-tooltip {
     position: absolute;
-    background: var(--color-white);
+    background: var(--pref-bg, var(--color-white));
+    color: var(--pref-text, inherit);
     border-radius: var(--radius-lg);
     padding: var(--space-4);
     max-width: 280px;
     box-shadow: var(--shadow-lg);
     z-index: var(--z-tour-tooltip);
+    pointer-events: auto;
 }
 
 .tour-tooltip-arrow {
@@ -198,11 +245,22 @@ This creates a "hole" where the target element is, with darkness everywhere else
 .tour-controls {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     margin-top: var(--space-3);
 }
 
+.tour-controls-left {
+    /* Back button (hidden on step 1) */
+}
+
+.tour-controls-right {
+    display: flex;
+    gap: var(--space-2);
+    /* Skip + Next/Done buttons */
+}
+
 .tour-progress {
-    /* Step dots: 1 2 3 4 5 6 7 */
+    /* Step dots: 1 2 3 4 5 */
     display: flex;
     justify-content: center;
     gap: var(--space-1);
@@ -230,6 +288,7 @@ This creates a "hole" where the target element is, with darkness everywhere else
 ```css
 @media (prefers-reduced-motion: reduce) {
     .tour-overlay,
+    .tour-spotlight,
     .tour-tooltip {
         transition: none;
     }
@@ -239,10 +298,14 @@ This creates a "hole" where the target element is, with darkness everywhere else
 ### Dark Mode
 ```css
 [data-dark-mode="true"] .tour-tooltip {
-    background: var(--dark-bg-secondary);
-    color: var(--dark-text-primary);
+    background: var(--pref-bg, var(--dark-bg-secondary));
+    color: var(--pref-text, var(--dark-text-primary));
 }
 ```
+
+### Vocab Theme Awareness
+
+The tooltip uses `var(--pref-bg, ...)` and `var(--pref-text, ...)` as its background and text colors, so when a vocabulary theme is active (which sets `--pref-*` CSS vars), the tooltip automatically picks up the theme colors instead of looking jarring against a themed UI.
 
 ## New Z-Index Constants
 
@@ -265,18 +328,19 @@ Add to `defaultLabels.js` under a new `tour` section:
 ```javascript
 tour: {
     welcomeMessage:   'Welcome to miniCycle! Ready to learn the basics?',
+    resumeMessage:    'Welcome back! Continue where you left off?',
     startButton:      'Take a Quick Tour',
+    resumeButton:     'Resume Tour',
     next:             'Next',
+    back:             'Back',
     skip:             'Skip Tour',
     done:             'Done',
     stepOf:           '{current} of {total}',
     step1:            'Tap here to add tasks to your routine.',
     step2:            'Tap the three dots on a task for options like recurring, priority, and due dates.',
     step3:            'Complete all tasks to finish a cycle. Your cycle count tracks consistency.',
-    step4:            'This status bar shows your progress and helpful tips.',
-    step5:            'Open the menu to access settings, personalization, routine actions, and more.',
-    step6:            'Undo and redo buttons let you reverse recent changes to your tasks.',
-    step7:            'Swipe left or click the arrow to open the Stats Panel — swiping works on desktop too!',
+    step4:            'Open the menu to access settings, personalization, routine actions, and more.',
+    step5:            'Swipe left or click the arrow to open the Stats Panel — swiping works on desktop too!',
     complete:         'You\'re all set! Enjoy building your routines.',
     retakeTour:       'Retake Guided Tour'
 }
@@ -286,10 +350,25 @@ tour: {
 
 ```javascript
 // In Schema 2.5 settings
-state.settings.guidedTourCompleted    // boolean, default false
+state.settings.guidedTourStep    // null | 0 | 1 | 2 | 3 | 4 | 'done'
 ```
 
-Add default in migration/schema initialization.
+- `null` — tour not started yet (show welcome notification)
+- `0–4` — tour in progress, persisted at this step (offer resume on next load)
+- `'done'` — tour completed or skipped (never show again)
+
+Add default (`null`) in migration/schema initialization.
+
+### Resume Logic
+
+On `init()`, if `guidedTourStep` is a number (0-4), show a resume notification:
+
+```
+"Welcome back! Continue where you left off?"
+[ Resume Tour ]
+```
+
+Clicking resumes at the persisted step. Dismissing sets `guidedTourStep = 'done'`.
 
 ## Manifest Entry
 
@@ -308,10 +387,10 @@ guidedTourManager: {
 ## Integration Points
 
 ### 1. After First Routine Creation
-In `appInit.js` `completeInitialSetup()` or after `onboardingManager` finishes — call `guidedTourManager.init()` which checks the flag and shows the welcome notification.
+In `appInit.js` `completeInitialSetup()` or after `onboardingManager` finishes — call `guidedTourManager.init()` which checks the flag and shows the welcome notification (with a 2-second delay to avoid stacking with other first-run notifications).
 
 ### 2. Settings Panel
-Add "Retake Guided Tour" button near existing "Reset Onboarding" button. Clicking it sets `guidedTourCompleted = false` and calls `startGuidedTour()`.
+Add "Retake Guided Tour" button near existing "Reset Onboarding" button. Clicking it sets `guidedTourStep = null` and calls `startGuidedTour()`.
 
 ### 3. Onboarding Relationship
 - Existing onboarding (3-step modal) runs FIRST — it's the "what is miniCycle" intro
@@ -322,12 +401,12 @@ Add "Retake Guided Tour" button near existing "Reset Onboarding" button. Clickin
 
 - `role="dialog"` and `aria-modal="true"` on overlay
 - `aria-live="polite"` region for step announcements
-- Focus trapped within tooltip (Next/Skip buttons)
+- Focus trapped within tooltip (Back/Next/Skip buttons)
 - Focus restored to previously focused element after tour ends
 - ESC to skip tour
-- Keyboard-navigable (Tab between Next/Skip, Enter to activate)
+- Keyboard-navigable (Tab between Back/Next/Skip, Enter to activate)
 - Respect `prefers-reduced-motion`: disable spotlight transitions, no scrollIntoView animation
-- Step progress announced: "Step 3 of 7" via aria-live
+- Step progress announced: "Step 3 of 5" via aria-live
 
 ## Mobile Considerations
 
@@ -340,22 +419,28 @@ Add "Retake Guided Tour" button near existing "Reset Onboarding" button. Clickin
 ## Testing Plan
 
 - Tour shows only for first-time users (not returning users)
-- Tour does not show if `guidedTourCompleted` is true
-- Dismissing welcome notification marks tour as skipped
+- Tour does not show if `guidedTourStep` is `'done'`
+- Tour resumes at correct step if `guidedTourStep` is a number (0-4)
+- Dismissing welcome notification marks tour as done
+- Dismissing resume notification marks tour as done
 - Each step spotlights the correct element
 - Next advances through all steps
-- Skip at any point closes tour and marks completed
-- Retake button in Settings restarts tour
+- Back returns to previous step (hidden on step 1)
+- Skip at any point closes tour and marks done
+- Step 2 skips gracefully when no tasks exist (empty routine)
+- Retake button in Settings restarts tour from step 1
 - Resize/orientation change repositions tooltip correctly (debounced)
 - Tour works in both light and dark mode
-- Tour respects vocabulary theme colors
+- Tour respects vocabulary theme colors (tooltip uses `--pref-*` vars)
 - All text comes from label system (`tour.*` keys)
 - All z-index values use `Z_INDEX` constants / CSS variables
 - All selectors use `DOM_IDS` / `DOM_SELECTORS` from constants.js
 - All listeners cleaned up after tour ends
-- Tour pauses if a modal opens and resumes when it closes
+- Modals blocked during tour (`data-tour-active` guard)
 - `scrollIntoView` runs before spotlight positioning
 - Reduced motion respected
+- Spotlight target is not clickable (`pointer-events: none`)
+- Progress persists across page refreshes
 
 ---
 
@@ -363,4 +448,4 @@ Add "Retake Guided Tour" button near existing "Reset Onboarding" button. Clickin
 
 - **New files**: 2 (guidedTourManager.js, guided-tour.css)
 - **Modified files**: ~7 (defaultLabels.js, constants.js, variables.css, moduleManifests.js, moduleLoader.js, appInit.js, settingsUIManager.js)
-- **Complexity**: Medium — the spotlight/tooltip auto-positioning is the trickiest part; modal conflict handling adds some orchestration
+- **Complexity**: Medium — the spotlight/tooltip auto-positioning is the trickiest part; the rest is straightforward with the simplified modal guard approach

@@ -1,7 +1,8 @@
 # CLAUDE.md — miniCycle Implementation Rules
 
-> This file is auto-loaded by Claude Code every session. It exists to prevent architectural drift and technical debt.
-> For full documentation, see `web/docs/developer-guides/CLAUDE.md`.
+> This file is the **short operational summary** — auto-loaded by Claude Code every session.
+> For the detailed reference, see `web/docs/developer-guides/CLAUDE.md`.
+> If either doc conflicts with the actual code, **the code wins**.
 
 ## What is miniCycle?
 
@@ -9,7 +10,10 @@ A **routine manager** (not a todo app). Tasks persist and reset via cycle counts
 
 ## Essential Commands
 
+All commands run from the `web/` directory (where `package.json` lives):
+
 ```bash
+cd web
 npm start          # Python HTTP server on port 8080
 npm test           # Playwright browser tests (server must be running)
 npm run lint       # ESLint with security + SonarJS plugins
@@ -17,26 +21,28 @@ npm run lint       # ESLint with security + SonarJS plugins
 
 ## Project Structure
 
+> **For current module counts, test counts, and line counts, see `web/docs/PROJECT_STATS.md`.**
+
 ```
 web/
 ├── miniCycle.html              # Main entry point (PWA)
 ├── service-worker.js           # Offline support, caching
 ├── version.js                  # APP_VERSION + CACHE_VERSION (single source of truth)
-├── modules/                    # 114 ES6 modules (strict DI, zero window.* fallbacks)
+├── modules/                    # ES6 modules (strict DI, zero window.* fallbacks)
 │   ├── boot/                   # orchestrator → coreBoot → featureBoot → uiBoot
 │   ├── core/                   # appState, appContext, appInit, diBase, constants
 │   ├── task/                   # Task CRUD, DOM, events, rendering, drag-drop
 │   ├── ui/                     # Modals, menus, settings, onboarding, gestures
-│   ├── recurring/              # 15 files — scheduling, matching, panel, settings
+│   ├── recurring/              # Scheduling, matching, panel, settings
 │   ├── features/               # Themes, stats, achievements, history, reminders
 │   ├── routine/                # Routine lifecycle, switching, migration
-│   ├── labels/                 # defaultLabels.js (~600 keys) + labelResolver.js
+│   ├── labels/                 # defaultLabels.js + labelResolver.js
 │   ├── utils/                  # Notifications, device detection, globalUtils
 │   ├── storage/                # backupManager (IndexedDB)
 │   ├── progress/               # Cycle completion tracking
 │   └── other/                  # Plugin system
-├── styles/                     # 38 CSS files, token-based (variables.css foundation)
-└── tests/                      # 1,458 Playwright tests
+├── styles/                     # Token-based CSS (variables.css foundation)
+└── tests/                      # Playwright browser tests
 ```
 
 ---
@@ -63,7 +69,7 @@ export class MyModule {
 }
 ```
 
-**NEVER** use a plain `let _deps = {}` object. **NEVER** use `{ ..._deps, ...dependencies }` spread — it evaluates lazy getters immediately.
+For new modules, always use `createDIModule()` from `diBase.js`. A small number of early boot/testing modules still use the legacy `let _deps = {}` pattern for startup-order reasons (see `web/docs/PROJECT_STATS.md` for counts) — do not use it for new modules. **NEVER** use `{ ..._deps, ...dependencies }` spread — it evaluates lazy getters immediately.
 
 ### 2. Always Use Object.defineProperties for Dependency Setters
 
@@ -218,7 +224,7 @@ state.achievements                        — unlocked[], seen{}
 ## BOOT SEQUENCE — Do Not Bypass
 
 ```
-orchestrator.js (pure sequence controller, no DI writes)
+orchestrator.js (sequence control + boot UI + early boot coordination)
   → Phase 1: coreBoot.js     — AppState, GlobalUtils, migration
   → Phase 2: featureBoot.js  — moduleLoader loads manifests, wires ALL DI
   → Phase 3: uiBoot.js       — event listeners, UI finalization
@@ -237,11 +243,11 @@ orchestrator.js (pure sequence controller, no DI writes)
 3. **Hardcoding strings** — Use `getLabel()`. Add missing keys to `defaultLabels.js`.
 4. **Hardcoding selectors** — Use `DOM_IDS`, `DOM_SELECTORS`, `DATA_SELECTORS` from constants.js.
 5. **Hardcoding z-index** — Use `Z_INDEX` constant or `var(--z-*)` CSS variables.
-6. **Forgetting listener cleanup** — Every addEventListener needs a corresponding removeEventListener path.
+6. **Forgetting listener cleanup** — Every addEventListener needs a corresponding removeEventListener path. Modules with listeners/timers should implement `destroy()` — it's called automatically on boot retry via `destroyAllModules()`.
 7. **Using innerHTML with user data** — Use `textContent`. Only use innerHTML for trusted static content.
 8. **Creating instances before wiring deps** — Always call `setModuleDependencies()` first.
 9. **Skipping the label system for "temporary" strings** — They're never temporary. Add the label.
-10. **Using plain _deps instead of diBase.js** — The project has a DI framework. Use it.
+10. **Using plain _deps instead of diBase.js** — The project has a DI framework. Use it (except Phase 1 boot modules — see rule #1 above).
 11. **Adding listeners in a loop without tracking them** — Use WeakMap or store references for cleanup.
 12. **Assuming a modal's close handler cleans everything up** — It usually only handles escape key. Clean up ALL handlers.
 

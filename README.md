@@ -148,7 +148,7 @@ miniCycle is built entirely with vanilla JavaScript — no React, no Vue, no fra
 
 ### Philosophy
 
-**Dependency Injection from scratch.** The app uses a custom DI framework (`diBase.js`) with `required()` and `optional()` dependency declarations, lazy getter resolution, and manifest-based wiring. This exists because 114 modules need to reference each other without circular imports or global state — the same problem Angular's DI solves, built here to understand how and why it works.
+**Dependency Injection from scratch.** The app uses a custom DI framework (`diBase.js`) with `required()` and `optional()` dependency declarations, lazy getter resolution, and manifest-based wiring. This exists because the app's modules need to reference each other without circular imports or global state — the same problem Angular's DI solves, built here to understand how and why it works.
 
 **A full label system instead of hardcoded strings.** Every user-facing string flows through `getLabel()` with pluralization, interpolation, and theme-aware resolution. This started as a way to keep text consistent and evolved into the foundation for the vocabulary theme system — where the entire app's language changes based on your routine's context.
 
@@ -188,32 +188,32 @@ miniCycle/
 │   ├── miniCycle.html              # Main entry point (PWA)
 │   ├── service-worker.js           # Offline support & caching
 │   ├── version.js                  # APP_VERSION + CACHE_VERSION
-│   ├── modules/                    # 114 ES6 modules (strict DI)
+│   ├── modules/                    # ES6 modules (strict DI, zero window.* globals)
 │   │   ├── boot/                   # orchestrator → coreBoot → featureBoot → uiBoot
 │   │   ├── core/                   # appState, appContext, diBase, constants
 │   │   ├── task/                   # Task CRUD, rendering, drag-drop, search
 │   │   ├── ui/                     # Modals, menus, settings, gestures, undo
-│   │   ├── recurring/              # 15 files — scheduling, matching, panel
+│   │   ├── recurring/              # Scheduling, matching, panel, settings
 │   │   ├── features/               # Themes, stats, achievements, history, reminders
 │   │   ├── routine/                # Routine lifecycle, switching, import/export
-│   │   ├── labels/                 # Label system (~1,050 keys) + theme overrides
+│   │   ├── labels/                 # Label system + theme overrides
 │   │   ├── utils/                  # Notifications, device detection, validation
 │   │   ├── storage/                # backupManager (IndexedDB)
 │   │   ├── progress/               # Cycle completion tracking
 │   │   └── other/                  # Plugin system
-│   ├── styles/                     # 38 CSS files, token-based (variables.css)
-│   ├── tests/                      # 59 Playwright test files
+│   ├── styles/                     # Token-based CSS (variables.css foundation)
+│   ├── tests/                      # Playwright test files
 │   └── docs/                       # Developer guides & architecture docs
 ├── lite/                           # Static ES5 fallback (frozen, not maintained)
 └── CLAUDE.md                       # Implementation rules & patterns
 ```
 
 ### Architecture
-- **114 ES6 modules** with strict dependency injection — zero `window.*` globals
+- **ES6 modules** with strict dependency injection — zero `window.*` globals
 - **Boot sequence**: orchestrator → coreBoot → featureBoot → uiBoot
 - **State management**: centralized `AppState.update(producer)` with Schema 2.5
-- **Label system**: ~1,050 keys with pluralization, interpolation, and theme-aware resolution
-- **CSS**: token-based design system with 38 files, dark mode, reduced motion support
+- **Label system**: centralized keys with pluralization, interpolation, and theme-aware resolution
+- **CSS**: token-based design system, dark mode, reduced motion support
 - **Service worker**: network-first strategy with stale-while-revalidate fallback
 - **Security**: Content Security Policy with hash-based inline script validation, XSS-safe DOM patterns
 

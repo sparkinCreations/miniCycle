@@ -13,14 +13,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.095 |
+| **App Version** | 2.096 |
 | **Lite Version** | 2.088 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 114 |
 | **Total Tests** | 1691 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 38 |
-| **JSDoc Blocks** | 1036 |
+| **JSDoc Blocks** | 1037 |
 | **Documentation Files** | 191 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -54,11 +54,11 @@
 | File | Lines | Purpose |
 |------|-------|---------|
 | `miniCycle-main.js` | ~49 | Entrypoint |
-| `modules/boot/orchestrator.js` | ~771 | Pure sequence controller |
+| `modules/boot/orchestrator.js` | ~774 | Sequence control + boot UI + early coordination |
 | `modules/boot/coreBoot.js` | ~1030 | Core state & init |
 | `modules/boot/featureBoot.js` | ~590 | DI wiring hub |
 | `modules/boot/uiBoot.js` | ~886 | UI handlers |
-| **Total** | **~3326** | |
+| **Total** | **~3329** | |
 
 ---
 
@@ -84,7 +84,7 @@
 | Boot file split | ✅ Complete | Dec 2025 |
 | CSS modularization | ✅ Complete | Jan 2026 |
 
-> **DI breakdown:** 60 modules use `diBase.js` (`createDIModule`), ~13 use custom `set*Dependencies()` functions, and ~29 are pure utilities/constants that don't require DI. The key guarantee: **zero modules use `|| window.*` fallbacks**.
+> **DI breakdown:** Most modules use `diBase.js` (`createDIModule`), a small number of core/boot/testing modules use custom `set*Dependencies()` functions, and the remainder are pure utilities/constants that don't require DI. The key guarantee: **zero modules use `|| window.*` fallbacks**.
 
 ### Boot Fallback Safety Nets
 

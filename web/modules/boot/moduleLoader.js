@@ -1306,7 +1306,24 @@ export function isModuleLoaded(name) {
 }
 
 /**
- * Clear all loaded modules (for testing)
+ * Destroy all module instances that implement destroy().
+ * Called before clearLoadedModules() on boot retry.
+ */
+export function destroyAllModules() {
+    for (const [name, instance] of moduleInstances) {
+        if (instance && typeof instance.destroy === 'function') {
+            try {
+                instance.destroy();
+            } catch (e) {
+                console.warn(`[moduleLoader] destroy() failed for ${name}:`, e);
+            }
+        }
+    }
+}
+
+/**
+ * Clear all loaded modules (for retry/testing).
+ * Call destroyAllModules() first to clean up listeners and timers.
  */
 export function clearLoadedModules() {
     loadedModules.clear();

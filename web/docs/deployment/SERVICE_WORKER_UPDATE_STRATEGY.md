@@ -69,7 +69,7 @@ const vParam = versionSuffix ? `?v=${versionSuffix}` : '';
 
 When offline, retrying with a different `?v=` suffix would miss every cache. Instead, the retry drops the version parameter entirely so the browser's HTTP cache (24-hour `max-age`) can serve files.
 
-The `withV()` helper propagates this through the entire chain: orchestrator → coreBoot → featureBoot → moduleLoader → all 114 modules.
+The `withV()` helper propagates this through the entire chain: orchestrator → coreBoot → featureBoot → moduleLoader → all modules.
 
 ### 4. Version Parameter on SW URL
 ```javascript
@@ -215,7 +215,7 @@ Open the app offline and look for these console messages:
 | `modules/boot/orchestrator.js` | Boot sequence, retry logic, `vParam` calculation |
 | `modules/boot/coreBoot.js` | Phase 1 boot, `withV()` helper, `effectiveVersion` |
 | `modules/boot/featureBoot.js` | Phase 2 boot, passes `withV` to moduleLoader |
-| `modules/boot/moduleLoader.js` | Loads all 114 modules using `withV()` |
+| `modules/boot/moduleLoader.js` | Loads all modules using `withV()` |
 | `netlify.toml` | Cache headers, CSP with SHA-256 hashes, redirects |
 | `scripts/update-version.sh` | Version bump automation |
 

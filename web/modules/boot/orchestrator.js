@@ -444,7 +444,7 @@ async function runBootSequence() {
   const { initUIBoot } = uiBoot;
 
   // Import moduleLoader to clear cache on retry
-  const { clearLoadedModules } = await import(`./moduleLoader.js${vParam}`);
+  const { clearLoadedModules, destroyAllModules } = await import(`./moduleLoader.js${vParam}`);
 
   // Import appInit to reset its state on retry
   const { appInit } = await import(`../core/appInit.js${vParam}`);
@@ -457,6 +457,9 @@ async function runBootSequence() {
       cycle: {}, recurring: {}, progress: {}, storage: {}, testing: {}
     };
   } else {
+    // ✅ Destroy all module instances before clearing cache (listeners, timers, etc.)
+    destroyAllModules();
+
     // ✅ CRITICAL FIX: Clear module loader cache on retry
     // Cached modules have DI closures that captured the old deps from attempt 1
     // We need to reload all modules so they get fresh closures with the current deps

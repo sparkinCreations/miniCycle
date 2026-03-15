@@ -116,7 +116,7 @@ Built-in debounced persistence to localStorage and an undo/redo system (`undoRed
 ### What miniCycle builds
 A label system in `modules/labels/`:
 
-- `defaultLabels.js` — 1,000+ keys across 32+ categories (the "translation file")
+- `defaultLabels.js` — centralized keys across 32+ categories (the "translation file")
 - `labelResolver.js` — `getLabel(key, options)` with pluralization and interpolation
 - Theme-aware resolution — vocabulary themes override specific keys at runtime
 
@@ -136,7 +136,7 @@ t('notify.taskRenamed', { name: 'Buy milk' })                   // 'Task renamed
 User-facing strings scattered across hundreds of files make consistency impossible and localization impractical. Both systems centralize strings into a registry with key-based lookups, keeping presentation logic separate from text content.
 
 ### What miniCycle adds
-Theme-aware resolution via `LENS_SENSITIVE_KEYS` — a set of ~142 keys that vocabulary themes can override. When a routine uses the "Fitness" theme, `getLabel('noun.task')` returns "workout" instead of "task." This is conceptually similar to i18next namespaces or contexts, but driven by app state rather than user locale.
+Theme-aware resolution via `LENS_SENSITIVE_KEYS` — a set of keys that vocabulary themes can override. When a routine uses the "Fitness" theme, `getLabel('noun.task')` returns "workout" instead of "task." This is conceptually similar to i18next namespaces or contexts, but driven by app state rather than user locale.
 
 ---
 
@@ -152,7 +152,7 @@ Theme-aware resolution via `LENS_SENSITIVE_KEYS` — a set of ~142 keys that voc
 A 4-phase boot sequence in `modules/boot/`:
 
 ```
-orchestrator.js (pure sequence controller — no DI writes, no DOM)
+orchestrator.js (sequence control + boot UI + early coordination)
   → Phase 1: coreBoot.js     — AppState, migration, core utilities
   → Phase 2: featureBoot.js  — module loading, DI wiring, instance creation
   → Phase 3: uiBoot.js       — event listeners, UI finalization, theme application
@@ -266,7 +266,7 @@ Event listeners in long-lived apps leak memory if not cleaned up, duplicate if a
 A token-based design system in `styles/base/variables.css`:
 
 - CSS custom properties for spacing (`--space-1` through `--space-8`), colors, typography, z-index, transitions
-- 38 CSS files organized by component
+- CSS files organized by component (see [PROJECT_STATS.md](../PROJECT_STATS.md) for counts)
 - Dark mode via `prefers-color-scheme` and manual toggle
 - Reduced motion support via `prefers-reduced-motion` (timing variables auto-disable)
 - Vocabulary theme color presets applied as `--pref-*` CSS variables at runtime
@@ -327,7 +327,7 @@ Playwright browser tests (`web/tests/`) that:
 - Run against the actual app in a real browser (localhost:8080)
 - Use `createProtectedTest()` to backup/restore localStorage between tests
 - Test the full boot sequence, DI wiring, and UI interactions
-- 59 test files with 1,600+ test cases
+- Comprehensive test files (see [PROJECT_STATS.md](../PROJECT_STATS.md) for counts)
 
 ### The problem both solve
 Code needs automated verification. The approach differs — React Testing Library tests components in isolation with a virtual DOM, while miniCycle tests the full app in a real browser. miniCycle's approach is closer to Cypress or Playwright E2E testing, validating that the entire system works together rather than testing units in isolation.
