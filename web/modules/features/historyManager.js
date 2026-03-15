@@ -958,11 +958,11 @@ export class HistoryManager {
         let detailText = '';
         if (event.details) {
             if (event.details.cycleCount !== undefined) {
-                const cycleNoun = event.details._cycleNoun || getLabel('noun.cycle', { count: 1 });
+                const cycleNoun = this._escapeHtml(event.details._cycleNoun) || getLabel('noun.cycle', { count: 1 });
                 const capitalized = cycleNoun.charAt(0).toUpperCase() + cycleNoun.slice(1);
                 detailText = `${capitalized} #${event.details.cycleCount}`;
             } else if (event.details.tasksCleared !== undefined) {
-                const taskNoun = event.details._taskNoun || getLabel('noun.task', { count: event.details.tasksCleared });
+                const taskNoun = this._escapeHtml(event.details._taskNoun) || getLabel('noun.task', { count: event.details.tasksCleared });
                 detailText = `${event.details.tasksCleared} ${taskNoun}`;
             } else if (event.details.achievementId) {
                  detailText = this._escapeHtml(event.details.achievementName || event.details.achievementId);
@@ -973,7 +973,7 @@ export class HistoryManager {
             } else if (event.details.taskNames !== undefined) {
                 const count = event.details.count ?? event.details.taskNames.length;
                 const names = event.details.taskNames.map(n => this._escapeHtml(n)).join(', ');
-                const taskNounPlural = event.details._taskNoun || getLabel('noun.task', { count });
+                const taskNounPlural = this._escapeHtml(event.details._taskNoun) || getLabel('noun.task', { count });
                 detailText = `${count} ${taskNounPlural}: ${names}`;
             } else if (event.type === 'task_priority_set' && event.details.taskName !== undefined) {
                 const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(event.details.priorityColor)
@@ -996,12 +996,12 @@ export class HistoryManager {
                 border-radius: 8px;
                 margin-bottom: 8px;
             ">
-                <span style="font-size: 20px;">${event.details?._eventIcon || icons[event.type] || '📌'}</span>
+                <span style="font-size: 20px;">${this._escapeHtml(event.details?._eventIcon) || icons[event.type] || '📌'}</span>
                 <div style="flex: 1; min-width: 0;">
                     <div style="
                         font-weight: 500;
                         color: var(--text-primary, #333);
-                    ">${event.details?._eventLabel || labels[event.type] || this._escapeHtml(event.type)}</div>
+                    ">${this._escapeHtml(event.details?._eventLabel) || labels[event.type] || this._escapeHtml(event.type)}</div>
                     ${detailText ? `<div style="
                         font-size: 13px;
                         color: var(--text-secondary, #666);
@@ -1200,6 +1200,7 @@ export class HistoryManager {
      * @returns {string}
      */
     _escapeHtml(text) {
+        if (text == null) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;

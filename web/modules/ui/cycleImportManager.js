@@ -651,11 +651,19 @@ export async function processImportedData(fileContent) {
         const events = Array.isArray(h.events)
             ? h.events.filter(e => e && typeof e === 'object' && typeof e.type === 'string')
                 .slice(0, maxEvents)
-                .map(e => ({
-                    type: fallbackSanitize(e.type, 50),
-                    timestamp: typeof e.timestamp === 'number' ? e.timestamp : Date.now(),
-                    details: (e.details && typeof e.details === 'object') ? e.details : {}
-                }))
+                .map(e => {
+                    const details = (e.details && typeof e.details === 'object') ? { ...e.details } : {};
+                    // Strip display-only fields — renderer regenerates these from getLabel()/icons maps
+                    delete details._eventIcon;
+                    delete details._eventLabel;
+                    delete details._cycleNoun;
+                    delete details._taskNoun;
+                    return {
+                        type: fallbackSanitize(e.type, 50),
+                        timestamp: typeof e.timestamp === 'number' ? e.timestamp : Date.now(),
+                        details
+                    };
+                })
             : [];
         safeHistory = { events, maxEvents };
     }

@@ -95,6 +95,18 @@ function sanitizeCycle(cycle) {
         cycle.tasks.forEach(sanitizeTask);
     }
 
+    // Strip display-only fields from history events — renderer regenerates from getLabel()/icons maps
+    if (cycle.history && typeof cycle.history === 'object' && Array.isArray(cycle.history.events)) {
+        cycle.history.events.forEach(event => {
+            if (event.details && typeof event.details === 'object') {
+                delete event.details._eventIcon;
+                delete event.details._eventLabel;
+                delete event.details._cycleNoun;
+                delete event.details._taskNoun;
+            }
+        });
+    }
+
     if (cycle.recurringTemplates && typeof cycle.recurringTemplates === 'object') {
         Object.values(cycle.recurringTemplates).forEach(template => {
             if (!template || typeof template !== 'object') return;
