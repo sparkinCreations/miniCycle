@@ -1,3 +1,7 @@
+## [2.093] - 2026-03-15
+- feat(backup-validation): enhance backup validation before restoring localStorage and improve event listener handling
+
+
 ## [2.092] - 2026-03-15
 - feat(routine-switcher): add close button and improve action row layout
 
