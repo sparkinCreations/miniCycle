@@ -727,9 +727,10 @@ class MiniCycleState {
 
     /**
      * Force an immediate save, bypassing debounce
+     * @returns {Promise<void>} Resolves when save completes
      */
-    forceSave() {
-        this.scheduleSave(true);
+    async forceSave() {
+        await this.scheduleSave(true);
     }
 
     /**

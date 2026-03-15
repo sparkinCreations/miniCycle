@@ -181,7 +181,7 @@ export class MiniCycleDueDates {
         // ✅ Use AppState only (no localStorage fallback)
         const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
         if (!AppState?.isReady?.()) {
-            console.error('❌ AppState not ready for checkOverdueTasks');
+            // Expected during initial boot — data loads after core phase
             return;
         }
 

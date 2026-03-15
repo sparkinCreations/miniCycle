@@ -227,11 +227,9 @@ class GamesManager {
             }
         };
 
-        // Use safeAddEventListener if available (DI-pure, no window.* fallback)
+        // Use safeAddEventListener (DI-pure, no window.* fallback)
         if (this.deps.safeAddEventListener) {
             this.deps.safeAddEventListener(document, "click", this._gamesOutsideClickHandler);
-        } else {
-            document.addEventListener("click", this._gamesOutsideClickHandler);
         }
     }
 

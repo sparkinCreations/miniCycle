@@ -269,7 +269,9 @@ const di = createDIModule('UndoRedoManager', {
   refreshHistoryIfOpen: optional(null),  // () => void — re-renders history modal if open (for cleared tasks tab)
   updateRecurringInfoLink: optional(null),  // () => void — refreshes "X tasks set to recurring" indicator
   updateHelpWindow: optional(null),  // () => void — refreshes help window status message
-  syncModeFromToggles: optional(null)  // () => void — syncs delete-checked/auto-reset toggles from state
+  syncModeFromToggles: optional(null),  // () => void — syncs delete-checked/auto-reset toggles from state
+  refreshThemeLabels: optional(null),  // () => void — refreshes vocab theme labels/colors after undo/redo
+  updateRecurringPanel: optional(null)  // () => void — refreshes recurring panel after undo/redo
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
@@ -766,6 +768,9 @@ export function computeTransactionDiff(fromSnapshot, toSnapshot) {
   const diff = {
     kind: 'undo', // or 'redo' - set by caller
     cycleChanged: false,
+    themeChanged: false,
+    recurringChanged: false,
+    clearedTasksChanged: false,
     taskCountChanged: false,
     taskOrderChanged: false,
     changedTaskIds: [],
@@ -796,6 +801,23 @@ export function computeTransactionDiff(fromSnapshot, toSnapshot) {
       fromSnapshot.deleteCheckedTasks !== toSnapshot.deleteCheckedTasks) {
     diff.cycleChanged = true;
     // Cycle metadata changes don't require full task re-render
+  }
+
+  // Check theme changes (requires vocab theme refresh)
+  if ((fromSnapshot.theme || 'classic') !== (toSnapshot.theme || 'classic')) {
+    diff.themeChanged = true;
+  }
+
+  // Check recurring template changes (requires recurring panel refresh)
+  if (JSON.stringify(fromSnapshot.recurringTemplates || {}) !==
+      JSON.stringify(toSnapshot.recurringTemplates || {})) {
+    diff.recurringChanged = true;
+  }
+
+  // Check cleared tasks changes (requires history refresh)
+  if (JSON.stringify(fromSnapshot.clearedTasks || null) !==
+      JSON.stringify(toSnapshot.clearedTasks || null)) {
+    diff.clearedTasksChanged = true;
   }
 
   // Check task count changes
@@ -843,6 +865,9 @@ export function computeTransactionDiff(fromSnapshot, toSnapshot) {
     }
     if (fromTask.highPriority !== toTask.highPriority) {
       taskFieldsChanged.push('highPriority');
+    }
+    if ((fromTask.priorityColor || null) !== (toTask.priorityColor || null)) {
+      taskFieldsChanged.push('priorityColor');
     }
     if (fromTask.dueDate !== toTask.dueDate) {
       taskFieldsChanged.push('dueDate');
@@ -942,6 +967,21 @@ function handleUndoRedoUIUpdate(diff, newState) {
   } else {
     // Fallback to refreshUIFromState
     _deps.refreshUIFromState(newState);
+  }
+
+  // Refresh theme labels/colors if theme changed (outside UIOrchestrator scope)
+  if (diff.themeChanged) {
+    _deps.refreshThemeLabels?.();
+  }
+
+  // Refresh recurring panel if templates changed (outside UIOrchestrator scope)
+  if (diff.recurringChanged) {
+    _deps.updateRecurringPanel?.();
+  }
+
+  // Refresh history modal if cleared tasks changed
+  if (diff.clearedTasksChanged) {
+    _deps.refreshHistoryIfOpen?.();
   }
 }
 

@@ -354,10 +354,15 @@ export class AchievementsManager {
     _setupModalHandlers() {
         if (!this.modalOverlay) return;
 
+        const safeAdd = this.deps.safeAddEventListener;
+
         // Back button (store handler for cleanup)
         const backBtn = this.modalOverlay.querySelector(DOM_SELECTORS.ACHIEVEMENTS_BACK_BTN);
         this._backBtnHandler = () => this.closeModal();
-        backBtn?.addEventListener('click', this._backBtnHandler);
+        if (backBtn) {
+            safeAdd ? safeAdd(backBtn, 'click', this._backBtnHandler)
+                : backBtn.addEventListener('click', this._backBtnHandler);
+        }
 
         // Click outside to close (store handler for cleanup)
         this._overlayClickHandler = (e) => {
@@ -365,14 +370,16 @@ export class AchievementsManager {
                 this.closeModal();
             }
         };
-        this.modalOverlay.addEventListener('click', this._overlayClickHandler);
+        safeAdd ? safeAdd(this.modalOverlay, 'click', this._overlayClickHandler)
+            : this.modalOverlay.addEventListener('click', this._overlayClickHandler);
 
         // Native dialog handles ESC — use cancel event for cleanup
         this._cancelHandler = (e) => {
             e.preventDefault();
             this.closeModal();
         };
-        this.modalOverlay.addEventListener('cancel', this._cancelHandler);
+        safeAdd ? safeAdd(this.modalOverlay, 'cancel', this._cancelHandler)
+            : this.modalOverlay.addEventListener('cancel', this._cancelHandler);
     }
 
     /**
@@ -654,9 +661,6 @@ export class AchievementsManager {
                 if (safeAddEventListener) {
                     safeAddEventListener(badge, 'click', badge._badgeClickHandler);
                     safeAddEventListener(badge, 'keydown', badge._badgeKeyHandler);
-                } else {
-                    badge.addEventListener('click', badge._badgeClickHandler);
-                    badge.addEventListener('keydown', badge._badgeKeyHandler);
                 }
             }
         });
@@ -1024,9 +1028,10 @@ export class AchievementsManager {
 
         // Close on backdrop click — require both mousedown and click on overlay
         // (prevents close when dragging badge spin beyond modal content)
-        overlay.addEventListener('mousedown', (e) => {
+        this._badgeOverlayMousedownHandler = (e) => {
             overlay._backdropMouseDown = e.target === overlay;
-        });
+        };
+        overlay.addEventListener('mousedown', this._badgeOverlayMousedownHandler);
         this._badgeOverlayClickHandler = (e) => {
             if (e.target === overlay && overlay._backdropMouseDown) {
                 this.hideBadgeDetail();
@@ -1067,7 +1072,11 @@ export class AchievementsManager {
             this._badgeCoinCleanup = null;
         }
 
-        // Cleanup overlay click handler
+        // Cleanup overlay listeners
+        if (this._badgeOverlayMousedownHandler && overlay) {
+            overlay.removeEventListener('mousedown', this._badgeOverlayMousedownHandler);
+            this._badgeOverlayMousedownHandler = null;
+        }
         if (this._badgeOverlayClickHandler && overlay) {
             overlay.removeEventListener('click', this._badgeOverlayClickHandler);
             this._badgeOverlayClickHandler = null;

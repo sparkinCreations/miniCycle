@@ -79,6 +79,9 @@ export class TaskDOMPatch {
                     case 'remindersEnabled':
                         this._patchReminders(taskElement, taskData);
                         break;
+                    case 'priorityColor':
+                        this._patchPriorityColor(taskElement, taskData);
+                        break;
                     case 'deleteWhenComplete':
                         this._patchDeleteWhenComplete(taskElement, taskData);
                         break;
@@ -141,6 +144,18 @@ export class TaskDOMPatch {
         if (priorityBtn) {
             priorityBtn.classList.toggle('priority-active', isHighPriority);
             priorityBtn.setAttribute('aria-pressed', String(isHighPriority));
+        }
+    }
+
+    /**
+     * Patch priority color only (when highPriority itself didn't change)
+     * @private
+     */
+    _patchPriorityColor(taskElement, taskData) {
+        if (taskData.highPriority && taskData.priorityColor) {
+            taskElement.style.setProperty('--task-priority-color', taskData.priorityColor);
+        } else {
+            taskElement.style.removeProperty('--task-priority-color');
         }
     }
 
