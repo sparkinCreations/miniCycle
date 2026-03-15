@@ -202,8 +202,8 @@ export const setGuidedTourManagerDependencies = di.setDependencies;
 ### Key Methods
 
 ```
-init()                    — Branch on onboardingCompleted: schedule notification directly (returning user) or register onboarding:setup-complete listener (first-run)
-startTour()               — Create overlay, begin at step 0 (or resume step)
+init()                    — Branch on onboardingCompleted: register init:app-ready listener (returning user) or onboarding:setup-complete listener (first-run)
+startTour()               — Create overlay, begin at persisted guidedTourStep (or step 0 if null/done)
 showStep(index)           — ScrollIntoView target, spotlight it, render tooltip
 nextStep()                — Advance to next step, persist progress
 prevStep()                — Go back one step (pre-scans backwards, skips missing targets)
@@ -668,7 +668,8 @@ Add `'guidedTourManager'` to `ALL_MODULES` array in `tests/automated/run-browser
 - `onboarding:setup-complete` event triggers `_scheduleNotification()` for first-run users
 - Dismissing welcome notification sets `guidedTourStep = 'done'`
 - Dismissing resume notification sets `guidedTourStep = 'done'`
-- `startTour()` sets `guidedTourStep = 0`
+- `startTour()` from fresh start (`guidedTourStep === null`) begins at step 0 and sets `guidedTourStep = 0`
+- `startTour()` from resume (`guidedTourStep === 2`) begins at step 2
 
 **Step Navigation**
 - `nextStep()` advances from step 0 to step 1
