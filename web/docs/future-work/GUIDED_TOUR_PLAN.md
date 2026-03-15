@@ -254,7 +254,7 @@ if (target) {
 
 ### Modal Conflict Handling
 
-Close any open dialogs before the tour starts (Layer 1). A future Layer 2 could also prevent new dialogs from opening during the tour.
+Bail out if any dialog is open, re-showing the CTA after a hint (Layer 1). The settings retake path closes its own dialog first so the guard doesn't fire. A future Layer 2 could also prevent new dialogs from opening during the tour.
 
 **Layer 1 — Guard against data loss from open dialogs in `startTour()`:** The tour can be launched from multiple entry points (welcome notification, resume notification, settings retake button). Any of these could fire while a dialog is open — e.g., the user clicks "Start Blank Routine" from the `welcomeSampleLoaded` notification (Path A, `onboardingManager.js:336`), opens the creation dialog, then clicks the delayed tour CTA. To avoid silently discarding in-progress modal input, `startTour()` bails out if any dialog is open and shows a brief hint:
 
@@ -292,7 +292,7 @@ The settings retake button explicitly closes the settings dialog *before* callin
 The `data-tour-active` attribute is still set/removed (useful for CSS targeting and as a foundation if Layer 2 is added later):
 
 ```javascript
-// In startTour(), after closing open dialogs:
+// In startTour(), after the dialog guard passes:
 this.deps.getRootElement().dataset.tourActive = 'true';
 
 // In destroy():
