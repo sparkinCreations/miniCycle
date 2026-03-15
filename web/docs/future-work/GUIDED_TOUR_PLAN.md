@@ -20,11 +20,20 @@ When a first-time user creates their first routine (via cycle creation modal) or
 
 ### Welcome Notification
 
-Use the existing notification system with an action button. Delayed ~2 seconds after onboarding completes to avoid notification stacking:
+Use the existing notification system with an action button. The delay depends on the trigger path:
+
+- **Returning users / Path B / Path C**: 2-second delay (no competing notification)
+- **Path A (sample loaded)**: 9-second delay — the sample-success notification (`welcomeSampleLoaded`) shows for 8 seconds, and the notification system appends rather than replaces, so a shorter delay would visibly stack two notifications. 9 seconds ensures the sample notification auto-expires first.
 
 ```javascript
-// In init(), after checking the flag
-setTimeout(() => this._showWelcomeNotification(), 2000);
+_scheduleNotification(delay = 2000) {
+    const step = this.deps.AppState.get()?.settings?.guidedTourStep;
+    if (step === null) {
+        setTimeout(() => this._showWelcomeNotification(), delay);
+    } else if (typeof step === 'number') {
+        setTimeout(() => this._showResumeNotification(), delay);
+    }
+}
 ```
 
 ```
@@ -421,22 +430,26 @@ init() {
     if (onboardingDone) {
         // Returning user — UI is not yet ready (init:app-ready hasn't fired).
         // Wait for app to finish loading before showing notification.
-        this._appReadyHandler = () => this._scheduleNotification();
+        this._appReadyHandler = () => this._scheduleNotification(2000);
         document.addEventListener('init:app-ready', this._appReadyHandler, { once: true });
     } else {
         // First-run — onboarding modal will show, task list not rendered yet.
         // Wait for onboarding + routine setup to actually complete.
-        this._onboardingHandler = () => this._scheduleNotification();
+        // 9s delay: Path A shows an 8s sample-loaded notification that would
+        // visibly stack with the tour prompt (notification system appends, not
+        // replaces). Paths B/C have no competing notification, but 9s is harmless —
+        // the user is still orienting after first routine creation.
+        this._onboardingHandler = () => this._scheduleNotification(9000);
         document.addEventListener('onboarding:setup-complete', this._onboardingHandler, { once: true });
     }
 }
 
-_scheduleNotification() {
+_scheduleNotification(delay = 2000) {
     const step = this.deps.AppState.get()?.settings?.guidedTourStep;
     if (step === null) {
-        setTimeout(() => this._showWelcomeNotification(), 2000);
+        setTimeout(() => this._showWelcomeNotification(), delay);
     } else if (typeof step === 'number') {
-        setTimeout(() => this._showResumeNotification(), 2000);
+        setTimeout(() => this._showResumeNotification(), delay);
     }
     // step === 'done' → do nothing
 }
@@ -446,34 +459,54 @@ _scheduleNotification() {
 
 #### New `onboarding:setup-complete` event
 
-Dispatched when the main UI is actually ready — meaning a routine exists and tasks are rendered. All three onboarding completion paths now converge on this event:
+Dispatched when the main UI is actually ready — meaning a routine exists and tasks are rendered. All three onboarding completion paths now converge on this event.
+
+**Critical: `completeInitialSetup` is async.** It wraps `appInit.runCompleteInitialSetup()`, which `await`s `loadMiniCycle()`, `updateReminderButtons()`, `updateDueDateVisibility()`, and `checkOverdueTasks()` before the task list is rendered. The existing callers (`onboardingManager.js:369`, `routineManager.js:252,527`) call it **without `await`**, which was fine before because nothing depended on completion. For the dispatch, we **must `await`** it so the event fires after the UI is ready.
 
 ```javascript
 // Path A — In onboardingManager.js completeOnboarding():
 //   Sample loaded successfully, inside the setTimeout(..., 300) block.
-//   After `await preloadGettingStartedCycle()` succeeds and notification shows.
-//   The sample routine is loaded, tasks are rendered. ✅ Dispatch here.
+//   preloadGettingStartedCycle internally calls completeInitialSetup (line 527).
+//   That call is also un-awaited — but loadSampleRoutine is already async,
+//   so we await the whole chain and dispatch after it resolves.
+//   ✅ Change: await preloadGettingStartedCycle already awaits loadSampleRoutine,
+//   but loadSampleRoutine calls completeInitialSetup without await at line 527.
+//   Fix: add `await` before `this.deps.completeInitialSetup(...)` in
+//   loadSampleRoutine (line 527) so the promise chain includes UI rendering.
 const success = await this.deps.preloadGettingStartedCycle({ silent: true });
 if (success) {
+    // By this point, completeInitialSetup has finished (now awaited inside
+    // loadSampleRoutine), tasks are rendered.
     this.deps.showNotification(...);
     document.dispatchEvent(new Event('onboarding:setup-complete'));
 }
 
 // Path B — In routineManager.js showCycleCreationModal(), onCreateBlank callback:
 //   Sample failed (offline/fetch error), user creates a blank routine via the
-//   creation modal. After completeInitialSetup() returns at line 252, the routine
-//   exists and the UI is rendered. ✅ Dispatch here.
-this.deps.completeInitialSetup(finalTitle, appState.get());
+//   creation modal. The onCreateBlank callback is already async.
+//   Fix: add `await` before completeInitialSetup at line 252.
+await this.deps.completeInitialSetup(finalTitle, appState.get());
 document.dispatchEvent(new Event('onboarding:setup-complete'));
 
 // Path C — In onboardingManager.js completeOnboarding():
 //   Existing cycle (rare, e.g. state was partially set up).
-//   After completeInitialSetup() returns. Task list is rendered. ✅ Dispatch here.
-this.deps.completeInitialSetup(activeCycle, null, updatedState);
+//   The containing setTimeout callback is already async.
+//   Fix: add `await` before completeInitialSetup at line 369.
+await this.deps.completeInitialSetup(activeCycle, null, updatedState);
 document.dispatchEvent(new Event('onboarding:setup-complete'));
 ```
 
-**Why Path B dispatches from `routineManager.js` (not `onboardingManager.js`):** When the sample fetch fails, `completeOnboarding()` calls `showCycleCreationModal()` and returns — the creation modal is just opening, and no routine exists yet. The actual setup completion happens later when the user fills in the modal and `onCreateBlank` fires. At `routineManager.js:252`, `completeInitialSetup()` has run, the routine is saved, and the UI is rendered — that's the correct convergence point.
+**Summary of `await` additions needed (4 sites):**
+| File | Line | Change |
+|------|------|--------|
+| `routineManager.js` | 527 | `await this.deps.completeInitialSetup(...)` (inside `loadSampleRoutine`, covers Path A) |
+| `routineManager.js` | 252 | `await this.deps.completeInitialSetup(...)` (inside `onCreateBlank`, covers Path B) |
+| `routineManager.js` | 327 | `await this.deps.completeInitialSetup(...)` (inside `createBasicFallbackCycle`, for consistency) |
+| `onboardingManager.js` | 369 | `await this.deps.completeInitialSetup(...)` (inside `completeOnboarding`, covers Path C) |
+
+All four callers are already inside `async` functions, so adding `await` is safe and non-breaking. The only behavioral change is that downstream code in the same function now waits for the UI to finish rendering before continuing — which is the correct behavior.
+
+**Why Path B dispatches from `routineManager.js` (not `onboardingManager.js`):** When the sample fetch fails, `completeOnboarding()` calls `showCycleCreationModal()` and returns — the creation modal is just opening, and no routine exists yet. The actual setup completion happens later when the user fills in the modal and `onCreateBlank` fires. At `routineManager.js:252`, `await completeInitialSetup()` has finished, the routine is saved, and the UI is rendered — that's the correct convergence point.
 
 **Why not defer to next session:** If `onboardingCompleted` is `true` but `cycleCount === 0` (user closed the app before creating a routine), `appInit.js:351` redirects back to onboarding — the returning-user path never runs. Dispatching from the creation callback guarantees the tour triggers in the same session.
 
