@@ -409,16 +409,50 @@ guidedTourManager: {
 
 ## Integration Points
 
-### 1. After First Routine Creation
-In `appInit.js` `completeInitialSetup()` or after `onboardingManager` finishes — call `guidedTourManager.init()` which checks the flag and shows the welcome notification (with a 2-second delay to avoid stacking with other first-run notifications).
+### 1. Tour Trigger: `init:app-ready` Event
+
+Both first-run paths (blank routine and sample routine) converge on the `init:app-ready` custom event dispatched by `appInit.markAppReady()` (`appInit.js:195`). This fires AFTER the task list is rendered and the UI is fully visible — the correct moment to show the tour prompt.
+
+```javascript
+// In guidedTourManager.init(), listen for the shared convergence event:
+document.addEventListener('init:app-ready', () => {
+    const step = this.deps.AppState.get()?.settings?.guidedTourStep;
+    if (step === null) {
+        setTimeout(() => this._showWelcomeNotification(), 2000);
+    } else if (typeof step === 'number') {
+        setTimeout(() => this._showResumeNotification(), 2000);
+    }
+    // step === 'done' → do nothing
+}, { once: true });
+```
+
+**Why not `completeInitialSetup()`:** The sample-routine path (`preloadGettingStartedCycle` in `onboardingManager.js:333`) shows its own welcome notification with a "Create blank routine" action button. If the tour trigger were wired to `completeInitialSetup()`, sample-routine users would never see it because their path goes through `loadSampleRoutine(isOnboarding=true)` which calls `completeInitialSetup()` internally but may show competing notifications. The `init:app-ready` event fires after both paths settle and all first-run notifications have been dispatched, so the 2-second delay cleanly avoids stacking.
 
 ### 2. Settings Panel
+
 Add "Retake Guided Tour" button near existing "Reset Onboarding" button. Clicking it sets `guidedTourStep = null` and calls `startGuidedTour()`.
+
+**Settings wiring path** (follows the `clearAllUndoHistory` pattern):
+
+1. **`moduleManifests.js`**: Add `'startGuidedTour'` to `settingsManager`'s `optionalDeps`
+2. **`moduleLoader.js`**: Add `startGuidedTour` entry to `depMappings`:
+   ```javascript
+   startGuidedTour: (...args) => deps.ui?.startGuidedTour?.(...args),
+   ```
+3. **`settingsManager.js`**: Add `startGuidedTour: optional(null)` to DI definition; forward in `wireSubModuleDependencies()`:
+   ```javascript
+   _subModules.setSettingsUIManagerDependencies({
+       // ...existing deps...
+       startGuidedTour: dependencies.startGuidedTour,
+   });
+   ```
+4. **`settingsUIManager.js`**: Add `startGuidedTour: optional(null)` to DI definition; create `setupRetakeGuidedTourButton()` function; add call in `initAllToggles()`
 
 ### 3. Onboarding Relationship
 - Existing onboarding (3-step modal) runs FIRST — it's the "what is miniCycle" intro
 - Guided tour runs AFTER — it's the "here's where things are" hands-on walkthrough
 - They're independent; either can be reset separately
+- Both paths converge on `init:app-ready` before the tour triggers
 
 ## Accessibility
 
@@ -513,5 +547,5 @@ Add `'guidedTourManager'` to `ALL_MODULES` array in `tests/automated/run-browser
 ## Estimated Scope
 
 - **New files**: 3 (guidedTourManager.js, guided-tour.css, guidedTourManager.tests.js)
-- **Modified files**: ~8 (defaultLabels.js, constants.js, variables.css, moduleManifests.js, moduleLoader.js, appInit.js, settingsUIManager.js, notifications.js, run-browser-tests.cjs)
+- **Modified files**: 10 (defaultLabels.js, constants.js, variables.css, moduleManifests.js, moduleLoader.js, notifications.js, settingsManager.js, settingsUIManager.js, miniCycle.html, run-browser-tests.cjs)
 - **Complexity**: Medium — the spotlight/tooltip auto-positioning is the trickiest part; the rest is straightforward with the simplified modal guard approach
