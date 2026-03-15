@@ -616,8 +616,10 @@ Add "Retake Guided Tour" button near existing "Reset Onboarding" button. The han
 setupRetakeGuidedTourButton() {
     // ... button click handler:
     _deps.AppState.update(state => { state.settings.guidedTourStep = null; }, true);
-    // Close settings dialog first — startTour() bails if any dialog is open
-    _deps.getElementById?.(DOM_IDS.SETTINGS_MODAL)?.close();
+    // Close settings dialog first — startTour() bails if any dialog is open.
+    // Uses bare document.getElementById (not DI) — consistent with the rest of
+    // settingsUIManager which hasn't been migrated to DI DOM helpers.
+    document.getElementById(DOM_IDS.SETTINGS_MODAL)?.close();
     _deps.startGuidedTour?.();
 }
 ```
