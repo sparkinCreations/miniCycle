@@ -1,3 +1,25 @@
+## [2.098] - 2026-03-15
+- fix(docs): update modal conflict handling to prevent data loss by ensuring dialogs are closed before starting the tour
+- fix(docs): update guided tour button logic to ensure settings dialog closes before starting tour
+- fix(docs): prevent data loss by canceling pending tour notifications in startTour()
+- fix(docs): enhance guided tour logic to prevent data loss from open dialogs during tour initiation
+- fix(docs): clarify welcome notification delay logic for first-time and returning users
+- fix(docs): update guided tour initialization logic to improve step persistence and event handling
+- fix(docs): enhance guided tour notification handling and improve step navigation logic
+- fix(docs): add general target handling in guided tour steps to prevent crashes and improve user experience
+- fix(docs): clarify welcome notification delay logic and ensure proper async handling for onboarding completion
+- fix(docs): clarify onboarding event dispatch logic and update rationale for guided tour triggers
+- fix(docs): update guided tour initialization logic for returning users and refine event listener management
+- feat(docs): refine guided tour initialization logic for first-run and returning users
+- feat(docs): update guided tour triggers for first-run and returning users
+- feat(docs): update guided tour integration points and add settings for retake option
+- docs(guided-tour): enhance testing plan and add test cases for guided tour functionality
+- fix(docs): clarify tooltip interaction and overlay behavior in guided tour plan
+- docs(guided-tour): update guided tour plan with refined steps and tooltip positioning
+- feat(docs): add Large Module Splits Plan to address module size and complexity
+- feat(docs): add ENFORCE_REQUIRES rollout plan for dependency management feat(data-access): update dataAccess.js to clarify legacy usage and encourage direct AppState access feat(module-manifests): enhance optionalDeps across multiple modules for improved dependency management
+
+
 ## [2.097] - 2026-03-15
 - Refactor documentation and codebase for clarity and consistency
 

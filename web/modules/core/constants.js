@@ -390,6 +390,9 @@ export const DOM_CLASSES = Object.freeze({
     CHECKED: 'checked',
     DISABLED: 'disabled',
 
+    // ---- Task ----
+    TASK: 'task',
+
     // ---- Task State ----
     RECURRING: 'recurring',
     HIGH_PRIORITY: 'high-priority',
@@ -405,6 +408,11 @@ export const DOM_CLASSES = Object.freeze({
     LONG_PRESSED: 'long-pressed',
     REARRANGING: 'rearranging',
     DROP_TARGET: 'drop-target',
+    MOVE_UP: 'move-up',
+    MOVE_DOWN: 'move-down',
+
+    // ---- Task Options Mode ----
+    SHOW_THREE_DOTS_ENABLED: 'show-three-dots-enabled',
 
     // ---- Theme ----
     DARK_MODE: 'dark-mode',
@@ -426,6 +434,10 @@ export const DOM_CLASSES = Object.freeze({
     FOCUS_MODE: 'focus-mode',
     FIXED_HEADER_CONTAINER: 'fixed-header-container',
     DROPDOWN_OPEN: 'dropdown-open',
+
+    // ---- Task Boundary Markers ----
+    IS_FIRST_TASK: 'is-first-task',
+    IS_LAST_TASK: 'is-last-task',
 
     // ---- Task Options Visibility ----
     TASK_OPTIONS_FORCE_HIDDEN: 'task-options-force-hidden',
@@ -866,6 +878,9 @@ export const DOM_SELECTORS = Object.freeze({
     RECURRING_BTN: '.recurring-btn',
     RECURRING_INDICATOR: '.recurring-indicator',
     THREE_DOTS_BTN: '.three-dots-btn',
+    MOVE_UP: '.move-up',
+    MOVE_DOWN: '.move-down',
+    MOVE_ARROWS: '.move-up, .move-down',
 
     // ---- Menu & Settings ----
     MENU_CONTAINER: '.menu-container',
