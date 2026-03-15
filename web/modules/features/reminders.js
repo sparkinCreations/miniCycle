@@ -35,11 +35,13 @@ const di = createDIModule('Reminders', {
     AppGlobalState: optional(null),
     AppMeta: optional(null),
     getModal: optional(null),
-    showConfirmationModal: optional(null)
+    showConfirmationModal: optional(null),
+    hideMainMenu: optional(null),
+    trackAction: optional(null)
 });
 
 // Late-binding deps via Proxy
-/** @type {{AppState: Object|null, showNotification: Function|null, loadMiniCycleData: Function|null, appInit: Object|null, refreshTaskListUI: Function|null, updateUndoRedoButtons: Function|null, autoSave: Function|null, AppGlobalState: Object|null, AppMeta: Object|null}} */
+/** @type {{AppState: Object|null, showNotification: Function|null, loadMiniCycleData: Function|null, appInit: Object|null, refreshTaskListUI: Function|null, updateUndoRedoButtons: Function|null, autoSave: Function|null, AppGlobalState: Object|null, AppMeta: Object|null, hideMainMenu: Function|null, trackAction: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -100,6 +102,8 @@ export class MiniCycleReminders {
             autoSave: _deps.autoSave || (() => console.warn('⚠️ autoSave not available')),
             getModal: _deps.getModal,
             showConfirmationModal: _deps.showConfirmationModal,
+            hideMainMenu: _deps.hideMainMenu,
+            trackAction: _deps.trackAction,
             ...this._constructorDeps
         };
     }
@@ -195,6 +199,38 @@ export class MiniCycleReminders {
         } catch (error) {
             console.warn('⚠️ Reminder system initialization failed:', error);
             this.deps.showNotification(getLabel('notify.reminderLimited'), 'warning');
+        }
+    }
+
+    async openRemindersModal() {
+        const remindersModal = this.deps.getModal?.('reminders');
+        if (!remindersModal) {
+            console.warn('⚠️ Reminders modal not found');
+            return false;
+        }
+
+        const previousFocus = document.activeElement;
+
+        try {
+            await this.loadRemindersSettings();
+        } catch (error) {
+            console.warn('⚠️ Could not load reminder settings:', error);
+            this.deps.showNotification?.(getLabel('notify.reminderLimited'), 'warning', UI_TIMEOUTS.NOTIFICATION_SHORT);
+            return false;
+        }
+
+        if (!remindersModal.open) {
+            remindersModal._previousFocus = previousFocus;
+            remindersModal.showModal();
+        }
+
+        return true;
+    }
+
+    closeRemindersModal() {
+        const remindersModal = this.deps.getModal?.('reminders');
+        if (remindersModal?.open) {
+            remindersModal.close();
         }
     }
 
@@ -777,18 +813,14 @@ export class MiniCycleReminders {
 
                 // Add click listener to open reminders modal
                 if (notificationElement) {
-                    const clickHandler = (e) => {
+                    const clickHandler = async (e) => {
                         // Don't trigger if clicking the close button
                         if (e.target.classList.contains('close-btn')) return;
 
-                        const remindersModal = this.deps.getModal('reminders');
-                        if (remindersModal && !remindersModal.open) {
-                            remindersModal._previousFocus = document.activeElement;
-                            remindersModal.show();
+                        const opened = await this.openRemindersModal();
+                        if (opened) {
+                            notificationElement.remove();
                         }
-
-                        // Remove notification after clicking
-                        notificationElement.remove();
                     };
 
                     notificationElement._clickHandler = clickHandler;
@@ -1020,26 +1052,21 @@ export class MiniCycleReminders {
         const remindersModal = this.deps.getModal('reminders');
         const closeRemindersBtn = this.deps.getElementById(DOM_IDS.CLOSE_REMINDERS_BTN);
 
+        if (!remindersModal) {
+            console.warn('⚠️ Reminders modal not found');
+            return;
+        }
+
         if (closeRemindersBtn) {
             replaceStoredEventListener(closeRemindersBtn, "click", "__miniCycleRemindersCloseClickHandler", () => {
-                if (remindersModal?.open) {
-                    remindersModal.close();
-                    remindersModal._previousFocus?.focus({ focusVisible: false });
-                }
+                this.closeRemindersModal();
             });
         }
 
         // Close on outside click (overlay area of the dialog)
         replaceStoredEventListener(remindersModal, "click", "__miniCycleRemindersModalClickHandler", (event) => {
             if (event.target === remindersModal) {
-                remindersModal.close();
-            }
-        });
-
-        // ESC to close (manual — show() doesn't provide automatic ESC like showModal())
-        replaceStoredEventListener(remindersModal, "keydown", "__miniCycleRemindersModalKeydownHandler", (event) => {
-            if (event.key === 'Escape' && remindersModal.open) {
-                remindersModal.close();
+                this.closeRemindersModal();
             }
         });
 
@@ -1061,23 +1088,13 @@ export class MiniCycleReminders {
             return;
         }
 
-        replaceStoredEventListener(openBtn, "click", "__miniCycleRemindersOpenClickHandler", () => {
-            _deps.trackAction?.('reminders');
+        replaceStoredEventListener(openBtn, "click", "__miniCycleRemindersOpenClickHandler", async () => {
+            this.deps.trackAction?.('reminders');
 
-            // Load current settings from Schema 2.5 before opening
-            this.loadRemindersSettings();
-
-            const remindersModal = this.deps.getModal('reminders');
-            if (remindersModal && !remindersModal.open) {
-                remindersModal._previousFocus = document.activeElement;
-                remindersModal.show();
-            }
-
-            // Hide main menu if available
-            if (typeof this.deps.hideMainMenu === 'function') {
+            const opened = await this.openRemindersModal();
+            if (opened && typeof this.deps.hideMainMenu === 'function') {
                 this.deps.hideMainMenu();
             }
-
         });
 
     }

@@ -50,6 +50,7 @@
   * [Label System Architecture](architecture/LABEL_SYSTEM_ARCHITECTURE.md)
   * [Label Registry Reference](architecture/LABEL_REGISTRY_REFERENCE.md)
   * [Mode Manager Architecture](architecture/MODE_MANAGER_ARCHITECTURE.md)
+  * [Framework Equivalents](architecture/FRAMEWORK_EQUIVALENTS.md)
   * [Lite Version](architecture/LITE_VERSION.md)
 
 * **Data & Schema**

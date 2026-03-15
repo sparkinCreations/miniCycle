@@ -1,3 +1,7 @@
+## [2.088] - 2026-03-14
+- feat(recurring): enhance recurring task settings and UI
+
+
 ## [2.087] - 2026-03-14
 - feat(recurring): enhance recurring task functionality and improve label handling
 

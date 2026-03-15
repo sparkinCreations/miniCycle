@@ -450,34 +450,51 @@ export class ModalManager {
     }
 
     /**
-     * Set up reminders modal close handlers
+     * Compatibility wrapper for reminders modal wiring.
+     * reminders.js owns the modal, but we reuse the same element-level keys so
+     * either setup path replaces the previous handler instead of stacking it.
      */
     setupRemindersModalHandlers() {
         const remindersModal = _deps.getModal('reminders');
         const closeRemindersBtn = document.getElementById(DOM_IDS.CLOSE_REMINDERS_BTN);
 
-        if (!remindersModal || !closeRemindersBtn) {
-            console.warn('⚠️ Reminders modal elements not found');
+        if (!remindersModal) {
+            console.warn('⚠️ Reminders modal not found');
             return;
         }
 
-        const safeAdd = _deps.safeAddEventListener;
+        if (closeRemindersBtn) {
+            replaceStoredEventListener(
+                closeRemindersBtn,
+                "click",
+                "__miniCycleRemindersCloseClickHandler",
+                () => {
+                    if (remindersModal.open) {
+                        remindersModal.close();
+                    }
+                }
+            );
+        }
 
-        // Close button
-        closeRemindersBtn._clickHandler = () => {
-            remindersModal.close();
-            remindersModal._previousFocus?.focus({ focusVisible: false });
-        };
-        safeAdd(closeRemindersBtn, "click", closeRemindersBtn._clickHandler);
+        replaceStoredEventListener(
+            remindersModal,
+            "click",
+            "__miniCycleRemindersModalClickHandler",
+            (event) => {
+                if (event.target === remindersModal && remindersModal.open) {
+                    remindersModal.close();
+                }
+            }
+        );
 
-        // Click outside to close (backdrop click fires on the dialog element)
-        remindersModal._outsideClickHandler = (event) => {
-            if (event.target === remindersModal) {
-                remindersModal.close();
+        replaceStoredEventListener(
+            remindersModal,
+            "close",
+            "__miniCycleRemindersModalCloseHandler",
+            () => {
                 remindersModal._previousFocus?.focus({ focusVisible: false });
             }
-        };
-        safeAdd(remindersModal, "click", remindersModal._outsideClickHandler);
+        );
     }
 
     /**

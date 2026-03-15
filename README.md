@@ -142,6 +142,24 @@ All data stays on your device. No servers, no accounts, no tracking.
 
 ---
 
+## Why Vanilla JS?
+
+miniCycle is built entirely with vanilla JavaScript — no React, no Vue, no framework. This is an intentional choice, not a limitation. Every architectural layer exists because a real problem demanded it, and building it by hand means every line is understood, not just imported.
+
+### Philosophy
+
+**Dependency Injection from scratch.** The app uses a custom DI framework (`diBase.js`) with `required()` and `optional()` dependency declarations, lazy getter resolution, and manifest-based wiring. This exists because 114 modules need to reference each other without circular imports or global state — the same problem Angular's DI solves, built here to understand how and why it works.
+
+**A full label system instead of hardcoded strings.** Every user-facing string flows through `getLabel()` with pluralization, interpolation, and theme-aware resolution. This started as a way to keep text consistent and evolved into the foundation for the vocabulary theme system — where the entire app's language changes based on your routine's context.
+
+**A 4-phase boot sequence.** `orchestrator → coreBoot → featureBoot → uiBoot` controls startup order so that state is ready before modules wire, modules wire before instances create, and instances create before the UI renders. This prevents an entire class of race conditions that plague large vanilla JS apps.
+
+**Zero `window.*` globals.** Every dependency is explicitly injected. If a module needs `document.body`, it receives a `getBody()` helper through DI. This makes every module testable in isolation and makes the dependency graph fully visible.
+
+The result is an app that solves the same problems frameworks solve — but with full visibility into every layer. The next project will use a build system and framework, informed by the deep understanding this one provided.
+
+---
+
 ## Development
 
 ### Prerequisites
@@ -184,7 +202,7 @@ miniCycle/
 │   │   ├── progress/               # Cycle completion tracking
 │   │   └── other/                  # Plugin system
 │   ├── styles/                     # 38 CSS files, token-based (variables.css)
-│   ├── tests/                      # 54 Playwright test files
+│   ├── tests/                      # 59 Playwright test files
 │   └── docs/                       # Developer guides & architecture docs
 ├── lite/                           # Static ES5 fallback (frozen, not maintained)
 └── CLAUDE.md                       # Implementation rules & patterns
