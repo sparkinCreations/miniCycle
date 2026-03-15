@@ -677,6 +677,7 @@ export const DOM_IDS = Object.freeze({
     RECURRING_EMPTY_STATE: 'recurring-empty-state',
     RECURRING_PREVIEW_TEXT: 'recurring-preview-text',
     RECURRING_SUMMARY: 'recurring-summary',
+    ADD_RECURRING_TASK_SECTION: 'add-recurring-task-section',
     ADD_RECURRING_TASK_BTN: 'add-recurring-task-btn',
     AVAILABLE_TASKS_LIST: 'available-tasks-list',
     CONFIRM_ADD_RECURRING: 'confirm-add-recurring',
@@ -811,6 +812,7 @@ export const DOM_IDS = Object.freeze({
     TEST_RUNNER_TITLE: 'test-runner-title',
     SEARCH_TEST_RESULTS: 'search-test-results',
     STORAGE_VIEWER_OVERLAY: 'storage-viewer-overlay',
+    CLOSE_STORAGE_VIEWER_BTN: 'close-storage-viewer-btn',
     STORAGE_CONTENT: 'storage-content',
     STAY_OPEN_TOGGLE: 'stay-open-toggle',
 

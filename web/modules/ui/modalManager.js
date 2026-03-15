@@ -79,6 +79,17 @@ export function setModalManagerDependencies(deps) {
     di.setDependencies(deps);
 }
 
+function replaceStoredEventListener(element, event, key, handler, options) {
+    if (!element) return;
+
+    if (typeof element[key] === 'function') {
+        element.removeEventListener(event, element[key], options);
+    }
+
+    element[key] = handler;
+    element.addEventListener(event, handler, options);
+}
+
 export class ModalManager {
     constructor(dependencies = {}) {
         // Resolve deps from diBase, with constructor overrides
@@ -474,7 +485,7 @@ export class ModalManager {
      */
     setupGlobalKeyHandlers() {
         if (this.deps.safeAddEventListener) {
-            this.deps.safeAddEventListener(document, "keydown", (e) => {
+            replaceStoredEventListener(document, "keydown", "__miniCycleModalManagerGlobalKeyHandler", (e) => {
                 if (e.key === "Escape") {
                     const hasOpenModal = this.isModalOpen();
                     const notifications = document.querySelectorAll(DOM_SELECTORS.NOTIFICATION);

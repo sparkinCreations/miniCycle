@@ -302,14 +302,89 @@ export function setupMilitaryTimeToggle(deps, prefix, onUpdate) {
         const is24Hour = toggle.checked;
 
         try {
-            hourInput.min = is24Hour ? 0 : 1;
-            hourInput.max = is24Hour ? 23 : 12;
             meridiemSelect.classList.toggle("hidden", is24Hour);
 
             onUpdate?.();
         } catch (error) {
             console.warn(`Error updating military time toggle for ${prefix}:`, error);
         }
+    });
+}
+
+// ============================================================================
+// TIME INPUT WRAP-AROUND
+// ============================================================================
+
+/**
+ * Setup wrap-around behavior for hour and minute number inputs.
+ * Hours wrap 12→1 / 1→12 (12h) or 23→0 / 0→23 (24h).
+ * Minutes wrap 59→0 / 0→59. Also clamps on blur.
+ * @param {Object} deps - Dependencies (getElementById, safeAddEventListener)
+ * @param {string} prefix - Frequency prefix (daily, weekly, etc.)
+ * @param {Function} [onUpdate] - Callback after value changes
+ */
+export function setupTimeInputWrapping(deps, prefix, onUpdate) {
+    const hourInput = deps.getElementById(DOM_IDS.freqHour(prefix));
+    const minuteInput = deps.getElementById(DOM_IDS.freqMinute(prefix));
+    const militaryToggle = deps.getElementById(DOM_IDS.freqMilitary(prefix));
+
+    if (hourInput) {
+        deps.safeAddEventListener(hourInput, 'input', () => {
+            const is24 = militaryToggle?.checked;
+            const maxH = is24 ? 23 : 12;
+            const minH = is24 ? 0 : 1;
+            let val = parseInt(hourInput.value);
+            if (isNaN(val)) return;
+            if (val > maxH) { hourInput.value = minH; onUpdate?.(); }
+            else if (val < minH) { hourInput.value = maxH; onUpdate?.(); }
+            else { onUpdate?.(); }
+        });
+        deps.safeAddEventListener(hourInput, 'blur', () => {
+            const is24 = militaryToggle?.checked;
+            const maxH = is24 ? 23 : 12;
+            const minH = is24 ? 0 : 1;
+            let val = parseInt(hourInput.value);
+            if (isNaN(val) || hourInput.value === '') return;
+            hourInput.value = Math.max(minH, Math.min(val, maxH));
+        });
+    }
+
+    if (minuteInput) {
+        deps.safeAddEventListener(minuteInput, 'input', () => {
+            let val = parseInt(minuteInput.value);
+            if (isNaN(val)) return;
+            if (val > 59) { minuteInput.value = 0; onUpdate?.(); }
+            else if (val < 0) { minuteInput.value = 59; onUpdate?.(); }
+            else { onUpdate?.(); }
+        });
+        deps.safeAddEventListener(minuteInput, 'blur', () => {
+            let val = parseInt(minuteInput.value);
+            if (isNaN(val) || minuteInput.value === '') return;
+            minuteInput.value = Math.max(0, Math.min(val, 59));
+        });
+    }
+}
+
+/**
+ * Setup wrap-around for the hourly-only minute input.
+ * @param {Object} deps - Dependencies (getElementById, safeAddEventListener)
+ * @param {Function} [onUpdate] - Callback after value changes
+ */
+export function setupHourlyMinuteWrapping(deps, onUpdate) {
+    const minuteInput = deps.getElementById(DOM_IDS.HOURLY_MINUTE);
+    if (!minuteInput) return;
+
+    deps.safeAddEventListener(minuteInput, 'input', () => {
+        let val = parseInt(minuteInput.value);
+        if (isNaN(val)) return;
+        if (val > 59) { minuteInput.value = 0; onUpdate?.(); }
+        else if (val < 0) { minuteInput.value = 59; onUpdate?.(); }
+        else { onUpdate?.(); }
+    });
+    deps.safeAddEventListener(minuteInput, 'blur', () => {
+        let val = parseInt(minuteInput.value);
+        if (isNaN(val) || minuteInput.value === '') return;
+        minuteInput.value = Math.max(0, Math.min(val, 59));
     });
 }
 
@@ -385,8 +460,10 @@ export function setupAdditionalListeners(deps, callbacks) {
         const taskList = deps.getElementById(DOM_IDS.RECURRING_TASK_LIST);
         const settingsPanel = deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
         const summaryPreview = deps.getElementById(DOM_IDS.RECURRING_SUMMARY_PREVIEW);
+        const addSection = deps.getElementById(DOM_IDS.ADD_RECURRING_TASK_SECTION);
 
         if (taskList?.contains(e.target) || settingsPanel?.contains(e.target)) return;
+        if (addSection?.contains(e.target)) return;
 
         // Deselect task and return to browsing when clicking outside
         if (summaryPreview && !summaryPreview.contains(e.target) && !taskList?.contains(e.target)) {

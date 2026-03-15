@@ -19,6 +19,9 @@
  */
 export function convert12To24(hour, meridiem) {
     hour = parseInt(hour, 10);
+    if (isNaN(hour)) return 0;
+    // Clamp to valid 12-hour range before conversion
+    hour = Math.max(1, Math.min(hour, 12));
     if (meridiem === "PM" && hour !== 12) return hour + 12;
     if (meridiem === "AM" && hour === 12) return 0;
     return hour;
@@ -140,12 +143,14 @@ export function applyTimeToDate(date, timeSettings) {
     }
 
     const { hour, minute, meridiem, military } = timeSettings;
+    const clampedMinute = Math.max(0, Math.min(parseInt(minute) || 0, 59));
 
     if (military) {
-        date.setHours(hour, minute, 0, 0);
+        const clampedHour = Math.max(0, Math.min(parseInt(hour) || 0, 23));
+        date.setHours(clampedHour, clampedMinute, 0, 0);
     } else {
         const hour24 = convert12To24(hour, meridiem);
-        date.setHours(hour24, minute, 0, 0);
+        date.setHours(hour24, clampedMinute, 0, 0);
     }
 
     return date;

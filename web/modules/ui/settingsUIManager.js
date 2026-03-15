@@ -114,6 +114,17 @@ const _initialized = {
     notificationsToggle: false,
 };
 
+function replaceStoredEventListener(element, event, key, handler, options) {
+    if (!element) return;
+
+    if (typeof element[key] === 'function') {
+        element.removeEventListener(event, element[key], options);
+    }
+
+    element[key] = handler;
+    element.addEventListener(event, handler, options);
+}
+
 // ============================================================================
 // MENU MANAGEMENT
 // ============================================================================
@@ -135,7 +146,6 @@ export function setupSettingsMenu() {
     }
 
     const settingsModal = _deps.getModal?.('settings') || document.querySelector(DOM_SELECTORS.SETTINGS_MODAL);
-    const settingsModalContent = document.querySelector(DOM_SELECTORS.SETTINGS_MODAL_CONTENT);
     const openSettingsBtn = document.getElementById(DOM_IDS.OPEN_SETTINGS);
     const closeSettingsBtn = document.getElementById(DOM_IDS.CLOSE_SETTINGS);
 
@@ -157,31 +167,31 @@ export function setupSettingsMenu() {
     };
 
     if (openSettingsBtn) {
-        safeAddEventListener(openSettingsBtn, "click", openSettings);
+        replaceStoredEventListener(openSettingsBtn, "click", "__miniCycleSettingsOpenClickHandler", openSettings);
     }
 
     if (closeSettingsBtn) {
-        safeAddEventListener(closeSettingsBtn, "click", closeSettings);
+        replaceStoredEventListener(closeSettingsBtn, "click", "__miniCycleSettingsCloseClickHandler", closeSettings);
     }
 
     // Click outside to close — clicking ::backdrop fires click on dialog element
-    safeAddEventListener(settingsModal, "click", (event) => {
+    replaceStoredEventListener(settingsModal, "click", "__miniCycleSettingsModalClickHandler", (event) => {
         if (event.target === settingsModal) {
             closeSettings();
         }
     });
 
     // Restore focus when dialog closes (including native ESC)
-    safeAddEventListener(settingsModal, "close", () => {
+    replaceStoredEventListener(settingsModal, "close", "__miniCycleSettingsModalCloseHandler", () => {
         settingsModal._previousFocus?.focus({ focusVisible: false });
     });
 
     // Setup collapsible sections
-    setupSettingsCollapsibleSections(safeAddEventListener);
+    setupSettingsCollapsibleSections();
 
     // Keyboard: Enter toggles, Arrow Up/Down navigates between checkboxes
     settingsModal.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-        safeAddEventListener(checkbox, 'keydown', (e) => {
+        replaceStoredEventListener(checkbox, 'keydown', '__miniCycleSettingsCheckboxKeydownHandler', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 checkbox.checked = !checkbox.checked;
@@ -206,9 +216,8 @@ export function setupSettingsMenu() {
 
 /**
  * Setup collapsible sections in settings modal
- * @param {Function} safeAddEventListener - Event listener helper
  */
-function setupSettingsCollapsibleSections(safeAddEventListener) {
+function setupSettingsCollapsibleSections() {
     const sectionHeaders = document.querySelectorAll(DOM_SELECTORS.SETTINGS_SECTION_HEADER);
 
     // Cache collapsible sections once and reuse in load/save
@@ -221,7 +230,7 @@ function setupSettingsCollapsibleSections(safeAddEventListener) {
     const settingsModal = document.querySelector(DOM_SELECTORS.SETTINGS_MODAL);
 
     sectionHeaders.forEach(header => {
-        safeAddEventListener(header, 'click', (e) => {
+        replaceStoredEventListener(header, 'click', '__miniCycleSettingsSectionClickHandler', (e) => {
             e.stopPropagation();
             const section = header.closest('.settings-section');
             if (section) {
@@ -231,7 +240,7 @@ function setupSettingsCollapsibleSections(safeAddEventListener) {
             }
         });
 
-        safeAddEventListener(header, 'keydown', (e) => {
+        replaceStoredEventListener(header, 'keydown', '__miniCycleSettingsSectionKeydownHandler', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 const section = header.closest('.settings-section');
@@ -1233,4 +1242,3 @@ export function initAllToggles() {
     setupNotificationsToggle();
     applyPriorityColor();
 }
-

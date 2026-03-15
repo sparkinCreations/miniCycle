@@ -67,10 +67,31 @@ const getShowNotification = () => _appContextMod?.ui?.()?.showNotification || nu
 const getStateApi = () => _appContextMod?.state?.() || null;
 const getUndoApi = () => _appContextMod?.undo?.() || null;
 const getUiApi = () => _appContextMod?.ui?.() || null;
-const getCycleApi = () => _appContextMod?.cycle?.() || null;
 const getReminderApi = () => _appContextMod?.reminder?.() || null;
 const getDeviceDetectionManager = () => _appContextMod?.ui?.()?.deviceDetectionManager || null;
 const getGetModal = () => _appContextMod?.ui?.()?.getModal || null;
+
+/**
+ * Replace a persistent listener on a live element/document across in-page boot retries.
+ * Versioned re-imports create fresh function identities, so safeAddEventListener()
+ * alone cannot remove the prior boot attempt's handler.
+ *
+ * @param {EventTarget|null} element
+ * @param {string} event
+ * @param {string} key
+ * @param {Function} handler
+ * @param {Object} [options]
+ */
+function replaceStoredEventListener(element, event, key, handler, options) {
+  if (!element) return;
+
+  if (typeof element[key] === 'function') {
+    element.removeEventListener(event, element[key], options);
+  }
+
+  element[key] = handler;
+  element.addEventListener(event, handler, options);
+}
 
 // ============================================================================
 // GLOBAL EVENT LISTENERS
@@ -82,29 +103,64 @@ const getGetModal = () => _appContextMod?.ui?.()?.getModal || null;
  * @param {Object} GlobalUtils - GlobalUtils module reference
  * @param {Object} options - Configuration options
  */
-export function attachGlobalEventListeners(GlobalUtils, options = {}) {
-  const { safeAddEventListener, safeAddEventListenerById } = GlobalUtils;
-
+export function attachGlobalEventListeners(_GlobalUtils, _options = {}) {
   // ========== Keyboard Shortcuts ==========
-  safeAddEventListener(document, 'keydown', handleGlobalKeydown);
+  replaceStoredEventListener(
+    document,
+    'keydown',
+    '__miniCycleUiBootGlobalKeydownHandler',
+    handleGlobalKeydown
+  );
 
   // ========== Global Click: Hide Task Buttons ==========
-  safeAddEventListener(document, 'click', handleGlobalClickForTaskButtons);
+  replaceStoredEventListener(
+    document,
+    'click',
+    '__miniCycleUiBootTaskButtonsClickHandler',
+    handleGlobalClickForTaskButtons
+  );
 
   // ========== Global Click: Deselect in Switch Modal ==========
-  safeAddEventListener(document, 'click', handleGlobalClickForSwitchModal);
+  replaceStoredEventListener(
+    document,
+    'click',
+    '__miniCycleUiBootSwitchModalClickHandler',
+    handleGlobalClickForSwitchModal
+  );
 
   // ========== Reset Notification Position ==========
-  safeAddEventListenerById('reset-notification-position', 'click', handleResetNotificationPosition);
+  replaceStoredEventListener(
+    document.getElementById('reset-notification-position'),
+    'click',
+    '__miniCycleUiBootResetNotificationClickHandler',
+    handleResetNotificationPosition
+  );
 
   // ========== Open Reminders Modal ==========
-  safeAddEventListenerById('open-reminders-modal', 'click', handleOpenRemindersModalClick);
+  replaceStoredEventListener(
+    document.getElementById(DOM_IDS.OPEN_REMINDERS_MODAL),
+    'click',
+    '__miniCycleUiBootOpenRemindersClickHandler',
+    handleOpenRemindersModalClick
+  );
 
   // ========== First Touch Interaction ==========
-  safeAddEventListener(document, 'touchstart', handleFirstTouchInteraction, { once: true, passive: true });
+  replaceStoredEventListener(
+    document,
+    'touchstart',
+    '__miniCycleUiBootFirstTouchHandler',
+    handleFirstTouchInteraction,
+    { once: true, passive: true }
+  );
 
   // ========== Passive Touchstart (for scroll performance) ==========
-  safeAddEventListener(document, 'touchstart', handlePassiveTouchstart, { passive: true });
+  replaceStoredEventListener(
+    document,
+    'touchstart',
+    '__miniCycleUiBootPassiveTouchstartHandler',
+    handlePassiveTouchstart,
+    { passive: true }
+  );
 
 }
 
@@ -115,16 +171,14 @@ export function attachGlobalEventListeners(GlobalUtils, options = {}) {
  * @param {HTMLElement} addTaskButton - Add task button element
  * @param {Object} appContextMod - appContext module (versioned import)
  */
-export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton, appContextMod) {
-  const { safeAddEventListener } = GlobalUtils;
-
+export function attachTaskInputListeners(_GlobalUtils, taskInput, addTaskButton, appContextMod) {
   // Add Task Button (Click)
   if (addTaskButton) {
-    safeAddEventListener(addTaskButton, 'click', () => {
+    replaceStoredEventListener(addTaskButton, 'click', '__miniCycleUiBootAddTaskClickHandler', () => {
       // Enable undo system on first user interaction
       try {
         appContextMod?.getUndoApi?.()?.enableOnFirstInteraction?.();
-      } catch (e) {
+      } catch {
         // API not ready yet - ok during early boot
       }
 
@@ -149,12 +203,12 @@ export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton, 
 
   // Task Input (Enter Key)
   if (taskInput) {
-    safeAddEventListener(taskInput, 'keypress', (event) => {
+    replaceStoredEventListener(taskInput, 'keypress', '__miniCycleUiBootTaskInputKeypressHandler', (event) => {
       if (event.key === 'Enter') {
         // Enable undo system on first user interaction
         try {
           appContextMod?.getUndoApi?.()?.enableOnFirstInteraction?.();
-        } catch (e) {
+        } catch {
           // API not ready yet - ok during early boot
         }
 
@@ -185,17 +239,15 @@ export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton, 
  * @param {HTMLElement} menuButton - Menu button element
  * @param {HTMLElement} menu - Menu container element
  */
-export function attachMenuButtonListener(GlobalUtils, menuButton, menu) {
-  const { safeAddEventListener } = GlobalUtils;
-
+export function attachMenuButtonListener(_GlobalUtils, menuButton, menu) {
   if (menuButton && menu) {
-    safeAddEventListener(menuButton, 'click', (event) => {
+    replaceStoredEventListener(menuButton, 'click', '__miniCycleUiBootMenuButtonClickHandler', (event) => {
       event.stopPropagation();
 
       // Sync settings before showing menu
       try {
         getUiApi()?.syncCurrentSettingsToStorage?.();
-      } catch (e) {
+      } catch {
         // APIs may not be ready - that's ok
       }
 
@@ -233,7 +285,12 @@ export function attachMenuButtonListener(GlobalUtils, menuButton, menu) {
           }
         };
         document.addEventListener('keydown', menu._escHandler);
-        safeAddEventListener(document, 'click', closeMenuOnClickOutside);
+        replaceStoredEventListener(
+          document,
+          'click',
+          '__miniCycleUiBootMenuCloseOutsideHandler',
+          closeMenuOnClickOutside
+        );
       } else {
         // Menu closing — clean up and restore focus
         if (menu._escHandler) {
@@ -410,7 +467,7 @@ function handleOpenRemindersModalClick() {
 
   try {
     getUiApi()?.hideMainMenu?.();
-  } catch (e) {
+  } catch {
     // Menu API not ready - ok
   }
 
@@ -426,7 +483,7 @@ function handleFirstTouchInteraction() {
     if (stateApi?.AppGlobalState) {
       stateApi.AppGlobalState.hasInteracted = true;
     }
-  } catch (e) {
+  } catch {
     // stateApi not registered yet - fallback silently
     console.warn('⚠️ First touch before stateApi ready');
   }
@@ -599,7 +656,7 @@ export function detectDeviceType() {
     if (deviceManager) {
       return; // Module loaded, use that instead
     }
-  } catch (e) {
+  } catch {
     // Not registered yet - use fallback
   }
 
@@ -642,7 +699,7 @@ export function handleTryLiteVersionClick(deps) {
 
   try {
     getUiApi()?.hideMainMenu?.();
-  } catch (e) {
+  } catch {
     // Menu API not ready - ok
   }
 
@@ -663,15 +720,15 @@ export function handleTryLiteVersionClick(deps) {
  * Setup user manual link handler
  * @param {Object} GlobalUtils - GlobalUtils module reference
  */
-export function setupUserManual(GlobalUtils) {
+export function setupUserManual(_GlobalUtils) {
   const openUserManual = document.getElementById(DOM_IDS.OPEN_USER_MANUAL);
   if (!openUserManual) return;
 
-  GlobalUtils.safeAddEventListener(openUserManual, "click", () => {
+  replaceStoredEventListener(openUserManual, 'click', '__miniCycleUiBootOpenManualClickHandler', () => {
     // Hide the menu when clicking
     try {
       getUiApi()?.hideMainMenu?.();
-    } catch (e) {
+    } catch {
       // Menu API not ready - ok
     }
 
@@ -691,9 +748,19 @@ export function setupUserManual(GlobalUtils) {
  * @param {Object} GlobalUtils - GlobalUtils module reference
  * @param {Object} deps - Dependencies containing showConfirmationModal
  */
-export function setupTryLiteVersionButton(GlobalUtils, deps) {
-  GlobalUtils.safeAddEventListenerById('try-lite-version', 'click', () => handleTryLiteVersionClick(deps));
-  GlobalUtils.safeAddEventListenerById('menu-lite-version', 'click', () => handleTryLiteVersionClick(deps));
+export function setupTryLiteVersionButton(_GlobalUtils, deps) {
+  replaceStoredEventListener(
+    document.getElementById('try-lite-version'),
+    'click',
+    '__miniCycleUiBootTryLiteClickHandler',
+    () => handleTryLiteVersionClick(deps)
+  );
+  replaceStoredEventListener(
+    document.getElementById('menu-lite-version'),
+    'click',
+    '__miniCycleUiBootTryLiteClickHandler',
+    () => handleTryLiteVersionClick(deps)
+  );
 }
 
 // ============================================================================
@@ -717,7 +784,6 @@ export function setupTryLiteVersionButton(GlobalUtils, deps) {
  */
 export async function finalizeUI(options) {
   const {
-    GlobalUtils,
     deps,
     getHandleCompleteAllTasks,
     getInitializeModeSelector,
@@ -729,9 +795,13 @@ export async function finalizeUI(options) {
 
   // Complete All button listener
   const completeAllButton = document.getElementById(DOM_IDS.COMPLETE_ALL);
-  const handleCompleteAll = getHandleCompleteAllTasks?.();
-  if (completeAllButton && typeof handleCompleteAll === 'function') {
-    GlobalUtils.safeAddEventListener(completeAllButton, "click", handleCompleteAll);
+  if (completeAllButton) {
+    replaceStoredEventListener(
+      completeAllButton,
+      'click',
+      '__miniCycleUiBootCompleteAllClickHandler',
+      () => getHandleCompleteAllTasks?.()?.()
+    );
   }
 
   // Final module setup — validate getters resolve before calling
@@ -849,4 +919,3 @@ export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
 // ============================================================================
 // MODULE INFO
 // ============================================================================
-

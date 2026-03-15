@@ -90,14 +90,26 @@
    ============================================================================= */
 
 #recurring-settings-panel {
-    margin-top: var(--space-3);
+    margin-top: 0;
     padding: var(--space-2-5);
     background: var(--color-gray-100);
-    border-top: 1px solid var(--theme-input-border);
+    border: 1px solid var(--color-gray-300);
     border-radius: var(--radius-md);
+    text-align: center;
 }
 
 #recurring-settings-panel.hidden {
+    display: none;
+}
+
+.recurring-settings-title {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    margin: var(--space-3) 0 var(--space-2) 0;
+    text-align: center;
+}
+
+.recurring-settings-title.hidden {
     display: none;
 }
 
@@ -570,9 +582,8 @@
     font-size: var(--font-size-base);
     border-radius: var(--radius-md);
     border: 2px solid var(--theme-input-border);
-    width: 70px;
+    width: 95px;
     text-align: center;
-    appearance: none;
     transition: border-color var(--transition-fast);
 }
 
@@ -999,4 +1010,39 @@ dialog.reminders-modal[open] {
     margin: var(--space-1) 0 0 0;
     padding: 0;
     line-height: 1.4;
+}
+
+/* =============================================================================
+   TWO-COLUMN DESKTOP LAYOUT
+   ============================================================================= */
+
+.recurring-panel-body {
+    display: block;
+}
+
+@media (min-width: 768px) {
+    #recurring-panel.two-col-active {
+        max-width: 780px;
+        transition: max-width var(--transition-normal) ease;
+    }
+
+    #recurring-panel.two-col-active .recurring-panel-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-4);
+        align-items: center;
+    }
+
+    #recurring-panel.two-col-active .recurring-panel-left,
+    #recurring-panel.two-col-active .recurring-panel-right {
+        min-width: 0;
+    }
+
+    #recurring-panel.two-col-active #recurring-settings-panel {
+        margin-top: 0;
+    }
+
+    #recurring-panel.two-col-active .recurring-scroll-area {
+        max-height: 300px;
+    }
 }
