@@ -127,14 +127,14 @@ All steps use Next/Back button navigation — no `'interact'` action type. Keeps
 ### Key Methods
 
 ```
-init()                    — Check flag, show welcome notification if needed; resume if mid-tour
+init()                    — Branch on onboardingCompleted: schedule notification directly (returning user) or register onboarding:setup-complete listener (first-run)
 startTour()               — Create overlay, begin at step 0 (or resume step)
 showStep(index)           — ScrollIntoView target, spotlight it, render tooltip
 nextStep()                — Advance to next step, persist progress
 prevStep()                — Go back one step
 skipTour()                — Close overlay, mark done
 completeTour()            — Final step done, mark done, show congrats
-destroy()                 — Clean up all listeners and DOM elements
+destroy()                 — Clean up all listeners (including onboarding:setup-complete if pending) and DOM elements
 ```
 
 ### Tooltip Auto-Positioning
@@ -409,54 +409,70 @@ guidedTourManager: {
 
 ## Integration Points
 
-### 1. Tour Trigger: Two Events for Two Paths
+### 1. Tour Trigger: Branch on Onboarding State
 
-The first-run and returning-user paths have different timing, so the tour uses two separate triggers:
-
-#### Returning users: `init:app-ready` event
-
-For users who have already completed onboarding (`onboardingCompleted === true`), `appInit.runInitialSetup()` calls `runCompleteInitialSetup()` which renders the task list, and then `markAppReady()` fires `init:app-ready` (`appInit.js:195`). The UI is fully visible at this point — correct for showing a resume notification.
-
-#### First-run users: new `onboarding:setup-complete` event
-
-For first-run users, `init:app-ready` fires while the onboarding modal is still open (`runInitialSetup()` returns immediately after calling `showOnboarding()` at `appInit.js:343-344`, and `onInitialSetupComplete` fires right after). The task list isn't rendered yet.
-
-The fix: add a new `onboarding:setup-complete` event dispatched at the end of `completeOnboarding()` in `onboardingManager.js`, after the sample routine loads or the creation modal completes:
-
-```javascript
-// In onboardingManager.js completeOnboarding(), after sample load or completeInitialSetup():
-// Path A (sample loaded, line ~350): after showNotification
-// Path B (sample failed, line ~354): after showCycleCreationModal
-// Path C (existing cycle, line ~369): after completeInitialSetup
-document.dispatchEvent(new Event('onboarding:setup-complete'));
-```
-
-**Note:** Path A wraps the sample load in a `setTimeout(..., 300)`, so the event must fire inside that timeout, after the `await preloadGettingStartedCycle()` resolves and the notification shows.
-
-#### Combined listener in `guidedTourManager.init()`
+The boot sequence matters: `guidedTourManager` loads during Phase 2 (featureBoot) and its `init()` is called during Phase 3 (uiBoot). By that point, `init:app-ready` has already fired (Phase 1), so event listeners for it would miss it entirely. Instead, `init()` branches on current state:
 
 ```javascript
 init() {
-    const handler = () => {
-        const step = this.deps.AppState.get()?.settings?.guidedTourStep;
-        if (step === null) {
-            setTimeout(() => this._showWelcomeNotification(), 2000);
-        } else if (typeof step === 'number') {
-            setTimeout(() => this._showResumeNotification(), 2000);
-        }
-        // step === 'done' → do nothing
-        // Clean up both listeners
-        document.removeEventListener('init:app-ready', handler);
-        document.removeEventListener('onboarding:setup-complete', handler);
-    };
+    const state = this.deps.AppState.get();
+    const onboardingDone = state?.settings?.onboardingCompleted;
 
-    // Listen to both — only one will fire per session
-    document.addEventListener('init:app-ready', handler, { once: true });
-    document.addEventListener('onboarding:setup-complete', handler, { once: true });
+    if (onboardingDone) {
+        // Returning user — boot is past Phase 3, UI is already rendered.
+        // Schedule notification directly (no event needed).
+        this._scheduleNotification();
+    } else {
+        // First-run — onboarding modal is still showing, task list not rendered.
+        // Wait for onboarding + routine setup to actually complete.
+        // Store reference so destroy() can clean up if called before event fires.
+        this._onboardingHandler = () => this._scheduleNotification();
+        document.addEventListener('onboarding:setup-complete', this._onboardingHandler, { once: true });
+    }
+}
+
+_scheduleNotification() {
+    const step = this.deps.AppState.get()?.settings?.guidedTourStep;
+    if (step === null) {
+        setTimeout(() => this._showWelcomeNotification(), 2000);
+    } else if (typeof step === 'number') {
+        setTimeout(() => this._showResumeNotification(), 2000);
+    }
+    // step === 'done' → do nothing
 }
 ```
 
-**Why two events instead of fixing `init:app-ready`:** Changing when `markAppReady()` fires would affect all existing code that listens for `init:app-ready`. The new event is scoped to the onboarding path only and doesn't change any existing behavior.
+**Why no `init:app-ready` listener:** By the time `init()` runs (Phase 3), `init:app-ready` has already been dispatched (Phase 1). For returning users the UI is already ready — just call `_scheduleNotification()` directly. For first-run users `init:app-ready` fires while the onboarding modal is open (before `completeOnboarding()`), so it's the wrong signal regardless.
+
+#### New `onboarding:setup-complete` event
+
+Dispatched from `completeOnboarding()` in `onboardingManager.js`, but ONLY when the main UI is actually ready — meaning a routine exists and tasks are rendered:
+
+```javascript
+// In onboardingManager.js completeOnboarding():
+
+// Path A (sample loaded successfully, inside the setTimeout(..., 300) block):
+//   After `await preloadGettingStartedCycle()` succeeds and notification shows.
+//   The sample routine is loaded, tasks are rendered. ✅ Dispatch here.
+const success = await this.deps.preloadGettingStartedCycle({ silent: true });
+if (success) {
+    this.deps.showNotification(...);
+    document.dispatchEvent(new Event('onboarding:setup-complete'));
+}
+
+// Path B (sample failed — offline/fetch error):
+//   Falls back to showCycleCreationModal(). The user has NOT created a routine
+//   yet — the creation modal is just opening. ❌ Do NOT dispatch here.
+//   The tour is deferred: on next app load, onboardingCompleted will be true
+//   and guidedTourStep will still be null, so the returning-user path picks it up.
+
+// Path C (existing cycle — rare, e.g. state was partially set up):
+//   After completeInitialSetup() returns. Task list is rendered. ✅ Dispatch here.
+this.deps.completeInitialSetup(activeCycle, null, updatedState);
+document.dispatchEvent(new Event('onboarding:setup-complete'));
+```
+
+**Path B deferral rationale:** This is the offline-first-run edge case — the sample fetch fails, so the user sees the creation modal. Dispatching the event here would launch the tour over the creation modal. Instead, the tour naturally appears on the next app load: `onboardingCompleted` is already `true` (set at the top of `completeOnboarding()`), and `guidedTourStep` is still `null`, so `init()` hits the returning-user branch and calls `_scheduleNotification()` directly. The user loses nothing — they just see the tour one session later.
 
 ### 2. Settings Panel
 
@@ -482,8 +498,9 @@ Add "Retake Guided Tour" button near existing "Reset Onboarding" button. Clickin
 - Existing onboarding (3-step modal) runs FIRST — it's the "what is miniCycle" intro
 - Guided tour runs AFTER — it's the "here's where things are" hands-on walkthrough
 - They're independent; either can be reset separately
-- First-run: tour triggers on `onboarding:setup-complete` (after sample loads/creation completes)
-- Returning users: tour triggers on `init:app-ready` (UI already visible)
+- First-run (Path A/C): tour triggers on `onboarding:setup-complete` (after sample loads or existing cycle renders)
+- First-run (Path B, offline): tour deferred to next session (creation modal still open)
+- Returning users: tour triggers immediately in `init()` (UI already rendered by Phase 3)
 
 ## Accessibility
 
@@ -520,11 +537,12 @@ Add `'guidedTourManager'` to `ALL_MODULES` array in `tests/automated/run-browser
 ### Test Cases
 
 **Trigger & State Management**
-- `init()` registers listeners for both `init:app-ready` and `onboarding:setup-complete`
-- When trigger fires with `guidedTourStep === null`, welcome notification shown after 2s delay
-- When trigger fires with `guidedTourStep` as a number (0-4), resume notification shown after 2s delay
-- When trigger fires with `guidedTourStep === 'done'`, no notification shown
-- After one event fires, the other listener is cleaned up (no double-trigger)
+- `init()` with `onboardingCompleted === true` calls `_scheduleNotification()` directly (no event listener)
+- `init()` with `onboardingCompleted === false` registers `onboarding:setup-complete` listener only
+- `_scheduleNotification()` with `guidedTourStep === null` shows welcome notification after 2s delay
+- `_scheduleNotification()` with `guidedTourStep` as a number (0-4) shows resume notification after 2s delay
+- `_scheduleNotification()` with `guidedTourStep === 'done'` does nothing
+- `onboarding:setup-complete` event triggers `_scheduleNotification()` for first-run users
 - Dismissing welcome notification sets `guidedTourStep = 'done'`
 - Dismissing resume notification sets `guidedTourStep = 'done'`
 - `startTour()` sets `guidedTourStep = 0`
@@ -566,7 +584,7 @@ Add `'guidedTourManager'` to `ALL_MODULES` array in `tests/automated/run-browser
 
 **Cleanup**
 - `destroy()` removes overlay, spotlight, and tooltip from DOM
-- `destroy()` removes all event listeners (resize, keydown, click)
+- `destroy()` removes all event listeners (resize, keydown, click, onboarding:setup-complete if pending)
 - `destroy()` cancels pending `requestAnimationFrame`
 - `destroy()` removes `data-tour-active` from `<html>`
 - Tour elements are not present in DOM after `skipTour()`
