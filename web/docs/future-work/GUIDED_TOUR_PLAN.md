@@ -446,12 +446,11 @@ _scheduleNotification() {
 
 #### New `onboarding:setup-complete` event
 
-Dispatched from `completeOnboarding()` in `onboardingManager.js`, but ONLY when the main UI is actually ready — meaning a routine exists and tasks are rendered:
+Dispatched when the main UI is actually ready — meaning a routine exists and tasks are rendered. All three onboarding completion paths now converge on this event:
 
 ```javascript
-// In onboardingManager.js completeOnboarding():
-
-// Path A (sample loaded successfully, inside the setTimeout(..., 300) block):
+// Path A — In onboardingManager.js completeOnboarding():
+//   Sample loaded successfully, inside the setTimeout(..., 300) block.
 //   After `await preloadGettingStartedCycle()` succeeds and notification shows.
 //   The sample routine is loaded, tasks are rendered. ✅ Dispatch here.
 const success = await this.deps.preloadGettingStartedCycle({ silent: true });
@@ -460,19 +459,23 @@ if (success) {
     document.dispatchEvent(new Event('onboarding:setup-complete'));
 }
 
-// Path B (sample failed — offline/fetch error):
-//   Falls back to showCycleCreationModal(). The user has NOT created a routine
-//   yet — the creation modal is just opening. ❌ Do NOT dispatch here.
-//   The tour is deferred: on next app load, onboardingCompleted will be true
-//   and guidedTourStep will still be null, so the returning-user path picks it up.
+// Path B — In routineManager.js showCycleCreationModal(), onCreateBlank callback:
+//   Sample failed (offline/fetch error), user creates a blank routine via the
+//   creation modal. After completeInitialSetup() returns at line 252, the routine
+//   exists and the UI is rendered. ✅ Dispatch here.
+this.deps.completeInitialSetup(finalTitle, appState.get());
+document.dispatchEvent(new Event('onboarding:setup-complete'));
 
-// Path C (existing cycle — rare, e.g. state was partially set up):
+// Path C — In onboardingManager.js completeOnboarding():
+//   Existing cycle (rare, e.g. state was partially set up).
 //   After completeInitialSetup() returns. Task list is rendered. ✅ Dispatch here.
 this.deps.completeInitialSetup(activeCycle, null, updatedState);
 document.dispatchEvent(new Event('onboarding:setup-complete'));
 ```
 
-**Path B deferral rationale:** This is the offline-first-run edge case — the sample fetch fails, so the user sees the creation modal. Dispatching the event here would launch the tour over the creation modal. Instead, the tour naturally appears on the next app load: `onboardingCompleted` is already `true` (set at the top of `completeOnboarding()`), and `guidedTourStep` is still `null`, so `init()` hits the returning-user branch and calls `_scheduleNotification()` directly. The user loses nothing — they just see the tour one session later.
+**Why Path B dispatches from `routineManager.js` (not `onboardingManager.js`):** When the sample fetch fails, `completeOnboarding()` calls `showCycleCreationModal()` and returns — the creation modal is just opening, and no routine exists yet. The actual setup completion happens later when the user fills in the modal and `onCreateBlank` fires. At `routineManager.js:252`, `completeInitialSetup()` has run, the routine is saved, and the UI is rendered — that's the correct convergence point.
+
+**Why not defer to next session:** If `onboardingCompleted` is `true` but `cycleCount === 0` (user closed the app before creating a routine), `appInit.js:351` redirects back to onboarding — the returning-user path never runs. Dispatching from the creation callback guarantees the tour triggers in the same session.
 
 ### 2. Settings Panel
 
@@ -498,8 +501,9 @@ Add "Retake Guided Tour" button near existing "Reset Onboarding" button. Clickin
 - Existing onboarding (3-step modal) runs FIRST — it's the "what is miniCycle" intro
 - Guided tour runs AFTER — it's the "here's where things are" hands-on walkthrough
 - They're independent; either can be reset separately
-- First-run (Path A/C): tour triggers on `onboarding:setup-complete` (after sample loads or existing cycle renders)
-- First-run (Path B, offline): tour deferred to next session (creation modal still open)
+- First-run (Path A): tour triggers on `onboarding:setup-complete` (after sample loads, dispatched from `onboardingManager.js`)
+- First-run (Path B): tour triggers on `onboarding:setup-complete` (after blank routine created, dispatched from `routineManager.js:252`)
+- First-run (Path C): tour triggers on `onboarding:setup-complete` (after existing cycle setup, dispatched from `onboardingManager.js`)
 - Returning users: tour triggers on `init:app-ready` (after `initialSetup()` renders the task list)
 
 ## Accessibility
@@ -599,5 +603,5 @@ Add `'guidedTourManager'` to `ALL_MODULES` array in `tests/automated/run-browser
 ## Estimated Scope
 
 - **New files**: 3 (guidedTourManager.js, guided-tour.css, guidedTourManager.tests.js)
-- **Modified files**: 11 (defaultLabels.js, constants.js, variables.css, moduleManifests.js, moduleLoader.js, notifications.js, onboardingManager.js, settingsManager.js, settingsUIManager.js, miniCycle.html, run-browser-tests.cjs)
+- **Modified files**: 12 (defaultLabels.js, constants.js, variables.css, moduleManifests.js, moduleLoader.js, notifications.js, onboardingManager.js, routineManager.js, settingsManager.js, settingsUIManager.js, miniCycle.html, run-browser-tests.cjs)
 - **Complexity**: Medium — the spotlight/tooltip auto-positioning is the trickiest part; the rest is straightforward with the simplified modal guard approach
