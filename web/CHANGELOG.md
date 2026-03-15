@@ -1,3 +1,7 @@
+## [2.097] - 2026-03-15
+- Refactor documentation and codebase for clarity and consistency
+
+
 ## [2.096] - 2026-03-15
 - feat(app-state): implement destroy method for AppState to manage teardown and prevent stale references
 
