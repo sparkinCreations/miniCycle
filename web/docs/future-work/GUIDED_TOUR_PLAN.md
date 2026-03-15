@@ -20,10 +20,10 @@ When a first-time user creates their first routine (via cycle creation modal) or
 
 ### Welcome Notification
 
-Use the existing notification system with an action button. The delay depends on the trigger path:
+Use the existing notification system with an action button. The delay depends on whether this is a first-run or returning user:
 
-- **Returning users / Path B / Path C**: 2-second delay (no competing notification)
-- **Path A (sample loaded)**: 9-second delay — the sample-success notification (`welcomeSampleLoaded`) shows for 8 seconds, and the notification system appends rather than replaces, so a shorter delay would visibly stack two notifications. 9 seconds ensures the sample notification auto-expires first.
+- **Returning users**: 2-second delay (no competing notification, app is already loaded)
+- **First-run (all paths — A, B, and C)**: 9-second delay — Path A shows an 8-second sample-loaded notification that would visibly stack (notification system appends, not replaces). Paths B/C have no competing notification, but 9 seconds is harmless — the user is still orienting after first routine creation — and avoids needing a path-specific signal.
 
 ```javascript
 _scheduleNotification(delay = 2000) {
@@ -254,7 +254,7 @@ if (target) {
 
 ### Modal Conflict Handling
 
-Two-layer defense: (1) close any open dialogs before the tour starts, and (2) prevent new dialogs from opening during the tour.
+Close any open dialogs before the tour starts (Layer 1). A future Layer 2 could also prevent new dialogs from opening during the tour.
 
 **Layer 1 — Close open dialogs in `startTour()`:** The tour can be launched from multiple entry points (welcome notification, resume notification, settings retake button). Any of these could fire while a dialog is open — e.g., the user opens the blank-routine creation modal from the sample-loaded notification, and then the 9-second-delayed tour notification appears. Clicking "Take a Quick Tour" would overlay the tour on top of the open dialog. To handle this generically, `startTour()` closes all open `<dialog>` elements before creating the overlay:
 
@@ -269,17 +269,17 @@ this.deps.getRootElement().dataset.tourActive = 'true';
 
 This is generic (not settings-specific), handles all entry points, and doesn't require wiring `closeSettingsModal` as a dependency.
 
-**Layer 2 — Prevent new dialogs during tour:** Set a `data-tour-active` attribute when the tour starts, remove it when the tour ends. Modal open functions check for this attribute and bail out early:
+**Layer 2 (future hardening, not in this implementation):** Set a `data-tour-active` attribute on `<html>` when the tour starts, remove it when the tour ends. Modal open functions could check this attribute and bail out early. This would require adding guards to every modal opener in the codebase — out of scope for this initial implementation. Layer 1 alone is sufficient since the tour is 5 quick steps and the user is focused on the tooltip, not opening other dialogs.
+
+The `data-tour-active` attribute is still set/removed (useful for CSS targeting and as a foundation if Layer 2 is added later):
 
 ```javascript
-// Guard at top of modal open functions
-if (this.deps.getRootElement().dataset.tourActive) return;
+// In startTour(), after closing open dialogs:
+this.deps.getRootElement().dataset.tourActive = 'true';
 
-// In destroy()
+// In destroy():
 delete this.deps.getRootElement().dataset.tourActive;
 ```
-
-This two-layer approach is simpler than a MutationObserver, requires no cleanup beyond the attribute, and handles both existing and future modal conflicts.
 
 ### Listener Cleanup
 - Store all handler references for removal in `destroy()`
@@ -301,6 +301,8 @@ _handleResize() {
 ```
 
 ## New CSS: `styles/components/guided-tour.css`
+
+Add `<link rel="stylesheet" href="styles/components/guided-tour.css">` to `miniCycle.html` (alongside existing component stylesheets).
 
 ### Overlay
 ```css
@@ -482,7 +484,7 @@ Clicking resumes at the persisted step. Dismissing sets `guidedTourStep = 'done'
 guidedTourManager: {
     path: '../ui/guidedTourManager.js',
     phase: PHASES.UI_MANAGERS,
-    requires: ['AppState', 'getElementById', 'querySelector', 'querySelectorAll', 'getRootElement', 'showNotification', 'safeAddEventListener'],
+    requires: ['showNotification'],
     optionalDeps: [],
     provides: ['startGuidedTour'],
     api: 'ui',
@@ -661,11 +663,11 @@ Add `'guidedTourManager'` to `ALL_MODULES` array in `tests/automated/run-browser
 **Trigger & State Management**
 - `init()` with `onboardingCompleted === true` registers `init:app-ready` listener (returning user)
 - `init()` with `onboardingCompleted === false` registers `onboarding:setup-complete` listener (first-run)
-- `init:app-ready` event triggers `_scheduleNotification()` for returning users
-- `_scheduleNotification()` with `guidedTourStep === null` shows welcome notification after 2s delay
-- `_scheduleNotification()` with `guidedTourStep` as a number (0-4) shows resume notification after 2s delay
+- `init:app-ready` event triggers `_scheduleNotification(2000)` for returning users
+- `onboarding:setup-complete` event triggers `_scheduleNotification(9000)` for first-run users
+- `_scheduleNotification()` with `guidedTourStep === null` shows welcome notification after the specified delay
+- `_scheduleNotification()` with `guidedTourStep` as a number (0-4) shows resume notification after the specified delay
 - `_scheduleNotification()` with `guidedTourStep === 'done'` does nothing
-- `onboarding:setup-complete` event triggers `_scheduleNotification()` for first-run users
 - Dismissing welcome notification sets `guidedTourStep = 'done'`
 - Dismissing resume notification sets `guidedTourStep = 'done'`
 - `startTour()` from fresh start (`guidedTourStep === null`) begins at step 0 and sets `guidedTourStep = 0`
