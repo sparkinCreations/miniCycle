@@ -203,7 +203,7 @@ export const setGuidedTourManagerDependencies = di.setDependencies;
 
 ```
 init()                    — Branch on onboardingCompleted: register init:app-ready listener (returning user) or onboarding:setup-complete listener (first-run)
-startTour()               — Create overlay, begin at persisted guidedTourStep (or step 0 if null/done)
+startTour()               — Guard against open dialogs, then create overlay and begin at persisted guidedTourStep (or step 0 if null/done)
 showStep(index)           — ScrollIntoView target, spotlight it, render tooltip
 nextStep()                — Advance to next step, persist progress
 prevStep()                — Go back one step (pre-scans backwards, skips missing targets)
@@ -256,18 +256,28 @@ if (target) {
 
 Close any open dialogs before the tour starts (Layer 1). A future Layer 2 could also prevent new dialogs from opening during the tour.
 
-**Layer 1 — Close open dialogs in `startTour()`:** The tour can be launched from multiple entry points (welcome notification, resume notification, settings retake button). Any of these could fire while a dialog is open — e.g., the user opens the blank-routine creation modal from the sample-loaded notification, and then the 9-second-delayed tour notification appears. Clicking "Take a Quick Tour" would overlay the tour on top of the open dialog. To handle this generically, `startTour()` closes all open `<dialog>` elements before creating the overlay:
+**Layer 1 — Guard against data loss from open dialogs in `startTour()`:** The tour can be launched from multiple entry points (welcome notification, resume notification, settings retake button). Any of these could fire while a dialog is open — e.g., the user clicks "Start Blank Routine" from the `welcomeSampleLoaded` notification (Path A, `onboardingManager.js:336`), opens the creation dialog, then clicks the delayed tour CTA. To avoid silently discarding in-progress modal input, `startTour()` bails out if any dialog is open and shows a brief hint:
 
 ```javascript
 // In startTour(), before creating overlay:
-// Close any open dialogs — tour must not render over them
 const openDialogs = this.deps.querySelectorAll('dialog[open]');
-openDialogs.forEach(d => d.close());
+if (openDialogs.length > 0) {
+    // Don't close dialogs with potentially unsaved input.
+    // Show a brief hint so the click doesn't feel dead.
+    this.deps.showNotification(getLabel('tour.closeDialogHint'), 'info', 3000);
+    // The CTA notification is already gone — notifications.js removes the element
+    // before calling onClick (line 462-464). Re-show the tour CTA after the hint
+    // expires so the user can retry.
+    this._scheduleTimeout = setTimeout(() => this._showWelcomeOrResumeNotification(), 3500);
+    return;
+}
 
 this.deps.getRootElement().dataset.tourActive = 'true';
 ```
 
-This is generic (not settings-specific), handles all entry points, and doesn't require wiring `closeSettingsModal` as a dependency.
+`_showWelcomeOrResumeNotification()` checks `guidedTourStep` to show the correct notification (welcome if `null`, resume if a number) — same logic as `_scheduleNotification()` but without the delay wrapper.
+
+The settings retake button explicitly closes the settings dialog *before* calling `startTour()`, so the guard never fires for that path (see Settings Panel section below). For notification/resume entry points, the guard applies. This avoids data loss without queueing complexity — the CTA reappears after the hint expires and the user can retry after closing their modal.
 
 **Layer 2 (future hardening, not in this implementation):** Set a `data-tour-active` attribute on `<html>` when the tour starts, remove it when the tour ends. Modal open functions could check this attribute and bail out early. This would require adding guards to every modal opener in the codebase — out of scope for this initial implementation. Layer 1 alone is sufficient since the tour is 5 quick steps and the user is focused on the tooltip, not opening other dialogs.
 
@@ -450,7 +460,8 @@ tour: {
     step4:            'Open the menu to access settings, personalization, routine actions, and more.',
     step5:            'Swipe left or click the arrow to open the Stats Panel — swiping works on desktop too!',
     complete:         'You\'re all set! Enjoy building your routines.',
-    retakeTour:       'Retake Guided Tour'
+    retakeTour:       'Retake Guided Tour',
+    closeDialogHint:  'Close the open dialog to start the tour'
 }
 ```
 
@@ -590,13 +601,15 @@ The first three callers are already inside `async` functions, so adding `await` 
 
 ### 2. Settings Panel
 
-Add "Retake Guided Tour" button near existing "Reset Onboarding" button. The handler resets the tour state and calls `startGuidedTour()`. The open settings dialog is closed automatically by `startTour()`'s generic `dialog[open]` cleanup (see Modal Conflict Handling above), so no settings-specific close logic is needed here.
+Add "Retake Guided Tour" button near existing "Reset Onboarding" button. The handler resets the tour state, closes the settings dialog, then calls `startGuidedTour()`. Because the dialog is already closed before `startTour()` runs, the open-dialog guard (see Modal Conflict Handling above) never fires — no flags or options needed:
 
 ```javascript
 // In settingsUIManager.js setupRetakeGuidedTourButton():
 setupRetakeGuidedTourButton() {
     // ... button click handler:
     _deps.AppState.update(state => { state.settings.guidedTourStep = null; }, true);
+    // Close settings dialog first — startTour() bails if any dialog is open
+    _deps.getElementById?.(DOM_IDS.SETTINGS_MODAL)?.close();
     _deps.startGuidedTour?.();
 }
 ```
@@ -722,11 +735,13 @@ Add `'guidedTourManager'` to `ALL_MODULES` array in `tests/automated/run-browser
 - Tour elements are not present in DOM after `completeTour()`
 
 **Modal Conflict**
-- `startTour()` closes all open `<dialog>` elements before creating overlay
-- Tour does not render over an already-open dialog (settings, creation modal, etc.)
+- `startTour()` returns early and shows `tour.closeDialogHint` notification if any `<dialog>` is open
+- `startTour()` re-schedules tour CTA notification 3.5s after bailing (via `_scheduleTimeout`)
+- Tour does not render over an already-open dialog
 
 **Settings Integration**
-- "Retake Guided Tour" button sets `guidedTourStep = null` and calls `startGuidedTour()`
+- "Retake Guided Tour" button closes settings dialog, sets `guidedTourStep = null`, and calls `startGuidedTour()`
+- `startTour()` proceeds normally because settings dialog is already closed before the guard check
 
 ---
 
