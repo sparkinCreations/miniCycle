@@ -1,3 +1,7 @@
+## [2.091] - 2026-03-15
+- Refactor recurring settings normalization and caching logic
+
+
 ## [2.090] - 2026-03-15
 - feat(accessibility): enhance recurring settings panel styles for high contrast mode
 

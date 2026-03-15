@@ -615,6 +615,7 @@ export const DOM_IDS = Object.freeze({
     THEME_PICKER_ROW: 'theme-picker-row',
     MINI_CYCLE_SWITCH_CONFIRM: 'miniCycleSwitchConfirm',
     MINI_CYCLE_SWITCH_CANCEL: 'miniCycleSwitchCancel',
+    MINI_CYCLE_SWITCH_CLOSE: 'miniCycleSwitchClose',
     STORAGE_BAR_FILL: 'storage-bar-fill',
     STORAGE_BAR_TEXT: 'storage-bar-text',
     SWITCH_PREVIEW_WINDOW: 'switch-preview-window',

@@ -603,7 +603,7 @@ export class MiniCycleReminders {
         }
         // No duration = requires manual dismissal (user may be away from app)
         // Use \n instead of <br> - CSS white-space: pre-line renders newlines (XSS-safe)
-        this._activeReminderNotification = this.deps.showNotification(`🔔 ${getLabel('notify.reminderTasksToComplete')}\n~ ${incompleteTasks.join("\n~ ")}`, "info");
+        this._activeReminderNotification = this.deps.showNotification(`🔔 ${getLabel('notify.reminderTasksToComplete')}\n~ ${incompleteTasks.join("\n~ ")}`, "info", 0);
 
         // Send browser notification if enabled and permission granted
         if (remindersSettings.browserNotifications && typeof Notification !== 'undefined' && Notification.permission === 'granted') {

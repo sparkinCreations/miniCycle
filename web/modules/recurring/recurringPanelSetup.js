@@ -146,7 +146,7 @@ export function setupToggleCheckAll(deps, onUpdate) {
         });
 
         // Update button label
-        toggleBtn.textContent = anyUnchecked ? getLabel('recurring.checkAll') : getLabel('recurring.uncheckAll');
+        toggleBtn.textContent = anyUnchecked ? getLabel('recurring.uncheckAll') : getLabel('recurring.checkAll');
 
         onUpdate?.();
     });
@@ -461,9 +461,12 @@ export function setupAdditionalListeners(deps, callbacks) {
         const settingsPanel = deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
         const summaryPreview = deps.getElementById(DOM_IDS.RECURRING_SUMMARY_PREVIEW);
         const addSection = deps.getElementById(DOM_IDS.ADD_RECURRING_TASK_SECTION);
+        const toggleActions = deps.getElementById(DOM_IDS.RECURRING_TOGGLE_ACTIONS);
 
         if (taskList?.contains(e.target) || settingsPanel?.contains(e.target)) return;
         if (addSection?.contains(e.target)) return;
+        if (toggleActions?.contains(e.target)) return;
+        if (e.target.closest(DOM_SELECTORS.NOTIFICATION)) return;
 
         // Deselect task and return to browsing when clicking outside
         if (summaryPreview && !summaryPreview.contains(e.target) && !taskList?.contains(e.target)) {
