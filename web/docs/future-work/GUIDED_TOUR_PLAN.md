@@ -289,6 +289,8 @@ this.deps.getRootElement().dataset.tourActive = 'true';
 
 The settings retake button explicitly closes the settings dialog *before* calling `startTour()`, so the guard never fires for that path (see Settings Panel section below). For notification/resume entry points, the guard applies. This avoids data loss without queueing complexity — the CTA reappears after the hint expires and the user can retry after closing their modal.
 
+**Scope note:** The `dialog[open]` check targets native `<dialog>` elements only. `settingsUIManager.js` has a legacy non-native fallback path (lines 167-183) that uses `style.display`/`.hidden` instead of `showModal()`/`.close()`, but `<dialog>` has had universal browser support since 2022 (Safari 15.4+). The settings retake path is unaffected regardless — it closes its own dialog before calling `startTour()`. No other modal in the codebase has a non-native fallback.
+
 **Layer 2 (future hardening, not in this implementation):** Set a `data-tour-active` attribute on `<html>` when the tour starts, remove it when the tour ends. Modal open functions could check this attribute and bail out early. This would require adding guards to every modal opener in the codebase — out of scope for this initial implementation. Layer 1 alone is sufficient since the tour is 5 quick steps and the user is focused on the tooltip, not opening other dialogs.
 
 The `data-tour-active` attribute is still set/removed (useful for CSS targeting and as a foundation if Layer 2 is added later):
