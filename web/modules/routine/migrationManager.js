@@ -126,11 +126,9 @@ export function createInitialSchema25Data() {
             unlockedFeatures: [],
             notificationPosition: { x: 0, y: 0 },
             notificationPositionModified: false,
-            accessibility: {
-                reducedMotion: false,
-                highContrast: false,
-                screenReaderHints: false
-            }
+            reducedMotion: false,
+            highContrast: false,
+            fontSize: '16'
         },
         data: {
             cycles: {} // Empty - user will create their first cycle
@@ -185,11 +183,9 @@ const SCHEMA_2_5_TARGET = {
         unlockedFeatures: [],
         notificationPosition: { x: 0, y: 0 },
         notificationPositionModified: false,
-        accessibility: {
-            reducedMotion: false,
-            highContrast: false,
-            screenReaderHints: false
-        }
+        reducedMotion: false,
+        highContrast: false,
+        fontSize: '16'
     },
     data: {
         cycles: {}

@@ -441,7 +441,7 @@ class MiniCycleState {
             this.isInitialized = true;
 
             // ✅ Flush pending saves on page unload to prevent data loss
-            this.deps.addWindowListener('beforeunload', () => {
+            this._beforeUnloadHandler = () => {
                 if (this.saveTimeout) {
                     clearTimeout(this.saveTimeout);
                     this.saveTimeout = null;
@@ -449,10 +449,11 @@ class MiniCycleState {
                 if (this.isDirty) {
                     this.save();
                 }
-            });
+            };
+            this.deps.addWindowListener('beforeunload', this._beforeUnloadHandler);
 
             // ✅ Multi-tab sync: Detect changes from other tabs via storage event
-            this.deps.addWindowListener('storage', (event) => {
+            this._storageHandler = (event) => {
                 if (event.key !== STORAGE_KEYS.DATA) return;
                 if (!event.newValue) return;
 
@@ -493,7 +494,8 @@ class MiniCycleState {
                 } catch (error) {
                     console.warn('⚠️ Multi-tab sync: Failed to parse external data', error);
                 }
-            });
+            };
+            this.deps.addWindowListener('storage', this._storageHandler);
 
             return this.data;
 
@@ -929,11 +931,9 @@ class MiniCycleState {
                 unlockedFeatures: [],
                 notificationPosition: { x: 0, y: 0 },
                 notificationPositionModified: false,
-                accessibility: {
-                    reducedMotion: false,
-                    highContrast: false,
-                    screenReaderHints: false
-                },
+                reducedMotion: false,
+                highContrast: false,
+                fontSize: '16',
                 debugMode: false,
                 testingModalResultsHeight: null,
                 modeDescriptionCollapsed: false,
@@ -1075,16 +1075,35 @@ export function createStateManager(dependencies = {}) {
 }
 
 /**
- * Reset state manager singleton (TEST ONLY)
- * Used for isolated testing - clears all state and listeners
+ * Reset state manager singleton — used for testing and boot retries.
+ * Removes global window listeners, clears subscriber listeners, and
+ * nulls the singleton so createStateManager() can create a fresh instance.
  * @returns {void}
  */
 export function resetStateManager() {
     if (AppState) {
-        // Clean up listeners
+        // Remove global window listeners to prevent duplicates on retry
+        if (AppState._beforeUnloadHandler) {
+            window.removeEventListener('beforeunload', AppState._beforeUnloadHandler);
+            AppState._beforeUnloadHandler = null;
+        }
+        if (AppState._storageHandler) {
+            window.removeEventListener('storage', AppState._storageHandler);
+            AppState._storageHandler = null;
+        }
+        // Flush pending save before teardown
+        if (AppState.saveTimeout) {
+            clearTimeout(AppState.saveTimeout);
+            AppState.saveTimeout = null;
+        }
+        if (AppState.isDirty) {
+            AppState.save();
+        }
+        // Clean up subscriber listeners
         if (AppState.listeners) {
             AppState.listeners.clear();
         }
+        AppState.isInitialized = false;
     }
     AppState = null;
 }

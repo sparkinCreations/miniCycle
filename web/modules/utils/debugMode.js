@@ -228,14 +228,14 @@ function dumpDiagnosticSnapshot() {
         s.darkMode && 'darkMode',
         s.showThreeDots && 'threeDots',
         s.showCompletedDropdown && 'completedDropdown',
-        s.accessibility?.reducedMotion && 'reducedMotion',
-        s.accessibility?.highContrast && 'highContrast',
+        s.reducedMotion && 'reducedMotion',
+        s.highContrast && 'highContrast',
         s.scrollToNewTask && 'scrollToNew',
         s.scrollOnLoad && 'scrollOnLoad',
     ].filter(Boolean);
     log('  --- Settings ---');
     log(`  Active: [${flags.join(', ') || 'defaults'}]`);
-    log(`  Theme: ${s.theme || 'default'}, Font: ${s.accessibility?.fontSize || 'default'}`);
+    log(`  Theme: ${s.theme || 'default'}, Font: ${s.fontSize || 'default'}`);
     log(`  Vocab theme: ${activeCycle?.theme || 'classic'}`);
 
     // --- Feature Flags ---
