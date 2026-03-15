@@ -200,7 +200,7 @@ This is far simpler than a MutationObserver approach, requires no cleanup, and p
 
 ### Listener Cleanup
 - Store all handler references for removal in `destroy()`
-- Overlay click outside tooltip = skip confirmation
+- Overlay click outside tooltip = skip confirmation (overlay has `pointer-events: auto`; spotlight is `pointer-events: none` so clicks pass through it to the overlay; tooltip is `pointer-events: auto` and uses `stopPropagation` so clicks on it don't bubble to the overlay)
 - ESC key = skip tour
 - Window resize = reposition tooltip (debounced via `requestAnimationFrame`)
 
@@ -225,8 +225,8 @@ _handleResize() {
     position: fixed;
     inset: 0;
     z-index: var(--z-tour-overlay);
-    pointer-events: none;
-    /* box-shadow inset trick for spotlight cutout */
+    pointer-events: auto;
+    /* Catches backdrop clicks for "click outside tooltip = skip" */
     transition: box-shadow var(--transition-normal);
 }
 ```
@@ -238,6 +238,7 @@ Use a large `box-shadow` on the overlay with `border-radius` matching the target
     position: fixed;
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
     pointer-events: none;
+    /* Visual only — clicks pass through to the overlay behind it */
     border-radius: var(--radius-md);
     transition: all var(--transition-normal);
     z-index: var(--z-tour-overlay);
@@ -398,7 +399,7 @@ Clicking resumes at the persisted step. Dismissing sets `guidedTourStep = 'done'
 guidedTourManager: {
     path: '../ui/guidedTourManager.js',
     phase: PHASES.UI_MANAGERS,
-    requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListener'],
+    requires: ['appInit', 'AppState', 'getElementById', 'querySelector', 'showNotification', 'safeAddEventListener'],
     optionalDeps: [],
     provides: ['startGuidedTour'],
     api: 'ui',
