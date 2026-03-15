@@ -1,3 +1,7 @@
+## [2.099] - 2026-03-15
+- fix(docs): enhance drag-and-drop functionality with new DOM classes and selectors for task management
+
+
 ## [2.098] - 2026-03-15
 - fix(docs): update modal conflict handling to prevent data loss by ensuring dialogs are closed before starting the tour
 - fix(docs): update guided tour button logic to ensure settings dialog closes before starting tour

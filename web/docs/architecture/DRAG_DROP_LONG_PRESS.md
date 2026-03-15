@@ -78,9 +78,12 @@ taskElement.addEventListener('touchstart', (e) => {
         isLongPress = true;
         this.draggedTask = taskElement;
         isDragging = true;
-        taskElement.classList.add("dragging");
+        taskElement.classList.add(DOM_CLASSES.DRAGGING);
+        // Enable undo system on first user interaction (touch drag path)
+        this.deps.enableUndoSystemOnFirstInteraction?.();
         // Three-dots check: only show task buttons if three-dots mode is OFF
-        const threeDotsEnabled = document.body.classList.contains('show-three-dots-enabled');
+        const body = this.deps.getBody?.() || document.body;
+        const threeDotsEnabled = body.classList.contains(DOM_CLASSES.SHOW_THREE_DOTS_ENABLED);
         if (!threeDotsEnabled) {
             this.deps.revealTaskButtons?.(taskElement, 'long-press');
         }
@@ -91,7 +94,7 @@ taskElement.addEventListener('touchmove', (e) => {
     // PRIORITY: If already dragging, process drag FIRST
     if (isDragging && this.draggedTask) {
         e.preventDefault(); // Block swipe navigation
-        const targetTask = document.elementFromPoint(x, y)?.closest('.task');
+        const targetTask = document.elementFromPoint(x, y)?.closest(DOM_SELECTORS.TASK);
         if (targetTask) this.handleRearrange(targetTask, e);
         return;
     }
@@ -116,10 +119,18 @@ taskElement.addEventListener('dragstart', (e) => {
     this._nativeDragActive = true;  // iOS native DnD handoff flag
     this.draggedTask = taskElement;
     e.dataTransfer.setData("text/plain", "");
-    taskElement.classList.add("dragging");
-    // Desktop only: hide ghost image. Mobile: let iOS show native preview.
-    const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    if (!isMobile) e.dataTransfer.setDragImage(transparentPixel, 0, 0);
+    taskElement.classList.add(DOM_CLASSES.DRAGGING);
+    // Safari desktop: custom 70%-width ghost clone for polished preview
+    // Non-Safari/iOS: browser shows native ghost (no intervention needed)
+    const ua = navigator.userAgent;
+    const isSafariDesktop = /Safari/.test(ua) && !/Chrome/.test(ua)
+        && !/Chromium/.test(ua) && !('ontouchstart' in window);
+    if (isSafariDesktop) {
+        const ghost = taskElement.cloneNode(true);
+        // Style at 70% width with theme vars, hide task-options, append offscreen
+        event.dataTransfer.setDragImage(ghost, offsetX, offsetY);
+        requestAnimationFrame(() => ghost.remove());
+    }
 });
 ```
 
