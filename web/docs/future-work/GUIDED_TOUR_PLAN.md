@@ -409,24 +409,54 @@ guidedTourManager: {
 
 ## Integration Points
 
-### 1. Tour Trigger: `init:app-ready` Event
+### 1. Tour Trigger: Two Events for Two Paths
 
-Both first-run paths (blank routine and sample routine) converge on the `init:app-ready` custom event dispatched by `appInit.markAppReady()` (`appInit.js:195`). This fires AFTER the task list is rendered and the UI is fully visible — the correct moment to show the tour prompt.
+The first-run and returning-user paths have different timing, so the tour uses two separate triggers:
+
+#### Returning users: `init:app-ready` event
+
+For users who have already completed onboarding (`onboardingCompleted === true`), `appInit.runInitialSetup()` calls `runCompleteInitialSetup()` which renders the task list, and then `markAppReady()` fires `init:app-ready` (`appInit.js:195`). The UI is fully visible at this point — correct for showing a resume notification.
+
+#### First-run users: new `onboarding:setup-complete` event
+
+For first-run users, `init:app-ready` fires while the onboarding modal is still open (`runInitialSetup()` returns immediately after calling `showOnboarding()` at `appInit.js:343-344`, and `onInitialSetupComplete` fires right after). The task list isn't rendered yet.
+
+The fix: add a new `onboarding:setup-complete` event dispatched at the end of `completeOnboarding()` in `onboardingManager.js`, after the sample routine loads or the creation modal completes:
 
 ```javascript
-// In guidedTourManager.init(), listen for the shared convergence event:
-document.addEventListener('init:app-ready', () => {
-    const step = this.deps.AppState.get()?.settings?.guidedTourStep;
-    if (step === null) {
-        setTimeout(() => this._showWelcomeNotification(), 2000);
-    } else if (typeof step === 'number') {
-        setTimeout(() => this._showResumeNotification(), 2000);
-    }
-    // step === 'done' → do nothing
-}, { once: true });
+// In onboardingManager.js completeOnboarding(), after sample load or completeInitialSetup():
+// Path A (sample loaded, line ~350): after showNotification
+// Path B (sample failed, line ~354): after showCycleCreationModal
+// Path C (existing cycle, line ~369): after completeInitialSetup
+document.dispatchEvent(new Event('onboarding:setup-complete'));
 ```
 
-**Why not `completeInitialSetup()`:** The sample-routine path (`preloadGettingStartedCycle` in `onboardingManager.js:333`) shows its own welcome notification with a "Create blank routine" action button. If the tour trigger were wired to `completeInitialSetup()`, sample-routine users would never see it because their path goes through `loadSampleRoutine(isOnboarding=true)` which calls `completeInitialSetup()` internally but may show competing notifications. The `init:app-ready` event fires after both paths settle and all first-run notifications have been dispatched, so the 2-second delay cleanly avoids stacking.
+**Note:** Path A wraps the sample load in a `setTimeout(..., 300)`, so the event must fire inside that timeout, after the `await preloadGettingStartedCycle()` resolves and the notification shows.
+
+#### Combined listener in `guidedTourManager.init()`
+
+```javascript
+init() {
+    const handler = () => {
+        const step = this.deps.AppState.get()?.settings?.guidedTourStep;
+        if (step === null) {
+            setTimeout(() => this._showWelcomeNotification(), 2000);
+        } else if (typeof step === 'number') {
+            setTimeout(() => this._showResumeNotification(), 2000);
+        }
+        // step === 'done' → do nothing
+        // Clean up both listeners
+        document.removeEventListener('init:app-ready', handler);
+        document.removeEventListener('onboarding:setup-complete', handler);
+    };
+
+    // Listen to both — only one will fire per session
+    document.addEventListener('init:app-ready', handler, { once: true });
+    document.addEventListener('onboarding:setup-complete', handler, { once: true });
+}
+```
+
+**Why two events instead of fixing `init:app-ready`:** Changing when `markAppReady()` fires would affect all existing code that listens for `init:app-ready`. The new event is scoped to the onboarding path only and doesn't change any existing behavior.
 
 ### 2. Settings Panel
 
@@ -452,7 +482,8 @@ Add "Retake Guided Tour" button near existing "Reset Onboarding" button. Clickin
 - Existing onboarding (3-step modal) runs FIRST — it's the "what is miniCycle" intro
 - Guided tour runs AFTER — it's the "here's where things are" hands-on walkthrough
 - They're independent; either can be reset separately
-- Both paths converge on `init:app-ready` before the tour triggers
+- First-run: tour triggers on `onboarding:setup-complete` (after sample loads/creation completes)
+- Returning users: tour triggers on `init:app-ready` (UI already visible)
 
 ## Accessibility
 
@@ -489,9 +520,11 @@ Add `'guidedTourManager'` to `ALL_MODULES` array in `tests/automated/run-browser
 ### Test Cases
 
 **Trigger & State Management**
-- `init()` shows welcome notification when `guidedTourStep` is `null`
-- `init()` shows resume notification when `guidedTourStep` is a number (0-4)
-- `init()` does nothing when `guidedTourStep` is `'done'`
+- `init()` registers listeners for both `init:app-ready` and `onboarding:setup-complete`
+- When trigger fires with `guidedTourStep === null`, welcome notification shown after 2s delay
+- When trigger fires with `guidedTourStep` as a number (0-4), resume notification shown after 2s delay
+- When trigger fires with `guidedTourStep === 'done'`, no notification shown
+- After one event fires, the other listener is cleaned up (no double-trigger)
 - Dismissing welcome notification sets `guidedTourStep = 'done'`
 - Dismissing resume notification sets `guidedTourStep = 'done'`
 - `startTour()` sets `guidedTourStep = 0`
@@ -547,5 +580,5 @@ Add `'guidedTourManager'` to `ALL_MODULES` array in `tests/automated/run-browser
 ## Estimated Scope
 
 - **New files**: 3 (guidedTourManager.js, guided-tour.css, guidedTourManager.tests.js)
-- **Modified files**: 10 (defaultLabels.js, constants.js, variables.css, moduleManifests.js, moduleLoader.js, notifications.js, settingsManager.js, settingsUIManager.js, miniCycle.html, run-browser-tests.cjs)
+- **Modified files**: 11 (defaultLabels.js, constants.js, variables.css, moduleManifests.js, moduleLoader.js, notifications.js, onboardingManager.js, settingsManager.js, settingsUIManager.js, miniCycle.html, run-browser-tests.cjs)
 - **Complexity**: Medium — the spotlight/tooltip auto-positioning is the trickiest part; the rest is straightforward with the simplified modal guard approach
