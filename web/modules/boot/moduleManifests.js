@@ -331,7 +331,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/undoRedoManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListener', 'getElementById', 'refreshUIFromState', 'UIOrchestrator', 'requestUIUpdate'],
-        optionalDeps: ['logHistoryEvent', 'refreshHistoryIfOpen', 'updateRecurringInfoLink', 'updateHelpWindow', 'syncModeFromToggles'],
+        optionalDeps: ['logHistoryEvent', 'refreshHistoryIfOpen', 'updateRecurringInfoLink', 'updateHelpWindow', 'syncModeFromToggles', 'refreshThemeLabels', 'updateRecurringPanel'],
         provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction', 'wrapAppStateForUndo', 'setupStateBasedUndoRedo', 'initUndoSystemForApp', 'onCycleCreated', 'onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'clearAllUndoHistory'],
         api: 'undo',
         after: ['taskDOM', 'uiOrchestrator']

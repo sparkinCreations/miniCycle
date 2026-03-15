@@ -259,20 +259,12 @@ export class StatsPanelManager {
         this._historyClickHandler = () => this.openHistoryModal();
         this._achievementsClickHandler = () => this.openAchievementsModal();
 
-        if (this.elements.historyBtn) {
-            if (safeAdd) {
-                safeAdd(this.elements.historyBtn, 'click', this._historyClickHandler);
-            } else {
-                this.elements.historyBtn.addEventListener('click', this._historyClickHandler);
-            }
+        if (this.elements.historyBtn && safeAdd) {
+            safeAdd(this.elements.historyBtn, 'click', this._historyClickHandler);
         }
 
-        if (this.elements.achievementBadgesBtn) {
-            if (safeAdd) {
-                safeAdd(this.elements.achievementBadgesBtn, 'click', this._achievementsClickHandler);
-            } else {
-                this.elements.achievementBadgesBtn.addEventListener('click', this._achievementsClickHandler);
-            }
+        if (this.elements.achievementBadgesBtn && safeAdd) {
+            safeAdd(this.elements.achievementBadgesBtn, 'click', this._achievementsClickHandler);
         }
     }
 

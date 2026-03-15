@@ -1,3 +1,7 @@
+## [2.092] - 2026-03-15
+- feat(routine-switcher): add close button and improve action row layout
+
+
 ## [2.091] - 2026-03-15
 - Refactor recurring settings normalization and caching logic
 

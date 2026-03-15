@@ -919,6 +919,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
                 return deps.recurring?.core?.[prop];
             }
         }),
+        updateRecurringPanel: (...args) => deps.recurring?.panel?.updateRecurringPanel?.(...args),
         updateRecurringPanelButtonVisibility: (...args) => deps.recurring?.panel?.updateRecurringPanelButtonVisibility?.(...args),
         updateRecurringInfoLink: (...args) => deps.recurring?.panel?.updateRecurringInfoLink?.(...args),
         catchUpMissedRecurringTasks: (...args) => deps.recurring?.core?.catchUpMissedRecurringTasks?.(...args),

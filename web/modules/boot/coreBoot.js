@@ -315,31 +315,29 @@ async function recoverFromInterruptedTests() {
 
         const backup = await getPreTestBackup();
         if (backup) {
-            // Clear current localStorage and restore backup
+            // Validate backup BEFORE clearing localStorage to avoid data loss
+            const backupData = backup[STORAGE_KEYS.DATA];
+            if (!backupData) {
+                console.warn('⚠️ Backup has no miniCycleData key - keeping current data');
+                return false;
+            }
+            try {
+                JSON.parse(backupData); // Verify it's valid JSON
+            } catch (parseError) {
+                console.error('❌ Backup data is invalid JSON - keeping current data for safety');
+                return false;
+            }
+
+            // Backup validated — safe to clear and restore
             localStorage.clear();
             Object.entries(backup).forEach(([key, value]) => {
                 localStorage.setItem(key, value);
             });
 
-            // Verify restore succeeded before clearing backup
-            const restored = localStorage.getItem(STORAGE_KEYS.DATA);
-            if (restored) {
-                try {
-                    JSON.parse(restored); // Verify it's valid JSON
-                    await clearTestModeFlags();
-                    // Set flag for UI to show notification after boot completes
-                    sessionStorage.setItem('__miniCycle_recoveredFromInterruptedTests__', 'true');
-                    return true;
-                } catch (parseError) {
-                    console.error('❌ Restored data is invalid JSON - keeping backup for manual recovery');
-                    // Don't clear backup - user can manually recover via Settings > Restore Backups
-                    return false;
-                }
-            } else {
-                console.warn('⚠️ Restore may have failed (no miniCycleData) - keeping backup');
-                // Don't clear backup - something went wrong
-                return false;
-            }
+            await clearTestModeFlags();
+            // Set flag for UI to show notification after boot completes
+            sessionStorage.setItem('__miniCycle_recoveredFromInterruptedTests__', 'true');
+            return true;
         } else {
             // Fix #71: Don't delete user data without backup - this could delete valid data
             // If testModeActive flag is set but no backup exists, the flag may be stale
