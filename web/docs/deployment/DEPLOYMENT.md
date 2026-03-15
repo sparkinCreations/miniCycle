@@ -62,7 +62,7 @@ web/
 ├── manifest.json                  # PWA manifest
 ├── netlify.toml                   # Netlify config: headers, redirects, CSP
 ├── product.html                   # Landing page (redirect target)
-├── modules/                       # 114 ES6 modules (strict DI, zero window.* fallbacks)
+├── modules/                       # ES6 modules (strict DI, zero window.* fallbacks)
 │   ├── boot/                      # orchestrator → coreBoot → featureBoot → uiBoot
 │   ├── core/                      # appState, appContext, appInit, diBase, constants
 │   ├── task/                      # Task CRUD, DOM, events, rendering, drag-drop

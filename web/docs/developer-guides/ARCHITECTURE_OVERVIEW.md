@@ -34,7 +34,7 @@
 | **Schema Version** | 2.5 |
 | **Test Pass Rate** | 100% ✅ |
 
-**Strict DI Complete:** All modules use dependency injection. No `|| window.*` fallbacks exist in the codebase. DI wiring happens in `modules/boot/featureBoot.js`, while `orchestrator.js` is a pure sequence controller.
+**Strict DI Complete:** All modules use dependency injection. No `|| window.*` fallbacks exist in the codebase. DI wiring happens in `modules/boot/featureBoot.js`, while `orchestrator.js` is a sequence control + boot UI + early coordination.
 
 **CSS Modularized:** All styles organized in `styles/` folder with component-based architecture. Entry point is `styles/main.css`.
 
@@ -116,7 +116,7 @@ const myModule = new MyModule();
 **Boot File Structure (Dec 2025):**
 ```
 miniCycle-main.js (entrypoint)
-  → modules/boot/orchestrator.js (pure sequence controller)
+  → modules/boot/orchestrator.js (sequence control + boot UI + early coordination)
       → modules/boot/coreBoot.js (core state)
       → modules/boot/featureBoot.js (feature loading)
       → modules/boot/uiBoot.js (UI handlers + initUIBoot())
@@ -125,7 +125,7 @@ miniCycle-main.js (entrypoint)
 > See [PROJECT_STATS.md](../PROJECT_STATS.md) for current line counts.
 
 **Key Architecture Points:**
-- `orchestrator.js` is a pure sequence controller - no DI writes, no DOM queries, no UI logic
+- `orchestrator.js` is a sequence control + boot UI + early coordination - no DI writes, no DOM queries, no UI logic
 - All UI setup consolidated into single `initUIBoot()` entrypoint
 - DI wiring happens in `featureBoot.js`, not orchestrator
 

@@ -10,7 +10,7 @@ These notes describe how the AI assistant should collaborate on this project.
 
 ## 2. DI Wiring Location
 - **`modules/boot/featureBoot.js`** is the DI wiring hub (not orchestrator.js).
-- `orchestrator.js` is a pure sequence controller - no DI writes, no DOM queries.
+- `orchestrator.js` is a sequence control + boot UI + early coordination - no DI writes, no DOM queries.
 - Other modules should receive dependencies via injection, not import them directly.
 - When in doubt, propose "import once, pass via deps" as the default pattern.
 
