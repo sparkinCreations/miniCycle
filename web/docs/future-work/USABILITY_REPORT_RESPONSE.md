@@ -211,14 +211,13 @@ The colored accent is always visible under the mode selector, providing an at-a-
 - Defer routine naming/configuration until the user has interacted with at least one task
 - If a popup is used, make it a dismissible "Welcome" tooltip, not a mandatory config screen
 
-**Our assessment:** Significantly improved since the report was written. The onboarding flow was reworked:
+**Our assessment:** Partially improved since the report was written. The onboarding flow was reworked:
 1. New users now see a **3-step onboarding tutorial** (`onboardingManager.js`) explaining the app before any routine creation
-2. A **Guided Tour system** (`guidedTourManager.js`) was added to walk users through the UI interactively
-3. The **first cycle celebration** logic was enhanced for new users (`cycleCompletion.js`)
+2. The **first cycle celebration** logic was enhanced for new users (`cycleCompletion.js`)
 
-The flow is now: onboarding tutorial → (if no routine exists) cycle creation modal → Getting Started loads. This is much less "blocking" than the original report described. The cycle creation modal still appears after onboarding, but users have context from the tutorial before making choices. A full "sandbox-first" approach (auto-loading Getting Started without any modal) could be explored later but would require changes to the boot sequence and state initialization.
+The flow is now: onboarding tutorial → (if no routine exists) cycle creation modal → Getting Started loads. This is less "blocking" than the original report described. The cycle creation modal still appears after onboarding, but users have context from the tutorial before making choices.
 
-**Action:** No change needed for now. The 3-step onboarding tutorial + Guided Tour system already address the "choice paralysis" and "discovery blockade" concerns. The cycle creation modal now appears after education, not before. A future iteration could auto-create a default "Getting Started" routine to skip the creation modal entirely.
+**Action:** A **Guided Tour system** is planned (see `docs/future-work/GUIDED_TOUR_PLAN.md`) to walk users through the UI interactively after onboarding — a 5-step opt-in spotlight tour pointing at real UI elements. This would complete the discoverability story. A full "sandbox-first" approach (auto-loading Getting Started without any modal) could be explored later but would require changes to the boot sequence and state initialization.
 
 ---
 
