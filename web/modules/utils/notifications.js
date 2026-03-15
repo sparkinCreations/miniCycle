@@ -475,9 +475,10 @@ export class MiniCycleNotifications {
       this.restoreNotificationPosition(notificationContainer);
 
       // Auto-remove after duration (hover pause)
-      if (duration) {
-        cleanupTimeouts = this.setupAutoRemove(notification, duration);
-      } else {
+      // duration=null → default timeout, duration=0 → persistent (no auto-remove)
+      const effectiveDuration = duration ?? UI_TIMEOUTS.NOTIFICATION_LONG;
+      if (effectiveDuration) {
+        cleanupTimeouts = this.setupAutoRemove(notification, effectiveDuration);
       }
 
       // Setup drag support
@@ -597,8 +598,10 @@ export class MiniCycleNotifications {
       this.restoreNotificationPosition(notificationContainer);
 
       // Auto-remove logic with hover pause
-      if (duration) {
-        cleanupTimeouts = this.setupAutoRemove(notification, duration);
+      // duration=null → default timeout, duration=0 → persistent (no auto-remove)
+      const effectiveDuration = duration ?? UI_TIMEOUTS.NOTIFICATION_LONG;
+      if (effectiveDuration) {
+        cleanupTimeouts = this.setupAutoRemove(notification, effectiveDuration);
       }
 
       // Dragging setup

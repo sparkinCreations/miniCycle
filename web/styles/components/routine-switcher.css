@@ -434,13 +434,43 @@ dialog.mini-cycle-switch-modal::backdrop {
     filter: brightness(1.12);
 }
 
-.mini-cycle-switch-btn.cancel-btn {
-    background: var(--color-gray-500);
-    color: var(--color-white);
+/* =============================================================================
+   ACTION ROW — Import + Open side by side
+   ============================================================================= */
+
+.switch-action-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-2);
 }
 
-.mini-cycle-switch-btn.cancel-btn:hover {
-    background: var(--color-slate-600);
+.switch-action-row .mini-cycle-upload-btn {
+    margin: 0;
+}
+
+/* =============================================================================
+   CLOSE BUTTON — matches recurring panel / settings close bar
+   ============================================================================= */
+
+.close-routine-switcher {
+    background: var(--menu-close-bg, var(--color-steel-blue));
+    color: var(--menu-close-text, var(--color-white));
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    padding: var(--space-3-5);
+    border: none;
+    border-radius: 0 0 var(--radius-15) var(--radius-15);
+    margin: var(--space-2-5) -25px -20px;
+    width: calc(100% + 50px);
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+    display: block;
+    text-align: center;
+}
+
+.close-routine-switcher:hover {
+    background: var(--menu-close-hover-bg, var(--color-steel-blue));
 }
 
 /* =============================================================================

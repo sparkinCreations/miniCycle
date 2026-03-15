@@ -237,11 +237,13 @@ export class RoutineSwitcher {
         }
         safeAdd(confirmBtn, "click", confirmBtn._clickHandler);
 
-        const cancelBtn = this.deps.getElementById(DOM_IDS.MINI_CYCLE_SWITCH_CANCEL);
-        if (!cancelBtn._clickHandler) {
-            cancelBtn._clickHandler = () => this.hideSwitchMiniCycleModal();
+        const closeBtn = this.deps.getElementById(DOM_IDS.MINI_CYCLE_SWITCH_CLOSE);
+        if (closeBtn) {
+            if (!closeBtn._clickHandler) {
+                closeBtn._clickHandler = () => this.hideSwitchMiniCycleModal();
+            }
+            safeAdd(closeBtn, "click", closeBtn._clickHandler);
         }
-        safeAdd(cancelBtn, "click", cancelBtn._clickHandler);
 
     }
 
@@ -1139,7 +1141,8 @@ export class RoutineSwitcher {
                 !mainMenu.contains(event.target) &&
                 event.target !== routineSwitcherBtn &&
                 !routineSwitcherBtn?.contains(event.target) &&
-                !modalOverlay
+                !modalOverlay &&
+                !event.target.closest(DOM_SELECTORS.NOTIFICATION)
             ) {
                 if (switchModal.open) switchModal.close();
                 switchModal._previousFocus?.focus({ focusVisible: false });
@@ -1597,6 +1600,18 @@ export class RoutineSwitcher {
                     } else {
                         listItem._clickHandler();
                     }
+                } else if (e.key === 'd' && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    listItem._clickHandler();
+                    this.duplicateMiniCycle();
+                } else if (e.key === 'F2') {
+                    e.preventDefault();
+                    listItem._clickHandler();
+                    this.renameMiniCycle();
+                } else if (e.key === 'Delete' || e.key === 'Backspace') {
+                    e.preventDefault();
+                    listItem._clickHandler();
+                    this.deleteMiniCycle();
                 }
             };
             safeAdd(listItem, "keydown", listItem._keyHandler);

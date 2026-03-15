@@ -304,6 +304,17 @@ export function setupTaskListDelegation(deps, state, callbacks) {
         selectTaskItem(item, deps, state, callbacks);
     });
 
+    // Double-click to toggle checkbox
+    deps.safeAddEventListener(container, "dblclick", (event) => {
+        const item = event.target.closest(DOM_SELECTORS.RECURRING_TASK_ITEM);
+        if (!item) return;
+        // Don't toggle if double-clicking the remove button
+        if (event.target.closest(DOM_SELECTORS.RECURRING_REMOVE_BTN)) return;
+        item.classList.toggle("checked");
+        const checkbox = item.querySelector(DOM_SELECTORS.RECURRING_CHECK);
+        if (checkbox) checkbox.checked = item.classList.contains("checked");
+    });
+
     // Keyboard navigation for task list items
     deps.safeAddEventListener(container, "keydown", (event) => {
         const item = event.target.closest(DOM_SELECTORS.RECURRING_TASK_ITEM);
