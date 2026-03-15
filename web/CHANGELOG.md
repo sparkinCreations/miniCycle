@@ -1,3 +1,7 @@
+## [2.095] - 2026-03-15
+- feat(app-state): improve AppState teardown and listener management for retries
+
+
 ## [2.094] - 2026-03-15
 - feat(changelog): add entry for backup validation enhancements and event listener improvements
 - feat(data-sanitizer): strip display-only fields from history events during cycle sanitization
