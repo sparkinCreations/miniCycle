@@ -69,6 +69,8 @@ this.deps.showNotification(
 
 Using `duration = 0` (persistent) avoids the need for a timeout-based dismiss callback — the user must click either the action button or the X.
 
+**Implementation note:** The `onDismiss` callback must also be called in the auto-dismiss path (`setupAutoRemove` → `clearNotification` at `notifications.js:732`) — not just the close button handler. The tour currently avoids this by using `duration = 0`, but if any future caller uses `onDismiss` with a non-zero duration, the timeout-based removal would skip the callback. Adding it to `clearNotification` now prevents a silent future regression.
+
 ## Tour Architecture
 
 ### Approach: Spotlight Overlay + Tooltip
