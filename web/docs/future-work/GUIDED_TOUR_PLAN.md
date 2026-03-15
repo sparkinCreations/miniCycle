@@ -259,7 +259,15 @@ Close any open dialogs before the tour starts (Layer 1). A future Layer 2 could 
 **Layer 1 — Guard against data loss from open dialogs in `startTour()`:** The tour can be launched from multiple entry points (welcome notification, resume notification, settings retake button). Any of these could fire while a dialog is open — e.g., the user clicks "Start Blank Routine" from the `welcomeSampleLoaded` notification (Path A, `onboardingManager.js:336`), opens the creation dialog, then clicks the delayed tour CTA. To avoid silently discarding in-progress modal input, `startTour()` bails out if any dialog is open and shows a brief hint:
 
 ```javascript
-// In startTour(), before creating overlay:
+// In startTour(), before anything else:
+// Cancel any pending CTA timer (e.g., 9s first-run delay still running when
+// user clicks "Retake Guided Tour" from settings). Without this, the old timer
+// fires mid-tour and shows a stacking notification.
+if (this._scheduleTimeout) {
+    clearTimeout(this._scheduleTimeout);
+    this._scheduleTimeout = null;
+}
+
 const openDialogs = this.deps.querySelectorAll('dialog[open]');
 if (openDialogs.length > 0) {
     // Don't close dialogs with potentially unsaved input.
@@ -735,6 +743,7 @@ Add `'guidedTourManager'` to `ALL_MODULES` array in `tests/automated/run-browser
 - Tour elements are not present in DOM after `completeTour()`
 
 **Modal Conflict**
+- `startTour()` cancels any pending `_scheduleTimeout` before doing anything else
 - `startTour()` returns early and shows `tour.closeDialogHint` notification if any `<dialog>` is open
 - `startTour()` re-schedules tour CTA notification 3.5s after bailing (via `_scheduleTimeout`)
 - Tour does not render over an already-open dialog
