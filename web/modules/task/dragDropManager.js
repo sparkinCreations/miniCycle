@@ -27,7 +27,7 @@ const di = createDIModule('DragDropManager', {
     refreshUIFromState: optional(null),
     revealTaskButtons: optional(null),
     hideTaskButtons: optional(null),
-    isTouchDevice: optional(null),
+    getBody: optional(null),
     enableUndoSystemOnFirstInteraction: optional(null),
     showNotification: optional(null),
     safeAddEventListener: optional(null),
@@ -35,7 +35,7 @@ const di = createDIModule('DragDropManager', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{appInit: Object|null, AppState: Object|null, updateProgressBar: Function|null, updateStatsPanel: Function|null, checkCompleteAllButton: Function|null, updateUndoRedoButtons: Function|null, captureStateSnapshot: Function|null, refreshUIFromState: Function|null, revealTaskButtons: Function|null, hideTaskButtons: Function|null, isTouchDevice: Function|null, enableUndoSystemOnFirstInteraction: Function|null, showNotification: Function|null, safeAddEventListener: Function|null, AppMeta: Object|null}} */
+/** @type {{appInit: Object|null, AppState: Object|null, updateProgressBar: Function|null, updateStatsPanel: Function|null, checkCompleteAllButton: Function|null, updateUndoRedoButtons: Function|null, captureStateSnapshot: Function|null, refreshUIFromState: Function|null, revealTaskButtons: Function|null, hideTaskButtons: Function|null, getBody: Function|null, enableUndoSystemOnFirstInteraction: Function|null, showNotification: Function|null, safeAddEventListener: Function|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -67,7 +67,7 @@ export class DragDropManager {
             refreshUIFromState: resolvedDeps.refreshUIFromState,
             revealTaskButtons: resolvedDeps.revealTaskButtons,
             hideTaskButtons: resolvedDeps.hideTaskButtons,
-            isTouchDevice: resolvedDeps.isTouchDevice || (() => 'ontouchstart' in window),
+            getBody: resolvedDeps.getBody,
             enableUndoSystemOnFirstInteraction: resolvedDeps.enableUndoSystemOnFirstInteraction,
             showNotification: resolvedDeps.showNotification || this.fallbackNotification,
             safeAddEventListener: resolvedDeps.safeAddEventListener
@@ -76,14 +76,11 @@ export class DragDropManager {
         // Internal state (local to this instance, not global)
         this.rearrangeTimeout = null;
         this.REARRANGE_DELAY = 75; // ms delay to smooth reordering
-        this.REORDER_SNAPSHOT_INTERVAL = 500; // ms between undo snapshots
 
         // Drag state (previously on AppGlobalState, now local)
         this.draggedTask = null;
         this.rearrangeInitialized = false;
         this.didDragReorderOccur = false;
-        this.lastReorderTime = 0;
-        this.lastRearrangeTarget = null;
 
         // Track current drop target to avoid querySelectorAll in hot paths
         this._currentDropTarget = null;
@@ -177,7 +174,7 @@ export class DragDropManager {
             const taskList = document.getElementById(DOM_IDS.TASK_LIST);
             if (taskList) {
                 taskList._arrowClickHandler = (event) => {
-                    if (event.target.matches('.move-up, .move-down')) {
+                    if (event.target.matches(DOM_SELECTORS.MOVE_ARROWS)) {
                         event.preventDefault();
                         event.stopPropagation();
                         this.handleArrowClick(event.target);
@@ -190,7 +187,7 @@ export class DragDropManager {
             this._dragoverHandler = (event) => {
                 event.preventDefault();
                 requestAnimationFrame(() => {
-                    const movingTask = event.target.closest(".task");
+                    const movingTask = event.target.closest(DOM_SELECTORS.TASK);
                     if (movingTask) {
                         this.handleRearrange(movingTask, event);
                     }
@@ -205,7 +202,6 @@ export class DragDropManager {
 
                 this.saveDragReorder();
                 this.cleanupDragState();
-                this.lastReorderTime = 0;
                 this._nativeDragActive = false;
             };
             safeAdd(document, "drop", this._dropHandler);
@@ -272,10 +268,13 @@ export class DragDropManager {
             if (taskElement._dragstartHandler) {
                 taskElement.removeEventListener("dragstart", taskElement._dragstartHandler);
             }
+            if (taskElement._clickGuardHandler) {
+                taskElement.removeEventListener("click", taskElement._clickGuardHandler);
+            }
 
             // 📱 **Touch-based Drag for Mobile**
             taskElement._touchstartHandler = (event) => {
-                if (event.target.closest(".task-options")) return;
+                if (event.target.closest(DOM_SELECTORS.TASK_OPTIONS)) return;
                 isLongPress = false;
                 isDragging = false;
                 isTap = true;
@@ -285,28 +284,35 @@ export class DragDropManager {
                 this._nativeDragActive = false; // Reset for new touch sequence
 
                 // Remove .long-pressed from all other tasks before long press starts
-                document.querySelectorAll(DOM_SELECTORS.TASK).forEach(task => {
-                    if (task !== taskElement) {
-                        task.classList.remove("long-pressed");
-                        this.deps.hideTaskButtons?.(task);
+                const taskList = document.getElementById(DOM_IDS.TASK_LIST);
+                if (taskList) {
+                    for (const task of taskList.children) {
+                        if (task !== taskElement && task.classList.contains(DOM_CLASSES.TASK)) {
+                            task.classList.remove(DOM_CLASSES.LONG_PRESSED);
+                            this.deps.hideTaskButtons?.(task);
+                        }
                     }
-                });
+                }
 
                 holdTimeout = setTimeout(() => {
                     isLongPress = true;
                     isTap = false;
                     this.draggedTask = taskElement;
                     isDragging = true;
-                    taskElement.classList.add("dragging");
+                    taskElement.classList.add(DOM_CLASSES.DRAGGING);
 
                     event.preventDefault();
+
+                    // Enable undo system on first user interaction (touch drag path)
+                    this.deps.enableUndoSystemOnFirstInteraction?.();
 
                     // Only reveal task option buttons if three-dots mode is NOT enabled.
                     // When three-dots is on, the dedicated button handles visibility;
                     // long press should only activate drag mode.
-                    const threeDotsEnabled = document.body.classList.contains('show-three-dots-enabled');
+                    const body = this.deps.getBody?.() || document.body;
+                    const threeDotsEnabled = body.classList.contains(DOM_CLASSES.SHOW_THREE_DOTS_ENABLED);
                     if (!threeDotsEnabled) {
-                        taskElement.classList.add("long-pressed");
+                        taskElement.classList.add(DOM_CLASSES.LONG_PRESSED);
                         this.deps.revealTaskButtons?.(taskElement, 'long-press');
                     }
                 }, 500); // Long-press delay (500ms)
@@ -325,7 +331,7 @@ export class DragDropManager {
                         event.preventDefault();
                     }
                     const elementAtPoint = document.elementFromPoint(touchMoveX, touchMoveY);
-                    const targetTask = elementAtPoint?.closest('.task');
+                    const targetTask = elementAtPoint?.closest(DOM_SELECTORS.TASK);
                     if (targetTask) {
                         this.handleRearrange(targetTask, event);
                     }
@@ -352,11 +358,14 @@ export class DragDropManager {
             taskElement._touchendHandler = () => {
                 clearTimeout(holdTimeout);
 
-                if (isTap) {
+                // After a long-press or drag, suppress the synthetic click that
+                // browsers fire after touchend — it would toggle the checkbox
+                // via the delegated click handler on taskList.
+                if (isLongPress || isDragging) {
                     preventClick = true;
                     setTimeout(() => {
                         preventClick = false;
-                    }, 100);
+                    }, 300);
                 }
 
                 // If native DnD took over (iOS), let the drop handler save.
@@ -372,20 +381,20 @@ export class DragDropManager {
                 }
 
                 if (this.draggedTask) {
-                    this.draggedTask.classList.remove("dragging", "rearranging");
+                    this.draggedTask.classList.remove(DOM_CLASSES.DRAGGING, DOM_CLASSES.REARRANGING);
                     this.draggedTask = null;
                 }
 
                 isDragging = false;
-                this.lastReorderTime = 0;
 
                 // Keep task options open after a long press (only when buttons were revealed)
-                const threeDotsEnabled = document.body.classList.contains('show-three-dots-enabled');
+                const body = this.deps.getBody?.() || document.body;
+                const threeDotsEnabled = body.classList.contains(DOM_CLASSES.SHOW_THREE_DOTS_ENABLED);
                 if (isLongPress && !threeDotsEnabled) {
                     return;
                 }
 
-                taskElement.classList.remove("long-pressed");
+                taskElement.classList.remove(DOM_CLASSES.LONG_PRESSED);
             };
             safeAdd(taskElement, "touchend", taskElement._touchendHandler, { passive: true });
 
@@ -409,21 +418,20 @@ export class DragDropManager {
                 }
 
                 if (this.draggedTask) {
-                    this.draggedTask.classList.remove("dragging", "rearranging");
+                    this.draggedTask.classList.remove(DOM_CLASSES.DRAGGING, DOM_CLASSES.REARRANGING);
                     this.draggedTask = null;
                 }
 
                 isDragging = false;
                 isLongPress = false;
                 isTap = false;
-                this.lastReorderTime = 0;
-                taskElement.classList.remove("long-pressed");
+                taskElement.classList.remove(DOM_CLASSES.LONG_PRESSED);
             };
             safeAdd(taskElement, "touchcancel", taskElement._touchcancelHandler, { passive: true });
 
             // 🖱️ **Mouse-based Drag for Desktop (also fires on iOS native DnD)**
             taskElement._dragstartHandler = (event) => {
-                if (event.target.closest(".task-options")) return;
+                if (event.target.closest(DOM_SELECTORS.TASK_OPTIONS)) return;
 
                 // Mark that native HTML5 DnD has started.
                 // On iOS, touchcancel will fire next — this flag tells that handler
@@ -437,7 +445,7 @@ export class DragDropManager {
                 event.dataTransfer.setData("text/plain", "");
 
                 // Add dragging class for desktop as well
-                taskElement.classList.add("dragging");
+                taskElement.classList.add(DOM_CLASSES.DRAGGING);
 
                 // Hide ghost image on desktop only - let iOS show native drag preview on mobile
                 const isMobileDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -446,6 +454,17 @@ export class DragDropManager {
                 }
             };
             safeAdd(taskElement, "dragstart", taskElement._dragstartHandler);
+
+            // 🛡️ Click guard: suppress synthetic click after long-press/drag
+            // Browsers fire a click event after touchend — without this guard,
+            // the delegated click handler on taskList would toggle the checkbox.
+            taskElement._clickGuardHandler = (event) => {
+                if (preventClick) {
+                    event.stopPropagation();
+                    event.preventDefault();
+                }
+            };
+            safeAdd(taskElement, "click", taskElement._clickGuardHandler);
 
         } catch (error) {
             console.warn('⚠️ Failed to enable drag and drop on task:', error);
@@ -475,15 +494,6 @@ export class DragDropManager {
 
             // ✅ ALWAYS mark that a reorder occurred (for save on drop)
             this.didDragReorderOccur = true;
-
-            // Snapshot only if enough time has passed (for undo system)
-            const now = Date.now();
-            if (this.lastReorderTime &&
-                now - this.lastReorderTime > this.REORDER_SNAPSHOT_INTERVAL) {
-                this.lastReorderTime = now;
-            } else if (!this.lastReorderTime) {
-                this.lastReorderTime = now;
-            }
 
             // Batch reads: collect all DOM reads before any writes
             const isLastTask = !target.nextElementSibling;
@@ -553,7 +563,7 @@ export class DragDropManager {
                 console.warn('⚠️ DOM manipulation failed during rearrange (likely race condition):', error.message);
                 // Clear dragging state to prevent stuck UI
                 if (this.draggedTask) {
-                    this.draggedTask.classList.remove("dragging", "drop-target");
+                    this.draggedTask.classList.remove(DOM_CLASSES.DRAGGING, DOM_CLASSES.DROP_TARGET);
                 }
                 return;
             }
@@ -570,7 +580,7 @@ export class DragDropManager {
         this._arrowMoveInProgress = true;
 
         try {
-            const taskItem = button.closest('.task');
+            const taskItem = button.closest(DOM_SELECTORS.TASK);
             if (!taskItem) return;
 
             const taskList = document.getElementById(DOM_IDS.TASK_LIST);
@@ -578,7 +588,7 @@ export class DragDropManager {
             const currentIndex = allTasks.indexOf(taskItem);
 
             let newIndex;
-            if (button.classList.contains('move-up')) {
+            if (button.classList.contains(DOM_CLASSES.MOVE_UP)) {
                 newIndex = Math.max(0, currentIndex - 1);
             } else {
                 newIndex = Math.min(allTasks.length - 1, currentIndex + 1);
@@ -614,7 +624,7 @@ export class DragDropManager {
                 }, true); // immediate save
 
                 // Remember which arrow was pressed for focus restoration
-                const arrowClass = button.classList.contains('move-up') ? 'move-up' : 'move-down';
+                const arrowClass = button.classList.contains(DOM_CLASSES.MOVE_UP) ? DOM_CLASSES.MOVE_UP : DOM_CLASSES.MOVE_DOWN;
 
                 // Re-render from state (await to ensure DOM is ready)
                 await this.deps.refreshUIFromState?.();
@@ -637,8 +647,8 @@ export class DragDropManager {
                         // Ensure task options are visible on the moved task
                         const taskOptions = movedTask.querySelector(DOM_SELECTORS.TASK_OPTIONS);
                         if (taskOptions) {
-                            taskOptions.classList.add('task-options-visible');
-                            taskOptions.classList.remove('task-options-force-hidden');
+                            taskOptions.classList.add(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
+                            taskOptions.classList.remove(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
                             taskOptions.querySelectorAll('button.task-btn').forEach(btn => {
                                 btn.tabIndex = 0;
                             });
@@ -646,7 +656,7 @@ export class DragDropManager {
 
                         // Try the same arrow first; if hidden (first/last boundary), fall back to opposite arrow
                         const arrowBtn = movedTask.querySelector(`.${arrowClass}`);
-                        const oppositeClass = arrowClass === 'move-up' ? 'move-down' : 'move-up';
+                        const oppositeClass = arrowClass === DOM_CLASSES.MOVE_UP ? DOM_CLASSES.MOVE_DOWN : DOM_CLASSES.MOVE_UP;
                         const oppositeBtn = movedTask.querySelector(`.${oppositeClass}`);
 
                         if (arrowBtn && getComputedStyle(arrowBtn).visibility !== 'hidden') {
@@ -655,7 +665,7 @@ export class DragDropManager {
                             oppositeBtn.focus();
                         } else {
                             // All arrows hidden — focus task text as fallback
-                            movedTask.querySelector('.task-text')?.focus();
+                            movedTask.querySelector(DOM_SELECTORS.TASK_TEXT)?.focus();
                         }
                     });
                 }
@@ -663,7 +673,7 @@ export class DragDropManager {
                 // Announce move to screen readers via live region
                 const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
                 if (liveRegion) {
-                    liveRegion.textContent = getLabel(arrowClass === 'move-up'
+                    liveRegion.textContent = getLabel(arrowClass === DOM_CLASSES.MOVE_UP
                         ? 'accessibility.taskMovedUp'
                         : 'accessibility.taskMovedDown');
                 }
@@ -739,13 +749,16 @@ export class DragDropManager {
      */
     cleanupDragState() {
         try {
+            clearTimeout(this.rearrangeTimeout);
+            this.rearrangeTimeout = null;
+
             if (this.draggedTask) {
-                this.draggedTask.classList.remove("dragging", "rearranging");
+                this.draggedTask.classList.remove(DOM_CLASSES.DRAGGING, DOM_CLASSES.REARRANGING);
                 this.draggedTask = null;
             }
 
-            this.lastRearrangeTarget = null;
             this._nativeDragActive = false;
+            this.didDragReorderOccur = false;
 
             // O(1) cleanup instead of querySelectorAll
             if (this._currentDropTarget) {
@@ -758,20 +771,38 @@ export class DragDropManager {
     }
 
     /**
-     * Setup drag end cleanup handlers
+     * Teardown all listeners and state for boot retry via destroyAllModules()
      */
-    setupDragEndCleanup() {
-        try {
-            const safeAdd = this.deps.safeAddEventListener;
-            this._dragEndDropHandler = () => this.cleanupDragState();
-            safeAdd(document, "drop", this._dragEndDropHandler);
-            this._dragEndDragoverHandler = () => {
-                document.querySelectorAll(DOM_SELECTORS.REARRANGING).forEach(task => task.classList.remove("rearranging"));
-            };
-            safeAdd(document, "dragover", this._dragEndDragoverHandler);
-        } catch (error) {
-            console.warn('⚠️ Failed to setup drag end cleanup:', error);
+    destroy() {
+        this.cleanupDragState();
+
+        // Remove document/window-level listeners
+        if (this._dragoverHandler) {
+            document.removeEventListener('dragover', this._dragoverHandler);
+            this._dragoverHandler = null;
         }
+        if (this._dropHandler) {
+            document.removeEventListener('drop', this._dropHandler);
+            this._dropHandler = null;
+        }
+        if (this._dragVisibilityHandler) {
+            document.removeEventListener('visibilitychange', this._dragVisibilityHandler);
+            this._dragVisibilityHandler = null;
+        }
+        if (this._dragBlurHandler) {
+            window.removeEventListener('blur', this._dragBlurHandler);
+            this._dragBlurHandler = null;
+        }
+
+        // Remove taskList arrow click delegation
+        const taskList = document.getElementById(DOM_IDS.TASK_LIST);
+        if (taskList?._arrowClickHandler) {
+            taskList.removeEventListener('click', taskList._arrowClickHandler);
+            taskList._arrowClickHandler = null;
+        }
+
+        this.rearrangeInitialized = false;
+        this.initialized = false;
     }
 
     /**
@@ -862,18 +893,18 @@ export class DragDropManager {
         if (!taskList) return;
 
         // Remove old markers (O(1) - at most one of each)
-        taskList.querySelector(DOM_SELECTORS.IS_FIRST_TASK)?.classList.remove('is-first-task');
-        taskList.querySelector(DOM_SELECTORS.IS_LAST_TASK)?.classList.remove('is-last-task');
+        taskList.querySelector(DOM_SELECTORS.IS_FIRST_TASK)?.classList.remove(DOM_CLASSES.IS_FIRST_TASK);
+        taskList.querySelector(DOM_SELECTORS.IS_LAST_TASK)?.classList.remove(DOM_CLASSES.IS_LAST_TASK);
 
         // Add new markers (direct children only)
         const firstTask = taskList.firstElementChild;
         const lastTask = taskList.lastElementChild;
 
-        if (firstTask?.classList.contains('task')) {
-            firstTask.classList.add('is-first-task');
+        if (firstTask?.classList.contains(DOM_CLASSES.TASK)) {
+            firstTask.classList.add(DOM_CLASSES.IS_FIRST_TASK);
         }
-        if (lastTask?.classList.contains('task') && lastTask !== firstTask) {
-            lastTask.classList.add('is-last-task');
+        if (lastTask?.classList.contains(DOM_CLASSES.TASK) && lastTask !== firstTask) {
+            lastTask.classList.add(DOM_CLASSES.IS_LAST_TASK);
         }
     }
 
