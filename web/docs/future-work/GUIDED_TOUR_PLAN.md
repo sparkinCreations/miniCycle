@@ -32,9 +32,31 @@ setTimeout(() => this._showWelcomeNotification(), 2000);
 [ Take a Quick Tour ]
 ```
 
-- Type: `info`, longer duration (e.g. 15 seconds or persistent until dismissed)
-- Clicking "Take a Quick Tour" launches the guided tour
-- Dismissing the notification (X or timeout) marks tour as done/skipped
+- Type: `info`, persistent (`duration = 0`) so the user must actively choose
+- Clicking "Take a Quick Tour" launches the guided tour (uses existing `options.actionButton` API)
+- Dismissing via X button marks tour as done/skipped
+
+#### Dismiss Callback — Required `notifications.js` Change
+
+The existing `show()` method supports `options.actionButton` with an `onClick` callback, but the close button (X) has no equivalent callback — it just removes the notification. To mark the tour as skipped on dismiss, add an `options.onDismiss` callback:
+
+```javascript
+// In show(), inside closeBtn._clickHandler, before removing:
+if (typeof options?.onDismiss === 'function') options.onDismiss();
+```
+
+This is a small, backwards-compatible change (~3 lines in `notifications.js`). The tour manager passes it like:
+
+```javascript
+this.deps.showNotification(
+    getLabel('tour.welcomeMessage'), 'info', 0, {
+        actionButton: { label: getLabel('tour.startButton'), onClick: () => this.startTour() },
+        onDismiss: () => this._markDone()
+    }
+);
+```
+
+Using `duration = 0` (persistent) avoids the need for a timeout-based dismiss callback — the user must click either the action button or the X.
 
 ## Tour Architecture
 
@@ -51,8 +73,8 @@ A lightweight overlay system that:
 
 | Step | Target Element | Constant | Message |
 |------|---------------|----------|---------|
-| 1 | Task input toggle | `DOM_IDS.TOGGLE_TASK_INPUT` | "Tap here to add tasks to your routine." |
-| 2 | First task item | `DOM_SELECTORS.TASK_TEXT` (first) | "Tap the three dots on a task for options like recurring, priority, and due dates." |
+| 1 | Task input toggle button | `DOM_IDS.TOGGLE_TASK_INPUT_BTN` | "Tap here to add tasks to your routine." |
+| 2 | First task row | `DOM_SELECTORS.TASK` (first) | "Tap the three dots on a task for options like recurring, priority, and due dates." |
 | 3 | Progress bar | `DOM_IDS.PROGRESS_BAR` | "Complete all tasks to finish a cycle. Your cycle count tracks consistency." |
 | 4 | Hamburger menu button | `DOM_SELECTORS.HAMBURGER_MENU` | "Open the menu to access settings, personalization, routine actions, and more." |
 | 5 | Stats navigation (arrow + nav dot) | `DOM_IDS.SLIDE_RIGHT` | "Swipe left or click the arrow to open the Stats Panel — swiping works on desktop too!" |
@@ -61,11 +83,11 @@ A lightweight overlay system that:
 
 ### Empty Task State Handling (Step 2)
 
-Step 2 targets the first `.task-text` element. If no tasks exist (e.g., user created a routine but hasn't added tasks yet), the `onEnter` callback handles it:
+Step 2 targets the first `.task` row element. If no tasks exist (e.g., user created a routine but hasn't added tasks yet), the `onEnter` callback handles it:
 
 ```javascript
 onEnter: () => {
-    const firstTask = this.deps.querySelector(DOM_SELECTORS.TASK_TEXT);
+    const firstTask = this.deps.querySelector(DOM_SELECTORS.TASK);
     if (!firstTask) {
         // Skip to step 3 — user will discover task options after adding tasks
         return 'skip';
@@ -79,7 +101,7 @@ Returning `'skip'` from `onEnter` advances to the next step automatically. This 
 
 ```javascript
 {
-    target: DOM_IDS.TOGGLE_TASK_INPUT,  // or DOM_SELECTORS for class-based
+    target: DOM_IDS.TOGGLE_TASK_INPUT_BTN,  // or DOM_SELECTORS for class-based
     message: getLabel('tour.step1'),     // label key
     position: 'auto',                    // tooltip position: 'auto', 'top', 'bottom', 'left', 'right'
     onEnter: null,                       // optional callback before showing step (return 'skip' to advance)

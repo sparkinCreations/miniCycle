@@ -60,7 +60,7 @@
 
 
 ## [2.081] - 2026-03-13
-- feat(guided-tour): enhance tour steps and tooltip functionality
+- docs(guided-tour): update guided tour plan with refined steps and tooltip positioning
 
 
 ## [2.080] - 2026-03-12
@@ -271,11 +271,11 @@
 
 
 ## [2.027] - 2026-02-28
-- feat: add guided tour system for onboarding new users
+- docs: add guided tour system plan for onboarding new users
 
 
 ## [2.026] - 2026-02-28
-- feat: add download functionality for routines and implement guided tour system
+- feat: add download functionality for routines; docs: create guided tour plan
 
 
 ## [2.025] - 2026-02-28
