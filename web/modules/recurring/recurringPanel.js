@@ -112,7 +112,8 @@ export class RecurringPanelManager {
             handleRemoveTask: (template, item) => this.handleRemoveTask(template, item),
             showTaskSummaryPreview: (task) => this.showTaskSummaryPreview(task),
             getSelectedYearlyMonths: () => this.getSelectedYearlyMonths(),
-            setPanelMode: (mode) => this.setPanelMode(mode)
+            setPanelMode: (mode) => this.setPanelMode(mode),
+            getPanelMode: () => this.state.panelMode
         };
         _initEventDelegation(this.deps, this.state, callbacks);
     }
@@ -208,12 +209,13 @@ export class RecurringPanelManager {
                 });
             });
 
-            // Setup military time toggles
-            this.setupMilitaryTimeToggle("daily");
-            this.setupMilitaryTimeToggle("weekly");
-            this.setupMilitaryTimeToggle("biweekly");
-            this.setupMilitaryTimeToggle("monthly");
-            this.setupMilitaryTimeToggle("yearly");
+            // Setup military time toggles + wrap-around for number inputs
+            ['daily', 'weekly', 'biweekly', 'monthly', 'yearly'].forEach(freq => {
+                this.setupMilitaryTimeToggle(freq);
+                this.setupTimeInputWrapping(freq);
+            });
+            this.setupTimeInputWrapping('specific-date');
+            this.setupHourlyMinuteWrapping();
 
             // Setup day/week/month grids
             this.setupWeeklyDayToggle();
@@ -361,6 +363,20 @@ export class RecurringPanelManager {
      */
     setupMilitaryTimeToggle(prefix) {
         _setupMilitaryTimeToggle(this.deps, prefix, () => this.updateRecurringSummary());
+    }
+
+    /**
+     * Setup wrap-around for hour/minute inputs on a frequency prefix
+     */
+    setupTimeInputWrapping(prefix) {
+        _setupTimeInputWrapping?.(this.deps, prefix, () => this.updateRecurringSummary());
+    }
+
+    /**
+     * Setup wrap-around for hourly-only minute input
+     */
+    setupHourlyMinuteWrapping() {
+        _setupHourlyMinuteWrapping?.(this.deps, () => this.updateRecurringSummary());
     }
 
     /**
@@ -711,8 +727,7 @@ export class RecurringPanelManager {
             updateRecurringSummary: () => this.updateRecurringSummary(),
             updateRecurCountVisibility: () => this.updateRecurCountVisibility(),
             deselectAndBrowse: () => {
-                this.state.selectedTaskId = null;
-                this.setPanelMode('browsing');
+                this.handleCancelSettings();
             }
         });
     }
@@ -813,19 +828,24 @@ export class RecurringPanelManager {
             const recurringTasks = Object.values(cycleData.recurringTemplates || {});
 
             // Clear existing list
-            recurringList.innerHTML = "";
-
-            
-            // Remember previously selected task AND checked tasks
+            // Remember previously selected task AND checked tasks BEFORE clearing DOM
             const previouslySelectedId = this.state.selectedTaskId;
             const previouslyCheckedIds = Array.from(
                 this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM_CHECKED)
             ).map(el => el.dataset.taskId);
 
-            // Clear previous selections
-            this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
-                el.classList.remove("selected");
-            });
+            // Merge in preserved checked IDs (saved before async operations that rebuild DOM)
+            if (this.state.preservedCheckedIds?.length) {
+                this.state.preservedCheckedIds.forEach(id => {
+                    if (!previouslyCheckedIds.includes(id)) {
+                        previouslyCheckedIds.push(id);
+                    }
+                });
+                this.state.preservedCheckedIds = null;
+            }
+
+            // Now clear the DOM
+            recurringList.innerHTML = "";
 
             // Handle empty state
             const emptyState = this.deps.getElementById(DOM_IDS.RECURRING_EMPTY_STATE);
@@ -1083,9 +1103,19 @@ export class RecurringPanelManager {
             const toggleBtn = this.deps.getElementById(DOM_IDS.TOGGLE_CHECK_ALL);
             const taskCount = this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).length;
 
-            // Settings panel: only visible in EDITING
+            // Two-column layout: active on desktop when editing
+            const panel = this.deps.getElementById(DOM_IDS.RECURRING_PANEL);
+            if (panel) {
+                panel.classList.toggle('two-col-active', isEditing);
+            }
+
+            // Settings panel + title: only visible in EDITING
             if (settingsPanel) {
                 settingsPanel.classList.toggle('hidden', !isEditing);
+                const settingsTitle = settingsPanel.previousElementSibling;
+                if (settingsTitle?.classList.contains('recurring-settings-title')) {
+                    settingsTitle.classList.toggle('hidden', !isEditing);
+                }
             }
 
             // Checkboxes: only visible in EDITING
@@ -1690,10 +1720,18 @@ export class RecurringPanelManager {
 
             // If the user wasn't already editing settings, return to browsing
             // so the panel refreshes cleanly without opening the settings form.
-            // If editing, keep selection so the user can continue editing.
+            // If editing, preserve checked task IDs so they survive the re-render.
             if (this.state.panelMode !== 'editing') {
                 this.state.selectedTaskId = null;
                 this.setPanelMode('browsing');
+            } else {
+                // Save checked IDs before DOM rebuild wipes them
+                this.state.preservedCheckedIds = Array.from(
+                    this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM)
+                ).filter(el => {
+                    const cb = el.querySelector(DOM_SELECTORS.RECURRING_CHECK);
+                    return cb?.checked;
+                }).map(el => el.dataset.taskId);
             }
 
             // Refresh the panel to show new recurring tasks
@@ -1796,6 +1834,7 @@ export class RecurringPanelManager {
             const checkbox = taskItem.querySelector(DOM_SELECTORS.RECURRING_CHECK);
             if (checkbox) {
                 checkbox.checked = true;
+                taskItem.classList.add('checked');
             }
         }
 
@@ -1891,6 +1930,8 @@ let _setupToggleCheckAll = null;
 let _setupAdvancedToggle = null;
 let _setupTimeConversion = null;
 let _setupMilitaryTimeToggle = null;
+let _setupTimeInputWrapping = null;
+let _setupHourlyMinuteWrapping = null;
 let _setupMonthlyMutualExclusion = null;
 let _setupAdditionalListeners = null;
 
@@ -1936,6 +1977,8 @@ export async function loadPanelSubModules(version) {
     _setupAdvancedToggle = setupModule.setupAdvancedToggle;
     _setupTimeConversion = setupModule.setupTimeConversion;
     _setupMilitaryTimeToggle = setupModule.setupMilitaryTimeToggle;
+    _setupTimeInputWrapping = setupModule.setupTimeInputWrapping;
+    _setupHourlyMinuteWrapping = setupModule.setupHourlyMinuteWrapping;
     _setupMonthlyMutualExclusion = setupModule.setupMonthlyMutualExclusion;
     _setupAdditionalListeners = setupModule.setupAdditionalListeners;
 

@@ -403,10 +403,11 @@ export async function watchRecurringTasks() {
         // Prevent re-adding if task already exists by ID
         if (taskList.some(task => task.id === template.id)) return;
 
+        // FAST PATH: Skip if there are no more occurrences (template finished)
+        if (template.nextScheduledOccurrence == null) return;
+
         // FAST PATH: Skip if not due yet
-        if (template.nextScheduledOccurrence && now.getTime() < template.nextScheduledOccurrence) {
-            return;
-        }
+        if (now.getTime() < template.nextScheduledOccurrence) return;
 
         // SLOW PATH: Pattern matching validation
         if (!Deps.shouldRecreateRecurringTask(template, taskList, now)) return;

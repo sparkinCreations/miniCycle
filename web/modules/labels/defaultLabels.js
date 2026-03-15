@@ -943,6 +943,7 @@ export const DEFAULT_LABELS = deepFreeze({
         selectAll:            'Select All',
         deselectAll:          'Deselect All',
         panelHint:            'Tap a recurring task to see its schedule or change settings',
+        settingsTitle:        'Recurring Settings',
         specificTimeOfDay:    'Choose specific time of day',
         specificMinute:       'Choose specific minute of each hour',
         use24HourFormat:      'Check box to use 24-hour format',

@@ -54,6 +54,7 @@ export function normalizeRecurringSettings(settings = {}) {
         count: settings.count ?? null,
         untilDate: settings.untilDate || null,
         time: settings.time || null,
+        useSpecificTime: settings.useSpecificTime ?? false,
 
         specificDates: {
             enabled: settings.specificDates?.enabled || false,

@@ -355,7 +355,11 @@ function selectTaskItem(item, deps, state, callbacks) {
         }
     }
 
-    // Transition to previewing mode (shows summary + change button)
-    callbacks.setPanelMode?.('previewing');
+    // If already editing, stay in editing mode — just update the preview
+    // without repopulating the form (user may be making bulk changes).
+    // Otherwise transition to previewing.
+    if (callbacks.getPanelMode?.() !== 'editing') {
+        callbacks.setPanelMode?.('previewing');
+    }
 }
 

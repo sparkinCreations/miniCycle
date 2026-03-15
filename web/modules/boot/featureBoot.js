@@ -28,6 +28,82 @@
  * @version 3.0.0
  */
 
+const HTML_EVENT_BRIDGE_KEY = '__miniCycleHtmlEventBridge';
+const HTML_EVENT_LISTENERS_READY = 'featureBootHtmlListenersReady';
+
+/**
+ * Store boot-time HTML event bridges on the live document so retries can reuse
+ * one listener set while refreshing the callable targets on each boot attempt.
+ *
+ * @returns {Object}
+ */
+function getHtmlEventBridge() {
+  if (!Object.prototype.hasOwnProperty.call(document, HTML_EVENT_BRIDGE_KEY)) {
+    Object.defineProperty(document, HTML_EVENT_BRIDGE_KEY, {
+      value: {},
+      configurable: true
+    });
+  }
+
+  return document[HTML_EVENT_BRIDGE_KEY];
+}
+
+/**
+ * Refresh the live bridge with the latest booted module functions.
+ *
+ * @param {Object} deps - Dependency container from boot
+ */
+function syncHtmlEventBridge(deps) {
+  const bridge = getHtmlEventBridge();
+  bridge.showNotification = (message, type, duration) =>
+    deps.utils.showNotification?.(message, type, duration);
+  bridge.showConfirmationModal = (options) =>
+    deps.utils.showConfirmationModal?.(options);
+  bridge.showStatsPanel = () => deps.ui.showStatsPanel?.();
+  bridge.closeStorageViewer = () => deps.testing?.closeStorageViewer?.();
+}
+
+/**
+ * Register the HTML/service-worker bridge listeners once per document.
+ * The handlers read from the mutable bridge so retries update behavior without
+ * stacking duplicate listeners.
+ *
+ * @param {string} closeStorageViewerButtonId - Storage viewer close button ID
+ */
+function ensureHtmlEventListeners(closeStorageViewerButtonId) {
+  const root = document.documentElement;
+  if (root.dataset[HTML_EVENT_LISTENERS_READY] === 'true') {
+    return;
+  }
+
+  const bridge = getHtmlEventBridge();
+
+  document.addEventListener('app:showNotification', (e) => {
+    const { message, type, duration } = e.detail || {};
+    bridge.showNotification?.(message, type, duration);
+  });
+
+  document.addEventListener('app:showConfirmationModal', (e) => {
+    bridge.showConfirmationModal?.(e.detail);
+  });
+
+  document.addEventListener('app:showStatsPanel', () => {
+    bridge.showStatsPanel?.();
+  });
+
+  document.addEventListener('app:closeStorageViewer', () => {
+    bridge.closeStorageViewer?.();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest(`#${closeStorageViewerButtonId}`)) {
+      document.dispatchEvent(new CustomEvent('app:closeStorageViewer'));
+    }
+  });
+
+  root.dataset[HTML_EVENT_LISTENERS_READY] = 'true';
+}
+
 /**
  * Boot early dependencies needed before AppState initialization
  * This loads only notifications (and its prerequisites) so showNotification
@@ -138,8 +214,15 @@ export async function bootFeatures(deps, coreResult) {
   const { GlobalUtils, appInit, withV } = coreResult;
 
   // Import moduleLoader (which re-exports moduleManifests to avoid duplicate loading)
-  const { loadAllModules, loadPhase, PHASES, MODULE_MANIFESTS, getLoadOrder } = await import(withV('./moduleLoader.js'));
-  const appContextMod = await import(withV('../core/appContext.js'));
+  const [
+    { loadAllModules, loadPhase, PHASES, MODULE_MANIFESTS, getLoadOrder },
+    appContextMod,
+    { DOM_IDS }
+  ] = await Promise.all([
+    import(withV('./moduleLoader.js')),
+    import(withV('../core/appContext.js')),
+    import(withV('../core/constants.js'))
+  ]);
 
   // Container for initialized modules
   const features = {
@@ -192,33 +275,8 @@ export async function bootFeatures(deps, coreResult) {
     // These listeners allow HTML inline scripts (like service worker update UI)
     // to communicate with the app via CustomEvents instead of window.* globals.
 
-    // Listen for notification requests from HTML/service worker
-    document.addEventListener('app:showNotification', (e) => {
-      const { message, type, duration } = e.detail || {};
-      deps.utils.showNotification?.(message, type, duration);
-    });
-
-    // Listen for confirmation modal requests from HTML/service worker
-    document.addEventListener('app:showConfirmationModal', (e) => {
-      deps.utils.showConfirmationModal?.(e.detail);
-    });
-
-    // Listen for stats panel requests from HTML
-    document.addEventListener('app:showStatsPanel', () => {
-      deps.ui.showStatsPanel?.();
-    });
-
-    // Listen for closeStorageViewer requests (testing modal)
-    document.addEventListener('app:closeStorageViewer', () => {
-      deps.testing?.closeStorageViewer?.();
-    });
-
-    // Close storage viewer button (replaces inline onclick for CSP compliance)
-    document.addEventListener('click', (e) => {
-      if (e.target.closest('#close-storage-viewer-btn')) {
-        document.dispatchEvent(new CustomEvent('app:closeStorageViewer'));
-      }
-    });
+    syncHtmlEventBridge(deps);
+    ensureHtmlEventListeners(DOM_IDS.CLOSE_STORAGE_VIEWER_BTN);
 
     // =========================================================================
     // LOAD TASK SEARCH MODULE

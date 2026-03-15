@@ -122,6 +122,29 @@ let bootAttempt = 0;
 let loaderMessageOverride = null;
 
 /**
+ * Inject a boot-time modal template only once across in-page retries.
+ * Retries reuse the same document, so blindly reinserting templates creates
+ * duplicate IDs and stale node bindings.
+ *
+ * @param {string} anchorId - Existing element used as insertion anchor
+ * @param {string} modalId - Root ID of the template being injected
+ * @param {string} templateHtml - HTML template to inject
+ */
+function ensureBootModalTemplate(anchorId, modalId, templateHtml) {
+  if (document.getElementById(modalId)) {
+    return;
+  }
+
+  const anchor = document.getElementById(anchorId);
+  if (!anchor) {
+    console.warn(`⚠️ Boot modal anchor not found: #${anchorId}`);
+    return;
+  }
+
+  anchor.insertAdjacentHTML('beforebegin', templateHtml);
+}
+
+/**
  * Update loader text and progress bar
  * @param {string} message - Progress message to display
  * @param {number} percent - Progress percentage (0-100)
@@ -494,12 +517,21 @@ async function runBootSequence() {
   // Inject large dialog modals BEFORE Phase 2 — modules query these elements during init
   const { RECURRING_PANEL_HTML, PREFERENCES_MODAL_HTML, SETTINGS_MODAL_HTML } =
       await import(`./modalTemplates.js${vParam}`);
-  document.getElementById('games-panel')
-      ?.insertAdjacentHTML('beforebegin', RECURRING_PANEL_HTML);
-  document.getElementById('routine-switcher-modal')
-      ?.insertAdjacentHTML('beforebegin', PREFERENCES_MODAL_HTML);
-  document.getElementById('testing-modal')
-      ?.insertAdjacentHTML('beforebegin', SETTINGS_MODAL_HTML);
+  ensureBootModalTemplate(
+    DOM_IDS.GAMES_PANEL,
+    DOM_IDS.RECURRING_PANEL_OVERLAY,
+    RECURRING_PANEL_HTML
+  );
+  ensureBootModalTemplate(
+    DOM_IDS.ROUTINE_SWITCHER_MODAL,
+    DOM_IDS.PREFERENCES_MODAL,
+    PREFERENCES_MODAL_HTML
+  );
+  ensureBootModalTemplate(
+    DOM_IDS.TESTING_MODAL,
+    DOM_IDS.SETTINGS_MODAL,
+    SETTINGS_MODAL_HTML
+  );
 
   // ========== PHASE 2: FEATURES (with timeout) ==========
   updateLoaderProgress(getLabel('boot.loadingFeatures'), 55);

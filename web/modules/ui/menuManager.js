@@ -84,6 +84,17 @@ export function setMenuManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
 }
 
+function replaceStoredEventListener(element, event, key, handler, options) {
+    if (!element) return;
+
+    if (typeof element[key] === 'function') {
+        element.removeEventListener(event, element[key], options);
+    }
+
+    element[key] = handler;
+    element.addEventListener(event, handler, options);
+}
+
 export class MenuManager {
     constructor(dependencies = {}) {
         // Resolve deps from diBase, with constructor overrides
@@ -171,54 +182,26 @@ export class MenuManager {
         const newBtn = this.deps.getElementById(DOM_IDS.NEW_MINI_CYCLE);
         const closeBtn = this.deps.getElementById(DOM_IDS.CLOSE_MAIN_MENU);
 
-        this.deps.safeAddEventListener(
-            saveBtn,
-            "click",
-            () => this.saveMiniCycleAsNew()
-        );
+        replaceStoredEventListener(saveBtn, "click", "__miniCycleMenuManagerClickHandler", () => this.saveMiniCycleAsNew());
 
-        this.deps.safeAddEventListener(
-            openBtn,
-            "click",
-            () => {
-                this.deps.trackAction?.('open-routine');
-                this.deps.switchMiniCycle();
-            }
-        );
+        replaceStoredEventListener(openBtn, "click", "__miniCycleMenuManagerClickHandler", () => {
+            this.deps.trackAction?.('open-routine');
+            this.deps.switchMiniCycle();
+        });
 
-        this.deps.safeAddEventListener(
-            clearBtn,
-            "click",
-            () => this.clearAllTasks()
-        );
+        replaceStoredEventListener(clearBtn, "click", "__miniCycleMenuManagerClickHandler", () => this.clearAllTasks());
 
-        this.deps.safeAddEventListener(
-            deleteBtn,
-            "click",
-            () => this.deleteAllTasks()
-        );
+        replaceStoredEventListener(deleteBtn, "click", "__miniCycleMenuManagerClickHandler", () => this.deleteAllTasks());
 
-        this.deps.safeAddEventListener(
-            newBtn,
-            "click",
-            () => this.deps.createNewMiniCycle()
-        );
+        replaceStoredEventListener(newBtn, "click", "__miniCycleMenuManagerClickHandler", () => this.deps.createNewMiniCycle());
 
-        this.deps.safeAddEventListener(
-            closeBtn,
-            "click",
-            () => this.closeMainMenu()
-        );
+        replaceStoredEventListener(closeBtn, "click", "__miniCycleMenuManagerClickHandler", () => this.closeMainMenu());
 
         this.deps.checkGamesUnlock();
 
-        this.deps.safeAddEventListener(
-            this.elements.exitMiniCycle,
-            "click",
-            () => {
-                window.location.href = "../index.html";
-            }
-        );
+        replaceStoredEventListener(this.elements.exitMiniCycle, "click", "__miniCycleMenuManagerClickHandler", () => {
+            window.location.href = "../index.html";
+        });
 
         // Setup collapsible menu sections
         this.setupCollapsibleSections();
@@ -226,7 +209,7 @@ export class MenuManager {
         // Close menu when legal links are clicked on mobile
         const legalLinks = this.deps.querySelectorAll('.menu-link-button');
         legalLinks.forEach(link => {
-            this.deps.safeAddEventListener(link, 'click', () => {
+            replaceStoredEventListener(link, 'click', '__miniCycleMenuManagerLegalClickHandler', () => {
                 this.hideMainMenu();
             });
         });
@@ -243,7 +226,7 @@ export class MenuManager {
         this.loadCollapsedStates();
 
         collapsibleHeaders.forEach(header => {
-            this.deps.safeAddEventListener(header, 'click', (e) => {
+            replaceStoredEventListener(header, 'click', '__miniCycleMenuManagerSectionClickHandler', (e) => {
                 e.stopPropagation();
                 const section = header.closest('.menu-section');
                 if (section) {
@@ -253,7 +236,7 @@ export class MenuManager {
                 }
             });
 
-            this.deps.safeAddEventListener(header, 'keydown', (e) => {
+            replaceStoredEventListener(header, 'keydown', '__miniCycleMenuManagerSectionKeydownHandler', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     const section = header.closest('.menu-section');

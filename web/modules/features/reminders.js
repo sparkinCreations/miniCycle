@@ -58,6 +58,17 @@ export function setRemindersDependencies(dependencies) {
     }
 }
 
+function replaceStoredEventListener(element, event, key, handler, options) {
+    if (!element) return;
+
+    if (typeof element[key] === 'function') {
+        element.removeEventListener(event, element[key], options);
+    }
+
+    element[key] = handler;
+    element.addEventListener(event, handler, options);
+}
+
 export class MiniCycleReminders {
     constructor(dependencies = {}) {
         // Store constructor-provided deps that won't change (browser API overrides for testing)
@@ -285,7 +296,7 @@ export class MiniCycleReminders {
             return;
         }
 
-        this.deps.safeAddEventListener(enableReminders, "change", () => this.handleReminderToggle());
+        replaceStoredEventListener(enableReminders, "change", "__miniCycleRemindersToggleChangeHandler", () => this.handleReminderToggle());
 
         // Load reminder settings from Schema 2.5
         const schemaData = this.deps.loadMiniCycleData();
@@ -854,7 +865,7 @@ export class MiniCycleReminders {
         // Indefinite checkbox listener
         const indefiniteCheckbox = this.deps.getElementById(DOM_IDS.INDEFINITE_CHECKBOX);
         if (indefiniteCheckbox) {
-            this.deps.safeAddEventListener(indefiniteCheckbox, "change", () => {
+            replaceStoredEventListener(indefiniteCheckbox, "change", "__miniCycleRemindersIndefiniteChangeHandler", () => {
 
                 const repeatCountRow = this.deps.getElementById(DOM_IDS.REPEAT_COUNT_ROW);
                 if (repeatCountRow) {
@@ -869,7 +880,7 @@ export class MiniCycleReminders {
         // Due dates reminders listener
         const dueDatesReminders = this.deps.getElementById(DOM_IDS.DUE_DATES_REMINDERS);
         if (dueDatesReminders) {
-            this.deps.safeAddEventListener(dueDatesReminders, "change", () => {
+            replaceStoredEventListener(dueDatesReminders, "change", "__miniCycleRemindersDueDatesChangeHandler", () => {
 
                 const schemaData = this.deps.loadMiniCycleData();
                 if (!schemaData) {
@@ -897,7 +908,7 @@ export class MiniCycleReminders {
         ["repeatCount", "frequencyValue", "frequencyUnit"].forEach(id => {
             const element = this.deps.getElementById(id);
             if (element) {
-                this.deps.safeAddEventListener(element, "input", () => {
+                replaceStoredEventListener(element, "input", "__miniCycleRemindersInputHandler", () => {
 
                     const schemaData = this.deps.loadMiniCycleData();
                     if (!schemaData) {
@@ -917,7 +928,7 @@ export class MiniCycleReminders {
         // Browser notifications toggle listener
         const browserNotificationsCheckbox = this.deps.getElementById(DOM_IDS.BROWSER_NOTIFICATIONS);
         if (browserNotificationsCheckbox) {
-            this.deps.safeAddEventListener(browserNotificationsCheckbox, "change", () => {
+            replaceStoredEventListener(browserNotificationsCheckbox, "change", "__miniCycleRemindersBrowserNotificationsChangeHandler", () => {
                 if (browserNotificationsCheckbox.checked) {
                     // Uncheck immediately — only re-check after confirmation + permission
                     browserNotificationsCheckbox.checked = false;
@@ -994,7 +1005,7 @@ export class MiniCycleReminders {
         // Privacy notice toggle — remember open/closed state
         const privacyNoticeDetails = this.deps.getElementById(DOM_IDS.PRIVACY_NOTICE_DETAILS);
         if (privacyNoticeDetails) {
-            this.deps.safeAddEventListener(privacyNoticeDetails, "toggle", () => {
+            replaceStoredEventListener(privacyNoticeDetails, "toggle", "__miniCycleRemindersPrivacyToggleHandler", () => {
                 this.autoSaveReminders();
             });
         }
@@ -1010,7 +1021,7 @@ export class MiniCycleReminders {
         const closeRemindersBtn = this.deps.getElementById(DOM_IDS.CLOSE_REMINDERS_BTN);
 
         if (closeRemindersBtn) {
-            this.deps.safeAddEventListener(closeRemindersBtn, "click", () => {
+            replaceStoredEventListener(closeRemindersBtn, "click", "__miniCycleRemindersCloseClickHandler", () => {
                 if (remindersModal?.open) {
                     remindersModal.close();
                     remindersModal._previousFocus?.focus({ focusVisible: false });
@@ -1019,21 +1030,21 @@ export class MiniCycleReminders {
         }
 
         // Close on outside click (overlay area of the dialog)
-        this.deps.safeAddEventListener(remindersModal, "click", (event) => {
+        replaceStoredEventListener(remindersModal, "click", "__miniCycleRemindersModalClickHandler", (event) => {
             if (event.target === remindersModal) {
                 remindersModal.close();
             }
         });
 
         // ESC to close (manual — show() doesn't provide automatic ESC like showModal())
-        this.deps.safeAddEventListener(remindersModal, "keydown", (event) => {
+        replaceStoredEventListener(remindersModal, "keydown", "__miniCycleRemindersModalKeydownHandler", (event) => {
             if (event.key === 'Escape' && remindersModal.open) {
                 remindersModal.close();
             }
         });
 
         // Restore focus when dialog closes
-        this.deps.safeAddEventListener(remindersModal, "close", () => {
+        replaceStoredEventListener(remindersModal, "close", "__miniCycleRemindersModalCloseHandler", () => {
             remindersModal._previousFocus?.focus({ focusVisible: false });
         });
 
@@ -1050,7 +1061,7 @@ export class MiniCycleReminders {
             return;
         }
 
-        this.deps.safeAddEventListener(openBtn, "click", () => {
+        replaceStoredEventListener(openBtn, "click", "__miniCycleRemindersOpenClickHandler", () => {
             _deps.trackAction?.('reminders');
 
             // Load current settings from Schema 2.5 before opening
