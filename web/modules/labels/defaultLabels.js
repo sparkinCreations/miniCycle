@@ -243,7 +243,7 @@ export const DEFAULT_LABELS = deepFreeze({
         renameRoutine:      'Rename routine',
         deleteRoutine:      'Delete routine',
         preview:            'Preview',
-        importExternal:     'Import From External',
+        importExternal:     'Import Routine',
         storage:            'Storage',
         calculating:        'Calculating...',
         deleteTitle:        'Delete Routine',
@@ -388,6 +388,7 @@ export const DEFAULT_LABELS = deepFreeze({
         recurringNoActiveCycle: 'No active routine',
         recurringAdded:         'Added {count} {taskWord} to recurring (daily by default)',
         recurringMissedAdded:   'Added {count} missed recurring {taskWord}',
+        recurringCountFinished: '"{taskName}" has completed all {count} scheduled occurrences',
         recurringLimitBlocked:  '{count} recurring {taskWord} couldn\'t spawn — task list full ({limit} limit). Complete or delete tasks to allow more.',
         recurringAddFailed:     'Failed to add tasks',
         recurringDefaultSaved:  'Default recurring settings saved!',
@@ -1824,6 +1825,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'switcher.duplicateRoutine',
     'switcher.renameRoutine',
     'switcher.deleteRoutine',
+    'switcher.importExternal',
     'switcher.deleteTitle',
     'switcher.deleteMessage',
     'switcher.noSaved',
@@ -2305,4 +2307,3 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
 // ============================================================================
 
 export const LABELS_VERSION = globalThis.APP_VERSION;
-

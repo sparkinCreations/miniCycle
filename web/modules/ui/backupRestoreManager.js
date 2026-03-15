@@ -53,6 +53,18 @@ const _initialized = {
     resetButton: false
 };
 
+const LITE_STORAGE_KEYS = Object.freeze([
+    STORAGE_KEYS.LITE_DATA,
+    STORAGE_KEYS.LITE_MODE,
+    STORAGE_KEYS.LITE_THEME,
+    STORAGE_KEYS.LITE_CYCLES,
+    STORAGE_KEYS.LITE_LIFETIME_COMPLETED,
+    STORAGE_KEYS.LITE_TODO_DELETED,
+    STORAGE_KEYS.LITE_CELEBRATED_BADGES,
+    STORAGE_KEYS.LITE_CELEBRATED_CLEARED_BADGES,
+    STORAGE_KEYS.LITE_NOTIFICATIONS
+]);
+
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
@@ -83,7 +95,7 @@ function reloadWithLoader(logContext, options = {}) {
             const taskList = document.getElementById(DOM_IDS.TASK_LIST);
             if (taskList) taskList.innerHTML = '';
 
-            const AppState = typeof _deps.AppState === 'function' ? _deps.AppState() : _deps.AppState;
+            const AppState = getAppStateInstance();
             AppState?.reload?.();
 
             if (fullReinit && _deps.appInit?.runInitialSetup) {
@@ -100,11 +112,49 @@ function reloadWithLoader(logContext, options = {}) {
     }, 400);
 }
 
+function getAppStateInstance() {
+    return typeof _deps.AppState === 'function' ? _deps.AppState() : _deps.AppState;
+}
+
+function collectLiteStorageSnapshot() {
+    const liteStorage = {};
+    let hasLiteData = false;
+
+    LITE_STORAGE_KEYS.forEach((key) => {
+        const value = localStorage.getItem(key);
+        if (value !== null) {
+            liteStorage[key] = value;
+            hasLiteData = true;
+        }
+    });
+
+    return hasLiteData ? liteStorage : null;
+}
+
+function restoreLiteStorageSnapshot(liteStorage) {
+    if (!liteStorage || typeof liteStorage !== 'object' || Array.isArray(liteStorage)) {
+        return;
+    }
+
+    const restorableEntries = Object.entries(liteStorage).filter(([key, value]) =>
+        LITE_STORAGE_KEYS.includes(key) && typeof value === 'string'
+    );
+    if (restorableEntries.length === 0) {
+        return;
+    }
+
+    LITE_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+
+    restorableEntries.forEach(([key, value]) => {
+        localStorage.setItem(key, value);
+    });
+}
+
 /**
  * Neutralize AppState to prevent auto-saving during critical operations
  */
 export function neutralizeAppState() {
-    const AppState = _deps.AppState?.();
+    const AppState = getAppStateInstance();
     if (!AppState) {
         return;
     }
@@ -146,23 +196,37 @@ export function setupBackupButton() {
     if (!backupBtn) return;
 
     backupBtn._clickHandler = () => {
-
-        const schemaData = localStorage.getItem(STORAGE_KEYS.DATA);
-        if (!schemaData) {
-            console.error('Schema 2.5 data required for backup');
+        const AppState = getAppStateInstance();
+        if (!AppState?.isReady?.()) {
+            console.error('Schema 2.5 AppState required for backup');
             _deps.showNotification?.(getLabel('notify.backupNoData'), "error");
             return;
         }
 
+        // Read directly from localStorage to ensure backup/restore round-trip fidelity
+        const miniCycleData = localStorage.getItem(STORAGE_KEYS.DATA);
+        if (!miniCycleData) {
+            console.error('Schema 2.5 data not found in localStorage');
+            _deps.showNotification?.(getLabel('notify.backupNoData'), "error");
+            return;
+        }
+
+        const currentState = AppState.get();
+        const liteStorage = collectLiteStorageSnapshot();
         const backupData = {
             schemaVersion: "2.5",
-            miniCycleData: schemaData,
+            miniCycleData,
             backupMetadata: {
                 createdAt: Date.now(),
-                version: "2.5",
+                version: _deps.AppMeta?.version || currentState?.metadata?.version || "2.5",
+                schemaVersion: currentState?.metadata?.schemaVersion || "2.5",
+                includesLiteStorage: Boolean(liteStorage),
                 source: "miniCycle App"
             }
         };
+        if (liteStorage) {
+            backupData.liteStorage = liteStorage;
+        }
 
         const backupBlob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
         const backupUrl = URL.createObjectURL(backupBlob);
@@ -361,6 +425,7 @@ async function processRestoreData(fileContent) {
                     }
 
                     localStorage.setItem(STORAGE_KEYS.DATA, backupData.miniCycleData);
+                    restoreLiteStorageSnapshot(backupData.liteStorage);
                     _deps.showNotification?.("✅ " + getLabel('notify.backupRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
 
                     // Re-render UI in place — faster than location.reload() and works offline
@@ -638,4 +703,3 @@ export function setupFactoryResetButton() {
 
     safeAddEventListener(resetBtn, "click", resetBtn._clickHandler);
 }
-

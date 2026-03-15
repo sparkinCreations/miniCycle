@@ -1080,7 +1080,7 @@ export class TaskDOMManager {
                 }
             } else {
                 if (this.deps.handleRecurringTaskDeactivation) {
-                    this.deps.handleRecurringTaskDeactivation(task, freshTaskContext, assignedTaskId);
+                    await this.deps.handleRecurringTaskDeactivation(task, freshTaskContext, assignedTaskId);
                 }
                 // ✅ Immediately sync delete-on-complete button to mode defaults
                 const isToDoMode = freshCycle?.deleteCheckedTasks === true;
