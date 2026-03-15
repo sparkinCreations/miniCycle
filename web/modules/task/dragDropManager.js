@@ -233,11 +233,6 @@ export class DragDropManager {
             taskElement.style.webkitUserSelect = "none";
             taskElement.style.msUserSelect = "none";
 
-            // ✅ SAFARI FIX: Create transparent drag image OUTSIDE event handler
-            // Safari requires the image to exist before dragstart fires
-            const transparentPixel = new Image();
-            transparentPixel.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
-
             let touchStartX = 0;
             let touchStartY = 0;
             let holdTimeout = null;
@@ -447,10 +442,40 @@ export class DragDropManager {
                 // Add dragging class for desktop as well
                 taskElement.classList.add(DOM_CLASSES.DRAGGING);
 
-                // Hide ghost image on desktop only - let iOS show native drag preview on mobile
-                const isMobileDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-                if (!isMobileDevice) {
-                    event.dataTransfer.setDragImage(transparentPixel, 0, 0);
+                // ✅ SAFARI DESKTOP FIX: Safari needs an explicit setDragImage call,
+                // and its default ghost rendering can be inconsistent. Build a custom
+                // ghost clone that mirrors the task's appearance for a polished preview.
+                // Non-Safari browsers use the browser's native ghost (no intervention needed).
+                const ua = navigator.userAgent;
+                const isSafariDesktop = /Safari/.test(ua) && !/Chrome/.test(ua) && !/Chromium/.test(ua)
+                    && !('ontouchstart' in window);
+                if (isSafariDesktop) {
+                    const rect = taskElement.getBoundingClientRect();
+                    const ghost = taskElement.cloneNode(true);
+                    ghost.style.cssText = `
+                        position: fixed;
+                        top: -9999px;
+                        left: -9999px;
+                        width: ${Math.round(rect.width * 0.7)}px;
+                        background: var(--theme-task-bg, #fff);
+                        border-radius: var(--radius-md, 8px);
+                        padding: var(--space-2, 8px) var(--space-3, 12px);
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                        opacity: 0.9;
+                        pointer-events: none;
+                        z-index: -1;
+                    `;
+                    // Hide task-options buttons in the ghost
+                    const ghostOptions = ghost.querySelector(DOM_SELECTORS.TASK_OPTIONS);
+                    if (ghostOptions) ghostOptions.style.display = 'none';
+
+                    document.body.appendChild(ghost);
+                    const offsetX = event.clientX - rect.left;
+                    const offsetY = event.clientY - rect.top;
+                    event.dataTransfer.setDragImage(ghost, offsetX, offsetY);
+
+                    // Remove ghost after browser captures it (next frame is sufficient)
+                    requestAnimationFrame(() => ghost.remove());
                 }
             };
             safeAdd(taskElement, "dragstart", taskElement._dragstartHandler);
@@ -741,6 +766,19 @@ export class DragDropManager {
         this.deps.updateUndoRedoButtons?.();
         this.updateFirstLastMarkers();
 
+        // Clear force-hidden from all task options so CSS :hover can take over.
+        // During touch drag, hideTaskButtons adds task-options-force-hidden to sibling tasks;
+        // without this cleanup, those tasks stay hidden on hover after switching to desktop.
+        const taskList = document.getElementById(DOM_IDS.TASK_LIST);
+        if (taskList) {
+            const forceHidden = taskList.querySelectorAll(
+                `${DOM_SELECTORS.TASK_OPTIONS}.${DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN}`
+            );
+            forceHidden.forEach(el => {
+                el.classList.remove(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
+            });
+        }
+
         this.didDragReorderOccur = false;
     }
 
@@ -764,6 +802,17 @@ export class DragDropManager {
             if (this._currentDropTarget) {
                 this._currentDropTarget.classList.remove(DOM_CLASSES.DROP_TARGET);
                 this._currentDropTarget = null;
+            }
+
+            // Clear force-hidden from all task options so CSS :hover can take over
+            const taskList = document.getElementById(DOM_IDS.TASK_LIST);
+            if (taskList) {
+                const forceHidden = taskList.querySelectorAll(
+                    `${DOM_SELECTORS.TASK_OPTIONS}.${DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN}`
+                );
+                forceHidden.forEach(el => {
+                    el.classList.remove(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
+                });
             }
         } catch (error) {
             console.warn('⚠️ Failed to cleanup drag state:', error);

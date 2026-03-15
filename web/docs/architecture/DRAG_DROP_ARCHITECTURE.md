@@ -2,7 +2,7 @@
 ## Custom Implementation for miniCycle Task Rearrangement
 
 **Author:** miniCycle Team
-**Last Updated:** February 2026
+**Last Updated:** March 2026
 **Status:** Production Ready
 **Test Coverage:** 76 tests (100% passing)
 
@@ -117,7 +117,7 @@ Libraries focus on drag-and-drop but we needed:
 ### Key Components
 
 #### 1. **DragDropManager Class**
-**Location:** `utilities/task/dragDropManager.js`
+**Location:** `modules/task/dragDropManager.js`
 
 **Responsibilities:**
 - Initialize drag-and-drop system
@@ -141,8 +141,6 @@ Drag state lives on the DragDropManager instance (not `window.AppGlobalState`):
 this.draggedTask = null;           // Current element being dragged
 this.rearrangeInitialized = false; // Prevents double setup
 this.didDragReorderOccur = false;  // Flag for save operations
-this.lastReorderTime = 0;         // Timestamp for snapshot debouncing
-this.lastRearrangeTarget = null;   // Previous rearrange target
 this._nativeDragActive = false;   // True when iOS native DnD has fired dragstart
 this._currentDropTarget = null;   // O(1) drop target tracking
 ```
@@ -228,7 +226,7 @@ Safari on iPhone/iPad uses touch events exclusively. The HTML5 drag API is not s
 #### Behavior
 1. **Mouse down** on task element
 2. **Drag** activates instantly (no delay)
-3. **Transparent drag image** (clean UX, no ghost)
+3. **Native browser ghost image** on most browsers; **custom 70%-width ghost clone** on Safari desktop
 4. **Rearrange in real-time** as mouse moves
 5. **Drop** saves new order
 
@@ -236,44 +234,61 @@ Safari on iPhone/iPad uses touch events exclusively. The HTML5 drag API is not s
 ```javascript
 dragstart →
   Set this.draggedTask →
-  Hide drag image on DESKTOP ONLY (let iOS show native preview) →
   Add .dragging class →
+  Safari desktop only: create custom ghost clone (70% width, themed) →
+  Non-Safari: browser shows native ghost image →
 
 dragover (event delegation on document) →
   preventDefault() →
   requestAnimationFrame() →
-  Find closest .task element →
+  Find closest .task element via DOM_SELECTORS.TASK →
   handleRearrange() →
 
 drop →
   Save if reorder occurred →
-  Cleanup drag state
+  Cleanup drag state (clear force-hidden from all task options)
 ```
 
 #### Safari Desktop Fix (CRITICAL!)
 
 **Problem:** Safari desktop wouldn't fire drag events despite correct configuration.
 
-**Solution:**
+**Solution (March 2026 — custom ghost):**
 ```javascript
 // 1. Set webkitUserDrag CSS property (Safari requirement)
 taskElement.style.webkitUserDrag = "element";
 
-// 2. Create drag image OUTSIDE event handler
-const transparentPixel = new Image();
-transparentPixel.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
+// 2. Detect Safari desktop via UA (not iOS Safari)
+const ua = navigator.userAgent;
+const isSafariDesktop = /Safari/.test(ua) && !/Chrome/.test(ua) && !/Chromium/.test(ua)
+    && !('ontouchstart' in window);
 
-// 3. Use pre-created image INSIDE event handler
-taskElement.addEventListener("dragstart", (event) => {
-  event.dataTransfer.setDragImage(transparentPixel, 0, 0);
-});
+// 3. In dragstart handler: create a custom ghost clone for Safari
+if (isSafariDesktop) {
+    const rect = taskElement.getBoundingClientRect();
+    const ghost = taskElement.cloneNode(true);
+    ghost.style.cssText = `
+        position: fixed; top: -9999px; left: -9999px;
+        width: ${Math.round(rect.width * 0.7)}px;
+        background: var(--theme-task-bg, #fff);
+        border-radius: var(--radius-md, 8px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        opacity: 0.9; pointer-events: none;
+    `;
+    // Hide task-options in the ghost
+    ghost.querySelector(DOM_SELECTORS.TASK_OPTIONS)?.style.display = 'none';
+    document.body.appendChild(ghost);
+    event.dataTransfer.setDragImage(ghost, offsetX, offsetY);
+    requestAnimationFrame(() => ghost.remove());
+}
+// Non-Safari browsers: no setDragImage call → browser shows native ghost
 ```
 
-**Why?**
+**Why custom ghost for Safari?**
 - Safari requires `-webkit-user-drag` to enable drag on arbitrary elements
-- Safari requires drag images to exist BEFORE the dragstart event fires
-- Creating images inside the event handler is too late (security/timing)
-- This is a well-documented Safari quirk (see references)
+- Safari's native ghost rendering can be inconsistent
+- The custom clone at 70% width provides a polished, themed drag preview
+- Non-Safari browsers have reliable native ghosts — no intervention needed
 
 **Reference:** [Stack Overflow: Safari drag events not firing](https://stackoverflow.com/questions/48973815/javascript-html5-drag-events-not-firing-on-safari-mac-dragging-does-not-work)
 
@@ -323,28 +338,27 @@ Arrow button click →
 
 ## 🗄️ State Management
 
-### AppGlobalState (Runtime Tracking)
+### DragDropManager Instance State (Runtime Tracking)
 
 **Purpose:** Track drag operation in progress
 
+All drag state lives on the `DragDropManager` instance (not `window.AppGlobalState`):
 ```javascript
 // Set when drag starts
-window.AppGlobalState.draggedTask = taskElement;
-window.AppGlobalState.isDragging = true;
+this.draggedTask = taskElement;
+this.didDragReorderOccur = true;
 
-// Updated during drag
-window.AppGlobalState.lastReorderTime = Date.now();
-window.AppGlobalState.didDragReorderOccur = true;
-
-// Cleared on drop
-window.AppGlobalState.draggedTask = null;
-window.AppGlobalState.isDragging = false;
+// Cleared on drop/cleanup
+this.draggedTask = null;
+this.didDragReorderOccur = false;
+this._nativeDragActive = false;
 ```
 
-**Why Separate from AppState?**
+**Why Instance State (not AppState)?**
 - Runtime-only data (doesn't need persistence)
 - Frequently updated (every mousemove)
 - Would pollute undo history if in AppState
+- DI-pure: no `window.*` globals
 
 ---
 
@@ -387,21 +401,11 @@ window.AppState.update(state => {
 - **After reorder** → New state is current
 - **Undo** → Restore previous state + trigger refreshUIFromState()
 
-**Debouncing Strategy:**
-```javascript
-// During continuous drag, only snapshot every 500ms
-const now = Date.now();
-if (now - AppGlobalState.lastReorderTime > 500) {
-  captureStateSnapshot(currentState);
-  AppGlobalState.lastReorderTime = now;
-}
-```
-
-**Why 500ms?**
-- Prevents undo stack explosion during drag
-- Typical drag lasts 1-3 seconds
-- Results in 2-6 snapshots per drag (reasonable)
-- Without debouncing: 30-100 snapshots per drag (undo stack bloat)
+**Snapshot Strategy:**
+A single undo snapshot is captured once when the drag reorder is saved (in `saveDragReorder()`
+or `handleArrowClick()`), not during the drag itself. This keeps the undo stack clean — one
+undo step per reorder operation, regardless of how many intermediate positions the task
+passed through during the drag.
 
 ---
 
@@ -411,8 +415,7 @@ if (now - AppGlobalState.lastReorderTime > 500) {
 
 ```javascript
 // Constants
-this.REARRANGE_DELAY = 75;  // ms
-this.REORDER_SNAPSHOT_INTERVAL = 500;  // ms
+this.REARRANGE_DELAY = 75;  // ms delay to smooth DOM reordering
 ```
 
 #### REARRANGE_DELAY (75ms)
@@ -436,26 +439,6 @@ handleRearrange(target, event) {
 - **Too slow (>100ms):** Feels laggy to user
 - **Sweet spot:** Fast enough to feel instant, slow enough to prevent jank
 - **Tested on:** iPhone SE (2016), Samsung Galaxy S8, MacBook Air (2015)
-
-#### REORDER_SNAPSHOT_INTERVAL (500ms)
-
-**Purpose:** Prevent undo stack explosion
-
-**How It Works:**
-```javascript
-const now = Date.now();
-if (now - AppGlobalState.lastReorderTime > 500) {
-  captureStateSnapshot(currentState);
-  AppGlobalState.lastReorderTime = now;
-  AppGlobalState.didDragReorderOccur = true;
-}
-```
-
-**Why 500ms?**
-- Average drag duration: 1-3 seconds
-- Results in 2-6 snapshots per drag
-- Without this: 30-100 snapshots per drag (based on mousemove frequency)
-- Keeps undo stack reasonable while preserving granularity
 
 ---
 
@@ -485,13 +468,13 @@ document.addEventListener("dragover", (event) => {
 
 ```javascript
 // ❌ BAD: Add listener to every arrow button
-document.querySelectorAll('.move-up').forEach(btn => {
+document.querySelectorAll(DOM_SELECTORS.MOVE_UP).forEach(btn => {
   btn.addEventListener('click', handleArrowClick);
 });
 
 // ✅ GOOD: Single listener on parent
 taskList.addEventListener('click', (event) => {
-  if (event.target.matches('.move-up, .move-down')) {
+  if (event.target.matches(DOM_SELECTORS.MOVE_ARROWS)) {
     this.handleArrowClick(event.target);
   }
 });
@@ -539,27 +522,29 @@ taskElement.style.webkitUserDrag = "element";
 
 ---
 
-#### Requirement 2: Drag Image Timing
+#### Requirement 2: Drag Image Timing (Safari Desktop Custom Ghost)
+
+Safari requires drag images to exist in memory BEFORE the `dragstart` event fires. We use
+this constraint to our advantage by creating a custom ghost clone for Safari desktop:
 
 ```javascript
-// ❌ WRONG: Create image inside event handler
-taskElement.addEventListener("dragstart", (event) => {
-  const img = new Image(); // TOO LATE!
-  img.src = "data:...";
-  event.dataTransfer.setDragImage(img, 0, 0);
-});
-
-// ✅ CORRECT: Create image outside event handler
-const transparentPixel = new Image();
-transparentPixel.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
-
-taskElement.addEventListener("dragstart", (event) => {
-  event.dataTransfer.setDragImage(transparentPixel, 0, 0); // ✅
-});
+// In dragstart handler — Safari desktop only:
+const isSafariDesktop = /Safari/.test(ua) && !/Chrome/.test(ua)
+    && !('ontouchstart' in window);
+if (isSafariDesktop) {
+    const ghost = taskElement.cloneNode(true);
+    // Style at 70% width with theme variables, hide task-options
+    document.body.appendChild(ghost);
+    event.dataTransfer.setDragImage(ghost, offsetX, offsetY);
+    requestAnimationFrame(() => ghost.remove());
+}
+// Non-Safari: no setDragImage call → native browser ghost
 ```
 
-**Why?**
-Safari has a security/performance requirement that drag images must exist in memory BEFORE the dragstart event fires. This is unique to Safari/WebKit.
+**Why custom ghost?**
+- Safari's native ghost can be inconsistent
+- The 70%-width themed clone provides a polished drag preview
+- Non-Safari browsers have reliable native ghosts — no intervention needed
 
 **Discovery:** This fix came from [Stack Overflow research](https://stackoverflow.com/questions/48973815/) after Safari desktop drag-and-drop stopped working despite correct configuration.
 
@@ -584,36 +569,28 @@ taskElement.style.msUserSelect = "none";
 
 ### Safari Mobile (iOS/iPadOS)
 
-**Key Difference:** iOS Safari doesn't support HTML5 drag-and-drop API via touch, BUT it does show a **native drag preview** when:
-1. Element has `draggable="true"`
-2. You DON'T override it with `setDragImage()`
+**Key Difference:** iOS Safari supports HTML5 drag-and-drop via long-press on `draggable="true"` elements. When iOS fires `dragstart`, it takes over the touch sequence and shows a native drag preview.
 
-**Solution:** Touch events with long-press pattern + native iOS drag preview
-```javascript
-touchstart → 500ms timer → touchmove → touchend
-// iOS automatically shows native drag preview (dark rectangle with content)
-```
+**Two drag paths on iOS:**
 
-**Critical: Don't Hide the Native Preview!**
+1. **iOS Native DnD (Primary):** Long-press triggers `dragstart` → iOS shows native preview → `touchcancel` fires (iOS taking over) → `dragover`/`drop` handle reorder
+2. **Custom Touch Drag (Fallback):** For non-iOS touch devices where native DnD doesn't trigger — uses `touchmove` + `elementFromPoint` + `handleRearrange()`
+
+**Critical: `_nativeDragActive` Flag**
 ```javascript
-// In dragstart handler - use INLINE touch detection
-const isMobileDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-if (!isMobileDevice) {
-    event.dataTransfer.setDragImage(transparentPixel, 0, 0);  // Desktop only!
+// In dragstart handler:
+this._nativeDragActive = true;
+
+// In touchcancel handler:
+if (this._nativeDragActive) {
+    // iOS took over — DON'T clear this.draggedTask!
+    // The drop handler needs it.
+    return;
 }
-// On mobile: skip setDragImage → iOS shows its native preview
 ```
 
-**Why Inline Detection?** (December 2025 Fix)
-- Dependency-injected `isTouchDevice()` can fail if not wired up correctly
-- Inline check `'ontouchstart' in window || navigator.maxTouchPoints > 0` always works
-- Evaluated at event time, not initialization time
-
-**Why This Works:**
-- iOS touch events are well-supported
-- Long-press is a familiar iOS pattern
-- Native iOS drag preview gives smooth visual feedback
-- Works on all iOS versions back to iOS 11
+**No `setDragImage` call on mobile** — the Safari desktop custom ghost detection
+uses `!('ontouchstart' in window)` to exclude iOS, so iOS always gets its native preview.
 
 **Critical: iOS Native DnD Event Sequence** (February 2026 Fix)
 
@@ -651,18 +628,14 @@ enableDragAndDrop(taskElement) {
     taskElement.setAttribute("draggable", "true");
     taskElement.style.webkitUserDrag = "element";
 
-    // 2. Create drag image OUTSIDE event handler (Safari requirement)
-    const transparentPixel = new Image();
-    transparentPixel.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
-
-    // 3. CLOSURE VARIABLES (private to THIS task)
+    // 2. CLOSURE VARIABLES (private to THIS task)
     let touchStartX = 0;          // Starting X position
     let touchStartY = 0;          // Starting Y position
     let holdTimeout = null;       // Long-press timer reference
     let isDragging = false;       // Currently dragging?
     let isLongPress = false;      // Long-press completed?
     let isTap = false;            // Was it just a tap?
-    let preventClick = false;     // Prevent accidental clicks after drag
+    let preventClick = false;     // Suppress synthetic click after drag/long-press
     const moveThreshold = 15;     // px before canceling long-press
 
     // These variables are captured in the closures below
@@ -746,7 +719,7 @@ drop → SAVE (desktop + iOS native DnD path)
 
 ```javascript
 taskElement.addEventListener("touchstart", (event) => {
-    if (event.target.closest(".task-options")) return;
+    if (event.target.closest(DOM_SELECTORS.TASK_OPTIONS)) return;
 
     // Reset all state variables for new touch sequence
     isLongPress = false;
@@ -757,29 +730,36 @@ taskElement.addEventListener("touchstart", (event) => {
     preventClick = false;
     this._nativeDragActive = false;  // Reset for new touch sequence
 
-    // Hide task buttons on OTHER tasks (only one task shows buttons at a time)
-    document.querySelectorAll(DOM_SELECTORS.TASK).forEach(task => {
-        if (task !== taskElement) {
-            task.classList.remove("long-pressed");
-            this.deps.hideTaskButtons?.(task);
+    // Hide task buttons on OTHER tasks (scoped to taskList children)
+    const taskList = document.getElementById(DOM_IDS.TASK_LIST);
+    if (taskList) {
+        for (const task of taskList.children) {
+            if (task !== taskElement && task.classList.contains(DOM_CLASSES.TASK)) {
+                task.classList.remove(DOM_CLASSES.LONG_PRESSED);
+                this.deps.hideTaskButtons?.(task);
+            }
         }
-    });
+    }
 
     // Start long-press timer (500ms)
     holdTimeout = setTimeout(() => {
         isLongPress = true;
         isTap = false;
-        this.draggedTask = taskElement;  // Instance property (not AppGlobalState)
+        this.draggedTask = taskElement;  // Instance property
         isDragging = true;
-        taskElement.classList.add("dragging");
+        taskElement.classList.add(DOM_CLASSES.DRAGGING);
 
         event.preventDefault();
 
+        // Enable undo system on first user interaction (touch drag path)
+        this.deps.enableUndoSystemOnFirstInteraction?.();
+
         // Only reveal task buttons if three-dots mode is NOT enabled.
         // When three-dots is on, long press activates drag mode only.
-        const threeDotsEnabled = document.body.classList.contains('show-three-dots-enabled');
+        const body = this.deps.getBody?.() || document.body;
+        const threeDotsEnabled = body.classList.contains(DOM_CLASSES.SHOW_THREE_DOTS_ENABLED);
         if (!threeDotsEnabled) {
-            taskElement.classList.add("long-pressed");
+            taskElement.classList.add(DOM_CLASSES.LONG_PRESSED);
             this.deps.revealTaskButtons?.(taskElement, 'long-press');
         }
     }, 500);
@@ -808,9 +788,9 @@ taskElement.addEventListener("touchmove", (event) => {
         if (event.cancelable) {
             event.preventDefault();
         }
-        // elementFromPoint returns child elements — .closest('.task') resolves to container
+        // elementFromPoint returns child elements — .closest() resolves to task container
         const elementAtPoint = document.elementFromPoint(touchMoveX, touchMoveY);
-        const targetTask = elementAtPoint?.closest('.task');
+        const targetTask = elementAtPoint?.closest(DOM_SELECTORS.TASK);
         if (targetTask) {
             this.handleRearrange(targetTask, event);
         }
@@ -863,13 +843,14 @@ if (8 > 15 || 3 > 15) { // FALSE
 taskElement.addEventListener("touchend", () => {
     clearTimeout(holdTimeout);
 
-    if (isTap) {
+    // Suppress synthetic click after long-press/drag to prevent
+    // accidental checkbox toggle via the delegated click handler
+    if (isLongPress || isDragging) {
         preventClick = true;
-        setTimeout(() => { preventClick = false; }, 100);
+        setTimeout(() => { preventClick = false; }, 300);
     }
 
     // If native DnD took over (iOS), let the drop handler save.
-    // touchend won't fire after touchcancel, but handle both for safety.
     if (this._nativeDragActive) {
         isDragging = false;
         return;
@@ -881,20 +862,31 @@ taskElement.addEventListener("touchend", () => {
     }
 
     if (this.draggedTask) {
-        this.draggedTask.classList.remove("dragging", "rearranging");
+        this.draggedTask.classList.remove(DOM_CLASSES.DRAGGING, DOM_CLASSES.REARRANGING);
         this.draggedTask = null;
     }
 
     isDragging = false;
-    this.lastReorderTime = 0;
 
     // Keep task options open after long-press (only when buttons were revealed)
-    const threeDotsEnabled = document.body.classList.contains('show-three-dots-enabled');
+    const body = this.deps.getBody?.() || document.body;
+    const threeDotsEnabled = body.classList.contains(DOM_CLASSES.SHOW_THREE_DOTS_ENABLED);
     if (isLongPress && !threeDotsEnabled) {
         return;
     }
 
-    taskElement.classList.remove("long-pressed");
+    taskElement.classList.remove(DOM_CLASSES.LONG_PRESSED);
+});
+```
+
+**Click Guard Handler:**
+```javascript
+// Prevents synthetic click after drag/long-press from toggling checkbox
+taskElement.addEventListener("click", (event) => {
+    if (preventClick) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
 });
 ```
 
@@ -926,15 +918,14 @@ taskElement.addEventListener("touchcancel", () => {
     }
 
     if (this.draggedTask) {
-        this.draggedTask.classList.remove("dragging", "rearranging");
+        this.draggedTask.classList.remove(DOM_CLASSES.DRAGGING, DOM_CLASSES.REARRANGING);
         this.draggedTask = null;
     }
 
     isDragging = false;
     isLongPress = false;
     isTap = false;
-    this.lastReorderTime = 0;
-    taskElement.classList.remove("long-pressed");
+    taskElement.classList.remove(DOM_CLASSES.LONG_PRESSED);
 });
 ```
 
@@ -959,7 +950,7 @@ Without the `_nativeDragActive` guard, the iOS flow breaks:
 
 ```javascript
 taskElement.addEventListener("dragstart", (event) => {
-    if (event.target.closest(".task-options")) return;
+    if (event.target.closest(DOM_SELECTORS.TASK_OPTIONS)) return;
 
     // Mark that native HTML5 DnD has started.
     // On iOS, touchcancel will fire next — this flag tells that handler
@@ -968,32 +959,26 @@ taskElement.addEventListener("dragstart", (event) => {
 
     this.deps.enableUndoSystemOnFirstInteraction?.();
 
-    this.draggedTask = taskElement;  // Instance property (not AppGlobalState)
+    this.draggedTask = taskElement;  // Instance property
     event.dataTransfer.setData("text/plain", "");
 
-    taskElement.classList.add("dragging");
+    taskElement.classList.add(DOM_CLASSES.DRAGGING);
 
-    // Hide drag ghost image on DESKTOP ONLY
-    // Use inline detection - more reliable than dependency injection
-    const isMobileDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    if (!isMobileDevice) {
-        event.dataTransfer.setDragImage(transparentPixel, 0, 0);
+    // Safari desktop only: create custom ghost clone (70% width, themed)
+    // Non-Safari browsers use the browser's native ghost image
+    const ua = navigator.userAgent;
+    const isSafariDesktop = /Safari/.test(ua) && !/Chrome/.test(ua)
+        && !/Chromium/.test(ua) && !('ontouchstart' in window);
+    if (isSafariDesktop) {
+        const rect = taskElement.getBoundingClientRect();
+        const ghost = taskElement.cloneNode(true);
+        // Style and append offscreen for browser to capture
+        ghost.querySelector(DOM_SELECTORS.TASK_OPTIONS)?.style.display = 'none';
+        document.body.appendChild(ghost);
+        event.dataTransfer.setDragImage(ghost, offsetX, offsetY);
+        requestAnimationFrame(() => ghost.remove());
     }
-    // On mobile: skip setDragImage → iOS shows its native drag preview!
 });
-```
-
-**Why transparentPixel is in Closure:**
-```javascript
-// Created OUTSIDE event handler (line 155-156)
-const transparentPixel = new Image();
-transparentPixel.src = "data:...";
-
-// Used INSIDE event handler (line 289)
-event.dataTransfer.setDragImage(transparentPixel, 0, 0);
-
-// Safari requires the image to exist BEFORE dragstart fires
-// If we created it inside the handler, Safari would reject it
 ```
 
 ---
@@ -1008,96 +993,74 @@ This is the most complex method. It determines WHERE to insert the dragged task.
 
 ```javascript
 handleRearrange(target, event) {
-    // Line 305: Guard clauses - exit early if invalid state
-    if (!target || !window.AppGlobalState?.draggedTask || target === window.AppGlobalState.draggedTask) {
+    // Guard clauses - exit early if invalid state
+    if (!target || !this.draggedTask || target === this.draggedTask) {
         return;  // Nothing to do
     }
-    //  ^         ^                                        ^
-    //  |         |                                        |
-    //  No target?  No dragged task?                      Can't drag over self
 
-    // Line 307: Clear any pending rearrange (debouncing)
+    // Clear any pending rearrange (debouncing)
     clearTimeout(this.rearrangeTimeout);
 
-    // Line 309: Schedule new rearrange (75ms delay for smooth UX)
+    // Schedule new rearrange (75ms delay for smooth UX)
     this.rearrangeTimeout = setTimeout(() => {
-        // Lines 310-313: Validate DOM elements still exist
-        if (!document.contains(target) || !document.contains(window.AppGlobalState.draggedTask)) {
+        // Validate DOM elements still exist
+        if (!document.contains(target) || !document.contains(this.draggedTask)) {
             return;  // Elements removed from DOM during drag
         }
 
-        const parent = window.AppGlobalState.draggedTask.parentNode;
+        const parent = this.draggedTask.parentNode;
         if (!parent || !target.parentNode) {
             return;  // No parent (shouldn't happen, but be safe)
         }
 ```
 
-#### Snapshot Timing (Lines 315-326)
+#### Position Detection and Reorder Flag
 
 ```javascript
-        // Line 315-316: Get mouse position relative to target
+        // Get mouse position relative to target
         const bounding = target.getBoundingClientRect();
-        const offset = event.clientY - bounding.top;
+        const clientY = event.clientY ?? event.touches?.[0]?.clientY ?? event.changedTouches?.[0]?.clientY;
+        const offset = clientY - bounding.top;
         //              ^                ^
-        //              Mouse Y          Top of target
+        //              Mouse/Touch Y    Top of target
         //              = How far DOWN into target element
 
-        // Lines 318-326: Undo snapshot debouncing
-        const now = Date.now();
-
-        if (window.AppGlobalState.lastReorderTime &&
-            now - window.AppGlobalState.lastReorderTime > this.REORDER_SNAPSHOT_INTERVAL) {
-            // More than 500ms since last snapshot
-            window.AppGlobalState.lastReorderTime = now;
-            window.AppGlobalState.didDragReorderOccur = true;  // Flag for saving
-        } else if (!window.AppGlobalState.lastReorderTime) {
-            // First reorder during this drag
-            window.AppGlobalState.lastReorderTime = now;
-        }
+        // Mark that a reorder occurred (for save on drop)
+        this.didDragReorderOccur = true;
 ```
 
-**Snapshot Timing Visualization:**
-```
-Drag starts at t=0ms
-  ↓
-t=0ms:   Reorder → Snapshot (first one)
-         lastReorderTime = 0
-t=100ms: Reorder → No snapshot (too soon, < 500ms)
-t=250ms: Reorder → No snapshot (too soon, < 500ms)
-t=400ms: Reorder → No snapshot (too soon, < 500ms)
-t=600ms: Reorder → Snapshot! (> 500ms since last)
-         lastReorderTime = 600
-t=700ms: Reorder → No snapshot (too soon)
-t=1100ms: Reorder → Snapshot! (> 500ms since 600)
-         lastReorderTime = 1100
-
-Result: 3 snapshots instead of 11 (saved undo stack!)
-```
+**Undo snapshots** are captured once in `saveDragReorder()` (on drop/touchend), not during
+the drag. This keeps the undo stack clean — one snapshot per reorder operation.
 
 #### Edge Cases: First and Last Tasks (Lines 328-343)
 
 ```javascript
-        // Lines 328-329: Detect special positions
-        const isLastTask = !target.nextElementSibling;    // No task after this
-        const isFirstTask = !target.previousElementSibling;  // No task before this
+        // Detect special positions
+        const isLastTask = !target.nextElementSibling;
+        const isFirstTask = !target.previousElementSibling;
+        const isNextSiblingDragged = target.nextSibling === this.draggedTask;
+        const isPrevSiblingDragged = target.previousSibling === this.draggedTask;
 
-        // Line 331: Remove old drop-target indicators
-        document.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
-
-        // Lines 333-337: Special case - dropping on LAST task
-        if (isLastTask && target.nextSibling !== window.AppGlobalState.draggedTask) {
-            // Move to end of list (after last task)
-            parent.appendChild(window.AppGlobalState.draggedTask);
-            window.AppGlobalState.draggedTask.classList.add("drop-target");
-            return;  // Done!
+        // O(1) drop target cleanup (tracked reference, not querySelectorAll)
+        if (this._currentDropTarget) {
+            this._currentDropTarget.classList.remove(DOM_CLASSES.DROP_TARGET);
+            this._currentDropTarget = null;
         }
 
-        // Lines 339-343: Special case - dropping on FIRST task
-        if (isFirstTask && target.previousSibling !== window.AppGlobalState.draggedTask) {
-            // Move to beginning of list (before first task)
-            parent.insertBefore(window.AppGlobalState.draggedTask, parent.firstChild);
-            window.AppGlobalState.draggedTask.classList.add("drop-target");
-            return;  // Done!
+        // Special case - dropping on LAST task
+        if (isLastTask && !isNextSiblingDragged) {
+            parent.appendChild(this.draggedTask);
+            this.draggedTask.classList.add(DOM_CLASSES.DROP_TARGET);
+            this._currentDropTarget = this.draggedTask;
+            return;
+        }
+
+        // Special case - dropping on FIRST task
+        if (isFirstTask && !isPrevSiblingDragged) {
+            parent.insertBefore(this.draggedTask, parent.firstChild);
+            this.draggedTask.classList.add(DOM_CLASSES.DROP_TARGET);
+            this._currentDropTarget = this.draggedTask;
+            return;
         }
 ```
 
@@ -1120,21 +1083,24 @@ Without special handling:
 #### Insertion Logic: Upper vs Lower Half (Lines 345-356)
 
 ```javascript
-        // Lines 345-353: Determine insertion point based on mouse position
+        // Determine insertion point based on mouse/touch position
         if (offset > bounding.height / 3) {
             // Mouse is in LOWER 2/3 of target → Insert AFTER
-            if (target.nextSibling !== window.AppGlobalState.draggedTask) {
-                parent.insertBefore(window.AppGlobalState.draggedTask, target.nextSibling);
+            if (!isNextSiblingDragged) {
+                parent.insertBefore(this.draggedTask, target.nextSibling);
             }
         } else {
             // Mouse is in UPPER 1/3 of target → Insert BEFORE
-            if (target.previousSibling !== window.AppGlobalState.draggedTask) {
-                parent.insertBefore(window.AppGlobalState.draggedTask, target);
+            if (!isPrevSiblingDragged) {
+                parent.insertBefore(this.draggedTask, target);
             }
         }
 
-        // Line 355: Add drop-target visual feedback
-        window.AppGlobalState.draggedTask.classList.add("drop-target");
+        // Add drop-target visual feedback
+        if (this.draggedTask && document.contains(this.draggedTask)) {
+            this.draggedTask.classList.add(DOM_CLASSES.DROP_TARGET);
+            this._currentDropTarget = this.draggedTask;
+        }
     }, this.REARRANGE_DELAY);  // 75ms delay
 }
 ```
@@ -1191,23 +1157,19 @@ This method reorders tasks via arrow buttons (▲▼).
 ```javascript
 handleArrowClick(button) {
     try {
-        // Line 365: Find the parent task element
-        const taskItem = button.closest('.task');
-        if (!taskItem) return;  // Button not in a task (shouldn't happen)
+        // Find the parent task element
+        const taskItem = button.closest(DOM_SELECTORS.TASK);
+        if (!taskItem) return;
 
-        // Lines 368-370: Get all tasks and find current position
-        const taskList = document.getElementById('taskList');
+        // Get all tasks and find current position
+        const taskList = document.getElementById(DOM_IDS.TASK_LIST);
         const allTasks = Array.from(taskList.children);
-        //                ^^^^^^^^^^^^^
-        //                Convert HTMLCollection to Array (for indexOf)
 
         const currentIndex = allTasks.indexOf(taskItem);
-        //                              ^^^^^^^
-        //                              Find position in array (0-based)
 
-        // Lines 372-377: Calculate new position
+        // Calculate new position
         let newIndex;
-        if (button.classList.contains('move-up')) {
+        if (button.classList.contains(DOM_CLASSES.MOVE_UP)) {
             newIndex = Math.max(0, currentIndex - 1);
             //         ^^^^^^^^
             //         Can't go below 0 (first position)
@@ -1245,14 +1207,15 @@ newIndex = Math.min(4, 4 + 1) = Math.min(4, 5) = 4;  // Stay at 4
 #### AppState Update (Lines 382-398)
 
 ```javascript
-        // Line 382: Check if AppState is ready
-        if (window.AppState?.isReady?.()) {
-            // Lines 384-385: Capture undo snapshot BEFORE change
-            const currentState = window.AppState.get();
-            if (currentState) this.deps.captureStateSnapshot(currentState);
+        // Check if AppState is ready (via DI, not window.*)
+        const AppState = this._getAppState();
+        if (AppState?.isReady?.()) {
+            // Capture undo snapshot BEFORE change
+            const currentState = AppState.get();
+            if (currentState) this.deps.captureStateSnapshot?.(currentState);
 
-            // Lines 387-398: Update AppState with new order
-            window.AppState.update(state => {
+            // Update AppState with new order
+            AppState.update(state => {
                 const activeCycleId = state.appState.activeCycleId;
                 if (activeCycleId && state.data.cycles[activeCycleId]) {
                     const tasks = state.data.cycles[activeCycleId].tasks;
@@ -1473,22 +1436,31 @@ document.addEventListener("dragover", (event) => {
 ```javascript
 cleanupDragState() {
     try {
-        // Lines 422-425: Clean up dragged task
-        if (window.AppGlobalState?.draggedTask) {
-            // Remove visual classes
-            window.AppGlobalState.draggedTask.classList.remove("dragging", "rearranging");
+        clearTimeout(this.rearrangeTimeout);
+        this.rearrangeTimeout = null;
 
-            // Clear reference (allow garbage collection)
-            window.AppGlobalState.draggedTask = null;
+        if (this.draggedTask) {
+            this.draggedTask.classList.remove(DOM_CLASSES.DRAGGING, DOM_CLASSES.REARRANGING);
+            this.draggedTask = null;
         }
 
-        // Lines 427-429: Clear other state
-        if (window.AppGlobalState) {
-            window.AppGlobalState.lastRearrangeTarget = null;
+        this._nativeDragActive = false;
+        this.didDragReorderOccur = false;
+
+        // O(1) drop target cleanup (tracked reference)
+        if (this._currentDropTarget) {
+            this._currentDropTarget.classList.remove(DOM_CLASSES.DROP_TARGET);
+            this._currentDropTarget = null;
         }
 
-        // Line 431: Remove drop-target indicators from ALL tasks
-        document.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
+        // Clear force-hidden from all task options so CSS :hover can take over
+        const taskList = document.getElementById(DOM_IDS.TASK_LIST);
+        if (taskList) {
+            const forceHidden = taskList.querySelectorAll(
+                `${DOM_SELECTORS.TASK_OPTIONS}.${DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN}`
+            );
+            forceHidden.forEach(el => el.classList.remove(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN));
+        }
     } catch (error) {
         console.warn('⚠️ Failed to cleanup drag state:', error);
     }
@@ -1529,7 +1501,6 @@ document.addEventListener("drop", (event) => {
     // Works for both desktop HTML5 DnD and iOS native DnD (via touchcancel → drop path).
     this.saveDragReorder();
     this.cleanupDragState();
-    this.lastReorderTime = 0;
     this._nativeDragActive = false;  // Reset iOS native DnD flag
 });
 ```
@@ -1629,18 +1600,17 @@ docs/
 ```javascript
 class DragDropManager {
   constructor(dependencies = {}) {
-    // Resilient Constructor Pattern
-    // Works with or without dependencies
+    // DI via diBase.js — deps resolved from createDIModule manifest
+    const resolvedDeps = di.resolve(dependencies);
     this.deps = {
-      saveCurrentTaskOrder: dependencies.saveCurrentTaskOrder || this.fallbackSave,
-      autoSave: dependencies.autoSave || this.fallbackAutoSave,
-      // ... 13 dependencies with fallbacks
+      AppState: resolvedDeps.AppState,
+      getBody: resolvedDeps.getBody,
+      // ... all deps via DI (no window.* fallbacks)
     };
 
     // Internal state
     this.rearrangeTimeout = null;
     this.REARRANGE_DELAY = 75;
-    this.REORDER_SNAPSHOT_INTERVAL = 500;
     this.initialized = false;
   }
 
@@ -1936,26 +1906,18 @@ taskElement.addEventListener("touchmove", (event) => {
 ### Issue: Undo stack grows too fast
 
 **Symptoms:**
-- Dragging one task creates 30+ undo entries
-- Undo button shows huge stack size
-- Memory usage increases during drag
+- Dragging one task creates multiple undo entries
+- Undo button shows unexpected stack size
 
-**Diagnosis:**
-```javascript
-// Check snapshot frequency
-console.log('Undo stack size:', window.AppGlobalState.undoStack.length);
-
-// Monitor during drag
-document.addEventListener('dragover', () => {
-  console.log('Snapshot created at:', Date.now());
-});
-```
+**Current Design:**
+A single undo snapshot is captured in `saveDragReorder()` (on drop/touchend),
+not during the drag itself. If multiple snapshots appear per drag, check that
+`captureStateSnapshot` is only called once per reorder operation.
 
 **Solutions:**
-1. ✅ Verify `REORDER_SNAPSHOT_INTERVAL = 500` (not too low)
-2. ✅ Check `lastReorderTime` is being updated
-3. ✅ Ensure `didDragReorderOccur` flag is set correctly
-4. ✅ Review snapshot debouncing logic in `handleRearrange()`
+1. ✅ Verify `saveDragReorder()` is the only snapshot capture point
+2. ✅ Ensure `didDragReorderOccur` flag is reset in `cleanupDragState()`
+3. ✅ Check that `cleanupDragState()` isn't called before `saveDragReorder()`
 
 ---
 
@@ -1999,36 +1961,24 @@ console.log({
 - But shows tiny question mark icon instead of task content preview
 - Native iOS drag preview (dark rectangle with content) not appearing
 
-**Root Cause (December 2025):**
-The `isTouchDevice()` dependency wasn't wired up in `deps.utils`, so it returned `false` on mobile. This caused `setDragImage(transparentPixel)` to run on iOS, hiding the native preview.
+**Current Design (March 2026):**
+`setDragImage` is only called on Safari desktop (detected via UA). iOS is excluded by the
+`!('ontouchstart' in window)` check, so it always gets its native drag preview. Non-Safari
+desktop browsers use the browser's default ghost image (no `setDragImage` call at all).
 
-**Diagnosis:**
 ```javascript
-// In browser console on iOS
-console.log({
-  ontouchstart: 'ontouchstart' in window,
-  maxTouchPoints: navigator.maxTouchPoints
-});
-// Should show: { ontouchstart: true, maxTouchPoints: 5 }
-```
-
-**Solution:**
-Use **inline touch detection** instead of dependency injection:
-```javascript
-// ❌ BAD: Depends on external wiring (can fail)
-if (!this.deps.isTouchDevice()) {
-    event.dataTransfer.setDragImage(transparentPixel, 0, 0);
+// Safari desktop only — custom 70%-width ghost clone
+const isSafariDesktop = /Safari/.test(ua) && !/Chrome/.test(ua)
+    && !/Chromium/.test(ua) && !('ontouchstart' in window);
+if (isSafariDesktop) {
+    // Clone task, style, setDragImage, remove after capture
 }
-
-// ✅ GOOD: Inline detection (always works)
-const isMobileDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-if (!isMobileDevice) {
-    event.dataTransfer.setDragImage(transparentPixel, 0, 0);
-}
+// iOS/non-Safari: no setDragImage → native preview
 ```
 
 **Lesson Learned:**
-For critical device-specific checks, prefer inline detection over dependency injection. DI is great for testability, but simple checks like touch detection should be self-contained to avoid wiring issues.
+The `isTouchDevice` DI dependency was removed — inline `'ontouchstart' in window` is more
+reliable for critical device branching in event handlers.
 
 ---
 
@@ -2326,6 +2276,6 @@ If something in this document is unclear:
 ---
 
 **Document Version:** 1.1
-**Last Updated:** February 2026
+**Last Updated:** March 2026
 **Maintained By:** miniCycle Team
 **License:** Part of miniCycle project
