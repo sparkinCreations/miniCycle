@@ -29,12 +29,14 @@ Use the existing notification system with an action button. The delay depends on
 _scheduleNotification(delay = 2000) {
     const step = this.deps.AppState.get()?.settings?.guidedTourStep;
     if (step === null) {
-        setTimeout(() => this._showWelcomeNotification(), delay);
+        this._scheduleTimeout = setTimeout(() => this._showWelcomeNotification(), delay);
     } else if (typeof step === 'number') {
-        setTimeout(() => this._showResumeNotification(), delay);
+        this._scheduleTimeout = setTimeout(() => this._showResumeNotification(), delay);
     }
 }
 ```
+
+The timeout ID is stored in `this._scheduleTimeout` so `destroy()` can cancel it — if the module is torn down during the delay window (e.g., boot retry via `destroyAllModules()`), the callback won't fire on a destroyed instance.
 
 ```
 "Welcome to miniCycle! Ready to learn the basics?"
@@ -124,6 +126,27 @@ async showStep(index) {
 }
 ```
 
+**`prevStep()` must also handle missing targets.** The `showStep()` guard always skips *forward* (calls `nextStep()`), which creates a stuck loop when navigating backwards: step 3 → Back → `showStep(2)` → target missing → `nextStep()` → step 3 again. To fix this, `prevStep()` pre-scans backwards for the nearest step with a valid target:
+
+```javascript
+prevStep() {
+    let targetIndex = this._currentStepIndex - 1;
+    while (targetIndex >= 0) {
+        const step = this._steps[targetIndex];
+        const target = this.deps.getElementById(step.target) ||
+                       this.deps.querySelector(step.target);
+        if (target) {
+            this._currentStepIndex = targetIndex;
+            this._persistStep(targetIndex);
+            this.showStep(targetIndex);
+            return;
+        }
+        targetIndex--;
+    }
+    // All previous steps have missing targets — stay on current step (no-op)
+}
+```
+
 ### Empty Task State Handling (Step 2)
 
 Step 2 targets the first `.task` row element. If no tasks exist (e.g., user created a routine but hasn't added tasks yet), the general guard above skips it automatically (no `.task` element in DOM → target is `null` → `nextStep()`). The `onEnter` callback provides an additional semantic hook if needed in the future but is not required for the skip:
@@ -159,12 +182,22 @@ All steps use Next/Back button navigation — no `'interact'` action type. Keeps
 `modules/ui/guidedTourManager.js`
 
 ### DI Dependencies
-- `AppState` (required) — read/write `settings.guidedTourStep`
-- `getElementById` (required) — locate target elements
-- `querySelector` (required)
-- `showNotification` (required) — welcome notification
-- `safeAddEventListener` (required) — button handlers
-- `getLabel` — via import (not DI)
+
+```javascript
+const di = createDIModule('GuidedTourManager', {
+    AppState: required(),
+    getElementById: required(),
+    querySelector: required(),
+    querySelectorAll: required(),
+    getRootElement: required(),
+    showNotification: required(),
+    safeAddEventListener: required(),
+});
+
+export const setGuidedTourManagerDependencies = di.setDependencies;
+```
+
+- `getLabel` — via static import (not DI), same as other modules
 
 ### Key Methods
 
@@ -173,10 +206,10 @@ init()                    — Branch on onboardingCompleted: schedule notificati
 startTour()               — Create overlay, begin at step 0 (or resume step)
 showStep(index)           — ScrollIntoView target, spotlight it, render tooltip
 nextStep()                — Advance to next step, persist progress
-prevStep()                — Go back one step
+prevStep()                — Go back one step (pre-scans backwards, skips missing targets)
 skipTour()                — Close overlay, mark done
 completeTour()            — Final step done, mark done, show congrats
-destroy()                 — Clean up all listeners (including init:app-ready or onboarding:setup-complete if pending) and DOM elements
+destroy()                 — Clean up all listeners (including init:app-ready or onboarding:setup-complete if pending), cancel _scheduleTimeout, and remove DOM elements
 ```
 
 ### Tooltip Auto-Positioning
@@ -221,24 +254,32 @@ if (target) {
 
 ### Modal Conflict Handling
 
-Use a simple `data-tour-active` attribute guard instead of a MutationObserver. Set the attribute when the tour starts, remove it when the tour ends:
+Two-layer defense: (1) close any open dialogs before the tour starts, and (2) prevent new dialogs from opening during the tour.
+
+**Layer 1 — Close open dialogs in `startTour()`:** The tour can be launched from multiple entry points (welcome notification, resume notification, settings retake button). Any of these could fire while a dialog is open — e.g., the user opens the blank-routine creation modal from the sample-loaded notification, and then the 9-second-delayed tour notification appears. Clicking "Take a Quick Tour" would overlay the tour on top of the open dialog. To handle this generically, `startTour()` closes all open `<dialog>` elements before creating the overlay:
 
 ```javascript
-// In startTour()
-document.documentElement.dataset.tourActive = 'true';
+// In startTour(), before creating overlay:
+// Close any open dialogs — tour must not render over them
+const openDialogs = this.deps.querySelectorAll('dialog[open]');
+openDialogs.forEach(d => d.close());
 
-// In destroy()
-delete document.documentElement.dataset.tourActive;
+this.deps.getRootElement().dataset.tourActive = 'true';
 ```
 
-Modal open functions check for this attribute and bail out early:
+This is generic (not settings-specific), handles all entry points, and doesn't require wiring `closeSettingsModal` as a dependency.
+
+**Layer 2 — Prevent new dialogs during tour:** Set a `data-tour-active` attribute when the tour starts, remove it when the tour ends. Modal open functions check for this attribute and bail out early:
 
 ```javascript
 // Guard at top of modal open functions
-if (document.documentElement.dataset.tourActive) return;
+if (this.deps.getRootElement().dataset.tourActive) return;
+
+// In destroy()
+delete this.deps.getRootElement().dataset.tourActive;
 ```
 
-This is far simpler than a MutationObserver approach, requires no cleanup, and prevents the conflict entirely rather than trying to pause/resume around it.
+This two-layer approach is simpler than a MutationObserver, requires no cleanup beyond the attribute, and handles both existing and future modal conflicts.
 
 ### Listener Cleanup
 - Store all handler references for removal in `destroy()`
@@ -341,11 +382,11 @@ This creates a "hole" where the target element is, with darkness everywhere else
 }
 
 .tour-progress-dot.active {
-    background: var(--primary-color, #4c79ff);
+    background: var(--primary-color);
 }
 
 .tour-progress-dot.completed {
-    background: var(--color-game-primary, #27ae60);
+    background: var(--color-game-primary);
 }
 ```
 
@@ -441,7 +482,7 @@ Clicking resumes at the persisted step. Dismissing sets `guidedTourStep = 'done'
 guidedTourManager: {
     path: '../ui/guidedTourManager.js',
     phase: PHASES.UI_MANAGERS,
-    requires: ['appInit', 'AppState', 'getElementById', 'querySelector', 'showNotification', 'safeAddEventListener'],
+    requires: ['AppState', 'getElementById', 'querySelector', 'querySelectorAll', 'getRootElement', 'showNotification', 'safeAddEventListener'],
     optionalDeps: [],
     provides: ['startGuidedTour'],
     api: 'ui',
@@ -480,9 +521,9 @@ init() {
 _scheduleNotification(delay = 2000) {
     const step = this.deps.AppState.get()?.settings?.guidedTourStep;
     if (step === null) {
-        setTimeout(() => this._showWelcomeNotification(), delay);
+        this._scheduleTimeout = setTimeout(() => this._showWelcomeNotification(), delay);
     } else if (typeof step === 'number') {
-        setTimeout(() => this._showResumeNotification(), delay);
+        this._scheduleTimeout = setTimeout(() => this._showResumeNotification(), delay);
     }
     // step === 'done' → do nothing
 }
@@ -521,23 +562,25 @@ if (success) {
 await this.deps.completeInitialSetup(finalTitle, appState.get());
 document.dispatchEvent(new Event('onboarding:setup-complete'));
 
-// Path C — In onboardingManager.js completeOnboarding():
+// Path C — In onboardingManager.js completeOnboarding(), else branch (line 365):
 //   Existing cycle (rare, e.g. state was partially set up).
-//   The containing setTimeout callback is already async.
-//   Fix: add `await` before completeInitialSetup at line 369.
-await this.deps.completeInitialSetup(activeCycle, null, updatedState);
-document.dispatchEvent(new Event('onboarding:setup-complete'));
+//   ⚠️ completeOnboarding() is NOT async — it's a synchronous method.
+//   Cannot add `await` directly. Wrap in an async IIFE:
+(async () => {
+    await this.deps.completeInitialSetup(activeCycle, null, updatedState);
+    document.dispatchEvent(new Event('onboarding:setup-complete'));
+})();
 ```
 
-**Summary of `await` additions needed (4 sites):**
-| File | Line | Change |
-|------|------|--------|
-| `routineManager.js` | 527 | `await this.deps.completeInitialSetup(...)` (inside `loadSampleRoutine`, covers Path A) |
-| `routineManager.js` | 252 | `await this.deps.completeInitialSetup(...)` (inside `onCreateBlank`, covers Path B) |
-| `routineManager.js` | 327 | `await this.deps.completeInitialSetup(...)` (inside `createBasicFallbackCycle`, for consistency) |
-| `onboardingManager.js` | 369 | `await this.deps.completeInitialSetup(...)` (inside `completeOnboarding`, covers Path C) |
+**Summary of changes needed (4 sites):**
+| File | Line | Change | Notes |
+|------|------|--------|-------|
+| `routineManager.js` | 527 | `await this.deps.completeInitialSetup(...)` | Inside `loadSampleRoutine` (async), covers Path A |
+| `routineManager.js` | 252 | `await this.deps.completeInitialSetup(...)` | Inside `onCreateBlank` (async), covers Path B |
+| `routineManager.js` | 327 | `await this.deps.completeInitialSetup(...)` | Inside `createBasicFallbackCycle` (async), for consistency |
+| `onboardingManager.js` | 369 | Wrap in async IIFE + `await` + dispatch | `completeOnboarding()` is **not async** — cannot use bare `await`. Covers Path C |
 
-All four callers are already inside `async` functions, so adding `await` is safe and non-breaking. The only behavioral change is that downstream code in the same function now waits for the UI to finish rendering before continuing — which is the correct behavior.
+The first three callers are already inside `async` functions, so adding `await` is straightforward. Path C requires an async IIFE because `completeOnboarding()` is a synchronous method and changing its signature would affect all callers. The IIFE is scoped to the else branch (line 365-373) and only wraps the `completeInitialSetup` call + dispatch — the rest of `completeOnboarding()` remains synchronous.
 
 **Why Path B dispatches from `routineManager.js` (not `onboardingManager.js`):** When the sample fetch fails, `completeOnboarding()` calls `showCycleCreationModal()` and returns — the creation modal is just opening, and no routine exists yet. The actual setup completion happens later when the user fills in the modal and `onCreateBlank` fires. At `routineManager.js:252`, `await completeInitialSetup()` has finished, the routine is saved, and the UI is rendered — that's the correct convergence point.
 
@@ -545,18 +588,14 @@ All four callers are already inside `async` functions, so adding `await` is safe
 
 ### 2. Settings Panel
 
-Add "Retake Guided Tour" button near existing "Reset Onboarding" button. The handler must **close the settings modal before starting the tour** — otherwise the tour overlay renders on top of the open modal, creating a confusing layered state. The `data-tour-active` guard prevents *new* modals from opening during the tour but doesn't close already-open ones.
+Add "Retake Guided Tour" button near existing "Reset Onboarding" button. The handler resets the tour state and calls `startGuidedTour()`. The open settings dialog is closed automatically by `startTour()`'s generic `dialog[open]` cleanup (see Modal Conflict Handling above), so no settings-specific close logic is needed here.
 
 ```javascript
 // In settingsUIManager.js setupRetakeGuidedTourButton():
 setupRetakeGuidedTourButton() {
     // ... button click handler:
     _deps.AppState.update(state => { state.settings.guidedTourStep = null; }, true);
-    // Close settings modal first — tour overlay must not render over it
-    const settingsModal = _deps.getElementById(DOM_IDS.SETTINGS_MODAL);
-    if (settingsModal?.open) settingsModal.close();
-    // Then start tour after a brief delay for modal close animation
-    setTimeout(() => _deps.startGuidedTour?.(), 300);
+    _deps.startGuidedTour?.();
 }
 ```
 
@@ -574,7 +613,7 @@ setupRetakeGuidedTourButton() {
        startGuidedTour: dependencies.startGuidedTour,
    });
    ```
-4. **`settingsUIManager.js`**: Add `startGuidedTour: optional(null)` to DI definition; create `setupRetakeGuidedTourButton()` function; add call in `initAllToggles()`
+4. **`settingsUIManager.js`**: Add `startGuidedTour: optional(null)` to DI definition; create `setupRetakeGuidedTourButton()` function with idempotency guard (`_initialized.retakeGuidedTourButton`); add to `_initialized` object; call from `initAllToggles()`
 
 ### 3. Onboarding Relationship
 - Existing onboarding (3-step modal) runs FIRST — it's the "what is miniCycle" intro
@@ -635,7 +674,9 @@ Add `'guidedTourManager'` to `ALL_MODULES` array in `tests/automated/run-browser
 - `nextStep()` advances from step 0 to step 1
 - `nextStep()` persists step index to `guidedTourStep`
 - `prevStep()` goes back from step 2 to step 1
+- `prevStep()` skips over missing-target steps when going backwards (e.g., step 3 → Back skips missing step 2 → lands on step 1)
 - `prevStep()` is a no-op on step 0
+- `prevStep()` is a no-op when all previous steps have missing targets
 - `nextStep()` on last step calls `completeTour()`
 - `completeTour()` sets `guidedTourStep = 'done'`
 - `skipTour()` sets `guidedTourStep = 'done'` from any step
@@ -671,14 +712,18 @@ Add `'guidedTourManager'` to `ALL_MODULES` array in `tests/automated/run-browser
 **Cleanup**
 - `destroy()` removes overlay, spotlight, and tooltip from DOM
 - `destroy()` removes all event listeners (resize, keydown, click, init:app-ready or onboarding:setup-complete if pending)
+- `destroy()` cancels pending `_scheduleTimeout` (notification delay)
 - `destroy()` cancels pending `requestAnimationFrame`
 - `destroy()` removes `data-tour-active` from `<html>`
 - Tour elements are not present in DOM after `skipTour()`
 - Tour elements are not present in DOM after `completeTour()`
 
+**Modal Conflict**
+- `startTour()` closes all open `<dialog>` elements before creating overlay
+- Tour does not render over an already-open dialog (settings, creation modal, etc.)
+
 **Settings Integration**
-- "Retake Guided Tour" button closes settings modal, sets `guidedTourStep = null`, and calls `startGuidedTour()` after 300ms delay
-- Tour overlay is not rendered while settings modal is still open
+- "Retake Guided Tour" button sets `guidedTourStep = null` and calls `startGuidedTour()`
 
 ---
 
