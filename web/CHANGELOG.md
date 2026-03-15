@@ -1,3 +1,8 @@
+## [2.094] - 2026-03-15
+- feat(changelog): add entry for backup validation enhancements and event listener improvements
+- feat(data-sanitizer): strip display-only fields from history events during cycle sanitization
+
+
 ## [2.093] - 2026-03-15
 - feat(backup-validation): enhance backup validation before restoring localStorage and improve event listener handling
 

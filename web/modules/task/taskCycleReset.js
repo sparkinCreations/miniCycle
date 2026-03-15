@@ -228,26 +228,18 @@ function getResetContext(deps) {
         ...(completedTaskList?.querySelectorAll(DOM_SELECTORS.TASK) || [])
     ];
 
-    // Get cycle data from AppState or localStorage
+    // Get cycle data from AppState (always ready by the time user actions trigger this)
     const AppState = deps.AppState || _deps.AppState;
-    const loadMiniCycleData = deps.loadMiniCycleData || _deps.loadMiniCycleData;
 
-    let cycles, activeCycle, cycleData;
-    if (AppState?.isReady?.()) {
-        const state = AppState.get();
-        cycles = state?.data?.cycles || {};
-        activeCycle = state?.appState?.activeCycleId;
-        cycleData = cycles[activeCycle];
-    } else {
-        const schemaData = loadMiniCycleData?.();
-        if (!schemaData) {
-            console.error('Schema 2.5 data required for resetTasks');
-            return null;
-        }
-        cycles = schemaData.data?.cycles || {};
-        activeCycle = schemaData.appState?.activeCycleId;
-        cycleData = cycles[activeCycle];
+    if (!AppState?.isReady?.()) {
+        console.error('AppState not ready for resetTasks');
+        return null;
     }
+
+    const state = AppState.get();
+    const cycles = state?.data?.cycles || {};
+    const activeCycle = state?.appState?.activeCycleId;
+    const cycleData = cycles[activeCycle];
 
     if (!activeCycle || !cycleData) {
         console.error("No active cycle found for resetTasks");
@@ -791,24 +783,17 @@ export function markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps
 function getCompleteAllContext(deps) {
     const querySelector = deps.querySelector || _deps.querySelector || ((sel) => document.querySelector(sel));
     const AppState = deps.AppState || _deps.AppState;
-    const loadMiniCycleData = deps.loadMiniCycleData || _deps.loadMiniCycleData;
 
     const taskList = querySelector("#taskList");
-    let activeCycle, cycleData;
 
-    if (AppState?.isReady?.()) {
-        const state = AppState.get();
-        activeCycle = state?.appState?.activeCycleId;
-        cycleData = state?.data?.cycles?.[activeCycle];
-    } else {
-        const schemaData = loadMiniCycleData?.();
-        if (!schemaData) {
-            console.error('Schema 2.5 data required for handleCompleteAllTasks');
-            return null;
-        }
-        activeCycle = schemaData.appState?.activeCycleId;
-        cycleData = schemaData.data?.cycles?.[activeCycle];
+    if (!AppState?.isReady?.()) {
+        console.error('AppState not ready for handleCompleteAllTasks');
+        return null;
     }
+
+    const state = AppState.get();
+    const activeCycle = state?.appState?.activeCycleId;
+    const cycleData = state?.data?.cycles?.[activeCycle];
 
     if (!activeCycle || !cycleData) {
         console.warn('No active cycle found for complete all tasks');

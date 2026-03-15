@@ -227,16 +227,10 @@
  * @property {boolean} [notificationPositionModified=false] - User moved notifications
  * @property {boolean} [showCompletedDropdown=false] - Show completed tasks dropdown
  * @property {boolean} [completedTasksExpanded=false] - Completed section expanded
- * @property {AccessibilitySettings} [accessibility] - Accessibility options
- * @property {boolean} [debugMode=false] - Debug mode enabled
- */
-
-/**
- * Accessibility settings
- * @typedef {Object} AccessibilitySettings
  * @property {boolean} [reducedMotion=false] - Reduce animations
  * @property {boolean} [highContrast=false] - High contrast mode
- * @property {boolean} [screenReaderHints=false] - Extra screen reader hints
+ * @property {string} [fontSize='16'] - Base font size in px
+ * @property {boolean} [debugMode=false] - Debug mode enabled
  */
 
 /**
