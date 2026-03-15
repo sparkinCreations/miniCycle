@@ -106,6 +106,8 @@
   * [Recurring Panel Refactor](future-work/RECURRING_PANEL_REFACTOR_PLAN.md)
   * [Schema 2.6 Migration Plan](future-work/SCHEMA_2_6_PLAN.md)
   * [Singleton Safe Versioning](future-work/SINGLETON_SAFE_VERSIONING_PLAN.md)
+  * [Enforce Requires Rollout](future-work/ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
+  * [Large Module Splits](future-work/LARGE_MODULE_SPLITS_PLAN.md)
   * [Test Modernization Plan](future-work/TEST_MODERNIZATION_PLAN.md)
 
 * **Links**
