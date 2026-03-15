@@ -90,21 +90,54 @@ A lightweight overlay system that:
 
 **Why 5 instead of 7:** UX research shows engagement drops sharply after 4-5 steps. The help window (self-discoverable status bar) and undo/redo buttons (standard UI pattern) were cut — users find those naturally.
 
+### Missing Target Handling
+
+`showStep()` includes a general target-not-found guard that runs before any step-specific logic:
+
+```javascript
+async showStep(index) {
+    const step = this._steps[index];
+
+    // General guard: if the target element is missing, skip to next step.
+    // Protects against DOM races, future refactors, or hidden elements.
+    const target = this.deps.getElementById(step.target) ||
+                   this.deps.querySelector(step.target);
+    if (!target) {
+        if (index < this._steps.length - 1) {
+            this.nextStep();
+        } else {
+            this.completeTour();
+        }
+        return;
+    }
+
+    // Step-specific onEnter (can also return 'skip')
+    if (typeof step.onEnter === 'function') {
+        const result = step.onEnter();
+        if (result === 'skip') {
+            this.nextStep();
+            return;
+        }
+    }
+
+    // ... scrollIntoView, spotlight, tooltip
+}
+```
+
 ### Empty Task State Handling (Step 2)
 
-Step 2 targets the first `.task` row element. If no tasks exist (e.g., user created a routine but hasn't added tasks yet), the `onEnter` callback handles it:
+Step 2 targets the first `.task` row element. If no tasks exist (e.g., user created a routine but hasn't added tasks yet), the general guard above skips it automatically (no `.task` element in DOM → target is `null` → `nextStep()`). The `onEnter` callback provides an additional semantic hook if needed in the future but is not required for the skip:
 
 ```javascript
 onEnter: () => {
     const firstTask = this.deps.querySelector(DOM_SELECTORS.TASK);
     if (!firstTask) {
-        // Skip to step 3 — user will discover task options after adding tasks
         return 'skip';
     }
 }
 ```
 
-Returning `'skip'` from `onEnter` advances to the next step automatically. This avoids the complexity of auto-creating sample tasks while keeping the tour smooth.
+This means every step is protected: if any target element is absent (progress bar hidden, hamburger menu removed in a future refactor, etc.), the tour gracefully skips to the next step instead of crashing or spotlighting `null`.
 
 ### Step Object Shape
 
@@ -512,7 +545,20 @@ All four callers are already inside `async` functions, so adding `await` is safe
 
 ### 2. Settings Panel
 
-Add "Retake Guided Tour" button near existing "Reset Onboarding" button. Clicking it sets `guidedTourStep = null` and calls `startGuidedTour()`.
+Add "Retake Guided Tour" button near existing "Reset Onboarding" button. The handler must **close the settings modal before starting the tour** — otherwise the tour overlay renders on top of the open modal, creating a confusing layered state. The `data-tour-active` guard prevents *new* modals from opening during the tour but doesn't close already-open ones.
+
+```javascript
+// In settingsUIManager.js setupRetakeGuidedTourButton():
+setupRetakeGuidedTourButton() {
+    // ... button click handler:
+    _deps.AppState.update(state => { state.settings.guidedTourStep = null; }, true);
+    // Close settings modal first — tour overlay must not render over it
+    const settingsModal = _deps.getElementById(DOM_IDS.SETTINGS_MODAL);
+    if (settingsModal?.open) settingsModal.close();
+    // Then start tour after a brief delay for modal close animation
+    setTimeout(() => _deps.startGuidedTour?.(), 300);
+}
+```
 
 **Settings wiring path** (follows the `clearAllUndoHistory` pattern):
 
@@ -596,6 +642,8 @@ Add `'guidedTourManager'` to `ALL_MODULES` array in `tests/automated/run-browser
 
 **Step Rendering**
 - Each step spotlights the correct target element (verify DOM lookup by constant)
+- `showStep()` skips to next step when target element is missing (general guard)
+- `showStep()` calls `completeTour()` when last step's target is missing
 - Step 2 `onEnter` returns `'skip'` when no `.task` elements exist
 - Step 2 proceeds normally when tasks exist
 - Tooltip renders with correct label text from `getLabel('tour.stepN')`
@@ -629,7 +677,8 @@ Add `'guidedTourManager'` to `ALL_MODULES` array in `tests/automated/run-browser
 - Tour elements are not present in DOM after `completeTour()`
 
 **Settings Integration**
-- "Retake Guided Tour" button sets `guidedTourStep = null` and calls `startGuidedTour()`
+- "Retake Guided Tour" button closes settings modal, sets `guidedTourStep = null`, and calls `startGuidedTour()` after 300ms delay
+- Tour overlay is not rendered while settings modal is still open
 
 ---
 
