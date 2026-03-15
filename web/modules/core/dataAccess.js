@@ -1,15 +1,18 @@
 /**
  * @file dataAccess.js
- * @description Centralized data access functions for miniCycle
+ * @description Legacy data access layer — thin wrappers around AppState
  * @module modules/core/dataAccess
  *
+ * LEGACY MODULE: New code should use AppState.update() and AppState.get() directly.
+ * These functions exist for backward compatibility with modules that were written
+ * before the state-first architecture was established. Do not add new consumers.
+ *
  * Extracted from coreBoot.js (Dec 2025) to reduce window.* pollution.
- * These functions provide the primary interface for loading and saving cycle data.
  *
  * Functions:
- * - loadMiniCycleData(): Load cycle data from AppState or localStorage
- * - autoSave(): Save current state with debouncing
- * - updateCycleData(): Update specific cycle data
+ * - loadMiniCycleData(): Wraps AppState.get() with legacy-shaped return value
+ * - autoSave(): Wraps AppState.update() for task arrays
+ * - updateCycleData(): Wraps AppState.update() for cycle mutations
  */
 
 import { STORAGE_KEYS } from './constants.js';

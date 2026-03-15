@@ -71,6 +71,8 @@ export class MyModule {
 
 For new modules, always use `createDIModule()` from `diBase.js`. A small number of early boot/testing modules still use the legacy `let _deps = {}` pattern for startup-order reasons (see `web/docs/PROJECT_STATS.md` for counts) — do not use it for new modules. **NEVER** use `{ ..._deps, ...dependencies }` spread — it evaluates lazy getters immediately.
 
+**Every dep a module accesses must be declared** in its manifest (`moduleManifests.js`): `requires` for same/earlier phase, `optionalDeps` for conditional/cross-phase, `lazyRequires` for later-phase deps only called after user interaction. DOM helpers (`getElementById`, `querySelector`, etc.) are in `CORE_DEPS` and don't need declaration.
+
 ### 2. Always Use Object.defineProperties for Dependency Setters
 
 ```javascript
@@ -205,6 +207,8 @@ this.deps.AppState.update(state => {
     state.data.cycles[cycleId].tasks.push(newTask);
 }, true); // true = immediate save (default: 600ms debounce)
 ```
+
+**Note:** `dataAccess.js` (`loadMiniCycleData`, `autoSave`, `updateCycleData`) is a legacy wrapper layer. New code should use `AppState.get()` and `AppState.update()` directly — do not add new consumers of `dataAccess.js`.
 
 Schema 2.5 shape:
 ```

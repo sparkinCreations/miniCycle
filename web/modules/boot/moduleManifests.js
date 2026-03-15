@@ -92,6 +92,7 @@ export const MODULE_MANIFESTS = {
         path: '../utils/consoleCapture.js',
         phase: PHASES.CORE_UTILS,
         requires: [],
+        optionalDeps: ['appendToTestResults', 'showNotification'],
         provides: ['consoleCapture'],
         api: 'utils',
         optional: true
@@ -101,6 +102,7 @@ export const MODULE_MANIFESTS = {
         path: '../labels/labelResolver.js',
         phase: PHASES.CORE_UTILS,
         requires: [],
+        optionalDeps: ['getActiveLens', 'getRoutineLens'],
         provides: ['getLabel', 'getLabelOrFallback', 'hasLabel', 'isLensSensitive', 'getLabels', 'getCategoryLabels', 'getLensSensitiveKeys', 'getLabelDiagnostics'],
         api: 'labels',
         optional: false,
@@ -111,6 +113,7 @@ export const MODULE_MANIFESTS = {
         path: '../utils/notifications.js',
         phase: PHASES.CORE_UTILS,
         requires: ['appInit', 'GlobalUtils'],
+        optionalDeps: ['applyRecurringToTaskSchema25', 'openRecurringSettingsPanelForTask', 'updateRecurringPanel', 'vocabThemeManager'],
         provides: ['showNotification', 'showConfirmationModal', 'showPromptModal'],
         api: 'utils'
     },
@@ -130,8 +133,8 @@ export const MODULE_MANIFESTS = {
     themeManager: {
         path: '../features/themeManager.js',
         phase: PHASES.THEME_VISUAL,
-        requires: ['appInit', 'showNotification', 'getModal', 'getElementById', 'querySelector', 'querySelectorAll'],
-        optionalDeps: ['vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'updateHelpWindow', 'applyCustomColors', 'logHistoryEvent'],
+        requires: ['appInit', 'showNotification', 'getModal'],
+        optionalDeps: ['vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'updateHelpWindow', 'applyCustomColors', 'logHistoryEvent', 'hideMainMenu'],
         provides: ['applyTheme', 'updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'initThemesPanel', 'refreshThemeToggles', 'setupThemesPanel', 'renderVocabThemes'],
         provideInstance: 'themeManager',
         api: 'features',
@@ -162,7 +165,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/onboardingManager.js',
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListenerById', 'safeAddEventListener'],
-        optionalDeps: ['preloadGettingStartedCycle', 'createNewMiniCycle'],
+        optionalDeps: ['preloadGettingStartedCycle', 'createNewMiniCycle', 'completeInitialSetup', 'showCycleCreationModal'],
         provides: [],
         provideInstance: 'onboardingManager',
         api: 'ui',
@@ -182,6 +185,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/modalManager.js',
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'showNotification', 'safeAddEventListener', 'getModal'],
+        optionalDeps: ['hideMainMenu', 'waitForCore'],
         provides: [],
         provideInstance: 'modalManager',
         api: 'ui'
@@ -198,6 +202,7 @@ export const MODULE_MANIFESTS = {
         path: '../task/dragDropManager.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['appInit', 'AppState', 'showNotification'],
+        optionalDeps: ['captureStateSnapshot', 'checkCompleteAllButton', 'enableUndoSystemOnFirstInteraction', 'hideTaskButtons', 'refreshUIFromState', 'revealTaskButtons', 'updateProgressBar', 'updateStatsPanel', 'updateUndoRedoButtons'],
         provides: ['enableDragAndDropOnTask', 'updateMoveArrowsVisibility', 'updateArrowsInDOM', 'setArrowsEnabled', 'updateFirstLastMarkers'],
         api: 'task'
     },
@@ -214,7 +219,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/statsPanel.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['showNotification', 'AppState', 'appInit', 'getModal'],
-        optionalDeps: ['historyManager', 'clearedTasksManager', 'achievementsManager', 'gesturePanelManager', 'vocabThemeManager'],
+        optionalDeps: ['historyManager', 'clearedTasksManager', 'achievementsManager', 'gesturePanelManager', 'vocabThemeManager', 'hideMainMenu', 'isDraggingNotification', 'isOverlayActive', 'setupDarkModeToggle', 'trackAction', 'updateThemeColor'],
         provides: ['showStatsPanel', 'showTaskView', 'updateStatsPanel', 'openHistoryModal', 'openClearedTasksModal', 'openAchievementsModal'],
         provideInstance: 'statsPanelManager',
         api: 'ui'
@@ -224,6 +229,7 @@ export const MODULE_MANIFESTS = {
         path: '../task/taskDOM.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['appInit', 'AppState', 'generateId', 'sanitizeInput', 'TaskOptionsVisibilityController', 'showTaskOptions', 'hideTaskOptions', 'attachKeyboardTaskOptionToggle', 'triggerLogoBackground'],
+        optionalDeps: ['saveTaskToSchema25', 'showNotification', 'syncTaskDeleteWhenCompleteDOM', 'taskCore'],
         provides: [
             'createTaskDOMElements', 'setupTaskInteractions', 'refreshUIFromState',
             'loadTaskContext', 'createOrUpdateTaskData', 'finalizeTaskCreation',
@@ -253,6 +259,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/reminders.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['appInit', 'AppState', 'showNotification', 'showConfirmationModal', 'getModal'],
+        optionalDeps: ['hideMainMenu', 'refreshTaskListUI', 'trackAction', 'updateUndoRedoButtons'],
         provides: ['startReminders', 'stopReminders', 'updateReminderButtons', 'setupReminderButtonHandler', 'loadRemindersSettings'],
         api: 'features',
         provideInstance: 'reminderManager',
@@ -266,6 +273,7 @@ export const MODULE_MANIFESTS = {
         path: '../recurring/recurringIntegration.js',
         phase: PHASES.RECURRING,
         requires: ['appInit', 'AppState', 'showNotification', 'showNotificationWithTip', 'notifications', 'FeatureFlags', 'GlobalUtils', 'refreshUIFromState', 'getModal'],
+        optionalDeps: ['clearDeferredRecurringSetup', 'getDeferredRecurringSetup', 'isOverlayActive', 'refreshTaskButtonsForModeChange', 'syncRecurringStateToDOM'],
         // Cross-phase lazy deps: these are from later phases but only called after user interaction
         lazyRequires: ['updateProgressBar'],  // From cycleCompletion (Phase 6)
         provides: ['panel', 'core'],
@@ -289,6 +297,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/modeManager.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'switchMiniCycle', 'createNewMiniCycle'],
+        optionalDeps: ['checkCompleteAllButton', 'checkMiniCycle', 'createTaskButtonContainer', 'helpWindowManager', 'recurringCore', 'setupDueDateButtonInteraction'],
         provides: ['setupModeSelector', 'refreshTaskButtonsForModeChange', 'updateCycleModeDescription', 'syncModeFromToggles'],
         api: 'cycle',
         provideInstance: 'modeManager',
@@ -299,7 +308,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineSwitcher.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showCycleCreationModal', 'getOnboardingManager', 'getModal'],
-        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData'],
+        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData', 'hideMainMenu'],
         provides: ['switchMiniCycle', 'renameMiniCycle', 'deleteMiniCycle'],
         api: 'cycle',
         after: ['routineManager', 'onboardingManager']
@@ -309,7 +318,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineManager.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'updateMainMenuHeader'],
-        optionalDeps: ['refreshThemeLabels', 'onCycleCreated', 'syncModeFromToggles', 'updateRecurringInfoLink', 'loadMiniCycle'],
+        optionalDeps: ['refreshThemeLabels', 'onCycleCreated', 'syncModeFromToggles', 'updateRecurringInfoLink', 'loadMiniCycle', 'DEFAULT_TASK_OPTION_BUTTONS', 'checkCompleteAllButton', 'completeInitialSetup', 'hideMainMenu', 'updateProgressBar'],
         provides: ['showCycleCreationModal', 'createNewMiniCycle', 'preloadGettingStartedCycle'],
         api: 'cycle',
         after: ['menuManager']  // Needs hideMainMenu and updateMainMenuHeader from menuManager
@@ -322,6 +331,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/uiOrchestrator.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'TaskDOMManager', 'renderTasks', 'updateProgressBar', 'updateStatsPanel', 'checkCompleteAllButton', 'setArrowsEnabled', 'updateFirstLastMarkers'],
+        optionalDeps: ['TaskRenderer', 'checkOverdueTasks', 'showNotification', 'updateMainMenuHeader'],
         provides: ['requestUIUpdate', 'flushUIUpdates', 'initUIOrchestrator', 'getUIOrchestrator', 'ui'],
         api: 'ui',
         after: ['taskDOM', 'cycleCompletion', 'statsPanel', 'dragDropManager']
@@ -330,8 +340,8 @@ export const MODULE_MANIFESTS = {
     undoRedoManager: {
         path: '../ui/undoRedoManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListener', 'getElementById', 'refreshUIFromState', 'UIOrchestrator', 'requestUIUpdate'],
-        optionalDeps: ['logHistoryEvent', 'refreshHistoryIfOpen', 'updateRecurringInfoLink', 'updateHelpWindow', 'syncModeFromToggles', 'refreshThemeLabels', 'updateRecurringPanel'],
+        requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListener', 'refreshUIFromState', 'UIOrchestrator', 'requestUIUpdate'],
+        optionalDeps: ['logHistoryEvent', 'refreshHistoryIfOpen', 'updateRecurringInfoLink', 'updateHelpWindow', 'syncModeFromToggles', 'refreshThemeLabels', 'updateRecurringPanel', 'AppGlobalState'],
         provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction', 'wrapAppStateForUndo', 'setupStateBasedUndoRedo', 'initUndoSystemForApp', 'onCycleCreated', 'onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'clearAllUndoHistory'],
         api: 'undo',
         after: ['taskDOM', 'uiOrchestrator']
@@ -341,6 +351,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/menuManager.js',
         phase: PHASES.CYCLE,  // Phase 5 (not Phase 6 UI_MANAGERS) because routineManager needs it in same phase
         requires: ['appInit', 'AppState', 'showNotification'],
+        optionalDeps: ['checkCompleteAllButton', 'checkGamesUnlock', 'createNewMiniCycle', 'recurringPanel', 'showConfirmationModal', 'showPromptModal', 'switchMiniCycle', 'trackAction', 'updateCycleData', 'updateCycleModeDescription', 'updateProgressBar', 'updateStatsPanel', 'updateUndoRedoButtons'],
         provides: ['hideMainMenu', 'updateMainMenuHeader'],
         api: 'ui',            // Exports to deps.ui — api category != phase
         singleton: true
@@ -350,7 +361,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/settingsManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
-        optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hideMainMenu'],
+        optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'organizeCompletedTasks', 'performSchema25Migration', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showConfirmationModal', 'toggleHoverTaskOptions', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateStatsPanel'],
         provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData'],
         provideInstance: 'settingsManager',
         api: 'ui',
@@ -363,7 +374,8 @@ export const MODULE_MANIFESTS = {
     preferencesManager: {
         path: '../ui/preferencesManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showConfirmationModal', 'safeAddEventListener', 'hideMainMenu', 'getModal', 'getElementById', 'querySelector', 'querySelectorAll'],
+        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showConfirmationModal', 'safeAddEventListener', 'hideMainMenu', 'getModal'],
+        optionalDeps: ['renderVocabThemes'],
         provides: ['applyCustomColors', 'removeCustomColors'],
         provideInstance: 'preferencesManager',
         api: 'ui',
@@ -392,7 +404,7 @@ export const MODULE_MANIFESTS = {
         path: '../progress/cycleCompletion.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification'],
-        optionalDeps: ['logHistoryEvent', 'checkAchievements', 'vocabThemeManager', 'renderVocabThemes', 'showConfirmationModal'],
+        optionalDeps: ['logHistoryEvent', 'checkAchievements', 'vocabThemeManager', 'renderVocabThemes', 'showConfirmationModal', 'assignCycleVariables', 'resetTasks', 'unlockMiniGame', 'updateStatsPanel'],
         provides: ['checkMiniCycle', 'updateProgressBar', 'incrementCycleCount', 'showCompletionAnimation', 'showClearAnimation', 'animateProgressBarFill', 'animateProgressBarEmpty', 'showMilestoneCelebrationOverlay'],
         api: 'progress'
     },
@@ -401,7 +413,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/taskUI.js',
         phase: PHASES.THEME_VISUAL, // Must load before TASK_MANAGEMENT so TaskOptionsVisibilityController is available
         requires: ['appInit', 'loadMiniCycleData'],
-        optionalDeps: ['showCustomizerTip'],
+        optionalDeps: ['showCustomizerTip', 'addTask', 'isTouchDevice', 'taskToAddTaskOptions', 'updateRecurringButtonVisibility'],
         provides: ['refreshTaskListUI', 'showTaskOptions', 'hideTaskOptions', 'checkCompleteAllButton', 'TaskOptionsVisibilityController', 'hideTaskButtons'],
         api: 'ui'
     },
@@ -419,6 +431,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/uiEffects.js',
         phase: PHASES.THEME_VISUAL, // Must load before TASK_MANAGEMENT so triggerLogoBackground is available
         requires: [],
+        optionalDeps: ['getLogoTimeoutId', 'setLogoTimeoutId'],
         provides: ['triggerLogoBackground', 'triggerLogoScan'],
         api: 'ui'
     },
@@ -436,6 +449,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/quickActionsManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
+        optionalDeps: ['hideMainMenu', 'isDebug', 'recurringPanel', 'showStatsPanel', 'showTaskView', 'switchMiniCycle'],
         provides: ['trackAction'],
         provideInstance: 'quickActionsManager',
         api: 'ui',
@@ -455,7 +469,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/gesturePanelManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['safeAddEventListener', 'showNotification'],
-        optionalDeps: ['isOverlayActive', 'isDraggingNotification'],
+        optionalDeps: ['isOverlayActive', 'isDraggingNotification', 'onShowStatsPanel', 'onShowTaskView'],
         provides: [],
         provideInstance: 'gesturePanelManager',
         api: 'ui',
@@ -466,7 +480,7 @@ export const MODULE_MANIFESTS = {
         path: '../task/taskCore.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'sanitizeInput', 'removeRecurringTasksFromCycle'],
-        optionalDeps: ['showCompletionAnimation', 'showClearAnimation', 'logHistoryEvent', 'showMilestoneCelebrationOverlay'],
+        optionalDeps: ['showCompletionAnimation', 'showClearAnimation', 'logHistoryEvent', 'showMilestoneCelebrationOverlay', 'DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS', 'DEFAULT_TASK_OPTION_BUTTONS', 'animateProgressBarEmpty', 'animateProgressBarFill', 'checkCompleteAllButton', 'checkMiniCycle', 'checkOverdueTasks', 'enableDragAndDropOnTask', 'incrementCycleCount', 'isPerformingUndoRedo', 'pluginManager', 'recurringPanel', 'syncTaskDeleteWhenCompleteDOM', 'updateArrowsInDOM', 'updateMainMenuHeader', 'updateMoveArrowsVisibility', 'updateProgressBar', 'updateRecurringPanelButtonVisibility', 'updateStatsPanel'],
         provides: ['addTask', 'editTask', 'deleteTask', 'toggleTaskPriority', 'handleTaskCompletionChange', 'resetTasks', 'saveTaskToSchema25', 'handleCompleteAllTasks'],
         provideInstance: 'taskCore',
         api: 'task',
@@ -477,7 +491,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineLoader.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'loadMiniCycleData'],
-        optionalDeps: ['refreshThemeLabels', 'syncModeFromToggles', 'updateRecurringInfoLink'],
+        optionalDeps: ['refreshThemeLabels', 'syncModeFromToggles', 'updateRecurringInfoLink', 'addTask', 'catchUpMissedRecurringTasks', 'checkCompleteAllButton', 'completedTasksManager', 'createInitialSchema25Data', 'startReminders', 'syncAllTasksWithMode', 'taskToAddTaskOptions', 'updateMainMenuHeader', 'updateProgressBar', 'updateSearchVisibility', 'updateStatsPanel', 'updateThemeColor'],
         provides: ['loadMiniCycle'],
         api: 'cycle',
         after: ['taskCore']
@@ -487,7 +501,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/pullToRefresh.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['showNotification'],
-        optionalDeps: ['refreshUIFromState', 'loadMiniCycle', 'watchRecurringTasks', 'isModalOpen'],
+        optionalDeps: ['refreshUIFromState', 'loadMiniCycle', 'watchRecurringTasks', 'isModalOpen', 'checkRecurringTasksNow', 'promptServiceWorkerUpdate'],
         provides: ['pullToRefresh'],
         api: 'ui',
         optional: true
@@ -520,7 +534,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/clearedTasksManager.js',
         phase: PHASES.FEATURES,
         requires: ['appInit', 'AppState', 'showNotification'],
-        optionalDeps: ['addTask'],
+        optionalDeps: ['addTask', 'showConfirmationModal'],
         provides: ['recordClearedTask', 'getClearedTasks', 'clearClearedTasks', 'openClearedTasksModal'],
         provideInstance: 'clearedTasksManager',
         api: 'features',
@@ -531,7 +545,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/achievementsManager.js',
         phase: PHASES.FEATURES,
         requires: ['appInit', 'AppState', 'showNotification'],
-        optionalDeps: ['unlockMiniGame', 'safeAddEventListener', 'vocabThemeManager'],
+        optionalDeps: ['unlockMiniGame', 'safeAddEventListener', 'vocabThemeManager', 'logHistoryEvent'],
         provides: ['checkAchievements', 'getAchievements', 'isAchievementUnlocked', 'openAchievementsModal', 'initBadgeTooltips', 'showBadgeDetail', 'hideBadgeDetail', 'updateBadges'],
         provideInstance: 'achievementsManager',
         api: 'features',
@@ -576,6 +590,7 @@ export const MODULE_MANIFESTS = {
         path: '../other/basicPluginSystem.js',
         phase: PHASES.TESTING,
         requires: ['appInit', 'AppState', 'showNotification'],
+        optionalDeps: ['getCurrentCycle'],
         provides: ['pluginManager'],
         api: 'plugins',
         optional: true
@@ -613,6 +628,15 @@ export const CORE_DEPS = new Set([
     'safeLocalStorageSet',
     'safeJSONParse',
     'safeJSONStringify',
+    // DOM helpers — always available, framework-level (direct document calls in depMappings)
+    'getElementById',
+    'querySelector',
+    'querySelectorAll',
+    'getBody',
+    'getRootElement',
+    'getActiveElement',
+    'getTaskList',
+    'getProgressBar',
 ]);
 
 /**
