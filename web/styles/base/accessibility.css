@@ -1182,7 +1182,11 @@ body.high-contrast *:focus-visible {
 
 body.high-contrast:not(.dark-mode) #recurring-settings-panel {
     background: #e8e8e8;
-    border-top: 2px solid #333;
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .recurring-settings-title {
+    color: #000;
 }
 
 body.high-contrast:not(.dark-mode) #recur-frequency {
@@ -1251,13 +1255,63 @@ body.high-contrast:not(.dark-mode) .confirm-add-recurring-btn:disabled {
     color: #333;
 }
 
+body.high-contrast:not(.dark-mode) .change-recurring-btn {
+    border: 2px solid #333;
+    background: #e0e0e0;
+    color: #000;
+}
+
+body.high-contrast:not(.dark-mode) #apply-recurring-settings {
+    border: 2px solid #006600;
+    color: #fff;
+}
+
+body.high-contrast:not(.dark-mode) #cancel-recurring-settings {
+    border: 2px solid #333;
+    color: #fff;
+}
+
+body.high-contrast:not(.dark-mode) .close-recurring-panel {
+    border-top: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .add-recurring-task-btn {
+    border: 2px dashed #333;
+    color: #000;
+}
+
+body.high-contrast:not(.dark-mode) .select-all-add-recurring-btn {
+    color: #000;
+    text-decoration: underline;
+}
+
+body.high-contrast:not(.dark-mode) .confirm-add-recurring-btn {
+    border: 2px solid #006600;
+}
+
+body.high-contrast:not(.dark-mode) .recurring-remove-btn {
+    color: #cc0000;
+}
+
+body.high-contrast:not(.dark-mode) .toggle-advanced-btn {
+    border: 1px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) #toggle-check-all {
+    border: 1px solid #333;
+}
+
 /* =============================================================================
    HIGH CONTRAST — RECURRING PANEL (Dark Mode)
    ============================================================================= */
 
 body.high-contrast.dark-mode #recurring-settings-panel {
     background: #2a2a2a;
-    border-top: 2px solid #aaa;
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .recurring-settings-title {
+    color: #fff;
 }
 
 body.high-contrast.dark-mode #recur-frequency {
@@ -1324,6 +1378,52 @@ body.high-contrast.dark-mode .recurring-empty-state {
 body.high-contrast.dark-mode .confirm-add-recurring-btn:disabled {
     background: #555;
     color: #ccc;
+}
+
+body.high-contrast.dark-mode .change-recurring-btn {
+    border: 2px solid #aaa;
+    background: #3a3a3a;
+    color: #fff;
+}
+
+body.high-contrast.dark-mode #apply-recurring-settings {
+    border: 2px solid #00aa00;
+    color: #fff;
+}
+
+body.high-contrast.dark-mode #cancel-recurring-settings {
+    border: 2px solid #aaa;
+    color: #fff;
+}
+
+body.high-contrast.dark-mode .close-recurring-panel {
+    border-top: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .add-recurring-task-btn {
+    border: 2px dashed #aaa;
+    color: #fff;
+}
+
+body.high-contrast.dark-mode .select-all-add-recurring-btn {
+    color: #6cf;
+    text-decoration: underline;
+}
+
+body.high-contrast.dark-mode .confirm-add-recurring-btn {
+    border: 2px solid #00aa00;
+}
+
+body.high-contrast.dark-mode .recurring-remove-btn {
+    color: #ff4444;
+}
+
+body.high-contrast.dark-mode .toggle-advanced-btn {
+    border: 1px solid #aaa;
+}
+
+body.high-contrast.dark-mode #toggle-check-all {
+    border: 1px solid #aaa;
 }
 
 /* =============================================================================

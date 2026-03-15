@@ -1,3 +1,7 @@
+## [2.089] - 2026-03-14
+- feat(documentation): add Framework Equivalents guide and enhance README with architectural philosophy
+
+
 ## [2.088] - 2026-03-14
 - feat(recurring): enhance recurring task settings and UI
 
