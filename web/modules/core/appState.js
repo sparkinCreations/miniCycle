@@ -993,6 +993,33 @@ class MiniCycleState {
             }
         };
     }
+
+    /**
+     * Tear down this instance: remove global listeners, flush pending saves,
+     * clear subscribers. Called by orchestrator on boot retry and by
+     * resetStateManager() for tests.
+     */
+    destroy() {
+        if (this._beforeUnloadHandler) {
+            window.removeEventListener('beforeunload', this._beforeUnloadHandler);
+            this._beforeUnloadHandler = null;
+        }
+        if (this._storageHandler) {
+            window.removeEventListener('storage', this._storageHandler);
+            this._storageHandler = null;
+        }
+        if (this.saveTimeout) {
+            clearTimeout(this.saveTimeout);
+            this.saveTimeout = null;
+        }
+        if (this.isDirty) {
+            this.save();
+        }
+        if (this.listeners) {
+            this.listeners.clear();
+        }
+        this.isInitialized = false;
+    }
 }
 
 // ============================================================================
@@ -1082,28 +1109,7 @@ export function createStateManager(dependencies = {}) {
  */
 export function resetStateManager() {
     if (AppState) {
-        // Remove global window listeners to prevent duplicates on retry
-        if (AppState._beforeUnloadHandler) {
-            window.removeEventListener('beforeunload', AppState._beforeUnloadHandler);
-            AppState._beforeUnloadHandler = null;
-        }
-        if (AppState._storageHandler) {
-            window.removeEventListener('storage', AppState._storageHandler);
-            AppState._storageHandler = null;
-        }
-        // Flush pending save before teardown
-        if (AppState.saveTimeout) {
-            clearTimeout(AppState.saveTimeout);
-            AppState.saveTimeout = null;
-        }
-        if (AppState.isDirty) {
-            AppState.save();
-        }
-        // Clean up subscriber listeners
-        if (AppState.listeners) {
-            AppState.listeners.clear();
-        }
-        AppState.isInitialized = false;
+        AppState.destroy();
     }
     AppState = null;
 }

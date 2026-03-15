@@ -470,24 +470,7 @@ async function runBootSequence() {
     // On retry, coreBoot re-imports appState.js with a new version suffix, creating
     // a fresh module instance with its own singleton. The old instance's global
     // beforeunload/storage listeners must be removed here, before deps.core is cleared.
-    const oldAppState = deps.core?.AppState;
-    if (oldAppState) {
-      if (oldAppState._beforeUnloadHandler) {
-        window.removeEventListener('beforeunload', oldAppState._beforeUnloadHandler);
-      }
-      if (oldAppState._storageHandler) {
-        window.removeEventListener('storage', oldAppState._storageHandler);
-      }
-      if (oldAppState.saveTimeout) {
-        clearTimeout(oldAppState.saveTimeout);
-        if (oldAppState.isDirty) {
-          oldAppState.save();
-        }
-      }
-      if (oldAppState.listeners) {
-        oldAppState.listeners.clear();
-      }
-    }
+    deps.core?.AppState?.destroy?.();
 
     // ✅ CRITICAL FIX 2: Clear nested objects to prevent stale references
     // On retry, we need to rebuild all deps from scratch so Proxy getters work correctly
