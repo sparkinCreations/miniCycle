@@ -67,7 +67,6 @@ const getShowNotification = () => _appContextMod?.ui?.()?.showNotification || nu
 const getStateApi = () => _appContextMod?.state?.() || null;
 const getUndoApi = () => _appContextMod?.undo?.() || null;
 const getUiApi = () => _appContextMod?.ui?.() || null;
-const getReminderApi = () => _appContextMod?.reminder?.() || null;
 const getDeviceDetectionManager = () => _appContextMod?.ui?.()?.deviceDetectionManager || null;
 const getGetModal = () => _appContextMod?.ui?.()?.getModal || null;
 
@@ -134,14 +133,6 @@ export function attachGlobalEventListeners(_GlobalUtils, _options = {}) {
     'click',
     '__miniCycleUiBootResetNotificationClickHandler',
     handleResetNotificationPosition
-  );
-
-  // ========== Open Reminders Modal ==========
-  replaceStoredEventListener(
-    document.getElementById(DOM_IDS.OPEN_REMINDERS_MODAL),
-    'click',
-    '__miniCycleUiBootOpenRemindersClickHandler',
-    handleOpenRemindersModalClick
   );
 
   // ========== First Touch Interaction ==========
@@ -445,32 +436,6 @@ async function handleResetNotificationPosition() {
     console.error('❌ Failed to reset notification position:', error);
     showNotification?.('❌ ' + getLabel('notify.positionResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
   }
-}
-
-/**
- * Handle open reminders modal click
- */
-function handleOpenRemindersModalClick() {
-
-  // Use grouped APIs
-  try {
-    getReminderApi()?.loadSettings?.();
-  } catch (e) {
-    console.warn('⚠️ Could not load reminder settings:', e);
-  }
-
-  const modal = getGetModal()?.('reminders');
-  if (modal && !modal.open) {
-    modal._previousFocus = document.activeElement;
-    modal.showModal();
-  }
-
-  try {
-    getUiApi()?.hideMainMenu?.();
-  } catch {
-    // Menu API not ready - ok
-  }
-
 }
 
 /**

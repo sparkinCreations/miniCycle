@@ -48,10 +48,11 @@ const di = createDIModule('SettingsUIManager', {
     isDebug: optional(null),
     getModal: optional(null),
     clearAllUndoHistory: optional(null),
-    updateHelpWindow: optional(null)
+    updateHelpWindow: optional(null),
+    trackAction: optional(null)
 });
 
-/** @type {{AppState: Object, loadMiniCycleData: Function, showNotification: Function, safeAddEventListener: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, organizeCompletedTasks: Function|null, resetDefaultRecurringSettings: Function|null}} */
+/** @type {{AppState: Object, loadMiniCycleData: Function, showNotification: Function, safeAddEventListener: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, organizeCompletedTasks: Function|null, resetDefaultRecurringSettings: Function|null, trackAction: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -137,7 +138,6 @@ export function setupSettingsMenu() {
     if (_initialized.settingsMenu) {
         return;
     }
-    _initialized.settingsMenu = true;
 
     const safeAddEventListener = _deps.safeAddEventListener;
     if (!safeAddEventListener) {
@@ -149,19 +149,36 @@ export function setupSettingsMenu() {
     const openSettingsBtn = document.getElementById(DOM_IDS.OPEN_SETTINGS);
     const closeSettingsBtn = document.getElementById(DOM_IDS.CLOSE_SETTINGS);
 
+    // Only lock setup after the live modal path exists so a later retry can recover.
+    if (!settingsModal || !openSettingsBtn || !closeSettingsBtn) {
+        console.warn('⚠️ Settings modal elements not found');
+        return;
+    }
+
+    _initialized.settingsMenu = true;
+    const isNativeDialog = typeof settingsModal.showModal === 'function';
+
     const openSettings = (event) => {
         event.stopPropagation();
         _deps.trackAction?.('settings');
-        if (settingsModal && !settingsModal.open) {
+        if (isNativeDialog && !settingsModal.open) {
             settingsModal._previousFocus = document.activeElement;
             settingsModal.showModal();
+        } else if (!isNativeDialog) {
+            settingsModal._previousFocus = document.activeElement;
+            settingsModal.style.display = 'flex';
+            settingsModal.classList.remove('hidden');
         }
         _deps.hideMainMenu?.();
     };
 
     const closeSettings = () => {
-        if (settingsModal && settingsModal.open) {
+        if (isNativeDialog && settingsModal.open) {
             settingsModal.close();
+            settingsModal._previousFocus?.focus({ focusVisible: false });
+        } else if (!isNativeDialog) {
+            settingsModal.style.display = 'none';
+            settingsModal.classList.add('hidden');
             settingsModal._previousFocus?.focus({ focusVisible: false });
         }
     };
