@@ -263,7 +263,7 @@ export class RoutineManager {
      * @returns {Promise<boolean>} True if sample loaded successfully, false on failure
      */
     async preloadGettingStartedCycle(_options = {}) {
-        return this.loadSampleRoutine('getting-started.mcyc', { isOnboarding: true });
+        return this.loadSampleRoutine('getting-started.mcyc', { isOnboarding: true, ..._options });
     }
 
     /**
@@ -518,11 +518,15 @@ export class RoutineManager {
                 });
             }
 
-            this.deps.showNotification(
-                '✨ ' + getLabel('notify.sampleLoaded', { vars: { name: sampleTitle } }),
-                'success',
-                UI_TIMEOUTS.NOTIFICATION_SLOW
-            );
+            // Onboarding path: skip generic toast — onboardingManager shows its own
+            // welcomeSampleLoaded notification with the blank-routine CTA.
+            if (!isOnboarding) {
+                this.deps.showNotification(
+                    '✨ ' + getLabel('notify.sampleLoaded', { vars: { name: sampleTitle } }),
+                    'success',
+                    UI_TIMEOUTS.NOTIFICATION_SLOW
+                );
+            }
 
             if (isOnboarding) {
                 await this.deps.completeInitialSetup(finalTitle, appState.get());
@@ -555,13 +559,15 @@ export class RoutineManager {
                 dialog.remove();
             }
 
-            this.deps.showNotification(
-                '❌ ' + getLabel('notify.sampleLoadFailed'),
-                'error',
-                UI_TIMEOUTS.NOTIFICATION_LONG
-            );
+            if (!options.silent) {
+                this.deps.showNotification(
+                    '❌ ' + getLabel('notify.sampleLoadFailed'),
+                    'error',
+                    UI_TIMEOUTS.NOTIFICATION_LONG
+                );
+            }
 
-            if (isOnboarding) {
+            if (isOnboarding && !options.silent) {
                 this.createBasicFallbackCycle();
             }
 

@@ -57,6 +57,7 @@ const di = createDIModule('StatsPanel', {
     gesturePanelManager: optional(null),
     // Vocabulary theme system (Phase 2)
     vocabThemeManager: optional(null),
+    showStatsTourNotification: optional(null),
     // DOM query helpers (testable, avoids direct document access)
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
@@ -834,6 +835,16 @@ export class StatsPanelManager {
         this._syncGestureManager(true);
         this.announceViewChange(getLabel('accessibility.statsPanelOpened'));
         this.updateNavDots();
+        this._maybeShowStatsTour();
+    }
+
+    /**
+     * Trigger stats panel tour notification on first open.
+     * The tour manager handles the state check internally.
+     * @private
+     */
+    _maybeShowStatsTour() {
+        _deps.showStatsTourNotification?.();
     }
 
     /**

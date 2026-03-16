@@ -35,7 +35,8 @@ const di = createDIModule('TaskOptionsCustomizer', {
     appInit: optional(null),
     DEFAULT_TASK_OPTION_BUTTONS: optional(null),
     safeAddEventListener: optional(null),
-    getModal: optional(null)
+    getModal: optional(null),
+    showTaskOptionsTourNotification: optional(null)
 });
 
 /**
@@ -387,6 +388,9 @@ export class TaskOptionsCustomizer {
         // Focus first interactive element
         const firstFocusable = modal.querySelector('input:not([disabled]), button');
         if (firstFocusable) setTimeout(() => firstFocusable.focus({ focusVisible: false }), 100);
+
+        // Show tour prompt after modal is open
+        this.deps.showTaskOptionsTourNotification?.();
     }
 
     /**

@@ -186,7 +186,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'showNotification', 'safeAddEventListener', 'getModal'],
         optionalDeps: ['hideMainMenu', 'waitForCore'],
-        provides: [],
+        provides: ['hasActiveNotifications'],
         provideInstance: 'modalManager',
         api: 'ui'
     },
@@ -219,7 +219,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/statsPanel.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['showNotification', 'AppState', 'appInit', 'getModal'],
-        optionalDeps: ['historyManager', 'clearedTasksManager', 'achievementsManager', 'gesturePanelManager', 'vocabThemeManager', 'hideMainMenu', 'isDraggingNotification', 'isOverlayActive', 'setupDarkModeToggle', 'trackAction', 'updateThemeColor'],
+        optionalDeps: ['historyManager', 'clearedTasksManager', 'achievementsManager', 'gesturePanelManager', 'vocabThemeManager', 'hideMainMenu', 'isDraggingNotification', 'isOverlayActive', 'setupDarkModeToggle', 'trackAction', 'updateThemeColor', 'showStatsTourNotification'],
         provides: ['showStatsPanel', 'showTaskView', 'updateStatsPanel', 'openHistoryModal', 'openClearedTasksModal', 'openAchievementsModal'],
         provideInstance: 'statsPanelManager',
         api: 'ui'
@@ -249,6 +249,7 @@ export const MODULE_MANIFESTS = {
         requires: ['appInit', 'AppState', 'showNotification', 'renderTaskList', 'updateMoveArrowsVisibility', 'startReminders', 'stopReminders', 'DEFAULT_TASK_OPTION_BUTTONS', 'safeAddEventListener', 'getModal'],
         // modeManager is Phase 5 (CYCLE) but taskOptionsCustomizer is Phase 3 - must be lazy
         lazyRequires: ['modeManager'],
+        optionalDeps: ['showTaskOptionsTourNotification'],
         provides: [],
         provideInstance: 'taskOptionsCustomizer',
         api: 'ui',
@@ -373,7 +374,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'getElementById', 'querySelector', 'getBody', 'getRootElement', 'getActiveElement', 'showNotification', 'safeAddEventListener'],
         optionalDeps: ['isModalOpen'],
-        provides: ['startGuidedTour'],
+        provides: ['startGuidedTour', 'showStatsTourNotification', 'showPersonalizationTourNotification', 'showTaskOptionsTourNotification'],
         provideInstance: 'guidedTourManager',
         api: 'ui',
         after: ['onboardingManager']
@@ -386,7 +387,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/preferencesManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showConfirmationModal', 'safeAddEventListener', 'hideMainMenu', 'getModal'],
-        optionalDeps: ['renderVocabThemes'],
+        optionalDeps: ['renderVocabThemes', 'showPersonalizationTourNotification', 'hasActiveNotifications'],
         provides: ['applyCustomColors', 'removeCustomColors'],
         provideInstance: 'preferencesManager',
         api: 'ui',

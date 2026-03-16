@@ -57,15 +57,21 @@ export async function runGuidedTourManagerTests(resultsDiv) {
     function cleanupDom() {
         document.querySelectorAll(
             '.tour-overlay, .tour-spotlight, .tour-tooltip, ' +
-            '#toggle-task-input-btn, #progressBar, #slide-right, #retake-guided-tour'
+            '#quick-actions-btn, #progressBar, #mode-selector, ' +
+            '#help-window, #quick-actions-window, #personalization-btn, ' +
+            '#quick-dark-toggle, #slide-right, #retake-guided-tour, ' +
+            '#current-routine-status, #history-btn, ' +
+            '#preferences-modal, #preferences-preview, #pref-section-quick-themes, ' +
+            '#preferences-reset-all, ' +
+            '#task-options-customizer-modal, #option-preview-content, #reset-task-options-btn'
         ).forEach(el => el.remove());
-        document.querySelectorAll('.task, .hamburger-menu').forEach(el => el.remove());
+        document.querySelectorAll('.task, .hamburger-menu, .badge-container, .global-stats-container, .preferences-section-header').forEach(el => el.remove());
         document.documentElement.removeAttribute('data-tour-active');
     }
 
-    function setupTargets({ withTask = true } = {}) {
+    function setupTargets({ withTask = true, withHelpWindow = true, withQuickActionsWindow = true } = {}) {
         createTarget('button', {
-            id: 'toggle-task-input-btn',
+            id: 'quick-actions-btn',
             rect: { left: 40, top: 100, width: 44, height: 44 }
         });
 
@@ -79,6 +85,35 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         createTarget('div', {
             id: 'progressBar',
             rect: { left: 48, top: 290, width: 280, height: 16 }
+        });
+
+        createTarget('select', {
+            id: 'mode-selector',
+            rect: { left: 200, top: 60, width: 160, height: 36 }
+        });
+
+        if (withHelpWindow) {
+            createTarget('div', {
+                id: 'help-window',
+                rect: { left: 700, top: 200, width: 200, height: 120 }
+            });
+        }
+
+        if (withQuickActionsWindow) {
+            createTarget('div', {
+                id: 'quick-actions-window',
+                rect: { left: 20, top: 200, width: 200, height: 120 }
+            });
+        }
+
+        createTarget('button', {
+            id: 'personalization-btn',
+            rect: { left: 10, top: 700, width: 50, height: 50 }
+        });
+
+        createTarget('button', {
+            id: 'quick-dark-toggle',
+            rect: { left: 1200, top: 700, width: 50, height: 50 }
         });
 
         createTarget('button', {
@@ -297,6 +332,44 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         }
     });
 
+    await test('showStep skips hidden help window and advances', async () => {
+        setupTargets({ withHelpWindow: false });
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: null }
+        });
+
+        manager.startTour();
+        manager.showStep(4); // help window (index 4)
+
+        if (manager._currentStepIndex === 4) {
+            throw new Error('Expected help window step to be skipped');
+        }
+        // Should advance to next available — quick-actions-window (5) or beyond
+        if (manager._currentStepIndex < 5) {
+            throw new Error(`Expected skip past step 4, got ${manager._currentStepIndex}`);
+        }
+    });
+
+    await test('showStep skips hidden quick actions window and advances', async () => {
+        setupTargets({ withQuickActionsWindow: false });
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: null }
+        });
+
+        manager.startTour();
+        manager.showStep(5); // quick actions window (index 5)
+
+        if (manager._currentStepIndex === 5) {
+            throw new Error('Expected quick actions step to be skipped');
+        }
+        // Should advance to personalization (6) or beyond
+        if (manager._currentStepIndex < 6) {
+            throw new Error(`Expected skip past step 5, got ${manager._currentStepIndex}`);
+        }
+    });
+
     await test('prevStep skips backwards over missing targets', async () => {
         setupTargets({ withTask: false });
         const manager = await createManager({
@@ -317,7 +390,7 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         setupTargets();
         const manager = await createManager({
             appReady: false,
-            settings: { onboardingCompleted: true, guidedTourStep: 4 }
+            settings: { onboardingCompleted: true, guidedTourStep: 9 }
         });
 
         manager.startTour();
@@ -335,7 +408,7 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         setupTargets();
         const manager = await createManager({
             appReady: false,
-            settings: { onboardingCompleted: true, guidedTourStep: 4 }
+            settings: { onboardingCompleted: true, guidedTourStep: 9 }
         });
 
         manager.startTour();
@@ -431,6 +504,416 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         if (document.documentElement.hasAttribute('data-tour-active')) {
             throw new Error('Expected data-tour-active to be cleared');
         }
+    });
+
+    // ---- Stats Tour Tests ----
+
+    function setupStatsPanelTargets({ withHistoryBtn = true } = {}) {
+        createTarget('div', {
+            id: 'current-routine-status',
+            rect: { left: 50, top: 100, width: 300, height: 200 }
+        });
+
+        if (withHistoryBtn) {
+            createTarget('button', {
+                id: 'history-btn',
+                rect: { left: 50, top: 320, width: 120, height: 36 }
+            });
+        }
+
+        createTarget('div', {
+            className: 'badge-container',
+            rect: { left: 50, top: 380, width: 300, height: 80 }
+        });
+
+        createTarget('div', {
+            className: 'global-stats-container',
+            rect: { left: 50, top: 480, width: 300, height: 100 }
+        });
+    }
+
+    resultsDiv.innerHTML += '<h4 class="test-section">Stats Tour</h4>';
+
+    await test('showStatsTourNotification shows notification when statsTourStep is null', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', statsTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showStatsTourNotification();
+
+        if (notifications.length !== 1) {
+            throw new Error(`Expected 1 notification, got ${notifications.length}`);
+        }
+        if (notifications[0].type !== 'info') {
+            throw new Error(`Expected info type, got ${notifications[0].type}`);
+        }
+        if (!notifications[0].options?.actionButton?.label?.includes('Stats Tour')) {
+            throw new Error('Expected stats tour CTA label');
+        }
+    });
+
+    await test('showStatsTourNotification is a no-op when statsTourStep is done', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', statsTourStep: 'done' }
+        });
+
+        notifications.length = 0;
+        manager.showStatsTourNotification();
+
+        if (notifications.length !== 0) {
+            throw new Error(`Expected 0 notifications, got ${notifications.length}`);
+        }
+    });
+
+    await test('stats tour completion sets statsTourStep to done without affecting guidedTourStep', async () => {
+        setupStatsPanelTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', statsTourStep: null }
+        });
+
+        manager.startTour('stats');
+        manager.completeTour();
+
+        if (mockState.settings.statsTourStep !== 'done') {
+            throw new Error(`Expected statsTourStep to be done, got ${mockState.settings.statsTourStep}`);
+        }
+        if (mockState.settings.guidedTourStep !== 'done') {
+            throw new Error(`guidedTourStep should remain done, got ${mockState.settings.guidedTourStep}`);
+        }
+    });
+
+    await test('startTour with no args still runs the main tour', async () => {
+        setupTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: null }
+        });
+
+        manager.startTour();
+
+        // Main tour step 0 targets quick-actions-btn
+        if (mockState.settings.guidedTourStep !== 0) {
+            throw new Error(`Expected guidedTourStep 0, got ${mockState.settings.guidedTourStep}`);
+        }
+    });
+
+    await test('stats tour skips missing history button', async () => {
+        setupStatsPanelTargets({ withHistoryBtn: false });
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', statsTourStep: null }
+        });
+
+        manager.startTour('stats');
+        manager.showStep(1); // history btn step
+
+        // Should skip past step 1 (history btn) to step 2 (badge container)
+        if (manager._currentStepIndex === 1) {
+            throw new Error('Expected history button step to be skipped');
+        }
+        if (manager._currentStepIndex < 2) {
+            throw new Error(`Expected skip past step 1, got ${manager._currentStepIndex}`);
+        }
+    });
+
+    await test('dismissing stats tour notification marks statsTourStep as done', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', statsTourStep: null }
+        });
+
+        manager.showStatsTourNotification();
+        notifications[0].options.onDismiss();
+
+        if (mockState.settings.statsTourStep !== 'done') {
+            throw new Error(`Expected statsTourStep done, got ${mockState.settings.statsTourStep}`);
+        }
+    });
+
+    // ---- Personalization Tour Tests ----
+
+    function setupPreferencesModalTargets() {
+        // Create a dialog element to act as the container
+        const dialog = document.createElement('dialog');
+        dialog.id = 'preferences-modal';
+        dialog.className = 'preferences-modal';
+        document.body.appendChild(dialog);
+
+        // Create targets inside the dialog
+        const preview = document.createElement('div');
+        preview.id = 'preferences-preview';
+        assignRect(preview, { left: 50, top: 80, width: 400, height: 200 });
+        dialog.appendChild(preview);
+
+        const presetsGrid = document.createElement('div');
+        presetsGrid.id = 'pref-section-quick-themes';
+        assignRect(presetsGrid, { left: 50, top: 300, width: 400, height: 120 });
+        dialog.appendChild(presetsGrid);
+
+        const sectionHeader = document.createElement('div');
+        sectionHeader.className = 'preferences-section-header collapsible';
+        assignRect(sectionHeader, { left: 50, top: 440, width: 400, height: 40 });
+        dialog.appendChild(sectionHeader);
+
+        const resetBtn = document.createElement('button');
+        resetBtn.id = 'preferences-reset-all';
+        assignRect(resetBtn, { left: 50, top: 600, width: 120, height: 36 });
+        dialog.appendChild(resetBtn);
+
+        return dialog;
+    }
+
+    resultsDiv.innerHTML += '<h4 class="test-section">Personalization Tour</h4>';
+
+    await test('showPersonalizationTourNotification shows notification when prefsTourStep is null', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', prefsTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showPersonalizationTourNotification();
+
+        if (notifications.length !== 1) {
+            throw new Error(`Expected 1 notification, got ${notifications.length}`);
+        }
+        if (notifications[0].type !== 'info') {
+            throw new Error(`Expected info notification, got ${notifications[0].type}`);
+        }
+        if (!notifications[0].options?.actionButton?.label) {
+            throw new Error('Expected personalization tour CTA label');
+        }
+    });
+
+    await test('showPersonalizationTourNotification is a no-op when prefsTourStep is done', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', prefsTourStep: 'done' }
+        });
+
+        notifications.length = 0;
+        manager.showPersonalizationTourNotification();
+
+        if (notifications.length !== 0) {
+            throw new Error(`Expected 0 notifications, got ${notifications.length}`);
+        }
+    });
+
+    await test('personalization notification dismiss marks tour as done', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', prefsTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showPersonalizationTourNotification();
+        notifications[0].options.onDismiss();
+
+        if (mockState.settings.prefsTourStep !== 'done') {
+            throw new Error(`Expected prefsTourStep done, got ${mockState.settings.prefsTourStep}`);
+        }
+    });
+
+    await test('personalization tour appends elements inside the dialog container', async () => {
+        const dialog = setupPreferencesModalTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', prefsTourStep: null }
+        });
+
+        manager.startTour('personalization');
+
+        const overlayInDialog = dialog.querySelector('.tour-overlay');
+        const overlayInBody = document.body.querySelector(':scope > .tour-overlay');
+
+        if (!overlayInDialog) {
+            throw new Error('Expected tour overlay inside the dialog');
+        }
+        if (overlayInBody) {
+            throw new Error('Tour overlay should NOT be a direct child of body');
+        }
+
+        dialog.remove();
+    });
+
+    await test('personalization tour completion sets prefsTourStep to done', async () => {
+        const dialog = setupPreferencesModalTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', prefsTourStep: null }
+        });
+
+        manager.startTour('personalization');
+        manager.completeTour();
+
+        if (mockState.settings.prefsTourStep !== 'done') {
+            throw new Error(`Expected prefsTourStep done, got ${mockState.settings.prefsTourStep}`);
+        }
+        if (mockState.settings.guidedTourStep !== 'done') {
+            throw new Error(`guidedTourStep should remain done, got ${mockState.settings.guidedTourStep}`);
+        }
+
+        dialog.remove();
+    });
+
+    // ---- Task Options Tour Tests ----
+
+    function setupTaskOptionsModalTargets() {
+        const dialog = document.createElement('dialog');
+        dialog.id = 'task-options-customizer-modal';
+        document.body.appendChild(dialog);
+
+        const modalBody = document.createElement('div');
+        modalBody.className = 'modal-body';
+        dialog.appendChild(modalBody);
+
+        const container = document.createElement('div');
+        container.className = 'task-options-container';
+        modalBody.appendChild(container);
+
+        const optionsList = document.createElement('div');
+        optionsList.className = 'task-options-list';
+        assignRect(optionsList, { left: 50, top: 80, width: 300, height: 280 });
+        container.appendChild(optionsList);
+
+        const previewContent = document.createElement('div');
+        previewContent.id = 'option-preview-content';
+        assignRect(previewContent, { left: 370, top: 80, width: 200, height: 200 });
+        container.appendChild(previewContent);
+
+        // Two sections: first is "This Routine", last is "Global"
+        const section1 = document.createElement('div');
+        section1.className = 'options-section';
+        container.appendChild(section1);
+
+        const section2 = document.createElement('div');
+        section2.className = 'options-section';
+        assignRect(section2, { left: 50, top: 380, width: 300, height: 120 });
+        container.appendChild(section2);
+
+        const resetBtn = document.createElement('button');
+        resetBtn.id = 'reset-task-options-btn';
+        assignRect(resetBtn, { left: 50, top: 520, width: 140, height: 36 });
+        dialog.appendChild(resetBtn);
+
+        return dialog;
+    }
+
+    resultsDiv.innerHTML += '<h4 class="test-section">Task Options Tour</h4>';
+
+    await test('showTaskOptionsTourNotification shows notification when taskOptionsTourStep is null', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', taskOptionsTourStep: null }
+        });
+
+        // Create dialog so container resolution works
+        const dialog = document.createElement('dialog');
+        dialog.id = 'task-options-customizer-modal';
+        const modalBody = document.createElement('div');
+        modalBody.className = 'modal-body';
+        dialog.appendChild(modalBody);
+        document.body.appendChild(dialog);
+
+        notifications.length = 0;
+        manager.showTaskOptionsTourNotification();
+
+        if (notifications.length !== 1) {
+            throw new Error(`Expected 1 notification, got ${notifications.length}`);
+        }
+        if (notifications[0].type !== 'info') {
+            throw new Error(`Expected info notification, got ${notifications[0].type}`);
+        }
+        if (!notifications[0].options?.actionButton?.label) {
+            throw new Error('Expected task options tour CTA label');
+        }
+
+        dialog.remove();
+    });
+
+    await test('showTaskOptionsTourNotification is a no-op when taskOptionsTourStep is done', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', taskOptionsTourStep: 'done' }
+        });
+
+        notifications.length = 0;
+        manager.showTaskOptionsTourNotification();
+
+        if (notifications.length !== 0) {
+            throw new Error(`Expected 0 notifications, got ${notifications.length}`);
+        }
+    });
+
+    await test('task options notification dismiss marks tour as done', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', taskOptionsTourStep: null }
+        });
+
+        // Create dialog so container resolution works
+        const dialog = document.createElement('dialog');
+        dialog.id = 'task-options-customizer-modal';
+        const modalBody = document.createElement('div');
+        modalBody.className = 'modal-body';
+        dialog.appendChild(modalBody);
+        document.body.appendChild(dialog);
+
+        notifications.length = 0;
+        manager.showTaskOptionsTourNotification();
+        notifications[0].options.onDismiss();
+
+        if (mockState.settings.taskOptionsTourStep !== 'done') {
+            throw new Error(`Expected taskOptionsTourStep done, got ${mockState.settings.taskOptionsTourStep}`);
+        }
+
+        dialog.remove();
+    });
+
+    await test('task options tour appends elements inside the dialog container', async () => {
+        const dialog = setupTaskOptionsModalTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', taskOptionsTourStep: null }
+        });
+
+        manager.startTour('taskOptions');
+
+        const overlayInDialog = dialog.querySelector('.tour-overlay');
+        const overlayInBody = document.body.querySelector(':scope > .tour-overlay');
+
+        if (!overlayInDialog) {
+            throw new Error('Expected tour overlay inside the dialog');
+        }
+        if (overlayInBody) {
+            throw new Error('Tour overlay should NOT be a direct child of body');
+        }
+
+        dialog.remove();
+    });
+
+    await test('task options tour completion sets taskOptionsTourStep to done', async () => {
+        const dialog = setupTaskOptionsModalTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', taskOptionsTourStep: null }
+        });
+
+        manager.startTour('taskOptions');
+        manager.completeTour();
+
+        if (mockState.settings.taskOptionsTourStep !== 'done') {
+            throw new Error(`Expected taskOptionsTourStep done, got ${mockState.settings.taskOptionsTourStep}`);
+        }
+        if (mockState.settings.guidedTourStep !== 'done') {
+            throw new Error(`guidedTourStep should remain done, got ${mockState.settings.guidedTourStep}`);
+        }
+
+        dialog.remove();
     });
 
     const percentage = Math.round((passed.count / total.count) * 100);

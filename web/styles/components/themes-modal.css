@@ -1247,6 +1247,7 @@ dialog.preferences-modal::backdrop {
 
     .preferences-scroll-area {
         display: flex;
+        flex-wrap: wrap;
         gap: var(--space-4);
         align-items: flex-start;
     }

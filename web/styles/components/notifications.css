@@ -269,6 +269,36 @@
 }
 
 /* =============================================================================
+   IN-DIALOG NOTIFICATIONS
+   Notifications rendered inside a <dialog> via the container option.
+   Compact horizontal layout that sits flush at the top of the dialog content.
+   ============================================================================= */
+
+dialog .notification {
+    margin: 0 0 var(--space-3);
+    border-radius: var(--radius-sm);
+    box-shadow: none;
+    font-size: var(--font-size-xs);
+    padding: var(--space-2-5) var(--space-3);
+    text-align: center;
+    flex: 0 0 100%;
+}
+
+dialog .notification .notification-content.notification-has-action {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+dialog .notification .notification-message {
+    flex: 1;
+}
+
+dialog .notification .notification-action-btn {
+    padding: var(--space-1-5) var(--space-3);
+}
+
+/* =============================================================================
    QUICK RECURRING OPTIONS
    ============================================================================= */
 

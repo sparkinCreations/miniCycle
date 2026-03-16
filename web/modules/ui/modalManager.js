@@ -49,6 +49,17 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/consta
 import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
 import { getLabel } from '../labels/labelResolver.js';
 
+/**
+ * Check if there are any active notifications. Used by backdrop click handlers
+ * to prevent closing a modal when the user is interacting with a notification
+ * that overlaps the dialog backdrop (e.g., tour prompts via popover).
+ * @returns {boolean} True if at least one notification is visible
+ */
+export function hasActiveNotifications() {
+    const container = document.getElementById(DOM_IDS.NOTIFICATION_CONTAINER);
+    return container?.querySelector(DOM_SELECTORS.NOTIFICATION) != null;
+}
+
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
@@ -254,7 +265,7 @@ export class ModalManager {
 
         // Close Modal on Outside Click (backdrop click fires on the dialog element)
         feedbackModal._outsideClickHandler = (event) => {
-            if (event.target === feedbackModal) {
+            if (event.target === feedbackModal && !hasActiveNotifications()) {
                 feedbackModal.close();
                 feedbackModal._previousFocus?.focus({ focusVisible: false });
             }
@@ -418,7 +429,7 @@ export class ModalManager {
 
         // Close Modal on Outside Click (backdrop click fires on the dialog element)
         aboutModal._outsideClickHandler = (event) => {
-            if (event.target === aboutModal) {
+            if (event.target === aboutModal && !hasActiveNotifications()) {
                 aboutModal.close();
                 aboutModal._previousFocus?.focus({ focusVisible: false });
             }
@@ -511,18 +522,33 @@ export class ModalManager {
                     // Only act if there's something to close
                     if (!hasOpenModal && !hasNotification) return;
 
+                    // When notifications are visible alongside a modal, dismiss notifications
+                    // first and keep the modal open. This prevents ESC from closing e.g. the
+                    // preferences dialog while a tour prompt notification is showing.
+                    if (hasNotification && hasOpenModal) {
+                        e.preventDefault(); // Block native <dialog> ESC close
+                        notifications.forEach(notification => {
+                            if (notification.querySelector(DOM_SELECTORS.CLOSE_BTN)) {
+                                notification.querySelector(DOM_SELECTORS.CLOSE_BTN).click();
+                            }
+                        });
+                        return;
+                    }
+
                     // Native <dialog> elements handle their own ESC (close event fires automatically).
                     // This handler covers non-dialog cleanup: task options, recurring panels, notifications, etc.
                     if (hasOpenModal) {
                         this.closeAllModals();
                     }
 
-                    // Dismiss notifications
-                    notifications.forEach(notification => {
-                        if (notification.querySelector(DOM_SELECTORS.CLOSE_BTN)) {
-                            notification.querySelector(DOM_SELECTORS.CLOSE_BTN).click();
-                        }
-                    });
+                    // Dismiss notifications (no modal open)
+                    if (hasNotification) {
+                        notifications.forEach(notification => {
+                            if (notification.querySelector(DOM_SELECTORS.CLOSE_BTN)) {
+                                notification.querySelector(DOM_SELECTORS.CLOSE_BTN).click();
+                            }
+                        });
+                    }
                 }
             });
 

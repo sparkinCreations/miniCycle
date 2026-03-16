@@ -921,6 +921,9 @@ class MiniCycleState {
                 completedTasksExpanded: false,
                 onboardingCompleted: false,
                 guidedTourStep: null,
+                statsTourStep: null,
+                prefsTourStep: null,
+                taskOptionsTourStep: null,
                 addTaskDiscovered: false,
                 dismissedEducationalTips: {},
                 defaultRecurringSettings: {
