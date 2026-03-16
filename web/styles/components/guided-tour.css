@@ -1,0 +1,191 @@
+.tour-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-tour-overlay);
+    pointer-events: auto;
+    background: transparent;
+}
+
+.tour-spotlight {
+    position: fixed;
+    z-index: var(--z-tour-overlay);
+    pointer-events: none;
+    border-radius: var(--space-4);
+    border: 2px solid rgba(255, 255, 255, 0.92);
+    box-shadow: 0 0 0 9999px rgba(8, 13, 30, 0.62);
+    transition: top var(--transition-fast) ease, left var(--transition-fast) ease, width var(--transition-fast) ease, height var(--transition-fast) ease;
+}
+
+.tour-tooltip {
+    position: fixed;
+    width: min(280px, calc(100vw - var(--space-8)));
+    z-index: var(--z-tour-tooltip);
+    pointer-events: auto;
+    border-radius: 18px;
+    padding: var(--space-4);
+    background: var(--pref-bg, var(--theme-modal-bg));
+    color: var(--pref-text, var(--theme-modal-text));
+    border: 1px solid color-mix(in srgb, var(--pref-text, var(--theme-modal-text)) 14%, transparent);
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.22);
+    transition: top var(--transition-fast) ease, left var(--transition-fast) ease, transform var(--transition-fast) ease;
+}
+
+.tour-tooltip[data-position="top"] {
+    transform: translateY(-4px);
+}
+
+.tour-tooltip[data-position="bottom"] {
+    transform: translateY(4px);
+}
+
+.tour-tooltip[data-position="left"] {
+    transform: translateX(-4px);
+}
+
+.tour-tooltip[data-position="right"] {
+    transform: translateX(4px);
+}
+
+.tour-tooltip-arrow {
+    position: absolute;
+    width: var(--space-3-5);
+    height: var(--space-3-5);
+    background: inherit;
+    border-left: inherit;
+    border-top: inherit;
+    transform: rotate(45deg);
+}
+
+.tour-tooltip[data-position="top"] .tour-tooltip-arrow {
+    bottom: calc(-1 * var(--space-2));
+    left: var(--space-8);
+}
+
+.tour-tooltip[data-position="bottom"] .tour-tooltip-arrow {
+    top: calc(-1 * var(--space-2));
+    left: var(--space-8);
+}
+
+.tour-tooltip[data-position="left"] .tour-tooltip-arrow {
+    right: calc(-1 * var(--space-2));
+    top: var(--space-6);
+}
+
+.tour-tooltip[data-position="right"] .tour-tooltip-arrow {
+    left: calc(-1 * var(--space-2));
+    top: var(--space-6);
+}
+
+.tour-step-count {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.72;
+}
+
+.tour-progress-dots {
+    display: flex;
+    gap: var(--space-2);
+    margin: var(--space-2-5) 0 var(--space-3-5);
+}
+
+.tour-progress-dot {
+    width: var(--space-2-25);
+    height: var(--space-2-25);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--pref-text, var(--theme-modal-text)) 18%, transparent);
+}
+
+.tour-progress-dot.complete {
+    background: color-mix(in srgb, var(--theme-button-bg) 70%, white);
+}
+
+.tour-progress-dot.active {
+    background: var(--theme-button-bg);
+    transform: scale(1.1);
+}
+
+.tour-message {
+    margin: 0 0 var(--space-4);
+    line-height: 1.5;
+    font-size: var(--font-size-sm);
+}
+
+.tour-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.tour-btn {
+    min-height: 44px;
+    padding: var(--space-2-5) var(--space-3-5);
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform var(--transition-fast) ease, background-color var(--transition-fast) ease, border-color var(--transition-fast) ease;
+}
+
+.tour-btn:hover {
+    transform: translateY(-1px);
+}
+
+.tour-btn:focus-visible {
+    outline: 2px solid var(--theme-button-bg);
+    outline-offset: 2px;
+}
+
+.tour-btn-primary {
+    background: var(--theme-button-bg);
+    color: var(--theme-button-text);
+}
+
+.tour-btn-primary:hover {
+    background: var(--theme-button-hover);
+}
+
+.tour-btn-secondary,
+.tour-btn-ghost {
+    background: transparent;
+    color: inherit;
+    border-color: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.tour-btn-secondary[hidden] {
+    display: none;
+}
+
+body.reduced-motion .tour-spotlight,
+body.reduced-motion .tour-tooltip,
+html.reduced-motion .tour-spotlight,
+html.reduced-motion .tour-tooltip {
+    transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tour-spotlight,
+    .tour-tooltip,
+    .tour-btn {
+        transition: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .tour-tooltip {
+        width: min(280px, calc(100vw - var(--space-6)));
+        padding: var(--space-3-5);
+    }
+
+    .tour-actions {
+        justify-content: stretch;
+    }
+
+    .tour-btn {
+        flex: 1 1 0;
+    }
+}

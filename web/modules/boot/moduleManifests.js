@@ -361,11 +361,22 @@ export const MODULE_MANIFESTS = {
         path: '../ui/settingsManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
-        optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'organizeCompletedTasks', 'performSchema25Migration', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showConfirmationModal', 'toggleHoverTaskOptions', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateStatsPanel'],
+        optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'organizeCompletedTasks', 'performSchema25Migration', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showConfirmationModal', 'startGuidedTour', 'toggleHoverTaskOptions', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateStatsPanel'],
         provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData'],
         provideInstance: 'settingsManager',
         api: 'ui',
         after: ['menuManager', 'themeManager', 'undoRedoManager']
+    },
+
+    guidedTourManager: {
+        path: '../ui/guidedTourManager.js',
+        phase: PHASES.UI_MANAGERS,
+        requires: ['appInit', 'AppState', 'getElementById', 'querySelector', 'getBody', 'getRootElement', 'getActiveElement', 'showNotification', 'safeAddEventListener'],
+        optionalDeps: ['isModalOpen'],
+        provides: ['startGuidedTour'],
+        provideInstance: 'guidedTourManager',
+        api: 'ui',
+        after: ['onboardingManager']
     },
 
     // NOTE: preferencesBgImage and preferencesPresets are loaded as
@@ -974,4 +985,3 @@ export function printLoadOrder() {
         const manifest = MODULE_MANIFESTS[name];
     });
 }
-

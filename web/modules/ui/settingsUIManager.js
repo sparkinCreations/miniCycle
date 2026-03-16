@@ -49,6 +49,7 @@ const di = createDIModule('SettingsUIManager', {
     getModal: optional(null),
     clearAllUndoHistory: optional(null),
     updateHelpWindow: optional(null),
+    startGuidedTour: optional(null),
     trackAction: optional(null)
 });
 
@@ -89,9 +90,11 @@ export function _resetForTesting() {
     _initialized.resetRecurringDefaults = false;
     _initialized.resetAchievementProgress = false;
     _initialized.clearUndoHistory = false;
+    _initialized.retakeGuidedTourButton = false;
     _initialized.reducedMotionToggle = false;
     _initialized.highContrastToggle = false;
     _initialized.fontSizeSelect = false;
+    _initialized.notificationsToggle = false;
 }
 
 // ============================================================================
@@ -109,6 +112,7 @@ const _initialized = {
     resetRecurringDefaults: false,
     resetAchievementProgress: false,
     clearUndoHistory: false,
+    retakeGuidedTourButton: false,
     reducedMotionToggle: false,
     highContrastToggle: false,
     fontSizeSelect: false,
@@ -951,6 +955,40 @@ export function setupClearUndoHistoryButton() {
     safeAddEventListener(btn, 'click', btn._clickHandler);
 }
 
+export function setupRetakeGuidedTourButton() {
+    if (_initialized.retakeGuidedTourButton) {
+        return;
+    }
+    _initialized.retakeGuidedTourButton = true;
+
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('SettingsUIManager: safeAddEventListener dependency not injected');
+        return;
+    }
+
+    const btn = document.getElementById(DOM_IDS.RETAKE_GUIDED_TOUR);
+    if (!btn) return;
+
+    btn._clickHandler = async () => {
+        const appState = _deps.AppState?.();
+        if (!appState?.isReady?.()) {
+            _deps.showNotification?.(getLabel('notify.appStateNotReady'), 'error');
+            return;
+        }
+
+        await appState.update((state) => {
+            if (!state.settings) state.settings = {};
+            state.settings.guidedTourStep = null;
+        }, true);
+
+        document.getElementById(DOM_IDS.CLOSE_SETTINGS)?.click();
+        _deps.startGuidedTour?.();
+    };
+
+    safeAddEventListener(btn, 'click', btn._clickHandler);
+}
+
 /**
  * Sync current settings to storage
  */
@@ -1253,6 +1291,7 @@ export function initAllToggles() {
     setupResetRecurringButton();
     setupResetAchievementProgressButton();
     setupClearUndoHistoryButton();
+    setupRetakeGuidedTourButton();
     setupReducedMotionToggle();
     setupHighContrastToggle();
     setupFontSizeSelect();

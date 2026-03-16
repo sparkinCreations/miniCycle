@@ -310,6 +310,8 @@ export const Z_INDEX = Object.freeze({
     MODAL: 1000,             // Standard modals
     MODAL_HIGH: 2000,        // High-priority modals (storage, onboarding)
     OVERLAY_CRITICAL: 10000, // Import/migration error overlays
+    TOUR_OVERLAY: 10500,     // Guided tour overlay
+    TOUR_TOOLTIP: 10501,     // Guided tour tooltip
     DEBUG: 99999,            // Debug utilities
     NOTIFICATION: 100000,    // Notification container (above all overlays)
     NOTIFICATION_ACTIVE: 100001, // Dragging notification
@@ -510,6 +512,7 @@ export const DOM_IDS = Object.freeze({
     RESET_RECURRING_DEFAULT: 'reset-recurring-default',
     RESET_ACHIEVEMENT_PROGRESS: 'reset-achievement-progress',
     CLEAR_UNDO_HISTORY: 'clear-undo-history',
+    RETAKE_GUIDED_TOUR: 'retake-guided-tour',
     TOGGLE_CHECKBOX_FILL: 'toggle-checkbox-fill',
     TOGGLE_CHECKBOX_INCOMPLETE: 'toggle-checkbox-incomplete',
     TOGGLE_BG_PATTERN: 'toggle-bg-pattern',

@@ -369,6 +369,7 @@
             <option value="undoRedoManager">UndoRedoManager</option>
             <option value="gamesManager">GamesManager</option>
             <option value="onboardingManager">OnboardingManager</option>
+            <option value="guidedTourManager">GuidedTourManager</option>
             <option value="modalManager">ModalManager</option>
             <option value="menuManager">MenuManager</option>
             <option value="settingsManager">SettingsManager</option>
@@ -405,7 +406,7 @@
         </div>
 
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (43 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
         <button id="copy-failed-btn" style="display: none;">📋 Copy Failed Tests</button>
     </div>
@@ -459,6 +460,7 @@
         const { runUndoRedoManagerTests } = await import(`./undoRedoManager.tests.js?v=${cacheBuster}`);
         const { runGamesManagerTests } = await import(`./gamesManager.tests.js?v=${cacheBuster}`);
         const { runOnboardingManagerTests } = await import(`./onboardingManager.tests.js?v=${cacheBuster}`);
+        const { runGuidedTourManagerTests } = await import(`./guidedTourManager.tests.js?v=${cacheBuster}`);
         const { runModalManagerTests } = await import(`./modalManager.tests.js?v=${cacheBuster}`);
         const { runMenuManagerTests } = await import(`./menuManager.tests.js?v=${cacheBuster}`);
         const { runSettingsManagerTests } = await import(`./settingsManager.tests.js?v=${cacheBuster}`);
@@ -902,6 +904,12 @@
                 window.OnboardingManager = mod.OnboardingManager;
                 window.onboardingManager = mod.onboardingManager;
                 window.showOnboarding = (...args) => mod.onboardingManager.showOnboarding(...args);
+            } else if (moduleKey === 'guidedTourManager') {
+                const mod = await import(`../modules/ui/guidedTourManager.js?v=${cacheBuster}`);
+                window.GuidedTourManager = mod.GuidedTourManager;
+                window.initGuidedTourManager = mod.initGuidedTourManager;
+                window.getGuidedTourManager = mod.getGuidedTourManager;
+                window.startGuidedTour = mod.startGuidedTour;
             } else if (moduleKey === 'modalManager') {
                 const mod = await import(`../modules/ui/modalManager.js?v=${cacheBuster}`);
                 window.ModalManager = mod.ModalManager;
@@ -1282,6 +1290,14 @@
                     window.showOnboarding = (...args) => mod.onboardingManager.showOnboarding(...args);
                     currentModule = 'onboardingManager';
                     resultsDiv.innerHTML = '<p>✅ OnboardingManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'guidedTourManager') {
+                    const mod = await import(`../modules/ui/guidedTourManager.js?v=${cacheBuster}`);
+                    window.GuidedTourManager = mod.GuidedTourManager;
+                    window.initGuidedTourManager = mod.initGuidedTourManager;
+                    window.getGuidedTourManager = mod.getGuidedTourManager;
+                    window.startGuidedTour = mod.startGuidedTour;
+                    currentModule = 'guidedTourManager';
+                    resultsDiv.innerHTML = '<p>✅ GuidedTourManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'modalManager') {
                     const mod = await import(`../modules/ui/modalManager.js?v=${cacheBuster}`);
                     window.ModalManager = mod.ModalManager;
@@ -1636,6 +1652,8 @@
                 await runGamesManagerTests(resultsDiv);
             } else if (currentModule === 'onboardingManager') {
                 await runOnboardingManagerTests(resultsDiv);
+            } else if (currentModule === 'guidedTourManager') {
+                await runGuidedTourManagerTests(resultsDiv);
             } else if (currentModule === 'modalManager') {
                 await runModalManagerTests(resultsDiv);
             } else if (currentModule === 'menuManager') {
@@ -2150,6 +2168,7 @@
                 { name: 'UndoRedoManager', key: 'undoRedoManager', runFn: runUndoRedoManagerTests, importPath: '../modules/ui/undoRedoManager.js' },
                 { name: 'GamesManager', key: 'gamesManager', runFn: runGamesManagerTests, importPath: '../modules/ui/gamesManager.js' },
                 { name: 'OnboardingManager', key: 'onboardingManager', runFn: runOnboardingManagerTests, importPath: '../modules/ui/onboardingManager.js' },
+                { name: 'GuidedTourManager', key: 'guidedTourManager', runFn: runGuidedTourManagerTests, importPath: '../modules/ui/guidedTourManager.js' },
                 { name: 'ModalManager', key: 'modalManager', runFn: runModalManagerTests, importPath: '../modules/ui/modalManager.js' },
                 { name: 'TaskCore', key: 'taskCore', runFn: runTaskCoreTests, importPath: '../modules/task/taskCore.js' },
                 { name: 'TaskValidation', key: 'taskValidation', runFn: runTaskValidationTests, importPath: '../modules/task/taskValidation.js' },

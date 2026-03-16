@@ -219,6 +219,7 @@
  * @property {boolean} [showThreeDots=false] - Show three dots menu globally
  * @property {boolean} [showTaskInput=true] - Show task input bar
  * @property {boolean} [onboardingCompleted=false] - User completed onboarding
+ * @property {number|'done'|null} [guidedTourStep=null] - Guided tour progress state
  * @property {Object.<string, boolean>} [dismissedEducationalTips={}] - Dismissed tips
  * @property {RecurringSettings} [defaultRecurringSettings] - Default recurring task settings
  * @property {string[]} [unlockedThemes=[]] - Unlocked theme names
@@ -530,4 +531,3 @@
 
 // This file contains only JSDoc typedefs - no runtime exports needed
 // Types are available via: @typedef {import('./types.js').TypeName} TypeName
-

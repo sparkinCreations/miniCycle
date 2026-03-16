@@ -202,9 +202,9 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
    ============================================================================= */
 
 .help-window {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--pref-panel-bg);
     border-radius: var(--radius-2xl);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid var(--pref-panel-border);
     box-shadow:
         0 4px 15px rgba(0, 0, 0, 0.08),
         inset 0 1px 1px rgba(255, 255, 255, 0.3);
@@ -218,9 +218,9 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
     justify-content: center;
     text-align: center;
     font-size: var(--font-size-base);
-    color: var(--pref-panel-text, rgba(255, 255, 255, 0.95));
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
+    color: var(--pref-panel-text);
+    backdrop-filter: blur(var(--pref-panel-blur));
+    -webkit-backdrop-filter: blur(var(--pref-panel-blur));
     transition: opacity var(--transition-normal) ease;
     opacity: 1;
     margin-top: var(--space-2-5);

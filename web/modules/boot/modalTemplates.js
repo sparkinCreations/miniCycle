@@ -971,6 +971,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                     </div>
                     <div class="settings-section-content" id="settings-section-reset">
                         <button id="reset-onboarding" class="settings-btn settings-btn-ghost"><i class="fas fa-redo"></i> ${getLabel('settings.resetOnboarding')}</button>
+                        <button id="retake-guided-tour" class="settings-btn settings-btn-ghost"><i class="fas fa-route"></i> ${getLabel('tour.retakeTour')}</button>
                         <button id="reset-notification-position" class="settings-btn settings-btn-ghost"><i class="fas fa-bell"></i> ${getLabel('settings.resetNotifPosition')}</button>
                         <button id="reset-recurring-default" class="settings-btn settings-btn-ghost"><i class="fas fa-sync"></i> ${getLabel('settings.resetRecurringDefault')}</button>
                         <button id="reset-achievement-progress" class="settings-btn settings-btn-ghost"><i class="fas fa-trophy"></i> ${getLabel('settings.resetAchievements')}</button>

@@ -348,6 +348,7 @@ export class OnboardingManager {
                                 }
                             }
                         );
+                        document.dispatchEvent(new Event('onboarding:setup-complete'));
                     } else {
                         // Sample load failed (e.g., offline first visit) — fall back to creation modal
                         if (this.deps.showCycleCreationModal) {
@@ -366,7 +367,10 @@ export class OnboardingManager {
             // Already have a cycle - complete setup
             if (this.deps.completeInitialSetup) {
                 const updatedState = this.deps.AppState?.get?.();
-                this.deps.completeInitialSetup(activeCycle, null, updatedState);
+                (async () => {
+                    await this.deps.completeInitialSetup(activeCycle, null, updatedState);
+                    document.dispatchEvent(new Event('onboarding:setup-complete'));
+                })();
             } else {
                 console.warn('⚠️ completeInitialSetup not available');
             }

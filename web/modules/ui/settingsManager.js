@@ -51,6 +51,7 @@ const di = createDIModule('SettingsManager', {
     disableDebug: optional(null),
     isDebug: optional(null),
     clearAllUndoHistory: optional(null),
+    startGuidedTour: optional(null),
     updateHelpWindow: optional(null),
     loadMiniCycle: optional(null),
     showLoader: optional(null),
@@ -188,6 +189,7 @@ function wireSubModuleDependencies(dependencies) {
         disableDebug: dependencies.disableDebug,
         isDebug: dependencies.isDebug,
         clearAllUndoHistory: dependencies.clearAllUndoHistory,
+        startGuidedTour: dependencies.startGuidedTour,
         updateHelpWindow: dependencies.updateHelpWindow
     });
 
@@ -397,4 +399,3 @@ export function sanitizeText(text, maxLen) { return _subModules?.sanitizeText?.(
 export function _resetForTesting() { _subModules?._resetForTesting?.(); }
 export function setupShareRoutineButton() { _subModules?.setupShareRoutineButton?.(); }
 export function setupShareAppButton() { _subModules?.setupShareAppButton?.(); }
-

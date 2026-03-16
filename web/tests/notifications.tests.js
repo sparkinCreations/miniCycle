@@ -257,6 +257,45 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
+    test('show() calls onDismiss when close button is clicked', async () => {
+        setupMockGlobals();
+        const container = createNotificationContainer();
+        const notifications = new window.MiniCycleNotifications();
+        let dismissCount = 0;
+
+        notifications.show('Dismiss me', 'info', 0, {
+            onDismiss: () => {
+                dismissCount++;
+            }
+        });
+
+        container.querySelector('.close-btn')?.click();
+        await new Promise(resolve => setTimeout(resolve, 350));
+
+        if (dismissCount !== 1) {
+            throw new Error(`Expected onDismiss once, got ${dismissCount}`);
+        }
+    });
+
+    test('show() calls onDismiss when auto-dismiss removes notification', async () => {
+        setupMockGlobals();
+        createNotificationContainer();
+        const notifications = new window.MiniCycleNotifications();
+        let dismissCount = 0;
+
+        notifications.show('Auto dismiss', 'info', 10, {
+            onDismiss: () => {
+                dismissCount++;
+            }
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 400));
+
+        if (dismissCount !== 1) {
+            throw new Error(`Expected auto-dismiss onDismiss once, got ${dismissCount}`);
+        }
+    });
+
     test('show() prevents duplicate notifications', () => {
         setupMockGlobals();
         // Ensure clean container with no leftover notifications
