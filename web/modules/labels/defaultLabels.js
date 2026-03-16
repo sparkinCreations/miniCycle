@@ -1146,6 +1146,30 @@ export const DEFAULT_LABELS = deepFreeze({
     },
 
     // ========================================================================
+    // 15b. GUIDED TOUR
+    // ========================================================================
+
+    tour: {
+        welcomeMessage:  'Welcome to miniCycle! Ready to learn the basics?',
+        resumeMessage:   'Welcome back! Continue where you left off?',
+        startButton:     'Take a Quick Tour',
+        resumeButton:    'Resume Tour',
+        next:            'Next',
+        back:            'Back',
+        skip:            'Skip Tour',
+        done:            'Done',
+        stepOf:          '{current} of {total}',
+        step1:           'Tap here to add tasks to your routine.',
+        step2:           'Tap the three dots on a task for options like recurring, priority, and due dates.',
+        step3:           'Complete all tasks to finish a cycle. Your cycle count tracks consistency.',
+        step4:           'Open the menu to access settings, personalization, routine actions, and more.',
+        step5:           'Swipe left or click the arrow to open the Stats Panel - swiping works on desktop too!',
+        complete:        'You\'re all set! Enjoy building your routines.',
+        retakeTour:      'Retake Guided Tour',
+        closeDialogHint: 'Close the open dialog to start the tour'
+    },
+
+    // ========================================================================
     // 16. UNDO/REDO
     // ========================================================================
 

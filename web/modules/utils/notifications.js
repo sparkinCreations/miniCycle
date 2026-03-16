@@ -417,6 +417,21 @@ export class MiniCycleNotifications {
 
       // ✅ FIX #7: Track cleanup function for timeouts
       let cleanupTimeouts = null;
+      let notificationRemoved = false;
+
+      const removeNotification = (reason = 'dismiss') => {
+        if (notificationRemoved) return;
+        notificationRemoved = true;
+
+        if (cleanupTimeouts) cleanupTimeouts();
+        notification.classList.remove("show");
+        setTimeout(() => {
+          notification.remove();
+          if (reason === 'dismiss' && typeof options?.onDismiss === 'function') {
+            options.onDismiss();
+          }
+        }, UI_TIMEOUTS.NOTIFICATION_FADE);
+      };
 
       // Style and handler for any close button
       const closeBtn = notification.querySelector(DOM_SELECTORS.CLOSE_BTN);
@@ -437,12 +452,7 @@ export class MiniCycleNotifications {
         // Store handler on element for safeAddEventListener
         closeBtn._clickHandler = (e) => {
           e.stopPropagation();
-
-          // FIX #7: Clean up any active timeouts before removing
-          if (cleanupTimeouts) cleanupTimeouts();
-
-          notification.classList.remove("show");
-          setTimeout(() => notification.remove(), UI_TIMEOUTS.NOTIFICATION_FADE);
+          removeNotification('dismiss');
         };
         _safeAddEventListener(closeBtn, "click", closeBtn._clickHandler);
       }
@@ -457,6 +467,8 @@ export class MiniCycleNotifications {
           actionBtn.textContent = btnLabel; // textContent for XSS safety
           actionBtn._clickHandler = (e) => {
             e.stopPropagation();
+            if (notificationRemoved) return;
+            notificationRemoved = true;
             if (cleanupTimeouts) cleanupTimeouts();
             notification.classList.remove('show');
             setTimeout(() => {
@@ -478,7 +490,13 @@ export class MiniCycleNotifications {
       // duration=null → default timeout, duration=0 → persistent (no auto-remove)
       const effectiveDuration = duration ?? UI_TIMEOUTS.NOTIFICATION_LONG;
       if (effectiveDuration) {
-        cleanupTimeouts = this.setupAutoRemove(notification, effectiveDuration);
+        cleanupTimeouts = this.setupAutoRemove(notification, effectiveDuration, () => {
+          if (notificationRemoved) return;
+          notificationRemoved = true;
+          if (typeof options?.onDismiss === 'function') {
+            options.onDismiss();
+          }
+        });
       }
 
       // Setup drag support
@@ -573,18 +591,28 @@ export class MiniCycleNotifications {
 
       // ✅ FIX #7: Track cleanup function for timeouts
       let cleanupTimeouts = null;
+      let notificationRemoved = false;
+
+      const removeNotification = (reason = 'dismiss') => {
+        if (notificationRemoved) return;
+        notificationRemoved = true;
+
+        if (cleanupTimeouts) cleanupTimeouts();
+        notification.classList.remove("show");
+        setTimeout(() => {
+          notification.remove();
+          if (reason === 'dismiss' && typeof options?.onDismiss === 'function') {
+            options.onDismiss();
+          }
+        }, UI_TIMEOUTS.NOTIFICATION_FADE);
+      };
 
       // Close button click
       const closeBtn = notification.querySelector(DOM_SELECTORS.CLOSE_BTN + ", " + DOM_SELECTORS.NOTIFICATION_CLOSE);
       if (closeBtn) {
         closeBtn._clickHandler = (e) => {
           e.stopPropagation();
-
-          // FIX #7: Clean up any active timeouts before removing
-          if (cleanupTimeouts) cleanupTimeouts();
-
-          notification.classList.remove("show");
-          setTimeout(() => notification.remove(), UI_TIMEOUTS.NOTIFICATION_FADE);
+          removeNotification('dismiss');
         };
         _safeAddEventListener(closeBtn, "click", closeBtn._clickHandler);
       }
@@ -601,7 +629,13 @@ export class MiniCycleNotifications {
       // duration=null → default timeout, duration=0 → persistent (no auto-remove)
       const effectiveDuration = duration ?? UI_TIMEOUTS.NOTIFICATION_LONG;
       if (effectiveDuration) {
-        cleanupTimeouts = this.setupAutoRemove(notification, effectiveDuration);
+        cleanupTimeouts = this.setupAutoRemove(notification, effectiveDuration, () => {
+          if (notificationRemoved) return;
+          notificationRemoved = true;
+          if (typeof options?.onDismiss === 'function') {
+            options.onDismiss();
+          }
+        });
       }
 
       // Dragging setup
@@ -721,7 +755,7 @@ async setDefaultPosition(notificationContainer) {
    * ⏰ Setup auto-remove with hover pause functionality
    * Returns cleanup function to clear timeouts
    */
-  setupAutoRemove(notification, duration) {
+  setupAutoRemove(notification, duration, onAutoDismiss = null) {
     let hoverPaused = false;
     let focusPaused = false;
     let remaining = duration;
@@ -731,6 +765,9 @@ async setDefaultPosition(notificationContainer) {
 
     const clearNotification = () => {
       notification.classList.remove("show");
+      if (typeof onAutoDismiss === 'function') {
+        onAutoDismiss();
+      }
       removeDelayTimeout = setTimeout(() => notification.remove(), UI_TIMEOUTS.NOTIFICATION_FADE);
     };
 

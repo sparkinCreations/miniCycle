@@ -249,7 +249,8 @@ export class RoutineManager {
 
                     this.deps.refreshThemeLabels?.();
                     this.deps.updateRecurringInfoLink?.();
-                    this.deps.completeInitialSetup(finalTitle, appState.get());
+                    await this.deps.completeInitialSetup(finalTitle, appState.get());
+                    document.dispatchEvent(new Event('onboarding:setup-complete'));
                 }
             });
         }, 500);
@@ -324,7 +325,7 @@ export class RoutineManager {
             });
         }
 
-        this.deps.completeInitialSetup(finalTitle, appState.get());
+        await this.deps.completeInitialSetup(finalTitle, appState.get());
     }
 
     /**
@@ -524,7 +525,7 @@ export class RoutineManager {
             );
 
             if (isOnboarding) {
-                this.deps.completeInitialSetup(finalTitle, appState.get());
+                await this.deps.completeInitialSetup(finalTitle, appState.get());
             } else {
                 // Menu path — sync mode, refresh UI, load routine
                 const modeSelector = this.deps.getElementById(DOM_IDS.MODE_SELECTOR);

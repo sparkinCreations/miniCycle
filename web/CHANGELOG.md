@@ -1,3 +1,11 @@
+## [2.100] - 2026-03-15
+- fix(docs): improve guided tour button setup by enhancing settings dialog closure handling
+- fix(docs): enhance modal detection in guided tour to improve user experience and prevent data loss
+- fix(docs): clarify dialog handling in guided tour implementation and note legacy fallback path
+- fix(docs): add implementation note for onDismiss callback in guided tour notification handling
+- fix(docs): improve Safari drag-and-drop handling with custom ghost image and cleanup for task options
+
+
 ## [2.099] - 2026-03-15
 - fix(docs): enhance drag-and-drop functionality with new DOM classes and selectors for task management
 

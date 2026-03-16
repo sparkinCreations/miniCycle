@@ -920,6 +920,7 @@ class MiniCycleState {
                 showCompletedDropdown: false,
                 completedTasksExpanded: false,
                 onboardingCompleted: false,
+                guidedTourStep: null,
                 addTaskDiscovered: false,
                 dismissedEducationalTips: {},
                 defaultRecurringSettings: {

@@ -30,6 +30,10 @@ body.dark-mode {
     --shadow-modal-compound: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
     --shadow-inner-border: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
     --text-shadow-md: 0 1px 2px rgba(0, 0, 0, 0.5);
+
+    /* Panel overrides (help window + quick actions) */
+    --pref-panel-bg: rgba(61, 61, 64, 0.85);
+    --pref-panel-border: rgba(255, 255, 255, 0.2);
 }
 
 /* =============================================================================
@@ -1132,9 +1136,7 @@ body.dark-mode .quick-action-item:not(:last-child) {
    ============================================================================= */
 
 body.dark-mode .help-window {
-    background: rgba(61, 61, 64, 0.85);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: var(--pref-panel-text, rgba(255, 255, 255, 0.9));
+    color: var(--pref-panel-text);
 }
 
 /* =============================================================================

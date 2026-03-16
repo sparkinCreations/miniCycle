@@ -805,6 +805,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         updateCompletedTasksCount: (...args) => deps.ui?.completedTasksManager?.updateCount?.(...args),
         updateStatsPanel: (...args) => deps.ui?.updateStatsPanel?.(...args),
         exportMiniCycleData: (...args) => deps.ui?.exportMiniCycleData?.(...args),
+        startGuidedTour: (...args) => deps.ui?.startGuidedTour?.(...args),
         triggerLogoBackground: (...args) => deps.ui?.triggerLogoBackground?.(...args),
         triggerLogoScan: (...args) => deps.ui?.triggerLogoScan?.(...args),
         showTaskOptions: (...args) => deps.ui?.showTaskOptions?.(...args),
@@ -1329,4 +1330,3 @@ export function clearLoadedModules() {
     loadedModules.clear();
     moduleInstances.clear();
 }
-

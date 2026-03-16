@@ -178,16 +178,16 @@ body.hide-quick-actions .quick-actions-menu-row {
         right: calc(100% + 25px);
         top: 50%;
         transform: translateY(-50%);
-        background: rgba(255, 255, 255, 0.12);
+        background: var(--pref-panel-bg);
         border-radius: var(--radius-2xl);
-        border: 1px solid rgba(255, 255, 255, 0.25);
+        border: 1px solid var(--pref-panel-border);
         box-shadow:
             0 4px 15px rgba(0, 0, 0, 0.08),
             inset 0 1px 1px rgba(255, 255, 255, 0.3);
-        padding: 10px var(--space-3);
+        padding: var(--space-2-5) var(--space-3);
         z-index: var(--z-content);
-        backdrop-filter: blur(2px);
-        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(var(--pref-panel-blur));
+        -webkit-backdrop-filter: blur(var(--pref-panel-blur));
         transition: opacity var(--transition-normal) ease;
     }
       .quick-actions-window .quick-actions-header {                                                                                                            
@@ -487,10 +487,8 @@ dialog.quick-actions-picker-overlay[open] {
    DARK MODE ADJUSTMENTS
    ============================================================================= */
 
-body.dark-mode .quick-actions-window {
-    background: rgba(61, 61, 64, 0.85);
-    border-color: rgba(255, 255, 255, 0.2);
-}
+/* background + border-color now handled by --pref-panel-bg / --pref-panel-border
+   overrides in dark-mode.css body.dark-mode {} block */
 
 body.dark-mode .quick-actions-slot.filled {
     background: rgba(255, 255, 255, 0.1);

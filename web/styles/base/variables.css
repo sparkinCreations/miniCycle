@@ -234,6 +234,9 @@
      COMPONENT VARIABLES - Utilities
      ═══════════════════════════════════════════════════════════════════════════ */
   --pref-panel-text:  rgba(255, 255, 255, 0.9);
+  --pref-panel-bg:    rgba(255, 255, 255, 0.12);
+  --pref-panel-border: rgba(255, 255, 255, 0.25);
+  --pref-panel-blur:  8px;
 
   /* ═══════════════════════════════════════════════════════════════════════════
      LEGACY VARIABLES (for backward compatibility)
@@ -422,6 +425,8 @@
   --z-modal: 1000;                   /* Standard modals */
   --z-modal-high: 2000;              /* High-priority modals (storage, onboarding) */
   --z-overlay-critical: 10000;       /* Import/migration error overlays */
+  --z-tour-overlay: 10500;           /* Guided tour overlay */
+  --z-tour-tooltip: 10501;           /* Guided tour tooltip */
   --z-debug: 99999;                  /* Debug utilities */
   --z-notification: 100000;          /* Notification container (above all overlays) */
   --z-notification-active: 100001;   /* Dragging notification */

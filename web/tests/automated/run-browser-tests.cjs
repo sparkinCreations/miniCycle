@@ -28,7 +28,7 @@ const ALL_MODULES = [
     'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel',
     'globalUtils', 'notifications', 'dragDropManager', 'migrationManager', 'dueDates',
     'reminders', 'modeManager', 'routineSwitcher', 'routineManager', 'undoRedoManager',
-    'gamesManager', 'onboardingManager', 'modalManager', 'menuManager', 'settingsManager',
+    'gamesManager', 'onboardingManager', 'guidedTourManager', 'modalManager', 'menuManager', 'settingsManager',
     'completedTasksManager', 'pullToRefresh', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer',
     'taskEvents', 'taskDOM', 'taskOptionsCustomizer', 'taskUI', 'taskInteractions', 'uiEffects',
     'xss-vulnerability', 'errorHandler', 'testingModal', 'backupManager', 'cycleCompletion',

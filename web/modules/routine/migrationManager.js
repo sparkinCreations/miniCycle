@@ -116,6 +116,7 @@ export function createInitialSchema25Data() {
             // Match isTouchDevice() logic from deviceDetection.js
             showThreeDots: !(window.matchMedia?.('(pointer: fine)')?.matches) && (('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0),
             onboardingCompleted: false,
+            guidedTourStep: null,
             dismissedEducationalTips: {},
             defaultRecurringSettings: {
                 frequency: "daily",
@@ -174,6 +175,7 @@ const SCHEMA_2_5_TARGET = {
         darkMode: false,
         alwaysShowRecurring: false,
         autoSave: true,
+        guidedTourStep: null,
         defaultRecurringSettings: {
             frequency: null,
             indefinitely: true,
@@ -1473,4 +1475,3 @@ export function forceAppMigration() {
 // ==========================================
 // 🎯 MODULE LOADED
 // ==========================================
-
