@@ -117,6 +117,9 @@ export function createInitialSchema25Data() {
             showThreeDots: !(window.matchMedia?.('(pointer: fine)')?.matches) && (('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0),
             onboardingCompleted: false,
             guidedTourStep: null,
+            statsTourStep: null,
+            prefsTourStep: null,
+            taskOptionsTourStep: null,
             dismissedEducationalTips: {},
             defaultRecurringSettings: {
                 frequency: "daily",
@@ -176,6 +179,9 @@ const SCHEMA_2_5_TARGET = {
         alwaysShowRecurring: false,
         autoSave: true,
         guidedTourStep: null,
+        statsTourStep: null,
+        prefsTourStep: null,
+        taskOptionsTourStep: null,
         defaultRecurringSettings: {
             frequency: null,
             indefinitely: true,

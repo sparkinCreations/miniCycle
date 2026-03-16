@@ -63,52 +63,235 @@ export class GuidedTourManager {
         this._documentKeydownHandler = null;
         this._appReadyHandler = null;
         this._onboardingHandler = null;
-        this._steps = this._createSteps();
+        this._tours = new Map();
+        this._activeTourId = null;
+        this._registerMainTour();
+        this._registerStatsTour();
+        this._registerPersonalizationTour();
+        this._registerTaskOptionsTour();
+    }
+
+    /**
+     * Active tour's steps (getter replaces former _steps field).
+     * All rendering/navigation code references this transparently.
+     */
+    get _steps() {
+        const tourId = this._activeTourId || 'main';
+        return this._tours.get(tourId)?.steps || [];
     }
 
     get deps() {
         return di.resolve();
     }
 
-    _createSteps() {
-        return [
-            {
-                targetType: 'id',
-                target: DOM_IDS.QUICK_ACTIONS_BTN,
-                messageKey: 'tour.step1',
-                position: 'auto'
-            },
-            {
-                targetType: 'selector',
-                target: DOM_SELECTORS.TASK,
-                messageKey: 'tour.step2',
-                position: 'auto',
-                onEnter: () => {
-                    if (!this.deps.querySelector(DOM_SELECTORS.TASK)) {
-                        return 'skip';
+    _registerMainTour() {
+        this._tours.set('main', {
+            stateKey: 'guidedTourStep',
+            completeKey: 'tour.complete',
+            steps: [
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.QUICK_ACTIONS_BTN,
+                    messageKey: 'tour.step1',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.TASK,
+                    messageKey: 'tour.step2',
+                    position: 'auto',
+                    onEnter: () => {
+                        if (!this.deps.querySelector(DOM_SELECTORS.TASK)) {
+                            return 'skip';
+                        }
+                        return null;
                     }
-                    return null;
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.PROGRESS_BAR,
+                    messageKey: 'tour.step3',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.MODE_SELECTOR,
+                    messageKey: 'tour.step4',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.HELP_WINDOW,
+                    messageKey: 'tour.step5',
+                    position: 'auto',
+                    onEnter: () => {
+                        const el = this.deps.getElementById(DOM_IDS.HELP_WINDOW);
+                        if (!el || el.offsetParent === null || getComputedStyle(el).display === 'none') {
+                            return 'skip';
+                        }
+                        return null;
+                    }
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.QUICK_ACTIONS_WINDOW,
+                    messageKey: 'tour.step6',
+                    position: 'auto',
+                    onEnter: () => {
+                        const el = this.deps.getElementById(DOM_IDS.QUICK_ACTIONS_WINDOW);
+                        if (!el || el.offsetParent === null || getComputedStyle(el).display === 'none') {
+                            return 'skip';
+                        }
+                        return null;
+                    }
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.PERSONALIZATION_BTN,
+                    messageKey: 'tour.step7',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.QUICK_DARK_TOGGLE,
+                    messageKey: 'tour.step8',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.HAMBURGER_MENU,
+                    messageKey: 'tour.step9',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.SLIDE_RIGHT,
+                    messageKey: 'tour.step10',
+                    position: 'auto'
                 }
-            },
-            {
-                targetType: 'id',
-                target: DOM_IDS.PROGRESS_BAR,
-                messageKey: 'tour.step3',
-                position: 'auto'
-            },
-            {
-                targetType: 'selector',
-                target: DOM_SELECTORS.HAMBURGER_MENU,
-                messageKey: 'tour.step4',
-                position: 'auto'
-            },
-            {
-                targetType: 'id',
-                target: DOM_IDS.SLIDE_RIGHT,
-                messageKey: 'tour.step5',
-                position: 'auto'
-            }
-        ];
+            ]
+        });
+    }
+
+    _registerStatsTour() {
+        this._tours.set('stats', {
+            stateKey: 'statsTourStep',
+            completeKey: 'statsTour.complete',
+            steps: [
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.CURRENT_ROUTINE_STATUS,
+                    messageKey: 'statsTour.step1',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.HISTORY_BTN,
+                    messageKey: 'statsTour.step2',
+                    position: 'auto',
+                    onEnter: () => {
+                        const el = this.deps.getElementById(DOM_IDS.HISTORY_BTN);
+                        if (!el || el.offsetParent === null) return 'skip';
+                        return null;
+                    }
+                },
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.BADGE_CONTAINER,
+                    messageKey: 'statsTour.step3',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.GLOBAL_STATS_CONTAINER,
+                    messageKey: 'statsTour.step4',
+                    position: 'auto'
+                }
+            ]
+        });
+    }
+
+    _registerPersonalizationTour() {
+        this._tours.set('personalization', {
+            stateKey: 'prefsTourStep',
+            completeKey: 'prefsTour.complete',
+            containerSelector: '#preferences-modal',
+            steps: [
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.PREFERENCES_PREVIEW,
+                    messageKey: 'prefsTour.step1',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.PREF_QUICK_PRESETS_GRID,
+                    messageKey: 'prefsTour.step2',
+                    position: 'auto',
+                    onEnter: () => {
+                        const el = this.deps.getElementById(DOM_IDS.PREF_QUICK_PRESETS_GRID);
+                        if (!el || el.offsetParent === null) return 'skip';
+                        return null;
+                    }
+                },
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.PREFERENCES_SECTION_HEADER_COLLAPSIBLE,
+                    messageKey: 'prefsTour.step3',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.PREFERENCES_RESET_ALL,
+                    messageKey: 'prefsTour.step4',
+                    position: 'auto'
+                }
+            ]
+        });
+    }
+
+    _registerTaskOptionsTour() {
+        this._tours.set('taskOptions', {
+            stateKey: 'taskOptionsTourStep',
+            completeKey: 'taskOptionsTour.complete',
+            containerSelector: '#task-options-customizer-modal',
+            steps: [
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.TASK_OPTIONS_LIST,
+                    messageKey: 'taskOptionsTour.step1',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.OPTION_PREVIEW_CONTENT,
+                    messageKey: 'taskOptionsTour.step2',
+                    position: 'auto',
+                    onEnter: () => {
+                        const el = this.deps.getElementById(DOM_IDS.OPTION_PREVIEW_CONTENT);
+                        if (!el || el.offsetParent === null) return 'skip';
+                        return null;
+                    }
+                },
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.TASK_OPTIONS_GLOBAL_SECTION,
+                    messageKey: 'taskOptionsTour.step3',
+                    position: 'auto',
+                    onEnter: () => {
+                        const el = this.deps.querySelector?.(DOM_SELECTORS.TASK_OPTIONS_GLOBAL_SECTION);
+                        if (!el || el.offsetParent === null) return 'skip';
+                        return null;
+                    }
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.RESET_TASK_OPTIONS_BTN,
+                    messageKey: 'taskOptionsTour.step4',
+                    position: 'auto'
+                }
+            ]
+        });
     }
 
     async init() {
@@ -152,13 +335,15 @@ export class GuidedTourManager {
         return this.startTour();
     }
 
-    startTour() {
+    startTour(tourId = 'main') {
         if (this._scheduleTimeout) {
             clearTimeout(this._scheduleTimeout);
             this._scheduleTimeout = null;
         }
 
-        if (this.deps.isModalOpen?.()) {
+        // Skip modal guard for tours that run inside a modal (containerSelector)
+        const tourDef = this._tours.get(tourId);
+        if (!tourDef?.containerSelector && this.deps.isModalOpen?.()) {
             this.deps.showNotification?.(
                 getLabel('tour.closeDialogHint'),
                 'info',
@@ -177,6 +362,7 @@ export class GuidedTourManager {
             return true;
         }
 
+        this._activeTourId = tourId;
         this._active = true;
         this._previousFocus = this.deps.getActiveElement();
         this.deps.getRootElement?.()?.setAttribute(TOUR_ACTIVE_ATTR, 'true');
@@ -184,7 +370,8 @@ export class GuidedTourManager {
         this._ensureTourElements();
         this._attachRuntimeListeners();
 
-        const persistedStep = this.deps.AppState?.get?.()?.settings?.guidedTourStep;
+        const stateKey = this._getActiveStateKey();
+        const persistedStep = this.deps.AppState?.get?.()?.settings?.[stateKey];
         const startIndex = typeof persistedStep === 'number' ? persistedStep : 0;
         this.showStep(startIndex);
 
@@ -281,10 +468,11 @@ export class GuidedTourManager {
     }
 
     completeTour() {
+        const tour = this._tours.get(this._activeTourId || 'main');
         this._markDone();
         this._teardownTourUI();
         this.deps.showNotification?.(
-            getLabel('tour.complete'),
+            getLabel(tour?.completeKey || 'tour.complete'),
             'success',
             UI_TIMEOUTS.NOTIFICATION_LONG
         );
@@ -415,15 +603,130 @@ export class GuidedTourManager {
         return rect.width > 0 || rect.height > 0;
     }
 
+    /**
+     * Show a notification prompting the user to take the stats panel tour.
+     * Called by statsPanel on first open. No-op if already started or completed.
+     */
+    showStatsTourNotification() {
+        const statsTour = this._tours.get('stats');
+        if (!statsTour) return;
+
+        const val = this.deps.AppState?.get?.()?.settings?.[statsTour.stateKey] ?? null;
+        if (val !== null) return; // Already started or done
+
+        this.deps.showNotification?.(
+            getLabel('statsTour.welcomeMessage'),
+            'info',
+            0,
+            {
+                actionButton: {
+                    label: getLabel('statsTour.startButton'),
+                    onClick: () => this.startTour('stats')
+                },
+                onDismiss: () => {
+                    this._activeTourId = 'stats';
+                    this._markDone();
+                    this._activeTourId = null;
+                }
+            }
+        );
+    }
+
+    /**
+     * Show a notification prompting the user to take the personalization tour.
+     * Called by preferencesManager after showModal(). No-op if already started or completed.
+     * Uses the notification system's container option to render inside the dialog,
+     * since showModal() makes the global notification container inert.
+     */
+    showPersonalizationTourNotification() {
+        const prefsTour = this._tours.get('personalization');
+        if (!prefsTour) return;
+
+        const val = this.deps.AppState?.get?.()?.settings?.[prefsTour.stateKey] ?? null;
+        if (val !== null) return; // Already started or done
+
+        // Render the notification inside the dialog's scroll area so it sits
+        // below the title/logo and scrolls with the content.
+        const dialog = prefsTour.containerSelector
+            ? this.deps.querySelector?.(prefsTour.containerSelector)
+            : null;
+        const container = dialog?.querySelector(DOM_SELECTORS.PREFERENCES_SCROLL_AREA)
+            || dialog?.querySelector(DOM_SELECTORS.PREFERENCES_MODAL_CONTENT)
+            || dialog;
+
+        this.deps.showNotification?.(
+            getLabel('prefsTour.welcomeMessage'),
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
+            {
+                container,
+                actionButton: {
+                    label: getLabel('prefsTour.startButton'),
+                    onClick: () => this.startTour('personalization')
+                },
+                onDismiss: () => {
+                    this._activeTourId = 'personalization';
+                    this._markDone();
+                    this._activeTourId = null;
+                }
+            }
+        );
+    }
+
+    /**
+     * Show a notification prompting the user to take the task options tour.
+     * Called by taskOptionsCustomizer after showModal(). No-op if already started or completed.
+     * Uses the notification system's container option to render inside the dialog,
+     * since showModal() makes the global notification container inert.
+     */
+    showTaskOptionsTourNotification() {
+        const taskOptionsTour = this._tours.get('taskOptions');
+        if (!taskOptionsTour) return;
+
+        const val = this.deps.AppState?.get?.()?.settings?.[taskOptionsTour.stateKey] ?? null;
+        if (val !== null) return; // Already started or done
+
+        // Render the notification inside the dialog's modal-body so it sits
+        // below the header and above the options grid.
+        const dialog = taskOptionsTour.containerSelector
+            ? this.deps.querySelector?.(taskOptionsTour.containerSelector)
+            : null;
+        const container = dialog?.querySelector(DOM_SELECTORS.TASK_OPTIONS_MODAL_BODY) || dialog;
+
+        this.deps.showNotification?.(
+            getLabel('taskOptionsTour.welcomeMessage'),
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
+            {
+                container,
+                actionButton: {
+                    label: getLabel('taskOptionsTour.startButton'),
+                    onClick: () => this.startTour('taskOptions')
+                },
+                onDismiss: () => {
+                    this._activeTourId = 'taskOptions';
+                    this._markDone();
+                    this._activeTourId = null;
+                }
+            }
+        );
+    }
+
+    _getActiveStateKey() {
+        const tourId = this._activeTourId || 'main';
+        return this._tours.get(tourId)?.stateKey || 'guidedTourStep';
+    }
+
     _persistStep(stepIndex) {
         const appState = this.deps.AppState;
         if (!appState?.isReady?.()) {
             return;
         }
 
+        const key = this._getActiveStateKey();
         appState.update((state) => {
             if (!state.settings) state.settings = {};
-            state.settings.guidedTourStep = stepIndex;
+            state.settings[key] = stepIndex;
         }, true);
     }
 
@@ -433,9 +736,10 @@ export class GuidedTourManager {
             return;
         }
 
+        const key = this._getActiveStateKey();
         appState.update((state) => {
             if (!state.settings) state.settings = {};
-            state.settings.guidedTourStep = 'done';
+            state.settings[key] = 'done';
         }, true);
     }
 
@@ -445,21 +749,36 @@ export class GuidedTourManager {
             || window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
     }
 
+    /**
+     * Returns the container element for the active tour's UI elements.
+     * Tours with a containerSelector (e.g., inside a native dialog) append
+     * overlay/spotlight/tooltip there instead of body.
+     */
+    _getActiveContainer() {
+        const tour = this._tours.get(this._activeTourId || 'main');
+        if (tour?.containerSelector) {
+            return this.deps.querySelector(tour.containerSelector) || this.deps.getBody();
+        }
+        return this.deps.getBody();
+    }
+
     _ensureTourElements() {
+        const container = this._getActiveContainer();
+
         if (!this._overlayElement) {
             this._overlayElement = document.createElement('div');
             this._overlayElement.className = 'tour-overlay';
             this._overlayElement.setAttribute('aria-hidden', 'true');
             this._overlayElement._clickHandler = () => this.skipTour();
             this.deps.safeAddEventListener(this._overlayElement, 'click', this._overlayElement._clickHandler);
-            this.deps.getBody().appendChild(this._overlayElement);
+            container.appendChild(this._overlayElement);
         }
 
         if (!this._spotlightElement) {
             this._spotlightElement = document.createElement('div');
             this._spotlightElement.className = 'tour-spotlight';
             this._spotlightElement.setAttribute('aria-hidden', 'true');
-            this.deps.getBody().appendChild(this._spotlightElement);
+            container.appendChild(this._spotlightElement);
         }
 
         if (!this._tooltipElement) {
@@ -469,7 +788,7 @@ export class GuidedTourManager {
             this._tooltipElement.setAttribute('aria-modal', 'true');
             this._tooltipElement._clickHandler = (event) => event.stopPropagation();
             this.deps.safeAddEventListener(this._tooltipElement, 'click', this._tooltipElement._clickHandler);
-            this.deps.getBody().appendChild(this._tooltipElement);
+            container.appendChild(this._tooltipElement);
         }
     }
 
@@ -716,6 +1035,7 @@ export class GuidedTourManager {
         this._currentTarget = null;
         this._active = false;
         this._currentStepIndex = 0;
+        this._activeTourId = null;
 
         this.deps.getRootElement?.()?.removeAttribute(TOUR_ACTIVE_ATTR);
 
@@ -745,6 +1065,18 @@ export function getGuidedTourManager() {
 
 export function startGuidedTour() {
     return guidedTourManager?.startTour?.();
+}
+
+export function showStatsTourNotification() {
+    return guidedTourManager?.showStatsTourNotification?.();
+}
+
+export function showPersonalizationTourNotification() {
+    return guidedTourManager?.showPersonalizationTourNotification?.();
+}
+
+export function showTaskOptionsTourNotification() {
+    return guidedTourManager?.showTaskOptionsTourNotification?.();
 }
 
 export function _resetForTesting() {

@@ -1160,13 +1160,48 @@ export const DEFAULT_LABELS = deepFreeze({
         done:            'Done',
         stepOf:          '{current} of {total}',
         step1:           'Tap here to add tasks to your routine.',
-        step2:           'Tap the three dots on a task for options like recurring, priority, and due dates.',
+        step2:           'Tap a task to complete it. Tap the three dots for options like recurring schedules and priorities.',
         step3:           'Complete all tasks to finish a cycle. Your cycle count tracks consistency.',
-        step4:           'Open the menu to access settings, personalization, routine actions, and more.',
-        step5:           'Swipe left or click the arrow to open the Stats Panel - swiping works on desktop too!',
+        step4:           'Switch between Auto Cycle, Manual, and To-Do modes to match your workflow.',
+        step5:           'Your at-a-glance status — shows the current mode, tasks remaining, and tips.',
+        step6:           'Recently used actions appear here for quick access.',
+        step7:           'Customize your colors, background image, and theme.',
+        step8:           'Toggle dark mode on or off with a single tap.',
+        step9:           'Open the menu for settings, routines, import/export, and more.',
+        step10:          'Swipe left or click the arrow to open the Stats Panel — swiping works on desktop too!',
         complete:        'You\'re all set! Enjoy building your routines.',
         retakeTour:      'Retake Guided Tour',
         closeDialogHint: 'Close the open dialog to start the tour'
+    },
+
+    statsTour: {
+        welcomeMessage:  'Welcome to Stats! Take a quick tour of your progress dashboard?',
+        startButton:     'Start Stats Tour',
+        step1:           'Your routine at a glance — cycle completion, cycle count, and cleared tasks.',
+        step2:           'View a timeline of completed cycles and cleared tasks.',
+        step3:           'Track your achievement badges and milestones as you build consistency.',
+        step4:           'Your total cycles across all routines and progress toward the next milestone.',
+        complete:        'That\'s your Stats Panel! Swipe right or tap the arrow to return to your tasks.'
+    },
+
+    prefsTour: {
+        welcomeMessage:  'First time here? Take a quick tour of the personalization options!',
+        startButton:     'Start Tour',
+        step1:           'See your changes in real time as you customize colors and styles.',
+        step2:           'Try a preset theme with one tap — or save your own custom presets.',
+        step3:           'Expand any section to fine-tune individual colors and options.',
+        step4:           'Made a mistake? Undo your last change or reset everything to defaults.',
+        complete:        'You\'re all set to personalize! Explore the sections at your own pace.'
+    },
+
+    taskOptionsTour: {
+        welcomeMessage:  'First time here? Take a quick tour of the task button options!',
+        startButton:     'Start Tour',
+        step1:           'Toggle buttons on or off for this routine. Changes apply right away.',
+        step2:           'Hover or tap any option to see what it does before toggling.',
+        step3:           'Global options affect all your routines, not just this one.',
+        step4:           'Reset everything back to defaults if you change your mind.',
+        complete:        'You\'re all set! Customize your task buttons however you like.'
     },
 
     // ========================================================================

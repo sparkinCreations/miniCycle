@@ -367,13 +367,18 @@ export class MiniCycleNotifications {
         }
       }
 
-      const notificationContainer = document.getElementById(DOM_IDS.NOTIFICATION_CONTAINER);
+      // Optional container override — allows rendering inside a <dialog> where
+      // the global notification container is blocked by showModal() inertness.
+      const notificationContainer = options?.container
+        || document.getElementById(DOM_IDS.NOTIFICATION_CONTAINER);
       if (!notificationContainer) {
         console.warn("⚠️ Notification container not found.");
         return;
       }
 
-      this._ensureAboveDialogs(notificationContainer);
+      if (!options?.container) {
+        this._ensureAboveDialogs(notificationContainer);
+      }
 
       if (typeof message !== "string" || message.trim() === "") {
         console.warn("⚠️ Invalid or empty message passed to show().");
@@ -481,10 +486,17 @@ export class MiniCycleNotifications {
         }
       }
 
-      notificationContainer.appendChild(notification);
+      // In-dialog: prepend at top; global: append at bottom
+      if (options?.container) {
+        notificationContainer.insertBefore(notification, notificationContainer.firstChild);
+      } else {
+        notificationContainer.appendChild(notification);
+      }
 
-      // Restore saved position from Schema 2.5
-      this.restoreNotificationPosition(notificationContainer);
+      // Skip drag/position for in-dialog notifications (custom container)
+      if (!options?.container) {
+        this.restoreNotificationPosition(notificationContainer);
+      }
 
       // Auto-remove after duration (hover pause)
       // duration=null → default timeout, duration=0 → persistent (no auto-remove)
@@ -499,8 +511,10 @@ export class MiniCycleNotifications {
         });
       }
 
-      // Setup drag support
-      this.setupNotificationDragging(notificationContainer);
+      // Skip drag support for in-dialog notifications (custom container)
+      if (!options?.container) {
+        this.setupNotificationDragging(notificationContainer);
+      }
 
       return notification;
 

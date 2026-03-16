@@ -208,6 +208,8 @@ const di = createDIModule('PreferencesManager', {
     safeAddEventListener: optional(null),
     hideMainMenu: optional(null),
     renderVocabThemes: optional(null),
+    showPersonalizationTourNotification: optional(null),
+    hasActiveNotifications: optional(null),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
     querySelectorAll: optional((sel) => document.querySelectorAll(sel)),
@@ -367,7 +369,7 @@ export class PreferencesManager {
         // Click outside to close
         if (this.modal) {
             this.modal._backdropClickHandler = (e) => {
-                if (e.target === this.modal) {
+                if (e.target === this.modal && !_deps.hasActiveNotifications?.()) {
                     this.closeModal();
                 }
             };
@@ -710,22 +712,27 @@ export class PreferencesManager {
      * Open the preferences modal
      */
     async openModal() {
-        if (this.modal) {
-            _deps.hideMainMenu?.();
-            this.updateThemeNotice();
-            this.loadSavedColors();
-            this.loadCollapsedStates();
-            this.renderPresetsList();
-            this.updatePreview();
-            this.updateUndoButton();
+        if (!this.modal) return;
 
-            // Refresh background image UI
-            const bgData = await _bgImageModule.loadBgImage();
-            _bgImageModule.updateBgImageUI(bgData?.dataUrl || null, bgData?.mode || 'cover', _deps.AppState, { getElementById: _deps.getElementById });
+        _deps.hideMainMenu?.();
+        this.updateThemeNotice();
+        this.loadSavedColors();
+        this.loadCollapsedStates();
+        this.renderPresetsList();
+        this.updatePreview();
+        this.updateUndoButton();
 
-            this.modal._previousFocus = _deps.getActiveElement();
-            if (!this.modal.open) this.modal.showModal();
-        }
+        // Refresh background image UI
+        const bgData = await _bgImageModule.loadBgImage();
+        _bgImageModule.updateBgImageUI(bgData?.dataUrl || null, bgData?.mode || 'cover', _deps.AppState, { getElementById: _deps.getElementById });
+
+        this.modal._previousFocus = _deps.getActiveElement();
+        if (!this.modal.open) this.modal.showModal();
+
+        // Show tour prompt after modal is open. The notification system's
+        // _ensureAboveDialogs() re-shows the popover container so it stacks
+        // above the dialog in the top layer, keeping it visible and interactive.
+        _deps.showPersonalizationTourNotification?.();
     }
 
     /**

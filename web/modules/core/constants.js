@@ -860,6 +860,9 @@ export const DOM_SELECTORS = Object.freeze({
     TASK_TEXT: '.task-text',
     TASK_EDIT_INPUT: '.task-edit-input',
     TASK_OPTIONS: '.task-options',
+    TASK_OPTIONS_LIST: '.task-options-list',
+    TASK_OPTIONS_GLOBAL_SECTION: '.task-options-container .options-section:last-child',
+    TASK_OPTIONS_MODAL_BODY: '.modal-body',
     TASK_BTN: '.task-btn',
     TASK_CHECKBOX: 'input[type="checkbox"]',
     TASK_INPUT: '.task-input',
@@ -922,6 +925,8 @@ export const DOM_SELECTORS = Object.freeze({
     // ---- Stats ----
     STATS_PANEL: '.stats-panel',
     DOT: '.dot',
+    BADGE_CONTAINER: '.badge-container',
+    GLOBAL_STATS_CONTAINER: '.global-stats-container',
 
     // ---- Themes ----
     THEME_CONTAINER: '.theme-container',
@@ -969,6 +974,8 @@ export const DOM_SELECTORS = Object.freeze({
 
     // ---- Preferences ----
     PREFERENCES_MODAL: '.preferences-modal',
+    PREFERENCES_MODAL_CONTENT: '.preferences-modal-content',
+    PREFERENCES_SCROLL_AREA: '.preferences-scroll-area',
     PREFERENCES_SECTION_HEADER_COLLAPSIBLE: '.preferences-section-header.collapsible',
     PREFERENCES_SECTION_BY_DATA: '.preferences-section[data-section], .preferences-preview-section[data-section]',
     PREFERENCES_RESET_BTN: '.preferences-reset-btn',

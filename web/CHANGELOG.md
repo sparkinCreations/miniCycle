@@ -1,3 +1,7 @@
+## [2.101] - 2026-03-16
+- feat: add Guided Tour Manager with UI elements and notifications
+
+
 ## [2.100] - 2026-03-15
 - fix(docs): improve guided tour button setup by enhancing settings dialog closure handling
 - fix(docs): enhance modal detection in guided tour to improve user experience and prevent data loss
