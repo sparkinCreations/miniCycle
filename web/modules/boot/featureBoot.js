@@ -416,7 +416,8 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     updateThemeColor: deps.features?.updateThemeColor,
     trackAction: deps.ui?.trackAction,
     getModal: deps.ui?.getModal,
-    initCompletedTasksSection: () => deps.ui?.completedTasksManager?.init?.()
+    initCompletedTasksSection: () => deps.ui?.completedTasksManager?.init?.(),
+    showMenuTourNotification: deps.ui?.showMenuTourNotification
   };
   appContextMod.setContextValue('uiApi', uiApiObj);
   appContextMod.registerApi('ui', uiApiObj);

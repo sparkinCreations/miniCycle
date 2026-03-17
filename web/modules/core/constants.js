@@ -976,6 +976,7 @@ export const DOM_SELECTORS = Object.freeze({
     PREFERENCES_MODAL: '.preferences-modal',
     PREFERENCES_MODAL_CONTENT: '.preferences-modal-content',
     PREFERENCES_SCROLL_AREA: '.preferences-scroll-area',
+    REMINDERS_MODAL_CONTENT: '.reminders-modal-content',
     PREFERENCES_SECTION_HEADER_COLLAPSIBLE: '.preferences-section-header.collapsible',
     PREFERENCES_SECTION_BY_DATA: '.preferences-section[data-section], .preferences-preview-section[data-section]',
     PREFERENCES_RESET_BTN: '.preferences-reset-btn',

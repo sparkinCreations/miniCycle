@@ -5,7 +5,7 @@
 > This file contains metrics that change frequently (version, counts, etc.).
 > All other documentation should reference this file instead of hardcoding these values.
 
-**Last Updated**: March 16, 2026
+**Last Updated**: March 17, 2026
 
 ---
 
@@ -13,11 +13,11 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.101 |
+| **App Version** | 2.102 |
 | **Lite Version** | 2.088 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 115 |
-| **Total Tests** | 1727 |
+| **Total Tests** | 1737 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 39 |
 | **JSDoc Blocks** | 1039 |
@@ -56,9 +56,9 @@
 | `miniCycle-main.js` | ~49 | Entrypoint |
 | `modules/boot/orchestrator.js` | ~774 | Sequence control + boot UI + early coordination |
 | `modules/boot/coreBoot.js` | ~1030 | Core state & init |
-| `modules/boot/featureBoot.js` | ~590 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~886 | UI handlers |
-| **Total** | **~3329** | |
+| `modules/boot/featureBoot.js` | ~591 | DI wiring hub |
+| `modules/boot/uiBoot.js` | ~875 | UI handlers |
+| **Total** | **~3319** | |
 
 ---
 
@@ -66,7 +66,7 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 1727 |
+| Total Tests | 1737 |
 | Test Files | 55 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |

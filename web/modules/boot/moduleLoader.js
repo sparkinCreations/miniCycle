@@ -809,6 +809,8 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         showStatsTourNotification: (...args) => deps.ui?.showStatsTourNotification?.(...args),
         showPersonalizationTourNotification: (...args) => deps.ui?.showPersonalizationTourNotification?.(...args),
         showTaskOptionsTourNotification: (...args) => deps.ui?.showTaskOptionsTourNotification?.(...args),
+        showRemindersTourNotification: (...args) => deps.ui?.showRemindersTourNotification?.(...args),
+        showMenuTourNotification: (...args) => deps.ui?.showMenuTourNotification?.(...args),
         hasActiveNotifications: (...args) => deps.ui?.hasActiveNotifications?.(...args),
         triggerLogoBackground: (...args) => deps.ui?.triggerLogoBackground?.(...args),
         triggerLogoScan: (...args) => deps.ui?.triggerLogoScan?.(...args),

@@ -260,7 +260,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/reminders.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['appInit', 'AppState', 'showNotification', 'showConfirmationModal', 'getModal'],
-        optionalDeps: ['hideMainMenu', 'refreshTaskListUI', 'trackAction', 'updateUndoRedoButtons'],
+        optionalDeps: ['hideMainMenu', 'refreshTaskListUI', 'trackAction', 'updateUndoRedoButtons', 'showRemindersTourNotification'],
         provides: ['startReminders', 'stopReminders', 'updateReminderButtons', 'setupReminderButtonHandler', 'loadRemindersSettings'],
         api: 'features',
         provideInstance: 'reminderManager',
@@ -374,7 +374,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'getElementById', 'querySelector', 'getBody', 'getRootElement', 'getActiveElement', 'showNotification', 'safeAddEventListener'],
         optionalDeps: ['isModalOpen'],
-        provides: ['startGuidedTour', 'showStatsTourNotification', 'showPersonalizationTourNotification', 'showTaskOptionsTourNotification'],
+        provides: ['startGuidedTour', 'showStatsTourNotification', 'showPersonalizationTourNotification', 'showTaskOptionsTourNotification', 'showRemindersTourNotification', 'showMenuTourNotification'],
         provideInstance: 'guidedTourManager',
         api: 'ui',
         after: ['onboardingManager']
