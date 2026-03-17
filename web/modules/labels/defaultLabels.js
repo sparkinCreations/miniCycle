@@ -1204,6 +1204,26 @@ export const DEFAULT_LABELS = deepFreeze({
         complete:        'You\'re all set! Customize your task buttons however you like.'
     },
 
+    remindersTour: {
+        welcomeMessage:  'First time here? Take a quick tour of the reminder settings!',
+        startButton:     'Start Tour',
+        step1:           'This is the master switch — turn reminders on or off for all your tasks.',
+        step2:           'Get notified when a task\'s due date is approaching.',
+        step3:           'Enable browser notifications to get alerts even when the app isn\'t in focus.',
+        step4:           'Customize how often you\'re reminded — choose the interval and repeat count.',
+        complete:        'You\'re all set! Configure reminders to stay on top of your tasks.'
+    },
+
+    menuTour: {
+        welcomeMessage:  'First time here? Take a quick tour of the menu!',
+        startButton:     'Start Tour',
+        step1:           'Create, download, import, and share your routines from here.',
+        step2:           'Manage tasks in bulk, set up reminders, and customize task option buttons.',
+        step3:           'Unlock themes and mini-games as you complete more cycles!',
+        step4:           'Personalize colors, layout, and app settings to make it yours.',
+        complete:        'That\'s the menu! Tap any section header to expand it.'
+    },
+
     // ========================================================================
     // 16. UNDO/REDO
     // ========================================================================

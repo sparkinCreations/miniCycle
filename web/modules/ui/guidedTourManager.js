@@ -7,7 +7,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 const TOUR_ACTIVE_ATTR = 'data-tour-active';
@@ -69,6 +69,8 @@ export class GuidedTourManager {
         this._registerStatsTour();
         this._registerPersonalizationTour();
         this._registerTaskOptionsTour();
+        this._registerRemindersTour();
+        this._registerMenuTour();
     }
 
     /**
@@ -288,6 +290,78 @@ export class GuidedTourManager {
                     targetType: 'id',
                     target: DOM_IDS.RESET_TASK_OPTIONS_BTN,
                     messageKey: 'taskOptionsTour.step4',
+                    position: 'auto'
+                }
+            ]
+        });
+    }
+
+    _registerRemindersTour() {
+        this._tours.set('reminders', {
+            stateKey: 'remindersTourStep',
+            completeKey: 'remindersTour.complete',
+            containerSelector: '#reminders-modal',
+            steps: [
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.ENABLE_REMINDERS,
+                    messageKey: 'remindersTour.step1',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.DUE_DATES_REMINDERS,
+                    messageKey: 'remindersTour.step2',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.BROWSER_NOTIFICATIONS,
+                    messageKey: 'remindersTour.step3',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.FREQUENCY_SECTION,
+                    messageKey: 'remindersTour.step4',
+                    position: 'auto',
+                    onEnter: () => {
+                        const el = this.deps.getElementById(DOM_IDS.FREQUENCY_SECTION);
+                        if (!el || el.offsetParent === null) return 'skip';
+                        return null;
+                    }
+                }
+            ]
+        });
+    }
+
+    _registerMenuTour() {
+        this._tours.set('menu', {
+            stateKey: 'menuTourStep',
+            completeKey: 'menuTour.complete',
+            steps: [
+                {
+                    targetType: 'selector',
+                    target: DATA_SELECTORS.menuSectionByName('routines'),
+                    messageKey: 'menuTour.step1',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'selector',
+                    target: DATA_SELECTORS.menuSectionByName('tasks'),
+                    messageKey: 'menuTour.step2',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'selector',
+                    target: DATA_SELECTORS.menuSectionByName('rewards'),
+                    messageKey: 'menuTour.step3',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'selector',
+                    target: DATA_SELECTORS.menuSectionByName('app'),
+                    messageKey: 'menuTour.step4',
                     position: 'auto'
                 }
             ]
@@ -712,6 +786,74 @@ export class GuidedTourManager {
         );
     }
 
+    /**
+     * Show a notification prompting the user to take the reminders tour.
+     * Called by reminders module after showModal(). No-op if already started or completed.
+     * Uses the notification system's container option to render inside the dialog,
+     * since showModal() makes the global notification container inert.
+     */
+    showRemindersTourNotification() {
+        const remindersTour = this._tours.get('reminders');
+        if (!remindersTour) return;
+
+        const val = this.deps.AppState?.get?.()?.settings?.[remindersTour.stateKey] ?? null;
+        if (val !== null) return; // Already started or done
+
+        // Render the notification inside the dialog's content wrapper
+        const dialog = remindersTour.containerSelector
+            ? this.deps.querySelector?.(remindersTour.containerSelector)
+            : null;
+        const container = dialog?.querySelector(DOM_SELECTORS.REMINDERS_MODAL_CONTENT) || dialog;
+
+        this.deps.showNotification?.(
+            getLabel('remindersTour.welcomeMessage'),
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
+            {
+                container,
+                actionButton: {
+                    label: getLabel('remindersTour.startButton'),
+                    onClick: () => this.startTour('reminders')
+                },
+                onDismiss: () => {
+                    this._activeTourId = 'reminders';
+                    this._markDone();
+                    this._activeTourId = null;
+                }
+            }
+        );
+    }
+
+    /**
+     * Show a notification prompting the user to take the menu tour.
+     * Called by uiBoot when the hamburger menu opens. No-op if already started or completed.
+     * No container option needed — the menu is a <nav>, not a <dialog>.
+     */
+    showMenuTourNotification() {
+        const menuTour = this._tours.get('menu');
+        if (!menuTour) return;
+
+        const val = this.deps.AppState?.get?.()?.settings?.[menuTour.stateKey] ?? null;
+        if (val !== null) return; // Already started or done
+
+        this.deps.showNotification?.(
+            getLabel('menuTour.welcomeMessage'),
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
+            {
+                actionButton: {
+                    label: getLabel('menuTour.startButton'),
+                    onClick: () => this.startTour('menu')
+                },
+                onDismiss: () => {
+                    this._activeTourId = 'menu';
+                    this._markDone();
+                    this._activeTourId = null;
+                }
+            }
+        );
+    }
+
     _getActiveStateKey() {
         const tourId = this._activeTourId || 'main';
         return this._tours.get(tourId)?.stateKey || 'guidedTourStep';
@@ -1077,6 +1219,14 @@ export function showPersonalizationTourNotification() {
 
 export function showTaskOptionsTourNotification() {
     return guidedTourManager?.showTaskOptionsTourNotification?.();
+}
+
+export function showRemindersTourNotification() {
+    return guidedTourManager?.showRemindersTourNotification?.();
+}
+
+export function showMenuTourNotification() {
+    return guidedTourManager?.showMenuTourNotification?.();
 }
 
 export function _resetForTesting() {

@@ -120,6 +120,8 @@ export function createInitialSchema25Data() {
             statsTourStep: null,
             prefsTourStep: null,
             taskOptionsTourStep: null,
+            remindersTourStep: null,
+            menuTourStep: null,
             dismissedEducationalTips: {},
             defaultRecurringSettings: {
                 frequency: "daily",
@@ -182,6 +184,8 @@ const SCHEMA_2_5_TARGET = {
         statsTourStep: null,
         prefsTourStep: null,
         taskOptionsTourStep: null,
+        remindersTourStep: null,
+        menuTourStep: null,
         defaultRecurringSettings: {
             frequency: null,
             indefinitely: true,

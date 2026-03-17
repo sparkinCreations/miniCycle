@@ -37,7 +37,8 @@ const di = createDIModule('Reminders', {
     getModal: optional(null),
     showConfirmationModal: optional(null),
     hideMainMenu: optional(null),
-    trackAction: optional(null)
+    trackAction: optional(null),
+    showRemindersTourNotification: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -104,6 +105,7 @@ export class MiniCycleReminders {
             showConfirmationModal: _deps.showConfirmationModal,
             hideMainMenu: _deps.hideMainMenu,
             trackAction: _deps.trackAction,
+            showRemindersTourNotification: _deps.showRemindersTourNotification,
             ...this._constructorDeps
         };
     }
@@ -223,6 +225,9 @@ export class MiniCycleReminders {
             remindersModal._previousFocus = previousFocus;
             remindersModal.showModal();
         }
+
+        // Show tour prompt after modal is open
+        this.deps.showRemindersTourNotification?.();
 
         return true;
     }

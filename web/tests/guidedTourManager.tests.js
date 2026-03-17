@@ -63,7 +63,8 @@ export async function runGuidedTourManagerTests(resultsDiv) {
             '#current-routine-status, #history-btn, ' +
             '#preferences-modal, #preferences-preview, #pref-section-quick-themes, ' +
             '#preferences-reset-all, ' +
-            '#task-options-customizer-modal, #option-preview-content, #reset-task-options-btn'
+            '#task-options-customizer-modal, #option-preview-content, #reset-task-options-btn, ' +
+            '#reminders-modal, #enableReminders, #dueDatesReminders, #browserNotifications, #frequency-section'
         ).forEach(el => el.remove());
         document.querySelectorAll('.task, .hamburger-menu, .badge-container, .global-stats-container, .preferences-section-header').forEach(el => el.remove());
         document.documentElement.removeAttribute('data-tour-active');
@@ -914,6 +915,249 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         }
 
         dialog.remove();
+    });
+
+    // ---- Reminders Tour Tests ----
+
+    function setupRemindersModalTargets() {
+        const dialog = document.createElement('dialog');
+        dialog.id = 'reminders-modal';
+        document.body.appendChild(dialog);
+
+        const content = document.createElement('div');
+        content.className = 'reminders-modal-content';
+        dialog.appendChild(content);
+
+        const enableReminders = document.createElement('input');
+        enableReminders.type = 'checkbox';
+        enableReminders.id = 'enableReminders';
+        assignRect(enableReminders, { left: 50, top: 100, width: 20, height: 20 });
+        content.appendChild(enableReminders);
+
+        const dueDates = document.createElement('input');
+        dueDates.type = 'checkbox';
+        dueDates.id = 'dueDatesReminders';
+        assignRect(dueDates, { left: 50, top: 160, width: 20, height: 20 });
+        content.appendChild(dueDates);
+
+        const browserNotif = document.createElement('input');
+        browserNotif.type = 'checkbox';
+        browserNotif.id = 'browserNotifications';
+        assignRect(browserNotif, { left: 50, top: 220, width: 20, height: 20 });
+        content.appendChild(browserNotif);
+
+        const frequencySection = document.createElement('div');
+        frequencySection.id = 'frequency-section';
+        assignRect(frequencySection, { left: 50, top: 280, width: 400, height: 120 });
+        content.appendChild(frequencySection);
+
+        return dialog;
+    }
+
+    resultsDiv.innerHTML += '<h4 class="test-section">Reminders Tour</h4>';
+
+    await test('showRemindersTourNotification shows notification when remindersTourStep is null', async () => {
+        const dialog = setupRemindersModalTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', remindersTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showRemindersTourNotification();
+
+        if (notifications.length !== 1) {
+            throw new Error(`Expected 1 notification, got ${notifications.length}`);
+        }
+        if (notifications[0].type !== 'info') {
+            throw new Error(`Expected info notification, got ${notifications[0].type}`);
+        }
+        if (!notifications[0].options?.actionButton?.label) {
+            throw new Error('Expected reminders tour CTA label');
+        }
+
+        dialog.remove();
+    });
+
+    await test('showRemindersTourNotification is a no-op when remindersTourStep is done', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', remindersTourStep: 'done' }
+        });
+
+        notifications.length = 0;
+        manager.showRemindersTourNotification();
+
+        if (notifications.length !== 0) {
+            throw new Error(`Expected 0 notifications, got ${notifications.length}`);
+        }
+    });
+
+    await test('reminders notification dismiss marks tour as done', async () => {
+        const dialog = setupRemindersModalTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', remindersTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showRemindersTourNotification();
+        notifications[0].options.onDismiss();
+
+        if (mockState.settings.remindersTourStep !== 'done') {
+            throw new Error(`Expected remindersTourStep done, got ${mockState.settings.remindersTourStep}`);
+        }
+
+        dialog.remove();
+    });
+
+    await test('reminders tour appends elements inside the dialog container', async () => {
+        const dialog = setupRemindersModalTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', remindersTourStep: null }
+        });
+
+        manager.startTour('reminders');
+
+        const overlayInDialog = dialog.querySelector('.tour-overlay');
+        const overlayInBody = document.body.querySelector(':scope > .tour-overlay');
+
+        if (!overlayInDialog) {
+            throw new Error('Expected tour overlay inside the dialog');
+        }
+        if (overlayInBody) {
+            throw new Error('Tour overlay should NOT be a direct child of body');
+        }
+
+        dialog.remove();
+    });
+
+    await test('reminders tour completion sets remindersTourStep to done', async () => {
+        const dialog = setupRemindersModalTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', remindersTourStep: null }
+        });
+
+        manager.startTour('reminders');
+        manager.completeTour();
+
+        if (mockState.settings.remindersTourStep !== 'done') {
+            throw new Error(`Expected remindersTourStep done, got ${mockState.settings.remindersTourStep}`);
+        }
+        if (mockState.settings.guidedTourStep !== 'done') {
+            throw new Error(`guidedTourStep should remain done, got ${mockState.settings.guidedTourStep}`);
+        }
+
+        dialog.remove();
+    });
+
+    // ---- Menu Tour Tests ----
+
+    function setupMenuTargets() {
+        const sections = ['routines', 'tasks', 'rewards', 'app'];
+        const elements = [];
+        sections.forEach((name, i) => {
+            const section = document.createElement('div');
+            section.className = 'menu-section';
+            section.setAttribute('data-section', name);
+            assignRect(section, { left: 50, top: 100 + i * 80, width: 300, height: 60 });
+            document.body.appendChild(section);
+            elements.push(section);
+        });
+        return elements;
+    }
+
+    resultsDiv.innerHTML += '<h4 class="test-section">Menu Tour</h4>';
+
+    await test('showMenuTourNotification shows notification when menuTourStep is null', async () => {
+        const elements = setupMenuTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', menuTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showMenuTourNotification();
+
+        if (notifications.length !== 1) {
+            throw new Error(`Expected 1 notification, got ${notifications.length}`);
+        }
+        if (!notifications[0].options?.actionButton) {
+            throw new Error('Expected notification to have an actionButton');
+        }
+
+        elements.forEach(el => el.remove());
+    });
+
+    await test('showMenuTourNotification is a no-op when menuTourStep is done', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', menuTourStep: 'done' }
+        });
+
+        notifications.length = 0;
+        manager.showMenuTourNotification();
+
+        if (notifications.length !== 0) {
+            throw new Error(`Expected 0 notifications, got ${notifications.length}`);
+        }
+    });
+
+    await test('showMenuTourNotification dismiss marks menuTourStep as done', async () => {
+        const elements = setupMenuTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', menuTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showMenuTourNotification();
+        notifications[0].options.onDismiss();
+
+        if (mockState.settings.menuTourStep !== 'done') {
+            throw new Error(`Expected menuTourStep done, got ${mockState.settings.menuTourStep}`);
+        }
+
+        elements.forEach(el => el.remove());
+    });
+
+    await test('showMenuTourNotification does not pass container option (global notification)', async () => {
+        const elements = setupMenuTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', menuTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showMenuTourNotification();
+
+        if (notifications[0].options?.container) {
+            throw new Error('Menu tour should not pass container option (not a dialog)');
+        }
+
+        elements.forEach(el => el.remove());
+    });
+
+    await test('menu tour completion sets menuTourStep to done', async () => {
+        const elements = setupMenuTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', menuTourStep: null }
+        });
+
+        manager.startTour('menu');
+        manager.completeTour();
+
+        if (mockState.settings.menuTourStep !== 'done') {
+            throw new Error(`Expected menuTourStep done, got ${mockState.settings.menuTourStep}`);
+        }
+        if (mockState.settings.guidedTourStep !== 'done') {
+            throw new Error(`guidedTourStep should remain done, got ${mockState.settings.guidedTourStep}`);
+        }
+
+        elements.forEach(el => el.remove());
     });
 
     const percentage = Math.round((passed.count / total.count) * 100);

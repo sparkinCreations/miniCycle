@@ -1,3 +1,7 @@
+## [2.102] - 2026-03-17
+- feat: enhance modal and notification interactions
+
+
 ## [2.101] - 2026-03-16
 - feat: add Guided Tour Manager with UI elements and notifications
 
