@@ -1,3 +1,7 @@
+## [2.103] - 2026-03-18
+- feat: add reminders and menu guided tour notifications with associated UI updates
+
+
 ## [2.102] - 2026-03-17
 - feat: enhance modal and notification interactions
 
