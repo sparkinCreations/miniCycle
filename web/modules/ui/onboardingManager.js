@@ -177,12 +177,25 @@ export class OnboardingManager {
                <li><span aria-hidden="true">📊</span> ${getLabel('onboarding.step2Item4')}</li>
              </ul>`,
             `<h3>${getLabel('onboarding.step3Title')}</h3>
-             <ul>
-               <li>${getLabel('onboarding.step3Item1')}</li>
-               <li>${getLabel('onboarding.step3Item2')}</li>
-               <li>${getLabel('onboarding.step3Item3')}</li>
-               <li>${getLabel('onboarding.step3Item4')}</li>
-             </ul>`
+             <p>${getLabel('onboarding.step3Desc1')}</p>
+             <p>${getLabel('onboarding.step3Desc2')}</p>
+             <div class="onboarding-tour-animation" aria-hidden="true">
+               <svg viewBox="0 0 280 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animation of a cursor clicking a Start Tour button">
+                 <!-- Notification bar -->
+                 <rect class="tour-anim-bar" x="10" y="20" width="260" height="60" rx="10" />
+                 <!-- Notification text -->
+                 <text class="tour-anim-text" x="30" y="48" font-size="13">Take a quick tour?</text>
+                 <!-- Start Tour button -->
+                 <g class="tour-anim-btn-group">
+                   <rect class="tour-anim-btn" x="170" y="34" width="88" height="32" rx="6" />
+                   <text class="tour-anim-btn-text" x="214" y="55" font-size="12" text-anchor="middle">Start Tour</text>
+                 </g>
+                 <!-- Animated cursor -->
+                 <g class="tour-anim-cursor">
+                   <path d="M0,0 L0,17 L4,13 L8,20 L11,18.5 L7,12 L12,11 Z" fill="var(--theme-modal-text, #333)" />
+                 </g>
+               </svg>
+             </div>`
         ];
 
         const modal = this.createOnboardingModal(currentTheme);
