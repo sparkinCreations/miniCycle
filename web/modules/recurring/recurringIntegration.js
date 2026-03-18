@@ -35,7 +35,9 @@ const di = createDIModule('RecurringIntegration', {
     GlobalUtils: optional(null),
     escapeHtml: optional(null),
     syncRecurringStateToDOM: optional(null),
-    refreshTaskButtonsForModeChange: optional(null)
+    refreshTaskButtonsForModeChange: optional(null),
+    showRecurringListTourNotification: optional(null),
+    showRecurringSettingsTourNotification: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -207,7 +209,9 @@ export async function initRecurringModules(options = {}) {
             refreshUIFromState: () => deps.refreshUIFromState?.(),
             activateTaskRecurringState: coreFunctions.activateTaskRecurringState,
             deactivateTaskRecurringState: coreFunctions.deactivateTaskRecurringState,
-            getModal: deps.getModal
+            getModal: deps.getModal,
+            showRecurringListTourNotification: deps.showRecurringListTourNotification,
+            showRecurringSettingsTourNotification: deps.showRecurringSettingsTourNotification
         });
 
         // Create instance - will validate required deps via DI

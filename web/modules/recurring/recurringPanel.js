@@ -59,7 +59,9 @@ const di = createDIModule('RecurringPanel', {
     refreshUIFromState: optional(null),
     activateTaskRecurringState: optional(null),
     deactivateTaskRecurringState: optional(null),
-    getModal: optional(null)
+    getModal: optional(null),
+    showRecurringListTourNotification: optional(null),
+    showRecurringSettingsTourNotification: optional(null)
 }, { strict: true });
 
 /**
@@ -761,6 +763,9 @@ export class RecurringPanelManager {
             this.state.panelOpen = true;
             this.setPanelMode('browsing');
 
+            // Show recurring list tour prompt after modal is open
+            this.deps.showRecurringListTourNotification?.();
+
         } catch (error) {
             console.error('❌ Error opening recurring panel:', error);
             this.deps.showNotification(getLabel('notify.panelOpenFailed'), 'error');
@@ -1078,6 +1083,11 @@ export class RecurringPanelManager {
     setPanelMode(mode) {
         this.state.panelMode = mode;
         this.applyPanelMode();
+
+        // Show recurring settings tour when entering editing mode for the first time
+        if (mode === 'editing') {
+            this.deps.showRecurringSettingsTourNotification?.();
+        }
     }
 
     /**

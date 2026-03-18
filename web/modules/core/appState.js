@@ -926,6 +926,10 @@ class MiniCycleState {
                 taskOptionsTourStep: null,
                 remindersTourStep: null,
                 menuTourStep: null,
+                settingsTourStep: null,
+                routineSwitcherTourStep: null,
+                recurringListTourStep: null,
+                recurringSettingsTourStep: null,
                 addTaskDiscovered: false,
                 dismissedEducationalTips: {},
                 defaultRecurringSettings: {

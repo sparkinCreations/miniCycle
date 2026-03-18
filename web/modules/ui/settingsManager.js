@@ -190,7 +190,9 @@ function wireSubModuleDependencies(dependencies) {
         isDebug: dependencies.isDebug,
         clearAllUndoHistory: dependencies.clearAllUndoHistory,
         startGuidedTour: dependencies.startGuidedTour,
-        updateHelpWindow: dependencies.updateHelpWindow
+        updateHelpWindow: dependencies.updateHelpWindow,
+        showSettingsTourNotification: dependencies.showSettingsTourNotification,
+        hasActiveNotifications: dependencies.hasActiveNotifications
     });
 
     _subModules.setCycleExportManagerDependencies({

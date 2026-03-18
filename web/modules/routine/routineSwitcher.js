@@ -74,7 +74,9 @@ const di = createDIModule('RoutineSwitcher', {
     updateMainMenuHeader: optional(null),
     refreshThemeLabels: optional(null),
     logHistoryEvent: optional(null),
-    exportMiniCycleData: optional(null)
+    exportMiniCycleData: optional(null),
+    showRoutineSwitcherTourNotification: optional(null),
+    hasActiveNotifications: optional(null)
 });
 
 /**
@@ -155,6 +157,8 @@ export class RoutineSwitcher {
 
         switchModal._previousFocus = document.activeElement;
         if (!switchModal.open) switchModal.showModal();
+        // Show routine switcher tour prompt after modal is open
+        this.deps.showRoutineSwitcherTourNotification?.();
         switchRow.style.display = "none";
 
         // Reset desktop preview to placeholder

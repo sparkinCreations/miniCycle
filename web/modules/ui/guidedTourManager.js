@@ -71,6 +71,10 @@ export class GuidedTourManager {
         this._registerTaskOptionsTour();
         this._registerRemindersTour();
         this._registerMenuTour();
+        this._registerSettingsTour();
+        this._registerRoutineSwitcherTour();
+        this._registerRecurringListTour();
+        this._registerRecurringSettingsTour();
     }
 
     /**
@@ -362,6 +366,170 @@ export class GuidedTourManager {
                     targetType: 'selector',
                     target: DATA_SELECTORS.menuSectionByName('app'),
                     messageKey: 'menuTour.step4',
+                    position: 'auto'
+                }
+            ]
+        });
+    }
+
+    _registerSettingsTour() {
+        this._tours.set('settings', {
+            stateKey: 'settingsTourStep',
+            completeKey: 'settingsTour.complete',
+            containerSelector: '#settings-modal',
+            steps: [
+                {
+                    targetType: 'selector',
+                    target: DATA_SELECTORS.settingsSectionByName('display'),
+                    messageKey: 'settingsTour.step1',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'selector',
+                    target: DATA_SELECTORS.settingsSectionByName('accessibility'),
+                    messageKey: 'settingsTour.step2',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'selector',
+                    target: DATA_SELECTORS.settingsSectionByName('behavior'),
+                    messageKey: 'settingsTour.step3',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'selector',
+                    target: DATA_SELECTORS.settingsSectionByName('data'),
+                    messageKey: 'settingsTour.step4',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'selector',
+                    target: DATA_SELECTORS.settingsSectionByName('reset'),
+                    messageKey: 'settingsTour.step5',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'selector',
+                    target: DATA_SELECTORS.settingsSectionByName('advanced'),
+                    messageKey: 'settingsTour.step6',
+                    position: 'auto'
+                }
+            ]
+        });
+    }
+
+    _registerRoutineSwitcherTour() {
+        this._tours.set('routineSwitcher', {
+            stateKey: 'routineSwitcherTourStep',
+            completeKey: 'routineSwitcherTour.complete',
+            containerSelector: '#routine-switcher-modal',
+            steps: [
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.MINI_CYCLE_LIST,
+                    messageKey: 'routineSwitcherTour.step1',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.ROUTINE_SEARCH_INPUT,
+                    messageKey: 'routineSwitcherTour.step2',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.SWITCH_ITEMS_ROW,
+                    messageKey: 'routineSwitcherTour.step3',
+                    position: 'auto',
+                    onEnter: () => {
+                        // Action row is hidden until a routine is selected
+                        const el = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
+                        if (!el || el.offsetParent === null || el.style.display === 'none') return 'skip';
+                        return null;
+                    }
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.MINI_CYCLE_SWITCH_CONFIRM,
+                    messageKey: 'routineSwitcherTour.step4',
+                    position: 'auto'
+                }
+            ]
+        });
+    }
+
+    _registerRecurringListTour() {
+        this._tours.set('recurringList', {
+            stateKey: 'recurringListTourStep',
+            completeKey: 'recurringListTour.complete',
+            containerSelector: '#recurring-panel-overlay',
+            steps: [
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.RECURRING_TASK_LIST,
+                    messageKey: 'recurringListTour.step1',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.RECURRING_REMOVE_BTN,
+                    messageKey: 'recurringListTour.step2',
+                    position: 'auto',
+                    onEnter: () => {
+                        const el = this.deps.querySelector(DOM_SELECTORS.RECURRING_REMOVE_BTN);
+                        if (!el || el.getClientRects().length === 0) return 'skip';
+                        return null;
+                    }
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.ADD_RECURRING_TASK_BTN,
+                    messageKey: 'recurringListTour.step3',
+                    position: 'auto'
+                }
+            ]
+        });
+    }
+
+    _registerRecurringSettingsTour() {
+        this._tours.set('recurringSettings', {
+            stateKey: 'recurringSettingsTourStep',
+            completeKey: 'recurringSettingsTour.complete',
+            containerSelector: '#recurring-panel-overlay',
+            steps: [
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.RECURRING_TASK_LIST,
+                    messageKey: 'recurringSettingsTour.step1',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.RECURRING_SUMMARY_PREVIEW,
+                    messageKey: 'recurringSettingsTour.step2',
+                    position: 'auto',
+                    onEnter: () => {
+                        const el = this.deps.getElementById(DOM_IDS.RECURRING_SUMMARY_PREVIEW);
+                        if (!el || el.classList.contains('hidden') || el.offsetParent === null) return 'skip';
+                        return null;
+                    }
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.RECUR_FREQUENCY,
+                    messageKey: 'recurringSettingsTour.step3',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.TOGGLE_ADVANCED_SETTINGS,
+                    messageKey: 'recurringSettingsTour.step4',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.APPLY_RECURRING_SETTINGS,
+                    messageKey: 'recurringSettingsTour.step5',
                     position: 'auto'
                 }
             ]
@@ -854,6 +1022,154 @@ export class GuidedTourManager {
         );
     }
 
+    /**
+     * Show a notification prompting the user to take the settings tour.
+     * Called by settingsUIManager after showModal(). No-op if already started or completed.
+     * Uses the notification system's container option to render inside the dialog,
+     * since showModal() makes the global notification container inert.
+     */
+    showSettingsTourNotification() {
+        const settingsTour = this._tours.get('settings');
+        if (!settingsTour) return;
+
+        const val = this.deps.AppState?.get?.()?.settings?.[settingsTour.stateKey] ?? null;
+        if (val !== null) return; // Already started or done
+
+        // Render the notification inside the dialog's content wrapper
+        const dialog = settingsTour.containerSelector
+            ? this.deps.querySelector?.(settingsTour.containerSelector)
+            : null;
+        const container = dialog?.querySelector(DOM_SELECTORS.SETTINGS_MODAL_CONTENT) || dialog;
+
+        this.deps.showNotification?.(
+            getLabel('settingsTour.welcomeMessage'),
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
+            {
+                container,
+                actionButton: {
+                    label: getLabel('settingsTour.startButton'),
+                    onClick: () => this.startTour('settings')
+                },
+                onDismiss: () => {
+                    this._activeTourId = 'settings';
+                    this._markDone();
+                    this._activeTourId = null;
+                }
+            }
+        );
+    }
+
+    /**
+     * Show a notification prompting the user to take the routine switcher tour.
+     * Called by routineSwitcher after showModal(). No-op if already started or completed.
+     * Uses the notification system's container option to render inside the dialog,
+     * since showModal() makes the global notification container inert.
+     */
+    showRoutineSwitcherTourNotification() {
+        const rsTour = this._tours.get('routineSwitcher');
+        if (!rsTour) return;
+
+        const val = this.deps.AppState?.get?.()?.settings?.[rsTour.stateKey] ?? null;
+        if (val !== null) return; // Already started or done
+
+        // Render the notification inside the dialog's content wrapper
+        const dialog = rsTour.containerSelector
+            ? this.deps.querySelector?.(rsTour.containerSelector)
+            : null;
+        const container = dialog?.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT) || dialog;
+
+        this.deps.showNotification?.(
+            getLabel('routineSwitcherTour.welcomeMessage'),
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
+            {
+                container,
+                actionButton: {
+                    label: getLabel('routineSwitcherTour.startButton'),
+                    onClick: () => this.startTour('routineSwitcher')
+                },
+                onDismiss: () => {
+                    this._activeTourId = 'routineSwitcher';
+                    this._markDone();
+                    this._activeTourId = null;
+                }
+            }
+        );
+    }
+
+    /**
+     * Show a notification prompting the user to take the recurring list tour.
+     * Called by recurringPanel after openPanel(). No-op if already started or completed.
+     * Uses the notification system's container option to render inside the dialog.
+     */
+    showRecurringListTourNotification() {
+        const rlTour = this._tours.get('recurringList');
+        if (!rlTour) return;
+
+        const val = this.deps.AppState?.get?.()?.settings?.[rlTour.stateKey] ?? null;
+        if (val !== null) return;
+
+        const dialog = rlTour.containerSelector
+            ? this.deps.querySelector?.(rlTour.containerSelector)
+            : null;
+        const container = dialog?.querySelector(`#${DOM_IDS.RECURRING_PANEL}`) || dialog;
+
+        this.deps.showNotification?.(
+            getLabel('recurringListTour.welcomeMessage'),
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
+            {
+                container,
+                actionButton: {
+                    label: getLabel('recurringListTour.startButton'),
+                    onClick: () => this.startTour('recurringList')
+                },
+                onDismiss: () => {
+                    this._activeTourId = 'recurringList';
+                    this._markDone();
+                    this._activeTourId = null;
+                }
+            }
+        );
+    }
+
+    /**
+     * Show a notification prompting the user to take the recurring settings tour.
+     * Called by recurringPanel when entering editing mode. No-op if already started or completed.
+     * Uses the notification system's container option to render inside the dialog.
+     */
+    showRecurringSettingsTourNotification() {
+        const rsTour = this._tours.get('recurringSettings');
+        if (!rsTour) return;
+
+        const val = this.deps.AppState?.get?.()?.settings?.[rsTour.stateKey] ?? null;
+        if (val !== null) return;
+
+        const dialog = rsTour.containerSelector
+            ? this.deps.querySelector?.(rsTour.containerSelector)
+            : null;
+        const container = dialog?.querySelector(`#${DOM_IDS.RECURRING_PANEL}`) || dialog;
+
+        this.deps.showNotification?.(
+            getLabel('recurringSettingsTour.welcomeMessage'),
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
+            {
+                container,
+                actionButton: {
+                    label: getLabel('recurringSettingsTour.startButton'),
+                    onClick: () => this.startTour('recurringSettings')
+                },
+                onDismiss: () => {
+                    this._activeTourId = 'recurringSettings';
+                    this._markDone();
+                    this._activeTourId = null;
+                }
+            }
+        );
+    }
+
     _getActiveStateKey() {
         const tourId = this._activeTourId || 'main';
         return this._tours.get(tourId)?.stateKey || 'guidedTourStep';
@@ -1227,6 +1543,22 @@ export function showRemindersTourNotification() {
 
 export function showMenuTourNotification() {
     return guidedTourManager?.showMenuTourNotification?.();
+}
+
+export function showSettingsTourNotification() {
+    return guidedTourManager?.showSettingsTourNotification?.();
+}
+
+export function showRoutineSwitcherTourNotification() {
+    return guidedTourManager?.showRoutineSwitcherTourNotification?.();
+}
+
+export function showRecurringListTourNotification() {
+    return guidedTourManager?.showRecurringListTourNotification?.();
+}
+
+export function showRecurringSettingsTourNotification() {
+    return guidedTourManager?.showRecurringSettingsTourNotification?.();
 }
 
 export function _resetForTesting() {
