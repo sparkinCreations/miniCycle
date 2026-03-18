@@ -170,12 +170,31 @@ export class OnboardingManager {
              <p>${getLabel('onboarding.step1Desc1')}</p>
              <p>${getLabel('onboarding.step1Desc2')}</p>`,
             `<h3>${getLabel('onboarding.step2Title')}</h3>
-             <ul>
-               <li><span aria-hidden="true">📝</span> ${getLabel('onboarding.step2Item1')}</li>
-               <li><span aria-hidden="true">✅</span> ${getLabel('onboarding.step2Item2')}</li>
-               <li><span aria-hidden="true">🔄</span> ${getLabel('onboarding.step2Item3')}</li>
-               <li><span aria-hidden="true">📊</span> ${getLabel('onboarding.step2Item4')}</li>
-             </ul>`,
+             <p>${getLabel('onboarding.step2Desc')}</p>
+             <div class="onboarding-cycle-animation" aria-hidden="true">
+               <svg viewBox="0 0 280 185" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animation showing three tasks being completed and resetting as a cycle">
+                 <!-- Task 1 -->
+                 <rect class="cycle-anim-task-bg" x="10" y="8" width="260" height="38" rx="8" />
+                 <circle class="cycle-anim-checkbox cycle-anim-checkbox-1" cx="34" cy="27" r="10" />
+                 <path class="cycle-anim-checkmark cycle-anim-checkmark-1" d="M28,27 L32,31 L40,22" />
+                 <text class="cycle-anim-task-text" x="52" y="32" font-size="13">${getLabel('onboarding.step2Task1')}</text>
+                 <!-- Task 2 -->
+                 <rect class="cycle-anim-task-bg" x="10" y="54" width="260" height="38" rx="8" />
+                 <circle class="cycle-anim-checkbox cycle-anim-checkbox-2" cx="34" cy="73" r="10" />
+                 <path class="cycle-anim-checkmark cycle-anim-checkmark-2" d="M28,73 L32,77 L40,68" />
+                 <text class="cycle-anim-task-text" x="52" y="78" font-size="13">${getLabel('onboarding.step2Task2')}</text>
+                 <!-- Task 3 -->
+                 <rect class="cycle-anim-task-bg" x="10" y="100" width="260" height="38" rx="8" />
+                 <circle class="cycle-anim-checkbox cycle-anim-checkbox-3" cx="34" cy="119" r="10" />
+                 <path class="cycle-anim-checkmark cycle-anim-checkmark-3" d="M28,119 L32,123 L40,114" />
+                 <text class="cycle-anim-task-text" x="52" y="124" font-size="13">${getLabel('onboarding.step2Task3')}</text>
+                 <!-- Cycle counter -->
+                 <text class="cycle-anim-counter cycle-anim-counter-0" x="140" y="162" font-size="14" text-anchor="middle">Cycles: 0</text>
+                 <text class="cycle-anim-counter cycle-anim-counter-1" x="140" y="162" font-size="14" text-anchor="middle">Cycles: 1</text>
+                 <!-- Cycle Complete flash -->
+                 <text class="cycle-anim-complete" x="140" y="162" font-size="16" text-anchor="middle" font-weight="700">Cycle Complete!</text>
+               </svg>
+             </div>`,
             `<h3>${getLabel('onboarding.step3Title')}</h3>
              <p>${getLabel('onboarding.step3Desc1')}</p>
              <p>${getLabel('onboarding.step3Desc2')}</p>
