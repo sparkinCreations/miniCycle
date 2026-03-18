@@ -64,7 +64,8 @@ export async function runGuidedTourManagerTests(resultsDiv) {
             '#preferences-modal, #preferences-preview, #pref-section-quick-themes, ' +
             '#preferences-reset-all, ' +
             '#task-options-customizer-modal, #option-preview-content, #reset-task-options-btn, ' +
-            '#reminders-modal, #enableReminders, #dueDatesReminders, #browserNotifications, #frequency-section'
+            '#reminders-modal, #enableReminders, #dueDatesReminders, #browserNotifications, #frequency-section, ' +
+            '#recurring-panel-overlay, #settings-modal, #routine-switcher-modal'
         ).forEach(el => el.remove());
         document.querySelectorAll('.task, .hamburger-menu, .badge-container, .global-stats-container, .preferences-section-header').forEach(el => el.remove());
         document.documentElement.removeAttribute('data-tour-active');
@@ -1158,6 +1159,535 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         }
 
         elements.forEach(el => el.remove());
+    });
+
+    // ---- Settings Tour Tests ----
+
+    function setupSettingsModalTargets() {
+        const dialog = document.createElement('dialog');
+        dialog.id = 'settings-modal';
+        dialog.className = 'settings-modal';
+        assignRect(dialog, { left: 100, top: 50, width: 500, height: 600 });
+        document.body.appendChild(dialog);
+
+        const content = document.createElement('div');
+        content.className = 'settings-modal-content';
+        dialog.appendChild(content);
+
+        const sectionNames = ['display', 'accessibility', 'behavior', 'data', 'reset', 'advanced'];
+        sectionNames.forEach((name, i) => {
+            // Outer section div (visible even when collapsed) — tour targets this
+            const section = document.createElement('div');
+            section.className = 'settings-section collapsible';
+            section.setAttribute('data-section', name);
+            assignRect(section, { left: 110, top: 100 + i * 80, width: 480, height: 60 });
+            content.appendChild(section);
+        });
+
+        return dialog;
+    }
+
+    resultsDiv.innerHTML += '<h4 class="test-section">Settings Tour</h4>';
+
+    await test('showSettingsTourNotification shows notification when settingsTourStep is null', async () => {
+        const dialog = setupSettingsModalTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', settingsTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showSettingsTourNotification();
+
+        if (notifications.length !== 1) {
+            throw new Error(`Expected 1 notification, got ${notifications.length}`);
+        }
+        if (notifications[0].type !== 'info') {
+            throw new Error(`Expected info notification, got ${notifications[0].type}`);
+        }
+        if (!notifications[0].options?.actionButton?.label) {
+            throw new Error('Expected settings tour CTA label');
+        }
+
+        dialog.remove();
+    });
+
+    await test('showSettingsTourNotification is a no-op when settingsTourStep is done', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', settingsTourStep: 'done' }
+        });
+
+        notifications.length = 0;
+        manager.showSettingsTourNotification();
+
+        if (notifications.length !== 0) {
+            throw new Error(`Expected 0 notifications, got ${notifications.length}`);
+        }
+    });
+
+    await test('settings notification dismiss marks tour as done', async () => {
+        const dialog = setupSettingsModalTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', settingsTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showSettingsTourNotification();
+        notifications[0].options.onDismiss();
+
+        if (mockState.settings.settingsTourStep !== 'done') {
+            throw new Error(`Expected settingsTourStep done, got ${mockState.settings.settingsTourStep}`);
+        }
+
+        dialog.remove();
+    });
+
+    await test('settings tour appends elements inside the dialog container', async () => {
+        const dialog = setupSettingsModalTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', settingsTourStep: null }
+        });
+
+        manager.startTour('settings');
+
+        const overlayInDialog = dialog.querySelector('.tour-overlay');
+        const overlayInBody = document.body.querySelector(':scope > .tour-overlay');
+
+        if (!overlayInDialog) {
+            throw new Error('Expected tour overlay inside the dialog');
+        }
+        if (overlayInBody) {
+            throw new Error('Tour overlay should NOT be a direct child of body');
+        }
+
+        dialog.remove();
+    });
+
+    await test('settings tour completion sets settingsTourStep to done', async () => {
+        const dialog = setupSettingsModalTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', settingsTourStep: null }
+        });
+
+        manager.startTour('settings');
+        manager.completeTour();
+
+        if (mockState.settings.settingsTourStep !== 'done') {
+            throw new Error(`Expected settingsTourStep done, got ${mockState.settings.settingsTourStep}`);
+        }
+        if (mockState.settings.guidedTourStep !== 'done') {
+            throw new Error(`guidedTourStep should remain done, got ${mockState.settings.guidedTourStep}`);
+        }
+
+        dialog.remove();
+    });
+
+    // ---- Routine Switcher Tour Tests ----
+
+    function setupRoutineSwitcherModalTargets() {
+        const dialog = document.createElement('dialog');
+        dialog.id = 'routine-switcher-modal';
+        assignRect(dialog, { left: 50, top: 50, width: 600, height: 500 });
+        document.body.appendChild(dialog);
+
+        const content = document.createElement('div');
+        content.className = 'mini-cycle-switch-modal-content';
+        dialog.appendChild(content);
+
+        const searchInput = document.createElement('input');
+        searchInput.id = 'routine-search-input';
+        assignRect(searchInput, { left: 60, top: 70, width: 500, height: 30 });
+        content.appendChild(searchInput);
+
+        const list = document.createElement('ul');
+        list.id = 'miniCycleList';
+        assignRect(list, { left: 60, top: 110, width: 300, height: 300 });
+        content.appendChild(list);
+
+        const actionRow = document.createElement('div');
+        actionRow.id = 'switch-items-row';
+        assignRect(actionRow, { left: 60, top: 420, width: 500, height: 40 });
+        content.appendChild(actionRow);
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.id = 'miniCycleSwitchConfirm';
+        assignRect(confirmBtn, { left: 400, top: 470, width: 100, height: 30 });
+        content.appendChild(confirmBtn);
+
+        return dialog;
+    }
+
+    resultsDiv.innerHTML += '<h4 class="test-section">Routine Switcher Tour</h4>';
+
+    await test('showRoutineSwitcherTourNotification shows notification when routineSwitcherTourStep is null', async () => {
+        const dialog = setupRoutineSwitcherModalTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', routineSwitcherTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showRoutineSwitcherTourNotification();
+
+        if (notifications.length !== 1) {
+            throw new Error(`Expected 1 notification, got ${notifications.length}`);
+        }
+        if (notifications[0].type !== 'info') {
+            throw new Error(`Expected info notification, got ${notifications[0].type}`);
+        }
+        if (!notifications[0].options?.actionButton?.label) {
+            throw new Error('Expected routine switcher tour CTA label');
+        }
+
+        dialog.remove();
+    });
+
+    await test('showRoutineSwitcherTourNotification is a no-op when routineSwitcherTourStep is done', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', routineSwitcherTourStep: 'done' }
+        });
+
+        notifications.length = 0;
+        manager.showRoutineSwitcherTourNotification();
+
+        if (notifications.length !== 0) {
+            throw new Error(`Expected 0 notifications, got ${notifications.length}`);
+        }
+    });
+
+    await test('routine switcher notification dismiss marks tour as done', async () => {
+        const dialog = setupRoutineSwitcherModalTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', routineSwitcherTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showRoutineSwitcherTourNotification();
+        notifications[0].options.onDismiss();
+
+        if (mockState.settings.routineSwitcherTourStep !== 'done') {
+            throw new Error(`Expected routineSwitcherTourStep done, got ${mockState.settings.routineSwitcherTourStep}`);
+        }
+
+        dialog.remove();
+    });
+
+    await test('routine switcher tour appends elements inside the dialog container', async () => {
+        const dialog = setupRoutineSwitcherModalTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', routineSwitcherTourStep: null }
+        });
+
+        manager.startTour('routineSwitcher');
+
+        const overlayInDialog = dialog.querySelector('.tour-overlay');
+        const overlayInBody = document.body.querySelector(':scope > .tour-overlay');
+
+        if (!overlayInDialog) {
+            throw new Error('Expected tour overlay inside the dialog');
+        }
+        if (overlayInBody) {
+            throw new Error('Tour overlay should NOT be a direct child of body');
+        }
+
+        dialog.remove();
+    });
+
+    await test('routine switcher tour completion sets routineSwitcherTourStep to done', async () => {
+        const dialog = setupRoutineSwitcherModalTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', routineSwitcherTourStep: null }
+        });
+
+        manager.startTour('routineSwitcher');
+        manager.completeTour();
+
+        if (mockState.settings.routineSwitcherTourStep !== 'done') {
+            throw new Error(`Expected routineSwitcherTourStep done, got ${mockState.settings.routineSwitcherTourStep}`);
+        }
+        if (mockState.settings.guidedTourStep !== 'done') {
+            throw new Error(`guidedTourStep should remain done, got ${mockState.settings.guidedTourStep}`);
+        }
+
+        dialog.remove();
+    });
+
+    // ---- Recurring List Tour Tests ----
+
+    function setupRecurringPanelTargets() {
+        const overlay = document.createElement('dialog');
+        overlay.id = 'recurring-panel-overlay';
+        assignRect(overlay, { left: 0, top: 0, width: 400, height: 700 });
+        document.body.appendChild(overlay);
+
+        const panel = document.createElement('div');
+        panel.id = 'recurring-panel';
+        assignRect(panel, { left: 0, top: 0, width: 400, height: 700 });
+        overlay.appendChild(panel);
+
+        const taskList = document.createElement('ul');
+        taskList.id = 'recurring-task-list';
+        assignRect(taskList, { left: 10, top: 60, width: 380, height: 400 });
+        panel.appendChild(taskList);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'recurring-remove-btn';
+        assignRect(removeBtn, { left: 350, top: 80, width: 30, height: 30 });
+        taskList.appendChild(removeBtn);
+
+        const addBtn = document.createElement('button');
+        addBtn.id = 'add-recurring-task-btn';
+        assignRect(addBtn, { left: 10, top: 480, width: 380, height: 40 });
+        panel.appendChild(addBtn);
+
+        return overlay;
+    }
+
+    resultsDiv.innerHTML += '<h4 class="test-section">Recurring List Tour</h4>';
+
+    await test('showRecurringListTourNotification shows notification when recurringListTourStep is null', async () => {
+        const dialog = setupRecurringPanelTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', recurringListTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showRecurringListTourNotification();
+
+        if (notifications.length !== 1) {
+            throw new Error(`Expected 1 notification, got ${notifications.length}`);
+        }
+        if (notifications[0].type !== 'info') {
+            throw new Error(`Expected info notification, got ${notifications[0].type}`);
+        }
+        if (!notifications[0].options?.actionButton?.label) {
+            throw new Error('Expected recurring list tour CTA label');
+        }
+
+        dialog.remove();
+    });
+
+    await test('showRecurringListTourNotification is a no-op when recurringListTourStep is done', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', recurringListTourStep: 'done' }
+        });
+
+        notifications.length = 0;
+        manager.showRecurringListTourNotification();
+
+        if (notifications.length !== 0) {
+            throw new Error(`Expected 0 notifications, got ${notifications.length}`);
+        }
+    });
+
+    await test('recurring list notification dismiss marks tour as done', async () => {
+        const dialog = setupRecurringPanelTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', recurringListTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showRecurringListTourNotification();
+        notifications[0].options.onDismiss();
+
+        if (mockState.settings.recurringListTourStep !== 'done') {
+            throw new Error(`Expected recurringListTourStep done, got ${mockState.settings.recurringListTourStep}`);
+        }
+
+        dialog.remove();
+    });
+
+    await test('recurring list tour appends elements inside the dialog container', async () => {
+        const dialog = setupRecurringPanelTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', recurringListTourStep: null }
+        });
+
+        manager.startTour('recurringList');
+
+        const overlayInDialog = dialog.querySelector('.tour-overlay');
+        const overlayInBody = document.body.querySelector(':scope > .tour-overlay');
+
+        if (!overlayInDialog) {
+            throw new Error('Expected tour overlay inside the dialog');
+        }
+        if (overlayInBody) {
+            throw new Error('Tour overlay should NOT be a direct child of body');
+        }
+
+        dialog.remove();
+    });
+
+    await test('recurring list tour completion sets recurringListTourStep to done', async () => {
+        const dialog = setupRecurringPanelTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', recurringListTourStep: null }
+        });
+
+        manager.startTour('recurringList');
+        manager.completeTour();
+
+        if (mockState.settings.recurringListTourStep !== 'done') {
+            throw new Error(`Expected recurringListTourStep done, got ${mockState.settings.recurringListTourStep}`);
+        }
+        if (mockState.settings.guidedTourStep !== 'done') {
+            throw new Error(`guidedTourStep should remain done, got ${mockState.settings.guidedTourStep}`);
+        }
+
+        dialog.remove();
+    });
+
+    // ---- Recurring Settings Tour Tests ----
+
+    function setupRecurringSettingsTargets() {
+        const overlay = document.createElement('dialog');
+        overlay.id = 'recurring-panel-overlay';
+        assignRect(overlay, { left: 0, top: 0, width: 400, height: 700 });
+        document.body.appendChild(overlay);
+
+        const panel = document.createElement('div');
+        panel.id = 'recurring-panel';
+        assignRect(panel, { left: 0, top: 0, width: 400, height: 700 });
+        overlay.appendChild(panel);
+
+        const taskList = document.createElement('ul');
+        taskList.id = 'recurring-task-list';
+        assignRect(taskList, { left: 10, top: 60, width: 380, height: 200 });
+        panel.appendChild(taskList);
+
+        const summaryPreview = document.createElement('div');
+        summaryPreview.id = 'recurring-summary-preview';
+        assignRect(summaryPreview, { left: 10, top: 270, width: 380, height: 60 });
+        panel.appendChild(summaryPreview);
+
+        const frequencySelect = document.createElement('select');
+        frequencySelect.id = 'recur-frequency';
+        assignRect(frequencySelect, { left: 10, top: 340, width: 380, height: 40 });
+        panel.appendChild(frequencySelect);
+
+        const advancedToggle = document.createElement('button');
+        advancedToggle.id = 'toggle-advanced-settings';
+        assignRect(advancedToggle, { left: 10, top: 400, width: 380, height: 40 });
+        panel.appendChild(advancedToggle);
+
+        const applyBtn = document.createElement('button');
+        applyBtn.id = 'apply-recurring-settings';
+        assignRect(applyBtn, { left: 10, top: 600, width: 380, height: 40 });
+        panel.appendChild(applyBtn);
+
+        return overlay;
+    }
+
+    resultsDiv.innerHTML += '<h4 class="test-section">Recurring Settings Tour</h4>';
+
+    await test('showRecurringSettingsTourNotification shows notification when recurringSettingsTourStep is null', async () => {
+        const dialog = setupRecurringSettingsTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', recurringSettingsTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showRecurringSettingsTourNotification();
+
+        if (notifications.length !== 1) {
+            throw new Error(`Expected 1 notification, got ${notifications.length}`);
+        }
+        if (notifications[0].type !== 'info') {
+            throw new Error(`Expected info notification, got ${notifications[0].type}`);
+        }
+        if (!notifications[0].options?.actionButton?.label) {
+            throw new Error('Expected recurring settings tour CTA label');
+        }
+
+        dialog.remove();
+    });
+
+    await test('showRecurringSettingsTourNotification is a no-op when recurringSettingsTourStep is done', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', recurringSettingsTourStep: 'done' }
+        });
+
+        notifications.length = 0;
+        manager.showRecurringSettingsTourNotification();
+
+        if (notifications.length !== 0) {
+            throw new Error(`Expected 0 notifications, got ${notifications.length}`);
+        }
+    });
+
+    await test('recurring settings notification dismiss marks tour as done', async () => {
+        const dialog = setupRecurringSettingsTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', recurringSettingsTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showRecurringSettingsTourNotification();
+        notifications[0].options.onDismiss();
+
+        if (mockState.settings.recurringSettingsTourStep !== 'done') {
+            throw new Error(`Expected recurringSettingsTourStep done, got ${mockState.settings.recurringSettingsTourStep}`);
+        }
+
+        dialog.remove();
+    });
+
+    await test('recurring settings tour appends elements inside the dialog container', async () => {
+        const dialog = setupRecurringSettingsTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', recurringSettingsTourStep: null }
+        });
+
+        manager.startTour('recurringSettings');
+
+        const overlayInDialog = dialog.querySelector('.tour-overlay');
+        const overlayInBody = document.body.querySelector(':scope > .tour-overlay');
+
+        if (!overlayInDialog) {
+            throw new Error('Expected tour overlay inside the dialog');
+        }
+        if (overlayInBody) {
+            throw new Error('Tour overlay should NOT be a direct child of body');
+        }
+
+        dialog.remove();
+    });
+
+    await test('recurring settings tour completion sets recurringSettingsTourStep to done', async () => {
+        const dialog = setupRecurringSettingsTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', recurringSettingsTourStep: null }
+        });
+
+        manager.startTour('recurringSettings');
+        manager.completeTour();
+
+        if (mockState.settings.recurringSettingsTourStep !== 'done') {
+            throw new Error(`Expected recurringSettingsTourStep done, got ${mockState.settings.recurringSettingsTourStep}`);
+        }
+        if (mockState.settings.guidedTourStep !== 'done') {
+            throw new Error(`guidedTourStep should remain done, got ${mockState.settings.guidedTourStep}`);
+        }
+
+        dialog.remove();
     });
 
     const percentage = Math.round((passed.count / total.count) * 100);

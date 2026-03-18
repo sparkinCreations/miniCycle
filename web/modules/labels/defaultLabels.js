@@ -1170,7 +1170,7 @@ export const DEFAULT_LABELS = deepFreeze({
         step9:           'Open the menu for settings, routines, import/export, and more.',
         step10:          'Swipe left or click the arrow to open the Stats Panel — swiping works on desktop too!',
         complete:        'You\'re all set! Enjoy building your routines.',
-        retakeTour:      'Retake Guided Tour',
+        retakeTour:      'Reset All Tours',
         closeDialogHint: 'Close the open dialog to start the tour'
     },
 
@@ -1212,6 +1212,48 @@ export const DEFAULT_LABELS = deepFreeze({
         step3:           'Enable browser notifications to get alerts even when the app isn\'t in focus.',
         step4:           'Customize how often you\'re reminded — choose the interval and repeat count.',
         complete:        'You\'re all set! Configure reminders to stay on top of your tasks.'
+    },
+
+    settingsTour: {
+        welcomeMessage:  'First time here? Take a quick tour of the settings!',
+        startButton:     'Start Tour',
+        step1:           'Toggle dark mode, help window, quick actions, and manage task buttons.',
+        step2:           'Adjust move arrows, reduced motion, high contrast, and font size.',
+        step3:           'Control scroll behavior and enable task notifications.',
+        step4:           'Backup and restore all your routines from here.',
+        step5:           'Reset individual features like onboarding, tours, or achievements.',
+        step6:           'Access debug tools, diagnostics, updates, and factory reset.',
+        complete:        'You\'re all set! Explore each section to customize your experience.'
+    },
+
+    routineSwitcherTour: {
+        welcomeMessage:  'First time here? Take a quick tour of the routine switcher!',
+        startButton:     'Start Tour',
+        step1:           'Browse all your saved routines here — tap one to select it.',
+        step2:           'Search by name to quickly find a routine.',
+        step3:           'Duplicate, rename, delete, or download the selected routine.',
+        step4:           'Import a routine file or open the selected routine.',
+        complete:        'You\'re all set! Select a routine and tap Open to switch.'
+    },
+
+    recurringListTour: {
+        welcomeMessage:  'First time here? Take a quick tour of recurring tasks!',
+        startButton:     'Start Tour',
+        step1:           'Tap any recurring task to view or change its schedule.',
+        step2:           'Remove a task from the recurring list.',
+        step3:           'Add any task from your routine to repeat automatically.',
+        complete:        'You\'re all set! Tap a task to manage its recurring schedule.'
+    },
+
+    recurringSettingsTour: {
+        welcomeMessage:  'First time editing a schedule? Take a quick tour!',
+        startButton:     'Start Tour',
+        step1:           'Tap a task to see its current schedule. Checked tasks will receive the new settings when you apply.',
+        step2:           'This summary shows the schedule for the selected task.',
+        step3:           'Choose how often this task repeats — daily, weekly, monthly, and more.',
+        step4:           'Expand advanced options for fine-tuned scheduling.',
+        step5:           'Apply your changes — only checked tasks will be updated.',
+        complete:        'You\'re all set! Select tasks, customize the schedule, and tap Apply.'
     },
 
     menuTour: {

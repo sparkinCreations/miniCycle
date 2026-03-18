@@ -1110,6 +1110,7 @@ export const DATA_SELECTORS = Object.freeze({
     elementByTaskId: (id) => `[data-task-id="${id}"]`,
     TASK_ID_ELEMENT: '[data-task-id]',
     menuSectionByName: (name) => `.menu-section[data-section="${name}"]`,
+    settingsSectionByName: (name) => `.settings-section[data-section="${name}"]`,
     preferencesSectionByName: (name) => `.preferences-section[data-section="${name}"], .preferences-preview-section[data-section="${name}"]`,
     // Data attribute names (for setAttribute/removeAttribute/getAttribute)
     ATTR_RECURRING_SETTINGS: 'data-recurring-settings'

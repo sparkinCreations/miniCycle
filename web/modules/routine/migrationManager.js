@@ -122,6 +122,10 @@ export function createInitialSchema25Data() {
             taskOptionsTourStep: null,
             remindersTourStep: null,
             menuTourStep: null,
+            settingsTourStep: null,
+            routineSwitcherTourStep: null,
+            recurringListTourStep: null,
+            recurringSettingsTourStep: null,
             dismissedEducationalTips: {},
             defaultRecurringSettings: {
                 frequency: "daily",
@@ -186,6 +190,10 @@ const SCHEMA_2_5_TARGET = {
         taskOptionsTourStep: null,
         remindersTourStep: null,
         menuTourStep: null,
+        settingsTourStep: null,
+        routineSwitcherTourStep: null,
+        recurringListTourStep: null,
+        recurringSettingsTourStep: null,
         defaultRecurringSettings: {
             frequency: null,
             indefinitely: true,

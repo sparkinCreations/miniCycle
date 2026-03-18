@@ -50,7 +50,9 @@ const di = createDIModule('SettingsUIManager', {
     clearAllUndoHistory: optional(null),
     updateHelpWindow: optional(null),
     startGuidedTour: optional(null),
-    trackAction: optional(null)
+    trackAction: optional(null),
+    showSettingsTourNotification: optional(null),
+    hasActiveNotifications: optional(null)
 });
 
 /** @type {{AppState: Object, loadMiniCycleData: Function, showNotification: Function, safeAddEventListener: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, organizeCompletedTasks: Function|null, resetDefaultRecurringSettings: Function|null, trackAction: Function|null}} */
@@ -168,6 +170,8 @@ export function setupSettingsMenu() {
         if (isNativeDialog && !settingsModal.open) {
             settingsModal._previousFocus = document.activeElement;
             settingsModal.showModal();
+            // Show settings tour prompt after modal is open
+            _deps.showSettingsTourNotification?.();
         } else if (!isNativeDialog) {
             settingsModal._previousFocus = document.activeElement;
             settingsModal.style.display = 'flex';
@@ -196,8 +200,9 @@ export function setupSettingsMenu() {
     }
 
     // Click outside to close — clicking ::backdrop fires click on dialog element
+    // Guard: don't close if a tour notification is active inside the dialog
     replaceStoredEventListener(settingsModal, "click", "__miniCycleSettingsModalClickHandler", (event) => {
-        if (event.target === settingsModal) {
+        if (event.target === settingsModal && !_deps.hasActiveNotifications?.()) {
             closeSettings();
         }
     });
@@ -980,6 +985,15 @@ export function setupRetakeGuidedTourButton() {
         await appState.update((state) => {
             if (!state.settings) state.settings = {};
             state.settings.guidedTourStep = null;
+            state.settings.statsTourStep = null;
+            state.settings.prefsTourStep = null;
+            state.settings.taskOptionsTourStep = null;
+            state.settings.remindersTourStep = null;
+            state.settings.menuTourStep = null;
+            state.settings.settingsTourStep = null;
+            state.settings.routineSwitcherTourStep = null;
+            state.settings.recurringListTourStep = null;
+            state.settings.recurringSettingsTourStep = null;
         }, true);
 
         document.getElementById(DOM_IDS.CLOSE_SETTINGS)?.click();

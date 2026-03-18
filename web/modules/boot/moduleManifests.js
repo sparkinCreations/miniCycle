@@ -274,7 +274,7 @@ export const MODULE_MANIFESTS = {
         path: '../recurring/recurringIntegration.js',
         phase: PHASES.RECURRING,
         requires: ['appInit', 'AppState', 'showNotification', 'showNotificationWithTip', 'notifications', 'FeatureFlags', 'GlobalUtils', 'refreshUIFromState', 'getModal'],
-        optionalDeps: ['clearDeferredRecurringSetup', 'getDeferredRecurringSetup', 'isOverlayActive', 'refreshTaskButtonsForModeChange', 'syncRecurringStateToDOM'],
+        optionalDeps: ['clearDeferredRecurringSetup', 'getDeferredRecurringSetup', 'isOverlayActive', 'refreshTaskButtonsForModeChange', 'showRecurringListTourNotification', 'showRecurringSettingsTourNotification', 'syncRecurringStateToDOM'],
         // Cross-phase lazy deps: these are from later phases but only called after user interaction
         lazyRequires: ['updateProgressBar'],  // From cycleCompletion (Phase 6)
         provides: ['panel', 'core'],
@@ -309,7 +309,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineSwitcher.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showCycleCreationModal', 'getOnboardingManager', 'getModal'],
-        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData', 'hideMainMenu'],
+        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData', 'hideMainMenu', 'showRoutineSwitcherTourNotification', 'hasActiveNotifications'],
         provides: ['switchMiniCycle', 'renameMiniCycle', 'deleteMiniCycle'],
         api: 'cycle',
         after: ['routineManager', 'onboardingManager']
@@ -362,7 +362,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/settingsManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
-        optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'organizeCompletedTasks', 'performSchema25Migration', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showConfirmationModal', 'startGuidedTour', 'toggleHoverTaskOptions', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateStatsPanel'],
+        optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'organizeCompletedTasks', 'performSchema25Migration', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showConfirmationModal', 'showSettingsTourNotification', 'startGuidedTour', 'toggleHoverTaskOptions', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateStatsPanel'],
         provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData'],
         provideInstance: 'settingsManager',
         api: 'ui',
@@ -374,7 +374,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'getElementById', 'querySelector', 'getBody', 'getRootElement', 'getActiveElement', 'showNotification', 'safeAddEventListener'],
         optionalDeps: ['isModalOpen'],
-        provides: ['startGuidedTour', 'showStatsTourNotification', 'showPersonalizationTourNotification', 'showTaskOptionsTourNotification', 'showRemindersTourNotification', 'showMenuTourNotification'],
+        provides: ['startGuidedTour', 'showStatsTourNotification', 'showPersonalizationTourNotification', 'showTaskOptionsTourNotification', 'showRemindersTourNotification', 'showMenuTourNotification', 'showSettingsTourNotification', 'showRoutineSwitcherTourNotification', 'showRecurringListTourNotification', 'showRecurringSettingsTourNotification'],
         provideInstance: 'guidedTourManager',
         api: 'ui',
         after: ['onboardingManager']
