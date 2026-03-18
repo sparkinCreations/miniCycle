@@ -1,3 +1,9 @@
+## [2.104] - 2026-03-18
+- feat: update licensing terms and add onboarding tour animation with associated styles
+- feat: update CHANGELOG for version 2.103 with new reminders and menu guided tour notifications
+- feat: add guided tours for settings, routine switcher, recurring list, and recurring settings
+
+
 ## [2.103] - 2026-03-18
 - feat: add reminders and menu guided tour notifications with associated UI updates
 
