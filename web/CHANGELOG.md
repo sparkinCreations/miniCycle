@@ -1,3 +1,8 @@
+## [2.105] - 2026-03-18
+- feat: update version to 2.104 and enhance CHANGELOG with new features
+- feat: enhance onboarding experience with cycle animation and updated task descriptions
+
+
 ## [2.104] - 2026-03-18
 - feat: update licensing terms and add onboarding tour animation with associated styles
 - feat: update CHANGELOG for version 2.103 with new reminders and menu guided tour notifications
