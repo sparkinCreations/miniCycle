@@ -222,6 +222,92 @@ body.onboarding-active .onboarding-placeholder {
 }
 
 /* =============================================================================
+   ONBOARDING TOUR ANIMATION (Step 3 — SVG + CSS)
+   ============================================================================= */
+
+.onboarding-tour-animation {
+    display: flex;
+    justify-content: center;
+    margin: var(--space-3-75) auto var(--space-2);
+    max-width: 280px;
+}
+
+.onboarding-tour-animation svg {
+    width: 100%;
+    height: auto;
+}
+
+/* Notification bar */
+.tour-anim-bar {
+    fill: var(--theme-task-bg, #f0f0f0);
+    stroke: var(--theme-border, #ddd);
+    stroke-width: 1;
+}
+
+/* Notification text */
+.tour-anim-text {
+    fill: var(--theme-modal-text, var(--theme-text-on-surface, #333));
+    font-family: inherit;
+}
+
+/* Start Tour button */
+.tour-anim-btn {
+    fill: var(--color-success, #38a169);
+}
+
+.tour-anim-btn-text {
+    fill: var(--color-white, #fff);
+    font-family: inherit;
+    font-weight: 600;
+}
+
+/* Button press effect — synced with cursor click */
+.tour-anim-btn-group {
+    transform-origin: 214px 50px;
+    animation: tourButtonPress 3.5s ease-in-out infinite;
+}
+
+/* Cursor slide + click */
+.tour-anim-cursor {
+    animation: tourCursorMove 3.5s ease-in-out infinite;
+}
+
+/* Cursor: slide in from right, hover over button, click, hold, reset */
+@keyframes tourCursorMove {
+    0%   { transform: translate(270px, 70px); opacity: 0; }
+    10%  { opacity: 1; }
+    40%  { transform: translate(210px, 42px); opacity: 1; }
+    48%  { transform: translate(210px, 45px); }
+    55%  { transform: translate(210px, 42px); }
+    70%  { transform: translate(210px, 42px); opacity: 1; }
+    80%  { opacity: 0; }
+    100% { transform: translate(270px, 70px); opacity: 0; }
+}
+
+/* Button: scale down on "click" then bounce back */
+@keyframes tourButtonPress {
+    0%   { transform: scale(1); }
+    46%  { transform: scale(1); }
+    50%  { transform: scale(0.93); }
+    55%  { transform: scale(1.02); }
+    60%  { transform: scale(1); }
+    100% { transform: scale(1); }
+}
+
+/* Reduced motion: show static scene, no animation */
+@media (prefers-reduced-motion: reduce) {
+    .tour-anim-cursor {
+        animation: none;
+        transform: translate(210px, 42px);
+        opacity: 1;
+    }
+
+    .tour-anim-btn-group {
+        animation: none;
+    }
+}
+
+/* =============================================================================
    START MINI-CYCLE BUTTON
    ============================================================================= */
 

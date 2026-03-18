@@ -1716,11 +1716,9 @@ export const DEFAULT_LABELS = deepFreeze({
         step2Item2:  'Complete all tasks in your routine',
         step2Item3:  'Tasks reset and you complete a cycle',
         step2Item4:  'Track how many cycles you\'ve completed',
-        step3Title:  'Quick Tips',
-        step3Item1:  'Hover or tap the three dots (\u22EE) for task options',
-        step3Item2:  'Use the + button (upper left) to add tasks and create routines',
-        step3Item3:  'Swipe or drag left to view your Stats Panel',
-        step3Item4:  'Tap the 📁 icon (upper right) to switch between routines'
+        step3Title:  'Want a Guided Tour?',
+        step3Desc1:  'Each feature offers a quick walkthrough the first time you open it.',
+        step3Desc2:  'Just tap Start Tour when the notification appears!'
     },
 
     // ========================================================================
