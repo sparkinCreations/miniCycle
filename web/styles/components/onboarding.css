@@ -329,10 +329,10 @@ body.onboarding-active .onboarding-placeholder {
     height: auto;
 }
 
-/* Task row backgrounds — transparent inside the card */
-.cycle-anim-task-bg {
-    fill: transparent;
-    stroke: none;
+/* Divider lines between tasks */
+.cycle-anim-divider {
+    stroke: var(--theme-border, var(--color-gray-200, #e2e2e2));
+    stroke-width: 0.5;
 }
 
 /* Task text */
@@ -365,10 +365,10 @@ body.onboarding-active .onboarding-placeholder {
 .cycle-anim-checkmark {
     fill: none;
     stroke: var(--color-white, #fff);
-    stroke-width: 2.5;
+    stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
-    stroke-dasharray: 24;
+    stroke-dasharray: 14;
 }
 
 .cycle-anim-checkmark-1 {
@@ -409,27 +409,27 @@ body.onboarding-active .onboarding-placeholder {
 /* --- Checkmark draw-in keyframes (staggered) --- */
 
 @keyframes cycleCheck1 {
-    0%, 8%   { stroke-dashoffset: 24; }
+    0%, 8%   { stroke-dashoffset: 14; }
     14%      { stroke-dashoffset: 0; }
     60%      { stroke-dashoffset: 0; }
-    66%      { stroke-dashoffset: 24; }
-    100%     { stroke-dashoffset: 24; }
+    66%      { stroke-dashoffset: 14; }
+    100%     { stroke-dashoffset: 14; }
 }
 
 @keyframes cycleCheck2 {
-    0%, 22%  { stroke-dashoffset: 24; }
+    0%, 22%  { stroke-dashoffset: 14; }
     28%      { stroke-dashoffset: 0; }
     60%      { stroke-dashoffset: 0; }
-    66%      { stroke-dashoffset: 24; }
-    100%     { stroke-dashoffset: 24; }
+    66%      { stroke-dashoffset: 14; }
+    100%     { stroke-dashoffset: 14; }
 }
 
 @keyframes cycleCheck3 {
-    0%, 36%  { stroke-dashoffset: 24; }
+    0%, 36%  { stroke-dashoffset: 14; }
     42%      { stroke-dashoffset: 0; }
     60%      { stroke-dashoffset: 0; }
-    66%      { stroke-dashoffset: 24; }
-    100%     { stroke-dashoffset: 24; }
+    66%      { stroke-dashoffset: 14; }
+    100%     { stroke-dashoffset: 14; }
 }
 
 /* --- Checkbox circle fill (green bg on check) --- */
