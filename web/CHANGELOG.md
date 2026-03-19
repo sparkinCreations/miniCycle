@@ -1,3 +1,7 @@
+## [2.106] - 2026-03-19
+- feat: enhance onboarding cycle animation with improved SVG design and styling adjustments
+
+
 ## [2.105] - 2026-03-18
 - feat: update version to 2.104 and enhance CHANGELOG with new features
 - feat: enhance onboarding experience with cycle animation and updated task descriptions

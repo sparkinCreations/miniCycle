@@ -1716,6 +1716,9 @@ export const DEFAULT_LABELS = deepFreeze({
         step2Task1:  'Morning jog',
         step2Task2:  'Read 10 pages',
         step2Task3:  'Drink water',
+        step2TryIt:  'Try it yourself!',
+        step2CycleComplete: 'Cycle complete!',
+        step2Cycles: 'Cycles',
         step3Title:  'Want a Guided Tour?',
         step3Desc1:  'Each feature offers a quick walkthrough the first time you open it.',
         step3Desc2:  'Just tap Start Tour when the notification appears!'

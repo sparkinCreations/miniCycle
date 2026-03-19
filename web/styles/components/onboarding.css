@@ -518,6 +518,158 @@ body.onboarding-active .onboarding-placeholder {
 }
 
 /* =============================================================================
+   "TRY IT YOURSELF" BUTTON
+   ============================================================================= */
+
+.onboarding-try-btn {
+    display: block;
+    margin: var(--space-3) auto 0;
+    padding: var(--space-2) var(--space-5);
+    background: var(--theme-info, var(--color-accent, #007BFF));
+    color: var(--color-white, #fff);
+    border: none;
+    border-radius: var(--radius-8, 8px);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.onboarding-try-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+.onboarding-try-btn:active {
+    transform: translateY(0);
+}
+
+/* =============================================================================
+   INTERACTIVE CYCLE DEMO
+   ============================================================================= */
+
+.cycle-demo {
+    position: relative;
+    max-width: 220px;
+    margin: var(--space-3) auto var(--space-2);
+    background: var(--theme-modal-bg, #fff);
+    border: 1px solid var(--theme-border, var(--color-gray-200, #e2e2e2));
+    border-radius: var(--radius-12, 12px);
+    padding: var(--space-3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Task row */
+.cycle-demo-task {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: opacity var(--transition-fast);
+}
+
+.cycle-demo-task:not(:last-of-type) {
+    border-bottom: 1px solid var(--theme-border, var(--color-gray-200, #e2e2e2));
+}
+
+/* Checkbox circle */
+.cycle-demo-checkbox {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--color-gray-400, #aaa);
+    background: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.cycle-demo-task.checked .cycle-demo-checkbox {
+    background: var(--color-success, #28a745);
+    border-color: var(--color-success, #28a745);
+}
+
+/* Checkmark SVG */
+.cycle-demo-checkmark {
+    width: 16px;
+    height: 16px;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.cycle-demo-checkmark path {
+    fill: none;
+    stroke: var(--color-white, #fff);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.cycle-demo-task.checked .cycle-demo-checkmark {
+    opacity: 1;
+}
+
+/* Task text */
+.cycle-demo-task-text {
+    font-size: var(--font-size-sm);
+    color: var(--theme-modal-text, var(--theme-text-on-surface, #333));
+    transition: opacity var(--transition-fast);
+}
+
+.cycle-demo-task.checked .cycle-demo-task-text {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+
+/* Cycle counter */
+.cycle-demo-counter {
+    text-align: center;
+    margin-top: var(--space-3);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--theme-modal-text, var(--theme-text-on-surface, #333));
+}
+
+/* "Cycle Complete!" flash */
+.cycle-demo-complete {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: var(--color-success, #28a745);
+    color: var(--color-white, #fff);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-8, 8px);
+    font-size: var(--font-size-md);
+    font-weight: 700;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-normal), transform var(--transition-normal);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.cycle-demo-complete.visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* Reduced motion: instant state changes */
+@media (prefers-reduced-motion: reduce) {
+    .cycle-demo-checkbox,
+    .cycle-demo-checkmark,
+    .cycle-demo-task-text,
+    .cycle-demo-complete {
+        transition: none;
+    }
+}
+
+/* =============================================================================
    START MINI-CYCLE BUTTON
    ============================================================================= */
 
