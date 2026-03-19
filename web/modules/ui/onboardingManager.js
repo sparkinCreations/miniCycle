@@ -193,7 +193,8 @@ export class OnboardingManager {
                  <!-- Cycle Complete flash -->
                  <text class="cycle-anim-complete" x="80" y="105" font-size="12" text-anchor="middle" font-weight="700">Cycle Complete!</text>
                </svg>
-             </div>`,
+             </div>
+             <button class="onboarding-try-btn">${getLabel('onboarding.step2TryIt')}</button>`,
             `<h3>${getLabel('onboarding.step3Title')}</h3>
              <p>${getLabel('onboarding.step3Desc1')}</p>
              <p>${getLabel('onboarding.step3Desc2')}</p>
@@ -272,12 +273,32 @@ export class OnboardingManager {
 
         let currentStep = 0;
 
+        // Track interactive demo cleanup
+        let demoCleanup = null;
+
         const renderStep = (index) => {
+            // Clean up any active interactive demo before switching steps
+            if (demoCleanup) {
+                demoCleanup();
+                demoCleanup = null;
+            }
+
             stepContent.innerHTML = steps[index];
             prevBtn.classList.toggle("hidden", index === 0);
             nextBtn.innerHTML = index === steps.length - 1
                 ? `${getLabel('onboarding.start')} <span aria-hidden="true">🚀</span>`
                 : `${getLabel('onboarding.next')} <span aria-hidden="true">➡</span>`;
+
+            // Wire "Try it yourself!" button on step 2 (index 1)
+            if (index === 1) {
+                const tryBtn = stepContent.querySelector('.onboarding-try-btn');
+                if (tryBtn) {
+                    tryBtn._clickHandler = () => {
+                        demoCleanup = this._startInteractiveDemo(stepContent);
+                    };
+                    safeAdd(tryBtn, 'click', tryBtn._clickHandler);
+                }
+            }
         };
 
         const completeOnboardingHandler = () => {
@@ -315,6 +336,145 @@ export class OnboardingManager {
         safeAdd(modal, "click", modal._clickHandler);
 
         renderStep(currentStep);
+    }
+
+    /**
+     * Start the interactive cycle demo, replacing the SVG animation.
+     * Users tap checkboxes to complete tasks, triggering a cycle reset.
+     * @param {HTMLElement} container - The step content container
+     * @returns {Function} Cleanup function to remove listeners and timers
+     */
+    _startInteractiveDemo(container) {
+        const taskNames = [
+            getLabel('onboarding.step2Task1'),
+            getLabel('onboarding.step2Task2'),
+            getLabel('onboarding.step2Task3')
+        ];
+
+        // Replace animation + button with interactive demo
+        const animEl = container.querySelector('.onboarding-cycle-animation');
+        const tryBtn = container.querySelector('.onboarding-try-btn');
+        if (animEl) animEl.remove();
+        if (tryBtn) tryBtn.remove();
+
+        const demo = document.createElement('div');
+        demo.className = 'cycle-demo';
+        demo.setAttribute('aria-label', getLabel('onboarding.step2Title'));
+
+        // Build task rows
+        taskNames.forEach((name, i) => {
+            const row = document.createElement('div');
+            row.className = 'cycle-demo-task';
+            row.dataset.index = i;
+
+            row.innerHTML = `
+                <div class="cycle-demo-checkbox" role="checkbox" aria-checked="false" tabindex="0">
+                    <svg viewBox="0 0 24 24" class="cycle-demo-checkmark" aria-hidden="true">
+                        <path d="M5,13 L9,17 L19,7" />
+                    </svg>
+                </div>
+                <span class="cycle-demo-task-text"></span>
+            `;
+
+            // Use textContent for user-sourced label text (XSS safe)
+            row.querySelector('.cycle-demo-task-text').textContent = name;
+            demo.appendChild(row);
+        });
+
+        // Cycle counter
+        const counterEl = document.createElement('div');
+        counterEl.className = 'cycle-demo-counter';
+        counterEl.textContent = `${getLabel('onboarding.step2Cycles')}: 0`;
+        demo.appendChild(counterEl);
+
+        // "Cycle Complete!" flash element
+        const completeEl = document.createElement('div');
+        completeEl.className = 'cycle-demo-complete';
+        completeEl.textContent = getLabel('onboarding.step2CycleComplete');
+        demo.appendChild(completeEl);
+
+        container.appendChild(demo);
+
+        // State
+        let cycleCount = 0;
+        let checked = [false, false, false];
+        let resetting = false;
+        const pendingTimers = [];
+
+        const trackTimeout = (fn, delay) => {
+            const id = setTimeout(fn, delay);
+            pendingTimers.push(id);
+            return id;
+        };
+
+        const resetDemo = () => {
+            resetting = true;
+            cycleCount++;
+
+            // Show "Cycle Complete!" flash
+            completeEl.classList.add('visible');
+            counterEl.textContent = `${getLabel('onboarding.step2Cycles')}: ${cycleCount}`;
+
+            trackTimeout(() => {
+                // Reset all checkboxes
+                checked = [false, false, false];
+                demo.querySelectorAll('.cycle-demo-task').forEach(row => {
+                    row.classList.remove('checked');
+                    const cb = row.querySelector('.cycle-demo-checkbox');
+                    if (cb) cb.setAttribute('aria-checked', 'false');
+                });
+
+                // Hide flash
+                completeEl.classList.remove('visible');
+                resetting = false;
+            }, 1200);
+        };
+
+        const handleTaskClick = (e) => {
+            if (resetting) return;
+            const row = e.target.closest('.cycle-demo-task');
+            if (!row) return;
+
+            const idx = parseInt(row.dataset.index, 10);
+            if (isNaN(idx)) return;
+
+            // Toggle
+            checked[idx] = !checked[idx];
+            row.classList.toggle('checked', checked[idx]);
+            const cb = row.querySelector('.cycle-demo-checkbox');
+            if (cb) cb.setAttribute('aria-checked', String(checked[idx]));
+
+            // Check if all complete
+            if (checked.every(Boolean)) {
+                trackTimeout(resetDemo, 400);
+            }
+        };
+
+        demo.addEventListener('click', handleTaskClick);
+
+        // Keyboard support (Enter/Space to toggle)
+        const handleKeydown = (e) => {
+            if (resetting) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+                const cb = e.target.closest('.cycle-demo-checkbox');
+                if (cb) {
+                    e.preventDefault();
+                    const row = cb.closest('.cycle-demo-task');
+                    if (row) {
+                        row.click();
+                    }
+                }
+            }
+        };
+        demo.addEventListener('keydown', handleKeydown);
+
+        // Return cleanup function
+        return () => {
+            pendingTimers.forEach(id => clearTimeout(id));
+            pendingTimers.length = 0;
+            demo.removeEventListener('click', handleTaskClick);
+            demo.removeEventListener('keydown', handleKeydown);
+        };
     }
 
     /**
