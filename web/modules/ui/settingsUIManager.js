@@ -994,6 +994,9 @@ export function setupRetakeGuidedTourButton() {
             state.settings.routineSwitcherTourStep = null;
             state.settings.recurringListTourStep = null;
             state.settings.recurringSettingsTourStep = null;
+            state.settings.historyTourStep = null;
+            state.settings.clearedTasksTourStep = null;
+            state.settings.achievementsTourStep = null;
         }, true);
 
         document.getElementById(DOM_IDS.CLOSE_SETTINGS)?.click();

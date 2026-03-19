@@ -75,6 +75,9 @@ export class GuidedTourManager {
         this._registerRoutineSwitcherTour();
         this._registerRecurringListTour();
         this._registerRecurringSettingsTour();
+        this._registerHistoryTour();
+        this._registerClearedTasksTour();
+        this._registerAchievementsTour();
     }
 
     /**
@@ -531,6 +534,121 @@ export class GuidedTourManager {
                     target: DOM_IDS.APPLY_RECURRING_SETTINGS,
                     messageKey: 'recurringSettingsTour.step5',
                     position: 'auto'
+                }
+            ]
+        });
+    }
+
+    _registerHistoryTour() {
+        this._tours.set('history', {
+            stateKey: 'historyTourStep',
+            completeKey: 'historyTour.complete',
+            containerSelector: '#' + DOM_IDS.HISTORY_MODAL_DIALOG,
+            steps: [
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.HISTORY_MODAL_CONTENT,
+                    messageKey: 'historyTour.step1',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.HISTORY_TAB + '[data-tab="cleared"]',
+                    messageKey: 'historyTour.step2',
+                    position: 'auto',
+                    onEnter: () => {
+                        const el = this.deps.querySelector(DOM_SELECTORS.HISTORY_TAB + '[data-tab="cleared"]');
+                        if (!el || el.offsetParent === null) return 'skip';
+                        return null;
+                    }
+                },
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.HISTORY_ACTION_BTN,
+                    messageKey: 'historyTour.step3',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.HISTORY_RESET_PROGRESS_BTN,
+                    messageKey: 'historyTour.step4',
+                    position: 'auto'
+                }
+            ]
+        });
+    }
+
+    _registerClearedTasksTour() {
+        this._tours.set('clearedTasks', {
+            stateKey: 'clearedTasksTourStep',
+            completeKey: 'clearedTasksTour.complete',
+            containerSelector: '#' + DOM_IDS.HISTORY_MODAL_DIALOG,
+            steps: [
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.CLEARED_ENTRY,
+                    messageKey: 'clearedTasksTour.step1',
+                    position: 'auto',
+                    onEnter: () => {
+                        const el = this.deps.querySelector(DOM_SELECTORS.CLEARED_ENTRY);
+                        if (!el || el.offsetParent === null) return 'skip';
+                        return null;
+                    }
+                },
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.HISTORY_ACTION_BTN,
+                    messageKey: 'clearedTasksTour.step2',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.HISTORY_TAB + '[data-tab="events"]',
+                    messageKey: 'clearedTasksTour.step3',
+                    position: 'auto',
+                    onEnter: () => {
+                        const el = this.deps.querySelector(DOM_SELECTORS.HISTORY_TAB + '[data-tab="events"]');
+                        if (!el || el.offsetParent === null) return 'skip';
+                        return null;
+                    }
+                }
+            ]
+        });
+    }
+
+    _registerAchievementsTour() {
+        this._tours.set('achievements', {
+            stateKey: 'achievementsTourStep',
+            completeKey: 'achievementsTour.complete',
+            containerSelector: '#' + DOM_IDS.ACHIEVEMENTS_MODAL_DIALOG,
+            steps: [
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.ACHIEVEMENTS_SUMMARY,
+                    messageKey: 'achievementsTour.step1',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.ACHIEVEMENTS_UNLOCKED,
+                    messageKey: 'achievementsTour.step2',
+                    position: 'auto',
+                    onEnter: () => {
+                        const el = this.deps.querySelector(DOM_SELECTORS.ACHIEVEMENTS_UNLOCKED);
+                        if (!el || el.offsetParent === null) return 'skip';
+                        return null;
+                    }
+                },
+                {
+                    targetType: 'selector',
+                    target: DOM_SELECTORS.ACHIEVEMENTS_UPCOMING,
+                    messageKey: 'achievementsTour.step3',
+                    position: 'auto',
+                    onEnter: () => {
+                        const el = this.deps.querySelector(DOM_SELECTORS.ACHIEVEMENTS_UPCOMING);
+                        if (!el || el.offsetParent === null) return 'skip';
+                        return null;
+                    }
                 }
             ]
         });
@@ -1170,6 +1288,114 @@ export class GuidedTourManager {
         );
     }
 
+    /**
+     * Show a notification prompting the user to take the history tour.
+     * Called by historyManager after openModal(). No-op if already started or completed.
+     * Uses the notification system's container option to render inside the dialog.
+     */
+    showHistoryTourNotification() {
+        const hTour = this._tours.get('history');
+        if (!hTour) return;
+
+        const val = this.deps.AppState?.get?.()?.settings?.[hTour.stateKey] ?? null;
+        if (val !== null) return;
+
+        const dialog = hTour.containerSelector
+            ? this.deps.querySelector?.(hTour.containerSelector)
+            : null;
+        const container = dialog?.querySelector(DOM_SELECTORS.HISTORY_MODAL) || dialog;
+
+        this.deps.showNotification?.(
+            getLabel('historyTour.welcomeMessage'),
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
+            {
+                container,
+                actionButton: {
+                    label: getLabel('historyTour.startButton'),
+                    onClick: () => this.startTour('history')
+                },
+                onDismiss: () => {
+                    this._activeTourId = 'history';
+                    this._markDone();
+                    this._activeTourId = null;
+                }
+            }
+        );
+    }
+
+    /**
+     * Show a notification prompting the user to take the cleared tasks tour.
+     * Called by historyManager when switching to the cleared tab. No-op if already started or completed.
+     * Uses the notification system's container option to render inside the dialog.
+     */
+    showClearedTasksTourNotification() {
+        const ctTour = this._tours.get('clearedTasks');
+        if (!ctTour) return;
+
+        const val = this.deps.AppState?.get?.()?.settings?.[ctTour.stateKey] ?? null;
+        if (val !== null) return;
+
+        const dialog = ctTour.containerSelector
+            ? this.deps.querySelector?.(ctTour.containerSelector)
+            : null;
+        const container = dialog?.querySelector(DOM_SELECTORS.HISTORY_MODAL) || dialog;
+
+        this.deps.showNotification?.(
+            getLabel('clearedTasksTour.welcomeMessage'),
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
+            {
+                container,
+                actionButton: {
+                    label: getLabel('clearedTasksTour.startButton'),
+                    onClick: () => this.startTour('clearedTasks')
+                },
+                onDismiss: () => {
+                    this._activeTourId = 'clearedTasks';
+                    this._markDone();
+                    this._activeTourId = null;
+                }
+            }
+        );
+    }
+
+    /**
+     * Show a notification prompting the user to take the achievements tour.
+     * Called by achievementsManager after openModal(). No-op if already started or completed.
+     * Uses the notification system's container option to render inside the dialog.
+     */
+    showAchievementsTourNotification() {
+        const aTour = this._tours.get('achievements');
+        if (!aTour) return;
+
+        const val = this.deps.AppState?.get?.()?.settings?.[aTour.stateKey] ?? null;
+        if (val !== null) return;
+
+        const dialog = aTour.containerSelector
+            ? this.deps.querySelector?.(aTour.containerSelector)
+            : null;
+        const container = dialog?.querySelector(DOM_SELECTORS.ACHIEVEMENTS_MODAL) || dialog;
+
+        this.deps.showNotification?.(
+            getLabel('achievementsTour.welcomeMessage'),
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
+            {
+                container,
+                actionButton: {
+                    label: getLabel('achievementsTour.startButton'),
+                    onClick: () => this.startTour('achievements')
+                },
+                onDismiss: () => {
+                    this._activeTourId = 'achievements';
+                    this._markDone();
+                    this._activeTourId = null;
+                }
+            }
+        );
+    }
+
     _getActiveStateKey() {
         const tourId = this._activeTourId || 'main';
         return this._tours.get(tourId)?.stateKey || 'guidedTourStep';
@@ -1559,6 +1785,18 @@ export function showRecurringListTourNotification() {
 
 export function showRecurringSettingsTourNotification() {
     return guidedTourManager?.showRecurringSettingsTourNotification?.();
+}
+
+export function showHistoryTourNotification() {
+    return guidedTourManager?.showHistoryTourNotification?.();
+}
+
+export function showClearedTasksTourNotification() {
+    return guidedTourManager?.showClearedTasksTourNotification?.();
+}
+
+export function showAchievementsTourNotification() {
+    return guidedTourManager?.showAchievementsTourNotification?.();
 }
 
 export function _resetForTesting() {
