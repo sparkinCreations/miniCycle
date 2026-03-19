@@ -1256,6 +1256,34 @@ export const DEFAULT_LABELS = deepFreeze({
         complete:        'You\'re all set! Select tasks, customize the schedule, and tap Apply.'
     },
 
+    achievementsTour: {
+        welcomeMessage:  'First time viewing achievements? Take a quick tour!',
+        startButton:     'Start Tour',
+        step1:           'Your total cycles, cleared tasks, and unlocked achievements at a glance.',
+        step2:           'Achievements you\'ve earned are listed here with their unlock date and reward.',
+        step3:           'See what\'s coming next — progress bars show how close you are.',
+        complete:        'You\'re all set! Keep completing cycles to unlock more achievements.'
+    },
+
+    historyTour: {
+        welcomeMessage:  'First time viewing history? Take a quick tour!',
+        startButton:     'Start Tour',
+        step1:           'Your routine events are logged here — cycle completions, task clears, and more.',
+        step2:           'Switch to the Cleared Tasks tab to see tasks that were removed.',
+        step3:           'Clear all history events, or tap Recreate Tasks to bring back cleared items.',
+        step4:           'Reset your routine\'s cycle count and progress from here.',
+        complete:        'You\'re all set! Review your history and recover cleared tasks anytime.'
+    },
+
+    clearedTasksTour: {
+        welcomeMessage:  'First time viewing cleared tasks? Take a quick tour!',
+        startButton:     'Start Tour',
+        step1:           'Each entry shows when a task was cleared, its priority, due date, and mode.',
+        step2:           'Tap Recreate Tasks to select items and add them back to your routine.',
+        step3:           'Switch back to Events to see your routine\'s activity log.',
+        complete:        'You\'re all set! Recover any cleared task with Recreate Tasks.'
+    },
+
     menuTour: {
         welcomeMessage:  'First time here? Take a quick tour of the menu!',
         startButton:     'Start Tour',

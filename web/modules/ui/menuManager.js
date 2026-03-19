@@ -231,8 +231,12 @@ export class MenuManager {
                 const section = header.closest('.menu-section');
                 if (section) {
                     section.classList.toggle('collapsed');
-                    header.setAttribute('aria-expanded', String(!section.classList.contains('collapsed')));
+                    const expanded = !section.classList.contains('collapsed');
+                    header.setAttribute('aria-expanded', String(expanded));
                     this.saveCollapsedStates();
+                    if (expanded) {
+                        this._scrollSectionIntoView(section);
+                    }
                 }
             });
 
@@ -242,8 +246,12 @@ export class MenuManager {
                     const section = header.closest('.menu-section');
                     if (section) {
                         section.classList.toggle('collapsed');
-                        header.setAttribute('aria-expanded', String(!section.classList.contains('collapsed')));
+                        const expanded = !section.classList.contains('collapsed');
+                        header.setAttribute('aria-expanded', String(expanded));
                         this.saveCollapsedStates();
+                        if (expanded) {
+                            this._scrollSectionIntoView(section);
+                        }
                     }
                     return;
                 }
@@ -258,6 +266,7 @@ export class MenuManager {
                         section.classList.remove('collapsed');
                         header.setAttribute('aria-expanded', 'true');
                         this.saveCollapsedStates();
+                        this._scrollSectionIntoView(section);
                     } else if (e.key === 'ArrowLeft' && !isCollapsed) {
                         section.classList.add('collapsed');
                         header.setAttribute('aria-expanded', 'false');
@@ -282,7 +291,21 @@ export class MenuManager {
         const state = this.deps.AppState?.get();
         const collapsedSections = state?.settings?.menuCollapsedSections;
 
-        if (!collapsedSections) return;
+        // No saved preference — expand all sections on desktop by default
+        if (!collapsedSections) {
+            const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+            if (isDesktop) {
+                const sections = this.deps.querySelectorAll(DOM_SELECTORS.MENU_SECTION_BY_DATA);
+                sections.forEach(section => {
+                    section.classList.remove('collapsed');
+                    const header = section.querySelector('.menu-section-header.collapsible');
+                    if (header) {
+                        header.setAttribute('aria-expanded', 'true');
+                    }
+                });
+            }
+            return;
+        }
 
         // Apply saved collapsed states
         Object.entries(collapsedSections).forEach(([sectionName, isCollapsed]) => {
@@ -320,6 +343,17 @@ export class MenuManager {
             if (!state.settings) state.settings = {};
             state.settings.menuCollapsedSections = collapsedSections;
         });
+    }
+
+    /**
+     * Scroll an expanded section into view so the user can see its contents.
+     * Uses a short delay to allow the CSS transition to complete.
+     * @param {HTMLElement} section - The .menu-section element
+     */
+    _scrollSectionIntoView(section) {
+        setTimeout(() => {
+            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 150);
     }
 
     /**

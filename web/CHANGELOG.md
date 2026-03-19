@@ -1,3 +1,7 @@
+## [2.107] - 2026-03-19
+- feat: update version to 2.106 and enhance onboarding with interactive demo and new styles
+
+
 ## [2.106] - 2026-03-19
 - feat: enhance onboarding cycle animation with improved SVG design and styling adjustments
 

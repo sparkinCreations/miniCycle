@@ -664,6 +664,8 @@ export const DOM_IDS = Object.freeze({
     CURRENT_ROUTINE_CYCLE_COUNT: 'current-routine-cycle-count',
     CURRENT_ROUTINE_CLEARED_COUNT: 'current-routine-cleared-count',
     HISTORY_BTN: 'history-btn',
+    HISTORY_MODAL_DIALOG: 'history-modal-dialog',
+    ACHIEVEMENTS_MODAL_DIALOG: 'achievements-modal-dialog',
     PER_ROUTINE_CLEARED: 'per-routine-cleared',
     THEME_UNLOCK_MESSAGE: 'theme-unlock-message',
     GOLDEN_UNLOCK_MESSAGE: 'golden-unlock-message',
@@ -1039,6 +1041,9 @@ export const DOM_SELECTORS = Object.freeze({
     ACHIEVEMENTS_MODAL: '.achievements-modal',
     ACHIEVEMENTS_MODAL_CONTENT: '.achievements-modal-content',
     ACHIEVEMENTS_BACK_BTN: '.achievements-back-btn',
+    ACHIEVEMENTS_SUMMARY: '.achievements-summary',
+    ACHIEVEMENTS_UNLOCKED: '.achievements-unlocked',
+    ACHIEVEMENTS_UPCOMING: '.achievements-upcoming',
 
     // ---- Games ----
     GAMES_MODAL_CONTENT: '.games-modal-content',

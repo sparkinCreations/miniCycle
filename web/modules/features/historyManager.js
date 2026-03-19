@@ -30,7 +30,9 @@ const di = createDIModule('HistoryManager', {
     showConfirmationModal: optional(null),
     clearedTasksManager: optional(null),
     updateStatsPanel: optional(null),
-    addTask: optional(null)
+    addTask: optional(null),
+    showHistoryTourNotification: optional(null),
+    showClearedTasksTourNotification: optional(null)
 });
 
 export const setHistoryManagerDependencies = di.setDependencies;
@@ -251,6 +253,7 @@ export class HistoryManager {
         this.selectedTasks.clear();
 
         this.modalOverlay = document.createElement('dialog');
+        this.modalOverlay.id = DOM_IDS.HISTORY_MODAL_DIALOG;
         this.modalOverlay.setAttribute('aria-label', getLabel('history.title'));
         this.modalOverlay.setAttribute('aria-modal', 'true');
         this.modalOverlay.style.cssText = `
@@ -410,6 +413,13 @@ export class HistoryManager {
                 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
             );
             if (firstFocusable) firstFocusable.focus({ focusVisible: false });
+
+            // Trigger appropriate guided tour
+            if (this.activeTab === 'cleared') {
+                this.deps.showClearedTasksTourNotification?.();
+            } else {
+                this.deps.showHistoryTourNotification?.();
+            }
         });
     }
 
@@ -541,6 +551,11 @@ export class HistoryManager {
                     this._renderModalContent();
                     this._updateFooterVisibility();
                     this._updateActionButton();
+
+                    // Trigger cleared tasks tour when switching to cleared tab
+                    if (newTab === 'cleared') {
+                        this.deps.showClearedTasksTourNotification?.();
+                    }
                 }
             };
             this._tabHandlers.push({ element: tab, handler });

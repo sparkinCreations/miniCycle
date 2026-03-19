@@ -43,6 +43,7 @@ const di = createDIModule('AchievementsManager', {
     querySelectorAll: optional((sel) => document.querySelectorAll(sel)),
     getBody: optional(() => document.body),
     getActiveElement: optional(() => document.activeElement),
+    showAchievementsTourNotification: optional(null),
 });
 
 export const setAchievementsManagerDependencies = di.setDependencies;
@@ -235,6 +236,7 @@ export class AchievementsManager {
         }
 
         this.modalOverlay = document.createElement('dialog');
+        this.modalOverlay.id = DOM_IDS.ACHIEVEMENTS_MODAL_DIALOG;
         this.modalOverlay.setAttribute('aria-label', getLabel('history.achievements'));
         this.modalOverlay.setAttribute('aria-modal', 'true');
         this.modalOverlay.style.cssText = `
@@ -304,6 +306,9 @@ export class AchievementsManager {
                 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
             );
             if (firstFocusable) firstFocusable.focus({ focusVisible: false });
+
+            // Trigger guided tour on first open
+            this.deps.showAchievementsTourNotification?.();
         });
     }
 
@@ -396,7 +401,7 @@ export class AchievementsManager {
 
         // Progress summary
         html += `
-            <div style="
+            <div class="achievements-summary" style="
                 background: var(--bg-secondary, #f5f5f5);
                 border-radius: 8px;
                 padding: 16px;
@@ -422,6 +427,7 @@ export class AchievementsManager {
 
         // Unlocked achievements
         if (unlocked.length > 0) {
+            html += `<div class="achievements-unlocked">`;
             html += `
                 <h3 style="
                     font-size: 12px;
@@ -432,10 +438,12 @@ export class AchievementsManager {
                 ">${getLabel('achievement.sectionUnlocked')}</h3>
             `;
             html += unlocked.map(a => this._renderUnlockedAchievement(a)).join('');
+            html += `</div>`;
         }
 
         // Upcoming achievements
         if (upcoming.length > 0) {
+            html += `<div class="achievements-upcoming">`;
             html += `
                 <h3 style="
                     font-size: 12px;
@@ -446,6 +454,7 @@ export class AchievementsManager {
                 ">${getLabel('achievement.sectionUpcoming')}</h3>
             `;
             html += upcoming.map(u => this._renderUpcomingAchievement(u)).join('');
+            html += `</div>`;
         }
 
         if (unlocked.length === 0 && upcoming.length === 0) {
