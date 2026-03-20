@@ -698,6 +698,58 @@ export function setupUserManual(_GlobalUtils) {
 }
 
 /**
+ * Setup menu "Reset Tours" button handler (Help & Support section)
+ */
+export function setupMenuRetakeTours() {
+  const btn = document.getElementById(DOM_IDS.MENU_RETAKE_TOURS);
+  if (!btn) return;
+
+  replaceStoredEventListener(btn, 'click', '__miniCycleMenuRetakeToursClickHandler', async () => {
+    const AppState = getAppState();
+    if (!AppState?.isReady?.()) return;
+
+    // Reset ALL tour progress
+    await AppState.update((state) => {
+      if (!state.settings) state.settings = {};
+      state.settings.guidedTourStep = null;
+      state.settings.statsTourStep = null;
+      state.settings.prefsTourStep = null;
+      state.settings.taskOptionsTourStep = null;
+      state.settings.remindersTourStep = null;
+      state.settings.menuTourStep = null;
+      state.settings.settingsTourStep = null;
+      state.settings.routineSwitcherTourStep = null;
+      state.settings.recurringListTourStep = null;
+      state.settings.recurringSettingsTourStep = null;
+      state.settings.historyTourStep = null;
+      state.settings.clearedTasksTourStep = null;
+      state.settings.achievementsTourStep = null;
+    }, true);
+
+    // Hide menu
+    try {
+      getUiApi()?.hideMainMenu?.();
+    } catch {
+      // Menu API not ready
+    }
+
+    // Ask user if they want to start the tour
+    const showNotification = getShowNotification();
+    showNotification?.(
+      getLabel('tour.toursReset'),
+      'info',
+      null,
+      {
+        actionButton: {
+          label: getLabel('tour.startTourAction'),
+          onClick: () => getUiApi()?.startGuidedTour?.()
+        }
+      }
+    );
+  });
+}
+
+/**
  * Setup lite version button handler
  * @param {Object} GlobalUtils - GlobalUtils module reference
  * @param {Object} deps - Dependencies containing showConfirmationModal
@@ -827,6 +879,7 @@ export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
   // Nav dots and menu setup
   updateNavDots();
   setupUserManual(GlobalUtils);
+  setupMenuRetakeTours();
   setupTryLiteVersionButton(GlobalUtils, { showConfirmationModal: deps.utils.showConfirmationModal });
 
   // Finalize UI (Complete All button, mode selector, device detection, etc.)
