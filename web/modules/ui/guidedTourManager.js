@@ -100,17 +100,18 @@ export class GuidedTourManager {
             steps: [
                 {
                     targetType: 'id',
-                    target: DOM_IDS.QUICK_ACTIONS_BTN,
+                    target: DOM_IDS.MODE_SELECTOR,
                     messageKey: 'tour.step1',
                     position: 'auto'
                 },
                 {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.TASK,
+                    targetType: 'id',
+                    target: DOM_IDS.FOCUS_MODE_BTN,
                     messageKey: 'tour.step2',
                     position: 'auto',
                     onEnter: () => {
-                        if (!this.deps.querySelector(DOM_SELECTORS.TASK)) {
+                        const el = this.deps.getElementById(DOM_IDS.FOCUS_MODE_BTN);
+                        if (!el || el.offsetParent === null || getComputedStyle(el).display === 'none') {
                             return 'skip';
                         }
                         return null;
@@ -118,20 +119,8 @@ export class GuidedTourManager {
                 },
                 {
                     targetType: 'id',
-                    target: DOM_IDS.PROGRESS_BAR,
-                    messageKey: 'tour.step3',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.MODE_SELECTOR,
-                    messageKey: 'tour.step4',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
                     target: DOM_IDS.HELP_WINDOW,
-                    messageKey: 'tour.step5',
+                    messageKey: 'tour.step3',
                     position: 'auto',
                     onEnter: () => {
                         const el = this.deps.getElementById(DOM_IDS.HELP_WINDOW);
@@ -143,40 +132,22 @@ export class GuidedTourManager {
                 },
                 {
                     targetType: 'id',
-                    target: DOM_IDS.QUICK_ACTIONS_WINDOW,
-                    messageKey: 'tour.step6',
+                    target: DOM_IDS.PERSONALIZATION_BTN,
+                    messageKey: 'tour.step4',
+                    position: 'auto'
+                },
+                {
+                    targetType: 'id',
+                    target: DOM_IDS.ROUTINE_SWITCHER_BTN,
+                    messageKey: 'tour.step5',
                     position: 'auto',
                     onEnter: () => {
-                        const el = this.deps.getElementById(DOM_IDS.QUICK_ACTIONS_WINDOW);
+                        const el = this.deps.getElementById(DOM_IDS.ROUTINE_SWITCHER_BTN);
                         if (!el || el.offsetParent === null || getComputedStyle(el).display === 'none') {
                             return 'skip';
                         }
                         return null;
                     }
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.PERSONALIZATION_BTN,
-                    messageKey: 'tour.step7',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.QUICK_DARK_TOGGLE,
-                    messageKey: 'tour.step8',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.HAMBURGER_MENU,
-                    messageKey: 'tour.step9',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.SLIDE_RIGHT,
-                    messageKey: 'tour.step10',
-                    position: 'auto'
                 }
             ]
         });

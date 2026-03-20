@@ -417,6 +417,10 @@ export const DOM_CLASSES = Object.freeze({
     // ---- Task Options Mode ----
     SHOW_THREE_DOTS_ENABLED: 'show-three-dots-enabled',
 
+    // ---- Search ----
+    SEARCH_MOBILE_OVERLAY: 'search-mobile-overlay',
+    SEARCH_FOCUSED: 'search-focused',
+
     // ---- Theme ----
     DARK_MODE: 'dark-mode',
     DARK_OCEAN: 'dark-ocean',
@@ -514,6 +518,7 @@ export const DOM_IDS = Object.freeze({
     RESET_ACHIEVEMENT_PROGRESS: 'reset-achievement-progress',
     CLEAR_UNDO_HISTORY: 'clear-undo-history',
     RETAKE_GUIDED_TOUR: 'retake-guided-tour',
+    MENU_RETAKE_TOURS: 'menu-retake-tours',
     TOGGLE_CHECKBOX_FILL: 'toggle-checkbox-fill',
     TOGGLE_CHECKBOX_INCOMPLETE: 'toggle-checkbox-incomplete',
     TOGGLE_BG_PATTERN: 'toggle-bg-pattern',

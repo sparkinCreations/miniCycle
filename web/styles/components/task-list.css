@@ -507,6 +507,41 @@ body.onboarding-active .complete-all-and-help-window-container {
     outline-offset: 2px;
 }
 
+/* Mobile search overlay — blacks out everything behind search bar when keyboard is open */
+.search-mobile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.92);
+    z-index: var(--z-modal-backdrop);
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Elevate the task list container above the overlay so the search bar is visible */
+.task-list-container:has(.search-focused) {
+    position: relative;
+    z-index: var(--z-modal);
+}
+
+/* Black out everything inside the container except the search bar */
+.task-list-container:has(.search-focused)::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.92);
+    border-radius: inherit;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Search bar elevated above the inner overlay */
+.task-search-input-row.search-focused {
+    position: relative;
+    z-index: 1;
+    background: var(--theme-task-bg, #fff);
+    box-shadow: 0 0 0 3px var(--theme-button-bg, #4c79ff), 0 4px 20px rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius-md);
+}
+
 /* Filter / Sort Row (shown when search is expanded) */
 .task-filter-sort-row {
     display: flex;

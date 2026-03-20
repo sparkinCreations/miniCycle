@@ -1000,7 +1000,19 @@ export function setupRetakeGuidedTourButton() {
         }, true);
 
         document.getElementById(DOM_IDS.CLOSE_SETTINGS)?.click();
-        _deps.startGuidedTour?.();
+
+        // Ask user if they want to start the tour instead of launching immediately
+        _deps.showNotification?.(
+            getLabel('tour.toursReset'),
+            'info',
+            null,
+            {
+                actionButton: {
+                    label: getLabel('tour.startTourAction'),
+                    onClick: () => _deps.startGuidedTour?.()
+                }
+            }
+        );
     };
 
     safeAddEventListener(btn, 'click', btn._clickHandler);

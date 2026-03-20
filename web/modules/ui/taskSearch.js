@@ -12,13 +12,19 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
 const TASK_THRESHOLD = 3; // Show search when this many tasks exist
+
+/** @returns {boolean} True on touch-primary devices (phones/tablets) */
+function _isMobileTouch() {
+    return ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+        && window.matchMedia('(pointer: coarse)').matches;
+}
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -27,6 +33,7 @@ const TASK_THRESHOLD = 3; // Show search when this many tasks exist
 const di = createDIModule('TaskSearch', {
     getElementById: optional((id) => document.getElementById(id)),
     querySelectorAll: optional((sel) => document.querySelectorAll(sel)),
+    getBody: optional(() => document.body),
     safeAddEventListener: optional(null)
 });
 
@@ -46,6 +53,8 @@ let currentFilter = 'all';        // persists across open/close
 let currentSort = 'default';      // persists across open/close
 let originalTaskOrder = null;     // array of task IDs captured before first non-default sort
 let filterGroupCollapsed = true;  // filter chips show only active chip when true
+let _searchOverlay = null;        // mobile-only: dims everything behind search when focused
+let _searchOverlayDismissTimer = null; // debounce overlay removal on blur → refocus
 
 // ============================================================================
 // MODULE IMPLEMENTATION
@@ -98,6 +107,31 @@ export function initTaskSearch() {
         if (e.key === 'Escape') {
             clearSearch();
             collapseSearch();
+        }
+    });
+
+    // Mobile: show overlay when search input is focused (keyboard visible)
+    // Dims everything behind the search bar for a focused search experience
+    safeAdd(searchInput, 'focus', () => {
+        if (_isMobileTouch()) {
+            // Cancel pending dismiss if focus returned quickly (e.g., after chip tap)
+            if (_searchOverlayDismissTimer) {
+                clearTimeout(_searchOverlayDismissTimer);
+                _searchOverlayDismissTimer = null;
+            }
+            _showSearchOverlay();
+        }
+    });
+
+    safeAdd(searchInput, 'blur', () => {
+        if (_isMobileTouch()) {
+            // Delay overlay removal — if the user tapped a filter/sort chip,
+            // focus will return to the input shortly. Without this delay the
+            // overlay would flash off and back on.
+            _searchOverlayDismissTimer = setTimeout(() => {
+                _searchOverlayDismissTimer = null;
+                _hideSearchOverlay();
+            }, 150);
         }
     });
 
@@ -183,17 +217,66 @@ function expandSearch() {
         inputRow.classList.remove('hidden');
         filterRow?.classList.remove('hidden');
         searchBtn.classList.add('active');
-        searchInput?.focus({ focusVisible: false });
         isSearchExpanded = true;
+
+        // Mobile: don't auto-focus — let user tap the search bar to bring up keyboard.
+        // Desktop: focus immediately for keyboard-first workflow.
+        if (!_isMobileTouch()) {
+            searchInput?.focus({ focusVisible: false });
+        }
+
         // Re-apply current filter/sort in case tasks changed while closed
         applyFiltersAndSort(searchInput?.value || '');
     }
 }
 
 /**
+ * Show a fullscreen overlay behind the search bar on mobile.
+ * Dims everything so the user focuses on the search input + keyboard.
+ */
+function _showSearchOverlay() {
+    if (_searchOverlay) return;
+
+    const deps = di.resolve();
+    const inputRow = deps.getElementById(DOM_IDS.TASK_SEARCH_INPUT_ROW);
+    inputRow?.classList.add(DOM_CLASSES.SEARCH_FOCUSED);
+
+    _searchOverlay = document.createElement('div');
+    _searchOverlay.className = DOM_CLASSES.SEARCH_MOBILE_OVERLAY;
+    // Tapping the overlay blurs the input (dismisses keyboard + overlay)
+    _searchOverlay._clickHandler = () => {
+        deps.getElementById(DOM_IDS.TASK_SEARCH_INPUT)?.blur();
+    };
+    _searchOverlay.addEventListener('click', _searchOverlay._clickHandler);
+    deps.getBody().appendChild(_searchOverlay);
+}
+
+/**
+ * Remove the mobile search overlay
+ */
+function _hideSearchOverlay() {
+    if (_searchOverlayDismissTimer) {
+        clearTimeout(_searchOverlayDismissTimer);
+        _searchOverlayDismissTimer = null;
+    }
+
+    if (!_searchOverlay) return;
+
+    const deps = di.resolve();
+    const inputRow = deps.getElementById(DOM_IDS.TASK_SEARCH_INPUT_ROW);
+    inputRow?.classList.remove(DOM_CLASSES.SEARCH_FOCUSED);
+
+    _searchOverlay.removeEventListener('click', _searchOverlay._clickHandler);
+    _searchOverlay.remove();
+    _searchOverlay = null;
+}
+
+/**
  * Collapse search input and filter/sort row (keeps chip selections)
  */
 function collapseSearch() {
+    _hideSearchOverlay();
+
     const deps = di.resolve();
     const searchBtn = deps.getElementById(DOM_IDS.TASK_SEARCH_BTN);
     const inputRow = deps.getElementById(DOM_IDS.TASK_SEARCH_INPUT_ROW);

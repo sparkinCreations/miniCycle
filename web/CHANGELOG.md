@@ -1,3 +1,7 @@
+## [2.112] - 2026-03-20
+- feat: update notification styles and structure for recurring notifications
+
+
 ## [2.111] - 2026-03-20
 - feat: enhance device detection and update cache version to 951
 
