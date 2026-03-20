@@ -1,3 +1,7 @@
+## [2.109] - 2026-03-20
+- feat: add edit focus overlay functionality with associated styles and behavior
+
+
 ## [2.108] - 2026-03-20
 - feat: add guided tours for history, cleared tasks, and achievements with associated notifications and UI updates
 

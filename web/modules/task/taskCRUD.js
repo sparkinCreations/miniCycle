@@ -351,11 +351,22 @@ export async function editTaskImpl(taskItem, deps = {}) {
         const AppState = deps.AppState || _deps.AppState;
         const captureStateSnapshot = deps.captureStateSnapshot || _deps.captureStateSnapshot;
         const enableUndoSystemOnFirstInteraction = deps.enableUndoSystemOnFirstInteraction || _deps.enableUndoSystemOnFirstInteraction;
+        const isTouchDevice = deps.isTouchDevice || _deps.isTouchDevice;
+
+        // On touch devices, use a modal dialog instead of inline editing
+        if (typeof isTouchDevice === 'function' && isTouchDevice()) {
+            _editTaskModal(taskItem, taskLabel, oldText, {
+                sanitizeInput, AppState, captureStateSnapshot,
+                enableUndoSystemOnFirstInteraction, deps
+            });
+            return;
+        }
 
         // Full-page overlay dims the entire app
         const pageOverlay = document.createElement('div');
         pageOverlay.className = 'edit-focus-overlay';
-        document.body.appendChild(pageOverlay);
+        const body = deps.getBody?.() || _deps.getBody?.() || document.body;
+        body.appendChild(pageOverlay);
 
         // Raise the task-view container above the page overlay
         // (#task-view has transform which creates a stacking context)
@@ -482,6 +493,147 @@ export async function editTaskImpl(taskItem, deps = {}) {
         console.warn('Task edit failed:', error);
         _deps.showNotification?.(getLabel('notify.taskEditFailed'), 'warning');
     }
+}
+
+/**
+ * Mobile-only modal dialog for editing task names.
+ * Uses the same .miniCycle-prompt-dialog pattern as routine creation.
+ *
+ * @param {HTMLElement} taskItem - The task DOM element
+ * @param {HTMLElement} taskLabel - The .task-text span
+ * @param {string} oldText - Current task name
+ * @param {Object} ctx - Context with deps
+ * @private
+ */
+function _editTaskModal(taskItem, taskLabel, oldText, ctx) {
+    const { sanitizeInput, AppState, captureStateSnapshot,
+            enableUndoSystemOnFirstInteraction, deps } = ctx;
+
+    const dialog = document.createElement('dialog');
+    dialog.className = 'miniCycle-prompt-dialog';
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+
+    const box = document.createElement('div');
+    box.className = 'miniCycle-prompt-box';
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'miniCycle-prompt-title';
+    titleEl.textContent = getLabel('action.editTaskTitle');
+    box.appendChild(titleEl);
+
+    const messageEl = document.createElement('div');
+    messageEl.className = 'miniCycle-prompt-message';
+    messageEl.textContent = getLabel('action.editTaskMessage');
+    box.appendChild(messageEl);
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'miniCycle-prompt-input';
+    input.value = oldText;
+    input.placeholder = getLabel('action.editTaskPlaceholder');
+    box.appendChild(input);
+
+    const buttons = document.createElement('div');
+    buttons.className = 'miniCycle-prompt-buttons';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'miniCycle-btn-cancel';
+    cancelBtn.textContent = getLabel('button.cancel');
+
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'miniCycle-btn-confirm';
+    saveBtn.textContent = getLabel('button.save');
+
+    buttons.appendChild(cancelBtn);
+    buttons.appendChild(saveBtn);
+    box.appendChild(buttons);
+    dialog.appendChild(box);
+    const body = deps.getBody?.() || _deps.getBody?.() || document.body;
+    body.appendChild(dialog);
+
+    // ── Event handlers ──
+    const handleSave = async () => {
+        const newText = sanitizeInput(input.value.trim());
+        if (!newText) {
+            input.classList.add('miniCycle-input-error');
+            input.focus();
+            return;
+        }
+        cleanup();
+        dialog.close();
+        dialog.remove();
+
+        if (newText === oldText) return;
+
+        enableUndoSystemOnFirstInteraction?.();
+
+        if (AppState?.isReady?.()) {
+            const currentState = AppState.get();
+            if (currentState) safeCaptureSnapshot(captureStateSnapshot, currentState, 'task edit');
+        }
+
+        taskLabel.textContent = newText;
+        const taskId = taskItem.dataset.taskId;
+
+        if (AppState?.isReady?.()) {
+            await AppState.update(state => {
+                const cid = state.appState.activeCycleId;
+                const cycle = state.data.cycles[cid];
+                const t = cycle?.tasks?.find(t => t.id === taskId);
+                if (t) t.text = newText;
+            }, true);
+        }
+
+        _deps.showNotification?.(getLabel('notify.taskRenamed', { vars: { name: newText } }), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+
+        if (typeof _deps.logHistoryEvent === 'function') {
+            _deps.logHistoryEvent('task_edited', { oldName: oldText, newName: newText });
+        }
+
+        const requestUIUpdate = deps.requestUIUpdate || _deps.requestUIUpdate;
+        requestUIUpdate?.({ stats: true, progress: true, completeAllButton: true });
+    };
+
+    const handleCancel = () => {
+        cleanup();
+        dialog.close();
+        dialog.remove();
+    };
+
+    const handleKeydown = (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); handleSave(); }
+    };
+
+    const handleDialogCancel = (e) => {
+        e.preventDefault();
+        handleCancel();
+    };
+
+    const handleBackdropClick = (e) => {
+        if (e.target === dialog) handleCancel();
+    };
+
+    // Wire listeners
+    saveBtn.addEventListener('click', handleSave);
+    cancelBtn.addEventListener('click', handleCancel);
+    input.addEventListener('keydown', handleKeydown);
+    dialog.addEventListener('cancel', handleDialogCancel);
+    dialog.addEventListener('click', handleBackdropClick);
+
+    const cleanup = () => {
+        saveBtn.removeEventListener('click', handleSave);
+        cancelBtn.removeEventListener('click', handleCancel);
+        input.removeEventListener('keydown', handleKeydown);
+        dialog.removeEventListener('cancel', handleDialogCancel);
+        dialog.removeEventListener('click', handleBackdropClick);
+    };
+
+    dialog.showModal();
+    input.focus();
+    input.select();
 }
 
 /**
