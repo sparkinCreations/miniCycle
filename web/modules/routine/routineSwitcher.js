@@ -76,7 +76,8 @@ const di = createDIModule('RoutineSwitcher', {
     logHistoryEvent: optional(null),
     exportMiniCycleData: optional(null),
     showRoutineSwitcherTourNotification: optional(null),
-    hasActiveNotifications: optional(null)
+    hasActiveNotifications: optional(null),
+    isTouchDevice: optional(null)
 });
 
 /**
@@ -638,6 +639,13 @@ export class RoutineSwitcher {
 
         const currentName = titleSpan.textContent;
 
+        // On touch devices, use a modal dialog instead of inline editing
+        const isTouchDevice = this.deps.isTouchDevice;
+        if (typeof isTouchDevice === 'function' && isTouchDevice()) {
+            this._editRoutineModal(listItem, cycleKey, titleSpan, currentName);
+            return;
+        }
+
         // Create input element
         const input = document.createElement('input');
         input.type = 'text';
@@ -685,6 +693,119 @@ export class RoutineSwitcher {
 
         input.addEventListener('blur', handleBlur, { once: true });
         input.addEventListener('keydown', handleKeydown);
+    }
+
+    /**
+     * Mobile-only modal dialog for renaming routines.
+     * Uses the same .miniCycle-prompt-dialog pattern as routine creation.
+     *
+     * @param {HTMLElement} listItem - The routine list item element
+     * @param {string} cycleKey - The cycle key being renamed
+     * @param {HTMLElement} titleSpan - The title span element
+     * @param {string} currentName - Current routine name
+     * @private
+     */
+    _editRoutineModal(listItem, cycleKey, titleSpan, currentName) {
+        const editDialog = document.createElement('dialog');
+        editDialog.className = 'miniCycle-prompt-dialog';
+        editDialog.setAttribute('role', 'dialog');
+        editDialog.setAttribute('aria-modal', 'true');
+
+        const box = document.createElement('div');
+        box.className = 'miniCycle-prompt-box';
+
+        const titleEl = document.createElement('div');
+        titleEl.className = 'miniCycle-prompt-title';
+        titleEl.textContent = getLabel('switcher.renameRoutine');
+        box.appendChild(titleEl);
+
+        const messageEl = document.createElement('div');
+        messageEl.className = 'miniCycle-prompt-message';
+        messageEl.textContent = getLabel('switcher.renameRoutineMessage');
+        box.appendChild(messageEl);
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'miniCycle-prompt-input';
+        input.value = currentName;
+        input.setAttribute('aria-label', getLabel('accessibility.editRoutineName'));
+        box.appendChild(input);
+
+        const buttons = document.createElement('div');
+        buttons.className = 'miniCycle-prompt-buttons';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'miniCycle-btn-cancel';
+        cancelBtn.textContent = getLabel('button.cancel');
+
+        const saveBtn = document.createElement('button');
+        saveBtn.type = 'button';
+        saveBtn.className = 'miniCycle-btn-confirm';
+        saveBtn.textContent = getLabel('button.save');
+
+        buttons.appendChild(cancelBtn);
+        buttons.appendChild(saveBtn);
+        box.appendChild(buttons);
+        editDialog.appendChild(box);
+        const body = this.deps.getBody?.() || document.body;
+        body.appendChild(editDialog);
+
+        // ── Event handlers ──
+        const handleSave = () => {
+            const value = input.value.trim();
+            if (!value) {
+                input.classList.add('miniCycle-input-error');
+                input.focus();
+                return;
+            }
+            cleanup();
+            editDialog.close();
+            editDialog.remove();
+            // Set the input value on a temporary input and call _finishInlineEdit
+            // to reuse existing rename logic (collision detection, state update, etc.)
+            const tempInput = document.createElement('input');
+            tempInput.value = value;
+            this._finishInlineEdit(listItem, cycleKey, tempInput, titleSpan);
+        };
+
+        const handleCancel = () => {
+            cleanup();
+            editDialog.close();
+            editDialog.remove();
+        };
+
+        const handleKeydown = (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); handleSave(); }
+        };
+
+        const handleDialogCancel = (e) => {
+            e.preventDefault();
+            handleCancel();
+        };
+
+        const handleBackdropClick = (e) => {
+            if (e.target === editDialog) handleCancel();
+        };
+
+        // Wire listeners
+        saveBtn.addEventListener('click', handleSave);
+        cancelBtn.addEventListener('click', handleCancel);
+        input.addEventListener('keydown', handleKeydown);
+        editDialog.addEventListener('cancel', handleDialogCancel);
+        editDialog.addEventListener('click', handleBackdropClick);
+
+        const cleanup = () => {
+            saveBtn.removeEventListener('click', handleSave);
+            cancelBtn.removeEventListener('click', handleCancel);
+            input.removeEventListener('keydown', handleKeydown);
+            editDialog.removeEventListener('cancel', handleDialogCancel);
+            editDialog.removeEventListener('click', handleBackdropClick);
+        };
+
+        editDialog.showModal();
+        input.focus();
+        input.select();
     }
 
     /**

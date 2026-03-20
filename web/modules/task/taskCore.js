@@ -83,7 +83,8 @@ const di = createDIModule('TaskCore', {
     pluginManager: optional(null),
     AppMeta: optional(null),
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: optional(null),
-    DEFAULT_TASK_OPTION_BUTTONS: optional(null)
+    DEFAULT_TASK_OPTION_BUTTONS: optional(null),
+    isTouchDevice: optional(null)
 });
 
 // Late-binding deps via Proxy
