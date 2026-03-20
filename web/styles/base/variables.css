@@ -419,6 +419,7 @@
   --z-base: 0;                       /* Normal document flow */
   --z-content: 1;                    /* Minor elevation within components */
   --z-elevated: 5;                   /* Progress bars, internal stacking */
+  --z-edit-focus: 50;                /* Edit focus overlay (below header) */
   --z-header: 100;                   /* Fixed header */
   --z-menu: 500;                     /* Main menu overlay */
   --z-modal-backdrop: 999;           /* Modal backdrops */
