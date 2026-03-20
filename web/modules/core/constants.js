@@ -304,6 +304,7 @@ export const Z_INDEX = Object.freeze({
     BASE: 0,                 // Normal document flow
     CONTENT: 1,              // Minor elevation within components
     ELEVATED: 5,             // Progress bars, internal stacking
+    EDIT_FOCUS: 50,          // Edit focus overlay (below header)
     HEADER: 100,             // Fixed header
     MENU: 500,               // Main menu overlay
     MODAL_BACKDROP: 999,     // Modal backdrops
@@ -1060,6 +1061,10 @@ export const DOM_SELECTORS = Object.freeze({
     QUICK_ACTIONS_PICKER_GRID: '.quick-actions-picker-grid',
     QUICK_ACTIONS_SLOT: '.quick-actions-slot',
     TOOLTIP_REMOVE: 'tooltip-remove',
+
+    // ---- Edit Focus ----
+    EDIT_FOCUS_OVERLAY: '.edit-focus-overlay',
+    EDIT_FOCUS_TARGET: '.edit-focus-target',
 
     // ---- Loading & UI ----
     LOADER_TEXT: '.loader-text',

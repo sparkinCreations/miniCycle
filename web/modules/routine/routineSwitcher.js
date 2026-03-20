@@ -645,6 +645,18 @@ export class RoutineSwitcher {
         input.value = currentName;
         input.setAttribute('aria-label', getLabel('accessibility.editRoutineName'));
 
+        // Add focus overlay to dim the modal
+        const dialog = this.deps.getElementById(DOM_IDS.ROUTINE_SWITCHER_MODAL);
+        const overlay = document.createElement('div');
+        overlay.className = 'edit-focus-overlay';
+        if (dialog) {
+            dialog.style.position = 'relative';
+            dialog.appendChild(overlay);
+        }
+        listItem.classList.add('edit-focus-target');
+        // Double rAF ensures browser registers initial opacity:0 before transitioning
+        requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('active')));
+
         // Replace title span with input
         titleSpan.style.display = 'none';
         titleSpan.parentNode.insertBefore(input, titleSpan.nextSibling);
@@ -686,9 +698,18 @@ export class RoutineSwitcher {
         const newName = this.deps.sanitizeInput(input.value.trim());
         const oldName = titleSpan.textContent;
 
-        // Remove input
+        // Remove input and focus overlay
         input.remove();
         titleSpan.style.display = '';
+        const listItem2 = titleSpan.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
+        if (listItem2) listItem2.classList.remove('edit-focus-target');
+        const overlay = titleSpan.closest('dialog')?.querySelector(DOM_SELECTORS.EDIT_FOCUS_OVERLAY);
+        if (overlay) {
+            overlay.classList.remove('active');
+            const removeOverlay = () => overlay.remove();
+            overlay.addEventListener('transitionend', removeOverlay, { once: true });
+            setTimeout(removeOverlay, 500);
+        }
 
         // If name unchanged or empty, just restore
         if (!newName || newName === oldName) {

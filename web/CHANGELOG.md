@@ -1,3 +1,7 @@
+## [2.108] - 2026-03-20
+- feat: add guided tours for history, cleared tasks, and achievements with associated notifications and UI updates
+
+
 ## [2.107] - 2026-03-19
 - feat: update version to 2.106 and enhance onboarding with interactive demo and new styles
 
