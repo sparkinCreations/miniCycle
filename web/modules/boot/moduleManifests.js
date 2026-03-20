@@ -211,7 +211,7 @@ export const MODULE_MANIFESTS = {
         path: '../utils/deviceDetection.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['appInit', 'AppState', 'showNotification'],
-        provides: ['deviceDetectionManager'],
+        provides: ['deviceDetectionManager', 'isTouchDevice'],
         api: 'utils'
     },
 

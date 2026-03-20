@@ -284,7 +284,13 @@ export class TaskCore {
             recurringCore: resolvedDeps.recurringCore || null,
 
             // Move arrows
-            updateMoveArrowsVisibility: resolvedDeps.updateMoveArrowsVisibility || null
+            updateMoveArrowsVisibility: resolvedDeps.updateMoveArrowsVisibility || null,
+
+            // Device detection
+            isTouchDevice: resolvedDeps.isTouchDevice || null,
+
+            // DOM body helper
+            getBody: resolvedDeps.getBody || (() => document.body)
         };
 
         // Local instance state
