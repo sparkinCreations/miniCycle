@@ -35,7 +35,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, Z_INDEX } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -1109,26 +1109,23 @@ async setDefaultPosition(notificationContainer) {
 
     return `
       <div class="main-notification-content"
-           data-task-id="${assignedTaskId}"
-           style="position: relative; display: block; padding: 12px 42px 12px 16px; border-radius: 6px;">
+           data-task-id="${assignedTaskId}">
 
         ${educationalTipHTML}
 
-        ${taskText ? `<div style="margin-bottom: 8px; font-size: 0.95em; opacity: 0.9;">"${escapedTaskText}"</div>` : ''}
+        ${taskText ? `<div class="recurring-task-name">"${escapedTaskText}"</div>` : ''}
 
         <span id="${DOM_IDS.notificationCurrentSettings(assignedTaskId)}">
           🔁 ${getLabel('notify.recurringStatus', { vars: { frequency: '<strong>' + frequency + '</strong>', pattern } })}
         </span><br>
 
         <button class="show-quick-actions"
-                data-task-id="${assignedTaskId}"
-                style="margin-top: 8px; padding: 6px 12px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 4px; color: #fff; cursor: pointer; font-size: 0.9em;">
+                data-task-id="${assignedTaskId}">
           ${getLabel('notify.changeSettings')}
         </button>
 
         <div class="quick-recurring-container"
-             data-task-id="${assignedTaskId}"
-             style="display: none; margin-top: 12px; opacity: 0; transform: translateY(-10px); transition: opacity 0.3s ease, transform 0.3s ease;">
+             data-task-id="${assignedTaskId}">
 
           <div class="quick-recurring-options" data-task-id="${assignedTaskId}" role="radiogroup" aria-label="${getLabel('freq.frequency')}">
             <div class="quick-option" role="radio" tabindex="${frequency === 'hourly' ? '0' : '-1'}" aria-checked="${frequency === 'hourly'}" data-freq="hourly">
@@ -1150,7 +1147,7 @@ async setDefaultPosition(notificationContainer) {
           </div>
 
           <div class="quick-actions">
-            <button class="apply-quick-recurring" data-task-id="${assignedTaskId}" style="display: none;">${getLabel('button.apply')}</button>
+            <button class="apply-quick-recurring" data-task-id="${assignedTaskId}">${getLabel('button.apply')}</button>
             <button class="open-recurring-settings" data-task-id="${assignedTaskId}">⚙ ${getLabel('notify.moreOptions')}</button>
           </div>
         </div>
@@ -1162,8 +1159,7 @@ async setDefaultPosition(notificationContainer) {
         <button class="close-btn"
                 data-task-id="${assignedTaskId}"
                 title="${getLabel('button.close')}"
-                aria-label="${getLabel('notify.closeNotification')}"
-                style="position: absolute; top: -7px; right: -7px; background: transparent; border: none; font-size: 16px; cursor: pointer; color: #fff; line-height: 1; padding: 0; z-index: ${Z_INDEX.ELEVATED};">✖</button>
+                aria-label="${getLabel('notify.closeNotification')}">✖</button>
       </div>
     `;
   }
@@ -1197,17 +1193,10 @@ async setDefaultPosition(notificationContainer) {
 
         if (quickContainer) {
           // Hide "Change Settings" button
-          changeSettingsBtn.style.display = "none";
+          changeSettingsBtn.classList.add("hidden");
 
           // Show and animate quick actions container
-          quickContainer.style.display = "block";
-
-          // Force reflow for animation
-          quickContainer.offsetHeight;
-
-          // Trigger animation
-          quickContainer.style.opacity = "1";
-          quickContainer.style.transform = "translateY(0)";
+          quickContainer.classList.add("visible");
 
           // Focus the currently-selected option (or first) for keyboard users
           const selectedOption = quickContainer.querySelector('.quick-option[aria-checked="true"]')
@@ -1251,7 +1240,7 @@ async setDefaultPosition(notificationContainer) {
           setTimeout(() => currentSettingsText.style.background = "transparent", UI_TIMEOUTS.BG_HIGHLIGHT_RESET);
         }
 
-        e.target.style.display = "none";
+        e.target.classList.remove("visible");
         this.showApplyConfirmation(currentSettingsText);
         if (this.deps.updateRecurringPanel) this.deps.updateRecurringPanel();
       }
@@ -1369,8 +1358,7 @@ async setDefaultPosition(notificationContainer) {
       opt.setAttribute('tabindex', isSelected ? '0' : '-1');
     });
 
-    applyButton.style.display = "inline-block";
-    applyButton.classList.add("show");
+    applyButton.classList.add("visible");
   }
 
   /**

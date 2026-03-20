@@ -299,6 +299,139 @@ dialog .notification .notification-action-btn {
 }
 
 /* =============================================================================
+   RECURRING NOTIFICATION CONTENT LAYOUT
+   ============================================================================= */
+
+/* Main content wrapper — replaces inline styles on .main-notification-content.
+   position: static ensures close-btn positions to .notification (which has position: relative). */
+.notification.recurring .main-notification-content {
+    position: static;
+    display: block;
+    padding: var(--space-3) var(--space-10, 40px) var(--space-3) var(--space-4);
+}
+
+/* Task name line */
+.notification.recurring .recurring-task-name {
+    margin-bottom: var(--space-2);
+    font-size: var(--font-size-sm);
+    opacity: 0.9;
+}
+
+/* "Change Settings" expand button */
+.notification.recurring .show-quick-actions {
+    display: inline-block;
+    margin-top: var(--space-2);
+    padding: var(--space-1-5) var(--space-3);
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-xs);
+    color: var(--color-white);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    transition: background var(--transition-fast) ease, opacity var(--transition-fast) ease;
+}
+
+.notification.recurring .show-quick-actions:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.notification.recurring .show-quick-actions.hidden {
+    display: none;
+}
+
+/* Expandable quick-change container — hidden by default, shown via .visible */
+.notification.recurring .quick-recurring-container {
+    display: none;
+    margin-top: var(--space-3);
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity var(--transition-normal) ease, transform var(--transition-normal) ease;
+}
+
+.notification.recurring .quick-recurring-container.visible {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Recurring close button — top-right corner of notification.
+   #notification-container prefix needed to beat the ID-specificity rule
+   that sets `position: relative` on all `#notification-container button`. */
+#notification-container .notification.recurring .close-btn {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    background: rgba(0, 0, 0, 0.2);
+    border: none;
+    border-radius: 50%;
+    width: var(--space-6);
+    height: var(--space-6);
+    font-size: var(--font-size-xs);
+    line-height: var(--space-6);
+    text-align: center;
+    color: var(--color-white);
+    cursor: pointer;
+    padding: 0;
+    z-index: var(--z-elevated);
+    transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
+}
+
+#notification-container .notification.recurring .close-btn:hover {
+    background: rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+/* =============================================================================
+   EDUCATIONAL TIP BANNER
+   ============================================================================= */
+
+.notification.recurring .educational-tip {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.notification.recurring .tip-content {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    font-size: var(--font-size-xs);
+    line-height: var(--line-height-normal);
+}
+
+.notification.recurring .tip-icon {
+    flex-shrink: 0;
+    font-size: var(--font-size-base);
+}
+
+.notification.recurring .tip-text {
+    flex: 1;
+    opacity: 0.95;
+}
+
+.notification.recurring .tip-close {
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    border-radius: 50%;
+    width: var(--space-5);
+    height: var(--space-5);
+    font-size: var(--font-size-xs);
+    line-height: var(--space-5);
+    text-align: center;
+    color: var(--color-white);
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    transition: background var(--transition-fast) ease;
+}
+
+.notification.recurring .tip-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* =============================================================================
    QUICK RECURRING OPTIONS
    ============================================================================= */
 
@@ -306,7 +439,21 @@ dialog .notification .notification-action-btn {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: var(--space-2);
-    margin-top: var(--space-3);
+}
+
+/* Individual radio option — flex row with proper alignment and touch target */
+.quick-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1-5) var(--space-2);
+    border-radius: var(--radius-xs);
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+}
+
+.quick-option:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .quick-option:focus-visible {
@@ -320,15 +467,29 @@ dialog .notification .notification-action-btn {
     outline-offset: 2px;
 }
 
+/* Quick actions row — Apply + More Options aligned side by side */
+.notification.recurring .quick-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+
 .notification .apply-quick-recurring {
+    display: none;
     padding: var(--space-2) var(--space-3);
     background: rgba(255, 255, 255, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: var(--radius-6);
     font-size: var(--font-size-xs);
     font-weight: 500;
+    white-space: nowrap;
     cursor: pointer;
     transition: all var(--transition-fast) ease;
+}
+
+.notification .apply-quick-recurring.visible {
+    display: inline-block;
 }
 
 .notification .apply-quick-recurring:hover {

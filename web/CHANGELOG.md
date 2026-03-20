@@ -1,3 +1,7 @@
+## [2.111] - 2026-03-20
+- feat: enhance device detection and update cache version to 951
+
+
 ## [2.110] - 2026-03-20
 - feat: update version to 2.109 and enhance various components with mobile-friendly dialogs and touch device support
 
