@@ -665,7 +665,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         escapeHtml: deps.utils?.escapeHtml,
         safeAddEventListener: GlobalUtils?.safeAddEventListener,
         safeAddEventListenerById: GlobalUtils?.safeAddEventListenerById,
-        isTouchDevice: deps.utils?.isTouchDevice,
+        isTouchDevice: (...args) => deps.utils?.isTouchDevice?.(...args),
 
         // Debug mode (from versioned debugMode via deps.utils)
         enableDebug: (...args) => deps.utils?.enableDebug?.(...args),
