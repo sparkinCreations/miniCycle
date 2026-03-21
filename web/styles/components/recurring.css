@@ -92,7 +92,7 @@
 #recurring-settings-panel {
     margin-top: 0;
     padding: var(--space-2-5);
-    background: var(--color-gray-100);
+    background: var(--color-blue-pale-light);
     border: 1px solid var(--color-gray-300);
     border-radius: var(--radius-md);
     text-align: center;
@@ -703,7 +703,7 @@ select.hidden {
     padding: var(--space-3);
     border: 2px solid var(--theme-input-border);
     border-radius: var(--radius-10);
-    background-color: var(--color-gray-100);
+    background-color: var(--color-blue-pale-light);
 }
 
 #specific-date-list {
@@ -925,9 +925,9 @@ dialog.reminders-modal[open] {
     color: var(--theme-modal-text, var(--theme-text-on-surface));
     padding: var(--space-5);
     border-radius: var(--radius-md);
-    width: 320px;
+    width: 380px;
     max-width: 90%;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-lg, 0 4px 10px rgba(0, 0, 0, 0.3));
     position: relative;
 }
 

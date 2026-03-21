@@ -188,26 +188,26 @@ export class OnboardingManager {
                  <path class="cycle-anim-checkmark cycle-anim-checkmark-3" d="M10,75 L13,78 L19,71" />
                  <text class="cycle-anim-task-text" x="28" y="79" font-size="11">${getLabel('onboarding.step2Task3')}</text>
                  <!-- Cycle counter -->
-                 <text class="cycle-anim-counter cycle-anim-counter-0" x="80" y="105" font-size="11" text-anchor="middle">Cycles: 0</text>
-                 <text class="cycle-anim-counter cycle-anim-counter-1" x="80" y="105" font-size="11" text-anchor="middle">Cycles: 1</text>
+                 <text class="cycle-anim-counter cycle-anim-counter-0" x="80" y="105" font-size="11" text-anchor="middle">${getLabel('onboarding.step2Cycles')}: 0</text>
+                 <text class="cycle-anim-counter cycle-anim-counter-1" x="80" y="105" font-size="11" text-anchor="middle">${getLabel('onboarding.step2Cycles')}: 1</text>
                  <!-- Cycle Complete flash -->
-                 <text class="cycle-anim-complete" x="80" y="105" font-size="12" text-anchor="middle" font-weight="700">Cycle Complete!</text>
+                 <text class="cycle-anim-complete" x="80" y="105" font-size="12" text-anchor="middle" font-weight="700">${getLabel('onboarding.step2CycleComplete')}</text>
                </svg>
              </div>
-             <button class="onboarding-try-btn">${getLabel('onboarding.step2TryIt')}</button>`,
+             <button class="onboarding-try-btn">${getLabel('onboarding.step2TryIt')}</button>
+             <p class="onboarding-choice-hint">${getLabel('onboarding.step2Choice')}</p>`,
             `<h3>${getLabel('onboarding.step3Title')}</h3>
              <p>${getLabel('onboarding.step3Desc1')}</p>
-             <p>${getLabel('onboarding.step3Desc2')}</p>
              <div class="onboarding-tour-animation" aria-hidden="true">
                <svg viewBox="0 0 280 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animation of a cursor clicking a Start Tour button">
                  <!-- Notification bar -->
                  <rect class="tour-anim-bar" x="10" y="20" width="260" height="60" rx="10" />
                  <!-- Notification text -->
-                 <text class="tour-anim-text" x="30" y="48" font-size="13">Take a quick tour?</text>
+                 <text class="tour-anim-text" x="30" y="48" font-size="13">${getLabel('onboarding.step3TourPrompt')}</text>
                  <!-- Start Tour button -->
                  <g class="tour-anim-btn-group">
                    <rect class="tour-anim-btn" x="170" y="34" width="88" height="32" rx="6" />
-                   <text class="tour-anim-btn-text" x="214" y="55" font-size="12" text-anchor="middle">Start Tour</text>
+                   <text class="tour-anim-btn-text" x="214" y="55" font-size="12" text-anchor="middle">${getLabel('onboarding.step3TourBtn')}</text>
                  </g>
                  <!-- Animated cursor -->
                  <g class="tour-anim-cursor">
@@ -248,6 +248,7 @@ export class OnboardingManager {
                     <button id="${DOM_IDS.ONBOARDING_PREV}" class="hidden"><span aria-hidden="true">⬅</span> ${getLabel('onboarding.back')}</button>
                     <button id="${DOM_IDS.ONBOARDING_NEXT}">${getLabel('onboarding.next')} <span aria-hidden="true">➡</span></button>
                 </div>
+                <span class="onboarding-step-indicator"></span>
             </div>
         `;
         return modal;
@@ -265,6 +266,7 @@ export class OnboardingManager {
         const nextBtn = document.getElementById(DOM_IDS.ONBOARDING_NEXT);
         const prevBtn = document.getElementById(DOM_IDS.ONBOARDING_PREV);
         const skipBtn = document.getElementById(DOM_IDS.ONBOARDING_SKIP);
+        const stepIndicator = modal.querySelector('.onboarding-step-indicator');
 
         if (!stepContent || !nextBtn || !prevBtn || !skipBtn) {
             console.error('❌ Onboarding modal elements not found');
@@ -285,6 +287,11 @@ export class OnboardingManager {
 
             stepContent.innerHTML = steps[index];
             prevBtn.classList.toggle("hidden", index === 0);
+            if (stepIndicator) {
+                stepIndicator.textContent = getLabel('onboarding.stepOf', {
+                    vars: { current: index + 1, total: steps.length }
+                });
+            }
             nextBtn.innerHTML = index === steps.length - 1
                 ? `${getLabel('onboarding.start')} <span aria-hidden="true">🚀</span>`
                 : `${getLabel('onboarding.next')} <span aria-hidden="true">➡</span>`;
@@ -354,8 +361,11 @@ export class OnboardingManager {
         // Replace animation + button with interactive demo
         const animEl = container.querySelector('.onboarding-cycle-animation');
         const tryBtn = container.querySelector('.onboarding-try-btn');
+        const hintEl = container.querySelector('.onboarding-choice-hint');
         if (animEl) animEl.remove();
         if (tryBtn) tryBtn.remove();
+        // Remove hint temporarily — will re-add below the demo with updated text
+        if (hintEl) hintEl.remove();
 
         const demo = document.createElement('div');
         demo.className = 'cycle-demo';
@@ -394,6 +404,10 @@ export class OnboardingManager {
         demo.appendChild(completeEl);
 
         container.appendChild(demo);
+        if (hintEl) {
+            hintEl.textContent = getLabel('onboarding.step2ActiveHint');
+            container.appendChild(hintEl);
+        }
 
         // State
         let cycleCount = 0;

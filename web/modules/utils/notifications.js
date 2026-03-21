@@ -486,9 +486,18 @@ export class MiniCycleNotifications {
         }
       }
 
-      // In-dialog: prepend at top; global: append at bottom
+      // In-dialog: insert after title element if present, else prepend; global: append at bottom
       if (options?.container) {
-        notificationContainer.insertBefore(notification, notificationContainer.firstChild);
+        // Find the modal's title — h2 for most modals, div title for routine switcher
+        const title = notificationContainer.querySelector('h2')
+          || notificationContainer.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_TITLE);
+        if (title?.nextSibling) {
+          notificationContainer.insertBefore(notification, title.nextSibling);
+        } else if (title) {
+          notificationContainer.appendChild(notification);
+        } else {
+          notificationContainer.insertBefore(notification, notificationContainer.firstChild);
+        }
       } else {
         notificationContainer.appendChild(notification);
       }

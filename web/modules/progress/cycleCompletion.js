@@ -342,8 +342,11 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
     // Guard: globalCyclesCompleted must be exactly 1 AND the celebration must not have
     // been shown before. The flag prevents re-showing for migrated users whose
     // cyclesCompleted was set to their pre-existing total by migrationManager.
+    // Delayed so the user sees the task reset animation play first.
     if (globalCyclesCompleted === 1 && !updatedState.userProgress?.firstCycleCelebrated) {
-        showMilestoneCelebrationOverlay('celebrate', 'notify.firstCycleCompleted', 'notify.firstCycleSubtitle');
+        setTimeout(() => {
+            showMilestoneCelebrationOverlay('celebrate', 'notify.firstCycleCompleted', 'notify.firstCycleSubtitle');
+        }, UI_TIMEOUTS.CELEBRATION_DELAY);
         deps.AppState.update(state => {
             state.userProgress.firstCycleCelebrated = true;
         }, true);
@@ -351,8 +354,11 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
 
     // ---- Milestone celebration overlays (one-time each) ----
     // Uses >= so backup restores past the threshold still trigger once
+    // Delayed so the user sees the task reset animation play first.
     if (globalCyclesCompleted >= 100 && !updatedState.userProgress?.celebrated100Cycles) {
-        showMilestoneCelebrationOverlay('milestoneTrail', 'notify.milestone100Cycles', 'notify.milestone100CyclesSubtitle');
+        setTimeout(() => {
+            showMilestoneCelebrationOverlay('milestoneTrail', 'notify.milestone100Cycles', 'notify.milestone100CyclesSubtitle');
+        }, UI_TIMEOUTS.CELEBRATION_DELAY);
         deps.AppState.update(state => {
             if (!state.userProgress) state.userProgress = {};
             state.userProgress.celebrated100Cycles = true;
@@ -360,7 +366,9 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
     }
 
     if (globalCyclesCompleted >= 500 && !updatedState.userProgress?.celebrated500Cycles) {
-        showMilestoneCelebrationOverlay('milestoneTrail', 'notify.milestone500Cycles', 'notify.milestone500CyclesSubtitle');
+        setTimeout(() => {
+            showMilestoneCelebrationOverlay('milestoneTrail', 'notify.milestone500Cycles', 'notify.milestone500CyclesSubtitle');
+        }, UI_TIMEOUTS.CELEBRATION_DELAY);
         deps.AppState.update(state => {
             if (!state.userProgress) state.userProgress = {};
             state.userProgress.celebrated500Cycles = true;

@@ -247,7 +247,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
 }
 
 .task-options-modal .modal-body {
-    background: var(--color-gray-100);
+    background: var(--color-blue-pale-light);
     padding: var(--space-3-75);
 }
 
@@ -273,9 +273,9 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     max-height: 320px;
     overflow-y: auto;
     padding: var(--space-3-5);
-    background: var(--theme-modal-bg, var(--color-white));
+    background: var(--color-blue-pale-light);
     border-radius: var(--radius-10);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     min-width: 220px;
 }
 
@@ -317,7 +317,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     display: flex;
     flex-direction: column;
     padding: var(--space-3);
-    background: var(--theme-modal-bg, var(--color-white));
+    background: var(--color-blue-pale-light);
     border-radius: var(--radius-10);
     border: 1px solid rgba(0, 0, 0, 0.08);
 }

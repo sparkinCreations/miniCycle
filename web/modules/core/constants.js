@@ -98,6 +98,7 @@ export const UI_TIMEOUTS = Object.freeze({
     NOTIFICATION_EXTRA_LONG: 6000, // 6000ms - Extra-long notification (migration, milestones)
     NOTIFICATION_PERSISTENT: 8000, // 8000ms - Near-persistent notification (data loss warnings)
     NOTIFICATION_OVERLAY: 10000,   // 10000ms - Overlay/celebration auto-dismiss
+    CELEBRATION_DELAY: 1800,       // 1800ms - Delay before showing celebration overlay (lets reset animation play first)
     TOOLTIP_HIDE: 3000             // 3000ms - Tooltip auto-hide delay
 });
 
@@ -417,9 +418,13 @@ export const DOM_CLASSES = Object.freeze({
     // ---- Task Options Mode ----
     SHOW_THREE_DOTS_ENABLED: 'show-three-dots-enabled',
 
-    // ---- Search ----
-    SEARCH_MOBILE_OVERLAY: 'search-mobile-overlay',
-    SEARCH_FOCUSED: 'search-focused',
+    // ---- Edit Focus ----
+    EDIT_FOCUS_OVERLAY: 'edit-focus-overlay',
+    EDIT_FOCUS_INNER: 'edit-focus-inner',
+    EDIT_FOCUS_RAISED: 'edit-focus-raised',
+    EDIT_FOCUS_TARGET: 'edit-focus-target',
+    EDIT_FOCUS_ACTIVE: 'active',
+    SEARCH_PAGE_OVERLAY: 'search-page-overlay',
 
     // ---- Theme ----
     DARK_MODE: 'dark-mode',
@@ -917,6 +922,7 @@ export const DOM_SELECTORS = Object.freeze({
     // ---- Routine Switcher ----
     MINI_CYCLE_SWITCH_MODAL: '.mini-cycle-switch-modal',
     MINI_CYCLE_SWITCH_MODAL_CONTENT: '.mini-cycle-switch-modal-content',
+    MINI_CYCLE_SWITCH_TITLE: '.mini-cycle-switch-title',
     MINI_CYCLE_SWITCH_ITEM: '.mini-cycle-switch-item',
     MINI_CYCLE_SWITCH_ITEM_SELECTED: '.mini-cycle-switch-item.selected',
     CYCLE_ITEM_TITLE: '.cycle-item-title',

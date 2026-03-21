@@ -22,7 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 
@@ -656,14 +656,14 @@ export class RoutineSwitcher {
         // Add focus overlay to dim the modal
         const dialog = this.deps.getElementById(DOM_IDS.ROUTINE_SWITCHER_MODAL);
         const overlay = document.createElement('div');
-        overlay.className = 'edit-focus-overlay';
+        overlay.className = DOM_CLASSES.EDIT_FOCUS_OVERLAY;
         if (dialog) {
             dialog.style.position = 'relative';
             dialog.appendChild(overlay);
         }
-        listItem.classList.add('edit-focus-target');
+        listItem.classList.add(DOM_CLASSES.EDIT_FOCUS_TARGET);
         // Double rAF ensures browser registers initial opacity:0 before transitioning
-        requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('active')));
+        requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add(DOM_CLASSES.EDIT_FOCUS_ACTIVE)));
 
         // Replace title span with input
         titleSpan.style.display = 'none';
@@ -823,10 +823,10 @@ export class RoutineSwitcher {
         input.remove();
         titleSpan.style.display = '';
         const listItem2 = titleSpan.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
-        if (listItem2) listItem2.classList.remove('edit-focus-target');
+        if (listItem2) listItem2.classList.remove(DOM_CLASSES.EDIT_FOCUS_TARGET);
         const overlay = titleSpan.closest('dialog')?.querySelector(DOM_SELECTORS.EDIT_FOCUS_OVERLAY);
         if (overlay) {
-            overlay.classList.remove('active');
+            overlay.classList.remove(DOM_CLASSES.EDIT_FOCUS_ACTIVE);
             const removeOverlay = () => overlay.remove();
             overlay.addEventListener('transitionend', removeOverlay, { once: true });
             setTimeout(removeOverlay, 500);

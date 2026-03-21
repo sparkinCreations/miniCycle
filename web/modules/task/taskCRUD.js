@@ -41,7 +41,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { LIMITS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
+import { LIMITS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -364,26 +364,26 @@ export async function editTaskImpl(taskItem, deps = {}) {
 
         // Full-page overlay dims the entire app
         const pageOverlay = document.createElement('div');
-        pageOverlay.className = 'edit-focus-overlay';
+        pageOverlay.className = DOM_CLASSES.EDIT_FOCUS_OVERLAY;
         const body = deps.getBody?.() || _deps.getBody?.() || document.body;
         body.appendChild(pageOverlay);
 
         // Raise the task-view container above the page overlay
         // (#task-view has transform which creates a stacking context)
         const taskView = taskItem.closest('#' + DOM_IDS.TASK_VIEW);
-        if (taskView) taskView.classList.add('edit-focus-raised');
+        if (taskView) taskView.classList.add(DOM_CLASSES.EDIT_FOCUS_RAISED);
 
         // Inner overlay dims non-edited tasks within the card
         const innerOverlay = document.createElement('div');
-        innerOverlay.className = 'edit-focus-overlay edit-focus-inner';
+        innerOverlay.className = `${DOM_CLASSES.EDIT_FOCUS_OVERLAY} ${DOM_CLASSES.EDIT_FOCUS_INNER}`;
         const taskListContainer = taskItem.closest(DOM_SELECTORS.TASK_LIST_CONTAINER) || taskItem.parentElement;
         taskListContainer.appendChild(innerOverlay);
 
-        taskItem.classList.add('edit-focus-target');
+        taskItem.classList.add(DOM_CLASSES.EDIT_FOCUS_TARGET);
         // Double rAF ensures browser registers initial opacity:0 before transitioning
         requestAnimationFrame(() => requestAnimationFrame(() => {
-            pageOverlay.classList.add('active');
-            innerOverlay.classList.add('active');
+            pageOverlay.classList.add(DOM_CLASSES.EDIT_FOCUS_ACTIVE);
+            innerOverlay.classList.add(DOM_CLASSES.EDIT_FOCUS_ACTIVE);
         }));
 
         // Hide task text, insert inline input
@@ -424,8 +424,8 @@ export async function editTaskImpl(taskItem, deps = {}) {
             taskLabel.style.display = '';
             if (taskOptions) taskOptions.style.visibility = '';
             // Remove focus overlays (fallback timeout if transition is disabled)
-            taskItem.classList.remove('edit-focus-target');
-            if (taskView) taskView.classList.remove('edit-focus-raised');
+            taskItem.classList.remove(DOM_CLASSES.EDIT_FOCUS_TARGET);
+            if (taskView) taskView.classList.remove(DOM_CLASSES.EDIT_FOCUS_RAISED);
             pageOverlay.classList.remove('active');
             innerOverlay.classList.remove('active');
             const removeOverlays = () => { pageOverlay.remove(); innerOverlay.remove(); };
