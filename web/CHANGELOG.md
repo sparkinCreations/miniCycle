@@ -1,3 +1,7 @@
+## [2.113] - 2026-03-21
+- feat: update task button icons and guided tour steps
+
+
 ## [2.112] - 2026-03-20
 - feat: update notification styles and structure for recurring notifications
 

@@ -53,7 +53,8 @@ let currentFilter = 'all';        // persists across open/close
 let currentSort = 'default';      // persists across open/close
 let originalTaskOrder = null;     // array of task IDs captured before first non-default sort
 let filterGroupCollapsed = true;  // filter chips show only active chip when true
-let _searchOverlay = null;        // mobile-only: dims everything behind search when focused
+let _pageOverlay = null;          // mobile-only: full-page edit-focus overlay
+let _innerOverlay = null;         // mobile-only: inner overlay inside task list container
 let _searchOverlayDismissTimer = null; // debounce overlay removal on blur → refocus
 
 // ============================================================================
@@ -231,28 +232,53 @@ function expandSearch() {
 }
 
 /**
- * Show a fullscreen overlay behind the search bar on mobile.
- * Dims everything so the user focuses on the search input + keyboard.
+ * Show edit-focus overlays behind the search bar on mobile.
+ * Reuses the same two-overlay pattern as taskCRUD inline editing:
+ *   1. Full-page overlay dims the entire app
+ *   2. Inner overlay dims non-search content within the task card
+ *   3. Search input row is raised as edit-focus-target
  */
 function _showSearchOverlay() {
-    if (_searchOverlay) return;
+    if (_pageOverlay) return;
 
     const deps = di.resolve();
+    const body = deps.getBody();
     const inputRow = deps.getElementById(DOM_IDS.TASK_SEARCH_INPUT_ROW);
-    inputRow?.classList.add(DOM_CLASSES.SEARCH_FOCUSED);
+    const taskView = inputRow?.closest('#' + DOM_IDS.TASK_VIEW);
+    const taskListContainer = inputRow?.closest(DOM_SELECTORS.TASK_LIST_CONTAINER);
 
-    _searchOverlay = document.createElement('div');
-    _searchOverlay.className = DOM_CLASSES.SEARCH_MOBILE_OVERLAY;
-    // Tapping the overlay blurs the input (dismisses keyboard + overlay)
-    _searchOverlay._clickHandler = () => {
+    // 1. Full-page overlay
+    _pageOverlay = document.createElement('div');
+    _pageOverlay.className = `${DOM_CLASSES.EDIT_FOCUS_OVERLAY} ${DOM_CLASSES.SEARCH_PAGE_OVERLAY}`;
+    // Tapping the overlay blurs the input (dismisses keyboard + overlays)
+    _pageOverlay._clickHandler = () => {
         deps.getElementById(DOM_IDS.TASK_SEARCH_INPUT)?.blur();
     };
-    _searchOverlay.addEventListener('click', _searchOverlay._clickHandler);
-    deps.getBody().appendChild(_searchOverlay);
+    _pageOverlay.addEventListener('click', _pageOverlay._clickHandler);
+    body.appendChild(_pageOverlay);
+
+    // 2. Raise task-view above the page overlay
+    if (taskView) taskView.classList.add(DOM_CLASSES.EDIT_FOCUS_RAISED);
+
+    // 3. Inner overlay inside the task list container
+    if (taskListContainer) {
+        _innerOverlay = document.createElement('div');
+        _innerOverlay.className = `${DOM_CLASSES.EDIT_FOCUS_OVERLAY} ${DOM_CLASSES.EDIT_FOCUS_INNER}`;
+        taskListContainer.appendChild(_innerOverlay);
+    }
+
+    // 4. Raise search input row above inner overlay
+    inputRow?.classList.add(DOM_CLASSES.EDIT_FOCUS_TARGET);
+
+    // Double rAF for smooth fade-in (matches taskCRUD pattern)
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        _pageOverlay?.classList.add(DOM_CLASSES.EDIT_FOCUS_ACTIVE);
+        _innerOverlay?.classList.add(DOM_CLASSES.EDIT_FOCUS_ACTIVE);
+    }));
 }
 
 /**
- * Remove the mobile search overlay
+ * Remove edit-focus overlays for mobile search
  */
 function _hideSearchOverlay() {
     if (_searchOverlayDismissTimer) {
@@ -260,15 +286,28 @@ function _hideSearchOverlay() {
         _searchOverlayDismissTimer = null;
     }
 
-    if (!_searchOverlay) return;
+    if (!_pageOverlay) return;
 
     const deps = di.resolve();
     const inputRow = deps.getElementById(DOM_IDS.TASK_SEARCH_INPUT_ROW);
-    inputRow?.classList.remove(DOM_CLASSES.SEARCH_FOCUSED);
+    const taskView = inputRow?.closest('#' + DOM_IDS.TASK_VIEW);
 
-    _searchOverlay.removeEventListener('click', _searchOverlay._clickHandler);
-    _searchOverlay.remove();
-    _searchOverlay = null;
+    // Remove target highlight
+    inputRow?.classList.remove(DOM_CLASSES.EDIT_FOCUS_TARGET);
+
+    // Remove raised state from task-view
+    if (taskView) taskView.classList.remove(DOM_CLASSES.EDIT_FOCUS_RAISED);
+
+    // Remove inner overlay
+    if (_innerOverlay) {
+        _innerOverlay.remove();
+        _innerOverlay = null;
+    }
+
+    // Remove page overlay
+    _pageOverlay.removeEventListener('click', _pageOverlay._clickHandler);
+    _pageOverlay.remove();
+    _pageOverlay = null;
 }
 
 /**

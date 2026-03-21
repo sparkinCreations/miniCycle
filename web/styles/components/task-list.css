@@ -507,39 +507,25 @@ body.onboarding-active .complete-all-and-help-window-container {
     outline-offset: 2px;
 }
 
-/* Mobile search overlay — blacks out everything behind search bar when keyboard is open */
-.search-mobile-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.92);
-    z-index: var(--z-modal-backdrop);
-    -webkit-tap-highlight-color: transparent;
+/* Mobile search focus — near-black overlays so only the search bar is visible */
+@media (pointer: coarse) {
+    .task-search-input-row ~ .edit-focus-overlay.edit-focus-inner,
+    .task-search-input-row ~ .edit-focus-overlay.edit-focus-inner.active {
+        background: rgba(0, 0, 0, 0.78);
+    }
 }
 
-/* Elevate the task list container above the overlay so the search bar is visible */
-.task-list-container:has(.search-focused) {
-    position: relative;
-    z-index: var(--z-modal);
+/* Page overlay darkened when search triggers it (sibling of task-list-container) */
+body > .edit-focus-overlay.search-page-overlay,
+body > .edit-focus-overlay.search-page-overlay.active {
+    background: rgba(0, 0, 0, 0.78);
+    pointer-events: auto;
 }
 
-/* Black out everything inside the container except the search bar */
-.task-list-container:has(.search-focused)::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.92);
-    border-radius: inherit;
-    z-index: 0;
-    pointer-events: none;
-}
-
-/* Search bar elevated above the inner overlay */
-.task-search-input-row.search-focused {
-    position: relative;
-    z-index: 1;
+/* Search bar highlighted above edit-focus overlays on mobile */
+.task-search-input-row.edit-focus-target {
     background: var(--theme-task-bg, #fff);
-    box-shadow: 0 0 0 3px var(--theme-button-bg, #4c79ff), 0 4px 20px rgba(0, 0, 0, 0.3);
-    border-radius: var(--radius-md);
+    box-shadow: 0 0 0 3px var(--theme-button-bg, #4c79ff), 0 0 12px rgba(255, 255, 255, 0.4);
 }
 
 /* Filter / Sort Row (shown when search is expanded) */

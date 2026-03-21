@@ -1151,7 +1151,7 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     tour: {
-        welcomeMessage:  'Welcome to miniCycle! Ready to learn the basics?',
+        welcomeMessage:  'Ready to learn the basics?',
         resumeMessage:   'Welcome back! Continue where you left off?',
         startButton:     'Take a Quick Tour',
         resumeButton:    'Resume Tour',
@@ -1162,7 +1162,7 @@ export const DEFAULT_LABELS = deepFreeze({
         stepOf:          '{current} of {total}',
         step1:           'Switch between Auto Cycle, Manual, and To-Do modes to match your workflow.',
         step2:           'Minimize distractions — Focus Mode hides everything except your tasks.',
-        step3:           'Your at-a-glance status — shows the current mode, tasks remaining, and tips. Other panels like Quick Actions give you fast access to recently used actions.',
+        step3:           'Your at-a-glance status — shows the current mode, tasks remaining, and tips.',
         step4:           'Customize your colors, background image, and theme. The dark mode toggle is on the opposite side.',
         step5:           'Switch between your routines — each has its own tasks and cycle count.',
         complete:        'You\'re all set! Enjoy building your routines.',
@@ -1402,7 +1402,10 @@ export const DEFAULT_LABELS = deepFreeze({
         taskOrderGame:  'Task Order Game',
         userManual:     'User Manual',
         toggleInput:    'Toggle Task Input',
-        taskOptions:    'Task Options'
+        taskOptions:    'Task Options',
+        tipPinned:      'Pin your favorite actions for quick access.',
+        tipRecent:      'Your most recently used actions appear here.',
+        tipFrequent:    'Actions you use often show up here automatically.'
     },
 
     // ========================================================================
@@ -1732,22 +1735,27 @@ export const DEFAULT_LABELS = deepFreeze({
         skip:    'Skip',
         back:    'Back',
         next:    'Next',
-        start:   'Start',
+        start:   'Let\'s Go!',
         title:   'Welcome to miniCycle',
+        stepOf:  '{current} of {total}',
         step1Title:  'Welcome to miniCycle!',
-        step1Desc1:  'A routine manager for tasks you do repeatedly - whether that\'s once a day, once a week, or multiple times a day.',
-        step1Desc2:  'Build your routine, complete it, and watch your cycle count grow!',
+        step1Desc1:  'Manage routines you repeat — daily, weekly, or multiple times a day.',
+        step1Desc2:  'Complete your routine and watch your cycle count grow!',
         step2Title:  'How Cycles Work',
-        step2Desc:   'Complete all tasks to finish a cycle — then they reset!',
+        step2Desc:   'Complete all tasks in your routine to finish a cycle — then they automatically reset!',
         step2Task1:  'Morning jog',
         step2Task2:  'Read 10 pages',
         step2Task3:  'Drink water',
         step2TryIt:  'Try it yourself!',
+        step2Choice: 'Try completing cycles yourself, or continue to the next step.',
+        step2ActiveHint: 'Try tapping or clicking all tasks to complete cycles. Continue to the next step when you\'re ready.',
         step2CycleComplete: 'Cycle complete!',
         step2Cycles: 'Cycles',
-        step3Title:  'Want a Guided Tour?',
-        step3Desc1:  'Each feature offers a quick walkthrough the first time you open it.',
-        step3Desc2:  'Just tap Start Tour when the notification appears!'
+        step3Title:  'You\'re All Set!',
+        step3Desc1:  'Whenever you see \'Start Tour,\' you can get a quick walkthrough of that part of the app.',
+        step3Desc2:  '',
+        step3TourPrompt: 'Take a quick tour?',
+        step3TourBtn: 'Start Tour'
     },
 
     // ========================================================================

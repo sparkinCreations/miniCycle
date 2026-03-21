@@ -275,19 +275,20 @@
    ============================================================================= */
 
 dialog .notification {
-    margin: 0 0 var(--space-3);
+    margin: var(--space-2) 0 var(--space-3);
     border-radius: var(--radius-sm);
     box-shadow: none;
     font-size: var(--font-size-xs);
     padding: var(--space-2-5) var(--space-3);
-    text-align: center;
+    text-align: left;
     flex: 0 0 100%;
 }
 
 dialog .notification .notification-content.notification-has-action {
     flex-direction: row;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    gap: var(--space-3);
 }
 
 dialog .notification .notification-message {
@@ -296,6 +297,7 @@ dialog .notification .notification-message {
 
 dialog .notification .notification-action-btn {
     padding: var(--space-1-5) var(--space-3);
+    flex-shrink: 0;
 }
 
 /* =============================================================================

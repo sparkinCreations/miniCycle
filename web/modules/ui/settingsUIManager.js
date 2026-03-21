@@ -997,6 +997,10 @@ export function setupRetakeGuidedTourButton() {
             state.settings.historyTourStep = null;
             state.settings.clearedTasksTourStep = null;
             state.settings.achievementsTourStep = null;
+            // Reset Quick Actions view tips
+            state.settings.quickActionsTipPinned = false;
+            state.settings.quickActionsTipRecent = false;
+            state.settings.quickActionsTipFrequent = false;
         }, true);
 
         document.getElementById(DOM_IDS.CLOSE_SETTINGS)?.click();

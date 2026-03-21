@@ -348,6 +348,43 @@ export class QuickActionsManager {
         });
 
         this._renderAllPanels();
+        this._showViewTip(nextView);
+    }
+
+    /**
+     * Show a one-time tip notification for each Quick Actions view.
+     * Each view's tip is shown only once, tracked via settings keys.
+     */
+    _showViewTip(view) {
+        const tipKeys = {
+            pinned: 'quickActionsTipPinned',
+            recent: 'quickActionsTipRecent',
+            frequent: 'quickActionsTipFrequent'
+        };
+        const tipLabelKeys = {
+            pinned: 'quickAction.tipPinned',
+            recent: 'quickAction.tipRecent',
+            frequent: 'quickAction.tipFrequent'
+        };
+
+        const stateKey = tipKeys[view];
+        if (!stateKey) return;
+
+        const state = this.deps.AppState?.get();
+        if (state?.settings?.[stateKey]) return; // Already shown
+
+        // Mark as seen
+        this.deps.AppState?.update(s => {
+            if (!s.settings) s.settings = {};
+            s.settings[stateKey] = true;
+        });
+
+        // Show the tip notification
+        this.deps.showNotification?.(
+            getLabel(tipLabelKeys[view]),
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_MEDIUM
+        );
     }
 
     // ========================================================================

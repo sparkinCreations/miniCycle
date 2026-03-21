@@ -12,7 +12,7 @@ import { getLabel } from '../labels/labelResolver.js';
 
 const TOUR_ACTIVE_ATTR = 'data-tour-active';
 const RETURNING_USER_DELAY = 2000;
-const FIRST_RUN_DELAY = 9000;
+const FIRST_RUN_DELAY = 10000;
 const TOUR_RESCHEDULE_DELAY = 3500;
 const TOUR_PADDING = 12;
 const TOOLTIP_MARGIN = 16;
@@ -885,7 +885,7 @@ export class GuidedTourManager {
         this.deps.showNotification?.(
             getLabel('tour.welcomeMessage'),
             'info',
-            0,
+            20000,
             {
                 actionButton: {
                     label: getLabel('tour.startButton'),

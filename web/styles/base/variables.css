@@ -51,6 +51,8 @@
   --color-blue-medium: #3498db;       /* recurring / reminder option icons */
   --color-blue-light: #5dade2;        /* reminder icons on dark bg */
   --color-steel-blue: #3d7ab5;        /* modal close button */
+  --color-blue-pale: #e8f0fe;         /* modal background */
+  --color-blue-pale-light: #f5f8ff;   /* inner panel bg on pale blue modals */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      NEUTRAL COLORS (Static palette)
@@ -151,7 +153,7 @@
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Modal
      ═══════════════════════════════════════════════════════════════════════════ */
-  --theme-modal-bg: #ffffff;
+  --theme-modal-bg: var(--color-blue-pale);
   --theme-modal-text: #333333;
   --theme-modal-border: transparent;
   --theme-modal-overlay: rgba(0, 0, 0, 0.5);
