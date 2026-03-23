@@ -109,22 +109,65 @@ document.addEventListener('visibilitychange', () => {
 
 Users see updates within 60 seconds of deployment.
 
+### 7. Immediate Version Freshness Check (`verifyVersionFresh()`)
+
+An inline script in `miniCycle.html` runs immediately at boot and on every focus/visibility change:
+
+```javascript
+// Fetches version.js with cache-buster — bypasses SW cache entirely
+const response = await fetch(`./version.js?_cb=${Date.now()}`, {
+  cache: 'no-store'
+});
+// Compares BOTH APP_VERSION and CACHE_VERSION
+if (serverVersion !== APP_VERSION || serverCacheVersion !== String(CACHE_VERSION)) {
+  // Clear all caches and reload
+}
+```
+
+**Why both versions:** After deployment, the new SW may precache the updated `version.js` (making `APP_VERSION` match), but old modules are still served from the old SW's dynamic cache. `CACHE_VERSION` catches this — the loaded modules have the old cache version while the server has the new one.
+
+**SW bypass:** `version.js?_cb=<timestamp>` requests are intercepted by the SW and passed straight to the network (no cache lookup). This ensures the version check always gets the real server version, even when the old SW is still controlling the page.
+
+**iOS bfcache:** A `pageshow` listener with `event.persisted` check catches Safari restoring the page from back-forward cache (which doesn't fire `visibilitychange`).
+
+### 8. Cache-First Navigation
+
+Navigation requests (HTML) use cache-first with background revalidation:
+
+```text
+Cache hit  → serve instantly, background-fetch to update cache
+Cache miss → fall back to network (same as before)
+```
+
+This makes online loads as fast as offline loads. Version mismatches are caught by `verifyVersionFresh()` within ~200ms (while the app-loader is still visible).
+
+**Safari `redirected` fix:** Cached navigation responses from Netlify redirects have `redirected: true`, which Safari rejects. The `cleanResponse()` helper in `service-worker.js` creates a clean `Response()` copy that strips this flag. Applied at both cache-write and cache-read time.
+
 ---
 
 ## What Happens for Existing Users
 
 ### First Visit After Update
-1. Page loads with old service worker
-2. Detection: finds old SW (no `?v=` parameter)
-3. Cleanup: unregisters old SW automatically
-4. Notification: one-time update prompt
-5. User reloads → new SW installs with version parameter
+
+1. Page loads with old service worker (cache-first — instant)
+2. `verifyVersionFresh()` fetches `version.js` from server (bypasses SW)
+3. Detects `CACHE_VERSION` mismatch → clears all caches → reloads
+4. Reload loads fresh content from network → new SW installs
+5. Subsequent loads use cache-first with new content
+
+### iOS PWA Reopened After Update
+
+1. Safari restores page from memory/bfcache (old content)
+2. `pageshow` or `focus` event triggers `verifyVersionFresh()`
+3. Detects version mismatch → clears caches → reloads
+4. App-loader visible during reload — user sees smooth transition
 
 ### All Future Visits
-1. Page loads with versioned SW
+
+1. Page loads with versioned SW (cache-first — instant)
 2. Background checks every 60 seconds + on tab focus
-3. Update detected → two-step confirmation (Prepare → Reload)
-4. User controls timing — no forced reloads
+3. `verifyVersionFresh()` runs on every focus/visibility change
+4. Update detected → automatic cache-clear + reload
 
 ---
 

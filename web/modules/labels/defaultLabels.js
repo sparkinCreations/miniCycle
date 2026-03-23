@@ -569,6 +569,8 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Backup/restore notifications
         backupNoData:            'No data found. Cannot create backup.',
+        backupNamePrompt:        'Name your backup',
+        backupNamePlaceholder:   'My Backup',
         backupCreated:           'Backup created successfully!',
         backupRestoreError:      'Error restoring backup - file may be corrupted.',
         backupRestored:          'Backup restored successfully!',
@@ -1430,7 +1432,9 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Vocabulary theme section heading (used in Themes modal)
         vocabThemeSection:  'Routine Theme',
-        vocabThemeApplied:  '{name} applied'
+        vocabThemeApplied:  '{name} applied',
+        vocabThemeHint:     'Complete more cycles or clear tasks in To-Do mode to unlock more themes',
+        vocabThemeHintNext: 'Next: {emoji} {name} — complete {cycles} cycles or clear {tasks} tasks to unlock'
     },
 
     // ========================================================================

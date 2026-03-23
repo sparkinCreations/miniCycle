@@ -28,7 +28,7 @@
  * @property {string} unlockKey - Key used for unlock tracking
  */
 
-import { DOM_IDS, DOM_SELECTORS, STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, STORAGE_KEYS, UI_TIMEOUTS, MILESTONES } from '../core/constants.js';
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
@@ -755,6 +755,33 @@ export class ThemeManager {
 
                 section.appendChild(option);
             });
+
+            // Show unlock hint with next theme requirements if there are locked themes remaining
+            const totalThemes = themeIds.length;
+            const unlockedCount = themeIds.filter(id => unlocked.has(id)).length;
+            if (unlockedCount < totalThemes) {
+                // Find the next locked vocab-theme milestone
+                const nextMilestone = MILESTONES.TIERS.find(m =>
+                    m.rewardType === 'vocab-theme' && !unlocked.has(m.reward)
+                );
+
+                const hint = document.createElement('p');
+                hint.className = 'vocab-theme-unlock-hint';
+
+                if (nextMilestone) {
+                    hint.textContent = getLabel('unlock.vocabThemeHintNext', {
+                        vars: {
+                            emoji: nextMilestone.emoji,
+                            name: nextMilestone.rewardLabel,
+                            cycles: nextMilestone.cycles,
+                            tasks: nextMilestone.tasks
+                        }
+                    });
+                } else {
+                    hint.textContent = getLabel('unlock.vocabThemeHint');
+                }
+                section.appendChild(hint);
+            }
 
         } catch (error) {
             console.warn('⚠️ renderVocabThemes failed:', error.message);

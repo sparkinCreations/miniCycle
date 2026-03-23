@@ -52,14 +52,20 @@ Cache key: /modules/core/appInit.js
 
 This means the same file always occupies one cache slot regardless of what `?v=` parameter was used to request it.
 
-### Three Fetch Strategies
+### Four Fetch Strategies
 
-When the SW intercepts a request, it picks one of three strategies:
+When the SW intercepts a request, it picks one of four strategies:
 
 ```
-┌─────────────────┐     version mismatch?     ┌──────────────────┐
-│   Incoming       │──── YES (+ online) ──────▶│  Network-First   │
-│   Request        │                           │  (3s timeout)    │
+┌─────────────────┐     navigation?            ┌──────────────────┐
+│   Incoming       │──── YES ──────────────────▶│  Cache-First     │
+│   Request        │                           │  + background    │
+│                  │     version.js?_cb= ?      │  revalidation    │
+│                  │──── YES ──────────────────▶│  Network-Only    │
+│                  │                           │  (bypass cache)  │
+│                  │     version mismatch?      │                  │
+│                  │──── YES (+ online) ──────▶│  Network-First   │
+│                  │                           │  (3s timeout)    │
 │                  │──── YES (+ offline) ──────▶│  Offline Fast-   │
 │                  │                           │  Path (cache)    │
 │                  │──── NO ──────────────────▶│  Stale-While-    │
@@ -67,9 +73,25 @@ When the SW intercepts a request, it picks one of three strategies:
 └─────────────────┘                           └──────────────────┘
 ```
 
+- **Cache-first + background revalidation** (navigation): HTML is served from cache instantly (same speed as offline). A background fetch updates the cache for next time. Version mismatches are caught by `verifyVersionFresh()` in the inline script (~200ms). Safari/iOS quirk: cached responses with `redirected: true` (from Netlify `_redirects`) are rejected for navigation. Fix: `cleanResponse()` helper creates a new `Response()` that strips the `redirected` flag.
+- **Network-only** (version verification): `version.js?_cb=<timestamp>` requests from `verifyVersionFresh()` bypass the SW cache entirely and go straight to the server. This ensures the version check always gets the real server version.
 - **Network-first** (3s timeout): Only for actual version mismatches (`?v=2.054` when SW has `2.056`). On timeout or failure, falls back to cache.
 - **Offline fast-path**: When `needsNetworkFirst` is true but `navigator.onLine` is false, skip the network entirely and serve from cache.
 - **Stale-while-revalidate**: For all other requests. Return cached copy immediately, then fetch fresh copy in the background (online only — background fetch is skipped when offline).
+
+### Version Freshness Verification (`verifyVersionFresh()`)
+
+After every page load, an inline script in `miniCycle.html` fetches `version.js?_cb=<timestamp>` directly from the server (bypasses all caches) and compares **both** `APP_VERSION` and `CACHE_VERSION` against what's currently loaded.
+
+- If either mismatches → clears all caches, syncs localStorage, and reloads
+- Runs immediately at boot (while app-loader is visible), on focus, on visibility change, and on `pageshow` (iOS bfcache restoration)
+- The `_cb=` parameter signals the SW to let the request pass through to the network
+
+**Why both versions are compared:** After deployment, the new SW may precache the new `version.js` (updating `APP_VERSION`), but old modules are still served from the old SW's dynamic cache. Comparing `CACHE_VERSION` catches this case — the loaded modules have the old cache version, but the server's `version.js` has the new one.
+
+### Safari `cleanResponse()` Helper
+
+Safari/iOS rejects cached navigation responses where `response.redirected === true` (common with Netlify `_redirects`). The `cleanResponse()` helper in `service-worker.js` creates a new `Response(body, {status, statusText, headers})` which always has `redirected=false`. Applied at both cache-write and cache-read time for navigation responses.
 
 ### Why Only Version Mismatches Trigger Network-First
 

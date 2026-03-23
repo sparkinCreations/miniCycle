@@ -1335,6 +1335,39 @@ body.dark-mode #dark-mode-section {
     color: var(--theme-text-primary);
 }
 
+/* Theme radio options */
+body.dark-mode .theme-radio-option {
+    background: var(--dark-overlay-subtle);
+}
+
+body.dark-mode .theme-radio-option:hover {
+    background: var(--dark-overlay-light);
+}
+
+body.dark-mode .theme-radio-option:has(input:checked) {
+    background: var(--dark-overlay-medium);
+    border-color: var(--dark-border-hover);
+}
+
+body.dark-mode .theme-radio-option input[type="radio"] {
+    border-color: var(--dark-border-subtle);
+}
+
+/* Dark mode checkbox */
+body.dark-mode #dark-mode-section .custom-checkbox .checkmark {
+    background: var(--dark-surface-primary);
+    border-color: var(--dark-border-subtle);
+}
+
+/* Vocab theme heading and unlock hint */
+body.dark-mode .vocab-theme-heading {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .vocab-theme-unlock-hint {
+    color: var(--dark-text-dim);
+}
+
 /* =============================================================================
    DARK MODE FOOTER
    ============================================================================= */
@@ -1434,8 +1467,8 @@ body.dark-mode #mini-cycle-title:focus {
 
 body.dark-mode .task-list-container {
     background: rgba(40, 40, 45, 0.6);
-    backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
     border-color: rgba(255, 255, 255, 0.08);
     box-shadow:
         0 4px 20px rgba(0, 0, 0, 0.2),

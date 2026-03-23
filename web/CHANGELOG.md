@@ -1,3 +1,7 @@
+## [2.122] - 2026-03-23
+- feat: update version to 2.121 across all relevant files and changelog
+
+
 ## [2.121] - 2026-03-23
 - feat: update version to 2.120 across all relevant files and changelog
 

@@ -36,7 +36,7 @@
 
 .themes-modal-content h2 {
     margin: 0;
-    padding: 18px var(--space-6);
+    padding: var(--space-4-5) var(--space-6);
     background: var(--theme-header-bg, var(--color-gray-100));
     color: var(--theme-modal-text, var(--color-gray-700));
     font-size: var(--font-size-lg);
@@ -55,7 +55,7 @@
 .theme-radio-option {
     display: flex;
     align-items: center;
-    padding: var(--space-3) 14px;
+    padding: var(--space-3) var(--space-3-5);
     margin-bottom: var(--space-1-5);
     background: var(--theme-input-bg, var(--overlay-faint));
     border-radius: var(--radius-10);
@@ -69,15 +69,15 @@
 }
 
 .theme-radio-option:has(input:checked) {
-    background: var(--theme-selected-bg, var(--highlight-blue-bg));
-    border-color: var(--theme-accent, var(--color-primary));
+    background: var(--color-blue-pale-mid);
+    border-color: var(--border-blue-subtle-hover);
 }
 
 .theme-radio-option input[type="radio"] {
     appearance: none;
     -webkit-appearance: none;
-    width: 18px;
-    height: 18px;
+    width: var(--space-4-5);
+    height: var(--space-4-5);
     border: 2px solid var(--theme-border, var(--color-gray-300));
     border-radius: 50%;
     margin-right: var(--space-3);
@@ -96,8 +96,8 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 10px;
-    height: 10px;
+    width: var(--space-2-5);
+    height: var(--space-2-5);
     background: var(--theme-accent, var(--color-primary));
     border-radius: 50%;
 }
@@ -112,7 +112,7 @@
 #theme-options-section .custom-checkbox {
     display: flex;
     align-items: center;
-    padding: var(--space-3) 14px;
+    padding: var(--space-3) var(--space-3-5);
     margin-bottom: var(--space-1-5);
     background: var(--theme-input-bg, var(--overlay-faint));
     border-radius: var(--radius-10);
@@ -131,38 +131,37 @@
 
 .theme-divider {
     border: none;
-    border-top: 1px solid var(--theme-modal-border, var(--overlay-light));
     margin: 0;
 }
 
 /* Dark mode section */
 #dark-mode-section {
-    padding: 14px var(--space-5);
-    background: var(--theme-section-bg, var(--overlay-faint));
+    padding: var(--space-3-5) var(--space-5);
+    background: transparent;
     text-align: left;
 }
 
 #dark-mode-section .custom-checkbox {
     display: flex;
     align-items: center;
-    padding: var(--space-3) 14px;
-    background: var(--theme-input-bg, var(--overlay-faint));
+    padding: var(--space-3) var(--space-3-5);
+    background: transparent;
     border-radius: var(--radius-10);
     transition: all var(--transition-fast) ease;
 }
 
 #dark-mode-section .custom-checkbox:hover {
-    background: var(--theme-hover-bg, var(--overlay-light));
+    background: var(--overlay-faint);
 }
 
 /* Dark mode checkbox - visible empty state */
 #dark-mode-section .custom-checkbox .checkmark {
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--theme-border, var(--color-gray-400));
+    width: var(--space-4-5);
+    height: var(--space-4-5);
+    border: 2px solid var(--overlay-strong);
     border-radius: var(--radius-sm);
     margin-right: var(--space-2-5);
-    background: var(--theme-modal-bg, var(--color-white));
+    background: var(--color-white);
     flex-shrink: 0;
 }
 
@@ -173,7 +172,7 @@
 
 #dark-mode-section .custom-checkbox input:checked + .checkmark::after {
     left: 4px;
-    top: 0px;
+    top: 0;
     width: 5px;
     height: 9px;
 }
@@ -218,7 +217,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--theme-text-muted, var(--color-gray-400));
+    color: var(--color-gray-600);
     margin: 0 0 var(--space-2) 0;
 }
 
@@ -241,6 +240,15 @@
 .vocab-theme-hint {
     font-size: var(--font-size-xs);
     color: var(--theme-text-muted, var(--color-gray-400));
+}
+
+.vocab-theme-unlock-hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-600);
+    text-align: center;
+    margin: var(--space-3) 0 0;
+    padding: var(--space-2) var(--space-3);
+    font-style: italic;
 }
 
 /* Themes modal needs scroll room now that vocab themes are added */
@@ -877,7 +885,7 @@ dialog.preferences-modal::backdrop {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    padding: var(--space-3) 14px;
+    padding: var(--space-3) var(--space-3-5);
     background: var(--color-blue-pale);
 }
 
@@ -1338,7 +1346,7 @@ dialog.preferences-modal::backdrop {
     }
 
     .preferences-modal-content h2 {
-        padding: var(--space-3) 14px;
+        padding: var(--space-3) var(--space-3-5);
         font-size: var(--font-size-sm);
     }
 

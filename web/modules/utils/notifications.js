@@ -488,12 +488,13 @@ export class MiniCycleNotifications {
 
       // In-dialog: insert after title element if present, else prepend; global: append at bottom
       if (options?.container) {
-        // Find the modal's title — h2 for most modals, div title for routine switcher
+        // Find the modal's title — h2 for most modals, div title for routine switcher.
+        // Must be a direct child of notificationContainer for insertBefore to work.
         const title = notificationContainer.querySelector('h2')
           || notificationContainer.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_TITLE);
-        if (title?.nextSibling) {
+        if (title && title.parentNode === notificationContainer && title.nextSibling) {
           notificationContainer.insertBefore(notification, title.nextSibling);
-        } else if (title) {
+        } else if (title && title.parentNode === notificationContainer) {
           notificationContainer.appendChild(notification);
         } else {
           notificationContainer.insertBefore(notification, notificationContainer.firstChild);

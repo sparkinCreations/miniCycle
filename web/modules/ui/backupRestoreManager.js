@@ -29,7 +29,8 @@ const di = createDIModule('BackupRestoreManager', {
     hideLoader: optional(null),  // Loading overlay from uiBoot
     hideMainMenu: optional(null),  // Close settings menu after restore/reset
     closeAllModals: optional(null),  // Close all open modals after restore/reset
-    appInit: optional(null)  // For full re-init after factory reset (triggers onboarding)
+    appInit: optional(null),  // For full re-init after factory reset (triggers onboarding)
+    showPromptModal: optional(null)  // For naming backups
 });
 
 /** @type {{AppState: Object, showNotification: Function, showConfirmationModal: Function, safeAddEventListener: Function, performSchema25Migration: Function|null, BackupManager: Object|null, AppMeta: Object|null, loadMiniCycle: Function|null, showLoader: Function|null, hideLoader: Function|null, hideMainMenu: Function|null, closeAllModals: Function|null, appInit: Object|null}} */
@@ -211,32 +212,57 @@ export function setupBackupButton() {
             return;
         }
 
-        const currentState = AppState.get();
-        const liteStorage = collectLiteStorageSnapshot();
-        const backupData = {
-            schemaVersion: "2.5",
-            miniCycleData,
-            backupMetadata: {
-                createdAt: Date.now(),
-                version: _deps.AppMeta?.version || currentState?.metadata?.version || "2.5",
-                schemaVersion: currentState?.metadata?.schemaVersion || "2.5",
-                includesLiteStorage: Boolean(liteStorage),
-                source: "miniCycle App"
+        const defaultName = `mini-cycle-backup-${new Date().toISOString().slice(0, 10)}`;
+
+        const createAndDownloadBackup = (fileName) => {
+            const currentState = AppState.get();
+            const liteStorage = collectLiteStorageSnapshot();
+            const backupData = {
+                schemaVersion: "2.5",
+                miniCycleData,
+                backupMetadata: {
+                    createdAt: Date.now(),
+                    version: _deps.AppMeta?.version || currentState?.metadata?.version || "2.5",
+                    schemaVersion: currentState?.metadata?.schemaVersion || "2.5",
+                    includesLiteStorage: Boolean(liteStorage),
+                    source: "miniCycle App"
+                }
+            };
+            if (liteStorage) {
+                backupData.liteStorage = liteStorage;
             }
+
+            // Sanitize filename: remove unsafe characters, ensure .json extension
+            const safeName = fileName.replace(/[<>:"/\\|?*]/g, '').trim() || defaultName;
+            const finalName = safeName.endsWith('.json') ? safeName : `${safeName}.json`;
+
+            const backupBlob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
+            const backupUrl = URL.createObjectURL(backupBlob);
+            const a = document.createElement("a");
+            a.href = backupUrl;
+            a.download = finalName;
+            a.click();
+            URL.revokeObjectURL(backupUrl);
+
+            _deps.showNotification?.("✅ " + getLabel('notify.backupCreated'), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
         };
-        if (liteStorage) {
-            backupData.liteStorage = liteStorage;
+
+        // Prompt for backup name, fall back to default if prompt unavailable
+        if (_deps.showPromptModal) {
+            _deps.showPromptModal({
+                title: getLabel('notify.backupNamePrompt'),
+                placeholder: getLabel('notify.backupNamePlaceholder'),
+                defaultValue: defaultName,
+                confirmText: getLabel('settings.backupAll'),
+                callback: (name) => {
+                    if (name !== null) {
+                        createAndDownloadBackup(name || defaultName);
+                    }
+                }
+            });
+        } else {
+            createAndDownloadBackup(defaultName);
         }
-
-        const backupBlob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
-        const backupUrl = URL.createObjectURL(backupBlob);
-        const a = document.createElement("a");
-        a.href = backupUrl;
-        a.download = `mini-cycle-backup-schema25-${Date.now()}.json`;
-        a.click();
-        URL.revokeObjectURL(backupUrl);
-
-        _deps.showNotification?.("✅ " + getLabel('notify.backupCreated'), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
     };
 
     safeAddEventListener(backupBtn, "click", backupBtn._clickHandler);
