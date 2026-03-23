@@ -55,7 +55,8 @@ const di = createDIModule('SettingsManager', {
     updateHelpWindow: optional(null),
     loadMiniCycle: optional(null),
     showLoader: optional(null),
-    hideLoader: optional(null)
+    hideLoader: optional(null),
+    showPromptModal: optional(null)
 });
 
 /** @type {{appInit: Object|null, loadMiniCycleData: Function, AppState: Object, showNotification: Function, showConfirmationModal: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, performSchema25Migration: Function|null, resetDefaultRecurringSettings: Function|null, organizeCompletedTasks: Function|null, DataValidator: Object|null, calculateNextOccurrence: Function|null, sanitizeInput: Function, AppMeta: Object|null, safeAddEventListener: Function, BackupManager: Object|null}} */
@@ -231,7 +232,8 @@ function wireSubModuleDependencies(dependencies) {
         hideLoader: dependencies.hideLoader,
         hideMainMenu: dependencies.hideMainMenu,
         closeAllModals: dependencies.closeAllModals,
-        appInit: dependencies.appInit
+        appInit: dependencies.appInit,
+        showPromptModal: dependencies.showPromptModal
     });
 
     _subModules.setDataSanitizerDependencies({

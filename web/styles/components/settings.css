@@ -66,6 +66,13 @@
     background: var(--color-blue-pale-light);
 }
 
+.settings-section.collapsible.collapsed {
+    border-color: transparent;
+    border-bottom: 1px solid var(--border-blue-subtle);
+    border-radius: 0;
+    background: transparent;
+}
+
 .settings-section-icon {
     font-size: var(--font-size-sm);
     flex-shrink: 0;
@@ -81,6 +88,7 @@
     cursor: pointer;
     font-weight: 600;
     font-size: var(--font-size-sm);
+    -webkit-user-select: none;
     user-select: none;
     transition: background var(--transition-fast) ease;
 }
