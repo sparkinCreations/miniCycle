@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.119';
-var CACHE_VERSION = 'v962';
+var APP_VERSION = '2.120';
+var CACHE_VERSION = 'v963';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -549,6 +549,13 @@ self.addEventListener('fetch', function (event) {
 
   // ✅ BYPASS: Always fetch fresh for test files (network-only, no cache)
   if (url.pathname.indexOf('/tests/') !== -1) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // ✅ BYPASS: version.js with cache-buster (from verifyVersionFresh)
+  // must hit the network to detect version mismatches after deployment.
+  if (url.pathname.endsWith('version.js') && url.search.indexOf('_cb=') !== -1) {
     event.respondWith(fetch(request));
     return;
   }

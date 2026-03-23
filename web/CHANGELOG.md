@@ -1,3 +1,7 @@
+## [2.120] - 2026-03-23
+- Add dark mode styles for personalization modal and related components
+
+
 ## [2.119] - 2026-03-23
 - feat: add new task option categories and enhance UI elements for better organization and clarity
 
