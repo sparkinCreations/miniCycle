@@ -522,19 +522,20 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
             </div>
 
             <!-- Saved Presets Section -->
-            <div class="preferences-presets-section">
-                <div class="preferences-presets-header">
-                    <div class="preferences-presets-title">
-                        <span class="preferences-section-icon">&#x1F4BE;</span>
-                        <span>${getLabel('prefs.savedPresets')}</span>
-                    </div>
+            <div class="preferences-section preferences-presets-section collapsed" data-section="saved-presets">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="saved-presets" aria-expanded="false" aria-label="${getLabel('prefs.ariaToggleSavedPresets')}" aria-controls="pref-section-saved-presets">
+                    <span class="preferences-section-icon">&#x1F4BE;</span>
+                    <span>${getLabel('prefs.savedPresets')}</span>
+                    <span class="preferences-section-toggle">&#x25BC;</span>
+                </div>
+                <div class="preferences-section-content" id="pref-section-saved-presets">
                     <div class="preferences-presets-actions">
                         <button id="pref-import-preset" class="preferences-import-btn" title="${getLabel('prefs.importPresetTitle')}">${getLabel('prefs.import')}</button>
                         <button id="pref-save-preset" class="preferences-save-btn" title="${getLabel('prefs.saveCurrentTitle')}">${getLabel('prefs.saveCurrent')}</button>
                     </div>
-                </div>
-                <div class="preferences-presets-list" id="preferences-presets-list">
-                    <div class="preferences-no-presets" id="preferences-no-presets">${getLabel('prefs.noSavedPresets')}</div>
+                    <div class="preferences-presets-list" id="preferences-presets-list">
+                        <div class="preferences-no-presets" id="preferences-no-presets">${getLabel('prefs.noSavedPresets')}</div>
+                    </div>
                 </div>
             </div>
 
@@ -832,11 +833,12 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
 export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
         <dialog id="settings-modal" class="settings-modal" data-modal aria-labelledby="settings-modal-title" aria-modal="true">
             <div class="settings-modal-content has-corner-logo">
-                <h2 id="settings-modal-title">${getLabel('settings.title')}</h2>
+                <h2 id="settings-modal-title">&#x2699;&#xFE0F; ${getLabel('settings.title')}</h2>
 
                 <!-- Display Section -->
                 <div class="settings-section collapsible collapsed" data-section="display">
                     <div class="settings-section-header" role="button" tabindex="0" data-toggle="display" aria-expanded="false" aria-label="${getLabel('settings.ariaToggleDisplay')}" aria-controls="settings-section-display">
+                        <span class="settings-section-icon">&#x1F5A5;</span>
                         <span>${getLabel('settings.display')}</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -876,6 +878,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                 <!-- Accessibility Section -->
                 <div class="settings-section collapsible collapsed" data-section="accessibility">
                     <div class="settings-section-header" role="button" tabindex="0" data-toggle="accessibility" aria-expanded="false" aria-label="${getLabel('settings.ariaToggleAccessibility')}" aria-controls="settings-section-accessibility">
+                        <span class="settings-section-icon">&#x267F;</span>
                         <span>${getLabel('settings.accessibility')}</span>
                         <span class="settings-section-toggle">&#9660;</span>
                     </div>
@@ -923,6 +926,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                 <!-- Behavior Section -->
                 <div class="settings-section collapsible collapsed" data-section="behavior">
                     <div class="settings-section-header" role="button" tabindex="0" data-toggle="behavior" aria-expanded="false" aria-label="${getLabel('settings.ariaToggleBehavior')}" aria-controls="settings-section-behavior">
+                        <span class="settings-section-icon">&#x1F39B;</span>
                         <span>${getLabel('settings.behavior')}</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -954,6 +958,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                 <!-- Data Management Section -->
                 <div class="settings-section collapsible collapsed" data-section="data">
                     <div class="settings-section-header" role="button" tabindex="0" data-toggle="data" aria-expanded="false" aria-label="${getLabel('settings.ariaToggleData')}" aria-controls="settings-section-data">
+                        <span class="settings-section-icon">&#x1F4BE;</span>
                         <span>${getLabel('settings.dataManagement')}</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -966,6 +971,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                 <!-- Reset Options Section -->
                 <div class="settings-section collapsible collapsed" data-section="reset">
                     <div class="settings-section-header" role="button" tabindex="0" data-toggle="reset" aria-expanded="false" aria-label="${getLabel('settings.ariaToggleReset')}" aria-controls="settings-section-reset">
+                        <span class="settings-section-icon">&#x1F504;</span>
                         <span>${getLabel('settings.resetOptions')}</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>
@@ -982,6 +988,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                 <!-- Advanced Section -->
                 <div class="settings-section collapsible collapsed" data-section="advanced">
                     <div class="settings-section-header" role="button" tabindex="0" data-toggle="advanced" aria-expanded="false" aria-label="${getLabel('settings.ariaToggleAdvanced')}" aria-controls="settings-section-advanced">
+                        <span class="settings-section-icon">&#x1F527;</span>
                         <span>${getLabel('settings.advanced')}</span>
                         <span class="settings-section-toggle">▼</span>
                     </div>

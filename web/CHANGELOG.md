@@ -1,3 +1,7 @@
+## [2.119] - 2026-03-23
+- feat: add new task option categories and enhance UI elements for better organization and clarity
+
+
 ## [2.118] - 2026-03-23
 - feat: enhance styling and layout across various components for improved UI consistency
 

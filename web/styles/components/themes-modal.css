@@ -22,8 +22,8 @@
 
 .themes-modal-content {
     position: relative;
-    background: var(--theme-modal-bg, #ffffff);
-    color: var(--theme-modal-text, #333);
+    background: var(--theme-modal-bg, var(--color-white));
+    color: var(--theme-modal-text, var(--color-gray-700));
     padding: 0;
     border-radius: var(--radius-xl);
     width: 420px;
@@ -37,12 +37,12 @@
 .themes-modal-content h2 {
     margin: 0;
     padding: 18px var(--space-6);
-    background: var(--theme-header-bg, #f5f5f5);
-    color: var(--theme-modal-text, #333);
-    font-size: 17px;
+    background: var(--theme-header-bg, var(--color-gray-100));
+    color: var(--theme-modal-text, var(--color-gray-700));
+    font-size: var(--font-size-lg);
     font-weight: 600;
     letter-spacing: 0.3px;
-    border-bottom: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.08));
+    border-bottom: 1px solid var(--theme-modal-border, var(--overlay-light));
 }
 
 /* Theme options sections */
@@ -57,7 +57,7 @@
     align-items: center;
     padding: var(--space-3) 14px;
     margin-bottom: var(--space-1-5);
-    background: var(--theme-input-bg, rgba(0, 0, 0, 0.03));
+    background: var(--theme-input-bg, var(--overlay-faint));
     border-radius: var(--radius-10);
     transition: all var(--transition-fast) ease;
     border: 2px solid transparent;
@@ -65,12 +65,12 @@
 }
 
 .theme-radio-option:hover {
-    background: var(--theme-hover-bg, rgba(0, 0, 0, 0.06));
+    background: var(--theme-hover-bg, var(--overlay-light));
 }
 
 .theme-radio-option:has(input:checked) {
-    background: var(--theme-selected-bg, rgba(74, 144, 226, 0.1));
-    border-color: var(--theme-accent, #4a90e2);
+    background: var(--theme-selected-bg, var(--highlight-blue-bg));
+    border-color: var(--theme-accent, var(--color-primary));
 }
 
 .theme-radio-option input[type="radio"] {
@@ -78,7 +78,7 @@
     -webkit-appearance: none;
     width: 18px;
     height: 18px;
-    border: 2px solid var(--theme-border, #ccc);
+    border: 2px solid var(--theme-border, var(--color-gray-300));
     border-radius: 50%;
     margin-right: var(--space-3);
     cursor: pointer;
@@ -87,7 +87,7 @@
 }
 
 .theme-radio-option input[type="radio"]:checked {
-    border-color: var(--theme-accent, #4a90e2);
+    border-color: var(--theme-accent, var(--color-primary));
 }
 
 .theme-radio-option input[type="radio"]:checked::after {
@@ -98,14 +98,14 @@
     transform: translate(-50%, -50%);
     width: 10px;
     height: 10px;
-    background: var(--theme-accent, #4a90e2);
+    background: var(--theme-accent, var(--color-primary));
     border-radius: 50%;
 }
 
 .theme-radio-label {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     font-weight: 500;
-    color: var(--theme-modal-text, #333);
+    color: var(--theme-modal-text, var(--color-gray-700));
 }
 
 /* Legacy checkbox support */
@@ -114,31 +114,31 @@
     align-items: center;
     padding: var(--space-3) 14px;
     margin-bottom: var(--space-1-5);
-    background: var(--theme-input-bg, rgba(0, 0, 0, 0.03));
+    background: var(--theme-input-bg, var(--overlay-faint));
     border-radius: var(--radius-10);
     transition: all var(--transition-fast) ease;
     border: 2px solid transparent;
 }
 
 #theme-options-section .custom-checkbox:hover {
-    background: var(--theme-hover-bg, rgba(0, 0, 0, 0.06));
+    background: var(--theme-hover-bg, var(--overlay-light));
 }
 
 #theme-options-section .custom-checkbox:has(input:checked) {
-    background: var(--theme-selected-bg, rgba(74, 144, 226, 0.1));
-    border-color: var(--theme-accent, #4a90e2);
+    background: var(--theme-selected-bg, var(--highlight-blue-bg));
+    border-color: var(--theme-accent, var(--color-primary));
 }
 
 .theme-divider {
     border: none;
-    border-top: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.08));
+    border-top: 1px solid var(--theme-modal-border, var(--overlay-light));
     margin: 0;
 }
 
 /* Dark mode section */
 #dark-mode-section {
     padding: 14px var(--space-5);
-    background: var(--theme-section-bg, rgba(0, 0, 0, 0.02));
+    background: var(--theme-section-bg, var(--overlay-faint));
     text-align: left;
 }
 
@@ -146,29 +146,29 @@
     display: flex;
     align-items: center;
     padding: var(--space-3) 14px;
-    background: var(--theme-input-bg, rgba(0, 0, 0, 0.03));
+    background: var(--theme-input-bg, var(--overlay-faint));
     border-radius: var(--radius-10);
     transition: all var(--transition-fast) ease;
 }
 
 #dark-mode-section .custom-checkbox:hover {
-    background: var(--theme-hover-bg, rgba(0, 0, 0, 0.06));
+    background: var(--theme-hover-bg, var(--overlay-light));
 }
 
 /* Dark mode checkbox - visible empty state */
 #dark-mode-section .custom-checkbox .checkmark {
     width: 16px;
     height: 16px;
-    border: 2px solid var(--theme-border, #999);
+    border: 2px solid var(--theme-border, var(--color-gray-400));
     border-radius: var(--radius-sm);
     margin-right: var(--space-2-5);
-    background: var(--theme-modal-bg, #fff);
+    background: var(--theme-modal-bg, var(--color-white));
     flex-shrink: 0;
 }
 
 #dark-mode-section .custom-checkbox input:checked + .checkmark {
-    background-color: var(--theme-accent, #4a90e2);
-    border-color: var(--theme-accent, #4a90e2);
+    background-color: var(--theme-accent, var(--color-primary));
+    border-color: var(--theme-accent, var(--color-primary));
 }
 
 #dark-mode-section .custom-checkbox input:checked + .checkmark::after {
@@ -182,18 +182,18 @@
     width: 100%;
     margin: 0;
     padding: var(--space-3-5);
-    background: var(--theme-button-bg, #4a90e2);
-    color: var(--theme-button-text, white);
+    background: var(--theme-button-bg, var(--color-primary));
+    color: var(--theme-button-text, var(--color-white));
     border: none;
     border-radius: 0;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
     transition: all var(--transition-fast) ease;
 }
 
 .themes-modal .close-btn:hover {
-    background: var(--theme-button-hover, #3a7bc8);
+    background: var(--theme-button-hover, var(--color-primary-dark));
 }
 
 .theme-locked {
@@ -214,11 +214,11 @@
 }
 
 .vocab-theme-heading {
-    font-size: 11px;
+    font-size: var(--font-size-xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--theme-text-muted, #888);
+    color: var(--theme-text-muted, var(--color-gray-400));
     margin: 0 0 var(--space-2) 0;
 }
 
@@ -229,18 +229,18 @@
 .vocab-theme-label {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--space-0-5);
 }
 
 .vocab-theme-name {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     font-weight: 500;
-    color: var(--theme-modal-text, #333);
+    color: var(--theme-modal-text, var(--color-gray-700));
 }
 
 .vocab-theme-hint {
-    font-size: 11px;
-    color: var(--theme-text-muted, #888);
+    font-size: var(--font-size-xs);
+    color: var(--theme-text-muted, var(--color-gray-400));
 }
 
 /* Themes modal needs scroll room now that vocab themes are added */
@@ -267,7 +267,7 @@
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--overlay-backdrop);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     justify-content: center;
@@ -276,15 +276,15 @@
 }
 
 dialog.preferences-modal::backdrop {
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--overlay-backdrop);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
 }
 
 .preferences-modal-content {
     position: relative;
-    background: var(--theme-modal-bg, #ffffff);
-    color: var(--theme-modal-text, #333);
+    background: var(--theme-modal-bg, var(--color-white));
+    color: var(--theme-modal-text, var(--color-gray-700));
     padding: 0;
     border-radius: var(--radius-xl);
     width: 420px;
@@ -301,12 +301,12 @@ dialog.preferences-modal::backdrop {
 .preferences-modal-content h2 {
     margin: 0;
     padding: var(--space-4) var(--space-5);
-    background: var(--theme-header-bg, #f5f5f5);
-    color: var(--theme-modal-text, #333);
-    font-size: 17px;
+    background: var(--theme-header-bg, var(--color-gray-100));
+    color: var(--theme-modal-text, var(--color-gray-700));
+    font-size: var(--font-size-lg);
     font-weight: 600;
     letter-spacing: 0.3px;
-    border-bottom: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.08));
+    border-bottom: 1px solid var(--theme-modal-border, var(--overlay-light));
     flex-shrink: 0;
 }
 
@@ -319,10 +319,10 @@ dialog.preferences-modal::backdrop {
     padding: var(--space-2-5) var(--space-3-5);
     margin: var(--space-3) var(--space-4) 0;
     background: var(--theme-selected-bg);
-    border: 1px solid var(--theme-accent, rgba(74, 144, 226, 0.2));
+    border: 1px solid var(--theme-accent, var(--highlight-blue-border));
     border-radius: var(--radius-md);
-    font-size: 12px;
-    color: var(--theme-modal-text, #555);
+    font-size: var(--font-size-xs);
+    color: var(--theme-modal-text, var(--color-gray-600));
     text-align: left;
     flex-shrink: 0;
 }
@@ -330,18 +330,18 @@ dialog.preferences-modal::backdrop {
 .preferences-theme-btn {
     flex-shrink: 0;
     padding: var(--space-1-25) var(--space-2-5);
-    background: var(--theme-button-bg, #4a90e2);
-    color: white;
+    background: var(--theme-button-bg, var(--color-primary));
+    color: var(--color-white);
     border: none;
     border-radius: var(--radius-6);
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     font-weight: 600;
     cursor: pointer;
     transition: background var(--transition-fast) ease;
 }
 
 .preferences-theme-btn:hover {
-    background: var(--theme-button-hover, #3a7bc8);
+    background: var(--theme-button-hover, var(--color-primary-dark));
 }
 
 /* Scrollable content area */
@@ -364,15 +364,15 @@ dialog.preferences-modal::backdrop {
     position: sticky;
     top: -12px;
     z-index: var(--z-elevated);
-    background: var(--preview-section-bg, linear-gradient(135deg, #4c79ff, #74c0fc));
+    background: var(--preview-section-bg, linear-gradient(135deg, var(--color-primary), var(--color-primary-light)));
     margin: 0 -16px var(--space-3-5) -16px;
     padding: var(--space-3) var(--space-4) 14px var(--space-4);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-dropdown);
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 .preferences-preview-label {
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     font-weight: 600;
     color: var(--pref-panel-text);
     text-transform: uppercase;
@@ -398,7 +398,7 @@ dialog.preferences-modal::backdrop {
 .preferences-preview-container {
     border-radius: var(--radius-10);
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
 }
 
 .preview-app-bg {
@@ -406,18 +406,18 @@ dialog.preferences-modal::backdrop {
     background:
         var(--preview-bg-image,
             var(--preview-pattern-bg,
-                var(--preview-app-bg, linear-gradient(135deg, #4c79ff, #74c0fc))));
+                var(--preview-app-bg, linear-gradient(135deg, var(--color-primary), var(--color-primary-light)))));
     background-size: cover, 100px 100px, cover;
     background-position: center;
     transition: background var(--transition-normal) ease;
 }
 
 .preview-title {
-    background: var(--preview-title-bg, #ffffff);
-    color: var(--preview-title-text, #2b2b2b);
+    background: var(--preview-title-bg, var(--color-white));
+    color: var(--preview-title-text, var(--color-gray-800));
     padding: var(--space-2) 10px;
     border-radius: var(--radius-6);
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     font-weight: 600;
     margin-bottom: var(--space-2);
     text-align: left;
@@ -425,7 +425,7 @@ dialog.preferences-modal::backdrop {
 }
 
 .preview-task-list {
-    background: var(--preview-task-list-bg, #ffffff);
+    background: var(--preview-task-list-bg, var(--color-white));
     border-radius: var(--radius-6);
     padding: var(--space-1-5);
     margin-bottom: var(--space-2);
@@ -437,7 +437,7 @@ dialog.preferences-modal::backdrop {
     align-items: center;
     gap: var(--space-2);
     padding: 6px var(--space-2);
-    background: var(--preview-task-bg, #ffffff);
+    background: var(--preview-task-bg, var(--color-white));
     border-radius: var(--radius-sm);
     margin-bottom: var(--space-1);
     transition: background var(--transition-normal) ease;
@@ -451,16 +451,16 @@ dialog.preferences-modal::backdrop {
     width: 16px;
     height: 16px;
     border-radius: var(--radius-sm);
-    border: 2px solid var(--preview-checkbox-incomplete-bg, rgba(180, 180, 180, 0.6));
-    background: var(--preview-checkbox-incomplete-bg, rgba(200, 200, 200, 0.25));
+    border: 2px solid var(--preview-checkbox-incomplete-bg, var(--color-gray-300));
+    background: var(--preview-checkbox-incomplete-bg, var(--overlay-faint));
     flex-shrink: 0;
     position: relative;
     transition: all var(--transition-normal) ease;
 }
 
 .preview-checkbox.checked {
-    background: var(--preview-checkbox-bg, #5db567);
-    border-color: var(--preview-checkbox-bg, #5db567);
+    background: var(--preview-checkbox-bg, var(--color-success-light));
+    border-color: var(--preview-checkbox-bg, var(--color-success-light));
 }
 
 .preview-checkbox.checked::after {
@@ -470,20 +470,20 @@ dialog.preferences-modal::backdrop {
     top: 1px;
     width: 4px;
     height: 8px;
-    border: solid var(--preview-checkmark, #124609);
+    border: solid var(--preview-checkmark, var(--color-success));
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
 }
 
 .preview-task-text {
-    font-size: 11px;
-    color: var(--preview-task-text, #333333);
+    font-size: var(--font-size-xs);
+    color: var(--preview-task-text, var(--color-gray-700));
     transition: color var(--transition-normal) ease;
 }
 
 .preview-progress-bar {
     height: 6px;
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--overlay-white-light);
     border-radius: var(--radius-xs);
     overflow: hidden;
     margin-bottom: var(--space-2);
@@ -492,7 +492,7 @@ dialog.preferences-modal::backdrop {
 .preview-progress-fill {
     width: 50%;
     height: 100%;
-    background: var(--preview-progress-bar, #82db8c);
+    background: var(--preview-progress-bar, var(--color-success-light));
     border-radius: var(--radius-xs);
     transition: background var(--transition-normal) ease;
 }
@@ -504,7 +504,7 @@ dialog.preferences-modal::backdrop {
 }
 
 .preview-button {
-    color: white;
+    color: var(--color-white);
     padding: var(--space-1-25) 0;
     border-radius: var(--radius-5);
     font-size: 9px;
@@ -514,17 +514,17 @@ dialog.preferences-modal::backdrop {
 }
 
 .preview-complete-btn {
-    background: var(--preview-complete-btn, #08c352);
+    background: var(--preview-complete-btn, var(--color-complete-btn));
     flex: 1;
 }
 
 .preview-clear-btn {
-    background: var(--preview-clear-btn, #3b82f6);
+    background: var(--preview-clear-btn, var(--color-todo-btn));
     flex: 1;
 }
 
 .preview-stats-panel {
-    background: var(--preview-stats-bg, rgba(255, 255, 255, 0.45));
+    background: var(--preview-stats-bg, var(--overlay-white-medium));
     border-radius: var(--radius-6);
     padding: 6px var(--space-2);
     margin-top: var(--space-2);
@@ -541,7 +541,7 @@ dialog.preferences-modal::backdrop {
 }
 
 .preview-doughnut-fill {
-    stroke: var(--preview-stats-doughnut, #4caf50);
+    stroke: var(--preview-stats-doughnut, var(--color-success));
     transition: stroke var(--transition-normal) ease;
 }
 
@@ -552,14 +552,14 @@ dialog.preferences-modal::backdrop {
 
 .preview-stats-label {
     font-size: 9px;
-    color: var(--preview-stats-text, #333);
+    color: var(--preview-stats-text, var(--color-gray-700));
     margin-bottom: var(--space-0-75);
     transition: color var(--transition-normal) ease;
 }
 
 .preview-stats-bar {
     height: 4px;
-    background: rgba(200, 200, 200, 0.3);
+    background: var(--overlay-medium);
     border-radius: var(--radius-2xs);
     overflow: hidden;
 }
@@ -568,8 +568,8 @@ dialog.preferences-modal::backdrop {
     width: 62%;
     height: 100%;
     background: linear-gradient(90deg,
-        var(--preview-stats-progress, #4c79ff),
-        color-mix(in srgb, var(--preview-stats-progress, #4c79ff), white 30%)
+        var(--preview-stats-progress, var(--color-primary)),
+        color-mix(in srgb, var(--preview-stats-progress, var(--color-primary)), white 30%)
     );
     border-radius: var(--radius-2xs);
     transition: background var(--transition-normal) ease;
@@ -584,13 +584,13 @@ dialog.preferences-modal::backdrop {
 .preview-panel {
     font-size: 8px;
     font-weight: 600;
-    color: var(--preview-panel-text, #ffffff);
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(4px);
+    color: var(--preview-panel-text, var(--color-white));
+    background: var(--overlay-white-light);
     -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
     padding: 3px var(--space-2);
     border-radius: var(--radius-sm);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--overlay-white-light);
     transition: color var(--transition-normal) ease, opacity var(--transition-normal) ease;
 }
 
@@ -609,7 +609,7 @@ dialog.preferences-modal::backdrop {
 .preferences-quick-presets {
     margin-bottom: var(--space-3-5);
     padding: var(--space-3);
-    background: var(--theme-input-bg, rgba(0, 0, 0, 0.03));
+    background: var(--color-blue-pale-light);
     border-radius: var(--radius-10);
 }
 
@@ -617,15 +617,15 @@ dialog.preferences-modal::backdrop {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     font-weight: 600;
-    color: var(--theme-modal-text, #333);
+    color: var(--theme-modal-text, var(--color-gray-700));
     margin-bottom: var(--space-2-5);
     text-align: left;
 }
 
 .preferences-section-icon {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
 }
 
 .preferences-quick-presets-grid {
@@ -640,17 +640,17 @@ dialog.preferences-modal::backdrop {
     align-items: center;
     gap: var(--space-1);
     padding: var(--space-2) var(--space-1);
-    background: var(--theme-modal-bg, #fff);
-    border: 1px solid var(--theme-border, #ddd);
+    background: var(--color-white);
+    border: 1px solid var(--border-blue-subtle);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all var(--transition-fast) ease;
 }
 
 .quick-preset-btn:hover {
-    border-color: var(--theme-accent, #4a90e2);
+    border-color: var(--theme-accent, var(--color-primary));
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
 }
 
 .quick-preset-btn:active {
@@ -661,80 +661,61 @@ dialog.preferences-modal::backdrop {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    border: 2px solid rgba(0, 0, 0, 0.1);
+    border: 2px solid var(--overlay-medium);
 }
 
 .quick-preset-name {
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     font-weight: 500;
-    color: var(--theme-modal-text, #555);
+    color: var(--theme-modal-text, var(--color-gray-600));
 }
 
 /* =============================================================================
    SAVED PRESETS SECTION
    ============================================================================= */
 
+/* Saved Presets uses .preferences-section for structure — only override spacing */
 .preferences-presets-section {
     margin-bottom: var(--space-3-5);
-    padding: var(--space-3);
-    background: var(--theme-input-bg, rgba(0, 0, 0, 0.03));
-    border-radius: var(--radius-10);
-}
-
-.preferences-presets-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--space-2-5);
-    flex-wrap: wrap;
-    gap: var(--space-2);
-}
-
-.preferences-presets-title {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--theme-modal-text, #333);
 }
 
 .preferences-presets-actions {
     display: flex;
     gap: var(--space-1-5);
+    margin-bottom: var(--space-2);
 }
 
 .preferences-import-btn {
     padding: var(--space-1-25) var(--space-2-5);
     background: transparent;
-    color: var(--theme-modal-text, #555);
-    border: 1px solid var(--theme-border, #ddd);
+    color: var(--theme-modal-text, var(--color-gray-600));
+    border: 1px solid var(--theme-border, var(--color-gray-300));
     border-radius: var(--radius-6);
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     font-weight: 500;
     cursor: pointer;
     transition: all var(--transition-fast) ease;
 }
 
 .preferences-import-btn:hover {
-    background: var(--theme-hover-bg, rgba(0, 0, 0, 0.05));
-    border-color: var(--theme-accent, #4a90e2);
+    background: var(--theme-hover-bg, var(--overlay-faint));
+    border-color: var(--theme-accent, var(--color-primary));
 }
 
 .preferences-save-btn {
     padding: var(--space-1-25) var(--space-2-5);
-    background: var(--theme-success, #28a745);
-    color: white;
+    background: var(--theme-success, var(--color-success));
+    color: var(--color-white);
     border: none;
     border-radius: var(--radius-6);
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     font-weight: 600;
     cursor: pointer;
     transition: background var(--transition-fast) ease;
 }
 
 .preferences-save-btn:hover {
-    background: var(--theme-success-hover, #218838);
+    background: var(--theme-success-hover, var(--color-success));
 }
 
 .preferences-presets-list {
@@ -743,8 +724,8 @@ dialog.preferences-modal::backdrop {
 }
 
 .preferences-no-presets {
-    font-size: 12px;
-    color: var(--theme-text-muted, #888);
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-600);
     text-align: center;
     padding: var(--space-2);
 }
@@ -755,8 +736,8 @@ dialog.preferences-modal::backdrop {
     gap: var(--space-2);
     padding: 6px var(--space-2);
     margin-bottom: var(--space-1-5);
-    background: var(--theme-modal-bg, #fff);
-    border: 1px solid var(--theme-border, #ddd);
+    background: var(--color-blue-pale-light);
+    border: 1px solid var(--theme-border, var(--color-gray-300));
     border-radius: var(--radius-6);
     transition: all var(--transition-fast) ease;
 }
@@ -766,7 +747,7 @@ dialog.preferences-modal::backdrop {
 }
 
 .preferences-preset-item:hover {
-    border-color: var(--theme-accent, #4a90e2);
+    border-color: var(--theme-accent, var(--color-primary));
 }
 
 /* Color swatch thumbnails for presets */
@@ -792,9 +773,9 @@ dialog.preferences-modal::backdrop {
 
 .preferences-preset-name {
     flex: 1;
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     font-weight: 500;
-    color: var(--theme-modal-text, #333);
+    color: var(--theme-modal-text, var(--color-gray-700));
     cursor: pointer;
     padding: var(--space-0-75) var(--space-1-5);
     border-radius: var(--radius-sm);
@@ -814,7 +795,7 @@ dialog.preferences-modal::backdrop {
 }
 
 .preferences-preset-name:hover {
-    background: var(--theme-hover-bg, rgba(0, 0, 0, 0.05));
+    background: var(--theme-hover-bg, var(--overlay-faint));
 }
 
 .preferences-preset-actions {
@@ -826,55 +807,55 @@ dialog.preferences-modal::backdrop {
 .preferences-preset-btn {
     padding: var(--space-0-75) var(--space-1-5);
     background: transparent;
-    border: 1px solid var(--theme-border, #ddd);
+    border: 1px solid var(--theme-border, var(--color-gray-300));
     border-radius: var(--radius-sm);
-    font-size: 11px;
+    font-size: var(--font-size-xs);
     cursor: pointer;
     transition: all var(--transition-fast) ease;
-    color: var(--theme-modal-text, #555);
+    color: var(--theme-modal-text, var(--color-gray-600));
 }
 
 .preferences-preset-btn:hover {
-    background: var(--theme-hover-bg, rgba(0, 0, 0, 0.05));
+    background: var(--theme-hover-bg, var(--overlay-faint));
 }
 
 .preferences-preset-btn.load-btn {
-    background: var(--theme-button-bg, #4a90e2);
-    color: white;
-    border-color: var(--theme-button-bg, #4a90e2);
+    background: var(--theme-button-bg, var(--color-primary));
+    color: var(--color-white);
+    border-color: var(--theme-button-bg, var(--color-primary));
 }
 
 .preferences-preset-btn.load-btn:hover {
-    background: var(--theme-button-hover, #3a7bc8);
+    background: var(--theme-button-hover, var(--color-primary-dark));
 }
 
 .preferences-preset-btn.export-btn:hover {
-    background: var(--theme-info, #17a2b8);
-    color: white;
-    border-color: var(--theme-info, #17a2b8);
+    background: var(--theme-info, var(--color-primary));
+    color: var(--color-white);
+    border-color: var(--theme-info, var(--color-primary));
 }
 
 .preferences-preset-btn.delete-btn:hover {
-    background: var(--theme-error, #dc3545);
-    color: white;
-    border-color: var(--theme-error, #dc3545);
+    background: var(--theme-error, var(--color-error));
+    color: var(--color-white);
+    border-color: var(--theme-error, var(--color-error));
 }
 
 /* Preset name editing */
 .preferences-preset-name-input {
     flex: 1;
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     font-weight: 500;
     padding: var(--space-0-75) var(--space-1-5);
-    border: 1px solid var(--theme-accent, #4a90e2);
+    border: 1px solid var(--theme-accent, var(--color-primary));
     border-radius: var(--radius-sm);
     outline: none;
-    background: var(--theme-modal-bg, #fff);
-    color: var(--theme-modal-text, #333);
+    background: var(--theme-modal-bg, var(--color-white));
+    color: var(--theme-modal-text, var(--color-gray-700));
 }
 
 .preferences-preset-name-input:focus-visible {
-    box-shadow: 0 0 0 2px var(--theme-input-focus-border, #4c79ff);
+    box-shadow: 0 0 0 2px var(--theme-input-focus-border, var(--color-primary));
 }
 
 /* =============================================================================
@@ -883,9 +864,13 @@ dialog.preferences-modal::backdrop {
 
 .preferences-section {
     margin-bottom: var(--space-2-5);
-    background: var(--theme-input-bg, rgba(0, 0, 0, 0.03));
+    background: transparent;
     border-radius: var(--radius-10);
     overflow: hidden;
+}
+
+.preferences-section:not(.collapsed) {
+    background: var(--color-blue-pale-light);
 }
 
 .preferences-section-header.collapsible {
@@ -893,25 +878,36 @@ dialog.preferences-modal::backdrop {
     align-items: center;
     gap: var(--space-2);
     padding: var(--space-3) 14px;
+    background: var(--color-blue-pale);
+}
+
+/* Preview label inherits the section gradient — don't override with pale blue */
+.preferences-preview-label.preferences-section-header.collapsible {
+    background: transparent;
     cursor: pointer;
+    -webkit-user-select: none;
     user-select: none;
     transition: background var(--transition-fast) ease;
 }
 
+.preferences-section:not(.collapsed) .preferences-section-header.collapsible {
+    background: var(--color-blue-pale-mid);
+}
+
 .preferences-section-header.collapsible:hover {
-    background: var(--theme-hover-bg, rgba(0, 0, 0, 0.05));
+    background: var(--color-blue-pale-mid);
 }
 
 .preferences-section-header.collapsible:focus-visible {
-    outline: 2px solid var(--accent-color, #007bff);
+    outline: 2px solid var(--accent-color, var(--color-primary));
     outline-offset: -2px;
     border-radius: var(--radius-md);
 }
 
 .preferences-section-toggle {
     margin-left: auto;
-    font-size: 12px;
-    color: var(--theme-text-muted, #888);
+    font-size: var(--font-size-xs);
+    color: var(--theme-text-muted, var(--color-gray-400));
     transition: transform var(--transition-normal) ease;
 }
 
@@ -938,7 +934,7 @@ dialog.preferences-modal::backdrop {
     gap: var(--space-2-5);
     padding: 10px var(--space-3);
     margin-bottom: var(--space-1-5);
-    background: var(--theme-modal-bg, #fff);
+    background: var(--color-blue-pale-light);
     border-radius: var(--radius-md);
     transition: all var(--transition-fast) ease;
     border: 1px solid transparent;
@@ -949,11 +945,11 @@ dialog.preferences-modal::backdrop {
 }
 
 .preferences-color-row:hover {
-    border-color: var(--theme-border, #ddd);
+    border-color: var(--theme-border, var(--color-gray-300));
 }
 
 .pref-color-icon {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     flex-shrink: 0;
     width: 20px;
     text-align: center;
@@ -961,9 +957,9 @@ dialog.preferences-modal::backdrop {
 
 .preferences-color-row label {
     flex: 1;
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     font-weight: 500;
-    color: var(--theme-modal-text, #333);
+    color: var(--theme-modal-text, var(--color-gray-700));
     text-align: left;
 }
 
@@ -972,7 +968,7 @@ dialog.preferences-modal::backdrop {
     width: 48px;
     height: 36px;
     padding: 0;
-    border: 2px solid var(--theme-border, #ddd);
+    border: 2px solid var(--theme-border, var(--color-gray-300));
     border-radius: var(--radius-md);
     cursor: pointer;
     background: transparent;
@@ -980,7 +976,7 @@ dialog.preferences-modal::backdrop {
 }
 
 .preferences-color-row input[type="color"]:hover {
-    border-color: var(--theme-accent, #4a90e2);
+    border-color: var(--theme-accent, var(--color-primary));
     transform: scale(1.05);
 }
 
@@ -1002,17 +998,17 @@ dialog.preferences-modal::backdrop {
 .preferences-reset-btn {
     padding: var(--space-1) var(--space-2);
     background: transparent;
-    color: var(--theme-text-muted, #888);
-    border: 1px solid var(--theme-border, #ddd);
+    color: var(--theme-text-muted, var(--color-gray-400));
+    border: 1px solid var(--theme-border, var(--color-gray-300));
     border-radius: var(--radius-sm);
-    font-size: 11px;
+    font-size: var(--font-size-xs);
     cursor: pointer;
     transition: all var(--transition-fast) ease;
 }
 
 .preferences-reset-btn:hover {
-    background: var(--theme-hover-bg, rgba(0, 0, 0, 0.05));
-    color: var(--theme-modal-text, #333);
+    background: var(--theme-hover-bg, var(--overlay-faint));
+    color: var(--theme-modal-text, var(--color-gray-700));
 }
 
 /* Range slider in preferences */
@@ -1021,7 +1017,7 @@ dialog.preferences-modal::backdrop {
     appearance: none;
     width: 100px;
     height: 6px;
-    background: var(--theme-border, #ddd);
+    background: var(--theme-border, var(--color-gray-300));
     border-radius: var(--radius-xs);
     outline: none;
     cursor: pointer;
@@ -1029,7 +1025,7 @@ dialog.preferences-modal::backdrop {
 }
 
 .preferences-color-row input[type="range"]:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
     outline-offset: 2px;
 }
 
@@ -1038,27 +1034,27 @@ dialog.preferences-modal::backdrop {
     appearance: none;
     width: 16px;
     height: 16px;
-    background: var(--theme-btn-primary-bg, #4c79ff);
+    background: var(--theme-btn-primary-bg, var(--color-primary));
     border-radius: 50%;
     cursor: pointer;
     border: 2px solid var(--color-white);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-xs);
 }
 
 .preferences-color-row input[type="range"]::-moz-range-thumb {
     width: 16px;
     height: 16px;
-    background: var(--theme-btn-primary-bg, #4c79ff);
+    background: var(--theme-btn-primary-bg, var(--color-primary));
     border-radius: 50%;
     cursor: pointer;
     border: 2px solid var(--color-white);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-xs);
 }
 
 .pref-range-value {
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     font-weight: 600;
-    color: var(--theme-modal-text, #333);
+    color: var(--theme-modal-text, var(--color-gray-700));
     min-width: 32px;
     text-align: center;
     transition: opacity var(--transition-fast) ease;
@@ -1071,57 +1067,57 @@ dialog.preferences-modal::backdrop {
 .preferences-bg-image-section {
     margin: var(--space-2) 0;
     padding: var(--space-2) 0;
-    border-top: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.06));
-    border-bottom: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.06));
+    border-top: 1px solid var(--theme-modal-border, var(--overlay-light));
+    border-bottom: 1px solid var(--theme-modal-border, var(--overlay-light));
 }
 
 .preferences-upload-btn,
 .preferences-remove-btn {
     padding: 6px var(--space-3);
     border-radius: var(--radius-6);
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     font-weight: 500;
     cursor: pointer;
     transition: all var(--transition-fast) ease;
 }
 
 .preferences-upload-btn {
-    background: var(--theme-accent, #4a90e2);
-    color: white;
+    background: var(--theme-accent, var(--color-primary));
+    color: var(--color-white);
     border: none;
 }
 
 .preferences-upload-btn:hover {
-    background: var(--theme-accent-hover, #3a7bc8);
+    background: var(--theme-accent-hover, var(--color-primary-dark));
     transform: scale(1.02);
 }
 
 .preferences-remove-btn {
     background: transparent;
-    color: var(--theme-text-muted, #888);
-    border: 1px solid var(--theme-border, #ddd);
+    color: var(--theme-text-muted, var(--color-gray-400));
+    border: 1px solid var(--theme-border, var(--color-gray-300));
     margin-left: var(--space-1-5);
 }
 
 .preferences-remove-btn:hover {
-    background: rgba(220, 53, 69, 0.1);
+    background: color-mix(in srgb, var(--color-error) 10%, transparent);
     color: var(--theme-error, var(--color-error));
     border-color: var(--color-error-light);
 }
 
 .preferences-select {
     padding: var(--space-1-5) var(--space-2-5);
-    border: 1px solid var(--theme-border, #ddd);
+    border: 1px solid var(--theme-border, var(--color-gray-300));
     border-radius: var(--radius-6);
-    background: var(--theme-modal-bg, #fff);
-    color: var(--theme-modal-text, #333);
-    font-size: 12px;
+    background: var(--theme-modal-bg, var(--color-white));
+    color: var(--theme-modal-text, var(--color-gray-700));
+    font-size: var(--font-size-xs);
     cursor: pointer;
     min-width: 120px;
 }
 
 .preferences-select:hover {
-    border-color: var(--theme-accent, #4a90e2);
+    border-color: var(--theme-accent, var(--color-primary));
 }
 
 .preferences-bg-image-options {
@@ -1132,7 +1128,7 @@ dialog.preferences-modal::backdrop {
 .bg-image-preview-container {
     margin-top: var(--space-2-5);
     padding: var(--space-2);
-    background: var(--theme-header-bg, #f5f5f5);
+    background: var(--theme-header-bg, var(--color-gray-100));
     border-radius: var(--radius-md);
     text-align: center;
 }
@@ -1142,12 +1138,12 @@ dialog.preferences-modal::backdrop {
     max-height: 100px;
     border-radius: var(--radius-6);
     object-fit: contain;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
 }
 
 .preferences-bg-image-hint {
-    font-size: 12px;
-    color: var(--theme-text-muted, #888);
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-600);
     margin-top: var(--space-1-5);
     padding-left: var(--space-7);
 }
@@ -1160,8 +1156,8 @@ dialog.preferences-modal::backdrop {
     display: flex;
     gap: var(--space-2-5);
     padding: var(--space-3) var(--space-4);
-    background: var(--theme-header-bg, #f5f5f5);
-    border-top: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.08));
+    background: var(--theme-header-bg, var(--color-gray-100));
+    border-top: 1px solid var(--theme-modal-border, var(--overlay-light));
     flex-shrink: 0;
 }
 
@@ -1173,18 +1169,18 @@ dialog.preferences-modal::backdrop {
     gap: var(--space-1-5);
     padding: var(--space-2-5);
     background: transparent;
-    color: var(--theme-modal-text, #555);
-    border: 1px solid var(--theme-border, #ddd);
+    color: var(--theme-modal-text, var(--color-gray-600));
+    border: 1px solid var(--theme-border, var(--color-gray-300));
     border-radius: var(--radius-md);
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     font-weight: 500;
     cursor: pointer;
     transition: all var(--transition-fast) ease;
 }
 
 .preferences-undo-btn:hover:not(:disabled) {
-    background: var(--theme-hover-bg, rgba(0, 0, 0, 0.05));
-    border-color: var(--theme-accent, #4a90e2);
+    background: var(--theme-hover-bg, var(--overlay-faint));
+    border-color: var(--theme-accent, var(--color-primary));
 }
 
 .preferences-undo-btn:disabled {
@@ -1193,25 +1189,25 @@ dialog.preferences-modal::backdrop {
 }
 
 .preferences-undo-btn span {
-    font-size: 16px;
+    font-size: var(--font-size-base);
 }
 
 .preferences-reset-all-btn {
     flex: 1;
     padding: var(--space-2-5);
-    background: transparent;
-    color: var(--theme-error, #dc3545);
-    border: 1px solid var(--theme-error, #dc3545);
+    background: color-mix(in srgb, var(--color-error) 10%, transparent);
+    color: var(--color-black);
+    border: 1px solid var(--theme-error, var(--color-error));
     border-radius: var(--radius-md);
-    font-size: 13px;
-    font-weight: 500;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
     cursor: pointer;
     transition: all var(--transition-fast) ease;
 }
 
-.preferences-reset-all-btn:hover {
-    background: var(--theme-error, #dc3545);
-    color: white;
+.preferences-footer button.preferences-reset-all-btn:hover {
+    background: var(--theme-error, var(--color-error));
+    color: var(--color-white);
 }
 
 /* Close button */
@@ -1219,11 +1215,11 @@ dialog.preferences-modal::backdrop {
     width: 100%;
     margin: 0;
     padding: var(--space-3-5);
-    background: var(--theme-button-bg, #4a90e2);
-    color: var(--theme-button-text, white);
+    background: var(--theme-button-bg, var(--color-primary));
+    color: var(--theme-button-text, var(--color-white));
     border: none;
     border-radius: 0;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
     transition: all var(--transition-fast) ease;
@@ -1231,7 +1227,7 @@ dialog.preferences-modal::backdrop {
 }
 
 .preferences-modal .close-btn:hover {
-    background: var(--theme-button-hover, #3a7bc8);
+    background: var(--theme-button-hover, var(--color-primary-dark));
 }
 
 /* =============================================================================
@@ -1280,7 +1276,7 @@ dialog.preferences-modal::backdrop {
 
     .preferences-modal-content h2 {
         padding: 14px var(--space-4);
-        font-size: 16px;
+        font-size: var(--font-size-base);
     }
 
     .preferences-scroll-area {
@@ -1309,7 +1305,7 @@ dialog.preferences-modal::backdrop {
     .preferences-preview-label .preferences-section-toggle {
         display: inline;
         margin-left: auto;
-        font-size: 11px;
+        font-size: var(--font-size-xs);
         color: var(--pref-panel-text);
         transition: transform var(--transition-normal) ease;
     }
@@ -1343,13 +1339,13 @@ dialog.preferences-modal::backdrop {
 
     .preferences-modal-content h2 {
         padding: var(--space-3) 14px;
-        font-size: 15px;
+        font-size: var(--font-size-sm);
     }
 
     .preferences-theme-notice {
         padding: var(--space-2) 10px;
         margin: 10px var(--space-3) 0;
-        font-size: 12px;
+        font-size: var(--font-size-xs);
     }
 
     .preferences-scroll-area {
@@ -1380,7 +1376,7 @@ dialog.preferences-modal::backdrop {
     }
 
     .preferences-color-row label {
-        font-size: 12px;
+        font-size: var(--font-size-xs);
     }
 
     .preferences-color-row input[type="color"] {
@@ -1393,7 +1389,7 @@ dialog.preferences-modal::backdrop {
     }
 
     .pref-color-icon {
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         width: 16px;
     }
 
@@ -1407,7 +1403,7 @@ dialog.preferences-modal::backdrop {
 
     .preferences-modal .close-btn {
         padding: var(--space-3);
-        font-size: 13px;
+        font-size: var(--font-size-sm);
     }
 
     /* Compact preview on mobile — collapsible behavior inherited from 768px */
@@ -1418,7 +1414,7 @@ dialog.preferences-modal::backdrop {
 
     .preferences-preview-label.preferences-section-header {
         margin-bottom: var(--space-1-5);
-        font-size: 11px;
+        font-size: var(--font-size-xs);
     }
 
     .preferences-preview-label .preferences-section-toggle {
