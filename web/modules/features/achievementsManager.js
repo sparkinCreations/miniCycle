@@ -240,52 +240,16 @@ export class AchievementsManager {
         this.modalOverlay.id = DOM_IDS.ACHIEVEMENTS_MODAL_DIALOG;
         this.modalOverlay.setAttribute('aria-label', getLabel('history.achievements'));
         this.modalOverlay.setAttribute('aria-modal', 'true');
-        this.modalOverlay.style.cssText = `
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        `;
+        this.modalOverlay.style.opacity = '0';
+        this.modalOverlay.style.transition = 'opacity 0.2s ease';
 
         this.modalOverlay.innerHTML = `
-            <div class="achievements-modal" style="
-                background: var(--bg-primary, #fff);
-                border-radius: 12px;
-                width: 90%;
-                max-width: 500px;
-                max-height: 80vh;
-                display: flex;
-                flex-direction: column;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-                transform: translateY(20px);
-                transition: transform 0.2s ease;
-            ">
-                <header style="
-                    display: flex;
-                    align-items: center;
-                    padding: 16px;
-                    border-bottom: 1px solid var(--border-color, #e0e0e0);
-                    gap: 12px;
-                ">
-                    <button class="achievements-back-btn" aria-label="${getLabel('button.close')}" style="
-                        background: none;
-                        border: none;
-                        font-size: 20px;
-                        cursor: pointer;
-                        padding: 4px 8px;
-                        color: var(--text-primary, #333);
-                    ">&larr;</button>
-                    <h2 style="
-                        flex: 1;
-                        margin: 0;
-                        font-size: 18px;
-                        font-weight: 600;
-                        color: var(--text-primary, #333);
-                    ">${getLabel('achievement.title')}</h2>
+            <div class="achievements-modal">
+                <header class="achievements-header">
+                    <button class="achievements-back-btn" aria-label="${getLabel('button.close')}">&larr;</button>
+                    <h2 class="achievements-title">${getLabel('achievement.title')}</h2>
                 </header>
-                <div class="achievements-modal-content" style="
-                    flex: 1;
-                    overflow-y: auto;
-                    padding: 16px;
-                "></div>
+                <div class="achievements-modal-content"></div>
             </div>
         `;
 
@@ -402,25 +366,19 @@ export class AchievementsManager {
 
         // Progress summary
         html += `
-            <div class="achievements-summary" style="
-                background: var(--bg-secondary, #f5f5f5);
-                border-radius: 8px;
-                padding: 16px;
-                margin-bottom: 20px;
-                text-align: center;
-            ">
-                <div style="display: flex; justify-content: space-around; gap: 16px;">
+            <div class="achievements-summary">
+                <div class="achievements-summary-row">
                     <div>
-                        <div style="font-size: 24px; font-weight: 600; color: #4361ee;">${cyclesCompleted}</div>
-                        <div style="font-size: 12px; color: var(--text-secondary, #666);">${getLabel('achievement.statCycles')}</div>
+                        <div class="achievements-stat-value achievements-stat-value--cycles">${cyclesCompleted}</div>
+                        <div class="achievements-stat-label">${getLabel('achievement.statCycles')}</div>
                     </div>
                     <div>
-                        <div style="font-size: 24px; font-weight: 600; color: #10b981;">${tasksCleared}</div>
-                        <div style="font-size: 12px; color: var(--text-secondary, #666);">${getLabel('achievement.statCleared')}</div>
+                        <div class="achievements-stat-value achievements-stat-value--tasks">${tasksCleared}</div>
+                        <div class="achievements-stat-label">${getLabel('achievement.statCleared')}</div>
                     </div>
                     <div>
-                        <div style="font-size: 24px; font-weight: 600; color: var(--text-primary, #333);">${unlocked.length}</div>
-                        <div style="font-size: 12px; color: var(--text-primary, #333);">${getLabel('achievement.statUnlocked')}</div>
+                        <div class="achievements-stat-value achievements-stat-value--count">${unlocked.length}</div>
+                        <div class="achievements-stat-label">${getLabel('achievement.statUnlocked')}</div>
                     </div>
                 </div>
             </div>
@@ -430,13 +388,7 @@ export class AchievementsManager {
         if (unlocked.length > 0) {
             html += `<div class="achievements-unlocked">`;
             html += `
-                <h3 style="
-                    font-size: 12px;
-                    font-weight: 600;
-                    color: var(--text-secondary, #666);
-                    text-transform: uppercase;
-                    margin: 0 0 12px;
-                ">${getLabel('achievement.sectionUnlocked')}</h3>
+                <h3 class="achievements-section-heading">${getLabel('achievement.sectionUnlocked')}</h3>
             `;
             html += unlocked.map(a => this._renderUnlockedAchievement(a)).join('');
             html += `</div>`;
@@ -446,13 +398,7 @@ export class AchievementsManager {
         if (upcoming.length > 0) {
             html += `<div class="achievements-upcoming">`;
             html += `
-                <h3 style="
-                    font-size: 12px;
-                    font-weight: 600;
-                    color: var(--text-secondary, #666);
-                    text-transform: uppercase;
-                    margin: 20px 0 12px;
-                ">${getLabel('achievement.sectionUpcoming')}</h3>
+                <h3 class="achievements-section-heading achievements-section-heading--upcoming">${getLabel('achievement.sectionUpcoming')}</h3>
             `;
             html += upcoming.map(u => this._renderUpcomingAchievement(u)).join('');
             html += `</div>`;
@@ -460,26 +406,16 @@ export class AchievementsManager {
 
         if (unlocked.length === 0 && upcoming.length === 0) {
             html = `
-                <div style="
-                    text-align: center;
-                    padding: 40px 20px;
-                    color: var(--text-secondary, #666);
-                ">
-                    <div style="font-size: 48px; margin-bottom: 16px;">🏆</div>
-                    <p style="margin: 0;">${getLabel('achievement.noAchievements')}</p>
+                <div class="achievements-empty-state">
+                    <div class="achievements-empty-emoji">🏆</div>
+                    <p class="achievements-empty-text">${getLabel('achievement.noAchievements')}</p>
                 </div>
             `;
         }
 
         // Achievement progress note
         html += `
-            <p style="
-                font-size: 12px;
-                color: var(--text-secondary, #666);
-                text-align: center;
-                margin: 16px 0 0;
-                font-style: italic;
-            ">${getLabel('achievement.progressNote')}</p>
+            <p class="achievements-progress-note">${getLabel('achievement.progressNote')}</p>
         `;
 
         content.innerHTML = html;
@@ -497,40 +433,16 @@ export class AchievementsManager {
         const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 
         return `
-            <div style="
-                display: flex;
-                align-items: flex-start;
-                gap: 12px;
-                padding: 12px;
-                background: var(--bg-secondary, #f5f5f5);
-                border-radius: 8px;
-                margin-bottom: 8px;
-            ">
-                <span style="font-size: 28px;">${milestone.emoji || '🏆'}</span>
-                <div style="flex: 1; min-width: 0;">
-                    <div style="
-                        font-weight: 600;
-                        color: var(--text-primary, #333);
-                    ">${milestone.name}</div>
-                    <div style="
-                        font-size: 13px;
-                        color: var(--text-secondary, #666);
-                        margin-top: 2px;
-                    ">${getLabel('achievement.description', { vars: { cycles: milestone.cycleThreshold, tasks: milestone.taskThreshold } })}</div>
-                    <div style="
-                        font-size: 12px;
-                        color: var(--text-secondary, #888);
-                        margin-top: 4px;
-                    ">
+            <div class="achievement-card">
+                <span class="achievement-card-emoji">${milestone.emoji || '🏆'}</span>
+                <div class="achievement-card-content">
+                    <div class="achievement-card-name">${milestone.name}</div>
+                    <div class="achievement-card-description">${getLabel('achievement.description', { vars: { cycles: milestone.cycleThreshold, tasks: milestone.taskThreshold } })}</div>
+                    <div class="achievement-card-date">
                         ${getLabel('achievement.unlockedOn', { vars: { date: dateStr, via: achievement.unlockedVia === 'cycles' ? getLabel('noun.cycle', { count: 2 }) : getLabel('noun.task', { count: 2 }) } })}
                     </div>
                     ${milestone.rewardLabel ? `
-                        <div style="
-                            font-size: 12px;
-                            color: var(--success-color, #28a745);
-                            margin-top: 4px;
-                            font-weight: 500;
-                        ">${getLabel('achievement.reward', { vars: { label: milestone.rewardLabel } })}</div>
+                        <div class="achievement-card-reward">${getLabel('achievement.reward', { vars: { label: milestone.rewardLabel } })}</div>
                     ` : ''}
                 </div>
             </div>
@@ -548,86 +460,30 @@ export class AchievementsManager {
         const cyclesHigher = cycleProgress >= taskProgress;
 
         return `
-            <div style="
-                display: flex;
-                align-items: flex-start;
-                gap: 12px;
-                padding: 12px;
-                background: var(--bg-secondary, #f5f5f5);
-                border-radius: 8px;
-                margin-bottom: 8px;
-                opacity: 0.8;
-            ">
-                <span style="font-size: 28px; filter: grayscale(1);">${milestone.emoji || '🏆'}</span>
-                <div style="flex: 1; min-width: 0;">
-                    <div style="
-                        font-weight: 600;
-                        color: var(--text-primary, #333);
-                    ">${milestone.name}</div>
-                    <div style="
-                        font-size: 13px;
-                        color: var(--text-secondary, #666);
-                        margin-top: 2px;
-                    ">${getLabel('achievement.description', { vars: { cycles: milestone.cycleThreshold, tasks: milestone.taskThreshold } })}</div>
-                    <!-- Combined progress bar -->
-                    <div role="progressbar"
+            <div class="achievement-card achievement-card--upcoming">
+                <span class="achievement-card-emoji">${milestone.emoji || '🏆'}</span>
+                <div class="achievement-card-content">
+                    <div class="achievement-card-name">${milestone.name}</div>
+                    <div class="achievement-card-description">${getLabel('achievement.description', { vars: { cycles: milestone.cycleThreshold, tasks: milestone.taskThreshold } })}</div>
+                    <div class="achievement-progress-bar" role="progressbar"
                         aria-valuenow="${Math.round(Math.max(cycleProgress, taskProgress))}"
                         aria-valuemin="0"
                         aria-valuemax="100"
-                        aria-label="${milestone.name} progress"
-                        style="
-                        position: relative;
-                        background: var(--border-color, #e0e0e0);
-                        border-radius: 4px;
-                        height: 8px;
-                        margin-top: 8px;
-                        overflow: hidden;
-                    ">
-                        <!-- Background bar (higher progress) -->
-                        <div style="
-                            position: absolute;
-                            top: 0;
-                            left: 0;
-                            background: ${cyclesHigher ? '#4361ee' : '#10b981'};
-                            height: 100%;
-                            width: ${Math.max(cycleProgress, taskProgress)}%;
-                            border-radius: 4px;
-                            transition: width 0.3s ease;
-                        "></div>
-                        <!-- Foreground bar (lower progress) -->
-                        <div style="
-                            position: absolute;
-                            top: 0;
-                            left: 0;
-                            background: ${cyclesHigher ? '#10b981' : '#4361ee'};
-                            height: 100%;
-                            width: ${Math.min(cycleProgress, taskProgress)}%;
-                            border-radius: 4px;
-                            transition: width 0.3s ease;
-                        "></div>
+                        aria-label="${milestone.name} progress">
+                        <div class="achievement-progress-fill ${cyclesHigher ? 'achievement-progress-fill--cycles' : 'achievement-progress-fill--tasks'}" style="width: ${Math.max(cycleProgress, taskProgress)}%;"></div>
+                        <div class="achievement-progress-fill ${cyclesHigher ? 'achievement-progress-fill--tasks' : 'achievement-progress-fill--cycles'}" style="width: ${Math.min(cycleProgress, taskProgress)}%;"></div>
                     </div>
-                    <!-- Legend and Reward -->
-                    <div style="
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: flex-start;
-                        margin-top: 6px;
-                        font-size: 11px;
-                    ">
-                        <div style="display: flex; flex-direction: column; gap: 2px;">
-                            <span style="color: #4361ee; font-weight: 500;">
-                                <span style="font-size: 14px;">●</span> ${getLabel('achievement.cyclesNeeded', { vars: { count: cyclesNeeded } })}
+                    <div class="achievement-legend">
+                        <div class="achievement-legend-items">
+                            <span class="achievement-legend-cycles">
+                                <span class="achievement-legend-bullet">●</span> ${getLabel('achievement.cyclesNeeded', { vars: { count: cyclesNeeded } })}
                             </span>
-                            <span style="color: #10b981; font-weight: 500;">
-                                <span style="font-size: 14px;">●</span> ${getLabel('achievement.tasksNeeded', { vars: { count: tasksNeeded } })}
+                            <span class="achievement-legend-tasks">
+                                <span class="achievement-legend-bullet">●</span> ${getLabel('achievement.tasksNeeded', { vars: { count: tasksNeeded } })}
                             </span>
                         </div>
                         ${milestone.rewardLabel ? `
-                            <span style="
-                                font-size: 11px;
-                                color: var(--text-secondary, #888);
-                                font-weight: 500;
-                            ">${getLabel('achievement.reward', { vars: { label: milestone.rewardLabel } })}</span>
+                            <span class="achievement-legend-reward">${getLabel('achievement.reward', { vars: { label: milestone.rewardLabel } })}</span>
                         ` : ''}
                     </div>
                 </div>
@@ -718,99 +574,30 @@ export class AchievementsManager {
         const tasksNeeded = Math.max(0, tierConfig.taskThreshold - achievements.tasksCleared);
         const cyclesHigher = cycleProgress >= taskProgress;
 
-        // Determine badge coin + modal colors based on unlock status and reward
-        let badgeBackground = 'linear-gradient(135deg, #e0e0e0, #c0c0c0)'; // locked — gray
-        let modalBg         = 'var(--bg-primary, #fff)';
-        let textPrimary     = 'var(--text-primary, #333)';
-        let textSecondary   = 'var(--text-secondary, #666)';
-        let textReward      = 'var(--primary-color, #4c79ff)';
-        if (isUnlocked) {
-            if (tierConfig.reward === 'habit-tracker') {
-                badgeBackground = 'linear-gradient(135deg, #c87132, #e8924a)'; // cognac amber
-                modalBg         = '#c87132';
-                textPrimary     = '#ffffff';
-                textSecondary   = 'rgba(255,255,255,0.8)';
-                textReward      = '#ffe0b8';
-            } else if (tierConfig.reward === 'fitness') {
-                badgeBackground = 'linear-gradient(135deg, #22a05e, #3dba74)'; // athletic green
-                modalBg         = '#22a05e';
-                textPrimary     = '#ffffff';
-                textSecondary   = 'rgba(255,255,255,0.8)';
-                textReward      = '#b8f0d4';
-            } else if (tierConfig.reward === 'scholar') {
-                badgeBackground = 'linear-gradient(135deg, #4440c0, #6560d8)'; // indigo
-                modalBg         = '#4440c0';
-                textPrimary     = '#ffffff';
-                textSecondary   = 'rgba(255,255,255,0.8)';
-                textReward      = '#c8c4ff';
-            } else if (tierConfig.reward === 'cleaning') {
-                badgeBackground = 'linear-gradient(135deg, #0a8db5, #20a8d8)'; // fresh teal
-                modalBg         = '#0a8db5';
-                textPrimary     = '#ffffff';
-                textSecondary   = 'rgba(255,255,255,0.8)';
-                textReward      = '#b8eeff';
-            } else if (tierConfig.reward === 'whack-a-order') {
-                badgeBackground = 'linear-gradient(135deg, #8b0000, #dc143c)'; // game red
-                modalBg         = '#8b0000';
-                textPrimary     = '#ffffff';
-                textSecondary   = 'rgba(255,255,255,0.8)';
-                textReward      = '#ffb8c8';
-            } else {
-                badgeBackground = 'linear-gradient(135deg, #22a05e, #3dba74)';
-            }
-        }
+        // Determine reward attribute for CSS theming
+        const rewardAttr = isUnlocked ? tierConfig.reward : null;
 
         // Create overlay
         const overlay = document.createElement('dialog');
         overlay.id = 'badge-detail-overlay';
-        overlay.style.cssText = `
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        `;
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.2s ease';
 
         // Build popup content
         let progressHtml = '';
         if (!isUnlocked) {
             progressHtml = `
-                <div style="width: 100%; max-width: 180px; margin-top: 4px;">
-                    <div style="
-                        position: relative;
-                        background: var(--border-color, #e0e0e0);
-                        border-radius: 4px;
-                        height: 8px;
-                        overflow: hidden;
-                    ">
-                        <div style="
-                            position: absolute;
-                            top: 0;
-                            left: 0;
-                            background: ${cyclesHigher ? '#4361ee' : '#10b981'};
-                            height: 100%;
-                            width: ${Math.max(cycleProgress, taskProgress)}%;
-                            border-radius: 4px;
-                        "></div>
-                        <div style="
-                            position: absolute;
-                            top: 0;
-                            left: 0;
-                            background: ${cyclesHigher ? '#10b981' : '#4361ee'};
-                            height: 100%;
-                            width: ${Math.min(cycleProgress, taskProgress)}%;
-                            border-radius: 4px;
-                        "></div>
+                <div class="badge-detail-progress">
+                    <div class="achievement-progress-bar">
+                        <div class="achievement-progress-fill ${cyclesHigher ? 'achievement-progress-fill--cycles' : 'achievement-progress-fill--tasks'}" style="width: ${Math.max(cycleProgress, taskProgress)}%;"></div>
+                        <div class="achievement-progress-fill ${cyclesHigher ? 'achievement-progress-fill--tasks' : 'achievement-progress-fill--cycles'}" style="width: ${Math.min(cycleProgress, taskProgress)}%;"></div>
                     </div>
-                    <div style="
-                        display: flex;
-                        flex-direction: column;
-                        gap: 2px;
-                        margin-top: 8px;
-                        font-size: 11px;
-                    ">
-                        <span style="color: #4361ee; font-weight: 500;">
-                            <span style="font-size: 14px;">●</span> ${getLabel('achievement.cyclesNeeded', { vars: { count: cyclesNeeded } })}
+                    <div class="achievement-legend-items badge-detail-progress-legend">
+                        <span class="achievement-legend-cycles">
+                            <span class="achievement-legend-bullet">●</span> ${getLabel('achievement.cyclesNeeded', { vars: { count: cyclesNeeded } })}
                         </span>
-                        <span style="color: #10b981; font-weight: 500;">
-                            <span style="font-size: 14px;">●</span> ${getLabel('achievement.tasksNeeded', { vars: { count: tasksNeeded } })}
+                        <span class="achievement-legend-tasks">
+                            <span class="achievement-legend-bullet">●</span> ${getLabel('achievement.tasksNeeded', { vars: { count: tasksNeeded } })}
                         </span>
                     </div>
                 </div>
@@ -822,7 +609,7 @@ export class AchievementsManager {
             const date = new Date(unlockedAchievement.unlockedAt);
             const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
             statusHtml = `
-                <p style="margin: 0; font-size: 12px; color: ${textSecondary};">
+                <p class="badge-detail-status badge-detail-secondary">
                     ${getLabel('achievement.unlockedOn', { vars: { date: dateStr, via: unlockedAchievement.unlockedVia === 'cycles' ? getLabel('noun.cycle', { count: 2 }) : getLabel('noun.task', { count: 2 }) } })}
                 </p>
             `;
@@ -830,57 +617,22 @@ export class AchievementsManager {
 
         // Drag to spin hint (only for unlocked badges)
         const dragHintHtml = isUnlocked ? `
-            <p style="margin: 4px 0 0; font-size: 11px; color: ${textSecondary}; font-style: italic;">
+            <p class="badge-detail-drag-hint badge-detail-secondary">
                 ${getLabel('achievement.dragToSpin')}
             </p>
         ` : '';
 
         overlay.innerHTML = `
-            <div style="
-                background: ${modalBg};
-                border-radius: 16px;
-                padding: 24px;
-                min-width: 260px;
-                max-width: 300px;
-                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                text-align: center;
-                user-select: text;
-                -webkit-user-select: text;
-                transform: scale(0.9);
-                transition: transform 0.2s ease;
-            ">
-                <!-- Badge circle with 3D perspective and expanded hit area -->
-                <div id="badge-spin-area" style="
-                    padding: 20px;
-                    margin: -20px;
-                    perspective: 300px;
-                    user-select: none;
-                    -webkit-user-select: none;
-                    ${isUnlocked ? 'cursor: grab;' : ''}
-                ">
-                    <div id="badge-coin" style="
-                        width: 80px;
-                        height: 80px;
-                        border-radius: 50%;
-                        background: ${badgeBackground};
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                        transform-style: preserve-3d;
-                        transition: transform 0.1s ease-out;
-                        ${!isUnlocked ? 'filter: grayscale(0.8);' : ''}
-                    ">
-                        <span style="font-size: 40px;">${tierConfig.emoji}</span>
+            <div class="badge-detail-popup" ${rewardAttr ? `data-reward="${rewardAttr}"` : ''}>
+                <div id="badge-spin-area" class="badge-spin-area ${isUnlocked ? 'interactive' : ''}">
+                    <div id="badge-coin" class="badge-coin ${isUnlocked ? '' : 'badge-coin--locked'}" ${rewardAttr ? `data-reward="${rewardAttr}"` : ''}>
+                        <span class="badge-coin-emoji">${tierConfig.emoji}</span>
                     </div>
                 </div>
                 ${dragHintHtml}
 
-                <h3 style="margin: 8px 0 4px; font-size: 20px; color: ${textPrimary};">${tierConfig.name}</h3>
-                <p style="margin: 0 0 12px; font-size: 13px; color: ${textSecondary};">
+                <h3 class="badge-detail-name">${tierConfig.name}</h3>
+                <p class="badge-detail-threshold badge-detail-secondary">
                     ${getLabel('achievement.threshold', { vars: { cycles: tierConfig.cycleThreshold, tasks: tierConfig.taskThreshold } })}
                 </p>
 
@@ -888,7 +640,7 @@ export class AchievementsManager {
                 ${progressHtml}
 
                 ${tierConfig.rewardLabel ? `
-                    <p style="margin: 12px 0 0; font-size: 12px; color: ${textReward};">
+                    <p class="badge-detail-reward">
                         <strong>${getLabel('achievement.rewardLabel')}</strong> ${tierConfig.rewardLabel}
                     </p>
                 ` : ''}
@@ -901,7 +653,7 @@ export class AchievementsManager {
         // Animate in
         requestAnimationFrame(() => {
             overlay.style.opacity = '1';
-            overlay.querySelector('div').style.transform = 'scale(1)';
+            overlay.querySelector('.badge-detail-popup').style.transform = 'scale(1)';
         });
 
         // Add coin spin interaction for unlocked badges

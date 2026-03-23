@@ -1,3 +1,7 @@
+## [2.123] - 2026-03-23
+- feat: enhance PWA offline architecture and service worker update strategy; add version freshness checks and improve theme management UI
+
+
 ## [2.122] - 2026-03-23
 - feat: update version to 2.121 across all relevant files and changelog
 
