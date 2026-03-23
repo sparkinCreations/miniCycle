@@ -22,10 +22,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: var(--theme-input-bg, var(--color-white));
+    background: var(--color-blue-pale-light);
     border: 1px solid var(--theme-border);
     border-radius: var(--radius-md);
-    padding: 2px var(--space-1);
+    padding: var(--space-0-5) var(--space-1);
     margin-bottom: var(--space-1);
     user-select: none;
     gap: var(--space-2);
@@ -34,7 +34,9 @@
 }
 
 .recurring-task-item:hover {
-    background: var(--theme-hover-bg);
+    background: var(--color-blue-pale);
+    border-color: var(--color-steel-blue);
+    box-shadow: var(--shadow-sm);
 }
 
 .recurring-task-item:focus-visible {
@@ -43,12 +45,26 @@
 }
 
 .recurring-task-item.checked {
-    background-color: var(--color-gray-400);
+    background: var(--color-steel-blue);
+    border-color: var(--color-blue-medium);
+    box-shadow: var(--shadow-sm);
+}
+
+.recurring-task-item.checked .recurring-remove-btn {
+    color: var(--color-white);
+}
+
+.recurring-task-item.checked .recurring-task-text {
+    color: var(--color-white);
 }
 
 .recurring-task-item.selected {
     border: 1px solid var(--theme-success, var(--color-success));
-    background-color: var(--recurring-selected-bg, #dfffdf);
+    background-color: var(--color-success-pale);
+}
+
+.recurring-task-item.selected .recurring-task-text {
+    color: var(--color-black);
 }
 
 .recurring-task-item input[type="checkbox"] {
@@ -75,7 +91,7 @@
 .recurring-remove-btn {
     background: none;
     border: none;
-    color: var(--theme-error, red);
+    color: var(--color-black);
     font-weight: bold;
     cursor: pointer;
     flex-shrink: 0;
@@ -92,8 +108,8 @@
 #recurring-settings-panel {
     margin-top: 0;
     padding: var(--space-2-5);
-    background: var(--color-white);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: var(--color-blue-pale-light);
+    border: 1px solid var(--color-gray-400);
     border-radius: var(--radius-md);
     text-align: center;
 }
@@ -164,6 +180,21 @@
 
 .toggle-advanced-btn {
     margin-top: var(--space-3);
+    background: var(--color-gray-600);
+    color: var(--color-white);
+    border: 1px solid var(--color-gray-600);
+    border-radius: var(--radius-md);
+    padding: var(--space-1-5) var(--space-3);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast) ease;
+}
+
+.toggle-advanced-btn:hover {
+    background: var(--color-steel-blue);
+    color: var(--color-white);
+    border-color: var(--color-steel-blue);
 }
 
 /* =============================================================================
@@ -203,12 +234,14 @@
 }
 
 #cancel-recurring-settings {
-    background-color: var(--color-gray-500);
-    color: var(--color-white);
+    background-color: transparent;
+    color: var(--color-gray-600);
+    border: 1px solid var(--color-gray-400);
 }
 
 #cancel-recurring-settings:hover {
-    background-color: var(--color-slate-600);
+    background-color: var(--color-gray-100);
+    border-color: var(--color-gray-600);
     transform: scale(1.02);
 }
 
@@ -264,7 +297,7 @@
     padding-right: var(--space-1);
     margin-top: var(--space-2-5);
     padding-bottom: var(--space-2-5);
-    border-bottom: 1px solid var(--theme-border);
+    border-bottom: 1px solid var(--color-gray-400);
     margin-bottom: var(--space-2-5);
 }
 
@@ -436,6 +469,10 @@
     border-radius: var(--radius-md);
 }
 
+.summary-box {
+    padding-bottom: var(--space-3);
+}
+
 #recurring-summary-preview {
     font-size: var(--font-size-sm);
     color: var(--theme-text-secondary, var(--color-gray-600));
@@ -447,22 +484,42 @@
 
 .change-recurring-btn {
     margin-top: var(--space-2);
-    padding: var(--space-1-5) var(--space-3);
-    font-size: var(--font-size-xs);
-    background: var(--theme-button-secondary-bg);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: var(--radius-6);
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-white);
+    background: var(--color-steel-blue);
+    border: none;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
-    transition: background var(--transition-fast) ease;
+    transition: background var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
 }
 
 .change-recurring-btn:hover {
-    background: var(--theme-button-secondary-hover-bg);
+    background: var(--color-blue-medium);
+    box-shadow: var(--shadow-md);
 }
 
 /* =============================================================================
    RECURRING TOGGLE ACTIONS
    ============================================================================= */
+
+.toggle-check-btn {
+    background: var(--color-blue-pale-mid);
+    color: var(--color-steel-blue);
+    border: 1px solid var(--color-steel-blue);
+    border-radius: var(--radius-md);
+    padding: var(--space-1) var(--space-2-5);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+}
+
+.toggle-check-btn:hover {
+    background: var(--color-blue-pale);
+}
 
 #recurring-toggle-actions {
     display: flex;
@@ -658,7 +715,7 @@ select.hidden {
 
 .yearly-month-box.selected,
 .yearly-day-box.selected {
-    background: var(--recurring-selected-bg, #dfffdf);
+    background: var(--color-success-pale);
     border-color: var(--color-success);
     color: var(--color-black);
 }
@@ -744,17 +801,18 @@ select.hidden {
     padding: var(--space-2-5) var(--space-4);
     font-size: var(--font-size-sm);
     font-weight: 500;
-    color: var(--theme-text-on-surface);
-    background: var(--theme-hover-bg);
-    border: 1px dashed rgba(0, 0, 0, 0.2);
+    color: var(--color-steel-blue);
+    background: var(--color-blue-pale);
+    border: 1px dashed var(--color-steel-blue);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all var(--transition-fast) ease;
 }
 
-.add-recurring-task-btn:hover {
-    background: rgba(0, 0, 0, 0.1);
-    border-color: rgba(0, 0, 0, 0.3);
+button.add-recurring-task-btn:hover {
+    background: var(--color-blue-pale-mid);
+    border: 1px dashed var(--color-steel-blue);
+    color: var(--color-steel-blue);
 }
 
 .add-recurring-task-btn i,
@@ -766,7 +824,7 @@ select.hidden {
 .available-tasks-list {
     margin-top: var(--space-2-5);
     padding: var(--space-2-5);
-    background: rgba(255, 255, 255, 0.8);
+    background: var(--color-blue-pale-light);
     border-radius: var(--radius-md);
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
@@ -809,9 +867,10 @@ select.hidden {
     gap: var(--space-2);
     padding: var(--space-2) var(--space-2-5);
     margin-bottom: var(--space-1);
-    background: var(--theme-input-bg, var(--color-white));
+    background: var(--color-blue-pale-light);
     border: 1px solid var(--theme-border);
     border-radius: var(--radius-6);
+    box-shadow: var(--shadow-inner-border);
     cursor: pointer;
     font-size: var(--font-size-sm);
     transition: all var(--transition-fast) ease;
@@ -822,7 +881,7 @@ select.hidden {
 }
 
 #non-recurring-tasks li.selected {
-    background: var(--recurring-selected-bg, #dfffdf);
+    background: var(--color-success-pale);
     border-color: var(--theme-success, var(--color-success));
 }
 

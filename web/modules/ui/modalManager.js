@@ -49,9 +49,11 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/consta
 import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
 import { getLabel } from '../labels/labelResolver.js';
 
-// Re-export from modalUtils.js (side-effect-free module) so existing
-// DI consumers that reference modalManager exports still work.
-export { hasActiveNotifications, isClickOnNotification } from './modalUtils.js';
+// Import for local use within this module
+import { hasActiveNotifications, isClickOnNotification } from './modalUtils.js';
+
+// Re-export so existing DI consumers that reference modalManager exports still work.
+export { hasActiveNotifications, isClickOnNotification };
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)

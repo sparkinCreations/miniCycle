@@ -9,10 +9,10 @@
 
 .routine-switcher-btn {
     position: absolute;
-    right: 15px;
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
-    border: 1px solid rgba(12, 32, 145, 0.25);
+    right: var(--space-3-75);
+    background: var(--overlay-white-light);
+    box-shadow: var(--shadow-button);
+    border: 1px solid var(--border-blue-subtle);
     color: var(--color-navy);
     border-radius: var(--radius-5);
     width: 88px;
@@ -25,7 +25,7 @@
 }
 
 .routine-switcher-btn:hover {
-    background: rgba(255, 255, 255, 0.4);
+    background: var(--overlay-white-medium);
     border-color: var(--color-navy-dark);
 }
 
@@ -51,7 +51,7 @@
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--overlay-heavy);
     justify-content: center;
     align-items: center;
 }
@@ -71,7 +71,7 @@ dialog.mini-cycle-switch-modal[open] {
 }
 
 dialog.mini-cycle-switch-modal::backdrop {
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--overlay-heavy);
 }
 
 /* =============================================================================
@@ -93,12 +93,12 @@ dialog.mini-cycle-switch-modal::backdrop {
 }
 
 .mini-cycle-switch-title {
-    font-size: 1.3rem;
+    font-size: var(--font-size-xl);
     font-weight: bold;
     color: inherit;
     text-align: center;
     padding: var(--space-2-5) 0;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid var(--overlay-medium);
     margin-bottom: var(--space-2-5);
 }
 
@@ -204,7 +204,7 @@ input.routine-search-input:focus {
 }
 
 .routine-filter-select:focus-visible {
-    box-shadow: 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+    box-shadow: var(--shadow-focus-ring);
 }
 
 .routine-filter-select:hover {
@@ -245,7 +245,7 @@ input.routine-search-input:focus {
     gap: var(--space-2);
     padding: var(--space-2);
     margin-bottom: var(--space-0-75);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid var(--overlay-medium);
     background: none;
     color: var(--color-black);
     font-weight: bold;
@@ -253,7 +253,7 @@ input.routine-search-input:focus {
     transition: background var(--transition-fast) ease-in-out, transform var(--transition-fast);
     text-align: left;
     border-radius: var(--radius-xs);
-    font-size: 0.9rem;
+    font-size: var(--font-size-sm);
 }
 
 .mini-cycle-switch-item span {
@@ -262,7 +262,7 @@ input.routine-search-input:focus {
 
 .mini-cycle-switch-item:hover,
 .mini-cycle-switch-item:focus-visible {
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--overlay-medium);
 }
 
 .mini-cycle-switch-item:focus-visible {
@@ -320,7 +320,7 @@ input.routine-search-input:focus {
     outline: none;
     min-width: 100px;
     max-width: 200px;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    box-shadow: var(--shadow-focus-ring-subtle);
     pointer-events: auto;
     cursor: text;
 }
@@ -331,18 +331,18 @@ input.routine-search-input:focus {
 }
 
 .cycle-item-size {
-    font-size: 0.75rem;
+    font-size: var(--font-size-xs);
     font-weight: normal;
     color: var(--theme-text-muted);
-    background: rgba(0, 0, 0, 0.06);
+    background: var(--overlay-light);
     padding: var(--space-0-5) var(--space-1-5);
     border-radius: var(--radius-sm);
     flex-shrink: 0;
 }
 
 .mini-cycle-switch-item.selected .cycle-item-size {
-    color: rgba(255, 255, 255, 0.8);
-    background: rgba(255, 255, 255, 0.2);
+    color: var(--overlay-white-strong);
+    background: var(--overlay-white-light);
 }
 
 /* =============================================================================
@@ -386,7 +386,7 @@ input.routine-search-input:focus {
 
     .switch-items-row-title {
         margin-bottom: 0;
-        font-size: 0.6rem;
+        font-size: var(--font-size-xs);
     }
 
     .switch-buttons {
@@ -435,11 +435,11 @@ input.routine-search-input:focus {
     width: 180px;
     height: auto;
     padding: var(--space-2-5);
-    background-color: var(--theme-input-bg, #fafafa);
-    border: 1px solid rgba(0, 0, 0, 0.15);
+    background-color: var(--theme-input-bg, var(--color-gray-50));
+    border: 1px solid var(--overlay-strong);
     border-radius: var(--radius-md);
     color: var(--color-gray-700);
-    font-size: 0.9rem;
+    font-size: var(--font-size-sm);
     text-align: left;
     overflow-y: auto;
     max-height: 70px;
@@ -447,9 +447,9 @@ input.routine-search-input:focus {
 }
 
 .preview-task {
-    font-size: 0.85rem;
+    font-size: var(--font-size-sm);
     padding: var(--space-0-75);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid var(--overlay-medium);
 }
 
 .preview-task:last-child {
@@ -457,7 +457,7 @@ input.routine-search-input:focus {
 }
 
 .switch-preview-date {
-    font-size: 0.7rem;
+    font-size: var(--font-size-xs);
     color: var(--theme-text-muted);
     text-align: center;
     margin-top: var(--space-1-5);
@@ -465,7 +465,7 @@ input.routine-search-input:focus {
 }
 
 .switch-preview-hint {
-    font-size: 0.65rem;
+    font-size: var(--font-size-xs);
     color: var(--theme-text-muted);
     text-align: center;
     margin-top: var(--space-1);
@@ -482,14 +482,14 @@ input.routine-search-input:focus {
     width: 100px;
     height: 30px;
     padding: 0 var(--space-4);
-    font-size: 0.95rem;
+    font-size: var(--font-size-base);
     margin: var(--space-1-25);
     font-weight: 600;
     border-radius: var(--radius-md);
     border: none;
     cursor: pointer;
     transition: all var(--transition-fast) ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-button);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -497,12 +497,12 @@ input.routine-search-input:focus {
 
 .mini-cycle-switch-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-button-hover);
 }
 
 .mini-cycle-switch-btn:active {
     transform: translateY(0) scale(0.98);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-sm);
 }
 
 .mini-cycle-switch-btn.open-btn {
@@ -565,7 +565,7 @@ input.routine-search-input:focus {
     height: 30px;
     padding: 0 var(--space-4);
     margin: var(--space-2) auto;
-    font-size: 0.85rem;
+    font-size: var(--font-size-sm);
     font-weight: 500;
     border-radius: var(--radius-6);
     border: none;
@@ -584,7 +584,7 @@ input.routine-search-input:focus {
 }
 
 .mini-cycle-upload-btn i {
-    font-size: 0.85rem;
+    font-size: var(--font-size-sm);
 }
 
 /* =============================================================================
@@ -657,12 +657,12 @@ input.routine-search-input:focus {
 .theme-picker-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    padding: 8px 0;
+    gap: var(--space-1-5);
+    padding: var(--space-2) 0;
     background: transparent;
     border: none;
     border-radius: 0;
-    margin: 4px auto 8px;
+    margin: var(--space-1) auto var(--space-2);
     justify-content: center;
     align-items: center;
     width: fit-content;
@@ -682,10 +682,10 @@ input.routine-search-input:focus {
 .theme-picker-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: var(--space-1-5);
     justify-content: center;
-    padding: 8px 12px;
-    background: rgba(0, 0, 0, 0.06);
+    padding: var(--space-2) var(--space-3);
+    background: var(--overlay-light);
     border: 1px solid var(--border-blue-subtle);
     border-radius: var(--radius-xl);
 }
@@ -698,11 +698,11 @@ input.routine-search-input:focus {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    padding: 5px 10px;
+    gap: var(--space-0-5);
+    padding: var(--space-1-25) var(--space-2-5);
     border-radius: var(--radius-6);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    background: rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--overlay-medium);
+    background: var(--overlay-light);
     cursor: pointer;
     font-size: var(--font-size-xs);
     color: var(--theme-text-secondary, rgba(40, 40, 40, 0.7));
@@ -714,13 +714,13 @@ input.routine-search-input:focus {
 }
 
 .theme-chip:hover:not([aria-disabled="true"]) {
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--overlay-strong);
     color: var(--theme-text-primary, #333);
 }
 
 .theme-chip[aria-checked="true"] {
     background: var(--theme-accent, #4c79ff);
-    color: white;
+    color: var(--color-white);
     border-color: var(--theme-accent, #4c79ff);
 }
 
@@ -735,7 +735,7 @@ input.routine-search-input:focus {
 }
 
 .theme-chip-icon {
-    font-size: 1.1em;
+    font-size: var(--font-size-sm);
 }
 
 .theme-chip-name {
@@ -743,7 +743,7 @@ input.routine-search-input:focus {
 }
 
 .theme-chip-hint {
-    font-size: 0.65em;
+    font-size: var(--font-size-xs);
     opacity: 0.75;
 }
 
@@ -790,7 +790,7 @@ input.routine-search-input:focus {
     border-top: none;
     border-radius: 0 0 var(--radius-5) var(--radius-5);
     color: var(--theme-text-muted);
-    font-size: 0.85rem;
+    font-size: var(--font-size-sm);
     text-align: left;
     overflow-y: auto;
     box-shadow: var(--shadow-inner-subtle);
@@ -798,9 +798,9 @@ input.routine-search-input:focus {
 }
 
 .desktop-preview-window .preview-task {
-    font-size: 0.85rem;
+    font-size: var(--font-size-sm);
     padding: var(--space-0-75);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid var(--overlay-medium);
 }
 
 .desktop-preview-window .preview-task:last-child {
@@ -827,7 +827,7 @@ input.routine-search-input:focus {
 }
 
 .desktop-preview-date {
-    font-size: 0.7rem;
+    font-size: var(--font-size-xs);
     color: var(--theme-text-muted);
     text-align: center;
     margin-top: var(--space-2);
@@ -918,7 +918,7 @@ input.routine-search-input:focus {
     }
 
     .mini-cycle-switch-title {
-        font-size: 1.2rem;
+        font-size: var(--font-size-xl);
     }
 
     .mini-cycle-switch-btn {
@@ -928,7 +928,7 @@ input.routine-search-input:focus {
 
     .mini-cycle-upload-btn {
         padding: var(--space-1-5) var(--space-3-5);
-        font-size: 0.8rem;
+        font-size: var(--font-size-xs);
     }
 
     .routine-filter-select {

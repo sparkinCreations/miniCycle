@@ -687,9 +687,7 @@ body.dark-mode {
     --menu-close-hover-bg: #326a9e;
 }
 
-body.dark-mode .menu-container.has-corner-logo::before {
-    filter: brightness(1.5) contrast(1.1);
-}
+/* Logo keeps its original colors in all modes — no dark-mode filter */
 
 body.dark-mode .menu-section-grid button i,
 body.dark-mode .menu-section-grid button .icon,

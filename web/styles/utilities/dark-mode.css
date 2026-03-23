@@ -59,6 +59,12 @@ body.dark-mode:not([data-theme]) {
     --dark-button-border-bottom: rgba(0, 0, 0, 0.3);
     --dark-border-subtle: #666666;
     --dark-border-hover: #777777;
+    /* White overlays for dark backgrounds */
+    --dark-overlay-subtle: rgba(255, 255, 255, 0.08);
+    --dark-overlay-light: rgba(255, 255, 255, 0.1);
+    --dark-overlay-medium: rgba(255, 255, 255, 0.15);
+    --dark-overlay-strong: rgba(255, 255, 255, 0.2);
+    --dark-overlay-heavy: rgba(30, 30, 30, 0.8);
     --dark-text-dim: #aaaaaa;
     --dark-text-subdued: #dddddd;
     --dark-text-light: #eaeaea;
@@ -225,7 +231,7 @@ body.dark-mode .stats-panel {
    ============================================================================= */
 
 body.dark-mode .mini-cycle-switch-title {
-    border-bottom-color: rgba(255, 255, 255, 0.15);
+    border-bottom-color: var(--dark-overlay-medium);
 }
 
 /* --- Search --- */
@@ -248,12 +254,12 @@ body.dark-mode .mini-cycle-switch-list {
 /* --- List items --- */
 body.dark-mode .mini-cycle-switch-item {
     color: var(--theme-text-primary);
-    border-bottom-color: rgba(255, 255, 255, 0.1);
+    border-bottom-color: var(--dark-overlay-light);
 }
 
 body.dark-mode .mini-cycle-switch-item:hover,
 body.dark-mode .mini-cycle-switch-item:focus-visible {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--dark-overlay-light);
 }
 
 /* --- Sort / filter controls --- */
@@ -297,7 +303,7 @@ body.dark-mode .desktop-preview-window {
 body.dark-mode .switch-preview-window .preview-task,
 body.dark-mode .desktop-preview-window .preview-task {
     background: var(--dark-surface-deep);
-    border-bottom-color: rgba(255, 255, 255, 0.1);
+    border-bottom-color: var(--dark-overlay-light);
     color: var(--theme-text-secondary);
 }
 
@@ -309,37 +315,44 @@ body.dark-mode .switch-preview-hint {
 }
 
 body.dark-mode .routine-panel-title {
+    background: var(--dark-surface-secondary);
+    color: var(--dark-text-light);
+    border-bottom: 1px solid var(--dark-overlay-light);
+}
+
+body.dark-mode .routine-list-hint {
     color: var(--dark-text-dim);
 }
 
 /* --- Action buttons (duplicate, edit, delete, theme) --- */
-body.dark-mode .switch-buttons {
+body.dark-mode .switch-buttons,
+body.dark-mode .switch-btn-label {
     color: var(--theme-text-secondary);
 }
 
 body.dark-mode .switch-buttons:hover {
     color: var(--theme-text-primary);
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--dark-overlay-light);
 }
 
 body.dark-mode .switch-theme[aria-expanded="true"] {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--dark-overlay-light);
     color: var(--color-primary-light);
 }
 
 /* --- Theme picker chips --- */
 body.dark-mode .theme-picker-row {
     background: var(--dark-surface-secondary);
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--dark-overlay-light);
 }
 
 body.dark-mode .theme-chip {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--dark-overlay-subtle);
     color: var(--theme-text-secondary);
 }
 
 body.dark-mode .theme-chip:hover:not([aria-disabled="true"]) {
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--dark-overlay-medium);
     color: var(--theme-text-primary);
 }
 
@@ -650,7 +663,7 @@ body.dark-mode .cycle-item-edit-input {
 
 body.dark-mode .cycle-item-size {
     color: var(--dark-text-dim);
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--dark-overlay-light);
 }
 
 /* =============================================================================
@@ -801,6 +814,34 @@ body.dark-mode .add-recurring-task-btn:hover {
 body.dark-mode .available-tasks-list {
     background: var(--dark-surface-secondary);
     border-color: var(--dark-button-hover-bg);
+}
+
+body.dark-mode #cancel-recurring-settings {
+    color: var(--dark-text-light);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode #cancel-recurring-settings:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+body.dark-mode .recurring-remove-btn {
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .recurring-task-item.selected .recurring-task-text {
+    color: var(--color-white);
+}
+
+body.dark-mode .toggle-check-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--dark-text-light);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .toggle-check-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
 }
 
 body.dark-mode .available-tasks-header {
@@ -1103,9 +1144,9 @@ body.dark-mode .mode-selector-wrapper .mode-selector {
 
 body.dark-mode .routine-switcher-btn,
 body.dark-mode .quick-actions-btn {
-    background: rgba(30, 30, 30, 0.8);
+    background: var(--dark-overlay-heavy);
     color: var(--theme-text-primary);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--dark-overlay-strong);
 }
 
 body.dark-mode .quick-actions-btn svg,
@@ -1159,6 +1200,28 @@ body.dark-mode .reminders-modal-content select {
     background: var(--theme-input-bg);
     color: var(--theme-text-primary);
     border-color: var(--dark-button-hover-bg);
+}
+
+body.dark-mode .settings-section.collapsible {
+    background: var(--dark-surface-secondary);
+    border-color: var(--dark-button-hover-bg);
+}
+
+body.dark-mode .settings-section-header {
+    background: var(--dark-surface-secondary);
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .settings-section.collapsed .settings-section-header {
+    background: var(--dark-surface-secondary);
+}
+
+body.dark-mode .settings-section-header:hover {
+    background: var(--dark-button-hover-bg);
+}
+
+body.dark-mode .settings-section:not(.collapsed) .settings-section-header:hover {
+    background: var(--dark-button-hover-bg);
 }
 
 /* =============================================================================

@@ -22,6 +22,7 @@
      ═══════════════════════════════════════════════════════════════════════════ */
   --color-success: #28a745;
   --color-success-light: #5ecf72;
+  --color-success-pale: #dfffdf;            /* recurring selected bg */
   --color-warning: #ffc107;
   --color-warning-light: #ffda6a;
   --color-error: #dc3545;
@@ -52,9 +53,19 @@
   --color-blue-light: #5dade2;        /* reminder icons on dark bg */
   --color-steel-blue: #3d7ab5;        /* modal close button */
   --color-blue-pale: #d6e4f7;         /* modal background */
+  --color-blue-pale-mid: #c0d4ed;     /* summary/detail panels on blue modals */
   --color-blue-pale-light: #f5f8ff;   /* inner panel bg on pale blue modals */
-  --border-blue-subtle: rgba(58, 95, 199, 0.25);   /* subtle blue border for inner panels */
-  --border-blue-subtle-hover: rgba(58, 95, 199, 0.4); /* hover state */
+  --border-blue-subtle: rgba(61, 122, 181, 0.25);   /* subtle blue border/hover for inner panels */
+  --border-blue-subtle-hover: rgba(61, 122, 181, 0.4); /* border state for blue sections */
+  /* Generic overlays (black translucent, used for borders/hovers/backdrops) */
+  --overlay-light: rgba(0, 0, 0, 0.06);        /* subtle tint for badges/chips */
+  --overlay-medium: rgba(0, 0, 0, 0.1);        /* borders, dividers, hover bg */
+  --overlay-strong: rgba(0, 0, 0, 0.15);       /* stronger borders, chip hover */
+  --overlay-heavy: rgba(0, 0, 0, 0.5);         /* modal backdrops */
+  /* White overlays (for dark-bg contexts) */
+  --overlay-white-light: rgba(255, 255, 255, 0.2);  /* subtle white tint */
+  --overlay-white-medium: rgba(255, 255, 255, 0.4); /* hover state white tint */
+  --overlay-white-strong: rgba(255, 255, 255, 0.8); /* text on dark bg */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      NEUTRAL COLORS (Static palette)
@@ -173,7 +184,7 @@
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Task
      ═══════════════════════════════════════════════════════════════════════════ */
-  --theme-task-bg: rgba(255, 255, 255, 0.95);
+  --theme-task-bg: var(--color-blue-pale-light);
   --theme-task-text: #333333;
   --theme-task-completed-bg: rgba(200, 255, 200, 0.9);
   --theme-task-completed-text: #666666;
