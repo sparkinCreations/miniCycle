@@ -1,3 +1,7 @@
+## [2.116] - 2026-03-23
+- feat: enhance notification behavior and UI, add dynamic copyright year
+
+
 ## [2.115] - 2026-03-23
 - Refactor modal handling and notification interactions
 
