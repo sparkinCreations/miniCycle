@@ -1,3 +1,7 @@
+## [2.115] - 2026-03-23
+- Refactor modal handling and notification interactions
+
+
 ## [2.114] - 2026-03-22
 - feat: update onboarding and tour messages for clarity and engagement
 

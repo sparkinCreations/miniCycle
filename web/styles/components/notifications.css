@@ -136,9 +136,13 @@
     box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
 }
 
+/* Pause-on-hover visual feedback for all notification types */
+.notification:hover {
+    box-shadow: var(--shadow-lg);
+}
+
 .notification.recurring:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
 }
 
 /* =============================================================================
