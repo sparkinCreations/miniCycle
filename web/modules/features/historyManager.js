@@ -257,138 +257,32 @@ export class HistoryManager {
         this.modalOverlay.id = DOM_IDS.HISTORY_MODAL_DIALOG;
         this.modalOverlay.setAttribute('aria-label', getLabel('history.title'));
         this.modalOverlay.setAttribute('aria-modal', 'true');
-        this.modalOverlay.style.cssText = `
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        `;
+        this.modalOverlay.style.opacity = '0';
+        this.modalOverlay.style.transition = 'opacity 0.2s ease';
 
         // Get cleared tasks count for badge
         const clearedCount = this._getClearedTasksCount();
 
         this.modalOverlay.innerHTML = `
-            <div class="history-modal" style="
-                background: var(--bg-primary, #fff);
-                border-radius: 12px;
-                width: 90%;
-                max-width: 500px;
-                max-height: 80vh;
-                display: flex;
-                flex-direction: column;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-                transform: translateY(20px);
-                transition: transform 0.2s ease;
-            ">
-                <header style="
-                    display: flex;
-                    align-items: center;
-                    padding: 16px;
-                    border-bottom: 1px solid var(--border-color, #e0e0e0);
-                    gap: 12px;
-                ">
-                    <button class="history-back-btn" aria-label="${getLabel('button.close')}" style="
-                        background: none;
-                        border: none;
-                        font-size: 20px;
-                        cursor: pointer;
-                        padding: 4px 8px;
-                        color: var(--text-primary, #333);
-                    ">&larr;</button>
-                    <h2 style="
-                        flex: 1;
-                        margin: 0;
-                        font-size: 18px;
-                        font-weight: 600;
-                        color: var(--text-primary, #333);
-                    ">${getLabel('history.title')}</h2>
-                    <button class="history-action-btn" style="
-                        background: none;
-                        border: none;
-                        font-size: 14px;
-                        cursor: pointer;
-                        padding: 4px 12px;
-                        color: var(--danger-color, #dc3545);
-                    ">${getLabel('history.clearAll')}</button>
+            <div class="history-modal">
+                <header class="history-header">
+                    <button class="history-back-btn" aria-label="${getLabel('button.close')}">&larr;</button>
+                    <h2 class="history-title">${getLabel('history.title')}</h2>
+                    <button class="history-action-btn history-action-btn--danger">${getLabel('history.clearAll')}</button>
                 </header>
                 ${clearedCount > 0 ? `
-                <div class="history-tabs" style="
-                    display: flex;
-                    border-bottom: 1px solid var(--border-color, #e0e0e0);
-                ">
-                    <button class="history-tab" data-tab="events" style="
-                        flex: 1;
-                        padding: 12px;
-                        border: none;
-                        background: none;
-                        font-size: 14px;
-                        cursor: pointer;
-                        color: var(--text-primary, #333);
-                        border-bottom: 2px solid transparent;
-                        transition: all 0.15s ease;
-                    ">📜 ${getLabel('history.events')}</button>
-                    <button class="history-tab" data-tab="cleared" style="
-                        flex: 1;
-                        padding: 12px;
-                        border: none;
-                        background: none;
-                        font-size: 14px;
-                        cursor: pointer;
-                        color: var(--text-primary, #333);
-                        border-bottom: 2px solid transparent;
-                        transition: all 0.15s ease;
-                    ">✓ ${getLabel('history.clearedTasks')} <span style="
-                        background: var(--primary-color, #4c79ff);
-                        color: white;
-                        border-radius: 10px;
-                        padding: 1px 6px;
-                        font-size: 11px;
-                        margin-left: 4px;
-                    ">${clearedCount}</span></button>
+                <div class="history-tabs">
+                    <button class="history-tab" data-tab="events">📜 ${getLabel('history.events')}</button>
+                    <button class="history-tab" data-tab="cleared">✓ ${getLabel('history.clearedTasks')} <span class="history-tab-badge">${clearedCount}</span></button>
                 </div>
                 ` : ''}
-                <div class="history-modal-content" style="
-                    flex: 1;
-                    overflow-y: auto;
-                    padding: 16px;
-                "></div>
-                <div class="history-reset-section" style="
-                    padding: 12px 16px;
-                    border-top: 1px solid var(--border-color, #e0e0e0);
-                    text-align: center;
-                ">
-                    <button class="history-reset-progress-btn" style="
-                        background: none;
-                        border: none;
-                        font-size: 13px;
-                        cursor: pointer;
-                        padding: 8px 16px;
-                        color: var(--text-secondary, #666);
-                        text-decoration: underline;
-                    ">${getLabel('history.resetRoutineProgress')}</button>
+                <div class="history-modal-content"></div>
+                <div class="history-reset-section">
+                    <button class="history-reset-progress-btn">${getLabel('history.resetRoutineProgress')}</button>
                 </div>
-                <footer class="history-footer" style="
-                    display: none;
-                    padding: 12px 16px;
-                    border-top: 1px solid var(--border-color, #e0e0e0);
-                    gap: 12px;
-                ">
-                    <button class="history-cancel-btn" style="
-                        flex: 1;
-                        padding: 10px;
-                        border: 1px solid var(--border-color, #e0e0e0);
-                        border-radius: 6px;
-                        background: none;
-                        cursor: pointer;
-                        color: var(--text-primary, #333);
-                    ">${getLabel('button.cancel')}</button>
-                    <button class="history-confirm-btn" style="
-                        flex: 1;
-                        padding: 10px;
-                        border: none;
-                        border-radius: 6px;
-                        background: var(--primary-color, #4c79ff);
-                        cursor: pointer;
-                        color: white;
-                    ">${getLabel('history.recreateSelected', { vars: { count: 0 } })}</button>
+                <footer class="history-footer">
+                    <button class="history-cancel-btn">${getLabel('button.cancel')}</button>
+                    <button class="history-confirm-btn">${getLabel('history.recreateSelected', { vars: { count: 0 } })}</button>
                 </footer>
             </div>
         `;
@@ -670,14 +564,10 @@ export class HistoryManager {
 
         if (events.length === 0) {
             content.innerHTML = `
-                <div style="
-                    text-align: center;
-                    padding: 40px 20px;
-                    color: var(--text-secondary, #666);
-                ">
-                    <div style="font-size: 48px; margin-bottom: 16px;">📜</div>
-                    <p style="margin: 0;">${getLabel('history.noHistoryYet')}</p>
-                    <p style="margin: 8px 0 0; font-size: 14px;">${getLabel('history.noHistoryHint')}</p>
+                <div class="history-empty-state">
+                    <div class="history-empty-emoji">📜</div>
+                    <p class="history-empty-text">${getLabel('history.noHistoryYet')}</p>
+                    <p class="history-empty-hint">${getLabel('history.noHistoryHint')}</p>
                 </div>
             `;
             return;
@@ -689,16 +579,8 @@ export class HistoryManager {
         let html = '';
         for (const [label, groupEvents] of Object.entries(groups)) {
             html += `
-                <div class="history-group" style="margin-bottom: 24px;">
-                    <h3 style="
-                        font-size: 12px;
-                        font-weight: 600;
-                        color: var(--text-secondary, #666);
-                        text-transform: uppercase;
-                        margin: 0 0 12px;
-                        padding-bottom: 8px;
-                        border-bottom: 1px solid var(--border-color, #e0e0e0);
-                    ">${label}</h3>
+                <div class="history-group">
+                    <h3 class="history-group-heading">${label}</h3>
                     ${groupEvents.map(evt => this._renderEvent(evt)).join('')}
                 </div>
             `;
@@ -708,13 +590,7 @@ export class HistoryManager {
         const hasClearedEvents = events.some(evt => evt.type === 'tasks_cleared' || evt.type === 'tasks_removed_on_reset');
         if (hasClearedEvents) {
             html += `
-                <p style="
-                    font-size: 12px;
-                    color: var(--text-secondary, #666);
-                    text-align: center;
-                    margin: 16px 0 0;
-                    font-style: italic;
-                ">${getLabel('taskOptions.achievementNote')}</p>
+                <p class="history-achievement-note">${getLabel('taskOptions.achievementNote')}</p>
             `;
         }
 
@@ -731,14 +607,10 @@ export class HistoryManager {
 
         if (entries.length === 0) {
             content.innerHTML = `
-                <div style="
-                    text-align: center;
-                    padding: 40px 20px;
-                    color: var(--text-secondary, #666);
-                ">
-                    <div style="font-size: 48px; margin-bottom: 16px;">✓</div>
-                    <p style="margin: 0;">${getLabel('history.noClearedTasks')}</p>
-                    <p style="margin: 8px 0 0; font-size: 14px;">${getLabel('history.noClearedHint')}</p>
+                <div class="history-empty-state">
+                    <div class="history-empty-emoji">✓</div>
+                    <p class="history-empty-text">${getLabel('history.noClearedTasks')}</p>
+                    <p class="history-empty-hint">${getLabel('history.noClearedHint')}</p>
                 </div>
             `;
             return;
@@ -752,24 +624,10 @@ export class HistoryManager {
         const activeCycle = activeCycleId ? state?.data?.cycles?.[activeCycleId] : null;
         const hasRecurring = Object.keys(activeCycle?.recurringTemplates || {}).length > 0;
         const recurringNote = `
-            <div style="
-                padding: 12px;
-                margin-top: 8px;
-                background: var(--bg-secondary, #f5f5f5);
-                border-radius: 8px;
-                font-size: 13px;
-                color: var(--text-secondary, #888);
-                line-height: 1.4;
-            ">
-                <span style="margin-right: 4px;">↻</span>
+            <div class="history-recurring-note">
+                <span class="history-recurring-note-icon">↻</span>
                 ${getLabel('history.recurringNote')}
-                ${hasRecurring ? `<br><a href="#" class="cleared-view-recurring" style="
-                    color: var(--primary-color, #4c79ff);
-                    text-decoration: none;
-                    font-weight: 500;
-                    margin-top: 4px;
-                    display: inline-block;
-                ">${getLabel('history.viewRecurring')}</a>` : ''}
+                ${hasRecurring ? `<br><a href="#" class="cleared-view-recurring">${getLabel('history.viewRecurring')}</a>` : ''}
             </div>
         `;
 
@@ -797,25 +655,11 @@ export class HistoryManager {
                     if (this.selectedTasks.has(id)) {
                         this.selectedTasks.delete(id);
                         el.classList.remove('selected');
-                        // Update inline styles for deselected state
-                        el.style.background = 'var(--bg-secondary, #f5f5f5)';
-                        el.style.border = '2px solid transparent';
-                        if (checkbox) {
-                            checkbox.style.background = 'transparent';
-                            checkbox.style.borderColor = 'var(--border-color, #ccc)';
-                            checkbox.textContent = '';
-                        }
+                        if (checkbox) checkbox.textContent = '';
                     } else {
                         this.selectedTasks.add(id);
                         el.classList.add('selected');
-                        // Update inline styles for selected state
-                        el.style.background = 'var(--primary-color-light, #e8efff)';
-                        el.style.border = '2px solid var(--primary-color, #4c79ff)';
-                        if (checkbox) {
-                            checkbox.style.background = 'var(--primary-color, #4c79ff)';
-                            checkbox.style.borderColor = 'var(--primary-color, #4c79ff)';
-                            checkbox.textContent = '✓';
-                        }
+                        if (checkbox) checkbox.textContent = '✓';
                     }
                     this._updateConfirmButton();
                 });
@@ -834,54 +678,21 @@ export class HistoryManager {
         const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         return `
-            <div class="cleared-entry ${isSelected ? 'selected' : ''}"
+            <div class="cleared-entry ${isSelected ? 'selected' : ''} ${this.isRecreateMode ? 'selectable' : ''}"
                  data-id="${entry.id}"
-                 tabindex="0"
-                 style="
-                    display: flex;
-                    align-items: flex-start;
-                    gap: 12px;
-                    padding: 12px;
-                    background: ${isSelected ? 'var(--primary-color-light, #e8efff)' : 'var(--bg-secondary, #f5f5f5)'};
-                    border-radius: 8px;
-                    margin-bottom: 8px;
-                    cursor: ${this.isRecreateMode ? 'pointer' : 'default'};
-                    border: 2px solid ${isSelected ? 'var(--primary-color, #4c79ff)' : 'transparent'};
-                    transition: all 0.15s ease;
-                 ">
+                 tabindex="0">
                 ${this.isRecreateMode ? `
-                    <span style="
-                        width: 20px;
-                        height: 20px;
-                        border: 2px solid ${isSelected ? 'var(--primary-color, #4c79ff)' : 'var(--border-color, #ccc)'};
-                        border-radius: 4px;
-                        background: ${isSelected ? 'var(--primary-color, #4c79ff)' : 'transparent'};
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        flex-shrink: 0;
-                        color: white;
-                        font-size: 12px;
-                    ">${isSelected ? '✓' : ''}</span>
+                    <span class="cleared-entry-checkbox">${isSelected ? '✓' : ''}</span>
                 ` : ''}
-                <div style="flex: 1; min-width: 0;">
-                    <div style="
-                        color: var(--text-primary, #333);
-                        word-break: break-word;
-                    ">${this._escapeHtml(entry.taskText)}</div>
-                    <div style="
-                        font-size: 12px;
-                        color: var(--text-secondary, #888);
-                        margin-top: 4px;
-                        display: flex;
-                        gap: 8px;
-                    ">
+                <div class="cleared-entry-content">
+                    <div class="cleared-entry-text">${this._escapeHtml(entry.taskText)}</div>
+                    <div class="cleared-entry-metadata">
                         <span>${dateStr} ${timeStr}</span>
-                        ${entry.wasHighPriority ? (() => { const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(entry.priorityColor) ? entry.priorityColor : '#dc3545'; return `<span style="color: var(--danger-color, #dc3545); display: inline-flex; align-items: center; gap: 3px;">${getLabel('history.highPriority')} <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${safeColor};vertical-align:middle;" aria-hidden="true"></span></span>`; })() : ''}
-                        ${entry.dueDate ? `<span style="color: var(--color-blue-medium, #3498db);">${getLabel('history.hasDueDate')} ${new Date(entry.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>` : ''}
-                        ${entry.remindersEnabled ? `<span style="color: var(--color-orange, #e67e22);">${getLabel('history.hasReminders')}</span>` : ''}
-                        ${entry.recurring ? `<span style="color: var(--color-game-primary, #27ae60);">${getLabel('history.isRecurring')}</span>` : ''}
-                        ${entry.clearedInMode ? `<span style="color: var(--color-gray-400, #a3a3a3);">${entry.clearedInMode === 'todo' ? getLabel('history.clearedInToDoMode') : getLabel('history.clearedInCycleMode')}</span>` : ''}
+                        ${entry.wasHighPriority ? (() => { const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(entry.priorityColor) ? entry.priorityColor : ''; return `<span class="cleared-entry-priority">${getLabel('history.highPriority')} <span class="history-priority-dot" style="background:${safeColor || 'var(--color-error)'};" aria-hidden="true"></span></span>`; })() : ''}
+                        ${entry.dueDate ? `<span class="cleared-entry-due-date">${getLabel('history.hasDueDate')} ${new Date(entry.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>` : ''}
+                        ${entry.remindersEnabled ? `<span class="cleared-entry-reminders">${getLabel('history.hasReminders')}</span>` : ''}
+                        ${entry.recurring ? `<span class="cleared-entry-recurring">${getLabel('history.isRecurring')}</span>` : ''}
+                        ${entry.clearedInMode ? `<span class="cleared-entry-mode">${entry.clearedInMode === 'todo' ? getLabel('history.clearedInToDoMode') : getLabel('history.clearedInCycleMode')}</span>` : ''}
                     </div>
                 </div>
             </div>
@@ -994,7 +805,7 @@ export class HistoryManager {
             } else if (event.type === 'task_priority_set' && event.details.taskName !== undefined) {
                 const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(event.details.priorityColor)
                     ? event.details.priorityColor : '#dc3545';
-                detailText = `${this._escapeHtml(event.details.taskName)} <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${safeColor};vertical-align:middle;margin-left:4px;" aria-hidden="true"></span>`;
+                detailText = `${this._escapeHtml(event.details.taskName)} <span class="history-priority-dot" style="background:${safeColor};" aria-hidden="true"></span>`;
             } else if (event.type === 'task_priority_removed' && event.details.taskName !== undefined) {
                 detailText = this._escapeHtml(event.details.taskName);
             } else if (event.details.themeName !== undefined) {
@@ -1003,32 +814,13 @@ export class HistoryManager {
         }
 
         return `
-            <div class="history-event" tabindex="0" style="
-                display: flex;
-                align-items: flex-start;
-                gap: 12px;
-                padding: 12px;
-                background: var(--bg-secondary, #f5f5f5);
-                border-radius: 8px;
-                margin-bottom: 8px;
-            ">
-                <span style="font-size: 20px;">${this._escapeHtml(event.details?._eventIcon) || icons[event.type] || '📌'}</span>
-                <div style="flex: 1; min-width: 0;">
-                    <div style="
-                        font-weight: 500;
-                        color: var(--text-primary, #333);
-                    ">${this._escapeHtml(event.details?._eventLabel) || labels[event.type] || this._escapeHtml(event.type)}</div>
-                    ${detailText ? `<div style="
-                        font-size: 13px;
-                        color: var(--text-secondary, #666);
-                        margin-top: 2px;
-                    ">${detailText}</div>` : ''}
+            <div class="history-event" tabindex="0">
+                <span class="history-event-icon">${this._escapeHtml(event.details?._eventIcon) || icons[event.type] || '📌'}</span>
+                <div class="history-event-content">
+                    <div class="history-event-title">${this._escapeHtml(event.details?._eventLabel) || labels[event.type] || this._escapeHtml(event.type)}</div>
+                    ${detailText ? `<div class="history-event-details">${detailText}</div>` : ''}
                 </div>
-                <span style="
-                    font-size: 12px;
-                    color: var(--text-secondary, #888);
-                    white-space: nowrap;
-                ">${time}</span>
+                <span class="history-event-timestamp">${time}</span>
             </div>
         `;
     }
@@ -1069,9 +861,7 @@ export class HistoryManager {
 
         this.modalOverlay.querySelectorAll(DOM_SELECTORS.HISTORY_TAB).forEach(tab => {
             const isActive = tab.dataset.tab === this.activeTab;
-            tab.style.fontWeight = isActive ? '600' : '400';
-            tab.style.borderBottomColor = isActive ? 'var(--primary-color, #4c79ff)' : 'transparent';
-            tab.style.color = isActive ? 'var(--primary-color, #4c79ff)' : 'var(--text-primary, #333)';
+            tab.classList.toggle('active', isActive);
         });
     }
 
@@ -1084,7 +874,7 @@ export class HistoryManager {
 
         const footer = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_FOOTER);
         if (footer) {
-            footer.style.display = this.isRecreateMode ? 'flex' : 'none';
+            footer.classList.toggle('visible', this.isRecreateMode);
         }
     }
 
@@ -1100,15 +890,15 @@ export class HistoryManager {
 
         if (this.activeTab === 'events') {
             actionBtn.textContent = getLabel('history.clearAll');
-            actionBtn.style.color = 'var(--danger-color, #dc3545)';
-            actionBtn.style.display = '';
+            actionBtn.className = 'history-action-btn history-action-btn--danger';
+            actionBtn.hidden = false;
         } else if (this.activeTab === 'cleared') {
             if (this.isRecreateMode) {
-                actionBtn.style.display = 'none';
+                actionBtn.hidden = true;
             } else {
                 actionBtn.textContent = getLabel('history.recreateTasks');
-                actionBtn.style.color = 'var(--primary-color, #4c79ff)';
-                actionBtn.style.display = '';
+                actionBtn.className = 'history-action-btn history-action-btn--primary';
+                actionBtn.hidden = false;
             }
         }
     }
@@ -1125,7 +915,6 @@ export class HistoryManager {
             const count = this.selectedTasks.size;
             confirmBtn.textContent = getLabel('history.recreateSelected', { vars: { count } });
             confirmBtn.disabled = count === 0;
-            confirmBtn.style.opacity = count === 0 ? '0.5' : '1';
         }
     }
 

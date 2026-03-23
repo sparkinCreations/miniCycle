@@ -1308,6 +1308,159 @@ body.dark-mode .preferences-footer button.preferences-reset-all-btn:hover {
 }
 
 /* =============================================================================
+   DARK MODE ACHIEVEMENTS MODAL
+   ============================================================================= */
+
+body.dark-mode .achievements-modal {
+    background: var(--dark-surface-primary);
+}
+
+body.dark-mode .achievements-header {
+    border-bottom-color: var(--dark-overlay-light);
+}
+
+body.dark-mode .achievements-back-btn,
+body.dark-mode .achievements-title {
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .achievements-summary {
+    background: var(--dark-surface-secondary);
+}
+
+body.dark-mode .achievements-stat-value--count,
+body.dark-mode .achievements-stat-label {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .achievements-section-heading {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .achievement-card {
+    background: var(--dark-surface-secondary);
+}
+
+body.dark-mode .achievement-card-name {
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .achievement-card-description,
+body.dark-mode .achievement-card-date {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .achievement-progress-bar {
+    background: var(--dark-overlay-light);
+}
+
+body.dark-mode .achievement-legend-reward {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .achievements-empty-state,
+body.dark-mode .achievements-progress-note {
+    color: var(--dark-text-dim);
+}
+
+/* =============================================================================
+   DARK MODE HISTORY MODAL
+   ============================================================================= */
+
+body.dark-mode .history-modal {
+    background: var(--dark-surface-primary);
+    box-shadow: var(--shadow-modal-heavy);
+}
+
+body.dark-mode .history-header {
+    border-bottom-color: var(--dark-overlay-light);
+}
+
+body.dark-mode .history-back-btn,
+body.dark-mode .history-title {
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .history-tabs {
+    border-bottom-color: var(--dark-overlay-light);
+}
+
+body.dark-mode .history-tab {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .history-tab.active {
+    color: var(--color-primary);
+}
+
+body.dark-mode .history-event,
+body.dark-mode .cleared-entry {
+    background: var(--dark-surface-secondary);
+}
+
+body.dark-mode .cleared-entry.selected {
+    background: var(--dark-overlay-medium);
+    border-color: var(--color-primary);
+}
+
+body.dark-mode .cleared-entry-checkbox {
+    background: var(--dark-surface-primary);
+    border-color: var(--dark-border-subtle);
+}
+
+body.dark-mode .cleared-entry.selected .cleared-entry-checkbox {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+body.dark-mode .history-event-title,
+body.dark-mode .cleared-entry-text {
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .history-event-details,
+body.dark-mode .history-event-timestamp,
+body.dark-mode .cleared-entry-metadata,
+body.dark-mode .history-group-heading {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .history-empty-state {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .history-recurring-note {
+    background: var(--dark-surface-secondary);
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .history-achievement-note,
+body.dark-mode .history-recurring-disclaimer {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .history-reset-section {
+    border-top-color: var(--dark-overlay-light);
+}
+
+body.dark-mode .history-reset-progress-btn {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .history-footer {
+    border-top-color: var(--dark-overlay-light);
+}
+
+body.dark-mode .history-cancel-btn {
+    color: var(--dark-text-light);
+    border-color: var(--dark-border-subtle);
+}
+
+body.dark-mode .history-confirm-btn {
+    background: var(--color-primary);
+}
+
+/* =============================================================================
    DARK MODE THEMES MODAL
    ============================================================================= */
 
