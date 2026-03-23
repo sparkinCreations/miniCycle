@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.115';
-var CACHE_VERSION = 'v958';
+var APP_VERSION = '2.116';
+var CACHE_VERSION = 'v959';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -558,76 +558,113 @@ self.addEventListener('fetch', function (event) {
                    (request.destination === '' && accept.indexOf('text/html') !== -1);
 
   if (isNavigate) {
-    // NOTE: No offline fast-path for navigations. Safari/iOS rejects cached
-    // responses that have `redirected: true` for navigation requests, causing
-    // "Response served by service worker has redirections" errors. The existing
-    // network-first → cache-fallback (.catch) path handles offline correctly
-    // because Safari tolerates cached responses in the error recovery path.
-    // The import/restore offline case is handled separately by calling
-    // loadMiniCycle() in-place instead of location.reload().
+    // ═══════════════════════════════════════════════════════════════════════
+    // NAVIGATION: Cache-first with background revalidation
+    // ═══════════════════════════════════════════════════════════════════════
+    // Serves cached HTML instantly (same speed as offline), then updates
+    // the cache in the background. Version mismatches are caught by
+    // verifyVersionFresh() in the inline script (~200ms after load),
+    // which clears caches and reloads while the app-loader is still visible.
+    //
+    // Safari/iOS quirk: cached responses with `redirected: true` (from
+    // Netlify _redirects) are rejected for navigation requests. Fix:
+    // store and serve a clean Response copy (strips the redirected flag).
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Helper: create a clean Response copy that Safari accepts for navigation.
+    // new Response() always has redirected=false, avoiding the Safari rejection.
+    function cleanResponse(response) {
+      if (!response.redirected) return response;
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers
+      });
+    }
+
+    // Helper: store a clean copy in cache (strips redirected flag at write time)
+    function cacheNavResponse(response) {
+      var toCache = cleanResponse(response.clone());
+      return caches.open(DYNAMIC_CACHE).then(function (cache) {
+        return cache.put(request, toCache).then(function () {
+          trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
+        }).catch(function (err) {
+          console.warn('⚠️ Navigation cache put failed:', err);
+        });
+      });
+    }
+
     event.respondWith(
-      // ✅ Use navigation preload if available (saves ~50-100ms on mobile)
-      // Falls back to regular fetch if preload not supported
-      (event.preloadResponse || Promise.resolve(null))
-        .then(function (preloadResponse) {
-          if (preloadResponse) {
-            console.log('⚡ Using navigation preload response');
-            return preloadResponse;
-          }
-          // ✅ iOS FIX: Use timeout to prevent hanging on slow connections
-          return fetchWithTimeout(request, FETCH_TIMEOUT_MS);
-        })
-        .then(function (fresh) {
-          return caches.open(DYNAMIC_CACHE).then(function (cache) {
-            // ✅ ADDED: Safe cache.put for navigation requests
-            return cache.put(request, fresh.clone()).then(function() {
-              // ✅ Trim cache after adding new entry
-              trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
-              return fresh;
-            }).catch(function(cacheError) {
-              console.warn('⚠️ Navigation cache put failed for:', request.url, cacheError);
-              return fresh; // Return response even if caching fails
-            });
-          });
-        })
-        .catch(function () {
-          // ✅ Offline fallback with smart shell selection
-          // Use caches.match() (ALL caches) first — if precache failed, the HTML
-          // might only exist in old caches kept as fallback
-          var shell = pickShell(url);
-          var shellPath = shell === 'lite' ? fromScope('lite/miniCycle-lite.html')
-                                          : fromScope('miniCycle.html');
+      caches.match(request).then(function (cached) {
+        if (cached) {
+          // ✅ Cache hit — serve instantly, revalidate in background
+          console.log('⚡ Navigation cache-first:', url.pathname);
 
-          return caches.match(shellPath).then(function (fallback) {
-            if (fallback) {
-              console.log('📱 Offline fallback: serving ' + shell + ' shell');
-              return fallback;
-            }
-
-            // ✅ Last resort: try any available shell
-            return caches.open(STATIC_CACHE).then(function (cache) {
-              return cache.match(fromScope('lite/miniCycle-lite.html'));
-            }).then(function (anyLite) {
-              if (anyLite) {
-                console.log('📱 Emergency fallback: serving lite shell');
-                return anyLite;
+          // Background revalidation: use navigation preload or fetch
+          (event.preloadResponse || Promise.resolve(null))
+            .then(function (preloaded) {
+              return preloaded || fetchWithTimeout(request, FETCH_TIMEOUT_MS);
+            })
+            .then(function (fresh) {
+              if (fresh && fresh.status === 200) {
+                return cacheNavResponse(fresh);
               }
+            })
+            .catch(function () {
+              // Background update failed (offline/timeout) — cache stays as-is
+            });
+
+          // Return the cached response immediately (clean copy for Safari)
+          return cleanResponse(cached);
+        }
+
+        // ✅ Cache miss — fall back to network-first
+        return (event.preloadResponse || Promise.resolve(null))
+          .then(function (preloaded) {
+            return preloaded || fetchWithTimeout(request, FETCH_TIMEOUT_MS);
+          })
+          .then(function (fresh) {
+            // Store clean copy for future cache-first serves
+            cacheNavResponse(fresh);
+            return fresh;
+          })
+          .catch(function () {
+            // ✅ Offline fallback with smart shell selection
+            var shell = pickShell(url);
+            var shellPath = shell === 'lite' ? fromScope('lite/miniCycle-lite.html')
+                                             : fromScope('miniCycle.html');
+
+            return caches.match(shellPath).then(function (fallback) {
+              if (fallback) {
+                console.log('📱 Offline fallback: serving ' + shell + ' shell');
+                return cleanResponse(fallback);
+              }
+
+              // ✅ Last resort: try any available shell
               return caches.open(STATIC_CACHE).then(function (cache) {
-                return cache.match(fromScope('miniCycle.html'));
-              }).then(function (anyFull) {
-                if (anyFull) {
-                  console.log('💻 Emergency fallback: serving full shell');
-                  return anyFull;
+                return cache.match(fromScope('lite/miniCycle-lite.html'));
+              }).then(function (anyLite) {
+                if (anyLite) {
+                  console.log('📱 Emergency fallback: serving lite shell');
+                  return cleanResponse(anyLite);
                 }
-                console.log('❌ No offline fallback available');
-                return new Response('Offline - No cached version available', {
-                  status: 503,
-                  statusText: 'Offline'
+                return caches.open(STATIC_CACHE).then(function (cache) {
+                  return cache.match(fromScope('miniCycle.html'));
+                }).then(function (anyFull) {
+                  if (anyFull) {
+                    console.log('💻 Emergency fallback: serving full shell');
+                    return cleanResponse(anyFull);
+                  }
+                  console.log('❌ No offline fallback available');
+                  return new Response('Offline - No cached version available', {
+                    status: 503,
+                    statusText: 'Offline'
+                  });
                 });
               });
             });
           });
-        })
+      })
     );
     return;
   }
