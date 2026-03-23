@@ -51,8 +51,10 @@
   --color-blue-medium: #3498db;       /* recurring / reminder option icons */
   --color-blue-light: #5dade2;        /* reminder icons on dark bg */
   --color-steel-blue: #3d7ab5;        /* modal close button */
-  --color-blue-pale: #e8f0fe;         /* modal background */
+  --color-blue-pale: #d6e4f7;         /* modal background */
   --color-blue-pale-light: #f5f8ff;   /* inner panel bg on pale blue modals */
+  --border-blue-subtle: rgba(58, 95, 199, 0.25);   /* subtle blue border for inner panels */
+  --border-blue-subtle-hover: rgba(58, 95, 199, 0.4); /* hover state */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      NEUTRAL COLORS (Static palette)

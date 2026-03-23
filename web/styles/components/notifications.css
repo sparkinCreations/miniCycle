@@ -18,6 +18,10 @@
     z-index: var(--z-notification);
     cursor: grab;
     user-select: none;
+    /* When empty, let clicks pass through to dialog ::backdrop below.
+       When notifications are present, .has-notifications restores pointer-events
+       so notifications remain interactive in the top layer. */
+    pointer-events: none;
     /* Override UA popover defaults (margin: auto, inset, etc.) */
     margin: 0;
     padding: 0;
@@ -27,8 +31,13 @@
     overflow: visible;
 }
 
+#notification-container.has-notifications {
+    pointer-events: auto;
+}
+
 #notification-container.dragging {
     cursor: grabbing;
+    pointer-events: auto;
     box-shadow: var(--shadow-toast);
     z-index: var(--z-notification-active);
 }

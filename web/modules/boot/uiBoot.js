@@ -367,6 +367,9 @@ function handleGlobalClickForSwitchModal(event) {
 
   const themePicker = document.getElementById(DOM_IDS.THEME_PICKER_ROW);
 
+  // Deselection is now handled by routineSwitcher._clickHandler on switchModalContent.
+  // This handler only closes the theme picker if it's open and the click is outside it,
+  // as a fallback for clicks that bubble past the content handler.
   if (
     switchModalContent?.contains(event.target) &&
     selectedCycle &&
@@ -374,17 +377,39 @@ function handleGlobalClickForSwitchModal(event) {
     !event.target.closest('.mini-cycle-switch-item') &&
     !previewWindow?.contains(event.target) &&
     !event.target.closest('.switch-buttons') &&
-    !themePicker?.contains(event.target)
+    !themePicker?.contains(event.target) &&
+    !event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_LEFT) &&
+    !event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_RIGHT)
   ) {
+    // If theme picker is open, just close it — don't deselect
+    const isPickerOpen = themePicker && !themePicker.classList.contains('hidden');
+    if (isPickerOpen) {
+      themePicker.classList.add('hidden');
+      const themeBtn = document.getElementById(DOM_IDS.SWITCH_THEME_BTN);
+      themeBtn?.setAttribute('aria-expanded', 'false');
+      return;
+    }
+
     selectedCycle.classList.remove('selected');
+    selectedCycle.setAttribute('aria-selected', 'false');
     if (switchItemsRow) {
       switchItemsRow.style.display = 'none';
     }
     if (themePicker) {
       themePicker.classList.add('hidden');
     }
-    if (previewWindow) {
-      previewWindow.innerHTML = '<p style="color: #888; font-style: italic;">' + getLabel('switcher.selectPreview') + '</p>';
+    // Reset preview
+    const desktopPreview = document.getElementById(DOM_IDS.DESKTOP_PREVIEW_WINDOW);
+    if (desktopPreview) {
+      desktopPreview.textContent = getLabel('switcher.selectPreview');
+    }
+    const previewTitle = document.getElementById(DOM_IDS.DESKTOP_PREVIEW_TITLE);
+    if (previewTitle) {
+      previewTitle.textContent = getLabel('switcher.preview');
+    }
+    const previewHint = document.getElementById(DOM_IDS.DESKTOP_PREVIEW_HINT);
+    if (previewHint) {
+      previewHint.style.display = 'none';
     }
   }
 }

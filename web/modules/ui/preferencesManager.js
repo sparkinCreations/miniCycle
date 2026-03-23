@@ -28,6 +28,7 @@ import { updateThemeColor } from '../features/themeManager.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { applyHelpWindowVisibility, applyQuickActionsVisibility, loadPanelVisibility, resetPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
+import { isClickOnNotification } from './modalUtils.js';
 
 // ============================================================================
 // DEFAULT COLORS
@@ -369,7 +370,7 @@ export class PreferencesManager {
         // Click outside to close
         if (this.modal) {
             this.modal._backdropClickHandler = (e) => {
-                if (e.target === this.modal && !_deps.hasActiveNotifications?.()) {
+                if (e.target === this.modal && !isClickOnNotification(e)) {
                     this.closeModal();
                 }
             };

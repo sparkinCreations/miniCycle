@@ -19,6 +19,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, FREQUENCY_MS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { isClickOnNotification } from '../ui/modalUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -1070,7 +1071,7 @@ export class MiniCycleReminders {
 
         // Close on outside click (overlay area of the dialog)
         replaceStoredEventListener(remindersModal, "click", "__miniCycleRemindersModalClickHandler", (event) => {
-            if (event.target === remindersModal) {
+            if (event.target === remindersModal && !isClickOnNotification(event)) {
                 this.closeRemindersModal();
             }
         });
