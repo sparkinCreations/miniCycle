@@ -11,6 +11,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav, handleHorizontalArrowNav } from '../utils/keyboardNav.js';
+import { isClickOnNotification } from '../ui/modalUtils.js';
 
 // ============================================================================
 // CONSTANTS
@@ -624,7 +625,7 @@ export class HistoryManager {
 
         // Click outside to close (store handler for cleanup in closeModal)
         this._overlayClickHandler = (e) => {
-            if (e.target === this.modalOverlay) {
+            if (e.target === this.modalOverlay && !isClickOnNotification(e)) {
                 this.closeModal();
             }
         };

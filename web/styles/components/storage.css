@@ -10,7 +10,8 @@
 .storage-bar-container {
     margin-top: var(--space-3-75);
     padding: var(--space-2-5);
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--color-blue-pale);
+    border: 1px solid var(--border-blue-subtle);
     border-radius: var(--radius-md);
 }
 

@@ -63,6 +63,7 @@
     border: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
     border-radius: var(--radius-10);
     overflow: hidden;
+    background: var(--color-blue-pale-light);
 }
 
 .settings-section-header {
@@ -70,7 +71,7 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--space-3) 14px;
-    background: var(--theme-input-bg, var(--color-gray-100));
+    background: var(--color-gray-300);
     cursor: pointer;
     font-weight: 600;
     font-size: var(--font-size-sm);
@@ -78,8 +79,16 @@
     transition: background var(--transition-fast) ease;
 }
 
+.settings-section.collapsed .settings-section-header {
+    background: var(--color-blue-pale-light);
+}
+
 .settings-section-header:hover {
-    background: var(--theme-input-hover-bg, #ebebeb);
+    background: var(--color-gray-100);
+}
+
+.settings-section:not(.collapsed) .settings-section-header:hover {
+    background: var(--color-gray-400);
 }
 
 .settings-section-header:focus-visible {
@@ -289,7 +298,8 @@
 .settings-version {
     text-align: center;
     font-size: var(--font-size-xs);
-    color: var(--theme-text-muted);
+    color: var(--color-gray-500);
+    font-weight: 700;
     margin-bottom: var(--space-2-5);
 }
 

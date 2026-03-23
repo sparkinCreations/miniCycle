@@ -855,11 +855,26 @@ async setDefaultPosition(notificationContainer) {
    * 🖱️ Setup notification dragging functionality
    */
   setupNotificationDragging(notificationContainer) {
+    // Toggle pointer-events based on whether the container has notification children.
+    // When empty, pointer-events: none lets clicks pass through to dialog ::backdrop.
+    // When populated, has-notifications class restores pointer-events: auto
+    // so notifications remain interactive in the top layer.
+    if (!notificationContainer._pointerEventsObserver) {
+      const updateContainerInteractivity = () => {
+        const hasChildren = notificationContainer.querySelector(DOM_SELECTORS.NOTIFICATION) != null;
+        notificationContainer.classList.toggle('has-notifications', hasChildren);
+      };
+      updateContainerInteractivity();
+      const childObserver = new MutationObserver(updateContainerInteractivity);
+      childObserver.observe(notificationContainer, { childList: true });
+      notificationContainer._pointerEventsObserver = childObserver;
+    }
+
     if (notificationContainer.dragListenersAttached) return;
     notificationContainer.dragListenersAttached = true;
 
     const interactiveSelectors = [
-      '.tip-close', '.tip-toggle',
+      DOM_SELECTORS.TIP_CLOSE, DOM_SELECTORS.TIP_TOGGLE,
       '.quick-option', '.radio-circle', '.option-label',
       '.apply-quick-recurring', '.open-recurring-settings', '.show-quick-actions',
       'button', 'input', 'select', 'textarea', 'a[href]'
@@ -1091,6 +1106,7 @@ async setDefaultPosition(notificationContainer) {
       observer.observe(notificationContainer.parentNode, { childList: true });
       cleanupFunctions.push(() => observer.disconnect());
     }
+
   }
 
   /**

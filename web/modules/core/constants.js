@@ -649,6 +649,7 @@ export const DOM_IDS = Object.freeze({
     DESKTOP_PREVIEW_WINDOW: 'desktop-preview-window',
     DESKTOP_PREVIEW_TITLE: 'desktop-preview-title',
     DESKTOP_PREVIEW_HINT: 'desktop-preview-hint',
+    ROUTINE_LIST_HINT: 'routine-list-hint',
     STORAGE_REFRESH_BTN: 'storage-refresh-btn',
     PREVIEW_REVIEW_OVERLAY: 'preview-review-overlay',
 
@@ -930,6 +931,7 @@ export const DOM_SELECTORS = Object.freeze({
     MINI_MODAL_OVERLAY: '.mini-modal-dialog',
     SWITCH_PREVIEW_WINDOW: '.switch-preview-window',
     DESKTOP_PREVIEW_WINDOW: '.desktop-preview-window',
+    ROUTINE_SWITCHER_LEFT: '.routine-switcher-left',
     ROUTINE_SWITCHER_RIGHT: '.routine-switcher-right',
     PREVIEW_REVIEW_CLOSE: '.preview-review-close',
 
@@ -1011,6 +1013,8 @@ export const DOM_SELECTORS = Object.freeze({
     NOTIFICATION_RECURRING_SHOW: '.notification.recurring.show',
     CLOSE_BTN: '.close-btn',
     NOTIFICATION_CLOSE: '.notification-close',
+    TIP_CLOSE: '.tip-close',
+    TIP_TOGGLE: '.tip-toggle',
     NOTIFICATION_CONTENT: '.notification-content',
     EDUCATIONAL_TIP: '.educational-tip',
     QUICK_RECURRING_CONTAINER: '.quick-recurring-container',

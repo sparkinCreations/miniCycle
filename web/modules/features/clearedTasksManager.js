@@ -12,6 +12,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
+import { isClickOnNotification } from '../ui/modalUtils.js';
 
 // ============================================================================
 // CONSTANTS
@@ -554,7 +555,7 @@ export class ClearedTasksManager {
 
         // Click outside to close (store handler for cleanup in closeModal)
         this._overlayClickHandler = (e) => {
-            if (e.target === this.modalOverlay) {
+            if (e.target === this.modalOverlay && !isClickOnNotification(e)) {
                 this.closeModal();
             }
         };

@@ -1,3 +1,7 @@
+## [2.114] - 2026-03-22
+- feat: update onboarding and tour messages for clarity and engagement
+
+
 ## [2.113] - 2026-03-21
 - feat: update task button icons and guided tour steps
 

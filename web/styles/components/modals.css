@@ -462,14 +462,14 @@ dialog.mini-modal-dialog::backdrop {
 }
 
 .mini-modal-buttons .btn-cancel {
-    background: var(--theme-button-secondary-bg);
+    background: var(--color-blue-pale);
     color: var(--theme-button-secondary-text);
     padding: var(--space-2-5) var(--space-5);
     border-radius: var(--radius-md);
-    border: none;
+    border: 1px solid var(--border-blue-subtle);
     cursor: pointer;
     flex: 1;
-    font-size: 0.95rem;
+    font-size: var(--font-size-sm);
     font-weight: 500;
     transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
 }
@@ -482,7 +482,7 @@ dialog.mini-modal-dialog::backdrop {
     border: none;
     cursor: pointer;
     flex: 1;
-    font-size: 0.95rem;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
 }

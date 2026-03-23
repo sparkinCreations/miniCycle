@@ -108,22 +108,24 @@ dialog.mini-cycle-switch-modal::backdrop {
    ROUTINE SEARCH
    ============================================================================= */
 
-.routine-search-input {
+input.routine-search-input {
     width: 100%;
     padding: var(--space-2) var(--space-3);
     margin-bottom: var(--space-2);
-    border: 1px solid var(--theme-input-border);
+    border: 1px solid var(--border-blue-subtle);
     border-radius: var(--radius-5);
+    background: var(--color-blue-pale);
     font-size: var(--font-size-sm);
     font-family: var(--font-family);
     box-sizing: border-box;
-    transition: border-color var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
+    transition: border-color var(--transition-fast) ease, box-shadow var(--transition-fast) ease, background var(--transition-fast) ease;
 }
 
-.routine-search-input:focus {
+input.routine-search-input:focus {
     outline: none;
     border-color: var(--theme-button-primary-bg, #4c79ff);
     box-shadow: var(--shadow-focus-ring-subtle);
+    background: var(--color-white);
 }
 
 .routine-search-input:focus-visible {
@@ -154,31 +156,33 @@ dialog.mini-cycle-switch-modal::backdrop {
 }
 
 .routine-sort-label {
-    font-size: 0.75rem;
-    color: var(--color-gray-500);
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-600);
     margin-right: var(--space-1);
+    font-weight: 500;
 }
 
 .routine-sort-btn {
-    padding: var(--space-1) 10px;
-    font-size: 0.75rem;
-    border: 1px solid var(--theme-input-border);
-    background: var(--color-gray-100);
-    border-radius: var(--radius-sm);
+    padding: var(--space-1) var(--space-2-5);
+    font-size: var(--font-size-xs);
+    border: 1px solid var(--border-blue-subtle);
+    background: var(--color-blue-pale);
+    border-radius: var(--radius-pill);
     cursor: pointer;
     transition: all var(--transition-fast) ease;
-    color: var(--theme-input-placeholder);
+    color: var(--color-primary-dark);
+    font-weight: 500;
 }
 
 .routine-sort-btn:hover {
-    background: var(--color-gray-200);
-    border-color: var(--color-gray-400);
+    background: var(--color-blue-pale);
+    border-color: var(--border-blue-subtle-hover);
 }
 
 .routine-sort-btn.active {
-    background: var(--theme-button-primary-bg, #4c79ff);
-    color: white;
-    border-color: var(--theme-button-primary-bg, #4c79ff);
+    background: var(--color-primary-dark);
+    color: var(--color-white);
+    border-color: var(--color-primary-dark);
 }
 
 .routine-filter-controls {
@@ -188,12 +192,13 @@ dialog.mini-cycle-switch-modal::backdrop {
 
 .routine-filter-select {
     padding: var(--space-1) var(--space-2);
-    font-size: 0.75rem;
-    border: 1px solid var(--theme-input-border);
-    background: var(--color-gray-100);
-    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    border: 1px solid var(--border-blue-subtle);
+    background: var(--color-blue-pale);
+    border-radius: var(--radius-pill);
     cursor: pointer;
-    color: var(--theme-input-placeholder);
+    color: var(--color-primary-dark);
+    font-weight: 500;
     outline: none;
     max-width: 100px;
 }
@@ -203,7 +208,8 @@ dialog.mini-cycle-switch-modal::backdrop {
 }
 
 .routine-filter-select:hover {
-    border-color: var(--color-gray-400);
+    background: var(--color-blue-pale);
+    border-color: var(--border-blue-subtle-hover);
 }
 
 .routine-filter-select:focus {
@@ -219,11 +225,12 @@ dialog.mini-cycle-switch-modal::backdrop {
     max-height: 240px;
     overflow-y: auto;
     overflow-x: hidden;
-    border: 1px solid rgba(0, 0, 0, 0.12);
+    border: 1px solid var(--color-primary-dark);
+    border-top: none;
     padding: var(--space-1-5);
     background: var(--color-blue-pale-light);
     text-align: left;
-    border-radius: var(--radius-5);
+    border-radius: 0 0 var(--radius-5) var(--radius-5);
 }
 
 /* =============================================================================
@@ -344,9 +351,82 @@ dialog.mini-cycle-switch-modal::backdrop {
 
 .switch-items-row {
     display: none;
-    padding: var(--space-2-5);
+    padding: var(--space-2-5) 0;
     margin-top: var(--space-2-5);
+    justify-content: center;
+    gap: var(--space-2) var(--space-3);
+    flex-wrap: wrap;
+}
+
+/* On mobile, ensure buttons distribute evenly and preview takes full width */
+@media (max-width: 767px) {
+    /* Show routine list header on mobile */
+    .routine-switcher-left .routine-panel-title {
+        display: block;
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+        color: var(--color-white);
+        padding: var(--space-2) var(--space-2-5);
+        background: var(--color-primary-dark);
+        border-radius: var(--radius-5) var(--radius-5) 0 0;
+        margin-bottom: 0;
+        text-align: center;
+    }
+
+    .mini-cycle-switch-list {
+        border-top: none;
+    }
+
+    /* Tighter routine actions spacing */
+    .switch-items-row {
+        gap: var(--space-0-75) var(--space-1);
+        padding: var(--space-1) 0;
+        margin-top: var(--space-1-5);
+    }
+
+    .switch-items-row-title {
+        margin-bottom: 0;
+        font-size: 0.6rem;
+    }
+
+    .switch-buttons {
+        padding: var(--space-1) var(--space-2);
+        min-width: auto;
+        flex: 0 1 auto;
+        font-size: var(--font-size-md);
+    }
+
+    .switch-btn-label {
+        display: none;
+    }
+
+    /* Preview — taller and thinner on mobile */
+    .switch-items-row .switch-preview-window {
+        flex-basis: 100%;
+        width: 70%;
+        max-width: 200px;
+        min-height: 150px;
+        margin: var(--space-1-5) auto 0;
+        border: 1px solid var(--border-blue-subtle);
+    }
+
+    /* Date and hint on separate lines */
+    .switch-preview-date,
+    .switch-preview-hint {
+        display: block;
+        width: 100%;
+    }
+}
+
+.switch-items-row-title {
+    width: 100%;
     text-align: center;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-gray-600);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--space-1);
 }
 
 .switch-preview-window {
@@ -512,19 +592,30 @@ dialog.mini-cycle-switch-modal::backdrop {
    ============================================================================= */
 
 .switch-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
     background: transparent;
     border: none;
-    color: var(--color-gray-500);
-    padding: var(--space-2) var(--space-3);
-    font-size: 1rem;
+    color: var(--color-black);
+    padding: var(--space-1-5) var(--space-3);
+    font-size: var(--font-size-sm);
     cursor: pointer;
     transition: color var(--transition-fast) ease, transform var(--transition-fast) ease;
-    border-radius: var(--radius-6);
+    border-radius: var(--radius-md);
+    min-width: 56px;
+}
+
+.switch-btn-label {
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    color: var(--color-black);
 }
 
 .switch-buttons:hover {
-    color: var(--theme-text-on-surface);
-    background: rgba(0, 0, 0, 0.05);
+    color: var(--color-gray-600);
     transform: scale(1.05);
 }
 
@@ -536,9 +627,27 @@ dialog.mini-cycle-switch-modal::backdrop {
     color: var(--color-error);
 }
 
+.switch-delete:hover .switch-btn-label {
+    color: var(--color-error);
+}
+
+.switch-buttons i {
+    font-size: var(--font-size-sm);
+    line-height: 1;
+    height: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.switch-theme {
+    font-size: var(--font-size-sm);
+    line-height: 1;
+}
+
 .switch-theme[aria-expanded="true"] {
-    background: rgba(0, 0, 0, 0.08);
-    color: var(--theme-accent, #4c79ff);
+    background: var(--color-blue-pale);
+    border-radius: var(--radius-6);
+    box-shadow: inset 0 0 0 1px var(--border-blue-subtle);
 }
 
 /* =============================================================================
@@ -549,12 +658,36 @@ dialog.mini-cycle-switch-modal::backdrop {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 8px 10px;
-    background: var(--theme-input-bg, #fafafa);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: var(--radius-md);
-    margin: 4px 0 8px;
+    padding: 8px 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    margin: 4px auto 8px;
     justify-content: center;
+    align-items: center;
+    width: fit-content;
+}
+
+.theme-picker-title {
+    width: 100%;
+    text-align: center;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--theme-text-secondary, rgba(40, 40, 40, 0.6));
+    margin-bottom: var(--space-1);
+}
+
+.theme-picker-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--border-blue-subtle);
+    border-radius: var(--radius-xl);
 }
 
 .theme-picker-row.hidden {
@@ -568,8 +701,8 @@ dialog.mini-cycle-switch-modal::backdrop {
     gap: 2px;
     padding: 5px 10px;
     border-radius: var(--radius-6);
-    border: 1px solid transparent;
-    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.08);
     cursor: pointer;
     font-size: var(--font-size-xs);
     color: var(--theme-text-secondary, rgba(40, 40, 40, 0.7));
@@ -581,7 +714,7 @@ dialog.mini-cycle-switch-modal::backdrop {
 }
 
 .theme-chip:hover:not([aria-disabled="true"]) {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.15);
     color: var(--theme-text-primary, #333);
 }
 
@@ -653,8 +786,9 @@ dialog.mini-cycle-switch-modal::backdrop {
 .desktop-preview-window {
     padding: var(--space-3);
     background: var(--color-blue-pale-light);
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    border-radius: var(--radius-md);
+    border: 1px solid var(--color-primary-dark);
+    border-top: none;
+    border-radius: 0 0 var(--radius-5) var(--radius-5);
     color: var(--theme-text-muted);
     font-size: 0.85rem;
     text-align: left;
@@ -676,11 +810,20 @@ dialog.mini-cycle-switch-modal::backdrop {
 .desktop-preview-hint {
     display: none;
     font-size: var(--font-size-xs);
-    color: var(--theme-text-muted);
+    color: var(--color-black);
     text-align: center;
     margin-top: var(--space-1);
     font-style: italic;
-    opacity: 0.7;
+    opacity: 0.4;
+}
+
+.routine-list-hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-black);
+    text-align: center;
+    margin-top: var(--space-1);
+    font-style: italic;
+    opacity: 0.4;
 }
 
 .desktop-preview-date {
@@ -731,9 +874,12 @@ dialog.mini-cycle-switch-modal::backdrop {
         display: block;
         font-size: var(--font-size-sm);
         font-weight: 600;
-        color: var(--theme-text-muted);
-        margin-bottom: var(--space-1-5);
-        text-align: left;
+        color: var(--color-white);
+        padding: var(--space-2) var(--space-2-5);
+        background: var(--color-primary-dark);
+        border-radius: var(--radius-5) var(--radius-5) 0 0;
+        margin-bottom: 0;
+        text-align: center;
     }
 
     /* Preview matches the list height */

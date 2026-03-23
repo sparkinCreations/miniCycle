@@ -49,16 +49,9 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/consta
 import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
 import { getLabel } from '../labels/labelResolver.js';
 
-/**
- * Check if there are any active notifications. Used by backdrop click handlers
- * to prevent closing a modal when the user is interacting with a notification
- * that overlaps the dialog backdrop (e.g., tour prompts via popover).
- * @returns {boolean} True if at least one notification is visible
- */
-export function hasActiveNotifications() {
-    const container = document.getElementById(DOM_IDS.NOTIFICATION_CONTAINER);
-    return container?.querySelector(DOM_SELECTORS.NOTIFICATION) != null;
-}
+// Re-export from modalUtils.js (side-effect-free module) so existing
+// DI consumers that reference modalManager exports still work.
+export { hasActiveNotifications, isClickOnNotification } from './modalUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -265,7 +258,7 @@ export class ModalManager {
 
         // Close Modal on Outside Click (backdrop click fires on the dialog element)
         feedbackModal._outsideClickHandler = (event) => {
-            if (event.target === feedbackModal && !hasActiveNotifications()) {
+            if (event.target === feedbackModal && !isClickOnNotification(event)) {
                 feedbackModal.close();
                 feedbackModal._previousFocus?.focus({ focusVisible: false });
             }
@@ -429,7 +422,7 @@ export class ModalManager {
 
         // Close Modal on Outside Click (backdrop click fires on the dialog element)
         aboutModal._outsideClickHandler = (event) => {
-            if (event.target === aboutModal && !hasActiveNotifications()) {
+            if (event.target === aboutModal && !isClickOnNotification(event)) {
                 aboutModal.close();
                 aboutModal._previousFocus?.focus({ focusVisible: false });
             }
@@ -492,7 +485,7 @@ export class ModalManager {
             "click",
             "__miniCycleRemindersModalClickHandler",
             (event) => {
-                if (event.target === remindersModal && remindersModal.open) {
+                if (event.target === remindersModal && remindersModal.open && !isClickOnNotification(event)) {
                     remindersModal.close();
                 }
             }

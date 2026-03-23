@@ -23,6 +23,7 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/consta
 import { getLabel } from '../labels/labelResolver.js';
 import { loadPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
+import { isClickOnNotification } from './modalUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -199,10 +200,11 @@ export function setupSettingsMenu() {
         replaceStoredEventListener(closeSettingsBtn, "click", "__miniCycleSettingsCloseClickHandler", closeSettings);
     }
 
-    // Click outside to close — clicking ::backdrop fires click on dialog element
-    // Guard: don't close if a tour notification is active inside the dialog
+    // Click outside to close — clicking ::backdrop fires click on dialog element.
+    // Guard: don't close if the click overlaps a notification (top-layer popover
+    // fires a separate click on the dialog's ::backdrop at the same coordinates).
     replaceStoredEventListener(settingsModal, "click", "__miniCycleSettingsModalClickHandler", (event) => {
-        if (event.target === settingsModal && !_deps.hasActiveNotifications?.()) {
+        if (event.target === settingsModal && !isClickOnNotification(event)) {
             closeSettings();
         }
     });

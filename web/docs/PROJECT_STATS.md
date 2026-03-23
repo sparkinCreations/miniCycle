@@ -5,7 +5,7 @@
 > This file contains metrics that change frequently (version, counts, etc.).
 > All other documentation should reference this file instead of hardcoding these values.
 
-**Last Updated**: March 21, 2026
+**Last Updated**: March 22, 2026
 
 ---
 
@@ -13,15 +13,15 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.113 |
+| **App Version** | 2.114 |
 | **Lite Version** | 2.088 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 115 |
+| **Total Modules** | 116 |
 | **Total Tests** | 1757 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 39 |
-| **JSDoc Blocks** | 1044 |
-| **Documentation Files** | 193 |
+| **JSDoc Blocks** | 1046 |
+| **Documentation Files** | 194 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
 
@@ -38,14 +38,14 @@
 | `task/` | 12 | Task CRUD, DOM, events, drag-drop, validation |
 | `routine/` | 5 | Routine management, switching, migration |
 | `recurring/` | 15 | Recurring task scheduling, panel, activation |
-| `ui/` | 30 | Modals, menus, settings, onboarding, gestures |
+| `ui/` | 31 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 7 | Themes, stats, achievements, history, reminders |
 | `utils/` | 13 | Notifications, device detection, utilities |
 | `storage/` | 1 | Backup manager |
 | `progress/` | 1 | Cycle completion tracking |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **115** | |
+| **Total** | **116** | |
 
 ---
 
@@ -57,8 +57,8 @@
 | `modules/boot/orchestrator.js` | ~774 | Sequence control + boot UI + early coordination |
 | `modules/boot/coreBoot.js` | ~1030 | Core state & init |
 | `modules/boot/featureBoot.js` | ~591 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~932 | UI handlers |
-| **Total** | **~3376** | |
+| `modules/boot/uiBoot.js` | ~957 | UI handlers |
+| **Total** | **~3401** | |
 
 ---
 

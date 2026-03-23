@@ -165,6 +165,12 @@ export class RoutineSwitcher {
         // Reset desktop preview to placeholder
         this._resetDesktopPreview();
 
+        // Populate routine list hint
+        const listHint = this.deps.getElementById(DOM_IDS.ROUTINE_LIST_HINT);
+        if (listHint) {
+            listHint.textContent = getLabel('switcher.tapToOpen');
+        }
+
         // ✅ Let loadMiniCycleList() handle all the population logic
         this.loadMiniCycleList();
 
@@ -216,7 +222,10 @@ export class RoutineSwitcher {
         const themeBtn = this.deps.getElementById(DOM_IDS.SWITCH_THEME_BTN);
         if (themeBtn) {
             if (!themeBtn._clickHandler) {
-                themeBtn._clickHandler = () => {
+                themeBtn._clickHandler = (e) => {
+                    // Stop propagation so the modal click handler doesn't also
+                    // close the picker we're about to toggle
+                    e.stopPropagation();
                     const selected = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
                     if (!selected) {
                         this.deps.showNotification(getLabel('switcher.selectFirst'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
@@ -613,7 +622,7 @@ export class RoutineSwitcher {
                 // Show the switch items row
                 const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
                 if (switchItemsRow) {
-                    switchItemsRow.style.display = "block";
+                    switchItemsRow.style.display = "flex";
                 }
 
                 // Update preview
@@ -913,7 +922,6 @@ export class RoutineSwitcher {
         } else {
             this.openThemePicker(cycleKey);
         }
-        themeBtn?.setAttribute('aria-expanded', String(!isOpen));
     }
 
     /**
@@ -925,6 +933,10 @@ export class RoutineSwitcher {
         const picker = this.deps.getElementById(DOM_IDS.THEME_PICKER_ROW);
         if (!picker || !vtm) return;
 
+        // Update theme button active state
+        const themeBtn = this.deps.getElementById(DOM_IDS.SWITCH_THEME_BTN);
+        themeBtn?.setAttribute('aria-expanded', 'true');
+
         const state = this.deps.AppState?.get();
         const cycle = state?.data?.cycles?.[cycleKey];
         const currentThemeId = cycle?.theme ?? 'classic';
@@ -935,6 +947,16 @@ export class RoutineSwitcher {
         picker._chipHandlers = picker._chipHandlers ?? [];
         picker._chipHandlers.forEach(({ el, fn }) => el.removeEventListener('click', fn));
         picker._chipHandlers = [];
+
+        // Add title
+        const title = document.createElement('div');
+        title.className = 'theme-picker-title';
+        title.textContent = getLabel('switcher.themePickerTitle');
+        picker.appendChild(title);
+
+        // Chips container (bordered area)
+        const chipsContainer = document.createElement('div');
+        chipsContainer.className = 'theme-picker-chips';
 
         // Build a chip for each unlocked theme only
         const themeIds = ['classic', 'habit-tracker', 'fitness', 'scholar', 'cleaning'];
@@ -965,9 +987,10 @@ export class RoutineSwitcher {
             chip.addEventListener('click', handler);
             picker._chipHandlers.push({ el: chip, fn: handler });
 
-            picker.appendChild(chip);
+            chipsContainer.appendChild(chip);
         });
 
+        picker.appendChild(chipsContainer);
         picker.classList.remove('hidden');
     }
 
@@ -1287,8 +1310,7 @@ export class RoutineSwitcher {
                 !mainMenu.contains(event.target) &&
                 event.target !== routineSwitcherBtn &&
                 !routineSwitcherBtn?.contains(event.target) &&
-                !modalOverlay &&
-                !event.target.closest(DOM_SELECTORS.NOTIFICATION)
+                !modalOverlay
             ) {
                 if (switchModal.open) switchModal.close();
                 switchModal._previousFocus?.focus({ focusVisible: false });
@@ -1296,20 +1318,45 @@ export class RoutineSwitcher {
         };
         safeAdd(document, "click", this._clickOutsideHandler);
 
-        // Reset desktop preview when clicking inside modal but not on a list item
+        // Handle clicks inside modal: close theme picker first, then deselect routine
         const switchModalContent = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT);
         if (switchModalContent) {
-            if (!switchModalContent._clickHandler) {
-                switchModalContent._clickHandler = (event) => {
-                    const clickedItem = event.target.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
-                    const clickedPreview = event.target.closest(DOM_SELECTORS.DESKTOP_PREVIEW_WINDOW);
-                    const clickedActions = event.target.closest(`#${DOM_IDS.SWITCH_ITEMS_ROW}`);
-                    const clickedThemePicker = event.target.closest(`#${DOM_IDS.THEME_PICKER_ROW}`);
-                    if (!clickedItem && !clickedPreview && !clickedActions && !clickedThemePicker) {
-                        this._resetDesktopPreview();
-                    }
-                };
+            // Remove old handler before creating new one
+            if (switchModalContent._clickHandler) {
+                switchModalContent.removeEventListener('click', switchModalContent._clickHandler);
             }
+            switchModalContent._clickHandler = (event) => {
+                const clickedItem = event.target.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
+                const clickedActions = event.target.closest(`#${DOM_IDS.SWITCH_ITEMS_ROW}`);
+                const clickedThemePicker = event.target.closest(`#${DOM_IDS.THEME_PICKER_ROW}`);
+                // Check both panel containers (list + preview)
+                const clickedListPanel = event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_LEFT);
+                const clickedPreviewPanel = event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_RIGHT);
+
+                // If clicking on a routine item or actions — let those handlers run
+                if (clickedItem || clickedActions || clickedThemePicker) {
+                    return;
+                }
+
+                // If theme picker is open and click is anywhere outside the picker,
+                // just close the picker — don't deselect the routine
+                const picker = this.deps.getElementById(DOM_IDS.THEME_PICKER_ROW);
+                const isPickerOpen = picker && !picker.classList.contains('hidden');
+                if (isPickerOpen) {
+                    this.closeThemePicker();
+                    // Stop propagation so the uiBoot global handler doesn't also deselect
+                    event.stopPropagation();
+                    return;
+                }
+
+                // Clicks inside the list or preview panels don't deselect
+                if (clickedListPanel || clickedPreviewPanel) {
+                    return;
+                }
+
+                // Clicked outside all interactive areas — deselect routine
+                this._deselectRoutine();
+            };
             safeAdd(switchModalContent, "click", switchModalContent._clickHandler);
         }
 
@@ -1422,10 +1469,11 @@ export class RoutineSwitcher {
             previewTitle.textContent = cycleData?.title || cycleName || getLabel('switcher.preview');
         }
 
-        // Show the double-click hint
+        // Show the double-click/tap hint
         const hint = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_HINT);
         if (hint) {
-            hint.textContent = getLabel('switcher.doubleClickEnlarge');
+            const isMobile = window.matchMedia('(max-width: 767px)').matches;
+            hint.textContent = getLabel(isMobile ? 'switcher.doubleTapEnlarge' : 'switcher.doubleClickEnlarge');
             hint.style.display = 'block';
         }
 
@@ -1442,6 +1490,28 @@ export class RoutineSwitcher {
             html += `<div class="desktop-preview-date">${dateLabel}: ${formattedDate}</div>`;
         }
         desktopPreview.innerHTML = html;
+    }
+
+    /**
+     * Fully deselect the current routine: remove selection, reset preview,
+     * hide actions row, and close theme picker.
+     */
+    _deselectRoutine() {
+        // Remove selection from all items
+        this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => {
+            item.classList.remove('selected');
+            item.setAttribute('aria-selected', 'false');
+        });
+        // Clear the listbox activedescendant
+        const listbox = this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST);
+        if (listbox) listbox.removeAttribute('aria-activedescendant');
+        // Hide actions row
+        const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
+        if (switchItemsRow) switchItemsRow.style.display = 'none';
+        // Close theme picker
+        this.closeThemePicker();
+        // Reset preview
+        this._resetDesktopPreview();
     }
 
     /**
@@ -1721,7 +1791,7 @@ export class RoutineSwitcher {
                 // Show preview & buttons
                 const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
                 if (switchItemsRow) {
-                    switchItemsRow.style.display = "block";
+                    switchItemsRow.style.display = "flex";
                 }
 
                 // ✅ Pass the cycle key for Schema 2.5
@@ -1882,14 +1952,10 @@ export class RoutineSwitcher {
             item.style.display = matches ? '' : 'none';
         });
 
-        // Hide switch-items-row if no item is selected or visible
-        const switchRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
+        // If the selected item got filtered out, fully deselect
         const selectedItem = miniCycleList.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
-        if (switchRow && selectedItem && selectedItem.style.display === 'none') {
-            // Selected item is now hidden, deselect it
-            selectedItem.classList.remove('selected');
-            switchRow.style.display = 'none';
-            this._resetDesktopPreview();
+        if (selectedItem && selectedItem.style.display === 'none') {
+            this._deselectRoutine();
         }
     }
 

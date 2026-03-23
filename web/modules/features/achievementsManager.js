@@ -12,6 +12,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
+import { isClickOnNotification } from '../ui/modalUtils.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -371,7 +372,7 @@ export class AchievementsManager {
 
         // Click outside to close (store handler for cleanup)
         this._overlayClickHandler = (e) => {
-            if (e.target === this.modalOverlay) {
+            if (e.target === this.modalOverlay && !isClickOnNotification(e)) {
                 this.closeModal();
             }
         };

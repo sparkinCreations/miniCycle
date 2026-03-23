@@ -31,6 +31,7 @@
 import { DOM_IDS, DOM_SELECTORS, STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
+import { isClickOnNotification } from '../ui/modalUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -845,7 +846,7 @@ export class ThemeManager {
             if (themesModal) {
                 themesModal._backdropClickHandler = (e) => {
                     // Only close if clicking on the backdrop itself, not the content
-                    if (e.target === themesModal) {
+                    if (e.target === themesModal && !isClickOnNotification(e)) {
                         themesModal.close();
                         themesModal._previousFocus?.focus({ focusVisible: false });
                     }
