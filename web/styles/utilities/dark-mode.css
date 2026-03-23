@@ -65,6 +65,10 @@ body.dark-mode:not([data-theme]) {
     --dark-overlay-medium: rgba(255, 255, 255, 0.15);
     --dark-overlay-strong: rgba(255, 255, 255, 0.2);
     --dark-overlay-heavy: rgba(30, 30, 30, 0.8);
+    --dark-overlay-faint: rgba(255, 255, 255, 0.03);
+    /* Blue highlight overrides (stronger for dark bg visibility) */
+    --highlight-blue-bg: rgba(74, 144, 226, 0.15);
+    --highlight-blue-border: rgba(74, 144, 226, 0.4);
     --dark-text-dim: #aaaaaa;
     --dark-text-subdued: #dddddd;
     --dark-text-light: #eaeaea;

@@ -1,3 +1,7 @@
+## [2.118] - 2026-03-23
+- feat: enhance styling and layout across various components for improved UI consistency
+
+
 ## [2.117] - 2026-03-23
 - feat: update version to 2.116 across all relevant files and changelog and no longer network first
 
