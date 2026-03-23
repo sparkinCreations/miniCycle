@@ -781,10 +781,14 @@ async setDefaultPosition(notificationContainer) {
   setupAutoRemove(notification, duration, onAutoDismiss = null) {
     let hoverPaused = false;
     let focusPaused = false;
+    let touchPaused = false;
     let remaining = duration;
     let removeTimeout;
     let removeDelayTimeout; // ✅ FIX #7: Track fade-out delay timeout
+    let touchResumeTimeout;
     let startTime = Date.now();
+
+    const isPaused = () => hoverPaused || focusPaused || touchPaused;
 
     const clearNotification = () => {
       notification.classList.remove("show");
@@ -797,22 +801,27 @@ async setDefaultPosition(notificationContainer) {
     const startTimer = () => {
       startTime = Date.now();
       removeTimeout = setTimeout(() => {
-        if (!hoverPaused && !focusPaused) clearNotification();
+        if (!isPaused()) clearNotification();
       }, remaining);
     };
 
-    // Only capture remaining time if the timer is actually running (neither source paused)
+    // Only capture remaining time if the timer is actually running (no source paused)
     const pauseIfRunning = () => {
-      if (!hoverPaused && !focusPaused) {
+      if (!isPaused()) {
         clearTimeout(removeTimeout);
         remaining -= (Date.now() - startTime);
         if (remaining < 0) remaining = 0;
       }
     };
 
-    // Only restart the timer if both sources are unpaused
+    // Restart the timer only if all sources are unpaused.
+    // Enforce a minimum remaining time so the notification doesn't vanish
+    // instantly after the user stops interacting.
     const resumeIfUnpaused = () => {
-      if (!hoverPaused && !focusPaused) {
+      if (!isPaused()) {
+        if (remaining < UI_TIMEOUTS.NOTIFICATION_RESUME_MIN) {
+          remaining = UI_TIMEOUTS.NOTIFICATION_RESUME_MIN;
+        }
         startTimer();
       }
     };
@@ -844,10 +853,29 @@ async setDefaultPosition(notificationContainer) {
       });
     });
 
+    // Touch interaction pause: on mobile, mouseenter/mouseleave don't fire
+    // reliably. Pause on touchstart; resume after touchend outside the
+    // notification (or after a short delay if touch stays inside).
+    _safeAddEventListener(notification, "touchstart", () => {
+      pauseIfRunning();
+      touchPaused = true;
+      // Clear any pending touch-resume so repeated taps stay paused
+      if (touchResumeTimeout) clearTimeout(touchResumeTimeout);
+    }, { passive: true });
+    _safeAddEventListener(notification, "touchend", () => {
+      // Delay resume slightly — the user may still be reading / about to tap again
+      if (touchResumeTimeout) clearTimeout(touchResumeTimeout);
+      touchResumeTimeout = setTimeout(() => {
+        touchPaused = false;
+        resumeIfUnpaused();
+      }, UI_TIMEOUTS.NOTIFICATION_RESUME_MIN);
+    }, { passive: true });
+
     // ✅ FIX #7: Return cleanup function to clear all timeouts
     return () => {
       if (removeTimeout) clearTimeout(removeTimeout);
       if (removeDelayTimeout) clearTimeout(removeDelayTimeout);
+      if (touchResumeTimeout) clearTimeout(touchResumeTimeout);
     };
   }
 

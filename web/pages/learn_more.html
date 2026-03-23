@@ -81,7 +81,7 @@
             opacity: 1;
         }
 
-        .cta-btn {
+        .header-nav .cta-btn {
             background: white;
             color: #0088ff;
             padding: 0.6rem 1.2rem;
@@ -91,7 +91,7 @@
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .cta-btn:hover {
+        .header-nav .cta-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
@@ -110,6 +110,11 @@
 
         section:nth-child(even) {
             background: white;
+        }
+
+        section.cta-section {
+            background: linear-gradient(135deg, #0088ff 0%, #04a7ff 100%);
+            color: white;
         }
 
         .section-title {
@@ -230,11 +235,17 @@
         }
 
         .feature-card {
-            background: white;
+            background: #f0f6ff;
             padding: 1.5rem;
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            border-left: 4px solid #0088ff;
+            border: 1px solid rgba(0,0,0,0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
         }
 
         .feature-card h4 {
@@ -496,7 +507,7 @@
 
         /* Responsive */
         @media (max-width: 768px) {
-            .header-nav {
+            .header-nav a:not(.cta-btn) {
                 display: none;
             }
 
@@ -637,12 +648,36 @@
                     <p>Create separate routines for different areas of life - work, home, fitness, personal projects.</p>
                 </div>
                 <div class="feature-card">
-                    <h4><span class="feature-icon" aria-hidden="true">📊</span> Progress Tracking</h4>
-                    <p>Track cycle counts, view statistics, and earn milestone badges as you build consistency.</p>
+                    <h4><span class="feature-icon" aria-hidden="true">🔍</span> Search, Filter & Sort</h4>
+                    <p>Find tasks instantly with inline search. Filter by status, priority, due date, or recurring. Sort alphabetically, by priority, or by due date.</p>
                 </div>
                 <div class="feature-card">
-                    <h4><span class="feature-icon" aria-hidden="true">🎨</span> Themes & Dark Mode</h4>
-                    <p>Unlock beautiful themes by reaching milestones. Toggle dark mode for comfortable viewing.</p>
+                    <h4><span class="feature-icon" aria-hidden="true">📊</span> Progress & Achievements</h4>
+                    <p>Track cycle counts, view statistics, and earn milestone badges and achievements as you build consistency.</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="feature-icon" aria-hidden="true">🎨</span> Vocabulary Themes</h4>
+                    <p>Unlock themed vocabularies as you hit milestones - Habit Tracker, Fitness, Scholar, and more. Each theme changes labels, icons, and colors.</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="feature-icon" aria-hidden="true">🔄</span> Drag & Drop Reordering</h4>
+                    <p>Rearrange tasks by dragging on desktop or long-pressing on mobile. Arrow buttons provide keyboard-accessible reordering.</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="feature-icon" aria-hidden="true">♿</span> Accessibility</h4>
+                    <p>Reduced motion, high contrast mode, adjustable font sizes, and full keyboard navigation. Built for everyone.</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="feature-icon" aria-hidden="true">🛡️</span> Backup & Restore</h4>
+                    <p>Create full backups of your routines, restore to any point, and factory reset when needed. Your data is always recoverable.</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="feature-icon" aria-hidden="true">🎯</span> Focus Mode</h4>
+                    <p>Hides distractions and highlights the next incomplete task. Great for working through routines one step at a time.</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="feature-icon" aria-hidden="true">🌙</span> Dark Mode & Personalization</h4>
+                    <p>Toggle dark mode, customize colors, background patterns, and font sizes. Your preferences persist across sessions.</p>
                 </div>
                 <div class="feature-card">
                     <h4><span class="feature-icon" aria-hidden="true">💾</span> Export & Share</h4>
@@ -779,8 +814,35 @@
                 </div>
 
                 <div class="faq-item">
-                    <button class="faq-question" aria-expanded="false" aria-controls="faq-answer-8">Is there a simpler version for older devices?</button>
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-answer-8">Can I search or filter my tasks?</button>
                     <div class="faq-answer" id="faq-answer-8">
+                        <div class="faq-answer-content">
+                            Yes! When you have 3 or more tasks, a search icon appears. Tap it to search by name, filter by status (incomplete, completed, priority, due date, recurring), and sort alphabetically, by priority, or by due date.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-answer-9">What are vocabulary themes?</button>
+                    <div class="faq-answer" id="faq-answer-9">
+                        <div class="faq-answer-content">
+                            Vocabulary themes change the labels, icons, and colors throughout the app to match a specific context. Themes like Habit Tracker, Fitness, Scholar, and Cleaning unlock as you complete more cycles - rewarding your consistency with a fresh look.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-answer-10">How do achievements work?</button>
+                    <div class="faq-answer" id="faq-answer-10">
+                        <div class="faq-answer-content">
+                            miniCycle tracks milestones like total tasks completed, cycles finished, and streaks maintained. You earn badges and unlock vocabulary themes as you hit these milestones. Check your progress in the Stats Panel.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-answer-11">Is there a simpler version for older devices?</button>
+                    <div class="faq-answer" id="faq-answer-11">
                         <div class="faq-answer-content">
                             Yes! miniCycle Lite is a lightweight version designed for older devices and slower connections. It has the core features without the advanced functionality. <a href="../lite/miniCycle-lite.html">Try Lite Version</a>
                         </div>

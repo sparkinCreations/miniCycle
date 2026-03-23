@@ -942,13 +942,20 @@ export class GuidedTourManager {
         const statsTour = this._tours.get('stats');
         if (!statsTour) return;
 
-        const val = this.deps.AppState?.get?.()?.settings?.[statsTour.stateKey] ?? null;
+        const state = this.deps.AppState?.get?.();
+        const val = state?.settings?.[statsTour.stateKey] ?? null;
         if (val !== null) return; // Already started or done
+
+        // First-time users: wait until at least one cycle is completed
+        // so the stats panel has meaningful data to tour.
+        // Returning users (cyclesCompleted >= 1) see it on first stats open.
+        const cyclesCompleted = state?.userProgress?.cyclesCompleted ?? 0;
+        if (cyclesCompleted < 1) return;
 
         this.deps.showNotification?.(
             getLabel('statsTour.welcomeMessage'),
             'info',
-            0,
+            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
             {
                 actionButton: {
                     label: getLabel('statsTour.startButton'),

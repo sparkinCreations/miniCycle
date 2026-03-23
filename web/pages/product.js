@@ -231,4 +231,12 @@
             document.getElementById('changelog').scrollIntoView({ behavior: 'smooth' });
         }, 500);
     }
+
+    // =========================================================
+    // Dynamic copyright year
+    // =========================================================
+    var yearEl = document.getElementById('year');
+    if (yearEl) {
+        yearEl.textContent = new Date().getFullYear();
+    }
 })();
