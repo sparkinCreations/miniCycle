@@ -1229,6 +1229,85 @@ body.dark-mode .settings-section:not(.collapsed) .settings-section-header:hover 
 }
 
 /* =============================================================================
+   DARK MODE PERSONALIZATION MODAL
+   ============================================================================= */
+
+/* Collapsible section headers */
+body.dark-mode .preferences-section-header.collapsible {
+    background: var(--dark-surface-secondary);
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .preferences-section:not(.collapsed) .preferences-section-header.collapsible {
+    background: var(--dark-surface-muted);
+}
+
+body.dark-mode .preferences-section-header.collapsible:hover {
+    background: var(--dark-surface-muted);
+}
+
+/* Preview label — transparent on the gradient, not overridden */
+body.dark-mode .preferences-preview-label.preferences-section-header.collapsible {
+    background: transparent;
+}
+
+/* Expanded section content area */
+body.dark-mode .preferences-section:not(.collapsed) {
+    background: var(--dark-surface-secondary);
+}
+
+/* Quick Colors & Saved Presets top-level sections */
+body.dark-mode .preferences-quick-presets {
+    background: var(--dark-surface-secondary);
+}
+
+/* Color rows and preset items */
+body.dark-mode .preferences-color-row {
+    background: var(--dark-overlay-subtle);
+}
+
+body.dark-mode .quick-preset-btn {
+    background: var(--dark-surface-primary);
+    border-color: var(--dark-border-subtle);
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .quick-preset-btn:hover {
+    border-color: var(--color-primary);
+}
+
+body.dark-mode .preferences-preset-item {
+    background: var(--dark-surface-primary);
+    border-color: var(--dark-border-subtle);
+}
+
+/* Muted text */
+body.dark-mode .preferences-no-presets {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .preferences-bg-image-hint {
+    color: var(--dark-text-dim);
+}
+
+/* Section toggle arrow */
+body.dark-mode .preferences-section-toggle {
+    color: var(--dark-text-dim);
+}
+
+/* Reset All button */
+body.dark-mode .preferences-reset-all-btn {
+    background: color-mix(in srgb, var(--color-error) 15%, transparent);
+    color: var(--dark-text-light);
+    border-color: var(--color-error);
+}
+
+body.dark-mode .preferences-footer button.preferences-reset-all-btn:hover {
+    background: var(--color-error);
+    color: var(--color-white);
+}
+
+/* =============================================================================
    DARK MODE THEMES MODAL
    ============================================================================= */
 

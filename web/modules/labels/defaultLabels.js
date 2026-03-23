@@ -1520,6 +1520,7 @@ export const DEFAULT_LABELS = deepFreeze({
         previewHelp:        'Help',
         ariaToggleLivePreview: 'Toggle Live Preview section',
         ariaToggleQuickColors: 'Toggle Quick Colors section',
+        ariaToggleSavedPresets: 'Toggle Saved Presets section',
         ariaToggleLayout:   'Toggle Layout section',
         ariaToggleAppBg:    'Toggle App Background section',
         ariaToggleRoutineList: 'Toggle Routine List section',
