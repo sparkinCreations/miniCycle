@@ -1099,6 +1099,8 @@ export const DOM_SELECTORS = Object.freeze({
 
     // ---- Task Options Customizer ----
     TASK_OPTION_ITEM: '.task-option-item',
+    TASK_OPTION_PREVIEW: '.task-option-preview',
+    OPTION_CHECKBOX_CONTAINER: '.option-checkbox-container',
 
     // ---- Icons ----
     ICON_FONTAWESOME: 'i.fas, i.far, i.fab, i.fa',

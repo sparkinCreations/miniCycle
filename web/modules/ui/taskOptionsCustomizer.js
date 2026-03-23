@@ -101,6 +101,7 @@ const BUTTON_CONFIG = [
         labelKey: 'taskOptions.highPriority',
         icon: CUSTOMIZER_ICONS['flag'],
         scope: 'cycle',
+        category: 'core',
         descriptionKey: 'taskOptions.highPriorityDescription'
     },
     {
@@ -108,6 +109,7 @@ const BUTTON_CONFIG = [
         labelKey: 'taskOptions.renameTask',
         icon: CUSTOMIZER_ICONS['edit'],
         scope: 'cycle',
+        category: 'core',
         descriptionKey: 'taskOptions.renameDescription'
     },
     {
@@ -115,6 +117,7 @@ const BUTTON_CONFIG = [
         labelKey: 'taskOptions.deleteTask',
         icon: CUSTOMIZER_ICONS['trash'],
         scope: 'cycle',
+        category: 'core',
         descriptionKey: 'taskOptions.deleteDescription'
     },
     {
@@ -122,6 +125,7 @@ const BUTTON_CONFIG = [
         labelKey: 'taskOptions.recurringTask',
         icon: CUSTOMIZER_ICONS['repeat'],
         scope: 'cycle',
+        category: 'scheduling',
         descriptionKey: 'taskOptions.recurringDescription'
     },
     {
@@ -129,6 +133,7 @@ const BUTTON_CONFIG = [
         labelKey: 'taskOptions.setDueDate',
         icon: CUSTOMIZER_ICONS['calendar-alt'],
         scope: 'cycle',
+        category: 'scheduling',
         descriptionKey: 'taskOptions.dueDateDescription'
     },
     {
@@ -136,6 +141,7 @@ const BUTTON_CONFIG = [
         labelKey: 'taskOptions.taskReminders',
         icon: CUSTOMIZER_ICONS['bell'],
         scope: 'cycle',
+        category: 'scheduling',
         descriptionKey: 'taskOptions.remindersDescription'
     },
     {
@@ -143,6 +149,7 @@ const BUTTON_CONFIG = [
         labelKey: 'taskOptions.clearOnReset',
         icon: '🧹',
         scope: 'cycle',
+        category: 'cleanup',
         descriptionKey: 'taskOptions.clearOnResetDescription'
     }
 ];
@@ -349,8 +356,11 @@ export class TaskOptionsCustomizer {
 
                 <div class="modal-body">
                     <div class="task-options-container">
-                        <div class="task-options-list">
-                            ${this.buildOptionsList(currentOptions)}
+                        <div class="task-options-list-column">
+                            <div class="task-options-list">
+                                ${this.buildOptionsList(currentOptions)}
+                            </div>
+                            <p class="modal-footer-note">${getLabel('taskOptions.changesApply')}</p>
                         </div>
                         <div class="task-option-preview">
                             <div class="preview-header">
@@ -366,7 +376,6 @@ export class TaskOptionsCustomizer {
 
                 <div class="modal-footer">
                     <div class="modal-footer-row">
-                        <p class="modal-footer-note">${getLabel('taskOptions.changesApply')}</p>
                         <button id="${DOM_IDS.RESET_TASK_OPTIONS_BTN}">
                             🔄 ${getLabel('taskOptions.resetDefault')}
                         </button>
@@ -386,6 +395,16 @@ export class TaskOptionsCustomizer {
         // Show modal using native dialog API
         modal._previousFocus = document.activeElement;
         modal.showModal();
+
+        // Sync preview height to match the options list
+        requestAnimationFrame(() => {
+            const list = modal.querySelector(DOM_SELECTORS.TASK_OPTIONS_LIST);
+            const preview = modal.querySelector(DOM_SELECTORS.TASK_OPTION_PREVIEW);
+            if (list && preview) {
+                preview.style.height = `${list.offsetHeight}px`;
+                preview.style.overflowY = 'auto';
+            }
+        });
         // Focus first interactive element
         const firstFocusable = modal.querySelector('input:not([disabled]), button');
         if (firstFocusable) setTimeout(() => firstFocusable.focus({ focusVisible: false }), 100);
@@ -401,7 +420,9 @@ export class TaskOptionsCustomizer {
      */
     buildOptionsList(currentOptions) {
         const globalOptions = BUTTON_CONFIG.filter(opt => opt.scope === 'global');
-        const cycleOptions = BUTTON_CONFIG.filter(opt => opt.scope === 'cycle');
+        const coreOptions = BUTTON_CONFIG.filter(opt => opt.scope === 'cycle' && opt.category === 'core');
+        const schedulingOptions = BUTTON_CONFIG.filter(opt => opt.scope === 'cycle' && opt.category === 'scheduling');
+        const cleanupOptions = BUTTON_CONFIG.filter(opt => opt.scope === 'cycle' && opt.category === 'cleanup');
 
         const defaultButtons = this.deps.DEFAULT_TASK_OPTION_BUTTONS;
         const escapeAttr = (str) => String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
@@ -425,11 +446,11 @@ export class TaskOptionsCustomizer {
             const iconIndex = BUTTON_CONFIG.findIndex(cfg => cfg.key === option.key);
 
             return `
-                <label class="task-option-item ${isDisabled ? 'disabled' : ''}"
-                       data-option-key="${option.key}"
-                       data-option-index="${iconIndex}"
-                       data-option-label="${escapeAttr(label)}"
-                       data-option-description="${escapeAttr(description)}">
+                <div class="task-option-item ${isDisabled ? 'disabled' : ''}"
+                     data-option-key="${option.key}"
+                     data-option-index="${iconIndex}"
+                     data-option-label="${escapeAttr(label)}"
+                     data-option-description="${escapeAttr(description)}">
                     <div class="option-checkbox-container">
                         <input
                             type="checkbox"
@@ -447,17 +468,33 @@ export class TaskOptionsCustomizer {
                         <span class="option-label">${label}</span>
                         ${isDisabled ? `<span class="always-visible-badge">${getLabel('taskOptions.alwaysBadge')}</span>` : ''}
                     </div>
-                </label>
+                </div>
             `;
         };
 
         return `
             <div class="options-section">
                 <div class="section-header">
-                    <h3>📋 ${getLabel('taskOptions.thisCycle')}</h3>
+                    <h3>🎯 ${getLabel('taskOptions.coreActions')}</h3>
                 </div>
                 <div class="section-options">
-                    ${cycleOptions.map(buildOption).join('')}
+                    ${coreOptions.map(buildOption).join('')}
+                </div>
+            </div>
+            <div class="options-section">
+                <div class="section-header">
+                    <h3>📅 ${getLabel('taskOptions.scheduling')}</h3>
+                </div>
+                <div class="section-options">
+                    ${schedulingOptions.map(buildOption).join('')}
+                </div>
+            </div>
+            <div class="options-section">
+                <div class="section-header">
+                    <h3>🧹 ${getLabel('taskOptions.cleanup')}</h3>
+                </div>
+                <div class="section-options">
+                    ${cleanupOptions.map(buildOption).join('')}
                 </div>
             </div>
             <div class="options-section">
@@ -537,12 +574,7 @@ export class TaskOptionsCustomizer {
             const icon = BUTTON_CONFIG[optionIndex]?.icon || '';
 
             const achievementNote = item.dataset.optionKey === 'deleteWhenComplete'
-                ? `<p class="preview-option-note" style="
-                    font-size: 12px;
-                    color: var(--text-secondary, #666);
-                    margin: 8px 0 0;
-                    font-style: italic;
-                ">${getLabel('taskOptions.achievementNote')}</p>`
+                ? `<p class="preview-option-note">${getLabel('taskOptions.achievementNote')}</p>`
                 : '';
 
             previewContent.innerHTML = `
@@ -556,7 +588,13 @@ export class TaskOptionsCustomizer {
         const hidePreview = () => {
             hidePreviewTimer = setTimeout(() => {
                 hidePreviewTimer = null;
-                previewContent.innerHTML = `<p class="preview-placeholder"><span class="desktop-text">${getLabel('taskOptions.previewHover')}</span><span class="mobile-text">${getLabel('taskOptions.previewTap')}</span> ${getLabel('taskOptions.previewInstruction')}</p>`;
+                // If an item is selected, show its preview instead of placeholder
+                const selectedItem = modal.querySelector('.task-option-item.selected');
+                if (selectedItem) {
+                    showPreview(selectedItem);
+                } else {
+                    previewContent.innerHTML = `<p class="preview-placeholder"><span class="desktop-text">${getLabel('taskOptions.previewHover')}</span><span class="mobile-text">${getLabel('taskOptions.previewTap')}</span> ${getLabel('taskOptions.previewInstruction')}</p>`;
+                }
             }, 80);
         };
 
@@ -582,9 +620,21 @@ export class TaskOptionsCustomizer {
             safeAdd(item, 'touchstart', item._touchstartHandler, { passive: true });
 
             item._clickHandler = (e) => {
-                if (!e.target.classList.contains('option-checkbox')) {
-                    showPreview(item);
+                const isCheckboxClick = e.target.closest(DOM_SELECTORS.OPTION_CHECKBOX_CONTAINER);
+                const checkbox = item.querySelector('.option-checkbox');
+
+                if (isCheckboxClick && checkbox && !checkbox.disabled) {
+                    // Clicking checkbox area: toggle the checkbox (since it's no longer in a <label>)
+                    if (!e.target.classList.contains('option-checkbox')) {
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
                 }
+
+                // Always show preview and mark selected
+                showPreview(item);
+                optionItems.forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
             };
             safeAdd(item, 'click', item._clickHandler);
         });
@@ -602,6 +652,21 @@ export class TaskOptionsCustomizer {
             this.saveCustomization(cycleId, checkboxes, 'reset');
         };
         safeAdd(resetBtn, 'click', resetBtn._clickHandler);
+
+        // Deselect when clicking empty modal space (not on items, buttons, or preview)
+        const modalContent = modal.querySelector('.task-options-modal');
+        if (modalContent) {
+            modalContent._deselectHandler = (e) => {
+                const isOnItem = e.target.closest(DOM_SELECTORS.TASK_OPTION_ITEM);
+                const isOnPreview = e.target.closest(DOM_SELECTORS.TASK_OPTION_PREVIEW);
+                const isOnButton = e.target.closest('button');
+                if (!isOnItem && !isOnPreview && !isOnButton) {
+                    optionItems.forEach(i => i.classList.remove('selected'));
+                    previewContent.innerHTML = `<p class="preview-placeholder"><span class="desktop-text">${getLabel('taskOptions.previewHover')}</span><span class="mobile-text">${getLabel('taskOptions.previewTap')}</span> ${getLabel('taskOptions.previewInstruction')}</p>`;
+                }
+            };
+            safeAdd(modalContent, 'click', modalContent._deselectHandler);
+        }
 
         // Close on overlay click
         modal._overlayClickHandler = (e) => {
@@ -807,6 +872,8 @@ export class TaskOptionsCustomizer {
             if (item._clickHandler) { item.removeEventListener('click', item._clickHandler); item._clickHandler = null; }
         });
         if (modal._overlayClickHandler) { modal.removeEventListener('click', modal._overlayClickHandler); modal._overlayClickHandler = null; }
+        const modalContent = modal.querySelector('.task-options-modal');
+        if (modalContent?._deselectHandler) { modalContent.removeEventListener('click', modalContent._deselectHandler); modalContent._deselectHandler = null; }
 
         modal.close();
         this._modalRemoveTimerId = setTimeout(() => {

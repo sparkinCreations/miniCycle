@@ -58,10 +58,15 @@
   --border-blue-subtle: rgba(61, 122, 181, 0.25);   /* subtle blue border/hover for inner panels */
   --border-blue-subtle-hover: rgba(61, 122, 181, 0.4); /* border state for blue sections */
   /* Generic overlays (black translucent, used for borders/hovers/backdrops) */
+  --overlay-faint: rgba(0, 0, 0, 0.03);        /* barely-visible tint */
   --overlay-light: rgba(0, 0, 0, 0.06);        /* subtle tint for badges/chips */
   --overlay-medium: rgba(0, 0, 0, 0.1);        /* borders, dividers, hover bg */
   --overlay-strong: rgba(0, 0, 0, 0.15);       /* stronger borders, chip hover */
-  --overlay-heavy: rgba(0, 0, 0, 0.5);         /* modal backdrops */
+  --overlay-backdrop: rgba(0, 0, 0, 0.3);      /* lighter modal backdrops */
+  --overlay-heavy: rgba(0, 0, 0, 0.5);         /* full modal backdrops */
+  /* Blue highlight overlays (interactive element hover/focus) */
+  --highlight-blue-bg: rgba(74, 144, 226, 0.08);     /* hover bg */
+  --highlight-blue-border: rgba(74, 144, 226, 0.3);  /* hover border */
   /* White overlays (for dark-bg contexts) */
   --overlay-white-light: rgba(255, 255, 255, 0.2);  /* subtle white tint */
   --overlay-white-medium: rgba(255, 255, 255, 0.4); /* hover state white tint */
