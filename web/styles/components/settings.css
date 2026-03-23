@@ -60,7 +60,7 @@
 .settings-section.collapsible {
     margin-bottom: var(--space-2);
     padding: 0;
-    border: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
+    border: 1px solid var(--border-blue-subtle-hover);
     border-radius: var(--radius-10);
     overflow: hidden;
     background: var(--color-blue-pale-light);
@@ -71,7 +71,8 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--space-3) 14px;
-    background: var(--color-gray-300);
+    background: var(--color-blue-pale-mid);
+    color: var(--color-black);
     cursor: pointer;
     font-weight: 600;
     font-size: var(--font-size-sm);
@@ -80,15 +81,12 @@
 }
 
 .settings-section.collapsed .settings-section-header {
-    background: var(--color-blue-pale-light);
+    background: var(--color-blue-pale);
 }
 
-.settings-section-header:hover {
-    background: var(--color-gray-100);
-}
-
+.settings-section.collapsed .settings-section-header:hover,
 .settings-section:not(.collapsed) .settings-section-header:hover {
-    background: var(--color-gray-400);
+    background: var(--border-blue-subtle);
 }
 
 .settings-section-header:focus-visible {

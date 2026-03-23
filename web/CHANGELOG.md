@@ -1,3 +1,7 @@
+## [2.117] - 2026-03-23
+- feat: update version to 2.116 across all relevant files and changelog and no longer network first
+
+
 ## [2.116] - 2026-03-23
 - feat: enhance notification behavior and UI, add dynamic copyright year
 

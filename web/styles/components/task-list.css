@@ -1045,7 +1045,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-list-c
 /* Task items - uses custom pref colors when set */
 html:not(.dark-mode) body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task,
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task {
-    background: var(--pref-task-bg, rgba(255, 255, 255, 0.95));
+    background: var(--pref-task-bg, var(--theme-task-bg, rgba(255, 255, 255, 0.95)));
     color: var(--pref-task-text, var(--theme-text-on-surface));
 }
 
