@@ -10,7 +10,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.120">
+<meta name="app-version" content="2.121">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -29,20 +29,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.120"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.121"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.120" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.120" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.120" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.120" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.120" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.120" as="style">
+<link rel="preload" href="styles/main.css?v=2.121" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.121" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.121" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.121" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.121" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.121" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.120" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.121" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.120"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.121"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -53,7 +53,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.120"></script>
+<script src="./version.js?v=2.121"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -446,28 +446,32 @@ if ('serviceWorker' in navigator) {
       });
       const text = await response.text();
 
-      // Extract version from response
+      // Extract both versions from response
       const match = text.match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
-      if (match) {
-        const serverVersion = match[1];
-        if (serverVersion !== APP_VERSION) {
-          console.warn(`🔄 VERSION MISMATCH: loaded=${APP_VERSION}, server=${serverVersion}`);
-          // Sync localStorage so the early boot check on the reloaded page
-          // sees a matching version and doesn't trigger a second reload.
-          try {
-            localStorage.setItem('__miniCycle_lastVersion', serverVersion);
-            sessionStorage.setItem('__miniCycle_justCleared', serverVersion);
-          } catch (e) { /* storage unavailable */ }
-          // Clear caches and reload
-          if ('caches' in window) {
-            const keys = await caches.keys();
-            await Promise.all(keys.map(k => caches.delete(k)));
-          }
-          window.location.href = window.location.pathname + '?_cb=' + Date.now();
-          return;
+      const cacheMatch = text.match(/CACHE_VERSION\s*=\s*['"]?([^'"\s;]+)/);
+      const serverVersion = match ? match[1] : null;
+      const serverCacheVersion = cacheMatch ? cacheMatch[1] : null;
+      if (serverVersion && (serverVersion !== APP_VERSION ||
+          (serverCacheVersion && typeof CACHE_VERSION !== 'undefined' && serverCacheVersion !== String(CACHE_VERSION)))) {
+        const reason = serverVersion !== APP_VERSION
+          ? `APP_VERSION: loaded=${APP_VERSION}, server=${serverVersion}`
+          : `CACHE_VERSION: loaded=${CACHE_VERSION}, server=${serverCacheVersion}`;
+        console.warn(`🔄 VERSION MISMATCH: ${reason}`);
+        // Sync localStorage so the early boot check on the reloaded page
+        // sees a matching version and doesn't trigger a second reload.
+        try {
+          localStorage.setItem('__miniCycle_lastVersion', serverVersion);
+          sessionStorage.setItem('__miniCycle_justCleared', serverVersion);
+        } catch (e) { /* storage unavailable */ }
+        // Clear caches and reload
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
         }
-        console.log(`✅ Version verified: ${APP_VERSION}`);
+        window.location.href = window.location.pathname + '?_cb=' + Date.now();
+        return;
       }
+      console.log(`✅ Version verified: ${APP_VERSION} (cache ${CACHE_VERSION})`);
     } catch (err) {
       console.warn('Version check failed (offline?):', err);
     } finally {
@@ -1845,7 +1849,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.120"></script>
+ <script type="module" src="miniCycle-main.js?v=2.121"></script>
 
 <script>
 // Sync About modal version with meta app-version
