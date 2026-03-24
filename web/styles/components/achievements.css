@@ -18,16 +18,20 @@
    ============================================================================= */
 
 .achievements-modal {
-    background: var(--theme-modal-bg, var(--color-white));
+    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
     border-radius: var(--radius-lg);
     width: 90%;
     max-width: 500px;
     max-height: 80vh;
     display: flex;
     flex-direction: column;
-    box-shadow: var(--shadow-modal);
+    box-shadow:
+        var(--shadow-modal),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
     transform: translateY(20px);
     transition: transform var(--transition-fast) ease;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
 }
 
 /* =============================================================================
@@ -303,8 +307,10 @@
 
 /* Default (locked) popup colors */
 .badge-detail-popup {
-    background: var(--theme-modal-bg, var(--color-white));
+    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
     color: var(--theme-modal-text, var(--color-gray-700));
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
 }
 
 /* Themed popup colors via data-attribute */

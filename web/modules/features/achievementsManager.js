@@ -531,6 +531,21 @@ export class AchievementsManager {
             }
         });
 
+        // One-time hint to tap/click badges for more info
+        const state = this.deps.AppState?.get?.();
+        if (state && !state.settings?.badgeHintShown) {
+            const badgesEl = this.deps.querySelector(DOM_SELECTORS.BADGES_CONTAINER);
+            if (badgesEl) {
+                const hint = document.createElement('p');
+                hint.className = 'badge-tap-hint';
+                hint.textContent = getLabel('achievement.badgeTapHint');
+                badgesEl.parentElement.insertBefore(hint, badgesEl.nextSibling);
+                this.deps.AppState.update(s => {
+                    s.settings.badgeHintShown = true;
+                });
+            }
+        }
+
         // Delegated ArrowLeft/Right navigation between badges
         const badgesContainer = this.deps.querySelector(DOM_SELECTORS.BADGES_CONTAINER);
         if (badgesContainer && safeAddEventListener) {

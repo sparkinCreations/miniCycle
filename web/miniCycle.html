@@ -10,7 +10,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.126">
+<meta name="app-version" content="2.127">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -29,20 +29,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.126"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.127"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.126" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.126" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.126" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.126" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.126" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.126" as="style">
+<link rel="preload" href="styles/main.css?v=2.127" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.127" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.127" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.127" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.127" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.127" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.126" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.127" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.126"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.127"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -53,7 +53,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.126"></script>
+<script src="./version.js?v=2.127"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -1333,14 +1333,14 @@ window.installApp = () => {
 
         <div class="testing-modal-body">
             <!-- Tabs for different testing categories -->
-            <div class="testing-tabs">
-                <button class="testing-tab active" data-tab="diagnostics">📊 Diagnostics</button>
-                <button class="testing-tab" data-tab="debug">🐛 Debug Info</button>
-                <button class="testing-tab" data-tab="automated-tests">🧪 Automated Tests</button>
+            <div class="testing-tabs" role="tablist" aria-label="Testing categories">
+                <button class="testing-tab active" data-tab="diagnostics" role="tab" aria-selected="true" aria-controls="diagnostics-tab">📊 Diagnostics</button>
+                <button class="testing-tab" data-tab="debug" role="tab" aria-selected="false" aria-controls="debug-tab">🐛 Debug Info</button>
+                <button class="testing-tab" data-tab="automated-tests" role="tab" aria-selected="false" aria-controls="automated-tests-tab">🧪 Automated Tests</button>
             </div>
 
             <!-- Diagnostics Tab -->
-            <div id="diagnostics-tab" class="testing-tab-content active">
+            <div id="diagnostics-tab" class="testing-tab-content active" role="tabpanel">
                 <div class="testing-section">
                     <h3>📋 Quick Health Check</h3>
                     <button id="run-health-check" class="test-btn test-primary">Run Full Diagnostic</button>
@@ -1372,7 +1372,7 @@ window.installApp = () => {
             </div>
 
             <!-- Debug Info Tab -->
-            <div id="debug-tab" class="testing-tab-content">
+            <div id="debug-tab" class="testing-tab-content" role="tabpanel">
                 <div class="testing-section">
                     <h3>🐛 Debug Information</h3>
                     <button id="generate-debug-report" class="test-btn test-primary">Generate Debug Report</button>
@@ -1398,7 +1398,7 @@ window.installApp = () => {
             </div>
 
             <!-- Automated Tests Tab -->
-            <div id="automated-tests-tab" class="testing-tab-content">
+            <div id="automated-tests-tab" class="testing-tab-content" role="tabpanel">
                 <div class="testing-section">
                     <h3>🧪 Quick Test</h3>
                     <button id="run-all-automated-tests" class="test-btn test-primary">
@@ -1507,7 +1507,7 @@ window.installApp = () => {
         <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off" aria-label="Search routines">
         <div class="routine-sort-filter-row">
             <div class="routine-filter-controls">
-                <select id="routine-filter-select" class="routine-filter-select">
+                <select id="routine-filter-select" class="routine-filter-select" aria-label="Filter routines by mode">
                     <option value="all">All Modes</option>
                     <option value="auto">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔄 Auto Cycle</option>
                     <option value="manual">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✋ Manual Cycle</option>
@@ -1691,7 +1691,7 @@ window.installApp = () => {
             <button id="task-search-clear" class="task-search-clear" aria-label="Clear search" title="Clear search">×</button>
         </div>
         <!--Tasks will go here-->
-        <ul id="taskList" class="task-list" aria-label="Task list"></ul>
+        <ul id="taskList" class="task-list" aria-label="Task list" aria-live="polite" aria-relevant="additions removals"></ul>
 
         <!-- Empty State Message -->
         <div id="empty-state" class="empty-state">
@@ -1849,7 +1849,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.126"></script>
+ <script type="module" src="miniCycle-main.js?v=2.127"></script>
 
 <script>
 // Sync About modal version with meta app-version

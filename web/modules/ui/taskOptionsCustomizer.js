@@ -622,18 +622,19 @@ export class TaskOptionsCustomizer {
             safeAdd(item, 'touchstart', item._touchstartHandler, { passive: true });
 
             item._clickHandler = (e) => {
-                const isCheckboxClick = e.target.closest(DOM_SELECTORS.OPTION_CHECKBOX_CONTAINER);
+                const isLabelClick = e.target.closest('.option-label');
                 const checkbox = item.querySelector('.option-checkbox');
 
-                if (isCheckboxClick && checkbox && !checkbox.disabled) {
-                    // Clicking checkbox area: toggle the checkbox (since it's no longer in a <label>)
+                if (!isLabelClick && checkbox && !checkbox.disabled) {
+                    // Left zone (checkbox + icon area): toggle the checkbox only
                     if (!e.target.classList.contains('option-checkbox')) {
                         checkbox.checked = !checkbox.checked;
                         checkbox.dispatchEvent(new Event('change', { bubbles: true }));
                     }
+                    return; // Don't select/preview
                 }
 
-                // Always show preview and mark selected
+                // Right zone (label text): show preview and mark selected
                 showPreview(item);
                 optionItems.forEach(i => i.classList.remove('selected'));
                 item.classList.add('selected');

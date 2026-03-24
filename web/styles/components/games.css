@@ -33,14 +33,18 @@
    ============================================================================= */
 
 .games-modal-content {
-    background: var(--theme-modal-bg, var(--color-white));
+    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
     color: var(--theme-modal-text, var(--theme-text-on-surface));
     padding: var(--space-6);
     border-radius: var(--radius-lg);
     width: 420px;
     max-width: 95%;
     text-align: center;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.3),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
 }
 
 .games-modal-content h2 {

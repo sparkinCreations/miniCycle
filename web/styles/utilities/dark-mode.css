@@ -135,6 +135,7 @@ body.dark-mode:not([data-theme]) {
     --theme-stats-text: var(--theme-text-primary);
     --theme-stats-bg: var(--dark-surface-primary);
     --theme-modal-bg: var(--dark-surface-primary);
+    --theme-modal-glass-bg: rgba(42, 42, 42, 0.82);
     --theme-modal-text: var(--theme-text-primary);
     --theme-modal-border: var(--dark-button-hover-bg);
     --theme-card-bg: #2e2e2e;
@@ -594,6 +595,16 @@ body.dark-mode .menu-container .menu-grid button:hover {
     background-color: var(--dark-button-bg);
     color: var(--color-white);
     border-color: var(--dark-border-hover);
+}
+
+/* Quick Actions title in menu */
+body.dark-mode .quick-actions-menu-row .quick-actions-title {
+    color: var(--dark-text-dim);
+}
+
+/* Menu section headers (ROUTINE ACTIONS, TASK ACTIONS & FEATURES) */
+body.dark-mode .menu-section-header {
+    color: var(--dark-text-dim);
 }
 
 /* =============================================================================
@@ -1690,4 +1701,23 @@ body.dark-mode .filter-sort-divider {
 
 body.dark-mode .chip-group-icon {
     color: var(--theme-text-primary);
+}
+
+/* =============================================================================
+   PREFERS-COLOR-SCHEME FALLBACK
+   Provides basic dark styling before JS loads. Once JS sets body.dark-mode,
+   the class-based rules above take precedence (higher specificity).
+   This prevents a flash of bright white for users with dark OS preferences.
+   ============================================================================= */
+
+@media (prefers-color-scheme: dark) {
+    html:not(.dark-mode):not([data-theme]) {
+        background: #1c1c1c;
+        color: #e0e0e0;
+    }
+
+    html:not(.dark-mode):not([data-theme]) body {
+        background: linear-gradient(135deg, #1c1c1c, #2a2a2a);
+        color: #e0e0e0;
+    }
 }

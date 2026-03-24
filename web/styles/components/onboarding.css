@@ -86,7 +86,7 @@ body.onboarding-active .onboarding-placeholder {
    ============================================================================= */
 
 .onboarding-content {
-    background: var(--theme-modal-bg, var(--color-white));
+    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
     color: var(--theme-modal-text, var(--theme-text-on-surface));
     padding: var(--space-12) var(--space-6) var(--space-5);
     width: 420px;
@@ -95,6 +95,8 @@ body.onboarding-active .onboarding-placeholder {
     text-align: center;
     position: relative;
     pointer-events: auto;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
 }
 
 .onboarding-content h2 {
