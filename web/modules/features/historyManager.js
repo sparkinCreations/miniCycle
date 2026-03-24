@@ -777,10 +777,10 @@ export class HistoryManager {
             'theme_changed': getLabel('history.themeChanged')
         };
 
-        const time = new Date(event.timestamp).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        const eventDate = new Date(event.timestamp);
+        const dateStr = eventDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        const timeStr = eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const time = `${dateStr} ${timeStr}`;
 
         let detailText = '';
         if (event.details) {

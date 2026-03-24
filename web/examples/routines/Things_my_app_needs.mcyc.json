@@ -1,0 +1,355 @@
+{
+  "name": "Things my app needs",
+  "title": "Things my app needs",
+  "tasks": [
+    {
+      "id": "id-1774312306290-qgykstemj",
+      "text": "Add date to history",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "id-1774312387464-kecmdh1re",
+      "text": "Make high light on history blue",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "id-1774312402683-9kcm39sw4",
+      "text": "Make badges move on hover",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "id-1774312422055-qn09t6dqo",
+      "text": "Add one hint on stats for badges",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "id-1774312436565-jrqfmjy0z",
+      "text": "Update user manual",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "id-1774312463559-260ad8ois",
+      "text": "Fix routine tab closing when opening history modal",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "id-1774312528257-bz9sal21l",
+      "text": "Update product website",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "id-1774312570630-0woycz0fc",
+      "text": "Update quick actions on mobile dark mode",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "id-1774312687088-nwql71o9j",
+      "text": "Allow different modal completions in personalization",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "id-1774312774144-86a2e43q9",
+      "text": "Update preview on add or remove task option buttons on mobile",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "id-1774312837695-lza1ezip1",
+      "text": "Make modals more transparent",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "id-1774313079679-arjuk13it",
+      "text": "Professional mode",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "id-1774313198396-h630a6z3j",
+      "text": "Update tours",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": false,
+  "cycleCount": 0,
+  "deleteCheckedTasks": true,
+  "taskOptionButtons": {
+    "customize": true,
+    "moveArrows": false,
+    "highPriority": true,
+    "rename": true,
+    "delete": true,
+    "recurring": false,
+    "dueDate": false,
+    "reminders": false,
+    "deleteWhenComplete": false
+  },
+  "recurringTemplates": {},
+  "reminders": null,
+  "createdAt": 1774312118163,
+  "theme": "classic",
+  "history": {
+    "events": [
+      {
+        "id": "evt-1774313198407-ivqlh",
+        "type": "task_added",
+        "timestamp": 1774313198407,
+        "details": {
+          "taskName": "Update tours",
+          "_eventLabel": "Task Added"
+        }
+      },
+      {
+        "id": "evt-1774313079703-xy6mi",
+        "type": "task_added",
+        "timestamp": 1774313079703,
+        "details": {
+          "taskName": "Professional mode",
+          "_eventLabel": "Task Added"
+        }
+      },
+      {
+        "id": "evt-1774312837707-blzx1",
+        "type": "task_added",
+        "timestamp": 1774312837707,
+        "details": {
+          "taskName": "Make modals more transparent",
+          "_eventLabel": "Task Added"
+        }
+      },
+      {
+        "id": "evt-1774312774158-wyp75",
+        "type": "task_added",
+        "timestamp": 1774312774158,
+        "details": {
+          "taskName": "Update preview on add or remove task option buttons on mobile",
+          "_eventLabel": "Task Added"
+        }
+      },
+      {
+        "id": "evt-1774312687100-uzzu2",
+        "type": "task_added",
+        "timestamp": 1774312687100,
+        "details": {
+          "taskName": "Allow different modal completions in personalization",
+          "_eventLabel": "Task Added"
+        }
+      },
+      {
+        "id": "evt-1774312570639-tumge",
+        "type": "task_added",
+        "timestamp": 1774312570639,
+        "details": {
+          "taskName": "Update quick actions on mobile dark mode",
+          "_eventLabel": "Task Added"
+        }
+      },
+      {
+        "id": "evt-1774312528267-fq8wg",
+        "type": "task_added",
+        "timestamp": 1774312528267,
+        "details": {
+          "taskName": "Update product website",
+          "_eventLabel": "Task Added"
+        }
+      },
+      {
+        "id": "evt-1774312463566-7q87y",
+        "type": "task_added",
+        "timestamp": 1774312463566,
+        "details": {
+          "taskName": "Fix routine tab closing when opening history modal",
+          "_eventLabel": "Task Added"
+        }
+      },
+      {
+        "id": "evt-1774312436573-6pf51",
+        "type": "task_added",
+        "timestamp": 1774312436573,
+        "details": {
+          "taskName": "Update user manual",
+          "_eventLabel": "Task Added"
+        }
+      },
+      {
+        "id": "evt-1774312422063-9oogo",
+        "type": "task_added",
+        "timestamp": 1774312422063,
+        "details": {
+          "taskName": "Add one hint on stats for badges",
+          "_eventLabel": "Task Added"
+        }
+      },
+      {
+        "id": "evt-1774312402690-a2qaj",
+        "type": "task_added",
+        "timestamp": 1774312402690,
+        "details": {
+          "taskName": "Make badges move on hover",
+          "_eventLabel": "Task Added"
+        }
+      },
+      {
+        "id": "evt-1774312387472-7g47k",
+        "type": "task_added",
+        "timestamp": 1774312387472,
+        "details": {
+          "taskName": "Make high light on history blue",
+          "_eventLabel": "Task Added"
+        }
+      },
+      {
+        "id": "evt-1774312306300-mtkmo",
+        "type": "task_added",
+        "timestamp": 1774312306301,
+        "details": {
+          "taskName": "Add date to history",
+          "_eventLabel": "Task Added"
+        }
+      }
+    ],
+    "maxEvents": 100
+  },
+  "clearedTasks": null
+}

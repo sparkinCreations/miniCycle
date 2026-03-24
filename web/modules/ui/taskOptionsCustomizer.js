@@ -396,8 +396,10 @@ export class TaskOptionsCustomizer {
         modal._previousFocus = document.activeElement;
         modal.showModal();
 
-        // Sync preview height to match the options list
+        // Sync preview height to match the options list (desktop only —
+        // on mobile the preview is a compact single-line bar below the list)
         requestAnimationFrame(() => {
+            if (window.innerWidth <= 768) return;
             const list = modal.querySelector(DOM_SELECTORS.TASK_OPTIONS_LIST);
             const preview = modal.querySelector(DOM_SELECTORS.TASK_OPTION_PREVIEW);
             if (list && preview) {

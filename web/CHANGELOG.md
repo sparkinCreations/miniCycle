@@ -1,3 +1,7 @@
+## [2.124] - 2026-03-24
+- feat: implement history modal styles and dark mode support; enhance UI for better user experience
+
+
 ## [2.123] - 2026-03-23
 - feat: enhance PWA offline architecture and service worker update strategy; add version freshness checks and improve theme management UI
 
