@@ -18,16 +18,20 @@
    ============================================================================= */
 
 .history-modal {
-    background: var(--theme-modal-bg, var(--color-white));
+    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
     border-radius: var(--radius-lg);
     width: 90%;
     max-width: 500px;
     max-height: 80vh;
     display: flex;
     flex-direction: column;
-    box-shadow: var(--shadow-modal);
+    box-shadow:
+        var(--shadow-modal),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
     transform: translateY(20px);
     transition: transform var(--transition-fast) ease;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
 }
 
 /* =============================================================================
@@ -96,8 +100,8 @@
     transition: all var(--transition-fast) ease;
 }
 
-.history-tab:hover {
-    background: var(--color-blue-pale-light);
+.history-tabs button.history-tab:hover {
+    background: var(--color-blue-pale-mid);
     color: var(--color-primary);
 }
 

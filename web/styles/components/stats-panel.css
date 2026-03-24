@@ -628,6 +628,22 @@
     cursor: pointer;
 }
 
+.badge:hover {
+    transform: scale(1.15) translateY(-2px);
+}
+
+.badge-tap-hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-600);
+    text-align: center;
+    margin: var(--space-2) 0 0;
+    font-style: italic;
+}
+
+.badge:active {
+    transform: scale(0.95);
+}
+
 .badge:focus-visible {
     outline: 2px solid var(--theme-input-focus-border, #4c79ff);
     outline-offset: 2px;

@@ -288,12 +288,16 @@ export function setupTestingTabs() {
         safeAddEventListener(button, 'click', () => {
             const targetTab = button.getAttribute('data-tab');
 
-            // Remove active class from all tabs and buttons
-            tabButtons.forEach(btn => btn.classList.remove('active'));
+            // Remove active class and deselect all tabs
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active');
+                btn.setAttribute('aria-selected', 'false');
+            });
             tabContents.forEach(content => content.classList.remove('active'));
 
-            // Add active class to clicked button
+            // Add active class and select clicked tab
             button.classList.add('active');
+            button.setAttribute('aria-selected', 'true');
 
             // Find the corresponding content
             const targetContentId = targetTab + '-tab';

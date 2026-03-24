@@ -1,3 +1,7 @@
+## [2.127] - 2026-03-24
+- feat: implement safe cache put method for dynamic and static caches; improve error handling
+
+
 ## [2.126] - 2026-03-24
 - feat: enhance service worker caching strategy; implement safe cache put and improve error handling
 

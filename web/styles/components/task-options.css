@@ -223,7 +223,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    background: var(--theme-modal-bg, var(--color-white));
+    background: transparent;
     padding: var(--space-4) var(--space-5) var(--space-4) var(--space-10);
     border-bottom: 1px solid var(--overlay-light);
 }
@@ -247,7 +247,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
 }
 
 .task-options-modal .modal-body {
-    background: var(--theme-modal-bg);
+    background: transparent;
     padding: var(--space-3-75);
 }
 
@@ -789,7 +789,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     gap: var(--space-2-5);
     padding: var(--space-3) 0 0 0;
     margin: 0 -20px -20px -20px;
-    background: var(--theme-modal-bg, var(--color-white));
+    background: transparent;
 }
 
 .task-options-modal .modal-footer-row {
@@ -883,14 +883,14 @@ body.dark-mode .task-btn.set-due-date.active .icon {
    ============================================================================= */
 
 body.dark-mode .task-options-modal {
-    background: var(--color-slate-800);
+    background: var(--theme-modal-glass-bg, var(--color-slate-800));
     color: var(--color-slate-100);
     border: 1px solid var(--color-slate-700);
     box-shadow: var(--shadow-modal-compound);
 }
 
 body.dark-mode .task-options-modal .modal-header {
-    background: var(--color-slate-800);
+    background: transparent;
     color: var(--color-white);
     border-bottom: 1px solid var(--color-slate-700);
 }
@@ -904,11 +904,11 @@ body.dark-mode .task-options-modal .modal-subtitle {
 }
 
 body.dark-mode .task-options-modal .modal-body {
-    background: var(--color-slate-900);
+    background: rgba(0, 0, 0, 0.15);
 }
 
 body.dark-mode .task-options-modal .modal-footer {
-    background: var(--color-slate-800);
+    background: transparent;
 }
 
 body.dark-mode .task-options-list {

@@ -96,7 +96,7 @@
   --color-slate-400: #94a3b8;
   --color-slate-100: #f1f5f9;
   /* Navigation dot colors */
-  --color-nav-dot: #44527c;           /* inactive dot */
+  --color-nav-dot: #1a2650;           /* inactive dot */
   --color-nav-dot-active: #dce7fc;    /* active dot */
   --color-nav-dot-press: #004494;     /* active dot on press */
   /* Navy palette (header/overlay context) */
@@ -122,7 +122,7 @@
   --theme-text-primary: inherit;
   --theme-text-secondary: inherit;
   --theme-text-on-surface: #333333;
-  --theme-text-muted: #888888;
+  --theme-text-muted: #717171;
 
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Semantic (themeable)
@@ -156,7 +156,7 @@
   --theme-input-text: #333333;
   --theme-input-border: #cccccc;
   --theme-input-focus-border: var(--color-primary);
-  --theme-input-placeholder: #555555;
+  --theme-input-placeholder: #767676;
 
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Button
@@ -172,6 +172,8 @@
      THEME VARIABLES - Modal
      ═══════════════════════════════════════════════════════════════════════════ */
   --theme-modal-bg: var(--color-blue-pale);
+  --theme-modal-glass-bg: rgba(214, 228, 247, 0.82);
+  --theme-modal-blur: 20px;
   --theme-modal-text: #333333;
   --theme-modal-border: transparent;
   --theme-modal-overlay: rgba(0, 0, 0, 0.5);

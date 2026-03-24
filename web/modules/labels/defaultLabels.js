@@ -316,6 +316,7 @@ export const DEFAULT_LABELS = deepFreeze({
         dragToSpin:      'drag to spin',
         badgeTooltip:    '{name}: {cycles} cycles OR {tasks} cleared tasks',
         badgeUnlocks:    'Unlocks {reward}',
+        badgeTapHint:    'Tap or click a badge to see more info',
         threshold:       '{cycles} cycles or {tasks} cleared tasks',
         description:     'Complete {cycles} cycles or {tasks} cleared tasks',
         progressNote:    'Only completed cycles and cleared tasks in To-Do mode count towards achievements',

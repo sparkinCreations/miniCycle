@@ -132,13 +132,17 @@
 }
 
 .storage-modal-content {
-    background: var(--theme-modal-bg, #ffffff);
+    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, #ffffff));
     color: var(--theme-modal-text, #333);
     border-radius: var(--radius-lg);
     padding: var(--space-5);
     width: 420px;
     max-width: 95%;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
 }
 
 .storage-modal-header {

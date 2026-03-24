@@ -80,16 +80,20 @@ dialog.mini-cycle-switch-modal::backdrop {
 
 .mini-cycle-switch-modal-content {
     position: relative;
-    background: var(--theme-modal-bg, rgb(237, 239, 246));
+    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, rgb(237, 239, 246)));
     color: var(--theme-modal-text, #333);
     padding: var(--space-3-75);
     border-radius: var(--radius-10);
-    box-shadow: var(--shadow-dropdown);
+    box-shadow:
+        var(--shadow-dropdown),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
     min-width: 300px;
     max-width: 400px;
     text-align: center;
     max-height: 90vh;
     overflow-y: auto;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
 }
 
 .mini-cycle-switch-title {

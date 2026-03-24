@@ -32,18 +32,22 @@
    ============================================================================= */
 
 .settings-modal-content {
-    background: var(--theme-modal-bg, var(--color-white));
+    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
     color: var(--theme-modal-text, var(--theme-text-on-surface));
     border-radius: var(--radius-xl);
     padding: var(--space-6) var(--space-5);
     width: 420px;
     max-width: 95%;
     text-align: left;
-    box-shadow: var(--shadow-modal-heavy);
+    box-shadow:
+        var(--shadow-modal-heavy),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
     font-family: var(--font-family);
     position: relative;
     max-height: 85vh;
     overflow-y: auto;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
 }
 
 .settings-modal-content h2 {

@@ -112,17 +112,21 @@ dialog.quick-actions-picker-overlay[open] {
    ============================================================================= */
 
 .modal-content {
-    background: var(--theme-modal-bg);
+    background: var(--theme-modal-glass-bg);
     color: var(--theme-modal-text);
     border: 1px solid var(--theme-modal-border);
     padding: var(--space-5);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
+    box-shadow:
+        var(--shadow-lg),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
     width: 420px;
     max-width: 95%;
     text-align: center;
     position: relative;
     animation: slideUp var(--transition-normal) ease;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
 }
 
 .modal-content a {
@@ -150,8 +154,8 @@ dialog.quick-actions-picker-overlay[open] {
         0 8px 32px rgba(0, 0, 0, 0.12),
         0 2px 8px rgba(0, 0, 0, 0.08),
         inset 0 1px 1px rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
 }
 
 /* Suppress corner logo — the centered about-logo serves as branding */
@@ -268,8 +272,8 @@ dialog.quick-actions-picker-overlay[open] {
 }
 
 .about-modal-content .about-footer .about-cache {
-    font-size: 11px;
-    opacity: 0.55;
+    font-size: var(--font-size-xs);
+    opacity: 0.75;
     margin-top: var(--space-1-5);
 }
 
@@ -427,15 +431,19 @@ dialog.mini-modal-dialog::backdrop {
 }
 
 .mini-modal-box {
-    background: var(--theme-modal-bg, var(--color-white));
+    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
     color: var(--theme-modal-text, var(--theme-text-on-surface));
     border-radius: var(--radius-xl);
     padding: var(--space-7) var(--space-6-25);
     max-width: 380px;
     width: 90%;
     text-align: center;
-    box-shadow: var(--shadow-modal-compound);
+    box-shadow:
+        var(--shadow-modal-compound),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
     animation: popIn var(--transition-normal) ease;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
 }
 
 .mini-modal-header {
@@ -553,7 +561,7 @@ dialog.mini-modal-dialog::backdrop {
 
 /* Dark mode mini-modal */
 body.dark-mode .mini-modal-box {
-    background: var(--theme-modal-bg);
+    background: var(--theme-modal-glass-bg, var(--theme-modal-bg));
     color: var(--color-gray-100);
     box-shadow: var(--shadow-modal-compound);
 }
@@ -592,15 +600,19 @@ body.dark-mode .btn-choice:hover {
 }
 
 .feedback-modal-content {
-    background: var(--theme-modal-bg, var(--color-white));
+    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
     color: var(--theme-modal-text, var(--theme-text-on-surface));
     padding: var(--space-6) var(--space-5) 0;
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
+    box-shadow:
+        var(--shadow-lg),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
     border: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
     width: 420px;
     max-width: 95%;
     text-align: center;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
     position: relative;
     animation: slideUp var(--transition-normal) ease;
 }
