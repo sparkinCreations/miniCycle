@@ -1,9 +1,9 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.124';
-var CACHE_VERSION = 'v967';
-var CACHE_VERSION_NUMBER = 967; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.125';
+var CACHE_VERSION = 'v968';
+var CACHE_VERSION_NUMBER = 968; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -315,8 +315,7 @@ self.addEventListener('install', function (event) {
     }).then(function (result) {
       console.log('✅ Precache complete. Cached:', result.ok, ' | Failed:', result.fail);
       if (result.fail > 0) {
-        // Optional: keep a tiny manifest in cache you can read later from the page
-        try { self._lastPrecacheResult = result; } catch (e) {}
+        console.warn('⚠️ Precache had ' + result.fail + ' failures:', result.failed.join(', '));
       }
 
       // Verify boot-critical files are cached — if these are missing, offline boot fails
@@ -404,8 +403,9 @@ self.addEventListener('activate', function (event) {
     ]).then(function () {
       console.log('✅ Old caches cleaned');
       // ✅ Clean expired entries and trim cache on activation
+      // These are best-effort — failures must not block clients.claim()
       if (!DISABLE_CACHING) {
-        cleanExpiredEntries();
+        cleanExpiredEntries().catch(function(e) { console.warn('⚠️ cleanExpiredEntries failed:', e); });
         trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
       }
       return self.clients.claim();
@@ -492,25 +492,57 @@ function trimCache(cacheName, maxEntries) {
  */
 function cleanExpiredEntries() {
   var now = Date.now();
-  caches.open(DYNAMIC_CACHE).then(function(cache) {
-    cache.keys().then(function(requests) {
-      requests.forEach(function(request) {
-        cache.match(request).then(function(response) {
+  return caches.open(DYNAMIC_CACHE).then(function(cache) {
+    return cache.keys().then(function(requests) {
+      return Promise.all(requests.map(function(request) {
+        return cache.match(request).then(function(response) {
           if (response) {
             var dateHeader = response.headers.get('date');
             if (dateHeader) {
               var cacheTime = new Date(dateHeader).getTime();
               if (now - cacheTime > MAX_CACHE_AGE_MS) {
-                cache.delete(request).then(function() {
+                return cache.delete(request).then(function() {
                   console.log('🗑️ Expired cache entry removed:', request.url);
-                }).catch(function(e) { console.warn('Cache delete error:', e); });
+                });
               }
             }
           }
-        }).catch(function(e) { console.warn('Cache match error:', e); });
+        });
+      }));
+    });
+  });
+}
+
+/**
+ * Quota-aware cache put: attempts cache.put(), and on quota error
+ * aggressively trims the cache and retries once.
+ * @param {Cache} cache - The cache object
+ * @param {Request} key - The cache key
+ * @param {Response} response - The response to cache
+ * @returns {Promise} - Resolves when cached (or fails silently after retry)
+ */
+function safeCachePut(cache, key, response) {
+  return cache.put(key, response).catch(function(err) {
+    var isQuota = err && (err.name === 'QuotaExceededError' ||
+                          (err.message && err.message.indexOf('quota') !== -1));
+    if (!isQuota) {
+      console.warn('⚠️ Cache put failed:', key.url || key, err);
+      return;
+    }
+    console.warn('⚠️ Quota exceeded — trimming cache and retrying:', key.url || key);
+    // Aggressive immediate trim (bypass debounce)
+    return cache.keys().then(function(keys) {
+      // Delete oldest 20% of entries
+      var deleteCount = Math.max(10, Math.floor(keys.length * 0.2));
+      var toDelete = keys.slice(0, deleteCount);
+      return Promise.all(toDelete.map(function(k) { return cache.delete(k); }));
+    }).then(function() {
+      // Retry the put once
+      return cache.put(key, response).catch(function(retryErr) {
+        console.warn('⚠️ Cache put retry failed:', key.url || key, retryErr);
       });
-    }).catch(function(e) { console.warn('Cache keys error:', e); });
-  }).catch(function(e) { console.warn('Cache open error:', e); });
+    });
+  });
 }
 
 function pickShell(urlObj) {
@@ -594,10 +626,8 @@ self.addEventListener('fetch', function (event) {
     function cacheNavResponse(response) {
       var toCache = cleanResponse(response.clone());
       return caches.open(DYNAMIC_CACHE).then(function (cache) {
-        return cache.put(request, toCache).then(function () {
+        return safeCachePut(cache, request, toCache).then(function () {
           trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
-        }).catch(function (err) {
-          console.warn('⚠️ Navigation cache put failed:', err);
         });
       });
     }
@@ -726,8 +756,14 @@ self.addEventListener('fetch', function (event) {
 
     if (needsNetworkFirst) {
       // ═══════════════════════════════════════════════════════════════════
-      // OFFLINE FAST-PATH: Serve from cache immediately without trying network
-      // Avoids 10-second timeout per file when offline (self.navigator.onLine)
+      // OFFLINE FAST-PATH: Serve from cache immediately without trying network.
+      // Avoids 10-second timeout per file when offline (40+ files × 3s = 120s).
+      //
+      // TRADEOFF: No background revalidation happens. If the user goes offline,
+      // then reconnects without closing the tab, they stay on the stale cached
+      // version until verifyVersionFresh() in the HTML catches the mismatch
+      // (runs on focus/visibility change). This is an accepted tradeoff to
+      // prevent the iOS "navigator.onLine lies" death spiral.
       // ═══════════════════════════════════════════════════════════════════
       if (!self.navigator.onLine) {
         event.respondWith(
@@ -757,7 +793,7 @@ self.addEventListener('fetch', function (event) {
                 );
               }
 
-              var safePath = url.pathname.replace(/[\\'"<>]/g, '');
+              var safePath = url.pathname.replace(/[^a-zA-Z0-9._\-\/]/g, '');
               return new Response(
                 url.pathname.endsWith('.css')
                   ? '/* offline: not cached */'
@@ -793,11 +829,8 @@ self.addEventListener('fetch', function (event) {
           .then(function (res) {
             if (res && res.status === 200) {
               return caches.open(DYNAMIC_CACHE).then(function (cache) {
-                return cache.put(cacheRequest, res.clone()).then(function() {
+                return safeCachePut(cache, cacheRequest, res.clone()).then(function() {
                   trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
-                  return res;
-                }).catch(function(cacheError) {
-                  console.warn('⚠️ Cache put failed for:', request.url, cacheError);
                   return res;
                 });
               });
@@ -827,7 +860,7 @@ self.addEventListener('fetch', function (event) {
                   );
                 }
 
-                var safePath = url.pathname.replace(/[\\'"<>]/g, '');
+                var safePath = url.pathname.replace(/[^a-zA-Z0-9._\-\/]/g, '');
                 return new Response(
                   url.pathname.endsWith('.css') ? '/* offline: not cached */' : 'throw new Error("Module not available offline: ' + safePath + '");',
                   {
@@ -889,7 +922,7 @@ self.addEventListener('fetch', function (event) {
                   { status: 200, headers: { 'Content-Type': 'application/javascript' } }
                 );
               }
-              var safePath = url.pathname.replace(/[\\'"<>]/g, '');
+              var safePath = url.pathname.replace(/[^a-zA-Z0-9._\-\/]/g, '');
               return new Response(
                 url.pathname.endsWith('.css') ? '/* offline: not cached */' : 'throw new Error("Module not available offline: ' + safePath + '");',
                 { status: 200, headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' } }
@@ -909,10 +942,10 @@ self.addEventListener('fetch', function (event) {
           var fetchPromise = fetch(freshRequest).then(function (res) {
             if (res && res.status === 200) {
               return caches.open(DYNAMIC_CACHE).then(function (cache) {
-                return cache.put(cacheRequest, res.clone()).then(function() {
+                return safeCachePut(cache, cacheRequest, res.clone()).then(function() {
                   trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
                   return res;
-                }).catch(function() { return res; });
+                });
               });
             }
             return res;
@@ -947,7 +980,7 @@ self.addEventListener('fetch', function (event) {
 
               // Use status 200 so browser's module loader accepts and parses it
               // (non-200 responses cause silent "Importing a module script failed")
-              var safePath = url.pathname.replace(/[\\'"<>]/g, '');
+              var safePath = url.pathname.replace(/[^a-zA-Z0-9._\-\/]/g, '');
               return new Response(
                 url.pathname.endsWith('.css') ? '/* offline: not cached */' : 'throw new Error("Module not available offline: ' + safePath + '");',
                 {
@@ -972,13 +1005,9 @@ self.addEventListener('fetch', function (event) {
         return fetch(request).then(function (res) {
           if (res && res.status === 200 && res.type === 'basic') {
             return caches.open(DYNAMIC_CACHE).then(function (cache) {
-              return cache.put(request, res.clone()).then(function() {
+              return safeCachePut(cache, request, res.clone()).then(function() {
                 console.log('📦 Cached new asset:', request.url);
-                // ✅ Trim cache after adding new entry
                 trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
-                return res;
-              }).catch(function(cacheError) {
-                console.warn('⚠️ Cache put failed for:', request.url, cacheError);
                 return res;
               });
             });
