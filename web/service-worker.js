@@ -1,8 +1,9 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.123';
-var CACHE_VERSION = 'v966';
+var APP_VERSION = '2.124';
+var CACHE_VERSION = 'v967';
+var CACHE_VERSION_NUMBER = 967; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -751,7 +752,7 @@ self.addEventListener('fetch', function (event) {
               if (url.pathname.endsWith('version.js')) {
                 console.log('📴 Generating synthetic version.js (APP_VERSION=' + APP_VERSION + ', CACHE_VERSION=' + CACHE_VERSION + ')');
                 return new Response(
-                  'globalThis.APP_VERSION = "' + APP_VERSION + '";\nglobalThis.CACHE_VERSION = ' + CACHE_VERSION + ';',
+                  'globalThis.APP_VERSION = "' + APP_VERSION + '";\nglobalThis.CACHE_VERSION = ' + CACHE_VERSION_NUMBER + ';',
                   { status: 200, headers: { 'Content-Type': 'application/javascript' } }
                 );
               }
@@ -821,7 +822,7 @@ self.addEventListener('fetch', function (event) {
                 if (url.pathname.endsWith('version.js')) {
                   console.log('🔧 Generating synthetic version.js (APP_VERSION=' + APP_VERSION + ', CACHE_VERSION=' + CACHE_VERSION + ')');
                   return new Response(
-                    'globalThis.APP_VERSION = "' + APP_VERSION + '";\nglobalThis.CACHE_VERSION = ' + CACHE_VERSION + ';',
+                    'globalThis.APP_VERSION = "' + APP_VERSION + '";\nglobalThis.CACHE_VERSION = ' + CACHE_VERSION_NUMBER + ';',
                     { status: 200, headers: { 'Content-Type': 'application/javascript' } }
                   );
                 }
@@ -884,7 +885,7 @@ self.addEventListener('fetch', function (event) {
               if (url.pathname.endsWith('version.js')) {
                 console.log('📴 Generating synthetic version.js');
                 return new Response(
-                  'globalThis.APP_VERSION = "' + APP_VERSION + '";\nglobalThis.CACHE_VERSION = ' + CACHE_VERSION + ';',
+                  'globalThis.APP_VERSION = "' + APP_VERSION + '";\nglobalThis.CACHE_VERSION = ' + CACHE_VERSION_NUMBER + ';',
                   { status: 200, headers: { 'Content-Type': 'application/javascript' } }
                 );
               }
@@ -939,7 +940,7 @@ self.addEventListener('fetch', function (event) {
               if (url.pathname.endsWith('version.js')) {
                 console.log('🔧 Generating synthetic version.js (stale-while-revalidate fallback)');
                 return new Response(
-                  'globalThis.APP_VERSION = "' + APP_VERSION + '";\nglobalThis.CACHE_VERSION = ' + CACHE_VERSION + ';',
+                  'globalThis.APP_VERSION = "' + APP_VERSION + '";\nglobalThis.CACHE_VERSION = ' + CACHE_VERSION_NUMBER + ';',
                   { status: 200, headers: { 'Content-Type': 'application/javascript' } }
                 );
               }

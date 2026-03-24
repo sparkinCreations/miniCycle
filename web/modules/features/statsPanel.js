@@ -257,8 +257,10 @@ export class StatsPanelManager {
         const safeAdd = _deps.safeAddEventListener;
 
         // Store handler references for cleanup
-        this._historyClickHandler = () => this.openHistoryModal();
-        this._achievementsClickHandler = () => this.openAchievementsModal();
+        // stopPropagation prevents click from bubbling to the currentRoutineStatus
+        // collapsible toggle, which would collapse the dropdown when opening a modal
+        this._historyClickHandler = (e) => { e.stopPropagation(); this.openHistoryModal(); };
+        this._achievementsClickHandler = (e) => { e.stopPropagation(); this.openAchievementsModal(); };
 
         if (this.elements.historyBtn && safeAdd) {
             safeAdd(this.elements.historyBtn, 'click', this._historyClickHandler);

@@ -453,7 +453,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     }
 
     .task-options-list {
-        max-height: 200px;
+        max-height: 40vh;
     }
 
 }

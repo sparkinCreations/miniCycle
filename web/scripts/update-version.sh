@@ -879,6 +879,7 @@ else
             backup_file "service-worker.js"
             do_sed "service-worker.js" "s/var APP_VERSION = '[^']*'/var APP_VERSION = '$NEW_VERSION'/g"
             do_sed "service-worker.js" "s/var CACHE_VERSION = 'v[0-9]*'/var CACHE_VERSION = 'v$NEW_CACHE_VERSION'/g"
+            do_sed "service-worker.js" "s/var CACHE_VERSION_NUMBER = [0-9]*/var CACHE_VERSION_NUMBER = $NEW_CACHE_VERSION/g"
             echo "✅ Updated service-worker.js (app: $NEW_VERSION, cache: v$NEW_CACHE_VERSION)"
         else
             echo "⚠️  service-worker.js not found"
@@ -1340,6 +1341,9 @@ if [ "$DRY_RUN" = false ]; then
                 VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
             elif ! grep -q "var CACHE_VERSION = 'v$NEW_CACHE_VERSION'" service-worker.js; then
                 echo "⚠️  Warning: service-worker.js CACHE_VERSION may not have updated correctly"
+                VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+            elif ! grep -q "var CACHE_VERSION_NUMBER = $NEW_CACHE_VERSION" service-worker.js; then
+                echo "⚠️  Warning: service-worker.js CACHE_VERSION_NUMBER may not have updated correctly"
                 VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
             else
                 echo "✅ service-worker.js validated"
