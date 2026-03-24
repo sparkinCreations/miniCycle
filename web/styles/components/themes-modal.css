@@ -295,7 +295,7 @@ dialog.preferences-modal::backdrop {
 
 .preferences-modal-content {
     position: relative;
-    background: var(--theme-modal-bg, var(--color-white));
+    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
     color: var(--theme-modal-text, var(--color-gray-700));
     padding: 0;
     border-radius: var(--radius-xl);
@@ -303,11 +303,15 @@ dialog.preferences-modal::backdrop {
     max-width: 95%;
     max-height: 85vh;
     text-align: center;
-    box-shadow: var(--shadow-modal);
+    box-shadow:
+        var(--shadow-modal),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
     overflow: hidden;
     cursor: default;
     display: flex;
     flex-direction: column;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
 }
 
 .preferences-modal-content h2 {
