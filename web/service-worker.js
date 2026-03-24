@@ -1,9 +1,9 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.125';
-var CACHE_VERSION = 'v968';
-var CACHE_VERSION_NUMBER = 968; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.126';
+var CACHE_VERSION = 'v969';
+var CACHE_VERSION_NUMBER = 969; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -1077,7 +1077,7 @@ self.addEventListener('message', function (event) {
             // Already in static cache — also ensure it's in dynamic cache
             return dynamicCache.match(file).then(function(dynFound) {
               if (!dynFound) {
-                return dynamicCache.put(file, found.clone());
+                return safeCachePut(dynamicCache, file, found.clone());
               }
             });
           }
@@ -1087,8 +1087,8 @@ self.addEventListener('message', function (event) {
           return fetch(file).then(function(res) {
             if (res && res.status === 200) {
               return Promise.all([
-                staticCache.put(file, res.clone()),
-                dynamicCache.put(file, res.clone())
+                safeCachePut(staticCache, file, res.clone()),
+                safeCachePut(dynamicCache, file, res.clone())
               ]);
             }
           }).catch(function(err) {

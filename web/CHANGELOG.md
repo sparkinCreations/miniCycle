@@ -1,3 +1,7 @@
+## [2.126] - 2026-03-24
+- feat: enhance service worker caching strategy; implement safe cache put and improve error handling
+
+
 ## [2.125] - 2026-03-24
 - - The document includes various structured content relevant to the miniCycle review process.
 
