@@ -87,7 +87,7 @@
     align-items: center;
     gap: var(--space-2);
     padding: var(--space-3) 14px;
-    background: var(--color-blue-pale-mid);
+    background: var(--border-blue-subtle-hover);
     color: var(--color-black);
     cursor: pointer;
     font-weight: 600;
@@ -98,10 +98,13 @@
 }
 
 .settings-section.collapsed .settings-section-header {
-    background: var(--color-blue-pale);
+    background: transparent;
 }
 
-.settings-section.collapsed .settings-section-header:hover,
+.settings-section.collapsed .settings-section-header:hover {
+    background: var(--overlay-light);
+}
+
 .settings-section:not(.collapsed) .settings-section-header:hover {
     background: var(--border-blue-subtle);
 }

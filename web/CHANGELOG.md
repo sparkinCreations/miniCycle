@@ -1,3 +1,7 @@
+## [2.129] - 2026-03-25
+- feat: update version to 2.128; modify changelog, project stats, manifest, HTML, CSS, and service worker for consistency
+
+
 ## [2.128] - 2026-03-25
 - feat: enhance preferences modal styling with glass effect and improved shadow
 - feat: update modal components for improved accessibility and styling

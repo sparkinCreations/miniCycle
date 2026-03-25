@@ -885,6 +885,11 @@ dialog.preferences-modal::backdrop {
     overflow: hidden;
 }
 
+.preferences-section.collapsed {
+    border-radius: 0;
+    border-bottom: 1px solid var(--border-blue-subtle);
+}
+
 .preferences-section:not(.collapsed) {
     background: var(--color-blue-pale-light);
 }
@@ -897,6 +902,10 @@ dialog.preferences-modal::backdrop {
     background: var(--color-blue-pale);
 }
 
+.preferences-section.collapsed .preferences-section-header.collapsible {
+    background: transparent;
+}
+
 /* Preview label inherits the section gradient — don't override with pale blue */
 .preferences-preview-label.preferences-section-header.collapsible {
     background: transparent;
@@ -907,11 +916,15 @@ dialog.preferences-modal::backdrop {
 }
 
 .preferences-section:not(.collapsed) .preferences-section-header.collapsible {
-    background: var(--color-blue-pale-mid);
+    background: var(--border-blue-subtle-hover);
 }
 
 .preferences-section-header.collapsible:hover {
-    background: var(--color-blue-pale-mid);
+    background: var(--border-blue-subtle-hover);
+}
+
+.preferences-section.collapsed .preferences-section-header.collapsible:hover {
+    background: var(--overlay-light);
 }
 
 .preferences-section-header.collapsible:focus-visible {

@@ -12,7 +12,7 @@
     right: var(--space-3-75);
     background: var(--overlay-white-light);
     box-shadow: var(--shadow-button);
-    border: 1px solid var(--border-blue-subtle);
+    border: 1px solid var(--border-blue-subtle-hover);
     color: var(--color-navy);
     border-radius: var(--radius-5);
     width: 88px;
@@ -116,9 +116,9 @@ input.routine-search-input {
     width: 100%;
     padding: var(--space-2) var(--space-3);
     margin-bottom: var(--space-2);
-    border: 1px solid var(--border-blue-subtle);
+    border: 1px solid var(--border-blue-subtle-hover);
     border-radius: var(--radius-5);
-    background: var(--color-blue-pale);
+    background: transparent;
     font-size: var(--font-size-sm);
     font-family: var(--font-family);
     box-sizing: border-box;
@@ -169,7 +169,7 @@ input.routine-search-input:focus {
 .routine-sort-btn {
     padding: var(--space-1) var(--space-2-5);
     font-size: var(--font-size-xs);
-    border: 1px solid var(--border-blue-subtle);
+    border: 1px solid var(--border-blue-subtle-hover);
     background: var(--color-blue-pale);
     border-radius: var(--radius-pill);
     cursor: pointer;
@@ -197,7 +197,7 @@ input.routine-search-input:focus {
 .routine-filter-select {
     padding: var(--space-1) var(--space-2);
     font-size: var(--font-size-xs);
-    border: 1px solid var(--border-blue-subtle);
+    border: 1px solid var(--border-blue-subtle-hover);
     background: var(--color-blue-pale);
     border-radius: var(--radius-pill);
     cursor: pointer;
@@ -229,7 +229,7 @@ input.routine-search-input:focus {
     max-height: 240px;
     overflow-y: auto;
     overflow-x: hidden;
-    border: 1px solid var(--color-primary-dark);
+    border: 1px solid var(--border-blue-subtle-hover);
     border-top: none;
     padding: var(--space-1-5);
     background: var(--color-blue-pale-light);
@@ -275,8 +275,8 @@ input.routine-search-input:focus {
 }
 
 .mini-cycle-switch-item.selected {
-    background: var(--theme-button-primary-bg, #0056b3);
-    color: var(--color-white);
+    background: var(--color-blue-pale-mid);
+    color: var(--color-black);
     font-weight: bold;
 }
 
@@ -345,8 +345,8 @@ input.routine-search-input:focus {
 }
 
 .mini-cycle-switch-item.selected .cycle-item-size {
-    color: var(--overlay-white-strong);
-    background: var(--overlay-white-light);
+    color: var(--theme-text-muted);
+    background: var(--overlay-light);
 }
 
 /* =============================================================================
@@ -371,7 +371,8 @@ input.routine-search-input:focus {
         font-weight: 600;
         color: var(--color-white);
         padding: var(--space-2) var(--space-2-5);
-        background: var(--color-primary-dark);
+        background: var(--color-primary);
+        opacity: 0.85;
         border-radius: var(--radius-5) var(--radius-5) 0 0;
         margin-bottom: 0;
         text-align: center;
@@ -411,7 +412,7 @@ input.routine-search-input:focus {
         max-width: 200px;
         min-height: 150px;
         margin: var(--space-1-5) auto 0;
-        border: 1px solid var(--border-blue-subtle);
+        border: 1px solid var(--border-blue-subtle-hover);
     }
 
     /* Date and hint on separate lines */
@@ -690,7 +691,7 @@ input.routine-search-input:focus {
     justify-content: center;
     padding: var(--space-2) var(--space-3);
     background: var(--overlay-light);
-    border: 1px solid var(--border-blue-subtle);
+    border: 1px solid var(--border-blue-subtle-hover);
     border-radius: var(--radius-xl);
 }
 
@@ -790,7 +791,7 @@ input.routine-search-input:focus {
 .desktop-preview-window {
     padding: var(--space-3);
     background: var(--color-blue-pale-light);
-    border: 1px solid var(--color-primary-dark);
+    border: 1px solid var(--border-blue-subtle-hover);
     border-top: none;
     border-radius: 0 0 var(--radius-5) var(--radius-5);
     color: var(--theme-text-muted);
@@ -880,7 +881,8 @@ input.routine-search-input:focus {
         font-weight: 600;
         color: var(--color-white);
         padding: var(--space-2) var(--space-2-5);
-        background: var(--color-primary-dark);
+        background: var(--color-primary);
+        opacity: 0.85;
         border-radius: var(--radius-5) var(--radius-5) 0 0;
         margin-bottom: 0;
         text-align: center;
