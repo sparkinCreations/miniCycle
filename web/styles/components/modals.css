@@ -290,15 +290,19 @@ dialog.quick-actions-picker-overlay[open] {
     max-width: 420px;
     max-height: 75vh;
     overflow-y: auto;
-    background-color: var(--theme-modal-bg, var(--color-gray-100));
+    background-color: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-gray-100)));
     color: var(--theme-modal-text, var(--theme-text-on-surface));
     border-radius: var(--radius-15);
     padding: var(--space-5) 25px;
     z-index: var(--z-modal);
-    box-shadow: var(--shadow-modal-heavy);
+    box-shadow:
+        var(--shadow-modal-heavy),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
     text-align: center;
     font-family: var(--font-family);
     animation: fadeInScale var(--transition-normal) ease;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
 }
 
 .modal-panel h2 {

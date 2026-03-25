@@ -214,9 +214,14 @@ body.dark-mode .task.overdue-task:hover {
    DARK MODE PANELS & MODALS
    ============================================================================= */
 
-body.dark-mode .menu-container,
-body.dark-mode .modal-panel {
+body.dark-mode .menu-container {
     background-color: var(--dark-surface-primary);
+    color: var(--theme-text-primary);
+    border: 1px solid var(--dark-button-hover-bg);
+}
+
+body.dark-mode .modal-panel {
+    background-color: var(--theme-modal-glass-bg, var(--dark-surface-primary));
     color: var(--theme-text-primary);
     border: 1px solid var(--dark-button-hover-bg);
 }
@@ -1228,17 +1233,23 @@ body.dark-mode .settings-section.collapsible {
     border-color: var(--dark-button-hover-bg);
 }
 
+body.dark-mode .settings-section.collapsible.collapsed {
+    background: transparent;
+    border-color: transparent;
+    border-bottom-color: var(--dark-border-subtle);
+}
+
 body.dark-mode .settings-section-header {
-    background: var(--dark-surface-secondary);
+    background: var(--dark-border-subtle);
     color: var(--dark-text-light);
 }
 
 body.dark-mode .settings-section.collapsed .settings-section-header {
-    background: var(--dark-surface-secondary);
+    background: transparent;
 }
 
-body.dark-mode .settings-section-header:hover {
-    background: var(--dark-button-hover-bg);
+body.dark-mode .settings-section.collapsed .settings-section-header:hover {
+    background: var(--overlay-light);
 }
 
 body.dark-mode .settings-section:not(.collapsed) .settings-section-header:hover {
@@ -1255,8 +1266,20 @@ body.dark-mode .preferences-section-header.collapsible {
     color: var(--dark-text-light);
 }
 
+body.dark-mode .preferences-section.collapsed {
+    border-bottom-color: var(--dark-border-subtle);
+}
+
+body.dark-mode .preferences-section.collapsed .preferences-section-header.collapsible {
+    background: transparent;
+}
+
 body.dark-mode .preferences-section:not(.collapsed) .preferences-section-header.collapsible {
-    background: var(--dark-surface-muted);
+    background: var(--dark-border-subtle);
+}
+
+body.dark-mode .preferences-section.collapsed .preferences-section-header.collapsible:hover {
+    background: var(--overlay-light);
 }
 
 body.dark-mode .preferences-section-header.collapsible:hover {

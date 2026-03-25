@@ -23,10 +23,14 @@
     pointer-events: auto;
     border-radius: 18px;
     padding: var(--space-4);
-    background: var(--pref-bg, var(--theme-modal-bg));
+    background: var(--pref-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg)));
     color: var(--pref-text, var(--theme-modal-text));
     border: 1px solid color-mix(in srgb, var(--pref-text, var(--theme-modal-text)) 14%, transparent);
-    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.22);
+    box-shadow:
+        0 20px 40px rgba(15, 23, 42, 0.22),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
     transition: top var(--transition-fast) ease, left var(--transition-fast) ease, transform var(--transition-fast) ease;
 }
 
