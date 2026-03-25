@@ -215,20 +215,26 @@ body.dark-mode .task.overdue-task:hover {
    ============================================================================= */
 
 body.dark-mode .menu-container,
-body.dark-mode .reminders-modal-content,
-body.dark-mode .settings-modal-content,
-body.dark-mode .stats-panel,
-body.dark-mode .themes-modal-content,
-body.dark-mode .feedback-modal-content,
-body.dark-mode .mini-cycle-switch-modal-content,
 body.dark-mode .modal-panel {
     background-color: var(--dark-surface-primary);
     color: var(--theme-text-primary);
     border: 1px solid var(--dark-button-hover-bg);
 }
 
+body.dark-mode .reminders-modal-content,
+body.dark-mode .settings-modal-content,
+body.dark-mode .themes-modal-content,
+body.dark-mode .feedback-modal-content,
+body.dark-mode .mini-cycle-switch-modal-content {
+    background-color: var(--theme-modal-glass-bg, var(--dark-surface-primary));
+    color: var(--theme-text-primary);
+    border: 1px solid var(--dark-button-hover-bg);
+}
+
 body.dark-mode .stats-panel {
     background-color: rgba(42, 42, 42, 0.92);
+    color: var(--theme-text-primary);
+    border: 1px solid var(--dark-button-hover-bg);
 }
 
 /* =============================================================================
@@ -715,7 +721,7 @@ body.dark-mode .recurring-scroll-area {
    ============================================================================= */
 
 body.dark-mode .games-modal-content {
-    background: var(--dark-surface-primary);
+    background: var(--theme-modal-glass-bg, var(--dark-surface-primary));
     color: var(--theme-text-primary);
 }
 
@@ -1323,7 +1329,7 @@ body.dark-mode .preferences-footer button.preferences-reset-all-btn:hover {
    ============================================================================= */
 
 body.dark-mode .achievements-modal {
-    background: var(--dark-surface-primary);
+    background: var(--theme-modal-glass-bg, var(--dark-surface-primary));
 }
 
 body.dark-mode .achievements-header {
@@ -1379,7 +1385,7 @@ body.dark-mode .achievements-progress-note {
    ============================================================================= */
 
 body.dark-mode .history-modal {
-    background: var(--dark-surface-primary);
+    background: var(--theme-modal-glass-bg, var(--dark-surface-primary));
     box-shadow: var(--shadow-modal-heavy);
 }
 

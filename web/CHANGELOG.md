@@ -1,3 +1,8 @@
+## [2.128] - 2026-03-25
+- feat: enhance preferences modal styling with glass effect and improved shadow
+- feat: update modal components for improved accessibility and styling
+
+
 ## [2.127] - 2026-03-24
 - feat: implement safe cache put method for dynamic and static caches; improve error handling
 
