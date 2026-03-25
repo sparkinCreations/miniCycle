@@ -82,7 +82,7 @@ dialog.mini-cycle-switch-modal::backdrop {
     position: relative;
     background: var(--theme-modal-glass-bg, var(--theme-modal-bg, rgb(237, 239, 246)));
     color: var(--theme-modal-text, #333);
-    padding: var(--space-3-75);
+    padding: var(--space-3-75) var(--space-3-75) 0;
     border-radius: var(--radius-10);
     box-shadow:
         var(--shadow-dropdown),

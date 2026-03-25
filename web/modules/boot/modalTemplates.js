@@ -834,6 +834,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
         <dialog id="settings-modal" class="settings-modal" data-modal aria-labelledby="settings-modal-title" aria-modal="true">
             <div class="settings-modal-content has-corner-logo">
                 <h2 id="settings-modal-title">&#x2699;&#xFE0F; ${getLabel('settings.title')}</h2>
+                <div class="settings-scroll-area">
 
                 <!-- Display Section -->
                 <div class="settings-section collapsible collapsed" data-section="display">
@@ -1007,11 +1008,12 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                     </div>
                 </div>
 
-                <!-- Version & Close -->
+                <!-- Version -->
                 <div class="settings-footer">
                     <div class="settings-version" id="settings-version-display">v...</div>
-                    <button id="close-settings" class="settings-btn close-btn">${getLabel('button.close')}</button>
                 </div>
+                </div><!-- end .settings-scroll-area -->
+                <button id="close-settings" class="settings-btn close-btn">${getLabel('button.close')}</button>
             </div>
         </dialog>
 `;
