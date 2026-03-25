@@ -4,8 +4,8 @@
  * Provides a distraction-free view by hiding UI chrome (header, footer,
  * navigation, help window) while keeping the task list and progress bar.
  *
- * State is transient — in-memory boolean, resets on page reload.
- * Not persisted to AppState.
+ * State is persisted to AppState (state.settings.focusModeActive) so
+ * focus mode survives page reloads.
  *
  * Pattern: Simple Instance
  * - Single responsibility (focus mode toggle)
@@ -26,6 +26,7 @@ import { getIcon } from '../utils/icons.js';
 const di = createDIModule('FocusMode', {
     showNotification: optional(null),
     safeAddEventListener: optional(null),
+    AppState: optional(null),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
     getBody: optional(() => document.body),
@@ -68,6 +69,12 @@ export class FocusMode {
         this._createButton();
         this._attachListeners();
         this.initialized = true;
+
+        // Restore persisted focus mode state
+        const state = this.deps.AppState?.get?.();
+        if (state?.settings?.focusModeActive) {
+            this.activate(true);
+        }
     }
 
     /**
@@ -143,7 +150,7 @@ export class FocusMode {
      * Reparents button to document.body so position:fixed works
      * (escapes #task-view's transform containing block).
      */
-    activate() {
+    activate(silent = false) {
         if (this._active) return;
         this._active = true;
 
@@ -156,7 +163,13 @@ export class FocusMode {
             this._button.setAttribute('aria-label', getLabel('focusMode.exitAria'));
         }
 
-        this.deps.showNotification?.(getLabel('focusMode.activated'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);
+        this.deps.AppState?.update?.(state => {
+            state.settings.focusModeActive = true;
+        });
+
+        if (!silent) {
+            this.deps.showNotification?.(getLabel('focusMode.activated'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);
+        }
     }
 
     /**
@@ -199,6 +212,10 @@ export class FocusMode {
             }
         }, 400);
 
+        this.deps.AppState?.update?.(state => {
+            state.settings.focusModeActive = false;
+        });
+
         this.deps.showNotification?.(getLabel('focusMode.deactivated'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);
     }
 
@@ -227,6 +244,10 @@ export class FocusMode {
         this._active = false;
         this.initialized = false;
         this.deps.getBody().classList.remove(DOM_CLASSES.FOCUS_MODE);
+
+        this.deps.AppState?.update?.(state => {
+            state.settings.focusModeActive = false;
+        });
     }
 }
 

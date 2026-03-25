@@ -603,6 +603,12 @@ export const DOM_IDS = Object.freeze({
     TOGGLE_SOLID_STATS_BG: 'toggle-solid-stats-bg',
     CHECKMARK_STYLE_OPTIONS: 'checkmark-style-options',
 
+    // ---- Cycle Completion ----
+    PREF_CELEBRATION_COLOR: 'pref-celebration-color',
+    PREF_TOAST_SELECT: 'pref-toast-select',
+    TOGGLE_COMPLETION_ANIMATION: 'toggle-completion-animation',
+    TOGGLE_COMPLETION_TOAST: 'toggle-completion-toast',
+
     // ---- Reminders Form ----
     ENABLE_REMINDERS: 'enableReminders',
     INDEFINITE_CHECKBOX: 'indefiniteCheckbox',

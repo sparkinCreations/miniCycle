@@ -522,7 +522,7 @@ export const MODULE_MANIFESTS = {
     focusMode: {
         path: '../ui/focusMode.js',
         phase: PHASES.UI_MANAGERS,
-        optionalDeps: ['showNotification', 'safeAddEventListener'],
+        optionalDeps: ['showNotification', 'safeAddEventListener', 'AppState'],
         provides: ['focusMode'],
         api: 'ui',
         optional: true

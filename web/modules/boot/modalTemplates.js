@@ -770,6 +770,49 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                 </div>
             </div>
 
+            <!-- Cycle Completion Section -->
+            <div class="preferences-section collapsed" data-section="cycle-animation">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="cycle-animation" aria-expanded="false" aria-label="${getLabel('prefs.ariaToggleCycleAnimation')}" aria-controls="pref-section-cycle-animation">
+                    <span class="preferences-section-icon">&#x1F389;</span>
+                    <span>${getLabel('prefs.cycleAnimation')}</span>
+                    <span class="preferences-section-toggle">&#x25BC;</span>
+                </div>
+                <div class="preferences-section-content" id="pref-section-cycle-animation">
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F3A8;</span>
+                        <label for="pref-celebration-color">${getLabel('prefs.animationColor')}</label>
+                        <input type="color" id="pref-celebration-color" value="#4caf4f" />
+                        <button class="preferences-reset-btn" data-target="pref-celebration-color" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F4AC;</span>
+                        <label for="pref-toast-select">${getLabel('prefs.toastMessage')}</label>
+                        <select id="pref-toast-select" class="preferences-select">
+                            <option value="default">${getLabel('prefs.toastDefault')}</option>
+                            <option value="greatJob">${getLabel('prefs.toastGreatJob')}</option>
+                            <option value="nailed">${getLabel('prefs.toastNailed')}</option>
+                            <option value="finished">${getLabel('prefs.toastFinished')}</option>
+                        </select>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F6AB;</span>
+                        <label for="toggle-completion-animation">${getLabel('prefs.disableAnimation')}</label>
+                        <span class="toggle-switch pref-toggle">
+                            <input type="checkbox" id="toggle-completion-animation">
+                            <span class="toggle-slider"></span>
+                        </span>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F6AB;</span>
+                        <label for="toggle-completion-toast">${getLabel('prefs.disableToast')}</label>
+                        <span class="toggle-switch pref-toggle">
+                            <input type="checkbox" id="toggle-completion-toast">
+                            <span class="toggle-slider"></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Stats Panel Section -->
             <div class="preferences-section collapsed" data-section="stats">
                 <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="stats" aria-expanded="false" aria-label="${getLabel('prefs.ariaToggleStats')}" aria-controls="pref-section-stats">

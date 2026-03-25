@@ -345,6 +345,10 @@ export class HelpWindowManager {
     showCycleCompleteMessage() {
         if (!this.helpWindow) return;
 
+        // Check if toast is disabled
+        const state = _deps.AppState?.get?.();
+        if (state?.settings?.disableCompletionToast) return;
+
         // Clear mode description if showing
         if (this.modeDescriptionTimeout) {
             clearTimeout(this.modeDescriptionTimeout);
@@ -355,9 +359,19 @@ export class HelpWindowManager {
             taskView?.classList.remove('mode-description-visible');
         }
 
+        // Use selected toast message
+        const toastKey = state?.settings?.cycleCompletionToast || 'default';
+        const TOAST_LABEL_MAP = {
+            'default': 'help.cycleComplete',
+            'greatJob': 'prefs.toastGreatJob',
+            'nailed': 'prefs.toastNailed',
+            'finished': 'prefs.toastFinished',
+        };
+        const toastMessage = getLabel(TOAST_LABEL_MAP[toastKey] || 'help.cycleComplete');
+
         this.isShowingCycleComplete = true;
         this.helpWindow.innerHTML = `
-            <p>✅ ${getLabel('help.cycleComplete')}</p>
+            <p>✅ ${toastMessage}</p>
         `;
 
         // Auto-hide after 2 seconds and return to normal message

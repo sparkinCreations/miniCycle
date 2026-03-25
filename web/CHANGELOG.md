@@ -1,3 +1,7 @@
+## [2.133] - 2026-03-25
+- feat: update notification selectors and improve badge tap hint; enhance styling for search match highlighting in dark mode
+
+
 ## [2.132] - 2026-03-25
 - feat: enhance settings modal layout and styling; add scroll area, adjust paddings, and improve close button design
 

@@ -52,7 +52,8 @@ const DEFAULT_COLORS = {
     statsProgress: '#4c79ff',
     statsDoughnut: '#4caf50',
     patternColor: '#ffffff',
-    panelText: '#ffffff'
+    panelText: '#ffffff',
+    celebrationBg: '#4caf4f'
 };
 
 // Default pattern color (white with 5% opacity)
@@ -193,6 +194,11 @@ const COLOR_MAP = {
         key: 'panelText',
         cssVar: '--pref-panel-text',
         previewVar: '--preview-panel-text'
+    },
+    'pref-celebration-color': {
+        key: 'celebrationBg',
+        cssVar: '--pref-celebration-bg',
+        previewVar: null
     }
 };
 
@@ -575,6 +581,65 @@ export class PreferencesManager {
             }
         }
 
+        // Cycle completion toast select
+        const toastSelect = _deps.getElementById(DOM_IDS.PREF_TOAST_SELECT);
+        if (toastSelect) {
+            toastSelect._changeHandler = (e) => {
+                _deps.AppState?.update?.(state => {
+                    state.settings.cycleCompletionToast = e.target.value;
+                });
+            };
+            safeAdd(toastSelect, 'change', toastSelect._changeHandler);
+        }
+
+        // Disable completion animation toggle
+        const disableAnimToggle = _deps.getElementById(DOM_IDS.TOGGLE_COMPLETION_ANIMATION);
+        if (disableAnimToggle) {
+            disableAnimToggle._changeHandler = (e) => {
+                _deps.AppState?.update?.(state => {
+                    state.settings.disableCompletionAnimation = e.target.checked;
+                });
+            };
+            safeAdd(disableAnimToggle, 'change', disableAnimToggle._changeHandler);
+
+            const toggleSwitch = disableAnimToggle.closest('.toggle-switch');
+            if (toggleSwitch) {
+                toggleSwitch._clickHandler = (e) => {
+                    if (e.target !== disableAnimToggle) {
+                        disableAnimToggle.checked = !disableAnimToggle.checked;
+                        _deps.AppState?.update?.(state => {
+                            state.settings.disableCompletionAnimation = disableAnimToggle.checked;
+                        });
+                    }
+                };
+                safeAdd(toggleSwitch, 'click', toggleSwitch._clickHandler);
+            }
+        }
+
+        // Disable completion toast toggle
+        const disableToastToggle = _deps.getElementById(DOM_IDS.TOGGLE_COMPLETION_TOAST);
+        if (disableToastToggle) {
+            disableToastToggle._changeHandler = (e) => {
+                _deps.AppState?.update?.(state => {
+                    state.settings.disableCompletionToast = e.target.checked;
+                });
+            };
+            safeAdd(disableToastToggle, 'change', disableToastToggle._changeHandler);
+
+            const toggleSwitch = disableToastToggle.closest('.toggle-switch');
+            if (toggleSwitch) {
+                toggleSwitch._clickHandler = (e) => {
+                    if (e.target !== disableToastToggle) {
+                        disableToastToggle.checked = !disableToastToggle.checked;
+                        _deps.AppState?.update?.(state => {
+                            state.settings.disableCompletionToast = disableToastToggle.checked;
+                        });
+                    }
+                };
+                safeAdd(toggleSwitch, 'click', toggleSwitch._clickHandler);
+            }
+        }
+
         // Reset buttons
         _deps.querySelectorAll(DOM_SELECTORS.PREFERENCES_RESET_BTN).forEach(btn => {
             const targetId = btn.dataset.target;
@@ -870,6 +935,21 @@ export class PreferencesManager {
         const solidStatsBgToggle = _deps.getElementById(DOM_IDS.TOGGLE_SOLID_STATS_BG);
         if (solidStatsBgToggle) {
             solidStatsBgToggle.checked = customColors.solidStatsBg === true; // Default false
+        }
+
+        // Load cycle completion settings
+        const settings = state?.settings || {};
+        const toastSelect = _deps.getElementById(DOM_IDS.PREF_TOAST_SELECT);
+        if (toastSelect) {
+            toastSelect.value = settings.cycleCompletionToast || 'default';
+        }
+        const disableAnimToggle = _deps.getElementById(DOM_IDS.TOGGLE_COMPLETION_ANIMATION);
+        if (disableAnimToggle) {
+            disableAnimToggle.checked = settings.disableCompletionAnimation === true;
+        }
+        const disableToastToggle = _deps.getElementById(DOM_IDS.TOGGLE_COMPLETION_TOAST);
+        if (disableToastToggle) {
+            disableToastToggle.checked = settings.disableCompletionToast === true;
         }
 
         // Load pattern color input
@@ -1309,6 +1389,7 @@ export class PreferencesManager {
                     statsProgress: null,
                     statsDoughnut: null,
                     panelText: null,
+                    celebrationBg: null,
                     patternColor: null,
                     patternOpacity: null,
                     showCheckboxFill: true,
@@ -1369,6 +1450,24 @@ export class PreferencesManager {
         const checkboxIncompleteResetBtn = _deps.querySelector(`[data-target="${DOM_IDS.PREF_CHECKBOX_INCOMPLETE_BG}"]`);
         if (checkboxIncompleteInput) checkboxIncompleteInput.style.opacity = '1';
         if (checkboxIncompleteResetBtn) checkboxIncompleteResetBtn.style.opacity = '1';
+
+        // Reset cycle completion settings
+        const celebrationColorInput = _deps.getElementById(DOM_IDS.PREF_CELEBRATION_COLOR);
+        if (celebrationColorInput) celebrationColorInput.value = '#4caf4f';
+        const toastSelect = _deps.getElementById(DOM_IDS.PREF_TOAST_SELECT);
+        if (toastSelect) toastSelect.value = 'default';
+        const disableAnimToggle = _deps.getElementById(DOM_IDS.TOGGLE_COMPLETION_ANIMATION);
+        if (disableAnimToggle) disableAnimToggle.checked = false;
+        const disableToastToggle = _deps.getElementById(DOM_IDS.TOGGLE_COMPLETION_TOAST);
+        if (disableToastToggle) disableToastToggle.checked = false;
+
+        if (_deps.AppState) {
+            _deps.AppState.update(state => {
+                state.settings.cycleCompletionToast = 'default';
+                state.settings.disableCompletionAnimation = false;
+                state.settings.disableCompletionToast = false;
+            });
+        }
 
         // Hide background image (keep image data, just toggle off)
         const bgImageVisibleToggle = _deps.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
