@@ -31,6 +31,12 @@
     letter-spacing: 0.5px;
 }
 
+.storage-bar-hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-400);
+    font-weight: 400;
+}
+
 /* =============================================================================
    STORAGE REFRESH BUTTON
    ============================================================================= */

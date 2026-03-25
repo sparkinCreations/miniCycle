@@ -382,11 +382,17 @@ body.dark-mode .mini-cycle-switch-btn.cancel-btn:hover {
 }
 
 body.dark-mode .mini-cycle-upload-btn {
-    background: var(--dark-button-bg);
+    background: transparent;
+    border-color: var(--dark-border-hover);
+    color: var(--dark-text-light);
 }
 
 body.dark-mode .mini-cycle-upload-btn:hover {
-    background: var(--dark-button-hover-bg);
+    background: var(--dark-surface-secondary);
+}
+
+body.dark-mode .cycle-item-title mark {
+    background: rgba(76, 121, 255, 0.3);
 }
 
 /* =============================================================================
@@ -653,10 +659,15 @@ body.dark-mode #about-modal .close-modal:hover {
    ============================================================================= */
 
 body.dark-mode .storage-bar-container {
-    background: rgba(255, 255, 255, 0.08);
+    background: transparent;
+    border-top-color: var(--dark-border-subtle);
 }
 
 body.dark-mode .storage-bar-label {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .storage-bar-hint {
     color: var(--dark-text-dim);
 }
 
