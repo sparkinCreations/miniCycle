@@ -1253,6 +1253,8 @@ dialog.preferences-modal::backdrop {
     cursor: pointer;
     transition: all var(--transition-fast) ease;
     flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
 }
 
 .preferences-modal .close-btn:hover {
