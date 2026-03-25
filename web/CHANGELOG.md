@@ -1,3 +1,7 @@
+## [2.132] - 2026-03-25
+- feat: enhance settings modal layout and styling; add scroll area, adjust paddings, and improve close button design
+
+
 ## [2.131] - 2026-03-25
 - feat: update version to 2.130; modify changelog, project stats, manifest, HTML, CSS, and service worker for consistency
 

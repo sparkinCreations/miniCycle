@@ -439,6 +439,10 @@ export class HistoryManager {
             const handler = () => {
                 const newTab = tab.dataset.tab;
                 if (newTab !== this.activeTab) {
+                    // Dismiss any existing tour notifications before switching tabs
+                    this.modalOverlay?.querySelectorAll(DOM_SELECTORS.NOTIFICATION_SHOW)
+                        .forEach(n => n.classList.remove('show'));
+
                     this.activeTab = newTab;
                     this.isRecreateMode = false;
                     this.selectedTasks.clear();

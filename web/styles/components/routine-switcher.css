@@ -143,7 +143,7 @@ input.routine-search-input:focus {
 
 /* Search match highlighting */
 .cycle-item-title mark {
-    background: rgba(76, 121, 255, 0.2);
+    background: var(--border-blue-subtle);
     color: inherit;
     border-radius: var(--radius-xs);
     padding: 0 1px;
