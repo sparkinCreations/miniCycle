@@ -1,3 +1,7 @@
+## [2.130] - 2026-03-25
+- feat: update version to 2.129; modify changelog, project stats, manifest, HTML, CSS, and service worker for consistency
+
+
 ## [2.129] - 2026-03-25
 - feat: update version to 2.128; modify changelog, project stats, manifest, HTML, CSS, and service worker for consistency
 

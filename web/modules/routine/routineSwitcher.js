@@ -1947,9 +1947,28 @@ export class RoutineSwitcher {
         const lowerQuery = query.toLowerCase().trim();
 
         items.forEach(item => {
-            const cycleName = (item.dataset.cycleName || '').toLowerCase();
-            const matches = lowerQuery === '' || cycleName.includes(lowerQuery);
+            const cycleName = (item.dataset.cycleName || '');
+            const matches = lowerQuery === '' || cycleName.toLowerCase().includes(lowerQuery);
             item.style.display = matches ? '' : 'none';
+
+            // Highlight matching text in title
+            const titleSpan = item.querySelector('.cycle-item-title');
+            if (titleSpan) {
+                if (lowerQuery === '' || !matches) {
+                    titleSpan.textContent = cycleName;
+                } else {
+                    const idx = cycleName.toLowerCase().indexOf(lowerQuery);
+                    const before = cycleName.slice(0, idx);
+                    const match = cycleName.slice(idx, idx + lowerQuery.length);
+                    const after = cycleName.slice(idx + lowerQuery.length);
+                    titleSpan.innerHTML = '';
+                    if (before) titleSpan.appendChild(document.createTextNode(before));
+                    const mark = document.createElement('mark');
+                    mark.textContent = match;
+                    titleSpan.appendChild(mark);
+                    if (after) titleSpan.appendChild(document.createTextNode(after));
+                }
+            }
         });
 
         // If the selected item got filtered out, fully deselect

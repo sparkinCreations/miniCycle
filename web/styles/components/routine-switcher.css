@@ -141,6 +141,14 @@ input.routine-search-input:focus {
     color: var(--color-gray-400);
 }
 
+/* Search match highlighting */
+.cycle-item-title mark {
+    background: rgba(76, 121, 255, 0.2);
+    color: inherit;
+    border-radius: var(--radius-xs);
+    padding: 0 1px;
+}
+
 /* =============================================================================
    SORT AND FILTER CONTROLS
    ============================================================================= */
@@ -275,9 +283,10 @@ input.routine-search-input:focus {
 }
 
 .mini-cycle-switch-item.selected {
-    background: var(--color-blue-pale-mid);
+    background: var(--color-blue-pale);
     color: var(--color-black);
     font-weight: bold;
+    box-shadow: var(--shadow-glow-blue-sm);
 }
 
 /* Cycle item layout */
@@ -573,15 +582,15 @@ input.routine-search-input:focus {
     font-size: var(--font-size-sm);
     font-weight: 500;
     border-radius: var(--radius-6);
-    border: none;
+    border: 1px solid var(--color-primary);
     cursor: pointer;
-    background: var(--color-slate-800);
-    color: var(--color-white);
+    background: transparent;
+    color: var(--color-primary-dark);
     transition: all var(--transition-fast) ease;
 }
 
 .mini-cycle-upload-btn:hover {
-    background: var(--color-slate-600);
+    background: var(--color-blue-pale-light);
 }
 
 .mini-cycle-upload-btn:active {
@@ -789,7 +798,7 @@ input.routine-search-input:focus {
 }
 
 .desktop-preview-window {
-    padding: var(--space-3);
+    padding: var(--space-4);
     background: var(--color-blue-pale-light);
     border: 1px solid var(--border-blue-subtle-hover);
     border-top: none;
