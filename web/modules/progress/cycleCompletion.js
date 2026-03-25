@@ -101,6 +101,10 @@ export function setCycleCompletionDependencies(dependencies) {
  * Shows a completion animation when a cycle is finished.
  */
 export function showCompletionAnimation() {
+    const deps = di.resolve();
+    const state = deps.AppState?.get?.();
+    if (state?.settings?.disableCompletionAnimation) return;
+
     const animation = document.createElement("div");
     animation.classList.add("mini-cycle-complete-animation");
     animation.setAttribute('role', 'status');
