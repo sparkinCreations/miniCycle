@@ -1,6 +1,6 @@
 # miniCycle Version Updater Guide
 
-> **Developer-friendly documentation for `update-version.sh` v5.2**
+> **Developer-friendly documentation for `update-version.sh` v5.5**
 > Complete guide with real examples, macOS specifics, and troubleshooting tips
 
 ---
@@ -1188,7 +1188,18 @@ cd backup/version_update_[timestamp]
 
 ## Changelog
 
-**v5.2** - Current (January 2026)
+**v5.5** - Current (March 2026)
+- **Automatic CSP hash verification** - Scans inline scripts in miniCycle.html, lite/miniCycle-lite.html, and tests/module-test-suite.html, computes SHA-256 hashes, and auto-updates netlify.toml if any are missing
+- Runs automatically on every version bump (no flag needed)
+- Skipped in --dry-run and --lite-only modes
+
+**v5.4**
+- **--samples flag** - Regenerate sample routine manifest
+
+**v5.3**
+- Minor updates
+
+**v5.2** - (January 2026)
 - **DI-pure module versioning** - Modules receive version via `AppMeta.version` injection
 - **Lite-only mode** - Independent lite version updates (`--lite-only`)
 - **Dry-run support** - Preview changes without writing (`--dry-run`)

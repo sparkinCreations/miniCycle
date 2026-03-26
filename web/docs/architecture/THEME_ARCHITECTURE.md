@@ -85,9 +85,12 @@ const THEME_DEFINITIONS = {
       // ... other overrides
     },
     colorPreset: {
-      bgStart:   '#2d8653',
-      bgEnd:     '#45b37a',
-      headerBg:  '#1e6e42',
+      bgStart:     '#2d8653',
+      bgEnd:       '#45b37a',
+      headerBg:    '#1e6e42',
+      modalBg:     'rgba(30, 80, 50, 0.85)',  // Glass background for modals
+      modalText:   '#e8f5e9',                  // Text color for modals
+      modalBorder: 'rgba(255, 255, 255, 0.12)', // Border color for modals
       // ... other color values
     }
   },
@@ -103,9 +106,12 @@ Each non-classic theme includes a `colorPreset` object that is applied as `--pre
 
 ```javascript
 // Applied by themeManager.js when vocab theme is activated:
-root.style.setProperty('--pref-bg-start', preset.bgStart);
-root.style.setProperty('--pref-bg-end',   preset.bgEnd);
-root.style.setProperty('--pref-header-bg', preset.headerBg);
+root.style.setProperty('--pref-bg-start',    preset.bgStart);
+root.style.setProperty('--pref-bg-end',      preset.bgEnd);
+root.style.setProperty('--pref-header-bg',   preset.headerBg);
+root.style.setProperty('--pref-modal-bg',    preset.modalBg);
+root.style.setProperty('--pref-modal-text',  preset.modalText);
+root.style.setProperty('--pref-modal-border', preset.modalBorder);
 // ...
 ```
 
