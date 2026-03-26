@@ -1,3 +1,7 @@
+## [2.134] - 2026-03-26
+- feat: add cycle completion settings; implement options for animation color, toast message, and toggles for animation and toast display
+
+
 ## [2.133] - 2026-03-25
 - feat: update notification selectors and improve badge tap hint; enhance styling for search match highlighting in dark mode
 

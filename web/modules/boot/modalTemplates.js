@@ -779,6 +779,12 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                 </div>
                 <div class="preferences-section-content" id="pref-section-cycle-animation">
                     <div class="preferences-color-row">
+                        <span class="pref-color-icon">&#x1F4A5;</span>
+                        <label for="pref-reset-flash-color">${getLabel('prefs.resetFlashColor')}</label>
+                        <input type="color" id="pref-reset-flash-color" value="#4caf50" />
+                        <button class="preferences-reset-btn" data-target="pref-reset-flash-color" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
+                    </div>
+                    <div class="preferences-color-row">
                         <span class="pref-color-icon">&#x1F3A8;</span>
                         <label for="pref-celebration-color">${getLabel('prefs.animationColor')}</label>
                         <input type="color" id="pref-celebration-color" value="#4caf4f" />

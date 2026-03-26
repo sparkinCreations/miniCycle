@@ -94,6 +94,7 @@ const VOCAB_THEME_CSS_VARS = {
     statsProgress:        '--pref-stats-progress',
     statsDoughnut:        '--pref-stats-doughnut',
     panelText:            '--pref-panel-text',
+    resetFlash:           '--pref-reset-flash',
     celebrationBg:        '--pref-celebration-bg',
     celebrationShadow:    '--pref-celebration-shadow',
     priorityColor:        '--task-priority-color',

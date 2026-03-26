@@ -295,6 +295,7 @@ function resetTasksData(context, deps) {
     const tasksToDeleteNames = [];
     let animationIndex = 0;
     const STAGGER_DELAY = 60; // ms between each task animation
+    const disableTaskAnimation = freshState?.settings?.disableCompletionAnimation === true;
 
     taskElements.forEach(taskEl => {
         if (taskEl.classList.contains("recurring")) return;
@@ -315,20 +316,30 @@ function resetTasksData(context, deps) {
         const dueDateInput = taskEl.querySelector(DOM_SELECTORS.DUE_DATE);
 
         // Apply staggered reset animation - Fix #58: wrap with trackTimeout
-        const delay = animationIndex * STAGGER_DELAY;
-        trackTimeout(setTimeout(() => {
-            taskEl.classList.add("task-resetting");
+        if (disableTaskAnimation) {
+            // Skip animation, just reset immediately
             if (checkbox) checkbox.checked = false;
             taskEl.classList.remove("overdue-task");
             if (dueDateInput) {
                 dueDateInput.value = "";
                 dueDateInput.classList.add("hidden");
             }
-            // Remove animation class after it completes
+        } else {
+            const delay = animationIndex * STAGGER_DELAY;
             trackTimeout(setTimeout(() => {
-                taskEl.classList.remove("task-resetting");
-            }, 400));
-        }, delay));
+                taskEl.classList.add("task-resetting");
+                if (checkbox) checkbox.checked = false;
+                taskEl.classList.remove("overdue-task");
+                if (dueDateInput) {
+                    dueDateInput.value = "";
+                    dueDateInput.classList.add("hidden");
+                }
+                // Remove animation class after it completes
+                trackTimeout(setTimeout(() => {
+                    taskEl.classList.remove("task-resetting");
+                }, 400));
+            }, delay));
+        }
 
         animationIndex++;
     });
