@@ -50,21 +50,21 @@ Here's the CSP from `.htaccess`, broken down rule by rule:
 
 **In plain English:** "Run our own script files freely. For inline scripts (code written directly in HTML), only run them if they match a known fingerprint."
 
-The hashes listed in `.htaccess` are fingerprints of the inline scripts in `miniCycle.html` and `miniCycle-lite.html`. If even one character of those scripts changes, the fingerprint changes and the browser will block them until the hash is updated.
+The hashes listed in `.htaccess` are fingerprints of the inline scripts in `miniCycle.html`, `miniCycle-lite.html`, and `tests/module-test-suite.html`. If even one character of those scripts changes, the fingerprint changes and the browser will block them until the hash is updated.
 
 **This is why new pages must never use inline scripts** — their fingerprints aren't in the list, so the browser will block them.
 
-### `style-src 'self' 'unsafe-inline'`
+### `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`
 
-**What it means:** CSS stylesheets can come from our domain, and inline styles (like `style="color: red"`) are allowed.
+**What it means:** CSS stylesheets can come from our domain, from Google Fonts, and inline styles (like `style="color: red"`) are allowed.
 
-**In plain English:** "Styles are fine from our files or written directly on elements." Inline styles are lower risk than inline scripts, so we allow them for convenience.
+**In plain English:** "Styles are fine from our files, from Google Fonts, or written directly on elements." Inline styles are lower risk than inline scripts, so we allow them for convenience.
 
-### `font-src 'self'`
+### `font-src 'self' https://fonts.gstatic.com`
 
-**What it means:** Fonts can only come from our domain.
+**What it means:** Fonts can come from our domain or from Google's font CDN (fonts.gstatic.com).
 
-**In plain English:** "We host our own fonts. Don't load fonts from anywhere else."
+**In plain English:** "We host our own fonts, and we also load fonts from Google Fonts (served from fonts.gstatic.com)."
 
 ### `img-src 'self' data: blob:`
 
@@ -110,7 +110,7 @@ Beyond CSP, `.htaccess` sets several other protective headers:
 
 | Header | What It Does | Plain English |
 |--------|-------------|---------------|
-| `X-Frame-Options: DENY` | Blocks the site from being embedded in iframes | Same as `frame-ancestors 'none'` but for older browsers |
+| `X-Frame-Options: SAMEORIGIN` | Allows same-origin iframes (needed for the in-app test runner) while blocking third-party embedding | Like `frame-ancestors 'none'` but permits our own domain's iframes; covers older browsers that don't support CSP |
 | `X-Content-Type-Options: nosniff` | Prevents browsers from guessing file types | "If we say it's CSS, treat it as CSS — don't try to run it as JavaScript" |
 | `X-XSS-Protection: 1; mode=block` | Legacy XSS filter for older browsers | Extra protection for browsers that don't support CSP |
 | `Referrer-Policy: strict-origin-when-cross-origin` | Controls what URL info is sent when clicking links | "When leaving our site, only share the domain name, not the full page URL" |
@@ -156,8 +156,9 @@ Inline scripts need a SHA-256 hash in `.htaccess` to work. Inline event handlers
 
 | Page | Script File | Notes |
 |------|------------|-------|
-| `miniCycle.html` | Inline (hashed in CSP) | Main app — only page allowed to use inline scripts |
+| `miniCycle.html` | Inline (hashed in CSP) | Main app — uses inline scripts with registered hashes |
 | `miniCycle-lite.html` | Inline (hashed in CSP) | Lite version — also has registered hashes |
+| `tests/module-test-suite.html` | Inline (hashed in CSP) | In-app test runner — also has registered hashes |
 | `pages/product.html` | `pages/product.js` | Carousel, changelog, hover effects |
 | `pages/learn_more.html` | `pages/learn_more.js` | FAQ accordion, smooth scroll |
 | `legal/privacy.html` | `legal/legal-footer.js` | Shared year footer |
@@ -205,7 +206,7 @@ The result looks like: `sha256-3Xbv1x8IO7a2BA/oYED4OTrf+44CPz5dLfxVpEswDOg=`
 
 ### When you need to update hashes
 
-**Only** if you change an inline script in `miniCycle.html` or `miniCycle-lite.html`:
+**Only** if you change an inline script in `miniCycle.html`, `miniCycle-lite.html`, or `tests/module-test-suite.html`:
 
 1. Make your change to the inline script
 2. Copy the exact content between `<script>` and `</script>` (not including the tags)
@@ -281,6 +282,7 @@ document.getElementById('myBtn').addEventListener('click', doSomething);
 | CSP rules | `web/.htaccess` | Security headers for all pages |
 | Main app | `web/miniCycle.html` | Only file with hashed inline scripts |
 | Lite app | `web/lite/miniCycle-lite.html` | Also has hashed inline scripts |
+| Test runner | `web/tests/module-test-suite.html` | Also has hashed inline scripts |
 | This guide | `web/docs/security/CSP_AND_HTACCESS_GUIDE.md` | You're reading it |
 
 ---

@@ -142,7 +142,7 @@ All `--theme-*` variables can be overridden by themes:
 | Cards | `--theme-card-bg`, `--theme-card-border`, `--theme-card-shadow` |
 | Inputs | `--theme-input-bg`, `--theme-input-text`, `--theme-input-border` |
 | Buttons | `--theme-button-primary-bg`, `--theme-button-secondary-bg` |
-| Modals | `--theme-modal-bg`, `--theme-modal-text`, `--theme-modal-overlay` |
+| Modals | `--theme-modal-bg`, `--theme-modal-glass-bg`, `--theme-modal-text`, `--theme-modal-border`, `--theme-modal-overlay` |
 | Tasks | `--theme-task-bg`, `--theme-task-completed-bg`, `--theme-task-checkmark` |
 | Header | `--theme-header-bg`, `--theme-header-text`, `--theme-header-border` |
 | Stats | `--theme-stats-bg`, `--theme-stats-text` |
@@ -343,6 +343,24 @@ When a vocab theme is active:
 3. The personalization modal shows a notice that theme colors are active
 
 Vocab theme colors take precedence over Quick Colors and user custom colors.
+
+### Modal-Specific Preset Variables
+
+Vocab themes can include modal styling via `--pref-modal-*` variables:
+
+| Variable              | colorPreset Key | Purpose                      |
+|-----------------------|-----------------|------------------------------|
+| `--pref-modal-bg`     | `modalBg`       | Glass background for modals  |
+| `--pref-modal-text`   | `modalText`     | Text color for modals        |
+| `--pref-modal-border` | `modalBorder`   | Border color for modals      |
+
+These integrate into the modal fallback chain:
+
+```css
+background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+```
+
+The chain ensures a value always resolves: vocab theme preset --> theme glass bg --> theme modal bg --> base color.
 
 ---
 

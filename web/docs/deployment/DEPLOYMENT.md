@@ -178,7 +178,7 @@ Both must stay in sync. If you modify ANY inline `<script>` in miniCycle.html, y
 **Local dev won't catch CSP mismatches** — the Python server doesn't send CSP headers. This only breaks in production on Netlify.
 
 ### Other Security Headers (netlify.toml)
-- `X-Frame-Options: DENY` — clickjacking protection
+- `X-Frame-Options: SAMEORIGIN` — allows same-origin iframes (needed for the in-app test runner) while still blocking third-party embedding
 - `Strict-Transport-Security` — HSTS for 1 year
 - `X-Content-Type-Options: nosniff`
 - `Referrer-Policy: strict-origin-when-cross-origin`
