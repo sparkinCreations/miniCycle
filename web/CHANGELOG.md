@@ -1,3 +1,7 @@
+## [2.137] - 2026-03-26
+- feat: add modal theme variables and update styles across components; enhance consistency and maintainability
+
+
 ## [2.136] - 2026-03-26
 - feat: refactor toast message label map for cycle completion; move to a constant and remove duplication in HelpWindowManager
 
