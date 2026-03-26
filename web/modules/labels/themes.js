@@ -116,6 +116,7 @@ export const THEME_DEFINITIONS = {
             taskOptionsBg:        'rgba(255, 220, 180, 0.85)',   // warm amber — matches taskBg tone
             taskOptionsBorder:    'rgba(192, 128, 64, 0.35)',    // amber border — visible on warm bg
             taskOptionsHoverBg:   'rgba(255, 200, 140, 0.9)',    // slightly deeper amber on hover
+            panelAccent:          '#ffffff',                      // white — readable on cognac amber panel bg
         },
         // Priority picker options — darkened for contrast on warm amber taskBg (#ffd0a0)
         priorityColors: [
@@ -195,6 +196,7 @@ export const THEME_DEFINITIONS = {
             taskOptionsBg:        'rgba(200, 240, 218, 0.85)',   // soft sage — matches taskBg tone
             taskOptionsBorder:    'rgba(30, 140, 82, 0.35)',     // green border — visible on sage bg
             taskOptionsHoverBg:   'rgba(170, 230, 198, 0.9)',    // slightly deeper sage on hover
+            panelAccent:          '#ffffff',                      // white — readable on forest green panel bg
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [
@@ -274,6 +276,7 @@ export const THEME_DEFINITIONS = {
             taskOptionsBg:        'rgba(216, 213, 255, 0.85)',   // soft periwinkle — matches taskBg tone
             taskOptionsBorder:    'rgba(61, 53, 181, 0.35)',     // indigo border — visible on periwinkle bg
             taskOptionsHoverBg:   'rgba(195, 190, 255, 0.9)',    // slightly deeper periwinkle on hover
+            panelAccent:          '#ffffff',                      // white — readable on indigo panel bg
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [
@@ -353,6 +356,7 @@ export const THEME_DEFINITIONS = {
             taskOptionsBg:        'rgba(185, 235, 248, 0.85)',   // soft aqua — matches taskBg tone
             taskOptionsBorder:    'rgba(10, 141, 181, 0.35)',    // teal border — visible on aqua bg
             taskOptionsHoverBg:   'rgba(155, 225, 245, 0.9)',    // slightly deeper aqua on hover
+            panelAccent:          '#ffffff',                      // white — readable on teal panel bg
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [

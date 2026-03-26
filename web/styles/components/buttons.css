@@ -247,6 +247,7 @@ body.hide-help-window .help-window {
     margin: 0 0 var(--space-2) 0;
     font-size: var(--font-size-base);
     font-weight: 600;
+    color: var(--pref-panel-accent, var(--accent-color, #007bff));
 }
 
 .help-window p {
