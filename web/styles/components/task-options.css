@@ -63,8 +63,8 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
 
 .task-btn,
 .move-btn {
-    background: var(--color-blue-pale);
-    border: 1px solid var(--border-blue-subtle);
+    background: var(--pref-task-options-bg, var(--color-blue-pale));
+    border: 1px solid var(--pref-task-options-border, var(--border-blue-subtle));
     border-radius: 50% 50% 0 0;
     width: 32px;
     height: 24px;
@@ -84,7 +84,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
 }
 
 .task-options button.task-btn:hover {
-    background: var(--color-blue-pale-mid);
+    background: var(--pref-task-options-hover-bg, var(--color-blue-pale-mid));
     transform: scale(1.05);
 }
 

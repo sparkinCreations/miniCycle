@@ -113,6 +113,9 @@ export const THEME_DEFINITIONS = {
             modalBg:              'rgba(255, 225, 195, 0.82)',   // warm amber glass — matches theme palette
             modalText:            '#3d1a00',                     // dark brown — same as taskText for consistency
             modalBorder:          'rgba(192, 128, 64, 0.25)',    // warm amber border
+            taskOptionsBg:        'rgba(255, 220, 180, 0.85)',   // warm amber — matches taskBg tone
+            taskOptionsBorder:    'rgba(192, 128, 64, 0.35)',    // amber border — visible on warm bg
+            taskOptionsHoverBg:   'rgba(255, 200, 140, 0.9)',    // slightly deeper amber on hover
         },
         // Priority picker options — darkened for contrast on warm amber taskBg (#ffd0a0)
         priorityColors: [
@@ -189,6 +192,9 @@ export const THEME_DEFINITIONS = {
             modalBg:              'rgba(220, 248, 232, 0.82)',   // soft mint glass — matches theme palette
             modalText:            '#0d2b1a',                     // dark green — same as taskText for consistency
             modalBorder:          'rgba(30, 140, 82, 0.25)',     // green border
+            taskOptionsBg:        'rgba(200, 240, 218, 0.85)',   // soft sage — matches taskBg tone
+            taskOptionsBorder:    'rgba(30, 140, 82, 0.35)',     // green border — visible on sage bg
+            taskOptionsHoverBg:   'rgba(170, 230, 198, 0.9)',    // slightly deeper sage on hover
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [
@@ -265,6 +271,9 @@ export const THEME_DEFINITIONS = {
             modalBg:              'rgba(216, 213, 255, 0.82)',   // soft periwinkle glass — matches theme palette
             modalText:            '#1e1b4b',                     // dark indigo — same as taskText for consistency
             modalBorder:          'rgba(61, 53, 181, 0.25)',     // indigo border
+            taskOptionsBg:        'rgba(216, 213, 255, 0.85)',   // soft periwinkle — matches taskBg tone
+            taskOptionsBorder:    'rgba(61, 53, 181, 0.35)',     // indigo border — visible on periwinkle bg
+            taskOptionsHoverBg:   'rgba(195, 190, 255, 0.9)',    // slightly deeper periwinkle on hover
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [
@@ -341,6 +350,9 @@ export const THEME_DEFINITIONS = {
             modalBg:              'rgba(200, 240, 252, 0.82)',   // soft aqua glass — matches theme palette
             modalText:            '#0c2b33',                     // dark teal — same as taskText for consistency
             modalBorder:          'rgba(10, 141, 181, 0.25)',    // teal border
+            taskOptionsBg:        'rgba(185, 235, 248, 0.85)',   // soft aqua — matches taskBg tone
+            taskOptionsBorder:    'rgba(10, 141, 181, 0.35)',    // teal border — visible on aqua bg
+            taskOptionsHoverBg:   'rgba(155, 225, 245, 0.9)',    // slightly deeper aqua on hover
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [

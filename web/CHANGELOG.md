@@ -1,3 +1,7 @@
+## [2.141] - 2026-03-26
+- feat: add backup reminder system to prompt users for routine backups and enhance storage management documentation
+
+
 ## [2.140] - 2026-03-26
 - feat: implement backup reminder system with modal notifications and download functionality
 
