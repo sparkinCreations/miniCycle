@@ -87,6 +87,7 @@ const di = createDIModule('TaskCycleReset', {
     logHistoryEvent: optional(null),
     checkAchievements: optional(null),
     showMilestoneCelebrationOverlay: optional(null),
+    checkBackupReminderOnTaskClear: optional(null),  // () => void — backup reminder after 100 cleared tasks
     // Logo effects
     triggerLogoScan: optional(null)
 });
@@ -742,6 +743,9 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
                 state.userProgress.celebrated500Tasks = true;
             }, true);
         }
+
+        // Check backup reminder (100-task interval)
+        _deps.checkBackupReminderOnTaskClear?.();
     } else {
         console.warn('⚠️ AppState not ready for task deletion - state may be lost');
     }

@@ -906,6 +906,14 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         isAchievementUnlocked: (...args) => deps.features?.achievementsManager?.isUnlocked?.(...args),
         openAchievementsModal: (...args) => deps.features?.achievementsManager?.openModal?.(...args),
 
+        // Backup reminder (from deps.features)
+        checkBackupReminderOnBoot: (...args) => deps.features?.checkBackupReminderOnBoot?.(...args),
+        checkBackupReminderOnCycleComplete: (...args) => deps.features?.checkBackupReminderOnCycleComplete?.(...args),
+        checkBackupReminderOnTaskClear: (...args) => deps.features?.checkBackupReminderOnTaskClear?.(...args),
+
+        // Backup file download (from deps.ui via settingsManager)
+        downloadBackupFile: (...args) => deps.ui?.downloadBackupFile?.(...args),
+
         // Vocabulary theme manager (from deps.features) - use Proxy for lazy resolution
         vocabThemeManager: new Proxy({}, {
             get(target, prop) {

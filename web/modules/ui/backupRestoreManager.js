@@ -174,6 +174,93 @@ export function neutralizeAppState() {
 }
 
 // ============================================================================
+// BACKUP FILE DOWNLOAD (reusable — called by backup button AND backup reminder)
+// ============================================================================
+
+/**
+ * Download the current app state as a .json backup file.
+ * This is the core backup logic extracted for reuse by both the
+ * settings backup button and the backup reminder module.
+ *
+ * @param {Object} [options]
+ * @param {boolean} [options.skipNamePrompt=false] - Skip the name prompt dialog
+ * @returns {boolean} true if backup was initiated, false on error
+ */
+export function downloadBackupFile(options = {}) {
+    const AppState = getAppStateInstance();
+    if (!AppState?.isReady?.()) {
+        console.error('Schema 2.5 AppState required for backup');
+        _deps.showNotification?.(getLabel('notify.backupNoData'), 'error');
+        return false;
+    }
+
+    const miniCycleData = localStorage.getItem(STORAGE_KEYS.DATA);
+    if (!miniCycleData) {
+        console.error('Schema 2.5 data not found in localStorage');
+        _deps.showNotification?.(getLabel('notify.backupNoData'), 'error');
+        return false;
+    }
+
+    const defaultName = `mini-cycle-backup-${new Date().toISOString().slice(0, 10)}`;
+
+    const createAndDownload = (fileName) => {
+        const currentState = AppState.get();
+        const liteStorage = collectLiteStorageSnapshot();
+        const backupData = {
+            schemaVersion: '2.5',
+            miniCycleData,
+            backupMetadata: {
+                createdAt: Date.now(),
+                version: _deps.AppMeta?.version || currentState?.metadata?.version || '2.5',
+                schemaVersion: currentState?.metadata?.schemaVersion || '2.5',
+                includesLiteStorage: Boolean(liteStorage),
+                source: 'miniCycle App'
+            }
+        };
+        if (liteStorage) {
+            backupData.liteStorage = liteStorage;
+        }
+
+        const safeName = fileName.replace(/[<>:"/\\|?*]/g, '').trim() || defaultName;
+        const finalName = safeName.endsWith('.json') ? safeName : `${safeName}.json`;
+
+        const backupBlob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+        const backupUrl = URL.createObjectURL(backupBlob);
+        const a = document.createElement('a');
+        a.href = backupUrl;
+        a.download = finalName;
+        a.click();
+        URL.revokeObjectURL(backupUrl);
+
+        _deps.showNotification?.('✅ ' + getLabel('notify.backupCreated'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+
+        // Record backup timestamp for backup reminder system
+        AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.lastFileBackupTimestamp = Date.now();
+        });
+    };
+
+    if (!options.skipNamePrompt && _deps.showPromptModal) {
+        _deps.showPromptModal({
+            title: getLabel('notify.backupNamePrompt'),
+            placeholder: getLabel('notify.backupNamePlaceholder'),
+            defaultValue: defaultName,
+            confirmText: getLabel('settings.backupAll'),
+            callback: (name) => {
+                if (name !== null) {
+                    createAndDownload(name || defaultName);
+                }
+            }
+        });
+    } else {
+        createAndDownload(defaultName);
+    }
+
+    return true;
+}
+
+// ============================================================================
 // BACKUP FUNCTIONS
 // ============================================================================
 
@@ -197,72 +284,7 @@ export function setupBackupButton() {
     if (!backupBtn) return;
 
     backupBtn._clickHandler = () => {
-        const AppState = getAppStateInstance();
-        if (!AppState?.isReady?.()) {
-            console.error('Schema 2.5 AppState required for backup');
-            _deps.showNotification?.(getLabel('notify.backupNoData'), "error");
-            return;
-        }
-
-        // Read directly from localStorage to ensure backup/restore round-trip fidelity
-        const miniCycleData = localStorage.getItem(STORAGE_KEYS.DATA);
-        if (!miniCycleData) {
-            console.error('Schema 2.5 data not found in localStorage');
-            _deps.showNotification?.(getLabel('notify.backupNoData'), "error");
-            return;
-        }
-
-        const defaultName = `mini-cycle-backup-${new Date().toISOString().slice(0, 10)}`;
-
-        const createAndDownloadBackup = (fileName) => {
-            const currentState = AppState.get();
-            const liteStorage = collectLiteStorageSnapshot();
-            const backupData = {
-                schemaVersion: "2.5",
-                miniCycleData,
-                backupMetadata: {
-                    createdAt: Date.now(),
-                    version: _deps.AppMeta?.version || currentState?.metadata?.version || "2.5",
-                    schemaVersion: currentState?.metadata?.schemaVersion || "2.5",
-                    includesLiteStorage: Boolean(liteStorage),
-                    source: "miniCycle App"
-                }
-            };
-            if (liteStorage) {
-                backupData.liteStorage = liteStorage;
-            }
-
-            // Sanitize filename: remove unsafe characters, ensure .json extension
-            const safeName = fileName.replace(/[<>:"/\\|?*]/g, '').trim() || defaultName;
-            const finalName = safeName.endsWith('.json') ? safeName : `${safeName}.json`;
-
-            const backupBlob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
-            const backupUrl = URL.createObjectURL(backupBlob);
-            const a = document.createElement("a");
-            a.href = backupUrl;
-            a.download = finalName;
-            a.click();
-            URL.revokeObjectURL(backupUrl);
-
-            _deps.showNotification?.("✅ " + getLabel('notify.backupCreated'), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
-        };
-
-        // Prompt for backup name, fall back to default if prompt unavailable
-        if (_deps.showPromptModal) {
-            _deps.showPromptModal({
-                title: getLabel('notify.backupNamePrompt'),
-                placeholder: getLabel('notify.backupNamePlaceholder'),
-                defaultValue: defaultName,
-                confirmText: getLabel('settings.backupAll'),
-                callback: (name) => {
-                    if (name !== null) {
-                        createAndDownloadBackup(name || defaultName);
-                    }
-                }
-            });
-        } else {
-            createAndDownloadBackup(defaultName);
-        }
+        downloadBackupFile({ skipNamePrompt: false });
     };
 
     safeAddEventListener(backupBtn, "click", backupBtn._clickHandler);
