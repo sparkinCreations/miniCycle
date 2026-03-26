@@ -1,6 +1,6 @@
 #!/bin/bash
 # update-version.sh - Enhanced Interactive Version Updater for miniCycle
-# Version: 5.4 - Added --samples flag to regenerate sample routine manifest (Mar 2026)
+# Version: 5.5 - Added automatic CSP hash verification/update (Mar 2026)
 #
 # Features:
 #  - Generates version.js as single source of truth (using globalThis)
@@ -16,6 +16,7 @@
 #  - --lite-only flag for updating ONLY the lite version (independent of main app)
 #  - --dry-run flag to preview changes without writing
 #  - --samples flag to regenerate sample routine manifest from .mcyc files
+#  - Automatic CSP hash verification — detects new/changed inline scripts and updates netlify.toml
 
 # ============================================
 # INSTRUCTIONS & DOCUMENTATION
@@ -114,6 +115,9 @@
 # Documentation:
 # • docs/PROJECT_STATS.md         - App Version + auto-counted metrics (modules, tests, test files,
 #                                   CSS, JSDoc, docs, lite version, boot file lines, per-directory counts)
+#
+# Security (auto-detected):
+# • netlify.toml                  - CSP script-src hashes (auto-updated when inline scripts change)
 #
 # ============================================
 # 📦 MODULE VERSIONING (DI-PURE)
@@ -1376,6 +1380,110 @@ if [ "$DRY_RUN" = false ]; then
     fi
     echo ""
 fi
+
+# ============================================
+# CSP HASH AUTO-UPDATE
+# ============================================
+# Scans inline <script> blocks in HTML files,
+# computes SHA-256 hashes, and updates netlify.toml
+# if any hashes are new or missing.
+
+echo "🔒 CSP Hash Verification"
+echo "------------------------"
+
+if [ "$DRY_RUN" = true ]; then
+    echo "🔍 [DRY RUN] Would verify CSP hashes..."
+elif [ "$LITE_ONLY" = true ]; then
+    echo "⏭️  Skipping CSP hashes (LITE ONLY mode)"
+else
+    NETLIFY_TOML="netlify.toml"
+    if [ -f "$NETLIFY_TOML" ]; then
+        # Compute hashes from all HTML files with inline scripts
+        CSP_HASHES=$(python3 -c "
+import hashlib, base64, re, sys
+
+files = [
+    'miniCycle.html',
+    'lite/miniCycle-lite.html',
+    'tests/module-test-suite.html',
+]
+
+hashes = []
+for f in files:
+    try:
+        html = open(f).read()
+        # Match inline scripts (not src=, not type='module' for main HTML; include type='module' for test suite)
+        # We hash ALL inline script blocks regardless of type
+        scripts = re.findall(r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>', html, re.DOTALL)
+        for s in scripts:
+            if s.strip():  # skip empty scripts
+                h = base64.b64encode(hashlib.sha256(s.encode()).digest()).decode()
+                hashes.append(f\"'sha256-{h}'\")
+    except FileNotFoundError:
+        pass
+
+# Deduplicate while preserving order
+seen = set()
+unique = []
+for h in hashes:
+    if h not in seen:
+        seen.add(h)
+        unique.append(h)
+
+for h in unique:
+    print(h)
+" 2>/dev/null)
+
+        if [ -n "$CSP_HASHES" ]; then
+            # Read current CSP line from netlify.toml
+            CURRENT_CSP=$(grep "Content-Security-Policy" "$NETLIFY_TOML" || true)
+            MISSING_HASHES=""
+            MISSING_COUNT=0
+
+            while IFS= read -r hash; do
+                if ! echo "$CURRENT_CSP" | grep -qF "$hash"; then
+                    MISSING_HASHES="$MISSING_HASHES $hash"
+                    MISSING_COUNT=$((MISSING_COUNT + 1))
+                fi
+            done <<< "$CSP_HASHES"
+
+            if [ $MISSING_COUNT -gt 0 ]; then
+                echo "⚠️  Found $MISSING_COUNT new inline script hash(es) not in CSP:"
+                for hash in $MISSING_HASHES; do
+                    echo "   + $hash"
+                done
+
+                # Build the new script-src with all hashes
+                ALL_HASHES=$(echo "$CSP_HASHES" | tr '\n' ' ' | sed 's/ $//')
+                NEW_SCRIPT_SRC="script-src 'self' $ALL_HASHES"
+
+                # Replace the script-src directive in netlify.toml
+                python3 -c "
+import re
+
+with open('$NETLIFY_TOML') as f:
+    content = f.read()
+
+# Replace script-src directive (everything between 'script-src' and the next ';')
+new_src = \"\"\"$NEW_SCRIPT_SRC\"\"\"
+content = re.sub(r\"script-src [^;]+\", new_src, content)
+
+with open('$NETLIFY_TOML', 'w') as f:
+    f.write(content)
+"
+                echo "✅ Updated CSP script-src in $NETLIFY_TOML ($MISSING_COUNT hash(es) added)"
+            else
+                echo "✅ All inline script hashes already in CSP"
+            fi
+        else
+            echo "ℹ️  No inline scripts found to hash"
+        fi
+    else
+        echo "⚠️  $NETLIFY_TOML not found - skipping CSP update"
+    fi
+fi
+
+echo ""
 
 # ============================================
 # CORE FILE UPDATES COMPLETE

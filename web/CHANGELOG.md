@@ -1,3 +1,7 @@
+## [2.138] - 2026-03-26
+- feat: update X-Frame-Options header to SAMEORIGIN for improved security
+
+
 ## [2.137] - 2026-03-26
 - feat: add modal theme variables and update styles across components; enhance consistency and maintainability
 
