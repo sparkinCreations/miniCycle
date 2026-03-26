@@ -1,9 +1,9 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.138';
-var CACHE_VERSION = 'v981';
-var CACHE_VERSION_NUMBER = 981; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.139';
+var CACHE_VERSION = 'v982';
+var CACHE_VERSION_NUMBER = 982; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 

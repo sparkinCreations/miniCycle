@@ -146,6 +146,7 @@ async function loadSubModules(version) {
         setupRestoreButton: backupRestoreModule.setupRestoreButton,
         setupFactoryResetButton: backupRestoreModule.setupFactoryResetButton,
         neutralizeAppState: backupRestoreModule.neutralizeAppState,
+        downloadBackupFile: backupRestoreModule.downloadBackupFile,
 
         // Data Sanitizer
         setDataSanitizerDependencies: dataSanitizerModule.setDataSanitizerDependencies,
@@ -398,6 +399,7 @@ export function setupBackupButton() { _subModules?.setupBackupButton?.(); }
 export function setupRestoreButton() { _subModules?.setupRestoreButton?.(); }
 export function setupFactoryResetButton() { _subModules?.setupFactoryResetButton?.(); }
 export function neutralizeAppState() { _subModules?.neutralizeAppState?.(); }
+export function downloadBackupFile(options) { return _subModules?.downloadBackupFile?.(options); }
 export function sanitizeImportedData(data) { return _subModules?.sanitizeImportedData?.(data); }
 export function sanitizeText(text, maxLen) { return _subModules?.sanitizeText?.(text, maxLen); }
 export function _resetForTesting() { _subModules?._resetForTesting?.(); }

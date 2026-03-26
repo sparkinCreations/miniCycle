@@ -1,3 +1,8 @@
+## [2.139] - 2026-03-26
+- feat: enhance modal theming with new variables and update security headers for improved protection
+- feat: update version to 5.5; add automatic CSP hash verification and update logic in update-version.sh
+
+
 ## [2.138] - 2026-03-26
 - feat: update X-Frame-Options header to SAMEORIGIN for improved security
 

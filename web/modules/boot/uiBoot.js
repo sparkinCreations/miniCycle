@@ -950,6 +950,16 @@ export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
       console.warn('⚠️ Session backup failed (non-critical):', error);
     }
   }, 1000); // Delay 1s to ensure AppState is fully ready
+
+  // ========== BACKUP REMINDER CHECK (non-blocking) ==========
+  // Check if user should be reminded to back up their routines (14-day interval)
+  setTimeout(() => {
+    try {
+      deps.features?.checkBackupReminderOnBoot?.();
+    } catch (error) {
+      console.warn('⚠️ Backup reminder check failed (non-critical):', error);
+    }
+  }, 3000); // Delay 3s to avoid interrupting initial UX
 }
 
 // ============================================================================

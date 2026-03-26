@@ -363,7 +363,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
         optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'organizeCompletedTasks', 'performSchema25Migration', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'toggleHoverTaskOptions', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateStatsPanel'],
-        provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData'],
+        provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData', 'downloadBackupFile'],
         provideInstance: 'settingsManager',
         api: 'ui',
         after: ['menuManager', 'themeManager', 'undoRedoManager']
@@ -416,7 +416,7 @@ export const MODULE_MANIFESTS = {
         path: '../progress/cycleCompletion.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification'],
-        optionalDeps: ['logHistoryEvent', 'checkAchievements', 'vocabThemeManager', 'renderVocabThemes', 'showConfirmationModal', 'assignCycleVariables', 'resetTasks', 'unlockMiniGame', 'updateStatsPanel'],
+        optionalDeps: ['logHistoryEvent', 'checkAchievements', 'checkBackupReminderOnCycleComplete', 'vocabThemeManager', 'renderVocabThemes', 'showConfirmationModal', 'assignCycleVariables', 'resetTasks', 'unlockMiniGame', 'updateStatsPanel'],
         provides: ['checkMiniCycle', 'updateProgressBar', 'incrementCycleCount', 'showCompletionAnimation', 'showClearAnimation', 'animateProgressBarFill', 'animateProgressBarEmpty', 'showMilestoneCelebrationOverlay'],
         api: 'progress'
     },
@@ -492,7 +492,7 @@ export const MODULE_MANIFESTS = {
         path: '../task/taskCore.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'sanitizeInput', 'removeRecurringTasksFromCycle'],
-        optionalDeps: ['showCompletionAnimation', 'showClearAnimation', 'logHistoryEvent', 'showMilestoneCelebrationOverlay', 'DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS', 'DEFAULT_TASK_OPTION_BUTTONS', 'animateProgressBarEmpty', 'animateProgressBarFill', 'checkCompleteAllButton', 'checkMiniCycle', 'checkOverdueTasks', 'enableDragAndDropOnTask', 'incrementCycleCount', 'isPerformingUndoRedo', 'isTouchDevice', 'pluginManager', 'recurringPanel', 'syncTaskDeleteWhenCompleteDOM', 'updateArrowsInDOM', 'updateMainMenuHeader', 'updateMoveArrowsVisibility', 'updateProgressBar', 'updateRecurringPanelButtonVisibility', 'updateStatsPanel'],
+        optionalDeps: ['showCompletionAnimation', 'showClearAnimation', 'logHistoryEvent', 'showMilestoneCelebrationOverlay', 'checkBackupReminderOnTaskClear', 'DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS', 'DEFAULT_TASK_OPTION_BUTTONS', 'animateProgressBarEmpty', 'animateProgressBarFill', 'checkCompleteAllButton', 'checkMiniCycle', 'checkOverdueTasks', 'enableDragAndDropOnTask', 'incrementCycleCount', 'isPerformingUndoRedo', 'isTouchDevice', 'pluginManager', 'recurringPanel', 'syncTaskDeleteWhenCompleteDOM', 'updateArrowsInDOM', 'updateMainMenuHeader', 'updateMoveArrowsVisibility', 'updateProgressBar', 'updateRecurringPanelButtonVisibility', 'updateStatsPanel'],
         provides: ['addTask', 'editTask', 'deleteTask', 'toggleTaskPriority', 'handleTaskCompletionChange', 'resetTasks', 'saveTaskToSchema25', 'handleCompleteAllTasks'],
         provideInstance: 'taskCore',
         api: 'task',
@@ -562,6 +562,17 @@ export const MODULE_MANIFESTS = {
         provideInstance: 'achievementsManager',
         api: 'features',
         after: ['clearedTasksManager', 'themeManager', 'gamesManager', 'vocabThemes']
+    },
+
+    backupReminder: {
+        path: '../features/backupReminder.js',
+        phase: PHASES.FEATURES,
+        requires: ['AppState', 'showConfirmationModal'],
+        optionalDeps: ['showNotification', 'downloadBackupFile'],
+        provides: ['checkBackupReminderOnBoot', 'checkBackupReminderOnCycleComplete', 'checkBackupReminderOnTaskClear'],
+        api: 'features',
+        optional: true,
+        after: ['achievementsManager']
     },
 
     // =========================================================================

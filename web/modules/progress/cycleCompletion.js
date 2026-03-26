@@ -76,6 +76,7 @@ const di = createDIModule('CycleCompletion', {
     // History & Achievements hooks
     logHistoryEvent: optional(null),       // (type, details) => void
     checkAchievements: optional(null),     // (cycles, tasks) => Array
+    checkBackupReminderOnCycleComplete: optional(null),  // () => void — backup reminder after 25 cycles
     // Vocabulary theme system
     vocabThemeManager: optional(null),     // VocabThemeManager singleton
     // Confirmation modal for due date warning
@@ -392,6 +393,9 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
     if (typeof deps.checkAchievements === 'function') {
         deps.checkAchievements(globalCyclesCompleted, totalTasksCompleted);
     }
+
+    // Check backup reminder (25-cycle interval)
+    deps.checkBackupReminderOnCycleComplete?.();
 
     // Check for newly unlocked vocabulary themes.
     // Compare against beforeUnlocked (captured before all unlock logic) so themes
