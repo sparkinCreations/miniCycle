@@ -14,6 +14,14 @@ import { getLabel } from '../labels/labelResolver.js';
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
 // ============================================================================
 
+// Toast message label map for cycle completion
+const TOAST_LABEL_MAP = {
+    'default': 'help.cycleComplete',
+    'greatJob': 'prefs.toastGreatJob',
+    'nailed': 'prefs.toastNailed',
+    'finished': 'prefs.toastFinished',
+};
+
 // Storage utilities - dynamically loaded to avoid ES module cache issues
 let getObjectSizeBytes, formatBytes;
 
@@ -361,12 +369,6 @@ export class HelpWindowManager {
 
         // Use selected toast message
         const toastKey = state?.settings?.cycleCompletionToast || 'default';
-        const TOAST_LABEL_MAP = {
-            'default': 'help.cycleComplete',
-            'greatJob': 'prefs.toastGreatJob',
-            'nailed': 'prefs.toastNailed',
-            'finished': 'prefs.toastFinished',
-        };
         const toastMessage = getLabel(TOAST_LABEL_MAP[toastKey] || 'help.cycleComplete');
 
         this.isShowingCycleComplete = true;

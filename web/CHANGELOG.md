@@ -1,3 +1,7 @@
+## [2.135] - 2026-03-26
+- feat: add reset flash color preference; implement color input and update related constants, labels, and animations
+
+
 ## [2.134] - 2026-03-26
 - feat: add cycle completion settings; implement options for animation color, toast message, and toggles for animation and toast display
 
