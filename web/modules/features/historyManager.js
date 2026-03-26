@@ -439,9 +439,10 @@ export class HistoryManager {
             const handler = () => {
                 const newTab = tab.dataset.tab;
                 if (newTab !== this.activeTab) {
-                    // Dismiss any existing tour notifications before switching tabs
+                    // Remove existing tour notifications before switching tabs
+                    // (not just hide — fully remove from DOM to prevent stacking)
                     this.modalOverlay?.querySelectorAll(DOM_SELECTORS.NOTIFICATION_SHOW)
-                        .forEach(n => n.classList.remove('show'));
+                        .forEach(n => n.remove());
 
                     this.activeTab = newTab;
                     this.isRecreateMode = false;
@@ -451,9 +452,11 @@ export class HistoryManager {
                     this._updateFooterVisibility();
                     this._updateActionButton();
 
-                    // Trigger cleared tasks tour when switching to cleared tab
+                    // Trigger appropriate tour for the new tab
                     if (newTab === 'cleared') {
                         this.deps.showClearedTasksTourNotification?.();
+                    } else {
+                        this.deps.showHistoryTourNotification?.();
                     }
                 }
             };

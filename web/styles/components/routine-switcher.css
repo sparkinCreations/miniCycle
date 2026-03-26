@@ -414,14 +414,43 @@ input.routine-search-input:focus {
         display: none;
     }
 
-    /* Preview — taller and thinner on mobile */
+    /* Preview title bar on mobile — sticky so it doesn't scroll with content */
+    .switch-items-row .switch-preview-window::before {
+        content: 'Preview';
+        display: block;
+        position: sticky;
+        top: calc(-1 * var(--space-2-5));
+        z-index: 1;
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+        color: var(--color-white);
+        background: var(--color-primary);
+        opacity: 0.85;
+        padding: var(--space-2) var(--space-2-5);
+        margin: calc(-1 * var(--space-2-5)) calc(-1 * var(--space-2-5)) var(--space-2);
+        border-radius: var(--radius-md) var(--radius-md) 0 0;
+        text-align: center;
+    }
+
+    /* Preview — taller on mobile, always below action buttons */
     .switch-items-row .switch-preview-window {
-        flex-basis: 100%;
-        width: 70%;
-        max-width: 200px;
+        flex: 0 0 100%;
+        max-width: none;
         min-height: 150px;
         margin: var(--space-1-5) auto 0;
         border: 1px solid var(--border-blue-subtle-hover);
+        order: 99;
+    }
+
+    /* Date and hint below preview, on separate lines */
+    .switch-preview-date {
+        order: 100;
+        flex: 0 0 100%;
+    }
+
+    .switch-preview-hint {
+        order: 101;
+        flex: 0 0 100%;
     }
 
     /* Date and hint on separate lines */
@@ -485,6 +514,7 @@ input.routine-search-input:focus {
     margin-top: var(--space-1);
     opacity: 0.6;
     pointer-events: none;
+    -webkit-user-select: none;
     user-select: none;
 }
 
@@ -902,7 +932,7 @@ input.routine-search-input:focus {
         height: 240px;
     }
 
-    /* Hide the inline mobile preview on desktop */
+    /* Hide the inline mobile preview on desktop — right panel handles it */
     .switch-preview-window,
     .switch-preview-date,
     .switch-preview-hint {

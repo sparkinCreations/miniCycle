@@ -255,6 +255,91 @@ LIMITS: {
 }
 ```
 
+## Backup Reminder System
+
+Since miniCycle stores all data locally (localStorage + IndexedDB) with no cloud sync, users risk losing routines if browser data is cleared. The backup reminder system periodically nudges users to download a backup file.
+
+### Module
+
+`modules/features/backupReminder.js` — Phase 7 (FEATURES), DI-pure via `createDIModule()`.
+
+### Triggers
+
+| Trigger | Condition | Check Point | Delay |
+|---------|-----------|-------------|-------|
+| **Timer** | 14+ days since last reminder shown | App boot (`uiBoot.js finalizeUI()`) | 3s |
+| **Cycles** | 25+ cycles completed since last reminder | After `incrementCycleCount()` in `cycleCompletion.js` | 2s |
+| **Tasks** | 100+ tasks cleared (To-Do mode) since last reminder | After `deleteCompletedTasksImpl()` in `taskCycleReset.js` | 2s |
+
+### Anti-Annoyance Rules
+
+| Rule | Behavior |
+|------|----------|
+| **Anti-stacking** | If reminder was shown within 3 days, skip (prevents multiple triggers firing at once) |
+| **Dismiss cooldown** | If user clicks "Not Now", suppress for 7 days |
+| **Recent backup** | If user downloaded a backup within 3 days, skip entirely |
+| **New user guard** | Skip timer trigger if user has 0 completed cycles (nothing to back up) |
+
+### State Fields (`state.settings`)
+
+| Field | Type | Default | Purpose |
+|-------|------|---------|---------|
+| `lastBackupReminderShown` | number | 0 | Timestamp of last reminder display |
+| `backupReminderDismissedUntil` | number | 0 | Suppress until this timestamp (now + 7 days on dismiss) |
+| `lastFileBackupTimestamp` | number | 0 | When last backup file was downloaded |
+| `cyclesAtLastBackupReminder` | number | 0 | Snapshot of `userProgress.cyclesCompleted` at last reminder |
+| `clearedTasksAtLastBackupReminder` | number | 0 | Snapshot of `userProgress.totalTasksCompleted` at last reminder |
+
+### UI Flow
+
+1. Reminder appears as a **confirmation modal** via `showConfirmationModal()`
+2. Title: "Back up your routines?" (label: `notify.backupReminderTitle`)
+3. Message: "Your routines are stored on this device only. A backup keeps them safe if your browser data is cleared." (label: `notify.backupReminderMessage`)
+4. **"Backup All Routines"** button → calls `downloadBackupFile({ skipNamePrompt: true })` → immediate `.json` file download, no name prompt
+5. **"Not Now"** button → sets `backupReminderDismissedUntil` to 7 days from now
+
+### Implementation Wiring
+
+```
+backupReminder.js (check logic + modal)
+  ├── DI deps: AppState, showConfirmationModal, showNotification, downloadBackupFile
+  ├── Provides: checkBackupReminderOnBoot, checkBackupReminderOnCycleComplete, checkBackupReminderOnTaskClear
+  └── Registered in moduleManifests.js (Phase 7, api: 'features')
+
+Hook points:
+  ├── uiBoot.js finalizeUI() → setTimeout(checkBackupReminderOnBoot, 3000)
+  ├── cycleCompletion.js incrementCycleCount() → deps.checkBackupReminderOnCycleComplete?.()
+  └── taskCycleReset.js deleteCompletedTasksImpl() → _deps.checkBackupReminderOnTaskClear?.()
+
+Backup execution:
+  └── backupRestoreManager.js downloadBackupFile() → creates .json blob, downloads, updates lastFileBackupTimestamp
+```
+
+### depMappings (`moduleLoader.js`)
+
+```javascript
+checkBackupReminderOnBoot: (...args) => deps.features?.checkBackupReminderOnBoot?.(...args),
+checkBackupReminderOnCycleComplete: (...args) => deps.features?.checkBackupReminderOnCycleComplete?.(...args),
+checkBackupReminderOnTaskClear: (...args) => deps.features?.checkBackupReminderOnTaskClear?.(...args),
+downloadBackupFile: (...args) => deps.ui?.downloadBackupFile?.(...args),
+```
+
+### Labels (`defaultLabels.js`)
+
+| Key | Value |
+|-----|-------|
+| `notify.backupReminderTitle` | "Back up your routines?" |
+| `notify.backupReminderMessage` | "Your routines are stored on this device only. A backup keeps them safe if your browser data is cleared." |
+| `notify.backupReminderConfirm` | "Backup All Routines" |
+| `notify.backupReminderDismiss` | "Not Now" |
+
+### Key Design Decisions
+
+- **Confirmation modal, not toast** — backup is an important action that deserves focused attention, not a dismissible toast
+- **No name prompt on reminder backup** — one-click flow reduces friction; the default filename includes the date
+- **Tracks cycle/task snapshots, not absolute thresholds** — "25 cycles since last reminder" not "at 25, 50, 75 cycles", so the reminder scales naturally with usage
+- **`downloadBackupFile()` extracted as reusable** — shared by the Settings backup button (with name prompt) and the reminder (without name prompt), avoiding code duplication
+
 ## Summary
 
 miniCycle's storage management provides:
