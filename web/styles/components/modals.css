@@ -112,9 +112,9 @@ dialog.quick-actions-picker-overlay[open] {
    ============================================================================= */
 
 .modal-content {
-    background: var(--theme-modal-glass-bg);
-    color: var(--theme-modal-text);
-    border: 1px solid var(--theme-modal-border);
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg));
+    color: var(--pref-modal-text, var(--theme-modal-text));
+    border: 1px solid var(--pref-modal-border, var(--theme-modal-border));
     padding: var(--space-5);
     border-radius: var(--radius-lg);
     box-shadow:
@@ -290,8 +290,8 @@ dialog.quick-actions-picker-overlay[open] {
     max-width: 420px;
     max-height: 75vh;
     overflow-y: auto;
-    background-color: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-gray-100)));
-    color: var(--theme-modal-text, var(--theme-text-on-surface));
+    background-color: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-gray-100))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
     border-radius: var(--radius-15);
     padding: var(--space-5) 25px;
     z-index: var(--z-modal);
@@ -350,7 +350,7 @@ dialog.quick-actions-picker-overlay[open] {
     justify-content: space-between;
     align-items: center;
     padding-bottom: var(--space-3-75);
-    border-bottom: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
+    border-bottom: 1px solid var(--pref-modal-border, var(--theme-modal-border, rgba(0, 0, 0, 0.1)));
     margin-bottom: var(--space-3-75);
 }
 
@@ -369,7 +369,7 @@ dialog.quick-actions-picker-overlay[open] {
     justify-content: flex-end;
     gap: var(--space-2-5);
     padding-top: var(--space-3-75);
-    border-top: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
+    border-top: 1px solid var(--pref-modal-border, var(--theme-modal-border, rgba(0, 0, 0, 0.1)));
     margin-top: var(--space-3-75);
 }
 
@@ -435,8 +435,8 @@ dialog.mini-modal-dialog::backdrop {
 }
 
 .mini-modal-box {
-    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
-    color: var(--theme-modal-text, var(--theme-text-on-surface));
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
     border-radius: var(--radius-xl);
     padding: var(--space-7) var(--space-6-25);
     max-width: 380px;
@@ -565,17 +565,17 @@ dialog.mini-modal-dialog::backdrop {
 
 /* Dark mode mini-modal */
 body.dark-mode .mini-modal-box {
-    background: var(--theme-modal-glass-bg, var(--theme-modal-bg));
-    color: var(--color-gray-100);
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg)));
+    color: var(--pref-modal-text, var(--color-gray-100));
     box-shadow: var(--shadow-modal-compound);
 }
 
 body.dark-mode .mini-modal-header {
-    color: var(--theme-modal-text);
+    color: var(--pref-modal-text, var(--theme-modal-text));
 }
 
 body.dark-mode .mini-modal-body {
-    color: var(--theme-modal-text);
+    color: var(--pref-modal-text, var(--theme-modal-text));
 }
 
 body.dark-mode .mini-modal-buttons .btn-cancel {
@@ -604,14 +604,14 @@ body.dark-mode .btn-choice:hover {
 }
 
 .feedback-modal-content {
-    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
-    color: var(--theme-modal-text, var(--theme-text-on-surface));
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
     padding: var(--space-6) var(--space-5) 0;
     border-radius: var(--radius-lg);
     box-shadow:
         var(--shadow-lg),
         inset 0 1px 1px rgba(255, 255, 255, 0.25);
-    border: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
+    border: 1px solid var(--pref-modal-border, var(--theme-modal-border, rgba(0, 0, 0, 0.1)));
     width: 420px;
     max-width: 95%;
     text-align: center;
@@ -625,12 +625,12 @@ body.dark-mode .btn-choice:hover {
     margin: 0 0 var(--space-2) 0;
     font-size: 18px;
     font-weight: 700;
-    color: var(--theme-modal-text, var(--theme-text-on-surface));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
 }
 
 .feedback-modal-content p {
     font-size: 13px;
-    color: var(--theme-modal-text, #666);
+    color: var(--pref-modal-text, var(--theme-modal-text, #666));
     opacity: 0.7;
     margin: 0 0 var(--space-4) 0;
     line-height: 1.5;

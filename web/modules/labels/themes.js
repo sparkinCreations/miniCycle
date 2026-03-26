@@ -110,6 +110,9 @@ export const THEME_DEFINITIONS = {
             celebrationBg:        'rgba(192, 82, 21, 0.97)',   // fiery orange popup
             celebrationShadow:    'rgba(192, 82, 21, 0.4)',
             priorityColor:        '#b04e12',
+            modalBg:              'rgba(255, 225, 195, 0.82)',   // warm amber glass — matches theme palette
+            modalText:            '#3d1a00',                     // dark brown — same as taskText for consistency
+            modalBorder:          'rgba(192, 128, 64, 0.25)',    // warm amber border
         },
         // Priority picker options — darkened for contrast on warm amber taskBg (#ffd0a0)
         priorityColors: [
@@ -183,6 +186,9 @@ export const THEME_DEFINITIONS = {
             celebrationBg:        'rgba(30, 140, 82, 0.97)',
             celebrationShadow:    'rgba(30, 140, 82, 0.4)',
             priorityColor:        '#1e8c52',
+            modalBg:              'rgba(220, 248, 232, 0.82)',   // soft mint glass — matches theme palette
+            modalText:            '#0d2b1a',                     // dark green — same as taskText for consistency
+            modalBorder:          'rgba(30, 140, 82, 0.25)',     // green border
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [
@@ -256,6 +262,9 @@ export const THEME_DEFINITIONS = {
             celebrationBg:        'rgba(61, 53, 181, 0.97)',
             celebrationShadow:    'rgba(61, 53, 181, 0.4)',
             priorityColor:        '#3d35b5',
+            modalBg:              'rgba(216, 213, 255, 0.82)',   // soft periwinkle glass — matches theme palette
+            modalText:            '#1e1b4b',                     // dark indigo — same as taskText for consistency
+            modalBorder:          'rgba(61, 53, 181, 0.25)',     // indigo border
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [
@@ -329,6 +338,9 @@ export const THEME_DEFINITIONS = {
             celebrationBg:        'rgba(10, 141, 181, 0.97)',
             celebrationShadow:    'rgba(10, 141, 181, 0.4)',
             priorityColor:        '#0a8db5',
+            modalBg:              'rgba(200, 240, 252, 0.82)',   // soft aqua glass — matches theme palette
+            modalText:            '#0c2b33',                     // dark teal — same as taskText for consistency
+            modalBorder:          'rgba(10, 141, 181, 0.25)',    // teal border
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [

@@ -32,8 +32,8 @@
    ============================================================================= */
 
 .settings-modal-content {
-    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
-    color: var(--theme-modal-text, var(--theme-text-on-surface));
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
     border-radius: var(--radius-xl);
     padding: 0;
     width: 420px;
@@ -274,8 +274,8 @@
 /* Ghost/Outline buttons (Reset options) */
 .settings-btn.settings-btn-ghost {
     background: transparent;
-    color: var(--theme-modal-text, var(--color-gray-600));
-    border: 1px solid var(--theme-modal-border, var(--theme-input-border));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-600)));
+    border: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--theme-input-border)));
 }
 
 .settings-btn.settings-btn-ghost:hover {
@@ -322,7 +322,7 @@ button.settings-btn.close-btn:hover {
 .settings-footer {
     margin-top: var(--space-4);
     padding-top: var(--space-3);
-    border-top: 1px solid var(--theme-modal-border, var(--overlay-medium));
+    border-top: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--overlay-medium)));
 }
 
 .settings-version {

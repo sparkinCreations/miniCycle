@@ -33,8 +33,8 @@
    ============================================================================= */
 
 .games-modal-content {
-    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
-    color: var(--theme-modal-text, var(--theme-text-on-surface));
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
     padding: var(--space-6);
     border-radius: var(--radius-lg);
     width: 420px;
