@@ -18,7 +18,7 @@
    ============================================================================= */
 
 .achievements-modal {
-    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
     border-radius: var(--radius-lg);
     width: 90%;
     max-width: 500px;
@@ -307,8 +307,8 @@
 
 /* Default (locked) popup colors */
 .badge-detail-popup {
-    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
-    color: var(--theme-modal-text, var(--color-gray-700));
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-700)));
     -webkit-backdrop-filter: blur(var(--theme-modal-blur));
     backdrop-filter: blur(var(--theme-modal-blur));
 }

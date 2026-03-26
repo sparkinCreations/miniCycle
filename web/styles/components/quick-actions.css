@@ -343,8 +343,8 @@ dialog.quick-actions-picker-overlay[open] {
 
 .quick-actions-picker {
     position: relative;
-    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
-    color: var(--theme-modal-text, var(--theme-text-on-surface));
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
     border-radius: var(--radius-xl);
     padding: var(--space-5);
     width: 420px;

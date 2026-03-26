@@ -98,6 +98,9 @@ const VOCAB_THEME_CSS_VARS = {
     celebrationBg:        '--pref-celebration-bg',
     celebrationShadow:    '--pref-celebration-shadow',
     priorityColor:        '--task-priority-color',
+    modalBg:              '--pref-modal-bg',
+    modalText:            '--pref-modal-text',
+    modalBorder:          '--pref-modal-border',
 };
 
 // ─── Dark-mode / vocab-theme restore ─────────────────────────────────────────

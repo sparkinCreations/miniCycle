@@ -80,8 +80,8 @@ dialog.mini-cycle-switch-modal::backdrop {
 
 .mini-cycle-switch-modal-content {
     position: relative;
-    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, rgb(237, 239, 246)));
-    color: var(--theme-modal-text, #333);
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, rgb(237, 239, 246))));
+    color: var(--pref-modal-text, var(--theme-modal-text, #333));
     padding: var(--space-3-75) var(--space-3-75) 0;
     border-radius: var(--radius-10);
     box-shadow:

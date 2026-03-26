@@ -18,7 +18,7 @@
    ============================================================================= */
 
 .history-modal {
-    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
     border-radius: var(--radius-lg);
     width: 90%;
     max-width: 500px;

@@ -139,8 +139,8 @@
 }
 
 .storage-modal-content {
-    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, #ffffff));
-    color: var(--theme-modal-text, #333);
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, #ffffff)));
+    color: var(--pref-modal-text, var(--theme-modal-text, #333));
     border-radius: var(--radius-lg);
     padding: var(--space-5);
     width: 420px;

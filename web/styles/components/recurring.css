@@ -980,8 +980,8 @@ dialog.reminders-modal[open] {
 }
 
 .reminders-modal-content {
-    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
-    color: var(--theme-modal-text, var(--theme-text-on-surface));
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
     padding: var(--space-5);
     border-radius: var(--radius-md);
     width: 380px;
@@ -1017,7 +1017,7 @@ dialog.reminders-modal[open] {
 /* Frequency Section */
 #frequency-section {
     margin-top: var(--space-2-5);
-    border-top: 1px solid var(--theme-modal-border, var(--theme-border));
+    border-top: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--theme-border)));
     padding-top: var(--space-2-5);
 }
 

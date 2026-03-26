@@ -86,8 +86,8 @@ body.onboarding-active .onboarding-placeholder {
    ============================================================================= */
 
 .onboarding-content {
-    background: var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
-    color: var(--theme-modal-text, var(--theme-text-on-surface));
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
     padding: var(--space-12) var(--space-6) var(--space-5);
     width: 420px;
     max-width: 95%;
