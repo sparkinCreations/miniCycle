@@ -280,7 +280,7 @@
         transform: scale(1);
     }
     30% {
-        background-color: rgba(76, 175, 80, 0.3);
+        background-color: var(--pref-reset-flash, rgba(76, 175, 80, 0.3));
         transform: scale(1.04);
     }
     100% {

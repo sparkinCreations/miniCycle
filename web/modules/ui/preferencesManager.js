@@ -53,6 +53,7 @@ const DEFAULT_COLORS = {
     statsDoughnut: '#4caf50',
     patternColor: '#ffffff',
     panelText: '#ffffff',
+    resetFlash: '#4caf50',
     celebrationBg: '#4caf4f'
 };
 
@@ -75,6 +76,7 @@ const CHECKMARK_CLASS_MAP = {
 const TRANSLUCENT_BG_ALPHA = {
     statsBg: 0.45,
     taskListBg: 0.15,
+    resetFlash: 0.3,
 };
 
 /**
@@ -194,6 +196,11 @@ const COLOR_MAP = {
         key: 'panelText',
         cssVar: '--pref-panel-text',
         previewVar: '--preview-panel-text'
+    },
+    'pref-reset-flash-color': {
+        key: 'resetFlash',
+        cssVar: '--pref-reset-flash',
+        previewVar: null
     },
     'pref-celebration-color': {
         key: 'celebrationBg',
@@ -1389,6 +1396,7 @@ export class PreferencesManager {
                     statsProgress: null,
                     statsDoughnut: null,
                     panelText: null,
+                    resetFlash: null,
                     celebrationBg: null,
                     patternColor: null,
                     patternOpacity: null,

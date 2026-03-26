@@ -604,6 +604,7 @@ export const DOM_IDS = Object.freeze({
     CHECKMARK_STYLE_OPTIONS: 'checkmark-style-options',
 
     // ---- Cycle Completion ----
+    PREF_RESET_FLASH_COLOR: 'pref-reset-flash-color',
     PREF_CELEBRATION_COLOR: 'pref-celebration-color',
     PREF_TOAST_SELECT: 'pref-toast-select',
     TOGGLE_COMPLETION_ANIMATION: 'toggle-completion-animation',

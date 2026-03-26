@@ -103,7 +103,7 @@ export function setCycleCompletionDependencies(dependencies) {
 export function showCompletionAnimation() {
     const deps = di.resolve();
     const state = deps.AppState?.get?.();
-    if (state?.settings?.disableCompletionAnimation) return;
+    if (state?.settings?.disableCompletionToast) return;
 
     const animation = document.createElement("div");
     animation.classList.add("mini-cycle-complete-animation");
