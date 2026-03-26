@@ -1,3 +1,7 @@
+## [2.142] - 2026-03-26
+- feat: enhance task options theming with new CSS variables for background, border, and hover effects
+
+
 ## [2.141] - 2026-03-26
 - feat: add backup reminder system to prompt users for routine backups and enhance storage management documentation
 

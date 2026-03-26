@@ -104,6 +104,7 @@ const VOCAB_THEME_CSS_VARS = {
     taskOptionsBg:        '--pref-task-options-bg',
     taskOptionsBorder:    '--pref-task-options-border',
     taskOptionsHoverBg:   '--pref-task-options-hover-bg',
+    panelAccent:          '--pref-panel-accent',
 };
 
 // ─── Dark-mode / vocab-theme restore ─────────────────────────────────────────

@@ -325,7 +325,7 @@ export class HelpWindowManager {
 
         this.helpWindow.innerHTML = `
             <div class="mode-help-content">
-                <h4 style="margin: 0 0 8px 0; color: var(--accent-color, #007bff);">${modeInfo.title}</h4>
+                <h4 style="margin: 0 0 8px 0;">${modeInfo.title}</h4>
                 <p style="margin: 0; line-height: 1.4;">${modeInfo.description}</p>
             </div>
         `;
