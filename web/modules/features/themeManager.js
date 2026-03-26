@@ -101,6 +101,9 @@ const VOCAB_THEME_CSS_VARS = {
     modalBg:              '--pref-modal-bg',
     modalText:            '--pref-modal-text',
     modalBorder:          '--pref-modal-border',
+    taskOptionsBg:        '--pref-task-options-bg',
+    taskOptionsBorder:    '--pref-task-options-border',
+    taskOptionsHoverBg:   '--pref-task-options-hover-bg',
 };
 
 // ─── Dark-mode / vocab-theme restore ─────────────────────────────────────────
