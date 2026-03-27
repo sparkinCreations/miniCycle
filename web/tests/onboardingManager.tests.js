@@ -508,7 +508,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    test('next button shows "Start" on last step (DI)', () => {
+    test('next button shows "Let\'s Go!" on last step (DI)', () => {
         const mockState = {
             settings: { theme: 'default' }
         };
@@ -530,8 +530,9 @@ export async function runOnboardingManagerTests(resultsDiv) {
         nextBtn.click();
         nextBtn.click();
 
-        if (!nextBtn.textContent.includes('Start')) {
-            throw new Error('Next button should show "Start" on last step');
+        // On the last step, the button shows getLabel('onboarding.start') which is "Let's Go!" + 🚀
+        if (!nextBtn.textContent.includes("Let's Go!")) {
+            throw new Error(`Next button should show "Let's Go!" on last step, got "${nextBtn.textContent}"`);
         }
 
         // Cleanup

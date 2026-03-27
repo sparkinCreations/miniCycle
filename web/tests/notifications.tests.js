@@ -83,8 +83,8 @@ export async function runNotificationsTests(resultsDiv) {
             existingContainer.remove();
         }
 
-        // Remove any modals/overlays
-        document.querySelectorAll('.mini-modal-overlay, .miniCycle-overlay').forEach(el => el.remove());
+        // Remove any modals/overlays (old and new selectors)
+        document.querySelectorAll('.mini-modal-overlay, .miniCycle-overlay, .mini-modal-dialog, .miniCycle-prompt-dialog').forEach(el => el.remove());
 
         // Reset body styles
         document.body.style.userSelect = '';
@@ -473,7 +473,7 @@ export async function runNotificationsTests(resultsDiv) {
             callback: () => {}
         });
 
-        const modal = document.querySelector('.mini-modal-overlay');
+        const modal = document.querySelector('.mini-modal-dialog');
         if (!modal) {
             throw new Error('Modal not created');
         }
@@ -490,8 +490,9 @@ export async function runNotificationsTests(resultsDiv) {
             callback: () => {}
         });
 
-        const confirmBtn = document.querySelector('.btn-confirm');
-        const cancelBtn = document.querySelector('.btn-cancel');
+        const dialog = document.querySelector('.mini-modal-dialog');
+        const confirmBtn = dialog.querySelector('.btn-confirm');
+        const cancelBtn = dialog.querySelector('.btn-cancel');
 
         if (!confirmBtn || confirmBtn.textContent !== 'Yes') {
             throw new Error('Confirm button not correct');
@@ -516,7 +517,8 @@ export async function runNotificationsTests(resultsDiv) {
             }
         });
 
-        const confirmBtn = document.querySelector('.btn-confirm');
+        const dialog = document.querySelector('.mini-modal-dialog');
+        const confirmBtn = dialog.querySelector('.btn-confirm');
         confirmBtn.click();
 
         if (!callbackCalled) {
@@ -534,7 +536,7 @@ export async function runNotificationsTests(resultsDiv) {
             callback: () => {}
         });
 
-        const modal = document.querySelector('.miniCycle-overlay');
+        const modal = document.querySelector('.miniCycle-prompt-dialog');
         const input = document.querySelector('.miniCycle-prompt-input');
 
         if (!modal) {

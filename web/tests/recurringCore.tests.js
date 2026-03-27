@@ -10,9 +10,37 @@ import {
 export async function runRecurringCoreTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🔁 RecurringCore Tests</h2><h3>Initializing module...</h3>';
 
+    // Mock label resolver for formatNextOccurrence tests
+    const mockLabels = {
+        'recurring.nextNone': 'No upcoming occurrences',
+        'recurring.nextOverdue': 'Overdue',
+        'recurring.nextUnderMinute': 'Less than a minute',
+        'recurring.nextMinutes': 'Appears in {count} {unit}',
+        'recurring.nextHours': 'Appears in {count} {unit}',
+        'recurring.nextMinuteUnit': { one: 'minute', other: 'minutes' },
+        'recurring.nextHourUnit': { one: 'hour', other: 'hours' },
+        'recurring.nextTomorrow': 'Next: Tomorrow at {time}',
+        'recurring.nextWeekday': 'Next: {weekday} at {time}',
+        'recurring.nextDate': 'Next: {date} at {time}'
+    };
+    function mockGetLabel(key, opts) {
+        const val = mockLabels[key];
+        if (val === undefined) return key.split('.').pop() || key;
+        // Pluralization
+        if (typeof val === 'object' && val.one && val.other) {
+            return opts?.count === 1 ? val.one : val.other;
+        }
+        // Interpolation
+        if (typeof val === 'string' && opts?.vars) {
+            return Object.entries(opts.vars).reduce((s, [k, v]) => s.replace(`{${k}}`, v), val);
+        }
+        return val;
+    }
+
     // Initialize recurring core module - this loads sub-modules and populates exported functions
     const recurringCore = await setRecurringCoreDependencies({
-        AppMeta: { version: 'test' }
+        AppMeta: { version: 'test' },
+        getLabel: mockGetLabel
     });
 
     // Get functions from the initialized module
@@ -99,14 +127,15 @@ export async function runRecurringCoreTests(resultsDiv) {
         }
     });
 
-    test('creates empty arrays for missing weekly days', () => {
+    test('defaults weekly days to current weekday when empty', () => {
         const result = normalizeRecurringSettings({ frequency: 'weekly' });
 
         if (!Array.isArray(result.weekly.days)) {
             throw new Error('weekly.days should be array');
         }
-        if (result.weekly.days.length !== 0) {
-            throw new Error('weekly.days should be empty by default');
+        // Normalizer fills in current weekday as default
+        if (result.weekly.days.length !== 1) {
+            throw new Error('weekly.days should default to current weekday');
         }
     });
 
@@ -405,25 +434,30 @@ export async function runRecurringCoreTests(resultsDiv) {
     // === HOURLY RECURRENCE TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">⏰ Hourly Recurrence</h4>';
 
-    test('hourly: triggers at top of hour by default', () => {
+    test('hourly: triggers at anchored minute by default', () => {
         const settings = normalizeRecurringSettings({ frequency: 'hourly' });
-        const testDate = new Date(2025, 0, 15, 10, 0); // 10:00
+        // Normalizer anchors to current minute — test with that minute
+        const anchoredMinute = settings.hourly.minute;
+        const testDate = new Date(2025, 0, 15, 10, anchoredMinute);
 
         const result = shouldTaskRecurNow(settings, testDate);
 
         if (!result) {
-            throw new Error('Should trigger at top of hour');
+            throw new Error('Should trigger at anchored minute');
         }
     });
 
-    test('hourly: does not trigger at other minutes', () => {
+    test('hourly: does not trigger at non-anchored minutes', () => {
         const settings = normalizeRecurringSettings({ frequency: 'hourly' });
-        const testDate = new Date(2025, 0, 15, 10, 30); // 10:30
+        // Pick a minute that's different from the anchored minute
+        const anchoredMinute = settings.hourly.minute;
+        const wrongMinute = (anchoredMinute + 15) % 60;
+        const testDate = new Date(2025, 0, 15, 10, wrongMinute);
 
         const result = shouldTaskRecurNow(settings, testDate);
 
         if (result) {
-            throw new Error('Should not trigger at :30');
+            throw new Error(`Should not trigger at :${wrongMinute}`);
         }
     });
 
@@ -763,45 +797,48 @@ export async function runRecurringCoreTests(resultsDiv) {
     // === EDGE CASES ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔍 Edge Cases</h4>';
 
-    test('✅ FIX: empty weekly days array allows all days', () => {
+    test('✅ FIX: empty weekly days defaults to today and triggers', () => {
         const settings = normalizeRecurringSettings({
             frequency: 'weekly',
             weekly: { days: [] }
         });
-        const testDate = new Date(2025, 0, 13); // Monday
+        // Normalizer fills in current weekday, so test with current date
+        const testDate = new Date();
 
         const result = shouldTaskRecurNow(settings, testDate);
 
         if (!result) {
-            throw new Error('✅ FIX: Should trigger on any day when no specific days selected');
+            throw new Error('✅ FIX: Should trigger on defaulted weekday');
         }
     });
 
-    test('✅ FIX: empty monthly days array allows all days', () => {
+    test('✅ FIX: empty monthly days defaults to today and triggers', () => {
         const settings = normalizeRecurringSettings({
             frequency: 'monthly',
             monthly: { days: [] }
         });
-        const testDate = new Date(2025, 0, 15);
+        // Normalizer fills in current day of month, so test with current date
+        const testDate = new Date();
 
         const result = shouldTaskRecurNow(settings, testDate);
 
         if (!result) {
-            throw new Error('✅ FIX: Should trigger on any day when no specific days selected');
+            throw new Error('✅ FIX: Should trigger on defaulted day of month');
         }
     });
 
-    test('✅ FIX: empty yearly months array allows all months', () => {
+    test('✅ FIX: empty yearly months defaults to today and triggers', () => {
         const settings = normalizeRecurringSettings({
             frequency: 'yearly',
             yearly: { months: [] }
         });
-        const testDate = new Date(2025, 0, 15);
+        // Normalizer fills in current month and day, so test with current date
+        const testDate = new Date();
 
         const result = shouldTaskRecurNow(settings, testDate);
 
         if (!result) {
-            throw new Error('✅ FIX: Should trigger in any month when no specific months selected');
+            throw new Error('✅ FIX: Should trigger on defaulted month and day');
         }
     });
 
@@ -1034,16 +1071,21 @@ export async function runRecurringCoreTests(resultsDiv) {
         }
     });
 
-    test('calculates next hourly occurrence (top of hour)', () => {
+    test('calculates next hourly occurrence (anchored minute)', () => {
         const settings = normalizeRecurringSettings({ frequency: 'hourly' });
-        const from = new Date(2025, 0, 15, 10, 30); // 10:30
+        // Normalizer anchors to current minute
+        const anchoredMinute = settings.hourly.minute;
+        // Pick a "from" time that is past the anchored minute this hour
+        const fromMinute = (anchoredMinute + 1) % 60;
+        const fromHour = fromMinute <= anchoredMinute ? 11 : 10;
+        const from = new Date(2025, 0, 15, fromHour, fromMinute);
 
         const next = calculateNextOccurrence(settings, from);
         const nextDate = new Date(next);
 
-        // Should be 11:00
-        if (nextDate.getHours() !== 11 || nextDate.getMinutes() !== 0) {
-            throw new Error('Should be at 11:00');
+        // Should be at the anchored minute in the next hour
+        if (nextDate.getMinutes() !== anchoredMinute) {
+            throw new Error(`Should be at :${String(anchoredMinute).padStart(2, '0')}`);
         }
     });
 

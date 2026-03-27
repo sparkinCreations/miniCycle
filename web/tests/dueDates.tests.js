@@ -271,8 +271,8 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             // Create mock task element
             const taskDiv = document.createElement('div');
             taskDiv.classList.add('task');
-            // Set assignedTaskId - required by checkOverdueTasks (uses task ID, not text)
-            taskDiv.dataset.assignedTaskId = 'overdue-task-1';
+            // Set taskId - required by checkOverdueTasks (uses task.dataset.taskId, not text)
+            taskDiv.dataset.taskId = 'overdue-task-1';
             const taskText = document.createElement('span');
             taskText.classList.add('task-text');
             taskText.textContent = 'Overdue Task';
@@ -401,28 +401,36 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
         await test('updateDueDateVisibility hides dates when autoReset on', async () => {
             const mockInput = document.createElement('input');
             mockInput.classList.add('due-date');
+            // No value set — should be hidden
 
-            const mockTask = document.createElement('div');
-            mockTask.classList.add('overdue-task');
+            const mockInputWithValue = document.createElement('input');
+            mockInputWithValue.classList.add('due-date');
+            mockInputWithValue.value = '2026-01-15';
+            mockInputWithValue.classList.add('hidden'); // Start hidden — should be shown
 
             const instance = new MiniCycleDueDates({
                 getElementById: () => null,
                 querySelectorAll: (selector) => {
-                    if (selector === '.due-date') return [mockInput];
-                    if (selector === '.overdue-task') return [mockTask];
+                    if (selector === '.due-date') return [mockInput, mockInputWithValue];
                     if (selector === '.set-due-date') return [];
+                    // checkOverdueTasks queries for '.task' — return empty to skip overdue logic
+                    if (selector === '.task') return [];
                     return [];
+                },
+                AppState: {
+                    isReady: () => false,
+                    get: () => null
                 }
             });
 
             instance.updateDueDateVisibility(true);
 
             if (!mockInput.classList.contains('hidden')) {
-                throw new Error('Due date input should be hidden when autoReset is on');
+                throw new Error('Due date input without value should be hidden');
             }
 
-            if (mockTask.classList.contains('overdue-task')) {
-                throw new Error('Overdue styling should be removed when autoReset is on');
+            if (mockInputWithValue.classList.contains('hidden')) {
+                throw new Error('Due date input with value should be visible');
             }
         });
 

@@ -220,10 +220,9 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
     await test('switchMiniCycle with valid AppState', async () => {
         const schemaData = JSON.parse(localStorage.getItem('miniCycleData'));
 
-        // Create mock DOM elements
-        const modal = document.createElement('div');
+        // Create mock DOM elements (dialog for native showModal/close API)
+        const modal = document.createElement('dialog');
         modal.className = 'mini-cycle-switch-modal';
-        modal.style.display = 'none';
         document.body.appendChild(modal);
 
         const switchRow = document.createElement('div');
@@ -263,14 +262,14 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
             getElementById: (id) => document.getElementById(id),
             hideMainMenu: () => {},
             showNotification: () => {},
-            getModal: () => document.querySelector('.mini-cycle-switch-modal')
+            getModal: () => modal
         };
 
         const instance = new RoutineSwitcher(mockDeps);
         instance.switchMiniCycle();
 
-        // Modal should be visible
-        if (modal.style.display !== 'flex') {
+        // Modal should be open (native dialog API)
+        if (!modal.open) {
             throw new Error('Modal should be displayed');
         }
     });
@@ -284,6 +283,7 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         };
         localStorage.setItem('miniCycleData', JSON.stringify(emptyData));
 
+        let notificationMsg = null;
         const mockDeps = {
             AppState: {
                 isReady: () => true,
@@ -292,32 +292,35 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
             querySelector: () => ({ style: {} }),
             getElementById: () => ({}),
             showNotification: (msg) => {
-                if (!msg.includes('No saved miniCycles')) {
-                    throw new Error('Should notify user of no cycles');
-                }
+                notificationMsg = msg;
             },
-            getModal: () => document.querySelector('.mini-cycle-switch-modal')
+            hideMainMenu: () => {},
+            getModal: () => document.createElement('dialog')
         };
 
         const instance = new RoutineSwitcher(mockDeps);
         instance.switchMiniCycle();
+
+        if (!notificationMsg) {
+            throw new Error('Should notify user of no cycles');
+        }
     });
 
     await test('hideSwitchMiniCycleModal hides modal', async () => {
-        const modal = document.createElement('div');
+        const modal = document.createElement('dialog');
         modal.className = 'mini-cycle-switch-modal';
-        modal.style.display = 'flex';
         document.body.appendChild(modal);
+        modal.showModal(); // Open it first
 
         const mockDeps = {
             querySelector: (sel) => document.querySelector(sel),
-            getModal: () => document.querySelector('.mini-cycle-switch-modal')
+            getModal: () => modal
         };
 
         const instance = new RoutineSwitcher(mockDeps);
         instance.hideSwitchMiniCycleModal();
 
-        if (modal.style.display !== 'none') {
+        if (modal.open) {
             throw new Error('Modal should be hidden');
         }
     });

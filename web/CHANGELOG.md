@@ -1,3 +1,9 @@
+## [2.146] - 2026-03-26
+- feat: enhance user manual with guided tour and accessibility options
+- Refactor code structure for improved readability and maintainability
+- Refactor UI module selectors to use DOM_SELECTORS constants
+
+
 ## [2.145] - 2026-03-26
 - feat: update hardcoded selectors audit documentation and add remaining violations
 

@@ -200,16 +200,16 @@ export async function runModalManagerTests(resultsDiv) {
     test('closeAllModals handles data-modal elements', () => {
         const mm = new ModalManager();
 
-        // Create a registered modal (settings uses 'removeVisible' close method)
-        const modal = document.createElement('div');
+        // Create a native <dialog> modal (settings uses 'close' method in registry)
+        const modal = document.createElement('dialog');
         modal.id = 'settings-modal';
-        modal.classList.add('visible');
         document.body.appendChild(modal);
+        modal.showModal(); // Opens the dialog natively
 
         mm.closeAllModals();
 
-        if (modal.classList.contains('visible')) {
-            throw new Error('Modal should not have visible class');
+        if (modal.open) {
+            throw new Error('Modal should be closed');
         }
 
         // Cleanup
@@ -219,15 +219,16 @@ export async function runModalManagerTests(resultsDiv) {
     test('closeAllModals handles overlay elements', () => {
         const mm = new ModalManager();
 
-        // Create test overlay
-        const overlay = document.createElement('div');
+        // Create a native <dialog> overlay (recurringOverlay uses 'close' method in registry)
+        const overlay = document.createElement('dialog');
         overlay.id = 'recurring-panel-overlay';
         document.body.appendChild(overlay);
+        overlay.showModal(); // Opens the dialog natively
 
         mm.closeAllModals();
 
-        if (!overlay.classList.contains('hidden')) {
-            throw new Error('Overlay should have hidden class');
+        if (overlay.open) {
+            throw new Error('Overlay dialog should be closed');
         }
 
         // Cleanup
@@ -330,13 +331,13 @@ export async function runModalManagerTests(resultsDiv) {
 
     test('feedback modal opens when button clicked', () => {
         const mm = new ModalManager({
-            hideMainMenu: mockHideMainMenu
+            hideMainMenu: mockHideMainMenu,
+            safeAddEventListener: mockSafeAddEventListener
         });
 
-        // Create mock elements
-        const modal = document.createElement('div');
+        // Create native <dialog> modal (code calls feedbackModal.showModal())
+        const modal = document.createElement('dialog');
         modal.id = 'feedback-modal';
-        modal.style.display = 'none';
         document.body.appendChild(modal);
 
         const openBtn = document.createElement('button');
@@ -368,23 +369,26 @@ export async function runModalManagerTests(resultsDiv) {
 
         openBtn.click();
 
-        if (modal.style.display !== 'flex') {
-            throw new Error('Modal should be visible after open button clicked');
+        if (!modal.open) {
+            throw new Error('Modal should be open after open button clicked');
         }
 
         // Cleanup
+        if (modal.open) modal.close();
         modal.remove();
         openBtn.remove();
     });
 
     test('feedback modal closes when close button clicked', () => {
-        const mm = new ModalManager();
+        const mm = new ModalManager({
+            safeAddEventListener: mockSafeAddEventListener
+        });
 
-        // Create mock elements
-        const modal = document.createElement('div');
+        // Create native <dialog> modal (code calls feedbackModal.close())
+        const modal = document.createElement('dialog');
         modal.id = 'feedback-modal';
-        modal.style.display = 'flex';
         document.body.appendChild(modal);
+        modal.showModal(); // Start open
 
         const openBtn = document.createElement('button');
         openBtn.id = 'open-feedback-modal';
@@ -415,8 +419,8 @@ export async function runModalManagerTests(resultsDiv) {
 
         closeBtn.click();
 
-        if (modal.style.display !== 'none') {
-            throw new Error('Modal should be hidden after close button clicked');
+        if (modal.open) {
+            throw new Error('Modal should be closed after close button clicked');
         }
 
         // Cleanup
@@ -436,12 +440,13 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('about modal opens when button clicked', () => {
-        const mm = new ModalManager();
+        const mm = new ModalManager({
+            safeAddEventListener: mockSafeAddEventListener
+        });
 
-        // Create mock elements
-        const modal = document.createElement('div');
+        // Create native <dialog> modal (code calls aboutModal.showModal())
+        const modal = document.createElement('dialog');
         modal.id = 'about-modal';
-        modal.style.display = 'none';
         document.body.appendChild(modal);
 
         const openBtn = document.createElement('button');
@@ -456,23 +461,26 @@ export async function runModalManagerTests(resultsDiv) {
 
         openBtn.click();
 
-        if (modal.style.display !== 'flex') {
-            throw new Error('About modal should be visible after open button clicked');
+        if (!modal.open) {
+            throw new Error('About modal should be open after open button clicked');
         }
 
         // Cleanup
+        if (modal.open) modal.close();
         modal.remove();
         openBtn.remove();
     });
 
     test('about modal closes when close button clicked', () => {
-        const mm = new ModalManager();
+        const mm = new ModalManager({
+            safeAddEventListener: mockSafeAddEventListener
+        });
 
-        // Create mock elements
-        const modal = document.createElement('div');
+        // Create native <dialog> modal (code calls aboutModal.close())
+        const modal = document.createElement('dialog');
         modal.id = 'about-modal';
-        modal.style.display = 'flex';
         document.body.appendChild(modal);
+        modal.showModal(); // Start open
 
         const openBtn = document.createElement('button');
         openBtn.id = 'open-about-modal';
@@ -486,8 +494,8 @@ export async function runModalManagerTests(resultsDiv) {
 
         closeBtn.click();
 
-        if (modal.style.display !== 'none') {
-            throw new Error('About modal should be hidden after close button clicked');
+        if (modal.open) {
+            throw new Error('About modal should be closed after close button clicked');
         }
 
         // Cleanup
@@ -507,13 +515,15 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('reminders modal closes when close button clicked', () => {
-        const mm = new ModalManager();
+        const mm = new ModalManager({
+            safeAddEventListener: mockSafeAddEventListener
+        });
 
-        // Create mock elements
-        const modal = document.createElement('div');
+        // Create native <dialog> modal (code calls remindersModal.close())
+        const modal = document.createElement('dialog');
         modal.id = 'reminders-modal';
-        modal.style.display = 'flex';
         document.body.appendChild(modal);
+        modal.showModal(); // Start open
 
         const closeBtn = document.createElement('button');
         closeBtn.id = 'close-reminders-btn';
@@ -523,8 +533,8 @@ export async function runModalManagerTests(resultsDiv) {
 
         closeBtn.click();
 
-        if (modal.style.display !== 'none') {
-            throw new Error('Reminders modal should be hidden after close button clicked');
+        if (modal.open) {
+            throw new Error('Reminders modal should be closed after close button clicked');
         }
 
         // Cleanup
@@ -548,13 +558,23 @@ export async function runModalManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">⌨️ Global Key Handlers</h4>';
 
     test('setupGlobalKeyHandlers attaches ESC key handler', () => {
-        const mm = new ModalManager();
+        // Track if the global key handler was attached
+        let keyHandler;
+        const mm = new ModalManager({
+            safeAddEventListener: (el, ev, fn) => {
+                el?.removeEventListener?.(ev, fn);
+                el?.addEventListener?.(ev, fn);
+                if (el === document && ev === 'keydown') {
+                    keyHandler = fn;
+                }
+            }
+        });
 
-        // Create test modal
-        const modal = document.createElement('div');
+        // Create native <dialog> modal
+        const modal = document.createElement('dialog');
         modal.id = 'feedback-modal';
-        modal.style.display = 'flex';
         document.body.appendChild(modal);
+        modal.showModal(); // Open it natively
 
         // Call setupGlobalKeyHandlers
         mm.setupGlobalKeyHandlers();
@@ -563,10 +583,14 @@ export async function runModalManagerTests(resultsDiv) {
         const escEvent = new KeyboardEvent('keydown', { key: 'Escape' });
         document.dispatchEvent(escEvent);
 
-        const handlerWorks = modal.style.display === 'none';
+        const handlerWorks = !modal.open;
 
         // Cleanup
+        if (modal.open) modal.close();
         modal.remove();
+        if (keyHandler) {
+            document.removeEventListener('keydown', keyHandler);
+        }
 
         if (!handlerWorks) {
             throw new Error('ESC key handler should be attached');
@@ -574,23 +598,24 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('ESC key closes modals', () => {
-        // Create test modal
-        const modal = document.createElement('div');
+        // Create native <dialog> modal
+        const modal = document.createElement('dialog');
         modal.id = 'feedback-modal';
-        modal.style.display = 'flex';
         document.body.appendChild(modal);
+        modal.showModal(); // Open it natively
 
         // Mock safeAddEventListener as a dependency
         let keyHandler;
-        const mockSafeAddEventListener = (element, event, handler) => {
+        const localMockSafeAdd = (element, event, handler) => {
+            element?.removeEventListener?.(event, handler);
+            element?.addEventListener?.(event, handler);
             if (element === document && event === 'keydown') {
                 keyHandler = handler;
-                document.addEventListener(event, handler);
             }
         };
 
         const mm = new ModalManager({
-            safeAddEventListener: mockSafeAddEventListener
+            safeAddEventListener: localMockSafeAdd
         });
 
         mm.setupGlobalKeyHandlers();
@@ -599,11 +624,12 @@ export async function runModalManagerTests(resultsDiv) {
         const escEvent = new KeyboardEvent('keydown', { key: 'Escape' });
         document.dispatchEvent(escEvent);
 
-        if (modal.style.display !== 'none') {
+        if (modal.open) {
             throw new Error('ESC key should close modals');
         }
 
         // Cleanup
+        if (modal.open) modal.close();
         modal.remove();
         if (keyHandler) {
             document.removeEventListener('keydown', keyHandler);
@@ -686,11 +712,11 @@ export async function runModalManagerTests(resultsDiv) {
     test('isModalOpen detects open settings modal', () => {
         const mm = new ModalManager();
 
-        // Create visible modal (needs ID for registry-based getModal lookup)
-        const modal = document.createElement('div');
+        // Create native <dialog> modal (settings uses 'close' method in registry)
+        const modal = document.createElement('dialog');
         modal.id = 'settings-modal';
-        modal.classList.add('settings-modal', 'visible');
         document.body.appendChild(modal);
+        modal.showModal(); // Opens the dialog natively, sets .open = true
 
         const result = mm.isModalOpen();
 
@@ -699,6 +725,7 @@ export async function runModalManagerTests(resultsDiv) {
         }
 
         // Cleanup
+        modal.close();
         modal.remove();
     });
 

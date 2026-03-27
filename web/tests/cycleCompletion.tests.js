@@ -385,7 +385,7 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
         // With 4 global cycles, the unlock check sees 4, not 5
     });
 
-    await test('unlocks Golden Glow theme at 50 global cycles', () => {
+    await test('calls checkAchievements at 50 global cycles for theme unlocks', () => {
         const mockData = createMockData();
         mockData.appState.activeCycleId = 'default';
         mockData.userProgress.cyclesCompleted = 50;
@@ -401,17 +401,23 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
             update: (fn) => { fn(mockData); return mockData; }
         };
 
+        let achievementsCalled = false;
+        let achievementsCycles = 0;
+
         setCycleCompletionDependencies({
             AppState: mockAppState,
             showNotification: () => {},
             updateStatsPanel: () => {},
-            unlockGoldenGlowTheme: () => { goldenGlowUnlocked = true; }
+            checkAchievements: (cycles) => { achievementsCalled = true; achievementsCycles = cycles; }
         });
 
         incrementCycleCount('default', {});
 
-        if (!goldenGlowUnlocked) {
-            throw new Error('Should unlock Golden Glow theme at 50 cycles');
+        if (!achievementsCalled) {
+            throw new Error('Should call checkAchievements at 50 cycles for vocab theme unlocks');
+        }
+        if (achievementsCycles < 50) {
+            throw new Error('checkAchievements should receive at least 50 cycles');
         }
     });
 

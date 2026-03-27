@@ -311,17 +311,17 @@ export async function runStatsPanelTests(resultsDiv) {
 
     await test('applies theme classes to unlocked badges', () => {
         const achievementsManager = new AchievementsManager();
-        achievementsManager.updateBadges(50);
+        achievementsManager.updateBadges(100);
 
         const badge5 = document.querySelector('[data-milestone="5"]');
-        const badge50 = document.querySelector('[data-milestone="50"]');
+        const badge100 = document.querySelector('[data-milestone="100"]');
 
-        if (!badge5.classList.contains('ocean-theme')) {
-            throw new Error('Badge 5 should have ocean-theme class');
+        if (!badge5.classList.contains('unlocked')) {
+            throw new Error('Badge 5 should be unlocked at 100 cycles');
         }
 
-        if (!badge50.classList.contains('golden-theme')) {
-            throw new Error('Badge 50 should have golden-theme class');
+        if (!badge100.classList.contains('game-unlocked')) {
+            throw new Error('Badge 100 should have game-unlocked class');
         }
     });
 
@@ -329,55 +329,73 @@ export async function runStatsPanelTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🎨 Theme Unlock</h4>';
 
     await test('displays correct theme unlock messages', () => {
-        const statsPanel = new StatsPanelManager();
-        const milestoneUnlocks = {
-            darkOcean: false,
-            goldenGlow: false,
-            taskOrderGame: false
+        // Inject vocabThemeManager via module-level DI (constructor doesn't merge deps)
+        const mockVtm = {
+            getUnlockedThemeIds: () => ['classic'],
+            getNextLockedTheme: (cycles) => cycles < 5 ? { id: 'habit-tracker', name: 'Habit Tracker', unlockAt: { cycles: 5 }, icons: { celebrate: '🔥' } } : null,
+            getThemeDefinition: (id) => id === 'classic' ? { id: 'classic', name: 'Classic', icons: {} } : null
         };
+        setStatsPanelDependencies({ vocabThemeManager: mockVtm });
+        const statsPanel = new StatsPanelManager();
+        const milestoneUnlocks = { taskOrderGame: false };
 
         statsPanel.updateThemeMessages(3, milestoneUnlocks);
 
-        const themeMessage = document.getElementById('theme-unlock-message');
-        if (!themeMessage.textContent.includes('2 more cycle')) {
-            throw new Error('Should show correct cycles remaining');
+        const goldenMessage = document.getElementById('golden-unlock-message');
+        if (!goldenMessage.textContent.includes('2') || !goldenMessage.textContent.includes('Habit Tracker')) {
+            throw new Error('Should show correct cycles remaining for next vocab theme');
         }
+        // Clean up: remove vtm from module deps
+        setStatsPanelDependencies({ vocabThemeManager: null });
     });
 
     await test('shows unlocked message for completed milestones', () => {
-        const statsPanel = new StatsPanelManager();
-        const milestoneUnlocks = {
-            darkOcean: true,
-            goldenGlow: false,
-            taskOrderGame: false
+        // Inject vtm with Habit Tracker unlocked (5 cycles met)
+        const mockVtm = {
+            getUnlockedThemeIds: () => ['classic', 'habit-tracker'],
+            getNextLockedTheme: (cycles) => cycles < 25 ? { id: 'fitness', name: 'Fitness', unlockAt: { cycles: 25 }, icons: { celebrate: '💪' } } : null,
+            getThemeDefinition: (id) => {
+                const defs = {
+                    'habit-tracker': { id: 'habit-tracker', name: 'Habit Tracker', icons: { celebrate: '🔥' } }
+                };
+                return defs[id] || null;
+            }
         };
+        setStatsPanelDependencies({ vocabThemeManager: mockVtm });
+        const statsPanel = new StatsPanelManager();
+        const milestoneUnlocks = { taskOrderGame: false };
 
         statsPanel.updateThemeMessages(10, milestoneUnlocks);
 
         const themeMessage = document.getElementById('theme-unlock-message');
-        if (!themeMessage.textContent.includes('unlocked')) {
-            throw new Error('Should show unlocked message');
+        if (!themeMessage.textContent.includes('Habit Tracker')) {
+            throw new Error('Should show unlocked theme name');
         }
 
         if (!themeMessage.classList.contains('unlocked-message')) {
             throw new Error('Should have unlocked-message class');
         }
+        setStatsPanelDependencies({ vocabThemeManager: null });
     });
 
-    await test('hides golden glow until ocean unlocked', () => {
-        const statsPanel = new StatsPanelManager();
-        const milestoneUnlocks = {
-            darkOcean: false,
-            goldenGlow: false,
-            taskOrderGame: false
+    await test('shows next vocab theme when some are unlocked', () => {
+        // Inject vtm — Habit Tracker unlocked, Fitness is next
+        const mockVtm = {
+            getUnlockedThemeIds: () => ['classic', 'habit-tracker'],
+            getNextLockedTheme: (cycles) => ({ id: 'fitness', name: 'Fitness', unlockAt: { cycles: 25 }, icons: { celebrate: '💪' } }),
+            getThemeDefinition: (id) => id === 'habit-tracker' ? { id: 'habit-tracker', name: 'Habit Tracker', icons: { celebrate: '🔥' } } : null
         };
+        setStatsPanelDependencies({ vocabThemeManager: mockVtm });
+        const statsPanel = new StatsPanelManager();
+        const milestoneUnlocks = { taskOrderGame: false };
 
         statsPanel.updateThemeMessages(10, milestoneUnlocks);
 
         const goldenMessage = document.getElementById('golden-unlock-message');
-        if (goldenMessage.textContent !== '') {
-            throw new Error('Golden Glow should be hidden until Ocean is unlocked');
+        if (!goldenMessage.textContent.includes('Fitness')) {
+            throw new Error('Should show next vocab theme name');
         }
+        setStatsPanelDependencies({ vocabThemeManager: null });
     });
 
     // === NAVIGATION TESTS ===

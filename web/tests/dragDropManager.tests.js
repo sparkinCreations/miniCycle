@@ -97,9 +97,6 @@ export async function runDragDropManagerTests(resultsDiv) {
         if (manager.REARRANGE_DELAY !== 75) {
             throw new Error(`Expected REARRANGE_DELAY to be 75ms, got ${manager.REARRANGE_DELAY}ms`);
         }
-        if (manager.REORDER_SNAPSHOT_INTERVAL !== 500) {
-            throw new Error(`Expected REORDER_SNAPSHOT_INTERVAL to be 500ms, got ${manager.REORDER_SNAPSHOT_INTERVAL}ms`);
-        }
     });
 
     test('initializes internal state correctly', () => {
@@ -718,23 +715,19 @@ export async function runDragDropManagerTests(resultsDiv) {
         }
     });
 
-    test('isTouchDevice dependency can be overridden', () => {
-        let customCheckCalled = false;
+    test('showNotification dependency can be overridden', () => {
+        let customNotifCalled = false;
 
         const manager = new DragDropManager({
-            isTouchDevice: () => {
-                customCheckCalled = true;
-                return true;
+            showNotification: (msg, type) => {
+                customNotifCalled = true;
             }
         });
 
-        const result = manager.deps.isTouchDevice();
+        manager.deps.showNotification('test', 'info');
 
-        if (!customCheckCalled) {
-            throw new Error('Should use custom isTouchDevice function');
-        }
-        if (result !== true) {
-            throw new Error('Should return value from custom function');
+        if (!customNotifCalled) {
+            throw new Error('Should use custom showNotification function');
         }
     });
 

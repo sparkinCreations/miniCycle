@@ -834,11 +834,15 @@ export class TaskDOMManager {
         checkbox.setAttribute("name", `task-complete-${assignedTaskId}`);
         checkbox.checked = completed;
         checkbox.setAttribute("aria-label", getLabel('action.markTaskComplete', { vars: { name: taskTextTrimmed } }));
+        checkbox.setAttribute("aria-checked", String(completed));
 
         // Add event listener using safe helper
         const addListener = this.deps.safeAddEventListener;
 
         addListener(checkbox, "change", () => {
+            // ✅ Keep aria-checked in sync with checked state
+            checkbox.setAttribute("aria-checked", String(checkbox.checked));
+
             // ✅ Enable undo system on first user interaction
             if (typeof this.deps.enableUndoSystemOnFirstInteraction === 'function') {
                 this.deps.enableUndoSystemOnFirstInteraction();
