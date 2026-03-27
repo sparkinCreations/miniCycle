@@ -849,7 +849,7 @@ export class TaskDOMManager {
             }
 
             if (typeof this.deps.checkMiniCycle === 'function') {
-                this.deps.checkMiniCycle({ lastToggledElement: checkbox.closest('.task') });
+                this.deps.checkMiniCycle({ lastToggledElement: checkbox.closest(DOM_SELECTORS.TASK) });
             }
 
             // Note: autoSave removed - handleTaskCompletionChange already updates AppState
@@ -898,7 +898,7 @@ export class TaskDOMManager {
         addListener(taskLabel, "keydown", (e) => {
             if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                const checkbox = taskLabel.closest('.task-content')?.querySelector('input[type="checkbox"]');
+                const checkbox = taskLabel.closest(DOM_SELECTORS.TASK_CONTENT)?.querySelector(DOM_SELECTORS.TASK_CHECKBOX);
                 if (checkbox) {
                     checkbox.checked = !checkbox.checked;
                     checkbox.dispatchEvent(new Event("change"));
@@ -969,7 +969,7 @@ export class TaskDOMManager {
             button.setAttribute("aria-pressed", isNowRecurring.toString());
 
             // ✅ Add or remove recurring icon from task label
-            const taskItem = button.closest('.task');
+            const taskItem = button.closest(DOM_SELECTORS.TASK);
             if (taskItem) {
                 const taskLabel = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT);
                 if (taskLabel) {
@@ -1012,7 +1012,7 @@ export class TaskDOMManager {
                 if (wasKeyboardActivated) {
                     const notification = this.deps.querySelector(DOM_SELECTORS.NOTIFICATION_RECURRING_SHOW);
                     if (notification) {
-                        const changeSettingsBtn = notification.querySelector('.show-quick-actions');
+                        const changeSettingsBtn = notification.querySelector(DOM_SELECTORS.SHOW_QUICK_ACTIONS);
                         if (changeSettingsBtn) {
                             // Store return-focus context on the notification
                             notification._focusReturnContext = {

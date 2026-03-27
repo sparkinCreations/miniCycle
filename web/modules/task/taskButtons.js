@@ -265,8 +265,8 @@ export class TaskButtons {
                     btn.tabIndex = -1;
                 });
                 // Return focus to task label
-                const taskItem = button.closest('.task');
-                const label = taskItem?.querySelector('.task-text');
+                const taskItem = button.closest(DOM_SELECTORS.TASK);
+                const label = taskItem?.querySelector(DOM_SELECTORS.TASK_TEXT);
                 label?.focus();
             }
         };

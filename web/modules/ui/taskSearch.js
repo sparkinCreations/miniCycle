@@ -12,7 +12,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // CONSTANTS
@@ -138,9 +138,9 @@ export function initTaskSearch() {
 
     // Filter chip click handlers — collapsed by default, expand on click, collapse after selection
     if (filterRow) {
-        const filterChipGroup = filterRow.querySelector('.filter-chip-group');
+        const filterChipGroup = filterRow.querySelector(DOM_SELECTORS.FILTER_CHIP_GROUP);
 
-        filterRow.querySelectorAll('.filter-chip').forEach(btn => {
+        filterRow.querySelectorAll(DOM_SELECTORS.FILTER_CHIP).forEach(btn => {
             safeAdd(btn, 'click', () => {
                 if (filterGroupCollapsed) {
                     // Expand to show all options — don't change filter yet
@@ -152,7 +152,7 @@ export function initTaskSearch() {
 
                 // Expanded: set selected filter + collapse
                 currentFilter = btn.dataset.filter;
-                filterRow.querySelectorAll('.filter-chip').forEach(b => {
+                filterRow.querySelectorAll(DOM_SELECTORS.FILTER_CHIP).forEach(b => {
                     const selected = b === btn;
                     b.classList.toggle(DOM_CLASSES.ACTIVE, selected);
                     b.setAttribute('aria-pressed', String(selected));
@@ -165,8 +165,8 @@ export function initTaskSearch() {
         });
 
         // Sort chip click handlers — clicking an active non-default chip toggles back to Default
-        const defaultSortChip = filterRow.querySelector('.sort-chip[data-sort="default"]');
-        filterRow.querySelectorAll('.sort-chip').forEach(btn => {
+        const defaultSortChip = filterRow.querySelector(`${DOM_SELECTORS.SORT_CHIP}[data-sort="default"]`);
+        filterRow.querySelectorAll(DOM_SELECTORS.SORT_CHIP).forEach(btn => {
             safeAdd(btn, 'click', () => {
                 const isAlreadyActive = btn.classList.contains(DOM_CLASSES.ACTIVE);
                 const targetChip = (isAlreadyActive && btn.dataset.sort !== 'default') ? defaultSortChip : btn;
@@ -176,7 +176,7 @@ export function initTaskSearch() {
                 if (currentSort === 'default') {
                     originalTaskOrder = null;
                 }
-                filterRow.querySelectorAll('.sort-chip').forEach(b => {
+                filterRow.querySelectorAll(DOM_SELECTORS.SORT_CHIP).forEach(b => {
                     const selected = b === targetChip;
                     b.classList.toggle(DOM_CLASSES.ACTIVE, selected);
                     b.setAttribute('aria-pressed', String(selected));
@@ -328,7 +328,7 @@ function collapseSearch() {
         isSearchExpanded = false;
 
         // Always re-collapse the filter group when search closes
-        const filterChipGroup = filterRow?.querySelector('.filter-chip-group');
+        const filterChipGroup = filterRow?.querySelector(DOM_SELECTORS.FILTER_CHIP_GROUP);
         if (filterChipGroup) {
             filterGroupCollapsed = true;
             filterChipGroup.classList.add(DOM_CLASSES.COLLAPSED);
@@ -358,7 +358,7 @@ function clearSearch() {
 function matchesFilter(task) {
     if (currentFilter === 'all') return true;
 
-    const checkbox = task.querySelector("input[type='checkbox']");
+    const checkbox = task.querySelector(DOM_SELECTORS.TASK_CHECKBOX);
 
     if (currentFilter === 'incomplete') return !checkbox?.checked;
     if (currentFilter === 'completed')  return !!checkbox?.checked;
@@ -383,7 +383,7 @@ function applySortToDOM(tasks, taskList) {
         // Restore original DOM order if we have a saved order
         if (originalTaskOrder) {
             originalTaskOrder.forEach(id => {
-                const el = taskList.querySelector(`[data-task-id="${id}"]`);
+                const el = taskList.querySelector(DATA_SELECTORS.elementByTaskId(id));
                 if (el) taskList.appendChild(el);
             });
         }
@@ -490,7 +490,7 @@ export function resetSearch() {
         const taskList = deps.getElementById(DOM_IDS.TASK_LIST);
         if (taskList) {
             originalTaskOrder.forEach(id => {
-                const el = taskList.querySelector(`[data-task-id="${id}"]`);
+                const el = taskList.querySelector(DATA_SELECTORS.elementByTaskId(id));
                 if (el) taskList.appendChild(el);
             });
         }
@@ -505,18 +505,18 @@ export function resetSearch() {
     // Reset chip visual state to defaults
     const filterRow = deps.getElementById(DOM_IDS.TASK_FILTER_SORT_ROW);
     if (filterRow) {
-        filterRow.querySelectorAll('.filter-chip').forEach(b => {
+        filterRow.querySelectorAll(DOM_SELECTORS.FILTER_CHIP).forEach(b => {
             const isAll = b.dataset.filter === 'all';
             b.classList.toggle(DOM_CLASSES.ACTIVE, isAll);
             b.setAttribute('aria-pressed', String(isAll));
         });
-        filterRow.querySelectorAll('.sort-chip').forEach(b => {
+        filterRow.querySelectorAll(DOM_SELECTORS.SORT_CHIP).forEach(b => {
             const isDef = b.dataset.sort === 'default';
             b.classList.toggle(DOM_CLASSES.ACTIVE, isDef);
             b.setAttribute('aria-pressed', String(isDef));
         });
         // Re-collapse the filter chip group
-        const filterChipGroup = filterRow.querySelector('.filter-chip-group');
+        const filterChipGroup = filterRow.querySelector(DOM_SELECTORS.FILTER_CHIP_GROUP);
         if (filterChipGroup) {
             filterChipGroup.classList.add(DOM_CLASSES.COLLAPSED);
             filterChipGroup.setAttribute('aria-expanded', 'false');

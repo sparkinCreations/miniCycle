@@ -473,7 +473,7 @@ export class ClearedTasksManager {
         if (this._cancelBtnHandler) { cancelBtn?.removeEventListener('click', this._cancelBtnHandler); this._cancelBtnHandler = null; }
         if (this._confirmBtnHandler) { confirmBtn?.removeEventListener('click', this._confirmBtnHandler); this._confirmBtnHandler = null; }
         if (this._contentKeyHandler) {
-            this.modalOverlay.querySelector('.cleared-tasks-modal-content')?.removeEventListener('keydown', this._contentKeyHandler);
+            this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_TASKS_MODAL_CONTENT)?.removeEventListener('keydown', this._contentKeyHandler);
             this._contentKeyHandler = null;
         }
 
@@ -536,7 +536,7 @@ export class ClearedTasksManager {
         confirmBtn?.addEventListener('click', this._confirmBtnHandler);
 
         // Arrow key navigation for cleared entries (Up/Down + Space to toggle in recreate mode)
-        const contentArea = this.modalOverlay.querySelector('.cleared-tasks-modal-content');
+        const contentArea = this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_TASKS_MODAL_CONTENT);
         if (contentArea) {
             this._contentKeyHandler = (event) => {
                 if (handleVerticalArrowNav(event, contentArea, DOM_SELECTORS.CLEARED_ENTRY)) return;

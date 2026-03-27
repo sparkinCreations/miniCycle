@@ -1,3 +1,7 @@
+## [2.145] - 2026-03-26
+- feat: update hardcoded selectors audit documentation and add remaining violations
+
+
 ## [2.144] - 2026-03-26
 - Refactor UI components to use DOM_CLASSES for improved maintainability
 

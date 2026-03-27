@@ -1302,7 +1302,7 @@ export class RoutineSwitcher {
             }
 
             // ✅ Check if click is inside a confirmation/prompt modal dialog
-            const modalOverlay = event.target.closest('.mini-modal-dialog');
+            const modalOverlay = event.target.closest(DOM_SELECTORS.MINI_MODAL_OVERLAY);
 
             // ✅ If clicked area is NOT inside the modal, main menu, routine switcher button, or confirmation modal, close it
             if (
@@ -1952,7 +1952,7 @@ export class RoutineSwitcher {
             item.style.display = matches ? '' : 'none';
 
             // Highlight matching text in title
-            const titleSpan = item.querySelector('.cycle-item-title');
+            const titleSpan = item.querySelector(DOM_SELECTORS.CYCLE_ITEM_TITLE);
             if (titleSpan) {
                 if (lowerQuery === '' || !matches) {
                     titleSpan.textContent = cycleName;

@@ -321,10 +321,10 @@ function handleGlobalClickForTaskButtons(event) {
 
   // Ignore clicks on interactive surfaces that shouldn't trigger a dismiss
   const isIgnored =
-    target.closest('.task, .task-options') ||
-    target.closest('[data-modal], dialog, .notification') ||
-    target.closest('#undo-btn, #redo-btn, .undo-btn, .redo-btn') ||
-    target.closest('.menu-container, .quick-actions-window, .help-window');
+    target.closest(`${DOM_SELECTORS.TASK}, ${DOM_SELECTORS.TASK_OPTIONS}`) ||
+    target.closest(`${DOM_SELECTORS.DATA_MODAL}, dialog, ${DOM_SELECTORS.NOTIFICATION}`) ||
+    target.closest(`#${DOM_IDS.UNDO_BTN}, #${DOM_IDS.REDO_BTN}, .undo-btn, .redo-btn`) ||
+    target.closest(`${DOM_SELECTORS.MENU_CONTAINER}, #${DOM_IDS.QUICK_ACTIONS_WINDOW}, #${DOM_IDS.HELP_WINDOW}`);
 
   if (isIgnored) return;
 
@@ -374,9 +374,9 @@ function handleGlobalClickForSwitchModal(event) {
     switchModalContent?.contains(event.target) &&
     selectedCycle &&
     !event.target.classList.contains(DOM_CLASSES.MINI_CYCLE_SWITCH_ITEM) &&
-    !event.target.closest('.mini-cycle-switch-item') &&
+    !event.target.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM) &&
     !previewWindow?.contains(event.target) &&
-    !event.target.closest('.switch-buttons') &&
+    !event.target.closest(DOM_SELECTORS.SWITCH_BUTTONS) &&
     !themePicker?.contains(event.target) &&
     !event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_LEFT) &&
     !event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_RIGHT)
@@ -566,7 +566,7 @@ export function showLoader(message = 'Processing...') {
   if (!appLoader) return;
 
   // Hide the tip section (not relevant during import/restore)
-  const tip = appLoader.querySelector('#loader-tip');
+  const tip = appLoader.querySelector(`#${DOM_IDS.LOADER_TIP}`);
   if (tip) tip.style.display = 'none';
 
   // Update the text
@@ -597,7 +597,7 @@ export function hideLoader() {
     // Restore original text and tip visibility for next boot
     const textElement = appLoader.querySelector(DOM_SELECTORS.LOADER_TEXT);
     if (textElement) textElement.textContent = getLabel('boot.loadingApp');
-    const tip = appLoader.querySelector('#loader-tip');
+    const tip = appLoader.querySelector(`#${DOM_IDS.LOADER_TIP}`);
     if (tip) tip.style.display = '';
   }, 500);
 }

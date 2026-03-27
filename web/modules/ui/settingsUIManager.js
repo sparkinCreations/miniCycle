@@ -19,7 +19,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { loadPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
@@ -260,7 +260,7 @@ function setupSettingsCollapsibleSections() {
     sectionHeaders.forEach(header => {
         replaceStoredEventListener(header, 'click', '__miniCycleSettingsSectionClickHandler', (e) => {
             e.stopPropagation();
-            const section = header.closest('.settings-section');
+            const section = header.closest(DOM_SELECTORS.SETTINGS_SECTION);
             if (section) {
                 section.classList.toggle(DOM_CLASSES.COLLAPSED);
                 header.setAttribute('aria-expanded', String(!section.classList.contains(DOM_CLASSES.COLLAPSED)));
@@ -271,14 +271,14 @@ function setupSettingsCollapsibleSections() {
         replaceStoredEventListener(header, 'keydown', '__miniCycleSettingsSectionKeydownHandler', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                const section = header.closest('.settings-section');
+                const section = header.closest(DOM_SELECTORS.SETTINGS_SECTION);
                 if (section) {
                     section.classList.toggle(DOM_CLASSES.COLLAPSED);
                     header.setAttribute('aria-expanded', String(!section.classList.contains(DOM_CLASSES.COLLAPSED)));
                     saveSettingsCollapsedStates(collapsibleSections);
                 }
             } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-                const section = header.closest('.settings-section');
+                const section = header.closest(DOM_SELECTORS.SETTINGS_SECTION);
                 if (!section) return;
                 const isCollapsed = section.classList.contains(DOM_CLASSES.COLLAPSED);
                 if (e.key === 'ArrowRight' && isCollapsed) {
@@ -322,7 +322,7 @@ function loadSettingsCollapsedStates(sections) {
                 section.classList.remove(DOM_CLASSES.COLLAPSED);
             }
             // Sync aria-expanded on the header
-            const sectionHeader = section.querySelector('.settings-section-header.collapsible');
+            const sectionHeader = section.querySelector(DOM_SELECTORS.SETTINGS_SECTION_HEADER_COLLAPSIBLE);
             if (sectionHeader) {
                 sectionHeader.setAttribute('aria-expanded', String(!isCollapsed));
             }
@@ -1306,7 +1306,7 @@ export function applyPriorityColor() {
     const tasks = schemaData.cycles?.[activeCycle]?.tasks || [];
     tasks.forEach(task => {
         if (task.highPriority && task.priorityColor) {
-            const el = document.querySelector(`[data-task-id="${task.id}"]`);
+            const el = document.querySelector(DATA_SELECTORS.elementByTaskId(task.id));
             if (el) el.style.setProperty('--task-priority-color', task.priorityColor);
         }
     });

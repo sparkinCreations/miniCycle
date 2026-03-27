@@ -239,7 +239,7 @@ export class StatsPanelManager {
         const achievementBadgesBtn = statsPanel.querySelector(`#${DOM_IDS.ACHIEVEMENT_BADGES_BTN}`);
         if (achievementBadgesBtn) {
             this.elements.achievementBadgesBtn = achievementBadgesBtn;
-            this.elements.achievementCountBadge = achievementBadgesBtn.querySelector('#achievement-count-badge');
+            this.elements.achievementCountBadge = achievementBadgesBtn.querySelector(`#${DOM_IDS.ACHIEVEMENT_COUNT_BADGE}`);
         }
 
         // Setup click handlers
@@ -456,7 +456,7 @@ export class StatsPanelManager {
         // Current Routine status click + keyboard activation
         if (this.elements.currentRoutineStatus) {
             safeAdd(this.elements.currentRoutineStatus, "click", this.boundHandlers.handleCurrentRoutineToggle);
-            this._routineHeaderEl = this.elements.currentRoutineStatus.querySelector('.clickable');
+            this._routineHeaderEl = this.elements.currentRoutineStatus.querySelector(DOM_SELECTORS.CLICKABLE);
             if (this._routineHeaderEl) {
                 this._routineHeaderKeydownHandler = (e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -471,7 +471,7 @@ export class StatsPanelManager {
         // Theme unlock status click + keyboard activation
         if (this.elements.themeUnlockStatus) {
             safeAdd(this.elements.themeUnlockStatus, "click", this.boundHandlers.handleThemeToggleClick);
-            this._milestoneHeaderEl = this.elements.themeUnlockStatus.querySelector('.clickable');
+            this._milestoneHeaderEl = this.elements.themeUnlockStatus.querySelector(DOM_SELECTORS.CLICKABLE);
             if (this._milestoneHeaderEl) {
                 this._milestoneHeaderKeydownHandler = (e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -1372,7 +1372,7 @@ export class StatsPanelManager {
         const toggleIcon = themeUnlockStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);
         if (toggleIcon) toggleIcon.textContent = newExpanded ? "▲" : "▼";
 
-        const clickableHeader = themeUnlockStatus?.querySelector('.clickable');
+        const clickableHeader = themeUnlockStatus?.querySelector(DOM_SELECTORS.CLICKABLE);
         if (clickableHeader) clickableHeader.setAttribute('aria-expanded', String(newExpanded));
 
         this.saveCollapsiblePreference('milestonesExpanded', newExpanded);
@@ -1404,7 +1404,7 @@ export class StatsPanelManager {
             const anyVisible = currentRoutineCycleCount.classList.contains(DOM_CLASSES.VISIBLE);
             toggleIcon.textContent = anyVisible ? "▲" : "▼";
 
-            const clickableHeader = currentRoutineStatus?.querySelector('.clickable');
+            const clickableHeader = currentRoutineStatus?.querySelector(DOM_SELECTORS.CLICKABLE);
             if (clickableHeader) clickableHeader.setAttribute('aria-expanded', String(anyVisible));
 
             // ✅ Save preference to localStorage
@@ -1487,7 +1487,7 @@ export class StatsPanelManager {
                 const toggleIcon = themeUnlockStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);
                 if (toggleIcon) toggleIcon.textContent = "▲";
 
-                const clickableHeader = themeUnlockStatus?.querySelector('.clickable');
+                const clickableHeader = themeUnlockStatus?.querySelector(DOM_SELECTORS.CLICKABLE);
                 if (clickableHeader) clickableHeader.setAttribute('aria-expanded', 'true');
             }
 
@@ -1643,7 +1643,7 @@ export class StatsPanelManager {
 
         if (!this._taskStatsCache || this._taskStatsCacheTime < now - CACHE_TTL) {
             const tasks = _deps.querySelectorAll(DOM_SELECTORS.TASK);
-            const checked = _deps.querySelectorAll(".task input:checked");
+            const checked = _deps.querySelectorAll(DOM_SELECTORS.TASK_INPUT_CHECKED);
             this._taskStatsCache = {
                 total: tasks.length,
                 completed: checked.length
@@ -1774,9 +1774,9 @@ export class StatsPanelManager {
     fallbackOverlayCheck() {
         // Basic overlay check
         const overlaySelectors = [
-            '.menu-container.visible',
+            DOM_SELECTORS.MENU_CONTAINER_VISIBLE,
             'dialog.modal[open]',
-            '.notification-container .notification'
+            `#${DOM_IDS.NOTIFICATION_CONTAINER} ${DOM_SELECTORS.NOTIFICATION}`
         ];
         return overlaySelectors.some(selector => _deps.querySelector(selector));
     }

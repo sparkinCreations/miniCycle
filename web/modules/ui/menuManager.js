@@ -207,7 +207,7 @@ export class MenuManager {
         this.setupCollapsibleSections();
 
         // Close menu when legal links are clicked on mobile
-        const legalLinks = this.deps.querySelectorAll('.menu-link-button');
+        const legalLinks = this.deps.querySelectorAll(DOM_SELECTORS.MENU_LINK_BUTTON);
         legalLinks.forEach(link => {
             replaceStoredEventListener(link, 'click', '__miniCycleMenuManagerLegalClickHandler', () => {
                 this.hideMainMenu();
@@ -228,7 +228,7 @@ export class MenuManager {
         collapsibleHeaders.forEach(header => {
             replaceStoredEventListener(header, 'click', '__miniCycleMenuManagerSectionClickHandler', (e) => {
                 e.stopPropagation();
-                const section = header.closest('.menu-section');
+                const section = header.closest(DOM_SELECTORS.MENU_SECTION);
                 if (section) {
                     section.classList.toggle(DOM_CLASSES.COLLAPSED);
                     const expanded = !section.classList.contains(DOM_CLASSES.COLLAPSED);
@@ -243,7 +243,7 @@ export class MenuManager {
             replaceStoredEventListener(header, 'keydown', '__miniCycleMenuManagerSectionKeydownHandler', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    const section = header.closest('.menu-section');
+                    const section = header.closest(DOM_SELECTORS.MENU_SECTION);
                     if (section) {
                         section.classList.toggle(DOM_CLASSES.COLLAPSED);
                         const expanded = !section.classList.contains(DOM_CLASSES.COLLAPSED);
@@ -259,7 +259,7 @@ export class MenuManager {
                 // ArrowRight to expand, ArrowLeft to collapse
                 if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
                     e.preventDefault();
-                    const section = header.closest('.menu-section');
+                    const section = header.closest(DOM_SELECTORS.MENU_SECTION);
                     if (!section) return;
                     const isCollapsed = section.classList.contains(DOM_CLASSES.COLLAPSED);
                     if (e.key === 'ArrowRight' && isCollapsed) {
@@ -276,7 +276,7 @@ export class MenuManager {
                 }
 
                 // ArrowUp/Down to navigate between section headers
-                const menuSections = header.closest('.menu-sections');
+                const menuSections = header.closest(DOM_SELECTORS.MENU_SECTIONS);
                 if (menuSections) {
                     handleVerticalArrowNav(e, menuSections, DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE);
                 }
@@ -298,7 +298,7 @@ export class MenuManager {
                 const sections = this.deps.querySelectorAll(DOM_SELECTORS.MENU_SECTION_BY_DATA);
                 sections.forEach(section => {
                     section.classList.remove(DOM_CLASSES.COLLAPSED);
-                    const header = section.querySelector('.menu-section-header.collapsible');
+                    const header = section.querySelector(DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE);
                     if (header) {
                         header.setAttribute('aria-expanded', 'true');
                     }
@@ -317,7 +317,7 @@ export class MenuManager {
                     section.classList.remove(DOM_CLASSES.COLLAPSED);
                 }
                 // Sync aria-expanded on the header
-                const sectionHeader = section.querySelector('.menu-section-header.collapsible');
+                const sectionHeader = section.querySelector(DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE);
                 if (sectionHeader) {
                     sectionHeader.setAttribute('aria-expanded', String(!isCollapsed));
                 }
@@ -606,8 +606,8 @@ export class MenuManager {
         }
 
         // ✅ Uncheck tasks in the UI and remove overdue styling
-        this.deps.querySelectorAll("#taskList .task").forEach(taskElement => {
-            const checkbox = taskElement.querySelector("input[type='checkbox']");
+        this.deps.querySelectorAll(`#${DOM_IDS.TASK_LIST} ${DOM_SELECTORS.TASK}`).forEach(taskElement => {
+            const checkbox = taskElement.querySelector(DOM_SELECTORS.TASK_CHECKBOX);
             if (checkbox) {
                 checkbox.checked = false;
             }

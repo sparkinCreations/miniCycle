@@ -446,7 +446,7 @@ export class PreferencesManager {
             checkboxFillToggle._changeHandler = (e) => this.handleCheckboxFillToggle(e.target.checked);
             safeAdd(checkboxFillToggle, 'change', checkboxFillToggle._changeHandler);
 
-            const toggleSwitch = checkboxFillToggle.closest('.toggle-switch');
+            const toggleSwitch = checkboxFillToggle.closest(DOM_SELECTORS.TOGGLE_SWITCH);
             if (toggleSwitch) {
                 toggleSwitch._clickHandler = (e) => {
                     if (e.target !== checkboxFillToggle) {
@@ -464,7 +464,7 @@ export class PreferencesManager {
             checkboxIncompleteToggle._changeHandler = (e) => this.handleCheckboxIncompleteToggle(e.target.checked);
             safeAdd(checkboxIncompleteToggle, 'change', checkboxIncompleteToggle._changeHandler);
 
-            const toggleSwitch = checkboxIncompleteToggle.closest('.toggle-switch');
+            const toggleSwitch = checkboxIncompleteToggle.closest(DOM_SELECTORS.TOGGLE_SWITCH);
             if (toggleSwitch) {
                 toggleSwitch._clickHandler = (e) => {
                     if (e.target !== checkboxIncompleteToggle) {
@@ -482,7 +482,7 @@ export class PreferencesManager {
             bgPatternToggle._changeHandler = (e) => this.handleBackgroundPatternToggle(e.target.checked);
             safeAdd(bgPatternToggle, 'change', bgPatternToggle._changeHandler);
 
-            const toggleSwitch = bgPatternToggle.closest('.toggle-switch');
+            const toggleSwitch = bgPatternToggle.closest(DOM_SELECTORS.TOGGLE_SWITCH);
             if (toggleSwitch) {
                 toggleSwitch._clickHandler = (e) => {
                     if (e.target !== bgPatternToggle) {
@@ -500,7 +500,7 @@ export class PreferencesManager {
             solidListBgToggle._changeHandler = (e) => this.handleSolidBgToggle('solidListBg', e.target.checked);
             safeAdd(solidListBgToggle, 'change', solidListBgToggle._changeHandler);
 
-            const toggleSwitch = solidListBgToggle.closest('.toggle-switch');
+            const toggleSwitch = solidListBgToggle.closest(DOM_SELECTORS.TOGGLE_SWITCH);
             if (toggleSwitch) {
                 toggleSwitch._clickHandler = (e) => {
                     if (e.target !== solidListBgToggle) {
@@ -518,7 +518,7 @@ export class PreferencesManager {
             solidStatsBgToggle._changeHandler = (e) => this.handleSolidBgToggle('solidStatsBg', e.target.checked);
             safeAdd(solidStatsBgToggle, 'change', solidStatsBgToggle._changeHandler);
 
-            const toggleSwitch = solidStatsBgToggle.closest('.toggle-switch');
+            const toggleSwitch = solidStatsBgToggle.closest(DOM_SELECTORS.TOGGLE_SWITCH);
             if (toggleSwitch) {
                 toggleSwitch._clickHandler = (e) => {
                     if (e.target !== solidStatsBgToggle) {
@@ -539,7 +539,7 @@ export class PreferencesManager {
             };
             safeAdd(bgImageVisibleToggle, 'change', bgImageVisibleToggle._changeHandler);
 
-            const toggleSwitch = bgImageVisibleToggle.closest('.toggle-switch');
+            const toggleSwitch = bgImageVisibleToggle.closest(DOM_SELECTORS.TOGGLE_SWITCH);
             if (toggleSwitch) {
                 toggleSwitch._clickHandler = (e) => {
                     if (e.target !== bgImageVisibleToggle) {
@@ -558,7 +558,7 @@ export class PreferencesManager {
             helpWindowToggle._changeHandler = (e) => this.handleHelpWindowToggle(e.target.checked);
             safeAdd(helpWindowToggle, 'change', helpWindowToggle._changeHandler);
 
-            const toggleSwitch = helpWindowToggle.closest('.toggle-switch');
+            const toggleSwitch = helpWindowToggle.closest(DOM_SELECTORS.TOGGLE_SWITCH);
             if (toggleSwitch) {
                 toggleSwitch._clickHandler = (e) => {
                     if (e.target !== helpWindowToggle) {
@@ -576,7 +576,7 @@ export class PreferencesManager {
             quickActionsToggle._changeHandler = (e) => this.handleQuickActionsToggle(e.target.checked);
             safeAdd(quickActionsToggle, 'change', quickActionsToggle._changeHandler);
 
-            const toggleSwitch = quickActionsToggle.closest('.toggle-switch');
+            const toggleSwitch = quickActionsToggle.closest(DOM_SELECTORS.TOGGLE_SWITCH);
             if (toggleSwitch) {
                 toggleSwitch._clickHandler = (e) => {
                     if (e.target !== quickActionsToggle) {
@@ -609,7 +609,7 @@ export class PreferencesManager {
             };
             safeAdd(disableAnimToggle, 'change', disableAnimToggle._changeHandler);
 
-            const toggleSwitch = disableAnimToggle.closest('.toggle-switch');
+            const toggleSwitch = disableAnimToggle.closest(DOM_SELECTORS.TOGGLE_SWITCH);
             if (toggleSwitch) {
                 toggleSwitch._clickHandler = (e) => {
                     if (e.target !== disableAnimToggle) {
@@ -633,7 +633,7 @@ export class PreferencesManager {
             };
             safeAdd(disableToastToggle, 'change', disableToastToggle._changeHandler);
 
-            const toggleSwitch = disableToastToggle.closest('.toggle-switch');
+            const toggleSwitch = disableToastToggle.closest(DOM_SELECTORS.TOGGLE_SWITCH);
             if (toggleSwitch) {
                 toggleSwitch._clickHandler = (e) => {
                     if (e.target !== disableToastToggle) {
@@ -761,7 +761,7 @@ export class PreferencesManager {
                     e.preventDefault();
                     this.toggleSection(header);
                 } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-                    const section = header.closest('.preferences-section');
+                    const section = header.closest(DOM_SELECTORS.PREFERENCES_SECTION);
                     if (!section) return;
                     const isCollapsed = section.classList.contains(DOM_CLASSES.COLLAPSED);
                     if (e.key === 'ArrowRight' && isCollapsed) {
@@ -1725,8 +1725,8 @@ export class PreferencesManager {
         // Handle Help Window and Quick Actions visibility in preview
         const helpToggle = _deps.getElementById(DOM_IDS.TOGGLE_HELP_WINDOW);
         const quickActionsToggle = _deps.getElementById(DOM_IDS.TOGGLE_QUICK_ACTIONS);
-        const previewHelp = preview.querySelector('.preview-help-window');
-        const previewQuickActions = preview.querySelector('.preview-quick-actions');
+        const previewHelp = preview.querySelector(DOM_SELECTORS.PREVIEW_HELP_WINDOW);
+        const previewQuickActions = preview.querySelector(DOM_SELECTORS.PREVIEW_QUICK_ACTIONS);
 
         if (previewHelp) {
             previewHelp.classList.toggle(DOM_CLASSES.HIDDEN, helpToggle?.checked === false);
@@ -1741,7 +1741,7 @@ export class PreferencesManager {
      * @param {HTMLElement} header - The section header element
      */
     toggleSection(header) {
-        const section = header.closest('.preferences-section') || header.closest('.preferences-preview-section');
+        const section = header.closest(DOM_SELECTORS.PREFERENCES_SECTION) || header.closest(DOM_SELECTORS.PREFERENCES_PREVIEW_SECTION);
         if (section) {
             section.classList.toggle(DOM_CLASSES.COLLAPSED);
             const isCollapsed = section.classList.contains(DOM_CLASSES.COLLAPSED);
@@ -1765,13 +1765,13 @@ export class PreferencesManager {
                 const hasSaved = collapsedSections && ('live-preview' in collapsedSections);
                 if (!hasSaved) {
                     previewSection.classList.add(DOM_CLASSES.COLLAPSED);
-                    const header = previewSection.querySelector('.preferences-section-header');
+                    const header = previewSection.querySelector(DOM_SELECTORS.PREFERENCES_SECTION_HEADER);
                     if (header) header.setAttribute('aria-expanded', 'false');
                 }
             } else {
                 // Desktop: always expanded
                 previewSection.classList.remove(DOM_CLASSES.COLLAPSED);
-                const header = previewSection.querySelector('.preferences-section-header');
+                const header = previewSection.querySelector(DOM_SELECTORS.PREFERENCES_SECTION_HEADER);
                 if (header) header.setAttribute('aria-expanded', 'true');
             }
         }
@@ -1787,7 +1787,7 @@ export class PreferencesManager {
                 } else {
                     section.classList.remove(DOM_CLASSES.COLLAPSED);
                 }
-                const header = section.querySelector('.preferences-section-header');
+                const header = section.querySelector(DOM_SELECTORS.PREFERENCES_SECTION_HEADER);
                 if (header) {
                     header.setAttribute('aria-expanded', (!isCollapsed).toString());
                 }

@@ -647,6 +647,7 @@ export const DOM_IDS = Object.freeze({
     OPEN_FEEDBACK_MODAL: 'open-feedback-modal',
     OPEN_FEEDBACK_MODAL_FOOTER: 'open-feedback-modal-footer',
     FEEDBACK_FORM: 'feedback-form',
+    FEEDBACK_MODAL_TITLE: 'feedback-modal-title',
     FEEDBACK_TEXT: 'feedback-text',
     FEEDBACK_EMAIL: 'feedback-email',
     SUBMIT_FEEDBACK: 'submit-feedback',
@@ -897,6 +898,7 @@ export const DOM_IDS = Object.freeze({
     BADGE_COIN: 'badge-coin',
     BADGE_DETAIL_OVERLAY: 'badge-detail-overlay',
     ACHIEVEMENT_BADGES_BTN: 'achievement-badges-btn',
+    ACHIEVEMENT_COUNT_BADGE: 'achievement-count-badge',
 
     // ---- Undo/Redo ----
     UNDO_BTN: 'undo-btn',
@@ -923,6 +925,7 @@ export const DOM_IDS = Object.freeze({
 
     // ---- Loading & UI ----
     APP_LOADER: 'app-loader',
+    LOADER_TIP: 'loader-tip',
     PROGRESS_BAR: 'progressBar',
     LOADING_OVERLAY: 'loading-overlay',
     CLEAR_CACHE_BTN: 'clear-cache-btn',
@@ -951,6 +954,18 @@ export const DOM_IDS = Object.freeze({
     CLOSE_STORAGE_VIEWER_BTN: 'close-storage-viewer-btn',
     STORAGE_CONTENT: 'storage-content',
     STAY_OPEN_TOGGLE: 'stay-open-toggle',
+
+    // ---- Testing Results Modal ----
+    CLOSE_RESULTS_MODAL: 'close-results-modal',
+    COPY_RESULTS: 'copy-results',
+    SAVE_RESULTS: 'save-results',
+    PRINT_RESULTS: 'print-results',
+    SEARCH_RESULTS: 'search-results',
+    SEARCH_BAR: 'search-bar',
+    SEARCH_INPUT: 'search-input',
+    SEARCH_INFO: 'search-info',
+    MODAL_RESULTS_CONTENT: 'modal-results-content',
+    CLEAR_SELECTION: 'clear-selection',
 
     // ---- Modal Root IDs (used by modalRegistry) ----
     ROUTINE_SWITCHER_MODAL: 'routine-switcher-modal',
@@ -985,6 +1000,9 @@ export const DOM_SELECTORS = Object.freeze({
     IS_FIRST_TASK: '.is-first-task',
     IS_LAST_TASK: '.is-last-task',
 
+    // ---- Task Content ----
+    TASK_CONTENT: '.task-content',
+
     // ---- Task Options & Buttons ----
     ENABLE_TASK_REMINDERS: '.enable-task-reminders',
     REMINDER_ACTIVE: '.reminder-active',
@@ -1000,6 +1018,9 @@ export const DOM_SELECTORS = Object.freeze({
     MOVE_ARROWS: '.move-up, .move-down',
 
     // ---- Menu & Settings ----
+    MENU_LINK_BUTTON: '.menu-link-button',
+    MENU_SECTION: '.menu-section',
+    MENU_SECTIONS: '.menu-sections',
     MENU_CONTAINER: '.menu-container',
     MENU_CONTAINER_VISIBLE: '.menu-container.visible',
     MENU_BUTTON: '.menu-button',
@@ -1008,8 +1029,10 @@ export const DOM_SELECTORS = Object.freeze({
     MENU_SECTION_HEADER: '.menu-section-header',
     MENU_SECTION_HEADER_COLLAPSIBLE: '.menu-section-header.collapsible',
     MENU_SECTION_BY_DATA: '.menu-section[data-section]',
+    TOGGLE_SWITCH: '.toggle-switch',
     SETTINGS_MODAL: '.settings-modal',
     SETTINGS_MODAL_CONTENT: '.settings-modal-content',
+    SETTINGS_SECTION: '.settings-section',
     SETTINGS_SECTION_HEADER: '.settings-section-header',
     SETTINGS_SECTION_COLLAPSIBLE: '.settings-section.collapsible[data-section]',
 
@@ -1030,6 +1053,7 @@ export const DOM_SELECTORS = Object.freeze({
     DESKTOP_PREVIEW_WINDOW: '.desktop-preview-window',
     ROUTINE_SWITCHER_LEFT: '.routine-switcher-left',
     ROUTINE_SWITCHER_RIGHT: '.routine-switcher-right',
+    SWITCH_BUTTONS: '.switch-buttons',
     PREVIEW_REVIEW_CLOSE: '.preview-review-close',
 
     // ---- Progress ----
@@ -1037,6 +1061,8 @@ export const DOM_SELECTORS = Object.freeze({
 
     // ---- Stats ----
     STATS_PANEL: '.stats-panel',
+    CLICKABLE: '.clickable',
+    TASK_INPUT_CHECKED: '.task input:checked',
     DOT: '.dot',
     BADGE_CONTAINER: '.badge-container',
     GLOBAL_STATS_CONTAINER: '.global-stats-container',
@@ -1085,7 +1111,25 @@ export const DOM_SELECTORS = Object.freeze({
     SPECIFIC_DATE_INPUT: `#specific-date-list input[type="date"]`,
     FOCUSABLE_ELEMENTS: 'button, input, select, [tabindex="0"]',
 
+    // ---- Task Search ----
+    FILTER_CHIP_GROUP: '.filter-chip-group',
+    FILTER_CHIP: '.filter-chip',
+    SORT_CHIP: '.sort-chip',
+
+    // ---- Onboarding ----
+    ONBOARDING_STEP_INDICATOR: '.onboarding-step-indicator',
+    ONBOARDING_TRY_BTN: '.onboarding-try-btn',
+    ONBOARDING_CYCLE_ANIMATION: '.onboarding-cycle-animation',
+    ONBOARDING_CHOICE_HINT: '.onboarding-choice-hint',
+    CYCLE_DEMO_TASK: '.cycle-demo-task',
+    CYCLE_DEMO_TASK_TEXT: '.cycle-demo-task-text',
+    CYCLE_DEMO_CHECKBOX: '.cycle-demo-checkbox',
+
     // ---- Preferences ----
+    PREFERENCES_SECTION: '.preferences-section',
+    PREFERENCES_SECTION_HEADER: '.preferences-section-header',
+    PREVIEW_HELP_WINDOW: '.preview-help-window',
+    PREVIEW_QUICK_ACTIONS: '.preview-quick-actions',
     PREFERENCES_MODAL: '.preferences-modal',
     PREFERENCES_MODAL_CONTENT: '.preferences-modal-content',
     PREFERENCES_SCROLL_AREA: '.preferences-scroll-area',
@@ -1106,6 +1150,14 @@ export const DOM_SELECTORS = Object.freeze({
     CLOSE_FEEDBACK_MODAL: '.close-feedback-modal',
 
     // ---- Notifications ----
+    SHOW_QUICK_ACTIONS: '.show-quick-actions',
+    QUICK_OPTION: '.quick-option',
+    QUICK_RECURRING_OPTIONS: '.quick-recurring-options',
+    PRIORITY_COLOR_PICKER: '.priority-color-picker',
+    PRIORITY_COLOR_BTN: '.priority-color-btn',
+    PRIORITY_RADIO_DOT: '.priority-radio-dot',
+    PRIORITY_SWATCH: '.priority-swatch',
+    BTN_CHOICE: '.btn-choice',
     NOTIFICATION: '.notification',
     NOTIFICATION_SHOW: '.notification.show',
     NOTIFICATION_RECURRING_SHOW: '.notification.recurring.show',
@@ -1137,6 +1189,9 @@ export const DOM_SELECTORS = Object.freeze({
     HISTORY_CONFIRM_BTN: '.history-confirm-btn',
     HISTORY_RESET_PROGRESS_BTN: '.history-reset-progress-btn',
     HISTORY_FOOTER: '.history-footer',
+    HISTORY_TABS: '.history-tabs',
+    HISTORY_EVENT: '.history-event',
+    CLEARED_VIEW_RECURRING: '.cleared-view-recurring',
     CLEARED_ENTRY: '.cleared-entry',
     CLEARED_TASKS_MODAL: '.cleared-tasks-modal',
     CLEARED_TASKS_MODAL_CONTENT: '.cleared-tasks-modal-content',
@@ -1173,11 +1228,14 @@ export const DOM_SELECTORS = Object.freeze({
     QUICK_ACTIONS_PICKER: '.quick-actions-picker',
     QUICK_ACTIONS_PICKER_GRID: '.quick-actions-picker-grid',
     QUICK_ACTIONS_SLOT: '.quick-actions-slot',
+    QUICK_ACTIONS_SLOTS: '.quick-actions-slots',
+    QUICK_ACTIONS_PANEL: '.quick-actions-panel',
     TOOLTIP_REMOVE: 'tooltip-remove',
 
     // ---- Edit Focus ----
     EDIT_FOCUS_OVERLAY: '.edit-focus-overlay',
     EDIT_FOCUS_TARGET: '.edit-focus-target',
+    FOCUS_SAFE: '.focus-safe',
 
     // ---- Loading & UI ----
     LOADER_TEXT: '.loader-text',
@@ -1195,9 +1253,13 @@ export const DOM_SELECTORS = Object.freeze({
     MCYC_DROP_TEXT: '.mcyc-drop-text',
 
     // ---- Task Options Customizer ----
+    TASK_OPTIONS_MODAL: '.task-options-modal',
     TASK_OPTION_ITEM: '.task-option-item',
+    TASK_OPTION_ITEM_SELECTED: '.task-option-item.selected',
     TASK_OPTION_PREVIEW: '.task-option-preview',
+    OPTION_CHECKBOX: '.option-checkbox',
     OPTION_CHECKBOX_CONTAINER: '.option-checkbox-container',
+    OPTION_LABEL: '.option-label',
 
     // ---- Icons ----
     ICON_FONTAWESOME: 'i.fas, i.far, i.fab, i.fa',
@@ -1213,11 +1275,24 @@ export const DOM_SELECTORS = Object.freeze({
     TESTING_MODAL_DRAG_HANDLE: '.testing-modal-drag-handle',
     TESTING_RESULTS_AREA: '.testing-results-area',
     TESTING_RESULTS_HEADER: '.testing-results-header',
+    TESTING_RESULTS_CONTROLS: '.testing-results-controls',
+    TEST_RESULTS_HINT: '.test-results-hint',
     TESTING_TAB: '.testing-tab',
     TESTING_TAB_CONTENT: '.testing-tab-content',
     TESTING_TAB_CONTENT_ACTIVE: '.testing-tab-content.active',
     CLOSE_TESTING_MODAL: '.close-testing-modal',
-    BACKUP_ITEM: '.backup-item'
+    BACKUP_ITEM: '.backup-item',
+
+    // ---- Guided Tour ----
+    TOUR_BACK: '.tour-back',
+    TOUR_SKIP: '.tour-skip',
+    TOUR_NEXT: '.tour-next',
+
+    // ---- Onboarding ----
+    ONBOARDING_MODAL: '.onboarding-modal',
+
+    // ---- Settings (collapsible header within section) ----
+    SETTINGS_SECTION_HEADER_COLLAPSIBLE: '.settings-section-header.collapsible'
 });
 
 // ============================================================================

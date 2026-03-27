@@ -357,15 +357,15 @@ export class HistoryManager {
             this._tabHandlers = null;
         }
         if (this._tabKeyHandler) {
-            this.modalOverlay.querySelector('.history-tabs')?.removeEventListener('keydown', this._tabKeyHandler);
+            this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_TABS)?.removeEventListener('keydown', this._tabKeyHandler);
             this._tabKeyHandler = null;
         }
         if (this._contentKeyHandler) {
-            this.modalOverlay.querySelector('.history-modal-content')?.removeEventListener('keydown', this._contentKeyHandler);
+            this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_MODAL_CONTENT)?.removeEventListener('keydown', this._contentKeyHandler);
             this._contentKeyHandler = null;
         }
         if (this._recurringLinkHandler) {
-            this.modalOverlay.querySelector('.cleared-view-recurring')?.removeEventListener('click', this._recurringLinkHandler);
+            this.modalOverlay.querySelector(DOM_SELECTORS.CLEARED_VIEW_RECURRING)?.removeEventListener('click', this._recurringLinkHandler);
             this._recurringLinkHandler = null;
         }
 
@@ -465,7 +465,7 @@ export class HistoryManager {
         });
 
         // Arrow key navigation for tabs (Left/Right to switch)
-        const tabContainer = this.modalOverlay.querySelector('.history-tabs');
+        const tabContainer = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_TABS);
         if (tabContainer) {
             this._tabKeyHandler = (event) => {
                 if (handleHorizontalArrowNav(event, tabContainer, DOM_SELECTORS.HISTORY_TAB, { wrap: true })) {
@@ -486,11 +486,11 @@ export class HistoryManager {
         }
 
         // Arrow key navigation for event/entry list (Up/Down)
-        const contentArea = this.modalOverlay.querySelector('.history-modal-content');
+        const contentArea = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_MODAL_CONTENT);
         if (contentArea) {
             this._contentKeyHandler = (event) => {
                 // Navigate history events
-                handleVerticalArrowNav(event, contentArea, '.history-event');
+                handleVerticalArrowNav(event, contentArea, DOM_SELECTORS.HISTORY_EVENT);
                 // Navigate cleared entries
                 handleVerticalArrowNav(event, contentArea, DOM_SELECTORS.CLEARED_ENTRY);
             };
@@ -641,7 +641,7 @@ export class HistoryManager {
         content.innerHTML = html + recurringNote;
 
         // Wire recurring panel link if present
-        const recurringLink = content.querySelector('.cleared-view-recurring');
+        const recurringLink = content.querySelector(DOM_SELECTORS.CLEARED_VIEW_RECURRING);
         if (recurringLink) {
             this._recurringLinkHandler = (e) => {
                 e.preventDefault();

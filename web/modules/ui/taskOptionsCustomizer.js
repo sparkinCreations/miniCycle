@@ -591,7 +591,7 @@ export class TaskOptionsCustomizer {
             hidePreviewTimer = setTimeout(() => {
                 hidePreviewTimer = null;
                 // If an item is selected, show its preview instead of placeholder
-                const selectedItem = modal.querySelector('.task-option-item.selected');
+                const selectedItem = modal.querySelector(DOM_SELECTORS.TASK_OPTION_ITEM_SELECTED);
                 if (selectedItem) {
                     showPreview(selectedItem);
                 } else {
@@ -608,7 +608,7 @@ export class TaskOptionsCustomizer {
             safeAdd(item, 'mouseleave', item._mouseleaveHandler);
 
             // Keyboard: show preview when checkbox receives focus
-            const checkbox = item.querySelector('.option-checkbox');
+            const checkbox = item.querySelector(DOM_SELECTORS.OPTION_CHECKBOX);
             if (checkbox) {
                 checkbox._focusHandler = () => showPreview(item);
                 safeAdd(checkbox, 'focus', checkbox._focusHandler);
@@ -622,8 +622,8 @@ export class TaskOptionsCustomizer {
             safeAdd(item, 'touchstart', item._touchstartHandler, { passive: true });
 
             item._clickHandler = (e) => {
-                const isLabelClick = e.target.closest('.option-label');
-                const checkbox = item.querySelector('.option-checkbox');
+                const isLabelClick = e.target.closest(DOM_SELECTORS.OPTION_LABEL);
+                const checkbox = item.querySelector(DOM_SELECTORS.OPTION_CHECKBOX);
 
                 if (!isLabelClick && checkbox && !checkbox.disabled) {
                     // Left zone (checkbox + icon area): toggle the checkbox only
@@ -657,7 +657,7 @@ export class TaskOptionsCustomizer {
         safeAdd(resetBtn, 'click', resetBtn._clickHandler);
 
         // Deselect when clicking empty modal space (not on items, buttons, or preview)
-        const modalContent = modal.querySelector('.task-options-modal');
+        const modalContent = modal.querySelector(DOM_SELECTORS.TASK_OPTIONS_MODAL);
         if (modalContent) {
             modalContent._deselectHandler = (e) => {
                 const isOnItem = e.target.closest(DOM_SELECTORS.TASK_OPTION_ITEM);
@@ -868,14 +868,14 @@ export class TaskOptionsCustomizer {
             if (cb._focusHandler) { cb.removeEventListener('focus', cb._focusHandler); cb._focusHandler = null; }
             if (cb._keydownHandler) { cb.removeEventListener('keydown', cb._keydownHandler); cb._keydownHandler = null; }
         });
-        modal.querySelectorAll('.task-option-item').forEach(item => {
+        modal.querySelectorAll(DOM_SELECTORS.TASK_OPTION_ITEM).forEach(item => {
             if (item._mouseenterHandler) { item.removeEventListener('mouseenter', item._mouseenterHandler); item._mouseenterHandler = null; }
             if (item._mouseleaveHandler) { item.removeEventListener('mouseleave', item._mouseleaveHandler); item._mouseleaveHandler = null; }
             if (item._touchstartHandler) { item.removeEventListener('touchstart', item._touchstartHandler); item._touchstartHandler = null; }
             if (item._clickHandler) { item.removeEventListener('click', item._clickHandler); item._clickHandler = null; }
         });
         if (modal._overlayClickHandler) { modal.removeEventListener('click', modal._overlayClickHandler); modal._overlayClickHandler = null; }
-        const modalContent = modal.querySelector('.task-options-modal');
+        const modalContent = modal.querySelector(DOM_SELECTORS.TASK_OPTIONS_MODAL);
         if (modalContent?._deselectHandler) { modalContent.removeEventListener('click', modalContent._deselectHandler); modalContent._deselectHandler = null; }
 
         modal.close();

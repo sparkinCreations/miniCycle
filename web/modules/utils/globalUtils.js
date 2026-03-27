@@ -22,7 +22,7 @@
  * @property {boolean} [capture=false] - Use capture phase
  */
 
-import { DOM_IDS, DOM_CLASSES } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // NOTE: Uses plain _deps instead of createDIModule() because GlobalUtils is a Phase 1
@@ -612,7 +612,7 @@ export class GlobalUtils {
         taskElement.dataset.deleteWhenCompleteSettings = JSON.stringify(validSettings);
 
         // Update button state (always update, even for recurring tasks)
-        const deleteBtn = taskElement.querySelector('.delete-when-complete-btn');
+        const deleteBtn = taskElement.querySelector(DOM_SELECTORS.DELETE_WHEN_COMPLETE_BTN);
         if (deleteBtn) {
             deleteBtn.classList.toggle(DOM_CLASSES.ACTIVE, finalDeleteWhenComplete);
             deleteBtn.classList.toggle(DOM_CLASSES.DELETE_WHEN_COMPLETE_ACTIVE, finalDeleteWhenComplete);
@@ -661,8 +661,8 @@ export class GlobalUtils {
         }
 
         const completedTaskList = document.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
-        const allTasks = taskList.querySelectorAll('.task');
-        const completedTasks = completedTaskList?.querySelectorAll('.task') || [];
+        const allTasks = taskList.querySelectorAll(DOM_SELECTORS.TASK);
+        const completedTasks = completedTaskList?.querySelectorAll(DOM_SELECTORS.TASK) || [];
         let syncedCount = 0;
         let removedCount = 0;
 

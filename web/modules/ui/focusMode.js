@@ -15,7 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getIcon } from '../utils/icons.js';
 
@@ -98,7 +98,7 @@ export class FocusMode {
         this._button.innerHTML = getIcon('expand');
 
         // Wrap progress bar and button in a flex row so they stay inline
-        const progressContainer = taskView.querySelector('.progress-container');
+        const progressContainer = taskView.querySelector(DOM_SELECTORS.PROGRESS_CONTAINER);
         if (progressContainer) {
             this._progressRow = document.createElement('div');
             this._progressRow.className = 'progress-focus-row';
