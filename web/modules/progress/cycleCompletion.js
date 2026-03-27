@@ -48,7 +48,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -107,7 +107,7 @@ export function showCompletionAnimation() {
     if (state?.settings?.disableCompletionToast) return;
 
     const animation = document.createElement("div");
-    animation.classList.add("mini-cycle-complete-animation");
+    animation.classList.add(DOM_CLASSES.COMPLETE_ANIMATION);
     animation.setAttribute('role', 'status');
     animation.setAttribute('aria-live', 'assertive');
     animation.innerHTML = `<span aria-hidden="true">${getIcon('cycleComplete')}</span>`;
@@ -129,7 +129,7 @@ export function showCompletionAnimation() {
  */
 export function showClearAnimation() {
     const animation = document.createElement("div");
-    animation.classList.add("mini-cycle-clear-animation");
+    animation.classList.add(DOM_CLASSES.CLEAR_ANIMATION);
     animation.setAttribute('role', 'status');
     animation.setAttribute('aria-live', 'assertive');
     animation.innerHTML = `<span aria-hidden="true">${getIcon('clearComplete')}</span>`;
@@ -216,7 +216,7 @@ function showMilestoneMessage(miniCycleName, cycleCount) {
     const labelText = getLabel('notify.milestoneAchieved', { vars: { count: cycleCount, name: miniCycleName } });
 
     const milestonePopup = document.createElement("div");
-    milestonePopup.classList.add("mini-cycle-milestone");
+    milestonePopup.classList.add(DOM_CLASSES.MILESTONE_ANIMATION);
     milestonePopup.setAttribute('role', 'status');
     milestonePopup.setAttribute('aria-live', 'assertive');
 

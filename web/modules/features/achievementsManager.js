@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
@@ -879,19 +879,19 @@ export class AchievementsManager {
             const tasksMet = tierConfig ? globalTasksCleared >= tierConfig.taskThreshold : false;
             const isUnlocked = cyclesMet || tasksMet;
 
-            badge.classList.toggle("unlocked", isUnlocked);
+            badge.classList.toggle(DOM_CLASSES.UNLOCKED, isUnlocked);
 
             // Reset theme badge classes
-            badge.classList.remove("ocean-theme", "golden-theme", "game-unlocked");
+            badge.classList.remove(DOM_CLASSES.OCEAN_THEME, DOM_CLASSES.GOLDEN_THEME, DOM_CLASSES.GAME_UNLOCKED);
 
             // Assign custom theme class based on reward type from constant
             if (isUnlocked && tierConfig) {
                 if (tierConfig.reward === 'dark-ocean') {
-                    badge.classList.add("ocean-theme");
+                    badge.classList.add(DOM_CLASSES.OCEAN_THEME);
                 } else if (tierConfig.reward === 'golden-glow') {
-                    badge.classList.add("golden-theme");
+                    badge.classList.add(DOM_CLASSES.GOLDEN_THEME);
                 } else if (tierConfig.reward === 'whack-a-order') {
-                    badge.classList.add("game-unlocked");
+                    badge.classList.add(DOM_CLASSES.GAME_UNLOCKED);
                 }
             }
         });

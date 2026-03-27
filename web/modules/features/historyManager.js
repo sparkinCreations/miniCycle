@@ -8,7 +8,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav, handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
@@ -661,11 +661,11 @@ export class HistoryManager {
 
                     if (this.selectedTasks.has(id)) {
                         this.selectedTasks.delete(id);
-                        el.classList.remove('selected');
+                        el.classList.remove(DOM_CLASSES.SELECTED);
                         if (checkbox) checkbox.textContent = '';
                     } else {
                         this.selectedTasks.add(id);
-                        el.classList.add('selected');
+                        el.classList.add(DOM_CLASSES.SELECTED);
                         if (checkbox) checkbox.textContent = '✓';
                     }
                     this._updateConfirmButton();
@@ -868,7 +868,7 @@ export class HistoryManager {
 
         this.modalOverlay.querySelectorAll(DOM_SELECTORS.HISTORY_TAB).forEach(tab => {
             const isActive = tab.dataset.tab === this.activeTab;
-            tab.classList.toggle('active', isActive);
+            tab.classList.toggle(DOM_CLASSES.ACTIVE, isActive);
         });
     }
 
@@ -881,7 +881,7 @@ export class HistoryManager {
 
         const footer = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_FOOTER);
         if (footer) {
-            footer.classList.toggle('visible', this.isRecreateMode);
+            footer.classList.toggle(DOM_CLASSES.VISIBLE, this.isRecreateMode);
         }
     }
 

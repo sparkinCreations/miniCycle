@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -149,7 +149,7 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
         // Update DOM classes (always do this, even without taskId for test compatibility)
         if (taskItem) {
             if (isCompleted) {
-                taskItem.classList.remove("overdue-task");
+                taskItem.classList.remove(DOM_CLASSES.OVERDUE_TASK);
             } else {
                 // Check if task is overdue
                 if (typeof checkOverdueTasks === 'function') {
@@ -165,7 +165,7 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
             // Update task item aria-label to reflect new status
             const taskText = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent || '';
             const statusText = isCompleted ? getLabel('nav.completed') : getLabel('nav.notCompleted');
-            const isRecurring = taskItem.classList.contains('recurring');
+            const isRecurring = taskItem.classList.contains(DOM_CLASSES.RECURRING);
             const labelKey = isRecurring ? 'action.taskItemRecurring' : 'action.taskItemLabel';
             taskItem.setAttribute('aria-label', getLabel(labelKey, { vars: { name: taskText, status: statusText } }));
 
@@ -192,7 +192,7 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
 
         // ✅ Trigger recurring task check for immediate respawn
         // When a recurring task is completed, check if next occurrence should spawn now
-        if (isCompleted && taskItem?.classList.contains('recurring')) {
+        if (isCompleted && taskItem?.classList.contains(DOM_CLASSES.RECURRING)) {
             const watchRecurringTasks = deps.watchRecurringTasks || _deps.watchRecurringTasks;
             if (typeof watchRecurringTasks === 'function') {
                 // Small delay to allow state to settle after completion

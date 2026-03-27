@@ -36,7 +36,7 @@
  */
 
 import { createDIModule, optional } from './diBase.js';
-import { DOM_IDS, STORAGE_KEYS, Z_INDEX, UI_TIMEOUTS } from './constants.js';
+import { DOM_IDS, DOM_CLASSES, STORAGE_KEYS, Z_INDEX, UI_TIMEOUTS } from './constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -398,7 +398,7 @@ class AppInit {
 	async runCompleteInitialSetup(activeCycle, fullSchemaData = null, schemaData = null) {
 
 		// ✅ Remove onboarding-active class to show task list area
-		document.body.classList.remove('onboarding-active');
+		document.body.classList.remove(DOM_CLASSES.ONBOARDING_ACTIVE);
 
 		// Wait for core systems (TaskDOM is loaded in Phase 2, before Phase 3 runs)
 		// Note: With orchestrator pattern, core is always ready by the time this runs
@@ -478,17 +478,17 @@ class AppInit {
 			enableReminders.checked = reminders.enabled === true;
 
 			if (reminders.enabled && frequencySection) {
-				frequencySection.classList.remove('hidden');
+				frequencySection.classList.remove(DOM_CLASSES.HIDDEN);
 				_deps.startReminders?.();
 			}
 		}
 
 		if (settings.darkMode) {
 			_deps.addBodyClass?.('dark-mode');
-			document.documentElement?.classList.add('dark-mode');
+			document.documentElement?.classList.add(DOM_CLASSES.DARK_MODE);
 		} else {
 			_deps.removeBodyClass?.('dark-mode');
-			document.documentElement?.classList.remove('dark-mode');
+			document.documentElement?.classList.remove(DOM_CLASSES.DARK_MODE);
 		}
 
 		if (settings.theme && settings.theme !== 'default') {
@@ -502,7 +502,7 @@ class AppInit {
 		// Accessibility settings
 		if (settings.reducedMotion) {
 			_deps.addBodyClass?.('reduced-motion');
-			document.documentElement?.classList.add('reduced-motion');
+			document.documentElement?.classList.add(DOM_CLASSES.REDUCED_MOTION);
 		}
 		if (settings.highContrast) {
 			_deps.addBodyClass?.('high-contrast');

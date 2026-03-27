@@ -56,7 +56,7 @@
 // NOTE: No appContext fallback - all dependencies come through initUIBoot
 // This avoids versioned/unversioned module instance mismatch issues
 
-import { DOM_IDS, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 let _appContextMod = null;
@@ -242,8 +242,8 @@ export function attachMenuButtonListener(_GlobalUtils, menuButton, menu) {
         // APIs may not be ready - that's ok
       }
 
-      menu.classList.toggle('visible');
-      const isVisible = menu.classList.contains('visible');
+      menu.classList.toggle(DOM_CLASSES.VISIBLE);
+      const isVisible = menu.classList.contains(DOM_CLASSES.VISIBLE);
       menuButton.setAttribute('aria-expanded', String(isVisible));
 
       if (isVisible) {
@@ -257,7 +257,7 @@ export function attachMenuButtonListener(_GlobalUtils, menuButton, menu) {
         // Escape key handler
         menu._escHandler = (e) => {
           if (e.key === 'Escape') {
-            menu.classList.remove('visible');
+            menu.classList.remove(DOM_CLASSES.VISIBLE);
             menuButton.setAttribute('aria-expanded', 'false');
             document.removeEventListener('keydown', menu._escHandler);
             document.removeEventListener('click', closeMenuOnClickOutside);
@@ -328,13 +328,13 @@ function handleGlobalClickForTaskButtons(event) {
 
   if (isIgnored) return;
 
-  const threeDotsEnabled = document.body.classList.contains('show-three-dots-enabled');
+  const threeDotsEnabled = document.body.classList.contains(DOM_CLASSES.SHOW_THREE_DOTS_ENABLED);
 
   // Reset task option button visibility using CSS classes (not inline styles)
   document.querySelectorAll(DOM_SELECTORS.TASK_OPTIONS).forEach(action => {
-    action.classList.remove('task-options-visible');
+    action.classList.remove(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
     if (threeDotsEnabled) {
-      action.classList.add('task-options-force-hidden');
+      action.classList.add(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
     }
     // Clear any lingering inline styles from legacy code paths
     action.style.opacity = '';
@@ -344,14 +344,14 @@ function handleGlobalClickForTaskButtons(event) {
 
   // Hoist recurring panel check outside the loop
   const recurringPanel = getGetModal()?.('recurringOverlay');
-  const recurringPanelOpen = recurringPanel && !recurringPanel.classList.contains('hidden');
+  const recurringPanelOpen = recurringPanel && !recurringPanel.classList.contains(DOM_CLASSES.HIDDEN);
 
   document.querySelectorAll(DOM_SELECTORS.TASK).forEach(task => {
-    task.classList.remove('long-pressed', 'draggable', 'dragging');
+    task.classList.remove(DOM_CLASSES.LONG_PRESSED, DOM_CLASSES.DRAGGABLE, DOM_CLASSES.DRAGGING);
 
     // Keep selections while recurring panel is open
     if (!recurringPanelOpen) {
-      task.classList.remove('selected');
+      task.classList.remove(DOM_CLASSES.SELECTED);
     }
   });
 }
@@ -373,7 +373,7 @@ function handleGlobalClickForSwitchModal(event) {
   if (
     switchModalContent?.contains(event.target) &&
     selectedCycle &&
-    !event.target.classList.contains('mini-cycle-switch-item') &&
+    !event.target.classList.contains(DOM_CLASSES.MINI_CYCLE_SWITCH_ITEM) &&
     !event.target.closest('.mini-cycle-switch-item') &&
     !previewWindow?.contains(event.target) &&
     !event.target.closest('.switch-buttons') &&
@@ -382,21 +382,21 @@ function handleGlobalClickForSwitchModal(event) {
     !event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_RIGHT)
   ) {
     // If theme picker is open, just close it — don't deselect
-    const isPickerOpen = themePicker && !themePicker.classList.contains('hidden');
+    const isPickerOpen = themePicker && !themePicker.classList.contains(DOM_CLASSES.HIDDEN);
     if (isPickerOpen) {
-      themePicker.classList.add('hidden');
+      themePicker.classList.add(DOM_CLASSES.HIDDEN);
       const themeBtn = document.getElementById(DOM_IDS.SWITCH_THEME_BTN);
       themeBtn?.setAttribute('aria-expanded', 'false');
       return;
     }
 
-    selectedCycle.classList.remove('selected');
+    selectedCycle.classList.remove(DOM_CLASSES.SELECTED);
     selectedCycle.setAttribute('aria-selected', 'false');
     if (switchItemsRow) {
       switchItemsRow.style.display = 'none';
     }
     if (themePicker) {
-      themePicker.classList.add('hidden');
+      themePicker.classList.add(DOM_CLASSES.HIDDEN);
     }
     // Reset preview
     const desktopPreview = document.getElementById(DOM_IDS.DESKTOP_PREVIEW_WINDOW);
@@ -483,7 +483,7 @@ function closeMenuOnClickOutside(event) {
   const menuButton = document.querySelector(DOM_SELECTORS.MENU_BUTTON);
 
   if (menu && !menu.contains(event.target) && !menuButton?.contains(event.target)) {
-    menu.classList.remove('visible');
+    menu.classList.remove(DOM_CLASSES.VISIBLE);
     menuButton?.setAttribute('aria-expanded', 'false');
     document.removeEventListener('click', closeMenuOnClickOutside);
     if (menu._escHandler) {
@@ -522,12 +522,12 @@ export function isOverlayActive() {
  */
 export function updateNavDots() {
   const statsPanel = document.getElementById(DOM_IDS.STATS_PANEL);
-  const statsVisible = statsPanel && statsPanel.classList.contains("show");
+  const statsVisible = statsPanel && statsPanel.classList.contains(DOM_CLASSES.SHOW);
   const dots = document.querySelectorAll(DOM_SELECTORS.DOT);
 
   if (dots.length === 2) {
-    dots[0].classList.toggle("active", !statsVisible);
-    dots[1].classList.toggle("active", statsVisible);
+    dots[0].classList.toggle(DOM_CLASSES.ACTIVE, !statsVisible);
+    dots[1].classList.toggle(DOM_CLASSES.ACTIVE, statsVisible);
   }
 }
 
@@ -537,11 +537,11 @@ export function updateNavDots() {
 export function hideAppLoader() {
   setTimeout(() => {
     // Remove app-loading class to reveal main content (prevents CLS during boot)
-    document.body.classList.remove('app-loading');
+    document.body.classList.remove(DOM_CLASSES.APP_LOADING);
 
     const appLoader = document.getElementById(DOM_IDS.APP_LOADER);
     if (appLoader) {
-      appLoader.classList.add('fade-out');
+      appLoader.classList.add(DOM_CLASSES.FADE_OUT);
       setTimeout(() => {
         appLoader.style.display = 'none';
         // Signal successful load via dataset (HTML checks this instead of window.*)
@@ -576,7 +576,7 @@ export function showLoader(message = 'Processing...') {
   }
 
   // Show the splash screen
-  appLoader.classList.remove('fade-out');
+  appLoader.classList.remove(DOM_CLASSES.FADE_OUT);
   appLoader.style.display = '';
   appLoader.setAttribute('aria-busy', 'true');
 }
@@ -589,7 +589,7 @@ export function hideLoader() {
   const appLoader = document.getElementById(DOM_IDS.APP_LOADER);
   if (!appLoader) return;
 
-  appLoader.classList.add('fade-out');
+  appLoader.classList.add(DOM_CLASSES.FADE_OUT);
   appLoader.setAttribute('aria-busy', 'false');
   setTimeout(() => {
     appLoader.style.display = 'none';
@@ -643,11 +643,11 @@ export function detectDeviceType() {
   const isTouchDeviceCheck = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
   if (isFinePointer && !isTouchDeviceCheck) {
-    document.body.classList.add('desktop-mode');
-    document.body.classList.remove('touch-mode');
+    document.body.classList.add(DOM_CLASSES.DESKTOP_MODE);
+    document.body.classList.remove(DOM_CLASSES.TOUCH_MODE);
   } else {
-    document.body.classList.add('touch-mode');
-    document.body.classList.remove('desktop-mode');
+    document.body.classList.add(DOM_CLASSES.TOUCH_MODE);
+    document.body.classList.remove(DOM_CLASSES.DESKTOP_MODE);
   }
 
 }

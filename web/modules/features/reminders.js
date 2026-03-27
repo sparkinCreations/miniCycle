@@ -17,7 +17,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, FREQUENCY_MS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, FREQUENCY_MS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
 
@@ -272,7 +272,7 @@ export class MiniCycleReminders {
         // Update the visibility of the frequency section
         const frequencySection = this.deps.getElementById(DOM_IDS.FREQUENCY_SECTION);
         if (frequencySection) {
-            frequencySection.classList.toggle("hidden", !isEnabled);
+            frequencySection.classList.toggle(DOM_CLASSES.HIDDEN, !isEnabled);
         }
 
         // Save updated settings and get the current global state
@@ -361,7 +361,7 @@ export class MiniCycleReminders {
 
         const frequencySection = this.deps.getElementById(DOM_IDS.FREQUENCY_SECTION);
         if (frequencySection) {
-            frequencySection.classList.toggle("hidden", !reminderSettings.enabled);
+            frequencySection.classList.toggle(DOM_CLASSES.HIDDEN, !reminderSettings.enabled);
         }
 
         // ✅ NOTE: updateReminderButtons() and startReminders() are now called via afterApp hook
@@ -496,7 +496,7 @@ export class MiniCycleReminders {
         // Show/hide frequency settings dynamically
         const frequencySection = this.deps.getElementById(DOM_IDS.FREQUENCY_SECTION);
         if (frequencySection) {
-            frequencySection.classList.toggle("hidden", !reminders.enabled);
+            frequencySection.classList.toggle(DOM_CLASSES.HIDDEN, !reminders.enabled);
         }
 
         const repeatCountRow = this.deps.getElementById(DOM_IDS.REPEAT_COUNT_ROW);
@@ -795,7 +795,7 @@ export class MiniCycleReminders {
             const isCurrentlyEnabled = task.remindersEnabled === true;
             const isActive = !isCurrentlyEnabled;
 
-            button.classList.toggle("reminder-active", isActive);
+            button.classList.toggle(DOM_CLASSES.REMINDER_ACTIVE, isActive);
             button.setAttribute("aria-pressed", isActive.toString());
 
             await this.saveTaskReminderState(assignedTaskId, isActive);
@@ -821,7 +821,7 @@ export class MiniCycleReminders {
                 if (notificationElement) {
                     const clickHandler = async (e) => {
                         // Don't trigger if clicking the close button
-                        if (e.target.classList.contains('close-btn')) return;
+                        if (e.target.classList.contains(DOM_CLASSES.CLOSE_BTN)) return;
 
                         const opened = await this.openRemindersModal();
                         if (opened) {
@@ -888,7 +888,7 @@ export class MiniCycleReminders {
           // Button visibility is now controlled by taskOptionButtons customization
           // Only update the button state (active/inactive) if it exists
           if (reminderButton) {
-            reminderButton.classList.toggle("reminder-active", isActive);
+            reminderButton.classList.toggle(DOM_CLASSES.REMINDER_ACTIVE, isActive);
             reminderButton.setAttribute("aria-pressed", isActive.toString());
           }
         });

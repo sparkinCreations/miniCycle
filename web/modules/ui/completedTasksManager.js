@@ -21,7 +21,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -90,7 +90,7 @@ export class CompletedTasksManager {
 
         if (!completedList || !toggleIcon) return;
 
-        const isVisible = completedList.classList.toggle('visible');
+        const isVisible = completedList.classList.toggle(DOM_CLASSES.VISIBLE);
         toggleIcon.textContent = isVisible ? '▲' : '▼';
 
         // Update aria-expanded on header
@@ -123,10 +123,10 @@ export class CompletedTasksManager {
 
         if (completedList && toggleIcon) {
             if (isExpanded) {
-                completedList.classList.add('visible');
+                completedList.classList.add(DOM_CLASSES.VISIBLE);
                 toggleIcon.textContent = '▲';
             } else {
-                completedList.classList.remove('visible');
+                completedList.classList.remove(DOM_CLASSES.VISIBLE);
                 toggleIcon.textContent = '▼';
             }
 
@@ -160,7 +160,7 @@ export class CompletedTasksManager {
         completedList.appendChild(taskElement);
 
         // Show the completed section if it has tasks
-        completedSection.classList.add('show');
+        completedSection.classList.add(DOM_CLASSES.SHOW);
 
         // Update count
         this.updateCount();
@@ -217,9 +217,9 @@ export class CompletedTasksManager {
 
         // Hide section if no completed tasks
         if (count === 0) {
-            completedSection.classList.remove('show');
+            completedSection.classList.remove(DOM_CLASSES.SHOW);
         } else {
-            completedSection.classList.add('show');
+            completedSection.classList.add(DOM_CLASSES.SHOW);
         }
     }
 

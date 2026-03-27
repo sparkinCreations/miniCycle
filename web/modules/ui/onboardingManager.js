@@ -15,7 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -146,7 +146,7 @@ export class OnboardingManager {
     showOnboarding(cycles, activeCycle, schemaData = null) {
 
         // ✅ Hide task list area during onboarding (show placeholder instead)
-        document.body.classList.add('onboarding-active');
+        document.body.classList.add(DOM_CLASSES.ONBOARDING_ACTIVE);
 
         // ✅ FIX: Use passed schemaData if available (avoids race condition on initial load)
         // AppState may not be ready yet when createInitialSchema25Data just created the data
@@ -286,7 +286,7 @@ export class OnboardingManager {
             }
 
             stepContent.innerHTML = steps[index];
-            prevBtn.classList.toggle("hidden", index === 0);
+            prevBtn.classList.toggle(DOM_CLASSES.HIDDEN, index === 0);
             if (stepIndicator) {
                 stepIndicator.textContent = getLabel('onboarding.stepOf', {
                     vars: { current: index + 1, total: steps.length }
@@ -426,20 +426,20 @@ export class OnboardingManager {
             cycleCount++;
 
             // Show "Cycle Complete!" flash
-            completeEl.classList.add('visible');
+            completeEl.classList.add(DOM_CLASSES.VISIBLE);
             counterEl.textContent = `${getLabel('onboarding.step2Cycles')}: ${cycleCount}`;
 
             trackTimeout(() => {
                 // Reset all checkboxes
                 checked = [false, false, false];
                 demo.querySelectorAll('.cycle-demo-task').forEach(row => {
-                    row.classList.remove('checked');
+                    row.classList.remove(DOM_CLASSES.CHECKED);
                     const cb = row.querySelector('.cycle-demo-checkbox');
                     if (cb) cb.setAttribute('aria-checked', 'false');
                 });
 
                 // Hide flash
-                completeEl.classList.remove('visible');
+                completeEl.classList.remove(DOM_CLASSES.VISIBLE);
                 resetting = false;
             }, 1200);
         };
@@ -454,7 +454,7 @@ export class OnboardingManager {
 
             // Toggle
             checked[idx] = !checked[idx];
-            row.classList.toggle('checked', checked[idx]);
+            row.classList.toggle(DOM_CLASSES.CHECKED, checked[idx]);
             const cb = row.querySelector('.cycle-demo-checkbox');
             if (cb) cb.setAttribute('aria-checked', String(checked[idx]));
 
@@ -500,7 +500,7 @@ export class OnboardingManager {
     completeOnboarding(modal, cycles, activeCycle) {
 
         // Remove onboarding body class to restore normal UI
-        document.body.classList.remove('onboarding-active');
+        document.body.classList.remove(DOM_CLASSES.ONBOARDING_ACTIVE);
 
         // ✅ Use AppState as source of truth
         const appState = this.deps.AppState;

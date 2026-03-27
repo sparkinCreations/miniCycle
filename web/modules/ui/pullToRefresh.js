@@ -17,7 +17,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -214,7 +214,7 @@ export class PullToRefresh {
 
         // Check for stats view being active
         const statsPanel = document.querySelector(DOM_SELECTORS.STATS_PANEL);
-        if (statsPanel && (statsPanel.classList.contains('active') || statsPanel.classList.contains('show'))) {
+        if (statsPanel && (statsPanel.classList.contains(DOM_CLASSES.ACTIVE) || statsPanel.classList.contains(DOM_CLASSES.SHOW))) {
             return false;
         }
 
@@ -226,7 +226,7 @@ export class PullToRefresh {
                 if (modal.open) return false;
             } else {
                 const style = window.getComputedStyle(modal);
-                if (style.display !== 'none' && (modal.classList.contains('active') || modal.classList.contains('show') || style.display === 'flex')) {
+                if (style.display !== 'none' && (modal.classList.contains(DOM_CLASSES.ACTIVE) || modal.classList.contains(DOM_CLASSES.SHOW) || style.display === 'flex')) {
                     return false;
                 }
             }
@@ -234,13 +234,13 @@ export class PullToRefresh {
 
         // Check if main menu is open
         const mainMenu = document.querySelector(DOM_SELECTORS.MAIN_MENU);
-        if (mainMenu && (mainMenu.classList.contains('active') || mainMenu.classList.contains('show'))) {
+        if (mainMenu && (mainMenu.classList.contains(DOM_CLASSES.ACTIVE) || mainMenu.classList.contains(DOM_CLASSES.SHOW))) {
             return false;
         }
 
         // Check for hamburger menu open
         const hamburgerMenu = document.querySelector(DOM_SELECTORS.HAMBURGER_MENU);
-        if (hamburgerMenu && hamburgerMenu.classList.contains('open')) {
+        if (hamburgerMenu && hamburgerMenu.classList.contains(DOM_CLASSES.OPEN)) {
             return false;
         }
 
@@ -321,7 +321,7 @@ export class PullToRefresh {
         if (!this.indicator) return;
 
         // Show indicator
-        this.indicator.classList.add('visible');
+        this.indicator.classList.add(DOM_CLASSES.VISIBLE);
 
         // Update position
         this.indicator.style.transform = `translateY(${distance - 60}px)`;
@@ -333,10 +333,10 @@ export class PullToRefresh {
         // Update text based on threshold
         if (distance >= this.threshold) {
             this.statusText.textContent = getLabel('pullRefresh.release');
-            this.indicator.classList.add('ready');
+            this.indicator.classList.add(DOM_CLASSES.READY);
         } else {
             this.statusText.textContent = getLabel('pullRefresh.pull');
-            this.indicator.classList.remove('ready');
+            this.indicator.classList.remove(DOM_CLASSES.READY);
         }
     }
 
@@ -346,7 +346,7 @@ export class PullToRefresh {
     resetIndicator() {
         if (!this.indicator) return;
 
-        this.indicator.classList.remove('visible', 'ready', 'refreshing');
+        this.indicator.classList.remove(DOM_CLASSES.VISIBLE, DOM_CLASSES.READY, DOM_CLASSES.REFRESHING);
         this.indicator.style.transform = 'translateY(-60px)';
         this.spinnerIcon.style.transform = 'rotate(0deg)';
         this.statusText.textContent = getLabel('pullRefresh.pull');
@@ -365,10 +365,10 @@ export class PullToRefresh {
         this.isRefreshing = true;
 
         // Update UI to show refreshing state
-        this.indicator.classList.add('refreshing');
+        this.indicator.classList.add(DOM_CLASSES.REFRESHING);
         this.indicator.style.transform = 'translateY(10px)';
         this.statusText.textContent = getLabel('pullRefresh.refreshing');
-        const isReducedMotion = document.body.classList.contains('reduced-motion') ||
+        const isReducedMotion = document.body.classList.contains(DOM_CLASSES.REDUCED_MOTION) ||
             window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         if (!isReducedMotion) {
             this.spinnerIcon.style.animation = 'pull-refresh-spin 1s linear infinite';

@@ -685,6 +685,25 @@ select.hidden {
     font-size: var(--font-size-sm);
 }
 
+/* Mobile: prevent time picker from overflowing its container */
+@media (max-width: 480px) {
+    .time-picker-wrapper {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .time-picker-group {
+        gap: var(--space-1-5);
+    }
+
+    .time-picker-group input[type="number"],
+    .time-picker-group select {
+        width: auto;
+        flex: 1;
+        min-width: 0;
+    }
+}
+
 /* =============================================================================
    YEARLY SELECTORS
    ============================================================================= */

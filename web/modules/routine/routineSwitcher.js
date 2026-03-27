@@ -439,7 +439,7 @@ export class RoutineSwitcher {
                     setTimeout(() => {
                         const firstCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
                         if (firstCycle) {
-                            firstCycle.classList.add("selected");
+                            firstCycle.classList.add(DOM_CLASSES.SELECTED);
                             firstCycle.click();
                         }
                     }, 50);
@@ -616,8 +616,8 @@ export class RoutineSwitcher {
 
             if (newItem) {
                 // Select the new item
-                this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => item.classList.remove("selected"));
-                newItem.classList.add("selected");
+                this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => item.classList.remove(DOM_CLASSES.SELECTED));
+                newItem.classList.add(DOM_CLASSES.SELECTED);
 
                 // Show the switch items row
                 const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
@@ -764,7 +764,7 @@ export class RoutineSwitcher {
         const handleSave = () => {
             const value = input.value.trim();
             if (!value) {
-                input.classList.add('miniCycle-input-error');
+                input.classList.add(DOM_CLASSES.MINICYCLE_INPUT_ERROR);
                 input.focus();
                 return;
             }
@@ -892,7 +892,7 @@ export class RoutineSwitcher {
             const renamedItem = [...this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM)]
                 .find(item => item.dataset.cycleKey === uniqueName);
             if (renamedItem) {
-                renamedItem.classList.add("selected");
+                renamedItem.classList.add(DOM_CLASSES.SELECTED);
                 renamedItem.click();
             }
         }, 50);
@@ -916,7 +916,7 @@ export class RoutineSwitcher {
         const themeBtn = this.deps.getElementById(DOM_IDS.SWITCH_THEME_BTN);
         if (!picker) return;
 
-        const isOpen = !picker.classList.contains('hidden');
+        const isOpen = !picker.classList.contains(DOM_CLASSES.HIDDEN);
         if (isOpen) {
             this.closeThemePicker();
         } else {
@@ -991,7 +991,7 @@ export class RoutineSwitcher {
         });
 
         picker.appendChild(chipsContainer);
-        picker.classList.remove('hidden');
+        picker.classList.remove(DOM_CLASSES.HIDDEN);
     }
 
     /**
@@ -1026,7 +1026,7 @@ export class RoutineSwitcher {
         const picker = this.deps.getElementById(DOM_IDS.THEME_PICKER_ROW);
         const themeBtn = this.deps.getElementById(DOM_IDS.SWITCH_THEME_BTN);
         if (picker) {
-            picker.classList.add('hidden');
+            picker.classList.add(DOM_CLASSES.HIDDEN);
             // Clean up chip listeners
             if (picker._chipHandlers) {
                 picker._chipHandlers.forEach(({ el, fn }) => el.removeEventListener('click', fn));
@@ -1341,7 +1341,7 @@ export class RoutineSwitcher {
                 // If theme picker is open and click is anywhere outside the picker,
                 // just close the picker — don't deselect the routine
                 const picker = this.deps.getElementById(DOM_IDS.THEME_PICKER_ROW);
-                const isPickerOpen = picker && !picker.classList.contains('hidden');
+                const isPickerOpen = picker && !picker.classList.contains(DOM_CLASSES.HIDDEN);
                 if (isPickerOpen) {
                     this.closeThemePicker();
                     // Stop propagation so the uiBoot global handler doesn't also deselect
@@ -1499,7 +1499,7 @@ export class RoutineSwitcher {
     _deselectRoutine() {
         // Remove selection from all items
         this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => {
-            item.classList.remove('selected');
+            item.classList.remove(DOM_CLASSES.SELECTED);
             item.setAttribute('aria-selected', 'false');
         });
         // Clear the listbox activedescendant
@@ -1724,7 +1724,7 @@ export class RoutineSwitcher {
             }
 
             const listItem = document.createElement("div");
-            listItem.classList.add("mini-cycle-switch-item");
+            listItem.classList.add(DOM_CLASSES.MINI_CYCLE_SWITCH_ITEM);
             listItem.id = `routine-option-${index}`;
             listItem.setAttribute("tabindex", "0");
             listItem.setAttribute("role", "option");
@@ -1776,10 +1776,10 @@ export class RoutineSwitcher {
                 if (event?.target?.classList?.contains('cycle-item-edit-input')) return;
 
                 this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => {
-                    item.classList.remove("selected");
+                    item.classList.remove(DOM_CLASSES.SELECTED);
                     item.setAttribute("aria-selected", "false");
                 });
-                listItem.classList.add("selected");
+                listItem.classList.add(DOM_CLASSES.SELECTED);
                 listItem.setAttribute("aria-selected", "true");
 
                 // Update aria-activedescendant on the listbox
@@ -1799,7 +1799,7 @@ export class RoutineSwitcher {
 
                 // If theme picker is open, refresh it for the newly selected routine
                 const picker = this.deps.getElementById(DOM_IDS.THEME_PICKER_ROW);
-                if (picker && !picker.classList.contains('hidden')) {
+                if (picker && !picker.classList.contains(DOM_CLASSES.HIDDEN)) {
                     this.openThemePicker(cycleKey);
                 }
             };
@@ -1810,7 +1810,7 @@ export class RoutineSwitcher {
             listItem._keyHandler = (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    if (listItem.classList.contains('selected')) {
+                    if (listItem.classList.contains(DOM_CLASSES.SELECTED)) {
                         // Already selected — confirm (like double-click)
                         this.confirmMiniCycle();
                     } else {
@@ -1834,8 +1834,8 @@ export class RoutineSwitcher {
 
             // Double-click to open immediately
             listItem._dblClickHandler = () => {
-                this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => item.classList.remove("selected"));
-                listItem.classList.add("selected");
+                this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => item.classList.remove(DOM_CLASSES.SELECTED));
+                listItem.classList.add(DOM_CLASSES.SELECTED);
                 this.confirmMiniCycle();
             };
             safeAdd(listItem, "dblclick", listItem._dblClickHandler);
@@ -1882,7 +1882,7 @@ export class RoutineSwitcher {
 
         safeAdd(refreshBtn, 'click', async () => {
             // Add spinning animation
-            refreshBtn.classList.add('refreshing');
+            refreshBtn.classList.add(DOM_CLASSES.REFRESHING);
             refreshBtn.disabled = true;
 
             try {
@@ -1905,7 +1905,7 @@ export class RoutineSwitcher {
                 this.deps.showNotification?.(getLabel('notify.storageRefreshFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
             } finally {
                 // Remove spinning animation
-                refreshBtn.classList.remove('refreshing');
+                refreshBtn.classList.remove(DOM_CLASSES.REFRESHING);
                 refreshBtn.disabled = false;
             }
         });
@@ -2050,7 +2050,7 @@ export class RoutineSwitcher {
         const sortSize = this.deps.getElementById(DOM_IDS.SORT_SIZE);
 
         if (sortAlpha) {
-            sortAlpha.classList.toggle('active', this._sortMode === 'alpha');
+            sortAlpha.classList.toggle(DOM_CLASSES.ACTIVE, this._sortMode === 'alpha');
             if (this._sortMode === 'alpha') {
                 sortAlpha.textContent = this._sortDirection === 'asc' ? getLabel('switcher.sortAlpha') : getLabel('switcher.sortZA');
             } else {
@@ -2058,7 +2058,7 @@ export class RoutineSwitcher {
             }
         }
         if (sortRecent) {
-            sortRecent.classList.toggle('active', this._sortMode === 'recent');
+            sortRecent.classList.toggle(DOM_CLASSES.ACTIVE, this._sortMode === 'recent');
             if (this._sortMode === 'recent') {
                 sortRecent.textContent = this._sortDirection === 'asc' ? getLabel('switcher.sortRecent') : getLabel('switcher.sortOldest');
             } else {
@@ -2066,7 +2066,7 @@ export class RoutineSwitcher {
             }
         }
         if (sortSize) {
-            sortSize.classList.toggle('active', this._sortMode === 'size');
+            sortSize.classList.toggle(DOM_CLASSES.ACTIVE, this._sortMode === 'size');
             if (this._sortMode === 'size') {
                 sortSize.textContent = this._sortDirection === 'asc' ? getLabel('switcher.sortLargest') : getLabel('switcher.sortSmallest');
             } else {

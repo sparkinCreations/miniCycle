@@ -7,7 +7,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -93,7 +93,7 @@ export class HelpWindowManager {
             // On mobile/tablet, always use bottom layout
             if (this.sideLayoutEnabled) {
                 this.sideLayoutEnabled = false;
-                taskView.classList.remove('help-window-side');
+                taskView.classList.remove(DOM_CLASSES.HELP_WINDOW_SIDE);
             }
             return;
         }
@@ -123,7 +123,7 @@ export class HelpWindowManager {
 
         if (shouldEnableSideLayout !== this.sideLayoutEnabled) {
             this.sideLayoutEnabled = shouldEnableSideLayout;
-            taskView.classList.toggle('help-window-side', shouldEnableSideLayout);
+            taskView.classList.toggle(DOM_CLASSES.HELP_WINDOW_SIDE, shouldEnableSideLayout);
         }
     }
 
@@ -139,7 +139,7 @@ export class HelpWindowManager {
         // Show welcome message immediately
         this.currentMessage = getLabel('help.welcome');
         this.updateContent(this.currentMessage);
-        this.helpWindow.classList.add('show');
+        this.helpWindow.classList.add(DOM_CLASSES.SHOW);
         this.isVisible = true;
 
         // Switch to normal help message after delay
@@ -304,7 +304,7 @@ export class HelpWindowManager {
 
         // Add class to task-view for CSS to reduce task card height
         const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
-        taskView?.classList.add('mode-description-visible');
+        taskView?.classList.add(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
 
         const modeDescriptions = {
             'auto-cycle': {
@@ -341,7 +341,7 @@ export class HelpWindowManager {
             this.modeDescriptionTimeout = null;
             // Remove class from task-view
             const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
-            taskView?.classList.remove('mode-description-visible');
+            taskView?.classList.remove(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
             this.updateConstantMessage();
         }, 30000);
 
@@ -364,7 +364,7 @@ export class HelpWindowManager {
             this.isShowingModeDescription = false;
             // Remove class from task-view
             const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
-            taskView?.classList.remove('mode-description-visible');
+            taskView?.classList.remove(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
         }
 
         // Use selected toast message
@@ -396,7 +396,7 @@ export class HelpWindowManager {
             this.modeDescriptionTimeout = null;
             this.isShowingModeDescription = false;
             const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
-            taskView?.classList.remove('mode-description-visible');
+            taskView?.classList.remove(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
         }
 
         this.isShowingCycleComplete = true; // Reuse flag to prevent updates
@@ -451,7 +451,7 @@ export class HelpWindowManager {
             this.isShowingModeDescription = false;
             this.modeDescriptionTimeout = null;
             const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
-            taskView?.classList.remove('mode-description-visible');
+            taskView?.classList.remove(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
             // Force re-evaluation by clearing cached message (same pattern as refreshLabels)
             this.currentMessage = null;
             this.updateConstantMessage();
@@ -489,7 +489,7 @@ export class HelpWindowManager {
             this.isShowingModeDescription = false;
             this.modeDescriptionTimeout = null;
             const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
-            taskView?.classList.remove('mode-description-visible');
+            taskView?.classList.remove(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
             // Force re-evaluation by clearing cached message
             this.currentMessage = null;
             this.updateConstantMessage();
@@ -596,8 +596,8 @@ export class HelpWindowManager {
             `;
         }
 
-        this.helpWindow.classList.remove('hide');
-        this.helpWindow.classList.add('show');
+        this.helpWindow.classList.remove(DOM_CLASSES.HIDE);
+        this.helpWindow.classList.add(DOM_CLASSES.SHOW);
         // Don't toggle display - use opacity only to prevent CLS
         this.isVisible = true;
     }
@@ -605,8 +605,8 @@ export class HelpWindowManager {
     hide() {
         if (!this.helpWindow || !this.isVisible) return;
 
-        this.helpWindow.classList.remove('show');
-        this.helpWindow.classList.add('hide');
+        this.helpWindow.classList.remove(DOM_CLASSES.SHOW);
+        this.helpWindow.classList.add(DOM_CLASSES.HIDE);
         this.isVisible = false;
         // Don't toggle display - use opacity only to prevent CLS
     }
@@ -658,8 +658,8 @@ export class HelpWindowManager {
         // Remove layout classes from task-view
         const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
         if (taskView) {
-            taskView.classList.remove('mode-description-visible');
-            taskView.classList.remove('help-window-side');
+            taskView.classList.remove(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
+            taskView.classList.remove(DOM_CLASSES.HELP_WINDOW_SIDE);
         }
 
         this.sideLayoutEnabled = false;

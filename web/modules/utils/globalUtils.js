@@ -22,7 +22,7 @@
  * @property {boolean} [capture=false] - Use capture phase
  */
 
-import { DOM_IDS } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // NOTE: Uses plain _deps instead of createDIModule() because GlobalUtils is a Phase 1
@@ -581,7 +581,7 @@ export class GlobalUtils {
 
         const { deleteWhenComplete, deleteWhenCompleteSettings } = taskData;
         const isToDoMode = currentMode === 'todo';
-        const isRecurring = taskElement.classList.contains('recurring');
+        const isRecurring = taskElement.classList.contains(DOM_CLASSES.RECURRING);
 
         // Validate settings
         const validSettings = this.validateDeleteSettings(deleteWhenCompleteSettings)
@@ -614,8 +614,8 @@ export class GlobalUtils {
         // Update button state (always update, even for recurring tasks)
         const deleteBtn = taskElement.querySelector('.delete-when-complete-btn');
         if (deleteBtn) {
-            deleteBtn.classList.toggle('active', finalDeleteWhenComplete);
-            deleteBtn.classList.toggle('delete-when-complete-active', finalDeleteWhenComplete);
+            deleteBtn.classList.toggle(DOM_CLASSES.ACTIVE, finalDeleteWhenComplete);
+            deleteBtn.classList.toggle(DOM_CLASSES.DELETE_WHEN_COMPLETE_ACTIVE, finalDeleteWhenComplete);
             deleteBtn.setAttribute('aria-pressed', finalDeleteWhenComplete.toString());
         }
 
@@ -623,25 +623,25 @@ export class GlobalUtils {
         if (isToDoMode) {
             // To-Do mode: show pin if kept (deleteWhenComplete=false)
             // Recurring tasks CAN show pin if user manually disabled deleteWhenComplete
-            taskElement.classList.remove('show-delete-indicator');
+            taskElement.classList.remove(DOM_CLASSES.SHOW_DELETE_INDICATOR);
             if (!finalDeleteWhenComplete) {
-                taskElement.classList.add('kept-task');
+                taskElement.classList.add(DOM_CLASSES.KEPT_TASK);
             } else {
-                taskElement.classList.remove('kept-task');
+                taskElement.classList.remove(DOM_CLASSES.KEPT_TASK);
             }
         } else {
             // Cycle mode: show 🧹 indicator if cleared on reset (deleteWhenComplete=true)
             // BUT recurring tasks never show 🧹 (recurring symbol indicates deletion)
             if (finalDeleteWhenComplete && !isRecurring) {
-                taskElement.classList.add('show-delete-indicator');
-                taskElement.classList.remove('kept-task');
+                taskElement.classList.add(DOM_CLASSES.SHOW_DELETE_INDICATOR);
+                taskElement.classList.remove(DOM_CLASSES.KEPT_TASK);
             } else {
-                taskElement.classList.remove('show-delete-indicator');
+                taskElement.classList.remove(DOM_CLASSES.SHOW_DELETE_INDICATOR);
                 // Recurring tasks show pin 📌 if user manually disabled deleteWhenComplete
                 if (!finalDeleteWhenComplete && isRecurring) {
-                    taskElement.classList.add('kept-task');
+                    taskElement.classList.add(DOM_CLASSES.KEPT_TASK);
                 } else {
-                    taskElement.classList.remove('kept-task');
+                    taskElement.classList.remove(DOM_CLASSES.KEPT_TASK);
                 }
             }
         }

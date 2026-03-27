@@ -484,7 +484,7 @@ export class GuidedTourManager {
                     position: 'auto',
                     onEnter: () => {
                         const el = this.deps.getElementById(DOM_IDS.RECURRING_SUMMARY_PREVIEW);
-                        if (!el || el.classList.contains('hidden') || el.offsetParent === null) return 'skip';
+                        if (!el || el.classList.contains(DOM_CLASSES.HIDDEN) || el.offsetParent === null) return 'skip';
                         return null;
                     }
                 },

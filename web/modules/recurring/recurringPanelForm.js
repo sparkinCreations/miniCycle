@@ -13,7 +13,7 @@
  * @version 1.1.0
  */
 
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { createDIModule, optional } from '../core/diBase.js';
 
 // ============================================================================
@@ -86,7 +86,7 @@ export function updateRecurCountVisibility(deps) {
 
     // Only show if NOT using specific dates AND NOT recurring indefinitely
     const shouldShow = !isUsingSpecificDates && !isIndefinite;
-    countContainer.classList.toggle("hidden", !shouldShow);
+    countContainer.classList.toggle(DOM_CLASSES.HIDDEN, !shouldShow);
 }
 
 // ============================================================================

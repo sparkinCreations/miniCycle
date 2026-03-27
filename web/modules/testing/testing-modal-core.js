@@ -7,7 +7,7 @@
  * @module testing-modal-core
  */
 
-import { DOM_IDS, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ==========================================
@@ -290,13 +290,13 @@ export function setupTestingTabs() {
 
             // Remove active class and deselect all tabs
             tabButtons.forEach(btn => {
-                btn.classList.remove('active');
+                btn.classList.remove(DOM_CLASSES.ACTIVE);
                 btn.setAttribute('aria-selected', 'false');
             });
-            tabContents.forEach(content => content.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove(DOM_CLASSES.ACTIVE));
 
             // Add active class and select clicked tab
-            button.classList.add('active');
+            button.classList.add(DOM_CLASSES.ACTIVE);
             button.setAttribute('aria-selected', 'true');
 
             // Find the corresponding content
@@ -304,7 +304,7 @@ export function setupTestingTabs() {
             const targetContent = document.getElementById(targetContentId);
 
             if (targetContent) {
-                targetContent.classList.add('active');
+                targetContent.classList.add(DOM_CLASSES.ACTIVE);
             }
         });
     });

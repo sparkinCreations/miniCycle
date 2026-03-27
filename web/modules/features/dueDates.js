@@ -258,15 +258,15 @@ export class MiniCycleDueDates {
         dueDateInput.type = "date";
         dueDateInput.id = `due-date-input-${assignedTaskId}`;
         dueDateInput.name = `taskDueDate-${assignedTaskId}`;
-        dueDateInput.classList.add("due-date");
+        dueDateInput.classList.add(DOM_CLASSES.DUE_DATE);
         dueDateInput.setAttribute("aria-describedby", `task-desc-${assignedTaskId}`);
         dueDateInput.setAttribute("aria-label", getLabel('taskOption.dueDate'));
 
         if (dueDate) {
             dueDateInput.value = dueDate;
-            dueDateInput.classList.remove("hidden");
+            dueDateInput.classList.remove(DOM_CLASSES.HIDDEN);
         } else {
-            dueDateInput.classList.add("hidden");
+            dueDateInput.classList.add(DOM_CLASSES.HIDDEN);
         }
 
         const safeAdd = this.deps.safeAddEventListener;
@@ -327,8 +327,8 @@ export class MiniCycleDueDates {
 
         const safeAdd = this.deps.safeAddEventListener;
         dueDateButton._clickHandler = () => {
-            dueDateInput.classList.toggle("hidden");
-            dueDateButton.classList.toggle("active", !dueDateInput.classList.contains("hidden"));
+            dueDateInput.classList.toggle(DOM_CLASSES.HIDDEN);
+            dueDateButton.classList.toggle(DOM_CLASSES.ACTIVE, !dueDateInput.classList.contains(DOM_CLASSES.HIDDEN));
         };
         safeAdd(dueDateButton, "click", dueDateButton._clickHandler);
 
@@ -404,7 +404,7 @@ export class MiniCycleDueDates {
      * @param {Event} event - The change event
      */
     handleDueDateChange = async (event) => {
-        if (!event.target.classList.contains("due-date")) return;
+        if (!event.target.classList.contains(DOM_CLASSES.DUE_DATE)) return;
 
         let taskItem = event.target.closest(".task");
         let taskId = taskItem?.dataset.taskId;
@@ -528,9 +528,9 @@ export class MiniCycleDueDates {
         // Show due dates that have a value, hide empty ones (all modes)
         this.deps.querySelectorAll(DOM_SELECTORS.DUE_DATE).forEach(input => {
             if (input.value) {
-                input.classList.remove("hidden");
+                input.classList.remove(DOM_CLASSES.HIDDEN);
             } else {
-                input.classList.add("hidden");
+                input.classList.add(DOM_CLASSES.HIDDEN);
             }
         });
 

@@ -11,7 +11,7 @@ import {
     getDeps,
     safeAddEventListenerById
 } from './testing-modal-core.js';
-import { DOM_IDS, DOM_SELECTORS, Z_INDEX } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, Z_INDEX } from '../core/constants.js';
 
 // ==========================================
 // BUTTON SETUP
@@ -110,7 +110,7 @@ export function openStorageViewer() {
 
                 valueContainer.style.display = isVisible ? "none" : "block";
                 keyToggle.textContent = isVisible ? "[+]" : "[-]";
-                keyToggle.classList.toggle("open", !isVisible);
+                keyToggle.classList.toggle(DOM_CLASSES.OPEN, !isVisible);
 
                 if (!isVisible) {
                     valueContainer.style.opacity = "0";
@@ -346,7 +346,7 @@ function renderExpandableJSON(data, deps, depth = 0) {
                         const visible = child.style.display === "block";
                         child.style.display = visible ? "none" : "block";
                         toggle.textContent = visible ? "[+]" : "[-]";
-                        toggle.classList.toggle("open", !visible);
+                        toggle.classList.toggle(DOM_CLASSES.OPEN, !visible);
                     } catch (error) {
                         console.error("Toggle error:", error);
                     }

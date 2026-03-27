@@ -13,7 +13,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -245,7 +245,7 @@ export class RoutineManager {
                     body.className = body.className.replace(
                         /\b(auto-cycle-mode|manual-cycle-mode|todo-mode-mode|todo-mode)\b/g, ''
                     );
-                    body.classList.add('auto-cycle-mode');
+                    body.classList.add(DOM_CLASSES.AUTO_CYCLE_MODE);
 
                     this.deps.refreshThemeLabels?.();
                     this.deps.updateRecurringInfoLink?.();
@@ -412,11 +412,11 @@ export class RoutineManager {
                 body.className = body.className.replace(
                     /\b(auto-cycle-mode|manual-cycle-mode|todo-mode-mode|todo-mode)\b/g, ''
                 );
-                body.classList.add('auto-cycle-mode');
+                body.classList.add(DOM_CLASSES.AUTO_CYCLE_MODE);
 
                 const taskInputContainer = this.deps.querySelector(DOM_SELECTORS.TASK_INPUT);
                 if (taskInputContainer) {
-                    taskInputContainer.classList.add('hidden');
+                    taskInputContainer.classList.add(DOM_CLASSES.HIDDEN);
                     const toggleText = this.deps.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_TEXT);
                     if (toggleText) toggleText.textContent = getLabel('action.addTask');
                     taskInputContainer.querySelectorAll('input, button').forEach(el => { el.tabIndex = -1; });
@@ -429,7 +429,7 @@ export class RoutineManager {
                 this.deps.refreshThemeLabels?.();
 
                 const recurringLink = this.deps.getElementById(DOM_IDS.RECURRING_INFO_LINK);
-                if (recurringLink) recurringLink.classList.remove('show');
+                if (recurringLink) recurringLink.classList.remove(DOM_CLASSES.SHOW);
 
                 const emptyHint = this.deps.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
                 if (emptyHint) {
@@ -538,7 +538,7 @@ export class RoutineManager {
                 body.className = body.className.replace(
                     /\b(auto-cycle-mode|manual-cycle-mode|todo-mode-mode|todo-mode)\b/g, ''
                 );
-                body.classList.add('auto-cycle-mode');
+                body.classList.add(DOM_CLASSES.AUTO_CYCLE_MODE);
 
                 this.deps.hideMainMenu();
                 this.deps.updateProgressBar();
@@ -739,14 +739,14 @@ export class RoutineManager {
         // View switching helpers (only needed when samples exist)
         // =====================================================================
         const showNameView = () => {
-            if (sampleView) sampleView.classList.remove('active');
-            nameView.classList.add('active');
+            if (sampleView) sampleView.classList.remove(DOM_CLASSES.ACTIVE);
+            nameView.classList.add(DOM_CLASSES.ACTIVE);
             input.focus();
         };
 
         const showSampleView = () => {
-            nameView.classList.remove('active');
-            if (sampleView) sampleView.classList.add('active');
+            nameView.classList.remove(DOM_CLASSES.ACTIVE);
+            if (sampleView) sampleView.classList.add(DOM_CLASSES.ACTIVE);
         };
 
         // =====================================================================
@@ -755,7 +755,7 @@ export class RoutineManager {
         const handleConfirm = () => {
             const value = input.value.trim();
             if (!value) {
-                input.classList.add('miniCycle-input-error');
+                input.classList.add(DOM_CLASSES.MINICYCLE_INPUT_ERROR);
                 input.focus();
                 return;
             }

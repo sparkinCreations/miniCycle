@@ -21,7 +21,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { Z_INDEX, UI_TIMEOUTS } from '../core/constants.js';
+import { Z_INDEX, UI_TIMEOUTS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -274,7 +274,7 @@ export function checkMigrationNeeded() {
             lastUsed: !!lastUsed,
             reminders: !!reminders,
             milestones: !!_deps.storage.getItem("milestoneUnlocks"),
-            darkMode: _deps.document.body.classList.contains('dark-mode')
+            darkMode: _deps.document.body.classList.contains(DOM_CLASSES.DARK_MODE)
         }
     };
 }

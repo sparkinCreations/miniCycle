@@ -168,8 +168,8 @@ export class ModalManager {
                 }
             } else {
                 // Non-dialog elements: use legacy close methods
-                if (def.closeMethod === 'removeVisible') modal.classList.remove('visible');
-                else if (def.closeMethod === 'addHidden') modal.classList.add('hidden');
+                if (def.closeMethod === 'removeVisible') modal.classList.remove(DOM_CLASSES.VISIBLE);
+                else if (def.closeMethod === 'addHidden') modal.classList.add(DOM_CLASSES.HIDDEN);
                 else modal.style.display = 'none';
             }
         }
@@ -186,18 +186,18 @@ export class ModalManager {
 
         // Reset task states
         document.querySelectorAll(DOM_SELECTORS.TASK).forEach(task => {
-            task.classList.remove("long-pressed", "draggable", "dragging", "selected");
+            task.classList.remove(DOM_CLASSES.LONG_PRESSED, DOM_CLASSES.DRAGGABLE, DOM_CLASSES.DRAGGING, DOM_CLASSES.SELECTED);
         });
 
         // Clear any active selections in recurring panels
         document.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM_SELECTED).forEach(item => {
-            item.classList.remove("selected");
+            item.classList.remove(DOM_CLASSES.SELECTED);
         });
 
         // Hide recurring settings panel if open
         const recurringSettingsPanel = document.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
         if (recurringSettingsPanel) {
-            recurringSettingsPanel.classList.add("hidden");
+            recurringSettingsPanel.classList.add(DOM_CLASSES.HIDDEN);
         }
     }
 
@@ -568,8 +568,8 @@ export class ModalManager {
             } else {
                 // Non-dialog elements: use legacy checks
                 const def = MODAL_DEFS[name];
-                if (def.closeMethod === 'removeVisible' && modal.classList.contains('visible')) return true;
-                if (def.closeMethod === 'addHidden' && !modal.classList.contains('hidden')) return true;
+                if (def.closeMethod === 'removeVisible' && modal.classList.contains(DOM_CLASSES.VISIBLE)) return true;
+                if (def.closeMethod === 'addHidden' && !modal.classList.contains(DOM_CLASSES.HIDDEN)) return true;
                 if (modal.style.display === 'flex' || modal.style.display === 'block') return true;
             }
         }

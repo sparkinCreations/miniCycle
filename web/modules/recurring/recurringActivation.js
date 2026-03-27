@@ -12,7 +12,7 @@ import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS,
     DOM_SELECTORS,
-    DATA_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
+    DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -185,7 +185,7 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
     // Update DOM AFTER state is committed (prevents desync if state update fails)
     if (taskItem) {
         taskItem.setAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS, JSON.stringify(task.recurringSettings));
-        taskItem.classList.add("recurring");
+        taskItem.classList.add(DOM_CLASSES.RECURRING);
     }
 
     // Sync DOM for delete-on-complete state
@@ -298,7 +298,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
     // Update DOM
     if (taskItem) {
         taskItem.removeAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS);
-        taskItem.classList.remove("recurring");
+        taskItem.classList.remove(DOM_CLASSES.RECURRING);
 
         if (Deps.GlobalUtils?.syncTaskDeleteWhenCompleteDOM) {
             Deps.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
@@ -382,11 +382,11 @@ export async function applyRecurringToTaskSchema25(taskId, newSettings) {
     assertInjected('querySelector', Deps.querySelector);
     const taskElement = Deps.querySelector(DATA_SELECTORS.elementByTaskId(taskId));
     if (taskElement) {
-        taskElement.classList.add("recurring");
+        taskElement.classList.add(DOM_CLASSES.RECURRING);
         taskElement.setAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS, JSON.stringify(updatedTask?.recurringSettings || task.recurringSettings));
         const recurringBtn = taskElement.querySelector(DOM_SELECTORS.RECURRING_BTN);
         if (recurringBtn) {
-            recurringBtn.classList.add("active");
+            recurringBtn.classList.add(DOM_CLASSES.ACTIVE);
             recurringBtn.setAttribute("aria-pressed", "true");
         }
     }
@@ -468,7 +468,7 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
 
     taskElements.forEach(taskEl => {
         const taskId = taskEl.dataset.taskId;
-        const isRecurring = taskEl.classList.contains("recurring");
+        const isRecurring = taskEl.classList.contains(DOM_CLASSES.RECURRING);
 
         if (isRecurring) {
             const task = cycleData?.tasks?.find(t => t.id === taskId);

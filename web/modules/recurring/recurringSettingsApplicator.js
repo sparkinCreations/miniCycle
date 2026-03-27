@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, UI_TIMEOUTS, DEFAULT_RECURRING_DELETE_SETTINGS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS, DEFAULT_RECURRING_DELETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -161,11 +161,11 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
             checkedEls.forEach(checkbox => {
                 const taskEl = checkbox.closest(DATA_SELECTORS.TASK_ID_ELEMENT);
                 if (!taskEl) return;
-                taskEl.classList.add("recurring");
+                taskEl.classList.add(DOM_CLASSES.RECURRING);
                 taskEl.setAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS, JSON.stringify(settings));
                 const recurringBtn = taskEl.querySelector(DOM_SELECTORS.RECURRING_BTN);
                 if (recurringBtn) {
-                    recurringBtn.classList.add("active");
+                    recurringBtn.classList.add(DOM_CLASSES.ACTIVE);
                     recurringBtn.setAttribute("aria-pressed", "true");
                 }
                 _deps.syncRecurringStateToDOM(taskEl, settings);
@@ -233,14 +233,14 @@ function updateUIAfterApply(panel) {
         // Keep first task selected, clear the rest
         _deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
             if (el !== firstCheckedTask) {
-                el.classList.remove("selected", "checked");
+                el.classList.remove(DOM_CLASSES.SELECTED, DOM_CLASSES.CHECKED);
             }
         });
 
         // Select the first checked task and show its preview
         const taskId = firstCheckedTask.dataset.taskId;
         panel.state.selectedTaskId = taskId;
-        firstCheckedTask.classList.add("selected");
+        firstCheckedTask.classList.add(DOM_CLASSES.SELECTED);
         firstCheckedTask.setAttribute("aria-selected", "true");
 
         // Update preview with new settings from template
@@ -256,7 +256,7 @@ function updateUIAfterApply(panel) {
     } else {
         // No checked tasks — clear all selections, stay in browsing
         _deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
-            el.classList.remove("selected", "checked");
+            el.classList.remove(DOM_CLASSES.SELECTED, DOM_CLASSES.CHECKED);
         });
         panel.state.selectedTaskId = null;
         panel.setPanelMode('browsing');

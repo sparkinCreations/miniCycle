@@ -176,7 +176,7 @@ export function setupSettingsMenu() {
         } else if (!isNativeDialog) {
             settingsModal._previousFocus = document.activeElement;
             settingsModal.style.display = 'flex';
-            settingsModal.classList.remove('hidden');
+            settingsModal.classList.remove(DOM_CLASSES.HIDDEN);
         }
         _deps.hideMainMenu?.();
     };
@@ -187,7 +187,7 @@ export function setupSettingsMenu() {
             settingsModal._previousFocus?.focus({ focusVisible: false });
         } else if (!isNativeDialog) {
             settingsModal.style.display = 'none';
-            settingsModal.classList.add('hidden');
+            settingsModal.classList.add(DOM_CLASSES.HIDDEN);
             settingsModal._previousFocus?.focus({ focusVisible: false });
         }
     };
@@ -262,8 +262,8 @@ function setupSettingsCollapsibleSections() {
             e.stopPropagation();
             const section = header.closest('.settings-section');
             if (section) {
-                section.classList.toggle('collapsed');
-                header.setAttribute('aria-expanded', String(!section.classList.contains('collapsed')));
+                section.classList.toggle(DOM_CLASSES.COLLAPSED);
+                header.setAttribute('aria-expanded', String(!section.classList.contains(DOM_CLASSES.COLLAPSED)));
                 saveSettingsCollapsedStates(collapsibleSections);
             }
         });
@@ -273,22 +273,22 @@ function setupSettingsCollapsibleSections() {
                 e.preventDefault();
                 const section = header.closest('.settings-section');
                 if (section) {
-                    section.classList.toggle('collapsed');
-                    header.setAttribute('aria-expanded', String(!section.classList.contains('collapsed')));
+                    section.classList.toggle(DOM_CLASSES.COLLAPSED);
+                    header.setAttribute('aria-expanded', String(!section.classList.contains(DOM_CLASSES.COLLAPSED)));
                     saveSettingsCollapsedStates(collapsibleSections);
                 }
             } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
                 const section = header.closest('.settings-section');
                 if (!section) return;
-                const isCollapsed = section.classList.contains('collapsed');
+                const isCollapsed = section.classList.contains(DOM_CLASSES.COLLAPSED);
                 if (e.key === 'ArrowRight' && isCollapsed) {
                     e.preventDefault();
-                    section.classList.remove('collapsed');
+                    section.classList.remove(DOM_CLASSES.COLLAPSED);
                     header.setAttribute('aria-expanded', 'true');
                     saveSettingsCollapsedStates(collapsibleSections);
                 } else if (e.key === 'ArrowLeft' && !isCollapsed) {
                     e.preventDefault();
-                    section.classList.add('collapsed');
+                    section.classList.add(DOM_CLASSES.COLLAPSED);
                     header.setAttribute('aria-expanded', 'false');
                     saveSettingsCollapsedStates(collapsibleSections);
                 }
@@ -317,9 +317,9 @@ function loadSettingsCollapsedStates(sections) {
         if (sectionName && collapsedStates[sectionName] !== undefined) {
             const isCollapsed = collapsedStates[sectionName];
             if (isCollapsed) {
-                section.classList.add('collapsed');
+                section.classList.add(DOM_CLASSES.COLLAPSED);
             } else {
-                section.classList.remove('collapsed');
+                section.classList.remove(DOM_CLASSES.COLLAPSED);
             }
             // Sync aria-expanded on the header
             const sectionHeader = section.querySelector('.settings-section-header.collapsible');
@@ -341,7 +341,7 @@ function saveSettingsCollapsedStates(sections) {
     sectionElements.forEach(section => {
         const sectionName = section.dataset.section;
         if (sectionName) {
-            collapsedStates[sectionName] = section.classList.contains('collapsed');
+            collapsedStates[sectionName] = section.classList.contains(DOM_CLASSES.COLLAPSED);
         }
     });
 
@@ -462,7 +462,7 @@ export function setupThreeDotsToggle() {
 
     const threeDotsEnabled = schemaData.settings?.showThreeDots || false;
     threeDotsToggle.checked = threeDotsEnabled;
-    document.body.classList.toggle("show-three-dots-enabled", threeDotsEnabled);
+    document.body.classList.toggle(DOM_CLASSES.SHOW_THREE_DOTS_ENABLED, threeDotsEnabled);
 
     threeDotsToggle._changeHandler = async () => {
         const enabled = threeDotsToggle.checked;
@@ -480,7 +480,7 @@ export function setupThreeDotsToggle() {
             return;
         }
 
-        document.body.classList.toggle("show-three-dots-enabled", enabled);
+        document.body.classList.toggle(DOM_CLASSES.SHOW_THREE_DOTS_ENABLED, enabled);
         _deps.toggleHoverTaskOptions?.(!enabled);
         _deps.refreshTaskListUI?.();
 
@@ -552,7 +552,7 @@ export function setupCompletedDropdownToggle() {
                 });
                 const completedSection = document.getElementById(DOM_IDS.COMPLETED_TASKS_SECTION);
                 if (completedSection) {
-                    completedSection.classList.remove('show');
+                    completedSection.classList.remove(DOM_CLASSES.SHOW);
                 }
             }
         }
@@ -599,7 +599,7 @@ export function setupHelpWindowToggle() {
             return;
         }
 
-        document.body.classList.toggle('hide-help-window', !visible);
+        document.body.classList.toggle(DOM_CLASSES.HIDE_HELP_WINDOW, !visible);
 
         // Sync personalization modal toggle
         const prefToggle = document.getElementById(DOM_IDS.TOGGLE_HELP_WINDOW);
@@ -647,7 +647,7 @@ export function setupQuickActionsToggle() {
             return;
         }
 
-        document.body.classList.toggle('hide-quick-actions', !visible);
+        document.body.classList.toggle(DOM_CLASSES.HIDE_QUICK_ACTIONS, !visible);
 
         // Sync personalization modal toggle
         const prefToggle = document.getElementById(DOM_IDS.TOGGLE_QUICK_ACTIONS);

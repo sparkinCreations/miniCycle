@@ -426,8 +426,8 @@ export async function editTaskImpl(taskItem, deps = {}) {
             // Remove focus overlays (fallback timeout if transition is disabled)
             taskItem.classList.remove(DOM_CLASSES.EDIT_FOCUS_TARGET);
             if (taskView) taskView.classList.remove(DOM_CLASSES.EDIT_FOCUS_RAISED);
-            pageOverlay.classList.remove('active');
-            innerOverlay.classList.remove('active');
+            pageOverlay.classList.remove(DOM_CLASSES.ACTIVE);
+            innerOverlay.classList.remove(DOM_CLASSES.ACTIVE);
             const removeOverlays = () => { pageOverlay.remove(); innerOverlay.remove(); };
             pageOverlay.addEventListener('transitionend', removeOverlays, { once: true });
             setTimeout(removeOverlays, 500);
@@ -558,7 +558,7 @@ function _editTaskModal(taskItem, taskLabel, oldText, ctx) {
     const handleSave = async () => {
         const newText = sanitizeInput(input.value.trim());
         if (!newText) {
-            input.classList.add('miniCycle-input-error');
+            input.classList.add(DOM_CLASSES.MINICYCLE_INPUT_ERROR);
             input.focus();
             return;
         }
@@ -785,11 +785,11 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
         }
 
         // Update DOM based on calculated state
-        taskItem.classList.toggle("high-priority", newHighPriority);
+        taskItem.classList.toggle(DOM_CLASSES.HIGH_PRIORITY, newHighPriority);
         const button = taskItem.querySelector(DOM_SELECTORS.PRIORITY_BTN);
         if (button) {
-            button.classList.toggle("active", newHighPriority);
-            button.classList.toggle("priority-active", newHighPriority);
+            button.classList.toggle(DOM_CLASSES.ACTIVE, newHighPriority);
+            button.classList.toggle(DOM_CLASSES.PRIORITY_ACTIVE, newHighPriority);
             button.setAttribute("aria-pressed", newHighPriority.toString());
         }
 
@@ -804,14 +804,25 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
 
         // ✅ Use AppState only (no localStorage fallback) - DI-pure
         if (AppState?.isReady?.()) {
+            // Resolve the color now so it's persisted even if the user
+            // dismisses the color picker without clicking a swatch
+            const resolvedColor = newHighPriority
+                ? (task.priorityColor ?? currentState?.settings?.priorityColor ?? '#dc3545')
+                : null;
+
             AppState.update(state => {
                 const cid = state.appState.activeCycleId;
                 const cycle = state.data.cycles[cid];
                 const t = cycle?.tasks?.find(t => t.id === taskId);
-                if (t) t.highPriority = newHighPriority;
+                if (t) {
+                    t.highPriority = newHighPriority;
+                    // Always persist the resolved color so it survives reload
+                    if (resolvedColor) t.priorityColor = resolvedColor;
+                }
                 // Sync priority state to recurring template so recreated tasks keep the setting
                 if (cycle?.recurringTemplates?.[taskId]) {
                     cycle.recurringTemplates[taskId].highPriority = newHighPriority;
+                    if (resolvedColor) cycle.recurringTemplates[taskId].priorityColor = resolvedColor;
                 }
             }, true);
 

@@ -30,7 +30,8 @@ import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS,
     DOM_IDS,
-    DOM_SELECTORS
+    DOM_SELECTORS,
+    DOM_CLASSES
 } from '../core/constants.js';
 
 // ============================================================================
@@ -177,9 +178,9 @@ export class TaskUtils {
                 text: taskTextElement.textContent,
                 completed: taskElement.querySelector("input[type='checkbox']")?.checked || false,
                 dueDate: taskElement.querySelector(DOM_SELECTORS.DUE_DATE)?.value || null,
-                highPriority: taskElement.classList.contains("high-priority"),
-                remindersEnabled: taskElement.querySelector(DOM_SELECTORS.ENABLE_TASK_REMINDERS)?.classList.contains("reminder-active") || false,
-                recurring: taskElement.querySelector(DOM_SELECTORS.RECURRING_BTN)?.classList.contains("active") || false,
+                highPriority: taskElement.classList.contains(DOM_CLASSES.HIGH_PRIORITY),
+                remindersEnabled: taskElement.querySelector(DOM_SELECTORS.ENABLE_TASK_REMINDERS)?.classList.contains(DOM_CLASSES.REMINDER_ACTIVE) || false,
+                recurring: taskElement.querySelector(DOM_SELECTORS.RECURRING_BTN)?.classList.contains(DOM_CLASSES.ACTIVE) || false,
                 recurringSettings,
                 deleteWhenComplete: taskElement.dataset.deleteWhenComplete === "true" || false,
                 deleteWhenCompleteSettings: deleteWhenCompleteSettings,
@@ -343,7 +344,7 @@ export class TaskUtils {
     static handleOverdueStyling(taskItem, completed) {
         setTimeout(() => {
             if (completed) {
-                taskItem.classList.remove("overdue-task");
+                taskItem.classList.remove(DOM_CLASSES.OVERDUE_TASK);
             }
         }, 300);
     }

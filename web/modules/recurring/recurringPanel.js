@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
@@ -248,7 +248,7 @@ export class RecurringPanelManager {
             if (yearlySpecificDaysCheckbox && yearlyDayContainer) {
                 this.deps.safeAddEventListener(yearlySpecificDaysCheckbox, "change", () => {
                     const hasMonthSelected = this.getSelectedYearlyMonths().length > 0;
-                    yearlyDayContainer.classList.toggle("hidden", !yearlySpecificDaysCheckbox.checked || !hasMonthSelected);
+                    yearlyDayContainer.classList.toggle(DOM_CLASSES.HIDDEN, !yearlySpecificDaysCheckbox.checked || !hasMonthSelected);
                 });
             }
 
@@ -438,7 +438,7 @@ export class RecurringPanelManager {
         if (!checkbox || !dropdown) return;
 
         if (checkbox.checked) {
-            dropdown.classList.add("hidden");
+            dropdown.classList.add(DOM_CLASSES.HIDDEN);
             if (daysLabel) {
                 daysLabel.textContent = getLabel('recurring.selectDaysForAllMonths');
             }
@@ -446,7 +446,7 @@ export class RecurringPanelManager {
                 this.generateYearlyDayGrid(selectedMonths[0]); // Use any selected month for grid
             }
         } else {
-            dropdown.classList.remove("hidden");
+            dropdown.classList.remove(DOM_CLASSES.HIDDEN);
             const selectedMonth = parseInt(dropdown.value);
             this.generateYearlyDayGrid(selectedMonth);
             this.updateYearlyDaysForMonthLabel(selectedMonth);
@@ -502,7 +502,7 @@ export class RecurringPanelManager {
             }
 
             if (isFirst) {
-                input.classList.add("first-specific-date");
+                input.classList.add(DOM_CLASSES.FIRST_SPECIFIC_DATE);
             }
 
             this.deps.safeAddEventListener(input, "change", () => {
@@ -540,19 +540,19 @@ export class RecurringPanelManager {
         this.deps.safeAddEventListener(checkbox, "change", () => {
             const shouldShow = checkbox.checked;
 
-            panel.classList.toggle("hidden", !shouldShow);
-            timeOptions.classList.toggle("hidden", !shouldShow);
+            panel.classList.toggle(DOM_CLASSES.HIDDEN, !shouldShow);
+            timeOptions.classList.toggle(DOM_CLASSES.HIDDEN, !shouldShow);
 
             this.deps.querySelectorAll(DOM_SELECTORS.FREQUENCY_OPTIONS).forEach(panel => {
-                panel.classList.add("hidden");
+                panel.classList.add(DOM_CLASSES.HIDDEN);
             });
 
-            this.deps.getElementById(DOM_IDS.RECUR_FREQUENCY_CONTAINER).classList.toggle("hidden", shouldShow);
-            this.deps.getElementById(DOM_IDS.RECUR_INDEFINITELY).closest("label").classList.toggle("hidden", shouldShow);
+            this.deps.getElementById(DOM_IDS.RECUR_FREQUENCY_CONTAINER).classList.toggle(DOM_CLASSES.HIDDEN, shouldShow);
+            this.deps.getElementById(DOM_IDS.RECUR_INDEFINITELY).closest("label").classList.toggle(DOM_CLASSES.HIDDEN, shouldShow);
 
             const advancedBtn = this.deps.getElementById(DOM_IDS.TOGGLE_ADVANCED_SETTINGS);
             if (advancedBtn) {
-                advancedBtn.classList.toggle("hidden", shouldShow);
+                advancedBtn.classList.toggle(DOM_CLASSES.HIDDEN, shouldShow);
             }
 
             if (shouldShow && list.children.length === 0) {
@@ -561,7 +561,7 @@ export class RecurringPanelManager {
 
             if (!shouldShow) {
                 this.deps.getElementById(DOM_IDS.SPECIFIC_DATE_SPECIFIC_TIME).checked = false;
-                this.deps.getElementById(DOM_IDS.SPECIFIC_DATE_TIME_CONTAINER).classList.add("hidden");
+                this.deps.getElementById(DOM_IDS.SPECIFIC_DATE_TIME_CONTAINER).classList.add(DOM_CLASSES.HIDDEN);
 
                 const freqSelect = this.deps.getElementById(DOM_IDS.RECUR_FREQUENCY);
                 if (freqSelect) {
@@ -633,7 +633,7 @@ export class RecurringPanelManager {
     handleCancelSettings() {
         // Deselect all tasks and uncheck checkboxes (data reset)
         this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
-            el.classList.remove('selected', 'checked');
+            el.classList.remove(DOM_CLASSES.SELECTED, DOM_CLASSES.CHECKED);
             el.setAttribute('aria-selected', 'false');
             const checkbox = el.querySelector(DOM_SELECTORS.RECURRING_CHECK);
             if (checkbox) checkbox.checked = false;
@@ -652,8 +652,8 @@ export class RecurringPanelManager {
             this.deps.safeAddEventListener(container, "click", (e) => {
                 const box = e.target.closest(DOM_SELECTORS.BIWEEKLY_DAY_BOX);
                 if (!box) return;
-                box.classList.toggle("selected");
-                box.setAttribute("aria-checked", box.classList.contains("selected") ? "true" : "false");
+                box.classList.toggle(DOM_CLASSES.SELECTED);
+                box.setAttribute("aria-checked", box.classList.contains(DOM_CLASSES.SELECTED) ? "true" : "false");
             });
             this.deps.safeAddEventListener(container, "keydown", (e) => {
                 const box = e.target.closest(DOM_SELECTORS.BIWEEKLY_DAY_BOX);
@@ -663,8 +663,8 @@ export class RecurringPanelManager {
                 // Enter/Space to toggle selection
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    box.classList.toggle("selected");
-                    box.setAttribute("aria-checked", box.classList.contains("selected") ? "true" : "false");
+                    box.classList.toggle(DOM_CLASSES.SELECTED);
+                    box.setAttribute("aria-checked", box.classList.contains(DOM_CLASSES.SELECTED) ? "true" : "false");
                 }
             });
         });
@@ -686,9 +686,9 @@ export class RecurringPanelManager {
         // Handle indefinitely checkbox
         const updateLimitedVisibility = () => {
             if (indefinitelyCheckbox.checked) {
-                limitedContainer.classList.add("hidden");
+                limitedContainer.classList.add(DOM_CLASSES.HIDDEN);
             } else {
-                limitedContainer.classList.remove("hidden");
+                limitedContainer.classList.remove(DOM_CLASSES.HIDDEN);
                 // Trigger radio button update
                 updateDurationContainers();
             }
@@ -697,10 +697,10 @@ export class RecurringPanelManager {
         // Handle radio buttons within limited container
         const updateDurationContainers = () => {
             if (countRadio && countContainer) {
-                countContainer.classList.toggle("hidden", !countRadio.checked);
+                countContainer.classList.toggle(DOM_CLASSES.HIDDEN, !countRadio.checked);
             }
             if (untilRadio && untilContainer) {
-                untilContainer.classList.toggle("hidden", !untilRadio.checked);
+                untilContainer.classList.toggle(DOM_CLASSES.HIDDEN, !untilRadio.checked);
             }
         };
 
@@ -857,17 +857,17 @@ export class RecurringPanelManager {
             const panelHint = recurringList.parentElement?.querySelector(DOM_SELECTORS.RECURRING_PANEL_HINT);
 
             if (recurringTasks.length === 0) {
-                if (emptyState) emptyState.classList.remove("hidden");
-                if (panelHint) panelHint.classList.add("hidden");
+                if (emptyState) emptyState.classList.remove(DOM_CLASSES.HIDDEN);
+                if (panelHint) panelHint.classList.add(DOM_CLASSES.HIDDEN);
 
                 // ✅ Hide the preview when no tasks
                 const summaryContainer = this.deps.getElementById(DOM_IDS.RECURRING_SUMMARY_PREVIEW);
                 if (summaryContainer) {
-                    summaryContainer.classList.add("hidden");
+                    summaryContainer.classList.add(DOM_CLASSES.HIDDEN);
                 }
             } else {
-                if (emptyState) emptyState.classList.add("hidden");
-                if (panelHint) panelHint.classList.remove("hidden");
+                if (emptyState) emptyState.classList.add(DOM_CLASSES.HIDDEN);
+                if (panelHint) panelHint.classList.remove(DOM_CLASSES.HIDDEN);
 
                 // Render each recurring task
                 recurringTasks.forEach(task => {
@@ -881,13 +881,13 @@ export class RecurringPanelManager {
 
                     // ✅ Restore selection if this was the previously selected task
                     if (previouslySelectedId && task.id === previouslySelectedId) {
-                        item.classList.add("selected");
+                        item.classList.add(DOM_CLASSES.SELECTED);
                         this.showTaskSummaryPreview(task);
                     }
 
                     // ✅ Restore checked state if this task was previously checked
                     if (previouslyCheckedIds.includes(task.id)) {
-                        item.classList.add("checked");
+                        item.classList.add(DOM_CLASSES.CHECKED);
                         const checkbox = item.querySelector(DOM_SELECTORS.RECURRING_CHECK);
                         if (checkbox) {
                             checkbox.checked = true;
@@ -1000,7 +1000,7 @@ export class RecurringPanelManager {
                         // Remove active state from recurring button
                         const recurringBtn = matchingTaskItem.querySelector(DOM_SELECTORS.RECURRING_BTN);
                         if (recurringBtn) {
-                            recurringBtn.classList.remove("active");
+                            recurringBtn.classList.remove(DOM_CLASSES.ACTIVE);
                             recurringBtn.setAttribute("aria-pressed", "false");
                             recurringBtn.disabled = false;
                         }
@@ -1009,7 +1009,7 @@ export class RecurringPanelManager {
                         if (recurringIndicator) {
                             recurringIndicator.remove();
                         }
-                        matchingTaskItem.classList.remove("recurring");
+                        matchingTaskItem.classList.remove(DOM_CLASSES.RECURRING);
                         matchingTaskItem.removeAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS);
 
                         // Restore delete-when-complete state based on cycle mode
@@ -1021,19 +1021,19 @@ export class RecurringPanelManager {
                         // Update delete-when-complete button
                         const deleteBtn = matchingTaskItem.querySelector(DOM_SELECTORS.DELETE_WHEN_COMPLETE_BTN);
                         if (deleteBtn) {
-                            deleteBtn.classList.toggle('active', defaultDeleteState);
-                            deleteBtn.classList.toggle('delete-when-complete-active', defaultDeleteState);
+                            deleteBtn.classList.toggle(DOM_CLASSES.ACTIVE, defaultDeleteState);
+                            deleteBtn.classList.toggle(DOM_CLASSES.DELETE_WHEN_COMPLETE_ACTIVE, defaultDeleteState);
                             deleteBtn.setAttribute('aria-pressed', defaultDeleteState.toString());
                         }
 
                         // Update data attribute and visual indicators
                         matchingTaskItem.dataset.deleteWhenComplete = defaultDeleteState.toString();
                         if (isToDoMode) {
-                            matchingTaskItem.classList.remove('show-delete-indicator');
-                            matchingTaskItem.classList.toggle('kept-task', !defaultDeleteState);
+                            matchingTaskItem.classList.remove(DOM_CLASSES.SHOW_DELETE_INDICATOR);
+                            matchingTaskItem.classList.toggle(DOM_CLASSES.KEPT_TASK, !defaultDeleteState);
                         } else {
-                            matchingTaskItem.classList.toggle('show-delete-indicator', defaultDeleteState);
-                            matchingTaskItem.classList.remove('kept-task');
+                            matchingTaskItem.classList.toggle(DOM_CLASSES.SHOW_DELETE_INDICATOR, defaultDeleteState);
+                            matchingTaskItem.classList.remove(DOM_CLASSES.KEPT_TASK);
                         }
                     }
 
@@ -1116,38 +1116,38 @@ export class RecurringPanelManager {
             // Two-column layout: active on desktop when editing
             const panel = this.deps.getElementById(DOM_IDS.RECURRING_PANEL);
             if (panel) {
-                panel.classList.toggle('two-col-active', isEditing);
+                panel.classList.toggle(DOM_CLASSES.TWO_COL_ACTIVE, isEditing);
             }
 
             // Settings panel + title: only visible in EDITING
             if (settingsPanel) {
-                settingsPanel.classList.toggle('hidden', !isEditing);
+                settingsPanel.classList.toggle(DOM_CLASSES.HIDDEN, !isEditing);
                 const settingsTitle = settingsPanel.previousElementSibling;
-                if (settingsTitle?.classList.contains('recurring-settings-title')) {
-                    settingsTitle.classList.toggle('hidden', !isEditing);
+                if (settingsTitle?.classList.contains(DOM_CLASSES.RECURRING_SETTINGS_TITLE)) {
+                    settingsTitle.classList.toggle(DOM_CLASSES.HIDDEN, !isEditing);
                 }
             }
 
             // Checkboxes: only visible in EDITING
             checkboxes.forEach(box => {
-                box.classList.toggle('hidden', !isEditing);
+                box.classList.toggle(DOM_CLASSES.HIDDEN, !isEditing);
             });
 
             // Per-item change buttons: only visible in PREVIEWING
             changeBtns.forEach(btn => {
-                btn.classList.toggle('hidden', mode !== 'previewing');
+                btn.classList.toggle(DOM_CLASSES.HIDDEN, mode !== 'previewing');
             });
 
             // Toggle container (Check All / Uncheck All): only in EDITING with >1 task
             const shouldShowToggle = isEditing && taskCount > 1;
             if (toggleContainer) {
-                toggleContainer.classList.toggle('hidden', !shouldShowToggle);
+                toggleContainer.classList.toggle(DOM_CLASSES.HIDDEN, !shouldShowToggle);
             }
 
             // Update toggle button label
             if (toggleBtn && shouldShowToggle) {
                 const anyUnchecked = Array.from(checkboxes).some(
-                    cb => !cb.checked && !cb.classList.contains('hidden')
+                    cb => !cb.checked && !cb.classList.contains(DOM_CLASSES.HIDDEN)
                 );
                 toggleBtn.textContent = anyUnchecked
                     ? getLabel('recurring.checkAll')
@@ -1157,7 +1157,7 @@ export class RecurringPanelManager {
             // Summary preview: hidden in BROWSING, visible in PREVIEWING/EDITING
             const summaryContainer = this.deps.getElementById(DOM_IDS.RECURRING_SUMMARY_PREVIEW);
             if (summaryContainer) {
-                summaryContainer.classList.toggle('hidden', isBrowsing);
+                summaryContainer.classList.toggle(DOM_CLASSES.HIDDEN, isBrowsing);
             }
 
             this.updateRecurringSummary();
@@ -1197,7 +1197,7 @@ export class RecurringPanelManager {
             }
 
             // ✅ Remove hidden class to show the preview
-            summaryContainer.classList.remove("hidden");
+            summaryContainer.classList.remove(DOM_CLASSES.HIDDEN);
 
             // Get recurring settings
             if (!this.deps.AppState?.isReady?.()) {
@@ -1343,7 +1343,7 @@ export class RecurringPanelManager {
 
             // Apply to DOM
             summaryEl.textContent = summaryText;
-            summaryEl.classList.remove("hidden");
+            summaryEl.classList.remove(DOM_CLASSES.HIDDEN);
 
         } catch (error) {
             console.error('❌ Error updating recurring summary:', error);
@@ -1394,7 +1394,7 @@ export class RecurringPanelManager {
             }
 
             // Always show the recurring button - users can now add tasks from the panel
-            panelButton.classList.remove("hidden");
+            panelButton.classList.remove(DOM_CLASSES.HIDDEN);
 
         } catch (error) {
             console.error('❌ Error updating panel button visibility:', error);
@@ -1423,7 +1423,7 @@ export class RecurringPanelManager {
             const hint = this.deps.querySelector?.(DOM_SELECTORS.EMPTY_STATE_HINT);
 
             if (templateCount === 0) {
-                linkEl.classList.remove('show');
+                linkEl.classList.remove(DOM_CLASSES.SHOW);
                 // Restore default empty state hint
                 if (hint) {
                     hint.innerHTML = getLabel('empty.noTasksHint').replace('+', '<strong>+</strong>');
@@ -1436,7 +1436,7 @@ export class RecurringPanelManager {
                 : getLabel('empty.recurringScheduled', { vars: { count: templateCount } });
 
             // Show the link
-            linkEl.classList.add('show');
+            linkEl.classList.add(DOM_CLASSES.SHOW);
             linkEl.textContent = '\u21BB ' + countText;
 
             // Bind handlers once (stable references for safeAddEventListener dedup)
@@ -1487,18 +1487,18 @@ export class RecurringPanelManager {
 
         // Toggle available tasks list visibility
         this.deps.safeAddEventListener(addTaskBtn, "click", () => {
-            const isHidden = availableTasksList.classList.contains("hidden");
+            const isHidden = availableTasksList.classList.contains(DOM_CLASSES.HIDDEN);
 
             if (isHidden) {
                 // Populate and show the list
                 this.populateAvailableTasks();
-                availableTasksList.classList.remove("hidden");
+                availableTasksList.classList.remove(DOM_CLASSES.HIDDEN);
                 addTaskBtn.innerHTML = `<span class="icon" aria-hidden="true">${ICONS['times']}</span> ${getLabel('button.cancel')}`;
             } else {
                 // Hide the list and reset
-                availableTasksList.classList.add("hidden");
+                availableTasksList.classList.add(DOM_CLASSES.HIDDEN);
                 addTaskBtn.textContent = getLabel('recurring.addToRecurring');
-                if (confirmBtn) confirmBtn.classList.add("hidden");
+                if (confirmBtn) confirmBtn.classList.add(DOM_CLASSES.HIDDEN);
             }
         });
 
@@ -1509,7 +1509,7 @@ export class RecurringPanelManager {
                 if (e.target.type === "checkbox") {
                     const taskItem = e.target.closest(DATA_SELECTORS.TASK_ID_ELEMENT);
                     if (taskItem) {
-                        taskItem.classList.toggle("selected", e.target.checked);
+                        taskItem.classList.toggle(DOM_CLASSES.SELECTED, e.target.checked);
                     }
                     this.updateConfirmButtonVisibility();
                 }
@@ -1526,7 +1526,7 @@ export class RecurringPanelManager {
                 const checkbox = taskItem.querySelector(DOM_SELECTORS.TASK_CHECKBOX);
                 if (checkbox) {
                     checkbox.checked = !checkbox.checked;
-                    taskItem.classList.toggle("selected", checkbox.checked);
+                    taskItem.classList.toggle(DOM_CLASSES.SELECTED, checkbox.checked);
                     this.updateConfirmButtonVisibility();
                 }
             });
@@ -1549,7 +1549,7 @@ export class RecurringPanelManager {
                 checkboxes.forEach(cb => {
                     cb.checked = anyUnchecked;
                     const item = cb.closest(DATA_SELECTORS.TASK_ID_ELEMENT);
-                    if (item) item.classList.toggle("selected", anyUnchecked);
+                    if (item) item.classList.toggle(DOM_CLASSES.SELECTED, anyUnchecked);
                 });
 
                 selectAllBtn.textContent = anyUnchecked
@@ -1571,12 +1571,12 @@ export class RecurringPanelManager {
 
         if (confirmBtn) {
             if (selectedCount > 0) {
-                confirmBtn.classList.remove("hidden");
+                confirmBtn.classList.remove(DOM_CLASSES.HIDDEN);
                 confirmBtn.textContent = selectedCount === 1
                     ? getLabel('recurring.addToRecurringShort')
                     : getLabel('recurring.addTasksToRecurring', { vars: { count: selectedCount } });
             } else {
-                confirmBtn.classList.add("hidden");
+                confirmBtn.classList.add(DOM_CLASSES.HIDDEN);
             }
         }
     }
@@ -1596,14 +1596,14 @@ export class RecurringPanelManager {
 
         // Clear existing list, hide confirm button, reset select all
         nonRecurringList.innerHTML = "";
-        if (confirmBtn) confirmBtn.classList.add("hidden");
+        if (confirmBtn) confirmBtn.classList.add(DOM_CLASSES.HIDDEN);
         const selectAllBtn = this.deps.getElementById(DOM_IDS.SELECT_ALL_ADD_RECURRING);
         if (selectAllBtn) selectAllBtn.textContent = getLabel('recurring.selectAll');
 
         try {
             if (!this.deps.AppState?.isReady?.()) {
                 console.warn('⚠️ AppState not ready for populating available tasks');
-                noTasksMessage.classList.remove("hidden");
+                noTasksMessage.classList.remove(DOM_CLASSES.HIDDEN);
                 noTasksMessage.textContent = getLabel('notify.taskLoadFailed');
                 return;
             }
@@ -1614,7 +1614,7 @@ export class RecurringPanelManager {
 
             if (!currentCycle) {
                 console.warn('⚠️ No active cycle found');
-                noTasksMessage.classList.remove("hidden");
+                noTasksMessage.classList.remove(DOM_CLASSES.HIDDEN);
                 noTasksMessage.textContent = getLabel('notify.noRoutineLoaded');
                 return;
             }
@@ -1635,12 +1635,12 @@ export class RecurringPanelManager {
                 } else {
                     noTasksMessage.textContent = getLabel('notify.allTasksRecurring');
                 }
-                noTasksMessage.classList.remove("hidden");
+                noTasksMessage.classList.remove(DOM_CLASSES.HIDDEN);
                 return;
             }
 
             // Hide "no tasks" message
-            noTasksMessage.classList.add("hidden");
+            noTasksMessage.classList.add(DOM_CLASSES.HIDDEN);
 
             // Render non-recurring tasks with checkboxes
             nonRecurringTasks.forEach(task => {
@@ -1663,7 +1663,7 @@ export class RecurringPanelManager {
 
         } catch (error) {
             console.error('❌ Error populating available tasks:', error);
-            noTasksMessage.classList.remove("hidden");
+            noTasksMessage.classList.remove(DOM_CLASSES.HIDDEN);
             noTasksMessage.textContent = getLabel('notify.taskLoadError');
         }
     }
@@ -1724,9 +1724,9 @@ export class RecurringPanelManager {
             const addTaskBtn = this.deps.getElementById(DOM_IDS.ADD_RECURRING_TASK_BTN);
             const confirmBtn = this.deps.getElementById(DOM_IDS.CONFIRM_ADD_RECURRING);
 
-            if (availableTasksList) availableTasksList.classList.add("hidden");
+            if (availableTasksList) availableTasksList.classList.add(DOM_CLASSES.HIDDEN);
             if (addTaskBtn) addTaskBtn.textContent = getLabel('recurring.addToRecurring');
-            if (confirmBtn) confirmBtn.classList.add("hidden");
+            if (confirmBtn) confirmBtn.classList.add(DOM_CLASSES.HIDDEN);
 
             // If the user wasn't already editing settings, return to browsing
             // so the panel refreshes cleanly without opening the settings form.
@@ -1844,7 +1844,7 @@ export class RecurringPanelManager {
             const checkbox = taskItem.querySelector(DOM_SELECTORS.RECURRING_CHECK);
             if (checkbox) {
                 checkbox.checked = true;
-                taskItem.classList.add('checked');
+                taskItem.classList.add(DOM_CLASSES.CHECKED);
             }
         }
 
@@ -1866,19 +1866,19 @@ export class RecurringPanelManager {
             // Find and preselect the correct task
             const itemToSelect = this.deps.querySelector(DATA_SELECTORS.recurringTaskById(taskIdToPreselect));
             if (itemToSelect) {
-                itemToSelect.classList.add("selected");
+                itemToSelect.classList.add(DOM_CLASSES.SELECTED);
                 this.state.selectedTaskId = taskIdToPreselect;
 
                 const checkbox = itemToSelect.querySelector(DOM_SELECTORS.RECURRING_CHECK);
                 if (checkbox) {
                     checkbox.checked = true;
-                    itemToSelect.classList.add("checked");
+                    itemToSelect.classList.add(DOM_CLASSES.CHECKED);
                 }
 
                 // Scroll the selected task into view within the list
                 requestAnimationFrame(() => {
                     const body = this.deps.getBody?.() || document.body;
-                    const scrollBehavior = body.classList.contains('reduced-motion') ? 'auto' : 'smooth';
+                    const scrollBehavior = body.classList.contains(DOM_CLASSES.REDUCED_MOTION) ? 'auto' : 'smooth';
                     itemToSelect.scrollIntoView({ behavior: scrollBehavior, block: 'center' });
                 });
 

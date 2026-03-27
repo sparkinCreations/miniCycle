@@ -9,7 +9,7 @@
  * @module ui/preferencesBgImage
  */
 
-import { DOM_IDS, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { updateThemeColor } from '../features/themeManager.js';
 import { getLabel } from '../labels/labelResolver.js';
 
@@ -293,13 +293,13 @@ export function applyBgImage(dataUrl, mode, AppState) {
 
     // Only add has-bg-image class if the toggle is on
     if (showBgImage) {
-        body.classList.add('has-bg-image');
+        body.classList.add(DOM_CLASSES.HAS_BG_IMAGE);
         // Update status bar color to black for custom background
         updateThemeColor();
     }
 
     // Remove any existing mode classes
-    body.classList.remove('bg-mode-cover', 'bg-mode-center', 'bg-mode-tile');
+    body.classList.remove(DOM_CLASSES.BG_MODE_COVER, DOM_CLASSES.BG_MODE_CENTER, DOM_CLASSES.BG_MODE_TILE);
 
     // Add the appropriate mode class
     body.classList.add(`bg-mode-${mode}`);
@@ -330,7 +330,7 @@ export async function removeBgImage(deps) {
         // Remove from body
         const body = document.body;
         document.documentElement.style.removeProperty('--custom-bg-image');
-        body.classList.remove('has-bg-image', 'bg-mode-cover', 'bg-mode-center', 'bg-mode-tile');
+        body.classList.remove(DOM_CLASSES.HAS_BG_IMAGE, DOM_CLASSES.BG_MODE_COVER, DOM_CLASSES.BG_MODE_CENTER, DOM_CLASSES.BG_MODE_TILE);
 
         // Update status bar color (back to blue for default view)
         updateThemeColor();
@@ -459,7 +459,7 @@ export async function handleBgImageModeChange(mode) {
 
         // Apply new mode
         const body = document.body;
-        body.classList.remove('bg-mode-cover', 'bg-mode-center', 'bg-mode-tile');
+        body.classList.remove(DOM_CLASSES.BG_MODE_COVER, DOM_CLASSES.BG_MODE_CENTER, DOM_CLASSES.BG_MODE_TILE);
         body.classList.add(`bg-mode-${mode}`);
     } catch (error) {
         console.error('Failed to change display mode:', error);
@@ -526,7 +526,7 @@ export function handleBgImageVisibleToggle(visible, AppState) {
 
     // Toggle body class to show/hide background image
     // The image data stays in IndexedDB, we just hide/show it via CSS class
-    document.body.classList.toggle('has-bg-image', visible);
+    document.body.classList.toggle(DOM_CLASSES.HAS_BG_IMAGE, visible);
 
     // Update status bar color (black for custom background, blue for default)
     updateThemeColor();

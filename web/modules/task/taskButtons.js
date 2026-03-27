@@ -88,7 +88,7 @@ export class TaskButtons {
         } = taskContext;
 
         const buttonContainer = document.createElement("div");
-        buttonContainer.classList.add("task-options");
+        buttonContainer.classList.add(DOM_CLASSES.TASK_OPTIONS);
 
         // If three dots mode is enabled, ensure buttons start explicitly HIDDEN via CSS class
         // (base .task-options CSS already has visibility: hidden; this adds explicit force-hidden)
@@ -131,7 +131,7 @@ export class TaskButtons {
      */
     createCustomizeButton() {
         const button = document.createElement("button");
-        button.classList.add("task-btn", "customize-btn");
+        button.classList.add(DOM_CLASSES.TASK_BTN, DOM_CLASSES.CUSTOMIZE_BTN);
         button.textContent = "+/-";
         button.setAttribute("type", "button");
         button.setAttribute("title", getLabel('taskOption.customize'));
@@ -180,7 +180,7 @@ export class TaskButtons {
         const { assignedTaskId, currentCycle, settings, remindersEnabled, recurring, highPriority, deleteWhenComplete } = taskContext;
 
         const button = document.createElement("button");
-        button.classList.add("task-btn", btnClass);
+        button.classList.add(DOM_CLASSES.TASK_BTN, btnClass);
 
         if (iconClass) {
             // Extract icon name from FA class (e.g., "fas fa-trash" -> "trash")
@@ -221,7 +221,7 @@ export class TaskButtons {
 
         // Move arrows don't use .hidden - visibility controlled by CSS
         if (btnClass !== "move-up" && btnClass !== "move-down" && !show) {
-            button.classList.add("hidden");
+            button.classList.add(DOM_CLASSES.HIDDEN);
         }
 
         this.setupButtonAccessibility(button, btnClass, buttonContainer);
@@ -310,12 +310,12 @@ export class TaskButtons {
     setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle, deleteWhenComplete) {
         if (btnClass === "enable-task-reminders") {
             const isActive = remindersEnabled === true;
-            button.classList.toggle("reminder-active", isActive);
+            button.classList.toggle(DOM_CLASSES.REMINDER_ACTIVE, isActive);
             button.setAttribute("aria-pressed", isActive.toString());
         } else if (btnClass === "delete-when-complete-btn") {
             const isActive = deleteWhenComplete === true;
-            button.classList.toggle("active", isActive);
-            button.classList.toggle("delete-when-complete-active", isActive);
+            button.classList.toggle(DOM_CLASSES.ACTIVE, isActive);
+            button.classList.toggle(DOM_CLASSES.DELETE_WHEN_COMPLETE_ACTIVE, isActive);
             button.setAttribute("aria-pressed", isActive.toString());
         } else if (btnClass === "set-due-date") {
             // Due date button shows/hides an input — use aria-expanded
@@ -330,7 +330,7 @@ export class TaskButtons {
                 isActive = !!highPriority;
             }
 
-            button.classList.toggle("active", isActive);
+            button.classList.toggle(DOM_CLASSES.ACTIVE, isActive);
             button.setAttribute("aria-pressed", isActive.toString());
         }
     }
@@ -381,8 +381,8 @@ export class TaskButtons {
                 return;
             }
 
-            const isRecurring = taskItem.classList.contains("recurring");
-            const currentlyActive = button.classList.contains("delete-when-complete-active");
+            const isRecurring = taskItem.classList.contains(DOM_CLASSES.RECURRING);
+            const currentlyActive = button.classList.contains(DOM_CLASSES.DELETE_WHEN_COMPLETE_ACTIVE);
             const newState = !currentlyActive;
 
             if (isRecurring && !newState) {
@@ -439,23 +439,23 @@ export class TaskButtons {
                     // Fallback: manual DOM update
                     taskItem.dataset.deleteWhenComplete = newState.toString();
                     taskItem.dataset.deleteWhenCompleteSettings = JSON.stringify(task.deleteWhenCompleteSettings);
-                    button.classList.toggle("active", newState);
-                    button.classList.toggle("delete-when-complete-active", newState);
+                    button.classList.toggle(DOM_CLASSES.ACTIVE, newState);
+                    button.classList.toggle(DOM_CLASSES.DELETE_WHEN_COMPLETE_ACTIVE, newState);
                     button.setAttribute("aria-pressed", newState.toString());
 
                     if (currentMode === 'todo') {
-                        taskItem.classList.remove('show-delete-indicator');
-                        taskItem.classList.toggle('kept-task', !newState);
+                        taskItem.classList.remove(DOM_CLASSES.SHOW_DELETE_INDICATOR);
+                        taskItem.classList.toggle(DOM_CLASSES.KEPT_TASK, !newState);
                     } else {
                         if (newState && !isRecurring) {
-                            taskItem.classList.add('show-delete-indicator');
-                            taskItem.classList.remove('kept-task');
+                            taskItem.classList.add(DOM_CLASSES.SHOW_DELETE_INDICATOR);
+                            taskItem.classList.remove(DOM_CLASSES.KEPT_TASK);
                         } else {
-                            taskItem.classList.remove('show-delete-indicator');
+                            taskItem.classList.remove(DOM_CLASSES.SHOW_DELETE_INDICATOR);
                             if (!newState && isRecurring) {
-                                taskItem.classList.add('kept-task');
+                                taskItem.classList.add(DOM_CLASSES.KEPT_TASK);
                             } else {
-                                taskItem.classList.remove('kept-task');
+                                taskItem.classList.remove(DOM_CLASSES.KEPT_TASK);
                             }
                         }
                     }
@@ -513,11 +513,11 @@ export class TaskButtons {
         const isToDoMode = cycle?.deleteCheckedTasks === true;
         const currentMode = isToDoMode ? 'todo' : 'cycle';
 
-        taskItem.classList.remove("recurring");
+        taskItem.classList.remove(DOM_CLASSES.RECURRING);
 
         const recurringBtn = taskItem.querySelector(DOM_SELECTORS.RECURRING_BTN);
         if (recurringBtn) {
-            recurringBtn.classList.remove("active");
+            recurringBtn.classList.remove(DOM_CLASSES.ACTIVE);
             recurringBtn.setAttribute("aria-pressed", "false");
         }
 
