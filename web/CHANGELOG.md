@@ -1,3 +1,7 @@
+## [2.147] - 2026-03-27
+- feat: update user manual with v3 screenshots, expand README with technical details
+
+
 ## [2.146] - 2026-03-26
 - feat: enhance user manual with guided tour and accessibility options
 - Refactor code structure for improved readability and maintainability
