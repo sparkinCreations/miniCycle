@@ -135,6 +135,10 @@ export async function runGuidedTourManagerTests(resultsDiv) {
                 onboardingCompleted: true,
                 guidedTourStep: null,
                 ...stateOverrides.settings
+            },
+            userProgress: {
+                cyclesCompleted: 0,
+                ...stateOverrides.userProgress
             }
         };
 
@@ -227,8 +231,8 @@ export async function runGuidedTourManagerTests(resultsDiv) {
 
         document.dispatchEvent(new Event('onboarding:setup-complete'));
 
-        if (scheduledDelay !== 9000) {
-            throw new Error(`Expected 9000ms delay, got ${scheduledDelay}`);
+        if (scheduledDelay !== 10000) {
+            throw new Error(`Expected 10000ms delay, got ${scheduledDelay}`);
         }
     });
 
@@ -314,7 +318,7 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         if (manager._currentStepIndex !== 2) {
             throw new Error(`Expected current step 2, got ${manager._currentStepIndex}`);
         }
-        if (!document.querySelector('.tour-message')?.textContent?.includes('Complete all tasks')) {
+        if (!document.querySelector('.tour-message')?.textContent?.includes('at-a-glance status')) {
             throw new Error('Expected step 3 message to render');
         }
     });
@@ -342,33 +346,33 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         });
 
         manager.startTour();
-        manager.showStep(4); // help window (index 4)
+        manager.showStep(2); // help window (index 2)
 
-        if (manager._currentStepIndex === 4) {
+        if (manager._currentStepIndex === 2) {
             throw new Error('Expected help window step to be skipped');
         }
-        // Should advance to next available — quick-actions-window (5) or beyond
-        if (manager._currentStepIndex < 5) {
-            throw new Error(`Expected skip past step 4, got ${manager._currentStepIndex}`);
+        // Should advance to next available — personalization-btn (3) or beyond
+        if (manager._currentStepIndex < 3) {
+            throw new Error(`Expected skip past step 2, got ${manager._currentStepIndex}`);
         }
     });
 
-    await test('showStep skips hidden quick actions window and advances', async () => {
-        setupTargets({ withQuickActionsWindow: false });
+    await test('showStep skips missing focus mode button and advances', async () => {
+        setupTargets(); // setupTargets does not create focus-mode-btn
         const manager = await createManager({
             appReady: false,
             settings: { onboardingCompleted: true, guidedTourStep: null }
         });
 
         manager.startTour();
-        manager.showStep(5); // quick actions window (index 5)
+        manager.showStep(1); // focus-mode-btn (index 1) — not in DOM
 
-        if (manager._currentStepIndex === 5) {
-            throw new Error('Expected quick actions step to be skipped');
+        if (manager._currentStepIndex === 1) {
+            throw new Error('Expected focus mode step to be skipped');
         }
-        // Should advance to personalization (6) or beyond
-        if (manager._currentStepIndex < 6) {
-            throw new Error(`Expected skip past step 5, got ${manager._currentStepIndex}`);
+        // Should advance to help-window (2) or beyond
+        if (manager._currentStepIndex < 2) {
+            throw new Error(`Expected skip past step 1, got ${manager._currentStepIndex}`);
         }
     });
 
@@ -539,7 +543,8 @@ export async function runGuidedTourManagerTests(resultsDiv) {
     await test('showStatsTourNotification shows notification when statsTourStep is null', async () => {
         const manager = await createManager({
             appReady: false,
-            settings: { onboardingCompleted: true, guidedTourStep: 'done', statsTourStep: null }
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', statsTourStep: null },
+            userProgress: { cyclesCompleted: 1 }
         });
 
         notifications.length = 0;
@@ -625,7 +630,8 @@ export async function runGuidedTourManagerTests(resultsDiv) {
     await test('dismissing stats tour notification marks statsTourStep as done', async () => {
         const manager = await createManager({
             appReady: false,
-            settings: { onboardingCompleted: true, guidedTourStep: 'done', statsTourStep: null }
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', statsTourStep: null },
+            userProgress: { cyclesCompleted: 1 }
         });
 
         manager.showStatsTourNotification();

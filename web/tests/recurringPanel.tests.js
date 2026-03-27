@@ -37,6 +37,11 @@ function setupPanelDeps(overrides = {}) {
         getElementById: overrides.getElementById || ((id) => document.getElementById(id)),
         querySelector: overrides.querySelector || ((sel) => document.querySelector(sel)),
         querySelectorAll: overrides.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+        safeAddEventListener: overrides.safeAddEventListener || ((el, event, handler, options) => {
+            if (el && el.addEventListener) {
+                el.addEventListener(event, handler, options);
+            }
+        }),
         isOverlayActive: overrides.isOverlayActive || (() => false),
         escapeHtml: overrides.escapeHtml || ((str) => str),
         getModal: overrides.getModal || ((name) => {
@@ -545,7 +550,14 @@ export async function runRecurringPanelTests(resultsDiv) {
                     };
                 }
                 if (id === 'recur-indefinitely') {
-                    return { set checked(val) {} };
+                    return { set checked(val) {}, dispatchEvent: () => {} };
+                }
+                if (id === 'recur-count-radio') {
+                    return {
+                        checked: false,
+                        set checked(val) {},
+                        dispatchEvent: () => {}
+                    };
                 }
                 return null;
             }
@@ -579,8 +591,8 @@ export async function runRecurringPanelTests(resultsDiv) {
 
         panel.generateMonthlyDayGrid();
 
-        // Should create 31 boxes (roughly)
-        const boxCount = (mockContainer.innerHTML.match(/box/g) || []).length;
+        // Count data-day attributes (one per day box, not ambiguous like "box")
+        const boxCount = (mockContainer.innerHTML.match(/data-day="/g) || []).length;
         if (boxCount !== 31) {
             throw new Error(`Should create 31 day boxes, got ${boxCount}`);
         }
@@ -601,7 +613,8 @@ export async function runRecurringPanelTests(resultsDiv) {
 
         panel.generateYearlyMonthGrid();
 
-        const boxCount = (mockContainer.innerHTML.match(/box/g) || []).length;
+        // Count data-month attributes (one per month box, not ambiguous like "box")
+        const boxCount = (mockContainer.innerHTML.match(/data-month="/g) || []).length;
         if (boxCount !== 12) {
             throw new Error(`Should create 12 month boxes, got ${boxCount}`);
         }
@@ -1047,30 +1060,22 @@ export async function runRecurringPanelTests(resultsDiv) {
         panel.showTaskSummaryPreview(null);
     });
 
-    test('showTaskSummaryPreview hides button when settings panel is open (edit mode)', () => {
+    test('showTaskSummaryPreview populates summary text for task with settings', () => {
+        let previewCleared = false;
+        let appendedChildren = [];
+        let summaryContainerShown = false;
+
         const mockElements = {
             'recurring-preview-text': {
                 innerHTML: '',
-                appendChild: () => {},
-                querySelectorAll: () => []
-            },
-            'change-recurring-settings': {
-                classList: {
-                    contains: () => false,
-                    add: function(className) { this._hidden = (className === 'hidden'); },
-                    remove: function(className) { if (className === 'hidden') this._hidden = false; },
-                    _hidden: false
-                },
-                style: {}
-            },
-            'recurring-settings-panel': {
-                classList: {
-                    contains: (className) => className === 'hidden' ? false : true // Panel is visible (edit mode)
-                }
+                set innerHTML(val) { previewCleared = (val === ''); },
+                appendChild: function(el) { appendedChildren.push(el); }
             },
             'recurring-summary-preview': {
                 classList: {
-                    remove: () => {},
+                    remove: function(className) {
+                        if (className === 'hidden') summaryContainerShown = true;
+                    },
                     add: () => {},
                     contains: () => false
                 }
@@ -1109,36 +1114,35 @@ export async function runRecurringPanelTests(resultsDiv) {
 
         panel.showTaskSummaryPreview(task);
 
-        const button = mockElements['change-recurring-settings'];
-        if (!button.classList._hidden) {
-            throw new Error('Button should be hidden when settings panel is open (edit mode)');
+        if (!summaryContainerShown) {
+            throw new Error('Summary container should be shown (hidden class removed)');
+        }
+
+        if (!previewCleared) {
+            throw new Error('Preview text should be cleared before populating');
+        }
+
+        // Should append at least the task name (strong) and a br element
+        if (appendedChildren.length < 2) {
+            throw new Error(`Should append task name and summary elements, got ${appendedChildren.length} children`);
         }
     });
 
-    test('showTaskSummaryPreview shows button when settings panel is closed (view mode)', () => {
+    test('showTaskSummaryPreview shows summary container when task has recurring settings', () => {
+        let summaryContainerShown = false;
+        let appendedChildren = [];
+
         const mockElements = {
             'recurring-preview-text': {
                 innerHTML: '',
-                appendChild: () => {},
-                querySelectorAll: () => []
-            },
-            'change-recurring-settings': {
-                classList: {
-                    contains: () => false,
-                    add: function(className) { this._hidden = (className === 'hidden'); },
-                    remove: function(className) { if (className === 'hidden') this._hidden = false; },
-                    _hidden: true
-                },
-                style: {}
-            },
-            'recurring-settings-panel': {
-                classList: {
-                    contains: (className) => className === 'hidden' ? true : false // Panel is hidden (view mode)
-                }
+                set innerHTML(val) {},
+                appendChild: function(el) { appendedChildren.push(el); }
             },
             'recurring-summary-preview': {
                 classList: {
-                    remove: () => {},
+                    remove: function(className) {
+                        if (className === 'hidden') summaryContainerShown = true;
+                    },
                     add: () => {},
                     contains: () => false
                 }
@@ -1177,9 +1181,16 @@ export async function runRecurringPanelTests(resultsDiv) {
 
         panel.showTaskSummaryPreview(task);
 
-        const button = mockElements['change-recurring-settings'];
-        if (button.classList._hidden) {
-            throw new Error('Button should be visible when settings panel is closed (view mode)');
+        if (!summaryContainerShown) {
+            throw new Error('Summary container should be visible when task has recurring settings');
+        }
+
+        // Should have appended a summary span (class 'recurring-summary-text')
+        const hasSummarySpan = appendedChildren.some(el =>
+            el.className === 'recurring-summary-text'
+        );
+        if (!hasSummarySpan) {
+            throw new Error('Should append a summary text span with recurring details');
         }
     });
 

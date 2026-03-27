@@ -167,6 +167,29 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         };
     }
 
+    // Helper: Wait for creation dialog to appear and simulate user input
+    async function fillAndConfirmCreationDialog(inputValue, timeout = 500) {
+        // Wait for async _buildCreationDialog to complete
+        await new Promise(resolve => setTimeout(resolve, timeout));
+
+        const dialog = document.querySelector('.miniCycle-prompt-dialog');
+        if (!dialog) return null;
+
+        const input = dialog.querySelector('.miniCycle-prompt-input');
+        const confirmBtn = dialog.querySelector('.miniCycle-btn-confirm');
+
+        if (input && inputValue !== undefined) {
+            input.value = inputValue;
+        }
+        if (confirmBtn && inputValue !== undefined) {
+            confirmBtn.click();
+        }
+
+        // Small delay for click handlers to execute
+        await new Promise(resolve => setTimeout(resolve, 50));
+        return dialog;
+    }
+
     async function test(name, testFn) {
         total.count++;
         try {
@@ -181,7 +204,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
             document.body.className = '';
 
             // Clear existing modal elements
-            const existingModals = document.querySelectorAll('.miniCycle-overlay, .mini-modal-overlay');
+            const existingModals = document.querySelectorAll('.miniCycle-prompt-dialog, .mini-modal-dialog, .miniCycle-overlay, .mini-modal-overlay');
             existingModals.forEach(el => el.remove());
 
             // Clear global state
@@ -348,55 +371,51 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
     // === SHOW CYCLE CREATION MODAL TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🆕 Cycle Creation Modal Tests</h4>';
 
-    await test('showCycleCreationModal calls showPromptModal', async () => {
-        let modalCalled = false;
-        const deps = createValidDeps({
-            showPromptModal: (options) => {
-                modalCalled = true;
-                if (options.title !== "Create a miniCycle") {
-                    throw new Error('Incorrect modal title');
-                }
-                if (options.confirmText !== "Create") {
-                    throw new Error('Incorrect confirm text');
-                }
-                if (options.cancelText !== "Load Sample") {
-                    throw new Error('Incorrect cancel text');
-                }
-            }
-        });
+    await test('showCycleCreationModal opens creation dialog', async () => {
+        const deps = createValidDeps();
 
         const instance = new RoutineManager(deps);
         instance.showCycleCreationModal();
 
-        // Wait for setTimeout
-        await new Promise(resolve => setTimeout(resolve, 600));
+        // Wait for setTimeout(500) + async _buildCreationDialog
+        await new Promise(resolve => setTimeout(resolve, 700));
 
-        if (!modalCalled) {
-            throw new Error('showPromptModal should be called');
+        const dialog = document.querySelector('.miniCycle-prompt-dialog');
+        if (!dialog) {
+            throw new Error('Creation dialog should appear in DOM');
+        }
+        const input = dialog.querySelector('.miniCycle-prompt-input');
+        if (!input) {
+            throw new Error('Dialog should have an input field');
+        }
+        const confirmBtn = dialog.querySelector('.miniCycle-btn-confirm');
+        if (!confirmBtn) {
+            throw new Error('Dialog should have a confirm button');
+        }
+        const cancelBtn = dialog.querySelector('.miniCycle-btn-cancel');
+        if (!cancelBtn) {
+            throw new Error('Dialog should have a cancel button');
         }
     });
 
     await test('showCycleCreationModal creates new cycle on valid input', async () => {
         let completeSetupCalled = false;
-        let savedData = null;
 
         const deps = createValidDeps({
-            showPromptModal: (options) => {
-                // Simulate user entering a name
-                options.callback('My New Cycle');
-            },
             sanitizeInput: (input) => input.trim(),
             completeInitialSetup: (cycleId, data) => {
                 completeSetupCalled = true;
-                savedData = data;
             }
         });
 
         const instance = new RoutineManager(deps);
         instance.showCycleCreationModal();
 
-        // Wait for setTimeout and async operations
-        await new Promise(resolve => setTimeout(resolve, 700));
+        // Wait for setTimeout(500) + async _buildCreationDialog
+        await fillAndConfirmCreationDialog('My New Cycle', 700);
+
+        // Wait for async onCreateBlank callback
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         if (!completeSetupCalled) {
             throw new Error('completeInitialSetup should be called');
@@ -415,30 +434,37 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         }
     });
 
-    await test('showCycleCreationModal loads sample on empty input', async () => {
-        let preloadCalled = false;
-
-        const deps = createValidDeps({
-            showPromptModal: (options) => {
-                // Simulate user clicking "Load Sample" (empty input)
-                options.callback('');
-            }
-        });
+    await test('showCycleCreationModal rejects empty input with error state', async () => {
+        const deps = createValidDeps();
 
         const instance = new RoutineManager(deps);
-
-        // Mock preloadGettingStartedCycle
-        instance.preloadGettingStartedCycle = async () => {
-            preloadCalled = true;
-        };
-
         instance.showCycleCreationModal();
 
-        // Wait for setTimeout and async
+        // Wait for setTimeout(500) + async _buildCreationDialog
         await new Promise(resolve => setTimeout(resolve, 700));
 
-        if (!preloadCalled) {
-            throw new Error('preloadGettingStartedCycle should be called on empty input');
+        const dialog = document.querySelector('.miniCycle-prompt-dialog');
+        if (!dialog) {
+            throw new Error('Dialog should appear');
+        }
+
+        const input = dialog.querySelector('.miniCycle-prompt-input');
+        const confirmBtn = dialog.querySelector('.miniCycle-btn-confirm');
+
+        // Leave input empty and click confirm
+        input.value = '';
+        confirmBtn.click();
+
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        // Dialog should still be open (empty input is rejected)
+        if (!document.querySelector('.miniCycle-prompt-dialog')) {
+            throw new Error('Dialog should remain open on empty input');
+        }
+
+        // Input should have error class
+        if (!input.classList.contains('miniCycle-input-error')) {
+            throw new Error('Input should have error class on empty submission');
         }
     });
 
@@ -551,47 +577,53 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         }
     });
 
-    await test('createNewMiniCycle shows prompt modal', async () => {
-        let modalOptions = null;
-
-        const deps = createValidDeps({
-            showPromptModal: (options) => {
-                modalOptions = options;
-            }
-        });
+    await test('createNewMiniCycle opens creation dialog', async () => {
+        const deps = createValidDeps();
 
         const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
 
-        if (!modalOptions) {
-            throw new Error('showPromptModal should be called');
+        // Wait for async _buildCreationDialog (no setTimeout wrapper)
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const dialog = document.querySelector('.miniCycle-prompt-dialog');
+        if (!dialog) {
+            throw new Error('Creation dialog should appear in DOM');
         }
-        // Implementation uses "Create New Routine" (not "miniCycle")
-        if (modalOptions.title !== 'Create New Routine') {
-            throw new Error('Incorrect modal title');
+        const input = dialog.querySelector('.miniCycle-prompt-input');
+        if (!input) {
+            throw new Error('Dialog should have an input field');
         }
-        if (modalOptions.required !== true) {
-            throw new Error('Modal should have required: true');
+        const confirmBtn = dialog.querySelector('.miniCycle-btn-confirm');
+        if (!confirmBtn) {
+            throw new Error('Dialog should have a confirm button');
         }
     });
 
     await test('createNewMiniCycle handles user cancellation', async () => {
-        let notificationMsg = null;
-
-        const deps = createValidDeps({
-            showPromptModal: (options) => {
-                options.callback(null); // User cancels
-            },
-            showNotification: (msg) => {
-                notificationMsg = msg;
-            }
-        });
+        const deps = createValidDeps();
 
         const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
 
-        if (!notificationMsg || !notificationMsg.includes('canceled')) {
-            throw new Error('Should notify user of cancellation');
+        // Wait for async _buildCreationDialog
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const dialog = document.querySelector('.miniCycle-prompt-dialog');
+        if (!dialog) {
+            throw new Error('Dialog should appear');
+        }
+
+        const cancelBtn = dialog.querySelector('.miniCycle-btn-cancel');
+        cancelBtn.click();
+
+        // Wait for click handler to execute
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        // Dialog should be removed from DOM after cancel
+        const remainingDialog = document.querySelector('.miniCycle-prompt-dialog');
+        if (remainingDialog) {
+            throw new Error('Dialog should be closed and removed after cancel');
         }
     });
 
@@ -609,14 +641,14 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
                     localStorage.setItem('miniCycleData', JSON.stringify(mockData));
                 }
             },
-            showPromptModal: (options) => {
-                options.callback('Brand New Cycle');
-            },
             sanitizeInput: (input) => input.trim()
         });
 
         const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
+
+        // Fill and confirm the dialog
+        await fillAndConfirmCreationDialog('Brand New Cycle', 300);
 
         if (!updateCalled) {
             throw new Error('AppState.update should be called');
@@ -647,9 +679,6 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
                     updateFn(mockData);
                 }
             },
-            showPromptModal: (options) => {
-                options.callback('Duplicate Name');
-            },
             sanitizeInput: (input) => input.trim(),
             showNotification: (msg) => {
                 notifications.push(msg);
@@ -658,6 +687,9 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
 
         const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
+
+        // Fill and confirm the dialog
+        await fillAndConfirmCreationDialog('Duplicate Name', 300);
 
         // Should create "Duplicate Name (2)"
         if (!mockData.data.cycles['Duplicate Name (2)']) {
@@ -691,9 +723,6 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
                     updateFn(mockData);
                 }
             },
-            showPromptModal: (options) => {
-                options.callback('Many Dupes');
-            },
             sanitizeInput: (input) => input.trim(),
             showNotification: (msg) => {
                 notifications.push(msg);
@@ -702,6 +731,9 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
 
         const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
+
+        // Fill and confirm the dialog
+        await fillAndConfirmCreationDialog('Many Dupes', 300);
 
         // Fallback appends timestamp to the name (e.g., "Many Dupes (1735822342415)")
         const cycleKeys = Object.keys(mockData.data.cycles);
@@ -757,9 +789,6 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
                     updateFn(mockData);
                 }
             },
-            showPromptModal: (options) => {
-                options.callback('UI Test Cycle');
-            },
             sanitizeInput: (input) => input.trim(),
             hideMainMenu: () => { hideMenuCalled = true; },
             updateProgressBar: () => { updateProgressCalled = true; },
@@ -768,6 +797,9 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
 
         const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
+
+        // Fill and confirm the dialog
+        await fillAndConfirmCreationDialog('UI Test Cycle', 300);
 
         // Check UI updates
         if (taskList.innerHTML !== '') {
@@ -808,9 +840,6 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
                 get: () => mockData,
                 update: (updateFn) => { updateFn(mockData); }
             },
-            showPromptModal: (options) => {
-                options.callback('Undo Test Cycle');
-            },
             sanitizeInput: (input) => input.trim(),
             onCycleCreated: async (cycleKey) => {
                 undoNotified = true;
@@ -821,7 +850,10 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
 
-        // Wait for async
+        // Fill and confirm the dialog
+        await fillAndConfirmCreationDialog('Undo Test Cycle', 300);
+
+        // Wait for async onCycleCreated
         await new Promise(resolve => setTimeout(resolve, 100));
 
         if (!undoNotified) {
@@ -847,14 +879,14 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
                     localStorage.setItem('miniCycleData', JSON.stringify(mockData));
                 }
             },
-            showPromptModal: (options) => {
-                options.callback('Schema Test');
-            },
             sanitizeInput: (input) => input.trim()
         });
 
         const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
+
+        // Fill and confirm the dialog
+        await fillAndConfirmCreationDialog('Schema Test', 300);
 
         const newCycle = mockData.data.cycles['Schema Test'];
 
@@ -905,14 +937,14 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
                 get: () => mockData,
                 update: (updateFn) => { updateFn(mockData); }
             },
-            showPromptModal: (options) => {
-                options.callback('Timestamp Test');
-            },
             sanitizeInput: (input) => input.trim()
         });
 
         const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
+
+        // Fill and confirm the dialog
+        await fillAndConfirmCreationDialog('Timestamp Test', 300);
 
         if (mockData.metadata.lastModified <= originalTimestamp) {
             throw new Error('lastModified should be updated');
@@ -929,14 +961,14 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
                 get: () => mockData,
                 update: (updateFn) => { updateFn(mockData); }
             },
-            showPromptModal: (options) => {
-                options.callback('Count Test');
-            },
             sanitizeInput: (input) => input.trim()
         });
 
         const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
+
+        // Fill and confirm the dialog
+        await fillAndConfirmCreationDialog('Count Test', 300);
 
         if (mockData.metadata.totalCyclesCreated !== originalCount + 1) {
             throw new Error('totalCyclesCreated should be incremented');
@@ -952,14 +984,14 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
                 get: () => mockData,
                 update: (updateFn) => { updateFn(mockData); }
             },
-            showPromptModal: (options) => {
-                options.callback('Active Test');
-            },
             sanitizeInput: (input) => input.trim()
         });
 
         const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
+
+        // Fill and confirm the dialog
+        await fillAndConfirmCreationDialog('Active Test', 300);
 
         if (mockData.appState.activeCycleId !== 'Active Test') {
             throw new Error('activeCycleId should be set to new cycle');
@@ -974,10 +1006,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
 
         const deps = createValidDeps({
             safeLocalStorageGet: () => null,
-            safeJSONParse: () => null,
-            showPromptModal: (options) => {
-                options.callback('Test Cycle');
-            }
+            safeJSONParse: () => null
         });
 
         const instance = new RoutineManager(deps);
@@ -985,7 +1014,14 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         // Should not throw
         instance.showCycleCreationModal();
 
+        // Wait for setTimeout(500) + async _buildCreationDialog
         await new Promise(resolve => setTimeout(resolve, 700));
+
+        // Dialog should still appear even with missing schema data
+        const dialog = document.querySelector('.miniCycle-prompt-dialog');
+        if (!dialog) {
+            throw new Error('Dialog should appear even with missing schema data');
+        }
     });
 
     await test('handles missing DOM elements gracefully', async () => {
@@ -997,9 +1033,6 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
                 get: () => mockData,
                 update: (updateFn) => { updateFn(mockData); }
             },
-            showPromptModal: (options) => {
-                options.callback('No DOM Test');
-            },
             sanitizeInput: (input) => input.trim(),
             getElementById: () => null // Missing DOM elements
         });
@@ -1008,6 +1041,9 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
 
         // Should not throw
         instance.createNewMiniCycle();
+
+        // Fill and confirm the dialog — should not throw despite missing DOM elements
+        await fillAndConfirmCreationDialog('No DOM Test', 300);
     });
 
     await test('handles onCycleCreated rejection gracefully', async () => {
@@ -1018,9 +1054,6 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
                 isReady: () => true,
                 get: () => mockData,
                 update: (updateFn) => { updateFn(mockData); }
-            },
-            showPromptModal: (options) => {
-                options.callback('Rejection Test');
             },
             sanitizeInput: (input) => input.trim(),
             onCycleCreated: async () => {
@@ -1033,6 +1066,10 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         // Should not throw despite onCycleCreated rejection
         instance.createNewMiniCycle();
 
+        // Fill and confirm the dialog
+        await fillAndConfirmCreationDialog('Rejection Test', 300);
+
+        // Wait for async onCycleCreated to reject
         await new Promise(resolve => setTimeout(resolve, 100));
     });
 
@@ -1054,9 +1091,6 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
 
         const deps = createValidDeps({
             AppState: mockAppState,
-            showPromptModal: (options) => {
-                options.callback('Sync Test');
-            },
             sanitizeInput: (input) => input.trim()
         });
 
@@ -1065,7 +1099,11 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         // For showCycleCreationModal path
         instance.showCycleCreationModal();
 
-        await new Promise(resolve => setTimeout(resolve, 700));
+        // Wait for setTimeout(500) + async _buildCreationDialog, then fill and confirm
+        await fillAndConfirmCreationDialog('Sync Test', 700);
+
+        // Wait for async onCreateBlank callback
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // AppState.update should be called to sync data
         if (!updateCalled) {
@@ -1129,9 +1167,8 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         }
     });
 
-    await test('createNewMiniCycle modal callback is fast', async () => {
+    await test('createNewMiniCycle confirm callback is fast', async () => {
         const mockData = createMockSchemaData();
-        let callbackDuration = 0;
 
         const deps = createValidDeps({
             AppState: {
@@ -1139,16 +1176,27 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
                 get: () => mockData,
                 update: (updateFn) => { updateFn(mockData); }
             },
-            showPromptModal: (options) => {
-                const start = performance.now();
-                options.callback('Perf Test');
-                callbackDuration = performance.now() - start;
-            },
             sanitizeInput: (input) => input.trim()
         });
 
         const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
+
+        // Wait for dialog to appear
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const dialog = document.querySelector('.miniCycle-prompt-dialog');
+        if (!dialog) {
+            throw new Error('Dialog should appear');
+        }
+
+        const input = dialog.querySelector('.miniCycle-prompt-input');
+        const confirmBtn = dialog.querySelector('.miniCycle-btn-confirm');
+        input.value = 'Perf Test';
+
+        const start = performance.now();
+        confirmBtn.click();
+        const callbackDuration = performance.now() - start;
 
         if (callbackDuration > 50) {
             throw new Error(`Callback took too long: ${callbackDuration.toFixed(2)}ms`);

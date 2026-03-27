@@ -2,12 +2,12 @@
 
 **Turn Your Routine Into Progress**
 
-A free, privacy-first routine manager with automatic task cycling, gamification, and offline support. Build consistent habits by completing tasks, watching them reset, and tracking your growth over time.
+**v2.145** — A free, privacy-first routine manager with automatic task cycling, gamification, and offline support. Build consistent habits by completing tasks, watching them reset, and tracking your growth over time.
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v2/main-view.jpg" alt="Main View" width="200"/>
-  <img src="web/assets/images/screenshots/Example/user-manual/v2/cycle-complete.jpg" alt="Cycle Complete" width="200"/>
-  <img src="web/assets/images/screenshots/Example/user-manual/v2/dark-mode.jpg" alt="Dark Mode" width="200"/>
+  <img src="web/assets/images/screenshots/Example/user-manual/v3/main-view.jpg" alt="Main View" width="200"/>
+  <img src="web/assets/images/screenshots/Example/user-manual/v3/cycle-complete.jpg" alt="Cycle Complete" width="200"/>
+  <img src="web/assets/images/screenshots/Example/user-manual/v3/dark-mode.jpg" alt="Dark Mode" width="200"/>
 </p>
 
 ---
@@ -22,8 +22,8 @@ The core mechanic — add your routine tasks, complete them all, and they automa
 - **To-Do Mode** — completed tasks are removed instead of cycled (for one-off lists)
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v2/todo-mode.jpg" alt="To-Do Mode" width="200"/>
-  <img src="web/assets/images/screenshots/Example/user-manual/v2/task-options.jpg" alt="Task Options" width="200"/>
+  <img src="web/assets/images/screenshots/Example/user-manual/v3/todo-mode.jpg" alt="To-Do Mode" width="200"/>
+  <img src="web/assets/images/screenshots/Example/user-manual/v3/task-options.jpg" alt="Task Options" width="200"/>
 </p>
 
 ### Multiple Routines
@@ -34,34 +34,36 @@ Create and switch between separate routines — morning, workout, cooking, work,
 - Per-routine storage size tracking
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v2/routine-switcher.jpg" alt="Routine Switcher" width="200"/>
+  <img src="web/assets/images/screenshots/Example/user-manual/v3/routine-switcher.jpg" alt="Routine Switcher" width="200"/>
 </p>
 
-### Recurring Tasks
-Schedule tasks to appear on a repeating basis — daily, weekly, monthly, or custom intervals.
+### Recurring Tasks & Due Dates
+Schedule tasks to appear on a repeating basis — daily, weekly, monthly, or custom intervals. Set due dates with calendar picker for deadline tracking.
 
-- Flexible frequency options with advanced scheduling
+- Flexible frequency options with advanced scheduling (hourly, daily, weekly, biweekly, monthly, yearly, specific dates)
 - Automatic activation when the next occurrence arrives
 - Full management panel for all recurring tasks
+- Due date badges with overdue highlighting
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v2/recurring-panel.jpg" alt="Recurring Tasks" width="200"/>
+  <img src="web/assets/images/screenshots/Example/user-manual/v3/recurring-panel.jpg" alt="Recurring Tasks" width="200"/>
 </p>
 
 ### Gamification
-Stay motivated with achievements, milestones, and unlockable themes that reward consistency.
+Stay motivated with achievements, milestones, unlockable themes, and a mini-game that reward consistency.
 
-- **Achievement Badges** — unlock by reaching cycle and task milestones
+- **Achievement Badges** — unlock by reaching cycle and task milestones (5, 25, 50, 75, 100)
 - **Milestone Celebrations** — overlay animations for major achievements
 - **Progress Tracking** — see how close you are to the next unlock
+- **Mini-Game** — Whack-a-Order unlocks at 100 cycles
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v2/achievements.jpg" alt="Achievements" width="200"/>
-  <img src="web/assets/images/screenshots/Example/user-manual/v2/milestone-badges.jpg" alt="Milestone Badges" width="200"/>
+  <img src="web/assets/images/screenshots/Example/user-manual/v3/achievements.jpg" alt="Achievements" width="200"/>
+  <img src="web/assets/images/screenshots/Example/user-manual/v3/milestone-badges.jpg" alt="Milestone Badges" width="200"/>
 </p>
 
 ### Vocabulary Themes
-Unlock 5 themes that change the app's language, icons, and colors to match your routine's context:
+Unlock 5 themes that transform a routine's language, icons, and color palette to match its context:
 
 | Theme | Unlocks At | Example Vocabulary |
 |-------|-----------|-------------------|
@@ -71,7 +73,11 @@ Unlock 5 themes that change the app's language, icons, and colors to match your 
 | Scholar | 50 cycles | studies, sessions, review |
 | Cleaning | 75 cycles | chores, sweeps, clean up |
 
-Each routine can use a different theme — your cooking routine can speak "Cleaning" while your study routine speaks "Scholar."
+Each routine can use a different theme — your cooking routine can speak "Cleaning" while your study routine speaks "Scholar." Themes change both vocabulary and the entire color scheme.
+
+<p align="center">
+  <img src="web/assets/images/screenshots/Example/user-manual/v3/themes.jpg" alt="Vocabulary Themes" width="200"/>
+</p>
 
 ### Stats & History
 Swipe left on the main view to access detailed statistics for your current routine.
@@ -81,7 +87,7 @@ Swipe left on the main view to access detailed statistics for your current routi
 - Cleared tasks archive with restore option
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v2/stats-panel.jpg" alt="Stats Panel" width="200"/>
+  <img src="web/assets/images/screenshots/Example/user-manual/v3/stats-panel.jpg" alt="Stats Panel" width="200"/>
 </p>
 
 ### Personalization
@@ -94,37 +100,43 @@ Customize colors, backgrounds, and display preferences to make miniCycle yours.
 - Checkmark style options (fitted, minimal, circle)
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v2/personalization.jpg" alt="Personalization" width="200"/>
-  <img src="web/assets/images/screenshots/Example/user-manual/v2/settings.jpg" alt="Settings" width="200"/>
+  <img src="web/assets/images/screenshots/Example/user-manual/v3/personalization.jpg" alt="Personalization" width="200"/>
+  <img src="web/assets/images/screenshots/Example/user-manual/v3/settings.jpg" alt="Settings" width="200"/>
 </p>
 
 ### Reminders & Notifications
-Set per-task reminders with flexible scheduling — minutes, hours, or days — with optional browser notifications.
+Set per-task reminders with flexible scheduling — minutes, hours, or days — with optional browser notifications and due date alerts.
+
+- Automatic backup reminders (every 14 days, 25 cycles, or 100 cleared tasks)
+- Due date notifications for approaching deadlines
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v2/reminders.jpg" alt="Reminders" width="200"/>
+  <img src="web/assets/images/screenshots/Example/user-manual/v3/reminders.jpg" alt="Reminders" width="200"/>
 </p>
 
-### Accessibility
-- Reduced motion support (respects OS preference)
+### Accessibility (WCAG AA)
+- Reduced motion support (respects OS preference + manual toggle)
 - High contrast mode
-- Adjustable font sizes (4 options)
-- Keyboard navigation and ARIA labels
-- Focus management in modals
+- Adjustable font sizes (Small, Default, Large, Extra Large)
+- Full keyboard navigation and ARIA labels
+- Focus management and focus trapping in modals
+- Minimum 4.5:1 contrast ratios throughout
 
 ### More
-- **Search** — filter tasks by name
-- **Drag & Drop** — reorder tasks by dragging or arrow buttons
-- **Undo/Redo** — full undo history for task and cycle actions
-- **Focus Mode** — distraction-free view hiding navigation
-- **Onboarding** — guided setup for new users
-- **Quick Actions** — fast-access toolbar in the hamburger menu
-- **Offline Support** — works fully offline via service worker
+- **Search & Filter** — filter by name, status, priority, due date, or recurring; sort by A-Z, priority, or due date
+- **Drag & Drop** — reorder tasks by dragging or arrow buttons (custom Safari ghost)
+- **Undo/Redo** — full undo history for task and cycle actions (Ctrl+Z / Cmd+Z)
+- **Focus Mode** — distraction-free view hiding all navigation chrome
+- **Guided Tours** — interactive walkthroughs for every major feature (13 tours total)
+- **Quick Actions** — customizable fast-access toolbar in the hamburger menu
+- **Sample Routines** — prebuilt routines (Daily Routine, Cardio, QA Inspection, etc.) to get started quickly
+- **Offline Support** — works fully offline as a Progressive Web App
+- **Backup & Restore** — full backup/restore of all routines and settings
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v2/search-tasks.jpg" alt="Search" width="200"/>
-  <img src="web/assets/images/screenshots/Example/user-manual/v2/hamburger-menu.jpg" alt="Menu" width="200"/>
-  <img src="web/assets/images/screenshots/Example/user-manual/v2/onboarding.jpg" alt="Onboarding" width="200"/>
+  <img src="web/assets/images/screenshots/Example/user-manual/v3/search-tasks.jpg" alt="Search & Filter" width="200"/>
+  <img src="web/assets/images/screenshots/Example/user-manual/v3/focus-mode.jpg" alt="Focus Mode" width="200"/>
+  <img src="web/assets/images/screenshots/Example/user-manual/v3/guided-tour.jpg" alt="Guided Tour" width="200"/>
 </p>
 
 ---
@@ -160,6 +172,22 @@ The result is an app that solves the same problems frameworks solve — but with
 
 ---
 
+## By the Numbers
+
+| Metric | Count |
+|--------|-------|
+| JavaScript | 77,653 lines across 117 modules |
+| CSS | 22,352 lines across 41 files |
+| Automated Tests | 1,757 tests in 55 test files (100% pass) |
+| DI-Manifested Modules | 51 with 8 load phases |
+| Label Keys | 53 categories with theme-aware resolution |
+| DOM Constants | 200+ (IDs, selectors, classes, z-index) |
+| CSP Hashes | 15+ SHA-256 inline script hashes |
+| Guided Tours | 13 interactive walkthroughs |
+| `window.*` Globals | 0 (strict DI enforcement) |
+
+---
+
 ## Development
 
 ### Prerequisites
@@ -179,6 +207,8 @@ npm start        # HTTP server on localhost:8080
 npm start          # Python HTTP server on port 8080
 npm test           # Playwright browser tests (server must be running)
 npm run lint       # ESLint with security + SonarJS plugins
+npm run perf       # Performance benchmarks
+npm run lighthouse # Lighthouse CI audit
 ```
 
 ### Project Structure
@@ -186,57 +216,89 @@ npm run lint       # ESLint with security + SonarJS plugins
 miniCycle/
 ├── web/
 │   ├── miniCycle.html              # Main entry point (PWA)
-│   ├── service-worker.js           # Offline support & caching
-│   ├── version.js                  # APP_VERSION + CACHE_VERSION
+│   ├── service-worker.js           # Cache-first SW with version verification
+│   ├── version.js                  # APP_VERSION + CACHE_VERSION (single source of truth)
 │   ├── modules/                    # ES6 modules (strict DI, zero window.* globals)
 │   │   ├── boot/                   # orchestrator → coreBoot → featureBoot → uiBoot
 │   │   ├── core/                   # appState, appContext, diBase, constants
 │   │   ├── task/                   # Task CRUD, rendering, drag-drop, search
-│   │   ├── ui/                     # Modals, menus, settings, gestures, undo
+│   │   ├── ui/                     # Modals, menus, settings, gestures, guided tours
 │   │   ├── recurring/              # Scheduling, matching, panel, settings
 │   │   ├── features/               # Themes, stats, achievements, history, reminders
 │   │   ├── routine/                # Routine lifecycle, switching, import/export
-│   │   ├── labels/                 # Label system + theme overrides
+│   │   ├── labels/                 # Label system + vocabulary theme overrides
 │   │   ├── utils/                  # Notifications, device detection, validation
 │   │   ├── storage/                # backupManager (IndexedDB)
 │   │   ├── progress/               # Cycle completion tracking
 │   │   └── other/                  # Plugin system
 │   ├── styles/                     # Token-based CSS (variables.css foundation)
-│   ├── tests/                      # Playwright test files
+│   ├── tests/                      # Playwright browser tests (55 files)
 │   └── docs/                       # Developer guides & architecture docs
+├── .github/workflows/              # CI pipelines (tests + Lighthouse + perf)
 ├── lite/                           # Static ES5 fallback (frozen, not maintained)
 └── CLAUDE.md                       # Implementation rules & patterns
 ```
 
 ### Architecture
-- **ES6 modules** with strict dependency injection — zero `window.*` globals
-- **Boot sequence**: orchestrator → coreBoot → featureBoot → uiBoot
-- **State management**: centralized `AppState.update(producer)` with Schema 2.5
-- **Label system**: centralized keys with pluralization, interpolation, and theme-aware resolution
-- **CSS**: token-based design system, dark mode, reduced motion support
-- **Service worker**: network-first strategy with stale-while-revalidate fallback
-- **Security**: Content Security Policy with hash-based inline script validation, XSS-safe DOM patterns
+
+#### Dependency Injection
+Every module declares its dependencies through `createDIModule()` from `diBase.js` with `required()` and `optional()` declarations. Dependencies are wired via manifest-based resolution in `featureBoot.js` — no circular imports, no global state, no `window.*` fallbacks. Lazy getter resolution ensures dependencies aren't evaluated until first access.
+
+#### Boot Sequence
+A 4-phase boot controls startup order with timeout protection:
+
+```
+orchestrator.js (sequence control + boot UI)
+  → Phase 1: coreBoot.js     — AppState, GlobalUtils, migration (15s timeout)
+  → Phase 2: featureBoot.js  — moduleLoader loads 51 manifests, wires ALL DI (20s timeout)
+  → Phase 3: uiBoot.js       — event listeners, UI finalization
+```
+
+Modules load across 8 phases: Core Utils → Theme/Visual → Task Management → Recurring → Cycle → UI Managers → Features → Testing. Each module can declare `requires`, `optionalDeps`, and `lazyRequires` to control wiring order.
+
+#### State Management
+Centralized `AppState.update(producer)` is the single mutation entry point for all state changes. Schema 2.5 organizes data into `cycles`, `appState`, `settings`, `userProgress`, and `achievements`. Saves are debounced at 600ms by default, with immediate save option for critical operations. A full undo/redo system captures snapshots with deduplication and signature tracking.
+
+#### Label System
+Every user-facing string flows through `getLabel()` with pluralization, interpolation, and theme-aware resolution. The vocabulary theme system layers theme-specific overrides on top of the 53-category default label set. Themes are resolved per-routine, so different routines can display entirely different vocabulary simultaneously.
+
+#### CSS Architecture
+Token-based design system built on `variables.css` with semantic color palette, spacing scale, typography scale, and z-index layers. Dark mode uses CSS custom property overrides with a `prefers-color-scheme` media query fallback. Reduced motion support auto-disables transitions via `prefers-reduced-motion`. Vocabulary themes apply color presets as `--pref-*` CSS variables at runtime.
+
+#### Service Worker
+Cache-first navigation with a `verifyVersionFresh()` safety net that checks version.js after serving cached content. Handles Safari's `redirected: true` response rejection with a `cleanResponse()` helper. Module assets use versioned URLs (`module.js?v=X`) for cache busting.
+
+#### Security
+- **CSP**: Strict Content Security Policy with 15+ SHA-256 hashes for inline scripts (no `'unsafe-inline'`)
+- **XSS Prevention**: `textContent` for all user data, `innerHTML` only for trusted static content (icons, labels)
+- **Headers**: HSTS (1 year), X-Frame-Options (SAMEORIGIN), X-Content-Type-Options (nosniff)
+- **Permissions Policy**: Geolocation, microphone, camera, and payment APIs blocked
+- **DOM Isolation**: All DOM access through DI helpers (`getElementById`, `querySelector`, `getBody`, etc.)
+
+### CI/CD
+GitHub Actions runs on every push and PR to main/develop:
+
+- **Test Pipeline** (`test.yml`): Node.js 18.x + 20.x matrix, 1,757 Playwright browser tests against Chromium
+- **Performance Pipeline** (`performance.yml`): Lighthouse CI audit + performance benchmarks
+- **Linting**: ESLint with `eslint-plugin-security` (unsafe regex, eval, CSRF detection) and `eslint-plugin-sonarjs` (cognitive complexity max 25, duplicate detection)
+
+### PWA Capabilities
+- **Standalone display** with window controls overlay support
+- **File handlers**: Opens `.mcyc` and `.json` files directly from the OS
+- **Shortcuts**: Quick Add Task, Open Lite, User Manual
+- **Offline**: Full functionality via service worker cache
+- **Install prompts**: Automatic detection for iOS Safari, Chrome, Edge
 
 ### Browser Compatibility
-- **Modern**: Chrome, Firefox, Safari, Edge (ES6+)
+- **Modern**: Chrome, Firefox, Safari, Edge (ES2022+)
 - **Mobile**: iOS Safari, Android Chrome (full PWA support)
 - **Legacy**: Static ES5 fallback in `lite/` for older devices
 
 ---
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Follow the patterns documented in `CLAUDE.md`
-4. Run `npm run lint` and `npm test` to verify
-5. Submit a pull request
-
----
-
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+This project is source-available under a proprietary license. You may view and study the code, but copying, modifying, distributing, or using it in other projects is not permitted. See [LICENSE](LICENSE) for full terms.
 
 ---
 
