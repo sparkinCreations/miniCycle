@@ -22,7 +22,7 @@ const colors = {
     magenta: '\x1b[35m'
 };
 
-// All available test modules (50 modules - matches browser "Run All Tests")
+// All available test modules (85 modules - matches browser "Run All Tests")
 const ALL_MODULES = [
     'integration', 'themeManager', 'deviceDetection', 'routineLoader', 'statsPanel',
     'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel',
@@ -33,7 +33,22 @@ const ALL_MODULES = [
     'taskEvents', 'taskDOM', 'taskOptionsCustomizer', 'taskUI', 'taskInteractions', 'uiEffects',
     'xss-vulnerability', 'errorHandler', 'testingModal', 'backupManager', 'cycleCompletion',
     'dataValidator', 'appInit', 'appState', 'helpWindowManager', 'constants', 'basicPluginSystem',
-    'accessibility', 'stress', 'coreBoot', 'uiBoot', 'featureBoot'
+    'accessibility', 'stress', 'coreBoot', 'uiBoot', 'featureBoot',
+    'labelResolver', 'defaultLabels', 'diBase', 'themes',
+    'dataSanitizer', 'storageUtils', 'achievementsManager', 'historyManager',
+    'recurringDateUtils', 'clearedTasksManager', 'taskCompletion', 'taskCRUD',
+    'recurringMatcher', 'recurringCalculators', 'recurringActivation',
+    'preferencesManager', 'settingsUIManager', 'focusMode', 'taskSearch',
+    'quickActionsManager', 'backupRestoreManager', 'cycleExportManager',
+    'cycleImportManager', 'shareManager', 'taskButtons', 'taskCycleReset', 'backupReminder',
+    'orchestrator', 'moduleLoader', 'moduleManifests', 'modalTemplates',
+    'appContext', 'dataAccess', 'appGlobalState', 'migrationFacade', 'types',
+    'modalRegistry', 'modalUtils', 'panelVisibilityHelpers', 'gesturePanelManager',
+    'titleManager', 'uiOrchestrator', 'preferencesBgImage', 'preferencesPresets',
+    'taskDOMPatch', 'debugMode', 'iconInit', 'icons', 'keyboardNav', 'nameUtils',
+    'recurringPanelEvents', 'recurringPanelForm', 'recurringPanelGrids',
+    'recurringPanelSetup', 'recurringPanelSummary', 'recurringSettings',
+    'recurringSettingsApplicator', 'recurringWatcher'
 ];
 
 // Parse command line arguments

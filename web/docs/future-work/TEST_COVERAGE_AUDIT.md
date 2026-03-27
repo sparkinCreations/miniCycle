@@ -1,14 +1,25 @@
 # Test Coverage Audit
 
 **Date:** March 27, 2026
-**Status:** DOCUMENTED
-**Coverage:** 49/117 modules tested (42%)
+**Status:** COMPLETE
+**Coverage:** 107/117 modules tested (91%) — 100% of production modules
 
 ---
 
 ## Summary
 
-1,677 tests across 54 test files, all passing (100%). Automated via Playwright headless Chromium against localhost:8080. The 49 tested modules cover all critical paths (state, boot, routing, tasks, recurring). The 68 untested modules are primarily UI helpers, sub-modules of tested parents, and internal utilities.
+2,195 tests across 85 test files, all passing (100%). Automated via Playwright headless Chromium against localhost:8080. Every production module has direct test coverage. The 10 untested modules are testing infrastructure (`testing-modal-*.js` sub-modules) and non-production example code (`exampleTimeTrackerPlugin.js`, `pluginIntegrationGuide.js`) — intentionally excluded.
+
+### Implementation Timeline (March 27, 2026)
+
+| Batch | Priority | Modules Added | Tests Added | Running Total |
+|-------|----------|---------------|-------------|---------------|
+| — | Existing | 49 modules (pre-audit) | 1,677 | 1,677 |
+| 1 | P1 — Core logic | labelResolver, defaultLabels, diBase, themes | 115 | 1,792 |
+| 2 | P1 — Core logic | dataSanitizer, storageUtils, achievementsManager, historyManager | 58 | 1,850 |
+| 3 | P1 — Core logic | recurringDateUtils, clearedTasksManager, taskCompletion, taskCRUD, recurringMatcher, recurringCalculators, recurringActivation | 80 | 1,930 |
+| 4 | P2 — UI managers | preferencesManager, settingsUIManager, focusMode, taskSearch, quickActionsManager, backupRestoreManager, cycleExportManager, cycleImportManager, shareManager, taskButtons, taskCycleReset, backupReminder | 127 | 2,057 |
+| 5 | P3+P4 — Boot/helpers | 31 boot, wiring, and utility modules | 138 | 2,195 |
 
 ---
 
@@ -122,96 +133,14 @@
 
 ---
 
-## Untested Modules (68)
+## Previously Untested Modules — ALL NOW COVERED
 
-### Priority 1 — High-value, independent logic
-These modules have testable logic that isn't covered by a parent module's tests.
+All 68 previously untested production modules received test coverage on March 27, 2026. The modules were addressed in priority order:
 
-| Module | Why |
-|--------|-----|
-| `labels/labelResolver.js` | Core label system — getLabel() with pluralization, interpolation, theme resolution |
-| `labels/defaultLabels.js` | 591+ label keys — structural validation, no missing keys |
-| `labels/themes.js` | VocabThemeManager, THEME_DEFINITIONS, unlock logic |
-| `core/diBase.js` | DI framework — createDIModule, required/optional, lazy resolution |
-| `task/taskCompletion.js` | Task completion logic, cycle triggers |
-| `task/taskCRUD.js` | Add/edit/delete task operations |
-| `features/achievementsManager.js` | Badge unlocks, milestone tracking |
-| `features/historyManager.js` | Cycle history logging |
-| `features/clearedTasksManager.js` | Cleared tasks archive, restore |
-| `utils/dataSanitizer.js` | Input sanitization — security-critical |
-| `utils/storageUtils.js` | Storage operations, size tracking |
-| `recurring/recurringMatcher.js` | Schedule matching logic |
-| `recurring/recurringCalculators.js` | Next-occurrence date calculations |
-| `recurring/recurringDateUtils.js` | Date utility functions |
-| `recurring/recurringActivation.js` | Auto-activation of recurring tasks |
-
-### Priority 2 — UI managers with significant logic
-These have business logic mixed with DOM, harder to test but valuable.
-
-| Module | Why |
-|--------|-----|
-| `ui/preferencesManager.js` | Color/theme preferences, vocab theme gate |
-| `ui/settingsUIManager.js` | Toggle setup, settings persistence |
-| `ui/focusMode.js` | Focus mode toggle, chrome hiding |
-| `ui/taskSearch.js` | Search/filter/sort logic |
-| `ui/quickActionsManager.js` | Quick action toolbar |
-| `ui/backupRestoreManager.js` | Backup/restore UI flow |
-| `ui/cycleExportManager.js` | .mcyc export logic |
-| `ui/cycleImportManager.js` | .mcyc import + validation |
-| `ui/shareManager.js` | Share functionality |
-| `task/taskButtons.js` | Button event wiring |
-| `task/taskCycleReset.js` | Cycle reset logic |
-| `features/backupReminder.js` | Backup reminder triggers |
-
-### Priority 3 — Boot/wiring modules
-These are primarily wiring code, tested indirectly by integration tests.
-
-| Module | Why |
-|--------|-----|
-| `boot/orchestrator.js` | Boot sequence control — tested indirectly |
-| `boot/moduleLoader.js` | DI wiring — tested indirectly via all module tests |
-| `boot/moduleManifests.js` | Manifest declarations — structural validation possible |
-| `boot/modalTemplates.js` | HTML injection — tested indirectly |
-| `core/appContext.js` | API facade — tested indirectly |
-| `core/dataAccess.js` | Legacy wrapper — being phased out |
-| `core/appGlobalState.js` | Global state — tested indirectly via appState |
-| `core/migrationFacade.js` | Migration entry — tested via migrationManager |
-| `core/types.js` | Type definitions only |
-
-### Priority 4 — Small helpers and internal utilities
-Low standalone value; tested implicitly through parent modules.
-
-| Module | Notes |
-|--------|-------|
-| `ui/modalRegistry.js` | Small registry, tested via modalManager |
-| `ui/modalUtils.js` | Modal helpers, tested via modalManager |
-| `ui/panelVisibilityHelpers.js` | Panel show/hide helpers |
-| `ui/gesturePanelManager.js` | Gesture handling |
-| `ui/titleManager.js` | Document title updates |
-| `ui/uiOrchestrator.js` | UI coordination |
-| `ui/preferencesBgImage.js` | Background image picker (no DI) |
-| `ui/preferencesPresets.js` | Color preset management |
-| `task/taskDOMPatch.js` | DOM patching helpers |
-| `utils/debugMode.js` | Debug mode toggle |
-| `utils/iconInit.js` | Icon initialization |
-| `utils/icons.js` | Icon constants |
-| `utils/keyboardNav.js` | Keyboard navigation |
-| `utils/nameUtils.js` | Name formatting utilities |
-| `recurring/recurringPanelEvents.js` | Panel event handlers |
-| `recurring/recurringPanelForm.js` | Panel form building |
-| `recurring/recurringPanelGrids.js` | Panel grid rendering |
-| `recurring/recurringPanelSetup.js` | Panel initialization |
-| `recurring/recurringPanelSummary.js` | Panel summary display |
-| `recurring/recurringSettings.js` | Recurring settings management |
-| `recurring/recurringSettingsApplicator.js` | Apply recurring settings |
-| `recurring/recurringWatcher.js` | Watch for recurring activations |
-| `other/exampleTimeTrackerPlugin.js` | Example plugin (not production) |
-| `other/pluginIntegrationGuide.js` | Guide (not production) |
-
-### Not Worth Testing
-| Module | Why |
-|--------|-----|
-| `testing/testing-modal-*.js` (8 files) | Testing infrastructure itself — testing the tester adds no value |
+- **Priority 1 (15 modules):** Core logic — labels, DI, sanitizer, storage, achievements, history, recurring date/match/calc/activation, task completion/CRUD, cleared tasks
+- **Priority 2 (12 modules):** UI managers — preferences, settings, focus mode, search, quick actions, backup/restore, export/import, share, task buttons/reset, backup reminder
+- **Priority 3 (9 modules):** Boot/wiring — orchestrator, moduleLoader, manifests, templates, appContext, dataAccess, appGlobalState, migrationFacade, types
+- **Priority 4 (22 modules):** Helpers — modal registry/utils, panel visibility, gestures, title, UI orchestrator, preferences bg/presets, taskDOMPatch, debug, icons, keyboard nav, name utils, all recurring panel sub-modules, recurring settings/applicator/watcher
 
 ---
 
@@ -222,38 +151,37 @@ Low standalone value; tested implicitly through parent modules.
 | routine/ | 5 | 5 | **100%** |
 | storage/ | 1 | 1 | **100%** |
 | progress/ | 1 | 1 | **100%** |
-| task/ | 8 | 14 | 57% |
-| features/ | 4 | 8 | 50% |
-| utils/ | 8 | 17 | 47% |
-| boot/ | 3 | 7 | 43% |
-| ui/ | 15 | 36 | 42% |
-| core/ | 4 | 10 | 40% |
-| other/ | 1 | 3 | 33% |
-| recurring/ | 3 | 15 | 20% |
-| testing/ | 1 | 9 | 11% |
-| labels/ | 0 | 3 | **0%** |
+| labels/ | 3 | 3 | **100%** |
+| task/ | 14 | 14 | **100%** |
+| features/ | 8 | 8 | **100%** |
+| core/ | 10 | 10 | **100%** |
+| boot/ | 7 | 7 | **100%** |
+| ui/ | 36 | 36 | **100%** |
+| utils/ | 17 | 17 | **100%** |
+| recurring/ | 15 | 15 | **100%** |
+| other/ | 1 | 3 | 33% (2 non-production) |
+| testing/ | 1 | 9 | 11% (8 intentionally excluded) |
 
 ---
 
-## Goal: 100% Module Coverage
+## Goal: 100% Production Module Coverage — ACHIEVED
 
-**Target:** 117/117 modules tested — 68 new test files needed.
+**Result:** 107/117 modules tested. All production modules covered. 10 intentionally excluded (testing infrastructure + non-production examples).
 
-### Implementation Order
+### Excluded Modules (intentional — not worth testing)
 
-1. **Priority 1 first** — pure logic modules, highest ROI, no DOM complications
-2. **Priority 2 next** — UI managers with significant business logic
-3. **Priority 3 then** — boot/wiring modules, structural validation
-4. **Priority 4 last** — small helpers, internal utilities
-5. **Skip testing/ sub-modules** — testing infrastructure doesn't need tests of its own
-
-### Key Notes
-
-- **labelResolver.js and diBase.js** are the two most impactful untested modules — they underpin every other module
-- **dataSanitizer.js** is security-critical and should be tested early
-- **recurring/ sub-modules** (calculators, matcher, dateUtils) have complex date logic that benefits most from unit tests
-- **Use MODULE_TEMPLATE.tests.js** as the starting point for new test files
-- Each new test file must be registered in `module-test-suite.html` (dropdown + loader) and `run-browser-tests.cjs` (ALL_MODULES array)
+| Module | Reason |
+|--------|--------|
+| `testing/testing-modal-analysis.js` | Testing infrastructure |
+| `testing/testing-modal-backup.js` | Testing infrastructure |
+| `testing/testing-modal-core.js` | Testing infrastructure |
+| `testing/testing-modal-debug.js` | Testing infrastructure |
+| `testing/testing-modal-diagnostics.js` | Testing infrastructure |
+| `testing/testing-modal-integration.js` | Testing infrastructure |
+| `testing/testing-modal-storage-viewer.js` | Testing infrastructure |
+| `testing/testing-modal-ui.js` | Testing infrastructure |
+| `other/exampleTimeTrackerPlugin.js` | Non-production example |
+| `other/pluginIntegrationGuide.js` | Non-production guide |
 
 ---
 

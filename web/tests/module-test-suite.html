@@ -401,6 +401,64 @@
             <option value="coreBoot">🚀 Core Boot</option>
             <option value="uiBoot">📱 UI Boot</option>
             <option value="featureBoot">🔌 Feature Boot</option>
+            <option value="labelResolver">🏷️ Label Resolver</option>
+            <option value="defaultLabels">📝 Default Labels</option>
+            <option value="diBase">💉 DI Base</option>
+            <option value="themes">🎨 Vocab Themes</option>
+            <option value="dataSanitizer">🧹 Data Sanitizer</option>
+            <option value="storageUtils">💾 Storage Utils</option>
+            <option value="achievementsManager">🏆 Achievements Manager</option>
+            <option value="historyManager">📜 History Manager</option>
+            <option value="recurringDateUtils">📅 Recurring Date Utils</option>
+            <option value="clearedTasksManager">🗑️ Cleared Tasks Manager</option>
+            <option value="taskCompletion">✅ Task Completion</option>
+            <option value="taskCRUD">✏️ Task CRUD</option>
+            <option value="recurringMatcher">🔁 Recurring Matcher</option>
+            <option value="recurringCalculators">🔢 Recurring Calculators</option>
+            <option value="recurringActivation">⚡ Recurring Activation</option>
+            <option value="preferencesManager">🎨 Preferences Manager</option>
+            <option value="settingsUIManager">⚙️ Settings UI Manager</option>
+            <option value="focusMode">🎯 Focus Mode</option>
+            <option value="taskSearch">🔍 Task Search</option>
+            <option value="quickActionsManager">⚡ Quick Actions</option>
+            <option value="backupRestoreManager">💾 Backup Restore</option>
+            <option value="cycleExportManager">📤 Cycle Export</option>
+            <option value="cycleImportManager">📥 Cycle Import</option>
+            <option value="shareManager">📤 Share Manager</option>
+            <option value="taskButtons">🔘 Task Buttons</option>
+            <option value="taskCycleReset">🔄 Task Cycle Reset</option>
+            <option value="backupReminder">🔔 Backup Reminder</option>
+            <option value="orchestrator">🎭 Orchestrator</option>
+            <option value="moduleLoader">📦 Module Loader</option>
+            <option value="moduleManifests">📋 Module Manifests</option>
+            <option value="modalTemplates">🖼️ Modal Templates</option>
+            <option value="appContext">🔗 App Context</option>
+            <option value="dataAccess">💿 Data Access</option>
+            <option value="appGlobalState">🌐 App Global State</option>
+            <option value="migrationFacade">🔀 Migration Facade</option>
+            <option value="types">📝 Types</option>
+            <option value="modalRegistry">📒 Modal Registry</option>
+            <option value="modalUtils">🔧 Modal Utils</option>
+            <option value="panelVisibilityHelpers">👁️ Panel Visibility</option>
+            <option value="gesturePanelManager">👆 Gesture Panel</option>
+            <option value="titleManager">📰 Title Manager</option>
+            <option value="uiOrchestrator">🎼 UI Orchestrator</option>
+            <option value="preferencesBgImage">🖼️ Preferences BG Image</option>
+            <option value="preferencesPresets">🎨 Preferences Presets</option>
+            <option value="taskDOMPatch">🩹 Task DOM Patch</option>
+            <option value="debugMode">🐛 Debug Mode</option>
+            <option value="iconInit">🎨 Icon Init</option>
+            <option value="icons">✨ Icons</option>
+            <option value="keyboardNav">⌨️ Keyboard Nav</option>
+            <option value="nameUtils">📛 Name Utils</option>
+            <option value="recurringPanelEvents">📅 Recurring Panel Events</option>
+            <option value="recurringPanelForm">📝 Recurring Panel Form</option>
+            <option value="recurringPanelGrids">📊 Recurring Panel Grids</option>
+            <option value="recurringPanelSetup">⚙️ Recurring Panel Setup</option>
+            <option value="recurringPanelSummary">📄 Recurring Panel Summary</option>
+            <option value="recurringSettings">⚙️ Recurring Settings</option>
+            <option value="recurringSettingsApplicator">🔧 Recurring Settings Applicator</option>
+            <option value="recurringWatcher">👀 Recurring Watcher</option>
         </select>
             </div>
         </div>
@@ -492,6 +550,64 @@
         const { runCoreBootTests } = await import(`./coreBoot.tests.js?v=${cacheBuster}`);
         const { runUIBootTests } = await import(`./uiBoot.tests.js?v=${cacheBuster}`);
         const { runFeatureBootTests } = await import(`./featureBoot.tests.js?v=${cacheBuster}`);
+        const { runLabelResolverTests } = await import(`./labelResolver.tests.js?v=${cacheBuster}`);
+        const { runDefaultLabelsTests } = await import(`./defaultLabels.tests.js?v=${cacheBuster}`);
+        const { runDiBaseTests } = await import(`./diBase.tests.js?v=${cacheBuster}`);
+        const { runThemesTests } = await import(`./themes.tests.js?v=${cacheBuster}`);
+        const { runDataSanitizerTests } = await import(`./dataSanitizer.tests.js?v=${cacheBuster}`);
+        const { runStorageUtilsTests } = await import(`./storageUtils.tests.js?v=${cacheBuster}`);
+        const { runAchievementsManagerTests } = await import(`./achievementsManager.tests.js?v=${cacheBuster}`);
+        const { runHistoryManagerTests } = await import(`./historyManager.tests.js?v=${cacheBuster}`);
+        const { runRecurringDateUtilsTests } = await import(`./recurringDateUtils.tests.js?v=${cacheBuster}`);
+        const { runClearedTasksManagerTests } = await import(`./clearedTasksManager.tests.js?v=${cacheBuster}`);
+        const { runTaskCompletionTests } = await import(`./taskCompletion.tests.js?v=${cacheBuster}`);
+        const { runTaskCRUDTests } = await import(`./taskCRUD.tests.js?v=${cacheBuster}`);
+        const { runRecurringMatcherTests } = await import(`./recurringMatcher.tests.js?v=${cacheBuster}`);
+        const { runRecurringCalculatorsTests } = await import(`./recurringCalculators.tests.js?v=${cacheBuster}`);
+        const { runRecurringActivationTests } = await import(`./recurringActivation.tests.js?v=${cacheBuster}`);
+        const { runPreferencesManagerTests } = await import(`./preferencesManager.tests.js?v=${cacheBuster}`);
+        const { runSettingsUIManagerTests } = await import(`./settingsUIManager.tests.js?v=${cacheBuster}`);
+        const { runFocusModeTests } = await import(`./focusMode.tests.js?v=${cacheBuster}`);
+        const { runTaskSearchTests } = await import(`./taskSearch.tests.js?v=${cacheBuster}`);
+        const { runQuickActionsManagerTests } = await import(`./quickActionsManager.tests.js?v=${cacheBuster}`);
+        const { runBackupRestoreManagerTests } = await import(`./backupRestoreManager.tests.js?v=${cacheBuster}`);
+        const { runCycleExportManagerTests } = await import(`./cycleExportManager.tests.js?v=${cacheBuster}`);
+        const { runCycleImportManagerTests } = await import(`./cycleImportManager.tests.js?v=${cacheBuster}`);
+        const { runShareManagerTests } = await import(`./shareManager.tests.js?v=${cacheBuster}`);
+        const { runTaskButtonsTests } = await import(`./taskButtons.tests.js?v=${cacheBuster}`);
+        const { runTaskCycleResetTests } = await import(`./taskCycleReset.tests.js?v=${cacheBuster}`);
+        const { runBackupReminderTests } = await import(`./backupReminder.tests.js?v=${cacheBuster}`);
+        const { runOrchestratorTests } = await import(`./orchestrator.tests.js?v=${cacheBuster}`);
+        const { runModuleLoaderTests } = await import(`./moduleLoader.tests.js?v=${cacheBuster}`);
+        const { runModuleManifestsTests } = await import(`./moduleManifests.tests.js?v=${cacheBuster}`);
+        const { runModalTemplatesTests } = await import(`./modalTemplates.tests.js?v=${cacheBuster}`);
+        const { runAppContextTests } = await import(`./appContext.tests.js?v=${cacheBuster}`);
+        const { runDataAccessTests } = await import(`./dataAccess.tests.js?v=${cacheBuster}`);
+        const { runAppGlobalStateTests } = await import(`./appGlobalState.tests.js?v=${cacheBuster}`);
+        const { runMigrationFacadeTests } = await import(`./migrationFacade.tests.js?v=${cacheBuster}`);
+        const { runTypesTests } = await import(`./types.tests.js?v=${cacheBuster}`);
+        const { runModalRegistryTests } = await import(`./modalRegistry.tests.js?v=${cacheBuster}`);
+        const { runModalUtilsTests } = await import(`./modalUtils.tests.js?v=${cacheBuster}`);
+        const { runPanelVisibilityHelpersTests } = await import(`./panelVisibilityHelpers.tests.js?v=${cacheBuster}`);
+        const { runGesturePanelManagerTests } = await import(`./gesturePanelManager.tests.js?v=${cacheBuster}`);
+        const { runTitleManagerTests } = await import(`./titleManager.tests.js?v=${cacheBuster}`);
+        const { runUIOrchestratorTests } = await import(`./uiOrchestrator.tests.js?v=${cacheBuster}`);
+        const { runPreferencesBgImageTests } = await import(`./preferencesBgImage.tests.js?v=${cacheBuster}`);
+        const { runPreferencesPresetsTests } = await import(`./preferencesPresets.tests.js?v=${cacheBuster}`);
+        const { runTaskDOMPatchTests } = await import(`./taskDOMPatch.tests.js?v=${cacheBuster}`);
+        const { runDebugModeTests } = await import(`./debugMode.tests.js?v=${cacheBuster}`);
+        const { runIconInitTests } = await import(`./iconInit.tests.js?v=${cacheBuster}`);
+        const { runIconsTests } = await import(`./icons.tests.js?v=${cacheBuster}`);
+        const { runKeyboardNavTests } = await import(`./keyboardNav.tests.js?v=${cacheBuster}`);
+        const { runNameUtilsTests } = await import(`./nameUtils.tests.js?v=${cacheBuster}`);
+        const { runRecurringPanelEventsTests } = await import(`./recurringPanelEvents.tests.js?v=${cacheBuster}`);
+        const { runRecurringPanelFormTests } = await import(`./recurringPanelForm.tests.js?v=${cacheBuster}`);
+        const { runRecurringPanelGridsTests } = await import(`./recurringPanelGrids.tests.js?v=${cacheBuster}`);
+        const { runRecurringPanelSetupTests } = await import(`./recurringPanelSetup.tests.js?v=${cacheBuster}`);
+        const { runRecurringPanelSummaryTests } = await import(`./recurringPanelSummary.tests.js?v=${cacheBuster}`);
+        const { runRecurringSettingsTests } = await import(`./recurringSettings.tests.js?v=${cacheBuster}`);
+        const { runRecurringSettingsApplicatorTests } = await import(`./recurringSettingsApplicator.tests.js?v=${cacheBuster}`);
+        const { runRecurringWatcherTests } = await import(`./recurringWatcher.tests.js?v=${cacheBuster}`);
 
         // 🚦 TEST MODE FLAG - Tells app to skip IndexedDB restoration after tests
         // Uses same DB as test results for simplicity
@@ -1554,6 +1670,151 @@
                     // Boot tests are standalone - they use fetch() to verify module structure
                     currentModule = 'featureBoot';
                     resultsDiv.innerHTML = '<p>✅ FeatureBoot tests ready (standalone). Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'labelResolver') {
+                    await import(`../modules/labels/labelResolver.js?v=${cacheBuster}`);
+                    currentModule = 'labelResolver';
+                    resultsDiv.innerHTML = '<p>✅ LabelResolver loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'defaultLabels') {
+                    await import(`../modules/labels/defaultLabels.js?v=${cacheBuster}`);
+                    currentModule = 'defaultLabels';
+                    resultsDiv.innerHTML = '<p>✅ DefaultLabels loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'diBase') {
+                    await import(`../modules/core/diBase.js?v=${cacheBuster}`);
+                    currentModule = 'diBase';
+                    resultsDiv.innerHTML = '<p>✅ diBase loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'themes') {
+                    await import(`../modules/labels/themes.js?v=${cacheBuster}`);
+                    currentModule = 'themes';
+                    resultsDiv.innerHTML = '<p>✅ Vocab Themes loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'dataSanitizer') {
+                    await import(`../modules/utils/dataSanitizer.js?v=${cacheBuster}`);
+                    currentModule = 'dataSanitizer';
+                    resultsDiv.innerHTML = '<p>✅ DataSanitizer loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'storageUtils') {
+                    await import(`../modules/utils/storageUtils.js?v=${cacheBuster}`);
+                    currentModule = 'storageUtils';
+                    resultsDiv.innerHTML = '<p>✅ StorageUtils loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'achievementsManager') {
+                    await import(`../modules/features/achievementsManager.js?v=${cacheBuster}`);
+                    currentModule = 'achievementsManager';
+                    resultsDiv.innerHTML = '<p>✅ AchievementsManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'historyManager') {
+                    await import(`../modules/features/historyManager.js?v=${cacheBuster}`);
+                    currentModule = 'historyManager';
+                    resultsDiv.innerHTML = '<p>✅ HistoryManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'recurringDateUtils') {
+                    await import(`../modules/recurring/recurringDateUtils.js?v=${cacheBuster}`);
+                    currentModule = 'recurringDateUtils';
+                    resultsDiv.innerHTML = '<p>✅ RecurringDateUtils loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'clearedTasksManager') {
+                    await import(`../modules/features/clearedTasksManager.js?v=${cacheBuster}`);
+                    currentModule = 'clearedTasksManager';
+                    resultsDiv.innerHTML = '<p>✅ ClearedTasksManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'taskCompletion') {
+                    await import(`../modules/task/taskCompletion.js?v=${cacheBuster}`);
+                    currentModule = 'taskCompletion';
+                    resultsDiv.innerHTML = '<p>✅ TaskCompletion loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'taskCRUD') {
+                    await import(`../modules/task/taskCRUD.js?v=${cacheBuster}`);
+                    currentModule = 'taskCRUD';
+                    resultsDiv.innerHTML = '<p>✅ TaskCRUD loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'recurringMatcher') {
+                    await import(`../modules/recurring/recurringMatcher.js?v=${cacheBuster}`);
+                    currentModule = 'recurringMatcher';
+                    resultsDiv.innerHTML = '<p>✅ RecurringMatcher loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'recurringCalculators') {
+                    await import(`../modules/recurring/recurringCalculators.js?v=${cacheBuster}`);
+                    currentModule = 'recurringCalculators';
+                    resultsDiv.innerHTML = '<p>✅ RecurringCalculators loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'recurringActivation') {
+                    await import(`../modules/recurring/recurringActivation.js?v=${cacheBuster}`);
+                    currentModule = 'recurringActivation';
+                    resultsDiv.innerHTML = '<p>✅ RecurringActivation loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'preferencesManager') {
+                    await import(`../modules/ui/preferencesManager.js?v=${cacheBuster}`);
+                    currentModule = 'preferencesManager';
+                    resultsDiv.innerHTML = '<p>✅ PreferencesManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'settingsUIManager') {
+                    await import(`../modules/ui/settingsUIManager.js?v=${cacheBuster}`);
+                    currentModule = 'settingsUIManager';
+                    resultsDiv.innerHTML = '<p>✅ SettingsUIManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'focusMode') {
+                    await import(`../modules/ui/focusMode.js?v=${cacheBuster}`);
+                    currentModule = 'focusMode';
+                    resultsDiv.innerHTML = '<p>✅ FocusMode loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'taskSearch') {
+                    await import(`../modules/ui/taskSearch.js?v=${cacheBuster}`);
+                    currentModule = 'taskSearch';
+                    resultsDiv.innerHTML = '<p>✅ TaskSearch loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'quickActionsManager') {
+                    await import(`../modules/ui/quickActionsManager.js?v=${cacheBuster}`);
+                    currentModule = 'quickActionsManager';
+                    resultsDiv.innerHTML = '<p>✅ QuickActionsManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'backupRestoreManager') {
+                    await import(`../modules/ui/backupRestoreManager.js?v=${cacheBuster}`);
+                    currentModule = 'backupRestoreManager';
+                    resultsDiv.innerHTML = '<p>✅ BackupRestoreManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'cycleExportManager') {
+                    await import(`../modules/ui/cycleExportManager.js?v=${cacheBuster}`);
+                    currentModule = 'cycleExportManager';
+                    resultsDiv.innerHTML = '<p>✅ CycleExportManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'cycleImportManager') {
+                    await import(`../modules/ui/cycleImportManager.js?v=${cacheBuster}`);
+                    currentModule = 'cycleImportManager';
+                    resultsDiv.innerHTML = '<p>✅ CycleImportManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'shareManager') {
+                    await import(`../modules/ui/shareManager.js?v=${cacheBuster}`);
+                    currentModule = 'shareManager';
+                    resultsDiv.innerHTML = '<p>✅ ShareManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'taskButtons') {
+                    await import(`../modules/task/taskButtons.js?v=${cacheBuster}`);
+                    currentModule = 'taskButtons';
+                    resultsDiv.innerHTML = '<p>✅ TaskButtons loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'taskCycleReset') {
+                    await import(`../modules/task/taskCycleReset.js?v=${cacheBuster}`);
+                    currentModule = 'taskCycleReset';
+                    resultsDiv.innerHTML = '<p>✅ TaskCycleReset loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'backupReminder') {
+                    await import(`../modules/features/backupReminder.js?v=${cacheBuster}`);
+                    currentModule = 'backupReminder';
+                    resultsDiv.innerHTML = '<p>✅ BackupReminder loaded. Click "Run Tests" to begin.</p>';
+                } else if (['orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','nameUtils','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher'].includes(moduleName)) {
+                    const pathMap = {
+                        orchestrator: '../modules/boot/orchestrator.js',
+                        moduleLoader: '../modules/boot/moduleLoader.js',
+                        moduleManifests: '../modules/boot/moduleManifests.js',
+                        modalTemplates: '../modules/boot/modalTemplates.js',
+                        appContext: '../modules/core/appContext.js',
+                        dataAccess: '../modules/core/dataAccess.js',
+                        appGlobalState: '../modules/core/appGlobalState.js',
+                        migrationFacade: '../modules/core/migrationFacade.js',
+                        types: '../modules/core/types.js',
+                        modalRegistry: '../modules/ui/modalRegistry.js',
+                        modalUtils: '../modules/ui/modalUtils.js',
+                        panelVisibilityHelpers: '../modules/ui/panelVisibilityHelpers.js',
+                        gesturePanelManager: '../modules/ui/gesturePanelManager.js',
+                        titleManager: '../modules/ui/titleManager.js',
+                        uiOrchestrator: '../modules/ui/uiOrchestrator.js',
+                        preferencesBgImage: '../modules/ui/preferencesBgImage.js',
+                        preferencesPresets: '../modules/ui/preferencesPresets.js',
+                        taskDOMPatch: '../modules/task/taskDOMPatch.js',
+                        debugMode: '../modules/utils/debugMode.js',
+                        iconInit: '../modules/utils/iconInit.js',
+                        icons: '../modules/utils/icons.js',
+                        keyboardNav: '../modules/utils/keyboardNav.js',
+                        nameUtils: '../modules/utils/nameUtils.js',
+                        recurringPanelEvents: '../modules/recurring/recurringPanelEvents.js',
+                        recurringPanelForm: '../modules/recurring/recurringPanelForm.js',
+                        recurringPanelGrids: '../modules/recurring/recurringPanelGrids.js',
+                        recurringPanelSetup: '../modules/recurring/recurringPanelSetup.js',
+                        recurringPanelSummary: '../modules/recurring/recurringPanelSummary.js',
+                        recurringSettings: '../modules/recurring/recurringSettings.js',
+                        recurringSettingsApplicator: '../modules/recurring/recurringSettingsApplicator.js',
+                        recurringWatcher: '../modules/recurring/recurringWatcher.js'
+                    };
+                    await import(`${pathMap[moduleName]}?v=${cacheBuster}`);
+                    currentModule = moduleName;
+                    resultsDiv.innerHTML = `<p>✅ ${moduleName} loaded. Click "Run Tests" to begin.</p>`;
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
@@ -1716,6 +1977,91 @@
                 await runUIBootTests(resultsDiv);
             } else if (currentModule === 'featureBoot') {
                 await runFeatureBootTests(resultsDiv);
+            } else if (currentModule === 'labelResolver') {
+                await runLabelResolverTests(resultsDiv);
+            } else if (currentModule === 'defaultLabels') {
+                await runDefaultLabelsTests(resultsDiv);
+            } else if (currentModule === 'diBase') {
+                await runDiBaseTests(resultsDiv);
+            } else if (currentModule === 'themes') {
+                await runThemesTests(resultsDiv);
+            } else if (currentModule === 'dataSanitizer') {
+                await runDataSanitizerTests(resultsDiv);
+            } else if (currentModule === 'storageUtils') {
+                await runStorageUtilsTests(resultsDiv);
+            } else if (currentModule === 'achievementsManager') {
+                await runAchievementsManagerTests(resultsDiv);
+            } else if (currentModule === 'historyManager') {
+                await runHistoryManagerTests(resultsDiv);
+            } else if (currentModule === 'recurringDateUtils') {
+                await runRecurringDateUtilsTests(resultsDiv);
+            } else if (currentModule === 'clearedTasksManager') {
+                await runClearedTasksManagerTests(resultsDiv);
+            } else if (currentModule === 'taskCompletion') {
+                await runTaskCompletionTests(resultsDiv);
+            } else if (currentModule === 'taskCRUD') {
+                await runTaskCRUDTests(resultsDiv);
+            } else if (currentModule === 'recurringMatcher') {
+                await runRecurringMatcherTests(resultsDiv);
+            } else if (currentModule === 'recurringCalculators') {
+                await runRecurringCalculatorsTests(resultsDiv);
+            } else if (currentModule === 'recurringActivation') {
+                await runRecurringActivationTests(resultsDiv);
+            } else if (currentModule === 'preferencesManager') {
+                await runPreferencesManagerTests(resultsDiv);
+            } else if (currentModule === 'settingsUIManager') {
+                await runSettingsUIManagerTests(resultsDiv);
+            } else if (currentModule === 'focusMode') {
+                await runFocusModeTests(resultsDiv);
+            } else if (currentModule === 'taskSearch') {
+                await runTaskSearchTests(resultsDiv);
+            } else if (currentModule === 'quickActionsManager') {
+                await runQuickActionsManagerTests(resultsDiv);
+            } else if (currentModule === 'backupRestoreManager') {
+                await runBackupRestoreManagerTests(resultsDiv);
+            } else if (currentModule === 'cycleExportManager') {
+                await runCycleExportManagerTests(resultsDiv);
+            } else if (currentModule === 'cycleImportManager') {
+                await runCycleImportManagerTests(resultsDiv);
+            } else if (currentModule === 'shareManager') {
+                await runShareManagerTests(resultsDiv);
+            } else if (currentModule === 'taskButtons') {
+                await runTaskButtonsTests(resultsDiv);
+            } else if (currentModule === 'taskCycleReset') {
+                await runTaskCycleResetTests(resultsDiv);
+            } else if (currentModule === 'backupReminder') {
+                await runBackupReminderTests(resultsDiv);
+            } else if (currentModule === 'orchestrator') { await runOrchestratorTests(resultsDiv);
+            } else if (currentModule === 'moduleLoader') { await runModuleLoaderTests(resultsDiv);
+            } else if (currentModule === 'moduleManifests') { await runModuleManifestsTests(resultsDiv);
+            } else if (currentModule === 'modalTemplates') { await runModalTemplatesTests(resultsDiv);
+            } else if (currentModule === 'appContext') { await runAppContextTests(resultsDiv);
+            } else if (currentModule === 'dataAccess') { await runDataAccessTests(resultsDiv);
+            } else if (currentModule === 'appGlobalState') { await runAppGlobalStateTests(resultsDiv);
+            } else if (currentModule === 'migrationFacade') { await runMigrationFacadeTests(resultsDiv);
+            } else if (currentModule === 'types') { await runTypesTests(resultsDiv);
+            } else if (currentModule === 'modalRegistry') { await runModalRegistryTests(resultsDiv);
+            } else if (currentModule === 'modalUtils') { await runModalUtilsTests(resultsDiv);
+            } else if (currentModule === 'panelVisibilityHelpers') { await runPanelVisibilityHelpersTests(resultsDiv);
+            } else if (currentModule === 'gesturePanelManager') { await runGesturePanelManagerTests(resultsDiv);
+            } else if (currentModule === 'titleManager') { await runTitleManagerTests(resultsDiv);
+            } else if (currentModule === 'uiOrchestrator') { await runUIOrchestratorTests(resultsDiv);
+            } else if (currentModule === 'preferencesBgImage') { await runPreferencesBgImageTests(resultsDiv);
+            } else if (currentModule === 'preferencesPresets') { await runPreferencesPresetsTests(resultsDiv);
+            } else if (currentModule === 'taskDOMPatch') { await runTaskDOMPatchTests(resultsDiv);
+            } else if (currentModule === 'debugMode') { await runDebugModeTests(resultsDiv);
+            } else if (currentModule === 'iconInit') { await runIconInitTests(resultsDiv);
+            } else if (currentModule === 'icons') { await runIconsTests(resultsDiv);
+            } else if (currentModule === 'keyboardNav') { await runKeyboardNavTests(resultsDiv);
+            } else if (currentModule === 'nameUtils') { await runNameUtilsTests(resultsDiv);
+            } else if (currentModule === 'recurringPanelEvents') { await runRecurringPanelEventsTests(resultsDiv);
+            } else if (currentModule === 'recurringPanelForm') { await runRecurringPanelFormTests(resultsDiv);
+            } else if (currentModule === 'recurringPanelGrids') { await runRecurringPanelGridsTests(resultsDiv);
+            } else if (currentModule === 'recurringPanelSetup') { await runRecurringPanelSetupTests(resultsDiv);
+            } else if (currentModule === 'recurringPanelSummary') { await runRecurringPanelSummaryTests(resultsDiv);
+            } else if (currentModule === 'recurringSettings') { await runRecurringSettingsTests(resultsDiv);
+            } else if (currentModule === 'recurringSettingsApplicator') { await runRecurringSettingsApplicatorTests(resultsDiv);
+            } else if (currentModule === 'recurringWatcher') { await runRecurringWatcherTests(resultsDiv);
             }
 
             } finally {
@@ -2195,7 +2541,65 @@
                 { name: 'Stress', key: 'stress', runFn: runStressTests, importPath: null },
                 { name: 'CoreBoot', key: 'coreBoot', runFn: runCoreBootTests, importPath: '../modules/boot/coreBoot.js' },
                 { name: 'UIBoot', key: 'uiBoot', runFn: runUIBootTests, importPath: '../modules/boot/uiBoot.js' },
-                { name: 'FeatureBoot', key: 'featureBoot', runFn: runFeatureBootTests, importPath: '../modules/boot/featureBoot.js' }
+                { name: 'FeatureBoot', key: 'featureBoot', runFn: runFeatureBootTests, importPath: '../modules/boot/featureBoot.js' },
+                { name: 'LabelResolver', key: 'labelResolver', runFn: runLabelResolverTests, importPath: '../modules/labels/labelResolver.js' },
+                { name: 'DefaultLabels', key: 'defaultLabels', runFn: runDefaultLabelsTests, importPath: '../modules/labels/defaultLabels.js' },
+                { name: 'DiBase', key: 'diBase', runFn: runDiBaseTests, importPath: '../modules/core/diBase.js' },
+                { name: 'Themes', key: 'themes', runFn: runThemesTests, importPath: '../modules/labels/themes.js' },
+                { name: 'DataSanitizer', key: 'dataSanitizer', runFn: runDataSanitizerTests, importPath: '../modules/utils/dataSanitizer.js' },
+                { name: 'StorageUtils', key: 'storageUtils', runFn: runStorageUtilsTests, importPath: '../modules/utils/storageUtils.js' },
+                { name: 'AchievementsManager', key: 'achievementsManager', runFn: runAchievementsManagerTests, importPath: '../modules/features/achievementsManager.js' },
+                { name: 'HistoryManager', key: 'historyManager', runFn: runHistoryManagerTests, importPath: '../modules/features/historyManager.js' },
+                { name: 'RecurringDateUtils', key: 'recurringDateUtils', runFn: runRecurringDateUtilsTests, importPath: '../modules/recurring/recurringDateUtils.js' },
+                { name: 'ClearedTasksManager', key: 'clearedTasksManager', runFn: runClearedTasksManagerTests, importPath: '../modules/features/clearedTasksManager.js' },
+                { name: 'TaskCompletion', key: 'taskCompletion', runFn: runTaskCompletionTests, importPath: '../modules/task/taskCompletion.js' },
+                { name: 'TaskCRUD', key: 'taskCRUD', runFn: runTaskCRUDTests, importPath: '../modules/task/taskCRUD.js' },
+                { name: 'RecurringMatcher', key: 'recurringMatcher', runFn: runRecurringMatcherTests, importPath: '../modules/recurring/recurringMatcher.js' },
+                { name: 'RecurringCalculators', key: 'recurringCalculators', runFn: runRecurringCalculatorsTests, importPath: '../modules/recurring/recurringCalculators.js' },
+                { name: 'RecurringActivation', key: 'recurringActivation', runFn: runRecurringActivationTests, importPath: '../modules/recurring/recurringActivation.js' },
+                { name: 'PreferencesManager', key: 'preferencesManager', runFn: runPreferencesManagerTests, importPath: '../modules/ui/preferencesManager.js' },
+                { name: 'SettingsUIManager', key: 'settingsUIManager', runFn: runSettingsUIManagerTests, importPath: '../modules/ui/settingsUIManager.js' },
+                { name: 'FocusMode', key: 'focusMode', runFn: runFocusModeTests, importPath: '../modules/ui/focusMode.js' },
+                { name: 'TaskSearch', key: 'taskSearch', runFn: runTaskSearchTests, importPath: '../modules/ui/taskSearch.js' },
+                { name: 'QuickActionsManager', key: 'quickActionsManager', runFn: runQuickActionsManagerTests, importPath: '../modules/ui/quickActionsManager.js' },
+                { name: 'BackupRestoreManager', key: 'backupRestoreManager', runFn: runBackupRestoreManagerTests, importPath: '../modules/ui/backupRestoreManager.js' },
+                { name: 'CycleExportManager', key: 'cycleExportManager', runFn: runCycleExportManagerTests, importPath: '../modules/ui/cycleExportManager.js' },
+                { name: 'CycleImportManager', key: 'cycleImportManager', runFn: runCycleImportManagerTests, importPath: '../modules/ui/cycleImportManager.js' },
+                { name: 'ShareManager', key: 'shareManager', runFn: runShareManagerTests, importPath: '../modules/ui/shareManager.js' },
+                { name: 'TaskButtons', key: 'taskButtons', runFn: runTaskButtonsTests, importPath: '../modules/task/taskButtons.js' },
+                { name: 'TaskCycleReset', key: 'taskCycleReset', runFn: runTaskCycleResetTests, importPath: '../modules/task/taskCycleReset.js' },
+                { name: 'BackupReminder', key: 'backupReminder', runFn: runBackupReminderTests, importPath: '../modules/features/backupReminder.js' },
+                { name: 'Orchestrator', key: 'orchestrator', runFn: runOrchestratorTests, importPath: '../modules/boot/orchestrator.js' },
+                { name: 'ModuleLoader', key: 'moduleLoader', runFn: runModuleLoaderTests, importPath: '../modules/boot/moduleLoader.js' },
+                { name: 'ModuleManifests', key: 'moduleManifests', runFn: runModuleManifestsTests, importPath: '../modules/boot/moduleManifests.js' },
+                { name: 'ModalTemplates', key: 'modalTemplates', runFn: runModalTemplatesTests, importPath: '../modules/boot/modalTemplates.js' },
+                { name: 'AppContext', key: 'appContext', runFn: runAppContextTests, importPath: '../modules/core/appContext.js' },
+                { name: 'DataAccess', key: 'dataAccess', runFn: runDataAccessTests, importPath: '../modules/core/dataAccess.js' },
+                { name: 'AppGlobalState', key: 'appGlobalState', runFn: runAppGlobalStateTests, importPath: '../modules/core/appGlobalState.js' },
+                { name: 'MigrationFacade', key: 'migrationFacade', runFn: runMigrationFacadeTests, importPath: '../modules/core/migrationFacade.js' },
+                { name: 'Types', key: 'types', runFn: runTypesTests, importPath: '../modules/core/types.js' },
+                { name: 'ModalRegistry', key: 'modalRegistry', runFn: runModalRegistryTests, importPath: '../modules/ui/modalRegistry.js' },
+                { name: 'ModalUtils', key: 'modalUtils', runFn: runModalUtilsTests, importPath: '../modules/ui/modalUtils.js' },
+                { name: 'PanelVisibilityHelpers', key: 'panelVisibilityHelpers', runFn: runPanelVisibilityHelpersTests, importPath: '../modules/ui/panelVisibilityHelpers.js' },
+                { name: 'GesturePanelManager', key: 'gesturePanelManager', runFn: runGesturePanelManagerTests, importPath: '../modules/ui/gesturePanelManager.js' },
+                { name: 'TitleManager', key: 'titleManager', runFn: runTitleManagerTests, importPath: '../modules/ui/titleManager.js' },
+                { name: 'UIOrchestrator', key: 'uiOrchestrator', runFn: runUIOrchestratorTests, importPath: '../modules/ui/uiOrchestrator.js' },
+                { name: 'PreferencesBgImage', key: 'preferencesBgImage', runFn: runPreferencesBgImageTests, importPath: '../modules/ui/preferencesBgImage.js' },
+                { name: 'PreferencesPresets', key: 'preferencesPresets', runFn: runPreferencesPresetsTests, importPath: '../modules/ui/preferencesPresets.js' },
+                { name: 'TaskDOMPatch', key: 'taskDOMPatch', runFn: runTaskDOMPatchTests, importPath: '../modules/task/taskDOMPatch.js' },
+                { name: 'DebugMode', key: 'debugMode', runFn: runDebugModeTests, importPath: '../modules/utils/debugMode.js' },
+                { name: 'IconInit', key: 'iconInit', runFn: runIconInitTests, importPath: '../modules/utils/iconInit.js' },
+                { name: 'Icons', key: 'icons', runFn: runIconsTests, importPath: '../modules/utils/icons.js' },
+                { name: 'KeyboardNav', key: 'keyboardNav', runFn: runKeyboardNavTests, importPath: '../modules/utils/keyboardNav.js' },
+                { name: 'NameUtils', key: 'nameUtils', runFn: runNameUtilsTests, importPath: '../modules/utils/nameUtils.js' },
+                { name: 'RecurringPanelEvents', key: 'recurringPanelEvents', runFn: runRecurringPanelEventsTests, importPath: '../modules/recurring/recurringPanelEvents.js' },
+                { name: 'RecurringPanelForm', key: 'recurringPanelForm', runFn: runRecurringPanelFormTests, importPath: '../modules/recurring/recurringPanelForm.js' },
+                { name: 'RecurringPanelGrids', key: 'recurringPanelGrids', runFn: runRecurringPanelGridsTests, importPath: '../modules/recurring/recurringPanelGrids.js' },
+                { name: 'RecurringPanelSetup', key: 'recurringPanelSetup', runFn: runRecurringPanelSetupTests, importPath: '../modules/recurring/recurringPanelSetup.js' },
+                { name: 'RecurringPanelSummary', key: 'recurringPanelSummary', runFn: runRecurringPanelSummaryTests, importPath: '../modules/recurring/recurringPanelSummary.js' },
+                { name: 'RecurringSettings', key: 'recurringSettings', runFn: runRecurringSettingsTests, importPath: '../modules/recurring/recurringSettings.js' },
+                { name: 'RecurringSettingsApplicator', key: 'recurringSettingsApplicator', runFn: runRecurringSettingsApplicatorTests, importPath: '../modules/recurring/recurringSettingsApplicator.js' },
+                { name: 'RecurringWatcher', key: 'recurringWatcher', runFn: runRecurringWatcherTests, importPath: '../modules/recurring/recurringWatcher.js' }
             ];
 
             let allResults = [];
