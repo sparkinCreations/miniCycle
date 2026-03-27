@@ -698,8 +698,8 @@ select.hidden {
 
     .time-picker-group input[type="number"],
     .time-picker-group select {
-        width: auto;
-        flex: 1;
+        width: 75px;
+        flex: 0 1 75px;
         min-width: 0;
     }
 }

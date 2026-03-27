@@ -1,3 +1,7 @@
+## [2.144] - 2026-03-26
+- Refactor UI components to use DOM_CLASSES for improved maintainability
+
+
 ## [2.143] - 2026-03-26
 - feat: add panel accent color variable to theme definitions and update help window styles
 
