@@ -1,3 +1,8 @@
+## [2.148] - 2026-03-27
+- feat: add comprehensive test coverage audit documentation
+- feat: update version to 2.147 across documentation and codebase
+
+
 ## [2.147] - 2026-03-27
 - feat: update user manual with v3 screenshots, expand README with technical details
 
