@@ -81,7 +81,7 @@ export class TaskOptionsVisibilityController {
      * @returns {'hover' | 'three-dots'} Current mode
      */
     static getMode() {
-        return document.body.classList.contains("show-three-dots-enabled") ? 'three-dots' : 'hover';
+        return document.body.classList.contains(DOM_CLASSES.SHOW_THREE_DOTS_ENABLED) ? 'three-dots' : 'hover';
     }
 
     /**
@@ -233,12 +233,12 @@ export async function refreshTaskListUI() {
  * @param {HTMLElement} taskItem - The task element
  */
 export function hideTaskButtons(taskItem) {
-    if (taskItem.classList.contains("rearranging")) {
+    if (taskItem.classList.contains(DOM_CLASSES.REARRANGING)) {
         return;
     }
 
     // Don't hide if task is long-pressed (mobile long-press in progress)
-    if (taskItem.classList.contains("long-pressed")) {
+    if (taskItem.classList.contains(DOM_CLASSES.LONG_PRESSED)) {
         return;
     }
 
@@ -255,7 +255,7 @@ export function hideTaskButtons(taskItem) {
     // Clear individual button inline styles if we successfully hid
     const taskOptions = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
     if (taskOptions) {
-        const threeDotsEnabled = document.body.classList.contains("show-three-dots-enabled");
+        const threeDotsEnabled = document.body.classList.contains(DOM_CLASSES.SHOW_THREE_DOTS_ENABLED);
 
         if (threeDotsEnabled) {
             // Three-dots mode: use inline styles to explicitly hide individual buttons
@@ -286,7 +286,7 @@ export function showTaskOptions(event) {
     // Only allow on desktop or if long-pressed on mobile
     const isTouchDevice = _deps.isTouchDevice;
     const isMobile = typeof isTouchDevice === 'function' ? isTouchDevice() : false;
-    const allowShow = !isMobile || taskElement.classList.contains("long-pressed");
+    const allowShow = !isMobile || taskElement.classList.contains(DOM_CLASSES.LONG_PRESSED);
 
     if (allowShow) {
         // Use centralized controller (handles mode checking automatically)
@@ -308,7 +308,7 @@ export function hideTaskOptions(event) {
     // Only hide if not long-pressed on mobile (so buttons stay open during drag)
     const isTouchDevice = _deps.isTouchDevice;
     const isMobile = typeof isTouchDevice === 'function' ? isTouchDevice() : false;
-    const allowHide = !isMobile || !taskElement.classList.contains("long-pressed");
+    const allowHide = !isMobile || !taskElement.classList.contains(DOM_CLASSES.LONG_PRESSED);
 
     if (allowHide) {
         // Use centralized controller (handles mode checking automatically)
@@ -334,29 +334,29 @@ export function checkCompleteAllButton() {
         return;
     }
 
-    const isAutoMode = document.body.classList.contains('auto-cycle-mode');
+    const isAutoMode = document.body.classList.contains(DOM_CLASSES.AUTO_CYCLE_MODE);
     const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
 
     // Detect To-Do mode from body class (set by modeManager as 'todo-mode-mode')
-    const isToDoMode = document.body.classList.contains('todo-mode-mode');
+    const isToDoMode = document.body.classList.contains(DOM_CLASSES.TODO_MODE_MODE);
 
     // Update button text and styling based on mode
     if (isToDoMode) {
         completeAllButton.textContent = '🧹 ' + getLabel('action.clearCompletedTasks');
-        completeAllButton.classList.add('todo-mode-btn');
-        completeAllButton.classList.remove('cycle-mode-btn');
+        completeAllButton.classList.add(DOM_CLASSES.TODO_MODE_BTN);
+        completeAllButton.classList.remove(DOM_CLASSES.CYCLE_MODE_BTN);
     } else {
         completeAllButton.textContent = '🔄 ' + getLabel('action.completeCycle');
-        completeAllButton.classList.add('cycle-mode-btn');
-        completeAllButton.classList.remove('todo-mode-btn');
+        completeAllButton.classList.add(DOM_CLASSES.CYCLE_MODE_BTN);
+        completeAllButton.classList.remove(DOM_CLASSES.TODO_MODE_BTN);
     }
 
     if (taskList.children.length > 0 && !isAutoMode) {
         completeAllButton.style.display = "block";
-        taskView?.classList.add('complete-btn-visible');
+        taskView?.classList.add(DOM_CLASSES.COMPLETE_BTN_VISIBLE);
     } else {
         completeAllButton.style.display = "none";
-        taskView?.classList.remove('complete-btn-visible');
+        taskView?.classList.remove(DOM_CLASSES.COMPLETE_BTN_VISIBLE);
     }
 }
 

@@ -18,7 +18,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS } from '../core/constants.js';
+import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
@@ -398,10 +398,10 @@ function updateCycleUIState(currentCycle, settings) {
  * Theme settings
  */
 function applyThemeSettings(settings) {
-  document.body.classList.toggle('dark-mode', !!settings.darkMode);
-  document.documentElement.classList.toggle('dark-mode', !!settings.darkMode);
+  document.body.classList.toggle(DOM_CLASSES.DARK_MODE, !!settings.darkMode);
+  document.documentElement.classList.toggle(DOM_CLASSES.DARK_MODE, !!settings.darkMode);
 
-  const allThemes = ['theme-dark-ocean', 'theme-golden-glow'];
+  const allThemes = [DOM_CLASSES.THEME_DARK_OCEAN, DOM_CLASSES.THEME_GOLDEN_GLOW];
   allThemes.forEach(t => document.body.classList.remove(t));
 
   if (settings.theme && settings.theme !== 'default') {
@@ -411,9 +411,9 @@ function applyThemeSettings(settings) {
   _deps.updateThemeColor?.();
 
   // Accessibility settings
-  document.body.classList.toggle('reduced-motion', !!settings.reducedMotion);
-  document.documentElement.classList.toggle('reduced-motion', !!settings.reducedMotion);
-  document.body.classList.toggle('high-contrast', !!settings.highContrast);
+  document.body.classList.toggle(DOM_CLASSES.REDUCED_MOTION, !!settings.reducedMotion);
+  document.documentElement.classList.toggle(DOM_CLASSES.REDUCED_MOTION, !!settings.reducedMotion);
+  document.body.classList.toggle(DOM_CLASSES.HIGH_CONTRAST, !!settings.highContrast);
   document.documentElement.style.setProperty('--font-size-base',
       (settings.fontSize && settings.fontSize !== '16') ? `${settings.fontSize}px` : '16px');
 }
@@ -430,7 +430,7 @@ async function setupRemindersForCycle(reminders) {
   enableReminders.checked = enabled;
 
   if (frequencySection) {
-    frequencySection.classList.toggle('hidden', !enabled);
+    frequencySection.classList.toggle(DOM_CLASSES.HIDDEN, !enabled);
   }
   if (enabled) {
     _deps.startReminders?.();

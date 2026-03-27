@@ -29,7 +29,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
+import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
 
@@ -422,7 +422,7 @@ export class TaskDOMManager {
                 if (typeof this.deps.showTaskOptions === 'function' && typeof this.deps.hideTaskOptions === 'function') {
                     taskItem.removeEventListener('mouseenter', this.deps.showTaskOptions);
                     taskItem.removeEventListener('mouseleave', this.deps.hideTaskOptions);
-                    taskItem.classList.remove('hover-enabled');
+                    taskItem.classList.remove(DOM_CLASSES.HOVER_ENABLED);
                 }
             });
 
@@ -575,7 +575,7 @@ export class TaskDOMManager {
 
         // Create task content wrapper
         const taskContent = document.createElement("div");
-        taskContent.classList.add("task-content");
+        taskContent.classList.add(DOM_CLASSES.TASK_CONTENT);
         taskContent.appendChild(checkbox);
         taskContent.appendChild(taskLabel);
 
@@ -602,12 +602,12 @@ export class TaskDOMManager {
      */
     createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle, deleteWhenComplete = false, deleteWhenCompleteSettings = null) {
         const taskItem = document.createElement("li");
-        taskItem.classList.add("task");
+        taskItem.classList.add(DOM_CLASSES.TASK);
         taskItem.setAttribute("draggable", "true");
         taskItem.dataset.taskId = assignedTaskId;
 
         if (highPriority) {
-            taskItem.classList.add("high-priority");
+            taskItem.classList.add(DOM_CLASSES.HIGH_PRIORITY);
         }
 
         // ✅ Check if task has a recurring template (source of truth for recurring state)
@@ -618,7 +618,7 @@ export class TaskDOMManager {
         const isRecurring = hasRecurringTemplate || (recurring && hasValidRecurringSettings);
 
         if (isRecurring) {
-            taskItem.classList.add("recurring");
+            taskItem.classList.add(DOM_CLASSES.RECURRING);
         }
 
         // ✅ CRITICAL: Always set data-recurring-settings if settings exist, even when recurring=false
@@ -670,17 +670,17 @@ export class TaskDOMManager {
             // To-Do mode: show pin ONLY if opted OUT (deleteWhenComplete=false)
             // Recurring tasks CAN show pin if user manually disabled deleteWhenComplete
             if (!finalDeleteWhenComplete) {
-                taskItem.classList.add("kept-task");
+                taskItem.classList.add(DOM_CLASSES.KEPT_TASK);
             }
         } else {
             // Cycle mode: show red X ONLY if opted IN (deleteWhenComplete=true)
             // BUT recurring tasks never show ❌ (recurring symbol indicates deletion)
             if (finalDeleteWhenComplete && !isRecurring) {
-                taskItem.classList.add("show-delete-indicator");
+                taskItem.classList.add(DOM_CLASSES.SHOW_DELETE_INDICATOR);
             }
             // Recurring tasks show pin 📌 if user manually disabled deleteWhenComplete
             if (!finalDeleteWhenComplete && isRecurring) {
-                taskItem.classList.add("kept-task");
+                taskItem.classList.add(DOM_CLASSES.KEPT_TASK);
             }
         }
 
@@ -720,7 +720,7 @@ export class TaskDOMManager {
 
         if (showThreeDots) {
             const threeDotsButton = document.createElement("button");
-            threeDotsButton.classList.add("three-dots-btn");
+            threeDotsButton.classList.add(DOM_CLASSES.THREE_DOTS_BTN);
             threeDotsButton.textContent = "⋮";
             threeDotsButton.setAttribute("title", getLabel('taskOption.showOptions'));
             threeDotsButton.setAttribute("aria-label", getLabel('taskOption.showOptions'));
@@ -757,7 +757,7 @@ export class TaskDOMManager {
         // Fallback: create empty container if buttons module not loaded
         console.warn('⚠️ TaskButtons module not loaded, returning empty container');
         const buttonContainer = document.createElement("div");
-        buttonContainer.classList.add("task-options");
+        buttonContainer.classList.add(DOM_CLASSES.TASK_OPTIONS);
         return buttonContainer;
     }
 
@@ -772,10 +772,10 @@ export class TaskDOMManager {
         // Fallback: create basic button if buttons module not loaded
         const { class: btnClass, icon, show } = buttonConfig;
         const button = document.createElement("button");
-        button.classList.add("task-btn", btnClass);
+        button.classList.add(DOM_CLASSES.TASK_BTN, btnClass);
         if (icon) button.textContent = icon;
         button.setAttribute("type", "button");
-        if (!show) button.classList.add("hidden");
+        if (!show) button.classList.add(DOM_CLASSES.HIDDEN);
         return button;
     }
 
@@ -818,7 +818,7 @@ export class TaskDOMManager {
             dueDateInput.type = "date";
             dueDateInput.id = `due-date-${assignedTaskId}`;
             dueDateInput.name = `dueDate-${assignedTaskId}`;
-            dueDateInput.classList.add("due-date", "hidden");
+            dueDateInput.classList.add(DOM_CLASSES.DUE_DATE, DOM_CLASSES.HIDDEN);
         }
 
         return { checkbox, taskLabel, dueDateInput };
@@ -887,7 +887,7 @@ export class TaskDOMManager {
      */
     createTaskLabel(taskTextTrimmed, assignedTaskId, recurring) {
         const taskLabel = document.createElement("span");
-        taskLabel.classList.add("task-text");
+        taskLabel.classList.add(DOM_CLASSES.TASK_TEXT);
         taskLabel.textContent = taskTextTrimmed;
         taskLabel.setAttribute("tabindex", "0");
         taskLabel.setAttribute("role", "text");
@@ -959,13 +959,13 @@ export class TaskDOMManager {
 
             // ✅ Check template existence AND button state (handles async race condition)
             const hasRecurringTemplate = freshCycle?.recurringTemplates?.[assignedTaskId];
-            const isButtonActive = button.classList.contains('active');
+            const isButtonActive = button.classList.contains(DOM_CLASSES.ACTIVE);
             // Use button state as fallback if template doesn't exist yet (async update in progress)
             const isCurrentlyRecurring = !!hasRecurringTemplate || isButtonActive;
             const isNowRecurring = !isCurrentlyRecurring;
 
             task.recurring = isNowRecurring;
-            button.classList.toggle("active", isNowRecurring);
+            button.classList.toggle(DOM_CLASSES.ACTIVE, isNowRecurring);
             button.setAttribute("aria-pressed", isNowRecurring.toString());
 
             // ✅ Add or remove recurring icon from task label
@@ -999,13 +999,13 @@ export class TaskDOMManager {
                 // ✅ Immediately sync delete-on-complete button to show active (recurring = delete on complete)
                 const deleteBtn = taskItem?.querySelector(DOM_SELECTORS.DELETE_WHEN_COMPLETE_BTN);
                 if (deleteBtn) {
-                    deleteBtn.classList.add('active', 'delete-when-complete-active');
+                    deleteBtn.classList.add(DOM_CLASSES.ACTIVE, DOM_CLASSES.DELETE_WHEN_COMPLETE_ACTIVE);
                     deleteBtn.setAttribute('aria-pressed', 'true');
                 }
                 if (taskItem) {
                     taskItem.dataset.deleteWhenComplete = 'true';
                     // Remove any kept-task or show-delete-indicator (recurring has its own indicator)
-                    taskItem.classList.remove('kept-task', 'show-delete-indicator');
+                    taskItem.classList.remove(DOM_CLASSES.KEPT_TASK, DOM_CLASSES.SHOW_DELETE_INDICATOR);
                 }
 
                 // Keyboard focus flow: stay on recurring button, Tab → notification → next task option
@@ -1025,7 +1025,7 @@ export class TaskDOMManager {
                             recurringBtn._notifTabHandler = (e) => {
                                 if (e.key !== 'Tab' || e.shiftKey) return;
                                 // Only redirect if notification is still visible
-                                if (document.contains(notification) && notification.classList.contains('show')) {
+                                if (document.contains(notification) && notification.classList.contains(DOM_CLASSES.SHOW)) {
                                     e.preventDefault();
                                     changeSettingsBtn.focus();
                                 }
@@ -1087,20 +1087,20 @@ export class TaskDOMManager {
                 const defaultDeleteState = isToDoMode; // todo=true, cycle=false
                 const deleteBtn = taskItem?.querySelector(DOM_SELECTORS.DELETE_WHEN_COMPLETE_BTN);
                 if (deleteBtn) {
-                    deleteBtn.classList.toggle('active', defaultDeleteState);
-                    deleteBtn.classList.toggle('delete-when-complete-active', defaultDeleteState);
+                    deleteBtn.classList.toggle(DOM_CLASSES.ACTIVE, defaultDeleteState);
+                    deleteBtn.classList.toggle(DOM_CLASSES.DELETE_WHEN_COMPLETE_ACTIVE, defaultDeleteState);
                     deleteBtn.setAttribute('aria-pressed', defaultDeleteState.toString());
                 }
                 if (taskItem) {
                     taskItem.dataset.deleteWhenComplete = defaultDeleteState.toString();
-                    taskItem.classList.remove('recurring');
+                    taskItem.classList.remove(DOM_CLASSES.RECURRING);
                     // Update visual indicators based on mode
                     if (isToDoMode) {
-                        taskItem.classList.remove('show-delete-indicator');
-                        taskItem.classList.toggle('kept-task', !defaultDeleteState);
+                        taskItem.classList.remove(DOM_CLASSES.SHOW_DELETE_INDICATOR);
+                        taskItem.classList.toggle(DOM_CLASSES.KEPT_TASK, !defaultDeleteState);
                     } else {
-                        taskItem.classList.toggle('show-delete-indicator', defaultDeleteState);
-                        taskItem.classList.remove('kept-task');
+                        taskItem.classList.toggle(DOM_CLASSES.SHOW_DELETE_INDICATOR, defaultDeleteState);
+                        taskItem.classList.remove(DOM_CLASSES.KEPT_TASK);
                     }
                 }
             }
@@ -1449,8 +1449,8 @@ function restoreFocusToNextTaskOption(context) {
     // Re-show task options if hidden
     const taskOptions = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
     if (taskOptions) {
-        taskOptions.classList.add('task-options-visible');
-        taskOptions.classList.remove('task-options-force-hidden');
+        taskOptions.classList.add(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
+        taskOptions.classList.remove(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
         taskOptions.querySelectorAll('button.task-btn').forEach(btn => {
             btn.tabIndex = 0;
         });
@@ -1461,7 +1461,7 @@ function restoreFocusToNextTaskOption(context) {
     const srcIndex = buttons.findIndex(btn => btn.classList.contains(sourceButtonClass));
 
     for (let i = srcIndex + 1; i < buttons.length; i++) {
-        if (buttons[i].offsetParent !== null && !buttons[i].classList.contains('hidden')) {
+        if (buttons[i].offsetParent !== null && !buttons[i].classList.contains(DOM_CLASSES.HIDDEN)) {
             buttons[i].focus();
             return;
         }
@@ -1483,8 +1483,8 @@ function restoreFocusToTaskOptionButton(context) {
 
     const taskOptions = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
     if (taskOptions) {
-        taskOptions.classList.add('task-options-visible');
-        taskOptions.classList.remove('task-options-force-hidden');
+        taskOptions.classList.add(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
+        taskOptions.classList.remove(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
         taskOptions.querySelectorAll('button.task-btn').forEach(btn => {
             btn.tabIndex = 0;
         });

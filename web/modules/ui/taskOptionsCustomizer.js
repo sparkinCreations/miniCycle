@@ -15,7 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isClickOnNotification } from './modalUtils.js';
 
@@ -234,7 +234,7 @@ export class TaskOptionsCustomizer {
                         // Close the menu first
                         const menuContainer = document.querySelector(DOM_SELECTORS.MENU_CONTAINER);
                         if (menuContainer) {
-                            menuContainer.classList.remove('visible');
+                            menuContainer.classList.remove(DOM_CLASSES.VISIBLE);
                         }
 
                         // Then open the customization modal
@@ -627,7 +627,7 @@ export class TaskOptionsCustomizer {
 
                 if (!isLabelClick && checkbox && !checkbox.disabled) {
                     // Left zone (checkbox + icon area): toggle the checkbox only
-                    if (!e.target.classList.contains('option-checkbox')) {
+                    if (!e.target.classList.contains(DOM_CLASSES.OPTION_CHECKBOX)) {
                         checkbox.checked = !checkbox.checked;
                         checkbox.dispatchEvent(new Event('change', { bubbles: true }));
                     }
@@ -636,8 +636,8 @@ export class TaskOptionsCustomizer {
 
                 // Right zone (label text): show preview and mark selected
                 showPreview(item);
-                optionItems.forEach(i => i.classList.remove('selected'));
-                item.classList.add('selected');
+                optionItems.forEach(i => i.classList.remove(DOM_CLASSES.SELECTED));
+                item.classList.add(DOM_CLASSES.SELECTED);
             };
             safeAdd(item, 'click', item._clickHandler);
         });
@@ -664,7 +664,7 @@ export class TaskOptionsCustomizer {
                 const isOnPreview = e.target.closest(DOM_SELECTORS.TASK_OPTION_PREVIEW);
                 const isOnButton = e.target.closest('button');
                 if (!isOnItem && !isOnPreview && !isOnButton) {
-                    optionItems.forEach(i => i.classList.remove('selected'));
+                    optionItems.forEach(i => i.classList.remove(DOM_CLASSES.SELECTED));
                     previewContent.innerHTML = `<p class="preview-placeholder"><span class="desktop-text">${getLabel('taskOptions.previewHover')}</span><span class="mobile-text">${getLabel('taskOptions.previewTap')}</span> ${getLabel('taskOptions.previewInstruction')}</p>`;
                 }
             };
@@ -778,7 +778,7 @@ export class TaskOptionsCustomizer {
             if (settingsThreeDotsToggle) {
                 settingsThreeDotsToggle.checked = newThreeDots;
             }
-            document.body.classList.toggle('show-three-dots-enabled', newThreeDots);
+            document.body.classList.toggle(DOM_CLASSES.SHOW_THREE_DOTS_ENABLED, newThreeDots);
 
             // Show tip when disabling on touch devices
             if (!newThreeDots && ('ontouchstart' in window)) {
@@ -795,7 +795,7 @@ export class TaskOptionsCustomizer {
                 enableRemindersCheckbox.checked = newRemindersEnabled;
                 const frequencySection = document.getElementById(DOM_IDS.FREQUENCY_SECTION);
                 if (frequencySection) {
-                    frequencySection.classList.toggle('hidden', !newRemindersEnabled);
+                    frequencySection.classList.toggle(DOM_CLASSES.HIDDEN, !newRemindersEnabled);
                 }
             }
 

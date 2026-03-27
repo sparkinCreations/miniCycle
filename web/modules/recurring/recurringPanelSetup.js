@@ -14,7 +14,7 @@
  * @version 1.0.0
  */
 
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -56,14 +56,14 @@ export function setupFrequencySelector(deps, onUpdate) {
 
         // Hide all frequency option sections
         Object.values(frequencyMap).forEach(section => {
-            if (section) section.classList.add("hidden");
+            if (section) section.classList.add(DOM_CLASSES.HIDDEN);
         });
 
         // Show selected frequency options only if advanced toggle is visible
         const advToggleBtn = deps.getElementById(DOM_IDS.TOGGLE_ADVANCED_SETTINGS);
         const advancedOn = advToggleBtn?.dataset.advancedVisible === 'true';
         if (frequencyMap[selectedFrequency] && advancedOn) {
-            frequencyMap[selectedFrequency].classList.remove("hidden");
+            frequencyMap[selectedFrequency].classList.remove(DOM_CLASSES.HIDDEN);
         }
 
         // Show/hide time picker sections (surfaced outside advanced)
@@ -77,11 +77,11 @@ export function setupFrequencySelector(deps, onUpdate) {
         };
 
         Object.values(timeMap).forEach(section => {
-            if (section) section.classList.add("hidden");
+            if (section) section.classList.add(DOM_CLASSES.HIDDEN);
         });
 
         if (timeMap[selectedFrequency]) {
-            timeMap[selectedFrequency].classList.remove("hidden");
+            timeMap[selectedFrequency].classList.remove(DOM_CLASSES.HIDDEN);
         }
 
         onUpdate?.();
@@ -102,7 +102,7 @@ export function setupToggleVisibility(deps) {
         const content = deps.getElementById(contentId);
         if (trigger && content) {
             deps.safeAddEventListener(trigger, "change", () => {
-                content.classList.toggle("hidden", !trigger.checked);
+                content.classList.toggle(DOM_CLASSES.HIDDEN, !trigger.checked);
             });
         }
     };
@@ -141,7 +141,7 @@ export function setupToggleCheckAll(deps, onUpdate) {
             cb.checked = anyUnchecked;
             const item = cb.closest(DOM_SELECTORS.RECURRING_TASK_ITEM);
             if (item) {
-                item.classList.toggle("checked", anyUnchecked);
+                item.classList.toggle(DOM_CLASSES.CHECKED, anyUnchecked);
             }
         });
 
@@ -177,7 +177,7 @@ export function setupAdvancedToggle(deps) {
 
         // Show/hide all `.frequency-options` panels
         deps.querySelectorAll(DOM_SELECTORS.FREQUENCY_OPTIONS).forEach(option => {
-            option.classList.toggle("hidden", !visible);
+            option.classList.toggle(DOM_CLASSES.HIDDEN, !visible);
         });
 
         // Re-apply frequency selection so only the active frequency's options show
@@ -189,7 +189,7 @@ export function setupAdvancedToggle(deps) {
 
                 Object.entries(frequencyMap).forEach(([freq, section]) => {
                     if (section && freq !== selected) {
-                        section.classList.add("hidden");
+                        section.classList.add(DOM_CLASSES.HIDDEN);
                     }
                 });
             }
@@ -197,7 +197,7 @@ export function setupAdvancedToggle(deps) {
 
         // Always show frequency dropdown container
         const frequencyContainer = deps.getElementById(DOM_IDS.RECUR_FREQUENCY_CONTAINER);
-        if (frequencyContainer) frequencyContainer.classList.remove("hidden");
+        if (frequencyContainer) frequencyContainer.classList.remove(DOM_CLASSES.HIDDEN);
 
         // Handle extras like 'Recur indefinitely' and 'Specific Dates'
         const advancedControls = [
@@ -211,13 +211,13 @@ export function setupAdvancedToggle(deps) {
 
             const label = checkbox.closest("label");
             if (label) {
-                label.classList.toggle("hidden", !visible);
+                label.classList.toggle(DOM_CLASSES.HIDDEN, !visible);
             }
         });
 
         const defaultBoxContainer = deps.getElementById(DOM_IDS.SET_DEFAULT_RECURRING_CONTAINER);
         if (defaultBoxContainer) {
-            defaultBoxContainer.classList.toggle("hidden", !visible);
+            defaultBoxContainer.classList.toggle(DOM_CLASSES.HIDDEN, !visible);
         }
     };
 
@@ -261,7 +261,7 @@ export function setupTimeConversion(deps, { hourInputId, minuteInputId, meridiem
                 hour = hour === 12 ? 12 : hour + 12;
             }
             hourInput.value = hour;
-            meridiemSelect.classList.add("hidden");
+            meridiemSelect.classList.add(DOM_CLASSES.HIDDEN);
         } else {
             // Convert from 24h to 12h
             if (hour === 0) {
@@ -277,7 +277,7 @@ export function setupTimeConversion(deps, { hourInputId, minuteInputId, meridiem
                 hourInput.value = hour - 12;
                 meridiemSelect.value = "PM";
             }
-            meridiemSelect.classList.remove("hidden");
+            meridiemSelect.classList.remove(DOM_CLASSES.HIDDEN);
         }
     });
 }
@@ -302,7 +302,7 @@ export function setupMilitaryTimeToggle(deps, prefix, onUpdate) {
         const is24Hour = toggle.checked;
 
         try {
-            meridiemSelect.classList.toggle("hidden", is24Hour);
+            meridiemSelect.classList.toggle(DOM_CLASSES.HIDDEN, is24Hour);
 
             onUpdate?.();
         } catch (error) {
@@ -406,7 +406,7 @@ export function setupMonthlyMutualExclusion(deps) {
         if (specificDays.checked && weekOfMonth.checked) {
             weekOfMonth.checked = false;
             const weekContainer = deps.getElementById(DOM_IDS.MONTHLY_WEEK_CONTAINER);
-            if (weekContainer) weekContainer.classList.add("hidden");
+            if (weekContainer) weekContainer.classList.add(DOM_CLASSES.HIDDEN);
         }
     });
 
@@ -414,7 +414,7 @@ export function setupMonthlyMutualExclusion(deps) {
         if (weekOfMonth.checked && specificDays.checked) {
             specificDays.checked = false;
             const dayContainer = deps.getElementById(DOM_IDS.MONTHLY_DAY_CONTAINER);
-            if (dayContainer) dayContainer.classList.add("hidden");
+            if (dayContainer) dayContainer.classList.add(DOM_CLASSES.HIDDEN);
         }
     });
 }
@@ -435,7 +435,7 @@ export function setupAdditionalListeners(deps, callbacks) {
         deps.safeAddEventListener(specificDateTime, "change", (e) => {
             const timeContainer = deps.getElementById(DOM_IDS.SPECIFIC_DATE_TIME_CONTAINER);
             if (timeContainer) {
-                timeContainer.classList.toggle("hidden", !e.target.checked);
+                timeContainer.classList.toggle(DOM_CLASSES.HIDDEN, !e.target.checked);
             }
             callbacks.updateRecurringSummary?.();
         });
@@ -471,7 +471,7 @@ export function setupAdditionalListeners(deps, callbacks) {
         // Deselect task and return to browsing when clicking outside
         if (summaryPreview && !summaryPreview.contains(e.target) && !taskList?.contains(e.target)) {
             deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
-                el.classList.remove("selected");
+                el.classList.remove(DOM_CLASSES.SELECTED);
                 el.setAttribute("aria-selected", "false");
             });
             callbacks.deselectAndBrowse?.();

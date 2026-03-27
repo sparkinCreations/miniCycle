@@ -22,7 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 
@@ -230,8 +230,8 @@ export class MenuManager {
                 e.stopPropagation();
                 const section = header.closest('.menu-section');
                 if (section) {
-                    section.classList.toggle('collapsed');
-                    const expanded = !section.classList.contains('collapsed');
+                    section.classList.toggle(DOM_CLASSES.COLLAPSED);
+                    const expanded = !section.classList.contains(DOM_CLASSES.COLLAPSED);
                     header.setAttribute('aria-expanded', String(expanded));
                     this.saveCollapsedStates();
                     if (expanded) {
@@ -245,8 +245,8 @@ export class MenuManager {
                     e.preventDefault();
                     const section = header.closest('.menu-section');
                     if (section) {
-                        section.classList.toggle('collapsed');
-                        const expanded = !section.classList.contains('collapsed');
+                        section.classList.toggle(DOM_CLASSES.COLLAPSED);
+                        const expanded = !section.classList.contains(DOM_CLASSES.COLLAPSED);
                         header.setAttribute('aria-expanded', String(expanded));
                         this.saveCollapsedStates();
                         if (expanded) {
@@ -261,14 +261,14 @@ export class MenuManager {
                     e.preventDefault();
                     const section = header.closest('.menu-section');
                     if (!section) return;
-                    const isCollapsed = section.classList.contains('collapsed');
+                    const isCollapsed = section.classList.contains(DOM_CLASSES.COLLAPSED);
                     if (e.key === 'ArrowRight' && isCollapsed) {
-                        section.classList.remove('collapsed');
+                        section.classList.remove(DOM_CLASSES.COLLAPSED);
                         header.setAttribute('aria-expanded', 'true');
                         this.saveCollapsedStates();
                         this._scrollSectionIntoView(section);
                     } else if (e.key === 'ArrowLeft' && !isCollapsed) {
-                        section.classList.add('collapsed');
+                        section.classList.add(DOM_CLASSES.COLLAPSED);
                         header.setAttribute('aria-expanded', 'false');
                         this.saveCollapsedStates();
                     }
@@ -297,7 +297,7 @@ export class MenuManager {
             if (isDesktop) {
                 const sections = this.deps.querySelectorAll(DOM_SELECTORS.MENU_SECTION_BY_DATA);
                 sections.forEach(section => {
-                    section.classList.remove('collapsed');
+                    section.classList.remove(DOM_CLASSES.COLLAPSED);
                     const header = section.querySelector('.menu-section-header.collapsible');
                     if (header) {
                         header.setAttribute('aria-expanded', 'true');
@@ -312,9 +312,9 @@ export class MenuManager {
             const section = this.deps.querySelector(DATA_SELECTORS.menuSectionByName(sectionName));
             if (section) {
                 if (isCollapsed) {
-                    section.classList.add('collapsed');
+                    section.classList.add(DOM_CLASSES.COLLAPSED);
                 } else {
-                    section.classList.remove('collapsed');
+                    section.classList.remove(DOM_CLASSES.COLLAPSED);
                 }
                 // Sync aria-expanded on the header
                 const sectionHeader = section.querySelector('.menu-section-header.collapsible');
@@ -336,7 +336,7 @@ export class MenuManager {
 
         sections.forEach(section => {
             const sectionName = section.dataset.section;
-            collapsedSections[sectionName] = section.classList.contains('collapsed');
+            collapsedSections[sectionName] = section.classList.contains(DOM_CLASSES.COLLAPSED);
         });
 
         this.deps.AppState.update(state => {
@@ -361,7 +361,7 @@ export class MenuManager {
      */
     closeMainMenu() {
         if (this.elements.menu) {
-            this.elements.menu.classList.remove("visible");
+            this.elements.menu.classList.remove(DOM_CLASSES.VISIBLE);
         }
     }
 
@@ -425,7 +425,7 @@ export class MenuManager {
     hideMainMenu() {
         const menu = this.deps.querySelector(DOM_SELECTORS.MENU_CONTAINER);
         if (menu) {
-            menu.classList.remove("visible");
+            menu.classList.remove(DOM_CLASSES.VISIBLE);
         }
     }
 
@@ -442,7 +442,7 @@ export class MenuManager {
 
         if (menu && menuButton) {
             if (!menu.contains(event.target) && !menuButton.contains(event.target)) {
-                menu.classList.remove("visible"); // Hide the menu
+                menu.classList.remove(DOM_CLASSES.VISIBLE); // Hide the menu
                 // Fix #3: Use bound handler reference for proper removal
                 // Note: This method is likely unused - uiBoot.js handles menu close via named function
                 if (this._boundCloseMenuHandler) {
@@ -612,7 +612,7 @@ export class MenuManager {
                 checkbox.checked = false;
             }
             // ✅ Remove overdue styling
-            taskElement.classList.remove("overdue-task");
+            taskElement.classList.remove(DOM_CLASSES.OVERDUE_TASK);
         });
 
         // ✅ Update UI elements

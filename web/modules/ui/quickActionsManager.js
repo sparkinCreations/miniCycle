@@ -13,7 +13,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 
@@ -1062,7 +1062,7 @@ export class QuickActionsManager {
 
                 // Disable if already pinned
                 if (pinned.includes(action.id)) {
-                    item.classList.add('disabled');
+                    item.classList.add(DOM_CLASSES.DISABLED);
                     item.setAttribute('aria-disabled', 'true');
                 }
 
@@ -1192,8 +1192,8 @@ export class QuickActionsManager {
 
     _animatedCycleView(direction, panel) {
         const isReducedMotion =
-            document.body.classList.contains('reduced-motion') ||
-            document.documentElement.classList.contains('reduced-motion');
+            document.body.classList.contains(DOM_CLASSES.REDUCED_MOTION) ||
+            document.documentElement.classList.contains(DOM_CLASSES.REDUCED_MOTION);
 
         if (isReducedMotion) {
             this.cycleView(direction);
@@ -1247,8 +1247,8 @@ export class QuickActionsManager {
         };
 
         const isReducedMotion = () =>
-            document.body.classList.contains('reduced-motion') ||
-            document.documentElement.classList.contains('reduced-motion');
+            document.body.classList.contains(DOM_CLASSES.REDUCED_MOTION) ||
+            document.documentElement.classList.contains(DOM_CLASSES.REDUCED_MOTION);
 
         const applyDragOffset = (diff) => {
             if (isReducedMotion()) return;
@@ -1414,7 +1414,7 @@ export class QuickActionsManager {
             top: `${rect.top - 10}px`,
             transform: 'translate(-50%, -100%)'
         });
-        this._tooltip.classList.add('visible');
+        this._tooltip.classList.add(DOM_CLASSES.VISIBLE);
 
         // Auto-hide after 3 seconds
         setTimeout(() => this._hideTooltip(), UI_TIMEOUTS.TOOLTIP_HIDE);
@@ -1431,7 +1431,7 @@ export class QuickActionsManager {
 
     _hideTooltip() {
         if (this._tooltip) {
-            this._tooltip.classList.remove('visible');
+            this._tooltip.classList.remove(DOM_CLASSES.VISIBLE);
         }
     }
 }

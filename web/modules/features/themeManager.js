@@ -28,7 +28,7 @@
  * @property {string} unlockKey - Key used for unlock tracking
  */
 
-import { DOM_IDS, DOM_SELECTORS, STORAGE_KEYS, UI_TIMEOUTS, MILESTONES } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, STORAGE_KEYS, UI_TIMEOUTS, MILESTONES } from '../core/constants.js';
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
@@ -123,7 +123,7 @@ function _setupDarkModeObserver() {
         if (!vocabThemeId || vocabThemeId === 'classic') return;
 
         const body = _deps.getBody();
-        if (body.classList.contains('dark-mode')) {
+        if (body.classList.contains(DOM_CLASSES.DARK_MODE)) {
             body.style.removeProperty('background');
         } else {
             const activeTheme = _deps.vocabThemeManager?.getActiveTheme?.();
@@ -154,7 +154,7 @@ function _refreshLiveLensLabels() {
     if (themeId !== 'classic' && activeTheme?.colorPreset) {
         // Clear any user-set custom pattern so the theme's SVG pattern shows.
         // applyCustomColors() restores it when switching back to Classic.
-        body.classList.remove('custom-pattern');
+        body.classList.remove(DOM_CLASSES.CUSTOM_PATTERN);
 
         // Set vars on body.style so child-element rules (task cards, stats panel,
         // etc.) resolve them from body's inline style — more correct scope than
@@ -211,14 +211,14 @@ function _refreshLiveLensLabels() {
     const addTaskText = _deps.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_TEXT);
     if (addTaskText) {
         const taskInputContainer = _deps.querySelector(DOM_SELECTORS.TASK_INPUT);
-        const isTaskInputVisible = taskInputContainer && !taskInputContainer.classList.contains('hidden');
+        const isTaskInputVisible = taskInputContainer && !taskInputContainer.classList.contains(DOM_CLASSES.HIDDEN);
         addTaskText.textContent = isTaskInputVisible ? getLabel('nav.hideTaskInput') : getLabel('action.addTask');
     }
 
     // Complete-all button text ("Complete Cycle" → "Complete Habits" etc.)
     const completeBtn = _deps.getElementById(DOM_IDS.COMPLETE_ALL);
     if (completeBtn) {
-        const isToDoMode = _deps.getBody().classList.contains('todo-mode-mode');
+        const isToDoMode = _deps.getBody().classList.contains(DOM_CLASSES.TODO_MODE_MODE);
         completeBtn.textContent = isToDoMode
             ? '🧹 ' + getLabel('action.clearCompletedTasks')
             : '🔄 ' + getLabel('action.completeCycle');
@@ -293,7 +293,7 @@ export class ThemeManager {
         try {
 
             // Step 1: Remove all theme classes
-            const allThemes = ['theme-dark-ocean', 'theme-golden-glow', 'theme-dark'];
+            const allThemes = [DOM_CLASSES.THEME_DARK_OCEAN, DOM_CLASSES.THEME_GOLDEN_GLOW, 'theme-dark'];
             const body = _deps.getBody();
             allThemes.forEach(theme => body?.classList.remove(theme));
 
@@ -344,17 +344,17 @@ export class ThemeManager {
             const themeColorMeta = _deps.getElementById(DOM_IDS.THEME_COLOR_META);
             const statusBarMeta = _deps.getElementById(DOM_IDS.STATUS_BAR_STYLE_META);
 
-            const isDarkMode = body.classList.contains('dark-mode');
-            const hasCustomBackground = body.classList.contains('has-bg-image');
+            const isDarkMode = body.classList.contains(DOM_CLASSES.DARK_MODE);
+            const hasCustomBackground = body.classList.contains(DOM_CLASSES.HAS_BG_IMAGE);
 
             let themeColor;
             let statusBarStyle;
 
             // Determine current theme
             let currentTheme = 'default';
-            if (body.classList.contains('theme-dark-ocean')) {
+            if (body.classList.contains(DOM_CLASSES.THEME_DARK_OCEAN)) {
                 currentTheme = 'dark-ocean';
-            } else if (body.classList.contains('theme-golden-glow')) {
+            } else if (body.classList.contains(DOM_CLASSES.THEME_GOLDEN_GLOW)) {
                 currentTheme = 'golden-glow';
             }
 
@@ -429,8 +429,8 @@ export class ThemeManager {
 
             // Set initial state
             thisToggle.checked = isDark;
-            _deps.getBody()?.classList.toggle("dark-mode", isDark);
-            _deps.getRootElement()?.classList.toggle("dark-mode", isDark);
+            _deps.getBody()?.classList.toggle(DOM_CLASSES.DARK_MODE, isDark);
+            _deps.getRootElement()?.classList.toggle(DOM_CLASSES.DARK_MODE, isDark);
 
             // Update theme color and quick toggle
             this.updateThemeColor();
@@ -507,8 +507,8 @@ export class ThemeManager {
      */
     toggleDarkMode(enabled, allToggleIds = [], excludeToggle = null) {
         try {
-            _deps.getBody()?.classList.toggle("dark-mode", enabled);
-            _deps.getRootElement()?.classList.toggle("dark-mode", enabled);
+            _deps.getBody()?.classList.toggle(DOM_CLASSES.DARK_MODE, enabled);
+            _deps.getRootElement()?.classList.toggle(DOM_CLASSES.DARK_MODE, enabled);
 
             
             // Save to storage
@@ -919,7 +919,7 @@ export class ThemeManager {
         try {
             const themeContainer = _deps.querySelector(DOM_SELECTORS.THEME_CONTAINER);
             if (themeContainer) {
-                themeContainer.classList.remove('hidden');
+                themeContainer.classList.remove(DOM_CLASSES.HIDDEN);
             }
         } catch (error) {
             console.warn('⚠️ Show theme container failed:', error.message);

@@ -145,7 +145,7 @@ export function initTaskSearch() {
                 if (filterGroupCollapsed) {
                     // Expand to show all options — don't change filter yet
                     filterGroupCollapsed = false;
-                    filterChipGroup?.classList.remove('collapsed');
+                    filterChipGroup?.classList.remove(DOM_CLASSES.COLLAPSED);
                     filterChipGroup?.setAttribute('aria-expanded', 'true');
                     return;
                 }
@@ -154,11 +154,11 @@ export function initTaskSearch() {
                 currentFilter = btn.dataset.filter;
                 filterRow.querySelectorAll('.filter-chip').forEach(b => {
                     const selected = b === btn;
-                    b.classList.toggle('active', selected);
+                    b.classList.toggle(DOM_CLASSES.ACTIVE, selected);
                     b.setAttribute('aria-pressed', String(selected));
                 });
                 filterGroupCollapsed = true;
-                filterChipGroup?.classList.add('collapsed');
+                filterChipGroup?.classList.add(DOM_CLASSES.COLLAPSED);
                 filterChipGroup?.setAttribute('aria-expanded', 'false');
                 applyFiltersAndSort(searchInput.value || '');
             });
@@ -168,7 +168,7 @@ export function initTaskSearch() {
         const defaultSortChip = filterRow.querySelector('.sort-chip[data-sort="default"]');
         filterRow.querySelectorAll('.sort-chip').forEach(btn => {
             safeAdd(btn, 'click', () => {
-                const isAlreadyActive = btn.classList.contains('active');
+                const isAlreadyActive = btn.classList.contains(DOM_CLASSES.ACTIVE);
                 const targetChip = (isAlreadyActive && btn.dataset.sort !== 'default') ? defaultSortChip : btn;
 
                 currentSort = targetChip.dataset.sort;
@@ -178,7 +178,7 @@ export function initTaskSearch() {
                 }
                 filterRow.querySelectorAll('.sort-chip').forEach(b => {
                     const selected = b === targetChip;
-                    b.classList.toggle('active', selected);
+                    b.classList.toggle(DOM_CLASSES.ACTIVE, selected);
                     b.setAttribute('aria-pressed', String(selected));
                 });
                 applyFiltersAndSort(searchInput.value || '');
@@ -215,9 +215,9 @@ function expandSearch() {
     const filterRow = deps.getElementById(DOM_IDS.TASK_FILTER_SORT_ROW);
 
     if (inputRow && searchBtn) {
-        inputRow.classList.remove('hidden');
-        filterRow?.classList.remove('hidden');
-        searchBtn.classList.add('active');
+        inputRow.classList.remove(DOM_CLASSES.HIDDEN);
+        filterRow?.classList.remove(DOM_CLASSES.HIDDEN);
+        searchBtn.classList.add(DOM_CLASSES.ACTIVE);
         isSearchExpanded = true;
 
         // Mobile: don't auto-focus — let user tap the search bar to bring up keyboard.
@@ -322,16 +322,16 @@ function collapseSearch() {
     const filterRow = deps.getElementById(DOM_IDS.TASK_FILTER_SORT_ROW);
 
     if (inputRow && searchBtn) {
-        inputRow.classList.add('hidden');
-        filterRow?.classList.add('hidden');
-        searchBtn.classList.remove('active');
+        inputRow.classList.add(DOM_CLASSES.HIDDEN);
+        filterRow?.classList.add(DOM_CLASSES.HIDDEN);
+        searchBtn.classList.remove(DOM_CLASSES.ACTIVE);
         isSearchExpanded = false;
 
         // Always re-collapse the filter group when search closes
         const filterChipGroup = filterRow?.querySelector('.filter-chip-group');
         if (filterChipGroup) {
             filterGroupCollapsed = true;
-            filterChipGroup.classList.add('collapsed');
+            filterChipGroup.classList.add(DOM_CLASSES.COLLAPSED);
             filterChipGroup.setAttribute('aria-expanded', 'false');
         }
     }
@@ -362,10 +362,10 @@ function matchesFilter(task) {
 
     if (currentFilter === 'incomplete') return !checkbox?.checked;
     if (currentFilter === 'completed')  return !!checkbox?.checked;
-    if (currentFilter === 'priority')   return task.classList.contains('high-priority');
+    if (currentFilter === 'priority')   return task.classList.contains(DOM_CLASSES.HIGH_PRIORITY);
     if (currentFilter === 'due-date')   return !!(task.querySelector(DOM_SELECTORS.DUE_DATE)?.value);
     if (currentFilter === 'recurring')  {
-        return task.querySelector(DOM_SELECTORS.RECURRING_BTN)?.classList.contains('active') ?? false;
+        return task.querySelector(DOM_SELECTORS.RECURRING_BTN)?.classList.contains(DOM_CLASSES.ACTIVE) ?? false;
     }
 
     return true;
@@ -405,8 +405,8 @@ function applySortToDOM(tasks, taskList) {
             return ta.localeCompare(tb);
         }
         if (currentSort === 'priority') {
-            const pa = a.classList.contains('high-priority') ? 0 : 1;
-            const pb = b.classList.contains('high-priority') ? 0 : 1;
+            const pa = a.classList.contains(DOM_CLASSES.HIGH_PRIORITY) ? 0 : 1;
+            const pb = b.classList.contains(DOM_CLASSES.HIGH_PRIORITY) ? 0 : 1;
             return pa - pb;
         }
         if (currentSort === 'due-date') {
@@ -507,18 +507,18 @@ export function resetSearch() {
     if (filterRow) {
         filterRow.querySelectorAll('.filter-chip').forEach(b => {
             const isAll = b.dataset.filter === 'all';
-            b.classList.toggle('active', isAll);
+            b.classList.toggle(DOM_CLASSES.ACTIVE, isAll);
             b.setAttribute('aria-pressed', String(isAll));
         });
         filterRow.querySelectorAll('.sort-chip').forEach(b => {
             const isDef = b.dataset.sort === 'default';
-            b.classList.toggle('active', isDef);
+            b.classList.toggle(DOM_CLASSES.ACTIVE, isDef);
             b.setAttribute('aria-pressed', String(isDef));
         });
         // Re-collapse the filter chip group
         const filterChipGroup = filterRow.querySelector('.filter-chip-group');
         if (filterChipGroup) {
-            filterChipGroup.classList.add('collapsed');
+            filterChipGroup.classList.add(DOM_CLASSES.COLLAPSED);
             filterChipGroup.setAttribute('aria-expanded', 'false');
         }
     }

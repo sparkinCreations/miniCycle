@@ -22,7 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
@@ -326,8 +326,8 @@ export class TaskRenderer {
             // Directly show task options (don't use revealTaskButtons to avoid toggle behavior)
             const taskOptions = taskElement.querySelector(DOM_SELECTORS.TASK_OPTIONS);
             if (taskOptions) {
-                taskOptions.classList.add('task-options-visible');
-                taskOptions.classList.remove('task-options-force-hidden');
+                taskOptions.classList.add(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
+                taskOptions.classList.remove(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
                 // Sync tabindex so restored buttons are keyboard-reachable
                 taskOptions.querySelectorAll('button.task-btn').forEach(btn => {
                     btn.tabIndex = 0;

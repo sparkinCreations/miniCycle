@@ -8,7 +8,7 @@
  * @version 1.0.0
  */
 
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { handleGridArrowNav, handleVerticalArrowNav } from '../utils/keyboardNav.js';
 
 // ============================================================================
@@ -51,8 +51,8 @@ export function initEventDelegation(deps, state, callbacks) {
  * @param {HTMLElement} box - The day or month box element
  */
 function toggleDayBox(box) {
-    box.classList.toggle("selected");
-    box.setAttribute("aria-checked", box.classList.contains("selected") ? "true" : "false");
+    box.classList.toggle(DOM_CLASSES.SELECTED);
+    box.setAttribute("aria-checked", box.classList.contains(DOM_CLASSES.SELECTED) ? "true" : "false");
 }
 
 /**
@@ -140,11 +140,11 @@ export function setupYearlyMonthDelegation(deps, state, callbacks) {
         // Reveal or hide the specific-days checkbox label and apply-all label
         const specificDaysLabel = deps.getElementById(DOM_IDS.YEARLY_SPECIFIC_DAYS_LABEL);
         if (specificDaysLabel) {
-            specificDaysLabel.classList.toggle("hidden", selectedMonths.length === 0);
+            specificDaysLabel.classList.toggle(DOM_CLASSES.HIDDEN, selectedMonths.length === 0);
         }
         const applyAllLabel = deps.getElementById(DOM_IDS.YEARLY_APPLY_ALL_LABEL);
         if (applyAllLabel) {
-            applyAllLabel.classList.toggle("hidden", selectedMonths.length === 0);
+            applyAllLabel.classList.toggle(DOM_CLASSES.HIDDEN, selectedMonths.length === 0);
         }
 
         // Show/hide day container based on selection + checkbox state
@@ -153,7 +153,7 @@ export function setupYearlyMonthDelegation(deps, state, callbacks) {
 
         if (yearlySpecificDaysCheckbox && yearlyDayContainer) {
             const shouldShow = yearlySpecificDaysCheckbox.checked && selectedMonths.length > 0;
-            yearlyDayContainer.classList.toggle("hidden", !shouldShow);
+            yearlyDayContainer.classList.toggle(DOM_CLASSES.HIDDEN, !shouldShow);
         }
 
         // Update dropdown
@@ -207,7 +207,7 @@ export function setupYearlyDayDelegation(deps, state, callbacks) {
         if (isNaN(day)) return;
 
         toggleDayBox(dayBox);
-        const isNowSelected = dayBox.classList.contains("selected");
+        const isNowSelected = dayBox.classList.contains(DOM_CLASSES.SELECTED);
 
         // Get current state
         const applyToAll = deps.getElementById(DOM_IDS.YEARLY_APPLY_ALL)?.checked || false;
@@ -277,7 +277,7 @@ export function setupTaskListDelegation(deps, state, callbacks) {
         const checkbox = event.target.closest(DOM_SELECTORS.RECURRING_CHECK);
         if (checkbox) {
             event.stopPropagation();
-            item.classList.toggle("checked");
+            item.classList.toggle(DOM_CLASSES.CHECKED);
             return;
         }
 
@@ -310,9 +310,9 @@ export function setupTaskListDelegation(deps, state, callbacks) {
         if (!item) return;
         // Don't toggle if double-clicking the remove button
         if (event.target.closest(DOM_SELECTORS.RECURRING_REMOVE_BTN)) return;
-        item.classList.toggle("checked");
+        item.classList.toggle(DOM_CLASSES.CHECKED);
         const checkbox = item.querySelector(DOM_SELECTORS.RECURRING_CHECK);
-        if (checkbox) checkbox.checked = item.classList.contains("checked");
+        if (checkbox) checkbox.checked = item.classList.contains(DOM_CLASSES.CHECKED);
     });
 
     // Keyboard navigation for task list items
@@ -340,10 +340,10 @@ export function setupTaskListDelegation(deps, state, callbacks) {
  */
 function selectTaskItem(item, deps, state, callbacks) {
     deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {
-        el.classList.remove("selected");
+        el.classList.remove(DOM_CLASSES.SELECTED);
         el.setAttribute("aria-selected", "false");
     });
-    item.classList.add("selected");
+    item.classList.add(DOM_CLASSES.SELECTED);
     item.setAttribute("aria-selected", "true");
 
     const taskId = item.getAttribute("data-task-id");

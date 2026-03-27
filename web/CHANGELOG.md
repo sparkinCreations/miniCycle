@@ -1,3 +1,7 @@
+## [2.143] - 2026-03-26
+- feat: add panel accent color variable to theme definitions and update help window styles
+
+
 ## [2.142] - 2026-03-26
 - feat: enhance task options theming with new CSS variables for background, border, and hover effects
 

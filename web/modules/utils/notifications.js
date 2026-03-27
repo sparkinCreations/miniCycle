@@ -35,7 +35,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -217,7 +217,7 @@ class EducationalTipManager {
     // Create bound handlers for this container (stored on container to enable removal)
     if (!container._tipCloseHandler) {
       container._tipCloseHandler = (e) => {
-        if (e.target.classList.contains('tip-close')) {
+        if (e.target.classList.contains(DOM_CLASSES.TIP_CLOSE)) {
           e.stopPropagation();
           const tipElement = e.target.closest('.educational-tip');
           const tipId = tipElement.dataset.tipId;
@@ -228,7 +228,7 @@ class EducationalTipManager {
 
     if (!container._tipToggleHandler) {
       container._tipToggleHandler = (e) => {
-        if (e.target.classList.contains('tip-toggle') || e.target.classList.contains('tip-toggle-btn')) {
+        if (e.target.classList.contains(DOM_CLASSES.TIP_TOGGLE) || e.target.classList.contains(DOM_CLASSES.TIP_TOGGLE_BTN)) {
           e.stopPropagation();
           const tipId = e.target.dataset.tipId;
           const tipElement = container.querySelector(`#tip-${tipId}`);
@@ -260,8 +260,8 @@ class EducationalTipManager {
       setTimeout(() => {
         tipElement.style.display = 'none';
         if (toggleButton) {
-          toggleButton.classList.remove('hide');
-          toggleButton.classList.add('show');
+          toggleButton.classList.remove(DOM_CLASSES.HIDE);
+          toggleButton.classList.add(DOM_CLASSES.SHOW);
         }
       }, 200);
     }
@@ -285,8 +285,8 @@ class EducationalTipManager {
       tipElement.style.transform = 'translateY(0)';
       
       if (toggleButton) {
-        toggleButton.classList.remove('show');
-        toggleButton.classList.add('hide');
+        toggleButton.classList.remove(DOM_CLASSES.SHOW);
+        toggleButton.classList.add(DOM_CLASSES.HIDE);
       }
     }
     
@@ -393,7 +393,7 @@ export class MiniCycleNotifications {
       }
 
       const notification = document.createElement("div");
-      notification.classList.add("notification", "show");
+      notification.classList.add("notification", DOM_CLASSES.SHOW);
       notification.dataset.id = newId;
 
       if (["error", "success", "info", "warning", "recurring"].includes(type)) {
@@ -429,7 +429,7 @@ export class MiniCycleNotifications {
         notificationRemoved = true;
 
         if (cleanupTimeouts) cleanupTimeouts();
-        notification.classList.remove("show");
+        notification.classList.remove(DOM_CLASSES.SHOW);
         setTimeout(() => {
           notification.remove();
           if (reason === 'dismiss' && typeof options?.onDismiss === 'function') {
@@ -475,7 +475,7 @@ export class MiniCycleNotifications {
             if (notificationRemoved) return;
             notificationRemoved = true;
             if (cleanupTimeouts) cleanupTimeouts();
-            notification.classList.remove('show');
+            notification.classList.remove(DOM_CLASSES.SHOW);
             setTimeout(() => {
               notification.remove();
               if (typeof onClick === 'function') onClick();
@@ -585,14 +585,14 @@ export class MiniCycleNotifications {
 
       // Build notification
       const notification = document.createElement("div");
-      notification.classList.add("notification", "show");
+      notification.classList.add("notification", DOM_CLASSES.SHOW);
       notification.dataset.id = newId;
 
-      if (type === "error") notification.classList.add("error");
-      if (type === "success") notification.classList.add("success");
-      if (type === "info") notification.classList.add("info");
-      if (type === "warning") notification.classList.add("warning");
-      if (type === "recurring") notification.classList.add("recurring");
+      if (type === "error") notification.classList.add(DOM_CLASSES.NOTIFICATION_ERROR);
+      if (type === "success") notification.classList.add(DOM_CLASSES.NOTIFICATION_SUCCESS);
+      if (type === "info") notification.classList.add(DOM_CLASSES.NOTIFICATION_INFO);
+      if (type === "warning") notification.classList.add(DOM_CLASSES.NOTIFICATION_WARNING);
+      if (type === "recurring") notification.classList.add(DOM_CLASSES.RECURRING);
 
       // Accessibility: role="alert" for urgent types, role="status" for others
       notification.setAttribute('role', (type === 'error' || type === 'warning') ? 'alert' : 'status');
@@ -622,7 +622,7 @@ export class MiniCycleNotifications {
         notificationRemoved = true;
 
         if (cleanupTimeouts) cleanupTimeouts();
-        notification.classList.remove("show");
+        notification.classList.remove(DOM_CLASSES.SHOW);
         setTimeout(() => {
           notification.remove();
           if (reason === 'dismiss' && typeof options?.onDismiss === 'function') {
@@ -792,7 +792,7 @@ async setDefaultPosition(notificationContainer) {
     const isPaused = () => hoverPaused || focusPaused || touchPaused;
 
     const clearNotification = () => {
-      notification.classList.remove("show");
+      notification.classList.remove(DOM_CLASSES.SHOW);
       if (typeof onAutoDismiss === 'function') {
         onAutoDismiss();
       }
@@ -891,7 +891,7 @@ async setDefaultPosition(notificationContainer) {
     if (!notificationContainer._pointerEventsObserver) {
       const updateContainerInteractivity = () => {
         const hasChildren = notificationContainer.querySelector(DOM_SELECTORS.NOTIFICATION) != null;
-        notificationContainer.classList.toggle('has-notifications', hasChildren);
+        notificationContainer.classList.toggle(DOM_CLASSES.HAS_NOTIFICATIONS, hasChildren);
       };
       updateContainerInteractivity();
       const childObserver = new MutationObserver(updateContainerInteractivity);
@@ -980,7 +980,7 @@ async setDefaultPosition(notificationContainer) {
         if (!dragStarted) {
           dragStarted = true;
           this.setDraggingState(true);
-          notificationContainer.classList.add("dragging");
+          notificationContainer.classList.add(DOM_CLASSES.DRAGGING);
           document.body.style.userSelect = 'none';
         }
       };
@@ -1004,7 +1004,7 @@ async setDefaultPosition(notificationContainer) {
       const onMouseUp = (e) => {
         if (dragStarted) {
           this.setDraggingState(false);
-          notificationContainer.classList.remove("dragging");
+          notificationContainer.classList.remove(DOM_CLASSES.DRAGGING);
           document.body.style.userSelect = '';
           if (Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY) > dragThreshold) {
             e.preventDefault();
@@ -1051,7 +1051,7 @@ async setDefaultPosition(notificationContainer) {
         if (!dragStarted) {
           dragStarted = true;
           this.setDraggingState(true);
-          notificationContainer.classList.add("dragging");
+          notificationContainer.classList.add(DOM_CLASSES.DRAGGING);
           document.body.style.overflow = 'hidden';
         }
       };
@@ -1076,7 +1076,7 @@ async setDefaultPosition(notificationContainer) {
       const onTouchEnd = (e) => {
         if (dragStarted) {
           this.setDraggingState(false);
-          notificationContainer.classList.remove("dragging");
+          notificationContainer.classList.remove(DOM_CLASSES.DRAGGING);
           document.body.style.overflow = '';
           const finalTouch = e.changedTouches[0];
           if (Math.abs(finalTouch.clientX - startX) + Math.abs(finalTouch.clientY - startY) > dragThreshold) {
@@ -1227,7 +1227,7 @@ async setDefaultPosition(notificationContainer) {
     if (closeBtn) {
       closeBtn._clickHandler = (e) => {
         e.stopPropagation();
-        notification.classList.remove("show");
+        notification.classList.remove(DOM_CLASSES.SHOW);
         setTimeout(() => notification.remove(), UI_TIMEOUTS.NOTIFICATION_FADE);
       };
       _safeAddEventListener(closeBtn, "click", closeBtn._clickHandler);
@@ -1241,16 +1241,16 @@ async setDefaultPosition(notificationContainer) {
                      e.target.closest("[data-task-id]")?.dataset.taskId;
 
       // Handle "Change Settings" button - expand quick actions
-      if (e.target.classList.contains("show-quick-actions")) {
+      if (e.target.classList.contains(DOM_CLASSES.SHOW_QUICK_ACTIONS)) {
         const changeSettingsBtn = e.target;
         const quickContainer = notification.querySelector(DOM_SELECTORS.QUICK_RECURRING_CONTAINER);
 
         if (quickContainer) {
           // Hide "Change Settings" button
-          changeSettingsBtn.classList.add("hidden");
+          changeSettingsBtn.classList.add(DOM_CLASSES.HIDDEN);
 
           // Show and animate quick actions container
-          quickContainer.classList.add("visible");
+          quickContainer.classList.add(DOM_CLASSES.VISIBLE);
 
           // Focus the currently-selected option (or first) for keyboard users
           const selectedOption = quickContainer.querySelector('.quick-option[aria-checked="true"]')
@@ -1265,7 +1265,7 @@ async setDefaultPosition(notificationContainer) {
       }
 
       // Handle apply button clicks
-      if (e.target.classList.contains("apply-quick-recurring")) {
+      if (e.target.classList.contains(DOM_CLASSES.APPLY_QUICK_RECURRING)) {
         const selectedCircle = notification.querySelector(DOM_SELECTORS.RADIO_CIRCLE_SELECTED);
         if (!selectedCircle || !taskId) return;
 
@@ -1294,13 +1294,13 @@ async setDefaultPosition(notificationContainer) {
           setTimeout(() => currentSettingsText.style.background = "transparent", UI_TIMEOUTS.BG_HIGHLIGHT_RESET);
         }
 
-        e.target.classList.remove("visible");
+        e.target.classList.remove(DOM_CLASSES.VISIBLE);
         this.showApplyConfirmation(currentSettingsText);
         if (this.deps.updateRecurringPanel) this.deps.updateRecurringPanel();
       }
 
       // Handle advanced settings button
-      if (e.target.classList.contains("open-recurring-settings") && taskId) {
+      if (e.target.classList.contains(DOM_CLASSES.OPEN_RECURRING_SETTINGS) && taskId) {
         // ✅ Wait for core systems to be ready (AppState + data)
         await _deps.appInit?.waitForCore();
 
@@ -1335,7 +1335,7 @@ async setDefaultPosition(notificationContainer) {
 
         const notificationEl = e.target.closest(".notification");
         if (notificationEl) {
-          notificationEl.classList.remove("show");
+          notificationEl.classList.remove(DOM_CLASSES.SHOW);
           setTimeout(() => notificationEl.remove(), UI_TIMEOUTS.NOTIFICATION_FADE);
         }
       }
@@ -1401,9 +1401,9 @@ async setDefaultPosition(notificationContainer) {
 
     // Update radio circles
     quickOptions.querySelectorAll(DOM_SELECTORS.RADIO_CIRCLE).forEach(circle => {
-      circle.classList.remove("selected");
+      circle.classList.remove(DOM_CLASSES.SELECTED);
     });
-    radioCircle.classList.add("selected");
+    radioCircle.classList.add(DOM_CLASSES.SELECTED);
 
     // Update aria-checked and roving tabindex on all options
     quickOptions.querySelectorAll('.quick-option').forEach(opt => {
@@ -1412,7 +1412,7 @@ async setDefaultPosition(notificationContainer) {
       opt.setAttribute('tabindex', isSelected ? '0' : '-1');
     });
 
-    applyButton.classList.add("visible");
+    applyButton.classList.add(DOM_CLASSES.VISIBLE);
   }
 
   /**
@@ -1527,7 +1527,7 @@ async setDefaultPosition(notificationContainer) {
       // If hovering, wait for mouseleave first, then dismiss after short delay
       const dismissAfterDelay = () => {
         setTimeout(() => {
-          notification.classList.remove('show');
+          notification.classList.remove(DOM_CLASSES.SHOW);
           setTimeout(() => notification.remove(), UI_TIMEOUTS.NOTIFICATION_FADE);
         }, 1500);
       };
@@ -1819,7 +1819,7 @@ async setDefaultPosition(notificationContainer) {
     confirmBtn._clickHandler = () => {
       const value = input.value.trim();
       if (required && !value) {
-        input.classList.add("miniCycle-input-error");
+        input.classList.add(DOM_CLASSES.MINICYCLE_INPUT_ERROR);
         input.focus();
         return;
       }

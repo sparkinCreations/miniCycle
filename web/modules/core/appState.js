@@ -25,7 +25,7 @@ import {
     DEFAULT_RECURRING_DELETE_SETTINGS,
     DEBOUNCE,
     DOM_IDS,
-    STORAGE_KEYS, UI_TIMEOUTS } from './constants.js';
+    STORAGE_KEYS, UI_TIMEOUTS, DOM_CLASSES } from './constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -244,7 +244,7 @@ class MiniCycleState {
             if (this._savingIndicatorTimeout) {
                 clearTimeout(this._savingIndicatorTimeout);
             }
-            indicator.classList.add('visible');
+            indicator.classList.add(DOM_CLASSES.VISIBLE);
         }
     }
 
@@ -254,7 +254,7 @@ class MiniCycleState {
         if (indicator) {
             // Keep visible for minimum 300ms so user can see it
             this._savingIndicatorTimeout = setTimeout(() => {
-                indicator.classList.remove('visible');
+                indicator.classList.remove(DOM_CLASSES.VISIBLE);
                 this._savingIndicatorTimeout = null;
             }, 300);
         }

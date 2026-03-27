@@ -14,7 +14,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -173,13 +173,13 @@ export class ModeManager {
                 autoResetEnabled,
                 deleteCheckedEnabled,
                 settings,
-                remindersEnabled: task.querySelector(DOM_SELECTORS.ENABLE_TASK_REMINDERS)?.classList.contains('reminder-active') || false,
+                remindersEnabled: task.querySelector(DOM_SELECTORS.ENABLE_TASK_REMINDERS)?.classList.contains(DOM_CLASSES.REMINDER_ACTIVE) || false,
                 remindersEnabledGlobal,
                 assignedTaskId: taskId,
                 currentCycle, // ✅ Required for recurring button handler
                 activeCycle: activeCycleId, // ✅ Also include activeCycleId
-                recurring: task.classList.contains('recurring'),
-                highPriority: task.classList.contains('high-priority')
+                recurring: task.classList.contains(DOM_CLASSES.RECURRING),
+                highPriority: task.classList.contains(DOM_CLASSES.HIGH_PRIORITY)
             };
 
             // Create new button container
@@ -198,10 +198,10 @@ export class ModeManager {
             }
 
             // Preserve visibility state
-            const wasVisible = oldButtonContainer.classList.contains('task-options-visible');
+            const wasVisible = oldButtonContainer.classList.contains(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
             if (wasVisible) {
-                newButtonContainer.classList.add('task-options-visible');
-                newButtonContainer.classList.remove('task-options-force-hidden');
+                newButtonContainer.classList.add(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
+                newButtonContainer.classList.remove(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
             }
 
             // Replace old container with new one
@@ -641,24 +641,24 @@ export class ModeManager {
 
         // Apply initial state
         if (isCollapsed) {
-            modeDescription.classList.add('collapsed');
+            modeDescription.classList.add(DOM_CLASSES.COLLAPSED);
             toggleBtn.setAttribute('aria-expanded', 'false');
         } else {
-            modeDescription.classList.remove('collapsed');
+            modeDescription.classList.remove(DOM_CLASSES.COLLAPSED);
             toggleBtn.setAttribute('aria-expanded', 'true');
         }
 
         // ✅ Setup click handler
         this.deps.safeAddEventListener(toggleBtn, 'click', async () => {
-            const currentlyCollapsed = modeDescription.classList.contains('collapsed');
+            const currentlyCollapsed = modeDescription.classList.contains(DOM_CLASSES.COLLAPSED);
             const newCollapsed = !currentlyCollapsed;
 
             // Update UI
             if (newCollapsed) {
-                modeDescription.classList.add('collapsed');
+                modeDescription.classList.add(DOM_CLASSES.COLLAPSED);
                 toggleBtn.setAttribute('aria-expanded', 'false');
             } else {
-                modeDescription.classList.remove('collapsed');
+                modeDescription.classList.remove(DOM_CLASSES.COLLAPSED);
                 toggleBtn.setAttribute('aria-expanded', 'true');
             }
 
@@ -698,7 +698,7 @@ export class ModeManager {
             || Object.keys(currentState?.data?.cycles || {}).length > 1;
 
         if (!currentState?.settings?.addTaskDiscovered && !isReturningUser) {
-            quickActionsBtn.classList.add('first-time-shimmer');
+            quickActionsBtn.classList.add(DOM_CLASSES.FIRST_TIME_SHIMMER);
 
             // Also remove shimmer when a task is added (covers mobile path where
             // users type into the input directly without ever clicking the + button).
@@ -709,7 +709,7 @@ export class ModeManager {
                 const initialCount = taskList.children.length;
                 const observer = new MutationObserver(() => {
                     if (taskList.children.length > initialCount) {
-                        quickActionsBtn.classList.remove('first-time-shimmer');
+                        quickActionsBtn.classList.remove(DOM_CLASSES.FIRST_TIME_SHIMMER);
                         observer.disconnect();
                         if (this.deps.AppState) {
                             this.deps.AppState.update(state => {
@@ -738,8 +738,8 @@ export class ModeManager {
             quickActionsMenu.style.display = isVisible ? 'none' : 'block';
 
             // Remove first-time shimmer on first click
-            if (quickActionsBtn.classList.contains('first-time-shimmer')) {
-                quickActionsBtn.classList.remove('first-time-shimmer');
+            if (quickActionsBtn.classList.contains(DOM_CLASSES.FIRST_TIME_SHIMMER)) {
+                quickActionsBtn.classList.remove(DOM_CLASSES.FIRST_TIME_SHIMMER);
                 if (this.deps.AppState) {
                     this.deps.AppState.update(state => {
                         if (!state.settings) state.settings = {};
@@ -772,7 +772,7 @@ export class ModeManager {
                 if (taskInput.style.display) {
                     taskInput.style.display = '';
                 }
-                taskInput.classList.toggle('hidden', !isVisible);
+                taskInput.classList.toggle(DOM_CLASSES.HIDDEN, !isVisible);
 
                 // Fix tab order: remove hidden inputs from focus sequence
                 const focusableChildren = taskInput.querySelectorAll('input, button');
@@ -789,7 +789,7 @@ export class ModeManager {
             this._updateTaskInputVisibility(initialVisible);
 
             this.deps.safeAddEventListener(toggleTaskInputBtn, 'click', async () => {
-                const currentVisible = !taskInput.classList.contains('hidden');
+                const currentVisible = !taskInput.classList.contains(DOM_CLASSES.HIDDEN);
                 const newVisible = !currentVisible;
 
                 // Update UI immediately

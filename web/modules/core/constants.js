@@ -397,6 +397,10 @@ export const DOM_CLASSES = Object.freeze({
 
     // ---- Task ----
     TASK: 'task',
+    TASK_CONTENT: 'task-content',
+    TASK_TEXT: 'task-text',
+    THREE_DOTS_BTN: 'three-dots-btn',
+    HOVER_ENABLED: 'hover-enabled',
 
     // ---- Task State ----
     RECURRING: 'recurring',
@@ -406,6 +410,7 @@ export const DOM_CLASSES = Object.freeze({
     DELETE_WHEN_COMPLETE_ACTIVE: 'delete-when-complete-active',
     REMINDER_ACTIVE: 'reminder-active',
     OVERDUE_TASK: 'overdue-task',
+    DUE_DATE: 'due-date',
 
     // ---- Drag & Drop ----
     DRAGGING: 'dragging',
@@ -434,6 +439,14 @@ export const DOM_CLASSES = Object.freeze({
     THEME_DARK_OCEAN: 'theme-dark-ocean',
     THEME_GOLDEN_GLOW: 'theme-golden-glow',
 
+    // ---- Boot / Loader ----
+    APP_LOADING: 'app-loading',
+    FADE_OUT: 'fade-out',
+
+    // ---- Device Mode ----
+    DESKTOP_MODE: 'desktop-mode',
+    TOUCH_MODE: 'touch-mode',
+
     // ---- Animation ----
     LOGO_SPIN: 'logo-spin',
     COMPLETE_ANIMATION: 'mini-cycle-complete-animation',
@@ -447,6 +460,11 @@ export const DOM_CLASSES = Object.freeze({
     FOCUS_MODE: 'focus-mode',
     FIXED_HEADER_CONTAINER: 'fixed-header-container',
     DROPDOWN_OPEN: 'dropdown-open',
+    REFRESHING: 'refreshing',
+
+    // ---- Routine Switcher ----
+    MINI_CYCLE_SWITCH_ITEM: 'mini-cycle-switch-item',
+    MINICYCLE_INPUT_ERROR: 'miniCycle-input-error',
 
     // ---- Task Boundary Markers ----
     IS_FIRST_TASK: 'is-first-task',
@@ -456,6 +474,31 @@ export const DOM_CLASSES = Object.freeze({
     TASK_OPTIONS_FORCE_HIDDEN: 'task-options-force-hidden',
     TASK_OPTIONS_VISIBLE: 'task-options-visible',
 
+    // ---- Task Buttons ----
+    TASK_OPTIONS: 'task-options',
+    TASK_BTN: 'task-btn',
+    CUSTOMIZE_BTN: 'customize-btn',
+    PRIORITY_ACTIVE: 'priority-active',
+
+    // ---- Mode Buttons ----
+    AUTO_CYCLE_MODE: 'auto-cycle-mode',
+    TODO_MODE_MODE: 'todo-mode-mode',
+    TODO_MODE_BTN: 'todo-mode-btn',
+    CYCLE_MODE_BTN: 'cycle-mode-btn',
+    COMPLETE_BTN_VISIBLE: 'complete-btn-visible',
+
+    // ---- Background / Pattern ----
+    NO_BG_PATTERN: 'no-bg-pattern',
+    CUSTOM_PATTERN: 'custom-pattern',
+    HAS_BG_IMAGE: 'has-bg-image',
+    BG_MODE_COVER: 'bg-mode-cover',
+    BG_MODE_CENTER: 'bg-mode-center',
+    BG_MODE_TILE: 'bg-mode-tile',
+
+    // ---- Panel Visibility ----
+    HIDE_HELP_WINDOW: 'hide-help-window',
+    HIDE_QUICK_ACTIONS: 'hide-quick-actions',
+
     // ---- Accessibility ----
     REDUCED_MOTION: 'reduced-motion',
     HIGH_CONTRAST: 'high-contrast',
@@ -463,7 +506,53 @@ export const DOM_CLASSES = Object.freeze({
     // ---- Checkmark Styles ----
     CHECKMARK_FITTED: 'checkmark-fitted',
     CHECKMARK_MINIMAL: 'checkmark-minimal',
-    CHECKMARK_CIRCLE: 'checkmark-circle'
+    CHECKMARK_CIRCLE: 'checkmark-circle',
+
+    // ---- Notifications ----
+    TIP_CLOSE: 'tip-close',
+    TIP_TOGGLE: 'tip-toggle',
+    TIP_TOGGLE_BTN: 'tip-toggle-btn',
+    HAS_NOTIFICATIONS: 'has-notifications',
+    NOTIFICATION_ERROR: 'error',
+    NOTIFICATION_SUCCESS: 'success',
+    NOTIFICATION_INFO: 'info',
+    NOTIFICATION_WARNING: 'warning',
+    SHOW_QUICK_ACTIONS: 'show-quick-actions',
+    APPLY_QUICK_RECURRING: 'apply-quick-recurring',
+    OPEN_RECURRING_SETTINGS: 'open-recurring-settings',
+
+    // ---- Achievements / Badges ----
+    UNLOCKED: 'unlocked',
+    UNLOCKED_MESSAGE: 'unlocked-message',
+    OCEAN_THEME: 'ocean-theme',
+    GOLDEN_THEME: 'golden-theme',
+    GAME_UNLOCKED: 'game-unlocked',
+    HAS_CONTENT: 'has-content',
+
+    // ---- Task Cycle Reset ----
+    TASK_RESETTING: 'task-resetting',
+    TASK_CLEARING: 'task-clearing',
+    COMPLETED: 'completed',
+
+    // ---- Pull to Refresh ----
+    OPEN: 'open',
+    READY: 'ready',
+
+    // ---- Onboarding ----
+    FIRST_TIME_SHIMMER: 'first-time-shimmer',
+
+    // ---- Recurring Panel ----
+    FIRST_SPECIFIC_DATE: 'first-specific-date',
+    TWO_COL_ACTIVE: 'two-col-active',
+    RECURRING_SETTINGS_TITLE: 'recurring-settings-title',
+    OPTION_CHECKBOX: 'option-checkbox',
+
+    // ---- Task Option Buttons (individual) ----
+    EDIT_BTN: 'edit-btn',
+    DELETE_BTN: 'delete-btn',
+    PRIORITY_BTN: 'priority-btn',
+    SET_DUE_DATE: 'set-due-date',
+    CLOSE_BTN: 'close-btn'
 });
 
 // ============================================================================

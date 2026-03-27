@@ -10,7 +10,7 @@
  * @module ui/panelVisibilityHelpers
  */
 
-import { DOM_IDS } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES } from '../core/constants.js';
 
 /**
  * Apply help window visibility: toggle body class, update state, sync both checkboxes.
@@ -27,7 +27,7 @@ export function applyHelpWindowVisibility(visible, AppState) {
         });
     }
 
-    document.body.classList.toggle('hide-help-window', !visible);
+    document.body.classList.toggle(DOM_CLASSES.HIDE_HELP_WINDOW, !visible);
 
     const prefToggle = document.getElementById(DOM_IDS.TOGGLE_HELP_WINDOW);
     if (prefToggle) prefToggle.checked = visible;
@@ -51,7 +51,7 @@ export function applyQuickActionsVisibility(visible, AppState) {
         });
     }
 
-    document.body.classList.toggle('hide-quick-actions', !visible);
+    document.body.classList.toggle(DOM_CLASSES.HIDE_QUICK_ACTIONS, !visible);
 
     const prefToggle = document.getElementById(DOM_IDS.TOGGLE_QUICK_ACTIONS);
     if (prefToggle) prefToggle.checked = visible;
@@ -69,8 +69,8 @@ export function loadPanelVisibility(customColors) {
     const showHelpWindow = customColors?.showHelpWindow !== false;
     const showQuickActions = customColors?.showQuickActions !== false;
 
-    document.body.classList.toggle('hide-help-window', !showHelpWindow);
-    document.body.classList.toggle('hide-quick-actions', !showQuickActions);
+    document.body.classList.toggle(DOM_CLASSES.HIDE_HELP_WINDOW, !showHelpWindow);
+    document.body.classList.toggle(DOM_CLASSES.HIDE_QUICK_ACTIONS, !showQuickActions);
 
     const helpPref = document.getElementById(DOM_IDS.TOGGLE_HELP_WINDOW);
     if (helpPref) helpPref.checked = showHelpWindow;
@@ -88,8 +88,8 @@ export function loadPanelVisibility(customColors) {
  * Removes body classes and resets all checkboxes.
  */
 export function resetPanelVisibility() {
-    document.body.classList.remove('hide-help-window');
-    document.body.classList.remove('hide-quick-actions');
+    document.body.classList.remove(DOM_CLASSES.HIDE_HELP_WINDOW);
+    document.body.classList.remove(DOM_CLASSES.HIDE_QUICK_ACTIONS);
 
     const helpPref = document.getElementById(DOM_IDS.TOGGLE_HELP_WINDOW);
     if (helpPref) helpPref.checked = true;

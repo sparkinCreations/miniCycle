@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_SELECTORS } from '../core/constants.js';
+import { DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
@@ -634,7 +634,7 @@ export class ClearedTasksManager {
 
                     if (this.selectedTasks.has(id)) {
                         this.selectedTasks.delete(id);
-                        el.classList.remove('selected');
+                        el.classList.remove(DOM_CLASSES.SELECTED);
                         // Update inline styles for deselected state
                         el.style.background = 'var(--bg-secondary, #f5f5f5)';
                         el.style.border = '2px solid transparent';
@@ -645,7 +645,7 @@ export class ClearedTasksManager {
                         }
                     } else {
                         this.selectedTasks.add(id);
-                        el.classList.add('selected');
+                        el.classList.add(DOM_CLASSES.SELECTED);
                         // Update inline styles for selected state
                         el.style.background = 'var(--primary-color-light, #e8efff)';
                         el.style.border = '2px solid var(--primary-color, #4c79ff)';

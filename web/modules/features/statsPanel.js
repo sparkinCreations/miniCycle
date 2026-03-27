@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { GESTURE, UI_TIMEOUTS, CHART, INTERVALS, DOM_IDS, DOM_SELECTORS, APP_VERSION } from '../core/constants.js';
+import { GESTURE, UI_TIMEOUTS, CHART, INTERVALS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -775,10 +775,10 @@ export class StatsPanelManager {
         }
 
         // Update panels
-        this.elements.statsPanel.classList.add("hide");
-        this.elements.statsPanel.classList.remove("show");
-        this.elements.taskView.classList.add("show");
-        this.elements.taskView.classList.remove("hide");
+        this.elements.statsPanel.classList.add(DOM_CLASSES.HIDE);
+        this.elements.statsPanel.classList.remove(DOM_CLASSES.SHOW);
+        this.elements.taskView.classList.add(DOM_CLASSES.SHOW);
+        this.elements.taskView.classList.remove(DOM_CLASSES.HIDE);
 
         // Remove hidden panel from tab order / screen readers
         this.elements.statsPanel.inert = true;
@@ -786,13 +786,13 @@ export class StatsPanelManager {
 
         // Update slide indicators + tabindex
         if (this.elements.slideRight) {
-            this.elements.slideRight.classList.add("show");
-            this.elements.slideRight.classList.remove("hide");
+            this.elements.slideRight.classList.add(DOM_CLASSES.SHOW);
+            this.elements.slideRight.classList.remove(DOM_CLASSES.HIDE);
             this.elements.slideRight.tabIndex = 0;
         }
         if (this.elements.slideLeft) {
-            this.elements.slideLeft.classList.add("hide");
-            this.elements.slideLeft.classList.remove("show");
+            this.elements.slideLeft.classList.add(DOM_CLASSES.HIDE);
+            this.elements.slideLeft.classList.remove(DOM_CLASSES.SHOW);
             this.elements.slideLeft.tabIndex = -1;
         }
 
@@ -812,10 +812,10 @@ export class StatsPanelManager {
         }
 
         // Update panels
-        this.elements.statsPanel.classList.add("show");
-        this.elements.statsPanel.classList.remove("hide");
-        this.elements.taskView.classList.add("hide");
-        this.elements.taskView.classList.remove("show");
+        this.elements.statsPanel.classList.add(DOM_CLASSES.SHOW);
+        this.elements.statsPanel.classList.remove(DOM_CLASSES.HIDE);
+        this.elements.taskView.classList.add(DOM_CLASSES.HIDE);
+        this.elements.taskView.classList.remove(DOM_CLASSES.SHOW);
 
         // Remove hidden panel from tab order / screen readers
         this.elements.statsPanel.inert = false;
@@ -823,13 +823,13 @@ export class StatsPanelManager {
 
         // Update slide indicators + tabindex
         if (this.elements.slideRight) {
-            this.elements.slideRight.classList.add("hide");
-            this.elements.slideRight.classList.remove("show");
+            this.elements.slideRight.classList.add(DOM_CLASSES.HIDE);
+            this.elements.slideRight.classList.remove(DOM_CLASSES.SHOW);
             this.elements.slideRight.tabIndex = -1;
         }
         if (this.elements.slideLeft) {
-            this.elements.slideLeft.classList.add("show");
-            this.elements.slideLeft.classList.remove("hide");
+            this.elements.slideLeft.classList.add(DOM_CLASSES.SHOW);
+            this.elements.slideLeft.classList.remove(DOM_CLASSES.HIDE);
             this.elements.slideLeft.tabIndex = 0;
         }
 
@@ -872,8 +872,8 @@ export class StatsPanelManager {
             this.elements.statsPanel.inert = true;
         }
         if (this.elements.slideLeft) {
-            this.elements.slideLeft.classList.add("hide");
-            this.elements.slideLeft.classList.remove("show");
+            this.elements.slideLeft.classList.add(DOM_CLASSES.HIDE);
+            this.elements.slideLeft.classList.remove(DOM_CLASSES.SHOW);
             this.elements.slideLeft.tabIndex = -1;
         }
 
@@ -1029,14 +1029,14 @@ export class StatsPanelManager {
                 this.elements.perRoutineCleared.textContent =
                     getLabel('stats.clearedTasks', { vars: { count: perRoutineCleared, taskWord: getLabel('noun.task', { count: perRoutineCleared }) } });
                 // Mark as having content - visibility is controlled by .visible class from dropdown toggle
-                this.elements.currentRoutineClearedCount.classList.add('has-content');
+                this.elements.currentRoutineClearedCount.classList.add(DOM_CLASSES.HAS_CONTENT);
                 // Sync with dropdown expanded state (check if cycle count has .visible)
-                if (this.elements.currentRoutineCycleCount?.classList.contains('visible')) {
-                    this.elements.currentRoutineClearedCount.classList.add('visible');
+                if (this.elements.currentRoutineCycleCount?.classList.contains(DOM_CLASSES.VISIBLE)) {
+                    this.elements.currentRoutineClearedCount.classList.add(DOM_CLASSES.VISIBLE);
                 }
             } else {
                 // No content - always hide
-                this.elements.currentRoutineClearedCount.classList.remove('has-content', 'visible');
+                this.elements.currentRoutineClearedCount.classList.remove(DOM_CLASSES.HAS_CONTENT, DOM_CLASSES.VISIBLE);
             }
         }
 
@@ -1105,15 +1105,15 @@ export class StatsPanelManager {
      * Update navigation dots
      */
     updateNavDots() {
-        const statsVisible = this.elements.statsPanel?.classList.contains("show");
-        
+        const statsVisible = this.elements.statsPanel?.classList.contains(DOM_CLASSES.SHOW);
+
         this.elements.dots.forEach((dot, index) => {
             if (index === 0) {
                 // Task view dot
-                dot.classList.toggle("active", !statsVisible);
+                dot.classList.toggle(DOM_CLASSES.ACTIVE, !statsVisible);
             } else if (index === 1) {
                 // Stats panel dot
-                dot.classList.toggle("active", statsVisible);
+                dot.classList.toggle(DOM_CLASSES.ACTIVE, statsVisible);
             }
         });
     }
@@ -1246,15 +1246,15 @@ export class StatsPanelManager {
                         const icon = def?.icons?.celebrate ?? '✅';
                         return `${icon} ${def.name}`;
                     }).join('\n');
-                    themeUnlockMessage.classList.toggle("unlocked-message", true);
-                    themeUnlockMessage.classList.toggle("visible", expanded);
+                    themeUnlockMessage.classList.toggle(DOM_CLASSES.UNLOCKED_MESSAGE, true);
+                    themeUnlockMessage.classList.toggle(DOM_CLASSES.VISIBLE, expanded);
                 } else {
                     themeUnlockMessage.textContent = "";
-                    themeUnlockMessage.classList.remove("unlocked-message", "visible");
+                    themeUnlockMessage.classList.remove(DOM_CLASSES.UNLOCKED_MESSAGE, DOM_CLASSES.VISIBLE);
                 }
             } else {
                 themeUnlockMessage.textContent = "";
-                themeUnlockMessage.classList.remove("unlocked-message", "visible");
+                themeUnlockMessage.classList.remove(DOM_CLASSES.UNLOCKED_MESSAGE, DOM_CLASSES.VISIBLE);
             }
         }
 
@@ -1267,16 +1267,16 @@ export class StatsPanelManager {
                     const cycleWord = getLabel('noun.cycle', { count: cyclesNeeded });
                     const themeUnlockText = getLabel('unlock.nextThemeUnlock', { vars: { name: nextVocabTheme.name, count: cyclesNeeded, cycleWord } });
                     goldenUnlockMessage.textContent = nextIcon ? `${nextIcon} ${themeUnlockText}` : themeUnlockText;
-                    goldenUnlockMessage.classList.remove("unlocked-message");
-                    goldenUnlockMessage.classList.toggle("visible", expanded);
+                    goldenUnlockMessage.classList.remove(DOM_CLASSES.UNLOCKED_MESSAGE);
+                    goldenUnlockMessage.classList.toggle(DOM_CLASSES.VISIBLE, expanded);
                 } else {
                     goldenUnlockMessage.textContent = getLabel('unlock.allThemesUnlocked');
-                    goldenUnlockMessage.classList.toggle("unlocked-message", true);
-                    goldenUnlockMessage.classList.toggle("visible", expanded);
+                    goldenUnlockMessage.classList.toggle(DOM_CLASSES.UNLOCKED_MESSAGE, true);
+                    goldenUnlockMessage.classList.toggle(DOM_CLASSES.VISIBLE, expanded);
                 }
             } else {
                 goldenUnlockMessage.textContent = "";
-                goldenUnlockMessage.classList.remove("unlocked-message", "visible");
+                goldenUnlockMessage.classList.remove(DOM_CLASSES.UNLOCKED_MESSAGE, DOM_CLASSES.VISIBLE);
             }
         }
 
@@ -1285,11 +1285,11 @@ export class StatsPanelManager {
             if (!allVocabUnlocked) {
                 // Still vocab themes to unlock — hide game message entirely
                 gameUnlockMessage.textContent = "";
-                gameUnlockMessage.classList.remove("unlocked-message", "visible");
+                gameUnlockMessage.classList.remove(DOM_CLASSES.UNLOCKED_MESSAGE, DOM_CLASSES.VISIBLE);
             } else if (milestoneUnlocks.taskOrderGame) {
                 gameUnlockMessage.textContent = `${getIcon('game')} ${getLabel('unlock.gameUnlocked')} ${getIcon('unlocked')}`;
-                gameUnlockMessage.classList.toggle("unlocked-message", true);
-                gameUnlockMessage.classList.toggle("visible", expanded);
+                gameUnlockMessage.classList.toggle(DOM_CLASSES.UNLOCKED_MESSAGE, true);
+                gameUnlockMessage.classList.toggle(DOM_CLASSES.VISIBLE, expanded);
             } else {
                 if (isToDoMode) {
                     const tasksNeeded = Math.max(0, 500 - totalTasksCleared);
@@ -1300,8 +1300,8 @@ export class StatsPanelManager {
                     const cycleWord = getLabel('noun.cycle', { count: cyclesNeeded });
                     gameUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.gameCycles', { vars: { count: cyclesNeeded, cycleWord } })}`;
                 }
-                gameUnlockMessage.classList.remove("unlocked-message");
-                gameUnlockMessage.classList.toggle("visible", expanded);
+                gameUnlockMessage.classList.remove(DOM_CLASSES.UNLOCKED_MESSAGE);
+                gameUnlockMessage.classList.toggle(DOM_CLASSES.VISIBLE, expanded);
             }
         }
     }
@@ -1358,9 +1358,9 @@ export class StatsPanelManager {
         const applyVisible = (el) => {
             if (!el) return;
             if (newExpanded && el.textContent) {
-                el.classList.add("visible");
+                el.classList.add(DOM_CLASSES.VISIBLE);
             } else {
-                el.classList.remove("visible");
+                el.classList.remove(DOM_CLASSES.VISIBLE);
             }
         };
 
@@ -1388,20 +1388,20 @@ export class StatsPanelManager {
         if (!currentRoutineCycleCount) return;
 
         // Toggle routine name, doughnut chart, progress text, cycle count, cleared count, and History button container
-        if (this.elements.currentRoutineName) this.elements.currentRoutineName.classList.toggle("visible");
-        if (currentCycleDoughnutContainer) currentCycleDoughnutContainer.classList.toggle("visible");
-        if (currentCycleProgressText) currentCycleProgressText.classList.toggle("visible");
-        currentRoutineCycleCount.classList.toggle("visible");
+        if (this.elements.currentRoutineName) this.elements.currentRoutineName.classList.toggle(DOM_CLASSES.VISIBLE);
+        if (currentCycleDoughnutContainer) currentCycleDoughnutContainer.classList.toggle(DOM_CLASSES.VISIBLE);
+        if (currentCycleProgressText) currentCycleProgressText.classList.toggle(DOM_CLASSES.VISIBLE);
+        currentRoutineCycleCount.classList.toggle(DOM_CLASSES.VISIBLE);
         // Only toggle cleared count if it has content to show
-        if (currentRoutineClearedCount?.classList.contains('has-content')) {
-            currentRoutineClearedCount.classList.toggle("visible");
+        if (currentRoutineClearedCount?.classList.contains(DOM_CLASSES.HAS_CONTENT)) {
+            currentRoutineClearedCount.classList.toggle(DOM_CLASSES.VISIBLE);
         }
-        if (routineButtonsContainer) routineButtonsContainer.classList.toggle("visible");
+        if (routineButtonsContainer) routineButtonsContainer.classList.toggle(DOM_CLASSES.VISIBLE);
 
         // Update toggle arrow and aria-expanded
         const toggleIcon = currentRoutineStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);
         if (toggleIcon) {
-            const anyVisible = currentRoutineCycleCount.classList.contains("visible");
+            const anyVisible = currentRoutineCycleCount.classList.contains(DOM_CLASSES.VISIBLE);
             toggleIcon.textContent = anyVisible ? "▲" : "▼";
 
             const clickableHeader = currentRoutineStatus?.querySelector('.clickable');
@@ -1463,12 +1463,12 @@ export class StatsPanelManager {
                     currentRoutineCycleCount, currentRoutineClearedCount, currentRoutineStatus, routineButtonsContainer } = this.elements;
 
             if (currentRoutineExpanded && currentRoutineCycleCount) {
-                if (this.elements.currentRoutineName) this.elements.currentRoutineName.classList.add("visible");
-                if (currentCycleDoughnutContainer) currentCycleDoughnutContainer.classList.add("visible");
-                if (currentCycleProgressText) currentCycleProgressText.classList.add("visible");
-                currentRoutineCycleCount.classList.add("visible");
+                if (this.elements.currentRoutineName) this.elements.currentRoutineName.classList.add(DOM_CLASSES.VISIBLE);
+                if (currentCycleDoughnutContainer) currentCycleDoughnutContainer.classList.add(DOM_CLASSES.VISIBLE);
+                if (currentCycleProgressText) currentCycleProgressText.classList.add(DOM_CLASSES.VISIBLE);
+                currentRoutineCycleCount.classList.add(DOM_CLASSES.VISIBLE);
                 // Don't add visible to cleared count here - let updateStats() handle it based on content
-                if (routineButtonsContainer) routineButtonsContainer.classList.add("visible");
+                if (routineButtonsContainer) routineButtonsContainer.classList.add(DOM_CLASSES.VISIBLE);
 
                 const toggleIcon = currentRoutineStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);
                 if (toggleIcon) toggleIcon.textContent = "▲";
@@ -1480,9 +1480,9 @@ export class StatsPanelManager {
             this._milestonesExpanded = milestonesExpanded;
 
             if (milestonesExpanded && themeUnlockMessage) {
-                themeUnlockMessage.classList.add("visible");
-                if (goldenUnlockMessage) goldenUnlockMessage.classList.add("visible");
-                if (gameUnlockMessage) gameUnlockMessage.classList.add("visible");
+                themeUnlockMessage.classList.add(DOM_CLASSES.VISIBLE);
+                if (goldenUnlockMessage) goldenUnlockMessage.classList.add(DOM_CLASSES.VISIBLE);
+                if (gameUnlockMessage) gameUnlockMessage.classList.add(DOM_CLASSES.VISIBLE);
 
                 const toggleIcon = themeUnlockStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);
                 if (toggleIcon) toggleIcon.textContent = "▲";
@@ -1501,13 +1501,13 @@ export class StatsPanelManager {
      */
     async handleQuickDarkToggle() {
         const body = _deps.getBody();
-        const isDark = body.classList.toggle("dark-mode");
+        const isDark = body.classList.toggle(DOM_CLASSES.DARK_MODE);
 
         // ✅ Use AppState only (no localStorage fallback) - DI-pure
         const AppState = this.dependencies.AppState;
         if (!AppState?.isReady?.()) {
             console.error('❌ AppState not ready for quick dark toggle');
-            body.classList.toggle("dark-mode"); // Revert
+            body.classList.toggle(DOM_CLASSES.DARK_MODE); // Revert
             return;
         }
 

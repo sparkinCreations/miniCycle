@@ -14,7 +14,7 @@ import {
     safeShowConfirmationModal,
     escapeHtml
 } from './testing-modal-core.js';
-import { DOM_SELECTORS, STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_SELECTORS, DOM_CLASSES, STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 const LITE_STORAGE_KEYS = Object.freeze([
@@ -350,10 +350,10 @@ export async function restoreFromBackup() {
 
         backupItem.addEventListener("click", () => {
             document.querySelectorAll(DOM_SELECTORS.BACKUP_ITEM).forEach(item => {
-                item.classList.remove('selected');
+                item.classList.remove(DOM_CLASSES.SELECTED);
             });
 
-            backupItem.classList.add('selected');
+            backupItem.classList.add(DOM_CLASSES.SELECTED);
             selectedBackup = backup;
 
             restoreBtn.disabled = false;

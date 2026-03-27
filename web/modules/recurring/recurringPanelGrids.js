@@ -8,7 +8,7 @@
  * @version 1.0.0
  */
 
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -104,7 +104,7 @@ export function generateYearlyDayGrid(deps, state, monthNumber) {
             : selectedDays.includes(i);
 
         if (isSelected) {
-            dayBox.classList.add("selected");
+            dayBox.classList.add(DOM_CLASSES.SELECTED);
         }
         dayBox.setAttribute("aria-checked", isSelected ? "true" : "false");
         dayBox.setAttribute("aria-label", getLabel('recurring.ariaDay', { vars: { day: i } }));

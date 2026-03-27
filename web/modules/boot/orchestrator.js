@@ -24,7 +24,7 @@
  * @see {@link module:boot/uiBoot} - Phase 3 implementation
  */
 
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ✅ Single source of truth: Read version from globalThis (set by version.js)
@@ -293,7 +293,7 @@ function showBootError(phase, error, willRetry = false) {
 
   // Keep loader visible and update its content
   loader.style.display = 'flex';
-  loader.classList.remove('fade-out');
+  loader.classList.remove(DOM_CLASSES.FADE_OUT);
 
   const { description, suggestion } = getErrorDetails(error, phase);
   const shortError = (error?.message || 'Unknown error').substring(0, 80);

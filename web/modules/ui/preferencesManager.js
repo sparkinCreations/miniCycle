@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, APP_VERSION, UI_TIMEOUTS, PREFERENCES } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, DATA_SELECTORS, APP_VERSION, UI_TIMEOUTS, PREFERENCES } from '../core/constants.js';
 import { updateThemeColor } from '../features/themeManager.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { applyHelpWindowVisibility, applyQuickActionsVisibility, loadPanelVisibility, resetPanelVisibility } from './panelVisibilityHelpers.js';
@@ -763,7 +763,7 @@ export class PreferencesManager {
                 } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
                     const section = header.closest('.preferences-section');
                     if (!section) return;
-                    const isCollapsed = section.classList.contains('collapsed');
+                    const isCollapsed = section.classList.contains(DOM_CLASSES.COLLAPSED);
                     if (e.key === 'ArrowRight' && isCollapsed) {
                         e.preventDefault();
                         this.toggleSection(header);
@@ -854,9 +854,9 @@ export class PreferencesManager {
     isDefaultTheme() {
         const body = _deps.getBody();
         const root = _deps.getRootElement();
-        return !body.classList.contains('theme-dark-ocean') &&
-               !body.classList.contains('theme-golden-glow') &&
-               !body.classList.contains('dark-mode') &&
+        return !body.classList.contains(DOM_CLASSES.THEME_DARK_OCEAN) &&
+               !body.classList.contains(DOM_CLASSES.THEME_GOLDEN_GLOW) &&
+               !body.classList.contains(DOM_CLASSES.DARK_MODE) &&
                (!root.dataset.vocabTheme || root.dataset.vocabTheme === 'classic');
     }
 
@@ -868,8 +868,8 @@ export class PreferencesManager {
     isPatternCustomizable() {
         const body = _deps.getBody();
         const root = _deps.getRootElement();
-        return !body.classList.contains('theme-dark-ocean') &&
-               !body.classList.contains('theme-golden-glow') &&
+        return !body.classList.contains(DOM_CLASSES.THEME_DARK_OCEAN) &&
+               !body.classList.contains(DOM_CLASSES.THEME_GOLDEN_GLOW) &&
                (!root.dataset.vocabTheme || root.dataset.vocabTheme === 'classic');
     }
 
@@ -918,7 +918,7 @@ export class PreferencesManager {
             const showPattern = customColors.showBgPattern !== false; // Default to true
             bgPatternToggle.checked = showPattern;
             // Apply body class immediately
-            _deps.getBody().classList.toggle('no-bg-pattern', !showPattern);
+            _deps.getBody().classList.toggle(DOM_CLASSES.NO_BG_PATTERN, !showPattern);
             // Dim pattern controls if pattern is hidden
             this.updatePatternControlsVisibility(showPattern);
         }
@@ -1090,7 +1090,7 @@ export class PreferencesManager {
         }
 
         // Toggle body class to show/hide pattern
-        _deps.getBody().classList.toggle('no-bg-pattern', !visible);
+        _deps.getBody().classList.toggle(DOM_CLASSES.NO_BG_PATTERN, !visible);
 
         // Dim/enable pattern color and opacity controls
         this.updatePatternControlsVisibility(visible);
@@ -1229,7 +1229,7 @@ export class PreferencesManager {
             // Custom color or opacity — generate inline SVG
             const patternUrl = generatePatternSvg(color, opacity);
             _deps.getRootElement().style.setProperty('--custom-pattern-bg', patternUrl);
-            _deps.getBody().classList.add('custom-pattern');
+            _deps.getBody().classList.add(DOM_CLASSES.CUSTOM_PATTERN);
         }
     }
 
@@ -1238,7 +1238,7 @@ export class PreferencesManager {
      */
     removePatternColor() {
         _deps.getRootElement().style.removeProperty('--custom-pattern-bg');
-        _deps.getBody().classList.remove('custom-pattern');
+        _deps.getBody().classList.remove(DOM_CLASSES.CUSTOM_PATTERN);
     }
 
     /**
@@ -1424,7 +1424,7 @@ export class PreferencesManager {
         // Reset background pattern toggle + body class + controls
         const bgPatternToggle = _deps.getElementById(DOM_IDS.TOGGLE_BG_PATTERN);
         if (bgPatternToggle) bgPatternToggle.checked = true;
-        _deps.getBody().classList.remove('no-bg-pattern');
+        _deps.getBody().classList.remove(DOM_CLASSES.NO_BG_PATTERN);
         this.updatePatternControlsVisibility(true);
 
         // Reset custom pattern (revert to external SVG)
@@ -1480,7 +1480,7 @@ export class PreferencesManager {
         // Hide background image (keep image data, just toggle off)
         const bgImageVisibleToggle = _deps.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
         if (bgImageVisibleToggle) bgImageVisibleToggle.checked = false;
-        _deps.getBody().classList.remove('has-bg-image', 'bg-mode-cover', 'bg-mode-center', 'bg-mode-tile');
+        _deps.getBody().classList.remove(DOM_CLASSES.HAS_BG_IMAGE, DOM_CLASSES.BG_MODE_COVER, DOM_CLASSES.BG_MODE_CENTER, DOM_CLASSES.BG_MODE_TILE);
 
         this.updatePreview();
 
@@ -1504,9 +1504,9 @@ export class PreferencesManager {
             // Only clear --pref-* vars for CSS-class overrides (dark mode, legacy themes).
             // Vocab themes apply their own --pref-* vars directly — don't clear them.
             const body = _deps.getBody();
-            if (body.classList.contains('dark-mode') ||
-                body.classList.contains('theme-dark-ocean') ||
-                body.classList.contains('theme-golden-glow')) {
+            if (body.classList.contains(DOM_CLASSES.DARK_MODE) ||
+                body.classList.contains(DOM_CLASSES.THEME_DARK_OCEAN) ||
+                body.classList.contains(DOM_CLASSES.THEME_GOLDEN_GLOW)) {
                 this.removeCustomColors();
             }
             return;
@@ -1729,10 +1729,10 @@ export class PreferencesManager {
         const previewQuickActions = preview.querySelector('.preview-quick-actions');
 
         if (previewHelp) {
-            previewHelp.classList.toggle('hidden', helpToggle?.checked === false);
+            previewHelp.classList.toggle(DOM_CLASSES.HIDDEN, helpToggle?.checked === false);
         }
         if (previewQuickActions) {
-            previewQuickActions.classList.toggle('hidden', quickActionsToggle?.checked === false);
+            previewQuickActions.classList.toggle(DOM_CLASSES.HIDDEN, quickActionsToggle?.checked === false);
         }
     }
 
@@ -1743,8 +1743,8 @@ export class PreferencesManager {
     toggleSection(header) {
         const section = header.closest('.preferences-section') || header.closest('.preferences-preview-section');
         if (section) {
-            section.classList.toggle('collapsed');
-            const isCollapsed = section.classList.contains('collapsed');
+            section.classList.toggle(DOM_CLASSES.COLLAPSED);
+            const isCollapsed = section.classList.contains(DOM_CLASSES.COLLAPSED);
             header.setAttribute('aria-expanded', (!isCollapsed).toString());
             this.saveCollapsedStates();
         }
@@ -1764,13 +1764,13 @@ export class PreferencesManager {
             if (isMobile) {
                 const hasSaved = collapsedSections && ('live-preview' in collapsedSections);
                 if (!hasSaved) {
-                    previewSection.classList.add('collapsed');
+                    previewSection.classList.add(DOM_CLASSES.COLLAPSED);
                     const header = previewSection.querySelector('.preferences-section-header');
                     if (header) header.setAttribute('aria-expanded', 'false');
                 }
             } else {
                 // Desktop: always expanded
-                previewSection.classList.remove('collapsed');
+                previewSection.classList.remove(DOM_CLASSES.COLLAPSED);
                 const header = previewSection.querySelector('.preferences-section-header');
                 if (header) header.setAttribute('aria-expanded', 'true');
             }
@@ -1783,9 +1783,9 @@ export class PreferencesManager {
             const section = _deps.querySelector(DATA_SELECTORS.preferencesSectionByName(sectionName));
             if (section) {
                 if (isCollapsed) {
-                    section.classList.add('collapsed');
+                    section.classList.add(DOM_CLASSES.COLLAPSED);
                 } else {
-                    section.classList.remove('collapsed');
+                    section.classList.remove(DOM_CLASSES.COLLAPSED);
                 }
                 const header = section.querySelector('.preferences-section-header');
                 if (header) {
@@ -1806,7 +1806,7 @@ export class PreferencesManager {
 
         sections.forEach(section => {
             const sectionName = section.dataset.section;
-            collapsedSections[sectionName] = section.classList.contains('collapsed');
+            collapsedSections[sectionName] = section.classList.contains(DOM_CLASSES.COLLAPSED);
         });
 
         _deps.AppState.update(state => {

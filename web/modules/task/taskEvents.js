@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
@@ -205,7 +205,7 @@ export class TaskEvents {
             }
 
             // Only navigate when a .task-text label is focused
-            if (!target.classList.contains('task-text')) return;
+            if (!target.classList.contains(DOM_CLASSES.TASK_TEXT)) return;
 
             // Guard: skip if inside an input/textarea (editing mode)
             if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
@@ -289,12 +289,12 @@ export class TaskEvents {
         let shouldSave = false;
 
         // ✅ DISABLED: Old arrow handling logic - now using event delegation
-        if (button.classList.contains("move-up") || button.classList.contains("move-down")) {
+        if (button.classList.contains(DOM_CLASSES.MOVE_UP) || button.classList.contains(DOM_CLASSES.MOVE_DOWN)) {
             return;
         }
 
         // DI-pure: use injected taskCore
-        if (button.classList.contains("edit-btn")) {
+        if (button.classList.contains(DOM_CLASSES.EDIT_BTN)) {
             if (this.deps.taskCore) {
                 this.deps.taskCore.editTask(taskItem);
             } else {
@@ -302,7 +302,7 @@ export class TaskEvents {
                 _deps.showNotification?.(getLabel('notify.editUnavailable'), 'warning');
             }
             shouldSave = false;
-        } else if (button.classList.contains("delete-btn")) {
+        } else if (button.classList.contains(DOM_CLASSES.DELETE_BTN)) {
             if (this.deps.taskCore) {
                 this.deps.taskCore.deleteTask(taskItem);
             } else {
@@ -310,7 +310,7 @@ export class TaskEvents {
                 _deps.showNotification?.(getLabel('notify.deleteUnavailable'), 'warning');
             }
             shouldSave = false;
-        } else if (button.classList.contains("priority-btn")) {
+        } else if (button.classList.contains(DOM_CLASSES.PRIORITY_BTN)) {
             if (this.deps.taskCore) {
                 this.deps.taskCore.toggleTaskPriority(taskItem);
             } else {
@@ -318,12 +318,12 @@ export class TaskEvents {
                 _deps.showNotification?.(getLabel('notify.priorityUnavailable'), 'warning');
             }
             shouldSave = false;
-        } else if (button.classList.contains("set-due-date")) {
+        } else if (button.classList.contains(DOM_CLASSES.SET_DUE_DATE)) {
             // Toggle due date input visibility
             const dueDateInput = taskItem.querySelector(DOM_SELECTORS.DUE_DATE);
             if (dueDateInput) {
-                const isHidden = dueDateInput.classList.contains("hidden");
-                dueDateInput.classList.toggle("hidden", !isHidden);
+                const isHidden = dueDateInput.classList.contains(DOM_CLASSES.HIDDEN);
+                dueDateInput.classList.toggle(DOM_CLASSES.HIDDEN, !isHidden);
                 button.setAttribute("aria-expanded", isHidden.toString());
                 if (isHidden) {
                     // Focus the input when showing
@@ -350,18 +350,18 @@ export class TaskEvents {
 
         this.deps.querySelectorAll(DOM_SELECTORS.TASK).forEach(taskItem => {
             if (enableHover) {
-                if (!taskItem.classList.contains("hover-enabled")) {
+                if (!taskItem.classList.contains(DOM_CLASSES.HOVER_ENABLED)) {
                     taskItem._hoverShowHandler = showTaskOptions;
                     taskItem._hoverHideHandler = hideTaskOptions;
                     safeAdd(taskItem, "mouseenter", taskItem._hoverShowHandler);
                     safeAdd(taskItem, "mouseleave", taskItem._hoverHideHandler);
-                    taskItem.classList.add("hover-enabled");
+                    taskItem.classList.add(DOM_CLASSES.HOVER_ENABLED);
                 }
             } else {
-                if (taskItem.classList.contains("hover-enabled")) {
+                if (taskItem.classList.contains(DOM_CLASSES.HOVER_ENABLED)) {
                     taskItem.removeEventListener("mouseenter", taskItem._hoverShowHandler);
                     taskItem.removeEventListener("mouseleave", taskItem._hoverHideHandler);
-                    taskItem.classList.remove("hover-enabled");
+                    taskItem.classList.remove(DOM_CLASSES.HOVER_ENABLED);
                 }
             }
         });
@@ -380,7 +380,7 @@ export class TaskEvents {
         }
 
         // Check current visibility state (use CSS class, not inline style)
-        const isCurrentlyVisible = taskOptions.classList.contains('task-options-visible');
+        const isCurrentlyVisible = taskOptions.classList.contains(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
         const taskId = taskItem.dataset.taskId || taskItem.dataset.id;
 
         // DI-pure: use injected TaskOptionsVisibilityController
@@ -440,7 +440,7 @@ export class TaskEvents {
         taskEl.setAttribute("data-recurring-settings", JSON.stringify(recurringSettings));
         const recurringBtn = taskEl.querySelector(DOM_SELECTORS.RECURRING_BTN);
         if (recurringBtn) {
-            recurringBtn.classList.add("active");
+            recurringBtn.classList.add(DOM_CLASSES.ACTIVE);
             recurringBtn.setAttribute("aria-pressed", "true");
         }
 
@@ -510,7 +510,7 @@ export class TaskEvents {
     setupPriorityButtonState(buttonContainer, highPriority) {
         const priorityButton = buttonContainer.querySelector(DOM_SELECTORS.PRIORITY_BTN);
         if (highPriority && priorityButton) {
-            priorityButton.classList.add("priority-active");
+            priorityButton.classList.add(DOM_CLASSES.PRIORITY_ACTIVE);
             priorityButton.setAttribute("aria-pressed", "true");
         }
     }

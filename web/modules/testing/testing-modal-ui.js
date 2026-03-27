@@ -13,7 +13,7 @@ import {
     safeAddEventListener,
     setupTestingTabs
 } from './testing-modal-core.js';
-import { DOM_IDS, DOM_SELECTORS, Z_INDEX, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, Z_INDEX, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ==========================================
@@ -298,7 +298,7 @@ function makeTestingModalDraggable(modalContent, dragHandle) {
         modalContent.style.zIndex = String(Z_INDEX.OVERLAY_CRITICAL + 1);
         modalContent.style.boxShadow = "0 25px 50px rgba(0, 0, 0, 0.5)";
         modalContent.style.transform = "scale(1.02)";
-        dragHandle.classList.add("dragging");
+        dragHandle.classList.add(DOM_CLASSES.DRAGGING);
 
         e.preventDefault();
         e.stopPropagation();
@@ -334,7 +334,7 @@ function makeTestingModalDraggable(modalContent, dragHandle) {
             modalContent.style.zIndex = String(Z_INDEX.OVERLAY_CRITICAL);
             modalContent.style.boxShadow = "";
             modalContent.style.transform = "scale(1)";
-            dragHandle.classList.remove("dragging");
+            dragHandle.classList.remove(DOM_CLASSES.DRAGGING);
 
             if (hasMoved) {
                 showNotification(getLabel('notify.testingModalRepositioned'), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);

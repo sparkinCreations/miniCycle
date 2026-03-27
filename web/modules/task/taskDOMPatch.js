@@ -16,7 +16,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 
 // ============================================================================
@@ -104,7 +104,7 @@ export class TaskDOMPatch {
         if (checkbox) {
             checkbox.checked = taskData.completed || false;
         }
-        taskElement.classList.toggle('completed', taskData.completed || false);
+        taskElement.classList.toggle(DOM_CLASSES.COMPLETED, taskData.completed || false);
     }
 
     /**
@@ -131,7 +131,7 @@ export class TaskDOMPatch {
      */
     _patchHighPriority(taskElement, taskData) {
         const isHighPriority = taskData.highPriority || false;
-        taskElement.classList.toggle('high-priority', isHighPriority);
+        taskElement.classList.toggle(DOM_CLASSES.HIGH_PRIORITY, isHighPriority);
 
         // Apply or clear per-task priority color via CSS custom property
         if (isHighPriority && taskData.priorityColor) {
@@ -142,7 +142,7 @@ export class TaskDOMPatch {
 
         const priorityBtn = taskElement.querySelector(DOM_SELECTORS.PRIORITY_BTN);
         if (priorityBtn) {
-            priorityBtn.classList.toggle('priority-active', isHighPriority);
+            priorityBtn.classList.toggle(DOM_CLASSES.PRIORITY_ACTIVE, isHighPriority);
             priorityBtn.setAttribute('aria-pressed', String(isHighPriority));
         }
     }
@@ -169,10 +169,10 @@ export class TaskDOMPatch {
             if (taskData.dueDate) {
                 const date = new Date(taskData.dueDate);
                 dueDateSpan.textContent = date.toLocaleDateString();
-                dueDateSpan.classList.remove('hidden');
+                dueDateSpan.classList.remove(DOM_CLASSES.HIDDEN);
             } else {
                 dueDateSpan.textContent = '';
-                dueDateSpan.classList.add('hidden');
+                dueDateSpan.classList.add(DOM_CLASSES.HIDDEN);
             }
         }
     }
@@ -183,11 +183,11 @@ export class TaskDOMPatch {
      */
     _patchRecurring(taskElement, taskData) {
         const isRecurring = taskData.recurring || false;
-        taskElement.classList.toggle('recurring', isRecurring);
+        taskElement.classList.toggle(DOM_CLASSES.RECURRING, isRecurring);
 
         const recurringBtn = taskElement.querySelector(DOM_SELECTORS.RECURRING_BTN);
         if (recurringBtn) {
-            recurringBtn.classList.toggle('active', isRecurring);
+            recurringBtn.classList.toggle(DOM_CLASSES.ACTIVE, isRecurring);
             recurringBtn.setAttribute('aria-pressed', String(isRecurring));
         }
 
@@ -213,7 +213,7 @@ export class TaskDOMPatch {
     _patchReminders(taskElement, taskData) {
         const reminderBtn = taskElement.querySelector(DOM_SELECTORS.ENABLE_TASK_REMINDERS);
         if (reminderBtn) {
-            reminderBtn.classList.toggle('reminder-active', taskData.remindersEnabled || false);
+            reminderBtn.classList.toggle(DOM_CLASSES.REMINDER_ACTIVE, taskData.remindersEnabled || false);
             reminderBtn.setAttribute('aria-pressed', String(taskData.remindersEnabled || false));
         }
     }
@@ -228,8 +228,8 @@ export class TaskDOMPatch {
 
         const dwcBtn = taskElement.querySelector(DOM_SELECTORS.DELETE_WHEN_COMPLETE_BTN);
         if (dwcBtn) {
-            dwcBtn.classList.toggle('active', isActive);
-            dwcBtn.classList.toggle('delete-when-complete-active', isActive);
+            dwcBtn.classList.toggle(DOM_CLASSES.ACTIVE, isActive);
+            dwcBtn.classList.toggle(DOM_CLASSES.DELETE_WHEN_COMPLETE_ACTIVE, isActive);
             dwcBtn.setAttribute('aria-pressed', String(isActive));
         }
 
@@ -240,11 +240,11 @@ export class TaskDOMPatch {
             const activeCycleId = state?.appState?.activeCycleId;
             const isToDoMode = state?.data?.cycles?.[activeCycleId]?.deleteCheckedTasks === true;
             if (isToDoMode) {
-                taskElement.classList.remove('show-delete-indicator');
-                taskElement.classList.toggle('kept-task', !isActive);
+                taskElement.classList.remove(DOM_CLASSES.SHOW_DELETE_INDICATOR);
+                taskElement.classList.toggle(DOM_CLASSES.KEPT_TASK, !isActive);
             } else {
-                taskElement.classList.toggle('show-delete-indicator', isActive);
-                taskElement.classList.remove('kept-task');
+                taskElement.classList.toggle(DOM_CLASSES.SHOW_DELETE_INDICATOR, isActive);
+                taskElement.classList.remove(DOM_CLASSES.KEPT_TASK);
             }
         }
     }
@@ -316,18 +316,18 @@ export class TaskDOMPatch {
         if (!taskList) return;
 
         // Remove old markers (O(1) - at most one of each)
-        taskList.querySelector(DOM_SELECTORS.IS_FIRST_TASK)?.classList.remove('is-first-task');
-        taskList.querySelector(DOM_SELECTORS.IS_LAST_TASK)?.classList.remove('is-last-task');
+        taskList.querySelector(DOM_SELECTORS.IS_FIRST_TASK)?.classList.remove(DOM_CLASSES.IS_FIRST_TASK);
+        taskList.querySelector(DOM_SELECTORS.IS_LAST_TASK)?.classList.remove(DOM_CLASSES.IS_LAST_TASK);
 
         // Add new markers
         const firstTask = taskList.firstElementChild;
         const lastTask = taskList.lastElementChild;
 
-        if (firstTask?.classList.contains('task')) {
-            firstTask.classList.add('is-first-task');
+        if (firstTask?.classList.contains(DOM_CLASSES.TASK)) {
+            firstTask.classList.add(DOM_CLASSES.IS_FIRST_TASK);
         }
-        if (lastTask?.classList.contains('task') && lastTask !== firstTask) {
-            lastTask.classList.add('is-last-task');
+        if (lastTask?.classList.contains(DOM_CLASSES.TASK) && lastTask !== firstTask) {
+            lastTask.classList.add(DOM_CLASSES.IS_LAST_TASK);
         }
     }
 }

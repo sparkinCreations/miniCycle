@@ -50,7 +50,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -279,7 +279,7 @@ function resetTasksData(context, deps) {
     // Capture recurring task names before removal for history logging
     const recurringRemovedNames = [];
     taskElements.forEach(taskEl => {
-        if (taskEl.classList.contains('recurring')) {
+        if (taskEl.classList.contains(DOM_CLASSES.RECURRING)) {
             const taskId = taskEl.dataset.taskId;
             const task = freshCycleData?.tasks?.find(t => t.id === taskId);
             if (task?.text) recurringRemovedNames.push(task.text);
@@ -299,7 +299,7 @@ function resetTasksData(context, deps) {
     const disableTaskAnimation = freshState?.settings?.disableCompletionAnimation === true;
 
     taskElements.forEach(taskEl => {
-        if (taskEl.classList.contains("recurring")) return;
+        if (taskEl.classList.contains(DOM_CLASSES.RECURRING)) return;
 
         const taskId = taskEl.dataset.taskId;
         const task = freshCycleData?.tasks?.find(t => t.id === taskId);
@@ -320,24 +320,24 @@ function resetTasksData(context, deps) {
         if (disableTaskAnimation) {
             // Skip animation, just reset immediately
             if (checkbox) checkbox.checked = false;
-            taskEl.classList.remove("overdue-task");
+            taskEl.classList.remove(DOM_CLASSES.OVERDUE_TASK);
             if (dueDateInput) {
                 dueDateInput.value = "";
-                dueDateInput.classList.add("hidden");
+                dueDateInput.classList.add(DOM_CLASSES.HIDDEN);
             }
         } else {
             const delay = animationIndex * STAGGER_DELAY;
             trackTimeout(setTimeout(() => {
-                taskEl.classList.add("task-resetting");
+                taskEl.classList.add(DOM_CLASSES.TASK_RESETTING);
                 if (checkbox) checkbox.checked = false;
-                taskEl.classList.remove("overdue-task");
+                taskEl.classList.remove(DOM_CLASSES.OVERDUE_TASK);
                 if (dueDateInput) {
                     dueDateInput.value = "";
-                    dueDateInput.classList.add("hidden");
+                    dueDateInput.classList.add(DOM_CLASSES.HIDDEN);
                 }
                 // Remove animation class after it completes
                 trackTimeout(setTimeout(() => {
-                    taskEl.classList.remove("task-resetting");
+                    taskEl.classList.remove(DOM_CLASSES.TASK_RESETTING);
                 }, 400));
             }, delay));
         }
@@ -423,7 +423,7 @@ function moveCompletedTasksBack(context, deps) {
     // Move completed tasks back to main list first
     const completedTaskElements = completedTaskList.querySelectorAll(DOM_SELECTORS.TASK);
     completedTaskElements.forEach(taskEl => {
-        if (!taskEl.classList.contains('recurring')) {
+        if (!taskEl.classList.contains(DOM_CLASSES.RECURRING)) {
             taskList.appendChild(taskEl);
         }
     });
@@ -519,12 +519,12 @@ export async function resetTasksImpl(deps = {}) {
         // Step 3.5: Spin the logo (coin-flip animation)
         const headerLogo = document.querySelector(DOM_SELECTORS.HEADER_LOGO);
         if (headerLogo) {
-            headerLogo.classList.remove('logo-spin'); // Reset if already spinning
+            headerLogo.classList.remove(DOM_CLASSES.LOGO_SPIN); // Reset if already spinning
             // Force reflow to restart animation
             void headerLogo.offsetWidth;
-            headerLogo.classList.add('logo-spin');
+            headerLogo.classList.add(DOM_CLASSES.LOGO_SPIN);
             // Remove class after animation completes
-            setTimeout(() => headerLogo.classList.remove('logo-spin'), UI_TIMEOUTS.CLEAR_ANIMATION);
+            setTimeout(() => headerLogo.classList.remove(DOM_CLASSES.LOGO_SPIN), UI_TIMEOUTS.CLEAR_ANIMATION);
         }
 
         // Step 4: Perform core data reset
@@ -698,7 +698,7 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     tasksToDelete.forEach(({ taskElement }, index) => {
         const delay = index * CLEAR_STAGGER_DELAY;
         trackTimeout(setTimeout(() => {
-            taskElement.classList.add("task-clearing");
+            taskElement.classList.add(DOM_CLASSES.TASK_CLEARING);
             // Remove from DOM after animation completes
             trackTimeout(setTimeout(() => {
                 taskElement.remove();
