@@ -142,7 +142,7 @@ export function setupResultsAreaResize() {
 
     function startResize(e) {
         const target = e.target;
-        if (target.tagName === 'BUTTON' || target.closest('button') || target.closest('.testing-results-controls')) {
+        if (target.tagName === 'BUTTON' || target.closest('button') || target.closest(DOM_SELECTORS.TESTING_RESULTS_CONTROLS)) {
             return;
         }
 
@@ -525,16 +525,16 @@ export function openTestResultsInModal() {
     };
 
     // Event listeners
-    const closeBtnEl = modalOverlay.querySelector("#close-results-modal");
+    const closeBtnEl = modalOverlay.querySelector(`#${DOM_IDS.CLOSE_RESULTS_MODAL}`);
     closeBtnEl.addEventListener("click", closeResultsModal);
 
-    modalOverlay.querySelector("#copy-results").addEventListener("click", () => {
+    modalOverlay.querySelector(`#${DOM_IDS.COPY_RESULTS}`).addEventListener("click", () => {
         navigator.clipboard.writeText(content).then(() => {
             showNotification(getLabel('notify.testResultsCopied'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
         });
     });
 
-    modalOverlay.querySelector("#save-results").addEventListener("click", () => {
+    modalOverlay.querySelector(`#${DOM_IDS.SAVE_RESULTS}`).addEventListener("click", () => {
         const blob = new Blob([content], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -545,7 +545,7 @@ export function openTestResultsInModal() {
         showNotification(getLabel('notify.testResultsSaved'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
     });
 
-    modalOverlay.querySelector("#print-results").addEventListener("click", () => {
+    modalOverlay.querySelector(`#${DOM_IDS.PRINT_RESULTS}`).addEventListener("click", () => {
         const printWindow = window.open('', '_blank');
         const doc = printWindow.document;
         doc.open();
@@ -566,27 +566,27 @@ export function openTestResultsInModal() {
         printWindow.print();
     });
 
-    modalOverlay.querySelector("#search-results").addEventListener("click", () => {
-        const searchBarEl = modalOverlay.querySelector("#search-bar");
+    modalOverlay.querySelector(`#${DOM_IDS.SEARCH_RESULTS}`).addEventListener("click", () => {
+        const searchBarEl = modalOverlay.querySelector(`#${DOM_IDS.SEARCH_BAR}`);
         const isVisible = searchBarEl.style.display === "block";
         searchBarEl.style.display = isVisible ? "none" : "block";
         if (!isVisible) {
-            modalOverlay.querySelector("#search-input").focus();
+            modalOverlay.querySelector(`#${DOM_IDS.SEARCH_INPUT}`).focus();
         }
     });
 
-    modalOverlay.querySelector("#clear-selection").addEventListener("click", () => {
+    modalOverlay.querySelector(`#${DOM_IDS.CLEAR_SELECTION}`).addEventListener("click", () => {
         window.getSelection().removeAllRanges();
         showNotification(getLabel('notify.selectionCleared'), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
     });
 
     // Search functionality
-    const searchInputEl = modalOverlay.querySelector("#search-input");
-    const searchInfoNode = modalOverlay.querySelector("#search-info");
+    const searchInputEl = modalOverlay.querySelector(`#${DOM_IDS.SEARCH_INPUT}`);
+    const searchInfoNode = modalOverlay.querySelector(`#${DOM_IDS.SEARCH_INFO}`);
 
     searchInputEl.addEventListener("input", (e) => {
         const query = e.target.value.toLowerCase();
-        const resultsEl = modalOverlay.querySelector("#modal-results-content");
+        const resultsEl = modalOverlay.querySelector(`#${DOM_IDS.MODAL_RESULTS_CONTENT}`);
 
         if (!query) {
             resultsEl.textContent = content;
@@ -614,19 +614,19 @@ export function openTestResultsInModal() {
             switch(e.key) {
                 case "f":
                     e.preventDefault();
-                    modalOverlay.querySelector("#search-results").click();
+                    modalOverlay.querySelector(`#${DOM_IDS.SEARCH_RESULTS}`).click();
                     break;
                 case "c":
                     e.preventDefault();
-                    modalOverlay.querySelector("#copy-results").click();
+                    modalOverlay.querySelector(`#${DOM_IDS.COPY_RESULTS}`).click();
                     break;
                 case "s":
                     e.preventDefault();
-                    modalOverlay.querySelector("#save-results").click();
+                    modalOverlay.querySelector(`#${DOM_IDS.SAVE_RESULTS}`).click();
                     break;
                 case "p":
                     e.preventDefault();
-                    modalOverlay.querySelector("#print-results").click();
+                    modalOverlay.querySelector(`#${DOM_IDS.PRINT_RESULTS}`).click();
                     break;
             }
         }
@@ -655,7 +655,7 @@ export function openTestResultsInModal() {
  */
 export function addTestResultsHint() {
     const resultsHeader = document.querySelector(DOM_SELECTORS.TESTING_RESULTS_HEADER);
-    if (!resultsHeader || resultsHeader.querySelector('.test-results-hint')) return;
+    if (!resultsHeader || resultsHeader.querySelector(DOM_SELECTORS.TEST_RESULTS_HINT)) return;
 
     const hint = document.createElement("small");
     hint.className = "test-results-hint";

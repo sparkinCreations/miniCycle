@@ -131,11 +131,11 @@ export class TaskEvents {
     _createTaskClickHandler() {
         return (event) => {
             // Find the closest .task element
-            const taskItem = event.target.closest(".task");
+            const taskItem = event.target.closest(DOM_SELECTORS.TASK);
             if (!taskItem) return;
 
             // Get task elements (✅ checkbox has no class, use type selector)
-            const checkbox = taskItem.querySelector("input[type='checkbox']");
+            const checkbox = taskItem.querySelector(DOM_SELECTORS.TASK_CHECKBOX);
             const buttonContainer = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
             const dueDateInput = taskItem.querySelector(DOM_SELECTORS.DUE_DATE);
 
@@ -152,7 +152,7 @@ export class TaskEvents {
             // the due date input, or the inline edit input (cursor repositioning).
             if (event.target === checkbox) return;
             if (event.target.closest('button')) return;
-            if (event.target.closest('.three-dots-btn')) return;
+            if (event.target.closest(DOM_SELECTORS.THREE_DOTS_BTN)) return;
             if (buttonContainer?.contains(event.target)) return;
             if (event.target === dueDateInput) return;
             if (event.target.closest(DOM_SELECTORS.TASK_EDIT_INPUT)) return;
@@ -194,7 +194,7 @@ export class TaskEvents {
             const target = event.target;
 
             // Navigate between task checkboxes with ArrowUp/Down
-            if (target.type === 'checkbox' && target.closest('.task-content')) {
+            if (target.type === 'checkbox' && target.closest(DOM_SELECTORS.TASK_CONTENT)) {
                 const taskList = target.closest('ul');
                 if (!taskList) return;
                 handleVerticalArrowNav(event, taskList, 'input[type="checkbox"]', {
@@ -280,7 +280,7 @@ export class TaskEvents {
     handleTaskButtonClick(event) {
         event.stopPropagation();
         const button = event.currentTarget;
-        const taskItem = button.closest(".task");
+        const taskItem = button.closest(DOM_SELECTORS.TASK);
         if (!taskItem) return;
 
         const taskOptions = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
@@ -394,7 +394,7 @@ export class TaskEvents {
             if (task !== taskItem) {
                 // Use controller for consistency (use same caller for hide)
                 controller?.hide(task, caller);
-                const otherDotsBtn = task.querySelector('.three-dots-btn');
+                const otherDotsBtn = task.querySelector(DOM_SELECTORS.THREE_DOTS_BTN);
                 if (otherDotsBtn) otherDotsBtn.setAttribute('aria-expanded', 'false');
                 hiddenCount++;
             }
@@ -411,13 +411,13 @@ export class TaskEvents {
             // Hide if already visible (clicking same task again) - but not for arrow moves
             controller?.hide(taskItem, caller);
             newActiveTaskId = null;
-            const dotsBtn = taskItem.querySelector('.three-dots-btn');
+            const dotsBtn = taskItem.querySelector(DOM_SELECTORS.THREE_DOTS_BTN);
             if (dotsBtn) dotsBtn.setAttribute('aria-expanded', 'false');
         } else {
             // Show if hidden (first click or switching tasks)
             controller?.show(taskItem, caller);
             newActiveTaskId = taskId || null;
-            const dotsBtn = taskItem.querySelector('.three-dots-btn');
+            const dotsBtn = taskItem.querySelector(DOM_SELECTORS.THREE_DOTS_BTN);
             if (dotsBtn) dotsBtn.setAttribute('aria-expanded', 'true');
         }
 

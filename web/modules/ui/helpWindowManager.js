@@ -163,7 +163,7 @@ export class HelpWindowManager {
         // Listen for checkbox changes on tasks
         this._changeHandler = (e) => {
             // Guard: e.target may not have closest() if event dispatched on document
-            if (e.target?.type === 'checkbox' && e.target?.closest?.('.task')) {
+            if (e.target?.type === 'checkbox' && e.target?.closest?.(DOM_SELECTORS.TASK)) {
                 this._pendingTimeouts.push(setTimeout(() => {
                     this.updateConstantMessage();
                 }, 50));
@@ -174,7 +174,7 @@ export class HelpWindowManager {
         // Listen for click events on tasks
         this._clickHandler = (e) => {
             // Guard: e.target may not have closest() if event dispatched on document
-            if (e.target?.closest?.('.task')) {
+            if (e.target?.closest?.(DOM_SELECTORS.TASK)) {
                 this._pendingTimeouts.push(setTimeout(() => {
                     this.updateConstantMessage();
                 }, 100));
@@ -498,7 +498,7 @@ export class HelpWindowManager {
 
     getCurrentStatusMessage() {
         const totalTasks = document.querySelectorAll(DOM_SELECTORS.TASK).length;
-        const completedTasks = document.querySelectorAll('.task input:checked').length;
+        const completedTasks = document.querySelectorAll(DOM_SELECTORS.TASK_INPUT_CHECKED).length;
         const remaining = totalTasks - completedTasks;
 
         // Get cycle count, cleared tasks, mode, and size from Schema 2.5 (DI-pure, no window.* fallbacks)

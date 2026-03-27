@@ -1172,7 +1172,7 @@ export class QuickActionsManager {
         }
 
         // Keyboard arrow navigation between slots
-        const slotsContainer = panel.querySelector('.quick-actions-slots');
+        const slotsContainer = panel.querySelector(DOM_SELECTORS.QUICK_ACTIONS_SLOTS);
         if (slotsContainer) {
             slotsContainer.addEventListener('keydown', (e) => {
                 const slot = e.target.closest(DOM_SELECTORS.QUICK_ACTIONS_SLOT);
@@ -1200,7 +1200,7 @@ export class QuickActionsManager {
             return;
         }
 
-        const slots = panel?.querySelector('.quick-actions-slots');
+        const slots = panel?.querySelector(DOM_SELECTORS.QUICK_ACTIONS_SLOTS);
         if (!slots) {
             this.cycleView(direction);
             return;
@@ -1242,8 +1242,8 @@ export class QuickActionsManager {
 
         // Find the slots container that is a sibling of the header
         const getSlotsContainer = () => {
-            const panel = element.closest('.quick-actions-panel, .quick-actions-menu-row');
-            return panel?.querySelector('.quick-actions-slots');
+            const panel = element.closest(`${DOM_SELECTORS.QUICK_ACTIONS_PANEL}, ${DOM_SELECTORS.QUICK_ACTIONS_MENU_ROW}`);
+            return panel?.querySelector(DOM_SELECTORS.QUICK_ACTIONS_SLOTS);
         };
 
         const isReducedMotion = () =>

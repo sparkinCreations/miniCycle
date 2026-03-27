@@ -86,7 +86,7 @@ export class CompletedTasksManager {
      */
     toggle() {
         const completedList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
-        const toggleIcon = this.deps.querySelector('#completed-tasks-header .toggle-icon');
+        const toggleIcon = this.deps.querySelector(`#${DOM_IDS.COMPLETED_TASKS_HEADER} ${DOM_SELECTORS.TOGGLE_ICON}`);
 
         if (!completedList || !toggleIcon) return;
 
@@ -119,7 +119,7 @@ export class CompletedTasksManager {
         const isExpanded = state?.settings?.completedTasksExpanded || false;
 
         const completedList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
-        const toggleIcon = this.deps.querySelector('#completed-tasks-header .toggle-icon');
+        const toggleIcon = this.deps.querySelector(`#${DOM_IDS.COMPLETED_TASKS_HEADER} ${DOM_SELECTORS.TOGGLE_ICON}`);
 
         if (completedList && toggleIcon) {
             if (isExpanded) {

@@ -35,7 +35,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -219,7 +219,7 @@ class EducationalTipManager {
       container._tipCloseHandler = (e) => {
         if (e.target.classList.contains(DOM_CLASSES.TIP_CLOSE)) {
           e.stopPropagation();
-          const tipElement = e.target.closest('.educational-tip');
+          const tipElement = e.target.closest(DOM_SELECTORS.EDUCATIONAL_TIP);
           const tipId = tipElement.dataset.tipId;
           this.hideTip(tipId, container);
         }
@@ -251,7 +251,7 @@ class EducationalTipManager {
 
   hideTip(tipId, container) {
     const tipElement = container.querySelector(`#tip-${tipId}`);
-    const toggleButton = container.querySelector(`.tip-toggle[data-tip-id="${tipId}"]`);
+    const toggleButton = container.querySelector(`${DOM_SELECTORS.TIP_TOGGLE}[data-tip-id="${tipId}"]`);
     
     if (tipElement) {
       tipElement.style.opacity = '0';
@@ -271,7 +271,7 @@ class EducationalTipManager {
 
   showTipElement(tipId, container) {
     const tipElement = container.querySelector(`#tip-${tipId}`);
-    const toggleButton = container.querySelector(`.tip-toggle[data-tip-id="${tipId}"]`);
+    const toggleButton = container.querySelector(`${DOM_SELECTORS.TIP_TOGGLE}[data-tip-id="${tipId}"]`);
     
     if (tipElement) {
       tipElement.style.display = 'block';
@@ -465,7 +465,7 @@ export class MiniCycleNotifications {
       // Optional action button — appended as second flex child inside notification-has-action
       if (hasAction) {
         const { label: btnLabel, onClick } = options.actionButton;
-        const contentDiv = notification.querySelector('.notification-content');
+        const contentDiv = notification.querySelector(DOM_SELECTORS.NOTIFICATION_CONTENT);
         if (contentDiv && typeof btnLabel === 'string') {
           const actionBtn = document.createElement('button');
           actionBtn.className = 'notification-action-btn';
@@ -1238,7 +1238,7 @@ async setDefaultPosition(notificationContainer) {
       e.stopPropagation();
 
       const taskId = e.target.dataset.taskId ||
-                     e.target.closest("[data-task-id]")?.dataset.taskId;
+                     e.target.closest(DATA_SELECTORS.TASK_ID_ELEMENT)?.dataset.taskId;
 
       // Handle "Change Settings" button - expand quick actions
       if (e.target.classList.contains(DOM_CLASSES.SHOW_QUICK_ACTIONS)) {
@@ -1253,15 +1253,15 @@ async setDefaultPosition(notificationContainer) {
           quickContainer.classList.add(DOM_CLASSES.VISIBLE);
 
           // Focus the currently-selected option (or first) for keyboard users
-          const selectedOption = quickContainer.querySelector('.quick-option[aria-checked="true"]')
-            || quickContainer.querySelector('.quick-option');
+          const selectedOption = quickContainer.querySelector(`${DOM_SELECTORS.QUICK_OPTION}[aria-checked="true"]`)
+            || quickContainer.querySelector(DOM_SELECTORS.QUICK_OPTION);
           selectedOption?.focus({ focusVisible: false });
         }
       }
 
       // Handle quick option clicks
-      if (e.target.closest(".quick-option")) {
-        this._selectQuickOption(notification, e.target.closest(".quick-option"));
+      if (e.target.closest(DOM_SELECTORS.QUICK_OPTION)) {
+        this._selectQuickOption(notification, e.target.closest(DOM_SELECTORS.QUICK_OPTION));
       }
 
       // Handle apply button clicks
@@ -1333,7 +1333,7 @@ async setDefaultPosition(notificationContainer) {
           this.deps.openRecurringSettingsPanelForTask(taskId);
         }
 
-        const notificationEl = e.target.closest(".notification");
+        const notificationEl = e.target.closest(DOM_SELECTORS.NOTIFICATION);
         if (notificationEl) {
           notificationEl.classList.remove(DOM_CLASSES.SHOW);
           setTimeout(() => notificationEl.remove(), UI_TIMEOUTS.NOTIFICATION_FADE);
@@ -1346,7 +1346,7 @@ async setDefaultPosition(notificationContainer) {
     notification._keyHandler = (e) => {
       // Enter/Space selects a quick option radio
       if (e.key === 'Enter' || e.key === ' ') {
-        const quickOption = e.target.closest('.quick-option');
+        const quickOption = e.target.closest(DOM_SELECTORS.QUICK_OPTION);
         if (quickOption) {
           e.preventDefault();
           this._selectQuickOption(notification, quickOption);
@@ -1356,10 +1356,10 @@ async setDefaultPosition(notificationContainer) {
 
       // Arrow keys within radiogroup: move focus AND select (ARIA APG radio pattern)
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        const currentRadio = e.target.closest('.quick-option');
+        const currentRadio = e.target.closest(DOM_SELECTORS.QUICK_OPTION);
         if (currentRadio) {
           e.preventDefault();
-          const radios = [...currentRadio.closest('.quick-recurring-options').querySelectorAll('.quick-option')];
+          const radios = [...currentRadio.closest(DOM_SELECTORS.QUICK_RECURRING_OPTIONS).querySelectorAll(DOM_SELECTORS.QUICK_OPTION)];
           const idx = radios.indexOf(currentRadio);
           const isForward = e.key === 'ArrowDown' || e.key === 'ArrowRight';
           const next = isForward
@@ -1396,7 +1396,7 @@ async setDefaultPosition(notificationContainer) {
    */
   _selectQuickOption(notification, quickOption) {
     const radioCircle = quickOption.querySelector(DOM_SELECTORS.RADIO_CIRCLE);
-    const quickOptions = quickOption.closest(".quick-recurring-options");
+    const quickOptions = quickOption.closest(DOM_SELECTORS.QUICK_RECURRING_OPTIONS);
     const applyButton = notification.querySelector(DOM_SELECTORS.APPLY_QUICK_RECURRING);
 
     // Update radio circles
@@ -1406,7 +1406,7 @@ async setDefaultPosition(notificationContainer) {
     radioCircle.classList.add(DOM_CLASSES.SELECTED);
 
     // Update aria-checked and roving tabindex on all options
-    quickOptions.querySelectorAll('.quick-option').forEach(opt => {
+    quickOptions.querySelectorAll(DOM_SELECTORS.QUICK_OPTION).forEach(opt => {
       const isSelected = opt === quickOption;
       opt.setAttribute('aria-checked', isSelected.toString());
       opt.setAttribute('tabindex', isSelected ? '0' : '-1');
@@ -1476,7 +1476,7 @@ async setDefaultPosition(notificationContainer) {
     // by the duplicate-ID check (both produce identical HTML → same hash → skipped)
     const notifContainer = document.getElementById(DOM_IDS.NOTIFICATION_CONTAINER);
     if (notifContainer) {
-      const existingPicker = notifContainer.querySelector('.priority-color-picker');
+      const existingPicker = notifContainer.querySelector(DOM_SELECTORS.PRIORITY_COLOR_PICKER);
       if (existingPicker) {
         const existingNotif = existingPicker.closest(DOM_SELECTORS.NOTIFICATION);
         if (existingNotif) existingNotif.remove();
@@ -1488,20 +1488,20 @@ async setDefaultPosition(notificationContainer) {
 
     // Attach color-picker interaction
     notification._colorPickerClickHandler = async (e) => {
-      const btn = e.target.closest('.priority-color-btn');
+      const btn = e.target.closest(DOM_SELECTORS.PRIORITY_COLOR_BTN);
       if (!btn) return;
 
       const color = btn.dataset.color;
 
       // Update radio dial and swatch ring for each option
-      notification.querySelectorAll('.priority-color-btn').forEach(b => {
+      notification.querySelectorAll(DOM_SELECTORS.PRIORITY_COLOR_BTN).forEach(b => {
         const selected = b === btn;
         const bColor = b.dataset.color;
         // Radio dial inner dot
-        const dot = b.querySelector('.priority-radio-dot');
+        const dot = b.querySelector(DOM_SELECTORS.PRIORITY_RADIO_DOT);
         if (dot) dot.style.opacity = selected ? '1' : '0';
         // Swatch selected outline
-        const swatch = b.querySelector('.priority-swatch');
+        const swatch = b.querySelector(DOM_SELECTORS.PRIORITY_SWATCH);
         if (swatch) {
           swatch.style.outline = selected ? '2px solid rgba(255,255,255,0.9)' : '2px solid transparent';
         }
@@ -1510,7 +1510,7 @@ async setDefaultPosition(notificationContainer) {
 
       // Apply color to the specific task's DOM element immediately (visual-only)
       if (taskId) {
-        const taskEl = document.querySelector(`[data-task-id="${taskId}"]`);
+        const taskEl = document.querySelector(DATA_SELECTORS.elementByTaskId(taskId));
         if (taskEl) taskEl.style.setProperty('--task-priority-color', color);
       }
 
@@ -1720,7 +1720,7 @@ async setDefaultPosition(notificationContainer) {
     overlay.showModal();
 
     const cancelBtn = modal.querySelector(DOM_SELECTORS.BTN_CANCEL);
-    const choiceBtns = modal.querySelectorAll('.btn-choice');
+    const choiceBtns = modal.querySelectorAll(DOM_SELECTORS.BTN_CHOICE);
 
     // Focus first choice button
     if (choiceBtns.length > 0) {

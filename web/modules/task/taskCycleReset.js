@@ -215,8 +215,8 @@ function fallbackConfirmModal(config) {
  */
 function getResetContext(deps) {
     const querySelector = deps.querySelector || _deps.querySelector || ((sel) => document.querySelector(sel));
-    const taskList = querySelector("#taskList");
-    const completedTaskList = querySelector("#completedTaskList");
+    const taskList = querySelector(`#${DOM_IDS.TASK_LIST}`);
+    const completedTaskList = querySelector(`#${DOM_IDS.COMPLETED_TASK_LIST}`);
 
     if (!taskList) {
         console.error('Task list element not found');
@@ -313,7 +313,7 @@ function resetTasksData(context, deps) {
         }
 
         // Reset task DOM with staggered animation
-        const checkbox = taskEl.querySelector("input[type='checkbox']");
+        const checkbox = taskEl.querySelector(DOM_SELECTORS.TASK_CHECKBOX);
         const dueDateInput = taskEl.querySelector(DOM_SELECTORS.DUE_DATE);
 
         // Apply staggered reset animation - Fix #58: wrap with trackTimeout
@@ -612,7 +612,7 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     const processTaskElement = (taskElement) => {
         const taskId = taskElement.dataset.taskId;
         const task = cycleData.tasks?.find(t => t.id === taskId);
-        const checkbox = taskElement.querySelector("input[type='checkbox']");
+        const checkbox = taskElement.querySelector(DOM_SELECTORS.TASK_CHECKBOX);
         const isCompleted = checkbox?.checked || false;
 
         if (isCompleted && task?.deleteWhenComplete === true) {
@@ -799,7 +799,7 @@ function getCompleteAllContext(deps) {
     const querySelector = deps.querySelector || _deps.querySelector || ((sel) => document.querySelector(sel));
     const AppState = deps.AppState || _deps.AppState;
 
-    const taskList = querySelector("#taskList");
+    const taskList = querySelector(`#${DOM_IDS.TASK_LIST}`);
 
     if (!AppState?.isReady?.()) {
         console.error('AppState not ready for handleCompleteAllTasks');

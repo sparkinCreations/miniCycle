@@ -177,7 +177,7 @@ export class ModalManager {
         // Close ephemeral dialog overlays (not in registry — created/destroyed per use)
         document.querySelectorAll('dialog.mini-modal-dialog[open]').forEach(el => el.close());
         document.querySelectorAll('dialog.miniCycle-prompt-dialog[open]').forEach(el => el.close());
-        document.querySelectorAll('.onboarding-modal').forEach(el => el.style.display = 'none');
+        document.querySelectorAll(DOM_SELECTORS.ONBOARDING_MODAL).forEach(el => el.style.display = 'none');
 
         // Close task options
         document.querySelectorAll(DOM_SELECTORS.TASK_OPTIONS).forEach(action => {
@@ -219,8 +219,8 @@ export class ModalManager {
         }
 
         // Populate labels from label system (replacing hardcoded HTML strings)
-        const titleEl = feedbackModal.querySelector('#feedback-modal-title');
-        const descEl = feedbackModal.querySelector('#feedback-modal-title + p');
+        const titleEl = feedbackModal.querySelector(`#${DOM_IDS.FEEDBACK_MODAL_TITLE}`);
+        const descEl = feedbackModal.querySelector(`#${DOM_IDS.FEEDBACK_MODAL_TITLE} + p`);
         const textareaLabel = feedbackModal.querySelector('label[for="feedback-text"]');
         const emailLabel = feedbackModal.querySelector('label[for="feedback-email"]');
         const emailInput = document.getElementById(DOM_IDS.FEEDBACK_EMAIL);

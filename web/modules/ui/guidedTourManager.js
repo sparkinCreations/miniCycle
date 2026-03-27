@@ -1493,9 +1493,9 @@ export class GuidedTourManager {
 
         this._tooltipElement.setAttribute('aria-describedby', 'tour-message');
 
-        const backButton = this._tooltipElement.querySelector('.tour-back');
-        const skipButton = this._tooltipElement.querySelector('.tour-skip');
-        const nextButton = this._tooltipElement.querySelector('.tour-next');
+        const backButton = this._tooltipElement.querySelector(DOM_SELECTORS.TOUR_BACK);
+        const skipButton = this._tooltipElement.querySelector(DOM_SELECTORS.TOUR_SKIP);
+        const nextButton = this._tooltipElement.querySelector(DOM_SELECTORS.TOUR_NEXT);
 
         if (backButton) {
             backButton._clickHandler = () => this.prevStep();
@@ -1670,7 +1670,7 @@ export class GuidedTourManager {
     }
 
     _focusPrimaryButton() {
-        const primaryButton = this._tooltipElement?.querySelector('.tour-next');
+        const primaryButton = this._tooltipElement?.querySelector(DOM_SELECTORS.TOUR_NEXT);
         primaryButton?.focus?.();
     }
 

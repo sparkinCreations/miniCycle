@@ -13,7 +13,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_CLASSES } from '../core/constants.js';
+import { DOM_CLASSES, DOM_SELECTORS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -76,7 +76,7 @@ export function attachKeyboardTaskOptionToggle(taskItem) {
             if (
                 target.classList.contains(DOM_CLASSES.TASK_TEXT) ||
                 target.type === "checkbox" ||
-                target.closest(".focus-safe")
+                target.closest(DOM_SELECTORS.FOCUS_SAFE)
             ) {
                 return;
             }

@@ -15,7 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -266,7 +266,7 @@ export class OnboardingManager {
         const nextBtn = document.getElementById(DOM_IDS.ONBOARDING_NEXT);
         const prevBtn = document.getElementById(DOM_IDS.ONBOARDING_PREV);
         const skipBtn = document.getElementById(DOM_IDS.ONBOARDING_SKIP);
-        const stepIndicator = modal.querySelector('.onboarding-step-indicator');
+        const stepIndicator = modal.querySelector(DOM_SELECTORS.ONBOARDING_STEP_INDICATOR);
 
         if (!stepContent || !nextBtn || !prevBtn || !skipBtn) {
             console.error('❌ Onboarding modal elements not found');
@@ -298,7 +298,7 @@ export class OnboardingManager {
 
             // Wire "Try it yourself!" button on step 2 (index 1)
             if (index === 1) {
-                const tryBtn = stepContent.querySelector('.onboarding-try-btn');
+                const tryBtn = stepContent.querySelector(DOM_SELECTORS.ONBOARDING_TRY_BTN);
                 if (tryBtn) {
                     tryBtn._clickHandler = () => {
                         demoCleanup = this._startInteractiveDemo(stepContent);
@@ -359,9 +359,9 @@ export class OnboardingManager {
         ];
 
         // Replace animation + button with interactive demo
-        const animEl = container.querySelector('.onboarding-cycle-animation');
-        const tryBtn = container.querySelector('.onboarding-try-btn');
-        const hintEl = container.querySelector('.onboarding-choice-hint');
+        const animEl = container.querySelector(DOM_SELECTORS.ONBOARDING_CYCLE_ANIMATION);
+        const tryBtn = container.querySelector(DOM_SELECTORS.ONBOARDING_TRY_BTN);
+        const hintEl = container.querySelector(DOM_SELECTORS.ONBOARDING_CHOICE_HINT);
         if (animEl) animEl.remove();
         if (tryBtn) tryBtn.remove();
         // Remove hint temporarily — will re-add below the demo with updated text
@@ -387,7 +387,7 @@ export class OnboardingManager {
             `;
 
             // Use textContent for user-sourced label text (XSS safe)
-            row.querySelector('.cycle-demo-task-text').textContent = name;
+            row.querySelector(DOM_SELECTORS.CYCLE_DEMO_TASK_TEXT).textContent = name;
             demo.appendChild(row);
         });
 
@@ -432,9 +432,9 @@ export class OnboardingManager {
             trackTimeout(() => {
                 // Reset all checkboxes
                 checked = [false, false, false];
-                demo.querySelectorAll('.cycle-demo-task').forEach(row => {
+                demo.querySelectorAll(DOM_SELECTORS.CYCLE_DEMO_TASK).forEach(row => {
                     row.classList.remove(DOM_CLASSES.CHECKED);
-                    const cb = row.querySelector('.cycle-demo-checkbox');
+                    const cb = row.querySelector(DOM_SELECTORS.CYCLE_DEMO_CHECKBOX);
                     if (cb) cb.setAttribute('aria-checked', 'false');
                 });
 
@@ -446,7 +446,7 @@ export class OnboardingManager {
 
         const handleTaskClick = (e) => {
             if (resetting) return;
-            const row = e.target.closest('.cycle-demo-task');
+            const row = e.target.closest(DOM_SELECTORS.CYCLE_DEMO_TASK);
             if (!row) return;
 
             const idx = parseInt(row.dataset.index, 10);
@@ -455,7 +455,7 @@ export class OnboardingManager {
             // Toggle
             checked[idx] = !checked[idx];
             row.classList.toggle(DOM_CLASSES.CHECKED, checked[idx]);
-            const cb = row.querySelector('.cycle-demo-checkbox');
+            const cb = row.querySelector(DOM_SELECTORS.CYCLE_DEMO_CHECKBOX);
             if (cb) cb.setAttribute('aria-checked', String(checked[idx]));
 
             // Check if all complete
@@ -470,10 +470,10 @@ export class OnboardingManager {
         const handleKeydown = (e) => {
             if (resetting) return;
             if (e.key === 'Enter' || e.key === ' ') {
-                const cb = e.target.closest('.cycle-demo-checkbox');
+                const cb = e.target.closest(DOM_SELECTORS.CYCLE_DEMO_CHECKBOX);
                 if (cb) {
                     e.preventDefault();
-                    const row = cb.closest('.cycle-demo-task');
+                    const row = cb.closest(DOM_SELECTORS.CYCLE_DEMO_TASK);
                     if (row) {
                         row.click();
                     }
