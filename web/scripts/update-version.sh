@@ -1439,7 +1439,10 @@ for h in unique:
             CURRENT_CSP=$(grep "Content-Security-Policy" "$NETLIFY_TOML" || true)
             MISSING_HASHES=""
             MISSING_COUNT=0
+            STALE_HASHES=""
+            STALE_COUNT=0
 
+            # Check for new hashes not yet in CSP
             while IFS= read -r hash; do
                 if ! echo "$CURRENT_CSP" | grep -qF "$hash"; then
                     MISSING_HASHES="$MISSING_HASHES $hash"
@@ -1447,13 +1450,32 @@ for h in unique:
                 fi
             done <<< "$CSP_HASHES"
 
-            if [ $MISSING_COUNT -gt 0 ]; then
-                echo "⚠️  Found $MISSING_COUNT new inline script hash(es) not in CSP:"
-                for hash in $MISSING_HASHES; do
-                    echo "   + $hash"
-                done
+            # Check for stale hashes in CSP that no longer match any inline script
+            CURRENT_HASH_LIST=$(echo "$CURRENT_CSP" | grep -o "'sha256-[^']*'" || true)
+            if [ -n "$CURRENT_HASH_LIST" ]; then
+                while IFS= read -r old_hash; do
+                    if ! echo "$CSP_HASHES" | grep -qF "$old_hash"; then
+                        STALE_HASHES="$STALE_HASHES $old_hash"
+                        STALE_COUNT=$((STALE_COUNT + 1))
+                    fi
+                done <<< "$CURRENT_HASH_LIST"
+            fi
 
-                # Build the new script-src with all hashes
+            if [ $MISSING_COUNT -gt 0 ] || [ $STALE_COUNT -gt 0 ]; then
+                if [ $MISSING_COUNT -gt 0 ]; then
+                    echo "⚠️  Found $MISSING_COUNT new inline script hash(es) not in CSP:"
+                    for hash in $MISSING_HASHES; do
+                        echo "   + $hash"
+                    done
+                fi
+                if [ $STALE_COUNT -gt 0 ]; then
+                    echo "🧹 Found $STALE_COUNT stale hash(es) no longer matching any inline script:"
+                    for hash in $STALE_HASHES; do
+                        echo "   - $hash"
+                    done
+                fi
+
+                # Build the new script-src with only current hashes
                 ALL_HASHES=$(echo "$CSP_HASHES" | tr '\n' ' ' | sed 's/ $//')
                 NEW_SCRIPT_SRC="script-src 'self' $ALL_HASHES"
 
@@ -1471,9 +1493,10 @@ content = re.sub(r\"script-src [^;]+\", new_src, content)
 with open('$NETLIFY_TOML', 'w') as f:
     f.write(content)
 "
-                echo "✅ Updated CSP script-src in $NETLIFY_TOML ($MISSING_COUNT hash(es) added)"
+                TOTAL_CHANGES=$((MISSING_COUNT + STALE_COUNT))
+                echo "✅ Updated CSP script-src in $NETLIFY_TOML ($MISSING_COUNT added, $STALE_COUNT removed)"
             else
-                echo "✅ All inline script hashes already in CSP"
+                echo "✅ All inline script hashes match CSP — no changes needed"
             fi
         else
             echo "ℹ️  No inline scripts found to hash"
