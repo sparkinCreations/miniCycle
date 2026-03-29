@@ -87,6 +87,9 @@ export function taskToAddTaskOptions(task) {
     };
 }
 
+/**
+ * Utility class for task context building, data extraction, and state operations
+ */
 export class TaskUtils {
     /**
      * Build task context from DOM element

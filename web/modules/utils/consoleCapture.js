@@ -20,8 +20,16 @@ const di = createDIModule('ConsoleCapture', {
     appendToTestResults: optional(null)
 });
 
+/**
+ * Set dependencies for ConsoleCapture (e.g., showNotification)
+ * @param {Object} dependencies - Dependencies to inject
+ * @returns {void}
+ */
 export const setConsoleCaptureDependencies = di.setDependencies;
 
+/**
+ * Captures and buffers console output for debugging and migration error review
+ */
 export class MiniCycleConsoleCapture {
     constructor() {
         this.consoleLogBuffer = [];
@@ -421,7 +429,10 @@ export class MiniCycleConsoleCapture {
 // Auto-create instance and make globally accessible
 const consoleCapture = new MiniCycleConsoleCapture();
 
-// DI-pure module (no window.* fallbacks for dependencies)
+/**
+ * Destructured singleton methods for direct import convenience
+ * @type {{ showAllCapturedLogs: Function, clearAllConsoleLogs: Function, showMigrationErrorsOnly: Function, getConsoleCaptureStats: Function, stopConsoleCapture: Function, startAutoConsoleCapture: Function }}
+ */
 export const {
     showAllCapturedLogs,
     clearAllConsoleLogs,

@@ -45,6 +45,7 @@ function getFrequencyOptionMap(deps) {
  * Setup frequency selector dropdown
  * @param {Object} deps - Dependencies (getElementById, safeAddEventListener)
  * @param {Function} onUpdate - Callback when frequency changes
+ * @returns {void}
  */
 export function setupFrequencySelector(deps, onUpdate) {
     const frequencySelect = deps.getElementById(DOM_IDS.RECUR_FREQUENCY);
@@ -95,6 +96,7 @@ export function setupFrequencySelector(deps, onUpdate) {
 /**
  * Setup toggle visibility for various sections
  * @param {Object} deps - Dependencies (getElementById, safeAddEventListener)
+ * @returns {void}
  */
 export function setupToggleVisibility(deps) {
     const toggleVisibility = (triggerId, contentId) => {
@@ -128,6 +130,7 @@ export function setupToggleVisibility(deps) {
  * Setup toggle check all button
  * @param {Object} deps - Dependencies (getElementById, querySelectorAll, safeAddEventListener)
  * @param {Function} onUpdate - Callback when selection changes
+ * @returns {void}
  */
 export function setupToggleCheckAll(deps, onUpdate) {
     const toggleBtn = deps.getElementById(DOM_IDS.TOGGLE_CHECK_ALL);
@@ -159,6 +162,7 @@ export function setupToggleCheckAll(deps, onUpdate) {
 /**
  * Setup advanced settings toggle
  * @param {Object} deps - Dependencies (getElementById, querySelectorAll, safeAddEventListener)
+ * @returns {{resetAdvanced: Function}|undefined} Object with resetAdvanced callback, or undefined if toggle element not found
  */
 export function setupAdvancedToggle(deps) {
     const toggleBtn = deps.getElementById(DOM_IDS.TOGGLE_ADVANCED_SETTINGS);
@@ -239,6 +243,7 @@ export function setupAdvancedToggle(deps) {
  * Setup time conversion between 12hr and 24hr formats
  * @param {Object} deps - Dependencies (getElementById, safeAddEventListener)
  * @param {Object} config - { hourInputId, minuteInputId, meridiemSelectId, militaryCheckboxId }
+ * @returns {void}
  */
 export function setupTimeConversion(deps, { hourInputId, minuteInputId, meridiemSelectId, militaryCheckboxId }) {
     const hourInput = deps.getElementById(hourInputId);
@@ -287,6 +292,7 @@ export function setupTimeConversion(deps, { hourInputId, minuteInputId, meridiem
  * @param {Object} deps - Dependencies (getElementById, safeAddEventListener)
  * @param {string} prefix - Frequency prefix (daily, weekly, etc.)
  * @param {Function} onUpdate - Callback when format changes
+ * @returns {void}
  */
 export function setupMilitaryTimeToggle(deps, prefix, onUpdate) {
     const toggle = deps.getElementById(DOM_IDS.freqMilitary(prefix));
@@ -322,6 +328,7 @@ export function setupMilitaryTimeToggle(deps, prefix, onUpdate) {
  * @param {Object} deps - Dependencies (getElementById, safeAddEventListener)
  * @param {string} prefix - Frequency prefix (daily, weekly, etc.)
  * @param {Function} [onUpdate] - Callback after value changes
+ * @returns {void}
  */
 export function setupTimeInputWrapping(deps, prefix, onUpdate) {
     const hourInput = deps.getElementById(DOM_IDS.freqHour(prefix));
@@ -369,6 +376,7 @@ export function setupTimeInputWrapping(deps, prefix, onUpdate) {
  * Setup wrap-around for the hourly-only minute input.
  * @param {Object} deps - Dependencies (getElementById, safeAddEventListener)
  * @param {Function} [onUpdate] - Callback after value changes
+ * @returns {void}
  */
 export function setupHourlyMinuteWrapping(deps, onUpdate) {
     const minuteInput = deps.getElementById(DOM_IDS.HOURLY_MINUTE);
@@ -395,6 +403,7 @@ export function setupHourlyMinuteWrapping(deps, onUpdate) {
 /**
  * Setup mutual exclusivity for monthly specific days vs week-of-month pattern
  * @param {Object} deps - Dependencies (getElementById, safeAddEventListener)
+ * @returns {void}
  */
 export function setupMonthlyMutualExclusion(deps) {
     const specificDays = deps.getElementById(DOM_IDS.MONTHLY_SPECIFIC_DAYS);
@@ -427,6 +436,7 @@ export function setupMonthlyMutualExclusion(deps) {
  * Setup additional event listeners for recurring panel
  * @param {Object} deps - Dependencies
  * @param {Object} callbacks - { updateRecurringSummary, updateRecurCountVisibility, deselectAndBrowse }
+ * @returns {void}
  */
 export function setupAdditionalListeners(deps, callbacks) {
     // Specific date time checkbox

@@ -8,6 +8,7 @@
 
 import { getLabel } from '../labels/labelResolver.js';
 
+/** @type {string} HTML template for the recurring tasks panel modal */
 export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
 <dialog id="recurring-panel-overlay" class="modal-overlay" aria-labelledby="recurring-panel-title" aria-modal="true">
   <div id="recurring-panel" class="modal-panel has-corner-logo">
@@ -444,6 +445,7 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
 </dialog>
 `;
 
+/** @type {string} HTML template for the preferences/personalization modal */
 export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
 <dialog class="preferences-modal" data-modal id="preferences-modal" aria-labelledby="preferences-modal-title" aria-modal="true">
     <div class="preferences-modal-content has-corner-logo">
@@ -879,6 +881,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
 </dialog>
 `;
 
+/** @type {string} HTML template for the settings modal */
 export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
         <dialog id="settings-modal" class="settings-modal" data-modal aria-labelledby="settings-modal-title" aria-modal="true">
             <div class="settings-modal-content has-corner-logo">

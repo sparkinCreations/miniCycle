@@ -49,6 +49,7 @@ export function initEventDelegation(deps, state, callbacks) {
 /**
  * Toggle a day/month box selection and sync aria-checked
  * @param {HTMLElement} box - The day or month box element
+ * @returns {void}
  */
 function toggleDayBox(box) {
     box.classList.toggle(DOM_CLASSES.SELECTED);
@@ -61,6 +62,7 @@ function toggleDayBox(box) {
  * @param {KeyboardEvent} event - The keydown event
  * @param {string} selector - CSS selector for the box elements
  * @param {HTMLElement} [container] - Grid container (required for arrow nav)
+ * @returns {HTMLElement|undefined} The matched box element, or undefined if no match
  */
 function handleDayBoxKeydown(event, selector, container) {
     // Arrow key navigation
@@ -77,6 +79,7 @@ function handleDayBoxKeydown(event, selector, container) {
  * Event delegation for monthly day boxes
  * Replaces 31 listeners with 1
  * @param {Object} deps - Dependencies
+ * @returns {void}
  */
 export function setupMonthlyDayDelegation(deps) {
     const container = deps.querySelector(DOM_SELECTORS.MONTHLY_DAYS);
@@ -101,6 +104,7 @@ export function setupMonthlyDayDelegation(deps) {
  * Event delegation for weekly day boxes
  * Replaces 7 listeners with 1
  * @param {Object} deps - Dependencies
+ * @returns {void}
  */
 export function setupWeeklyDayDelegation(deps) {
     const container = deps.querySelector(DOM_SELECTORS.WEEKLY_DAYS);
@@ -127,6 +131,7 @@ export function setupWeeklyDayDelegation(deps) {
  * @param {Object} deps - Dependencies
  * @param {Object} state - Panel state
  * @param {Object} callbacks - Callback functions
+ * @returns {void}
  */
 export function setupYearlyMonthDelegation(deps, state, callbacks) {
     const container = deps.querySelector(DOM_SELECTORS.YEARLY_MONTHS);
@@ -197,6 +202,7 @@ export function setupYearlyMonthDelegation(deps, state, callbacks) {
  * @param {Object} deps - Dependencies
  * @param {Object} state - Panel state
  * @param {Object} callbacks - Callback functions
+ * @returns {void}
  */
 export function setupYearlyDayDelegation(deps, state, callbacks) {
     const container = deps.getElementById(DOM_IDS.YEARLY_DAY_CONTAINER);
@@ -264,6 +270,7 @@ export function setupYearlyDayDelegation(deps, state, callbacks) {
  * @param {Object} deps - Dependencies
  * @param {Object} state - Panel state
  * @param {Object} callbacks - Callback functions
+ * @returns {void}
  */
 export function setupTaskListDelegation(deps, state, callbacks) {
     const container = deps.getElementById(DOM_IDS.RECURRING_TASK_LIST);
@@ -337,6 +344,7 @@ export function setupTaskListDelegation(deps, state, callbacks) {
  * @param {Object} deps - Dependencies
  * @param {Object} state - Panel state
  * @param {Object} callbacks - Callback functions
+ * @returns {void}
  */
 function selectTaskItem(item, deps, state, callbacks) {
     deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM).forEach(el => {

@@ -31,6 +31,11 @@ const _deps = new Proxy({}, {
     }
 });
 
+/**
+ * Inject dependencies for the share manager module.
+ * @param {Object} dependencies - Dependencies including AppState, showNotification, etc.
+ * @returns {void}
+ */
 export function setShareManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
 }
@@ -50,6 +55,7 @@ let _shareAppInitialized = false;
  * Download a routine as an .mcyc file
  * @param {Blob} dataBlob - The routine data blob
  * @param {string} fileName - The filename to use
+ * @returns {void}
  */
 function _downloadRoutineFile(dataBlob, fileName) {
     try {

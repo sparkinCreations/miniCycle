@@ -38,6 +38,11 @@ const _deps = new Proxy({}, {
     }
 });
 
+/**
+ * Sets the dependency injection bindings for GuidedTourManager.
+ * @param {Object} dependencies - Map of dependency names to implementations
+ * @returns {void}
+ */
 export const setGuidedTourManagerDependencies = di.setDependencies;
 
 function isHTMLElement(value) {
@@ -47,6 +52,9 @@ function isHTMLElement(value) {
 let guidedTourManager = null;
 
 export class GuidedTourManager {
+    /**
+     * Creates a new GuidedTourManager and registers all built-in tours.
+     */
     constructor() {
         this.initialized = false;
         this._active = false;
@@ -89,6 +97,10 @@ export class GuidedTourManager {
         return this._tours.get(tourId)?.steps || [];
     }
 
+    /**
+     * Lazily resolves and returns the current DI dependencies.
+     * @returns {Object}
+     */
     get deps() {
         return di.resolve();
     }
@@ -625,6 +637,10 @@ export class GuidedTourManager {
         });
     }
 
+    /**
+     * Initializes the tour manager and schedules the welcome notification if applicable.
+     * @returns {Promise<GuidedTourManager>}
+     */
     async init() {
         if (this.initialized) {
             return this;
@@ -662,10 +678,19 @@ export class GuidedTourManager {
         return this;
     }
 
+    /**
+     * Starts the main guided tour (alias for startTour with no arguments).
+     * @returns {boolean}
+     */
     startGuidedTour() {
         return this.startTour();
     }
 
+    /**
+     * Starts the specified tour, creating overlay elements and showing the first step.
+     * @param {string} tourId - Registered tour identifier to start
+     * @returns {boolean} Whether the tour was successfully started
+     */
     startTour(tourId = 'main') {
         if (this._scheduleTimeout) {
             clearTimeout(this._scheduleTimeout);
@@ -709,6 +734,11 @@ export class GuidedTourManager {
         return true;
     }
 
+    /**
+     * Renders the tour step at the given index, spotlighting its target element.
+     * @param {number} index - Zero-based step index to display
+     * @returns {void}
+     */
     showStep(index) {
         if (!this._active) return;
 
@@ -764,6 +794,10 @@ export class GuidedTourManager {
         });
     }
 
+    /**
+     * Advances to the next tour step, or completes the tour if on the last step.
+     * @returns {void}
+     */
     nextStep() {
         if (!this._active) return;
 
@@ -777,6 +811,10 @@ export class GuidedTourManager {
         this.showStep(this._currentStepIndex + 1);
     }
 
+    /**
+     * Navigates back to the previous visible tour step.
+     * @returns {void}
+     */
     prevStep() {
         if (!this._active || this._currentStepIndex <= 0) {
             return;
@@ -793,11 +831,19 @@ export class GuidedTourManager {
         }
     }
 
+    /**
+     * Skips the active tour, marking it as done and removing all tour UI.
+     * @returns {void}
+     */
     skipTour() {
         this._markDone();
         this._teardownTourUI();
     }
 
+    /**
+     * Completes the active tour, removes UI, and shows a success notification.
+     * @returns {void}
+     */
     completeTour() {
         const tour = this._tours.get(this._activeTourId || 'main');
         this._markDone();
@@ -809,6 +855,10 @@ export class GuidedTourManager {
         );
     }
 
+    /**
+     * Tears down the tour manager, removing all listeners, timers, and UI elements.
+     * @returns {void}
+     */
     destroy() {
         if (this._scheduleTimeout) {
             clearTimeout(this._scheduleTimeout);
@@ -1708,6 +1758,11 @@ export class GuidedTourManager {
     }
 }
 
+/**
+ * Initializes the singleton GuidedTourManager, optionally setting dependencies first.
+ * @param {Object} dependencies - Optional DI dependencies to wire before init
+ * @returns {Promise<GuidedTourManager>}
+ */
 export async function initGuidedTourManager(dependencies = {}) {
     if (dependencies && Object.keys(dependencies).length > 0) {
         setGuidedTourManagerDependencies(dependencies);
@@ -1721,62 +1776,122 @@ export async function initGuidedTourManager(dependencies = {}) {
     return guidedTourManager;
 }
 
+/**
+ * Returns the singleton GuidedTourManager instance, or null if not yet initialized.
+ * @returns {GuidedTourManager|null}
+ */
 export function getGuidedTourManager() {
     return guidedTourManager;
 }
 
+/**
+ * Convenience wrapper to start the main guided tour on the singleton instance.
+ * @returns {boolean|undefined}
+ */
 export function startGuidedTour() {
     return guidedTourManager?.startTour?.();
 }
 
+/**
+ * Delegates to the singleton to show the stats panel tour notification.
+ * @returns {void}
+ */
 export function showStatsTourNotification() {
     return guidedTourManager?.showStatsTourNotification?.();
 }
 
+/**
+ * Delegates to the singleton to show the personalization tour notification.
+ * @returns {void}
+ */
 export function showPersonalizationTourNotification() {
     return guidedTourManager?.showPersonalizationTourNotification?.();
 }
 
+/**
+ * Delegates to the singleton to show the task options tour notification.
+ * @returns {void}
+ */
 export function showTaskOptionsTourNotification() {
     return guidedTourManager?.showTaskOptionsTourNotification?.();
 }
 
+/**
+ * Delegates to the singleton to show the reminders tour notification.
+ * @returns {void}
+ */
 export function showRemindersTourNotification() {
     return guidedTourManager?.showRemindersTourNotification?.();
 }
 
+/**
+ * Delegates to the singleton to show the menu tour notification.
+ * @returns {void}
+ */
 export function showMenuTourNotification() {
     return guidedTourManager?.showMenuTourNotification?.();
 }
 
+/**
+ * Delegates to the singleton to show the settings tour notification.
+ * @returns {void}
+ */
 export function showSettingsTourNotification() {
     return guidedTourManager?.showSettingsTourNotification?.();
 }
 
+/**
+ * Delegates to the singleton to show the routine switcher tour notification.
+ * @returns {void}
+ */
 export function showRoutineSwitcherTourNotification() {
     return guidedTourManager?.showRoutineSwitcherTourNotification?.();
 }
 
+/**
+ * Delegates to the singleton to show the recurring list tour notification.
+ * @returns {void}
+ */
 export function showRecurringListTourNotification() {
     return guidedTourManager?.showRecurringListTourNotification?.();
 }
 
+/**
+ * Delegates to the singleton to show the recurring settings tour notification.
+ * @returns {void}
+ */
 export function showRecurringSettingsTourNotification() {
     return guidedTourManager?.showRecurringSettingsTourNotification?.();
 }
 
+/**
+ * Delegates to the singleton to show the history tour notification.
+ * @returns {void}
+ */
 export function showHistoryTourNotification() {
     return guidedTourManager?.showHistoryTourNotification?.();
 }
 
+/**
+ * Delegates to the singleton to show the cleared tasks tour notification.
+ * @returns {void}
+ */
 export function showClearedTasksTourNotification() {
     return guidedTourManager?.showClearedTasksTourNotification?.();
 }
 
+/**
+ * Delegates to the singleton to show the achievements tour notification.
+ * @returns {void}
+ */
 export function showAchievementsTourNotification() {
     return guidedTourManager?.showAchievementsTourNotification?.();
 }
 
+/**
+ * Destroys the singleton and resets it to null for test isolation.
+ * @returns {void}
+ */
 export function _resetForTesting() {
     guidedTourManager?.destroy?.();
     guidedTourManager = null;

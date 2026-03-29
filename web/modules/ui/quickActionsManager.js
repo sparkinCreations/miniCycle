@@ -224,6 +224,11 @@ const _deps = new Proxy({}, {
     }
 });
 
+/**
+ * Inject dependencies for the QuickActionsManager module.
+ * @param {Object} dependencies - Dependencies including AppState, showNotification, etc.
+ * @returns {void}
+ */
 export function setQuickActionsManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
     if (dependencies.isDebug?.()) console.log('⚡ QuickActionsManager dependencies set:', Object.keys(dependencies));
@@ -233,6 +238,10 @@ export function setQuickActionsManagerDependencies(dependencies) {
 // QUICK ACTIONS MANAGER CLASS
 // ============================================================================
 
+/**
+ * Manages the quick actions panel, which surfaces frequently used actions
+ * based on usage frequency and recency.
+ */
 export class QuickActionsManager {
     constructor(dependencies = {}) {
         const resolved = di.resolve(dependencies);
@@ -1442,6 +1451,11 @@ export class QuickActionsManager {
 
 let quickActionsManager = null;
 
+/**
+ * Initialize the QuickActionsManager singleton.
+ * @param {Object} dependencies - Dependencies forwarded to QuickActionsManager constructor
+ * @returns {Promise<QuickActionsManager>} The initialized QuickActionsManager instance
+ */
 export async function initQuickActionsManager(dependencies) {
     quickActionsManager = new QuickActionsManager(dependencies);
     await quickActionsManager.init();
@@ -1451,6 +1465,7 @@ export async function initQuickActionsManager(dependencies) {
 /**
  * Track an action from outside the module (called by menu handlers)
  * @param {string} actionId - Action ID from ACTION_REGISTRY
+ * @returns {void}
  */
 export function trackAction(actionId) {
     quickActionsManager?.trackAction(actionId);

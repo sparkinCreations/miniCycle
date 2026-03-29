@@ -34,6 +34,9 @@ export const setDataValidatorDependencies = (dependencies) => di.setDependencies
 // DATA VALIDATOR CLASS
 // ============================================================================
 
+/**
+ * Validates and sanitizes imported data structures against expected schemas
+ */
 export class DataValidator {
     /**
      * Dangerous keys that could cause prototype pollution

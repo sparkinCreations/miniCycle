@@ -295,6 +295,11 @@ const _deps = new Proxy({ wrapperActive: false }, {
   }
 });
 
+/**
+ * Inject or override dependencies for the undo/redo manager module.
+ * @param {Object} [overrides] - Dependency overrides to merge into the DI container
+ * @returns {void}
+ */
 export function setUndoRedoManagerDependencies(overrides = {}) {
   di.setDependencies(overrides);
 }

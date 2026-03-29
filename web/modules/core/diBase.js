@@ -41,7 +41,7 @@
  * @version 1.0.0
  */
 
-// Version marker for cache debugging (derives from Single Source of Truth)
+/** @type {string} Version marker for cache debugging (derives from Single Source of Truth) */
 export const DIBASE_VERSION = globalThis.APP_VERSION || 'dev-local';
 
 // ============================================================================

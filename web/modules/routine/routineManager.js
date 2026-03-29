@@ -74,6 +74,9 @@ export function setRoutineManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
 }
 
+/**
+ * Manages routine CRUD operations including creation, renaming, deletion, and reset
+ */
 export class RoutineManager {
     constructor(dependencies = {}) {
         // Resolve deps from diBase, with constructor overrides
@@ -866,7 +869,10 @@ export async function initRoutineManager(dependencies) {
     return routineManager;
 }
 
-// Export for access to routineManager instance
+/**
+ * Get the singleton RoutineManager instance
+ * @returns {RoutineManager|null} The initialized instance or null
+ */
 export function getRoutineManager() {
     return routineManager;
 }

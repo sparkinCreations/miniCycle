@@ -1,10 +1,16 @@
 /**
- * SVG Icons Module
- * Replaces Font Awesome with inline SVGs for better performance
- * Icons are based on Font Awesome 6 Free (CC BY 4.0)
+ * @file icons.js
+ * @description SVG icon registry — inline SVGs replacing Font Awesome for better performance.
+ * Icons are based on Font Awesome 6 Free (CC BY 4.0).
+ * @module utils/icons
  */
 
-// Note: xmlns attribute is required for innerHTML insertion to work properly
+/**
+ * SVG icon registry — maps icon names to SVG markup strings.
+ * Used via innerHTML for trusted static content (never with user data).
+ * xmlns attribute is required for innerHTML insertion to work properly.
+ * @type {Object<string, string>}
+ */
 const ICONS = {
     // Info circle - used for info buttons
     'info-circle': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg>',
@@ -211,8 +217,9 @@ export function replaceFA(element) {
 }
 
 /**
- * Map of Font Awesome class names to icon names
- * Used for backwards compatibility
+ * Map of Font Awesome class names to icon registry names.
+ * Used for backwards compatibility when migrating from FA to inline SVGs.
+ * @type {Object<string, string>}
  */
 export const FA_MAP = {
     'fa-info-circle': 'info-circle',

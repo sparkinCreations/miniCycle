@@ -24,6 +24,11 @@ const _deps = new Proxy({}, {
     }
 });
 
+/**
+ * Set dependencies for the data sanitizer (e.g., sanitizeInput)
+ * @param {Object} dependencies - Dependencies to inject
+ * @returns {void}
+ */
 export function setDataSanitizerDependencies(dependencies) {
     di.setDependencies(dependencies);
 }

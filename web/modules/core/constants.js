@@ -559,6 +559,11 @@ export const DOM_CLASSES = Object.freeze({
 // DOM ELEMENT IDS — Single source of truth for getElementById calls
 // ============================================================================
 
+/**
+ * DOM element ID constants for getElementById calls.
+ * Includes factory functions for parameterized IDs (e.g., freqSpecificTime, notificationCurrentSettings).
+ * @constant {Object<string, string|Function>}
+ */
 export const DOM_IDS = Object.freeze({
     // ---- Task ----
     TASK_LIST: 'taskList',
@@ -980,6 +985,10 @@ export const DOM_IDS = Object.freeze({
 // DOM CSS SELECTORS — Single source of truth for querySelector calls
 // ============================================================================
 
+/**
+ * CSS selector constants for querySelector/querySelectorAll calls.
+ * @constant {Object<string, string>}
+ */
 export const DOM_SELECTORS = Object.freeze({
     // ---- Task ----
     TASK: '.task',
@@ -1320,16 +1329,28 @@ export const DATA_SELECTORS = Object.freeze({
 // VERSION
 // ============================================================================
 
-// Centralized APP_VERSION — import this instead of repeating globalThis fallbacks
+/**
+ * Centralized application version string, derived from version.js via globalThis.
+ * @type {string}
+ */
 export const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
 
-// Lite version redirect path (relative to app root)
+/**
+ * Relative path to the lite version HTML file for legacy device redirect.
+ * @type {string}
+ */
 export const LITE_VERSION_PATH = './lite/miniCycle-lite.html';
 
-// Canonical app URL for sharing
+/**
+ * Canonical application URL used for share links.
+ * @type {string}
+ */
 export const APP_URL = 'https://minicycle.app';
 
-// Version marker for cache debugging (derives from Single Source of Truth)
+/**
+ * Version marker for cache debugging, derived from the single source of truth in version.js.
+ * @type {string}
+ */
 export const CONSTANTS_VERSION = globalThis.APP_VERSION;
 
 // Phase 2 Step 6 - Clean exports (no window.* pollution)

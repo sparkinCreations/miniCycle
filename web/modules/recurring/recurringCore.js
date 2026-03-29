@@ -107,55 +107,98 @@ let _activation = null;
 // coordinator and is NOT suitable for regular modules (use diBase.js directly).
 //
 
+/**
+ * Late-bound recurring sub-module exports.
+ * All start as null and are populated by loadSubModules() after dynamic imports resolve.
+ * Callers see live values once setRecurringCoreDependencies() completes.
+ */
+
 // Date utilities
+/** @type {?Function} Convert 12-hour time string to 24-hour format */
 export let convert12To24 = null;
+/** @type {?Function} Parse a date string as a local Date (avoids UTC shift) */
 export let parseDateAsLocal = null;
+/** @type {?Function} Get the number of days in a given month/year */
 export let getDaysInMonth = null;
+/** @type {?Function} Check if a Date object is valid */
 export let isValidDate = null;
+/** @type {?Function} Calculate the number of days between two dates */
 export let getDaysBetween = null;
+/** @type {?Function} Create a shallow clone of a Date object */
 export let cloneDate = null;
+/** @type {?Function} Check if a date is the last day of its month */
 export let isLastDayOfMonth = null;
+/** @type {?Function} Apply a time-of-day to an existing Date */
 export let applyTimeToDate = null;
+/** @type {?Function} Calculate the nth weekday occurrence in a given month */
 export let calculateNthWeekdayOfMonth = null;
+/** @type {?Object} Map of weekday names to numeric indices */
 export let WEEKDAY_MAP = null;
 
 // Settings normalization
+/** @type {?Function} Normalize recurring settings to a canonical form */
 export let normalizeRecurringSettings = null;
 
 // Calculators
+/** @type {?Function} Calculate the next hourly recurrence date */
 export let calculateNextHourly = null;
+/** @type {?Function} Calculate the next daily recurrence date */
 export let calculateNextDaily = null;
+/** @type {?Function} Calculate the next weekly recurrence date */
 export let calculateNextWeekly = null;
+/** @type {?Function} Calculate the next biweekly recurrence date */
 export let calculateNextBiweekly = null;
+/** @type {?Function} Calculate the next monthly recurrence date */
 export let calculateNextMonthly = null;
+/** @type {?Function} Calculate the next yearly recurrence date */
 export let calculateNextYearly = null;
+/** @type {?Function} Calculate the next specific-date recurrence */
 export let calculateNextSpecificDate = null;
+/** @type {?Function} Calculate the next occurrence for any recurrence type */
 export let calculateNextOccurrence = null;
+/** @type {?Function} Calculate multiple future occurrences */
 export let calculateNextOccurrences = null;
+/** @type {?Function} Format a next-occurrence date for display */
 export let formatNextOccurrence = null;
 
 // Pattern matching
+/** @type {?Function} Check if a recurring task should fire now */
 export let shouldTaskRecurNow = null;
+/** @type {?Function} Check if a recurring task should be recreated */
 export let shouldRecreateRecurringTask = null;
 
 // Watcher/scheduler
+/** @type {?Function} Process any missed recurring tasks since last check */
 export let catchUpMissedRecurringTasks = null;
+/** @type {?Function} Start watching for recurring task triggers */
 export let watchRecurringTasks = null;
+/** @type {?Function} Set up the recurring task watcher interval */
 export let setupRecurringWatcher = null;
+/** @type {?Function} Restart the recurring watcher with fresh state */
 export let restartRecurringWatcher = null;
+/** @type {?Function} Check if the recurring watcher has been initialized */
 export let isWatcherInitialized = null;
+/** @type {?Function} Reset watcher state for testing or cycle switch */
 export let resetWatcherState = null;
 
 // Activation/deactivation
+/** @type {?Function} Activate recurring scheduling on a task */
 export let handleRecurringTaskActivation = null;
+/** @type {?Function} Deactivate recurring scheduling on a task */
 export let handleRecurringTaskDeactivation = null;
+/** @type {?Function} Apply recurring settings to a Schema 2.5 task object */
 export let applyRecurringToTaskSchema25 = null;
+/** @type {?Function} Delete a recurring template from a cycle */
 export let deleteRecurringTemplate = null;
+/** @type {?Function} Remove all recurring tasks from a cycle */
 export let removeRecurringTasksFromCycle = null;
+/** @type {?Function} Handle recurring tasks after a cycle reset */
 export let handleRecurringTasksAfterReset = null;
 
 // Shared state mutation helpers (pure functions)
+/** @type {?Function} Set recurring-active flags on a task state object */
 export let activateTaskRecurringState = null;
+/** @type {?Function} Clear recurring-active flags from a task state object */
 export let deactivateTaskRecurringState = null;
 
 // ============================================================================
@@ -165,6 +208,7 @@ export let deactivateTaskRecurringState = null;
 /**
  * Load all sub-modules with version cache-busting
  * @param {string} version - Version string for cache-busting
+ * @returns {Promise<void>}
  */
 async function loadSubModules(version) {
     if (_subModulesLoaded) {

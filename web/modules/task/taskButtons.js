@@ -61,6 +61,7 @@ const _deps = new Proxy({}, {
 /**
  * Set dependencies for TaskButtons
  * @param {Object} dependencies - Dependencies to inject
+ * @returns {void}
  */
 export function setTaskButtonsDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -76,7 +77,7 @@ export class TaskButtons {
     }
 
     /**
-     * Create task button container with all buttons
+     * Create task button container with all buttons.
      * @param {Object} taskContext - Task context with settings and state
      * @returns {HTMLDivElement} Button container element
      */
@@ -169,7 +170,7 @@ export class TaskButtons {
     }
 
     /**
-     * Create individual task button
+     * Create individual task button.
      * @param {Object} buttonConfig - Button configuration
      * @param {Object} taskContext - Task context
      * @param {HTMLElement} buttonContainer - Parent container
@@ -236,6 +237,7 @@ export class TaskButtons {
      * @param {HTMLButtonElement} button - The button element
      * @param {string} btnClass - Button class name
      * @param {HTMLElement} buttonContainer - Parent container
+     * @returns {void}
      */
     setupButtonAccessibility(button, btnClass, buttonContainer) {
         button.setAttribute("tabindex", "-1");
@@ -306,6 +308,7 @@ export class TaskButtons {
      * @param {string} assignedTaskId - Task ID
      * @param {Object} currentCycle - Current cycle data
      * @param {boolean} deleteWhenComplete - Delete when complete state
+     * @returns {void}
      */
     setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle, deleteWhenComplete) {
         if (btnClass === "enable-task-reminders") {
@@ -340,6 +343,7 @@ export class TaskButtons {
      * @param {HTMLButtonElement} button - The button element
      * @param {string} btnClass - Button class name
      * @param {Object} taskContext - Task context
+     * @returns {void}
      */
     setupButtonEventHandlers(button, btnClass, taskContext) {
         const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => el.addEventListener(ev, fn));
@@ -367,6 +371,7 @@ export class TaskButtons {
      * Setup delete-when-complete button handler
      * @param {HTMLButtonElement} button - The button element
      * @param {Object} taskContext - Task context
+     * @returns {void}
      */
     setupDeleteWhenCompleteButtonHandler(button, taskContext) {
         const { assignedTaskId } = taskContext;
@@ -480,6 +485,7 @@ export class TaskButtons {
      * @param {string} assignedTaskId - Task ID
      * @param {HTMLElement} taskItem - Task DOM element
      * @param {HTMLElement} button - Delete-when-complete button
+     * @returns {Promise<void>}
      */
     async handleDisableRecurringForTask(assignedTaskId, taskItem, button) {
         if (!this.deps.AppState?.isReady?.()) return;
@@ -541,8 +547,8 @@ export class TaskButtons {
 let taskButtonsInstance = null;
 
 /**
- * Initialize the TaskButtons singleton
- * @param {Object} dependencies - Dependencies to inject
+ * Initialize the TaskButtons singleton.
+ * @param {Object} [dependencies={}] - Dependencies to inject
  * @returns {TaskButtons} The TaskButtons instance
  */
 export function initTaskButtons(dependencies = {}) {

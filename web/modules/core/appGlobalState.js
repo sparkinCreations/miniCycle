@@ -142,7 +142,10 @@ export const AppGlobalState = {
 // CONSTANTS
 // ============================================================================
 
+/** @type {number} Maximum number of undo snapshots to retain per cycle */
 export const UNDO_LIMIT = 20;
+
+/** @type {number} Minimum interval in milliseconds between undo snapshots */
 export const UNDO_MIN_INTERVAL_MS = 100;
 
 // ============================================================================
@@ -152,10 +155,19 @@ export const UNDO_MIN_INTERVAL_MS = 100;
 // Debug AppState - receives AppState as parameter to avoid module import issues
 let _debugAppState = null;
 
+/**
+ * Inject AppState reference for debug logging
+ * @param {Object} AppState - The AppState manager instance
+ * @returns {void}
+ */
 export function setDebugAppState(AppState) {
   _debugAppState = AppState;
 }
 
+/**
+ * Log current application state to the console for debugging
+ * @returns {Promise<void>}
+ */
 export async function debugAppState() {
   console.group('🔍 App State Debug');
 

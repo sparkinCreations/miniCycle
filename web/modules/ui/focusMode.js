@@ -35,6 +35,7 @@ const di = createDIModule('FocusMode', {
 /**
  * Set dependencies for FocusMode (call before initFocusMode)
  * @param {Object} dependencies
+ * @returns {void}
  */
 export function setFocusModeDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -46,6 +47,10 @@ export function setFocusModeDependencies(dependencies) {
 
 let focusModeInstance = null;
 
+/**
+ * Implements focus mode, which highlights the next incomplete task
+ * and dims all others to reduce visual clutter.
+ */
 export class FocusMode {
     constructor() {
         this._active = false;

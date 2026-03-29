@@ -88,6 +88,9 @@ export function setRoutineSwitcherDependencies(dependencies) {
     di.setDependencies(dependencies);
 }
 
+/**
+ * Manages the routine switcher modal UI for switching, creating, and managing routines
+ */
 export class RoutineSwitcher {
     constructor(dependencies = {}) {
         // Resolve deps from diBase, with constructor overrides

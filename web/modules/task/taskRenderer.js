@@ -61,6 +61,7 @@ const _deps = new Proxy({}, {
 /**
  * Set dependencies for TaskRenderer (call before initTaskRenderer)
  * @param {Object} dependencies - { AppState, updateProgressBar, etc. }
+ * @returns {void}
  */
 export function setTaskRendererDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -122,6 +123,7 @@ export class TaskRenderer {
      * Inject a dependency after construction (for late-bound dependencies)
      * @param {string} name - The dependency name
      * @param {*} value - The dependency value
+     * @returns {void}
      */
     injectDependency(name, value) {
         this.deps[name] = value;
@@ -157,7 +159,7 @@ export class TaskRenderer {
      * Render tasks array to DOM using atomic replaceChildren.
      * Uses DocumentFragment for efficient batch DOM operations.
      *
-     * @param {Task[]} tasksArray - Array of task objects to render
+     * @param {Task[]} [tasksArray=[]] - Array of task objects to render
      * @returns {Promise<void>}
      */
     async renderTasks(tasksArray = []) {
@@ -246,7 +248,7 @@ export class TaskRenderer {
      * Refresh UI from state (re-render tasks from AppState).
      * Falls back to loadMiniCycle if state is not available.
      *
-     * NOTE: Can only be called after Phase 2 complete (TaskDOMManager ready)
+     * NOTE: Can only be called after Phase 2 complete (TaskDOMManager ready).
      *
      * @param {Object|null} [providedState=null] - Optional state object (uses AppState if not provided)
      * @returns {Promise<void>}

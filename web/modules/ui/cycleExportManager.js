@@ -32,6 +32,11 @@ const _deps = new Proxy({}, {
     }
 });
 
+/**
+ * Inject dependencies for the cycle export manager module.
+ * @param {Object} dependencies - Dependencies including AppState, showNotification, etc.
+ * @returns {void}
+ */
 export function setCycleExportManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
 }
@@ -50,6 +55,7 @@ let _exportButtonInitialized = false;
  * Export cycle data to .mcyc file
  * @param {Object} miniCycleData - The cycle data to export
  * @param {string} cycleName - Name for the file
+ * @returns {void}
  */
 export function exportMiniCycleData(miniCycleData, cycleName) {
 

@@ -636,7 +636,9 @@ class AppInit {
 	}
 }
 
+/** @type {AppInit} Singleton instance coordinating app initialization lifecycle */
 export const appInit = new AppInit();
 
+/** @type {string} Version of the AppInit module */
 export const APPINIT_VERSION = '2.0.0';
 

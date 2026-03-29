@@ -42,7 +42,7 @@ export class TaskDOMPatch {
     }
 
     /**
-     * Patch a single task's DOM to reflect state changes (O(1) operation)
+     * Patch a single task's DOM to reflect state changes (O(1) operation).
      * @param {string} taskId - Task ID to patch
      * @param {Object} taskData - Current task data from state
      * @param {string[]} [changedFields] - Specific fields that changed (for optimization)
@@ -250,7 +250,7 @@ export class TaskDOMPatch {
     }
 
     /**
-     * Remove a task from the DOM (O(1) operation)
+     * Remove a task from the DOM (O(1) operation).
      * @param {string} taskId - Task ID to remove
      * @returns {boolean} True if removed, false if not found
      */
@@ -266,7 +266,7 @@ export class TaskDOMPatch {
     }
 
     /**
-     * Reorder tasks in DOM without full re-render
+     * Reorder tasks in DOM without full re-render.
      * @param {string[]} taskIds - Task IDs in desired order
      * @returns {boolean} True if reordered successfully
      */

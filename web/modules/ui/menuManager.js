@@ -79,6 +79,7 @@ const _deps = new Proxy({}, {
 /**
  * Set dependencies for MenuManager (call before creating instance)
  * @param {Object} dependencies - { loadMiniCycleData, showNotification, etc. }
+ * @returns {void}
  */
 export function setMenuManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -95,6 +96,10 @@ function replaceStoredEventListener(element, event, key, handler, options) {
     element.addEventListener(event, handler, options);
 }
 
+/**
+ * Manages the main hamburger menu, including opening/closing, keyboard navigation,
+ * sub-menu items, and menu action handlers.
+ */
 export class MenuManager {
     constructor(dependencies = {}) {
         // Resolve deps from diBase, with constructor overrides
@@ -349,6 +354,7 @@ export class MenuManager {
      * Scroll an expanded section into view so the user can see its contents.
      * Uses a short delay to allow the CSS transition to complete.
      * @param {HTMLElement} section - The .menu-section element
+     * @returns {void}
      */
     _scrollSectionIntoView(section) {
         setTimeout(() => {
@@ -435,6 +441,7 @@ export class MenuManager {
      * Ensures the menu only closes when clicking outside both the menu and menu button.
      *
      * @param {MouseEvent} event - The click event that triggers the check.
+     * @returns {void}
      */
     closeMenuOnClickOutside(event) {
         const menu = this.elements.menu;
@@ -730,7 +737,11 @@ export class MenuManager {
 // Create global instance
 let menuManager = null;
 
-// Export initialization function
+/**
+ * Initialize the MenuManager singleton, dynamically importing storage utilities.
+ * @param {Object} dependencies - Dependencies forwarded to MenuManager constructor
+ * @returns {Promise<MenuManager>} The initialized MenuManager instance
+ */
 export async function initMenuManager(dependencies) {
     // Dynamically import utilities with version for cache-busting
     const version = APP_VERSION;

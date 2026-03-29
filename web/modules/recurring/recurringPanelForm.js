@@ -76,6 +76,7 @@ export function getSelectedYearlyMonths(deps) {
 /**
  * Update recurring count visibility based on settings
  * @param {Object} deps - Dependencies (getElementById)
+ * @returns {void}
  */
 export function updateRecurCountVisibility(deps) {
     const isIndefinite = deps.getElementById(DOM_IDS.RECUR_INDEFINITELY)?.checked;
@@ -253,6 +254,7 @@ export function buildRecurringSettingsFromPanel(deps, state) {
  * Populate recurring form with settings
  * @param {Object} deps - Dependencies (getElementById)
  * @param {Object} settings - Recurring settings to populate
+ * @returns {void}
  */
 export function populateRecurringFormWithSettings(deps, settings) {
 
@@ -327,6 +329,7 @@ export function populateRecurringFormWithSettings(deps, settings) {
 /**
  * Clear/reset the recurring form
  * @param {Object} deps - Dependencies (getElementById)
+ * @returns {void}
  */
 export function clearRecurringForm(deps) {
 

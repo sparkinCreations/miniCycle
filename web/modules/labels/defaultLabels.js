@@ -39,6 +39,7 @@ function deepFreeze(obj) {
 // DEFAULT LABELS
 // ============================================================================
 
+/** @type {Readonly<Object>} Frozen lookup of all default label strings, organized by category */
 export const DEFAULT_LABELS = deepFreeze({
 
     // ========================================================================
@@ -1921,6 +1922,7 @@ export const DEFAULT_LABELS = deepFreeze({
 // Format: 'category.key' dot-path strings
 // ============================================================================
 
+/** @type {Readonly<Set<string>>} Set of dot-path label keys that vocabulary themes can override */
 export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     // Core nouns
     'noun.task',
@@ -2494,4 +2496,5 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
 // VERSION & DIAGNOSTICS
 // ============================================================================
 
+/** @type {string} Version of the default labels module */
 export const LABELS_VERSION = globalThis.APP_VERSION;

@@ -80,6 +80,7 @@ const _deps = new Proxy({}, {
 /**
  * Set dependencies for ModalManager
  * Call this after dependencies are available
+ * @returns {void}
  */
 export function setModalManagerDependencies(deps) {
     di.setDependencies(deps);
@@ -96,6 +97,10 @@ function replaceStoredEventListener(element, event, key, handler, options) {
     element.addEventListener(event, handler, options);
 }
 
+/**
+ * Coordinates modal lifecycle including open/close, focus trapping,
+ * backdrop clicks, escape key handling, and cleanup of event listeners.
+ */
 export class ModalManager {
     constructor(dependencies = {}) {
         // Resolve deps from diBase, with constructor overrides

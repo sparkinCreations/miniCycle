@@ -77,6 +77,7 @@ const _deps = new Proxy({}, {
 /**
  * Set dependencies for StatsPanelManager (call before creating instance)
  * @param {Object} dependencies - { showNotification, loadMiniCycleData, AppState, appInit, etc. }
+ * @returns {void}
  */
 export function setStatsPanelDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -852,6 +853,7 @@ export class StatsPanelManager {
     /**
      * Sync gesture panel manager state when view changes externally
      * @param {boolean} isVisible - Whether stats panel is visible
+     * @returns {void}
      * @private
      */
     _syncGestureManager(isVisible) {
@@ -1169,6 +1171,7 @@ export class StatsPanelManager {
     /**
      * Update theme unlock status messages based on GLOBAL cycles completed
      * @param {number} globalCyclesCompleted - Total cycles across all routines
+     * @returns {void}
      */
     updateThemeUnlockStatus(globalCyclesCompleted) {
 
@@ -1210,6 +1213,7 @@ export class StatsPanelManager {
      * Shows cycle-based text in Cycle mode, task-based text in To-Do mode
      * @param {number} globalCyclesCompleted - Total cycles across all routines
      * @param {Object} milestoneUnlocks - Current unlock status
+     * @returns {void}
      */
     updateThemeMessages(globalCyclesCompleted, milestoneUnlocks) {
         const { themeUnlockMessage, goldenUnlockMessage, gameUnlockMessage } = this.elements;
@@ -1310,6 +1314,7 @@ export class StatsPanelManager {
      * Unlock themes if user is eligible based on GLOBAL cycles completed
      * @param {number} globalCyclesCompleted - Total cycles across all routines
      * @param {Object} milestoneUnlocks - Current unlock status
+     * @returns {Promise<void>}
      */
     async unlockThemesIfEligible(globalCyclesCompleted, milestoneUnlocks) {
         // ✅ Use AppState only (no localStorage fallback) - DI-pure
@@ -1417,6 +1422,7 @@ export class StatsPanelManager {
      * Save collapsible section preference to AppState
      * @param {string} key - Preference key
      * @param {boolean} value - Whether section is expanded
+     * @returns {void}
      */
     saveCollapsiblePreference(key, value) {
         try {

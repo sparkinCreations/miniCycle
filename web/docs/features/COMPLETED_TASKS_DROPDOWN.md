@@ -2,7 +2,7 @@
 
 > **Version:** 1.516 (December 20, 2025)
 > **Status:** ✅ Production Ready
-> **Test Coverage:** 100% (1610+/1,690+ tests passing)
+> **Test Coverage:** 100% (2,195+ automated tests passing; see [PROJECT_STATS.md](../PROJECT_STATS.md))
 
 ## Overview
 
@@ -258,7 +258,7 @@ if (taskList.some(task => task.id === id)) return false;  // Already exists, don
 - ✅ Task movement between lists
 - ✅ Badge counter updates
 
-**Total Coverage:** 1610+/1,690+ tests passing (100%)
+**Total Coverage:** 2,195+ automated tests passing (100%); see [PROJECT_STATS.md](../PROJECT_STATS.md) for current counts
 
 ### Manual Testing Checklist
 

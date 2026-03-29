@@ -47,6 +47,11 @@ const _deps = new Proxy({}, {
     }
 });
 
+/**
+ * Inject dependencies for the cycle import manager module.
+ * @param {Object} dependencies - Dependencies including AppState, showNotification, etc.
+ * @returns {void}
+ */
 export function setCycleImportManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
 }
@@ -68,7 +73,7 @@ const MAX_CYCLE_NAME_LENGTH = LIMITS.CYCLE_NAME_CHARACTER;
  * Fallback sanitization for when DataValidator is not injected.
  * Escapes HTML and enforces length limits.
  * @param {string} input - Text to sanitize
- * @param {number} maxLength - Maximum allowed length
+ * @param {number} [maxLength=100] - Maximum allowed length
  * @returns {string} Sanitized text
  */
 function fallbackSanitize(input, maxLength = 100) {
@@ -383,6 +388,7 @@ export function setupDragDropImport() {
 /**
  * Process imported cycle data
  * @param {string} fileContent - Raw file content
+ * @returns {Promise<void>}
  */
 export async function processImportedData(fileContent) {
     let importedData;

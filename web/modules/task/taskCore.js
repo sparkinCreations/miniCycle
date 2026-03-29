@@ -105,6 +105,7 @@ let taskCoreInstance = null;
 /**
  * Load all sub-modules with versioned imports
  * @param {string} version - Version string for cache busting
+ * @returns {Promise<Object>}
  */
 async function loadSubModules(version) {
     if (_subModules) return _subModules;
@@ -149,6 +150,7 @@ async function loadSubModules(version) {
 /**
  * Wire dependencies to all sub-modules
  * @param {Object} dependencies - Dependencies to propagate
+ * @returns {void}
  */
 function wireSubModuleDependencies(dependencies) {
     if (!_subModules) {
@@ -171,6 +173,7 @@ function wireSubModuleDependencies(dependencies) {
  * @param {Function} [dependencies.showNotification] - Notification function
  * @param {Function} [dependencies.sanitizeInput] - Input sanitization
  * @param {Object} [dependencies.AppMeta] - App metadata with version
+ * @returns {void}
  */
 export function setTaskCoreDependencies(dependencies) {
     di.setDependencies(dependencies);

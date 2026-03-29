@@ -223,6 +223,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
 /**
  * Update UI after settings are applied
  * @param {Object} panel - The RecurringPanel instance
+ * @returns {void}
  */
 function updateUIAfterApply(panel) {
     const checkedTasks = _deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM_CHECKED);

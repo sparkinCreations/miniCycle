@@ -53,6 +53,7 @@ const _deps = new Proxy({}, {
 /**
  * Set dependencies for MiniCycleReminders (call before creating instance)
  * @param {Object} dependencies - { AppState, showNotification, loadMiniCycleData, appInit, refreshTaskListUI, AppGlobalState, AppMeta }
+ * @returns {void}
  */
 export function setRemindersDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -513,6 +514,7 @@ export class MiniCycleReminders {
      * Save reminder state for a specific task
      * @param {string} taskId - The ID of the task
      * @param {boolean} isEnabled - Whether reminders are enabled for this task
+     * @returns {Promise<void>}
      */
     async saveTaskReminderState(taskId, isEnabled) {
 
@@ -763,6 +765,7 @@ export class MiniCycleReminders {
      * Set up reminder button event handler for a specific task
      * @param {HTMLElement} button - The reminder button element
      * @param {Object} taskContext - Context containing task ID
+     * @returns {void}
      */
     setupReminderButtonHandler(button, taskContext) {
         const { assignedTaskId } = taskContext;

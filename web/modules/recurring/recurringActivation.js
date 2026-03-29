@@ -48,6 +48,7 @@ const Deps = new Proxy({}, {
 /**
  * Configure dependencies for the activation module
  * @param {Object} overrides - Dependency overrides
+ * @returns {void}
  */
 export function setRecurringActivationDependencies(overrides = {}) {
     di.setDependencies(overrides);
@@ -74,6 +75,7 @@ function assertInjected(name, value) {
  * @param {string} taskId - Task ID to activate
  * @param {Object} normalizedSettings - Already-normalized recurring settings
  * @param {Function} calculateNextOccurrenceFn - Function to calculate next occurrence
+ * @returns {void}
  */
 export function activateTaskRecurringState(cycle, taskId, normalizedSettings, calculateNextOccurrenceFn) {
     const task = cycle.tasks.find(t => t.id === taskId);
@@ -115,6 +117,7 @@ export function activateTaskRecurringState(cycle, taskId, normalizedSettings, ca
  * @param {Object} cycle - Draft cycle object (mutated in place)
  * @param {string} taskId - Task ID to deactivate
  * @param {string} currentMode - 'todo' or 'cycle'
+ * @returns {void}
  */
 export function deactivateTaskRecurringState(cycle, taskId, currentMode) {
     const task = cycle.tasks.find(t => t.id === taskId);
@@ -139,6 +142,7 @@ export function deactivateTaskRecurringState(cycle, taskId, currentMode) {
  * @param {Object} task - The task object to make recurring
  * @param {Object} taskContext - Context containing taskId, currentCycle, settings
  * @param {HTMLElement} button - The recurring button element (optional)
+ * @returns {Promise<void>}
  */
 export async function handleRecurringTaskActivation(task, taskContext, button = null) {
     const { assignedTaskId, currentCycle, settings } = taskContext;
@@ -248,6 +252,7 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
  * @param {Object} task - The task object to make non-recurring
  * @param {Object} taskContext - Context containing taskId, currentCycle
  * @param {string} assignedTaskId - The task ID
+ * @returns {Promise<void>}
  */
 export async function handleRecurringTaskDeactivation(task, taskContext, assignedTaskId) {
     assertInjected('querySelector', Deps.querySelector);
@@ -330,6 +335,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
  * Apply recurring settings to a task (Schema 2.5)
  * @param {string} taskId - The task ID
  * @param {Object} newSettings - New recurring settings to apply
+ * @returns {Promise<void>}
  */
 export async function applyRecurringToTaskSchema25(taskId, newSettings) {
     assertInjected('AppState', Deps.AppState);
@@ -417,6 +423,7 @@ export async function applyRecurringToTaskSchema25(taskId, newSettings) {
 /**
  * Delete a recurring template
  * @param {string} taskId - The task ID
+ * @returns {Promise<void>}
  */
 export async function deleteRecurringTemplate(taskId) {
 
@@ -461,6 +468,7 @@ export async function deleteRecurringTemplate(taskId) {
  * Mutates a transient cycleData object; caller is responsible for persistence via AppState.update().
  * @param {Array} taskElements - Array of task DOM elements
  * @param {Object} cycleData - Transient cycle data snapshot (not a live AppState reference)
+ * @returns {void}
  */
 export function removeRecurringTasksFromCycle(taskElements, cycleData) {
     let removedCount = 0;

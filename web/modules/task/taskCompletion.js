@@ -56,6 +56,7 @@ const _deps = new Proxy({}, {
 /**
  * Set dependencies for TaskCompletion
  * @param {Object} dependencies - Dependencies to inject
+ * @returns {void}
  */
 export function setTaskCompletionDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -82,7 +83,7 @@ async function waitForCoreWithTimeout() {
 /**
  * Helper to resolve getter functions for late-initialized dependencies.
  * @param {*} dep - The dependency (may be a getter function or direct value)
- * @returns {*} The resolved value
+ * @returns {*} The resolved value.
  */
 function resolveGetter(dep) {
     if (typeof dep === 'function' && dep.length === 0) {
@@ -103,6 +104,7 @@ function resolveGetter(dep) {
  * Handle task completion checkbox change
  * @param {HTMLInputElement} checkbox - The checkbox element
  * @param {Object} deps - Resolved dependencies
+ * @returns {Promise<void>}
  */
 export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
     try {
@@ -214,6 +216,7 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
 /**
  * Save current task order after drag & drop
  * @param {Object} deps - Resolved dependencies
+ * @returns {Promise<void>}
  */
 export async function saveCurrentTaskOrderImpl(deps = {}) {
     try {
@@ -260,6 +263,7 @@ export async function saveCurrentTaskOrderImpl(deps = {}) {
  * @param {string} activeCycle - The cycle ID to save
  * @param {object} currentCycle - The cycle data to save
  * @param {Object} deps - Resolved dependencies
+ * @returns {void}
  */
 export function saveTaskToSchema25Impl(activeCycle, currentCycle, deps = {}) {
     const AppState = deps.AppState || _deps.AppState;

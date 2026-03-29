@@ -46,6 +46,7 @@ const _deps = new Proxy({}, {
 /**
  * Set dependencies for title manager (DI-pure pattern)
  * @param {Object} injected - Dependencies to inject
+ * @returns {void}
  */
 export function setTitleManagerDependencies(injected) {
     di.setDependencies(injected);
@@ -241,8 +242,8 @@ export function setupMiniCycleTitleListener() {
 
 /**
  * Initialize TitleManager (called by moduleLoader)
- * Dynamically imports utilities with version cache-busting before setup
- * @param {Object} dependencies - Injected dependencies
+ * Dynamically imports utilities with version cache-busting before setup.
+ * @param {Object} [dependencies={}] - Injected dependencies
  * @returns {Promise<Object>} Module exports for registration
  */
 export async function initTitleManager(dependencies = {}) {

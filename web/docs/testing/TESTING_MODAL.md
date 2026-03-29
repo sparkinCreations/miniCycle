@@ -36,7 +36,7 @@ User clicks "Run All Tests"
 │ with ?autorun=true&embedded=true│
 └─────────────────────────────────┘
         ↓
-    Tests run (1,690+)
+    Tests run (2,195+)
         ↓
 ┌─────────────────────────────────┐
 │ iframe sends TEST_RESULTS       │
@@ -298,15 +298,15 @@ window.parent.postMessage({
     type: 'TEST_PROGRESS',
     currentModule: 'recurringCore',
     currentIndex: 15,
-    totalModules: 87,
+    totalModules: 85,
     moduleName: 'RecurringCore'
 }, '*');
 
 // Final results
 window.parent.postMessage({
     type: 'TEST_RESULTS',
-    totalPassed: 1690,
-    totalTests: 1690,
+    totalPassed: 2195,
+    totalTests: 2195,
     duration: 65.2,
     allPassed: true,
     failedModules: []

@@ -15,7 +15,7 @@
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌───────────┐ │
 │  │ Functional │  │Performance │  │ Lighthouse │  │  Manual   │ │
 │  │   Tests    │  │ Benchmarks │  │     CI     │  │ Profiling │ │
-│  │ 1,690+ tests│  │  12 tests  │  │  5 metrics │  │ DevTools  │ │
+│  │ 2,195+ tests│  │  12 tests  │  │  5 metrics │  │ DevTools  │ │
 │  └────────────┘  └────────────┘  └────────────┘  └───────────┘ │
 │                                                                   │
 └─────────────────────────────────────────────────────────────────┘
@@ -41,19 +41,19 @@ Developer Makes Changes
     └────────────────────┘
          ↓
     ┌────────────────────────────────┐
-    │ Runs 50 Module Test Suites     │
+    │ Runs 85 Module Test Suites     │
     │ - Integration (11 tests)       │
     │ - ThemeManager (15 tests)      │
     │ - RecurringCore (99 tests)     │
     │ - UndoRedoManager (73 tests)   │
     │ - XSS Vulnerability (25 tests) │
     │ - Error Handler (34 tests)     │
-    │ - ... (44 more modules)        │
+    │ - ... (79 more modules)        │
     └────────────────────────────────┘
          ↓
     ┌─────────────────┐
-    │ Results: 1610+/ │
-    │ 1610+ Passed ✅ │
+    │ Results: 2,195+/│
+    │ 2,195+ Passed ✅│
     └─────────────────┘
          ↓
     ┌────────────┐
@@ -88,7 +88,7 @@ Push to GitHub
 └────────────┘      └──────────────────┘
       ↓                    ↓
 ┌────────────┐      ┌──────────────────┐
-│ Run 1610+  │      │ Run Benchmarks   │
+│ Run 2,195+ │      │ Run Benchmarks   │
 │ Tests      │      │ (12 tests)       │
 └────────────┘      └──────────────────┘
       ↓                    ↓
@@ -167,7 +167,7 @@ Push to GitHub
 │ ✅ End-to-end workflows                           │
 └───────────────────────────────────────────────────┘
 
-Total: 1,690+ tests across all layers
+Total: 2,195+ tests across all layers (see [PROJECT_STATS.md](../PROJECT_STATS.md) for current counts)
 ```
 
 ---
@@ -294,7 +294,7 @@ miniCycle/web/
 │   │   ├── run-browser-tests.js ────────┐
 │   │   └── run-performance-benchmarks.js ├─► Test Runners
 │   │                                      │
-│   ├── *.tests.js (30 files) ────────────┼─► Test Suites
+│   ├── *.tests.js (113 files) ───────────┼─► Test Suites
 │   │   ├── integration.tests.js          │
 │   │   ├── recurringCore.tests.js        │
 │   │   ├── undoRedoManager.tests.js      │
@@ -470,7 +470,7 @@ setRecurringCoreDependencies({
 │ Notifications    │  39   │  100%  │   93%    │ ✅      │
 │ ... (22 more)    │ 618   │  100%  │   95%    │ ✅      │
 ├──────────────────┼───────┼────────┼──────────┼─────────┤
-│ TOTAL            │ 1610+ │  100%  │   95%    │ ✅ 100% │
+│ TOTAL            │ 2,195+│  100%  │   95%    │ ✅ 100% │
 └──────────────────┴───────┴────────┴──────────┴─────────┘
 ```
 
@@ -571,7 +571,7 @@ Ideal Distribution (achieved!):
 ```
 Test Type          | Count  | Total Time | Avg Time
 -------------------|--------|------------|----------
-Functional Tests   | 1610+  | ~65s       | ~44ms
+Functional Tests   | 2,195+ | ~65s       | ~44ms
 Performance Tests  | 12     | 21.40ms    | 1.78ms
 Lighthouse (full)  | 10     | 180s       | 18s
 -------------------|--------|------------|----------
@@ -594,7 +594,7 @@ Stress Testing     | 50    | 3.4%
 Integration        | 11    | 0.8%
 Performance        | 12    | 0.8%
 -------------------|-------|------------
-Total              | 1610+ | 100%
+Total              | 2,195+| 100%
 ```
 
 ### Performance Status
@@ -616,7 +616,7 @@ Storage Speed      | <100ms  | 0.80ms  | ✅ 125x
 ### Run Tests
 
 ```bash
-npm test           # Functional (1,690+ tests, ~65s)
+npm test           # Functional (2,195+ tests, ~65s)
 npm run perf       # Performance (12 tests, 20ms)
 npm run lighthouse # Lighthouse (full audit, 3min)
 npm start          # Manual testing (browser)

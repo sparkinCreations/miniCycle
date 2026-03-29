@@ -563,6 +563,7 @@ export class AchievementsManager {
     /**
      * Show badge detail popup
      * @param {number} milestone - The milestone cycle count
+     * @returns {void}
      */
     showBadgeDetail(milestone) {
         const tierConfig = MILESTONES ? MILESTONES.find(t => t.cycleThreshold === milestone) : null;
@@ -870,6 +871,7 @@ export class AchievementsManager {
      * Uses MILESTONES constant from constants.js as single source of truth
      * @param {number} globalCyclesCompleted - Total cycles across all routines
      * @param {number} globalTasksCleared - Total tasks cleared across all routines
+     * @returns {void}
      */
     updateBadges(globalCyclesCompleted, globalTasksCleared = 0) {
         this.deps.querySelectorAll(DOM_SELECTORS.BADGE).forEach(badge => {

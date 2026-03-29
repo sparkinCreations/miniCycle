@@ -40,6 +40,11 @@ const _deps = new Proxy({}, {
     }
 });
 
+/**
+ * Inject dependencies for the backup/restore manager module.
+ * @param {Object} dependencies - Dependencies including AppState, showNotification, etc.
+ * @returns {void}
+ */
 export function setBackupRestoreManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
 }
@@ -78,6 +83,7 @@ const LITE_STORAGE_KEYS = Object.freeze([
  * @param {Object} [options] - Optional behaviour flags
  * @param {boolean} [options.fullReinit=false] - When true, runs appInit.runInitialSetup()
  *   instead of loadMiniCycle(). Used after factory reset to trigger onboarding flow.
+ * @returns {void}
  */
 function reloadWithLoader(logContext, options = {}) {
     const { fullReinit = false } = options;
@@ -387,6 +393,7 @@ export function setupRestoreButton() {
 /**
  * Process restore data from file
  * @param {string} fileContent - Raw file content
+ * @returns {Promise<void>}
  */
 async function processRestoreData(fileContent) {
 
