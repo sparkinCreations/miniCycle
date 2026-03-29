@@ -32,6 +32,7 @@ let _getLabel = (key, opts) => {
 /**
  * Set date utilities (called by recurringCore after loading sub-modules)
  * @param {Object} utils - Date utility functions
+ * @returns {void}
  */
 export function setDateUtils(utils) {
     _dateUtils = utils;
@@ -40,6 +41,7 @@ export function setDateUtils(utils) {
 /**
  * Set normalizer function (called by recurringCore after loading sub-modules)
  * @param {Function} fn - normalizeRecurringSettings function
+ * @returns {void}
  */
 export function setNormalizer(fn) {
     _normalizeSettings = fn;
@@ -48,6 +50,7 @@ export function setNormalizer(fn) {
 /**
  * Set label resolver (called by recurringCore after loading sub-modules)
  * @param {Function} fn - getLabel function from labelResolver
+ * @returns {void}
  */
 export function setLabelResolver(fn) {
     _getLabel = fn;

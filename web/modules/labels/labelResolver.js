@@ -32,6 +32,11 @@ const di = createDIModule('LabelResolver', {
     getRoutineLens: optional(null)
 });
 
+/**
+ * Set dependencies for the label resolver (e.g., active lens getters)
+ * @param {Object} dependencies - Dependencies to inject
+ * @returns {void}
+ */
 export const setLabelResolverDependencies = di.setDependencies;
 
 // ============================================================================
@@ -289,6 +294,7 @@ export function getCategoryLabels(category, options = {}) {
 // VERSION & DIAGNOSTICS
 // ============================================================================
 
+/** @type {string} Version of the label resolver module */
 export const LABEL_RESOLVER_VERSION = globalThis.APP_VERSION;
 
 /**

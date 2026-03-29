@@ -50,6 +50,7 @@ const _deps = new Proxy({}, {
 /**
  * Set dependencies for HelpWindowManager.
  * @param {Object} dependencies - Injected dependencies
+ * @returns {void}
  */
 export function setHelpWindowManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -289,6 +290,7 @@ export class HelpWindowManager {
     /**
      * Shows mode description temporarily.
      * @param {string} mode - The mode to describe
+     * @returns {void}
      */
     showModeDescription(mode) {
         if (!this.helpWindow) return;
@@ -386,6 +388,7 @@ export class HelpWindowManager {
     /**
      * Shows tasks cleared message (for To-Do mode).
      * @param {number} count - Number of tasks cleared
+     * @returns {void}
      */
     showTasksClearedMessage(count = 0) {
         if (!this.helpWindow) return;
@@ -417,6 +420,7 @@ export class HelpWindowManager {
      * @param {'three-dots'|'hover'} trigger - What triggered the tip
      *   - 'three-dots': show every time (user pressed three-dots button)
      *   - 'hover': show only once per page reload (first desktop hover)
+     * @returns {void}
      */
     showCustomizerTip(trigger) {
         if (!this.helpWindow) return;
@@ -672,8 +676,8 @@ let helpWindowManagerInstance = null;
 
 /**
  * Initialize and get the HelpWindowManager instance.
- * Dynamically imports utilities with version cache-busting before creating instance
- * @param {Object} dependencies - Optional dependencies to inject
+ * Dynamically imports utilities with version cache-busting before creating instance.
+ * @param {Object} [dependencies={}] - Optional dependencies to inject
  * @returns {Promise<HelpWindowManager>} The manager instance
  */
 export async function initHelpWindowManager(dependencies = {}) {

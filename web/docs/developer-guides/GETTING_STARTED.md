@@ -30,7 +30,7 @@ npx serve .                         # Node.js
 # Lite version: http://localhost:8080/lite/miniCycle-lite.html (static fallback, not maintained)
 
 # 4. Run tests (optional)
-npm test                            # Automated tests (1,690+ passing)
+npm test                            # Automated tests (2,195+ passing)
 open http://localhost:8080/tests/module-test-suite.html  # Browser tests
 ```
 

@@ -42,6 +42,10 @@ export function setCompletedTasksManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
 }
 
+/**
+ * Manages the completed tasks dropdown, including rendering, toggling visibility,
+ * and handling completed task interactions.
+ */
 export class CompletedTasksManager {
     constructor(dependencies = {}) {
 

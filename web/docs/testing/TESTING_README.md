@@ -31,7 +31,7 @@
 ### Run All Tests
 
 ```bash
-# 1. Functional tests (1,690+ tests, ~115s)
+# 1. Functional tests (2,195+ tests, ~115s)
 npm test
 
 # 2. Performance benchmarks (12 tests, ~20s)
@@ -51,7 +51,7 @@ npm start
 **Available test suites:**
 - ⚡ Performance Benchmarks (this page)
 - 🔗 Integration Tests (E2E)
-- 45 module-specific test suites
+- 85 automated test modules (see [PROJECT_STATS.md](../PROJECT_STATS.md))
 
 ---
 
@@ -64,12 +64,12 @@ tests/
 ├── automated/
 │   ├── run-browser-tests.js         # Main test runner (Playwright)
 │   └── run-performance-benchmarks.js # Performance runner
-├── *.tests.js                        # 45 test modules
+├── *.tests.js                        # 113 test files
 ├── module-test-suite.html            # Browser test UI
 └── integration.tests.js              # E2E tests
 ```
 
-### Test Modules (50 Total)
+### Test Modules (85 Automated, 113 Total Files)
 
 | Category | Modules | Tests |
 |----------|---------|-------|
@@ -206,7 +206,7 @@ npm run lighthouse  # Terminal 2
 **Runs:**
 - Installs dependencies
 - Starts dev server
-- Runs 1610+ automated tests
+- Runs 2,195+ automated tests
 - Tests on Node.js 18.x and 20.x
 
 **Status:**
@@ -316,7 +316,7 @@ npm run lighthouse  # Terminal 2
 ✅ basicPluginSystem    42/42 tests
 ✅ accessibility        41/41 tests
 
-🎉 All tests passed! (1,690+ - 100%)
+🎉 All tests passed! (2,195+ - 100%)
 ```
 
 ### Performance Benchmark Results
@@ -580,7 +580,7 @@ web/
 │   ├── automated/
 │   │   ├── run-browser-tests.js         # Main test runner
 │   │   └── run-performance-benchmarks.js # Performance runner
-│   ├── *.tests.js                        # 45 test modules
+│   ├── *.tests.js                        # 113 test files
 │   ├── performance.benchmark.js          # Performance suite
 │   ├── module-test-suite.html            # Browser UI
 │   ├── PERFORMANCE_TESTING.md            # Testing guide
@@ -637,9 +637,9 @@ Before releasing:
 
 ```
 📊 Test Statistics
-├── Functional Tests: 1,690+ (100%) ✅
+├── Functional Tests: 2,195+ (100%) ✅
 ├── Performance Tests: 12/12 (100%) ✅
-├── Module Coverage: 45/45 (100%) ✅
+├── Module Coverage: 107/117 (91%) ✅
 ├── Line Coverage: ~15,000 lines ✅
 └── Platform Coverage: Mac, iPad, iPhone ✅
 

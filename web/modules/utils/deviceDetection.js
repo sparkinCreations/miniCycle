@@ -30,8 +30,16 @@ const di = createDIModule('DeviceDetection', {
     AppMeta: optional(null)
 });
 
+/**
+ * Set dependencies for DeviceDetectionManager (e.g., AppState, appInit)
+ * @param {Object} dependencies - Dependencies to inject
+ * @returns {void}
+ */
 export const setDeviceDetectionDependencies = di.setDependencies;
 
+/**
+ * Detects device type, platform, and capabilities for adaptive UI behavior
+ */
 export class DeviceDetectionManager {
   constructor(dependencies = {}) {
     // Store constructor-provided version (can be overridden by DI-injected AppMeta)

@@ -154,6 +154,10 @@ const BUTTON_CONFIG = [
     }
 ];
 
+/**
+ * Manages the task options customizer modal, allowing users to toggle
+ * which action buttons appear on each task item.
+ */
 export class TaskOptionsCustomizer {
     constructor() {
         this._refreshTimeout = null;

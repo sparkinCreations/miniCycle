@@ -46,11 +46,16 @@ const _deps = new Proxy({}, {
 /**
  * Set dependencies for OnboardingManager (call before initOnboardingManager)
  * @param {Object} dependencies - { AppState, showNotification, showCycleCreationModal, completeInitialSetup, safeAddEventListenerById }
+ * @returns {void}
  */
 export function setOnboardingManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
 }
 
+/**
+ * Manages the guided onboarding tour, walking new users through
+ * key features with step-by-step highlight tooltips.
+ */
 export class OnboardingManager {
     constructor(dependencies = {}) {
         // For singleton created at module load time, use getter for late-binding
@@ -142,6 +147,7 @@ export class OnboardingManager {
      * @param {Object} cycles - Available cycles
      * @param {string} activeCycle - Currently active cycle name
      * @param {Object} [schemaData] - Optional schema data (avoids AppState race condition on first load)
+     * @returns {void}
      */
     showOnboarding(cycles, activeCycle, schemaData = null) {
 
@@ -224,7 +230,7 @@ export class OnboardingManager {
     }
 
     /**
-     * Create onboarding modal DOM structure
+     * Create onboarding modal DOM structure.
      * @param {string} theme - Current theme name
      * @returns {HTMLElement} Modal element
      */
@@ -260,6 +266,7 @@ export class OnboardingManager {
      * @param {Array<string>} steps - Step content HTML strings
      * @param {Object} cycles - Available cycles
      * @param {string} activeCycle - Currently active cycle name
+     * @returns {void}
      */
     setupModalControls(modal, steps, cycles, activeCycle) {
         const stepContent = document.getElementById(DOM_IDS.ONBOARDING_STEP_CONTENT);
@@ -349,7 +356,7 @@ export class OnboardingManager {
      * Start the interactive cycle demo, replacing the SVG animation.
      * Users tap checkboxes to complete tasks, triggering a cycle reset.
      * @param {HTMLElement} container - The step content container
-     * @returns {Function} Cleanup function to remove listeners and timers
+     * @returns {Function} Cleanup function to remove listeners and timers.
      */
     _startInteractiveDemo(container) {
         const taskNames = [
@@ -496,6 +503,7 @@ export class OnboardingManager {
      * @param {HTMLElement} modal - Modal element to remove
      * @param {Object} cycles - Available cycles
      * @param {string} activeCycle - Currently active cycle name
+     * @returns {void}
      */
     completeOnboarding(modal, cycles, activeCycle) {
 
@@ -635,8 +643,8 @@ const onboardingManager = new OnboardingManager();
 
 /**
  * Initialize OnboardingManager (called by moduleLoader)
- * @param {Object} dependencies - Injected dependencies
- * @returns {OnboardingManager} The singleton instance
+ * @param {Object} [dependencies={}] - Injected dependencies
+ * @returns {Promise<OnboardingManager>} The singleton instance
  */
 export async function initOnboardingManager(dependencies = {}) {
     // Set dependencies

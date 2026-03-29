@@ -301,13 +301,28 @@ export const utils = () => getApi('utils');
 // GROUPED API GETTERS (Alternative naming for existing code)
 // ============================================================================
 
+/** @returns {StateApi} State API containing AppState, data loading, and save functions. */
 export function getStateApi() { return getApi('state'); }
+
+/** @returns {TaskApi} Task API for CRUD operations, DOM creation, and refresh. */
 export function getTaskApi() { return getApi('task'); }
+
+/** @returns {CycleApi} Cycle API for loading, switching, renaming, and deleting routines. */
 export function getCycleApi() { return getApi('cycle'); }
+
+/** @returns {UiApi} UI API for notifications, confirmation modals, and menu control. */
 export function getUiApi() { return getApi('ui'); }
+
+/** @returns {UndoApi} Undo API for state snapshots, undo, redo, and button updates. */
 export function getUndoApi() { return getApi('undo'); }
+
+/** @returns {ReminderApi} Reminder API for starting, stopping, and configuring reminders. */
 export function getReminderApi() { return getApi('reminder'); }
+
+/** @returns {RecurringApi} Recurring API for panel and core recurring task functionality. */
 export function getRecurringApi() { return getApi('recurring'); }
+
+/** @returns {UtilsApi} Utils API for global utilities, validation, and input sanitization. */
 export function getUtilsApi() { return getApi('utils'); }
 
 // ============================================================================
@@ -424,6 +439,9 @@ export function createLazyDeps() {
     };
 }
 
-// Version constant for cache validation (derives from Single Source of Truth)
+/**
+ * Version constant for cache validation, derived from the single source of truth in version.js.
+ * @type {string}
+ */
 export const APPCONTEXT_VERSION = globalThis.APP_VERSION;
 

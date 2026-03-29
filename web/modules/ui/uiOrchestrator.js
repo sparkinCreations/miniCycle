@@ -509,7 +509,10 @@ export function flushUIUpdates() {
     orchestrator?.flush();
 }
 
-// Convenience functions for common operations
+/**
+ * Convenience object exposing common UI update operations
+ * (fullRender, patchTasks, removeTasks, afterTaskChange).
+ */
 export const ui = {
     /**
      * Request a full task list re-render

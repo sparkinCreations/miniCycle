@@ -42,6 +42,9 @@ export function setPullToRefreshDependencies(dependencies) {
     di.setDependencies(dependencies);
 }
 
+/**
+ * Provides mobile-style pull-to-refresh gesture support for reloading task data.
+ */
 export class PullToRefresh {
     constructor(options = {}) {
         // Configuration

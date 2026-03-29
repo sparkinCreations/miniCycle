@@ -55,6 +55,7 @@ const Deps = new Proxy({}, {
 /**
  * Configure dependencies for the watcher module
  * @param {Object} overrides - Dependency overrides
+ * @returns {void}
  */
 export function setRecurringWatcherDependencies(overrides = {}) {
     di.setDependencies(overrides);
@@ -106,6 +107,7 @@ function checkTaskLimit(currentTaskCount, tasksToAdd) {
  * Show notification about blocked recurring tasks due to limit
  * Only shows once per session to avoid spam
  * @param {number} blockedCount - Number of tasks blocked
+ * @returns {void}
  */
 function showTaskLimitNotification(blockedCount) {
     if (_taskLimitNotificationShown) return;
@@ -133,6 +135,7 @@ function resetTaskLimitNotification() {
 /**
  * Switch the watcher interval (active 30s vs idle 2h)
  * @param {boolean} hasTemplates - Whether recurring templates exist
+ * @returns {void}
  */
 function switchInterval(hasTemplates) {
     const targetInterval = hasTemplates
@@ -533,6 +536,7 @@ export async function watchRecurringTasks() {
 /**
  * Show notification for templates that just reached their count limit
  * @param {Object} templateUpdates - Map of templateId → updated template
+ * @returns {void}
  */
 function notifyExhaustedTemplates(templateUpdates) {
     Object.values(templateUpdates).forEach(updated => {

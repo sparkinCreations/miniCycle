@@ -382,12 +382,20 @@ const di = createDIModule('VocabThemeManager', {
     AppState: optional(null)
 });
 
+/**
+ * Set dependencies for the VocabThemeManager (e.g., AppState)
+ * @param {Object} dependencies - Dependencies to inject
+ * @returns {void}
+ */
 export const setVocabThemeManagerDependencies = di.setDependencies;
 
 // ============================================================================
 // THEME MANAGER
 // ============================================================================
 
+/**
+ * Manages vocabulary theme resolution, unlocking, and per-routine theme application
+ */
 export class VocabThemeManager {
 
     get deps() {
@@ -681,6 +689,7 @@ export class VocabThemeManager {
 // SINGLETON + LABELRESOLVER WIRING
 // ============================================================================
 
+/** @type {VocabThemeManager} Singleton instance for vocabulary theme management */
 export const vocabThemeManager = new VocabThemeManager();
 
 /**

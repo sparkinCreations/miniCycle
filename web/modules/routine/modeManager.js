@@ -52,6 +52,9 @@ export function setModeManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
 }
 
+/**
+ * Manages app mode switching (cycle/todo) and mode-specific UI behavior
+ */
 export class ModeManager {
     constructor(dependencies = {}) {
 

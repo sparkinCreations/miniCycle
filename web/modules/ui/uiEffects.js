@@ -31,6 +31,7 @@ const di = createDIModule('UIEffects', {
 /**
  * Set dependencies for UIEffects module
  * @param {UIEffectsDeps} dependencies - Injected dependencies
+ * @returns {void}
  */
 export const setUIEffectsDependencies = (dependencies) => di.setDependencies(dependencies);
 
@@ -44,6 +45,7 @@ export const setUIEffectsDependencies = (dependencies) => di.setDependencies(dep
  *
  * @param {string} [color='green'] - The temporary background color for the logo (used as fallback).
  * @param {number} [duration=300] - The duration (in milliseconds) before resetting the background.
+ * @returns {void}
  */
 export function triggerLogoBackground(color = 'green', duration = 300) {
     const deps = di.resolve();
@@ -86,6 +88,7 @@ export function triggerLogoBackground(color = 'green', duration = 300) {
  * A blue rectangle sweeps from top to bottom of the logo.
  *
  * @param {number} [duration=400] - The duration (in milliseconds) of the scan animation.
+ * @returns {void}
  */
 export function triggerLogoScan(duration = 400) {
     const deps = di.resolve();

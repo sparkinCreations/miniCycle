@@ -66,6 +66,11 @@ const di = createDIModule('StorageUtils', {
     AppState: optional(null)
 });
 
+/**
+ * Set dependencies for StorageUtils (e.g., AppState for quota caching)
+ * @param {Object} dependencies - Dependencies to inject
+ * @returns {void}
+ */
 export const setStorageDependencies = di.setDependencies;
 
 // ============================================================================

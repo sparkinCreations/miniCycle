@@ -26,6 +26,11 @@ const di = createDIModule('GesturePanelManager', {
     onShowTaskView: optional(null)
 });
 
+/**
+ * Inject dependencies for the gesture panel manager module.
+ * @param {Object} deps - Dependencies including AppState, getElementById, etc.
+ * @returns {void}
+ */
 export const setGesturePanelManagerDependencies = di.setDependencies;
 
 // ============================================================================
@@ -423,6 +428,7 @@ export class GesturePanelManager {
      * Sync state with external stats visibility
      * Call this when stats panel visibility changes externally
      * @param {boolean} isVisible - Whether stats panel is visible
+     * @returns {void}
      */
     syncStatsVisibility(isVisible) {
         this.state.isStatsVisible = isVisible;
@@ -480,7 +486,7 @@ let instance = null;
 
 /**
  * Initialize the gesture panel manager
- * @param {Object} deps - Dependencies
+ * @param {Object} [deps={}] - Dependencies
  * @returns {GesturePanelManager}
  */
 export function initGesturePanelManager(deps = {}) {

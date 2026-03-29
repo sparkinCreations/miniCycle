@@ -288,6 +288,7 @@ export class ThemeManager {
      * Apply a theme to the document
      * @param {string} themeName - Theme name ('default', 'dark-ocean', 'golden-glow')
      * @param {boolean} shouldSave - Whether to save to storage (false during initial load)
+     * @returns {Promise<void>}
      */
     async applyTheme(themeName, shouldSave = true) {
         try {
@@ -402,6 +403,7 @@ export class ThemeManager {
      * Setup dark mode toggle with syncing across multiple toggles
      * @param {string} toggleId - Primary toggle element ID
      * @param {string[]} allToggleIds - All toggle IDs to sync
+     * @returns {void}
      */
     setupDarkModeToggle(toggleId, allToggleIds = []) {
         try {
@@ -1117,6 +1119,7 @@ function updateThemeColor() {
  * Setup dark mode toggle
  * @param {string} toggleId - Toggle element ID
  * @param {string[]} allToggleIds - All toggles to sync
+ * @returns {void}
  */
 function setupDarkModeToggle(toggleId, allToggleIds = []) {
     return themeManager.setupDarkModeToggle(toggleId, allToggleIds);
@@ -1153,6 +1156,7 @@ function setupThemesPanel() {
 /**
  * Setup themes panel with data
  * @param {object} schemaData - Schema 2.5 data
+ * @returns {void}
  */
 function setupThemesPanelWithData(schemaData) {
     return themeManager.setupThemesPanelWithData(schemaData);

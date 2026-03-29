@@ -241,6 +241,7 @@ const _deps = new Proxy({}, {
 /**
  * Set dependencies for PreferencesManager
  * @param {Object} dependencies - Injected dependencies
+ * @returns {void}
  */
 export function setPreferencesManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -260,6 +261,7 @@ let _presetsModule = null;
 /**
  * Load sub-modules with version cache-busting
  * @param {string} version - Version string for cache-busting
+ * @returns {Promise<void>}
  */
 async function loadPreferencesSubModules(version) {
     if (_bgImageModule) {
@@ -280,6 +282,10 @@ async function loadPreferencesSubModules(version) {
 // PREFERENCES MANAGER CLASS
 // ============================================================================
 
+/**
+ * Manages the visual preferences modal, including color customization,
+ * background image settings, preset management, and vocab theme integration.
+ */
 export class PreferencesManager {
     constructor() {
         this._initialized = false;

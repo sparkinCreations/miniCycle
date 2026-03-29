@@ -100,6 +100,8 @@ export function setCycleCompletionDependencies(dependencies) {
 
 /**
  * Shows a completion animation when a cycle is finished.
+ * Creates a temporary DOM overlay that auto-removes after 1.5s.
+ * @returns {void}
  */
 export function showCompletionAnimation() {
     const deps = di.resolve();
@@ -126,6 +128,8 @@ export function showCompletionAnimation() {
 
 /**
  * Shows a clear animation when tasks are cleared in To-Do mode.
+ * Creates a temporary DOM overlay that auto-removes after 1.5s.
+ * @returns {void}
  */
 export function showClearAnimation() {
     const animation = document.createElement("div");
@@ -153,6 +157,7 @@ export function showClearAnimation() {
  * @param {string} iconKey - Icon key for getIcon() (e.g., 'celebrate', 'milestoneTrail')
  * @param {string} headingKey - Label key for heading text
  * @param {string} subtitleKey - Label key for subtitle text
+ * @returns {void}
  */
 export function showMilestoneCelebrationOverlay(iconKey, headingKey, subtitleKey) {
     const overlay = document.createElement('div');
@@ -293,6 +298,7 @@ function handleMilestoneUnlocks(miniCycleName, globalCyclesCompleted) {
  *
  * @param {string} miniCycleName - Deprecated, kept for backwards compatibility
  * @param {Object} savedMiniCycles - Deprecated, kept for backwards compatibility
+ * @returns {void}
  */
 export function incrementCycleCount(miniCycleName, savedMiniCycles) {
 
@@ -460,6 +466,7 @@ export function animateProgressBarFill() {
 
 /**
  * Animate progress bar to empty (used after reset completes)
+ * @returns {void}
  */
 export function animateProgressBarEmpty() {
     const progressBar = deps.getProgressBar?.();
@@ -479,6 +486,7 @@ export function animateProgressBarEmpty() {
  * Updates the progress bar to reflect current task completion.
  * Animates the width transition smoothly.
  * Counts tasks from both main list AND completed dropdown.
+ * @returns {void}
  */
 export function updateProgressBar() {
     const taskList = deps.getTaskList?.();
@@ -528,6 +536,7 @@ let _showingDueDateModal = false;
  * Checks tasks from both main list AND completed dropdown.
  * @param {Object} [options] - Optional parameters
  * @param {HTMLElement} [options.lastToggledElement] - The task element that was just toggled (for cancel-revert)
+ * @returns {void}
  */
 export function checkMiniCycle(options = {}) {
     const { lastToggledElement } = options;

@@ -101,6 +101,7 @@ const _deps = new Proxy({}, {
  * @param {Function} [dependencies.showConfirmationModal] - Confirmation modal function
  * @param {Function} [dependencies.captureStateSnapshot] - Undo snapshot capture
  * @param {Function} [dependencies.requestUIUpdate] - UI Orchestrator update function
+ * @returns {void}
  */
 export function setTaskCRUDDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -134,6 +135,7 @@ const _warnedMissingDeps = new Set();
  * Warn once about a missing optional dependency
  * @param {string} depName - Dependency name
  * @param {string} context - Where it was needed
+ * @returns {void}
  * @private
  */
 function warnMissingDep(depName, context) {
@@ -148,6 +150,7 @@ function warnMissingDep(depName, context) {
  * @param {Function|null} captureStateSnapshot - The snapshot function
  * @param {Object} state - Current state
  * @param {string} context - Context description for warning
+ * @returns {void}
  * @private
  */
 function safeCaptureSnapshot(captureStateSnapshot, state, context) {
@@ -164,6 +167,7 @@ function safeCaptureSnapshot(captureStateSnapshot, state, context) {
  * @param {Object} config - Modal configuration
  * @param {string} config.message - Confirmation message
  * @param {Function} [config.callback] - Callback with boolean result
+ * @returns {void}
  * @private
  */
 function fallbackConfirmModal(config) {
@@ -503,6 +507,7 @@ export async function editTaskImpl(taskItem, deps = {}) {
  * @param {HTMLElement} taskLabel - The .task-text span
  * @param {string} oldText - Current task name
  * @param {Object} ctx - Context with deps
+ * @returns {void}
  * @private
  */
 function _editTaskModal(taskItem, taskLabel, oldText, ctx) {

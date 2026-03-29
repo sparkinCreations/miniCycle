@@ -18,6 +18,7 @@ import { getLabel } from '../labels/labelResolver.js';
 /**
  * Generate monthly day selection grid (days 1-31)
  * @param {Object} deps - Dependencies (querySelector)
+ * @returns {void}
  */
 export function generateMonthlyDayGrid(deps) {
     const container = deps.querySelector(DOM_SELECTORS.MONTHLY_DAYS);
@@ -44,6 +45,7 @@ export function generateMonthlyDayGrid(deps) {
 /**
  * Generate yearly month selection grid (Jan-Dec)
  * @param {Object} deps - Dependencies (querySelector)
+ * @returns {void}
  */
 export function generateYearlyMonthGrid(deps) {
     const container = deps.querySelector(DOM_SELECTORS.YEARLY_MONTHS);
@@ -76,6 +78,7 @@ export function generateYearlyMonthGrid(deps) {
  * @param {Object} deps - Dependencies (querySelector, getElementById)
  * @param {Object} state - Panel state containing selectedYearlyDays
  * @param {number} monthNumber - Month number (1-12)
+ * @returns {void}
  */
 export function generateYearlyDayGrid(deps, state, monthNumber) {
     const container = deps.querySelector(DOM_SELECTORS.YEARLY_DAYS);

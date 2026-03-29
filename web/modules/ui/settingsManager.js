@@ -67,8 +67,9 @@ const _deps = new Proxy({}, {
 });
 
 /**
- * Set dependencies for SettingsManager and all sub-modules
+ * Set dependencies for SettingsManager and all sub-modules.
  * @param {Object} dependencies - All required dependencies
+ * @returns {void}
  */
 export function setSettingsManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -255,7 +256,14 @@ function wireSubModuleDependencies(dependencies) {
 // SETTINGS MANAGER CLASS (Facade)
 // ============================================================================
 
+/**
+ * Facade class that orchestrates settings sub-modules for UI controls, import/export, and backup/restore.
+ */
 export class SettingsManager {
+    /**
+     * Create a SettingsManager instance.
+     * @param {Object} [dependencies={}] - Initial dependencies (typically AppMeta for version)
+     */
     constructor(dependencies = {}) {
         // Instance version - uses injected AppMeta (no hardcoded fallback)
         this.version = dependencies.AppMeta?.version || _deps.AppMeta?.version;
@@ -263,7 +271,8 @@ export class SettingsManager {
     }
 
     /**
-     * Initialize settings manager and all sub-modules
+     * Initialize settings manager and all sub-modules.
+     * @returns {Promise<void>}
      */
     async init() {
         if (this.initialized) return;
@@ -300,35 +309,69 @@ export class SettingsManager {
         }
     }
 
-    // Delegate to sub-modules for backwards compatibility
+    /**
+     * Neutralize AppState to prevent saves during destructive operations.
+     * @returns {void}
+     */
     neutralizeAppState() {
         _subModules?.neutralizeAppState?.();
     }
 
+    /**
+     * Initialize the settings menu UI and event listeners.
+     * @returns {void}
+     */
     setupSettingsMenu() {
         _subModules?.setupSettingsMenu?.();
     }
 
+    /**
+     * Set up the export/download button for cycle data.
+     * @returns {void}
+     */
     setupDownloadMiniCycle() {
         _subModules?.setupExportButton?.();
     }
 
+    /**
+     * Set up the import/upload buttons for cycle data.
+     * @returns {void}
+     */
     setupUploadMiniCycle() {
         _subModules?.setupImportButtons?.();
     }
 
+    /**
+     * Sync current in-memory settings to persistent storage.
+     * @returns {Promise<void>}
+     */
     async syncCurrentSettingsToStorage() {
         await _subModules?.syncCurrentSettingsToStorage?.();
     }
 
+    /**
+     * Export cycle data as a downloadable JSON file.
+     * @param {Object} data - The cycle data to export
+     * @param {string} name - The filename for the exported file
+     * @returns {void}
+     */
     exportMiniCycleData(data, name) {
         _subModules?.exportMiniCycleData?.(data, name);
     }
 
+    /**
+     * Sanitize imported backup data to prevent XSS and invalid content.
+     * @param {Object} backupData - The parsed backup data object to sanitize
+     * @returns {Object} Sanitized backup data
+     */
     sanitizeImportedData(backupData) {
         return _subModules?.sanitizeImportedData?.(backupData);
     }
 
+    /**
+     * Reset recurring task settings to factory defaults.
+     * @returns {Promise<void>}
+     */
     async resetDefaultRecurringSettings() {
 
         const defaultSettings = {
@@ -373,35 +416,176 @@ export async function initSettingsManager(dependencies) {
 // RE-EXPORTS (async getters for sub-module functions)
 // ============================================================================
 
-// These are async because sub-modules are loaded dynamically
+/**
+ * Load and return all dynamically-imported sub-modules.
+ * @param {string} [version] - Version string for cache busting; defaults to AppMeta version
+ * @returns {Promise<Object>} Object containing all sub-module functions
+ */
 export async function getSubModules(version) {
     return await loadSubModules(version || _deps.AppMeta?.version);
 }
 
 // Synchronous getters (only work after init)
+
+/**
+ * Initialize the settings menu UI and event listeners.
+ * @returns {void}
+ */
 export function setupSettingsMenu() { _subModules?.setupSettingsMenu?.(); }
+
+/**
+ * Initialize the dark mode toggle in settings.
+ * @returns {void}
+ */
 export function setupDarkModeToggle() { _subModules?.setupDarkModeToggle?.(); }
+
+/**
+ * Initialize the move arrows visibility toggle in settings.
+ * @returns {void}
+ */
 export function setupMoveArrowsToggle() { _subModules?.setupMoveArrowsToggle?.(); }
+
+/**
+ * Initialize the three-dots task options toggle in settings.
+ * @returns {void}
+ */
 export function setupThreeDotsToggle() { _subModules?.setupThreeDotsToggle?.(); }
+
+/**
+ * Initialize the completed tasks dropdown toggle in settings.
+ * @returns {void}
+ */
 export function setupCompletedDropdownToggle() { _subModules?.setupCompletedDropdownToggle?.(); }
+
+/**
+ * Initialize the scroll-to-new-task toggle in settings.
+ * @returns {void}
+ */
 export function setupScrollToNewTaskToggle() { _subModules?.setupScrollToNewTaskToggle?.(); }
+
+/**
+ * Initialize the scroll-on-load toggle in settings.
+ * @returns {void}
+ */
 export function setupScrollOnLoadToggle() { _subModules?.setupScrollOnLoadToggle?.(); }
+
+/**
+ * Initialize the debug mode toggle in settings.
+ * @returns {void}
+ */
 export function setupDebugModeToggle() { _subModules?.setupDebugModeToggle?.(); }
+
+/**
+ * Initialize the reset recurring settings button in settings.
+ * @returns {void}
+ */
 export function setupResetRecurringButton() { _subModules?.setupResetRecurringButton?.(); }
+
+/**
+ * Initialize the reset achievement progress button in settings.
+ * @returns {void}
+ */
 export function setupResetAchievementProgressButton() { _subModules?.setupResetAchievementProgressButton?.(); }
+
+/**
+ * Initialize the clear undo history button in settings.
+ * @returns {void}
+ */
 export function setupClearUndoHistoryButton() { _subModules?.setupClearUndoHistoryButton?.(); }
+
+/**
+ * Sync current in-memory settings to persistent storage.
+ * @returns {void}
+ */
 export function syncCurrentSettingsToStorage() { return _subModules?.syncCurrentSettingsToStorage?.(); }
+
+/**
+ * Initialize all settings toggle controls in a single batch.
+ * @returns {void}
+ */
 export function initAllToggles() { _subModules?.initAllToggles?.(); }
+
+/**
+ * Initialize the export button for downloading cycle data.
+ * @returns {void}
+ */
 export function setupExportButton() { _subModules?.setupExportButton?.(); }
+
+/**
+ * Export cycle data as a downloadable JSON file.
+ * @param {Object} data - The cycle data to export
+ * @param {string} name - The filename for the exported file
+ * @returns {void}
+ */
 export function exportMiniCycleData(data, name) { _subModules?.exportMiniCycleData?.(data, name); }
+
+/**
+ * Initialize the import buttons for uploading cycle data.
+ * @returns {void}
+ */
 export function setupImportButtons() { _subModules?.setupImportButtons?.(); }
+
+/**
+ * Initialize the backup button for creating data backups.
+ * @returns {void}
+ */
 export function setupBackupButton() { _subModules?.setupBackupButton?.(); }
+
+/**
+ * Initialize the restore button for loading data backups.
+ * @returns {void}
+ */
 export function setupRestoreButton() { _subModules?.setupRestoreButton?.(); }
+
+/**
+ * Initialize the factory reset button in settings.
+ * @returns {void}
+ */
 export function setupFactoryResetButton() { _subModules?.setupFactoryResetButton?.(); }
+
+/**
+ * Neutralize AppState to prevent saves during destructive operations.
+ * @returns {void}
+ */
 export function neutralizeAppState() { _subModules?.neutralizeAppState?.(); }
+
+/**
+ * Download a backup file of the current app data.
+ * @param {Object} [options] - Backup options
+ * @param {boolean} [options.skipNamePrompt=false] - Skip the name prompt dialog
+ * @returns {boolean} True if backup was initiated, false on error
+ */
 export function downloadBackupFile(options) { return _subModules?.downloadBackupFile?.(options); }
+
+/**
+ * Sanitize imported backup data to prevent XSS and invalid content.
+ * @param {Object} data - The parsed backup data object to sanitize
+ * @returns {Object} Sanitized backup data
+ */
 export function sanitizeImportedData(data) { return _subModules?.sanitizeImportedData?.(data); }
+
+/**
+ * Sanitize a text string by escaping dangerous characters and enforcing max length.
+ * @param {string} text - The text to sanitize
+ * @param {number} [maxLen=500] - Maximum allowed length
+ * @returns {string} Sanitized text
+ */
 export function sanitizeText(text, maxLen) { return _subModules?.sanitizeText?.(text, maxLen); }
+
+/**
+ * Reset sub-module initialization state for testing purposes.
+ * @returns {void}
+ */
 export function _resetForTesting() { _subModules?._resetForTesting?.(); }
+
+/**
+ * Initialize the share routine button for sharing routines via Web Share API.
+ * @returns {void}
+ */
 export function setupShareRoutineButton() { _subModules?.setupShareRoutineButton?.(); }
+
+/**
+ * Initialize the share app button for sharing the app link via Web Share API.
+ * @returns {void}
+ */
 export function setupShareAppButton() { _subModules?.setupShareAppButton?.(); }

@@ -103,6 +103,7 @@ const _deps = new Proxy({}, {
 /**
  * Set dependencies for TaskCycleReset
  * @param {Object} dependencies - Dependencies to inject
+ * @returns {void}
  */
 export function setTaskCycleResetDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -119,6 +120,7 @@ const activeTimeouts = new Set();
 /**
  * Track a timeout for later cleanup
  * @param {number} timeoutId - The timeout ID returned by setTimeout
+ * @returns {number}
  */
 function trackTimeout(timeoutId) {
     activeTimeouts.add(timeoutId);
@@ -149,7 +151,7 @@ export function isResetInProgress() {
 /**
  * Helper to resolve getter functions for late-initialized dependencies.
  * @param {*} dep - The dependency (may be a getter function or direct value)
- * @returns {*} The resolved value
+ * @returns {*} The resolved value.
  */
 function resolveGetter(dep) {
     if (typeof dep === 'function' && dep.length === 0) {
@@ -209,7 +211,7 @@ function fallbackConfirmModal(config) {
 // ============================================================================
 
 /**
- * Get context needed for reset operation
+ * Get context needed for reset operation.
  * @param {Object} deps - Resolved dependencies
  * @returns {Object|null} Reset context or null if invalid
  */
@@ -251,7 +253,7 @@ function getResetContext(deps) {
 }
 
 /**
- * Perform the core data reset logic
+ * Perform the core data reset logic.
  * @param {Object} context - Reset context from getResetContext
  * @param {Object} deps - Resolved dependencies
  * @returns {Object} Result with tasksDeleted count
@@ -412,6 +414,7 @@ function resetTasksData(context, deps) {
  * Move completed tasks back to active list and restore original order
  * @param {Object} context - Reset context
  * @param {Object} deps - Resolved dependencies
+ * @returns {void}
  */
 function moveCompletedTasksBack(context, deps) {
     const { taskList, completedTaskList, activeCycle } = context;
@@ -464,6 +467,7 @@ function moveCompletedTasksBack(context, deps) {
 /**
  * Reset all tasks (cycle completion)
  * @param {Object} deps - Resolved dependencies
+ * @returns {Promise<void>}
  */
 export async function resetTasksImpl(deps = {}) {
     try {
@@ -770,6 +774,7 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
  * @param {HTMLElement} taskList - The task list DOM element
  * @param {Function} resetTasksFn - The resetTasks function to call
  * @param {Object} deps - Resolved dependencies
+ * @returns {void}
  */
 export function markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps = {}) {
     if (isResetting) {
@@ -793,7 +798,7 @@ export function markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps
 /**
  * Get context for complete all operation.
  * @param {Object} deps - Resolved dependencies
- * @returns {Object|null} { activeCycle, cycleData, taskList } or null if invalid
+ * @returns {Object|null} { activeCycle, cycleData, taskList } or null if invalid.
  */
 function getCompleteAllContext(deps) {
     const querySelector = deps.querySelector || _deps.querySelector || ((sel) => document.querySelector(sel));
@@ -822,6 +827,7 @@ function getCompleteAllContext(deps) {
  * Complete all tasks at once
  * @param {Function} resetTasksFn - The resetTasks function to call when needed
  * @param {Object} deps - Resolved dependencies
+ * @returns {Promise<void>}
  */
 export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
     try {
@@ -900,6 +906,7 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
  * @param {HTMLElement} taskList - Task list element
  * @param {Function} resetTasksFn - The resetTasks function to call
  * @param {Object} deps - Resolved dependencies
+ * @returns {Promise<void>}
  */
 async function executeCompleteAll(activeCycle, cycleData, taskList, resetTasksFn, deps) {
     if (cycleData.deleteCheckedTasks) {

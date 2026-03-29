@@ -311,6 +311,9 @@ function getEscapeHtml(deps) {
 // Store instance reference for late dep updates
 let _notificationsInstance = null;
 
+/**
+ * Manages in-app toast notifications, educational tips, and notification queuing
+ */
 export class MiniCycleNotifications {
   constructor(dependencies = {}) {
     // Store constructor-provided deps separately

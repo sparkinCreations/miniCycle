@@ -23,12 +23,19 @@ export const setBasicPluginSystemDependencies = di.setDependencies;
 
 /**
  * Simple Event Bus for Plugin Communication
+ * Provides publish/subscribe messaging between plugins and the main app.
  */
 class EventBus {
     constructor() {
+        /** @type {Map<string, Function[]>} */
         this.listeners = new Map();
     }
 
+    /**
+     * Subscribe to an event
+     * @param {string} event - Event name to listen for
+     * @param {Function} callback - Handler called when event fires
+     */
     on(event, callback) {
         if (!this.listeners.has(event)) {
             this.listeners.set(event, []);
@@ -36,6 +43,11 @@ class EventBus {
         this.listeners.get(event).push(callback);
     }
 
+    /**
+     * Emit an event to all subscribers
+     * @param {string} event - Event name to emit
+     * @param {*} data - Data to pass to handlers
+     */
     emit(event, data) {
         if (this.listeners.has(event)) {
             this.listeners.get(event).forEach(callback => {
@@ -48,6 +60,11 @@ class EventBus {
         }
     }
 
+    /**
+     * Unsubscribe from an event
+     * @param {string} event - Event name
+     * @param {Function} callback - Handler to remove
+     */
     off(event, callback) {
         if (this.listeners.has(event)) {
             const callbacks = this.listeners.get(event);
@@ -102,23 +119,58 @@ class MiniCyclePlugin {
         }
     }
 
-    // Lifecycle methods (override in your plugins)
+    /**
+     * Called when the plugin is enabled. Override in subclasses.
+     * Automatically waits for core systems before proceeding.
+     * @returns {Promise<void>}
+     */
     async onLoad() {
         // ✅ Automatically wait for core systems before plugin loads
         await this.waitForCore();
     }
 
+    /**
+     * Called when the plugin is disabled. Override in subclasses.
+     * @returns {Promise<void>}
+     */
     async onUnload() {
     }
 
-    // Event hooks (override in your plugins)
+    /**
+     * Called when a task is added. Override in subclasses.
+     * @param {Object} task - The added task object
+     */
     onTaskAdded(task) {}
+
+    /**
+     * Called when a task is completed. Override in subclasses.
+     * @param {Object} task - The completed task object
+     */
     onTaskCompleted(task) {}
+
+    /**
+     * Called when a task is deleted. Override in subclasses.
+     * @param {Object} task - The deleted task object
+     */
     onTaskDeleted(task) {}
+
+    /**
+     * Called when a cycle is completed. Override in subclasses.
+     * @param {Object} cycle - The completed cycle data
+     */
     onCycleCompleted(cycle) {}
+
+    /**
+     * Called when a cycle is reset. Override in subclasses.
+     * @param {Object} cycle - The reset cycle data
+     */
     onCycleReset(cycle) {}
 
-    // Helper methods for plugins (DI-pure)
+    /**
+     * Show a notification to the user
+     * @param {string} message - Notification message
+     * @param {string} [type='info'] - Notification type ('info', 'success', 'error', 'warning')
+     */
     addNotification(message, type = 'info') {
         if (this.deps.showNotification) {
             this.deps.showNotification(message, type);
@@ -126,6 +178,10 @@ class MiniCyclePlugin {
         }
     }
 
+    /**
+     * Get the current task list for the active routine
+     * @returns {Object[]} Array of task objects
+     */
     getCurrentTasks() {
         if (typeof this.deps.getTaskList === 'function') {
             return this.deps.getTaskList();
@@ -139,6 +195,10 @@ class MiniCyclePlugin {
         return [];
     }
 
+    /**
+     * Get the current active cycle/routine data
+     * @returns {Object|null} Cycle data object or null
+     */
     getCurrentCycle() {
         if (typeof this.deps.getCurrentCycle === 'function') {
             return this.deps.getCurrentCycle();
@@ -154,18 +214,25 @@ class MiniCyclePlugin {
 }
 
 /**
- * Plugin Manager
+ * Plugin Manager — registers, enables, disables, and coordinates plugins.
+ * Manages lifecycle and event hook dispatch for all registered plugins.
  */
 class PluginManager {
     constructor() {
+        /** @type {Map<string, MiniCyclePlugin>} */
         this.plugins = new Map();
+        /** @type {EventBus} */
         this.eventBus = new EventBus();
+        /** @type {Map<string, Array<{plugin: string, method: Function}>>} */
         this.hooks = new Map();
-        
-        // Initialize built-in event hooks
+
         this.initEventHooks();
     }
 
+    /**
+     * Initialize built-in event hook channels
+     * @private
+     */
     initEventHooks() {
         // These events will be triggered by the main app
         this.hooks.set('taskAdded', []);
@@ -175,6 +242,12 @@ class PluginManager {
         this.hooks.set('cycleReset', []);
     }
 
+    /**
+     * Register a plugin (does not enable it)
+     * @param {MiniCyclePlugin} plugin - Plugin instance to register
+     * @returns {Promise<boolean>} True if registered, false if already exists
+     * @throws {Error} If plugin does not extend MiniCyclePlugin
+     */
     async register(plugin) {
         if (!(plugin instanceof MiniCyclePlugin)) {
             throw new Error('Plugin must extend MiniCyclePlugin class');
@@ -189,6 +262,11 @@ class PluginManager {
         return true;
     }
 
+    /**
+     * Enable a registered plugin — calls onLoad() and registers hooks
+     * @param {string} pluginName - Name of the plugin to enable
+     * @returns {Promise<boolean>} True if enabled successfully
+     */
     async enable(pluginName) {
         const plugin = this.plugins.get(pluginName);
         if (!plugin) {
@@ -216,6 +294,11 @@ class PluginManager {
         }
     }
 
+    /**
+     * Disable an enabled plugin — calls onUnload() and unregisters hooks
+     * @param {string} pluginName - Name of the plugin to disable
+     * @returns {Promise<boolean>} True if disabled successfully
+     */
     async disable(pluginName) {
         const plugin = this.plugins.get(pluginName);
         if (!plugin || !plugin.enabled) {
@@ -236,6 +319,11 @@ class PluginManager {
         }
     }
 
+    /**
+     * Register a plugin's lifecycle hooks into the hook dispatch map
+     * @param {MiniCyclePlugin} plugin - Plugin whose hooks to register
+     * @private
+     */
     registerPluginHooks(plugin) {
         // Register all hook methods from the plugin
         const hookMethods = ['onTaskAdded', 'onTaskCompleted', 'onTaskDeleted', 'onCycleCompleted', 'onCycleReset'];
@@ -253,13 +341,22 @@ class PluginManager {
         });
     }
 
+    /**
+     * Remove a plugin's hooks from the dispatch map
+     * @param {MiniCyclePlugin} plugin - Plugin whose hooks to remove
+     * @private
+     */
     unregisterPluginHooks(plugin) {
         this.hooks.forEach((hooks, eventName) => {
             this.hooks.set(eventName, hooks.filter(hook => hook.plugin !== plugin.name));
         });
     }
 
-    // Trigger plugin hooks from main app
+    /**
+     * Trigger all plugin hooks for a given event
+     * @param {string} eventName - Event name (e.g., 'taskAdded', 'cycleCompleted')
+     * @param {*} data - Event data passed to each hook handler
+     */
     triggerHook(eventName, data) {
         if (this.hooks.has(eventName)) {
             this.hooks.get(eventName).forEach(hook => {
@@ -272,7 +369,10 @@ class PluginManager {
         }
     }
 
-    // Get plugin status
+    /**
+     * Get status of all registered plugins
+     * @returns {Object<string, {version: string, enabled: boolean, initialized: boolean}>}
+     */
     getPluginStatus() {
         const status = {};
         this.plugins.forEach((plugin, name) => {
@@ -285,7 +385,10 @@ class PluginManager {
         return status;
     }
 
-    // Enable/disable all plugins
+    /**
+     * Enable all registered plugins
+     * @returns {Promise<boolean[]>} Array of enable results
+     */
     async enableAll() {
         const results = [];
         for (const [name, plugin] of this.plugins) {
@@ -296,6 +399,10 @@ class PluginManager {
         return results;
     }
 
+    /**
+     * Disable all enabled plugins
+     * @returns {Promise<boolean[]>} Array of disable results
+     */
     async disableAll() {
         const results = [];
         for (const [name, plugin] of this.plugins) {

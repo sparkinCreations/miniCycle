@@ -126,34 +126,67 @@ export const MigrationFacade = {
 };
 
 // Also export individual functions for those who prefer direct imports
+
+/**
+ * Create an initial Schema 2.5 data structure for a fresh install.
+ * @returns {Object} Empty Schema 2.5 data object.
+ */
 export function createInitialSchema25Data() {
     return MigrationFacade.createInitialData();
 }
 
+/**
+ * Check whether a migration to Schema 2.5 is needed.
+ * @returns {boolean} True if migration is required.
+ */
 export function checkMigrationNeeded() {
     return MigrationFacade.checkNeeded();
 }
 
+/**
+ * Simulate the Schema 2.5 migration without applying changes.
+ * @returns {Object} Simulation result with projected changes.
+ */
 export function simulateMigrationToSchema25() {
     return MigrationFacade.simulate();
 }
 
+/**
+ * Perform the Schema 2.5 migration, transforming stored data in place.
+ * @returns {Object} Migration result with status and details.
+ */
 export function performSchema25Migration() {
     return MigrationFacade.performMigration();
 }
 
+/**
+ * Validate all miniCycle tasks using lenient rules.
+ * @returns {Object} Validation result with any issues found.
+ */
 export function validateAllMiniCycleTasksLenient() {
     return MigrationFacade.validateTasks();
 }
 
+/**
+ * Fix task validation issues found by the lenient validator.
+ * @returns {Object} Fix result with details of corrections applied.
+ */
 export function fixTaskValidationIssues() {
     return MigrationFacade.fixIssues();
 }
 
+/**
+ * Initialize the app with automatic migration if needed.
+ * @returns {Object} Initialization result with migration status.
+ */
 export function initAppWithAutoMigration() {
     return MigrationFacade.initWithAutoMigration();
 }
 
+/**
+ * Force a migration even if one is not detected as needed.
+ * @returns {Object} Migration result with status and details.
+ */
 export function forceAppMigration() {
     return MigrationFacade.forceMigration();
 }

@@ -62,6 +62,7 @@ export class HistoryManager {
      * Log a history event to the current routine
      * @param {string} type - Event type: 'cycle_completed', 'tasks_cleared', 'cycle_reset', 'achievement_unlocked'
      * @param {Object} details - Event-specific details
+     * @returns {void}
      */
     logEvent(type, details = {}) {
         const state = this.deps.AppState.get();
@@ -154,6 +155,7 @@ export class HistoryManager {
     /**
      * Clear all history for a routine
      * @param {string} [cycleId] - Cycle ID (defaults to active)
+     * @returns {void}
      */
     clearHistory(cycleId = null) {
         const state = this.deps.AppState.get();
@@ -243,6 +245,7 @@ export class HistoryManager {
     /**
      * Open the history modal
      * @param {string} [initialTab='events'] - Initial tab to show ('events' or 'cleared')
+     * @returns {void}
      */
     openModal(initialTab = 'events') {
         if (this.modalOverlay) {

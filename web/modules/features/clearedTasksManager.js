@@ -58,6 +58,7 @@ export class ClearedTasksManager {
     /**
      * Record a cleared task
      * @param {Object} task - Task object being cleared
+     * @returns {void}
      */
     recordClearedTask(task) {
         if (!task || !task.text) {
@@ -125,6 +126,7 @@ export class ClearedTasksManager {
     /**
      * Record multiple cleared tasks at once
      * @param {Array} tasks - Array of task objects
+     * @returns {void}
      */
     recordMultipleClearedTasks(tasks) {
         if (!tasks || tasks.length === 0) return;
@@ -200,6 +202,7 @@ export class ClearedTasksManager {
     /**
      * Clear all cleared task records for a routine
      * @param {string} [cycleId] - Cycle ID (defaults to active)
+     * @returns {void}
      */
     clearAll(cycleId = null) {
         const state = this.deps.AppState.get();
@@ -227,6 +230,7 @@ export class ClearedTasksManager {
      * Remove a specific entry by ID
      * @param {string} entryId - Entry ID to remove
      * @param {string} [cycleId] - Cycle ID (defaults to active)
+     * @returns {void}
      */
     removeEntry(entryId, cycleId = null) {
         const state = this.deps.AppState.get();

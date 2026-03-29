@@ -24,6 +24,11 @@ const di = createDIModule('ModalRegistry', {
     querySelector: optional((sel) => document.querySelector(sel))
 });
 
+/**
+ * Inject dependencies for the modal registry module.
+ * @param {Object} deps - Dependencies including getElementById and querySelector
+ * @returns {void}
+ */
 export const setModalRegistryDependencies = (deps) => di.setDependencies(deps);
 
 // Late-binding deps via Proxy (consistent with all other modules)

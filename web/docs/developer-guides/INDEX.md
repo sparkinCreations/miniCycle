@@ -117,7 +117,7 @@
 - GitHub Actions CI/CD
 - Creating new tests
 - Test patterns and best practices
-- 1,690+ tests, 100% passing ✅
+- 2,195+ automated tests, 100% passing ✅
 
 #### [SECURITY_GUIDE.md](./SECURITY_GUIDE.md)
 **What it is**: Security patterns and best practices
@@ -196,7 +196,7 @@
 
 **Topics:**
 - Overall assessment (EXCEPTIONAL ✅)
-- Key metrics (1610+/1,690+ tests, 21.40ms)
+- Key metrics (see [PROJECT_STATS.md](../PROJECT_STATS.md) for current test counts, 21.40ms)
 - Benchmark results table
 - Performance over time
 - Quality checklist
@@ -223,7 +223,7 @@
 **Time**: 10 minutes
 
 **Topics:**
-- Functional testing (1,690+ tests)
+- Functional testing (2,195+ automated tests)
 - Performance testing (12 benchmarks)
 - CI/CD integration
 - Test results
@@ -458,7 +458,7 @@
 ### Test Results
 
 ```
-✅ Functional Tests: 1,690+ (100%)
+✅ Functional Tests: 2,195+ (100%)
 ✅ Performance Tests: 12/12 (100%)
 ✅ Execution Time: ~65s
 ✅ Memory Usage: 9.54MB (0.3%)
@@ -478,7 +478,7 @@
 
 ```
 📝 Code Reduction: 74.8% (15,677 → 3,674 lines)
-🧩 Modules: 53+ focused modules
+🧩 Modules: 117 ES6 modules (see [PROJECT_STATS.md](../PROJECT_STATS.md))
 📂 Lines Extracted: 12,003 lines
 ✅ Modularization: Complete
 ```
@@ -491,7 +491,7 @@
 
 ```bash
 # Testing
-npm test                # Run all functional tests (1610+)
+npm test                # Run all functional tests (2,195+)
 npm run perf            # Run performance benchmarks (12)
 npm run lighthouse      # Run Lighthouse CI audit
 
@@ -522,7 +522,7 @@ web/
 │   ├── automated/
 │   │   ├── run-browser-tests.js         # Test runner
 │   │   └── run-performance-benchmarks.js # Perf runner
-│   └── *.tests.js (53 files)            # Test suites
+│   └── *.tests.js (113 files)            # Test suites
 ├── .github/workflows/
 │   ├── test.yml                          # Functional CI
 │   └── performance.yml                   # Performance CI

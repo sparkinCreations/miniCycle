@@ -38,6 +38,9 @@ export function setGlobalUtilsDependencies(dependencies) {
     _deps = { ..._deps, ...dependencies };
 }
 
+/**
+ * Core utility class providing safe event listener management, ID generation, and input sanitization
+ */
 export class GlobalUtils {
     /**
      * Adds an event listener safely by removing any existing listener first.

@@ -73,6 +73,7 @@ const _deps = new Proxy({}, {
  * @param {Function} [dependencies.hideMainMenu] - Menu hide function
  * @param {Function} [dependencies.setupDarkModeToggle] - Dark mode setup
  * @param {Function} [dependencies.updateMoveArrowsVisibility] - Move arrows updater
+ * @returns {void}
  */
 export function setSettingsUIManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -304,6 +305,7 @@ function setupSettingsCollapsibleSections() {
 /**
  * Load collapsed states from AppState
  * @param {NodeList} [sections] - Cached collapsible section elements
+ * @returns {void}
  */
 function loadSettingsCollapsedStates(sections) {
     const state = _deps.AppState?.get();
@@ -962,6 +964,11 @@ export function setupClearUndoHistoryButton() {
     safeAddEventListener(btn, 'click', btn._clickHandler);
 }
 
+/**
+ * Wire the "Retake Guided Tour" button in settings to reset all tour progress
+ * and restart onboarding.
+ * @returns {void}
+ */
 export function setupRetakeGuidedTourButton() {
     if (_initialized.retakeGuidedTourButton) {
         return;
@@ -1312,6 +1319,11 @@ export function applyPriorityColor() {
     });
 }
 
+/**
+ * Initialize all settings toggles, buttons, and selects by calling each
+ * individual setup function. Idempotent (each sub-setup has its own guard).
+ * @returns {void}
+ */
 export function initAllToggles() {
     setupSettingsMenu();
     setupDarkModeToggle();

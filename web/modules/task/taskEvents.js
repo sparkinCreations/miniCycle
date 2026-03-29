@@ -62,6 +62,7 @@ const _deps = new Proxy({}, {
 /**
  * Set dependencies for TaskEvents (call before init)
  * @param {Object} dependencies - { AppState, taskCore, showNotification, etc. }
+ * @returns {void}
  */
 export function setTaskEventsDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -276,6 +277,7 @@ export class TaskEvents {
     /**
      * Handle task button clicks (edit, delete, priority)
      * @param {Event} event - Click event
+     * @returns {void}
      */
     handleTaskButtonClick(event) {
         event.stopPropagation();
@@ -341,6 +343,7 @@ export class TaskEvents {
     /**
      * Toggle hover task options (enable/disable hover interactions)
      * @param {boolean} enableHover - Whether to enable hover
+     * @returns {void}
      */
     toggleHoverTaskOptions(enableHover) {
         // DI-pure: use injected showTaskOptions/hideTaskOptions
@@ -371,6 +374,7 @@ export class TaskEvents {
      * Reveal task buttons (three dots menu OR long-press)
      * @param {HTMLElement} taskItem - Task element
      * @param {string} caller - Caller identifier ('three-dots-button', 'long-press', or 'arrow-move')
+     * @returns {void}
      */
     revealTaskButtons(taskItem, caller = 'three-dots-button') {
         const taskOptions = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
@@ -435,6 +439,7 @@ export class TaskEvents {
      * Sync recurring state to DOM elements
      * @param {HTMLElement} taskEl - Task element
      * @param {Object} recurringSettings - Recurring settings
+     * @returns {void}
      */
     syncRecurringStateToDOM(taskEl, recurringSettings) {
         taskEl.setAttribute("data-recurring-settings", JSON.stringify(recurringSettings));
@@ -461,6 +466,7 @@ export class TaskEvents {
      * Setup all task interactions (click, hover, focus)
      * @param {Object} taskElements - Task DOM elements
      * @param {Object} taskContext - Task context data
+     * @returns {void}
      */
     setupTaskInteractions(taskElements, taskContext) {
         const { taskItem, buttonContainer, checkbox, dueDateInput } = taskElements;
@@ -494,6 +500,7 @@ export class TaskEvents {
      * @param {HTMLElement} checkbox - Checkbox element (unused)
      * @param {HTMLElement} buttonContainer - Button container element (unused)
      * @param {HTMLElement} dueDateInput - Due date input element (unused)
+     * @returns {void}
      */
     setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput) {
         // ✅ NO-OP: This method is deprecated
@@ -506,6 +513,7 @@ export class TaskEvents {
      * Setup priority button state
      * @param {HTMLElement} buttonContainer - Button container element
      * @param {boolean} highPriority - Whether task is high priority
+     * @returns {void}
      */
     setupPriorityButtonState(buttonContainer, highPriority) {
         const priorityButton = buttonContainer.querySelector(DOM_SELECTORS.PRIORITY_BTN);
@@ -519,6 +527,7 @@ export class TaskEvents {
      * Setup task hover interactions
      * @param {HTMLElement} taskItem - Task element
      * @param {Object} settings - Settings object
+     * @returns {void}
      */
     setupTaskHoverInteractions(taskItem, settings) {
         // Skip hover interactions on touch devices - they should use long-press only
@@ -543,6 +552,7 @@ export class TaskEvents {
     /**
      * Setup task focus interactions
      * @param {HTMLElement} taskItem - Task element
+     * @returns {void}
      */
     setupTaskFocusInteractions(taskItem) {
         const addListener = this.deps.safeAddEventListener;
@@ -580,7 +590,8 @@ let taskEvents = null;
 
 /**
  * Initialize the global task events handler
- * @param {Object} dependencies - Required dependencies
+ * @param {Object} [dependencies={}] - Required dependencies
+ * @returns {Promise<TaskEvents>}
  */
 export async function initTaskEvents(dependencies = {}) {
     if (taskEvents) {

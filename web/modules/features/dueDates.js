@@ -44,6 +44,7 @@ const _deps = new Proxy({}, {
 /**
  * Set dependencies for MiniCycleDueDates (call before creating instance)
  * @param {Object} dependencies - { loadMiniCycleData, showNotification, etc. }
+ * @returns {void}
  */
 export function setDueDatesDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -121,6 +122,7 @@ export class MiniCycleDueDates {
      * Save due date for a specific task
      * @param {string} taskId - The ID of the task
      * @param {string|null} newDueDate - The due date to assign, or null to clear
+     * @returns {Promise<void>}
      */
     async saveTaskDueDate(taskId, newDueDate) {
 
@@ -172,6 +174,7 @@ export class MiniCycleDueDates {
     /**
      * Check for overdue tasks and apply visual styling
      * @param {HTMLElement|null} taskToCheck - Specific task to check, or null to check all
+     * @returns {Promise<void>}
      */
     async checkOverdueTasks(taskToCheck = null) {
         await _deps.appInit?.waitForCore();
@@ -312,6 +315,7 @@ export class MiniCycleDueDates {
      * Set up due date button click interaction
      * @param {HTMLElement} buttonContainer - Container with task buttons
      * @param {HTMLInputElement} dueDateInput - The due date input element
+     * @returns {void}
      */
     setupDueDateButtonInteraction(buttonContainer, dueDateInput) {
         const dueDateButton = buttonContainer.querySelector(DOM_SELECTORS.SET_DUE_DATE);
@@ -402,6 +406,7 @@ export class MiniCycleDueDates {
     /**
      * Handle due date input changes
      * @param {Event} event - The change event
+     * @returns {Promise<void>}
      */
     handleDueDateChange = async (event) => {
         if (!event.target.classList.contains(DOM_CLASSES.DUE_DATE)) return;
@@ -512,6 +517,7 @@ export class MiniCycleDueDates {
     /**
      * Update visibility of due date fields and related UI elements
      * @param {boolean} autoReset - Whether Auto Reset is enabled
+     * @returns {void}
      */
     updateDueDateVisibility(autoReset) {
         const dueDatesRemindersOption = this.deps.getElementById(DOM_IDS.DUE_DATES_REMINDERS)?.parentNode;

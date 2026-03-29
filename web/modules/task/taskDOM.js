@@ -78,6 +78,9 @@ let _createOrUpdateTaskDataFn = null;
 // ✅ taskToAddTaskOptions from taskUtils.js - exported for other modules to use
 let _taskToAddTaskOptions = null;
 
+/**
+ * Manages task DOM creation, rendering, and lifecycle via sub-module coordination
+ */
 export class TaskDOMManager {
     constructor(dependencies = {}) {
         // Resolve deps from diBase, with constructor overrides

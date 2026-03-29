@@ -50,6 +50,9 @@ export function setDragDropManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
 }
 
+/**
+ * Manages drag-and-drop reordering of tasks in the task list
+ */
 export class DragDropManager {
     constructor(dependencies = {}) {
         // Resolve deps from diBase, with constructor overrides

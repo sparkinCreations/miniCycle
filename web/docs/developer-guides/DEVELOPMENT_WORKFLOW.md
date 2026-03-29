@@ -158,7 +158,7 @@ console.log(cycle.recurringTemplates);
 ./scripts/update-version.sh
 
 # 2. Run tests
-npm test  # Ensure all 1,690+ tests pass
+npm test  # Ensure all 2,195+ tests pass
 
 # 3. Commit changes
 git add .

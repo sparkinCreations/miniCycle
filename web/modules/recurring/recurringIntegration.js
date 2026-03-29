@@ -50,6 +50,7 @@ const deps = new Proxy({}, {
 /**
  * Set dependencies for RecurringIntegration module.
  * @param {Object} dependencies - Injected dependencies
+ * @returns {void}
  */
 export function setRecurringIntegrationDependencies(dependencies) {
     di.setDependencies(dependencies);

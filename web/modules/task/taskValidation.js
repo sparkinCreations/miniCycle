@@ -47,6 +47,9 @@ export function setTaskValidationDependencies(dependencies) {
     di.setDependencies(dependencies);
 }
 
+/**
+ * Validates and sanitizes task input text before creation or update
+ */
 export class TaskValidator {
     constructor(dependencies = {}) {
         // Resolve deps from diBase, with constructor overrides
