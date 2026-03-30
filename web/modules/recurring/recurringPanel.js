@@ -1794,6 +1794,7 @@ export class RecurringPanelManager {
     wireRecurringSettingsClickListener() {
         if (!this.deps.safeAddEventListener) return; // Guard: dependency not injected (e.g., in tests)
         this.deps.safeAddEventListener(document, "click", (e) => {
+            if (!e.target?.closest) return; // Guard: text nodes, SVG, etc.
             const target = e.target.closest(DOM_SELECTORS.OPEN_RECURRING_SETTINGS);
             if (!target) return;
 
