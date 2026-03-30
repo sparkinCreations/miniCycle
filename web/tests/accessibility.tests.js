@@ -415,10 +415,13 @@ export async function runAccessibilityTests(resultsDiv, isPartOfSuite = false) {
         container.appendChild(btn2);
         container.appendChild(btn3);
 
-        // Track which button received focus (document.activeElement is unreliable
-        // when the page/iframe doesn't have OS-level focus, e.g., DevTools is focused)
-        let focusedElement = null;
-        [btn1, btn2, btn3].forEach(btn => btn.addEventListener('focus', () => { focusedElement = btn; }));
+        // Override .focus() to track calls directly — document.activeElement and
+        // focus events are unreliable when the page doesn't have OS-level focus
+        let lastFocused = null;
+        [btn1, btn2, btn3].forEach(btn => {
+            const orig = btn.focus.bind(btn);
+            btn.focus = () => { lastFocused = btn; orig(); };
+        });
 
         // Set up arrow key navigation
         container.addEventListener('keydown', (e) => {
@@ -436,10 +439,11 @@ export async function runAccessibilityTests(resultsDiv, isPartOfSuite = false) {
         });
 
         btn1.focus();
+        lastFocused = null; // reset after initial focus
         const event = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true });
         btn1.dispatchEvent(event);
 
-        if (focusedElement !== btn2) {
+        if (lastFocused !== btn2) {
             throw new Error('ArrowRight should move focus to next button');
         }
     });
@@ -455,8 +459,11 @@ export async function runAccessibilityTests(resultsDiv, isPartOfSuite = false) {
         container.appendChild(btn1);
         container.appendChild(btn2);
 
-        let focusedElement = null;
-        [btn1, btn2].forEach(btn => btn.addEventListener('focus', () => { focusedElement = btn; }));
+        let lastFocused = null;
+        [btn1, btn2].forEach(btn => {
+            const orig = btn.focus.bind(btn);
+            btn.focus = () => { lastFocused = btn; orig(); };
+        });
 
         container.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
@@ -472,10 +479,11 @@ export async function runAccessibilityTests(resultsDiv, isPartOfSuite = false) {
         });
 
         btn2.focus();
+        lastFocused = null;
         const event = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true });
         btn2.dispatchEvent(event);
 
-        if (focusedElement !== btn1) {
+        if (lastFocused !== btn1) {
             throw new Error('Arrow navigation should wrap from last to first');
         }
     });
@@ -494,8 +502,11 @@ export async function runAccessibilityTests(resultsDiv, isPartOfSuite = false) {
         container.appendChild(btn2);
         container.appendChild(btn3);
 
-        let focusedElement = null;
-        [btn1, btn2, btn3].forEach(btn => btn.addEventListener('focus', () => { focusedElement = btn; }));
+        let lastFocused = null;
+        [btn1, btn2, btn3].forEach(btn => {
+            const orig = btn.focus.bind(btn);
+            btn.focus = () => { lastFocused = btn; orig(); };
+        });
 
         container.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft') {
@@ -509,10 +520,11 @@ export async function runAccessibilityTests(resultsDiv, isPartOfSuite = false) {
         });
 
         btn1.focus();
+        lastFocused = null;
         const event = new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true });
         btn1.dispatchEvent(event);
 
-        if (focusedElement !== btn3) {
+        if (lastFocused !== btn3) {
             throw new Error('ArrowLeft should wrap from first to last');
         }
     });
