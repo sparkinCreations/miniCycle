@@ -150,12 +150,12 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     }
 
     // Helper: mock download infrastructure to prevent real downloads and blob:mock-url errors.
-    // Does NOT mock document.createElement — that interferes with dynamic imports in init().
-    // Instead, neuters .click() at the appendChild stage, after the <a> element is fully set up.
+    // IMPORTANT: Call AFTER instance.init() — mocking createElement during init() blocks dynamic imports.
     function mockDownloadEnvironment() {
         const originals = {
             createObjectURL: URL.createObjectURL,
             revokeObjectURL: URL.revokeObjectURL,
+            createElement: document.createElement.bind(document),
             appendChild: document.body.appendChild.bind(document.body),
             removeChild: document.body.removeChild.bind(document.body),
         };
@@ -163,13 +163,21 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
 
         URL.createObjectURL = () => { tracked.blobCreated = true; return 'about:blank'; };
         URL.revokeObjectURL = () => {};
-        document.body.appendChild = (el) => {
-            if (el?.tagName === 'A') {
+        document.createElement = (tag) => {
+            const el = originals.createElement(tag);
+            if (tag === 'a') {
                 tracked.linkCreated = true;
-                tracked.filename = el.download || '';
-                el.click = () => {}; // neuter click before production code calls it
+                el.click = () => {};
+                Object.defineProperty(el, 'href', { set() {}, get() { return ''; }, configurable: true });
+                Object.defineProperty(el, 'download', {
+                    set(v) { tracked.filename = v; },
+                    get() { return tracked.filename; },
+                    configurable: true
+                });
             }
+            return el;
         };
+        document.body.appendChild = () => {};
         document.body.removeChild = () => {};
 
         return {
@@ -177,6 +185,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             restore() {
                 URL.createObjectURL = originals.createObjectURL;
                 URL.revokeObjectURL = originals.revokeObjectURL;
+                document.createElement = originals.createElement;
                 document.body.appendChild = originals.appendChild;
                 document.body.removeChild = originals.removeChild;
             }
@@ -331,14 +340,14 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     resultsDiv.innerHTML += '<h4>📤 Import/Export Functionality</h4>';
 
     await test('exportMiniCycleData creates download', async (mockFlattenedData) => {
+        const instance = new SettingsManager({
+            loadMiniCycleData: () => mockFlattenedData,
+            showNotification: () => {}
+        });
+        await instance.init();
+
         const dl = mockDownloadEnvironment();
         try {
-            const instance = new SettingsManager({
-                loadMiniCycleData: () => mockFlattenedData,
-                showNotification: () => {}
-            });
-            await instance.init();
-
             instance.exportMiniCycleData({
                 name: 'test-cycle', title: 'Test Cycle', tasks: [],
                 autoReset: true, cycleCount: 0, deleteCheckedTasks: false
@@ -353,14 +362,14 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     });
 
     await test('exportMiniCycleData handles export flow', async (mockFlattenedData) => {
+        const instance = new SettingsManager({
+            loadMiniCycleData: () => mockFlattenedData,
+            showNotification: () => {}
+        });
+        await instance.init();
+
         const dl = mockDownloadEnvironment();
         try {
-            const instance = new SettingsManager({
-                loadMiniCycleData: () => mockFlattenedData,
-                showNotification: () => {}
-            });
-            await instance.init();
-
             instance.exportMiniCycleData({
                 name: 'test', title: 'Test',
                 tasks: [{ id: 'task-1', text: 'Task 1', completed: false }],
@@ -372,14 +381,14 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     });
 
     await test('exportMiniCycleData sanitizes filename', async (mockFlattenedData) => {
+        const instance = new SettingsManager({
+            loadMiniCycleData: () => mockFlattenedData,
+            showNotification: () => {}
+        });
+        await instance.init();
+
         const dl = mockDownloadEnvironment();
         try {
-            const instance = new SettingsManager({
-                loadMiniCycleData: () => mockFlattenedData,
-                showNotification: () => {}
-            });
-            await instance.init();
-
             instance.exportMiniCycleData({
                 name: 'test', title: 'My Cycle!', tasks: [],
                 autoReset: true, cycleCount: 0, deleteCheckedTasks: false
@@ -491,15 +500,14 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
 
     await test('handles corrupted localStorage in export', async () => {
         localStorage.clear();
+        const instance = new SettingsManager({
+            loadMiniCycleData: () => null,
+            showNotification: () => {}
+        });
+        await instance.init();
+
         const dl = mockDownloadEnvironment();
         try {
-            const instance = new SettingsManager({
-                loadMiniCycleData: () => null,
-                showNotification: () => {}
-            });
-            await instance.init();
-
-            // Should handle gracefully
             instance.exportMiniCycleData({
                 name: 'test', title: 'Test', tasks: [],
                 autoReset: true, cycleCount: 0, deleteCheckedTasks: false
@@ -699,13 +707,13 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     });
 
     await test('exportMiniCycleData completes quickly', async () => {
+        const instance = new SettingsManager({
+            showNotification: () => {}
+        });
+        await instance.init();
+
         const dl = mockDownloadEnvironment();
         try {
-            const instance = new SettingsManager({
-                showNotification: () => {}
-            });
-            await instance.init();
-
             const startTime = performance.now();
             instance.exportMiniCycleData({
                 name: 'test', title: 'Test', tasks: [],
@@ -737,13 +745,13 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     });
 
     await test('handles missing data in export', async () => {
+        const instance = new SettingsManager({
+            showNotification: () => {}
+        });
+        await instance.init();
+
         const dl = mockDownloadEnvironment();
         try {
-            const instance = new SettingsManager({
-                showNotification: () => {}
-            });
-            await instance.init();
-
             // Should handle gracefully — missing tasks, autoReset, etc.
             instance.exportMiniCycleData({ name: 'test', title: 'Test' }, 'Test');
         } finally {
@@ -752,13 +760,13 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     });
 
     await test('handles very large data export', async () => {
+        const instance = new SettingsManager({
+            showNotification: () => {}
+        });
+        await instance.init();
+
         const dl = mockDownloadEnvironment();
         try {
-            const instance = new SettingsManager({
-                showNotification: () => {}
-            });
-            await instance.init();
-
             const largeTasks = Array.from({ length: 1000 }, (_, i) => ({
                 id: `task-${i}`, text: `Task ${i}`, completed: false
             }));
