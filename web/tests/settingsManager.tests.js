@@ -345,6 +345,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             showNotification: () => {}
         });
         await instance.init();
+        await new Promise(r => setTimeout(r, 0)); // yield so init's background work settles
 
         const dl = mockDownloadEnvironment();
         try {
@@ -367,6 +368,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             showNotification: () => {}
         });
         await instance.init();
+        await new Promise(r => setTimeout(r, 0)); // yield so init's background work settles
 
         const dl = mockDownloadEnvironment();
         try {
@@ -386,6 +388,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             showNotification: () => {}
         });
         await instance.init();
+        await new Promise(r => setTimeout(r, 0)); // yield so init's background work settles
 
         const dl = mockDownloadEnvironment();
         try {
@@ -505,6 +508,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             showNotification: () => {}
         });
         await instance.init();
+        await new Promise(r => setTimeout(r, 0)); // yield so init's background work settles
 
         const dl = mockDownloadEnvironment();
         try {
@@ -711,6 +715,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             showNotification: () => {}
         });
         await instance.init();
+        await new Promise(r => setTimeout(r, 0)); // yield so init's background work settles
 
         const dl = mockDownloadEnvironment();
         try {
@@ -749,6 +754,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             showNotification: () => {}
         });
         await instance.init();
+        await new Promise(r => setTimeout(r, 0)); // yield so init's background work settles
 
         const dl = mockDownloadEnvironment();
         try {
@@ -764,6 +770,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             showNotification: () => {}
         });
         await instance.init();
+        await new Promise(r => setTimeout(r, 0)); // yield so init's background work settles
 
         const dl = mockDownloadEnvironment();
         try {
