@@ -98,6 +98,7 @@ function withTimeout(promise, timeoutMs, defaultValue) {
     return Promise.race([
         promise,
         new Promise((resolve) => setTimeout(() => {
+            console.warn(`⚠️ IndexedDB operation timed out after ${timeoutMs}ms — recovery skipped`);
             resolve(defaultValue);
         }, timeoutMs))
     ]);

@@ -1,3 +1,7 @@
+## [2.153] - 2026-03-29
+- fix: add guard for event target in wireRecurringSettingsClickListener
+
+
 ## [2.150] - 2026-03-29
 - Enhance documentation and dependency injection across UI modules
 

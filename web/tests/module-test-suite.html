@@ -2426,7 +2426,18 @@
             };
 
             // 💾 BACKUP localStorage to IndexedDB (survives browser close/crash)
-            const backupCheckResult = await backupLocalStorageToIndexedDB();
+            // 🛡️ If a backup already exists from a PREVIOUS interrupted run, KEEP IT.
+            // Overwriting it would capture corrupted/test data from the failed run.
+            // Only create a fresh backup if no backup exists (clean start).
+            let backupCheckResult;
+            if (preCheckIndexedDB.hasBackup) {
+                console.log('%c🛡️ Preserving existing IndexedDB backup from previous run (not overwriting)', 'background: #856404; color: #fff3cd; padding: 2px 6px;');
+                console.log(`   - Backup has ${preCheckIndexedDB.keyCount} keys, created ${new Date(preCheckIndexedDB.timestamp).toISOString()}`);
+                backupCheckResult = { preserved: true, keyCount: preCheckIndexedDB.keyCount };
+            } else {
+                backupCheckResult = await backupLocalStorageToIndexedDB();
+                console.log('%c🔵 Creating fresh IndexedDB backup: ' + (backupCheckResult.keyCount || '?') + ' localStorage keys', 'background: #004085; color: #cce5ff; padding: 2px 6px;');
+            }
             console.log('💾 [TestSuite] Backup check result:', backupCheckResult);
 
             // 🔒 SAVE APP-SIDE BACKUP KEYS (these must survive localStorage.clear())
