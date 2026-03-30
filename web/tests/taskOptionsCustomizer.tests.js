@@ -62,56 +62,85 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
         return { passed: 0, total: 1 };
     }
 
-    function test(name, testFn) {
+    // Shared mock data factory — each test gets a fresh copy
+    function createMockSchemaData() {
+        return {
+            metadata: {
+                version: "2.5",
+                lastModified: Date.now()
+            },
+            settings: {
+                showThreeDots: false
+            },
+            ui: {
+                moveArrowsVisible: false
+            },
+            appState: {
+                activeCycleId: 'test-cycle-1'
+            },
+            data: {
+                cycles: {
+                    'test-cycle-1': {
+                        id: 'test-cycle-1',
+                        title: 'Test Cycle',
+                        tasks: [],
+                        taskOptionButtons: {
+                            customize: true,
+                            moveArrows: false,
+                            threeDots: false,
+                            highPriority: true,
+                            rename: true,
+                            delete: true,
+                            recurring: false,
+                            dueDate: false,
+                            reminders: false
+                        }
+                    },
+                    'test-cycle-2': {
+                        id: 'test-cycle-2',
+                        title: 'Test Cycle 2',
+                        tasks: []
+                        // No taskOptionButtons - should use defaults
+                    }
+                }
+            },
+            userProgress: {}
+        };
+    }
+
+    async function test(name, testFn) {
         total.count++;
         try {
             // Reset environment before each test
             localStorage.clear();
 
-            // Mock Schema 2.5 data with cycles
-            const mockSchemaData = {
-                metadata: {
-                    version: "2.5",
-                    lastModified: Date.now()
-                },
-                settings: {
-                    showThreeDots: false
-                },
-                ui: {
-                    moveArrowsVisible: false
-                },
-                appState: {
-                    activeCycleId: 'test-cycle-1'
-                },
-                data: {
-                    cycles: {
-                        'test-cycle-1': {
-                            id: 'test-cycle-1',
-                            title: 'Test Cycle',
-                            tasks: [],
-                            taskOptionButtons: {
-                                customize: true,
-                                moveArrows: false,
-                                threeDots: false,
-                                highPriority: true,
-                                rename: true,
-                                delete: true,
-                                recurring: false,
-                                dueDate: false,
-                                reminders: false
-                            }
-                        },
-                        'test-cycle-2': {
-                            id: 'test-cycle-2',
-                            title: 'Test Cycle 2',
-                            tasks: []
-                            // No taskOptionButtons - should use defaults
-                        }
+            const mockSchemaData = createMockSchemaData();
+            localStorage.setItem('miniCycleData', JSON.stringify(mockSchemaData));
+
+            // Wire DI deps with a proper AppState mock for each test
+            // (constructor args are ignored — TaskOptionsCustomizer uses di.resolve())
+            setTaskOptionsCustomizerDependencies({
+                AppState: {
+                    isReady: () => true,
+                    get: () => JSON.parse(localStorage.getItem('miniCycleData')),
+                    update: (fn) => {
+                        const data = JSON.parse(localStorage.getItem('miniCycleData'));
+                        fn(data);
+                        localStorage.setItem('miniCycleData', JSON.stringify(data));
                     }
                 },
-                userProgress: {}
-            };
-            localStorage.setItem('miniCycleData', JSON.stringify(mockSchemaData));
+                appInit: { waitForCore: () => Promise.resolve() },
+                showNotification: () => {},
+                showConfirmationModal: (opts) => { if (opts.onConfirm) opts.onConfirm(); },
+                renderTaskList: () => {},
+                updateMoveArrowsVisibility: () => {},
+                safeAddEventListener: (el, event, handler) => {
+                    el.removeEventListener(event, handler);
+                    el.addEventListener(event, handler);
+                },
+                loadMiniCycleData: () => null,
+                autoSave: () => {}
+            });
 
             // Reset DOM state
             document.body.className = '';
@@ -120,7 +149,8 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
             const existingModal = document.getElementById('task-options-customizer-modal');
             if (existingModal) existingModal.remove();
 
-            testFn();
+            const result = testFn();
+            if (result instanceof Promise) await result;
             resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
             passed.count++;
         } catch (error) {
@@ -131,7 +161,7 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
     // === INITIALIZATION TESTS ===
     resultsDiv.innerHTML += '<h4>🔧 Initialization Tests</h4>';
 
-    test('creates instance successfully', () => {
+    await test('creates instance successfully', () => {
         const instance = new TaskOptionsCustomizer();
         if (!instance || typeof instance.showCustomizationModal !== 'function') {
             throw new Error('TaskOptionsCustomizer not properly initialized');
@@ -149,24 +179,8 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
     // === MODAL CREATION TESTS ===
     resultsDiv.innerHTML += '<h4>🪟 Modal Creation Tests</h4>';
 
-    test('showCustomizationModal creates modal element', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: (fn) => {
-                    fn(mockData);
-                    localStorage.setItem('miniCycleData', JSON.stringify(mockData));
-                }
-            },
-            showNotification: () => {},
-            getElementById: (id) => document.getElementById(id),
-            querySelector: (sel) => document.querySelector(sel),
-            renderTaskList: () => {}
-        });
-
+    await test('showCustomizationModal creates modal element', async () => {
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-1');
 
         const modal = document.getElementById('task-options-customizer-modal');
@@ -175,44 +189,21 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
-    test('modal contains all button options', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: () => {}
-            },
-            showNotification: () => {},
-            getElementById: (id) => document.getElementById(id),
-            renderTaskList: () => {}
-        });
-
+    await test('modal contains all button options', async () => {
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-1');
 
         const modal = document.getElementById('task-options-customizer-modal');
         const checkboxes = modal.querySelectorAll('input[type="checkbox"]');
 
-        // Should have 9 options: customize, moveArrows, threeDots, highPriority, rename, delete, recurring, dueDate, reminders
-        if (checkboxes.length !== 9) {
-            throw new Error(`Expected 9 checkboxes, got ${checkboxes.length}`);
+        // Should have 10 options: customize, moveArrows, threeDots, highPriority, rename, delete, recurring, dueDate, reminders, deleteWhenComplete
+        if (checkboxes.length !== 10) {
+            throw new Error(`Expected 10 checkboxes, got ${checkboxes.length}`);
         }
     });
 
-    test('modal contains cycle title in subtitle', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: () => {}
-            },
-            showNotification: () => {},
-            renderTaskList: () => {}
-        });
-
+    await test('modal contains cycle title in subtitle', async () => {
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-1');
 
         const modal = document.getElementById('task-options-customizer-modal');
@@ -223,19 +214,8 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
-    test('removes existing modal before creating new one', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: () => {}
-            },
-            showNotification: () => {},
-            renderTaskList: () => {}
-        });
-
+    await test('removes existing modal before creating new one', async () => {
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-1');
         await instance.showCustomizationModal('test-cycle-1');
 
@@ -248,19 +228,8 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
     // === BUTTON CONFIGURATION TESTS ===
     resultsDiv.innerHTML += '<h4>⚙️ Button Configuration Tests</h4>';
 
-    test('customize button is always disabled', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: () => {}
-            },
-            showNotification: () => {},
-            renderTaskList: () => {}
-        });
-
+    await test('customize button is always disabled', async () => {
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-1');
 
         const modal = document.getElementById('task-options-customizer-modal');
@@ -271,20 +240,13 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
-    test('loads current cycle button settings', async () => {
+    await test('loads current cycle button settings', async () => {
+        // Modify mock data in localStorage before creating instance
         const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
         mockData.data.cycles['test-cycle-1'].taskOptionButtons.highPriority = false;
+        localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: () => {}
-            },
-            showNotification: () => {},
-            renderTaskList: () => {}
-        });
-
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-1');
 
         const modal = document.getElementById('task-options-customizer-modal');
@@ -295,19 +257,8 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
-    test('uses defaults when cycle has no taskOptionButtons', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: () => {}
-            },
-            showNotification: () => {},
-            renderTaskList: () => {}
-        });
-
+    await test('uses defaults when cycle has no taskOptionButtons', async () => {
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-2');
 
         const modal = document.getElementById('task-options-customizer-modal');
@@ -321,29 +272,23 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
     // === SAVE FUNCTIONALITY TESTS ===
     resultsDiv.innerHTML += '<h4>💾 Save Functionality Tests</h4>';
 
-    test('saves customization to cycle', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
+    await test('saves customization to cycle', async () => {
         let updateCalled = false;
-
-        const instance = new TaskOptionsCustomizer({
+        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
+        // Override DI with tracking mock
+        setTaskOptionsCustomizerDependencies({
             AppState: {
                 isReady: () => true,
                 get: () => mockData,
-                update: (fn) => {
-                    fn(mockData);
-                    updateCalled = true;
-                }
-            },
-            showNotification: () => {},
-            renderTaskList: () => {}
+                update: (fn) => { fn(mockData); updateCalled = true; }
+            }
         });
 
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-1');
 
         const modal = document.getElementById('task-options-customizer-modal');
         const checkboxes = modal.querySelectorAll('input[type="checkbox"]');
-
-        // Change a checkbox
         const recurringCheckbox = modal.querySelector('[data-option="recurring"]');
         recurringCheckbox.checked = true;
 
@@ -358,19 +303,8 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
-    test('ensures customize button is always enabled after save', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: (fn) => fn(mockData)
-            },
-            showNotification: () => {},
-            renderTaskList: () => {}
-        });
-
+    await test('ensures customize button is always enabled after save', async () => {
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-1');
 
         const modal = document.getElementById('task-options-customizer-modal');
@@ -378,31 +312,28 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
 
         instance.saveCustomization('test-cycle-1', checkboxes);
 
-        if (!mockData.data.cycles['test-cycle-1'].taskOptionButtons.customize) {
+        const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
+        if (!savedData.data.cycles['test-cycle-1'].taskOptionButtons.customize) {
             throw new Error('Customize button should always be enabled after save');
         }
     });
 
-    test('calls renderTaskList after save', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
+    await test('calls renderTaskList after save', async () => {
         let renderCalled = false;
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: (fn) => fn(mockData)
-            },
-            showNotification: () => {},
+        // Override renderTaskList to track the call
+        setTaskOptionsCustomizerDependencies({
             renderTaskList: () => { renderCalled = true; }
         });
 
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-1');
 
         const modal = document.getElementById('task-options-customizer-modal');
         const checkboxes = modal.querySelectorAll('input[type="checkbox"]');
 
-        instance.saveCustomization('test-cycle-1', checkboxes);
+        await instance.saveCustomization('test-cycle-1', checkboxes);
+        // Wait for scheduleRefresh debounce (150ms) + refreshAllTaskButtons microtask
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         if (!renderCalled) {
             throw new Error('renderTaskList should be called after save');
@@ -412,21 +343,14 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
     // === MOVE ARROWS SYNCHRONIZATION TESTS ===
     resultsDiv.innerHTML += '<h4>🔄 Move Arrows Synchronization Tests</h4>';
 
-    test('syncs move arrows with global setting on modal show', async () => {
+    await test('syncs move arrows with global setting on modal show', async () => {
+        // Set global moveArrowsVisible=true in localStorage
         const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
         mockData.ui.moveArrowsVisible = true;
         mockData.data.cycles['test-cycle-1'].taskOptionButtons.moveArrows = false;
+        localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: () => {}
-            },
-            showNotification: () => {},
-            renderTaskList: () => {}
-        });
-
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-1');
 
         const modal = document.getElementById('task-options-customizer-modal');
@@ -438,20 +362,8 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
-    test('syncs global setting when move arrows changed', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-        mockData.ui.moveArrowsVisible = false;
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: (fn) => fn(mockData)
-            },
-            showNotification: () => {},
-            renderTaskList: () => {}
-        });
-
+    await test('syncs global setting when move arrows changed', async () => {
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-1');
 
         const modal = document.getElementById('task-options-customizer-modal');
@@ -463,28 +375,19 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
 
         instance.saveCustomization('test-cycle-1', checkboxes);
 
-        if (!mockData.ui.moveArrowsVisible) {
+        const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
+        if (!savedData.ui.moveArrowsVisible) {
             throw new Error('Global moveArrowsVisible should be synced to true');
         }
     });
 
-    test('calls updateMoveArrowsVisibility when move arrows changed', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-        mockData.ui.moveArrowsVisible = false;
+    await test('calls updateMoveArrowsVisibility when move arrows changed', async () => {
         let updateArrowsCalled = false;
-
-        window.updateMoveArrowsVisibility = () => { updateArrowsCalled = true; };
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: (fn) => fn(mockData)
-            },
-            showNotification: () => {},
-            renderTaskList: () => {}
+        setTaskOptionsCustomizerDependencies({
+            updateMoveArrowsVisibility: () => { updateArrowsCalled = true; }
         });
 
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-1');
 
         const modal = document.getElementById('task-options-customizer-modal');
@@ -493,28 +396,18 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
 
         moveArrowsCheckbox.checked = true;
 
-        instance.saveCustomization('test-cycle-1', checkboxes);
+        await instance.saveCustomization('test-cycle-1', checkboxes);
 
         if (!updateArrowsCalled) {
             throw new Error('updateMoveArrowsVisibility should be called');
         }
-
-        delete window.updateMoveArrowsVisibility;
     });
 
     // === BUTTON VISIBILITY TESTS ===
     resultsDiv.innerHTML += '<h4>👁️ Button Visibility Tests</h4>';
 
-    test('getButtonVisibility returns cycle settings', () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData
-            }
-        });
-
+    await test('getButtonVisibility returns cycle settings', () => {
+        const instance = new TaskOptionsCustomizer();
         const visibility = instance.getButtonVisibility('test-cycle-1');
 
         if (!visibility.customize || visibility.moveArrows) {
@@ -522,16 +415,8 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
-    test('getButtonVisibility returns defaults when no cycle settings', () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData
-            }
-        });
-
+    await test('getButtonVisibility returns defaults when no cycle settings', () => {
+        const instance = new TaskOptionsCustomizer();
         const visibility = instance.getButtonVisibility('test-cycle-2');
 
         // Should use defaults
@@ -540,11 +425,11 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
-    test('getButtonVisibility handles missing AppState', () => {
-        const instance = new TaskOptionsCustomizer({
-            AppState: null
-        });
+    await test('getButtonVisibility handles missing AppState', () => {
+        // Override AppState to null
+        setTaskOptionsCustomizerDependencies({ AppState: null });
 
+        const instance = new TaskOptionsCustomizer();
         const visibility = instance.getButtonVisibility('test-cycle-1');
 
         if (!visibility.customize) {
@@ -555,19 +440,8 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
     // === RESET FUNCTIONALITY TESTS ===
     resultsDiv.innerHTML += '<h4>🔄 Reset Functionality Tests</h4>';
 
-    test('reset button restores defaults', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: () => {}
-            },
-            showNotification: () => {},
-            renderTaskList: () => {}
-        });
-
+    await test('reset button restores defaults', async () => {
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-1');
 
         const modal = document.getElementById('task-options-customizer-modal');
@@ -590,74 +464,43 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
     // === MODAL CLOSE TESTS ===
     resultsDiv.innerHTML += '<h4>❌ Modal Close Tests</h4>';
 
-    test('closeModal removes show class', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: () => {}
-            },
-            showNotification: () => {},
-            renderTaskList: () => {}
-        });
-
+    await test('closeModal closes the dialog', async () => {
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-1');
 
         const modal = document.getElementById('task-options-customizer-modal');
-        modal.classList.add('show');
+        // modal.showModal() is called by createModal — modal.open should be true
+        if (!modal.open) {
+            throw new Error('Modal should be open before closeModal');
+        }
 
         instance.closeModal(modal);
 
-        if (modal.classList.contains('show')) {
-            throw new Error('Show class should be removed');
+        if (modal.open) {
+            throw new Error('Modal should be closed after closeModal');
         }
     });
 
-    test('ESC key closes modal', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: () => {}
-            },
-            showNotification: () => {},
-            renderTaskList: () => {}
-        });
-
+    await test('cancel event closes modal', async () => {
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-1');
 
         const modal = document.getElementById('task-options-customizer-modal');
-        modal.classList.add('show');
 
-        // Simulate ESC key press
-        const escEvent = new KeyboardEvent('keydown', { key: 'Escape' });
-        document.dispatchEvent(escEvent);
+        // Simulate cancel event (triggered by ESC on native <dialog>)
+        const cancelEvent = new Event('cancel', { cancelable: true });
+        modal.dispatchEvent(cancelEvent);
 
-        if (modal.classList.contains('show')) {
-            throw new Error('ESC key should close modal');
+        if (modal.open) {
+            throw new Error('Cancel event should close modal');
         }
     });
 
     // === ERROR HANDLING TESTS ===
     resultsDiv.innerHTML += '<h4>⚠️ Error Handling Tests</h4>';
 
-    test('handles missing cycle gracefully', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: () => {}
-            },
-            showNotification: () => {},
-            renderTaskList: () => {}
-        });
-
+    await test('handles missing cycle gracefully', async () => {
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('non-existent-cycle');
 
         const modal = document.getElementById('task-options-customizer-modal');
@@ -666,19 +509,17 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
-    test('handles AppState not ready', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-
-        const instance = new TaskOptionsCustomizer({
+    await test('handles AppState not ready', async () => {
+        // Override AppState to return not ready
+        setTaskOptionsCustomizerDependencies({
             AppState: {
                 isReady: () => false,
-                get: () => mockData,
+                get: () => JSON.parse(localStorage.getItem('miniCycleData')),
                 update: () => {}
-            },
-            showNotification: () => {},
-            renderTaskList: () => {}
+            }
         });
 
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-1');
 
         const modal = document.getElementById('task-options-customizer-modal');
@@ -687,19 +528,11 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
-    test('handles missing renderTaskList gracefully', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
+    await test('handles missing renderTaskList gracefully', async () => {
+        // Override renderTaskList to null
+        setTaskOptionsCustomizerDependencies({ renderTaskList: null });
 
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: (fn) => fn(mockData)
-            },
-            showNotification: () => {},
-            renderTaskList: null
-        });
-
+        const instance = new TaskOptionsCustomizer();
         // Should not throw
         instance.refreshAllTaskButtons();
     });
@@ -707,30 +540,18 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
     // === INTEGRATION TESTS ===
     resultsDiv.innerHTML += '<h4>🔗 Integration Tests</h4>';
 
-    test('integrates with AppState when available', async () => {
-        window.AppState = {
-            isReady: () => true,
-            get: () => JSON.parse(localStorage.getItem('miniCycleData')),
-            update: (fn) => {
-                const data = JSON.parse(localStorage.getItem('miniCycleData'));
-                fn(data);
-                localStorage.setItem('miniCycleData', JSON.stringify(data));
-            }
-        };
-
+    await test('integrates with AppState when available', async () => {
+        // DI deps are already set by the test wrapper — just verify it works
         const instance = new TaskOptionsCustomizer();
-
         await instance.showCustomizationModal('test-cycle-1');
 
         const modal = document.getElementById('task-options-customizer-modal');
         if (!modal) {
-            throw new Error('Should work with window.AppState');
+            throw new Error('Should work with DI-injected AppState');
         }
-
-        delete window.AppState;
     });
 
-    test('global function showTaskOptionsCustomizer works', async () => {
+    await test('global function showTaskOptionsCustomizer works', async () => {
         window.AppState = {
             isReady: () => true,
             get: () => JSON.parse(localStorage.getItem('miniCycleData')),
@@ -750,18 +571,8 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
     // === PERFORMANCE TESTS ===
     resultsDiv.innerHTML += '<h4>⚡ Performance Tests</h4>';
 
-    test('modal creation completes within reasonable time', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: () => {}
-            },
-            showNotification: () => {},
-            renderTaskList: () => {}
-        });
+    await test('modal creation completes within reasonable time', async () => {
+        const instance = new TaskOptionsCustomizer();
 
         const startTime = performance.now();
         await instance.showCustomizationModal('test-cycle-1');
@@ -774,19 +585,8 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
-    test('save operation completes quickly', async () => {
-        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-
-        const instance = new TaskOptionsCustomizer({
-            AppState: {
-                isReady: () => true,
-                get: () => mockData,
-                update: (fn) => fn(mockData)
-            },
-            showNotification: () => {},
-            renderTaskList: () => {}
-        });
-
+    await test('save operation completes quickly', async () => {
+        const instance = new TaskOptionsCustomizer();
         await instance.showCustomizationModal('test-cycle-1');
 
         const modal = document.getElementById('task-options-customizer-modal');
