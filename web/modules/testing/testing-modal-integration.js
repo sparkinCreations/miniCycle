@@ -436,14 +436,14 @@ async function runAllAutomatedTests() {
     };
     window.addEventListener('message', handleTestMessages);
 
-    // Timeout after 10 minutes
+    // Timeout after 20 minutes (production runs 112 modules through SW, takes longer than local)
     setTimeout(() => {
         if (!resultsReceived) {
             window.removeEventListener('message', handleTestMessages);
             appendToAutomatedTestResults("⚠️ Test timeout - closing modal.\n");
             closeTestRunnerModal();
         }
-    }, 600000);
+    }, 1200000);
 }
 
 // DI-pure module (no window.* fallbacks for dependencies)

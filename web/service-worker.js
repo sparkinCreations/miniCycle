@@ -1,9 +1,9 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.155';
-var CACHE_VERSION = 'v998';
-var CACHE_VERSION_NUMBER = 998; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.156';
+var CACHE_VERSION = 'v999';
+var CACHE_VERSION_NUMBER = 999; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -935,6 +935,34 @@ self.addEventListener('fetch', function (event) {
             });
           }
 
+          // Return cached immediately if available
+          if (cached) {
+            // ✅ Skip background revalidation for test requests — test files are ephemeral
+            // and production modules are already precached. Avoids hundreds of background
+            // fetches that saturate connections and slow down test execution on production.
+            if (!isTestFile && !isTestCacheBuster) {
+              var freshRequest = new Request(fetchUrl.href, {
+                method: 'GET',
+                headers: request.headers,
+                mode: request.mode,
+                credentials: request.credentials,
+                cache: 'no-cache'
+              });
+              // Background fetch to update cache (only when online)
+              fetch(freshRequest).then(function (res) {
+                if (res && res.status === 200) {
+                  return caches.open(DYNAMIC_CACHE).then(function (cache) {
+                    return safeCachePut(cache, cacheRequest, res.clone()).then(function() {
+                      trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
+                    });
+                  });
+                }
+              }).catch(function () {});
+            }
+            return cached;
+          }
+
+          // No cache - fetch from network
           var freshRequest = new Request(fetchUrl.href, {
             method: 'GET',
             headers: request.headers,
@@ -942,8 +970,6 @@ self.addEventListener('fetch', function (event) {
             credentials: request.credentials,
             cache: 'no-cache'
           });
-
-          // Background fetch to update cache (only when online)
           var fetchPromise = fetch(freshRequest).then(function (res) {
             if (res && res.status === 200) {
               return caches.open(DYNAMIC_CACHE).then(function (cache) {
@@ -956,12 +982,6 @@ self.addEventListener('fetch', function (event) {
             return res;
           }).catch(function () { return null; });
 
-          // Return cached immediately if available
-          if (cached) {
-            return cached;
-          }
-
-          // No cache - wait for network
           return fetchPromise.then(function (res) {
             if (res) return res;
             // ✅ Last resort: try STATIC_CACHE explicitly (precached CSS files)
