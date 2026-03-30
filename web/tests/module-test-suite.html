@@ -2622,8 +2622,17 @@
                 const totalModuleCount = allModules.length;
                 let moduleIndex = 0;
 
+                // Skip modules that hang on production due to SW fetch interference
+                const isProduction = location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
+                const productionSkipList = ['moduleLoader', 'orchestrator'];
+
                 for (const module of allModules) {
                     moduleIndex++;
+
+                    if (isProduction && productionSkipList.includes(module.key)) {
+                        allResults.push({ name: module.name, passed: 0, total: 0, skipped: true });
+                        continue;
+                    }
 
                     // Send progress update to parent (if embedded)
                     const isEmbedded = new URLSearchParams(window.location.search).get('embedded') === 'true';
@@ -2729,7 +2738,12 @@
                 const passRate = result.total > 0 ? (result.passed / result.total * 100).toFixed(0) : 0;
                 let statusEmoji, rowBg, rowText, statusText;
 
-                if (result.timedOut) {
+                if (result.skipped) {
+                    statusEmoji = '⏭️';
+                    statusText = 'SKIPPED';
+                    rowBg = isDarkMode ? '#3a3a5a' : '#f0f0f0';
+                    rowText = isDarkMode ? '#aaaaaa' : '#888888';
+                } else if (result.timedOut) {
                     statusEmoji = '⏱️';
                     statusText = 'TIMEOUT';
                     rowBg = isDarkMode ? '#7c4700' : '#fef3c7'; // Orange/yellow for timeout
