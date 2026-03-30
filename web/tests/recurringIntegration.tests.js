@@ -27,17 +27,23 @@ function setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags) {
         notifications: { showConfirmationModal: () => {} },
         isOverlayActive: () => false,
         getDeferredRecurringSetup: () => window._deferredRecurringSetup || [],
-        clearDeferredRecurringSetup: () => { window._deferredRecurringSetup = []; }
+        clearDeferredRecurringSetup: () => { window._deferredRecurringSetup = []; },
+        GlobalUtils: {
+            safeAddEventListener: (el, event, handler) => {
+                el.removeEventListener(event, handler);
+                el.addEventListener(event, handler);
+            }
+        }
     });
 }
 
-export function runRecurringIntegrationTests(resultsDiv) {
+export async function runRecurringIntegrationTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🔗 RecurringIntegration Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };
     let total = { count: 0 };
 
-    function test(name, testFn) {
+    async function test(name, testFn) {
         total.count++;
 
         // 🔒 SAVE REAL APP DATA before test runs
@@ -63,7 +69,8 @@ export function runRecurringIntegrationTests(resultsDiv) {
         };
 
         try {
-            testFn();
+            const result = testFn();
+            if (result instanceof Promise) await result;
             resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
             passed.count++;
         } catch (error) {
@@ -154,7 +161,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
     // === INITIALIZATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🚀 Initialization</h4>';
 
-    test('initializes with valid dependencies', async () => {
+    await test('initializes with valid dependencies', async () => {
         // Setup mocks
         const mockAppState = {
             get: () => ({
@@ -190,7 +197,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    test('exposes recurringCore globally', async () => {
+    await test('exposes recurringCore globally', async () => {
         const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
@@ -220,7 +227,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    test('returns recurringPanel in result', async () => {
+    await test('returns recurringPanel in result', async () => {
         const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
@@ -250,7 +257,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    test('returns complete API objects', async () => {
+    await test('returns complete API objects', async () => {
         const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
@@ -297,7 +304,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         });
     });
 
-    test('handles missing AppState gracefully', async () => {
+    await test('handles missing AppState gracefully', async () => {
         const mockShowNotification = (msg) => msg;
         const mockFeatureFlags = { recurringEnabled: true };
 
@@ -316,7 +323,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    test('processes deferred setups', async () => {
+    await test('processes deferred setups', async () => {
         const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
@@ -357,7 +364,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
     // === DEPENDENCY CONFIGURATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔌 Dependency Configuration</h4>';
 
-    test('configures state management dependencies', async () => {
+    await test('configures state management dependencies', async () => {
         const mockAppState = {
             get: () => ({ test: 'data' }),
             update: (fn) => {},
@@ -379,7 +386,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    test('configures notification dependencies', async () => {
+    await test('configures notification dependencies', async () => {
         const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
@@ -406,7 +413,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    test('configures feature flag dependencies', async () => {
+    await test('configures feature flag dependencies', async () => {
         const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
@@ -435,7 +442,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
     // === ERROR HANDLING TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 
-    test('catches and reports initialization errors', async () => {
+    await test('catches and reports initialization errors', async () => {
         // Force an error by providing invalid state
         const mockShowNotification = (msg) => msg;
         const mockFeatureFlags = { recurringEnabled: true };
@@ -456,7 +463,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    test('shows notification on initialization failure', async () => {
+    await test('shows notification on initialization failure', async () => {
         let notificationMessage = null;
         const mockShowNotification = (msg, type) => {
             notificationMessage = msg;
@@ -483,7 +490,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
     // === GLOBAL FUNCTION AVAILABILITY TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Functions</h4>';
 
-    test('exposes applyRecurringToTaskSchema25', async () => {
+    await test('exposes applyRecurringToTaskSchema25', async () => {
         const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
@@ -509,7 +516,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    test('returns handleActivation in coreAPI', async () => {
+    await test('returns handleActivation in coreAPI', async () => {
         const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
@@ -535,7 +542,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    test('returns panel update functions in panelAPI', async () => {
+    await test('returns panel update functions in panelAPI', async () => {
         const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",

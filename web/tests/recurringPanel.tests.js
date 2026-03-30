@@ -82,7 +82,7 @@ export async function runRecurringPanelTests(resultsDiv) {
         info: console.info
     };
 
-    function test(name, testFn) {
+    async function test(name, testFn) {
         total.count++;
 
         // 🔒 SAVE REAL APP DATA before test runs
@@ -105,7 +105,8 @@ export async function runRecurringPanelTests(resultsDiv) {
         };
 
         try {
-            testFn();
+            const result = testFn();
+            if (result instanceof Promise) await result;
             resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
             passed.count++;
         } catch (error) {
@@ -263,7 +264,7 @@ export async function runRecurringPanelTests(resultsDiv) {
     // ===== PANEL OPERATIONS =====
     resultsDiv.innerHTML += '<h4 class="test-section">🔁 Panel Operations</h4>';
 
-    test('openPanel waits for core systems', async () => {
+    await test('openPanel waits for core systems', async () => {
         // ✅ Test updated: With AppInit, openPanel() waits for core instead of failing
 
         // Mark core ready so the test completes
@@ -292,7 +293,7 @@ export async function runRecurringPanelTests(resultsDiv) {
         }
     });
 
-    test('openPanel sets panelOpen state', async () => {
+    await test('openPanel sets panelOpen state', async () => {
         // ✅ Mark core systems ready for test
         if (window.appInit && !window.appInit.isCoreReady()) {
             await window.appInit.markCoreSystemsReady();
@@ -1000,7 +1001,7 @@ export async function runRecurringPanelTests(resultsDiv) {
         panel.setup();
     });
 
-    test('handles AppState not ready in openPanel', async () => {
+    await test('handles AppState not ready in openPanel', async () => {
         // ✅ Test updated: With AppInit, openPanel() now waits for core instead of checking readiness
         // The old behavior (show notification immediately) no longer applies
         // New behavior: waits silently via appInit.waitForCore()
