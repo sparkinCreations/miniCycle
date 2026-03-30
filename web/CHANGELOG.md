@@ -1,3 +1,7 @@
+## [2.156] - 2026-03-30
+- fix: improve version mismatch detection for test files in service worker
+
+
 ## [2.155] - 2026-03-29
 - chore: update version to 2.154 and adjust related files
 
