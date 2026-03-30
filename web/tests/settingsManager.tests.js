@@ -149,69 +149,27 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         }
     }
 
-    // Helper: mock download infrastructure to prevent real downloads and blob:mock-url errors
+    // Helper: mock download infrastructure to prevent real downloads and blob:mock-url errors.
+    // Does NOT mock document.createElement — that interferes with dynamic imports in init().
+    // Instead, neuters .click() at the appendChild stage, after the <a> element is fully set up.
     function mockDownloadEnvironment() {
         const originals = {
             createObjectURL: URL.createObjectURL,
             revokeObjectURL: URL.revokeObjectURL,
-            createElement: document.createElement.bind(document),
             appendChild: document.body.appendChild.bind(document.body),
             removeChild: document.body.removeChild.bind(document.body),
         };
         const tracked = { linkCreated: false, blobCreated: false, filename: '' };
-        const _debug = false; // flip to true to diagnose download mock issues
 
-        URL.createObjectURL = (blob) => {
-            tracked.blobCreated = true;
-            if (_debug) console.log('[DL-MOCK] createObjectURL called, returning about:blank');
-            return 'about:blank';
-        };
-        URL.revokeObjectURL = () => {
-            if (_debug) console.log('[DL-MOCK] revokeObjectURL called (no-op)');
-        };
-        document.createElement = (tag) => {
-            const el = originals.createElement(tag);
-            if (tag === 'a') {
+        URL.createObjectURL = () => { tracked.blobCreated = true; return 'about:blank'; };
+        URL.revokeObjectURL = () => {};
+        document.body.appendChild = (el) => {
+            if (el?.tagName === 'A') {
                 tracked.linkCreated = true;
-                el.click = () => {
-                    if (_debug) console.log('[DL-MOCK] link.click() intercepted (no-op)');
-                };
-                // Test if we can shadow href on this element
-                try {
-                    Object.defineProperty(el, 'href', {
-                        set(v) { if (_debug) console.log('[DL-MOCK] href SET intercepted:', v); },
-                        get() { return ''; },
-                        configurable: true
-                    });
-                    // Verify the shadow actually works
-                    el.href = 'test://verify';
-                    if (el.href !== '') {
-                        // defineProperty didn't shadow the native href — use a plain object instead
-                        if (_debug) console.log('[DL-MOCK] href shadow FAILED, using plain object');
-                        throw new Error('shadow failed');
-                    }
-                    if (_debug) console.log('[DL-MOCK] href shadow OK');
-                } catch {
-                    // Fallback: return a plain object that quacks like an <a> element
-                    if (_debug) console.log('[DL-MOCK] href not overridable, returning plain mock object');
-                    return {
-                        href: '',
-                        download: '',
-                        click() { if (_debug) console.log('[DL-MOCK] plain mock click (no-op)'); },
-                        set download(v) { tracked.filename = v; },
-                        get download() { return tracked.filename; },
-                    };
-                }
-                // Track download filename
-                Object.defineProperty(el, 'download', {
-                    set(v) { tracked.filename = v; },
-                    get() { return tracked.filename; },
-                    configurable: true
-                });
+                tracked.filename = el.download || '';
+                el.click = () => {}; // neuter click before production code calls it
             }
-            return el;
         };
-        document.body.appendChild = () => {};
         document.body.removeChild = () => {};
 
         return {
@@ -219,7 +177,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             restore() {
                 URL.createObjectURL = originals.createObjectURL;
                 URL.revokeObjectURL = originals.revokeObjectURL;
-                document.createElement = originals.createElement;
                 document.body.appendChild = originals.appendChild;
                 document.body.removeChild = originals.removeChild;
             }
