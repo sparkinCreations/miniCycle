@@ -299,15 +299,22 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     await test('exportMiniCycleData creates download', async (mockFlattenedData) => {
         let linkCreated = false;
         let blobCreated = false;
+        let mockBlobUrl = null;
 
-        // Mock URL methods to prevent real downloads
+        // Mock URL methods — create a REAL blob URL to avoid browser security errors,
+        // but intercept to track that createObjectURL was called
         const originalCreateObjectURL = URL.createObjectURL;
         const originalRevokeObjectURL = URL.revokeObjectURL;
         URL.createObjectURL = (blob) => {
             blobCreated = true;
-            return 'blob:mock-url';
+            // Create a real blob URL so the browser doesn't complain
+            mockBlobUrl = originalCreateObjectURL(blob);
+            return mockBlobUrl;
         };
-        URL.revokeObjectURL = () => {};
+        URL.revokeObjectURL = (url) => {
+            // Revoke the real blob URL we created
+            if (url) originalRevokeObjectURL(url);
+        };
 
         // Mock document methods
         const originalCreateElement = document.createElement.bind(document);
@@ -354,6 +361,9 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         URL.createObjectURL = originalCreateObjectURL;
         URL.revokeObjectURL = originalRevokeObjectURL;
 
+        // Clean up any remaining blob URL
+        if (mockBlobUrl) originalRevokeObjectURL(mockBlobUrl);
+
         if (!linkCreated || !blobCreated) {
             throw new Error('Download link and blob should be created');
         }
@@ -363,8 +373,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         // Mock URL methods
         const originalCreateObjectURL = URL.createObjectURL;
         const originalRevokeObjectURL = URL.revokeObjectURL;
-        URL.createObjectURL = () => 'blob:mock-url';
-        URL.revokeObjectURL = () => {};
+        URL.createObjectURL = (blob) => originalCreateObjectURL(blob);
+        URL.revokeObjectURL = (url) => originalRevokeObjectURL(url);
 
         // Mock DOM methods
         const originalAppendChild = document.body.appendChild.bind(document.body);
@@ -407,8 +417,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         // Mock URL methods
         const originalCreateObjectURL = URL.createObjectURL;
         const originalRevokeObjectURL = URL.revokeObjectURL;
-        URL.createObjectURL = () => 'blob:mock-url';
-        URL.revokeObjectURL = () => {};
+        URL.createObjectURL = (blob) => originalCreateObjectURL(blob);
+        URL.revokeObjectURL = (url) => originalRevokeObjectURL(url);
 
         // Mock DOM methods
         const originalAppendChild = document.body.appendChild.bind(document.body);
@@ -563,8 +573,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         const originalAppendChild = document.body.appendChild.bind(document.body);
         const originalRemoveChild = document.body.removeChild.bind(document.body);
 
-        URL.createObjectURL = () => 'blob:mock-url';
-        URL.revokeObjectURL = () => {};
+        URL.createObjectURL = (blob) => originalCreateObjectURL(blob);
+        URL.revokeObjectURL = (url) => originalRevokeObjectURL(url);
         document.body.appendChild = () => {};
         document.body.removeChild = () => {};
 
@@ -792,8 +802,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         const originalAppendChild = document.body.appendChild.bind(document.body);
         const originalRemoveChild = document.body.removeChild.bind(document.body);
 
-        URL.createObjectURL = () => 'blob:mock-url';
-        URL.revokeObjectURL = () => {};
+        URL.createObjectURL = (blob) => originalCreateObjectURL(blob);
+        URL.revokeObjectURL = (url) => originalRevokeObjectURL(url);
         document.body.appendChild = () => {};
         document.body.removeChild = () => {};
 
@@ -850,8 +860,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         const originalAppendChild = document.body.appendChild.bind(document.body);
         const originalRemoveChild = document.body.removeChild.bind(document.body);
 
-        URL.createObjectURL = () => 'blob:mock-url';
-        URL.revokeObjectURL = () => {};
+        URL.createObjectURL = (blob) => originalCreateObjectURL(blob);
+        URL.revokeObjectURL = (url) => originalRevokeObjectURL(url);
         document.body.appendChild = () => {};
         document.body.removeChild = () => {};
 
@@ -886,8 +896,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         const originalAppendChild = document.body.appendChild.bind(document.body);
         const originalRemoveChild = document.body.removeChild.bind(document.body);
 
-        URL.createObjectURL = () => 'blob:mock-url';
-        URL.revokeObjectURL = () => {};
+        URL.createObjectURL = (blob) => originalCreateObjectURL(blob);
+        URL.revokeObjectURL = (url) => originalRevokeObjectURL(url);
         document.body.appendChild = () => {};
         document.body.removeChild = () => {};
 
