@@ -149,6 +149,83 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         }
     }
 
+    // Helper: mock download infrastructure to prevent real downloads and blob:mock-url errors
+    function mockDownloadEnvironment() {
+        const originals = {
+            createObjectURL: URL.createObjectURL,
+            revokeObjectURL: URL.revokeObjectURL,
+            createElement: document.createElement.bind(document),
+            appendChild: document.body.appendChild.bind(document.body),
+            removeChild: document.body.removeChild.bind(document.body),
+        };
+        const tracked = { linkCreated: false, blobCreated: false, filename: '' };
+        const _debug = false; // flip to true to diagnose download mock issues
+
+        URL.createObjectURL = (blob) => {
+            tracked.blobCreated = true;
+            if (_debug) console.log('[DL-MOCK] createObjectURL called, returning about:blank');
+            return 'about:blank';
+        };
+        URL.revokeObjectURL = () => {
+            if (_debug) console.log('[DL-MOCK] revokeObjectURL called (no-op)');
+        };
+        document.createElement = (tag) => {
+            const el = originals.createElement(tag);
+            if (tag === 'a') {
+                tracked.linkCreated = true;
+                el.click = () => {
+                    if (_debug) console.log('[DL-MOCK] link.click() intercepted (no-op)');
+                };
+                // Test if we can shadow href on this element
+                try {
+                    Object.defineProperty(el, 'href', {
+                        set(v) { if (_debug) console.log('[DL-MOCK] href SET intercepted:', v); },
+                        get() { return ''; },
+                        configurable: true
+                    });
+                    // Verify the shadow actually works
+                    el.href = 'test://verify';
+                    if (el.href !== '') {
+                        // defineProperty didn't shadow the native href — use a plain object instead
+                        if (_debug) console.log('[DL-MOCK] href shadow FAILED, using plain object');
+                        throw new Error('shadow failed');
+                    }
+                    if (_debug) console.log('[DL-MOCK] href shadow OK');
+                } catch {
+                    // Fallback: return a plain object that quacks like an <a> element
+                    if (_debug) console.log('[DL-MOCK] href not overridable, returning plain mock object');
+                    return {
+                        href: '',
+                        download: '',
+                        click() { if (_debug) console.log('[DL-MOCK] plain mock click (no-op)'); },
+                        set download(v) { tracked.filename = v; },
+                        get download() { return tracked.filename; },
+                    };
+                }
+                // Track download filename
+                Object.defineProperty(el, 'download', {
+                    set(v) { tracked.filename = v; },
+                    get() { return tracked.filename; },
+                    configurable: true
+                });
+            }
+            return el;
+        };
+        document.body.appendChild = () => {};
+        document.body.removeChild = () => {};
+
+        return {
+            tracked,
+            restore() {
+                URL.createObjectURL = originals.createObjectURL;
+                URL.revokeObjectURL = originals.revokeObjectURL;
+                document.createElement = originals.createElement;
+                document.body.appendChild = originals.appendChild;
+                document.body.removeChild = originals.removeChild;
+            }
+        };
+    }
+
     // === INITIALIZATION TESTS ===
     resultsDiv.innerHTML += '<h4>🔧 Initialization Tests</h4>';
 
@@ -297,174 +374,65 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     resultsDiv.innerHTML += '<h4>📤 Import/Export Functionality</h4>';
 
     await test('exportMiniCycleData creates download', async (mockFlattenedData) => {
-        let linkCreated = false;
-        let blobCreated = false;
-        let mockBlobUrl = null;
+        const dl = mockDownloadEnvironment();
+        try {
+            const instance = new SettingsManager({
+                loadMiniCycleData: () => mockFlattenedData,
+                showNotification: () => {}
+            });
+            await instance.init();
 
-        // Mock URL methods — create a REAL blob URL to avoid browser security errors,
-        // but intercept to track that createObjectURL was called
-        const originalCreateObjectURL = URL.createObjectURL;
-        const originalRevokeObjectURL = URL.revokeObjectURL;
-        URL.createObjectURL = (blob) => {
-            blobCreated = true;
-            // Create a real blob URL so the browser doesn't complain
-            mockBlobUrl = originalCreateObjectURL(blob);
-            return mockBlobUrl;
-        };
-        URL.revokeObjectURL = (url) => {
-            // Revoke the real blob URL we created
-            if (url) originalRevokeObjectURL(url);
-        };
+            instance.exportMiniCycleData({
+                name: 'test-cycle', title: 'Test Cycle', tasks: [],
+                autoReset: true, cycleCount: 0, deleteCheckedTasks: false
+            }, 'Test Cycle');
 
-        // Mock document methods
-        const originalCreateElement = document.createElement.bind(document);
-        const originalAppendChild = document.body.appendChild.bind(document.body);
-        const originalRemoveChild = document.body.removeChild.bind(document.body);
-
-        document.createElement = (tag) => {
-            const el = originalCreateElement(tag);
-            if (tag === 'a') {
-                linkCreated = true;
-                // Override click to prevent actual download
-                el.click = () => {};
+            if (!dl.tracked.linkCreated || !dl.tracked.blobCreated) {
+                throw new Error('Download link and blob should be created');
             }
-            return el;
-        };
-
-        // Prevent actual DOM manipulation
-        document.body.appendChild = () => {};
-        document.body.removeChild = () => {};
-
-        const instance = new SettingsManager({
-            loadMiniCycleData: () => mockFlattenedData,
-            showNotification: () => {}
-        });
-
-        // Init to load sub-modules before calling exportMiniCycleData
-        await instance.init();
-
-        const miniCycleData = {
-            name: 'test-cycle',
-            title: 'Test Cycle',
-            tasks: [],
-            autoReset: true,
-            cycleCount: 0,
-            deleteCheckedTasks: false
-        };
-
-        instance.exportMiniCycleData(miniCycleData, 'Test Cycle');
-
-        // Restore originals
-        document.createElement = originalCreateElement;
-        document.body.appendChild = originalAppendChild;
-        document.body.removeChild = originalRemoveChild;
-        URL.createObjectURL = originalCreateObjectURL;
-        URL.revokeObjectURL = originalRevokeObjectURL;
-
-        // Clean up any remaining blob URL
-        if (mockBlobUrl) originalRevokeObjectURL(mockBlobUrl);
-
-        if (!linkCreated || !blobCreated) {
-            throw new Error('Download link and blob should be created');
+        } finally {
+            dl.restore();
         }
     });
 
     await test('exportMiniCycleData handles export flow', async (mockFlattenedData) => {
-        // Mock URL methods
-        const originalCreateObjectURL = URL.createObjectURL;
-        const originalRevokeObjectURL = URL.revokeObjectURL;
-        URL.createObjectURL = (blob) => originalCreateObjectURL(blob);
-        URL.revokeObjectURL = (url) => originalRevokeObjectURL(url);
-
-        // Mock DOM methods
-        const originalAppendChild = document.body.appendChild.bind(document.body);
-        const originalRemoveChild = document.body.removeChild.bind(document.body);
-        document.body.appendChild = () => {};
-        document.body.removeChild = () => {};
-
-        const instance = new SettingsManager({
-            loadMiniCycleData: () => mockFlattenedData,
-            showNotification: () => {}
-        });
-
-        // Init to load sub-modules
-        await instance.init();
-
-        const miniCycleData = {
-            name: 'test',
-            title: 'Test',
-            tasks: [{ id: 'task-1', text: 'Task 1', completed: false }],
-            autoReset: false,
-            cycleCount: 0,
-            deleteCheckedTasks: false
-        };
-
-        // Should not throw
+        const dl = mockDownloadEnvironment();
         try {
-            instance.exportMiniCycleData(miniCycleData, 'Test Cycle');
+            const instance = new SettingsManager({
+                loadMiniCycleData: () => mockFlattenedData,
+                showNotification: () => {}
+            });
+            await instance.init();
+
+            instance.exportMiniCycleData({
+                name: 'test', title: 'Test',
+                tasks: [{ id: 'task-1', text: 'Task 1', completed: false }],
+                autoReset: false, cycleCount: 0, deleteCheckedTasks: false
+            }, 'Test Cycle');
         } finally {
-            // Restore originals
-            document.body.appendChild = originalAppendChild;
-            document.body.removeChild = originalRemoveChild;
-            URL.createObjectURL = originalCreateObjectURL;
-            URL.revokeObjectURL = originalRevokeObjectURL;
+            dl.restore();
         }
     });
 
     await test('exportMiniCycleData sanitizes filename', async (mockFlattenedData) => {
-        let filename = '';
+        const dl = mockDownloadEnvironment();
+        try {
+            const instance = new SettingsManager({
+                loadMiniCycleData: () => mockFlattenedData,
+                showNotification: () => {}
+            });
+            await instance.init();
 
-        // Mock URL methods
-        const originalCreateObjectURL = URL.createObjectURL;
-        const originalRevokeObjectURL = URL.revokeObjectURL;
-        URL.createObjectURL = (blob) => originalCreateObjectURL(blob);
-        URL.revokeObjectURL = (url) => originalRevokeObjectURL(url);
+            instance.exportMiniCycleData({
+                name: 'test', title: 'My Cycle!', tasks: [],
+                autoReset: true, cycleCount: 0, deleteCheckedTasks: false
+            }, 'My Cycle!');
 
-        // Mock DOM methods
-        const originalAppendChild = document.body.appendChild.bind(document.body);
-        const originalRemoveChild = document.body.removeChild.bind(document.body);
-        document.body.appendChild = () => {};
-        document.body.removeChild = () => {};
-
-        const originalCreateElement = document.createElement.bind(document);
-        document.createElement = (tag) => {
-            const el = originalCreateElement(tag);
-            if (tag === 'a') {
-                Object.defineProperty(el, 'download', {
-                    set(value) { filename = value; },
-                    get() { return filename; }
-                });
-                el.click = () => {}; // Prevent actual click
+            if (!dl.tracked.filename.endsWith('.mcyc')) {
+                throw new Error('Filename should have .mcyc extension');
             }
-            return el;
-        };
-
-        const instance = new SettingsManager({
-            loadMiniCycleData: () => mockFlattenedData,
-            showNotification: () => {}
-        });
-
-        // Init to load sub-modules
-        await instance.init();
-
-        instance.exportMiniCycleData({
-            name: 'test',
-            title: 'My Cycle!',
-            tasks: [],
-            autoReset: true,
-            cycleCount: 0,
-            deleteCheckedTasks: false
-        }, 'My Cycle!');
-
-        // Restore originals
-        document.createElement = originalCreateElement;
-        document.body.appendChild = originalAppendChild;
-        document.body.removeChild = originalRemoveChild;
-        URL.createObjectURL = originalCreateObjectURL;
-        URL.revokeObjectURL = originalRevokeObjectURL;
-
-        if (!filename.endsWith('.mcyc')) {
-            throw new Error('Filename should have .mcyc extension');
+        } finally {
+            dl.restore();
         }
     });
 
@@ -566,43 +534,21 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
 
     await test('handles corrupted localStorage in export', async () => {
         localStorage.clear();
-
-        // Mock URL and DOM methods to prevent downloads
-        const originalCreateObjectURL = URL.createObjectURL;
-        const originalRevokeObjectURL = URL.revokeObjectURL;
-        const originalAppendChild = document.body.appendChild.bind(document.body);
-        const originalRemoveChild = document.body.removeChild.bind(document.body);
-
-        URL.createObjectURL = (blob) => originalCreateObjectURL(blob);
-        URL.revokeObjectURL = (url) => originalRevokeObjectURL(url);
-        document.body.appendChild = () => {};
-        document.body.removeChild = () => {};
-
-        const instance = new SettingsManager({
-            loadMiniCycleData: () => null,
-            showNotification: () => {}
-        });
-
-        await instance.init();
-
-        const miniCycleData = {
-            name: 'test',
-            title: 'Test',
-            tasks: [],
-            autoReset: true,
-            cycleCount: 0,
-            deleteCheckedTasks: false
-        };
-
-        // Should handle gracefully
+        const dl = mockDownloadEnvironment();
         try {
-            instance.exportMiniCycleData(miniCycleData, 'Test');
+            const instance = new SettingsManager({
+                loadMiniCycleData: () => null,
+                showNotification: () => {}
+            });
+            await instance.init();
+
+            // Should handle gracefully
+            instance.exportMiniCycleData({
+                name: 'test', title: 'Test', tasks: [],
+                autoReset: true, cycleCount: 0, deleteCheckedTasks: false
+            }, 'Test');
         } finally {
-            // Restore originals
-            URL.createObjectURL = originalCreateObjectURL;
-            URL.revokeObjectURL = originalRevokeObjectURL;
-            document.body.appendChild = originalAppendChild;
-            document.body.removeChild = originalRemoveChild;
+            dl.restore();
         }
     });
 
@@ -796,46 +742,26 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     });
 
     await test('exportMiniCycleData completes quickly', async () => {
-        // Mock URL and DOM methods to prevent downloads
-        const originalCreateObjectURL = URL.createObjectURL;
-        const originalRevokeObjectURL = URL.revokeObjectURL;
-        const originalAppendChild = document.body.appendChild.bind(document.body);
-        const originalRemoveChild = document.body.removeChild.bind(document.body);
+        const dl = mockDownloadEnvironment();
+        try {
+            const instance = new SettingsManager({
+                showNotification: () => {}
+            });
+            await instance.init();
 
-        URL.createObjectURL = (blob) => originalCreateObjectURL(blob);
-        URL.revokeObjectURL = (url) => originalRevokeObjectURL(url);
-        document.body.appendChild = () => {};
-        document.body.removeChild = () => {};
+            const startTime = performance.now();
+            instance.exportMiniCycleData({
+                name: 'test', title: 'Test', tasks: [],
+                autoReset: true, cycleCount: 0, deleteCheckedTasks: false
+            }, 'Test');
+            const endTime = performance.now();
 
-        const instance = new SettingsManager({
-            showNotification: () => {}
-        });
-
-        await instance.init();
-
-        const miniCycleData = {
-            name: 'test',
-            title: 'Test',
-            tasks: [],
-            autoReset: true,
-            cycleCount: 0,
-            deleteCheckedTasks: false
-        };
-
-        const startTime = performance.now();
-        instance.exportMiniCycleData(miniCycleData, 'Test');
-        const endTime = performance.now();
-
-        // Restore originals
-        URL.createObjectURL = originalCreateObjectURL;
-        URL.revokeObjectURL = originalRevokeObjectURL;
-        document.body.appendChild = originalAppendChild;
-        document.body.removeChild = originalRemoveChild;
-
-        const duration = endTime - startTime;
-
-        if (duration > 50) { // 50ms threshold
-            throw new Error(`exportMiniCycleData took too long: ${duration.toFixed(2)}ms`);
+            const duration = endTime - startTime;
+            if (duration > 50) {
+                throw new Error(`exportMiniCycleData took too long: ${duration.toFixed(2)}ms`);
+            }
+        } finally {
+            dl.restore();
         }
     });
 
@@ -854,84 +780,38 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     });
 
     await test('handles missing data in export', async () => {
-        // Mock URL and DOM methods to prevent downloads
-        const originalCreateObjectURL = URL.createObjectURL;
-        const originalRevokeObjectURL = URL.revokeObjectURL;
-        const originalAppendChild = document.body.appendChild.bind(document.body);
-        const originalRemoveChild = document.body.removeChild.bind(document.body);
-
-        URL.createObjectURL = (blob) => originalCreateObjectURL(blob);
-        URL.revokeObjectURL = (url) => originalRevokeObjectURL(url);
-        document.body.appendChild = () => {};
-        document.body.removeChild = () => {};
-
-        const instance = new SettingsManager({
-            showNotification: () => {}
-        });
-
-        await instance.init();
-
-        const miniCycleData = {
-            name: 'test',
-            title: 'Test'
-            // Missing tasks, autoReset, etc.
-        };
-
-        // Should handle gracefully
+        const dl = mockDownloadEnvironment();
         try {
-            instance.exportMiniCycleData(miniCycleData, 'Test');
+            const instance = new SettingsManager({
+                showNotification: () => {}
+            });
+            await instance.init();
+
+            // Should handle gracefully — missing tasks, autoReset, etc.
+            instance.exportMiniCycleData({ name: 'test', title: 'Test' }, 'Test');
         } finally {
-            // Restore originals
-            URL.createObjectURL = originalCreateObjectURL;
-            URL.revokeObjectURL = originalRevokeObjectURL;
-            document.body.appendChild = originalAppendChild;
-            document.body.removeChild = originalRemoveChild;
+            dl.restore();
         }
     });
 
     await test('handles very large data export', async () => {
-        // Mock URL and DOM methods to prevent downloads
-        const originalCreateObjectURL = URL.createObjectURL;
-        const originalRevokeObjectURL = URL.revokeObjectURL;
-        const originalAppendChild = document.body.appendChild.bind(document.body);
-        const originalRemoveChild = document.body.removeChild.bind(document.body);
-
-        URL.createObjectURL = (blob) => originalCreateObjectURL(blob);
-        URL.revokeObjectURL = (url) => originalRevokeObjectURL(url);
-        document.body.appendChild = () => {};
-        document.body.removeChild = () => {};
-
-        const instance = new SettingsManager({
-            showNotification: () => {}
-        });
-
-        await instance.init();
-
-        // Create large dataset
-        const largeTasks = Array.from({ length: 1000 }, (_, i) => ({
-            id: `task-${i}`,
-            text: `Task ${i}`,
-            completed: false
-        }));
-
-        const miniCycleData = {
-            name: 'large-test',
-            title: 'Large Test',
-            tasks: largeTasks,
-            autoReset: true,
-            cycleCount: 0,
-            deleteCheckedTasks: false
-        };
-
-        // Should handle large dataset
+        const dl = mockDownloadEnvironment();
         try {
-            instance.exportMiniCycleData(miniCycleData, 'Large Test');
+            const instance = new SettingsManager({
+                showNotification: () => {}
+            });
+            await instance.init();
+
+            const largeTasks = Array.from({ length: 1000 }, (_, i) => ({
+                id: `task-${i}`, text: `Task ${i}`, completed: false
+            }));
+
+            instance.exportMiniCycleData({
+                name: 'large-test', title: 'Large Test', tasks: largeTasks,
+                autoReset: true, cycleCount: 0, deleteCheckedTasks: false
+            }, 'Large Test');
         } finally {
-            // Restore originals
-            URL.createObjectURL = originalCreateObjectURL;
-            URL.revokeObjectURL = originalRevokeObjectURL;
-            document.body.appendChild = originalAppendChild;
-            document.body.removeChild = originalRemoveChild;
+            dl.restore();
         }
     });
 
