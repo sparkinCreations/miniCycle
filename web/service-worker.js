@@ -1,9 +1,9 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.154';
-var CACHE_VERSION = 'v997';
-var CACHE_VERSION_NUMBER = 997; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.155';
+var CACHE_VERSION = 'v998';
+var CACHE_VERSION_NUMBER = 998; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -727,9 +727,11 @@ self.addEventListener('fetch', function (event) {
     // ✅ VERSION MISMATCH DETECTION:
     var requestVersion = url.searchParams.get('v');
     var isTestFile = url.pathname.indexOf('/tests/') !== -1;
-    // Test files use Date.now() cache busters — always a "mismatch" but not a real version issue.
-    // Skip version mismatch for test paths to avoid 3s network-first timeouts (60+ files).
-    var versionMismatch = requestVersion && requestVersion !== APP_VERSION && !isTestFile;
+    // Test cache busters use Date.now() (13-digit timestamps) or "test"/"dev-local"/etc.
+    // These are NOT real version mismatches — skip network-first to avoid 3s timeouts per file.
+    // Real app versions match pattern like "2.154" (short numeric with dot).
+    var isTestCacheBuster = requestVersion && (requestVersion.length > 10 || requestVersion === 'test' || requestVersion === 'dev-local' || requestVersion === 'undefined');
+    var versionMismatch = requestVersion && requestVersion !== APP_VERSION && !isTestFile && !isTestCacheBuster;
     var isModuleFile = url.pathname.indexOf('/modules/') !== -1;
     var staticImportWithoutVersion = isModuleFile && !requestVersion;
 
