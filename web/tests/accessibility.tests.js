@@ -44,11 +44,14 @@ export async function runAccessibilityTests(resultsDiv, isPartOfSuite = false) {
     }
 
     // Helper to create DOM elements for testing
+    // Note: use opacity:0 instead of left:-9999px because browsers
+    // don't reliably move focus to off-screen elements
     function createTestContainer() {
         const container = document.createElement('div');
         container.id = 'a11y-test-container';
         container.style.position = 'absolute';
-        container.style.left = '-9999px';
+        container.style.opacity = '0';
+        container.style.pointerEvents = 'none';
         document.body.appendChild(container);
         return container;
     }

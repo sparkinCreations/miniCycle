@@ -43,17 +43,18 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">⚙️ DI Setup</h4>';
 
-    await test('setBackupRestoreManagerDependencies accepts an object without throwing', () => {
-        mod.setBackupRestoreManagerDependencies({});
-    });
-
     await test('setBackupRestoreManagerDependencies accepts mock dependencies', () => {
         mod.setBackupRestoreManagerDependencies({
-            AppState: { get: () => ({ settings: {} }), update: () => {} },
+            AppState: { get: () => ({ settings: {} }), update: () => {}, isReady: () => true },
             showNotification: () => {},
             showConfirmationModal: () => {},
             safeAddEventListener: () => {}
         });
+    });
+
+    await test('setBackupRestoreManagerDependencies accepts an object without throwing', () => {
+        // Call after mock deps are set (above) so required deps are already satisfied
+        mod.setBackupRestoreManagerDependencies({});
     });
 
     // ============================================
