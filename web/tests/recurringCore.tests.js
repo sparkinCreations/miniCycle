@@ -842,7 +842,21 @@ export async function runRecurringCoreTests(resultsDiv) {
         }
     });
 
-    test('empty biweekly week1 and week2 arrays do not trigger', () => {
+    test('empty biweekly week1 and week2 arrays do not trigger on non-default day', () => {
+        // The normalizer defaults empty week arrays to today's weekday.
+        // Use a test date on a DIFFERENT weekday so it never accidentally matches.
+        const today = new Date();
+        const todayWeekday = today.getDay(); // 0=Sun, 1=Mon, ...
+        // Pick a test date that's 3 days offset from today (guaranteed different weekday)
+        const offsetDate = new Date(2025, 0, 6); // Monday, Jan 6 (week 0)
+        const offsetDay = offsetDate.getDay();
+
+        // If today happens to be the same weekday as the test date, shift test date by 1 day
+        let testDate = offsetDate;
+        if (todayWeekday === offsetDay) {
+            testDate = new Date(2025, 0, 7); // Tuesday, Jan 7
+        }
+
         const referenceDate = new Date(2025, 0, 6); // Monday, Jan 6 (week 0)
         const settings = normalizeRecurringSettings({
             frequency: 'biweekly',
@@ -852,12 +866,11 @@ export async function runRecurringCoreTests(resultsDiv) {
                 referenceDate: referenceDate.toISOString()
             }
         });
-        const testDate = new Date(2025, 0, 6); // Monday, week 0
 
         const result = shouldTaskRecurNow(settings, testDate);
 
         if (result) {
-            throw new Error('Should not trigger when both week1 and week2 are empty');
+            throw new Error('Should not trigger when test day differs from defaulted weekday');
         }
     });
 
