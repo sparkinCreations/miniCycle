@@ -1,3 +1,7 @@
+## [2.154] - 2026-03-29
+- fix: enhance backup logic in module test suite to preserve existing IndexedDB backups
+
+
 ## [2.153] - 2026-03-29
 - fix: add guard for event target in wireRecurringSettingsClickListener
 
