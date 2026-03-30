@@ -2630,7 +2630,11 @@
                     moduleIndex++;
 
                     if (isProduction && productionSkipList.includes(module.key)) {
-                        allResults.push({ name: module.name, passed: 0, total: 0, skipped: true });
+                        allResults.push({
+                            name: module.name, passed: 0, total: 0, skipped: true,
+                            skipReason: 'Skipped on production — dynamic imports in this module go through the service worker fetch handler, which interferes with Netlify\'s CDN edge caching and causes timeouts. Run locally via npm test for full coverage.',
+                            html: ''
+                        });
                         continue;
                     }
 
@@ -2776,6 +2780,13 @@
             // Detailed results for each module
             output += '<h3 style="margin-top: 30px;">📋 Detailed Results</h3>';
             for (const result of allResults) {
+                if (result.skipped) {
+                    output += '<div style="margin: 20px 0; padding: 15px; background: rgba(128, 128, 128, 0.1); border-radius: 8px; opacity: 0.7;">';
+                    output += `<h4 style="margin-top: 0;">⏭️ ${result.name} (SKIPPED)</h4>`;
+                    output += `<p style="margin: 0; font-style: italic;">${result.skipReason}</p>`;
+                    output += '</div>';
+                    continue;
+                }
                 output += '<div style="margin: 20px 0; padding: 15px; background: rgba(255, 255, 255, 0.1); border-radius: 8px;">';
                 output += `<h4 style="margin-top: 0;">${result.name} (${result.passed}/${result.total})</h4>`;
                 output += result.html;
