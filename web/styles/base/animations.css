@@ -27,6 +27,12 @@
     100% { opacity: 0; }
 }
 
+/* Fade out with scale (for modal close transitions) */
+@keyframes fadeOutScale-modal {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(0.95); }
+}
+
 /* Fade out with scale (for cycle completion — legacy, kept for clear animation) */
 @keyframes fadeOutScale {
     0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }

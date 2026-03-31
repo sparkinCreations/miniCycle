@@ -55,6 +55,8 @@ import { hasActiveNotifications, isClickOnNotification } from './modalUtils.js';
 // Re-export so existing DI consumers that reference modalManager exports still work.
 export { hasActiveNotifications, isClickOnNotification };
 
+import { animateDialogClose } from '../utils/dialogClose.js';
+
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
@@ -165,10 +167,10 @@ export class ModalManager {
             const modal = _deps.getModal(name);
             if (!modal) continue;
 
-            // Native <dialog> elements use .close(); restore focus from the dialog that was open
+            // Native <dialog> elements use animated close; restore focus from the dialog that was open
             if (typeof modal.showModal === 'function') {
                 if (modal.open) {
-                    modal.close();
+                    animateDialogClose(modal);
                     modal._previousFocus?.focus({ focusVisible: false });
                 }
             } else {

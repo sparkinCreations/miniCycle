@@ -27,6 +27,7 @@ import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
+import { animateDialogClose } from '../utils/dialogClose.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -547,6 +548,12 @@ export class RecurringPanelManager {
                 panel.classList.add(DOM_CLASSES.HIDDEN);
             });
 
+            // Hide the surfaced time picker section when specific dates is active
+            const timePickerSection = this.deps.getElementById(DOM_IDS.TIME_PICKER_SECTION);
+            if (timePickerSection) {
+                timePickerSection.classList.toggle(DOM_CLASSES.HIDDEN, shouldShow);
+            }
+
             this.deps.getElementById(DOM_IDS.RECUR_FREQUENCY_CONTAINER).classList.toggle(DOM_CLASSES.HIDDEN, shouldShow);
             this.deps.getElementById(DOM_IDS.RECUR_INDEFINITELY).closest("label").classList.toggle(DOM_CLASSES.HIDDEN, shouldShow);
 
@@ -567,6 +574,14 @@ export class RecurringPanelManager {
                 if (freqSelect) {
                     const event = new Event("change");
                     freqSelect.dispatchEvent(event);
+                }
+
+                // Only restore "Recur indefinitely" label if advanced options are expanded
+                const advBtn = this.deps.getElementById(DOM_IDS.TOGGLE_ADVANCED_SETTINGS);
+                const advancedOn = advBtn?.dataset.advancedVisible === 'true';
+                const indefinitelyLabel = this.deps.getElementById(DOM_IDS.RECUR_INDEFINITELY)?.closest("label");
+                if (indefinitelyLabel && !advancedOn) {
+                    indefinitelyLabel.classList.add(DOM_CLASSES.HIDDEN);
                 }
             }
 
@@ -775,13 +790,21 @@ export class RecurringPanelManager {
     /**
      * Close the recurring panel
      */
-    closePanel() {
+    async closePanel() {
 
         try {
             const overlay = this.deps.getModal('recurringOverlay');
             if (overlay) {
-                overlay.close();
+                await animateDialogClose(overlay);
                 overlay._previousFocus?.focus({ focusVisible: false });
+            }
+
+            // Reset specific-dates checkbox so _resetAdvanced() on reopen doesn't hide its label while it's checked
+            const specificDatesCheckbox = this.deps.getElementById(DOM_IDS.RECUR_SPECIFIC_DATES);
+            if (specificDatesCheckbox?.checked) {
+                specificDatesCheckbox.checked = false;
+                // Trigger the change handler to restore frequency dropdown, time picker, etc.
+                specificDatesCheckbox.dispatchEvent(new Event('change'));
             }
 
             this.state.selectedTaskId = null;
@@ -1056,7 +1079,7 @@ export class RecurringPanelManager {
                     if (remaining.length === 0) {
                         const overlay = this.deps.getModal('recurringOverlay');
                         if (overlay) {
-                            overlay.close();
+                            animateDialogClose(overlay);
                             overlay._previousFocus?.focus({ focusVisible: false });
                         }
                     }
