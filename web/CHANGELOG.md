@@ -1,3 +1,7 @@
+## [2.168] - 2026-03-31
+- feat: implement animated dialog close utility and enhance modal close animations
+
+
 ## [2.167] - 2026-03-31
 - chore: fix license field to reference proprietary LICENSE file
 - chore: add root .gitignore for OS files
