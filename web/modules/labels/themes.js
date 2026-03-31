@@ -179,7 +179,7 @@ export const THEME_DEFINITIONS = {
             checkboxBg:           '#1e8c52',
             checkboxIncompleteBg: '#8bc9a8',                    // solid mid-green — visible against sage task bg
             checkmark:            '#000000',                    // black — high contrast on green checkbox
-            completeBtn:          '#0a3d20',                    // dark forest green — clearly stands out from appBg
+            completeBtn:          '#2dab67',                    // mid green — white text 2.9:1 ✗, visible against dark forest appBg
             clearBtn:             '#2dab67',
             progressBar:          '#a3e635',                    // lime green — energetic, visible against mid-green
             statsBg:              'rgba(240, 253, 244, 0.55)',  // matches task list panel
@@ -259,7 +259,7 @@ export const THEME_DEFINITIONS = {
             checkboxBg:           '#3d35b5',
             checkboxIncompleteBg: '#9980ff',
             checkmark:            '#d391ff',                    // black — high contrast on indigo checkbox
-            completeBtn:          '#1a0f5e',                    // dark navy-indigo — clearly stands out from appBg
+            completeBtn:          '#6d28d9',                    // vibrant purple — white text 7.1:1 ✓, visible against dark indigo appBg
             clearBtn:             '#6d28d9',
             progressBar:          '#c084fc',                    // bright lilac — pops against dark indigo bg
             statsBg:              'rgba(195, 215, 255, 0.55)',  // matches task list panel
@@ -339,7 +339,7 @@ export const THEME_DEFINITIONS = {
             checkboxBg:           '#0a8db5',
             checkboxIncompleteBg: '#69b1c7',                    // full teal — visible against aqua task bg
             checkmark:            '#000000',                    // black — high contrast on teal checkbox
-            completeBtn:          '#042d38',                    // dark deep teal — clearly stands out from appBg
+            completeBtn:          '#06b6d4',                    // bright cyan — white text 2.4:1 ✗, visible against dark ocean appBg
             clearBtn:             '#06b6d4',
             progressBar:          '#67e8f9',                    // bright light cyan — pops against mid-teal bg
             statsBg:              'rgba(240, 253, 255, 0.55)',  // matches task list panel
