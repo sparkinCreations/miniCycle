@@ -16,10 +16,21 @@ dialog {
     overflow: visible;
 }
 
+/* Open animation — backdrop fades in */
 dialog::backdrop {
     background-color: rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    animation: fadeIn var(--transition-normal) ease;
+}
+
+/* Close animation — dialog content scales + fades out (applied via .closing class) */
+dialog.closing > :first-child {
+    animation: fadeOutScale-modal var(--transition-fast) ease forwards;
+}
+
+dialog.closing::backdrop {
+    animation: fadeOut var(--transition-fast) ease forwards;
 }
 
 /* Override legacy overlay/backdrop styles for <dialog> — ::backdrop handles these */

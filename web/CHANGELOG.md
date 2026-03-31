@@ -1,3 +1,11 @@
+## [2.167] - 2026-03-31
+- chore: fix license field to reference proprietary LICENSE file
+- chore: add root .gitignore for OS files
+- chore: remove .DS_Store from git tracking
+- chore: add miniCycle Review PDF to the archive
+- chore: enhance test output for skipped modules with detailed reasons
+
+
 ## [2.166] - 2026-03-30
 - chore: update version to 2.165 and adjust related files
 

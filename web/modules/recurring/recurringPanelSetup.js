@@ -203,10 +203,9 @@ export function setupAdvancedToggle(deps) {
         const frequencyContainer = deps.getElementById(DOM_IDS.RECUR_FREQUENCY_CONTAINER);
         if (frequencyContainer) frequencyContainer.classList.remove(DOM_CLASSES.HIDDEN);
 
-        // Handle extras like 'Recur indefinitely' and 'Specific Dates'
+        // Handle extras like 'Recur indefinitely' (Specific Dates is always visible — top-level setting)
         const advancedControls = [
             { checkboxId: DOM_IDS.RECUR_INDEFINITELY },
-            { checkboxId: DOM_IDS.RECUR_SPECIFIC_DATES }
         ];
 
         advancedControls.forEach(({ checkboxId }) => {

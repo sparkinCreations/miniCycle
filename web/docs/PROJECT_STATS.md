@@ -5,7 +5,7 @@
 > This file contains metrics that change frequently (version, counts, etc.).
 > All other documentation should reference this file instead of hardcoding these values.
 
-**Last Updated**: March 30, 2026
+**Last Updated**: March 31, 2026
 
 ---
 
@@ -13,14 +13,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.166 |
+| **App Version** | 2.167 |
 | **Lite Version** | 2.088 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 117 |
+| **Total Modules** | 118 |
 | **Total Tests** | 2333 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 41 |
-| **JSDoc Blocks** | 1223 |
+| **JSDoc Blocks** | 1225 |
 | **Documentation Files** | 198 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -40,12 +40,12 @@
 | `recurring/` | 15 | Recurring task scheduling, panel, activation |
 | `ui/` | 31 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 8 | Themes, stats, achievements, history, reminders |
-| `utils/` | 13 | Notifications, device detection, utilities |
+| `utils/` | 14 | Notifications, device detection, utilities |
 | `storage/` | 1 | Backup manager |
 | `progress/` | 1 | Cycle completion tracking |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **117** | |
+| **Total** | **118** | |
 
 ---
 
