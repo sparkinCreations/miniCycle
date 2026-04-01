@@ -894,6 +894,22 @@ body.checkmark-circle .task input[type="checkbox"]::after {
     visibility: hidden;
 }
 
+/* Hide move arrows on completed tasks (order is irrelevant for completed tasks) */
+#taskList .task:has(input[type="checkbox"]:checked) .move-up,
+#taskList .task:has(input[type="checkbox"]:checked) .move-down,
+#completedTaskList .task .move-up,
+#completedTaskList .task .move-down {
+    display: none;
+}
+
+/* Disable drag on completed tasks in the completed dropdown */
+#completedTaskList .task {
+    -webkit-user-drag: none;
+}
+#completedTaskList .task[draggable] {
+    cursor: default;
+}
+
 /* =============================================================================
    DESKTOP ADJUSTMENTS
    ============================================================================= */

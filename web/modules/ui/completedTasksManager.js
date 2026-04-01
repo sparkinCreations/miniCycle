@@ -143,6 +143,7 @@ export class CompletedTasksManager {
     /**
      * Move a task to the completed list
      * @param {HTMLElement} taskElement - The task element to move
+     * @returns {void}
      */
     moveToCompleted(taskElement) {
         const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
@@ -160,25 +161,41 @@ export class CompletedTasksManager {
             }
         }
 
+        // Clear stale interaction classes before moving
+        this._cleanupTaskStateBeforeMove(taskElement);
+
         // Move the task element
         completedList.appendChild(taskElement);
+
+        // Disable dragging in completed list
+        taskElement.setAttribute('draggable', 'false');
 
         // Show the completed section if it has tasks
         completedSection.classList.add(DOM_CLASSES.SHOW);
 
-        // Update count
+        // Update count and boundary markers
         this.updateCount();
-
+        this._updateBoundaryMarkers();
     }
 
     /**
      * Move a task back to the active list at its original position
      * @param {HTMLElement} taskElement - The task element to move
+     * @returns {void}
      */
     moveToActive(taskElement) {
         const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
 
         if (!taskList || !taskElement) return;
+
+        // Clear stale interaction classes before moving
+        this._cleanupTaskStateBeforeMove(taskElement);
+
+        // Restore draggable attribute for active list
+        taskElement.setAttribute('draggable', 'true');
+
+        // Save current focus state — restore after DOM move
+        const hadFocus = taskElement.contains(document.activeElement);
 
         // Try to restore to original position (saved when task was completed)
         const originalIndex = parseInt(taskElement.dataset.originalIndex, 10);
@@ -196,14 +213,24 @@ export class CompletedTasksManager {
 
             // Clean up the stored index
             delete taskElement.dataset.originalIndex;
-
-            this.updateCount();
-            return;
+        } else {
+            // Fallback: append to end if no original position stored
+            taskList.appendChild(taskElement);
         }
 
-        // Fallback: append to end if no original position stored
-        taskList.appendChild(taskElement);
+        // Restore focus to the task if it had it before the move
+        if (hadFocus) {
+            const taskLabel = taskElement.querySelector(DOM_SELECTORS.TASK_TEXT);
+            if (taskLabel) {
+                taskLabel.focus();
+            } else {
+                taskElement.focus();
+            }
+        }
+
+        // Update count and boundary markers
         this.updateCount();
+        this._updateBoundaryMarkers();
     }
 
     /**
@@ -224,6 +251,57 @@ export class CompletedTasksManager {
             completedSection.classList.remove(DOM_CLASSES.SHOW);
         } else {
             completedSection.classList.add(DOM_CLASSES.SHOW);
+        }
+    }
+
+    /**
+     * Clear stale interaction classes from a task before moving it between lists.
+     * Prevents ghost buttons, stale drag state, and incorrect boundary markers.
+     * @param {HTMLElement} taskElement - The task element being moved
+     * @private
+     */
+    _cleanupTaskStateBeforeMove(taskElement) {
+        taskElement.classList.remove(
+            DOM_CLASSES.LONG_PRESSED,
+            DOM_CLASSES.DRAGGING,
+            DOM_CLASSES.IS_FIRST_TASK,
+            DOM_CLASSES.IS_LAST_TASK
+        );
+
+        // Reset task options visibility to default (hidden until hover/tap)
+        const taskOptions = taskElement.querySelector(DOM_SELECTORS.TASK_OPTIONS);
+        if (taskOptions) {
+            taskOptions.classList.remove(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
+            taskOptions.classList.add(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
+        }
+    }
+
+    /**
+     * Update first/last task boundary markers on the active list.
+     * Called after tasks move between lists to ensure arrow visibility is correct.
+     * @private
+     */
+    _updateBoundaryMarkers() {
+        const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
+        if (!taskList) return;
+
+        // Remove old markers
+        taskList.querySelector(DOM_SELECTORS.IS_FIRST_TASK)?.classList.remove(DOM_CLASSES.IS_FIRST_TASK);
+        taskList.querySelector(DOM_SELECTORS.IS_LAST_TASK)?.classList.remove(DOM_CLASSES.IS_LAST_TASK);
+
+        // Find first/last incomplete tasks (skip completed — their arrows are hidden)
+        const tasks = Array.from(taskList.children).filter(el =>
+            el.classList.contains(DOM_CLASSES.TASK) && !el.querySelector(DOM_SELECTORS.TASK_INPUT_CHECKED)
+        );
+
+        const firstTask = tasks[0] || null;
+        const lastTask = tasks.length > 1 ? tasks[tasks.length - 1] : null;
+
+        if (firstTask) {
+            firstTask.classList.add(DOM_CLASSES.IS_FIRST_TASK);
+        }
+        if (lastTask && lastTask !== firstTask) {
+            lastTask.classList.add(DOM_CLASSES.IS_LAST_TASK);
         }
     }
 
