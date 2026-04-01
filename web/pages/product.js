@@ -1,74 +1,40 @@
-// product.js — Product page carousel, changelog, and interaction logic
-// Extracted from inline <script> to comply with Content Security Policy
+// product.js — Product page carousel, changelog accordion, and smooth scroll
+// Redesigned to match learn_more.html visual patterns
 
 (function () {
     'use strict';
 
     // =========================================================
-    // Hover handlers (moved from inline onmouseover/onmouseout)
-    // =========================================================
-    const changelogToggleBtn = document.getElementById('changelog-toggle');
-    if (changelogToggleBtn) {
-        changelogToggleBtn.addEventListener('mouseover', function () {
-            this.style.color = 'rgba(0,0,0,0.8)';
-        });
-        changelogToggleBtn.addEventListener('mouseout', function () {
-            this.style.color = 'rgba(0,0,0,0.5)';
-        });
-    }
-
-    document.querySelectorAll('.hover-link').forEach(function (link) {
-        link.addEventListener('mouseover', function () {
-            this.style.color = 'white';
-            this.style.borderColor = 'white';
-        });
-        link.addEventListener('mouseout', function () {
-            this.style.color = 'rgba(255,255,255,0.7)';
-            this.style.borderColor = 'rgba(255,255,255,0.3)';
-        });
-    });
-
-    // =========================================================
     // Carousel
     // =========================================================
-    const videos = [
+    var videos = [
         {
             src: '../assets/videos/samples/Daily_Home_Routine.gif',
             title: 'Daily Home Routine',
-            description: 'Streamline your daily home tasks with organized cycles that keep you productive and focused.',
-            isVideo: true
+            description: 'Streamline your daily home tasks with organized cycles that keep you productive and focused.'
         },
         {
             src: '../assets/videos/samples/Daily_Work_Routine.gif',
             title: 'Daily Work Routine',
-            description: 'Boost your work productivity with structured cycle lists that help you stay on track throughout the day.',
-            isVideo: true
+            description: 'Boost your work productivity with structured cycle lists that help you stay on track throughout the day.'
         },
         {
             src: '../assets/videos/samples/Monday_Fitness_Routine.gif',
             title: 'Monday Fitness Routine',
-            description: 'Start your week strong with organized fitness cycles that make staying healthy simple and sustainable.',
-            isVideo: true
-        },
-        {
-            src: null,
-            title: 'Built for You',
-            description: 'Privacy-focused, offline-first, and designed to work beautifully on every device you own.',
-            isVideo: false
+            description: 'Start your week strong with organized fitness cycles that make staying healthy simple and sustainable.'
         }
     ];
 
-    let currentIndex = 0;
-    let isTransitioning = false;
+    var currentIndex = 0;
+    var isTransitioning = false;
 
-    const videoElement = document.getElementById('currentVideo');
-    const featuresSlide = document.getElementById('featuresSlide');
-    const titleElement = document.getElementById('videoTitle');
-    const descriptionElement = document.getElementById('videoDescription');
-    const videoInfo = document.querySelector('.video-info');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const dots = document.querySelectorAll('.dot');
+    var videoElement = document.getElementById('currentVideo');
+    var titleElement = document.getElementById('videoTitle');
+    var descriptionElement = document.getElementById('videoDescription');
+    var videoInfo = document.querySelector('.video-info');
+    var prevBtn = document.getElementById('prevBtn');
+    var nextBtn = document.getElementById('nextBtn');
+    var dots = document.querySelectorAll('.dot');
 
     function updateContent(video, index) {
         titleElement.textContent = video.title;
@@ -95,40 +61,14 @@
         var video = videos[index];
 
         videoInfo.classList.add('fade-out');
+        videoElement.classList.add('fade-out');
 
-        if (videos[currentIndex].isVideo && !video.isVideo) {
-            videoElement.classList.add('fade-out');
-            setTimeout(function () {
-                videoElement.style.display = 'none';
-                featuresSlide.style.display = 'block';
-                setTimeout(function () {
-                    featuresSlide.classList.add('active');
-                    updateContent(video, index);
-                }, 50);
-            }, 250);
-
-        } else if (!videos[currentIndex].isVideo && video.isVideo) {
-            featuresSlide.classList.remove('active');
-            setTimeout(function () {
-                featuresSlide.style.display = 'none';
-                videoElement.style.display = 'block';
-                videoElement.src = video.src;
-                videoElement.classList.remove('fade-out');
-                videoElement.classList.add('fade-in');
-                updateContent(video, index);
-            }, 250);
-
-        } else if (video.isVideo) {
-            videoElement.classList.add('fade-out');
-            setTimeout(function () {
-                videoElement.src = video.src;
-                videoElement.classList.remove('fade-out');
-                videoElement.classList.add('fade-in');
-                updateContent(video, index);
-            }, 250);
-        } else {
+        setTimeout(function () {
+            videoElement.src = video.src;
+            videoElement.classList.remove('fade-out');
+            videoElement.classList.add('fade-in');
             updateContent(video, index);
-        }
+        }, 250);
     }
 
     function nextVideo() {
@@ -165,72 +105,160 @@
     }
 
     // =========================================================
-    // Changelog
+    // Changelog Accordion
     // =========================================================
-    fetch('../CHANGELOG.md')
-        .then(function (response) { return response.text(); })
-        .then(function (markdown) {
-            var html = markdown
-                .replace(/^## \[([^\]]+)\] - (.+)$/gm, '<h3 style="margin-top: 20px; margin-bottom: 10px; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 8px;">v$1 <span style="font-weight: normal; font-size: 0.85em; opacity: 0.7;">($2)</span></h3>')
-                .replace(/^# (.+)$/gm, '')
-                .replace(/^- (.+)$/gm, '<li style="margin-left: 20px; margin-bottom: 5px;">$1</li>')
-                .replace(/\n\n/g, '</ul><ul style="list-style: none; padding: 0;">')
-                .replace(/^(.+)$/gm, function (line) { return line.startsWith('<') ? line : '<p>' + line + '</p>'; });
+    var INITIAL_VERSIONS = 5;
 
-            html = '<ul style="list-style: none; padding: 0;">' + html + '</ul>';
-            html = html.replace(/<p><\/p>/g, '').replace(/<ul[^>]*><\/ul>/g, '');
+    function parseChangelog(markdown) {
+        var entries = [];
+        var sections = markdown.split(/^## /m);
 
-            document.getElementById('changelog-content').innerHTML = html || '<p>No changelog entries yet.</p>';
-        })
-        .catch(function () {
-            document.getElementById('changelog-content').innerHTML = '<p style="opacity: 0.7;">Could not load changelog.</p>';
-        });
+        for (var i = 0; i < sections.length; i++) {
+            var section = sections[i].trim();
+            if (!section) continue;
 
-    var changelogContent = document.getElementById('changelog-content');
-    var changelogInner = document.getElementById('changelog-inner');
-    var changelogArrow = document.getElementById('changelog-arrow');
-    var changelogHint = document.getElementById('changelog-hint');
-    var changelogState = 'closed';
+            var headerMatch = section.match(/^\[([^\]]+)\]\s*-\s*(.+)$/m);
+            if (!headerMatch) continue;
 
-    function setChangelogState(state) {
-        changelogState = state;
-        if (state === 'closed') {
-            changelogContent.style.maxHeight = '0';
-            changelogInner.style.maxHeight = 'none';
-            changelogArrow.style.transform = 'rotate(0deg)';
-            changelogHint.style.display = 'none';
-            changelogToggleBtn.setAttribute('aria-expanded', 'false');
-        } else if (state === 'open') {
-            changelogContent.style.maxHeight = '200px';
-            changelogInner.style.maxHeight = '170px';
-            changelogArrow.style.transform = 'rotate(180deg)';
-            changelogHint.style.display = 'block';
-            changelogToggleBtn.setAttribute('aria-expanded', 'true');
-        } else if (state === 'expanded') {
-            changelogContent.style.maxHeight = '500px';
-            changelogInner.style.maxHeight = '470px';
-            changelogArrow.style.transform = 'rotate(180deg)';
-            changelogHint.style.display = 'none';
-            changelogToggleBtn.setAttribute('aria-expanded', 'true');
+            var version = headerMatch[1];
+            var date = headerMatch[2].trim();
+            var changes = [];
+
+            var lines = section.split('\n');
+            for (var j = 1; j < lines.length; j++) {
+                var line = lines[j].trim();
+                if (line.startsWith('- ')) {
+                    changes.push(line.substring(2));
+                }
+            }
+
+            if (changes.length > 0) {
+                entries.push({ version: version, date: date, changes: changes });
+            }
+        }
+
+        return entries;
+    }
+
+    function renderChangelog(entries) {
+        var changelogList = document.getElementById('changelogList');
+        changelogList.innerHTML = '';
+
+        var visibleCount = Math.min(INITIAL_VERSIONS, entries.length);
+        var hasMore = entries.length > INITIAL_VERSIONS;
+
+        for (var i = 0; i < entries.length; i++) {
+            var entry = entries[i];
+            var item = document.createElement('div');
+            item.className = 'changelog-item';
+            if (i >= visibleCount) {
+                item.style.display = 'none';
+                item.dataset.hidden = 'true';
+            }
+
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'changelog-question';
+            button.setAttribute('aria-expanded', 'false');
+            button.setAttribute('aria-controls', 'changelog-answer-' + i);
+            button.textContent = 'v' + entry.version + '  (' + entry.date + ')';
+
+            var answer = document.createElement('div');
+            answer.className = 'changelog-answer';
+            answer.id = 'changelog-answer-' + i;
+
+            var content = document.createElement('div');
+            content.className = 'changelog-answer-content';
+
+            var ul = document.createElement('ul');
+            for (var j = 0; j < entry.changes.length; j++) {
+                var li = document.createElement('li');
+                li.textContent = entry.changes[j];
+                ul.appendChild(li);
+            }
+            content.appendChild(ul);
+            answer.appendChild(content);
+
+            item.appendChild(button);
+            item.appendChild(answer);
+            changelogList.appendChild(item);
+
+            // Accordion toggle
+            (function (btn, itm) {
+                btn.addEventListener('click', function () {
+                    var isActive = itm.classList.contains('active');
+                    if (isActive) {
+                        itm.classList.remove('active');
+                        btn.setAttribute('aria-expanded', 'false');
+                    } else {
+                        itm.classList.add('active');
+                        btn.setAttribute('aria-expanded', 'true');
+                    }
+                });
+            })(button, item);
+        }
+
+        // "Show older versions" button
+        if (hasMore) {
+            var showMoreBtn = document.createElement('button');
+            showMoreBtn.type = 'button';
+            showMoreBtn.className = 'show-more-btn';
+            showMoreBtn.textContent = 'Show older versions';
+            showMoreBtn.addEventListener('click', function () {
+                var hiddenItems = changelogList.querySelectorAll('[data-hidden="true"]');
+                for (var k = 0; k < hiddenItems.length; k++) {
+                    hiddenItems[k].style.display = '';
+                    hiddenItems[k].removeAttribute('data-hidden');
+                }
+                showMoreBtn.remove();
+            });
+            changelogList.appendChild(showMoreBtn);
         }
     }
 
-    changelogToggleBtn.addEventListener('click', function () {
-        if (changelogState === 'closed') setChangelogState('open');
-        else setChangelogState('closed');
-    });
+    fetch('../CHANGELOG.md')
+        .then(function (response) { return response.text(); })
+        .then(function (markdown) {
+            var entries = parseChangelog(markdown);
+            if (entries.length > 0) {
+                renderChangelog(entries);
+            } else {
+                document.getElementById('changelogList').innerHTML =
+                    '<p style="text-align:center; color:#888;">No changelog entries yet.</p>';
+            }
+        })
+        .catch(function () {
+            document.getElementById('changelogList').innerHTML =
+                '<p style="text-align:center; color:#888;">Could not load changelog.</p>';
+        });
 
-    changelogContent.addEventListener('dblclick', function () {
-        if (changelogState === 'open') setChangelogState('expanded');
-        else if (changelogState === 'expanded') setChangelogState('open');
-    });
-
+    // Auto-open changelog if linked via hash
     if (window.location.hash === '#changelog') {
         setTimeout(function () {
-            setChangelogState('open');
-            document.getElementById('changelog').scrollIntoView({ behavior: 'smooth' });
-        }, 500);
+            var changelogSection = document.getElementById('changelog');
+            if (changelogSection) {
+                changelogSection.scrollIntoView({ behavior: 'smooth' });
+            }
+            // Open the first entry
+            var firstItem = document.querySelector('.changelog-item');
+            if (firstItem && !firstItem.classList.contains('active')) {
+                firstItem.querySelector('.changelog-question').click();
+            }
+        }, 800);
     }
+
+    // =========================================================
+    // Smooth scroll for anchor links
+    // =========================================================
+    document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            var target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
 
     // =========================================================
     // Dynamic copyright year

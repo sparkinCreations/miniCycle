@@ -6,7 +6,7 @@
     <title>miniCycle - Complete. Cycle. Repeat.</title>
     <link rel="icon" type="image/png" href="../assets/images/logo/logo.png">
     <link rel="apple-touch-icon" href="../assets/images/logo/logo.png">
-    
+
     <!-- Structured Data (JSON-LD) for SEO -->
     <script type="application/ld+json">
     {
@@ -49,7 +49,7 @@
       ]
     }
     </script>
-    
+
     <!-- FAQ Structured Data -->
     <script type="application/ld+json">
     {
@@ -65,7 +65,7 @@
           }
         },
         {
-          "@type": "Question", 
+          "@type": "Question",
           "name": "How do auto-reset cycles work?",
           "acceptedAnswer": {
             "@type": "Answer",
@@ -99,76 +99,231 @@
         }
 
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #c8daf2;
+        }
+
+        /* Header */
+        header {
             background: linear-gradient(135deg, #0088ff 0%, #04a7ff 100%);
-            min-height: 100vh;
+            color: white;
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
+        }
+
+        .logo-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
             color: white;
         }
 
-        .container {
-            max-width: 1200px;
-            width: 90%;
-            text-align: center;
-            padding: 20px;
-        }
-           .app-name {
-            width: 300px;
+        .logo-link img {
+            height: 36px;
+            width: auto;
         }
 
-        .logo-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 10px;
-        }
-
-        .logo-icon {
-            width: 60px;
-            height: 60px;
-        }
-
-        .logo {
-            font-size: 3rem;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .slogan {
-            font-size: 2rem;
-            margin-bottom: 40px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-            font-weight: 300;
-            letter-spacing: 2px;
-        }
-        .slogan-two {
-            font-size: 1.8rem;
-            margin-bottom: 40px;
-            color: rgb(0, 0, 0);
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-            font-weight: 300;
-            letter-spacing: 2px;
-        }
-
-            .slogan-three {
-            font-size: 1.8rem;
-            color: rgb(0, 0, 0);
-            margin-bottom: 10px;
+        .logo-text {
+            font-size: 1.3rem;
             font-weight: 600;
-            letter-spacing: 2px;
         }
 
-        .video-showcase {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
+        .header-nav {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .header-nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            opacity: 0.9;
+            transition: opacity 0.2s;
+        }
+
+        .header-nav a:hover {
+            opacity: 1;
+        }
+
+        .header-nav .cta-btn {
+            background: white;
+            color: #0088ff;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .header-nav .cta-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Section Styling */
+        section {
+            padding: 4rem 0;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: #222;
+            text-align: center;
+        }
+
+        .section-subtitle {
+            font-size: 1.1rem;
+            color: #666;
+            text-align: center;
+            margin-bottom: 2.5rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            background: #d4e3ff;
+            text-align: center;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .hero-text {
+            text-align: left;
+        }
+
+        .hero-logo {
+            max-width: 280px;
+            width: 100%;
+            margin: 0 0 1.5rem;
+            display: block;
+        }
+
+        .hero-image {
+            max-width: 280px;
+            margin: 0 auto;
+        }
+
+        .hero-image img {
+            width: 100%;
+            display: block;
             border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            border-top: 12px solid #000;
+            border-bottom: 12px solid #000;
+        }
+
+        .hero-tagline {
+            font-size: 1.3rem;
+            color: #555;
+            margin-bottom: 2rem;
+            letter-spacing: 0.5px;
+        }
+
+        .cycle-flow {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 2rem;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #0088ff;
+            letter-spacing: 0.5px;
+        }
+
+        .cycle-flow .cycle-arrow {
+            font-weight: 400;
+            color: #999;
+        }
+
+        /* CTA Buttons (shared) */
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .cta-primary {
+            background: #0088ff;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 1.1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .cta-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,136,255,0.3);
+        }
+
+        .cta-secondary {
+            background: transparent;
+            color: #0088ff;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 1.1rem;
+            border: 2px solid #0088ff;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .cta-secondary:hover {
+            background: #0088ff;
+            color: white;
+        }
+
+        .trust-text {
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        /* Demos Section */
+        .demos-section {
+            background: #c8daf2;
+        }
+
+        .carousel-card {
+            background: transparent;
+            padding: 2rem;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
         .video-container {
@@ -176,7 +331,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 20px;
+            gap: 15px;
         }
 
         .video-display {
@@ -189,8 +344,7 @@
         .video-display img {
             width: 100%;
             height: auto;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            border-radius: 12px;
             transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
         }
 
@@ -204,73 +358,26 @@
             transform: translateX(0);
         }
 
-        .features-slide {
-            display: none;
-            text-align: center;
-            padding: 2rem;
-            color: white;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-        }
-
-        .features-slide.active {
-            display: block;
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .features-grid-mini {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1.5rem;
-        }
-
-        .feature-item {
-            background: rgba(0, 0, 0, 0.1);
-            padding: 1.5rem;
-            border-radius: 12px;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .feature-icon-large {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .feature-item h4 {
-            font-size: 1.1rem;
-            margin-bottom: 0.8rem;
-            font-weight: 600;
-        }
-
-        .feature-item p {
-            font-size: 0.9rem;
-            opacity: 0.9;
-            line-height: 1.4;
-        }
-
         .nav-button {
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            width: 60px;
-            height: 60px;
+            background: #f0f6ff;
+            border: 2px solid #0088ff;
+            color: #0088ff;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
         }
 
         .nav-button:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: #0088ff;
+            color: white;
             transform: scale(1.1);
-            border-color: rgba(255, 255, 255, 0.5);
         }
 
         .nav-button:active {
@@ -279,6 +386,7 @@
 
         .video-info {
             margin-top: 20px;
+            text-align: center;
             opacity: 1;
             transform: translateY(0);
             transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
@@ -290,14 +398,15 @@
         }
 
         .video-title {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            color: #222;
         }
 
         .video-description {
-            font-size: 1.1rem;
-            opacity: 0.9;
+            font-size: 1rem;
+            color: #666;
             line-height: 1.6;
         }
 
@@ -312,119 +421,244 @@
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(0, 136, 255, 0.2);
             cursor: pointer;
             transition: all 0.4s ease;
         }
 
         .dot.active {
-            background: white;
+            background: #0088ff;
             transform: scale(1.2);
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 10px rgba(0, 136, 255, 0.4);
         }
 
         .dot:hover {
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(0, 136, 255, 0.5);
             transform: scale(1.1);
         }
 
-        .cta-section {
-            margin-top: 30px;
+        .secondary-links {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
         }
-          .cta-section-two {
-            margin-top: -30px;
-            margin-bottom: 30px;
 
+        .secondary-links a {
+            color: #0088ff;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-bottom: 1px solid rgba(0, 136, 255, 0.3);
+            padding-bottom: 2px;
+            transition: border-color 0.2s, color 0.2s;
         }
 
-        .cta-button {
-            background: linear-gradient(45deg, #535353, #565656);
+        .secondary-links a:hover {
+            color: #0066cc;
+            border-color: #0066cc;
+        }
+
+        /* Features Section */
+        .features-section {
+            background: #d4e3ff;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .feature-card {
+            background: #f0f6ff;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        }
+
+        .feature-card h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: #222;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .feature-card p {
+            font-size: 0.95rem;
+            color: #666;
+        }
+
+        .feature-icon {
+            font-size: 1.3rem;
+        }
+
+        /* Changelog Section */
+        .changelog-section {
+            background: #c8daf2;
+        }
+
+        .changelog-list {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .changelog-item {
+            background: white;
+            margin-bottom: 0.75rem;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .changelog-question {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            background: white;
+            border: none;
+            text-align: left;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #222;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+            font-family: inherit;
+        }
+
+        .changelog-question:hover {
+            background: #f8f9fa;
+        }
+
+        .changelog-question::after {
+            content: '+';
+            font-size: 1.5rem;
+            color: #0088ff;
+            transition: transform 0.3s;
+        }
+
+        .changelog-item.active .changelog-question::after {
+            transform: rotate(45deg);
+        }
+
+        .changelog-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .changelog-answer-content {
+            padding: 0 1.5rem 1rem;
+            color: #555;
+            line-height: 1.7;
+        }
+
+        .changelog-answer-content li {
+            margin-bottom: 0.4rem;
+            margin-left: 1.2rem;
+        }
+
+        .changelog-item.active .changelog-answer {
+            max-height: 500px;
+        }
+
+        .show-more-btn {
+            display: block;
+            margin: 1.5rem auto 0;
+            background: transparent;
+            border: 2px solid #0088ff;
+            color: #0088ff;
+            padding: 0.7rem 1.5rem;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            font-family: inherit;
+        }
+
+        .show-more-btn:hover {
+            background: #0088ff;
             color: white;
-            padding: 15px 40px;
-            border: none;
-            border-radius: 50px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-             .cta-button-two {
-            background: linear-gradient(45deg, #ffffff, #ffffff);
-            color: rgb(0, 0, 0);
-            padding: 15px 40px;
-            border: none;
-            border-radius: 50px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        .cta-button:hover {
-            transform: translateY(-7px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        /* Bottom CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, #0088ff 0%, #04a7ff 100%);
+            color: white;
+            text-align: center;
+            padding: 4rem 2rem;
         }
 
-        .cta-button-two:hover {
-            transform: translateY(-7px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        .cta-section h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
         }
 
+        .cta-section p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+
+        .cta-section .cta-primary {
+            background: white;
+            color: #0088ff;
+        }
+
+        .cta-section .cta-primary:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .cta-section .cta-secondary {
+            background: transparent;
+            color: white;
+            border-color: white;
+        }
+
+        .cta-section .cta-secondary:hover {
+            background: white;
+            color: #0088ff;
+        }
 
         /* Footer */
         footer {
-            background: transparent;
+            background: #2c3e50;
             color: white;
             text-align: center;
-            padding: 2rem 0;
+            padding: 2rem;
         }
 
-        .footer-bottom {
-            border-top: none;
-            padding-top: 1rem;
-            margin-top: 1rem;
-            color: rgba(255, 255, 255, 0.7);
+        footer a {
+            color: #bdc3c7;
+            text-decoration: none;
         }
 
-        
+        footer a:hover {
+            color: white;
+        }
 
-/* Copyright Text */
-#copyright {
-    margin: 0;
-    line-height: 1.5;
-    opacity: 0.7;
-    transition: opacity 0.3s ease-in-out;
-    font-size: 0.85rem;
-}
-
-#copyright a {
-    color: white;
-    text-decoration: none;
-}
-
-#copyright a:hover {
-    text-decoration: underline;
-}
-
-footer:hover #copyright {
-    opacity: 1;
-}
-
-        /* Skip link — hidden off-screen, visible on focus */
+        /* Skip link */
         .skip-link {
             position: absolute;
             top: -40px;
             left: 0;
-            background: #000;
+            background: #0088ff;
             color: #fff;
             padding: 8px 16px;
-            z-index: 1000;
+            z-index: 1001;
             font-size: 0.9rem;
             text-decoration: none;
             border-radius: 0 0 4px 0;
@@ -436,21 +670,32 @@ footer:hover #copyright {
 
         /* Focus-visible styles */
         *:focus-visible {
-            outline: 2px solid white;
+            outline: 2px solid #0088ff;
             outline-offset: 2px;
         }
-        .cta-button:focus-visible,
-        .cta-button-two:focus-visible {
-            outline: 3px solid white;
+        .cta-btn:focus-visible,
+        .cta-primary:focus-visible,
+        .cta-secondary:focus-visible {
+            outline: 3px solid #0088ff;
             outline-offset: 3px;
         }
         .nav-button:focus-visible {
-            outline: 3px solid white;
+            outline: 3px solid #0088ff;
             outline-offset: 3px;
         }
         .dot:focus-visible {
-            outline: 2px solid white;
+            outline: 2px solid #0088ff;
             outline-offset: 3px;
+        }
+        .changelog-question:focus-visible {
+            outline: 2px solid #0088ff;
+            outline-offset: -2px;
+        }
+        header *:focus-visible {
+            outline-color: white;
+        }
+        .cta-section *:focus-visible {
+            outline-color: white;
         }
 
         /* Reduced motion */
@@ -461,148 +706,240 @@ footer:hover #copyright {
                 transition-duration: 0.01ms !important;
                 scroll-behavior: auto !important;
             }
-            .video-display img,
-            .features-slide,
-            .video-info,
-            .dot,
-            .nav-button,
-            .cta-button,
-            .cta-button-two {
-                transition: none !important;
-            }
         }
 
+        /* Responsive */
         @media (max-width: 768px) {
-            .logo-container {
+            .header-nav a:not(.cta-btn) {
+                display: none;
+            }
+
+            .hero-grid {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .hero-text {
+                text-align: center;
+            }
+
+            .hero-logo {
+                max-width: 220px;
+                margin: 0 auto 1.5rem;
+            }
+
+            .hero-image {
+                order: -1;
+            }
+
+            .hero-image {
+                max-width: 230px;
+            }
+
+            .cycle-flow {
+                justify-content: center;
+            }
+
+            .cta-buttons {
+                justify-content: center;
+            }
+
+            .hero-tagline {
+                font-size: 1.1rem;
+            }
+
+            .section-title {
+                font-size: 1.6rem;
+            }
+
+            .cycle-flow {
+                font-size: 1.1rem;
+                gap: 0.5rem;
+            }
+
+            .carousel-card {
+                padding: 1.5rem;
+            }
+
+            .video-container {
                 gap: 10px;
             }
-            
-            .logo-icon {
-                width: 50px;
-                height: 50px;
-            }
-            
-            .logo {
-                font-size: 2rem;
-            }
-            
-            .slogan {
-                font-size: 1.3rem;
-                letter-spacing: 1px;
-            }
-            
-            .video-container {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
+
             .nav-button {
-                width: 50px;
-                height: 50px;
-                font-size: 1.2rem;
+                width: 40px;
+                height: 40px;
+                font-size: 1.1rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .secondary-links {
+                flex-direction: column;
+                align-items: center;
+                gap: 0.8rem;
             }
         }
     </style>
 </head>
 <body>
     <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Header -->
+    <header role="banner">
+        <div class="header-content">
+            <a href="product.html" class="logo-link">
+                <img src="../assets/images/logo/logo.png" alt="miniCycle">
+                <span class="logo-text">miniCycle</span>
+            </a>
+            <nav class="header-nav" aria-label="Page navigation">
+                <a href="#demos">See It In Action</a>
+                <a href="#features">Features</a>
+                <a href="#changelog">What's New</a>
+                <a href="../miniCycle.html" class="cta-btn">Try Now</a>
+            </nav>
+        </div>
+    </header>
+
     <main id="main-content">
-    <div class="container">
-        <div class="logo-container">
-          <!--<img src="../assets/images/logo/logo.png" alt="miniCycle Logo" class="logo-icon">-->
-            <img src="../assets/images/Logo/app_name_miniCycle_top_half.png" alt="miniCycle -" class="app-name" />
 
-        </div>
-         <p class="slogan-two">Create routines with repeatable checklists.</p>
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="hero-grid">
+                <div class="hero-text">
+                    <img src="../assets/images/logo/App_Name_miniCycle.png" alt="miniCycle" class="hero-logo">
+                    <p class="hero-tagline">Create repeatable checklists that automatically reset when you complete your routine.</p>
 
-              <div class="cta-section-two">
-            <a href="../miniCycle.html" class="cta-button-two">Get Started</a>
-            <div style="margin-top: 12px; font-size: 0.85rem; color: rgba(0,0,0,0.6);">
-                100% Free • Privacy focused • No ads • No accounts • Just routines
-            </div>
-            <!-- Changelog Section (Collapsible) -->
-            <div id="changelog" style="margin-top: 15px; text-align: center; padding: 0 20px;">
-                <button id="changelog-toggle" aria-expanded="false" aria-controls="changelog-content" style="background: none; border: none; color: rgba(0,0,0,0.5); font-size: 0.8rem; cursor: pointer; padding: 5px 12px; transition: color 0.2s;">
-                    Changelog <span id="changelog-arrow" style="font-size: 0.65rem; transition: transform 0.3s ease; display: inline-block;">▼</span>
-                </button>
-                <div id="changelog-content" style="max-height: 0; overflow: hidden; font-size: 0.8rem; line-height: 1.5; transition: max-height 0.4s ease; text-align: center; background: rgba(0,0,0,0.08); border-radius: 10px; margin-top: 8px; color: rgba(0,0,0,0.7);">
-                    <div id="changelog-inner" style="padding: 15px 20px; overflow-y: auto;">
-                        <p style="text-align: center; opacity: 0.5;">Loading...</p>
+                    <div class="cycle-flow">
+                        <span>Complete</span>
+                        <span class="cycle-arrow" aria-hidden="true">→</span>
+                        <span>Cycle</span>
+                        <span class="cycle-arrow" aria-hidden="true">→</span>
+                        <span>Repeat</span>
                     </div>
-                </div>
-                <p id="changelog-hint" style="font-size: 0.7rem; color: rgba(0,0,0,0.4); margin-top: 5px; display: none;">Double-click to expand</p>
-            </div>
-        </div>
 
-        <div class="video-showcase">
-            <h1 class="slogan-three">Your routine in action:</h1>
-         <p class="slogan"> Complete → Cycle → Repeat</p>
-            <div class="video-container">
-                <button class="nav-button" id="prevBtn" aria-label="Previous slide">‹</button>
-                
-                <div class="video-display">
-                    <img id="currentVideo" src="../assets/videos/samples/Daily_Home_Routine.gif" alt="miniCycle Demo">
-                    <div id="featuresSlide" class="features-slide">
-                        <h3 style="font-size: 1.8rem; margin-bottom: 1rem;">Why Choose miniCycle? <span aria-hidden="true">✨</span></h3>
-                        <div class="features-grid-mini">
-                            <div class="feature-item">
-                                <div class="feature-icon-large" aria-hidden="true">🔒</div>
-                                <h4>Privacy Focused</h4>
-                                <p>Your data stays on your device. No tracking, no analytics, no cloud storage.</p>
-                            </div>
-                            <div class="feature-item">
-                                <div class="feature-icon-large" aria-hidden="true">🔍</div>
-                                <h4>Search, Filter & Sort</h4>
-                                <p>Find tasks instantly. Filter by status, priority, or due date. Sort your way.</p>
-                            </div>
-                            <div class="feature-item">
-                                <div class="feature-icon-large" aria-hidden="true">🎨</div>
-                                <h4>Themes & Achievements</h4>
-                                <p>Unlock vocabulary themes and earn milestones as you build consistency.</p>
-                            </div>
-                            <div class="feature-item">
-                                <div class="feature-icon-large" aria-hidden="true">📱</div>
-                                <h4>Works Everywhere</h4>
-                                <p>Install as a PWA. Works offline. Drag-and-drop on desktop, long-press on mobile.</p>
-                            </div>
-                        </div>
+                    <div class="cta-buttons">
+                        <a href="../miniCycle.html" class="cta-primary">Get Started</a>
+                        <a href="learn_more.html" class="cta-secondary">Learn More</a>
                     </div>
+                    <p class="trust-text">100% Free · Privacy focused · No ads · No accounts · Just routines</p>
                 </div>
-                
-                <button class="nav-button" id="nextBtn" aria-label="Next slide">›</button>
+                <div class="hero-image">
+                    <img src="../assets/images/screenshots/Example/user-manual/v3/main-view.jpg" alt="miniCycle app showing a Daily Routine with tasks and progress tracking">
+                </div>
             </div>
-            
-            <div class="video-info">
-                <h3 class="video-title" id="videoTitle">Daily Home Routine</h3>
-                <p class="video-description" id="videoDescription">Streamline your daily home tasks with organized cycles that keep you productive and focused.</p>
-            </div>
-            
-            <div class="progress-dots" id="progressDots" role="tablist" aria-label="Slide navigation">
-                <span class="dot active" data-index="0" role="tab" aria-label="Slide 1" aria-selected="true" tabindex="0"></span>
-                <span class="dot" data-index="1" role="tab" aria-label="Slide 2" aria-selected="false" tabindex="0"></span>
-                <span class="dot" data-index="2" role="tab" aria-label="Slide 3" aria-selected="false" tabindex="0"></span>
-                <span class="dot" data-index="3" role="tab" aria-label="Slide 4" aria-selected="false" tabindex="0"></span>
-            </div>
-
-            <div style="margin-top: 20px; display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
-                <a href="learn_more.html" class="hover-link" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px; transition: all 0.3s ease;">Learn more about features →</a>
-                <a href="../lite/miniCycle-lite.html" class="hover-link" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px; transition: all 0.3s ease;">Try Lite Version →</a>
-                <a href="https://github.com/sparkinCreations/miniCycle" target="_blank" rel="noopener noreferrer" class="hover-link" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px; transition: all 0.3s ease;">View on GitHub →</a>
-                <!--<a href="blog.html" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px; transition: all 0.3s ease;" onmouseover="this.style.color='white'; this.style.borderColor='white';" onmouseout="this.style.color='rgba(255,255,255,0.7)'; this.style.borderColor='rgba(255,255,255,0.3)';">Read the Blog →</a>-->
-            </div>
-
         </div>
+    </section>
 
+    <!-- Demos Section -->
+    <section id="demos" class="demos-section">
+        <div class="container">
+            <h2 class="section-title">See It In Action</h2>
+            <p class="section-subtitle">Watch how miniCycle handles real routines.</p>
 
-        <div class="cta-section">
-            <a href="../miniCycle.html" class="cta-button">Try miniCycle Now</a>
+            <div class="carousel-card">
+                <div class="video-container">
+                    <button type="button" class="nav-button" id="prevBtn" aria-label="Previous slide">&#8249;</button>
+
+                    <div class="video-display">
+                        <img id="currentVideo" src="../assets/videos/samples/Daily_Home_Routine.gif" alt="miniCycle demo: Daily Home Routine">
+                    </div>
+
+                    <button type="button" class="nav-button" id="nextBtn" aria-label="Next slide">&#8250;</button>
+                </div>
+
+                <div class="video-info">
+                    <h3 class="video-title" id="videoTitle">Daily Home Routine</h3>
+                    <p class="video-description" id="videoDescription">Streamline your daily home tasks with organized cycles that keep you productive and focused.</p>
+                </div>
+
+                <div class="progress-dots" id="progressDots" role="tablist" aria-label="Slide navigation">
+                    <span class="dot active" data-index="0" role="tab" aria-label="Slide 1" aria-selected="true" tabindex="0"></span>
+                    <span class="dot" data-index="1" role="tab" aria-label="Slide 2" aria-selected="false" tabindex="0"></span>
+                    <span class="dot" data-index="2" role="tab" aria-label="Slide 3" aria-selected="false" tabindex="0"></span>
+                </div>
+            </div>
+
+            <div class="secondary-links">
+                <a href="learn_more.html">Learn more about features →</a>
+                <a href="../lite/miniCycle-lite.html">Try Lite Version →</a>
+                <a href="https://github.com/sparkinCreations/miniCycle" target="_blank" rel="noopener noreferrer">View on GitHub →</a>
+            </div>
         </div>
-    </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features-section">
+        <div class="container">
+            <h2 class="section-title">Why Choose miniCycle?</h2>
+            <p class="section-subtitle">Built for privacy, designed for simplicity.</p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h4><span class="feature-icon" aria-hidden="true">🔒</span> Privacy Focused</h4>
+                    <p>Your data stays on your device. No tracking, no analytics, no cloud storage.</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="feature-icon" aria-hidden="true">🔍</span> Search, Filter & Sort</h4>
+                    <p>Find tasks instantly. Filter by status, priority, or due date. Sort your way.</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="feature-icon" aria-hidden="true">🎨</span> Themes & Achievements</h4>
+                    <p>Unlock vocabulary themes and earn milestones as you build consistency.</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="feature-icon" aria-hidden="true">📱</span> Works Everywhere</h4>
+                    <p>Install as a PWA. Works offline. Responsive on desktop, tablet, and mobile.</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="feature-icon" aria-hidden="true">🔄</span> Auto-Reset Cycles</h4>
+                    <p>Complete all tasks and they automatically reset. Your cycle count tracks your consistency.</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="feature-icon" aria-hidden="true">✋</span> Drag & Drop Reordering</h4>
+                    <p>Rearrange tasks by dragging on desktop or long-pressing on mobile. Arrow buttons for keyboard access.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Changelog Section -->
+    <section id="changelog" class="changelog-section">
+        <div class="container">
+            <h2 class="section-title">What's New</h2>
+            <p class="section-subtitle">Latest updates and improvements.</p>
+
+            <div class="changelog-list" id="changelogList">
+                <div class="changelog-item">
+                    <button type="button" class="changelog-question">Loading...</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <h2>Ready to Build Better Routines?</h2>
+        <p>Start using miniCycle today — it's free, private, and works offline.</p>
+        <div class="cta-buttons">
+            <a href="../miniCycle.html" class="cta-primary">Try miniCycle Now</a>
+            <a href="../legal/user-manual.html" class="cta-secondary">Read User Manual</a>
+        </div>
+    </section>
 
     </main>
-           <footer class="footer-bottom" role="contentinfo">
-                <p id="copyright">&copy; <span id="year"></span> <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a></p>
-            </footer>
+
+    <!-- Footer -->
+    <footer role="contentinfo">
+        <p>&copy; <span id="year"></span> <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a> | <a href="../lite/miniCycle-lite.html">Lite Version</a> | <a href="../legal/user-manual.html">User Manual</a></p>
+    </footer>
 
     <script src="product.js"></script>
 </body>

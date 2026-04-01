@@ -273,6 +273,9 @@ export class DragDropManager {
             // 📱 **Touch-based Drag for Mobile**
             taskElement._touchstartHandler = (event) => {
                 if (event.target.closest(DOM_SELECTORS.TASK_OPTIONS)) return;
+
+                // Prevent drag on completed tasks in the completed dropdown
+                if (taskElement.closest(`#${DOM_IDS.COMPLETED_TASK_LIST}`)) return;
                 isLongPress = false;
                 isDragging = false;
                 isTap = true;
@@ -430,6 +433,12 @@ export class DragDropManager {
             // 🖱️ **Mouse-based Drag for Desktop (also fires on iOS native DnD)**
             taskElement._dragstartHandler = (event) => {
                 if (event.target.closest(DOM_SELECTORS.TASK_OPTIONS)) return;
+
+                // Prevent dragging completed tasks in the completed dropdown
+                if (taskElement.closest(`#${DOM_IDS.COMPLETED_TASK_LIST}`)) {
+                    event.preventDefault();
+                    return;
+                }
 
                 // Mark that native HTML5 DnD has started.
                 // On iOS, touchcancel will fire next — this flag tells that handler
@@ -610,6 +619,9 @@ export class DragDropManager {
         try {
             const taskItem = button.closest(DOM_SELECTORS.TASK);
             if (!taskItem) return;
+
+            // Prevent arrow reordering on completed tasks
+            if (taskItem.querySelector(DOM_SELECTORS.TASK_INPUT_CHECKED)) return;
 
             const taskList = document.getElementById(DOM_IDS.TASK_LIST);
             const allTasks = Array.from(taskList.children);
@@ -948,14 +960,18 @@ export class DragDropManager {
         taskList.querySelector(DOM_SELECTORS.IS_FIRST_TASK)?.classList.remove(DOM_CLASSES.IS_FIRST_TASK);
         taskList.querySelector(DOM_SELECTORS.IS_LAST_TASK)?.classList.remove(DOM_CLASSES.IS_LAST_TASK);
 
-        // Add new markers (direct children only)
-        const firstTask = taskList.firstElementChild;
-        const lastTask = taskList.lastElementChild;
+        // Find first/last INCOMPLETE tasks (skip completed — their arrows are hidden)
+        const tasks = Array.from(taskList.children).filter(el =>
+            el.classList.contains(DOM_CLASSES.TASK) && !el.querySelector(DOM_SELECTORS.TASK_INPUT_CHECKED)
+        );
 
-        if (firstTask?.classList.contains(DOM_CLASSES.TASK)) {
+        const firstTask = tasks[0] || null;
+        const lastTask = tasks.length > 1 ? tasks[tasks.length - 1] : null;
+
+        if (firstTask) {
             firstTask.classList.add(DOM_CLASSES.IS_FIRST_TASK);
         }
-        if (lastTask?.classList.contains(DOM_CLASSES.TASK) && lastTask !== firstTask) {
+        if (lastTask && lastTask !== firstTask) {
             lastTask.classList.add(DOM_CLASSES.IS_LAST_TASK);
         }
     }
