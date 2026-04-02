@@ -147,25 +147,20 @@
         var visibleCount = Math.min(INITIAL_VERSIONS, entries.length);
         var hasMore = entries.length > INITIAL_VERSIONS;
 
-        for (var i = 0; i < entries.length; i++) {
-            var entry = entries[i];
+        function createChangelogItem(entry, index) {
             var item = document.createElement('div');
             item.className = 'changelog-item';
-            if (i >= visibleCount) {
-                item.style.display = 'none';
-                item.dataset.hidden = 'true';
-            }
 
             var button = document.createElement('button');
             button.type = 'button';
             button.className = 'changelog-question';
             button.setAttribute('aria-expanded', 'false');
-            button.setAttribute('aria-controls', 'changelog-answer-' + i);
+            button.setAttribute('aria-controls', 'changelog-answer-' + index);
             button.textContent = 'v' + entry.version + '  (' + entry.date + ')';
 
             var answer = document.createElement('div');
             answer.className = 'changelog-answer';
-            answer.id = 'changelog-answer-' + i;
+            answer.id = 'changelog-answer-' + index;
 
             var content = document.createElement('div');
             content.className = 'changelog-answer-content';
@@ -178,41 +173,56 @@
             }
             content.appendChild(ul);
             answer.appendChild(content);
-
             item.appendChild(button);
             item.appendChild(answer);
-            changelogList.appendChild(item);
 
-            // Accordion toggle
-            (function (btn, itm) {
-                btn.addEventListener('click', function () {
-                    var isActive = itm.classList.contains('active');
-                    if (isActive) {
-                        itm.classList.remove('active');
-                        btn.setAttribute('aria-expanded', 'false');
-                    } else {
-                        itm.classList.add('active');
-                        btn.setAttribute('aria-expanded', 'true');
-                    }
-                });
-            })(button, item);
+            button.addEventListener('click', function () {
+                var isActive = item.classList.contains('active');
+                if (isActive) {
+                    item.classList.remove('active');
+                    button.setAttribute('aria-expanded', 'false');
+                } else {
+                    item.classList.add('active');
+                    button.setAttribute('aria-expanded', 'true');
+                }
+            });
+
+            return item;
         }
 
-        // "Show older versions" button
+        // Render initial visible items
+        for (var i = 0; i < visibleCount; i++) {
+            changelogList.appendChild(createChangelogItem(entries[i], i));
+        }
+
+        // "Show older versions" toggle with scrollable container
         if (hasMore) {
+            var olderContainer = document.createElement('div');
+            olderContainer.className = 'changelog-older';
+
+            for (var i = visibleCount; i < entries.length; i++) {
+                olderContainer.appendChild(createChangelogItem(entries[i], i));
+            }
+
             var showMoreBtn = document.createElement('button');
             showMoreBtn.type = 'button';
             showMoreBtn.className = 'show-more-btn';
             showMoreBtn.textContent = 'Show older versions';
+
+            var isOpen = false;
             showMoreBtn.addEventListener('click', function () {
-                var hiddenItems = changelogList.querySelectorAll('[data-hidden="true"]');
-                for (var k = 0; k < hiddenItems.length; k++) {
-                    hiddenItems[k].style.display = '';
-                    hiddenItems[k].removeAttribute('data-hidden');
+                isOpen = !isOpen;
+                if (isOpen) {
+                    olderContainer.classList.add('open');
+                    showMoreBtn.textContent = 'Hide older versions';
+                } else {
+                    olderContainer.classList.remove('open');
+                    showMoreBtn.textContent = 'Show older versions';
                 }
-                showMoreBtn.remove();
             });
+
             changelogList.appendChild(showMoreBtn);
+            changelogList.appendChild(olderContainer);
         }
     }
 

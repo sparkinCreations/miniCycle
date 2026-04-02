@@ -31,6 +31,7 @@ const di = createDIModule('CompletedTasksManager', {
     AppState: optional(null),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
+    getActiveElement: optional(() => document.activeElement),
     safeAddEventListener: optional((el, evt, fn) => { el?.removeEventListener(evt, fn); el?.addEventListener(evt, fn); })
 });
 
@@ -195,7 +196,7 @@ export class CompletedTasksManager {
         taskElement.setAttribute('draggable', 'true');
 
         // Save current focus state — restore after DOM move
-        const hadFocus = taskElement.contains(document.activeElement);
+        const hadFocus = taskElement.contains(this.deps.getActiveElement());
 
         // Try to restore to original position (saved when task was completed)
         const originalIndex = parseInt(taskElement.dataset.originalIndex, 10);

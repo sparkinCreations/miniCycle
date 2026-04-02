@@ -1,3 +1,7 @@
+## [2.170] - 2026-04-02
+- feat: update product page carousel and changelog functionality
+
+
 ## [2.169] - 2026-04-01
 - chore: update version to 2.168 across all relevant files and changelog
 
