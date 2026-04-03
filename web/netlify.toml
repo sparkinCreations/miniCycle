@@ -5,11 +5,12 @@
   # Publish directory (where your built site files are located)
   publish = "."
 
-  # Command to run before deploying (if you have a build process)
-  # command = "npm run build"
+  # Install dependencies (required for Netlify Functions)
+  command = "npm install"
 
 [functions]
   directory = "netlify/functions"
+  node_bundler = "esbuild"
 
 # Domain redirects for minicycleapp.com
 [[redirects]]
