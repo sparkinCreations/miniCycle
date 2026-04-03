@@ -1,3 +1,9 @@
+## [2.176] - 2026-04-03
+- feat: normalize event data format for click tracking in dashboard and handler
+- feat: enhance click tracking with daily breakdown and recent clicks display
+- chore: update app version to 2.175 and modify related files
+
+
 ## [2.175] - 2026-04-03
 - feat: add initial dashboard HTML structure and styling
 
