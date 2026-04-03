@@ -42,9 +42,13 @@ export default async function handler(request) {
             var raw = await store.get(blob.key);
             try {
                 var parsed = JSON.parse(raw);
-                events[blob.key] = parsed;
+                // Normalize: if parsed is a number or string, it's the old format
+                if (typeof parsed === 'object' && parsed !== null && parsed.total !== undefined) {
+                    events[blob.key] = parsed;
+                } else {
+                    events[blob.key] = { total: parseInt(parsed, 10) || 0, clicks: [] };
+                }
             } catch {
-                // Legacy format (plain number) — migrate
                 events[blob.key] = { total: parseInt(raw, 10) || 0, clicks: [] };
             }
         }
