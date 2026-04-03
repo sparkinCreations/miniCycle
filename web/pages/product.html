@@ -138,9 +138,10 @@
             width: auto;
         }
 
-        .logo-text {
-            font-size: 1.3rem;
-            font-weight: 600;
+        .logo-wordmark {
+            height: 28px;
+            width: auto;
+            filter: brightness(0) invert(1);
         }
 
         .header-nav {
@@ -401,6 +402,26 @@
             text-align: center;
             margin-top: 0.8rem;
             font-size: 1.1rem;
+        }
+
+        /* Positioning Statement */
+        .positioning-section {
+            background: #c8daf2;
+            padding: 3rem 0;
+            text-align: center;
+        }
+
+        .positioning-text {
+            font-size: 1.35rem;
+            color: #444;
+            line-height: 1.8;
+            max-width: 650px;
+            margin: 0 auto;
+            letter-spacing: 0.2px;
+        }
+
+        .positioning-text strong {
+            color: #0088ff;
         }
 
         /* Demos Section */
@@ -951,8 +972,8 @@
     <header role="banner">
         <div class="header-content">
             <a href="product.html" class="logo-link">
-                <img src="../assets/images/logo/logo.png" alt="miniCycle">
-                <span class="logo-text">miniCycle</span>
+                <img src="../assets/images/logo/logo.png" alt="miniCycle" class="logo-icon">
+                <img src="../assets/images/logo/App_Name_miniCycle.png" alt="miniCycle" class="logo-wordmark">
             </a>
             <nav class="header-nav" aria-label="Page navigation">
                 <a href="#demos">See It In Action</a>
@@ -997,6 +1018,13 @@
                 <a href="learn_more.html" class="cta-secondary">Learn More</a>
             </div>
             <p class="trust-text trust-text-center">100% Free · Privacy focused · No ads · No accounts · Just routines</p>
+        </div>
+    </section>
+
+    <!-- Positioning Statement -->
+    <section class="positioning-section">
+        <div class="container">
+            <p class="positioning-text">To-do lists are for one-off tasks. Habit trackers are for streaks. <strong>miniCycle is for routines that never miss a step.</strong></p>
         </div>
     </section>
 

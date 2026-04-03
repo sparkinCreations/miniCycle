@@ -1,7 +1,7 @@
 # .mcyc File Format Documentation
 
 **Schema Version:** 2.5
-**Last Updated:** March 2026
+**Last Updated:** April 2026
 
 ---
 
@@ -169,6 +169,7 @@ Every task in the `tasks` array uses this structure:
   "schemaVersion": 2,
   "dueDate": null,
   "highPriority": false,
+  "priorityColor": null,
   "remindersEnabled": false,
   "recurring": false,
   "recurringSettings": {},
@@ -190,6 +191,7 @@ Every task in the `tasks` array uses this structure:
 | `schemaVersion` | number | **Yes** | `2` | Task schema version |
 | `dueDate` | string\|null | No | `null` | ISO 8601 date string |
 | `highPriority` | boolean | No | `false` | Priority flag |
+| `priorityColor` | string\|null | No | `null` | Hex color for priority border (e.g., `"#dc3545"`) |
 | `remindersEnabled` | boolean | No | `false` | Enable reminders for this task |
 | `recurring` | boolean | No | `false` | Is this a recurring task? |
 | `recurringSettings` | object | No | `{}` | Recurring configuration (see below) |
@@ -602,7 +604,8 @@ For tasks with `recurring: true` (Schema 2.5+ structure, updated v1.349):
       "text": "✅ Finalize feature set",
       "completed": false,
       "schemaVersion": 2,
-      "highPriority": true
+      "highPriority": true,
+      "priorityColor": "#dc3545"
     },
     {
       "id": "t2",
@@ -623,6 +626,7 @@ For tasks with `recurring: true` (Schema 2.5+ structure, updated v1.349):
       "completed": false,
       "schemaVersion": 2,
       "highPriority": true,
+      "priorityColor": "#facc15",
       "dueDate": "2025-02-15T12:00:00Z"
     }
   ],
@@ -983,7 +987,8 @@ function createMcycFile(cycleName, tasks, options = {}) {
       completed: false,
       schemaVersion: 2,
       dueDate: options.dueDates?.[index] || null,
-      highPriority: options.priorities?.[index] || false
+      highPriority: options.priorities?.[index] || false,
+      priorityColor: options.priorityColors?.[index] || null
     })),
     autoReset: options.autoReset !== false,
     cycleCount: 0,
@@ -1127,10 +1132,10 @@ python3 create_mcyc.py
 
 ## Version
 
-**Document Version:** 1.2
+**Document Version:** 1.3
 **Schema Version:** 2.5
 
-**Last Updated:** March 2026
+**Last Updated:** April 2026
 
 ---
 
