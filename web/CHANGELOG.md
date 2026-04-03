@@ -1,3 +1,7 @@
+## [2.177] - 2026-04-03
+- chore: update app version to 2.176 and modify related files
+
+
 ## [2.176] - 2026-04-03
 - feat: normalize event data format for click tracking in dashboard and handler
 - feat: enhance click tracking with daily breakdown and recent clicks display
