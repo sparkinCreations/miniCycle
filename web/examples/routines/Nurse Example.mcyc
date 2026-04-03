@@ -1,0 +1,324 @@
+{
+  "name": "📋 The \"4 Ps\" Hourly Rounding Checklist (2)",
+  "title": "📋 The \"4 Ps\" Hourly Rounding Checklist (2)",
+  "tasks": [
+    {
+      "id": "task-4ps-001",
+      "text": "Intro: Safety check",
+      "completed": true,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-002",
+      "text": "Pain: 0–10? Meds needed?",
+      "completed": true,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-003",
+      "text": "Personal needs: Restroom?",
+      "completed": true,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-004",
+      "text": "Position: Reposition/comfort",
+      "completed": true,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-005",
+      "text": "Call light in reach",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-006",
+      "text": "Phone/water/glasses near",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-007",
+      "text": "Trash can nearby",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-008",
+      "text": "Closing: Anything else?",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": true,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false,
+  "taskOptionButtons": null,
+  "recurringTemplates": {},
+  "reminders": null,
+  "createdAt": 1775240228375,
+  "theme": "classic",
+  "history": {
+    "events": [
+      {
+        "id": "evt-1775240280985-xk2eo",
+        "type": "task_priority_color_changed",
+        "timestamp": 1775240280985,
+        "details": {
+          "taskName": "Closing: Anything else?",
+          "priorityColor": "#facc15",
+          "_eventLabel": "Priority Color Changed"
+        }
+      },
+      {
+        "id": "evt-1775240278186-18tmq",
+        "type": "task_priority_set",
+        "timestamp": 1775240278186,
+        "details": {
+          "taskName": "Closing: Anything else?",
+          "priorityColor": "#28a745",
+          "_eventLabel": "Priority Assigned"
+        }
+      },
+      {
+        "id": "evt-1775240276577-znn7l",
+        "type": "task_priority_color_changed",
+        "timestamp": 1775240276577,
+        "details": {
+          "taskName": "Trash can nearby",
+          "priorityColor": "#28a745",
+          "_eventLabel": "Priority Color Changed"
+        }
+      },
+      {
+        "id": "evt-1775240275623-uztem",
+        "type": "task_priority_set",
+        "timestamp": 1775240275623,
+        "details": {
+          "taskName": "Trash can nearby",
+          "priorityColor": "#facc15",
+          "_eventLabel": "Priority Assigned"
+        }
+      },
+      {
+        "id": "evt-1775240272171-lqjlu",
+        "type": "task_priority_color_changed",
+        "timestamp": 1775240272171,
+        "details": {
+          "taskName": "Phone/water/glasses near",
+          "priorityColor": "#facc15",
+          "_eventLabel": "Priority Color Changed"
+        }
+      },
+      {
+        "id": "evt-1775240271009-q2cl3",
+        "type": "task_priority_set",
+        "timestamp": 1775240271009,
+        "details": {
+          "taskName": "Phone/water/glasses near",
+          "priorityColor": "#dc3545",
+          "_eventLabel": "Priority Assigned"
+        }
+      },
+      {
+        "id": "evt-1775240261254-o52l5",
+        "type": "task_priority_set",
+        "timestamp": 1775240261254,
+        "details": {
+          "taskName": "Position: Reposition/comfort",
+          "priorityColor": "#dc3545",
+          "_eventLabel": "Priority Assigned"
+        }
+      },
+      {
+        "id": "evt-1775240260884-2n04u",
+        "type": "task_priority_removed",
+        "timestamp": 1775240260884,
+        "details": {
+          "taskName": "Position: Reposition/comfort",
+          "_eventLabel": "Priority Removed"
+        }
+      },
+      {
+        "id": "evt-1775240259074-d8mpy",
+        "type": "task_priority_set",
+        "timestamp": 1775240259074,
+        "details": {
+          "taskName": "Personal needs: Restroom?",
+          "priorityColor": "#dc3545",
+          "_eventLabel": "Priority Assigned"
+        }
+      },
+      {
+        "id": "evt-1775240258594-5eugf",
+        "type": "task_priority_removed",
+        "timestamp": 1775240258594,
+        "details": {
+          "taskName": "Personal needs: Restroom?",
+          "_eventLabel": "Priority Removed"
+        }
+      },
+      {
+        "id": "evt-1775240257224-0sm45",
+        "type": "task_priority_color_changed",
+        "timestamp": 1775240257224,
+        "details": {
+          "taskName": "Pain: 0–10? Meds needed?",
+          "priorityColor": "#dc3545",
+          "_eventLabel": "Priority Color Changed"
+        }
+      },
+      {
+        "id": "evt-1775240255981-rnofp",
+        "type": "task_priority_set",
+        "timestamp": 1775240255981,
+        "details": {
+          "taskName": "Pain: 0–10? Meds needed?",
+          "priorityColor": "#28a745",
+          "_eventLabel": "Priority Assigned"
+        }
+      },
+      {
+        "id": "evt-1775240254356-3nqu8",
+        "type": "task_priority_color_changed",
+        "timestamp": 1775240254356,
+        "details": {
+          "taskName": "Intro: Safety check",
+          "priorityColor": "#28a745",
+          "_eventLabel": "Priority Color Changed"
+        }
+      },
+      {
+        "id": "evt-1775240253386-vuvpb",
+        "type": "task_priority_set",
+        "timestamp": 1775240253386,
+        "details": {
+          "taskName": "Intro: Safety check",
+          "priorityColor": "#dc3545",
+          "_eventLabel": "Priority Assigned"
+        }
+      },
+      {
+        "id": "evt-1775240251423-79nsk",
+        "type": "task_priority_removed",
+        "timestamp": 1775240251423,
+        "details": {
+          "taskName": "Intro: Safety check",
+          "_eventLabel": "Priority Removed"
+        }
+      },
+      {
+        "id": "evt-1775240248941-q87bp",
+        "type": "task_priority_removed",
+        "timestamp": 1775240248941,
+        "details": {
+          "taskName": "Pain: 0–10? Meds needed?",
+          "_eventLabel": "Priority Removed"
+        }
+      },
+      {
+        "id": "evt-1775240243887-36151",
+        "type": "task_priority_color_changed",
+        "timestamp": 1775240243887,
+        "details": {
+          "taskName": "Intro: Safety check",
+          "priorityColor": "#dc3545",
+          "_eventLabel": "Priority Color Changed"
+        }
+      },
+      {
+        "id": "evt-1775240240058-my7wq",
+        "type": "task_priority_set",
+        "timestamp": 1775240240058,
+        "details": {
+          "taskName": "Intro: Safety check",
+          "priorityColor": "#28a745",
+          "_eventLabel": "Priority Assigned"
+        }
+      }
+    ],
+    "maxEvents": 100
+  },
+  "clearedTasks": null
+}
