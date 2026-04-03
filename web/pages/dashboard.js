@@ -23,19 +23,82 @@
         }).join(' ');
     }
 
+    // Page label from event key
+    function pageLabel(key) {
+        if (key.startsWith('product-')) return 'Product';
+        if (key.startsWith('learn-more-')) return 'Learn More';
+        return 'Unknown';
+    }
+
     function formatTime(date) {
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    function renderDashboard(counts) {
+    function formatDate(dateStr) {
+        var d = new Date(dateStr);
+        return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+
+    function formatDateTime(dateStr) {
+        var d = new Date(dateStr);
+        return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) +
+            ' at ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function formatDateKey(dateStr) {
+        var d = new Date(dateStr);
+        return d.toISOString().split('T')[0];
+    }
+
+    // Get daily breakdown from all clicks across all events
+    function getDailyBreakdown(events) {
+        var days = {};
+        Object.keys(events).forEach(function (key) {
+            var clicks = events[key].clicks || [];
+            clicks.forEach(function (ts) {
+                var day = formatDateKey(ts);
+                if (!days[day]) days[day] = 0;
+                days[day]++;
+            });
+        });
+        // Sort by date descending
+        return Object.entries(days).sort(function (a, b) {
+            return b[0].localeCompare(a[0]);
+        });
+    }
+
+    // Get recent clicks across all events
+    function getRecentClicks(events, limit) {
+        var all = [];
+        Object.keys(events).forEach(function (key) {
+            var clicks = events[key].clicks || [];
+            clicks.forEach(function (ts) {
+                all.push({ event: key, time: ts });
+            });
+        });
+        all.sort(function (a, b) { return b.time.localeCompare(a.time); });
+        return all.slice(0, limit);
+    }
+
+    // Find the max value in daily breakdown for bar chart scaling
+    function getMaxDaily(dailyBreakdown) {
+        var max = 0;
+        dailyBreakdown.forEach(function (entry) {
+            if (entry[1] > max) max = entry[1];
+        });
+        return max || 1;
+    }
+
+    function renderDashboard(events) {
         var content = document.getElementById('content');
-        var keys = Object.keys(counts);
+        var keys = Object.keys(events);
 
         if (keys.length === 0) {
             content.innerHTML = '<div class="empty-state"><p>No clicks recorded yet.</p><small>Click a CTA button on the product or learn more page to start tracking.</small></div>';
             document.getElementById('totalClicks').textContent = '0';
             document.getElementById('productTotal').textContent = '0';
             document.getElementById('learnMoreTotal').textContent = '0';
+            document.getElementById('todayTotal').textContent = '0';
             return;
         }
 
@@ -47,35 +110,46 @@
         var learnMoreSum = 0;
 
         keys.forEach(function (key) {
-            var val = counts[key];
+            var val = events[key].total || 0;
             total += val;
             if (key.startsWith('product-')) {
-                product[key] = val;
+                product[key] = events[key];
                 productSum += val;
             } else if (key.startsWith('learn-more-')) {
-                learnMore[key] = val;
+                learnMore[key] = events[key];
                 learnMoreSum += val;
             }
+        });
+
+        // Today's count
+        var today = new Date().toISOString().split('T')[0];
+        var todayCount = 0;
+        keys.forEach(function (key) {
+            (events[key].clicks || []).forEach(function (ts) {
+                if (formatDateKey(ts) === today) todayCount++;
+            });
         });
 
         document.getElementById('totalClicks').textContent = total;
         document.getElementById('productTotal').textContent = productSum;
         document.getElementById('learnMoreTotal').textContent = learnMoreSum;
+        document.getElementById('todayTotal').textContent = todayCount;
 
         var html = '';
 
-        // Sort by count descending
+        // Sort by total count descending
         function sortedEntries(obj) {
-            return Object.entries(obj).sort(function (a, b) { return b[1] - a[1]; });
+            return Object.entries(obj).sort(function (a, b) { return (b[1].total || 0) - (a[1].total || 0); });
         }
 
+        // --- Button Breakdown ---
         if (Object.keys(product).length > 0) {
             html += '<div class="page-section">';
             html += '<div class="page-section-header"><h3>Product Page</h3><span class="page-total">' + productSum + ' total clicks</span></div>';
             sortedEntries(product).forEach(function (entry) {
                 html += '<div class="click-row">';
                 html += '<span class="click-name">' + friendlyName(entry[0]) + getBadge(entry[0]) + '</span>';
-                html += '<span class="click-count">' + entry[1] + '</span>';
+                html += '<span class="click-count">' + (entry[1].total || 0) + '</span>';
                 html += '</div>';
             });
             html += '</div>';
@@ -87,7 +161,43 @@
             sortedEntries(learnMore).forEach(function (entry) {
                 html += '<div class="click-row">';
                 html += '<span class="click-name">' + friendlyName(entry[0]) + getBadge(entry[0]) + '</span>';
-                html += '<span class="click-count">' + entry[1] + '</span>';
+                html += '<span class="click-count">' + (entry[1].total || 0) + '</span>';
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+
+        // --- Daily Breakdown ---
+        var dailyBreakdown = getDailyBreakdown(events);
+        if (dailyBreakdown.length > 0) {
+            var maxDaily = getMaxDaily(dailyBreakdown);
+            var displayDays = dailyBreakdown.slice(0, 14); // Last 14 days
+
+            html += '<div class="page-section">';
+            html += '<div class="page-section-header"><h3>Daily Activity</h3><span class="page-total">Last ' + displayDays.length + ' days</span></div>';
+            displayDays.forEach(function (entry) {
+                var pct = Math.round((entry[1] / maxDaily) * 100);
+                html += '<div class="daily-row">';
+                html += '<span class="daily-date">' + formatDate(entry[0]) + '</span>';
+                html += '<div class="daily-bar-container"><div class="daily-bar" style="width: ' + pct + '%"></div></div>';
+                html += '<span class="daily-count">' + entry[1] + '</span>';
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+
+        // --- Recent Clicks ---
+        var recent = getRecentClicks(events, 20);
+        if (recent.length > 0) {
+            html += '<div class="page-section">';
+            html += '<div class="page-section-header"><h3>Recent Clicks</h3><span class="page-total">Last ' + recent.length + '</span></div>';
+            recent.forEach(function (click) {
+                html += '<div class="click-row recent-row">';
+                html += '<div class="recent-info">';
+                html += '<span class="click-name">' + friendlyName(click.event) + '</span>';
+                html += '<span class="recent-page">' + pageLabel(click.event) + '</span>';
+                html += '</div>';
+                html += '<span class="recent-time">' + formatDateTime(click.time) + '</span>';
                 html += '</div>';
             });
             html += '</div>';
@@ -110,8 +220,15 @@
                 return res.json();
             })
             .then(function (data) {
-                if (data && data.counts) {
-                    renderDashboard(data.counts);
+                if (data && data.events) {
+                    renderDashboard(data.events);
+                } else if (data && data.counts) {
+                    // Legacy format compatibility
+                    var events = {};
+                    Object.keys(data.counts).forEach(function (k) {
+                        events[k] = { total: data.counts[k], clicks: [] };
+                    });
+                    renderDashboard(events);
                 }
             })
             .catch(function () {

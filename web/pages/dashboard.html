@@ -150,7 +150,7 @@
         /* Summary Cards */
         .summary-row {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 1rem;
             margin-bottom: 2rem;
         }
@@ -275,6 +275,74 @@
             font-size: 0.85rem;
         }
 
+        /* Daily Activity */
+        .daily-row {
+            display: flex;
+            align-items: center;
+            padding: 0.6rem 1.5rem;
+            border-bottom: 1px solid #1e2d3d;
+            gap: 1rem;
+        }
+
+        .daily-row:last-child {
+            border-bottom: none;
+        }
+
+        .daily-date {
+            font-size: 0.85rem;
+            color: #7a8b9a;
+            min-width: 55px;
+        }
+
+        .daily-bar-container {
+            flex: 1;
+            height: 8px;
+            background: #1e2d3d;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .daily-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #0088ff, #00c48c);
+            border-radius: 4px;
+            min-width: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .daily-count {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #e0e6ed;
+            min-width: 30px;
+            text-align: right;
+        }
+
+        /* Recent Clicks */
+        .recent-row {
+            flex-wrap: wrap;
+        }
+
+        .recent-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .recent-page {
+            font-size: 0.75rem;
+            color: #4a5a6a;
+            background: #1e2d3d;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .recent-time {
+            font-size: 0.8rem;
+            color: #4a5a6a;
+        }
+
         /* Loading */
         .loading {
             text-align: center;
@@ -284,12 +352,18 @@
 
         @media (max-width: 600px) {
             .summary-row {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
             }
 
             .dashboard-header {
                 flex-direction: column;
                 align-items: flex-start;
+            }
+
+            .recent-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.3rem;
             }
         }
     </style>
@@ -320,6 +394,10 @@
             <div class="summary-card">
                 <div class="label">Total Clicks</div>
                 <div class="value blue" id="totalClicks">0</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">Today</div>
+                <div class="value green" id="todayTotal">0</div>
             </div>
             <div class="summary-card">
                 <div class="label">Product Page</div>
