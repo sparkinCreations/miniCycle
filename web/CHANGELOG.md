@@ -1,3 +1,7 @@
+## [2.175] - 2026-04-03
+- feat: add initial dashboard HTML structure and styling
+
+
 ## [2.174] - 2026-04-03
 - chore: update app version to 2.173 and modify related files
 
