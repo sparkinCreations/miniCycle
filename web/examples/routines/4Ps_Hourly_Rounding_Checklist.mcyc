@@ -1,0 +1,137 @@
+{
+  "name": "healthcare_4ps_hourly_rounding_checklist",
+  "title": "📋 The \"4 Ps\" Hourly Rounding Checklist",
+  "tasks": [
+    {
+      "id": "task-4ps-001",
+      "text": "Intro: Acknowledge the patient and explain you are there for a safety check.",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-002",
+      "text": "Pain: \"On a scale of 0–10, how is your pain? Do you need your scheduled or 'as needed' meds?\"",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-003",
+      "text": "Personal Needs: \"Do you need to use the restroom?\" If yes, assist using safe handling protocols.",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-004",
+      "text": "Position: \"Are you comfortable? Let’s adjust your pillows or turn you to protect your skin.\"",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-005",
+      "text": "Proximity/Possessions: Confirm the call light is in the patient’s hand.",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-006",
+      "text": "Proximity/Possessions: Confirm the phone, water, and glasses are on the over-bed table.",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-007",
+      "text": "Proximity/Possessions: Confirm the trash can is nearby.",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-008",
+      "text": "Closing: \"Is there anything else I can do for you? I'll be back in about an hour.\"",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": true,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}
