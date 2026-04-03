@@ -11,6 +11,7 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+  included_files = ["netlify/functions/**"]
 
 # Domain redirects for minicycleapp.com
 [[redirects]]
