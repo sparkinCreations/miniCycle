@@ -57,15 +57,41 @@ let _exportButtonInitialized = false;
  * @param {string} cycleName - Name for the file
  * @returns {void}
  */
-export function exportMiniCycleData(miniCycleData, cycleName) {
+export async function exportMiniCycleData(miniCycleData, cycleName) {
 
     try {
         const dataStr = JSON.stringify(miniCycleData, null, 2);
         const dataBlob = new Blob([dataStr], { type: "application/json" });
+        const sanitizedName = cycleName.replace(/[^a-z0-9]/gi, '_');
 
+        // Try File System Access API (lets user name file and choose save location)
+        if (typeof window.showSaveFilePicker === 'function') {
+            try {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: `${sanitizedName}.mcyc`,
+                    types: [{
+                        description: 'miniCycle Routine',
+                        accept: { 'application/json': ['.mcyc'] }
+                    }]
+                });
+                const writable = await handle.createWritable();
+                await writable.write(dataBlob);
+                await writable.close();
+
+                _deps.showNotification?.("✅ " + getLabel('notify.exportSuccess', { vars: { name: cycleName } }), "success", 3000);
+                return;
+            } catch (pickerError) {
+                // User cancelled the save dialog — not an error
+                if (pickerError.name === 'AbortError') return;
+                // Other error — fall through to legacy download
+                console.warn('Save picker failed, falling back to download:', pickerError);
+            }
+        }
+
+        // Fallback: auto-download for browsers without File System Access API
         const link = document.createElement("a");
         link.href = URL.createObjectURL(dataBlob);
-        link.download = `${cycleName.replace(/[^a-z0-9]/gi, '_')}.mcyc`;
+        link.download = `${sanitizedName}.mcyc`;
 
         document.body.appendChild(link);
         link.click();
@@ -165,6 +191,7 @@ export function setupExportButton() {
                             completed: task.completed || false,
                             dueDate: task.dueDate || null,
                             highPriority: task.highPriority || false,
+                            priorityColor: task.priorityColor || null,
                             remindersEnabled: task.remindersEnabled || false,
                             recurring: task.recurring || false,
                             recurringSettings: settings,

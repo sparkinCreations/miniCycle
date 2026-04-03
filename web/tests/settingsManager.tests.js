@@ -158,7 +158,10 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             createElement: document.createElement.bind(document),
             appendChild: document.body.appendChild.bind(document.body),
             removeChild: document.body.removeChild.bind(document.body),
+            showSaveFilePicker: window.showSaveFilePicker,
         };
+        // Force legacy download path (showSaveFilePicker requires user activation)
+        delete window.showSaveFilePicker;
         const tracked = { linkCreated: false, blobCreated: false, filename: '' };
 
         URL.createObjectURL = () => { tracked.blobCreated = true; return 'about:blank'; };
@@ -188,6 +191,9 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
                 document.createElement = originals.createElement;
                 document.body.appendChild = originals.appendChild;
                 document.body.removeChild = originals.removeChild;
+                if (originals.showSaveFilePicker) {
+                    window.showSaveFilePicker = originals.showSaveFilePicker;
+                }
             }
         };
     }
@@ -349,7 +355,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
 
         const dl = mockDownloadEnvironment();
         try {
-            instance.exportMiniCycleData({
+            await instance.exportMiniCycleData({
                 name: 'test-cycle', title: 'Test Cycle', tasks: [],
                 autoReset: true, cycleCount: 0, deleteCheckedTasks: false
             }, 'Test Cycle');
@@ -392,7 +398,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
 
         const dl = mockDownloadEnvironment();
         try {
-            instance.exportMiniCycleData({
+            await instance.exportMiniCycleData({
                 name: 'test', title: 'My Cycle!', tasks: [],
                 autoReset: true, cycleCount: 0, deleteCheckedTasks: false
             }, 'My Cycle!');

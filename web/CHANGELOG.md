@@ -1,3 +1,7 @@
+## [2.178] - 2026-04-03
+- chore: update app version to 2.177 and modify related files
+
+
 ## [2.177] - 2026-04-03
 - chore: update app version to 2.176 and modify related files
 
