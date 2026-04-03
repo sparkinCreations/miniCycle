@@ -221,14 +221,26 @@
             })
             .then(function (data) {
                 if (data && data.events) {
-                    renderDashboard(data.events);
-                } else if (data && data.counts) {
-                    // Legacy format compatibility
+                    // Normalize — some values may be plain numbers (pre-timestamp format)
                     var events = {};
-                    Object.keys(data.counts).forEach(function (k) {
-                        events[k] = { total: data.counts[k], clicks: [] };
+                    Object.keys(data.events).forEach(function (k) {
+                        var val = data.events[k];
+                        if (typeof val === 'number') {
+                            events[k] = { total: val, clicks: [] };
+                        } else if (typeof val === 'object' && val !== null) {
+                            events[k] = { total: val.total || 0, clicks: val.clicks || [] };
+                        } else {
+                            events[k] = { total: parseInt(val, 10) || 0, clicks: [] };
+                        }
                     });
                     renderDashboard(events);
+                } else if (data && data.counts) {
+                    // Legacy format compatibility
+                    var legacyEvents = {};
+                    Object.keys(data.counts).forEach(function (k) {
+                        legacyEvents[k] = { total: data.counts[k], clicks: [] };
+                    });
+                    renderDashboard(legacyEvents);
                 }
             })
             .catch(function () {
