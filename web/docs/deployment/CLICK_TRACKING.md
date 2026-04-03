@@ -87,7 +87,7 @@ Returns `401` if the secret is missing or incorrect.
 Visit this URL (replace with your actual secret):
 
 ```
-https://minicycle.app/.netlify/functions/track?secret=YOUR_SECRET_VALUE
+https://minicycle.app/.netlify/functions/track?secret=miniCycle2007
 ```
 
 ## Cost
