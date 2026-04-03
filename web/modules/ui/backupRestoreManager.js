@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, STORAGE_KEYS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, STORAGE_KEYS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -100,7 +100,10 @@ function reloadWithLoader(logContext, options = {}) {
 
             // Clear the task list DOM so stale tasks don't linger
             const taskList = document.getElementById(DOM_IDS.TASK_LIST);
-            if (taskList) taskList.innerHTML = '';
+            if (taskList) {
+                taskList.innerHTML = '';
+                document.body.classList.add(DOM_CLASSES.TASKS_EMPTY);
+            }
 
             const AppState = getAppStateInstance();
             AppState?.reload?.();

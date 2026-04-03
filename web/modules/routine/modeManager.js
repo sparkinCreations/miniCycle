@@ -702,28 +702,9 @@ export class ModeManager {
 
         if (!currentState?.settings?.addTaskDiscovered && !isReturningUser) {
             quickActionsBtn.classList.add(DOM_CLASSES.FIRST_TIME_SHIMMER);
-
-            // Also remove shimmer when a task is added (covers mobile path where
-            // users type into the input directly without ever clicking the + button).
-            // Capture initial count so the sample routine's pre-populated tasks don't
-            // trigger removal — only genuinely new user-added tasks should dismiss it.
-            const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
-            if (taskList) {
-                const initialCount = taskList.children.length;
-                const observer = new MutationObserver(() => {
-                    if (taskList.children.length > initialCount) {
-                        quickActionsBtn.classList.remove(DOM_CLASSES.FIRST_TIME_SHIMMER);
-                        observer.disconnect();
-                        if (this.deps.AppState) {
-                            this.deps.AppState.update(state => {
-                                if (!state.settings) state.settings = {};
-                                state.settings.addTaskDiscovered = true;
-                            }, true);
-                        }
-                    }
-                });
-                observer.observe(taskList, { childList: true });
-            }
+            // Shimmer removal handled by:
+            // 1. Click on + button (below in this function)
+            // 2. Task input submit via Add button or Enter key (uiBoot.js attachTaskInputListeners)
         } else if (!currentState?.settings?.addTaskDiscovered && isReturningUser) {
             // Returning user without the flag — set it silently
             if (this.deps.AppState) {

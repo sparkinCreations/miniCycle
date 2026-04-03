@@ -414,7 +414,10 @@ export class RoutineSwitcher {
                         const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
                         const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
 
-                        if (taskList) taskList.innerHTML = "";
+                        if (taskList) {
+                            taskList.innerHTML = "";
+                            this.deps.getBody().classList.add(DOM_CLASSES.TASKS_EMPTY);
+                        }
                         if (toggleAutoReset) toggleAutoReset.checked = false;
 
                         // Show onboarding flow (placeholder + modal)

@@ -540,6 +540,7 @@ export const DOM_CLASSES = Object.freeze({
 
     // ---- Onboarding ----
     FIRST_TIME_SHIMMER: 'first-time-shimmer',
+    TASKS_EMPTY: 'tasks-empty',
 
     // ---- Recurring Panel ----
     FIRST_SPECIFIC_DATE: 'first-specific-date',

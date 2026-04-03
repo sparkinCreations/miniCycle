@@ -519,6 +519,15 @@ export async function loadAllModules(deps, coreResult) {
         }
     }
 
+    // Inject organizeCompletedTasks into TaskRenderer (re-sort after full re-render)
+    if (deps.task?.taskDOMManager?.renderer && deps.ui?.completedTasksManager) {
+        if (typeof deps.task.taskDOMManager.renderer.injectDependency === 'function') {
+            deps.task.taskDOMManager.renderer.injectDependency('organizeCompletedTasks',
+                () => deps.ui.completedTasksManager.organize?.()
+            );
+        }
+    }
+
     return results;
 }
 

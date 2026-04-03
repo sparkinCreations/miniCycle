@@ -163,6 +163,23 @@ export function attachGlobalEventListeners(_GlobalUtils, _options = {}) {
  * @param {Object} appContextMod - appContext module (versioned import)
  */
 export function attachTaskInputListeners(_GlobalUtils, taskInput, addTaskButton, appContextMod) {
+  // Dismiss first-time shimmer on the + button when user adds a task
+  function dismissFirstTimeShimmer() {
+    const quickActionsBtn = document.getElementById(DOM_SELECTORS.QUICK_ACTIONS_BTN);
+    if (quickActionsBtn?.classList.contains(DOM_CLASSES.FIRST_TIME_SHIMMER)) {
+      quickActionsBtn.classList.remove(DOM_CLASSES.FIRST_TIME_SHIMMER);
+      try {
+        const AppState = appContextMod?.getStateApi?.()?.AppState;
+        AppState?.update?.(state => {
+          if (!state.settings) state.settings = {};
+          state.settings.addTaskDiscovered = true;
+        }, true);
+      } catch {
+        // State API not ready — shimmer class still removed from DOM
+      }
+    }
+  }
+
   // Add Task Button (Click)
   if (addTaskButton) {
     replaceStoredEventListener(addTaskButton, 'click', '__miniCycleUiBootAddTaskClickHandler', () => {
@@ -182,6 +199,7 @@ export function attachTaskInputListeners(_GlobalUtils, taskInput, addTaskButton,
       try {
         const taskApi = appContextMod.getTaskApi();
         taskApi?.add?.(taskText);
+        dismissFirstTimeShimmer();
       } catch (e) {
         console.error('❌ Failed to add task:', e);
         getShowNotification()?.('❌ ' + getLabel('notify.taskAddFailed'), 'error', 3000);
@@ -213,6 +231,7 @@ export function attachTaskInputListeners(_GlobalUtils, taskInput, addTaskButton,
         try {
           const taskApi = appContextMod.getTaskApi();
           taskApi?.add?.(taskText);
+          dismissFirstTimeShimmer();
         } catch (e) {
           console.error('❌ Failed to add task:', e);
           getShowNotification()?.('❌ ' + getLabel('notify.taskAddFailed'), 'error', 3000);

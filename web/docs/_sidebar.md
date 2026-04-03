@@ -93,6 +93,7 @@
   * [PWA Offline Architecture](deployment/PWA_OFFLINE_ARCHITECTURE.md)
   * [Service Worker Update Strategy](deployment/SERVICE_WORKER_UPDATE_STRATEGY.md)
   * [Update Version Guide](deployment/UPDATE-VERSION-GUIDE.md)
+  * [CTA Click Tracking](deployment/CLICK_TRACKING.md)
 
 * **Future Work**
   * [Label System Integration](future-work/LABEL_SYSTEM_INTEGRATION_PLAN.md)

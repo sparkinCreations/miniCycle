@@ -1,3 +1,7 @@
+## [2.171] - 2026-04-03
+- Add daily routine screenshot for Version 2-145
+
+
 ## [2.170] - 2026-04-02
 - feat: update product page carousel and changelog functionality
 

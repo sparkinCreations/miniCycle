@@ -293,6 +293,17 @@ export class OnboardingManager {
             }
 
             stepContent.innerHTML = steps[index];
+
+            // Trigger title expand animation after DOM insertion
+            const h2 = stepContent.querySelector('h2');
+            if (h2) {
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        h2.classList.add('animate-in');
+                    });
+                });
+            }
+
             prevBtn.classList.toggle(DOM_CLASSES.HIDDEN, index === 0);
             if (stepIndicator) {
                 stepIndicator.textContent = getLabel('onboarding.stepOf', {

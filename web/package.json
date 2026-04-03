@@ -1,6 +1,6 @@
 {
   "name": "minicycle-web",
-  "version": "2.170",
+  "version": "2.171",
   "description": "miniCycle - Turn Your Routine Into Progress",
   "type": "module",
   "private": true,
@@ -34,5 +34,8 @@
     "eslint-plugin-security": "^3.0.1",
     "eslint-plugin-sonarjs": "^3.0.5",
     "playwright": "^1.56.0"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^10.7.4"
   }
 }

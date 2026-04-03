@@ -64,12 +64,12 @@ body.onboarding-active .onboarding-placeholder {
 .onboarding-modal {
     display: flex;
     position: fixed;
-    z-index: var(--z-header);
+    z-index: var(--z-modal-high);
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.85);
     justify-content: center;
     align-items: center;
     pointer-events: none;
@@ -100,11 +100,30 @@ body.onboarding-active .onboarding-placeholder {
 }
 
 .onboarding-content h2 {
-    color: inherit;
-    font-size: var(--font-size-2xl);
+    color: var(--color-navy, #2c3270);
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
     margin-bottom: var(--space-3-75);
     padding-left: var(--space-5);
     padding-right: var(--space-5);
+    letter-spacing: -0.02em;
+    transform: scale(0.85);
+    opacity: 0;
+    transition: transform 4s ease-out, opacity 4s ease-out;
+}
+
+.onboarding-content h2.animate-in {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* Reduced motion: no expand animation, show immediately */
+@media (prefers-reduced-motion: reduce) {
+    .onboarding-content h2 {
+        transform: scale(1);
+        opacity: 1;
+        transition: none;
+    }
 }
 
 .onboarding-content ul {

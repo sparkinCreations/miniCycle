@@ -203,7 +203,8 @@ body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
 }
 
 /* Shimmer effect on "+" button when task list is empty — draws attention to add action */
-body:has(.task-list:empty) .quick-actions-btn {
+/* Uses JS-managed .tasks-empty class instead of :has(.task-list:empty) for PWA reliability */
+body.tasks-empty .quick-actions-btn {
     background: linear-gradient(
         110deg,
         rgba(255, 255, 255, 0.2) 0%,
@@ -218,11 +219,11 @@ body:has(.task-list:empty) .quick-actions-btn {
 
 /* Disable shimmer under reduced motion */
 @media (prefers-reduced-motion: reduce) {
-    body:has(.task-list:empty) .quick-actions-btn {
+    body.tasks-empty .quick-actions-btn {
         animation: none;
     }
 }
-body.reduced-motion:has(.task-list:empty) .quick-actions-btn {
+body.reduced-motion.tasks-empty .quick-actions-btn {
     animation: none;
 }
 
