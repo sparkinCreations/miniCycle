@@ -399,7 +399,10 @@ export class RoutineManager {
                 const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
                 const deleteCheckedTasks = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
 
-                if (taskList) taskList.innerHTML = "";
+                if (taskList) {
+                    taskList.innerHTML = "";
+                    this.deps.getBody().classList.add(DOM_CLASSES.TASKS_EMPTY);
+                }
 
                 const titleElement = this.deps.getElementById(DOM_IDS.MINI_CYCLE_TITLE);
                 if (titleElement && finalResult) titleElement.textContent = finalResult.finalTitle;

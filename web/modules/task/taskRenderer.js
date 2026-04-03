@@ -209,6 +209,10 @@ export class TaskRenderer {
             // ✅ Atomic DOM update: replaceChildren swaps all children in one reflow
             // This is more efficient than innerHTML = "" followed by appendChild
             taskList.replaceChildren(...fragment.childNodes);
+
+            // Toggle tasks-empty class on body for shimmer effect
+            // Uses managed class instead of :has(.task-list:empty) for PWA reliability
+            document.body.classList.toggle(DOM_CLASSES.TASKS_EMPTY, taskList.children.length === 0);
         } else {
             console.warn('⚠️ Render failed - existing task list preserved');
             return;
@@ -238,6 +242,9 @@ export class TaskRenderer {
 
         // Restore active task options from state (state-driven UI)
         this._restoreActiveTaskOptions();
+
+        // Re-organize completed tasks into dropdown (if feature enabled)
+        this.deps.organizeCompletedTasks?.();
 
         // Update task search visibility based on count
         this.deps.updateSearchVisibility?.(tasksArray.length);

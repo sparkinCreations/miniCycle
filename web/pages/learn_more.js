@@ -33,4 +33,23 @@
             }
         });
     });
+    // =========================================================
+    // CTA Click Tracking
+    // =========================================================
+    function trackClick(event) {
+        try {
+            fetch('/.netlify/functions/track', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ event: event }),
+            }).catch(function () { /* silent fail — tracking is non-critical */ });
+        } catch (e) { /* silent fail */ }
+    }
+
+    document.querySelectorAll('a.cta-primary, a.cta-secondary, a.cta-btn').forEach(function (link) {
+        link.addEventListener('click', function () {
+            var label = this.textContent.trim().toLowerCase().replace(/\s+/g, '-');
+            trackClick('learn-more-' + label);
+        });
+    });
 })();
