@@ -1,3 +1,8 @@
+## [2.179] - 2026-04-04
+- feat: add Nurse Example checklist with task priority and completion tracking
+- feat: enhance .mcyc file format and export functionality with priority color support
+
+
 ## [2.178] - 2026-04-03
 - chore: update app version to 2.177 and modify related files
 
