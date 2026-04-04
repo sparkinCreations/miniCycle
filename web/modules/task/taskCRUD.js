@@ -390,17 +390,14 @@ export async function editTaskImpl(taskItem, deps = {}) {
             innerOverlay.classList.add(DOM_CLASSES.EDIT_FOCUS_ACTIVE);
         }));
 
-        // Hide task text, insert inline textarea (auto-grows for long titles)
+        // Hide task text, insert inline input
         taskLabel.style.display = 'none';
-        const input = document.createElement('textarea');
+        const input = document.createElement('input');
+        input.type = 'text';
         input.className = 'task-edit-input';
         input.value = oldText;
-        input.rows = 1;
         input.setAttribute('aria-label', getLabel('action.editTaskTitle'));
         taskLabel.parentNode.insertBefore(input, taskLabel.nextSibling);
-        // Auto-size to fit content
-        input.style.height = 'auto';
-        input.style.height = input.scrollHeight + 'px';
 
         // Disable drag while editing so the text cursor works
         const wasDraggable = taskItem.getAttribute('draggable');
@@ -415,12 +412,6 @@ export async function editTaskImpl(taskItem, deps = {}) {
 
         input.focus();
         input.select();
-
-        // Auto-resize textarea as user types
-        input.addEventListener('input', () => {
-            input.style.height = 'auto';
-            input.style.height = input.scrollHeight + 'px';
-        });
 
         // Hide task option buttons while editing
         const taskOptions = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);

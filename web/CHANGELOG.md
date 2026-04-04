@@ -1,3 +1,7 @@
+## [2.180] - 2026-04-04
+- feat: enhance task editing with auto-resizing textarea and improved styles
+
+
 ## [2.179] - 2026-04-04
 - feat: add Nurse Example checklist with task priority and completion tracking
 - feat: enhance .mcyc file format and export functionality with priority color support
