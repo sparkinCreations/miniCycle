@@ -1,3 +1,7 @@
+## [2.181] - 2026-04-05
+- chore: update app version to 2.180 and modify related files
+
+
 ## [2.180] - 2026-04-04
 - feat: enhance task editing with auto-resizing textarea and improved styles
 
