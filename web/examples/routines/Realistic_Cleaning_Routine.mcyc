@@ -1,0 +1,264 @@
+{
+  "name": "realistic_cleaning_routine",
+  "title": "🧼 Realistic Cleaning Routine",
+  "tasks": [
+    {
+      "id": "t1",
+      "text": "Make bed",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "t2",
+      "text": "Open blinds/windows",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "t3",
+      "text": "Put away clutter",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "t4",
+      "text": "Start one load of laundry",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "t5",
+      "text": "Wipe bathroom sink",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "t6",
+      "text": "Quick toilet wipe",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "t7",
+      "text": "Wipe kitchen counters",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "t8",
+      "text": "Load/unload dishwasher",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "t9",
+      "text": "Sweep high-traffic areas",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "t10",
+      "text": "Take out trash",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "t11",
+      "text": "Fold laundry",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "t12",
+      "text": "Vacuum one room",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "t13",
+      "text": "Spot-clean mirrors",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "t14",
+      "text": "Restock paper/soap",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "t15",
+      "text": "Final 5-minute tidy",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    }
+  ],
+  "autoReset": true,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}

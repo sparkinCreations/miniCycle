@@ -291,6 +291,54 @@
     });
 
     // =========================================================
+    // Scroll Reveal (IntersectionObserver)
+    // =========================================================
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        var revealElements = document.querySelectorAll('.reveal');
+        if (revealElements.length > 0 && 'IntersectionObserver' in window) {
+            var revealObserver = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        revealObserver.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+            revealElements.forEach(function (el) {
+                revealObserver.observe(el);
+            });
+        }
+    } else {
+        // Reduced motion: show everything immediately
+        document.querySelectorAll('.reveal').forEach(function (el) {
+            el.classList.add('visible');
+        });
+    }
+
+    // =========================================================
+    // Hero Phone Crossfade (20s interval)
+    // =========================================================
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        var heroPhoneImgs = document.querySelectorAll('.hero-phone-img');
+        if (heroPhoneImgs.length > 1) {
+            var heroPhoneIndex = 0;
+            var heroPhonePaused = false;
+            var heroPhoneContainer = document.querySelector('.hero-phone');
+
+            heroPhoneContainer.addEventListener('mouseenter', function () { heroPhonePaused = true; });
+            heroPhoneContainer.addEventListener('mouseleave', function () { heroPhonePaused = false; });
+
+            setInterval(function () {
+                if (heroPhonePaused) return;
+                heroPhoneImgs[heroPhoneIndex].classList.remove('active');
+                heroPhoneIndex = (heroPhoneIndex + 1) % heroPhoneImgs.length;
+                heroPhoneImgs[heroPhoneIndex].classList.add('active');
+            }, 20000);
+        }
+    }
+
+    // =========================================================
     // Dynamic copyright year
     // =========================================================
     var yearEl = document.getElementById('year');

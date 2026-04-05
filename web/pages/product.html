@@ -4,8 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>miniCycle - Complete. Cycle. Repeat.</title>
+    <meta name="description" content="miniCycle is a free, privacy-first routine manager. Build your checklist once — it resets every time you complete it. Perfect for rounds, inspections, opening procedures, and any repeating workflow.">
     <link rel="icon" type="image/png" href="../assets/images/logo/logo.png">
     <link rel="apple-touch-icon" href="../assets/images/logo/logo.png">
+
+    <!-- Open Graph / Social -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://minicycle.app/pages/product.html">
+    <meta property="og:title" content="miniCycle - Routine Checklists That Reset Automatically">
+    <meta property="og:description" content="Build your checklist once — it resets every time you complete it. Free, private, works offline. No account needed.">
+    <meta property="og:image" content="https://minicycle.app/assets/images/Product/Mini_Cycle_List.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="miniCycle - Routine Checklists That Reset Automatically">
+    <meta name="twitter:description" content="Build your checklist once — it resets every time you complete it. Free, private, works offline.">
+    <meta name="twitter:image" content="https://minicycle.app/assets/images/Product/Mini_Cycle_List.png">
+
+    <link rel="preload" as="image" href="../assets/images/Product/phone-light-mode.png">
+    <link rel="preload" as="image" href="../assets/images/Product/desktop-monitor-mockup.png">
 
     <!-- Structured Data (JSON-LD) for SEO -->
     <script type="application/ld+json">
@@ -13,40 +28,18 @@
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "miniCycle",
-      "description": "A routine workflow companion that helps build productive habits with auto-reset cycles, recurring workflows, and intelligent routine patterns",
+      "description": "A routine workflow companion that helps manage repeating task lists with auto-reset cycles and intelligent routine patterns",
       "url": "https://minicycle.app",
       "applicationCategory": "ProductivityApplication",
       "genre": "Routine Workflow Companion",
-      "keywords": "routine workflow companion, auto-reset cycles, habit tracker, workflow automation, productive routines, habit building, cycle-based productivity",
+      "keywords": "routine workflow companion, auto-reset cycles, workflow automation, productive routines, cycle-based productivity",
       "operatingSystem": "Web Browser, PWA",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "creator": {
-        "@type": "Organization",
-        "name": "sparkinCreations",
-        "url": "https://sparkincreations.com"
-      },
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "creator": { "@type": "Organization", "name": "sparkinCreations", "url": "https://sparkincreations.com" },
       "screenshot": "https://minicycle.app/assets/images/Product/Mini_Cycle_List.png",
-      "softwareVersion": "2.114",
+      "softwareVersion": "2.180",
       "datePublished": "2025",
-      "featureList": [
-        "Auto-Reset Workflow Cycles",
-        "Intelligent Routine Patterns",
-        "Recurring Task Scheduling",
-        "Task Search, Filter & Sort",
-        "Drag-and-Drop Reordering",
-        "Vocabulary Theme System",
-        "Achievement & Milestone Tracking",
-        "Undo/Redo History",
-        "Smart Routine Reminders",
-        "Export & Import .mcyc Files",
-        "Interactive Guided Tour",
-        "Dark Mode & Custom Themes",
-        "Cross-Platform PWA"
-      ]
+      "featureList": ["Auto-Reset Workflow Cycles","Recurring Task Scheduling","Task Search, Filter & Sort","Drag-and-Drop Reordering","Vocabulary Theme System","Achievement & Milestone Tracking","Undo/Redo History","Smart Routine Reminders","Export & Import .mcyc Files","Dark Mode & Custom Themes","Cross-Platform PWA"]
     }
     </script>
 
@@ -56,919 +49,301 @@
       "@context": "https://schema.org",
       "@type": "FAQPage",
       "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "What is a routine workflow companion?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "A routine workflow companion like miniCycle helps you build lasting productive habits by transforming daily tasks into automated workflow patterns. Unlike traditional task managers, it focuses on creating repeatable routines that build momentum through auto-reset cycles."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "How do auto-reset cycles work?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Auto-reset cycles automatically refresh your routine when all tasks are completed. This creates seamless workflow patterns perfect for daily habits, weekly routines, and recurring workflows that build lasting productive momentum."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Is miniCycle free to use?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes! miniCycle is completely free to use as your routine workflow companion. It's a web-based application that works in any modern browser without requiring downloads or subscriptions."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Can I use miniCycle on my phone?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Absolutely! miniCycle works perfectly on desktop, tablet, and mobile devices. Your routine workflow companion follows you everywhere with responsive design and can be installed as a PWA for app-like experience."
-          }
-        }
+        { "@type": "Question", "name": "How do auto-reset cycles work?", "acceptedAnswer": { "@type": "Answer", "text": "Auto-reset cycles automatically refresh your routine when all tasks are completed. Your cycle count goes up each time. This creates seamless repeating workflows perfect for shift rounds, inspections, and recurring procedures." } },
+        { "@type": "Question", "name": "Is miniCycle free to use?", "acceptedAnswer": { "@type": "Answer", "text": "Yes! miniCycle is completely free. No accounts, no subscriptions, no ads. It works in any modern browser and can be installed as a PWA for offline use." } },
+        { "@type": "Question", "name": "Can I use miniCycle on my phone?", "acceptedAnswer": { "@type": "Answer", "text": "Absolutely! miniCycle works on phones, tablets, and desktops. It can be installed as a PWA for an app-like experience and works fully offline." } }
       ]
     }
     </script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* ============================
+           Design Tokens
+           ============================ */
+        :root {
+            --color-primary: #0088ff;
+            --color-primary-dark: #0066cc;
+            --color-primary-light: #04a7ff;
+            --color-bg: #f4f7fb;
+            --color-bg-alt: #eaf1fa;
+            --color-text: #333;
+            --color-text-dark: #1a1a1a;
+            --color-text-muted: #5a6a7a;
+            --color-text-light: #7a8a9a;
+            --color-white: #fff;
+            --color-navy: #1a2a4a;
+            --color-navy-dark: #0f1a2e;
+            --color-border: rgba(0, 0, 0, 0.06);
+            --color-footer: #2c3e50;
+
+            --space-xs: 0.5rem;
+            --space-sm: 1rem;
+            --space-md: 1.5rem;
+            --space-lg: 2rem;
+            --space-xl: 3rem;
+            --space-2xl: 4rem;
+            --space-3xl: 5rem;
+
+            --radius: 12px;
+            --radius-lg: 20px;
+            --radius-pill: 30px;
+            --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.06);
+            --shadow-elevated: 0 12px 40px rgba(0, 0, 0, 0.1);
+
+            --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            --font-heading: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: #c8daf2;
-        }
+        /* Poppins (self-hosted) */
+        @font-face { font-family: 'Poppins'; font-style: normal; font-weight: 600; font-display: swap; src: url('../assets/fonts/poppins-600.woff2') format('woff2'); }
+        @font-face { font-family: 'Poppins'; font-style: normal; font-weight: 700; font-display: swap; src: url('../assets/fonts/poppins-700.woff2') format('woff2'); }
 
-        /* Header */
+        /* ============================
+           Base (Mobile-First)
+           ============================ */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-body); line-height: 1.6; color: var(--color-text); background: var(--color-bg); }
+
+        /* ============================
+           Header
+           ============================ */
         header {
-            background: linear-gradient(135deg, #0088ff 0%, #04a7ff 100%);
-            color: white;
-            padding: 1rem 0;
+            background: rgba(145, 175, 215, 0.94);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: var(--space-sm) 0;
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo-link {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-            color: white;
-        }
-
-        .logo-link img {
-            height: 36px;
-            width: auto;
-        }
-
-        .logo-wordmark {
-            height: 28px;
-            width: auto;
-            filter: brightness(0) invert(1);
-        }
-
-        .header-nav {
-            display: flex;
-            gap: 1.5rem;
-            align-items: center;
-        }
-
-        .header-nav a {
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            opacity: 0.9;
-            transition: opacity 0.2s;
-        }
-
-        .header-nav a:hover {
-            opacity: 1;
-        }
-
-        .header-nav .cta-btn {
-            background: white;
-            color: #0088ff;
-            padding: 0.6rem 1.2rem;
-            border-radius: 25px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .header-nav .cta-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-
-        /* Main Container */
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        /* Section Styling */
-        section {
-            padding: 4rem 0;
-        }
-
-        .section-title {
-            font-size: 2rem;
-            margin-bottom: 1.5rem;
-            color: #222;
-            text-align: center;
-        }
-
-        .section-subtitle {
-            font-size: 1.1rem;
-            color: #666;
-            text-align: center;
-            margin-bottom: 2.5rem;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* Hero Section */
-        .hero-section {
-            background: #d4e3ff;
-            text-align: center;
-            padding-bottom: 2rem;
-            overflow: hidden;
-        }
-
-        .hero-section .container {
-            max-width: 1200px;
-        }
-
-        .hero-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.5rem;
-            align-items: center;
-        }
-
-        .hero-text {
-            text-align: left;
-            align-self: start;
-            max-width: 400px;
-            margin-left: auto;
-            margin-right: 5rem;
-            padding-top: 2rem;
-        }
-
-        .hero-logo {
-            max-width: 280px;
-            width: 100%;
-            margin: 0 auto 1rem;
-            display: block;
-        }
-
-        .hero-subtitle {
-            text-align: center;
-            font-size: 1.7rem;
-            color: #444;
-            margin-bottom: 2.5rem;
-            letter-spacing: 0.3px;
-            font-weight: 300;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .hero-images {
-            position: relative;
-            min-height: 520px;
-            display: flex;
-            justify-content: center;
-            overflow: visible;
-            margin-top: -5rem;
-        }
-
-        /* Subtle glow behind devices */
-        .hero-images::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            height: 80%;
-            background: radial-gradient(circle, rgba(255,255,255,0.4), transparent 70%);
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        .hero-image img {
-            width: 100%;
-            display: block;
-        }
-
-        .hero-image-desktop {
-            max-width: 520px;
-            position: relative;
-            z-index: 1;
-            margin-left: 40px;
-            align-self: center;
-            animation: slideInRight 1.5s ease-out both;
-            transform: rotate(-3deg);
-        }
-
-        .hero-image-desktop img {
-            border: 3px solid #111;
-            border-bottom: none;
-            border-radius: 12px 12px 0 0;
-            box-shadow: 0 30px 80px rgba(0,0,0,0.18), 0 8px 25px rgba(0,0,0,0.1);
-        }
-
-        .hero-image-desktop::after {
-            content: '';
-            display: block;
-            background: #111;
-            height: 24px;
-            border-radius: 0 0 8px 8px;
-            box-shadow: 0 30px 80px rgba(0,0,0,0.18);
-        }
-
-        .hero-image-mobile {
-            max-width: 260px;
-            position: absolute;
-            bottom: -20px;
-            left: -30px;
-            z-index: 2;
-            animation: slideInLeft 1.5s ease-out 0.6s both;
-        }
-
-        .hero-image-mobile img {
-            border: 3px solid #111;
-            border-radius: 28px;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.22), 0 10px 20px rgba(0,0,0,0.14);
-        }
-
-        .hero-tagline {
-            font-size: 1.3rem;
-            color: #555;
-            margin-bottom: 2rem;
-            letter-spacing: 0.5px;
-        }
-
-        .cycle-flow {
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            gap: 0.8rem;
-            margin-bottom: 2rem;
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #0088ff;
-            letter-spacing: 0.5px;
-        }
-
-        .cycle-flow .cycle-arrow {
-            font-weight: 400;
-            color: #999;
-        }
-
-        /* CTA Buttons (shared) */
-        .cta-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-start;
-            flex-wrap: wrap;
-            margin-bottom: 1.5rem;
-        }
-
-        .cta-primary {
-            background: #0088ff;
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 30px;
-            font-weight: 600;
-            text-decoration: none;
-            font-size: 1.1rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .cta-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0,136,255,0.3);
-        }
-
-        .cta-secondary {
-            background: transparent;
-            color: #0088ff;
-            padding: 1rem 2rem;
-            border-radius: 30px;
-            font-weight: 600;
-            text-decoration: none;
-            font-size: 1.1rem;
-            border: 2px solid #0088ff;
-            transition: background 0.2s, color 0.2s;
-        }
-
-        .cta-secondary:hover {
-            background: #0088ff;
-            color: white;
-        }
-
-        .trust-text {
-            font-size: 0.85rem;
-            color: #888;
-        }
-
-        .hero-cta {
-            justify-content: center;
-            margin-top: 4rem;
-        }
-
-        .trust-text-center {
-            text-align: center;
-            margin-top: 0.8rem;
-            font-size: 1.1rem;
-        }
-
-        /* Positioning Statement */
-        .positioning-section {
-            background: #c8daf2;
-            padding: 3rem 0;
-            text-align: center;
-        }
-
-        .positioning-text {
-            font-size: 1.35rem;
-            color: #444;
-            line-height: 1.8;
-            max-width: 650px;
-            margin: 0 auto;
-            letter-spacing: 0.2px;
-        }
-
-        .positioning-text strong {
-            color: #0088ff;
-        }
-
-        /* Demos Section */
-        .demos-section {
-            background: #c8daf2;
-        }
-
-        .carousel-card {
-            background: transparent;
-            padding: 2rem;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .video-container {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-        }
-
-        .video-display {
-            flex: 1;
-            max-width: 400px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .video-display img {
-            width: 100%;
-            height: auto;
-            border-radius: 12px;
-            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-        }
-
-        .video-display img.fade-out {
-            opacity: 0;
-            transform: translateX(-20px);
-        }
-
-        .video-display img.fade-in {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        .nav-button {
-            background: #f0f6ff;
-            border: 2px solid #0088ff;
-            color: #0088ff;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            font-size: 1.4rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .nav-button:hover {
-            background: #0088ff;
-            color: white;
-            transform: scale(1.1);
-        }
-
-        .nav-button:active {
-            transform: scale(0.95);
-        }
-
-        .video-info {
-            margin-top: 20px;
-            text-align: center;
-            opacity: 1;
-            transform: translateY(0);
-            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-        }
-
-        .video-info.fade-out {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        .video-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: #222;
-        }
-
-        .video-description {
-            font-size: 1rem;
-            color: #666;
-            line-height: 1.6;
-        }
-
-        .progress-dots {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: rgba(0, 136, 255, 0.2);
-            cursor: pointer;
-            transition: all 0.4s ease;
-        }
-
-        .dot.active {
-            background: #0088ff;
-            transform: scale(1.2);
-            box-shadow: 0 0 10px rgba(0, 136, 255, 0.4);
-        }
-
-        .dot:hover {
-            background: rgba(0, 136, 255, 0.5);
-            transform: scale(1.1);
-        }
-
-        .secondary-links {
-            display: flex;
-            gap: 1.5rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 2rem;
-        }
-
-        .secondary-links a {
-            color: #0088ff;
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            border-bottom: 1px solid rgba(0, 136, 255, 0.3);
-            padding-bottom: 2px;
-            transition: border-color 0.2s, color 0.2s;
-        }
-
-        .secondary-links a:hover {
-            color: #0066cc;
-            border-color: #0066cc;
-        }
-
-        /* Features Section */
-        .features-section {
-            background: #d4e3ff;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.5rem;
-        }
-
-        .feature-card {
-            background: #f0f6ff;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            border: 1px solid rgba(0,0,0,0.06);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-        }
-
-        .feature-card h4 {
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
-            color: #222;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .feature-card p {
-            font-size: 0.95rem;
-            color: #666;
-        }
-
-        .feature-icon {
-            font-size: 1.3rem;
-        }
-
-        /* Changelog Section */
-        .changelog-section {
-            background: #c8daf2;
-        }
-
-        .changelog-list {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .changelog-item {
-            background: white;
-            margin-bottom: 0.75rem;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .changelog-question {
-            width: 100%;
-            padding: 1rem 1.5rem;
-            background: white;
-            border: none;
-            text-align: left;
-            font-size: 1rem;
-            font-weight: 600;
-            color: #222;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: background 0.2s;
-            font-family: inherit;
-        }
-
-        .changelog-question:hover {
-            background: #f8f9fa;
-        }
-
-        .changelog-question::after {
-            content: '+';
-            font-size: 1.5rem;
-            color: #0088ff;
-            transition: transform 0.3s;
-        }
-
-        .changelog-item.active .changelog-question::after {
-            transform: rotate(45deg);
-        }
-
-        .changelog-answer {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-        }
-
-        .changelog-answer-content {
-            padding: 0 1.5rem 1rem;
-            color: #555;
-            line-height: 1.7;
-        }
-
-        .changelog-answer-content li {
-            margin-bottom: 0.4rem;
-            margin-left: 1.2rem;
-        }
-
-        .changelog-item.active .changelog-answer {
-            max-height: 500px;
-        }
-
-        .show-more-btn {
-            display: block;
-            margin: 1.5rem auto;
-            background: transparent;
-            border: 2px solid #0088ff;
-            color: #0088ff;
-            padding: 0.7rem 1.5rem;
-            border-radius: 25px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s, color 0.2s;
-            font-family: inherit;
-        }
-
-        .show-more-btn:hover {
-            background: #0088ff;
-            color: white;
-        }
-
-        .changelog-older {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.4s ease-out;
-        }
-
-        .changelog-older.open {
-            max-height: 400px;
-            overflow-y: auto;
-            transition: max-height 0.4s ease-in;
-        }
-
-        .changelog-older::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .changelog-older::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .changelog-older::-webkit-scrollbar-thumb {
-            background: rgba(0, 136, 255, 0.3);
-            border-radius: 3px;
-        }
-
-        .changelog-older::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 136, 255, 0.5);
-        }
-
-        /* Bottom CTA Section */
-        .cta-section {
-            background: linear-gradient(135deg, #0088ff 0%, #04a7ff 100%);
-            color: white;
-            text-align: center;
-            padding: 4rem 2rem;
-        }
-
-        .cta-section h2 {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-        }
-
-        .cta-section p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            margin-bottom: 2rem;
-        }
-
-        .cta-section .cta-buttons {
-            justify-content: center;
-        }
-
-        .cta-section .cta-primary {
-            background: white;
-            color: #0088ff;
-        }
-
-        .cta-section .cta-primary:hover {
-            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-        }
-
-        .cta-section .cta-secondary {
-            background: transparent;
-            color: white;
-            border-color: white;
-        }
-
-        .cta-section .cta-secondary:hover {
-            background: white;
-            color: #0088ff;
-        }
-
-        /* Footer */
-        footer {
-            background: #2c3e50;
-            color: white;
-            text-align: center;
-            padding: 2rem;
-        }
-
-        footer a {
-            color: #bdc3c7;
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            color: white;
-        }
-
-        /* Skip link */
-        .skip-link {
-            position: absolute;
-            top: -40px;
-            left: 0;
-            background: #0088ff;
-            color: #fff;
-            padding: 8px 16px;
-            z-index: 1001;
-            font-size: 0.9rem;
-            text-decoration: none;
-            border-radius: 0 0 4px 0;
-            transition: top 0.2s;
-        }
-        .skip-link:focus {
-            top: 0;
-        }
-
-        /* Focus-visible styles */
-        *:focus-visible {
-            outline: 2px solid #0088ff;
-            outline-offset: 2px;
-        }
-        .cta-btn:focus-visible,
-        .cta-primary:focus-visible,
-        .cta-secondary:focus-visible {
-            outline: 3px solid #0088ff;
-            outline-offset: 3px;
-        }
-        .nav-button:focus-visible {
-            outline: 3px solid #0088ff;
-            outline-offset: 3px;
-        }
-        .dot:focus-visible {
-            outline: 2px solid #0088ff;
-            outline-offset: 3px;
-        }
-        .changelog-question:focus-visible {
-            outline: 2px solid #0088ff;
-            outline-offset: -2px;
-        }
-        header *:focus-visible {
-            outline-color: white;
-        }
-        .cta-section *:focus-visible {
-            outline-color: white;
-        }
-
-        /* Hero image animations */
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: rotate(-3deg) translateX(40px);
-            }
-            to {
-                opacity: 1;
-                transform: rotate(-3deg) translateX(0);
-            }
-        }
-
-        @keyframes slideInLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-40px) translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0) translateY(0);
-            }
-        }
+            border-bottom: 1px solid rgba(0, 136, 255, 0.08);
+        }
+        .header-content { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+        .logo-link { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--color-text-dark); }
+        .logo-link img { height: 36px; width: auto; }
+        .logo-wordmark { height: 28px; width: auto; }
+        .header-nav { display: flex; gap: var(--space-md); align-items: center; }
+        .header-nav a { color: #2a3a4a; text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: color 0.2s; display: none; }
+        .header-nav a:hover { color: var(--color-primary); }
+        .header-nav .cta-btn { display: inline-block; background: var(--color-primary); color: var(--color-white); padding: 0.6rem 1.4rem; border-radius: var(--radius-pill); font-weight: 600; font-size: 0.95rem; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s; }
+        .header-nav .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 136, 255, 0.25); }
+
+        /* ============================
+           Shared
+           ============================ */
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+        section { padding: var(--space-xl) 0; }
+        .section-title { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; margin-bottom: var(--space-xs); color: var(--color-text-dark); text-align: center; }
+        .section-subtitle { font-size: 1rem; color: var(--color-text-muted); text-align: center; margin-bottom: var(--space-lg); }
+
+        .cta-primary { display: inline-block; background: var(--color-primary); color: var(--color-white); padding: 0.9rem 2rem; border-radius: var(--radius-pill); font-weight: 600; text-decoration: none; font-size: 1.05rem; transition: transform 0.2s, box-shadow 0.2s; }
+        .cta-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 136, 255, 0.25); }
+        .cta-secondary { display: inline-block; color: var(--color-primary); padding: 0.9rem 2rem; border-radius: var(--radius-pill); font-weight: 600; text-decoration: none; font-size: 1.05rem; border: 2px solid var(--color-primary); transition: background 0.2s, color 0.2s; }
+        .cta-secondary:hover { background: var(--color-primary); color: var(--color-white); }
+
+        /* ============================
+           Hero — Clean Split Layout
+           ============================ */
+        .hero-section { background: rgba(200, 218, 242, 0.9); padding: var(--space-2xl) 0 var(--space-xl); overflow: visible; }
+        .hero-grid { display: flex; flex-direction: column; align-items: center; gap: var(--space-lg); }
+        .hero-text { text-align: center; max-width: 550px; }
+        .hero-headline { font-family: var(--font-heading); font-size: 2.2rem; font-weight: 700; color: var(--color-text-dark); margin-bottom: var(--space-sm); line-height: 1.15; }
+        .hero-sub { font-size: 1.15rem; color: var(--color-text-muted); margin-bottom: var(--space-lg); line-height: 1.7; }
+        .hero-ctas { display: flex; flex-direction: column; gap: var(--space-sm); align-items: center; margin-bottom: var(--space-sm); }
+        .trust-text { font-size: 0.95rem; color: var(--color-text-light); font-weight: 500; }
+
+        .hero-mockup { position: relative; width: 100%; max-width: 500px; height: 320px; margin: 0 auto; }
+        .hero-phone { position: relative; z-index: 2; height: 130%; left: 80px; }
+        .hero-phone-img { position: absolute; top: 0; left: 0; height: 100%; width: auto; display: block; opacity: 0; transition: opacity 1.5s ease-in-out; }
+        .hero-phone-img.active { opacity: 1; position: relative; }
+        .hero-desktop { position: absolute; z-index: 1; height: 70%; right: -200px; top: 35%; }
+        .hero-desktop img { height: 100%; width: auto; display: block; filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.15)); }
+
+        /* ============================
+           How It Works
+           ============================ */
+        .how-section { background: var(--color-bg); }
+        .steps-row { display: flex; flex-direction: column; gap: var(--space-md); align-items: center; }
+        .step-card { text-align: center; background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius); padding: var(--space-md) var(--space-lg); max-width: 280px; width: 100%; box-shadow: var(--shadow-card); display: flex; flex-direction: column; }
+        .step-number { width: 40px; height: 40px; border-radius: 50%; background: var(--color-primary); color: var(--color-white); font-family: var(--font-heading); font-size: 1rem; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-xs); }
+        .step-title { font-family: var(--font-heading); font-size: 1.05rem; font-weight: 600; color: var(--color-text-dark); margin-bottom: var(--space-xs); }
+        .step-desc { font-size: 0.9rem; color: var(--color-text-muted); }
+        .step-arrow { color: var(--color-primary); font-size: 1.4rem; font-weight: 700; transform: rotate(90deg); opacity: 0.4; align-self: center; }
+
+        /* ============================
+           Use Cases
+           ============================ */
+        .usecases-section { background: var(--color-white); text-align: center; }
+        .why-lines { max-width: 550px; margin: 0 auto var(--space-lg); }
+        .why-line { font-size: 1.05rem; color: var(--color-text-muted); margin-bottom: var(--space-xs); }
+        .why-line-bold { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 600; color: var(--color-primary); margin-top: var(--space-sm); }
+        .usecase-row { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-xs); margin-top: var(--space-md); }
+        .usecase-chip { background: var(--color-bg); border: 1px solid var(--color-border); padding: 0.5rem 1rem; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 500; color: var(--color-text); }
+
+        /* ============================
+           Demos
+           ============================ */
+        .demos-section { background: var(--color-bg); }
+        .carousel-wrapper { max-width: 440px; margin: 0 auto; background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-md); box-shadow: var(--shadow-card); }
+        .video-container { position: relative; display: flex; align-items: center; justify-content: center; gap: 12px; }
+        .video-display { flex: 1; max-width: 340px; overflow: hidden; border-radius: var(--radius); }
+        .video-display img { width: 100%; height: auto; display: block; border-radius: var(--radius); transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; }
+        .video-display img.fade-out { opacity: 0; transform: translateX(-20px); }
+        .video-display img.fade-in { opacity: 1; transform: translateX(0); }
+        .nav-button { background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-muted); width: 38px; height: 38px; border-radius: 50%; font-size: 1.1rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .nav-button:hover { background: var(--color-primary); color: var(--color-white); border-color: var(--color-primary); }
+        .nav-button:active { transform: scale(0.95); }
+        .video-info { margin-top: 16px; text-align: center; opacity: 1; transform: translateY(0); transition: opacity 0.3s, transform 0.3s; }
+        .video-info.fade-out { opacity: 0; transform: translateY(10px); }
+        .video-title { font-family: var(--font-heading); font-size: 1.05rem; font-weight: 600; color: var(--color-text-dark); margin-bottom: 2px; }
+        .video-description { font-size: 0.85rem; color: var(--color-text-muted); }
+        .progress-dots { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--color-border); cursor: pointer; transition: all 0.3s; }
+        .dot.active { background: var(--color-primary); transform: scale(1.2); }
+        .dot:hover { background: rgba(0, 136, 255, 0.4); }
+        .secondary-links { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; margin-top: var(--space-lg); }
+        .secondary-links a { color: var(--color-primary); text-decoration: none; font-size: 0.9rem; font-weight: 500; }
+        .secondary-links a:hover { text-decoration: underline; }
+
+        /* ============================
+           Theme Showcase
+           ============================ */
+        .themes-section { background: var(--color-white); }
+        .themes-image { width: 100%; max-width: 1000px; margin: 0 auto var(--space-md); display: block; border-radius: var(--radius-lg); box-shadow: var(--shadow-elevated); }
+        .themes-desc { text-align: center; font-size: 0.9rem; color: var(--color-text-muted); max-width: 500px; margin: 0 auto; line-height: 1.7; }
+
+        /* ============================
+           Features
+           ============================ */
+        .features-section { background: var(--color-bg); }
+        .features-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-sm); }
+        .feature-card { background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius); padding: var(--space-md); box-shadow: var(--shadow-card); }
+        .feature-card h4 { font-family: var(--font-heading); font-size: 0.95rem; font-weight: 600; margin-bottom: var(--space-xs); color: var(--color-text-dark); display: flex; align-items: center; gap: var(--space-xs); }
+        .feature-card p { font-size: 0.85rem; color: var(--color-text-muted); }
+        .feature-icon { font-size: 1.1rem; }
+
+        /* ============================
+           Built Different (Story)
+           ============================ */
+        .story-section { background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-dark) 100%); color: var(--color-white); padding: var(--space-2xl) 0; text-align: center; }
+        .story-section .section-title { color: var(--color-white); }
+        .story-lead { font-size: 1rem; opacity: 0.9; margin-bottom: var(--space-lg); max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+        .story-stats { display: flex; flex-direction: column; gap: var(--space-md); align-items: center; margin-bottom: var(--space-lg); }
+        .story-stat { padding: var(--space-md) var(--space-lg); text-align: center; min-width: 160px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius); }
+        .story-stat-number { font-family: var(--font-heading); font-size: 2.2rem; font-weight: 700; color: var(--color-primary-light); line-height: 1; }
+        .story-stat-label { font-size: 0.8rem; opacity: 0.7; margin-top: var(--space-xs); }
+        .story-quote { font-size: 0.95rem; opacity: 0.8; font-style: italic; max-width: 440px; margin: 0 auto; line-height: 1.7; }
+
+        /* ============================
+           Changelog
+           ============================ */
+        .changelog-section { background: var(--color-white); }
+        .changelog-intro { text-align: center; font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: var(--space-md); }
+        .changelog-list { max-width: 700px; margin: 0 auto; }
+        .changelog-item { background: var(--color-bg); margin-bottom: 0.5rem; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--color-border); }
+        .changelog-question { width: 100%; padding: 0.8rem 1.2rem; background: transparent; border: none; text-align: left; font-size: 0.9rem; font-weight: 600; color: var(--color-text-dark); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; font-family: inherit; }
+        .changelog-question:hover { background: rgba(0, 0, 0, 0.02); }
+        .changelog-question::after { content: '+'; font-size: 1.3rem; color: var(--color-primary); transition: transform 0.3s; }
+        .changelog-item.active .changelog-question::after { transform: rotate(45deg); }
+        .changelog-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .changelog-answer-content { padding: 0 1.2rem 0.8rem; color: var(--color-text-muted); line-height: 1.6; font-size: 0.85rem; }
+        .changelog-answer-content li { margin-bottom: 0.3rem; margin-left: 1rem; }
+        .changelog-item.active .changelog-answer { max-height: 500px; }
+        .show-more-btn { display: block; margin: var(--space-sm) auto; background: transparent; border: 1px solid var(--color-primary); color: var(--color-primary); padding: 0.5rem 1.2rem; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.2s, color 0.2s; font-family: inherit; }
+        .show-more-btn:hover { background: var(--color-primary); color: var(--color-white); }
+        .changelog-older { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; }
+        .changelog-older.open { max-height: 400px; overflow-y: auto; transition: max-height 0.4s ease-in; }
+        .changelog-older::-webkit-scrollbar { width: 5px; }
+        .changelog-older::-webkit-scrollbar-track { background: transparent; }
+        .changelog-older::-webkit-scrollbar-thumb { background: rgba(0, 136, 255, 0.2); border-radius: 3px; }
+
+        /* ============================
+           Bottom CTA
+           ============================ */
+        .cta-section { background: var(--color-primary); color: var(--color-white); text-align: center; padding: var(--space-2xl) var(--space-lg); }
+        .cta-section h2 { font-family: var(--font-heading); font-size: 1.8rem; font-weight: 700; margin-bottom: var(--space-xs); }
+        .cta-section p { font-size: 1rem; opacity: 0.9; margin-bottom: var(--space-lg); }
+        .cta-section .cta-primary { background: var(--color-white); color: var(--color-primary); }
+        .cta-section .cta-primary:hover { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); }
+        .cta-section .cta-secondary { color: var(--color-white); border-color: var(--color-white); }
+        .cta-section .cta-secondary:hover { background: var(--color-white); color: var(--color-primary); }
+        .cta-section .cta-row { display: flex; flex-direction: column; gap: var(--space-sm); align-items: center; }
+
+        /* ============================
+           Footer
+           ============================ */
+        footer { background: var(--color-footer); color: var(--color-white); text-align: center; padding: var(--space-lg); font-size: 0.85rem; }
+        footer a { color: #9aa; text-decoration: none; }
+        footer a:hover { color: var(--color-white); }
+
+        /* ============================
+           Accessibility
+           ============================ */
+        .skip-link { position: absolute; top: -40px; left: 0; background: var(--color-primary); color: var(--color-white); padding: 8px 16px; z-index: 1001; font-size: 0.9rem; text-decoration: none; border-radius: 0 0 4px 0; transition: top 0.2s; }
+        .skip-link:focus { top: 0; }
+        *:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+        .cta-btn:focus-visible, .cta-primary:focus-visible, .cta-secondary:focus-visible, .nav-button:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
+        .dot:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+        .changelog-question:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+        header *:focus-visible { outline-color: var(--color-primary); }
+        .cta-section *:focus-visible, .story-section *:focus-visible { outline-color: var(--color-white); }
+
+        /* ============================
+           Animations
+           ============================ */
+        .reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.5s ease-out, transform 0.5s ease-out; }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
 
-        /* Reduced motion */
         @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-                scroll-behavior: auto !important;
-            }
+            *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+            .reveal { opacity: 1; transform: none; }
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .header-nav a:not(.cta-btn) {
-                display: none;
-            }
+        /* ============================
+           Desktop (768px+)
+           ============================ */
+        @media (min-width: 768px) {
+            .header-nav a { display: inline; }
+            section { padding: var(--space-2xl) 0; }
+            .section-title { font-size: 2rem; }
 
-            .hero-grid {
-                grid-template-columns: 1fr;
-                text-align: center;
-            }
+            .hero-section { padding: var(--space-3xl) 0 var(--space-2xl); }
+            .hero-grid { position: relative; }
+            .hero-text { text-align: left; max-width: 550px; position: relative; z-index: 3; margin-right: auto; margin-top: 80px; }
+            .hero-headline { font-size: 2.6rem; }
+            .hero-sub { font-size: 1.2rem; }
+            .hero-ctas { flex-direction: row; justify-content: flex-start; }
+            .trust-text { text-align: left; }
+            .hero-mockup { max-width: 280px; height: 420px; margin: -550px -40px 0 auto; }
 
-            .hero-text {
-                text-align: center;
-            }
+            .steps-row { flex-direction: row; justify-content: center; align-items: stretch; gap: var(--space-sm); }
+            .step-arrow { transform: none; align-self: center; }
 
-            .hero-logo {
-                max-width: 220px;
-            }
+            .why-line-bold { font-size: 1.4rem; }
 
-            .hero-image {
-                order: -1;
-            }
+            .carousel-wrapper { max-width: 550px; padding: var(--space-lg); }
+            .video-display { max-width: 380px; }
+            .nav-button { width: 44px; height: 44px; font-size: 1.3rem; }
+            .secondary-links { flex-direction: row; gap: var(--space-md); justify-content: center; }
 
-            .hero-images {
-                min-height: 320px;
-                justify-content: center;
-            }
+            .theme-item { flex: 0 0 200px; }
 
-            .hero-image-desktop {
-                max-width: 300px;
-                margin-left: 30px;
-            }
+            .features-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-md); }
 
-            .hero-image-mobile {
-                max-width: 150px;
-                left: 5px;
-                bottom: -10px;
-            }
+            .story-stats { flex-direction: row; justify-content: center; }
+            .story-stat-number { font-size: 2.8rem; }
 
-            .cycle-flow {
-                justify-content: center;
-            }
+            .cta-section h2 { font-size: 2rem; }
+            .cta-section .cta-row { flex-direction: row; justify-content: center; }
+        }
 
-            .cta-buttons {
-                justify-content: center;
-            }
-
-            .hero-tagline {
-                font-size: 1.1rem;
-            }
-
-            .section-title {
-                font-size: 1.6rem;
-            }
-
-            .cycle-flow {
-                font-size: 1.1rem;
-                gap: 0.5rem;
-            }
-
-            .carousel-card {
-                padding: 1.5rem;
-            }
-
-            .video-container {
-                gap: 10px;
-            }
-
-            .nav-button {
-                width: 40px;
-                height: 40px;
-                font-size: 1.1rem;
-            }
-
-            .features-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .cta-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .secondary-links {
-                flex-direction: column;
-                align-items: center;
-                gap: 0.8rem;
-            }
+        @media (min-width: 1024px) {
+            .hero-headline { font-size: 3rem; }
+            .hero-mockup { max-width: 750px; height: 480px; }
         }
     </style>
 </head>
 <body>
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    <!-- Header -->
     <header role="banner">
         <div class="header-content">
             <a href="product.html" class="logo-link">
@@ -976,6 +351,7 @@
                 <img src="../assets/images/logo/App_Name_miniCycle.png" alt="miniCycle" class="logo-wordmark">
             </a>
             <nav class="header-nav" aria-label="Page navigation">
+                <a href="#how-it-works">How It Works</a>
                 <a href="#demos">See It In Action</a>
                 <a href="#features">Features</a>
                 <a href="#changelog">What's New</a>
@@ -986,70 +362,94 @@
 
     <main id="main-content">
 
-    <!-- Hero Section -->
+    <!-- Hero -->
     <section class="hero-section">
         <div class="container">
-            <img src="../assets/images/logo/App_Name_miniCycle.png" alt="miniCycle" class="hero-logo">
-            <p class="hero-subtitle">Routine checklists that reset automatically.</p>
             <div class="hero-grid">
                 <div class="hero-text">
-                    <p class="hero-tagline">A privacy-first routine manager for recurring workflows on mobile and desktop.</p>
-
-                    <div class="cycle-flow">
-                        <span>Complete</span>
-                        <span class="cycle-arrow" aria-hidden="true">→</span>
-                        <span>Cycle</span>
-                        <span class="cycle-arrow" aria-hidden="true">→</span>
-                        <span>Repeat</span>
+                    <h1 class="hero-headline">Routine checklists that reset automatically.</h1>
+                    <p class="hero-sub">From shift rounds to morning rituals &mdash; build your routine once, and miniCycle resets it every time you finish.</p>
+                    <div class="hero-ctas">
+                        <a href="../miniCycle.html" class="cta-primary">Try miniCycle</a>
+                        <a href="#demos" class="cta-secondary">See It In Action</a>
                     </div>
-
+                    <p class="trust-text">Free forever &middot; No account needed &middot; Your data stays on your device</p>
                 </div>
-                <div class="hero-images">
-                    <div class="hero-image hero-image-mobile">
-                        <img src="../assets/images/Product/4-Ps-Hourly-smaller.jpg" alt="miniCycle app showing a 4 Ps Hourly Rounding Checklist for healthcare workflows">
+                <div class="hero-mockup">
+                    <div class="hero-phone">
+                        <img class="hero-phone-img active" src="../assets/images/Product/phone-light-focus-mode.png" alt="miniCycle in focus mode showing the 4 Ps Hourly Rounding Checklist">
+                        <img class="hero-phone-img" src="../assets/images/Product/phone-dark-mode.png" alt="miniCycle in dark mode showing the 4 Ps Hourly Rounding Checklist" loading="lazy">
+                        <img class="hero-phone-img" src="../assets/images/Product/phone-light-mode.png" alt="miniCycle in light mode showing the 4 Ps Hourly Rounding Checklist" loading="lazy">
                     </div>
-                    <div class="hero-image hero-image-desktop">
-                        <img src="../assets/images/Product/daily-routine-desktop.jpg" alt="miniCycle desktop app showing a Daily Routine">
+                    <div class="hero-desktop">
+                        <img src="../assets/images/Product/desktop-monitor-mockup.png" alt="miniCycle app on a desktop showing a Daily Programming Workflow">
                     </div>
                 </div>
             </div>
-            <div class="cta-buttons hero-cta">
-                <a href="../miniCycle.html" class="cta-primary">Get Started</a>
-                <a href="learn_more.html" class="cta-secondary">Learn More</a>
-            </div>
-            <p class="trust-text trust-text-center">100% Free · Privacy focused · No ads · No accounts · Just routines</p>
         </div>
     </section>
 
-    <!-- Positioning Statement -->
-    <section class="positioning-section">
+    <!-- How It Works -->
+    <section id="how-it-works" class="how-section">
         <div class="container">
-            <p class="positioning-text">To-do lists are for one-off tasks. Habit trackers are for streaks. <strong>miniCycle is for routines that never miss a step.</strong></p>
+            <h2 class="section-title">Complete. Cycle. Repeat.</h2>
+            <div class="steps-row">
+                <div class="step-card reveal">
+                    <div class="step-number">1</div>
+                    <h3 class="step-title">Complete</h3>
+                    <p class="step-desc">Check off each step of your routine as you go.</p>
+                </div>
+                <span class="step-arrow reveal" aria-hidden="true">&#8594;</span>
+                <div class="step-card reveal">
+                    <div class="step-number">2</div>
+                    <h3 class="step-title">Cycle</h3>
+                    <p class="step-desc">All done? It resets. Your cycle count goes up.</p>
+                </div>
+                <span class="step-arrow reveal" aria-hidden="true">&#8594;</span>
+                <div class="step-card reveal">
+                    <div class="step-number">3</div>
+                    <h3 class="step-title">Repeat</h3>
+                    <p class="step-desc">Start the next round. Same checklist, ready to go.</p>
+                </div>
+            </div>
         </div>
     </section>
 
-    <!-- Demos Section -->
+    <!-- Use Cases -->
+    <section class="usecases-section">
+        <div class="container">
+            <div class="why-lines reveal">
+                <p class="why-line">To-do lists are for one-off tasks.</p>
+                <p class="why-line">Habit trackers are for streaks.</p>
+                <p class="why-line why-line-bold">miniCycle is for routines that never miss a step.</p>
+            </div>
+            <div class="usecase-row reveal">
+                <span class="usecase-chip">🏥 Nurse shift rounds</span>
+                <span class="usecase-chip">🔧 Equipment inspections</span>
+                <span class="usecase-chip">📋 Opening &amp; closing procedures</span>
+                <span class="usecase-chip">🏋️ Workout routines</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demos -->
     <section id="demos" class="demos-section">
         <div class="container">
             <h2 class="section-title">See It In Action</h2>
-            <p class="section-subtitle">Watch how miniCycle handles real routines.</p>
+            <p class="section-subtitle">Real routines, real cycles.</p>
 
-            <div class="carousel-card">
+            <div class="carousel-wrapper">
                 <div class="video-container">
                     <button type="button" class="nav-button" id="prevBtn" aria-label="Previous slide">&#8249;</button>
-
                     <div class="video-display">
                         <img id="currentVideo" src="../assets/videos/samples/Daily_Home_Routine.gif" alt="miniCycle demo: Daily Home Routine">
                     </div>
-
                     <button type="button" class="nav-button" id="nextBtn" aria-label="Next slide">&#8250;</button>
                 </div>
-
                 <div class="video-info">
                     <h3 class="video-title" id="videoTitle">Daily Home Routine</h3>
                     <p class="video-description" id="videoDescription">Streamline your daily home tasks with organized cycles that keep you productive and focused.</p>
                 </div>
-
                 <div class="progress-dots" id="progressDots" role="tablist" aria-label="Slide navigation">
                     <span class="dot active" data-index="0" role="tab" aria-label="Slide 1" aria-selected="true" tabindex="0"></span>
                     <span class="dot" data-index="1" role="tab" aria-label="Slide 2" aria-selected="false" tabindex="0"></span>
@@ -1058,54 +458,75 @@
             </div>
 
             <div class="secondary-links">
-                <a href="learn_more.html">Learn more about features →</a>
-                <a href="../lite/miniCycle-lite.html">Try Lite Version →</a>
-                <a href="https://github.com/sparkinCreations/miniCycle" target="_blank" rel="noopener noreferrer">View on GitHub →</a>
+                <a href="learn_more.html">Learn more about features &#8594;</a>
+                <a href="../lite/miniCycle-lite.html">Try Lite Version &#8594;</a>
+                <a href="https://github.com/sparkinCreations/miniCycle" target="_blank" rel="noopener noreferrer">View on GitHub &#8594;</a>
             </div>
         </div>
     </section>
 
-    <!-- Features Section -->
+    <!-- Theme Showcase -->
+    <section class="themes-section">
+        <div class="container">
+            <h2 class="section-title reveal">One app that adapts to how you use it.</h2>
+            <img class="themes-image reveal" src="../assets/images/Product/Unlocked-Themes-Mock-Up.png" alt="Four miniCycle vocabulary themes side by side: Study Planner (purple), Habit Tracker (amber), Fitness Tracker (green), and Chore Manager (teal) — each with unique colors, language, and real routines" loading="lazy">
+            <p class="themes-desc reveal">Complete cycles to unlock vocabulary themes. Each one changes the app's language, colors, and identity. Your fitness routine becomes a workout tracker. Your study list becomes a study planner.</p>
+        </div>
+    </section>
+
+    <!-- Features -->
     <section id="features" class="features-section">
         <div class="container">
-            <h2 class="section-title">Why Choose miniCycle?</h2>
-            <p class="section-subtitle">Built for privacy, designed for simplicity.</p>
-
+            <h2 class="section-title">Features</h2>
             <div class="features-grid">
-                <div class="feature-card">
-                    <h4><span class="feature-icon" aria-hidden="true">🔒</span> Privacy Focused</h4>
-                    <p>Your data stays on your device. No tracking, no analytics, no cloud storage.</p>
+                <div class="feature-card reveal">
+                    <h4><span class="feature-icon" aria-hidden="true">🔄</span> Auto-Reset</h4>
+                    <p>Complete your routine. It resets. No manual cleanup.</p>
                 </div>
-                <div class="feature-card">
-                    <h4><span class="feature-icon" aria-hidden="true">🔍</span> Search, Filter & Sort</h4>
-                    <p>Find tasks instantly. Filter by status, priority, or due date. Sort your way.</p>
+                <div class="feature-card reveal">
+                    <h4><span class="feature-icon" aria-hidden="true">🔒</span> Private by architecture</h4>
+                    <p>Your data never leaves your device. There is no server.</p>
                 </div>
-                <div class="feature-card">
-                    <h4><span class="feature-icon" aria-hidden="true">🎨</span> Themes & Achievements</h4>
-                    <p>Unlock vocabulary themes and earn milestones as you build consistency.</p>
+                <div class="feature-card reveal">
+                    <h4><span class="feature-icon" aria-hidden="true">📱</span> Works offline</h4>
+                    <p>Install as a PWA. No internet required. No account needed.</p>
                 </div>
-                <div class="feature-card">
-                    <h4><span class="feature-icon" aria-hidden="true">📱</span> Works Everywhere</h4>
-                    <p>Install as a PWA. Works offline. Responsive on desktop, tablet, and mobile.</p>
-                </div>
-                <div class="feature-card">
-                    <h4><span class="feature-icon" aria-hidden="true">🔄</span> Auto-Reset Cycles</h4>
-                    <p>Complete all tasks and they automatically reset. Your cycle count tracks your consistency.</p>
-                </div>
-                <div class="feature-card">
-                    <h4><span class="feature-icon" aria-hidden="true">✋</span> Drag & Drop Reordering</h4>
-                    <p>Rearrange tasks by dragging on desktop or long-pressing on mobile. Arrow buttons for keyboard access.</p>
+                <div class="feature-card reveal">
+                    <h4><span class="feature-icon" aria-hidden="true">📤</span> Share routines</h4>
+                    <p>Export and import .mcyc files. Share routines with your team.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Changelog Section -->
+    <!-- Built Different -->
+    <section class="story-section">
+        <div class="container">
+            <h2 class="section-title reveal">Built Different</h2>
+            <p class="story-lead reveal">Built by a quality inspector who taught himself to code. No frameworks. No shortcuts. Every feature tested with real routines.</p>
+            <div class="story-stats">
+                <div class="story-stat reveal">
+                    <div class="story-stat-number">17</div>
+                    <div class="story-stat-label">months of development</div>
+                </div>
+                <div class="story-stat reveal">
+                    <div class="story-stat-number">108</div>
+                    <div class="story-stat-label">hand-built modules</div>
+                </div>
+                <div class="story-stat reveal">
+                    <div class="story-stat-number">557+</div>
+                    <div class="story-stat-label">cycles completed</div>
+                </div>
+            </div>
+            <p class="story-quote reveal">Your data never touches a server. Not because of a privacy policy. Because there is no server.</p>
+        </div>
+    </section>
+
+    <!-- Changelog -->
     <section id="changelog" class="changelog-section">
         <div class="container">
             <h2 class="section-title">What's New</h2>
-            <p class="section-subtitle">Latest updates and improvements.</p>
-
+            <p class="changelog-intro">Actively maintained. Here's what's changed recently.</p>
             <div class="changelog-list" id="changelogList">
                 <div class="changelog-item">
                     <button type="button" class="changelog-question">Loading...</button>
@@ -1114,21 +535,20 @@
         </div>
     </section>
 
-    <!-- CTA Section -->
+    <!-- CTA -->
     <section class="cta-section">
-        <h2>Ready to Build Better Routines?</h2>
-        <p>Start using miniCycle today — it's free, private, and works offline.</p>
-        <div class="cta-buttons">
-            <a href="../miniCycle.html" class="cta-primary">Try miniCycle Now</a>
+        <h2>Your routine is waiting.</h2>
+        <p>Start your first cycle in under a minute.</p>
+        <div class="cta-row">
+            <a href="../miniCycle.html" class="cta-primary">Try miniCycle</a>
             <a href="../legal/user-manual.html" class="cta-secondary">Read User Manual</a>
         </div>
     </section>
 
     </main>
 
-    <!-- Footer -->
     <footer role="contentinfo">
-        <p>&copy; <span id="year"></span> <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a> | <a href="../lite/miniCycle-lite.html">Lite Version</a> | <a href="../legal/user-manual.html">User Manual</a></p>
+        <p>&copy; <span id="year"></span> <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a> &middot; <a href="../lite/miniCycle-lite.html">Lite Version</a> &middot; <a href="../legal/user-manual.html">User Manual</a></p>
     </footer>
 
     <script src="product.js"></script>
