@@ -1,3 +1,7 @@
+## [2.183] - 2026-04-05
+- feat: adjust hero mockup and phone positioning for improved layout
+
+
 ## [2.182] - 2026-04-05
 - Add new product images and realistic cleaning routine example
 
