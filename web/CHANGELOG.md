@@ -1,3 +1,7 @@
+## [2.189] - 2026-04-06
+- feat: implement double-tap/click selection for routines and adjust selection delay; enhance sticky position for search input
+
+
 ## [2.188] - 2026-04-06
 - feat: enhance modal touch handling and improve CSS overflow properties
 
