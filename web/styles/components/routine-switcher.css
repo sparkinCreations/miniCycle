@@ -54,10 +54,8 @@
     background: var(--overlay-heavy);
     justify-content: center;
     align-items: center;
-    overflow-x: hidden;
-    overflow-y: hidden;
+    overflow: hidden;
     overscroll-behavior: none;
-    touch-action: none;
 }
 
 .mini-cycle-switch-modal.active,
@@ -271,6 +269,7 @@ input.routine-search-input:focus {
     text-align: left;
     border-radius: var(--radius-xs);
     font-size: var(--font-size-sm);
+    touch-action: manipulation;
 }
 
 .mini-cycle-switch-item span {
