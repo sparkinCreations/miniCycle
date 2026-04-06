@@ -663,6 +663,8 @@ input.routine-search-input:focus {
     transition: background var(--transition-fast) ease;
     display: block;
     text-align: center;
+    position: sticky;
+    bottom: 0;
 }
 
 .close-routine-switcher:hover {

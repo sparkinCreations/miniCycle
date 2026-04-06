@@ -1,3 +1,7 @@
+## [2.188] - 2026-04-06
+- feat: enhance modal touch handling and improve CSS overflow properties
+
+
 ## [2.187] - 2026-04-06
 - feat: update app version to 2.186 and adjust related files
 
