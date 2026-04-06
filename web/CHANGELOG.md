@@ -1,3 +1,9 @@
+## [2.191] - 2026-04-06
+- feat: Integrate completed tasks dropdown functionality
+- feat: update software version to 2.190 in product page and enhance version updater script
+- feat: refactor routine switcher modal and improve accessibility; streamline undo/redo handling and enhance animations
+
+
 ## [2.190] - 2026-04-06
 - feat: remove sticky positioning from routine search input for improved layout
 
