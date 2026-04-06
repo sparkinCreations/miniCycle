@@ -5,109 +5,69 @@
     'use strict';
 
     // =========================================================
-    // Carousel
+    // Carousel (only if elements exist on page)
     // =========================================================
-    var videos = [
-        {
-            src: '../assets/videos/samples/Daily_Home_Routine.gif',
-            title: 'Daily Home Routine',
-            description: 'Streamline your daily home tasks with organized cycles that keep you productive and focused.'
-        },
-        {
-            src: '../assets/videos/samples/Daily_Work_Routine.gif',
-            title: 'Daily Work Routine',
-            description: 'Boost your work productivity with structured cycle lists that help you stay on track throughout the day.'
-        },
-        {
-            src: '../assets/videos/samples/Monday_Fitness_Routine.gif',
-            title: 'Monday Fitness Routine',
-            description: 'Start your week strong with organized fitness cycles that make staying healthy simple and sustainable.'
-        }
-    ];
-
-    var currentIndex = 0;
-    var isTransitioning = false;
-
-    var videoElement = document.getElementById('currentVideo');
-    var titleElement = document.getElementById('videoTitle');
-    var descriptionElement = document.getElementById('videoDescription');
-    var videoInfo = document.querySelector('.video-info');
     var prevBtn = document.getElementById('prevBtn');
     var nextBtn = document.getElementById('nextBtn');
-    var dots = document.querySelectorAll('.dot');
 
-    function updateContent(video, index) {
-        titleElement.textContent = video.title;
-        descriptionElement.textContent = video.description;
+    if (prevBtn && nextBtn) {
+        var videos = [
+            { src: '../assets/videos/samples/Daily_Home_Routine.gif', title: 'Daily Home Routine', description: 'Streamline your daily home tasks with organized cycles that keep you productive and focused.' },
+            { src: '../assets/videos/samples/Daily_Work_Routine.gif', title: 'Daily Work Routine', description: 'Boost your work productivity with structured cycle lists that help you stay on track throughout the day.' },
+            { src: '../assets/videos/samples/Monday_Fitness_Routine.gif', title: 'Monday Fitness Routine', description: 'Start your week strong with organized fitness cycles that make staying healthy simple and sustainable.' }
+        ];
 
-        dots.forEach(function (dot, i) {
-            dot.classList.toggle('active', i === index);
-            dot.setAttribute('aria-selected', i === index ? 'true' : 'false');
-        });
+        var currentIndex = 0;
+        var isTransitioning = false;
+        var videoElement = document.getElementById('currentVideo');
+        var titleElement = document.getElementById('videoTitle');
+        var descriptionElement = document.getElementById('videoDescription');
+        var videoInfo = document.querySelector('.video-info');
+        var dots = document.querySelectorAll('.dot');
 
-        videoElement.alt = 'miniCycle demo: ' + video.title;
+        function updateContent(video, index) {
+            titleElement.textContent = video.title;
+            descriptionElement.textContent = video.description;
+            dots.forEach(function (dot, i) {
+                dot.classList.toggle('active', i === index);
+                dot.setAttribute('aria-selected', i === index ? 'true' : 'false');
+            });
+            videoElement.alt = 'miniCycle demo: ' + video.title;
+            setTimeout(function () { videoInfo.classList.remove('fade-out'); currentIndex = index; isTransitioning = false; }, 100);
+        }
 
-        setTimeout(function () {
-            videoInfo.classList.remove('fade-out');
-            currentIndex = index;
-            isTransitioning = false;
-        }, 100);
-    }
+        function updateVideo(index) {
+            if (isTransitioning) return;
+            isTransitioning = true;
+            var video = videos[index];
+            videoInfo.classList.add('fade-out');
+            videoElement.classList.add('fade-out');
+            setTimeout(function () { videoElement.src = video.src; videoElement.classList.remove('fade-out'); videoElement.classList.add('fade-in'); updateContent(video, index); }, 250);
+        }
 
-    function updateVideo(index) {
-        if (isTransitioning) return;
-        isTransitioning = true;
+        function nextVideo() { updateVideo((currentIndex + 1) % videos.length); }
+        function prevVideo() { updateVideo((currentIndex - 1 + videos.length) % videos.length); }
 
-        var video = videos[index];
-
-        videoInfo.classList.add('fade-out');
-        videoElement.classList.add('fade-out');
-
-        setTimeout(function () {
-            videoElement.src = video.src;
-            videoElement.classList.remove('fade-out');
-            videoElement.classList.add('fade-in');
-            updateContent(video, index);
-        }, 250);
-    }
-
-    function nextVideo() {
-        updateVideo((currentIndex + 1) % videos.length);
-    }
-
-    function prevVideo() {
-        updateVideo((currentIndex - 1 + videos.length) % videos.length);
-    }
-
-    nextBtn.addEventListener('click', function () {
-        nextBtn.style.transform = 'scale(0.9)';
-        setTimeout(function () { nextBtn.style.transform = ''; }, 150);
-        nextVideo();
-    });
-
-    prevBtn.addEventListener('click', function () {
-        prevBtn.style.transform = 'scale(0.9)';
-        setTimeout(function () { prevBtn.style.transform = ''; }, 150);
-        prevVideo();
-    });
-
-    dots.forEach(function (dot, index) {
-        dot.addEventListener('click', function () { updateVideo(index); });
-    });
-
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'ArrowRight') nextVideo();
-        if (e.key === 'ArrowLeft') prevVideo();
-    });
-
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        setInterval(nextVideo, 15000);
+        nextBtn.addEventListener('click', function () { nextBtn.style.transform = 'scale(0.9)'; setTimeout(function () { nextBtn.style.transform = ''; }, 150); nextVideo(); });
+        prevBtn.addEventListener('click', function () { prevBtn.style.transform = 'scale(0.9)'; setTimeout(function () { prevBtn.style.transform = ''; }, 150); prevVideo(); });
+        dots.forEach(function (dot, index) { dot.addEventListener('click', function () { updateVideo(index); }); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'ArrowRight') nextVideo(); if (e.key === 'ArrowLeft') prevVideo(); });
+        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setInterval(nextVideo, 15000); }
     }
 
     // =========================================================
     // Changelog Accordion
     // =========================================================
     var INITIAL_VERSIONS = 5;
+
+    function formatDate(dateStr) {
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var parts = dateStr.split('-');
+        if (parts.length !== 3) return dateStr;
+        var month = parseInt(parts[1], 10) - 1;
+        var day = parseInt(parts[2], 10);
+        return months[month] + ' ' + day + ', ' + parts[0];
+    }
 
     function parseChangelog(markdown) {
         var entries = [];
@@ -156,7 +116,47 @@
             button.className = 'changelog-question';
             button.setAttribute('aria-expanded', 'false');
             button.setAttribute('aria-controls', 'changelog-answer-' + index);
-            button.textContent = 'v' + entry.version + '  (' + entry.date + ')';
+
+            // Header row: [version + badge] [date + expand icon]
+            var headerRow = document.createElement('span');
+            headerRow.className = 'cl-header-row';
+
+            var left = document.createElement('span');
+            left.className = 'cl-left';
+            var vSpan = document.createElement('span');
+            vSpan.textContent = 'v' + entry.version;
+            left.appendChild(vSpan);
+            if (index === 0) {
+                var badge = document.createElement('span');
+                badge.className = 'cl-badge';
+                badge.textContent = 'Latest';
+                left.appendChild(badge);
+            }
+
+            var right = document.createElement('span');
+            right.className = 'cl-right';
+            var dateSpan = document.createElement('span');
+            dateSpan.className = 'cl-date';
+            dateSpan.textContent = formatDate(entry.date);
+            var expandIcon = document.createElement('span');
+            expandIcon.className = 'cl-expand';
+            expandIcon.setAttribute('aria-hidden', 'true');
+            expandIcon.textContent = '+';
+            right.appendChild(dateSpan);
+            right.appendChild(expandIcon);
+
+            headerRow.appendChild(left);
+            headerRow.appendChild(right);
+            button.appendChild(headerRow);
+
+            // Summary: first change as a hint
+            if (entry.changes.length > 0) {
+                var summary = document.createElement('span');
+                summary.className = 'cl-summary';
+                var text = entry.changes[0];
+                summary.textContent = text.length > 70 ? text.substring(0, 67) + '…' : text;
+                button.appendChild(summary);
+            }
 
             var answer = document.createElement('div');
             answer.className = 'changelog-answer';

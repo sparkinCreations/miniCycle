@@ -95,7 +95,6 @@
 
         /* Poppins (self-hosted) */
         @font-face { font-family: 'Poppins'; font-style: normal; font-weight: 600; font-display: swap; src: url('../assets/fonts/poppins-600.woff2') format('woff2'); }
-        @font-face { font-family: 'Poppins'; font-style: normal; font-weight: 700; font-display: swap; src: url('../assets/fonts/poppins-700.woff2') format('woff2'); }
 
         /* ============================
            Base (Mobile-First)
@@ -131,7 +130,7 @@
            ============================ */
         .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
         section { padding: var(--space-xl) 0; }
-        .section-title { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; margin-bottom: var(--space-xs); color: var(--color-text-dark); text-align: center; }
+        .section-title { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 600; margin-bottom: var(--space-xs); color: var(--color-text-dark); text-align: center; }
         .section-subtitle { font-size: 1rem; color: var(--color-text-muted); text-align: center; margin-bottom: var(--space-lg); }
 
         .cta-primary { display: inline-block; background: var(--color-primary); color: var(--color-white); padding: 0.9rem 2rem; border-radius: var(--radius-pill); font-weight: 600; text-decoration: none; font-size: 1.05rem; transition: transform 0.2s, box-shadow 0.2s; }
@@ -145,16 +144,23 @@
         .hero-section { background: rgba(200, 218, 242, 0.9); padding: var(--space-2xl) 0 var(--space-xl); overflow: visible; }
         .hero-grid { display: flex; flex-direction: column; align-items: center; gap: var(--space-lg); }
         .hero-text { text-align: center; max-width: 550px; }
-        .hero-headline { font-family: var(--font-heading); font-size: 2.2rem; font-weight: 700; color: var(--color-text-dark); margin-bottom: var(--space-sm); line-height: 1.15; }
+        .hero-headline { font-family: var(--font-heading); font-size: 2.2rem; font-weight: 600; color: var(--color-text-dark); margin-bottom: var(--space-sm); line-height: 1.15; }
         .hero-sub { font-size: 1.15rem; color: var(--color-text-muted); margin-bottom: var(--space-lg); line-height: 1.7; }
         .hero-ctas { display: flex; flex-direction: column; gap: var(--space-sm); align-items: center; margin-bottom: var(--space-sm); }
         .trust-text { font-size: 0.95rem; color: var(--color-text-light); font-weight: 500; }
+        .hero-learn-more { display: inline-block; margin-top: 0.6rem; font-size: 0.9rem; color: var(--color-text-muted); text-decoration: none; transition: color 0.2s; }
+        .hero-learn-more:hover { color: var(--color-primary); }
 
-        .hero-mockup { position: relative; width: 100%; max-width: 500px; height: 320px; margin: 0 auto; left: -200px; }
+        /* Mobile hero: phone-on-desk photo only */
+        .hero-desk-photo { display: block; width: 100%; max-width: 320px; margin: 0 auto; border-radius: var(--radius-lg); box-shadow: var(--shadow-elevated); }
+        .hero-desk-photo img { width: 100%; height: auto; display: block; border-radius: var(--radius-lg); }
+
+        /* Mockup stack (phone + desktop): hidden on mobile, shown on tablet/desktop */
+        .hero-mockup { display: none; position: relative; width: 100%; max-width: 500px; height: 320px; margin: 0 auto; left: -200px; }
         .hero-phone { position: relative; z-index: 2; height: 130%; left: 80px; }
         .hero-phone-img { position: absolute; top: 0; left: 0; height: 100%; width: auto; display: block; opacity: 0; transition: opacity 1.5s ease-in-out; }
         .hero-phone-img.active { opacity: 1; position: relative; }
-        .hero-desktop { position: absolute; z-index: 1; height: 70%; right: -200px; top: 35%; }
+        .hero-desktop { position: absolute; z-index: 1; height: 70%; left: 120px; top: 35%; }
         .hero-desktop img { height: 100%; width: auto; display: block; filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.15)); }
 
         /* ============================
@@ -163,10 +169,10 @@
         .how-section { background: var(--color-bg); }
         .steps-row { display: flex; flex-direction: column; gap: var(--space-md); align-items: center; }
         .step-card { text-align: center; background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius); padding: var(--space-md) var(--space-lg); max-width: 280px; width: 100%; box-shadow: var(--shadow-card); display: flex; flex-direction: column; }
-        .step-number { width: 40px; height: 40px; border-radius: 50%; background: var(--color-primary); color: var(--color-white); font-family: var(--font-heading); font-size: 1rem; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-xs); }
+        .step-number { width: 40px; height: 40px; border-radius: 50%; background: var(--color-primary); color: var(--color-white); font-family: var(--font-heading); font-size: 1rem; font-weight: 600; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-xs); }
         .step-title { font-family: var(--font-heading); font-size: 1.05rem; font-weight: 600; color: var(--color-text-dark); margin-bottom: var(--space-xs); }
         .step-desc { font-size: 0.9rem; color: var(--color-text-muted); }
-        .step-arrow { color: var(--color-primary); font-size: 1.4rem; font-weight: 700; transform: rotate(90deg); opacity: 0.4; align-self: center; }
+        .step-arrow { color: var(--color-primary); font-size: 1.4rem; font-weight: 600; transform: rotate(90deg); opacity: 0.4; align-self: center; }
 
         /* ============================
            Use Cases
@@ -182,23 +188,8 @@
            Demos
            ============================ */
         .demos-section { background: var(--color-bg); }
-        .carousel-wrapper { max-width: 440px; margin: 0 auto; background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-md); box-shadow: var(--shadow-card); }
-        .video-container { position: relative; display: flex; align-items: center; justify-content: center; gap: 12px; }
-        .video-display { flex: 1; max-width: 340px; overflow: hidden; border-radius: var(--radius); }
-        .video-display img { width: 100%; height: auto; display: block; border-radius: var(--radius); transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; }
-        .video-display img.fade-out { opacity: 0; transform: translateX(-20px); }
-        .video-display img.fade-in { opacity: 1; transform: translateX(0); }
-        .nav-button { background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-muted); width: 38px; height: 38px; border-radius: 50%; font-size: 1.1rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .nav-button:hover { background: var(--color-primary); color: var(--color-white); border-color: var(--color-primary); }
-        .nav-button:active { transform: scale(0.95); }
-        .video-info { margin-top: 16px; text-align: center; opacity: 1; transform: translateY(0); transition: opacity 0.3s, transform 0.3s; }
-        .video-info.fade-out { opacity: 0; transform: translateY(10px); }
-        .video-title { font-family: var(--font-heading); font-size: 1.05rem; font-weight: 600; color: var(--color-text-dark); margin-bottom: 2px; }
-        .video-description { font-size: 0.85rem; color: var(--color-text-muted); }
-        .progress-dots { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--color-border); cursor: pointer; transition: all 0.3s; }
-        .dot.active { background: var(--color-primary); transform: scale(1.2); }
-        .dot:hover { background: rgba(0, 136, 255, 0.4); }
+        .cycle-demo { max-width: 260px; margin: 0 auto; }
+        .cycle-demo-svg { width: 100%; height: auto; display: block; }
         .secondary-links { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; margin-top: var(--space-lg); }
         .secondary-links a { color: var(--color-primary); text-decoration: none; font-size: 0.9rem; font-weight: 500; }
         .secondary-links a:hover { text-decoration: underline; }
@@ -207,7 +198,17 @@
            Theme Showcase
            ============================ */
         .themes-section { background: var(--color-white); }
-        .themes-image { width: 100%; max-width: 1000px; margin: 0 auto var(--space-md); display: block; border-radius: var(--radius-lg); box-shadow: var(--shadow-elevated); }
+        /* Desktop: full static image */
+        .themes-image { width: 100%; max-width: 1000px; margin: 0 auto var(--space-md); display: none; border-radius: var(--radius-lg); box-shadow: var(--shadow-elevated); }
+        /* Mobile: scrollable strip */
+        .themes-scroll-wrapper { position: relative; max-width: 680px; margin: 0 auto var(--space-md); display: block; }
+        .themes-scroll-wrapper::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 100px; background: linear-gradient(to right, transparent, var(--color-white)); pointer-events: none; }
+        .themes-scroll-track { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: var(--color-primary) #e0e8f0; padding-bottom: 8px; }
+        .themes-scroll-track::-webkit-scrollbar { display: block; height: 4px; }
+        .themes-scroll-track::-webkit-scrollbar-track { background: #e0e8f0; border-radius: 2px; }
+        .themes-scroll-track::-webkit-scrollbar-thumb { background: var(--color-primary); border-radius: 2px; }
+        .themes-scroll-img { width: 1256px; height: auto; display: block; }
+        .themes-scroll-img { width: 1256px; height: auto; display: block; }
         .themes-desc { text-align: center; font-size: 0.9rem; color: var(--color-text-muted); max-width: 500px; margin: 0 auto; line-height: 1.7; }
 
         /* ============================
@@ -228,7 +229,7 @@
         .story-lead { font-size: 1rem; opacity: 0.9; margin-bottom: var(--space-lg); max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.7; }
         .story-stats { display: flex; flex-direction: column; gap: var(--space-md); align-items: center; margin-bottom: var(--space-lg); }
         .story-stat { padding: var(--space-md) var(--space-lg); text-align: center; min-width: 160px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius); }
-        .story-stat-number { font-family: var(--font-heading); font-size: 2.2rem; font-weight: 700; color: var(--color-primary-light); line-height: 1; }
+        .story-stat-number { font-family: var(--font-heading); font-size: 2.2rem; font-weight: 600; color: var(--color-primary-light); line-height: 1; }
         .story-stat-label { font-size: 0.8rem; opacity: 0.7; margin-top: var(--space-xs); }
         .story-quote { font-size: 0.95rem; opacity: 0.8; font-style: italic; max-width: 440px; margin: 0 auto; line-height: 1.7; }
 
@@ -239,10 +240,16 @@
         .changelog-intro { text-align: center; font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: var(--space-md); }
         .changelog-list { max-width: 700px; margin: 0 auto; }
         .changelog-item { background: var(--color-bg); margin-bottom: 0.5rem; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--color-border); }
-        .changelog-question { width: 100%; padding: 0.8rem 1.2rem; background: transparent; border: none; text-align: left; font-size: 0.9rem; font-weight: 600; color: var(--color-text-dark); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; font-family: inherit; }
+        .changelog-question { width: 100%; padding: 0.8rem 1.2rem; background: transparent; border: none; text-align: left; font-size: 0.9rem; font-weight: 600; color: var(--color-text-dark); cursor: pointer; display: flex; flex-direction: column; align-items: stretch; gap: 0.25rem; transition: background 0.2s; font-family: inherit; }
         .changelog-question:hover { background: rgba(0, 0, 0, 0.02); }
-        .changelog-question::after { content: '+'; font-size: 1.3rem; color: var(--color-primary); transition: transform 0.3s; }
-        .changelog-item.active .changelog-question::after { transform: rotate(45deg); }
+        .cl-header-row { display: flex; justify-content: space-between; align-items: center; }
+        .cl-left { display: flex; align-items: center; gap: 0.45rem; }
+        .cl-badge { background: var(--color-primary); color: var(--color-white); font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 20px; letter-spacing: 0.02em; }
+        .cl-right { display: flex; align-items: center; gap: 0.5rem; }
+        .cl-date { font-size: 0.8rem; color: var(--color-text-muted); font-weight: 400; }
+        .cl-expand { font-size: 1.3rem; color: var(--color-primary); transition: transform 0.3s; line-height: 1; }
+        .changelog-item.active .cl-expand { transform: rotate(45deg); }
+        .cl-summary { font-size: 0.8rem; color: var(--color-text-muted); font-weight: 400; }
         .changelog-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
         .changelog-answer-content { padding: 0 1.2rem 0.8rem; color: var(--color-text-muted); line-height: 1.6; font-size: 0.85rem; }
         .changelog-answer-content li { margin-bottom: 0.3rem; margin-left: 1rem; }
@@ -259,7 +266,7 @@
            Bottom CTA
            ============================ */
         .cta-section { background: var(--color-primary); color: var(--color-white); text-align: center; padding: var(--space-2xl) var(--space-lg); }
-        .cta-section h2 { font-family: var(--font-heading); font-size: 1.8rem; font-weight: 700; margin-bottom: var(--space-xs); }
+        .cta-section h2 { font-family: var(--font-heading); font-size: 1.8rem; font-weight: 600; margin-bottom: var(--space-xs); }
         .cta-section p { font-size: 1rem; opacity: 0.9; margin-bottom: var(--space-lg); }
         .cta-section .cta-primary { background: var(--color-white); color: var(--color-primary); }
         .cta-section .cta-primary:hover { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); }
@@ -307,15 +314,17 @@
             .hero-headline { font-size: 2.6rem; }
             .hero-sub { font-size: 1.2rem; }
             .hero-ctas { flex-direction: row; justify-content: center; }
+            .hero-desk-photo { display: none; }
+            .hero-mockup { display: block; }
+            .themes-scroll-wrapper { display: none; }
+            .themes-image { display: block; }
 
             .steps-row { flex-direction: row; justify-content: center; align-items: stretch; gap: var(--space-sm); }
             .step-arrow { transform: none; align-self: center; }
 
             .why-line-bold { font-size: 1.4rem; }
 
-            .carousel-wrapper { max-width: 550px; padding: var(--space-lg); }
-            .video-display { max-width: 380px; }
-            .nav-button { width: 44px; height: 44px; font-size: 1.3rem; }
+            .cycle-demo { max-width: 300px; }
             .secondary-links { flex-direction: row; gap: var(--space-md); justify-content: center; }
 
             .theme-item { flex: 0 0 200px; }
@@ -331,12 +340,12 @@
 
         @media (min-width: 1024px) {
             .hero-section { padding: var(--space-3xl) 0 var(--space-2xl); }
-            .hero-grid { position: relative; }
-            .hero-text { text-align: left; max-width: 550px; position: relative; z-index: 3; margin-right: auto; margin-top: 80px; }
+            .hero-grid { flex-direction: row; align-items: center; justify-content: center; gap: 1.5rem; }
+            .hero-text { text-align: left; max-width: 480px; margin: 0; }
             .hero-headline { font-size: 3rem; }
             .hero-ctas { justify-content: flex-start; }
             .trust-text { text-align: left; }
-            .hero-mockup { max-width: 280px; height: 420px; margin: -550px -40px 0 auto; left: 0; }
+            .hero-mockup { flex-shrink: 0; width: 460px; max-width: 460px; height: 420px; margin: 0 2rem 0 0; left: 0; }
         }
     </style>
 </head>
@@ -372,7 +381,10 @@
                         <a href="../miniCycle.html" class="cta-primary">Try miniCycle</a>
                         <a href="#demos" class="cta-secondary">See It In Action</a>
                     </div>
-                    <p class="trust-text">Free forever &middot; No account needed &middot; Your data stays on your device</p>
+                    <p class="trust-text">Free forever &middot; No account needed &middot; Your data stays on your device &middot; <a href="learn_more.html" class="hero-learn-more">Learn more &#8594;</a></p>
+                </div>
+                <div class="hero-desk-photo">
+                    <img src="../assets/images/Product/phone-on-desk-updated.png" alt="miniCycle open on a phone, ready for a routine">
                 </div>
                 <div class="hero-mockup">
                     <div class="hero-phone">
@@ -431,30 +443,76 @@
         </div>
     </section>
 
-    <!-- Demos -->
+    <!-- See It In Action -->
     <section id="demos" class="demos-section">
         <div class="container">
             <h2 class="section-title">See It In Action</h2>
-            <p class="section-subtitle">Real routines, real cycles.</p>
+            <p class="section-subtitle">Watch a full cycle: check off, complete, reset.</p>
 
-            <div class="carousel-wrapper">
-                <div class="video-container">
-                    <button type="button" class="nav-button" id="prevBtn" aria-label="Previous slide">&#8249;</button>
-                    <div class="video-display">
-                        <img id="currentVideo" src="../assets/videos/samples/Daily_Home_Routine.gif" alt="miniCycle demo: Daily Home Routine">
-                    </div>
-                    <button type="button" class="nav-button" id="nextBtn" aria-label="Next slide">&#8250;</button>
-                </div>
-                <div class="video-info">
-                    <h3 class="video-title" id="videoTitle">Daily Home Routine</h3>
-                    <p class="video-description" id="videoDescription">Streamline your daily home tasks with organized cycles that keep you productive and focused.</p>
-                </div>
-                <div class="progress-dots" id="progressDots" role="tablist" aria-label="Slide navigation">
-                    <span class="dot active" data-index="0" role="tab" aria-label="Slide 1" aria-selected="true" tabindex="0"></span>
-                    <span class="dot" data-index="1" role="tab" aria-label="Slide 2" aria-selected="false" tabindex="0"></span>
-                    <span class="dot" data-index="2" role="tab" aria-label="Slide 3" aria-selected="false" tabindex="0"></span>
-                </div>
+            <div class="cycle-demo" role="img" aria-label="Animated demo of miniCycle's auto-reset cycle: tasks get checked off one by one, a completion checkmark appears, then tasks cascade back to unchecked">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 491 978" class="cycle-demo-svg">
+                  <defs>
+                    <g id="check"><circle r="16" fill="#1e8e3e"/><path d="M-7,1 L-3,5 L7,-4" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
+                    <g id="big-check"><circle r="65" fill="#1e8e3e" opacity="0.9"/><path d="M-26,6 L-10,22 L28,-16" stroke="#1a1a1a" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
+                  </defs>
+                  <style>
+                    .ca { opacity: 0; }
+                    .c1 { animation: c1 13s ease infinite; } .c2 { animation: c2 13s ease infinite; }
+                    .c3 { animation: c3 13s ease infinite; } .c4 { animation: c4 13s ease infinite; }
+                    .c5 { animation: c5 13s ease infinite; } .c6 { animation: c6 13s ease infinite; }
+                    .c7 { animation: c7 13s ease infinite; } .c8 { animation: c8 13s ease infinite; }
+                    @keyframes c1{0%,7.6%{opacity:0}7.7%,78%{opacity:1}80%,100%{opacity:0}}
+                    @keyframes c2{0%,15.3%{opacity:0}15.4%,80%{opacity:1}82%,100%{opacity:0}}
+                    @keyframes c3{0%,23%{opacity:0}23.1%,81.5%{opacity:1}83.5%,100%{opacity:0}}
+                    @keyframes c4{0%,30.7%{opacity:0}30.8%,83%{opacity:1}85%,100%{opacity:0}}
+                    @keyframes c5{0%,38.4%{opacity:0}38.5%,84.6%{opacity:1}86.6%,100%{opacity:0}}
+                    @keyframes c6{0%,46.1%{opacity:0}46.2%,86.1%{opacity:1}88.1%,100%{opacity:0}}
+                    @keyframes c7{0%,53.8%{opacity:0}53.9%,87.7%{opacity:1}89.7%,100%{opacity:0}}
+                    @keyframes c8{0%,61.5%{opacity:0}61.6%,89.2%{opacity:1}91.2%,100%{opacity:0}}
+                    .gb { opacity: 0; }
+                    .g1{animation:g1 13s ease infinite} .g2{animation:g2 13s ease infinite}
+                    .g3{animation:g3 13s ease infinite} .g4{animation:g4 13s ease infinite}
+                    .g5{animation:g5 13s ease infinite} .g6{animation:g6 13s ease infinite}
+                    .g7{animation:g7 13s ease infinite} .g8{animation:g8 13s ease infinite}
+                    @keyframes g1{0%,76%{opacity:0}77%{opacity:1}82%,100%{opacity:0}}
+                    @keyframes g2{0%,78%{opacity:0}79%{opacity:1}84%,100%{opacity:0}}
+                    @keyframes g3{0%,80%{opacity:0}81%{opacity:1}86%,100%{opacity:0}}
+                    @keyframes g4{0%,82%{opacity:0}83%{opacity:1}88%,100%{opacity:0}}
+                    @keyframes g5{0%,84%{opacity:0}85%{opacity:1}90%,100%{opacity:0}}
+                    @keyframes g6{0%,86%{opacity:0}87%{opacity:1}92%,100%{opacity:0}}
+                    @keyframes g7{0%,88%{opacity:0}89%{opacity:1}94%,100%{opacity:0}}
+                    @keyframes g8{0%,90%{opacity:0}91%{opacity:1}96%,100%{opacity:0}}
+                    .cc{opacity:0;transform-origin:245px 500px;animation:cc 13s ease infinite}
+                    @keyframes cc{0%,68%{opacity:0;transform:scale(0)}71%{opacity:1;transform:scale(1.1)}73%{opacity:1;transform:scale(1)}85%{opacity:.6;transform:scale(1)}90%,100%{opacity:0;transform:scale(.9)}}
+                    .pf{animation:pf 13s ease infinite}
+                    @keyframes pf{0%,7.7%{width:0}15.4%{width:38px}23.1%{width:76px}30.8%{width:114px}38.5%{width:152px}46.2%{width:190px}53.9%{width:228px}61.5%{width:266px}69%{width:300px}77%{width:300px}92%,100%{width:0}}
+                    @media(prefers-reduced-motion:reduce){*{animation:none!important}}
+                  </style>
+                  <image href="../assets/images/Product/4ps-See-it-in-action-1.png" x="0" y="0" width="491" height="978"/>
+                  <g class="ca c1"><use href="#check" x="95" y="215"/></g>
+                  <rect class="gb g1" x="82" y="190" width="310" height="48" rx="10" fill="#1e8e3e" fill-opacity="0.2"/>
+                  <g class="ca c2"><use href="#check" x="95" y="275"/></g>
+                  <rect class="gb g2" x="82" y="248" width="310" height="58" rx="10" fill="#1e8e3e" fill-opacity="0.2"/>
+                  <g class="ca c3"><use href="#check" x="95" y="350"/></g>
+                  <rect class="gb g3" x="82" y="325" width="310" height="55" rx="10" fill="#1e8e3e" fill-opacity="0.2"/>
+                  <g class="ca c4"><use href="#check" x="95" y="425"/></g>
+                  <rect class="gb g4" x="82" y="400" width="310" height="58" rx="10" fill="#1e8e3e" fill-opacity="0.2"/>
+                  <g class="ca c5"><use href="#check" x="95" y="490"/></g>
+                  <rect class="gb g5" x="82" y="465" width="310" height="48" rx="10" fill="#1e8e3e" fill-opacity="0.2"/>
+                  <g class="ca c6"><use href="#check" x="95" y="555"/></g>
+                  <rect class="gb g6" x="82" y="530" width="310" height="58" rx="10" fill="#1e8e3e" fill-opacity="0.2"/>
+                  <g class="ca c7"><use href="#check" x="95" y="620"/></g>
+                  <rect class="gb g7" x="82" y="600" width="310" height="48" rx="10" fill="#1e8e3e" fill-opacity="0.2"/>
+                  <g class="ca c8"><use href="#check" x="95" y="685"/></g>
+                  <rect class="gb g8" x="82" y="660" width="310" height="58" rx="10" fill="#1e8e3e" fill-opacity="0.2"/>
+                  <rect class="pf" x="85" y="788" width="0" height="8" rx="4" fill="#1e8e3e"/>
+                  <g class="cc">
+                    <rect x="80" y="185" width="315" height="530" rx="14" fill="rgba(255,255,255,0.25)"/>
+                    <use href="#big-check" x="240" y="460"/>
+                  </g>
+                </svg>
             </div>
+            <p class="section-subtitle" style="margin-top: var(--space-md);">Also used for workout routines, opening procedures, study sessions, and more.</p>
 
             <div class="secondary-links">
                 <a href="learn_more.html">Learn more about features &#8594;</a>
@@ -468,6 +526,13 @@
     <section class="themes-section">
         <div class="container">
             <h2 class="section-title reveal">One app that adapts to how you use it.</h2>
+            <!-- Mobile: scrollable strip -->
+            <div class="themes-scroll-wrapper reveal">
+                <div class="themes-scroll-track">
+                    <img class="themes-scroll-img" src="../assets/images/Product/No-Background-Unlocked-Themes-Mock-Up.png" alt="Four miniCycle vocabulary themes side by side: Study Planner (purple), Habit Tracker (amber), Fitness Tracker (green), and Chore Manager (teal)" loading="lazy">
+                </div>
+            </div>
+            <!-- Desktop: full static image -->
             <img class="themes-image reveal" src="../assets/images/Product/Unlocked-Themes-Mock-Up.png" alt="Four miniCycle vocabulary themes side by side: Study Planner (purple), Habit Tracker (amber), Fitness Tracker (green), and Chore Manager (teal) — each with unique colors, language, and real routines" loading="lazy">
             <p class="themes-desc reveal">Complete cycles to unlock vocabulary themes. Each one changes the app's language, colors, and identity. Your fitness routine becomes a workout tracker. Your study list becomes a study planner.</p>
         </div>
@@ -525,7 +590,7 @@
     <section id="changelog" class="changelog-section">
         <div class="container">
             <h2 class="section-title">What's New</h2>
-            <p class="changelog-intro">Actively maintained. Here's what's changed recently.</p>
+            <p class="changelog-intro">Built by one person, shipped consistently.</p>
             <div class="changelog-list" id="changelogList">
                 <div class="changelog-item">
                     <button type="button" class="changelog-question">Loading...</button>
@@ -540,7 +605,7 @@
         <p>Start your first cycle in under a minute.</p>
         <div class="cta-row">
             <a href="../miniCycle.html" class="cta-primary">Try miniCycle</a>
-            <a href="../legal/user-manual.html" class="cta-secondary">Read User Manual</a>
+            <a href="learn_more.html" class="cta-secondary">Learn More</a>
         </div>
     </section>
 

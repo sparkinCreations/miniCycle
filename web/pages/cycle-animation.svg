@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 491 978" width="491" height="978">
+  <defs>
+    <!-- Green checkmark (small, for tasks) -->
+    <g id="check">
+      <circle r="16" fill="#1e8e3e"/>
+      <path d="M-7,1 L-3,5 L7,-4" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <!-- Big completion checkmark -->
+    <g id="big-check">
+      <circle r="65" fill="#1e8e3e" opacity="0.9"/>
+      <path d="M-26,6 L-10,22 L28,-16" stroke="#1a1a1a" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </defs>
+
+  <style>
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    @keyframes glowCascade { 0% { opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; } }
+
+    /* Total timeline: 13s
+       0-1s: all unchecked
+       1s-8s: checks appear (1s apart)
+       8s-9s: brief pause, last check settles
+       9s: completion checkmark appears
+       10s-11.6s: cascade uncheck top to bottom
+       11.6s-13s: settle, all unchecked
+    */
+
+    /* Checks: fade in, then fade out during cascade */
+    .check-anim { opacity: 0; }
+    .check-1 { animation: c1 13s ease infinite; }
+    .check-2 { animation: c2 13s ease infinite; }
+    .check-3 { animation: c3 13s ease infinite; }
+    .check-4 { animation: c4 13s ease infinite; }
+    .check-5 { animation: c5 13s ease infinite; }
+    .check-6 { animation: c6 13s ease infinite; }
+    .check-7 { animation: c7 13s ease infinite; }
+    .check-8 { animation: c8 13s ease infinite; }
+
+    @keyframes c1 { 0%,7.6% { opacity:0 } 7.7%,78% { opacity:1 } 80%,100% { opacity:0 } }
+    @keyframes c2 { 0%,15.3% { opacity:0 } 15.4%,80% { opacity:1 } 82%,100% { opacity:0 } }
+    @keyframes c3 { 0%,23% { opacity:0 } 23.1%,81.5% { opacity:1 } 83.5%,100% { opacity:0 } }
+    @keyframes c4 { 0%,30.7% { opacity:0 } 30.8%,83% { opacity:1 } 85%,100% { opacity:0 } }
+    @keyframes c5 { 0%,38.4% { opacity:0 } 38.5%,84.6% { opacity:1 } 86.6%,100% { opacity:0 } }
+    @keyframes c6 { 0%,46.1% { opacity:0 } 46.2%,86.1% { opacity:1 } 88.1%,100% { opacity:0 } }
+    @keyframes c7 { 0%,53.8% { opacity:0 } 53.9%,87.7% { opacity:1 } 89.7%,100% { opacity:0 } }
+    @keyframes c8 { 0%,61.5% { opacity:0 } 61.6%,89.2% { opacity:1 } 91.2%,100% { opacity:0 } }
+
+    /* Green cascade glow on each row — on 13s timeline */
+    .glow-bar { opacity: 0; }
+    .glow-1 { animation: g1 13s ease infinite; }
+    .glow-2 { animation: g2 13s ease infinite; }
+    .glow-3 { animation: g3 13s ease infinite; }
+    .glow-4 { animation: g4 13s ease infinite; }
+    .glow-5 { animation: g5 13s ease infinite; }
+    .glow-6 { animation: g6 13s ease infinite; }
+    .glow-7 { animation: g7 13s ease infinite; }
+    .glow-8 { animation: g8 13s ease infinite; }
+
+    /* 10s/13s=77%, 0.6s duration=4.6%, staggered 0.2s=1.5% apart */
+    @keyframes g1 { 0%,76% { opacity:0 } 77% { opacity:1 } 82%,100% { opacity:0 } }
+    @keyframes g2 { 0%,78% { opacity:0 } 79% { opacity:1 } 84%,100% { opacity:0 } }
+    @keyframes g3 { 0%,80% { opacity:0 } 81% { opacity:1 } 86%,100% { opacity:0 } }
+    @keyframes g4 { 0%,82% { opacity:0 } 83% { opacity:1 } 88%,100% { opacity:0 } }
+    @keyframes g5 { 0%,84% { opacity:0 } 85% { opacity:1 } 90%,100% { opacity:0 } }
+    @keyframes g6 { 0%,86% { opacity:0 } 87% { opacity:1 } 92%,100% { opacity:0 } }
+    @keyframes g7 { 0%,88% { opacity:0 } 89% { opacity:1 } 94%,100% { opacity:0 } }
+    @keyframes g8 { 0%,90% { opacity:0 } 91% { opacity:1 } 96%,100% { opacity:0 } }
+
+    /* Big completion checkmark */
+    .completion-check {
+      opacity: 0;
+      transform-origin: 245px 500px;
+      animation: completionAnim 13s ease infinite;
+    }
+    @keyframes completionAnim {
+      0%,68% { opacity:0; transform:scale(0) }
+      71% { opacity:1; transform:scale(1.1) }
+      73% { opacity:1; transform:scale(1) }
+      85% { opacity:0.6; transform:scale(1) }
+      90%,100% { opacity:0; transform:scale(0.9) }
+    }
+
+    /* Progress bar */
+    .progress-fill {
+      animation: progressBar 13s ease infinite;
+    }
+    @keyframes progressBar {
+      0%,7.7% { width: 0 }
+      15.4% { width: 38px }
+      23.1% { width: 76px }
+      30.8% { width: 114px }
+      38.5% { width: 152px }
+      46.2% { width: 190px }
+      53.9% { width: 228px }
+      61.5% { width: 266px }
+      69% { width: 300px }
+      77% { width: 300px }
+      92%,100% { width: 0 }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; }
+    }
+  </style>
+
+  <!-- Background: actual app screenshot -->
+  <image href="../assets/images/Product/4ps-See-it-in-action-1.png" x="0" y="0" width="491" height="978"/>
+
+  <!-- Animated checkmarks overlaying each task's checkbox position -->
+  <!-- Task 1: Intro: Safety check -->
+  <g class="check-anim check-1"><use href="#check" x="95" y="215"/></g>
+  <rect class="glow-bar glow-1" x="82" y="190" width="310" height="48" rx="10" fill="#1e8e3e" fill-opacity="0.2"/>
+
+  <!-- Task 2: Pain: 0-10? Meds needed? -->
+  <g class="check-anim check-2"><use href="#check" x="95" y="275"/></g>
+  <rect class="glow-bar glow-2" x="82" y="248" width="310" height="58" rx="10" fill="#1e8e3e" fill-opacity="0.2"/>
+
+  <!-- Task 3: Personal needs: Restroom? -->
+  <g class="check-anim check-3"><use href="#check" x="95" y="350"/></g>
+  <rect class="glow-bar glow-3" x="82" y="325" width="310" height="55" rx="10" fill="#1e8e3e" fill-opacity="0.2"/>
+
+  <!-- Task 4: Position: Reposition/comfort -->
+  <g class="check-anim check-4"><use href="#check" x="95" y="425"/></g>
+  <rect class="glow-bar glow-4" x="82" y="400" width="310" height="58" rx="10" fill="#1e8e3e" fill-opacity="0.2"/>
+
+  <!-- Task 5: Call light in reach -->
+  <g class="check-anim check-5"><use href="#check" x="95" y="490"/></g>
+  <rect class="glow-bar glow-5" x="82" y="465" width="310" height="48" rx="10" fill="#1e8e3e" fill-opacity="0.2"/>
+
+  <!-- Task 6: Phone/water/glasses near -->
+  <g class="check-anim check-6"><use href="#check" x="95" y="555"/></g>
+  <rect class="glow-bar glow-6" x="82" y="530" width="310" height="58" rx="10" fill="#1e8e3e" fill-opacity="0.2"/>
+
+  <!-- Task 7: Trash can nearby -->
+  <g class="check-anim check-7"><use href="#check" x="95" y="620"/></g>
+  <rect class="glow-bar glow-7" x="82" y="600" width="310" height="48" rx="10" fill="#1e8e3e" fill-opacity="0.2"/>
+
+  <!-- Task 8: Closing: Anything else? -->
+  <g class="check-anim check-8"><use href="#check" x="95" y="685"/></g>
+  <rect class="glow-bar glow-8" x="82" y="660" width="310" height="58" rx="10" fill="#1e8e3e" fill-opacity="0.2"/>
+
+  <!-- Progress bar fill (overlays existing progress bar track) -->
+  <rect class="progress-fill" x="85" y="788" width="0" height="8" rx="4" fill="#1e8e3e"/>
+
+  <!-- Big completion checkmark overlay -->
+  <g class="completion-check">
+    <rect x="80" y="185" width="315" height="530" rx="14" fill="rgba(255,255,255,0.25)"/>
+    <use href="#big-check" x="240" y="460"/>
+  </g>
+</svg>
