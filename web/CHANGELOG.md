@@ -1,3 +1,7 @@
+## [2.187] - 2026-04-06
+- feat: update app version to 2.186 and adjust related files
+
+
 ## [2.186] - 2026-04-06
 - feat: enhance routine selection with double-click handling and improve modal styles
 - feat: update app version to 2.185 and adjust related files

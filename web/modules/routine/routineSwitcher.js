@@ -161,6 +161,21 @@ export class RoutineSwitcher {
 
         switchModal._previousFocus = document.activeElement;
         if (!switchModal.open) switchModal.showModal();
+
+        // Prevent iOS rubber-band drag on the modal backdrop
+        // Allow touchmove only inside scrollable children (routine list, preview)
+        if (!switchModal._touchmoveGuard) {
+            switchModal._touchmoveGuard = (e) => {
+                const scrollable = e.target.closest(
+                    `#${DOM_IDS.MINI_CYCLE_LIST}, ${DOM_SELECTORS.SWITCH_PREVIEW_WINDOW}, ${DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT}`
+                );
+                if (!scrollable) {
+                    e.preventDefault();
+                }
+            };
+            switchModal.addEventListener('touchmove', switchModal._touchmoveGuard, { passive: false });
+        }
+
         // Show routine switcher tour prompt after modal is open
         this.deps.showRoutineSwitcherTourNotification?.();
         switchRow.style.display = "none";
