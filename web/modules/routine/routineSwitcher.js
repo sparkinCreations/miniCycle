@@ -1891,12 +1891,25 @@ export class RoutineSwitcher {
             listItem.appendChild(sizeSpan);
 
             // 🖱️ Handle selection with safeAddEventListener
+            // Uses a short delay so double-click can bypass the preview when nothing is selected
             const safeAdd = this.deps.safeAddEventListener;
             listItem._clickHandler = (event) => {
                 // Skip selection when clicking inside an inline edit input
                 if (event?.target?.classList?.contains('cycle-item-edit-input')) return;
 
-                this._selectRoutine(cycleKey);
+                // If a routine is already selected, select immediately (no delay needed)
+                const hasSelection = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
+                if (hasSelection) {
+                    this._selectRoutine(cycleKey);
+                    return;
+                }
+
+                // No routine selected — delay selection to allow double-click to bypass
+                if (listItem._selectTimeout) clearTimeout(listItem._selectTimeout);
+                listItem._selectTimeout = setTimeout(() => {
+                    listItem._selectTimeout = null;
+                    this._selectRoutine(cycleKey);
+                }, 250);
             };
             safeAdd(listItem, "click", listItem._clickHandler);
 
@@ -1909,28 +1922,31 @@ export class RoutineSwitcher {
                         // Already selected — confirm (like double-click)
                         this.confirmMiniCycle();
                     } else {
-                        listItem._clickHandler();
+                        this._selectRoutine(cycleKey);
                     }
                 } else if (e.key === 'd' && (e.metaKey || e.ctrlKey)) {
                     e.preventDefault();
-                    listItem._clickHandler();
+                    this._selectRoutine(cycleKey);
                     this.duplicateMiniCycle();
                 } else if (e.key === 'F2') {
                     e.preventDefault();
-                    listItem._clickHandler();
+                    this._selectRoutine(cycleKey);
                     this.renameMiniCycle();
                 } else if (e.key === 'Delete' || e.key === 'Backspace') {
                     e.preventDefault();
-                    listItem._clickHandler();
+                    this._selectRoutine(cycleKey);
                     this.deleteMiniCycle();
                 }
             };
             safeAdd(listItem, "keydown", listItem._keyHandler);
 
-            // Double-click to open immediately
+            // Double-click to open immediately (cancel pending selection)
             listItem._dblClickHandler = () => {
-                this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => item.classList.remove(DOM_CLASSES.SELECTED));
-                listItem.classList.add(DOM_CLASSES.SELECTED);
+                if (listItem._selectTimeout) {
+                    clearTimeout(listItem._selectTimeout);
+                    listItem._selectTimeout = null;
+                }
+                this._selectRoutine(cycleKey);
                 this.confirmMiniCycle();
             };
             safeAdd(listItem, "dblclick", listItem._dblClickHandler);
