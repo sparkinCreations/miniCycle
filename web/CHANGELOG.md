@@ -1,3 +1,9 @@
+## [2.184] - 2026-04-05
+- Add SVG Animation Overlay Guide and related assets
+- feat: center align hero call-to-action buttons for improved layout
+- feat: update hero mockup dimensions and positioning for better layout
+
+
 ## [2.183] - 2026-04-05
 - feat: adjust hero mockup and phone positioning for improved layout
 
