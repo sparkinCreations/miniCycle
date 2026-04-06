@@ -317,6 +317,11 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         // Update search visibility after adding task
         _deps.updateSearchVisibility?.(_deps.getTaskCount?.() ?? 0);
 
+        // Move completed tasks to dropdown (skip during bulk loading — organizeCompletedTasks handles it)
+        if (!isLoading && completed && result) {
+            _deps.handleTaskListMovement?.(result, true);
+        }
+
         // Log history event for task addition (skip during bulk loading)
         if (!isLoading && typeof _deps.logHistoryEvent === 'function') {
             _deps.logHistoryEvent('task_added', {
@@ -728,6 +733,9 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
 
                     // Restart reminders in case deleted task had reminders enabled
                     _deps.startReminders?.();
+
+                    // Update completed dropdown count (task may have been in dropdown)
+                    _deps.updateCompletedTasksCount?.();
                 } else {
                     console.warn('⚠️ AppState not ready for task deletion - state may be lost');
                     _deps.showNotification?.(getLabel('notify.taskDeleteFailed'), 'warning');

@@ -119,14 +119,6 @@ export function attachGlobalEventListeners(_GlobalUtils, _options = {}) {
     handleGlobalClickForTaskButtons
   );
 
-  // ========== Global Click: Deselect in Switch Modal ==========
-  replaceStoredEventListener(
-    document,
-    'click',
-    '__miniCycleUiBootSwitchModalClickHandler',
-    handleGlobalClickForSwitchModal
-  );
-
   // ========== Reset Notification Position ==========
   replaceStoredEventListener(
     document.getElementById('reset-notification-position'),
@@ -375,64 +367,9 @@ function handleGlobalClickForTaskButtons(event) {
   });
 }
 
-/**
- * Global click handler for deselecting in switch modal
- */
-function handleGlobalClickForSwitchModal(event) {
-  const switchModalContent = document.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT);
-  const selectedCycle = document.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
-  const switchItemsRow = document.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
-  const previewWindow = document.querySelector(DOM_SELECTORS.SWITCH_PREVIEW_WINDOW);
-
-  const themePicker = document.getElementById(DOM_IDS.THEME_PICKER_ROW);
-
-  // Deselection is now handled by routineSwitcher._clickHandler on switchModalContent.
-  // This handler only closes the theme picker if it's open and the click is outside it,
-  // as a fallback for clicks that bubble past the content handler.
-  if (
-    switchModalContent?.contains(event.target) &&
-    selectedCycle &&
-    !event.target.classList.contains(DOM_CLASSES.MINI_CYCLE_SWITCH_ITEM) &&
-    !event.target.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM) &&
-    !previewWindow?.contains(event.target) &&
-    !event.target.closest(DOM_SELECTORS.SWITCH_BUTTONS) &&
-    !themePicker?.contains(event.target) &&
-    !event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_LEFT) &&
-    !event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_RIGHT) &&
-    !event.target.closest(DOM_SELECTORS.RECENT_ROUTINES_SECTION)
-  ) {
-    // If theme picker is open, just close it — don't deselect
-    const isPickerOpen = themePicker && !themePicker.classList.contains(DOM_CLASSES.HIDDEN);
-    if (isPickerOpen) {
-      themePicker.classList.add(DOM_CLASSES.HIDDEN);
-      const themeBtn = document.getElementById(DOM_IDS.SWITCH_THEME_BTN);
-      themeBtn?.setAttribute('aria-expanded', 'false');
-      return;
-    }
-
-    selectedCycle.classList.remove(DOM_CLASSES.SELECTED);
-    selectedCycle.setAttribute('aria-selected', 'false');
-    if (switchItemsRow) {
-      switchItemsRow.style.display = 'none';
-    }
-    if (themePicker) {
-      themePicker.classList.add(DOM_CLASSES.HIDDEN);
-    }
-    // Reset preview
-    const desktopPreview = document.getElementById(DOM_IDS.DESKTOP_PREVIEW_WINDOW);
-    if (desktopPreview) {
-      desktopPreview.textContent = getLabel('switcher.selectPreview');
-    }
-    const previewTitle = document.getElementById(DOM_IDS.DESKTOP_PREVIEW_TITLE);
-    if (previewTitle) {
-      previewTitle.textContent = getLabel('switcher.preview');
-    }
-    const previewHint = document.getElementById(DOM_IDS.DESKTOP_PREVIEW_HINT);
-    if (previewHint) {
-      previewHint.style.display = 'none';
-    }
-  }
-}
+// Note: Switch modal deselection was previously handled here as a fallback.
+// Removed in refactor (Apr 2026) — routineSwitcher.setupModalClickOutside()
+// owns all deselection logic via _deselectRoutine().
 
 /**
  * Handle reset notification position click
