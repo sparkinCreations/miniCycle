@@ -325,3 +325,34 @@
     animation: taskClearOut var(--transition-normal) ease-in forwards;
     overflow: hidden;
 }
+
+
+/* =============================================================================
+   REDUCED MOTION
+   Note: variables.css already sets --transition-* and --animation-* to 0ms,
+   which handles most cases. This block catches animation shorthand classes
+   and ensures final states are applied instantly without motion.
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-fade-in,
+    .animate-fade-out,
+    .animate-slide-up,
+    .animate-slide-down,
+    .animate-pop-in,
+    .animate-spin,
+    .animate-pulse,
+    .animate-bounce,
+    .animate-shake,
+    .task-resetting,
+    .task-clearing {
+        animation: none;
+    }
+
+    .task-clearing {
+        opacity: 0;
+        max-height: 0;
+        padding: 0;
+        margin: 0;
+    }
+}

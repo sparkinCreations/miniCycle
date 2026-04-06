@@ -27,6 +27,8 @@
   --color-warning-light: #ffda6a;
   --color-error: #dc3545;
   --color-error-light: #f1737e;
+  --color-error-bg: rgba(220, 53, 69, 0.25);
+  --color-error-bg-dark: rgba(220, 53, 69, 0.35);
   --color-info: #17a2b8;
   /* App-specific action colors */
   --color-complete-btn: #08c352;

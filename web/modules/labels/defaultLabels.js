@@ -2332,8 +2332,6 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'quickAction.openRoutine',
 
     // Theme unlocks
-    'unlock.darkOcean',
-    'unlock.goldenGlow',
     'unlock.game',
 
     // About
@@ -2390,16 +2388,8 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'history.resetRoutineProgress',
     'history.recreateSelected',
     'history.noHistoryYet',
-    'history.noHistoryHint',
     'history.noClearedTasks',
-    'history.noClearedHint',
-    'history.cycleCompleted',
-    'history.tasksCleared',
-    'history.cycleReset',
     'history.achievementUnlocked',
-    'history.taskAdded',
-    'history.taskDeleted',
-    'history.taskEdited',
 
     // New modal keys
     'modal.resetProgressMessage',
@@ -2445,10 +2435,6 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'onboarding.step2Task2',
     'onboarding.step2Task3',
     'onboarding.step3Title',
-    'onboarding.step3Item1',
-    'onboarding.step3Item2',
-    'onboarding.step3Item3',
-    'onboarding.step3Item4',
 
     // History (additional)
     'history.recreate',
@@ -2499,3 +2485,13 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
 
 /** @type {string} Version of the default labels module */
 export const LABELS_VERSION = globalThis.APP_VERSION;
+
+// Self-validation: verify all LENS_SENSITIVE_KEYS exist in DEFAULT_LABELS
+// Runs once at module load — warns immediately if a key drifts out of sync
+for (const key of LENS_SENSITIVE_KEYS) {
+    const [cat, ...rest] = key.split('.');
+    const labelKey = rest.join('.');
+    if (!DEFAULT_LABELS[cat] || !(labelKey in DEFAULT_LABELS[cat])) {
+        console.warn(`⚠️ LENS_SENSITIVE_KEYS contains "${key}" but it does not exist in DEFAULT_LABELS`);
+    }
+}

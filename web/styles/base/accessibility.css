@@ -99,9 +99,9 @@ body.high-contrast:not(.dark-mode) .task-options-section-header {
 
 /* Overdue tasks */
 body.high-contrast:not(.dark-mode) .task.overdue-task {
-    background: rgba(220, 53, 69, 0.25);
+    background: var(--color-error-bg);
     color: #b71c1c;
-    border: 2px solid #b71c1c;
+    border: 2px solid var(--color-error);
 }
 
 /* Modal overlays */
@@ -668,9 +668,9 @@ body.high-contrast.dark-mode .task-options-section-header {
 
 /* Overdue tasks */
 body.high-contrast.dark-mode .task.overdue-task {
-    background: rgba(220, 53, 69, 0.35);
+    background: var(--color-error-bg-dark);
     color: #ff5252;
-    border: 2px solid #ff5252;
+    border: 2px solid var(--color-error);
 }
 
 /* Modal overlays */

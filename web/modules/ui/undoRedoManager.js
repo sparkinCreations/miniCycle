@@ -319,6 +319,9 @@ const _initialized = {
   undoRedoKeyboard: false
 };
 
+// Module-scope handler reference for cleanup
+let _handleUndoRedoKeydown = null;
+
 // ============ UI INITIALIZATION ============
 
 /**
@@ -362,7 +365,7 @@ export function wireUndoRedoKeyboardShortcuts() {
 
   assertInjected('safeAddEventListener', _deps.safeAddEventListener);
 
-  function handleUndoRedoKeydown(e) {
+  _handleUndoRedoKeydown = function handleUndoRedoKeydown(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
       e.preventDefault();
       performStateBasedUndo();
@@ -370,9 +373,9 @@ export function wireUndoRedoKeyboardShortcuts() {
       e.preventDefault();
       performStateBasedRedo();
     }
-  }
+  };
 
-  _deps.safeAddEventListener(document, 'keydown', handleUndoRedoKeydown);
+  _deps.safeAddEventListener(document, 'keydown', _handleUndoRedoKeydown);
 }
 
 /**
@@ -2020,6 +2023,18 @@ export async function clearAllUndoHistory() {
 
 }
 
+/**
+ * Clean up listeners and reset state for boot retry.
+ */
+function destroyUndoRedoManager() {
+  if (_handleUndoRedoKeydown) {
+    document.removeEventListener('keydown', _handleUndoRedoKeydown);
+    _handleUndoRedoKeydown = null;
+  }
+  _initialized.undoRedoUI = false;
+  _initialized.undoRedoKeyboard = false;
+}
+
 // ============ INIT FUNCTION (for moduleLoader) ============
 
 /**
@@ -2067,7 +2082,9 @@ export async function initUndoRedoManager(dependencies = {}) {
     onCycleRenamed,
     // Cache helpers
     clearUndoCache,
-    clearAllUndoHistory
+    clearAllUndoHistory,
+    // Cleanup
+    destroy: destroyUndoRedoManager
   };
 }
 

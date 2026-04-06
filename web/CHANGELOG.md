@@ -1,3 +1,7 @@
+## [2.190] - 2026-04-06
+- feat: remove sticky positioning from routine search input for improved layout
+
+
 ## [2.189] - 2026-04-06
 - feat: implement double-tap/click selection for routines and adjust selection delay; enhance sticky position for search input
 

@@ -173,16 +173,9 @@ export async function runDefaultLabelsTests(resultsDiv) {
         }
     });
 
-    await test('most lens-sensitive keys exist in DEFAULT_LABELS', () => {
-        // Known stale keys from removed themes (Dark Ocean, Golden Glow) and renamed onboarding keys
-        const knownStale = new Set([
-            'unlock.darkOcean', 'unlock.goldenGlow',
-            'onboarding.step3Item1', 'onboarding.step3Item2',
-            'onboarding.step3Item3', 'onboarding.step3Item4'
-        ]);
+    await test('all lens-sensitive keys exist in DEFAULT_LABELS', () => {
         const missing = [];
         for (const key of LENS_SENSITIVE_KEYS) {
-            if (knownStale.has(key)) continue;
             const parts = key.split('.');
             if (parts.length < 2) { missing.push(key); continue; }
             const cat = parts[0];
