@@ -1905,12 +1905,29 @@ export class RoutineSwitcher {
             listItem.appendChild(leftSide);
             listItem.appendChild(sizeSpan);
 
-            // 🖱️ Handle selection with safeAddEventListener
-            // Uses a short delay so double-click can bypass the preview when nothing is selected
+            // 🖱️ Handle selection with double-tap/double-click detection
+            // First tap/click selects (with delay to allow double-tap bypass)
+            // Second tap/click within 300ms opens the routine directly
             const safeAdd = this.deps.safeAddEventListener;
+            listItem._lastClickTime = 0;
             listItem._clickHandler = (event) => {
                 // Skip selection when clicking inside an inline edit input
                 if (event?.target?.classList?.contains('cycle-item-edit-input')) return;
+
+                const now = Date.now();
+                const timeSinceLastClick = now - listItem._lastClickTime;
+                listItem._lastClickTime = now;
+
+                // Double-tap/click detected (within 300ms)
+                if (timeSinceLastClick < 300) {
+                    if (listItem._selectTimeout) {
+                        clearTimeout(listItem._selectTimeout);
+                        listItem._selectTimeout = null;
+                    }
+                    this._selectRoutine(cycleKey);
+                    this.confirmMiniCycle();
+                    return;
+                }
 
                 // If a routine is already selected, select immediately (no delay needed)
                 const hasSelection = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
@@ -1919,12 +1936,12 @@ export class RoutineSwitcher {
                     return;
                 }
 
-                // No routine selected — delay selection to allow double-click to bypass
+                // No routine selected — delay selection to allow double-tap to bypass
                 if (listItem._selectTimeout) clearTimeout(listItem._selectTimeout);
                 listItem._selectTimeout = setTimeout(() => {
                     listItem._selectTimeout = null;
                     this._selectRoutine(cycleKey);
-                }, 250);
+                }, 300);
             };
             safeAdd(listItem, "click", listItem._clickHandler);
 
