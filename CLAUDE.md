@@ -257,6 +257,23 @@ orchestrator.js (sequence control + boot UI + early boot coordination)
 
 ---
 
+## HIDDEN SUB-MODULE FACADE PATTERN
+
+Four facade modules dynamically import their sub-modules during `init()` instead of declaring them in `moduleManifests.js`. This is **intentional** — do NOT add these sub-modules to the manifest (it would cause duplicate initialization).
+
+| Facade | Sub-Modules |
+|--------|-------------|
+| `settingsManager` | settingsUIManager, cycleExportManager, cycleImportManager, backupRestoreManager, dataSanitizer, shareManager |
+| `taskCore` | taskCRUD, taskCompletion, taskCycleReset |
+| `taskDOM` | taskValidation, taskUtils, taskRenderer, taskEvents |
+| `preferencesManager` | preferencesBgImage, preferencesPresets |
+
+**Why:** Sub-modules are tightly coupled to their facade. Dynamic imports with `?v=${APP_VERSION}` cache busting ensure fresh loads. The facade wires DI to each sub-module via its own `wireSubModuleDependencies()`.
+
+**Testing note:** Tests for sub-modules import them directly with `?v=${cacheBuster}`. The facade's `init()` may create a singleton — tests that need fresh instances should use the sub-module's exported class/functions directly, not through the facade.
+
+---
+
 ## TESTING
 
 - Tests require server: `npm start` before `npm test`

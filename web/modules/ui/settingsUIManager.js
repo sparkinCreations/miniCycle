@@ -42,6 +42,8 @@ const di = createDIModule('SettingsUIManager', {
     toggleHoverTaskOptions: optional(null),
     refreshTaskListUI: optional(null),
     organizeCompletedTasks: optional(null),
+    handleTaskListMovement: optional(null),
+    updateCompletedTasksCount: optional(null),
     resetDefaultRecurringSettings: optional(null),
     updateStatsPanel: optional(null),
     enableDebug: optional(null),
@@ -529,35 +531,36 @@ export function setupCompletedDropdownToggle() {
         const enabled = completedDropdownToggle.checked;
 
         const AppState = _deps.AppState?.();
-        if (AppState?.isReady?.()) {
-            await AppState.update(state => {
-                if (!state.settings) state.settings = {};
-                state.settings.showCompletedDropdown = enabled;
-            }, true);
-        } else {
+        if (!AppState?.isReady?.()) {
             console.error('AppState not ready - setting not saved');
             _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
             completedDropdownToggle.checked = !enabled;
             return;
         }
 
-        if (enabled) {
-            _deps.organizeCompletedTasks?.();
-        } else {
-            // Move completed tasks back to main list
+        // When disabling: move tasks back BEFORE updating state (while isEnabled() still returns true)
+        if (!enabled) {
             const completedList = document.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
-            const taskList = document.getElementById(DOM_IDS.TASK_LIST);
-            if (completedList && taskList) {
+            if (completedList) {
                 const completedTasks = Array.from(completedList.querySelectorAll(DOM_SELECTORS.TASK));
                 completedTasks.forEach(task => {
-                    taskList.appendChild(task);
+                    _deps.handleTaskListMovement?.(task, false);
                 });
-                const completedSection = document.getElementById(DOM_IDS.COMPLETED_TASKS_SECTION);
-                if (completedSection) {
-                    completedSection.classList.remove(DOM_CLASSES.SHOW);
-                }
             }
         }
+
+        // Update state
+        await AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.showCompletedDropdown = enabled;
+        }, true);
+
+        // When enabling: organize completed tasks into dropdown
+        if (enabled) {
+            _deps.organizeCompletedTasks?.();
+        }
+
+        _deps.updateCompletedTasksCount?.();
     };
 
     safeAddEventListener(completedDropdownToggle, "change", completedDropdownToggle._changeHandler);

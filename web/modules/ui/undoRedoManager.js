@@ -265,6 +265,7 @@ const di = createDIModule('UndoRedoManager', {
   showNotification: optional(null),
   // UIOrchestrator for smart UI updates (optional - falls back to refreshUIFromState)
   UIOrchestrator: optional(null),
+  organizeCompletedTasks: optional(null),  // () => void — re-organize completed dropdown after undo/redo
   logHistoryEvent: optional(null),  // (type, details) => void — logs undo/redo to routine history
   refreshHistoryIfOpen: optional(null),  // () => void — re-renders history modal if open (for cleared tasks tab)
   updateRecurringInfoLink: optional(null),  // () => void — refreshes "X tasks set to recurring" indicator
@@ -976,6 +977,9 @@ function handleUndoRedoUIUpdate(diff, newState) {
     // Fallback to refreshUIFromState
     _deps.refreshUIFromState(newState);
   }
+
+  // Re-organize completed tasks dropdown (handles both patch and full render paths)
+  _deps.organizeCompletedTasks?.();
 
   // Refresh theme labels/colors if theme changed (outside UIOrchestrator scope)
   if (diff.themeChanged) {

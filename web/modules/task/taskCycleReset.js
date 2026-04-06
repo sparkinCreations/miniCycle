@@ -423,30 +423,29 @@ function moveCompletedTasksBack(context, deps) {
 
     if (!completedTaskList || !taskList) return;
 
-    // Move completed tasks back to main list first
+    // Move all remaining completed tasks back to main list
+    // (deleteWhenComplete recurring tasks were already removed in resetTasksData Step 4)
     const completedTaskElements = completedTaskList.querySelectorAll(DOM_SELECTORS.TASK);
     completedTaskElements.forEach(taskEl => {
-        if (!taskEl.classList.contains(DOM_CLASSES.RECURRING)) {
-            // Clear stale interaction classes before moving back
-            taskEl.classList.remove(
-                DOM_CLASSES.LONG_PRESSED,
-                DOM_CLASSES.DRAGGING,
-                DOM_CLASSES.IS_FIRST_TASK,
-                DOM_CLASSES.IS_LAST_TASK
-            );
+        // Clear stale interaction classes before moving back
+        taskEl.classList.remove(
+            DOM_CLASSES.LONG_PRESSED,
+            DOM_CLASSES.DRAGGING,
+            DOM_CLASSES.IS_FIRST_TASK,
+            DOM_CLASSES.IS_LAST_TASK
+        );
 
-            // Reset task options visibility
-            const taskOptions = taskEl.querySelector(DOM_SELECTORS.TASK_OPTIONS);
-            if (taskOptions) {
-                taskOptions.classList.remove(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
-                taskOptions.classList.add(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
-            }
-
-            // Restore draggable attribute for active list
-            taskEl.setAttribute('draggable', 'true');
-
-            taskList.appendChild(taskEl);
+        // Reset task options visibility
+        const taskOptions = taskEl.querySelector(DOM_SELECTORS.TASK_OPTIONS);
+        if (taskOptions) {
+            taskOptions.classList.remove(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
+            taskOptions.classList.add(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
         }
+
+        // Restore draggable attribute for active list
+        taskEl.setAttribute('draggable', 'true');
+
+        taskList.appendChild(taskEl);
     });
 
     if (completedTaskElements.length > 0) {

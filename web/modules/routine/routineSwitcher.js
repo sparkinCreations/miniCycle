@@ -144,6 +144,14 @@ export class RoutineSwitcher {
             return;
         }
 
+        // Restore sort/filter preferences from state
+        const prefs = currentState.settings?.routineSwitcherPrefs;
+        if (prefs) {
+            this._sortMode = prefs.sortMode || 'alpha';
+            this._sortDirection = prefs.sortDirection || 'asc';
+            this._filterMode = prefs.filterMode || 'all';
+        }
+
         const cycles = currentState.data?.cycles || {};
         const switchModal = this.deps.getModal('routineSwitcher');
         const switchRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
@@ -164,8 +172,8 @@ export class RoutineSwitcher {
 
         // Prevent iOS rubber-band drag on the modal backdrop
         // Allow touchmove only inside scrollable children (routine list, preview)
-        if (!switchModal._touchmoveGuard) {
-            switchModal._touchmoveGuard = (e) => {
+        if (!switchModal._touchmoveHandler) {
+            switchModal._touchmoveHandler = (e) => {
                 const scrollable = e.target.closest(
                     `#${DOM_IDS.MINI_CYCLE_LIST}, ${DOM_SELECTORS.SWITCH_PREVIEW_WINDOW}, ${DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT}`
                 );
@@ -173,7 +181,7 @@ export class RoutineSwitcher {
                     e.preventDefault();
                 }
             };
-            switchModal.addEventListener('touchmove', switchModal._touchmoveGuard, { passive: false });
+            switchModal.addEventListener('touchmove', switchModal._touchmoveHandler, { passive: false });
         }
 
         // Show routine switcher tour prompt after modal is open
@@ -181,7 +189,7 @@ export class RoutineSwitcher {
         switchRow.style.display = "none";
 
         // Reset desktop preview to placeholder
-        this._resetDesktopPreview();
+        this._resetPreview();
 
         // Populate routine list hint
         const listHint = this.deps.getElementById(DOM_IDS.ROUTINE_LIST_HINT);
@@ -705,7 +713,9 @@ export class RoutineSwitcher {
 
         // Handle blur (save on blur)
         const handleBlur = () => {
-            this._finishInlineEdit(listItem, cycleKey, input, titleSpan);
+            const newValue = input.value;
+            this._teardownInlineEdit(input, titleSpan);
+            this._commitRename(cycleKey, newValue, currentName);
         };
 
         // Handle keydown (Enter to save, Escape to cancel)
@@ -792,11 +802,7 @@ export class RoutineSwitcher {
             cleanup();
             editDialog.close();
             editDialog.remove();
-            // Set the input value on a temporary input and call _finishInlineEdit
-            // to reuse existing rename logic (collision detection, state update, etc.)
-            const tempInput = document.createElement('input');
-            tempInput.value = value;
-            this._finishInlineEdit(listItem, cycleKey, tempInput, titleSpan);
+            this._commitRename(cycleKey, value, currentName);
         };
 
         const handleCancel = () => {
@@ -839,21 +845,18 @@ export class RoutineSwitcher {
     }
 
     /**
-     * Finish inline editing and save the new name
-     * @param {HTMLElement} listItem - The list item element
-     * @param {string} oldKey - The original cycle key
-     * @param {HTMLInputElement} input - The input element
-     * @param {HTMLElement} titleSpan - The title span element
+     * Tear down inline edit UI (input, overlay, focus target class).
+     * Called after inline edit completes or cancels. Not used for modal edit.
+     * @param {HTMLInputElement} input - The inline input element
+     * @param {HTMLElement} titleSpan - The title span to restore
+     * @returns {void}
+     * @private
      */
-    _finishInlineEdit(listItem, oldKey, input, titleSpan) {
-        const newName = this.deps.sanitizeInput(input.value.trim());
-        const oldName = titleSpan.textContent;
-
-        // Remove input and focus overlay
+    _teardownInlineEdit(input, titleSpan) {
         input.remove();
         titleSpan.style.display = '';
-        const listItem2 = titleSpan.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
-        if (listItem2) listItem2.classList.remove(DOM_CLASSES.EDIT_FOCUS_TARGET);
+        const listItem = titleSpan.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
+        if (listItem) listItem.classList.remove(DOM_CLASSES.EDIT_FOCUS_TARGET);
         const overlay = titleSpan.closest('dialog')?.querySelector(DOM_SELECTORS.EDIT_FOCUS_OVERLAY);
         if (overlay) {
             overlay.classList.remove(DOM_CLASSES.EDIT_FOCUS_ACTIVE);
@@ -861,16 +864,30 @@ export class RoutineSwitcher {
             overlay.addEventListener('transitionend', removeOverlay, { once: true });
             setTimeout(removeOverlay, 500);
         }
+    }
 
-        // If name unchanged or empty, just restore
+    /**
+     * Commit a routine rename — validates, handles collisions, updates AppState,
+     * refreshes the list, and notifies undo system.
+     * Shared by both inline edit and modal edit paths.
+     * @param {string} oldKey - The original cycle key
+     * @param {string} rawNewName - The new name (will be sanitized)
+     * @param {string} oldName - The original display name (for no-change detection)
+     * @returns {void}
+     * @private
+     */
+    _commitRename(oldKey, rawNewName, oldName) {
+        const newName = this.deps.sanitizeInput(rawNewName.trim());
+
+        // If name unchanged or empty, do nothing
         if (!newName || newName === oldName) {
             return;
         }
 
-        // ✅ Get unique name if there's a collision (but not with self)
+        // Get unique name if there's a collision (but not with self)
         const currentState = this.deps.AppState.get();
         const cycles = { ...currentState.data.cycles };
-        delete cycles[oldKey]; // Exclude self from collision check
+        delete cycles[oldKey];
 
         const { name: uniqueName, wasModified } = getUniqueCycleName(newName, cycles);
 
@@ -878,19 +895,15 @@ export class RoutineSwitcher {
             this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: uniqueName } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
         }
 
-        // ✅ Update through state system
+        // Update through state system
         this.deps.AppState.update(state => {
             const cycleData = state.data.cycles[oldKey];
             if (!cycleData) return;
 
-            // Create new entry with new title as key
             const updatedCycle = { ...cycleData, title: uniqueName };
             state.data.cycles[uniqueName] = updatedCycle;
-
-            // Remove old entry
             delete state.data.cycles[oldKey];
 
-            // Update active cycle if this was the active one
             if (state.appState.activeCycleId === oldKey) {
                 state.appState.activeCycleId = uniqueName;
             }
@@ -898,17 +911,15 @@ export class RoutineSwitcher {
             state.metadata.lastModified = Date.now();
         }, true);
 
-        // ✅ Notify undo system of cycle rename
+        // Notify undo system of cycle rename
         if (typeof this.deps.onCycleRenamed === 'function') {
             this.deps.onCycleRenamed(oldKey, uniqueName).catch(err => {
                 console.warn('⚠️ Undo system cycle rename notification failed:', err);
             });
         }
 
-        // Refresh the list
+        // Refresh the list and re-select
         this.loadMiniCycleList();
-
-        // Re-select the renamed item
         setTimeout(() => {
             const renamedItem = [...this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM)]
                 .find(item => item.dataset.cycleKey === uniqueName);
@@ -919,7 +930,6 @@ export class RoutineSwitcher {
         }, 50);
 
         // Re-apply theme labels/colors in case the active routine was renamed
-        // (activeCycleId key changed — vocabThemeManager must re-resolve from new key)
         this.deps.refreshThemeLabels?.();
 
         this.deps.showNotification('✅ ' + getLabel('notify.routineRenamed', { vars: { name: uniqueName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
@@ -965,9 +975,9 @@ export class RoutineSwitcher {
 
         // Clear existing chips and their listeners
         picker.innerHTML = '';
-        picker._chipHandlers = picker._chipHandlers ?? [];
-        picker._chipHandlers.forEach(({ el, fn }) => el.removeEventListener('click', fn));
-        picker._chipHandlers = [];
+        picker._clickHandlers = picker._clickHandlers ?? [];
+        picker._clickHandlers.forEach(({ el, fn }) => el.removeEventListener('click', fn));
+        picker._clickHandlers = [];
 
         // Add title
         const title = document.createElement('div');
@@ -1006,7 +1016,7 @@ export class RoutineSwitcher {
                 this._selectTheme(cycleKey, id, def);
             };
             chip.addEventListener('click', handler);
-            picker._chipHandlers.push({ el: chip, fn: handler });
+            picker._clickHandlers.push({ el: chip, fn: handler });
 
             chipsContainer.appendChild(chip);
         });
@@ -1049,9 +1059,9 @@ export class RoutineSwitcher {
         if (picker) {
             picker.classList.add(DOM_CLASSES.HIDDEN);
             // Clean up chip listeners
-            if (picker._chipHandlers) {
-                picker._chipHandlers.forEach(({ el, fn }) => el.removeEventListener('click', fn));
-                picker._chipHandlers = [];
+            if (picker._clickHandlers) {
+                picker._clickHandlers.forEach(({ el, fn }) => el.removeEventListener('click', fn));
+                picker._clickHandlers = [];
             }
         }
         themeBtn?.setAttribute('aria-expanded', 'false');
@@ -1068,7 +1078,47 @@ export class RoutineSwitcher {
 
         if (switchModal.open) switchModal.close();
         this.closeThemePicker();
+        this._cleanup();
         switchModal._previousFocus?.focus({ focusVisible: false });
+    }
+
+    /**
+     * Clean up event listeners attached during modal open.
+     * Called on modal close (explicit close + native ESC via dialog close event).
+     * Nulls handler references so guards recreate them on next open.
+     * @returns {void}
+     */
+    _cleanup() {
+        const switchModal = this.deps.getModal('routineSwitcher');
+
+        // Remove touchmove guard (prevents iOS rubber-band drag)
+        if (switchModal?._touchmoveHandler) {
+            switchModal.removeEventListener('touchmove', switchModal._touchmoveHandler);
+            switchModal._touchmoveHandler = null;
+        }
+
+        // Remove modal content click handler (deselection logic)
+        const switchModalContent = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT);
+        if (switchModalContent?._clickHandler) {
+            switchModalContent.removeEventListener('click', switchModalContent._clickHandler);
+            switchModalContent._clickHandler = null;
+        }
+
+        // Null button handler references so guards recreate on next open
+        const buttonIds = [
+            DOM_IDS.SWITCH_DUPLICATE, DOM_IDS.SWITCH_RENAME, DOM_IDS.SWITCH_DELETE,
+            DOM_IDS.SWITCH_DOWNLOAD, DOM_IDS.SWITCH_THEME_BTN,
+            DOM_IDS.MINI_CYCLE_SWITCH_CONFIRM, DOM_IDS.MINI_CYCLE_SWITCH_CLOSE
+        ];
+        buttonIds.forEach(id => {
+            const btn = this.deps.getElementById(id);
+            if (btn) {
+                if (btn._clickHandler) {
+                    btn.removeEventListener('click', btn._clickHandler);
+                    btn._clickHandler = null;
+                }
+            }
+        });
     }
 
     /**
@@ -1306,6 +1356,22 @@ export class RoutineSwitcher {
     }
 
     /**
+     * Persist sort/filter preferences to AppState (deferred save).
+     * @returns {void}
+     * @private
+     */
+    _savePreferences() {
+        this.deps.AppState?.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.routineSwitcherPrefs = {
+                sortMode: this._sortMode,
+                sortDirection: this._sortDirection,
+                filterMode: this._filterMode
+            };
+        }, false);
+    }
+
+    /**
      * Setup click outside handler for modal
      */
     setupModalClickOutside() {
@@ -1371,8 +1437,6 @@ export class RoutineSwitcher {
                 const isPickerOpen = picker && !picker.classList.contains(DOM_CLASSES.HIDDEN);
                 if (isPickerOpen) {
                     this.closeThemePicker();
-                    // Stop propagation so the uiBoot global handler doesn't also deselect
-                    event.stopPropagation();
                     return;
                 }
 
@@ -1391,6 +1455,7 @@ export class RoutineSwitcher {
         const switchModal = this.deps.getModal('routineSwitcher');
         if (switchModal) {
             safeAdd(switchModal, "close", () => {
+                this._cleanup();
                 switchModal._previousFocus?.focus({ focusVisible: false });
             });
         }
@@ -1399,9 +1464,14 @@ export class RoutineSwitcher {
     /**
      * Update preview window with cycle tasks
      */
+    /**
+     * Update both mobile and desktop preview panels for a selected routine.
+     * Builds task HTML and date once, writes to both containers.
+     * CSS handles which is visible per viewport.
+     * @param {string} cycleName - Cycle storage key
+     * @returns {void}
+     */
     updatePreview(cycleName) {
-
-        // ✅ Use AppState instead of loadMiniCycleData()
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for updatePreview');
             return;
@@ -1416,107 +1486,91 @@ export class RoutineSwitcher {
         const cycles = currentState.data?.cycles || {};
         const cycleData = cycles[cycleName];
 
-        const previewWindow = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_WINDOW);
-
-        if (!previewWindow) {
-            console.error('❌ Preview window element not found');
-            return;
-        }
-
-        function escapeHTML(str) {
+        function escapeText(str) {
             const temp = document.createElement("div");
             temp.textContent = str;
             return temp.innerHTML;
         }
 
-        // ✅ Get or create date display element below preview
+        // Build task HTML and date (shared across both panels)
+        let tasksHTML = '';
+        let dateLabel = '';
+        let formattedDate = '';
+
+        if (cycleData?.tasks) {
+            tasksHTML = cycleData.tasks
+                .map(task => `<div class="preview-task">${task.completed ? "✔️" : "___"} ${escapeText(task.text)}</div>`)
+                .join("");
+
+            const timestamp = cycleData.lastModified || cycleData.createdAt;
+            if (timestamp) {
+                const date = new Date(timestamp);
+                formattedDate = date.toLocaleDateString(undefined, {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                });
+                dateLabel = cycleData.lastModified ? getLabel('switcher.modified') : getLabel('switcher.created');
+            }
+        }
+
+        const contentHTML = tasksHTML
+            ? `<strong>${getLabel('switcher.tasksPreviewLabel')}:</strong><br>${tasksHTML}`
+            : '';
+        const dateHTML = (dateLabel && formattedDate)
+            ? `<div class="desktop-preview-date">${dateLabel}: ${formattedDate}</div>`
+            : '';
+        const noTasksLabel = getLabel('empty.noTasksPreview');
+
+        // --- Mobile preview panel ---
+        const previewWindow = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_WINDOW);
+        if (previewWindow) {
+            if (tasksHTML) {
+                previewWindow.innerHTML = contentHTML;
+            } else {
+                previewWindow.innerHTML = '<br>';
+                const msg = document.createElement('strong');
+                msg.textContent = noTasksLabel;
+                previewWindow.appendChild(msg);
+            }
+        }
+
+        // Mobile date display (below preview)
         let dateDisplay = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_DATE);
-        if (!dateDisplay) {
+        if (!dateDisplay && previewWindow) {
             dateDisplay = document.createElement("div");
-            dateDisplay.id = "switch-preview-date";
+            dateDisplay.id = DOM_IDS.SWITCH_PREVIEW_DATE;
             dateDisplay.className = "switch-preview-date";
             previewWindow.parentNode.insertBefore(dateDisplay, previewWindow.nextSibling);
         }
-
-        if (!cycleData || !cycleData.tasks) {
-            const noTasksMsg = document.createElement('strong');
-            noTasksMsg.textContent = getLabel('empty.noTasksPreview');
-            previewWindow.innerHTML = '<br>';
-            previewWindow.appendChild(noTasksMsg);
-            dateDisplay.textContent = '';
-            // Also update desktop preview
-            this._updateDesktopPreview(null, cycleName);
-            return;
+        if (dateDisplay) {
+            dateDisplay.textContent = (dateLabel && formattedDate) ? `${dateLabel}: ${formattedDate}` : '';
         }
 
-        // ✅ Create a simple list of tasks for preview
-        const tasksPreview = cycleData.tasks
-            .map(task => `<div class="preview-task">${task.completed ? "✔️" : "___"} ${escapeHTML(task.text)}</div>`)
-            .join("");
-
-        previewWindow.innerHTML = `<strong>${getLabel('switcher.tasksPreviewLabel')}:</strong><br>${tasksPreview}`;
-
-        // ✅ Show last modified date (falls back to created date if not yet set)
-        const timestamp = cycleData.lastModified || cycleData.createdAt;
-        let formattedDate = '';
-        let dateLabel = '';
-        if (timestamp) {
-            const date = new Date(timestamp);
-            formattedDate = date.toLocaleDateString(undefined, {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-            dateLabel = cycleData.lastModified ? getLabel('switcher.modified') : getLabel('switcher.created');
-            dateDisplay.textContent = `${dateLabel}: ${formattedDate}`;
-        } else {
-            dateDisplay.textContent = '';
-        }
-
-        // Also update desktop preview panel
-        this._updateDesktopPreview(cycleData, cycleName, tasksPreview, dateLabel, formattedDate);
-
-    }
-
-    /**
-     * Update the desktop right-panel preview with task data
-     * @param {Object|null} cycleData - The cycle data, or null for empty state
-     * @param {string} [cycleName] - The routine name to display in the title
-     * @param {string} [tasksHTML] - Pre-built tasks HTML
-     * @param {string} [dateLabel] - "Modified" or "Created" label
-     * @param {string} [formattedDate] - Formatted date string
-     */
-    _updateDesktopPreview(cycleData, cycleName, tasksHTML, dateLabel, formattedDate) {
+        // --- Desktop preview panel ---
         const desktopPreview = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_WINDOW);
-        if (!desktopPreview) return;
+        if (desktopPreview) {
+            if (tasksHTML) {
+                desktopPreview.innerHTML = contentHTML + dateHTML;
+            } else {
+                desktopPreview.innerHTML = '';
+                const msg = document.createElement('strong');
+                msg.textContent = noTasksLabel;
+                desktopPreview.appendChild(msg);
+            }
+        }
 
-        // Update the preview title to show the routine name
+        // Desktop preview title
         const previewTitle = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_TITLE);
         if (previewTitle) {
             previewTitle.textContent = cycleData?.title || cycleName || getLabel('switcher.preview');
         }
 
-        // Show the double-click/tap hint
+        // Desktop preview hint
         const hint = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_HINT);
         if (hint) {
             const isMobile = window.matchMedia('(max-width: 767px)').matches;
             hint.textContent = getLabel(isMobile ? 'switcher.doubleTapEnlarge' : 'switcher.doubleClickEnlarge');
             hint.style.display = 'block';
         }
-
-        if (!cycleData || !cycleData.tasks) {
-            desktopPreview.innerHTML = '';
-            const noTasksMsg = document.createElement('strong');
-            noTasksMsg.textContent = getLabel('empty.noTasksPreview');
-            desktopPreview.appendChild(noTasksMsg);
-            return;
-        }
-
-        let html = `<strong>${getLabel('switcher.tasksPreviewLabel')}:</strong><br>${tasksHTML}`;
-        if (dateLabel && formattedDate) {
-            html += `<div class="desktop-preview-date">${dateLabel}: ${formattedDate}</div>`;
-        }
-        desktopPreview.innerHTML = html;
     }
 
     /**
@@ -1579,23 +1633,33 @@ export class RoutineSwitcher {
         // Close theme picker
         this.closeThemePicker();
         // Reset preview
-        this._resetDesktopPreview();
+        this._resetPreview();
     }
 
     /**
-     * Reset desktop preview panel to placeholder state
+     * Reset both mobile and desktop preview panels to placeholder state.
+     * @returns {void}
      */
-    _resetDesktopPreview() {
+    _resetPreview() {
+        // Mobile preview
+        const previewWindow = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_WINDOW);
+        if (previewWindow) {
+            previewWindow.innerHTML = '';
+        }
+        const dateDisplay = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_DATE);
+        if (dateDisplay) {
+            dateDisplay.textContent = '';
+        }
+
+        // Desktop preview
         const desktopPreview = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_WINDOW);
         if (desktopPreview) {
             desktopPreview.textContent = getLabel('switcher.selectPreview');
         }
-        // Reset the title back to generic "Preview"
         const previewTitle = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_TITLE);
         if (previewTitle) {
             previewTitle.textContent = getLabel('switcher.preview');
         }
-        // Hide the double-click hint
         const hint = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_HINT);
         if (hint) {
             hint.style.display = 'none';
@@ -1634,10 +1698,10 @@ export class RoutineSwitcher {
         if (desktopPreview) {
             // Stop click propagation so clicks inside the preview don't bubble up
             // to the modal and deselect the currently selected routine
-            if (!desktopPreview._clickGuard) {
-                desktopPreview._clickGuard = (e) => e.stopPropagation();
+            if (!desktopPreview._clickHandler) {
+                desktopPreview._clickHandler = (e) => e.stopPropagation();
             }
-            safeAdd(desktopPreview, "click", desktopPreview._clickGuard);
+            safeAdd(desktopPreview, "click", desktopPreview._clickHandler);
             safeAdd(desktopPreview, "dblclick", () => this._openPreviewReviewModal());
         }
     }
@@ -1728,11 +1792,11 @@ export class RoutineSwitcher {
     }
 
     /**
-     * Load miniCycle list (actual implementation)
+     * Load miniCycle list (actual implementation).
+     * Orchestrates filtering, sorting, recently-used rendering, and list item creation.
+     * @returns {void}
      */
     loadMiniCycleListActual() {
-
-        // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for loadMiniCycleList');
             return;
@@ -1746,248 +1810,261 @@ export class RoutineSwitcher {
 
         const cycles = currentState.data?.cycles || {};
         const miniCycleList = this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST);
-
         if (!miniCycleList) {
             console.error('❌ miniCycleList element not found');
             return;
         }
 
-        miniCycleList.innerHTML = ""; // Clear the list before repopulating
-
-        // Remove previous "Recently Used" section if present
+        // Clear list and previous recently-used section
+        miniCycleList.innerHTML = "";
         const modalContent = miniCycleList.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT);
         const prevRecent = modalContent?.querySelector(DOM_SELECTORS.RECENT_ROUTINES_SECTION);
         if (prevRecent) prevRecent.remove();
 
-        // Delegated arrow key navigation for routine list items
+        // Delegated arrow key navigation
         this.deps.safeAddEventListener(miniCycleList, "keydown", (event) => {
             const item = event.target.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
             if (!item) return;
             handleVerticalArrowNav(event, miniCycleList, DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM, {
-                wrap: false,
-                skipHidden: true
+                wrap: false, skipHidden: true
             });
         });
 
-        // ✅ Ensure we have cycles to display
+        // Empty state
         if (Object.keys(cycles).length === 0) {
-            console.warn('⚠️ No cycles found to display');
             miniCycleList.innerHTML = `<div class="no-cycles-message">${getLabel('switcher.noCyclesFound')}</div>`;
             return;
         }
 
-        // ✅ Filter cycles based on current filter mode
+        // Filter and sort
         const filteredCycles = this._filterCycles(Object.entries(cycles));
-
-        // ✅ Handle no matches for filter
         if (filteredCycles.length === 0) {
             const modeLabel = { auto: getLabel('switcher.filterAuto'), manual: getLabel('switcher.filterManual'), todo: getLabel('switcher.filterTodo') }[this._filterMode] || '';
             miniCycleList.innerHTML = `<div class="no-cycles-message">${getLabel('switcher.noModeRoutinesFound', { vars: { mode: modeLabel } })}</div>`;
             return;
         }
-
-        // ✅ Sort cycles based on current sort mode
         const sortedCycles = this._sortCycles(filteredCycles);
 
-        // ✅ Render "Recently Used" section (3+ routines, excludes current)
-        const activeCycleIdForRecent = currentState.appState?.activeCycleId;
-        if (sortedCycles.length >= 3) {
-            const recentCycles = sortedCycles
-                .filter(([key]) => key !== activeCycleIdForRecent)
-                .filter(([, data]) => data.lastAccessedAt)
-                .sort((a, b) => (b[1].lastAccessedAt || 0) - (a[1].lastAccessedAt || 0))
-                .slice(0, 3);
+        // Render recently used chips (3+ routines)
+        const activeCycleId = currentState.appState?.activeCycleId;
+        this._renderRecentlyUsed(sortedCycles, activeCycleId, miniCycleList, modalContent);
 
-            if (recentCycles.length > 0) {
-                const recentSection = document.createElement("div");
-                recentSection.className = DOM_CLASSES.RECENT_ROUTINES_SECTION;
+        // Render each list item
+        sortedCycles.forEach(([cycleKey, cycleData], index) => {
+            this._renderListItem(cycleKey, cycleData, index, activeCycleId, miniCycleList, currentState);
+        });
 
-                const recentLabel = document.createElement("div");
-                recentLabel.className = "recent-routines-label";
-                recentLabel.textContent = getLabel('quickAction.recentlyUsed');
-                recentSection.appendChild(recentLabel);
+        this.deps.updateReminderButtons();
+    }
 
-                const chipContainer = document.createElement("div");
-                chipContainer.className = "recent-routines-chips";
+    /**
+     * Render the "Recently Used" chips section above the routine list.
+     * Only shown when 3+ routines exist and at least one has been accessed.
+     * @param {Array} sortedCycles - Filtered and sorted cycle entries
+     * @param {string} activeCycleId - Currently active cycle ID (excluded from chips)
+     * @param {HTMLElement} miniCycleList - The list container (for querySelector in chip click)
+     * @param {HTMLElement} modalContent - The modal content container (for insertion point)
+     * @returns {void}
+     * @private
+     */
+    _renderRecentlyUsed(sortedCycles, activeCycleId, miniCycleList, modalContent) {
+        if (sortedCycles.length < 3) return;
 
-                recentCycles.forEach(([cycleKey, cycleData]) => {
-                    const chip = document.createElement("button");
-                    chip.className = "recent-routine-chip";
-                    chip.dataset.cycleKey = cycleKey;
-                    chip.textContent = cycleData.title || cycleKey;
-                    chip.setAttribute('type', 'button');
-                    chip.setAttribute('title', cycleData.title || cycleKey);
+        const recentCycles = sortedCycles
+            .filter(([key]) => key !== activeCycleId)
+            .filter(([, data]) => data.lastAccessedAt)
+            .sort((a, b) => (b[1].lastAccessedAt || 0) - (a[1].lastAccessedAt || 0))
+            .slice(0, 3);
 
-                    this.deps.safeAddEventListener(chip, 'click', () => {
-                        this._selectRoutine(cycleKey);
-                        const listItem = miniCycleList.querySelector(DATA_SELECTORS.cycleByKey(cycleKey));
-                        if (listItem) {
-                            listItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-                        }
-                    });
+        if (recentCycles.length === 0) return;
 
-                    chipContainer.appendChild(chip);
-                });
+        const recentSection = document.createElement("div");
+        recentSection.className = DOM_CLASSES.RECENT_ROUTINES_SECTION;
 
-                recentSection.appendChild(chipContainer);
+        const recentLabel = document.createElement("div");
+        recentLabel.className = "recent-routines-label";
+        recentLabel.textContent = getLabel('quickAction.recentlyUsed');
+        recentSection.appendChild(recentLabel);
 
-                // Insert above the two-column body (Routines | Preview), not inside it
-                const switcherBody = modalContent?.querySelector(DOM_SELECTORS.ROUTINE_SWITCHER_BODY);
-                if (switcherBody) {
-                    switcherBody.parentNode.insertBefore(recentSection, switcherBody);
-                } else {
-                    miniCycleList.parentNode.insertBefore(recentSection, miniCycleList);
+        const chipContainer = document.createElement("div");
+        chipContainer.className = "recent-routines-chips";
+
+        recentCycles.forEach(([cycleKey, cycleData]) => {
+            const chip = document.createElement("button");
+            chip.className = "recent-routine-chip";
+            chip.dataset.cycleKey = cycleKey;
+            chip.textContent = cycleData.title || cycleKey;
+            chip.setAttribute('type', 'button');
+            chip.setAttribute('title', cycleData.title || cycleKey);
+
+            this.deps.safeAddEventListener(chip, 'click', () => {
+                this._selectRoutine(cycleKey);
+                const listItem = miniCycleList.querySelector(DATA_SELECTORS.cycleByKey(cycleKey));
+                if (listItem) {
+                    listItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
                 }
-            }
+            });
+
+            chipContainer.appendChild(chip);
+        });
+
+        recentSection.appendChild(chipContainer);
+
+        // Insert above the two-column body (Routines | Preview), not inside it
+        const switcherBody = modalContent?.querySelector(DOM_SELECTORS.ROUTINE_SWITCHER_BODY);
+        if (switcherBody) {
+            switcherBody.parentNode.insertBefore(recentSection, switcherBody);
+        } else {
+            miniCycleList.parentNode.insertBefore(recentSection, miniCycleList);
+        }
+    }
+
+    /**
+     * Render a single routine list item with click, keyboard, and double-click handlers.
+     * @param {string} cycleKey - Cycle storage key
+     * @param {Object} cycleData - Cycle data object
+     * @param {number} index - Position index in the sorted list
+     * @param {string} activeCycleId - Currently active cycle ID
+     * @param {HTMLElement} miniCycleList - The list container to append to
+     * @param {Object} currentState - Current AppState snapshot
+     * @returns {void}
+     * @private
+     */
+    _renderListItem(cycleKey, cycleData, index, activeCycleId, miniCycleList, currentState) {
+        if (!cycleData) {
+            console.warn('⚠️ Invalid cycle data for key:', cycleKey);
+            return;
         }
 
-        // ✅ Use sorted entries to render list
-        sortedCycles.forEach(([cycleKey, cycleData], index) => {
-            if (!cycleData) {
-                console.warn('⚠️ Invalid cycle data for key:', cycleKey);
-                return;
-            }
+        const listItem = document.createElement("div");
+        listItem.classList.add(DOM_CLASSES.MINI_CYCLE_SWITCH_ITEM);
+        listItem.id = `routine-option-${index}`;
+        listItem.setAttribute("tabindex", "0");
+        listItem.setAttribute("role", "option");
+        listItem.dataset.cycleName = cycleData.title || cycleKey;
+        listItem.dataset.cycleKey = cycleKey;
 
-            const listItem = document.createElement("div");
-            listItem.classList.add(DOM_CLASSES.MINI_CYCLE_SWITCH_ITEM);
-            listItem.id = `routine-option-${index}`;
-            listItem.setAttribute("tabindex", "0");
-            listItem.setAttribute("role", "option");
-            listItem.dataset.cycleName = cycleData.title || cycleKey; // Use title for compatibility
-            listItem.dataset.cycleKey = cycleKey; // ✅ Store the storage key
+        // Mode emoji
+        let emoji = " ✋"; // Manual Cycle
+        if (cycleData.deleteCheckedTasks) {
+            emoji = " 📋"; // To-Do Mode
+        } else if (cycleData.autoReset) {
+            emoji = " 🔄"; // Auto Cycle Mode
+        }
 
-            // 🏷️ Determine emoji based on miniCycle mode
-            let emoji = " ✋"; // Manual Cycle
-            if (cycleData.deleteCheckedTasks) {
-                emoji = " 📋"; // To-Do Mode (space for alignment)
-            } else if (cycleData.autoReset) {
-                emoji = " 🔄"; // Auto Cycle Mode (space for alignment)
-            }
+        // Left side: emoji + title
+        const leftSide = document.createElement("span");
+        leftSide.className = "cycle-item-left";
 
-            // 📌 Create left side with fixed-width emoji container and name
-            const leftSide = document.createElement("span");
-            leftSide.className = "cycle-item-left";
+        const emojiSpan = document.createElement("span");
+        emojiSpan.className = "cycle-item-emoji";
+        emojiSpan.textContent = emoji;
 
-            const emojiSpan = document.createElement("span");
-            emojiSpan.className = "cycle-item-emoji";
-            emojiSpan.textContent = emoji;
+        const titleSpan = document.createElement("span");
+        titleSpan.className = "cycle-item-title";
+        titleSpan.textContent = cycleData.title || cycleKey;
 
-            const titleSpan = document.createElement("span");
-            titleSpan.className = "cycle-item-title";
-            titleSpan.textContent = cycleData.title || cycleKey;
+        leftSide.appendChild(emojiSpan);
+        leftSide.appendChild(titleSpan);
 
-            leftSide.appendChild(emojiSpan);
-            leftSide.appendChild(titleSpan);
+        // Right side: size estimate
+        const isActiveCycle = cycleKey === activeCycleId;
+        const cycleDataSize = getObjectSizeBytes(cycleData);
+        const undoSize = isActiveCycle ? getUndoCacheSizeBytes() : (cycleData.undoSizeBytes || 0);
+        const totalSize = cycleDataSize + undoSize;
 
-            // 📊 Create right side with size (~ indicates estimate)
-            // Include undo history size: live from cache for active, saved metadata for inactive
-            const activeCycleId = currentState.appState?.activeCycleId;
-            const isActiveCycle = cycleKey === activeCycleId;
-            const cycleDataSize = getObjectSizeBytes(cycleData);
-            const undoSize = isActiveCycle ? getUndoCacheSizeBytes() : (cycleData.undoSizeBytes || 0);
-            const totalSize = cycleDataSize + undoSize;
+        const sizeSpan = document.createElement("span");
+        sizeSpan.className = "cycle-item-size";
+        sizeSpan.textContent = `~${formatBytes(totalSize)}`;
 
-            const sizeSpan = document.createElement("span");
-            sizeSpan.className = "cycle-item-size";
-            sizeSpan.textContent = `~${formatBytes(totalSize)}`;
+        // Current routine badge
+        if (isActiveCycle) {
+            listItem.classList.add(DOM_CLASSES.CURRENT_ROUTINE);
 
-            // Mark the currently active routine
-            if (isActiveCycle) {
-                listItem.classList.add(DOM_CLASSES.CURRENT_ROUTINE);
+            const activeIndicator = document.createElement("span");
+            activeIndicator.className = "current-routine-badge";
+            activeIndicator.textContent = getLabel('nav.currentBadge');
+            activeIndicator.setAttribute('aria-label', getLabel('stats.currentRoutine'));
+            leftSide.appendChild(activeIndicator);
+        }
 
-                const activeIndicator = document.createElement("span");
-                activeIndicator.className = "current-routine-badge";
-                activeIndicator.textContent = getLabel('nav.currentBadge');
-                activeIndicator.setAttribute('aria-label', getLabel('stats.currentRoutine'));
-                leftSide.appendChild(activeIndicator);
-            }
+        listItem.appendChild(leftSide);
+        listItem.appendChild(sizeSpan);
 
-            listItem.appendChild(leftSide);
-            listItem.appendChild(sizeSpan);
+        // Click handler with double-tap detection
+        const safeAdd = this.deps.safeAddEventListener;
+        listItem._lastClickTime = 0;
+        listItem._clickHandler = (event) => {
+            if (event?.target?.classList?.contains('cycle-item-edit-input')) return;
 
-            // 🖱️ Handle selection with double-tap/double-click detection
-            // First tap/click selects (with delay to allow double-tap bypass)
-            // Second tap/click within 300ms opens the routine directly
-            const safeAdd = this.deps.safeAddEventListener;
-            listItem._lastClickTime = 0;
-            listItem._clickHandler = (event) => {
-                // Skip selection when clicking inside an inline edit input
-                if (event?.target?.classList?.contains('cycle-item-edit-input')) return;
+            const now = Date.now();
+            const timeSinceLastClick = now - listItem._lastClickTime;
+            listItem._lastClickTime = now;
 
-                const now = Date.now();
-                const timeSinceLastClick = now - listItem._lastClickTime;
-                listItem._lastClickTime = now;
-
-                // Double-tap/click detected (within 300ms)
-                if (timeSinceLastClick < 300) {
-                    if (listItem._selectTimeout) {
-                        clearTimeout(listItem._selectTimeout);
-                        listItem._selectTimeout = null;
-                    }
-                    this._selectRoutine(cycleKey);
-                    this.confirmMiniCycle();
-                    return;
-                }
-
-                // If a routine is already selected, select immediately (no delay needed)
-                const hasSelection = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
-                if (hasSelection) {
-                    this._selectRoutine(cycleKey);
-                    return;
-                }
-
-                // No routine selected — delay selection to allow double-tap to bypass
-                if (listItem._selectTimeout) clearTimeout(listItem._selectTimeout);
-                listItem._selectTimeout = setTimeout(() => {
-                    listItem._selectTimeout = null;
-                    this._selectRoutine(cycleKey);
-                }, 300);
-            };
-            safeAdd(listItem, "click", listItem._clickHandler);
-
-            // Keyboard activation: Enter/Space to select, Enter on selected to confirm
-            // Arrow key navigation is handled by delegated listener on the list container
-            listItem._keyHandler = (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    if (listItem.classList.contains(DOM_CLASSES.SELECTED)) {
-                        // Already selected — confirm (like double-click)
-                        this.confirmMiniCycle();
-                    } else {
-                        this._selectRoutine(cycleKey);
-                    }
-                } else if (e.key === 'd' && (e.metaKey || e.ctrlKey)) {
-                    e.preventDefault();
-                    this._selectRoutine(cycleKey);
-                    this.duplicateMiniCycle();
-                } else if (e.key === 'F2') {
-                    e.preventDefault();
-                    this._selectRoutine(cycleKey);
-                    this.renameMiniCycle();
-                } else if (e.key === 'Delete' || e.key === 'Backspace') {
-                    e.preventDefault();
-                    this._selectRoutine(cycleKey);
-                    this.deleteMiniCycle();
-                }
-            };
-            safeAdd(listItem, "keydown", listItem._keyHandler);
-
-            // Double-click to open immediately (cancel pending selection)
-            listItem._dblClickHandler = () => {
+            // Double-tap/click detected (within 300ms)
+            if (timeSinceLastClick < 300) {
                 if (listItem._selectTimeout) {
                     clearTimeout(listItem._selectTimeout);
                     listItem._selectTimeout = null;
                 }
                 this._selectRoutine(cycleKey);
                 this.confirmMiniCycle();
-            };
-            safeAdd(listItem, "dblclick", listItem._dblClickHandler);
+                return;
+            }
 
-            miniCycleList.appendChild(listItem);
-        });
+            // If a routine is already selected, select immediately
+            const hasSelection = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
+            if (hasSelection) {
+                this._selectRoutine(cycleKey);
+                return;
+            }
 
-        this.deps.updateReminderButtons();
+            // No selection — delay to allow double-tap to bypass
+            if (listItem._selectTimeout) clearTimeout(listItem._selectTimeout);
+            listItem._selectTimeout = setTimeout(() => {
+                listItem._selectTimeout = null;
+                this._selectRoutine(cycleKey);
+            }, 300);
+        };
+        safeAdd(listItem, "click", listItem._clickHandler);
 
+        // Keyboard activation
+        listItem._keyHandler = (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (listItem.classList.contains(DOM_CLASSES.SELECTED)) {
+                    this.confirmMiniCycle();
+                } else {
+                    this._selectRoutine(cycleKey);
+                }
+            } else if (e.key === 'd' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                this._selectRoutine(cycleKey);
+                this.duplicateMiniCycle();
+            } else if (e.key === 'F2') {
+                e.preventDefault();
+                this._selectRoutine(cycleKey);
+                this.renameMiniCycle();
+            } else if (e.key === 'Delete' || e.key === 'Backspace') {
+                e.preventDefault();
+                this._selectRoutine(cycleKey);
+                this.deleteMiniCycle();
+            }
+        };
+        safeAdd(listItem, "keydown", listItem._keyHandler);
+
+        // Double-click fallback (desktop)
+        listItem._dblClickHandler = () => {
+            if (listItem._selectTimeout) {
+                clearTimeout(listItem._selectTimeout);
+                listItem._selectTimeout = null;
+            }
+            this._selectRoutine(cycleKey);
+            this.confirmMiniCycle();
+        };
+        safeAdd(listItem, "dblclick", listItem._dblClickHandler);
+
+        miniCycleList.appendChild(listItem);
     }
 
     /**
@@ -2068,11 +2145,11 @@ export class RoutineSwitcher {
         searchInput.value = '';
 
         // Setup input handler (only once)
-        if (!searchInput._searchHandler) {
-            searchInput._searchHandler = (e) => {
+        if (!searchInput._inputHandler) {
+            searchInput._inputHandler = (e) => {
                 this.filterRoutineList(e.target.value);
             };
-            searchInput.addEventListener('input', searchInput._searchHandler);
+            searchInput.addEventListener('input', searchInput._inputHandler);
         }
 
         // Don't auto-focus search — let the user tap it if they want to search
@@ -2138,10 +2215,9 @@ export class RoutineSwitcher {
         this._updateSortButtonStates();
 
         // Setup handlers (only once)
-        if (!sortAlpha._sortHandler) {
-            sortAlpha._sortHandler = () => {
+        if (!sortAlpha._clickHandler) {
+            sortAlpha._clickHandler = () => {
                 if (this._sortMode === 'alpha') {
-                    // Toggle direction
                     this._sortDirection = this._sortDirection === 'asc' ? 'desc' : 'asc';
                 } else {
                     this._sortMode = 'alpha';
@@ -2149,14 +2225,14 @@ export class RoutineSwitcher {
                 }
                 this._updateSortButtonStates();
                 this.loadMiniCycleList();
+                this._savePreferences();
             };
-            sortAlpha.addEventListener('click', sortAlpha._sortHandler);
+            sortAlpha.addEventListener('click', sortAlpha._clickHandler);
         }
 
-        if (!sortRecent._sortHandler) {
-            sortRecent._sortHandler = () => {
+        if (!sortRecent._clickHandler) {
+            sortRecent._clickHandler = () => {
                 if (this._sortMode === 'recent') {
-                    // Toggle direction
                     this._sortDirection = this._sortDirection === 'asc' ? 'desc' : 'asc';
                 } else {
                     this._sortMode = 'recent';
@@ -2164,14 +2240,14 @@ export class RoutineSwitcher {
                 }
                 this._updateSortButtonStates();
                 this.loadMiniCycleList();
+                this._savePreferences();
             };
-            sortRecent.addEventListener('click', sortRecent._sortHandler);
+            sortRecent.addEventListener('click', sortRecent._clickHandler);
         }
 
-        if (!sortSize._sortHandler) {
-            sortSize._sortHandler = () => {
+        if (!sortSize._clickHandler) {
+            sortSize._clickHandler = () => {
                 if (this._sortMode === 'size') {
-                    // Toggle direction
                     this._sortDirection = this._sortDirection === 'asc' ? 'desc' : 'asc';
                 } else {
                     this._sortMode = 'size';
@@ -2179,8 +2255,9 @@ export class RoutineSwitcher {
                 }
                 this._updateSortButtonStates();
                 this.loadMiniCycleList();
+                this._savePreferences();
             };
-            sortSize.addEventListener('click', sortSize._sortHandler);
+            sortSize.addEventListener('click', sortSize._clickHandler);
         }
     }
 
@@ -2270,12 +2347,13 @@ export class RoutineSwitcher {
         filterSelect.value = this._filterMode;
 
         // Setup handler (only once)
-        if (!filterSelect._filterHandler) {
-            filterSelect._filterHandler = (e) => {
+        if (!filterSelect._changeHandler) {
+            filterSelect._changeHandler = (e) => {
                 this._filterMode = e.target.value;
                 this.loadMiniCycleList();
+                this._savePreferences();
             };
-            filterSelect.addEventListener('change', filterSelect._filterHandler);
+            filterSelect.addEventListener('change', filterSelect._changeHandler);
         }
     }
 
