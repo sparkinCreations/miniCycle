@@ -106,7 +106,7 @@
 # • manifest-lite.json            - version field
 #
 # Other pages:
-# • pages/product.html            - ?v= params, meta tags
+# • pages/product.html            - ?v= params, meta tags, JSON-LD softwareVersion
 #
 # Manifests & package:
 # • manifest.json                 - version field
@@ -946,6 +946,7 @@ if [ "$LITE_ONLY" = false ] && should_update "pages/product.html"; then
     elif backup_file "pages/product.html"; then
         do_sed "pages/product.html" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g"
         do_sed "pages/product.html" 's/?v=[0-9.]\{1,\}/?v='"$NEW_VERSION"'/g'
+        do_sed "pages/product.html" 's/"softwareVersion": "[^"]*"/"softwareVersion": "'"$NEW_VERSION"'"/g'
         echo "✅ Updated pages/product.html"
     else
         echo "⚠️  Failed to update pages/product.html"
