@@ -33,7 +33,7 @@
 
 .storage-bar-hint {
     font-size: var(--font-size-xs);
-    color: var(--color-gray-400);
+    color: var(--color-gray-600);
     font-weight: 400;
 }
 
@@ -106,7 +106,7 @@
 
 .storage-bar-text {
     font-size: 0.7rem;
-    color: var(--theme-input-placeholder);
+    color: var(--color-gray-600);
     margin-top: var(--space-1-5);
     text-align: right;
 }

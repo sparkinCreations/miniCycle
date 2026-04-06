@@ -27,18 +27,19 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             line-height: 1.6;
             color: #333;
-            background: #f8f9fa;
+            background: #edf3fb;
         }
 
         /* Header */
         header {
-            background: linear-gradient(135deg, #0088ff 0%, #04a7ff 100%);
+            background: rgba(0, 68, 187, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             color: white;
             padding: 1rem 0;
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
         .header-content {
@@ -56,6 +57,7 @@
             gap: 10px;
             text-decoration: none;
             color: white;
+            padding: 0.5rem 0;
         }
 
         .logo-link img {
@@ -70,15 +72,14 @@
         }
 
         .header-nav a {
-            color: white;
+            color: rgba(255, 255, 255, 0.9);
             text-decoration: none;
             font-weight: 500;
-            opacity: 0.9;
-            transition: opacity 0.2s;
+            transition: color 0.2s;
         }
 
         .header-nav a:hover {
-            opacity: 1;
+            color: white;
         }
 
         .header-nav .cta-btn {
@@ -88,12 +89,14 @@
             border-radius: 25px;
             font-weight: 600;
             text-decoration: none;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s, color 0.2s;
         }
 
         .header-nav .cta-btn:hover {
+            background: transparent;
+            color: white;
+            box-shadow: inset 0 0 0 2px rgba(255,255,255,0.85);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
         /* Main Container */
@@ -109,7 +112,7 @@
         }
 
         section:nth-child(even) {
-            background: white;
+            background: #dce9f6;
         }
 
         section.cta-section {
@@ -142,9 +145,15 @@
             align-items: center;
         }
 
+        .intro-image {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         .intro-text h3 {
             font-size: 1.4rem;
-            color: #0088ff;
+            color: #0044bb;
             margin-bottom: 1rem;
         }
 
@@ -160,18 +169,109 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
         }
 
+        /* Phone mockup frame */
+        .phone-mockup {
+            position: relative;
+            width: 300px;
+            background: #1a1a2e;
+            border-radius: 40px;
+            padding: 14px 10px;
+            box-shadow:
+                0 0 0 2px #3a3a5c,
+                0 0 0 4px #1a1a2e,
+                0 25px 60px rgba(0,0,0,0.35);
+        }
+
+        /* Side buttons */
+        .phone-mockup::before {
+            content: '';
+            position: absolute;
+            left: -4px;
+            top: 80px;
+            width: 4px;
+            height: 32px;
+            background: #3a3a5c;
+            border-radius: 2px 0 0 2px;
+            box-shadow: 0 44px 0 #3a3a5c;
+        }
+
+        .phone-mockup::after {
+            content: '';
+            position: absolute;
+            right: -4px;
+            top: 100px;
+            width: 4px;
+            height: 56px;
+            background: #3a3a5c;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .phone-notch {
+            width: 80px;
+            height: 22px;
+            background: #1a1a2e;
+            border-radius: 0 0 16px 16px;
+            margin: 0 auto 6px;
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .phone-notch::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #2a2a4a;
+            border-radius: 50%;
+        }
+
+        .phone-notch::after {
+            content: '';
+            width: 40px;
+            height: 5px;
+            background: #2a2a4a;
+            border-radius: 3px;
+        }
+
+        .phone-screen {
+            border-radius: 24px;
+            overflow: hidden;
+            background: #000;
+            line-height: 0;
+        }
+
+        .phone-screen video {
+            width: 100%;
+            display: block;
+            margin-top: -28px;
+            margin-bottom: -64px;
+        }
+
+        .phone-home-bar {
+            width: 60px;
+            height: 4px;
+            background: #3a3a5c;
+            border-radius: 2px;
+            margin: 8px auto 0;
+        }
+
         .key-concept {
-            background: linear-gradient(135deg, #0088ff 0%, #04a7ff 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 15px;
-            margin-top: 2rem;
+            padding: 2rem 0 1rem;
+            margin-top: 1rem;
             text-align: center;
         }
 
         .key-concept h4 {
             font-size: 1.3rem;
             margin-bottom: 0.5rem;
+            color: #1a2a3a;
+        }
+
+        .key-concept p {
+            color: #4a5a6a;
         }
 
         .cycle-visual {
@@ -185,7 +285,8 @@
         }
 
         .cycle-visual span {
-            background: rgba(255,255,255,0.2);
+            background: #dce9f6;
+            color: #0044bb;
             padding: 0.5rem 1rem;
             border-radius: 8px;
         }
@@ -198,7 +299,7 @@
         }
 
         .mode-card {
-            background: #f8f9fa;
+            background: white;
             padding: 1.5rem;
             border-radius: 12px;
             text-align: center;
@@ -235,7 +336,7 @@
         }
 
         .feature-card {
-            background: #f0f6ff;
+            background: white;
             padding: 1.5rem;
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
@@ -315,7 +416,7 @@
             margin-bottom: 1rem;
             border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
         }
 
         .faq-question {
@@ -335,7 +436,7 @@
         }
 
         .faq-question:hover {
-            background: #f8f9fa;
+            background: #e4eef8;
         }
 
         .faq-question::after {
@@ -554,7 +655,7 @@
         <div class="header-content">
             <a href="product.html" class="logo-link">
                 <img src="../assets/images/logo/logo.png" alt="miniCycle">
-                <span style="font-size: 1.3rem; font-weight: 600;">miniCycle</span>
+                <img src="../assets/images/logo/App_Name_miniCycle.png" alt="miniCycle" style="height: 28px; width: auto; filter: brightness(0) invert(1);">
             </a>
             <nav class="header-nav" aria-label="Page navigation">
                 <a href="#what-is">What is miniCycle</a>
@@ -568,7 +669,7 @@
 
     <main id="main-content">
     <!-- What is miniCycle -->
-    <section id="what-is">
+    <section id="what-is" style="background: #edf3fb;">
         <div class="container">
             <h2 class="section-title">What is miniCycle?</h2>
             <p class="section-subtitle">A privacy-focused routine manager that handles repeating tasks differently than traditional to-do apps.</p>
@@ -584,9 +685,26 @@
                     </div>
                 </div>
                 <div class="intro-image">
-                    <img src="../assets/images/screenshots/Example/user-manual/v3/main-view.jpg" alt="miniCycle main view showing a Daily Routine with tasks completed and progress tracking">
+                    <div class="phone-mockup">
+                        <div class="phone-notch"></div>
+                        <div class="phone-screen">
+                            <video autoplay loop muted playsinline aria-label="miniCycle auto-reset in action">
+                                <source src="../assets/images/Product/Screen_Recording_Auto_Reset_Focus_h264.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                        <div class="phone-home-bar"></div>
+                    </div>
                 </div>
             </div>
+
+        </div>
+    </section>
+
+    <!-- Three Modes -->
+    <section id="modes" style="background: #dce9f6;">
+        <div class="container">
+            <h2 class="section-title">Three Modes for Different Needs</h2>
+            <p class="section-subtitle">Choose how your routine behaves when you complete tasks.</p>
 
             <div class="key-concept">
                 <h4>The Core Concept</h4>
@@ -599,14 +717,6 @@
                     <span>Repeat</span>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <!-- Three Modes -->
-    <section id="modes" style="background: white;">
-        <div class="container">
-            <h2 class="section-title">Three Modes for Different Needs</h2>
-            <p class="section-subtitle">Choose how your routine behaves when you complete tasks.</p>
 
             <div class="modes-grid">
                 <div class="mode-card">
@@ -696,7 +806,7 @@
     </section>
 
     <!-- Who It's For -->
-    <section id="who-its-for" style="background: white;">
+    <section id="who-its-for" style="background: #dce9f6;">
         <div class="container">
             <h2 class="section-title">Who Is miniCycle For?</h2>
             <p class="section-subtitle">If you repeat the same tasks regularly, miniCycle is built for you.</p>
@@ -866,7 +976,7 @@
 
     <!-- Footer -->
     <footer role="contentinfo">
-        <p>&copy; 2026 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a> | <a href="../lite/miniCycle-lite.html">Lite Version</a> | <a href="../legal/user-manual.html">User Manual</a></p>
+        <p>&copy; 2026 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a> &middot; <a href="../lite/miniCycle-lite.html">Lite Version</a> &middot; <a href="../legal/user-manual.html">User Manual</a></p>
     </footer>
 
     <script src="learn_more.js"></script>

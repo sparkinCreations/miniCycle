@@ -398,7 +398,8 @@ function handleGlobalClickForSwitchModal(event) {
     !event.target.closest(DOM_SELECTORS.SWITCH_BUTTONS) &&
     !themePicker?.contains(event.target) &&
     !event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_LEFT) &&
-    !event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_RIGHT)
+    !event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_RIGHT) &&
+    !event.target.closest(DOM_SELECTORS.RECENT_ROUTINES_SECTION)
   ) {
     // If theme picker is open, just close it — don't deselect
     const isPickerOpen = themePicker && !themePicker.classList.contains(DOM_CLASSES.HIDDEN);

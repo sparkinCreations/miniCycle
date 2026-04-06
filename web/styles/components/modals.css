@@ -88,6 +88,8 @@ dialog.quick-actions-picker-overlay[open] {
     justify-content: center;
     align-items: center;
     animation: fadeIn var(--transition-normal) ease;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
 }
 
 .modal.active,
@@ -112,6 +114,8 @@ dialog.quick-actions-picker-overlay[open] {
     z-index: var(--z-modal-backdrop);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    overflow-x: hidden;
+    overscroll-behavior: contain;
 }
 
 .modal-overlay.hidden {

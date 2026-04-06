@@ -22,7 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 
@@ -1107,6 +1107,11 @@ export class RoutineSwitcher {
 
             state.appState.activeCycleId = cycleKey;
             state.metadata.lastModified = Date.now();
+
+            // Track last accessed time for "Recently Used" in routine switcher
+            if (state.data.cycles[cycleKey]) {
+                state.data.cycles[cycleKey].lastAccessedAt = Date.now();
+            }
         }, false); // deferred save - don't block UI
 
         // ✅ Schedule idle-time save for durability
@@ -1335,12 +1340,13 @@ export class RoutineSwitcher {
                 const clickedItem = event.target.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
                 const clickedActions = event.target.closest(`#${DOM_IDS.SWITCH_ITEMS_ROW}`);
                 const clickedThemePicker = event.target.closest(`#${DOM_IDS.THEME_PICKER_ROW}`);
+                const clickedRecentChip = event.target.closest(DOM_SELECTORS.RECENT_ROUTINES_SECTION);
                 // Check both panel containers (list + preview)
                 const clickedListPanel = event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_LEFT);
                 const clickedPreviewPanel = event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_RIGHT);
 
-                // If clicking on a routine item or actions — let those handlers run
-                if (clickedItem || clickedActions || clickedThemePicker) {
+                // If clicking on a routine item, actions, or recent chip — let those handlers run
+                if (clickedItem || clickedActions || clickedThemePicker || clickedRecentChip) {
                     return;
                 }
 
@@ -1496,6 +1502,47 @@ export class RoutineSwitcher {
             html += `<div class="desktop-preview-date">${dateLabel}: ${formattedDate}</div>`;
         }
         desktopPreview.innerHTML = html;
+    }
+
+    /**
+     * Select a routine by cycle key: highlight in list, update aria, show preview and actions.
+     * Single source of truth for selection logic — used by list item clicks, chip clicks, and keyboard.
+     * @param {string} cycleKey - The cycle storage key to select
+     * @returns {void}
+     */
+    _selectRoutine(cycleKey) {
+        // Deselect all items
+        this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => {
+            item.classList.remove(DOM_CLASSES.SELECTED);
+            item.setAttribute("aria-selected", "false");
+        });
+
+        // Select the matching item in the list
+        const miniCycleList = this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST);
+        const listItem = miniCycleList?.querySelector(DATA_SELECTORS.cycleByKey(cycleKey));
+        if (listItem) {
+            listItem.classList.add(DOM_CLASSES.SELECTED);
+            listItem.setAttribute("aria-selected", "true");
+
+            if (miniCycleList && listItem.id) {
+                miniCycleList.setAttribute('aria-activedescendant', listItem.id);
+            }
+        }
+
+        // Show action buttons
+        const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
+        if (switchItemsRow) {
+            switchItemsRow.style.display = "flex";
+        }
+
+        // Update preview
+        this.updatePreview(cycleKey);
+
+        // Refresh theme picker if open
+        const picker = this.deps.getElementById(DOM_IDS.THEME_PICKER_ROW);
+        if (picker && !picker.classList.contains(DOM_CLASSES.HIDDEN)) {
+            this.openThemePicker(cycleKey);
+        }
     }
 
     /**
@@ -1692,6 +1739,11 @@ export class RoutineSwitcher {
 
         miniCycleList.innerHTML = ""; // Clear the list before repopulating
 
+        // Remove previous "Recently Used" section if present
+        const modalContent = miniCycleList.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT);
+        const prevRecent = modalContent?.querySelector(DOM_SELECTORS.RECENT_ROUTINES_SECTION);
+        if (prevRecent) prevRecent.remove();
+
         // Delegated arrow key navigation for routine list items
         this.deps.safeAddEventListener(miniCycleList, "keydown", (event) => {
             const item = event.target.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
@@ -1721,6 +1773,58 @@ export class RoutineSwitcher {
 
         // ✅ Sort cycles based on current sort mode
         const sortedCycles = this._sortCycles(filteredCycles);
+
+        // ✅ Render "Recently Used" section (3+ routines, excludes current)
+        const activeCycleIdForRecent = currentState.appState?.activeCycleId;
+        if (sortedCycles.length >= 3) {
+            const recentCycles = sortedCycles
+                .filter(([key]) => key !== activeCycleIdForRecent)
+                .filter(([, data]) => data.lastAccessedAt)
+                .sort((a, b) => (b[1].lastAccessedAt || 0) - (a[1].lastAccessedAt || 0))
+                .slice(0, 3);
+
+            if (recentCycles.length > 0) {
+                const recentSection = document.createElement("div");
+                recentSection.className = DOM_CLASSES.RECENT_ROUTINES_SECTION;
+
+                const recentLabel = document.createElement("div");
+                recentLabel.className = "recent-routines-label";
+                recentLabel.textContent = getLabel('quickAction.recentlyUsed');
+                recentSection.appendChild(recentLabel);
+
+                const chipContainer = document.createElement("div");
+                chipContainer.className = "recent-routines-chips";
+
+                recentCycles.forEach(([cycleKey, cycleData]) => {
+                    const chip = document.createElement("button");
+                    chip.className = "recent-routine-chip";
+                    chip.dataset.cycleKey = cycleKey;
+                    chip.textContent = cycleData.title || cycleKey;
+                    chip.setAttribute('type', 'button');
+                    chip.setAttribute('title', cycleData.title || cycleKey);
+
+                    this.deps.safeAddEventListener(chip, 'click', () => {
+                        this._selectRoutine(cycleKey);
+                        const listItem = miniCycleList.querySelector(DATA_SELECTORS.cycleByKey(cycleKey));
+                        if (listItem) {
+                            listItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                        }
+                    });
+
+                    chipContainer.appendChild(chip);
+                });
+
+                recentSection.appendChild(chipContainer);
+
+                // Insert above the two-column body (Routines | Preview), not inside it
+                const switcherBody = modalContent?.querySelector(DOM_SELECTORS.ROUTINE_SWITCHER_BODY);
+                if (switcherBody) {
+                    switcherBody.parentNode.insertBefore(recentSection, switcherBody);
+                } else {
+                    miniCycleList.parentNode.insertBefore(recentSection, miniCycleList);
+                }
+            }
+        }
 
         // ✅ Use sorted entries to render list
         sortedCycles.forEach(([cycleKey, cycleData], index) => {
@@ -1772,6 +1876,17 @@ export class RoutineSwitcher {
             sizeSpan.className = "cycle-item-size";
             sizeSpan.textContent = `~${formatBytes(totalSize)}`;
 
+            // Mark the currently active routine
+            if (isActiveCycle) {
+                listItem.classList.add(DOM_CLASSES.CURRENT_ROUTINE);
+
+                const activeIndicator = document.createElement("span");
+                activeIndicator.className = "current-routine-badge";
+                activeIndicator.textContent = getLabel('nav.currentBadge');
+                activeIndicator.setAttribute('aria-label', getLabel('stats.currentRoutine'));
+                leftSide.appendChild(activeIndicator);
+            }
+
             listItem.appendChild(leftSide);
             listItem.appendChild(sizeSpan);
 
@@ -1781,33 +1896,7 @@ export class RoutineSwitcher {
                 // Skip selection when clicking inside an inline edit input
                 if (event?.target?.classList?.contains('cycle-item-edit-input')) return;
 
-                this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => {
-                    item.classList.remove(DOM_CLASSES.SELECTED);
-                    item.setAttribute("aria-selected", "false");
-                });
-                listItem.classList.add(DOM_CLASSES.SELECTED);
-                listItem.setAttribute("aria-selected", "true");
-
-                // Update aria-activedescendant on the listbox
-                const listbox = this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST);
-                if (listbox && listItem.id) {
-                    listbox.setAttribute('aria-activedescendant', listItem.id);
-                }
-
-                // Show preview & buttons
-                const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
-                if (switchItemsRow) {
-                    switchItemsRow.style.display = "flex";
-                }
-
-                // ✅ Pass the cycle key for Schema 2.5
-                this.updatePreview(cycleKey);
-
-                // If theme picker is open, refresh it for the newly selected routine
-                const picker = this.deps.getElementById(DOM_IDS.THEME_PICKER_ROW);
-                if (picker && !picker.classList.contains(DOM_CLASSES.HIDDEN)) {
-                    this.openThemePicker(cycleKey);
-                }
+                this._selectRoutine(cycleKey);
             };
             safeAdd(listItem, "click", listItem._clickHandler);
 
