@@ -1368,7 +1368,8 @@ export const DEFAULT_LABELS = deepFreeze({
         addTaskToggle:  'Add Task',
         darkModeAria:   'Toggle dark mode',
         personalizationAria: 'Personalization',
-        appSubtitle:    'ROUTINE MANAGER'
+        appSubtitle:    'ROUTINE MANAGER',
+        currentBadge:   'Current'
     },
 
     // ========================================================================

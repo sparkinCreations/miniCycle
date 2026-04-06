@@ -392,6 +392,7 @@ export const DOM_CLASSES = Object.freeze({
     // ---- State ----
     ACTIVE: 'active',
     SELECTED: 'selected',
+    CURRENT_ROUTINE: 'current-routine',
     CHECKED: 'checked',
     DISABLED: 'disabled',
 
@@ -464,6 +465,7 @@ export const DOM_CLASSES = Object.freeze({
 
     // ---- Routine Switcher ----
     MINI_CYCLE_SWITCH_ITEM: 'mini-cycle-switch-item',
+    RECENT_ROUTINES_SECTION: 'recent-routines-section',
     MINICYCLE_INPUT_ERROR: 'miniCycle-input-error',
 
     // ---- Task Boundary Markers ----
@@ -1056,6 +1058,8 @@ export const DOM_SELECTORS = Object.freeze({
     MINI_CYCLE_SWITCH_TITLE: '.mini-cycle-switch-title',
     MINI_CYCLE_SWITCH_ITEM: '.mini-cycle-switch-item',
     MINI_CYCLE_SWITCH_ITEM_SELECTED: '.mini-cycle-switch-item.selected',
+    RECENT_ROUTINES_SECTION: '.recent-routines-section',
+    ROUTINE_SWITCHER_BODY: '.routine-switcher-body',
     CYCLE_ITEM_TITLE: '.cycle-item-title',
     MINI_CYCLE_OVERLAY: '.miniCycle-prompt-dialog',
     MINI_MODAL_OVERLAY: '.mini-modal-dialog',
@@ -1322,6 +1326,7 @@ export const DATA_SELECTORS = Object.freeze({
     menuSectionByName: (name) => `.menu-section[data-section="${name}"]`,
     settingsSectionByName: (name) => `.settings-section[data-section="${name}"]`,
     preferencesSectionByName: (name) => `.preferences-section[data-section="${name}"], .preferences-preview-section[data-section="${name}"]`,
+    cycleByKey: (key) => `[data-cycle-key="${key}"]`,
     // Data attribute names (for setAttribute/removeAttribute/getAttribute)
     ATTR_RECURRING_SETTINGS: 'data-recurring-settings'
 });
