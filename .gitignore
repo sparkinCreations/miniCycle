@@ -1,3 +1,6 @@
 # OS files
 .DS_Store
 Thumbs.db
+
+# Private developer docs
+web/docs/DEVELOPER_PROFILE.md
