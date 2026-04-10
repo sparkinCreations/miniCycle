@@ -69,6 +69,21 @@
         return months[month] + ' ' + day + ', ' + parts[0];
     }
 
+    // Bullets we don't want to surface on the public changelog — they're
+    // internal version-bump commits that tell users nothing useful.
+    var NOISE_BULLET_PATTERNS = [
+        /^(?:feat|chore|fix)?:?\s*update\s+(?:app|software)\s+version\b/i,
+        /^(?:feat|chore|fix)?:?\s*bump\s+version\b/i,
+        /^(?:feat|chore|fix)?:?\s*version\s+bump\b/i
+    ];
+
+    function isNoiseBullet(text) {
+        for (var k = 0; k < NOISE_BULLET_PATTERNS.length; k++) {
+            if (NOISE_BULLET_PATTERNS[k].test(text)) return true;
+        }
+        return false;
+    }
+
     function parseChangelog(markdown) {
         var entries = [];
         var sections = markdown.split(/^## /m);
@@ -88,10 +103,14 @@
             for (var j = 1; j < lines.length; j++) {
                 var line = lines[j].trim();
                 if (line.startsWith('- ')) {
-                    changes.push(line.substring(2));
+                    var bullet = line.substring(2);
+                    if (!isNoiseBullet(bullet)) {
+                        changes.push(bullet);
+                    }
                 }
             }
 
+            // Skip entries that are entirely version-bump noise (e.g. v2.187)
             if (changes.length > 0) {
                 entries.push({ version: version, date: date, changes: changes });
             }

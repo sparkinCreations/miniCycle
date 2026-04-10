@@ -37,7 +37,7 @@
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
       "creator": { "@type": "Organization", "name": "sparkinCreations", "url": "https://sparkincreations.com" },
       "screenshot": "https://minicycle.app/assets/images/Product/Mini_Cycle_List.png",
-      "softwareVersion": "2.191",
+      "softwareVersion": "2.193",
       "datePublished": "2025",
       "featureList": ["Auto-Reset Workflow Cycles","Recurring Task Scheduling","Task Search, Filter & Sort","Drag-and-Drop Reordering","Vocabulary Theme System","Achievement & Milestone Tracking","Undo/Redo History","Smart Routine Reminders","Export & Import .mcyc Files","Dark Mode & Custom Themes","Cross-Platform PWA"]
     }
@@ -182,7 +182,8 @@
         .why-line { font-size: 1.05rem; color: var(--color-text-muted); margin-bottom: var(--space-xs); }
         .why-line-bold { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 600; color: var(--color-primary); margin-top: var(--space-sm); }
         .usecase-row { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-xs); margin-top: var(--space-md); }
-        .usecase-chip { background: var(--color-bg); border: 1px solid var(--color-border); padding: 0.5rem 1rem; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 500; color: var(--color-text); }
+        .usecase-chip { background: var(--color-bg); border: 1px solid var(--color-border); padding: 0.5rem 1rem; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 500; color: var(--color-text); display: inline-flex; align-items: center; gap: 0.5rem; }
+        .usecase-chip svg { width: 17px; height: 17px; color: var(--color-primary); flex-shrink: 0; }
 
         /* ============================
            Demos
@@ -231,9 +232,10 @@
         .features-section { background: #edf3fb; }
         .features-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-sm); }
         .feature-card { background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius); padding: var(--space-md); box-shadow: var(--shadow-card); }
-        .feature-card h4 { font-family: var(--font-heading); font-size: 0.95rem; font-weight: 600; margin-bottom: var(--space-xs); color: var(--color-text-dark); display: flex; align-items: center; gap: var(--space-xs); }
+        .feature-card h4 { font-family: var(--font-heading); font-size: 0.95rem; font-weight: 600; margin-bottom: var(--space-xs); color: var(--color-text-dark); display: flex; align-items: center; gap: 0.65rem; }
         .feature-card p { font-size: 0.85rem; color: var(--color-text-muted); }
-        .feature-icon { font-size: 1.1rem; }
+        .feature-icon { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; background: rgba(0, 136, 255, 0.1); color: var(--color-primary); flex-shrink: 0; }
+        .feature-icon svg { width: 18px; height: 18px; }
 
         /* ============================
            Built Different (Story)
@@ -448,10 +450,22 @@
                 <p class="why-line why-line-bold">miniCycle is for routines that never miss a step.</p>
             </div>
             <div class="usecase-row reveal">
-                <span class="usecase-chip">🏥 Nurse shift rounds</span>
-                <span class="usecase-chip">🔧 Equipment inspections</span>
-                <span class="usecase-chip">📋 Opening &amp; closing procedures</span>
-                <span class="usecase-chip">🏋️ Workout routines</span>
+                <span class="usecase-chip">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3a1 1 0 0 1 1-1h1.5v4A3.5 3.5 0 0 0 10 9.5v0A3.5 3.5 0 0 0 13.5 6V2H15a1 1 0 0 1 1 1v3a6 6 0 0 1-6 6v0a6 6 0 0 1-6-6z" fill="currentColor" fill-opacity="0.12"/><path d="M10 12v3a5 5 0 0 0 5 5v0a5 5 0 0 0 5-5v-2"/><circle cx="20" cy="10" r="2" fill="currentColor" fill-opacity="0.2"/><path d="M20 12v0"/></svg>
+                    Nurse shift rounds
+                </span>
+                <span class="usecase-chip">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.18"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    Equipment inspections
+                </span>
+                <span class="usecase-chip">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="18" rx="2" fill="currentColor" fill-opacity="0.12"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8.5 12l1.5 1.5L13 11"/><line x1="14.5" y1="12.5" x2="16.5" y2="12.5"/><path d="M8.5 17l1.5 1.5L13 16"/><line x1="14.5" y1="17.5" x2="16.5" y2="17.5"/></svg>
+                    Opening &amp; closing procedures
+                </span>
+                <span class="usecase-chip">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="8" width="2.5" height="8" rx="0.5" fill="currentColor" fill-opacity="0.2"/><rect x="4" y="10" width="2" height="4" rx="0.5" fill="currentColor" fill-opacity="0.1"/><line x1="6" y1="12" x2="18" y2="12" stroke-width="2.6"/><rect x="18" y="10" width="2" height="4" rx="0.5" fill="currentColor" fill-opacity="0.1"/><rect x="20" y="8" width="2.5" height="8" rx="0.5" fill="currentColor" fill-opacity="0.2"/></svg>
+                    Workout routines
+                </span>
             </div>
         </div>
     </section>
@@ -557,19 +571,39 @@
             <h2 class="section-title">Features</h2>
             <div class="features-grid">
                 <div class="feature-card reveal">
-                    <h4><span class="feature-icon" aria-hidden="true">🔄</span> Auto-Reset</h4>
+                    <h4>
+                        <span class="feature-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12"/><path d="M21 12a9 9 0 1 1-3.5-7.1"/><path d="M21 3v5h-5"/><path d="M12 7v5l3 2"/></svg>
+                        </span>
+                        Auto-Reset
+                    </h4>
                     <p>Complete your routine. It resets. No manual cleanup.</p>
                 </div>
                 <div class="feature-card reveal">
-                    <h4><span class="feature-icon" aria-hidden="true">🔒</span> Private by architecture</h4>
+                    <h4>
+                        <span class="feature-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z" fill="currentColor" fill-opacity="0.12"/><rect x="9" y="11" width="6" height="6" rx="1"/><path d="M10.5 11V9.5a1.5 1.5 0 0 1 3 0V11"/><circle cx="12" cy="14" r="0.8" fill="currentColor"/></svg>
+                        </span>
+                        Private by architecture
+                    </h4>
                     <p>Your data never leaves your device. There is no server.</p>
                 </div>
                 <div class="feature-card reveal">
-                    <h4><span class="feature-icon" aria-hidden="true">📱</span> Works offline</h4>
+                    <h4>
+                        <span class="feature-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5" fill="currentColor" fill-opacity="0.12"/><line x1="5" y1="18" x2="19" y2="18"/><line x1="11" y1="20.5" x2="13" y2="20.5"/><path d="M9 11l2 2 4-4"/></svg>
+                        </span>
+                        Works offline
+                    </h4>
                     <p>Install as a PWA. No internet required. No account needed.</p>
                 </div>
                 <div class="feature-card reveal">
-                    <h4><span class="feature-icon" aria-hidden="true">📤</span> Share routines</h4>
+                    <h4>
+                        <span class="feature-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg>
+                        </span>
+                        Share routines
+                    </h4>
                     <p>Export and import .mcyc files. Share routines with your team.</p>
                 </div>
             </div>

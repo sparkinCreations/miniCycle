@@ -135,3 +135,13 @@
     Cache-Control = "no-cache, no-store, must-revalidate"
     Pragma = "no-cache"
     Expires = "0"
+
+[[headers]]
+  for = "/pages/*.js"
+  [headers.values]
+    # Marketing/admin page scripts (dashboard.js, product.js, learn_more.js) are
+    # not part of the offline PWA — they require network anyway. Without this
+    # override, the general *.js rule caches them for 24h and forces hard reloads.
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
