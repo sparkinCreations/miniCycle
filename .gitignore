@@ -4,3 +4,12 @@ Thumbs.db
 
 # Private developer docs
 web/docs/DEVELOPER_PROFILE.md
+
+# Dependencies
+web/blog/node_modules/
+
+# Test output (regenerated every run)
+web/test-results/
+
+# Claude Code session files
+web/.claude/
