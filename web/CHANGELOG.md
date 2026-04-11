@@ -1,3 +1,10 @@
+## [2.195] - 2026-04-11
+- Remove DEVELOPER_PROFILE.md from tracking (again)
+- Refactor code structure and remove redundant changes
+- Remove blog node_modules, test-results, and .claude from tracking
+- version changes
+
+
 ## [2.194] - 2026-04-11
 - changed emojis on product page to SVG art
 
