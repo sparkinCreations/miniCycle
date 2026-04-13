@@ -245,21 +245,60 @@
         }
     }
 
-    fetch('../CHANGELOG.md')
-        .then(function (response) { return response.text(); })
-        .then(function (markdown) {
-            var entries = parseChangelog(markdown);
-            if (entries.length > 0) {
-                renderChangelog(entries);
+    // =========================================================
+    // Changelog toggle — hidden by default, revealed on click
+    // =========================================================
+    var changelogContainer = document.getElementById('changelogContainer');
+    var changelogToggleBtn = document.getElementById('changelogToggleBtn');
+    var changelogLoaded = false;
+    var changelogOpen = false;
+
+    function openChangelog() {
+        changelogOpen = true;
+        changelogContainer.classList.add('open');
+        changelogToggleBtn.textContent = 'Hide changelog';
+    }
+
+    function closeChangelog() {
+        changelogOpen = false;
+        changelogContainer.classList.remove('open');
+        changelogToggleBtn.textContent = 'View full changelog';
+    }
+
+    function loadAndShowChangelog() {
+        if (!changelogLoaded) {
+            changelogLoaded = true;
+            fetch('../CHANGELOG.md')
+                .then(function (response) { return response.text(); })
+                .then(function (markdown) {
+                    var entries = parseChangelog(markdown);
+                    if (entries.length > 0) {
+                        renderChangelog(entries);
+                    } else {
+                        document.getElementById('changelogList').innerHTML =
+                            '<p style="text-align:center; color:#888;">No changelog entries yet.</p>';
+                    }
+                    openChangelog();
+                })
+                .catch(function () {
+                    document.getElementById('changelogList').innerHTML =
+                        '<p style="text-align:center; color:#888;">Could not load changelog.</p>';
+                    openChangelog();
+                });
+        } else {
+            openChangelog();
+        }
+    }
+
+    if (changelogToggleBtn) {
+        changelogToggleBtn.addEventListener('click', function () {
+            if (changelogOpen) {
+                closeChangelog();
             } else {
-                document.getElementById('changelogList').innerHTML =
-                    '<p style="text-align:center; color:#888;">No changelog entries yet.</p>';
+                loadAndShowChangelog();
             }
-        })
-        .catch(function () {
-            document.getElementById('changelogList').innerHTML =
-                '<p style="text-align:center; color:#888;">Could not load changelog.</p>';
         });
+    }
 
     // Auto-open changelog if linked via hash
     if (window.location.hash === '#changelog') {
@@ -268,11 +307,7 @@
             if (changelogSection) {
                 changelogSection.scrollIntoView({ behavior: 'smooth' });
             }
-            // Open the first entry
-            var firstItem = document.querySelector('.changelog-item');
-            if (firstItem && !firstItem.classList.contains('active')) {
-                firstItem.querySelector('.changelog-question').click();
-            }
+            loadAndShowChangelog();
         }, 800);
     }
 

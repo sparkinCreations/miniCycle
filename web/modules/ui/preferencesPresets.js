@@ -141,7 +141,7 @@ const QUICK_PRESETS = {
             statsText: '#2c3e50',
             statsProgress: '#0984e3',
             statsDoughnut: '#00cec9',
-            panelText: '#ffffff'
+            panelText: '#1a3a5c'
         }
     },
     forest: {
@@ -216,7 +216,7 @@ const QUICK_PRESETS = {
             statsText: '#1d1d1f',
             statsProgress: '#007aff',
             statsDoughnut: '#34c759',
-            panelText: '#ffffff'
+            panelText: '#1d1d1f'
         }
     },
     goldenGlow: {
@@ -241,7 +241,7 @@ const QUICK_PRESETS = {
             statsText: '#5c4a1f',
             statsProgress: '#daa520',
             statsDoughnut: '#c9a227',
-            panelText: '#ffffff'
+            panelText: '#4a3810'
         }
     },
     darkOcean: {

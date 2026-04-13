@@ -37,7 +37,7 @@
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
       "creator": { "@type": "Organization", "name": "sparkinCreations", "url": "https://sparkincreations.com" },
       "screenshot": "https://minicycle.app/assets/images/Product/Mini_Cycle_List.png",
-      "softwareVersion": "2.195",
+      "softwareVersion": "2.196",
       "datePublished": "2025",
       "featureList": ["Auto-Reset Workflow Cycles","Recurring Task Scheduling","Task Search, Filter & Sort","Drag-and-Drop Reordering","Vocabulary Theme System","Achievement & Milestone Tracking","Undo/Redo History","Smart Routine Reminders","Export & Import .mcyc Files","Dark Mode & Custom Themes","Cross-Platform PWA"]
     }
@@ -250,10 +250,30 @@
         .story-quote { font-size: 0.95rem; opacity: 0.8; font-style: italic; max-width: 440px; margin: 0 auto; line-height: 1.7; }
 
         /* ============================
-           Changelog
+           What's New — Timeline + Changelog
            ============================ */
         .changelog-section { background: #dce9f6; }
-        .changelog-intro { text-align: center; font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: var(--space-md); }
+        .changelog-intro { text-align: center; font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: var(--space-lg); }
+
+        /* Timeline */
+        .whats-new-timeline { max-width: 600px; margin: 0 auto var(--space-lg); position: relative; padding-left: 28px; }
+        .whats-new-timeline::before { content: ''; position: absolute; left: 7px; top: 8px; bottom: 8px; width: 2px; background: var(--color-primary); opacity: 0.25; border-radius: 1px; }
+        .timeline-item { position: relative; padding-bottom: 1.4rem; }
+        .timeline-item:last-child { padding-bottom: 0; }
+        .timeline-item::before { content: ''; position: absolute; left: -24px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--color-primary); border: 2px solid #dce9f6; }
+        .timeline-item:first-child::before { background: var(--color-primary); box-shadow: 0 0 0 3px rgba(0, 136, 255, 0.2); }
+        .timeline-date { font-size: 0.75rem; color: var(--color-text-light); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.15rem; }
+        .timeline-title { font-family: var(--font-heading); font-size: 0.95rem; font-weight: 600; color: var(--color-text-dark); margin-bottom: 0.15rem; }
+        .timeline-desc { font-size: 0.85rem; color: var(--color-text-muted); line-height: 1.5; }
+
+        /* Changelog toggle */
+        .changelog-toggle-btn { display: block; margin: 0 auto var(--space-md); background: transparent; border: 1px solid var(--color-primary); color: var(--color-primary); padding: 0.5rem 1.4rem; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.2s, color 0.2s; font-family: inherit; }
+        .changelog-toggle-btn:hover { background: var(--color-primary); color: var(--color-white); }
+        .changelog-container { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out; }
+        .changelog-container.open { max-height: 2000px; overflow-y: auto; transition: max-height 0.5s ease-in; }
+        .changelog-container::-webkit-scrollbar { width: 5px; }
+        .changelog-container::-webkit-scrollbar-track { background: transparent; }
+        .changelog-container::-webkit-scrollbar-thumb { background: rgba(0, 136, 255, 0.2); border-radius: 3px; }
         .changelog-list { max-width: 700px; margin: 0 auto; }
         .changelog-item { background: var(--color-bg); margin-bottom: 0.5rem; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--color-border); }
         .changelog-question { width: 100%; padding: 0.8rem 1.2rem; background: transparent; border: none; text-align: left; font-size: 0.9rem; font-weight: 600; color: var(--color-text-dark); cursor: pointer; display: flex; flex-direction: column; align-items: stretch; gap: 0.25rem; transition: background 0.2s; font-family: inherit; }
@@ -633,14 +653,46 @@
         </div>
     </section>
 
-    <!-- Changelog -->
+    <!-- What's New -->
     <section id="changelog" class="changelog-section">
         <div class="container">
             <h2 class="section-title">What's New</h2>
             <p class="changelog-intro">Built by one person, shipped consistently.</p>
-            <div class="changelog-list" id="changelogList">
-                <div class="changelog-item">
-                    <button type="button" class="changelog-question">Loading...</button>
+
+            <div class="whats-new-timeline reveal">
+                <div class="timeline-item">
+                    <div class="timeline-date">Apr 2026</div>
+                    <div class="timeline-title">Completed Tasks Dropdown</div>
+                    <div class="timeline-desc">Collapse finished tasks to focus on what's left. Keeps your routine clean without losing progress.</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">Mar 2026</div>
+                    <div class="timeline-title">Vocabulary Theme System</div>
+                    <div class="timeline-desc">Unlock themed language and colors as you complete cycles. Your fitness routine becomes a workout tracker.</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">Mar 2026</div>
+                    <div class="timeline-title">Accessibility Settings</div>
+                    <div class="timeline-desc">Reduced motion, high contrast mode, and adjustable font sizes. Built for everyone.</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">Feb 2026</div>
+                    <div class="timeline-title">Undo/Redo History</div>
+                    <div class="timeline-desc">Full state snapshots with one-tap undo. Never lose progress to an accidental tap.</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">Jan 2026</div>
+                    <div class="timeline-title">Achievement System</div>
+                    <div class="timeline-desc">Milestones, unlock tracking, and gamification rewards that grow with your consistency.</div>
+                </div>
+            </div>
+
+            <button type="button" class="changelog-toggle-btn" id="changelogToggleBtn">View full changelog</button>
+            <div class="changelog-container" id="changelogContainer">
+                <div class="changelog-list" id="changelogList">
+                    <div class="changelog-item">
+                        <button type="button" class="changelog-question">Loading...</button>
+                    </div>
                 </div>
             </div>
         </div>
