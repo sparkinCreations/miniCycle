@@ -11,7 +11,7 @@
     display: block;
     position: fixed;
     bottom: 18px;
-    color: var(--color-white);
+    color: var(--pref-panel-text, var(--color-white));
     text-align: center;
     font-size: 12px;
     font-family: 'Poppins', sans-serif;
@@ -29,11 +29,11 @@
     opacity: 0.8;
     transition: opacity var(--transition-normal) ease-in-out;
     align-items: center;
-    color: var(--color-white);
+    color: var(--pref-panel-text, var(--color-white));
 }
 
 #copyright a {
-    color: var(--color-white);
+    color: var(--pref-panel-text, var(--color-white));
     text-decoration: none;
 }
 
@@ -55,7 +55,7 @@
     opacity: 0.8;
     transition: opacity var(--transition-normal) ease-in-out;
     align-items: center;
-    color: var(--color-white);
+    color: var(--pref-panel-text, var(--color-white));
     z-index: var(--z-content);
 }
 
@@ -65,7 +65,7 @@
 }
 
 .footer-item a {
-    color: var(--color-white);
+    color: var(--pref-panel-text, var(--color-white));
     text-decoration: none;
 }
 
@@ -79,7 +79,7 @@
 .footer-item button {
     background: none;
     border: none;
-    color: var(--color-white);
+    color: var(--pref-panel-text, var(--color-white));
     text-decoration: none;
     cursor: pointer;
     font: inherit;

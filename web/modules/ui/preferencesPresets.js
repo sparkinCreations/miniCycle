@@ -198,16 +198,16 @@ const QUICK_PRESETS = {
         name: 'Professional',
         shortName: 'Pro',
         title: 'Clean minimal look',
-        swatch: ['#007aff', '#f5f5f7'],
+        swatch: ['#007aff', '#b7c3d1'],
         colors: {
-            appBg: '#f5f5f7',
+            appBg: '#b7c3d1',
             taskListBg: '#ffffff',
-            taskBg: '#ffffff',
+            taskBg: '#d3dbe4',
             taskText: '#1d1d1f',
-            titleBg: '#ffffff',
+            titleBg: '#f0f2f5',
             titleText: '#1d1d1f',
             checkboxBg: '#007aff',
-            checkboxIncompleteBg: '#d1d1d6',
+            checkboxIncompleteBg: '#c7c7cc',
             checkmark: '#ffffff',
             completeBtn: '#34c759',
             clearBtn: '#007aff',
@@ -216,7 +216,9 @@ const QUICK_PRESETS = {
             statsText: '#1d1d1f',
             statsProgress: '#007aff',
             statsDoughnut: '#34c759',
-            panelText: '#1d1d1f'
+            panelText: '#2c2c2e',
+            celebrationBg: '#4c76ae',
+            resetFlash: '#405f87'
         }
     },
     goldenGlow: {

@@ -1,3 +1,7 @@
+## [2.197] - 2026-04-13
+- feat: Enhance changelog section with timeline and toggle functionality
+
+
 ## [2.191] - 2026-04-06
 - feat: Integrate completed tasks dropdown functionality
 - feat: update software version to 2.190 in product page and enhance version updater script
