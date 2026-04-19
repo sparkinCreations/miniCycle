@@ -1120,24 +1120,35 @@ async setDefaultPosition(notificationContainer) {
     // Store cleanup function in WeakMap
     this._activeListeners.set(notificationContainer, cleanup);
 
-    // Use MutationObserver to detect when notification is removed
+    // Use MutationObserver to detect when the container is TRULY removed
+    // from the document (system teardown), not just reparented. `appendChild`
+    // to move an element fires a removal mutation on the old parent — we need
+    // to distinguish that from an actual removal, or reparenting the container
+    // (e.g. NotificationDialogHost moves it into an open modal) would nuke
+    // the drag listeners.
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         for (const node of mutation.removedNodes) {
           if (node === notificationContainer || node.contains(notificationContainer)) {
-            cleanup();
-            observer.disconnect();
+            // Reparenting: the container is removed from old parent then
+            // appended to new parent in the same microtask. Defer the check
+            // so we see the final state.
+            queueMicrotask(() => {
+              if (!notificationContainer.isConnected) {
+                cleanup();
+                observer.disconnect();
+              }
+            });
             return;
           }
         }
       }
     });
 
-    // Observe the parent for child removal
-    if (notificationContainer.parentNode) {
-      observer.observe(notificationContainer.parentNode, { childList: true });
-      cleanupFunctions.push(() => observer.disconnect());
-    }
+    // Observe the document root so the observer keeps working when the
+    // container is moved to a new parent (e.g., into an open modal dialog).
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+    cleanupFunctions.push(() => observer.disconnect());
 
   }
 

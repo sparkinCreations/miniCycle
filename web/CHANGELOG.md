@@ -1,3 +1,8 @@
+## [2.198] - 2026-04-19
+- feat: Implement features carousel with infinite loop and auto-advance functionality
+- style: Update color variables in footer and quick presets for consistency
+
+
 ## [2.197] - 2026-04-13
 - feat: Enhance changelog section with timeline and toggle functionality
 

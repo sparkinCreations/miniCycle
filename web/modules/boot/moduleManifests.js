@@ -191,6 +191,17 @@ export const MODULE_MANIFESTS = {
         api: 'ui'
     },
 
+    notificationDialogHost: {
+        path: '../ui/notificationDialogHost.js',
+        phase: PHASES.THEME_VISUAL,
+        requires: [],
+        optionalDeps: ['getBody', 'waitForCore'],
+        provides: [],
+        provideInstance: 'notificationDialogHost',
+        api: 'ui',
+        after: ['notifications', 'modalManager']
+    },
+
     // =========================================================================
     // PHASE 3: TASK MANAGEMENT
     // =========================================================================

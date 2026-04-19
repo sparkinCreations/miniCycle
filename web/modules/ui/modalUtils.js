@@ -24,14 +24,17 @@ export function hasActiveNotifications() {
 
 /**
  * Check if a click event's coordinates overlap any visible notification.
- * The notification container is a popover in the top layer, so clicking on a
- * notification fires BOTH a click on the notification AND a separate click on
- * the dialog's ::backdrop. This function lets backdrop click handlers detect
- * that the user was interacting with a notification, not dismissing the modal.
  *
- * If the click lands on a notification's close button (✕/✖), the notification
- * is programmatically dismissed — since the dialog's inert behavior prevents
- * the close button from receiving the event directly.
+ * Primary fix for notification-while-modal-open is `notificationDialogHost.js`,
+ * which re-parents the container into the topmost modal so notifications are
+ * interactive (drag, action buttons, close). This coordinate-based function
+ * remains as a defensive fallback for:
+ *   - Browsers where the host's MutationObserver fires too late on a given
+ *     event (rare race between showModal and backdrop click).
+ *   - Legacy non-modal containers still managed through `modalManager`
+ *     backdrop handlers.
+ *   - Guarding against closing a modal when the user clicked a notification
+ *     that happens to overlap the dialog's ::backdrop.
  *
  * @param {MouseEvent} event - The click event from the dialog handler
  * @returns {boolean} True if the click coordinates overlap a notification
