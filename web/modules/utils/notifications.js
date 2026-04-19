@@ -37,6 +37,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { reshowPopover } from './popoverUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -341,19 +342,12 @@ export class MiniCycleNotifications {
 
   /**
    * Ensure notification container is in the browser's top layer above any open
-   * <dialog> modals. Native showModal() places dialogs in the top layer, which
-   * renders above all normal DOM z-index values. Using popover="manual" puts
-   * the container in the same top layer, and re-showing it moves it on top.
-   * @param {HTMLElement} container - The notification container element
+   * <dialog> modals. Native showModal() places dialogs in the top layer;
+   * re-showing the popover-attributed container moves it on top.
+   * @param {HTMLElement} container
    */
   _ensureAboveDialogs(container) {
-    if (!container?.hasAttribute('popover')) return;
-    try {
-      if (container.matches(':popover-open')) container.hidePopover();
-      container.showPopover();
-    } catch (e) {
-      // Popover API not supported — falls back to normal z-index stacking
-    }
+    reshowPopover(container);
   }
 
   /**
@@ -963,17 +957,30 @@ async setDefaultPosition(notificationContainer) {
     // ✅ FIX #2: Track cleanup functions for this notification
     const cleanupFunctions = [];
 
-    // Mouse dragging
-    const mouseDownHandler = (e) => {
+    // Unified pointer-based drag (mouse + touch + pen).
+    //
+    // Why pointer events (not mousedown+touchstart): when a native <dialog>
+    // modal is open, everything outside the dialog's subtree is inert, and
+    // the browser suppresses mouse/pointer events over inert areas. That
+    // used to break drag: the cursor would leave the dialog onto the
+    // backdrop, mousemove stops firing, drag freezes. setPointerCapture on
+    // pointerdown routes all subsequent pointer events for that gesture to
+    // the capturing element regardless of hit-target inertness — drag works
+    // anywhere on the viewport, including over the modal backdrop.
+    const pointerDownHandler = (e) => {
+      // Only primary button for mouse input
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+
       const isInteractive = interactiveSelectors.some(selector =>
         e.target.matches(selector) || e.target.closest(selector)
       );
       if (isInteractive) return;
 
       let dragStarted = false;
-      let startX = e.clientX;
-      let startY = e.clientY;
-      const dragThreshold = 5;
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const dragThreshold = e.pointerType === 'touch' ? 8 : 5;
+      const pointerId = e.pointerId;
 
       const rect = notificationContainer.getBoundingClientRect();
       const offsetX = e.clientX - rect.left;
@@ -984,17 +991,26 @@ async setDefaultPosition(notificationContainer) {
           dragStarted = true;
           this.setDraggingState(true);
           notificationContainer.classList.add(DOM_CLASSES.DRAGGING);
-          document.body.style.userSelect = 'none';
+          if (e.pointerType === 'touch') {
+            document.body.style.overflow = 'hidden';
+          } else {
+            document.body.style.userSelect = 'none';
+          }
         }
       };
 
-      const onMouseMove = (e) => {
-        const moveDistance = Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY);
+      // Capture the pointer so move/up events fire on the container regardless
+      // of where the cursor is — including over inert modal backdrops.
+      try { notificationContainer.setPointerCapture(pointerId); } catch {}
+
+      const onPointerMove = (ev) => {
+        if (ev.pointerId !== pointerId) return;
+        const moveDistance = Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY);
         if (!dragStarted && moveDistance > dragThreshold) startDrag();
         if (dragStarted) {
-          e.preventDefault();
-          const newY = e.clientY - offsetY;
-          const newX = e.clientX - offsetX;
+          ev.preventDefault();
+          const newY = ev.clientY - offsetY;
+          const newX = ev.clientX - offsetX;
 
           notificationContainer.style.top = `${newY}px`;
           notificationContainer.style.left = `${newX}px`;
@@ -1004,106 +1020,57 @@ async setDefaultPosition(notificationContainer) {
         }
       };
 
-      const onMouseUp = (e) => {
+      const endDrag = (ev) => {
+        if (ev.pointerId !== pointerId) return;
         if (dragStarted) {
           this.setDraggingState(false);
           notificationContainer.classList.remove(DOM_CLASSES.DRAGGING);
           document.body.style.userSelect = '';
-          if (Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY) > dragThreshold) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
-        }
-        document.removeEventListener("mousemove", onMouseMove);
-        document.removeEventListener("mouseup", onMouseUp);
-      };
-
-      _safeAddEventListener(document, "mousemove", onMouseMove);
-      _safeAddEventListener(document, "mouseup", onMouseUp);
-
-      // FIX #2: Store cleanup for forced cleanup on notification removal
-      cleanupFunctions.push(() => {
-        document.removeEventListener("mousemove", onMouseMove);
-        document.removeEventListener("mouseup", onMouseUp);
-      });
-    };
-
-    _safeAddEventListener(notificationContainer, "mousedown", mouseDownHandler);
-    cleanupFunctions.push(() => {
-      notificationContainer.removeEventListener("mousedown", mouseDownHandler);
-    });
-
-    // Touch dragging
-    const touchStartHandler = (e) => {
-      const isInteractive = interactiveSelectors.some(selector =>
-        e.target.matches(selector) || e.target.closest(selector)
-      );
-      if (isInteractive) return;
-
-      let dragStarted = false;
-      const touch = e.touches[0];
-      const startX = touch.clientX;
-      const startY = touch.clientY;
-      const dragThreshold = 8;
-
-      const rect = notificationContainer.getBoundingClientRect();
-      const offsetX = touch.clientX - rect.left;
-      const offsetY = touch.clientY - rect.top;
-
-      const startDrag = () => {
-        if (!dragStarted) {
-          dragStarted = true;
-          this.setDraggingState(true);
-          notificationContainer.classList.add(DOM_CLASSES.DRAGGING);
-          document.body.style.overflow = 'hidden';
-        }
-      };
-
-      const onTouchMove = (e) => {
-        const touch = e.touches[0];
-        const moveDistance = Math.abs(touch.clientX - startX) + Math.abs(touch.clientY - startY);
-        if (!dragStarted && moveDistance > dragThreshold) startDrag();
-        if (dragStarted) {
-          e.preventDefault();
-          const newY = touch.clientY - offsetY;
-          const newX = touch.clientX - offsetX;
-
-          notificationContainer.style.top = `${newY}px`;
-          notificationContainer.style.left = `${newX}px`;
-          notificationContainer.style.right = "auto";
-
-          savePositionToSchema25(newX, newY);
-        }
-      };
-
-      const onTouchEnd = (e) => {
-        if (dragStarted) {
-          this.setDraggingState(false);
-          notificationContainer.classList.remove(DOM_CLASSES.DRAGGING);
           document.body.style.overflow = '';
-          const finalTouch = e.changedTouches[0];
-          if (Math.abs(finalTouch.clientX - startX) + Math.abs(finalTouch.clientY - startY) > dragThreshold) {
-            e.preventDefault();
-            e.stopPropagation();
+          if (Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY) > dragThreshold) {
+            ev.preventDefault();
+            ev.stopPropagation();
           }
+
+          // After releasing pointer capture, the browser synthesizes a click
+          // event on the current hit target — which after dragging across a
+          // modal is usually the dialog's ::backdrop. Modal click-outside
+          // handlers (modalManager.setupFeedbackModal/setupAboutModal/etc.)
+          // would close the modal unexpectedly. Swallow the next click at
+          // capture phase so no handler sees it. The setTimeout cleanup
+          // unregisters the listener if no click actually fires.
+          const swallowClick = (clickEvent) => {
+            clickEvent.preventDefault();
+            clickEvent.stopPropagation();
+            clickEvent.stopImmediatePropagation();
+          };
+          window.addEventListener('click', swallowClick, { capture: true, once: true });
+          setTimeout(() => {
+            window.removeEventListener('click', swallowClick, { capture: true });
+          }, 50);
         }
-        document.removeEventListener("touchmove", onTouchMove);
-        document.removeEventListener("touchend", onTouchEnd);
+        try { notificationContainer.releasePointerCapture(pointerId); } catch {}
+        notificationContainer.removeEventListener("pointermove", onPointerMove);
+        notificationContainer.removeEventListener("pointerup", endDrag);
+        notificationContainer.removeEventListener("pointercancel", endDrag);
       };
 
-      _safeAddEventListener(document, "touchmove", onTouchMove, { passive: false });
-      _safeAddEventListener(document, "touchend", onTouchEnd, { passive: false });
+      _safeAddEventListener(notificationContainer, "pointermove", onPointerMove);
+      _safeAddEventListener(notificationContainer, "pointerup", endDrag);
+      _safeAddEventListener(notificationContainer, "pointercancel", endDrag);
 
       // FIX #2: Store cleanup for forced cleanup on notification removal
       cleanupFunctions.push(() => {
-        document.removeEventListener("touchmove", onTouchMove);
-        document.removeEventListener("touchend", onTouchEnd);
+        notificationContainer.removeEventListener("pointermove", onPointerMove);
+        notificationContainer.removeEventListener("pointerup", endDrag);
+        notificationContainer.removeEventListener("pointercancel", endDrag);
+        try { notificationContainer.releasePointerCapture(pointerId); } catch {}
       });
     };
 
-    _safeAddEventListener(notificationContainer, "touchstart", touchStartHandler, { passive: true });
+    _safeAddEventListener(notificationContainer, "pointerdown", pointerDownHandler);
     cleanupFunctions.push(() => {
-      notificationContainer.removeEventListener("touchstart", touchStartHandler);
+      notificationContainer.removeEventListener("pointerdown", pointerDownHandler);
     });
 
     // ✅ FIX #2: Watch for notification removal and cleanup listeners
@@ -1127,6 +1094,12 @@ async setDefaultPosition(notificationContainer) {
     // (e.g. NotificationDialogHost moves it into an open modal) would nuke
     // the drag listeners.
     const observer = new MutationObserver((mutations) => {
+      // Fast path: if the container is still attached, nothing was actually
+      // torn down. The subtree observer fires on every DOM mutation anywhere
+      // in the document (task adds, drag reorders, modal content changes,
+      // etc.), so this early-exit avoids scanning removedNodes on every one.
+      if (notificationContainer.isConnected) return;
+
       for (const mutation of mutations) {
         for (const node of mutation.removedNodes) {
           if (node === notificationContainer || node.contains(notificationContainer)) {

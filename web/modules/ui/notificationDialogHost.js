@@ -4,47 +4,34 @@
  * Keeps `#notification-container` interactive while a native `<dialog>` modal
  * is open by re-parenting the container into the topmost open modal dialog.
  *
- * THE PROBLEM
- * -----------
- * `dialog.showModal()` does two independent things:
- *   1. Places the dialog in the browser's top layer (paint order).
- *   2. Marks every element OUTSIDE the dialog's DOM subtree as inert.
+ * Background: `dialog.showModal()` places the dialog in the browser's top
+ * layer AND marks every element outside the dialog's DOM subtree as inert.
+ * The notification container uses the Popover API so it paints above the
+ * modal, but inertness is determined by the DOM tree, not top-layer
+ * membership — a body-level container is inert while any modal is open,
+ * making notifications unclickable and undraggable.
  *
- * The notification container uses the Popover API to render in the same top
- * layer, so it paints ABOVE the modal. But inertness is determined by the DOM
- * tree, not top-layer membership — since the container is a child of <body>
- * and not the dialog, the browser treats it as inert. Visible but unclickable,
- * unscrollable, and undraggable.
+ * The fix: move the container into the open dialog's subtree. On close,
+ * move it back (or to the previous modal in the stack for nested dialogs).
  *
- * THE FIX
- * -------
- * Move the notification container INTO the open dialog's subtree while the
- * dialog is open. Inertness is scoped to "outside the dialog", so the
- * container becomes interactive. Popover API keeps visual stacking correct.
- * On close, move the container back to <body> (or to the previous modal in
- * the stack for nested dialogs).
+ * Two non-obvious implementation constraints:
  *
- * WHY SIBLING OF `.modal-content`, NOT CHILD
- * ------------------------------------------
- * `.modal-content` has `backdrop-filter: blur(...)`, which creates a
- * containing block for `position: fixed` descendants. The notification
- * container uses `position: fixed` with saved viewport coordinates — if we
- * made it a descendant of `.modal-content`, those coordinates would become
- * relative to the modal box instead of the viewport. The <dialog> element
- * itself has no containing-block-creating properties, so appending there
- * preserves viewport-fixed positioning.
+ *   - Append to the `<dialog>` itself, NOT to `.modal-content`. Many modals
+ *     have `.modal-content` with `backdrop-filter`, which creates a
+ *     containing block for `position: fixed` descendants. Putting the
+ *     container inside `.modal-content` would make its saved viewport
+ *     coordinates relative to the modal box instead. The `<dialog>` element
+ *     itself has no containing-block-creating properties.
  *
- * WHY APPEND, NOT PREPEND
- * -----------------------
- * `dialog.closing > :first-child` runs a fade-out animation on the first
- * child. Appending makes the notification container the last child, so it's
- * never the `:first-child` and stays visible during the close animation.
+ *   - Append (last child), don't prepend. `dialog.closing > :first-child`
+ *     runs the modal's fade-out animation — the container shouldn't match.
  *
  * @module ui/notificationDialogHost
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { reshowPopover, isPopoverOpen } from '../utils/popoverUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -97,9 +84,6 @@ export class NotificationDialogHost {
 
         /** @type {MutationObserver|null} */
         this._observer = null;
-
-        /** @type {WeakMap<HTMLDialogElement, Function>} Tracked per-dialog close handlers */
-        this._closeHandlers = new WeakMap();
 
         this.initialized = false;
     }
@@ -168,22 +152,19 @@ export class NotificationDialogHost {
             this._observer = null;
         }
 
-        // Remove any remaining close listeners from tracked dialogs
-        for (const dialog of this._stack) {
-            const handler = this._closeHandlers.get(dialog);
-            if (handler) dialog.removeEventListener('close', handler);
-        }
+        // Close listeners were registered with `{ once: true }`; they auto-
+        // remove when they fire, and any that never fire are harmless
+        // (dialog is garbage-collected with them).
 
         // Restore container to its default home if it's currently inside a dialog
         const container = this._container;
         if (container && this._defaultHome && container.parentElement !== this._defaultHome) {
             this._defaultHome.appendChild(container);
-            this._reshowPopover(container);
+            reshowPopover(container);
         }
 
         this._stack = [];
         this._container = null;
-        this._closeHandlers = new WeakMap();
         this.initialized = false;
     }
 
@@ -192,7 +173,7 @@ export class NotificationDialogHost {
     // ========================================================================
 
     _scanExistingOpenDialogs() {
-        const dialogs = document.querySelectorAll('dialog[open]');
+        const dialogs = document.querySelectorAll(DOM_SELECTORS.OPEN_DIALOG);
         for (const dialog of dialogs) {
             if (this._isModal(dialog)) {
                 this._onDialogOpened(dialog);
@@ -229,12 +210,12 @@ export class NotificationDialogHost {
     _onDialogOpened(dialog) {
         this._stack.push(dialog);
 
-        // Attach a synchronous `close` event listener. This fires during
-        // `.close()` BEFORE any subsequent `.remove()` call, so we can reparent
-        // the container out before the dialog is gone from the DOM.
-        const handler = () => this._onDialogClosed(dialog);
-        this._closeHandlers.set(dialog, handler);
-        dialog.addEventListener('close', handler, { once: true });
+        // `close` event fires synchronously during `.close()` — before any
+        // subsequent `.remove()` — so we can reparent the container out
+        // before the dialog is gone. `{ once: true }` auto-removes the
+        // listener; the stack-membership check in _onDialogClosed is the
+        // idempotency guard if this also fires via mutation observer.
+        dialog.addEventListener('close', () => this._onDialogClosed(dialog), { once: true });
 
         this._moveContainerTo(dialog);
     }
@@ -245,13 +226,6 @@ export class NotificationDialogHost {
 
         this._stack.splice(idx, 1);
 
-        const handler = this._closeHandlers.get(dialog);
-        if (handler) {
-            dialog.removeEventListener('close', handler);
-            this._closeHandlers.delete(dialog);
-        }
-
-        // Move container to the new topmost modal, or back to default home
         const newHost = this._stack.length > 0
             ? this._stack[this._stack.length - 1]
             : this._defaultHome;
@@ -275,36 +249,13 @@ export class NotificationDialogHost {
         const container = this._container;
         if (!container || !newHost || container.parentElement === newHost) return;
 
-        // Preserve `open` state of the popover across the move.
-        // Per spec, moving a showing popover may implicitly hide it, so we
-        // always re-show after the append (idempotent).
-        const wasPopoverOpen = this._isPopoverOpen(container);
-
-        // Append as the LAST child. This avoids the `dialog.closing > :first-child`
-        // close animation, and also makes it the topmost child within the dialog's
-        // own z-order (though popover top layer overrides either way).
+        // Append (not prepend): avoids being matched by the
+        // `dialog.closing > :first-child` close animation.
+        const wasPopoverOpen = isPopoverOpen(container);
         newHost.appendChild(container);
 
-        if (wasPopoverOpen || container.querySelector('.notification')) {
-            this._reshowPopover(container);
-        }
-    }
-
-    _isPopoverOpen(element) {
-        try {
-            return element.matches(':popover-open');
-        } catch {
-            return false;
-        }
-    }
-
-    _reshowPopover(element) {
-        if (!element.hasAttribute('popover')) return;
-        try {
-            if (element.matches(':popover-open')) element.hidePopover();
-            element.showPopover();
-        } catch {
-            // Popover API not supported — falls back to normal z-index stacking
+        if (wasPopoverOpen || container.querySelector(DOM_SELECTORS.NOTIFICATION)) {
+            reshowPopover(container);
         }
     }
 

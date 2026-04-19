@@ -1,9 +1,9 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.198';
-var CACHE_VERSION = 'v1041';
-var CACHE_VERSION_NUMBER = 1041; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.200';
+var CACHE_VERSION = 'v1043';
+var CACHE_VERSION_NUMBER = 1043; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -183,6 +183,7 @@ var BOOT_CRITICAL = [
   './modules/ui/uiOrchestrator.js',
   './modules/ui/undoRedoManager.js',
   './modules/ui/panelVisibilityHelpers.js',
+  './modules/ui/notificationDialogHost.js',
   // Features - remaining
   './modules/features/clearedTasksManager.js',
   './modules/features/historyManager.js',

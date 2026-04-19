@@ -1186,6 +1186,9 @@ export const DOM_SELECTORS = Object.freeze({
     RADIO_CIRCLE_SELECTED: '.radio-circle.selected',
     APPLY_QUICK_RECURRING: '.apply-quick-recurring',
 
+    // ---- Native Dialogs ----
+    OPEN_DIALOG: 'dialog[open]',
+
     // ---- Confirmation Dialogs ----
     BTN_CONFIRM: '.btn-confirm',
     BTN_CANCEL: '.btn-cancel',

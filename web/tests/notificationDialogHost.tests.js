@@ -10,7 +10,8 @@
 
 import {
     setupTestEnvironment,
-    createProtectedTest
+    createProtectedTest,
+    wait
 } from './testHelpers.js';
 
 import {
@@ -53,10 +54,6 @@ function cleanupDialog(dialog) {
     dialog.remove();
 }
 
-// Give the MutationObserver a microtask tick to process attribute mutations.
-function nextTick() {
-    return new Promise(resolve => setTimeout(resolve, 0));
-}
 
 // --------------------------------------------------------------------------
 // TEST SUITE
@@ -120,7 +117,7 @@ export async function runNotificationDialogHostTests(resultsDiv) {
         const dialog = makeDialog();
         try {
             dialog.showModal();
-            await nextTick();
+            await wait(0);
 
             if (container.parentElement !== dialog) {
                 throw new Error(
@@ -132,7 +129,7 @@ export async function runNotificationDialogHostTests(resultsDiv) {
             }
         } finally {
             cleanupDialog(dialog);
-            await nextTick();
+            await wait(0);
         }
     });
 
@@ -141,7 +138,7 @@ export async function runNotificationDialogHostTests(resultsDiv) {
         const dialog = makeDialog();
         try {
             dialog.showModal();
-            await nextTick();
+            await wait(0);
             dialog.close();  // close event is synchronous
 
             if (container.parentElement !== document.body) {
@@ -154,7 +151,7 @@ export async function runNotificationDialogHostTests(resultsDiv) {
             }
         } finally {
             cleanupDialog(dialog);
-            await nextTick();
+            await wait(0);
         }
     });
 
@@ -163,7 +160,7 @@ export async function runNotificationDialogHostTests(resultsDiv) {
         const dialog = makeDialog();
         try {
             dialog.showModal();
-            await nextTick();
+            await wait(0);
 
             if (dialog.firstElementChild === container) {
                 throw new Error('container should not be :first-child (would break close animation)');
@@ -173,7 +170,7 @@ export async function runNotificationDialogHostTests(resultsDiv) {
             }
         } finally {
             cleanupDialog(dialog);
-            await nextTick();
+            await wait(0);
         }
     });
 
@@ -186,9 +183,9 @@ export async function runNotificationDialogHostTests(resultsDiv) {
         const second = makeDialog();
         try {
             first.showModal();
-            await nextTick();
+            await wait(0);
             second.showModal();
-            await nextTick();
+            await wait(0);
 
             if (container.parentElement !== second) {
                 throw new Error('container should follow topmost modal');
@@ -204,7 +201,7 @@ export async function runNotificationDialogHostTests(resultsDiv) {
             first.close();
             cleanupDialog(first);
             cleanupDialog(second);
-            await nextTick();
+            await wait(0);
         }
     });
 
@@ -214,9 +211,9 @@ export async function runNotificationDialogHostTests(resultsDiv) {
         const second = makeDialog();
         try {
             first.showModal();
-            await nextTick();
+            await wait(0);
             second.showModal();
-            await nextTick();
+            await wait(0);
             second.close();
 
             if (container.parentElement !== first) {
@@ -229,7 +226,7 @@ export async function runNotificationDialogHostTests(resultsDiv) {
             first.close();
             cleanupDialog(first);
             cleanupDialog(second);
-            await nextTick();
+            await wait(0);
         }
     });
 
@@ -239,9 +236,9 @@ export async function runNotificationDialogHostTests(resultsDiv) {
         const second = makeDialog();
         try {
             first.showModal();
-            await nextTick();
+            await wait(0);
             second.showModal();
-            await nextTick();
+            await wait(0);
             second.close();
             first.close();
 
@@ -254,7 +251,7 @@ export async function runNotificationDialogHostTests(resultsDiv) {
         } finally {
             cleanupDialog(first);
             cleanupDialog(second);
-            await nextTick();
+            await wait(0);
         }
     });
 
@@ -266,7 +263,7 @@ export async function runNotificationDialogHostTests(resultsDiv) {
         const dialog = makeDialog();
         try {
             dialog.show();  // NOT showModal — no inertness, should be ignored
-            await nextTick();
+            await wait(0);
 
             if (container.parentElement === dialog) {
                 throw new Error('non-modal dialog should not attract container');
@@ -277,7 +274,7 @@ export async function runNotificationDialogHostTests(resultsDiv) {
         } finally {
             dialog.close();
             cleanupDialog(dialog);
-            await nextTick();
+            await wait(0);
         }
     });
 
@@ -286,7 +283,7 @@ export async function runNotificationDialogHostTests(resultsDiv) {
         const dialog = makeDialog();
         try {
             dialog.showModal();
-            await nextTick();
+            await wait(0);
 
             // Simulate ephemeral dialog pattern: close + immediately remove
             dialog.close();
@@ -299,7 +296,7 @@ export async function runNotificationDialogHostTests(resultsDiv) {
                 throw new Error('container should be in body');
             }
         } finally {
-            await nextTick();
+            await wait(0);
         }
     });
 
@@ -308,19 +305,19 @@ export async function runNotificationDialogHostTests(resultsDiv) {
         const dialog = makeDialog();
         try {
             dialog.showModal();
-            await nextTick();
+            await wait(0);
 
             // Programmatic open=false path (defensive — not the normal API)
             // Use .close() since direct attribute removal doesn't fire the close event
             dialog.close();
-            await nextTick();
+            await wait(0);
 
             if (container.parentElement !== document.body) {
                 throw new Error('container should return to body');
             }
         } finally {
             cleanupDialog(dialog);
-            await nextTick();
+            await wait(0);
         }
     });
 
@@ -329,7 +326,7 @@ export async function runNotificationDialogHostTests(resultsDiv) {
         const dialog = makeDialog();
         try {
             dialog.showModal();
-            await nextTick();
+            await wait(0);
 
             // Simulate native escape — dispatches cancel then close
             dialog.dispatchEvent(new Event('cancel'));
@@ -340,7 +337,7 @@ export async function runNotificationDialogHostTests(resultsDiv) {
             }
         } finally {
             cleanupDialog(dialog);
-            await nextTick();
+            await wait(0);
         }
     });
 
@@ -369,14 +366,14 @@ export async function runNotificationDialogHostTests(resultsDiv) {
         const dialog = makeDialog();
         try {
             dialog.showModal();
-            await nextTick();
+            await wait(0);
             throwaway.destroy();
             if (throwaway.getStackDepth() !== 0) {
                 throw new Error('stack should be empty after destroy');
             }
         } finally {
             cleanupDialog(dialog);
-            await nextTick();
+            await wait(0);
         }
     });
 
