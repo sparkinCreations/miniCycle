@@ -56,6 +56,255 @@
     }
 
     // =========================================================
+    // Features Carousel (infinite loop via cloned slides)
+    // =========================================================
+    var featuresCarousel = document.getElementById('featuresCarousel');
+    var featuresDots = document.getElementById('featuresDots');
+
+    if (featuresCarousel && featuresDots) {
+        var featuresPrevBtn = document.querySelector('.features-arrow-prev');
+        var featuresNextBtn = document.querySelector('.features-arrow-next');
+        var featuresProgressBar = document.getElementById('featuresProgressBar');
+
+        var AUTO_ADVANCE_MS = 5000;
+        var USER_PAUSE_MS = 10000;
+
+        // Snapshot real cards BEFORE we clone.
+        var realCards = Array.prototype.slice.call(featuresCarousel.querySelectorAll('.feature-card'));
+        var N = realCards.length;
+
+        // Clone full set to the left and right. DOM becomes: [clonesL][real][clonesR].
+        function buildClones(side) {
+            return realCards.map(function (c) {
+                var clone = c.cloneNode(true);
+                clone.setAttribute('aria-hidden', 'true');
+                clone.setAttribute('tabindex', '-1');
+                clone.dataset.clone = side;
+                return clone;
+            });
+        }
+        var leftClones = buildClones('left');
+        var rightClones = buildClones('right');
+        for (var li = 0; li < leftClones.length; li++) {
+            featuresCarousel.insertBefore(leftClones[li], realCards[0]);
+        }
+        for (var ri = 0; ri < rightClones.length; ri++) {
+            featuresCarousel.appendChild(rightClones[ri]);
+        }
+        // All cards in DOM order (3 * N total)
+        var allCards = Array.prototype.slice.call(featuresCarousel.querySelectorAll('.feature-card'));
+
+        // Build dots — one per REAL card only
+        for (var fi = 0; fi < N; fi++) {
+            var fDot = document.createElement('button');
+            fDot.type = 'button';
+            fDot.className = 'features-dot';
+            fDot.setAttribute('aria-label', 'Go to feature ' + (fi + 1));
+            fDot.setAttribute('role', 'tab');
+            featuresDots.appendChild(fDot);
+        }
+        var fDots = featuresDots.querySelectorAll('.features-dot');
+
+        function getFeatureStep() {
+            if (allCards.length < 2) return allCards[0] ? allCards[0].offsetWidth : 0;
+            return allCards[N + 1].offsetLeft - allCards[N].offsetLeft;
+        }
+
+        // offsetLeft of first real card (start of middle set)
+        function getRealOffset() {
+            return allCards[N] ? allCards[N].offsetLeft : 0;
+        }
+
+        // Set initial scroll position to the first real card (not the first clone).
+        // Uses 'instant' to defeat any inherited smooth scrolling.
+        function jumpToRealStart() {
+            try {
+                featuresCarousel.scrollTo({ left: getRealOffset(), behavior: 'instant' });
+            } catch (e) {
+                featuresCarousel.scrollLeft = getRealOffset();
+            }
+        }
+        jumpToRealStart();
+
+        // When the user scrolls past the real band into a clone zone, silently teleport
+        // by N * step to the matching real card. Clones are identical to real cards, so
+        // the jump is invisible — as long as it's truly instant (no animation).
+        var isTeleporting = false;
+        function instantScroll(target) {
+            try {
+                featuresCarousel.scrollTo({ left: target, behavior: 'instant' });
+            } catch (e) {
+                featuresCarousel.scrollLeft = target;
+            }
+        }
+        function checkTeleport() {
+            var step = getFeatureStep();
+            if (!step) return;
+            var realStart = getRealOffset();
+            var realEnd = realStart + step * (N - 1); // offset of last real card
+            var pos = featuresCarousel.scrollLeft;
+            var shift = step * N;
+            if (pos > realEnd + step * 0.5) {
+                isTeleporting = true;
+                instantScroll(pos - shift);
+                isTeleporting = false;
+            } else if (pos < realStart - step * 0.5) {
+                isTeleporting = true;
+                instantScroll(pos + shift);
+                isTeleporting = false;
+            }
+        }
+
+        function getActiveRealIdx() {
+            var step = getFeatureStep();
+            if (!step) return 0;
+            var pos = Math.round((featuresCarousel.scrollLeft - getRealOffset()) / step);
+            return ((pos % N) + N) % N;
+        }
+
+        function updateFeatureUi() {
+            var idx = getActiveRealIdx();
+            for (var di = 0; di < fDots.length; di++) {
+                fDots[di].classList.toggle('active', di === idx);
+                fDots[di].setAttribute('aria-selected', di === idx ? 'true' : 'false');
+            }
+            if (featuresProgressBar) {
+                var progress = N > 1 ? idx / (N - 1) : 0;
+                featuresProgressBar.style.width = (progress * 100) + '%';
+            }
+        }
+
+        var featureScrollTimer;
+        featuresCarousel.addEventListener('scroll', function () {
+            if (isTeleporting) return;
+            updateFeatureUi();
+            clearTimeout(featureScrollTimer);
+            featureScrollTimer = setTimeout(function () {
+                checkTeleport();
+                updateFeatureUi();
+            }, 150);
+        });
+
+        // ---- Navigation ----
+        function scrollNext() {
+            featuresCarousel.scrollBy({ left: getFeatureStep(), behavior: 'smooth' });
+        }
+        function scrollPrev() {
+            featuresCarousel.scrollBy({ left: -getFeatureStep(), behavior: 'smooth' });
+        }
+
+        // Jump to a specific real card via dots — pick the nearest copy (real or clone)
+        // to keep the visual scroll distance short.
+        function scrollToRealIdx(realIdx) {
+            var step = getFeatureStep();
+            if (!step) return;
+            var currentCardPos = Math.round(featuresCarousel.scrollLeft / step);
+            var candidates = [realIdx, realIdx + N, realIdx + 2 * N];
+            var closest = candidates[0];
+            for (var k = 1; k < candidates.length; k++) {
+                if (Math.abs(candidates[k] - currentCardPos) < Math.abs(closest - currentCardPos)) {
+                    closest = candidates[k];
+                }
+            }
+            featuresCarousel.scrollTo({ left: closest * step, behavior: 'smooth' });
+        }
+
+        // ---- Auto-advance ----
+        var autoAdvanceInterval = null;
+        var pauseResumeTimer = null;
+        var isUserPaused = false;
+
+        function canAutoAdvance() {
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+            if (!window.matchMedia('(min-width: 768px)').matches) return false;
+            return true;
+        }
+        function tickAutoAdvance() {
+            if (isUserPaused) return;
+            scrollNext();
+        }
+        function startAutoAdvance() {
+            stopAutoAdvance();
+            if (!canAutoAdvance()) return;
+            autoAdvanceInterval = setInterval(tickAutoAdvance, AUTO_ADVANCE_MS);
+        }
+        function stopAutoAdvance() {
+            if (autoAdvanceInterval) {
+                clearInterval(autoAdvanceInterval);
+                autoAdvanceInterval = null;
+            }
+        }
+        function pauseFor(ms) {
+            isUserPaused = true;
+            clearTimeout(pauseResumeTimer);
+            if (ms) {
+                pauseResumeTimer = setTimeout(function () { isUserPaused = false; }, ms);
+            }
+        }
+        function resumeNow() {
+            clearTimeout(pauseResumeTimer);
+            isUserPaused = false;
+        }
+
+        // Pause on pointer hover / keyboard focus
+        featuresCarousel.addEventListener('mouseenter', function () { pauseFor(0); });
+        featuresCarousel.addEventListener('mouseleave', function () { resumeNow(); });
+        featuresCarousel.addEventListener('focusin', function () { pauseFor(0); });
+        featuresCarousel.addEventListener('focusout', function () { resumeNow(); });
+
+        // Dot clicks: jump to real idx via nearest copy
+        for (var dk = 0; dk < fDots.length; dk++) {
+            (function (idx) {
+                fDots[idx].addEventListener('click', function () {
+                    pauseFor(USER_PAUSE_MS);
+                    scrollToRealIdx(idx);
+                });
+            })(dk);
+        }
+
+        if (featuresPrevBtn) {
+            featuresPrevBtn.addEventListener('click', function () {
+                pauseFor(USER_PAUSE_MS);
+                scrollPrev();
+            });
+        }
+        if (featuresNextBtn) {
+            featuresNextBtn.addEventListener('click', function () {
+                pauseFor(USER_PAUSE_MS);
+                scrollNext();
+            });
+        }
+
+        // Keyboard navigation when carousel has focus
+        featuresCarousel.addEventListener('keydown', function (e) {
+            if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                pauseFor(USER_PAUSE_MS);
+                scrollNext();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                pauseFor(USER_PAUSE_MS);
+                scrollPrev();
+            }
+        });
+
+        // Restart auto-advance on resize. Do NOT re-jump the scroll position —
+        // that would visibly "reset to first card" during responsive transitions.
+        // Teleport logic handles any position drift on its own.
+        window.addEventListener('resize', function () {
+            updateFeatureUi();
+            if (canAutoAdvance()) {
+                if (!autoAdvanceInterval) startAutoAdvance();
+            } else {
+                stopAutoAdvance();
+            }
+        });
+
+        updateFeatureUi();
+        startAutoAdvance();
+    }
+
+    // =========================================================
     // Changelog Accordion
     // =========================================================
     var INITIAL_VERSIONS = 5;

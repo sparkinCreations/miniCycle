@@ -227,15 +227,30 @@
         }
 
         /* ============================
-           Features
+           Features Carousel
            ============================ */
         .features-section { background: #edf3fb; }
-        .features-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-sm); }
+        .features-carousel-wrapper { display: flex; align-items: center; gap: var(--space-xs); }
+        .features-carousel { flex: 1 1 0%; min-width: 0; display: flex; gap: var(--space-sm); overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 4px 0 12px; scroll-padding-left: 0; }
+        .features-carousel::-webkit-scrollbar { display: none; }
         .feature-card { background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius); padding: var(--space-md); box-shadow: var(--shadow-card); }
+        .features-carousel .feature-card { flex: 0 0 85%; scroll-snap-align: start; display: flex; flex-direction: column; min-height: 140px; }
         .feature-card h4 { font-family: var(--font-heading); font-size: 0.95rem; font-weight: 600; margin-bottom: var(--space-xs); color: var(--color-text-dark); display: flex; align-items: center; gap: 0.65rem; }
         .feature-card p { font-size: 0.85rem; color: var(--color-text-muted); }
         .feature-icon { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; background: rgba(0, 136, 255, 0.1); color: var(--color-primary); flex-shrink: 0; }
         .feature-icon svg { width: 18px; height: 18px; }
+
+        .features-arrow { flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%; background: var(--color-white); border: 1px solid var(--color-border); box-shadow: var(--shadow-card); color: var(--color-primary); cursor: pointer; display: none; align-items: center; justify-content: center; font-family: var(--font-heading); font-size: 1.4rem; line-height: 1; padding: 0; transition: background 0.2s, transform 0.15s, box-shadow 0.2s, opacity 0.2s; }
+        .features-arrow:hover:not(:disabled) { background: var(--color-primary); color: var(--color-white); transform: scale(1.06); }
+        .features-arrow:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        .features-dots { display: none; justify-content: center; gap: 0.5rem; margin-top: var(--space-md); flex-wrap: wrap; }
+        .features-dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(0, 136, 255, 0.22); border: none; cursor: pointer; padding: 0; transition: background 0.2s, transform 0.2s; }
+        .features-dot:hover { background: rgba(0, 136, 255, 0.5); }
+        .features-dot.active { background: var(--color-primary); transform: scale(1.3); }
+
+        .features-progress { display: block; margin: var(--space-md) auto 0; max-width: 180px; height: 4px; background: rgba(0, 136, 255, 0.15); border-radius: 2px; overflow: hidden; position: relative; }
+        .features-progress-bar { position: absolute; top: 0; left: 0; bottom: 0; width: 0; background: var(--color-primary); border-radius: 2px; transition: width 0.25s ease; }
 
         /* ============================
            Built Different (Story)
@@ -297,6 +312,21 @@
         .changelog-older::-webkit-scrollbar { width: 5px; }
         .changelog-older::-webkit-scrollbar-track { background: transparent; }
         .changelog-older::-webkit-scrollbar-thumb { background: rgba(0, 136, 255, 0.2); border-radius: 3px; }
+
+        /* ============================
+           Testimonial
+           ============================ */
+        .testimonial-section { background: var(--color-white); padding: var(--space-2xl) 0; }
+        .testimonial { max-width: 720px; margin: 0 auto; text-align: center; padding: 0 var(--space-sm); position: relative; }
+        .testimonial-quote-mark { width: 36px; height: 36px; color: var(--color-primary); opacity: 0.35; margin: 0 auto var(--space-sm); display: block; }
+        .testimonial-quote { font-family: var(--font-heading); font-size: 1.2rem; font-weight: 500; line-height: 1.55; color: var(--color-text-dark); margin-bottom: var(--space-md); font-style: italic; }
+        .testimonial-cite { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; font-style: normal; }
+        .testimonial-name { font-family: var(--font-heading); font-weight: 600; color: var(--color-text-dark); font-size: 0.95rem; }
+        .testimonial-role { font-size: 0.85rem; color: var(--color-text-muted); }
+
+        @media (min-width: 768px) {
+            .testimonial-quote { font-size: 1.5rem; }
+        }
 
         /* ============================
            Bottom CTA
@@ -363,7 +393,10 @@
 
             .theme-item { flex: 0 0 200px; }
 
-            .features-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-md); }
+            .features-carousel .feature-card { flex: 0 0 calc(50% - var(--space-sm) / 2); }
+            .features-arrow { display: flex; }
+            .features-dots { display: flex; }
+            .features-progress { display: none; }
 
             .story-stats { flex-direction: row; justify-content: center; }
             .story-stat-number { font-size: 2.8rem; }
@@ -373,6 +406,8 @@
         }
 
         @media (min-width: 1024px) {
+            .features-carousel .feature-card { flex: 0 0 calc(33.333% - var(--space-sm) * 2 / 3); }
+
             .hero-section { padding: var(--space-3xl) 0 var(--space-2xl); }
             .hero-grid { flex-direction: row; align-items: center; justify-content: center; gap: 1.5rem; }
             .hero-text { text-align: left; max-width: 560px; margin: 0; }
@@ -585,47 +620,118 @@
         </div>
     </section>
 
+    <!-- Testimonial -->
+    <section class="testimonial-section">
+        <div class="container">
+            <figure class="testimonial reveal">
+                <svg class="testimonial-quote-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M7.5 6C4.5 6 2 8.5 2 11.5v6.5h6.5v-6.5H5c0-1.9 1.6-3.5 3.5-3.5V6h-1zm10 0c-3 0-5.5 2.5-5.5 5.5v6.5H18.5v-6.5H15c0-1.9 1.6-3.5 3.5-3.5V6h-1z"/>
+                </svg>
+                <blockquote class="testimonial-quote">
+                    &ldquo;It&rsquo;s blowing me away. All the customization, the gamification, the pre-populated samples, reminders to save. This thing feels legit. It is very impressive.&rdquo;
+                </blockquote>
+                <figcaption class="testimonial-cite">
+                    <span class="testimonial-name">Dan R.</span>
+                    <span class="testimonial-role">Software Developer</span>
+                </figcaption>
+            </figure>
+        </div>
+    </section>
+
     <!-- Features -->
     <section id="features" class="features-section">
         <div class="container">
             <h2 class="section-title">Features</h2>
-            <div class="features-grid">
-                <div class="feature-card reveal">
-                    <h4>
-                        <span class="feature-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12"/><path d="M21 12a9 9 0 1 1-3.5-7.1"/><path d="M21 3v5h-5"/><path d="M12 7v5l3 2"/></svg>
-                        </span>
-                        Auto-Reset
-                    </h4>
-                    <p>Complete your routine. It resets. No manual cleanup.</p>
+            <div class="features-carousel-wrapper">
+                <button type="button" class="features-arrow features-arrow-prev" aria-label="Previous features" aria-controls="featuresCarousel">&#8249;</button>
+                <div class="features-carousel" id="featuresCarousel" role="region" aria-label="Features carousel" tabindex="0">
+                    <div class="feature-card">
+                        <h4>
+                            <span class="feature-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12"/><path d="M21 12a9 9 0 1 1-3.5-7.1"/><path d="M21 3v5h-5"/><path d="M12 7v5l3 2"/></svg>
+                            </span>
+                            Auto-Reset Cycles
+                        </h4>
+                        <p>Complete your routine. It resets automatically. No manual cleanup.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>
+                            <span class="feature-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14-5.3L20 5" fill="currentColor" fill-opacity="0.12"/><polyline points="20 4 20 9 15 9"/><path d="M20 12a8 8 0 0 1-14 5.3L4 19"/><polyline points="4 20 4 15 9 15"/></svg>
+                            </span>
+                            Recurring Tasks
+                        </h4>
+                        <p>Daily, weekly, monthly, or custom schedules &mdash; built right in.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>
+                            <span class="feature-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.4-.3-.3-.5-.8-.5-1.3 0-1.1.9-2 2-2h1.6c3 0 5.4-2.4 5.4-5.4C22 5.3 17.5 2 12 2z" fill="currentColor" fill-opacity="0.12"/><circle cx="6.5" cy="12" r="1.3" fill="currentColor"/><circle cx="9.5" cy="7.5" r="1.3" fill="currentColor"/><circle cx="14.5" cy="7.5" r="1.3" fill="currentColor"/><circle cx="17.5" cy="12" r="1.3" fill="currentColor"/></svg>
+                            </span>
+                            Vocabulary Themes
+                        </h4>
+                        <p>Unlock themed language, icons, and colors as you complete cycles.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>
+                            <span class="feature-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h10a6 6 0 0 1 0 12H9" fill="currentColor" fill-opacity="0.12"/><polyline points="8 5 3 10 8 15"/></svg>
+                            </span>
+                            Undo &amp; Redo
+                        </h4>
+                        <p>Full state snapshots with one-tap undo. Never lose progress.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>
+                            <span class="feature-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v4a6 6 0 0 1-12 0V4z" fill="currentColor" fill-opacity="0.12"/><path d="M6 6H4a2 2 0 0 0 0 4h2"/><path d="M18 6h2a2 2 0 0 1 0 4h-2"/><line x1="12" y1="14" x2="12" y2="18"/><rect x="8" y="18" width="8" height="3" rx="0.5"/></svg>
+                            </span>
+                            Achievements
+                        </h4>
+                        <p>Milestones and rewards that grow with your consistency.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>
+                            <span class="feature-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z" fill="currentColor" fill-opacity="0.12"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
+                            </span>
+                            Smart Reminders
+                        </h4>
+                        <p>Gentle nudges so your routine never misses a step.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>
+                            <span class="feature-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z" fill="currentColor" fill-opacity="0.12"/><rect x="9" y="11" width="6" height="6" rx="1"/><path d="M10.5 11V9.5a1.5 1.5 0 0 1 3 0V11"/><circle cx="12" cy="14" r="0.8" fill="currentColor"/></svg>
+                            </span>
+                            Private by Architecture
+                        </h4>
+                        <p>Your data never leaves your device. There is no server.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>
+                            <span class="feature-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5" fill="currentColor" fill-opacity="0.12"/><line x1="5" y1="18" x2="19" y2="18"/><line x1="11" y1="20.5" x2="13" y2="20.5"/><path d="M9 11l2 2 4-4"/></svg>
+                            </span>
+                            Works Offline
+                        </h4>
+                        <p>Install as a PWA. No internet required. No account needed.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>
+                            <span class="feature-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg>
+                            </span>
+                            Share Routines
+                        </h4>
+                        <p>Export and import .mcyc files. Share routines with your team.</p>
+                    </div>
                 </div>
-                <div class="feature-card reveal">
-                    <h4>
-                        <span class="feature-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z" fill="currentColor" fill-opacity="0.12"/><rect x="9" y="11" width="6" height="6" rx="1"/><path d="M10.5 11V9.5a1.5 1.5 0 0 1 3 0V11"/><circle cx="12" cy="14" r="0.8" fill="currentColor"/></svg>
-                        </span>
-                        Private by architecture
-                    </h4>
-                    <p>Your data never leaves your device. There is no server.</p>
-                </div>
-                <div class="feature-card reveal">
-                    <h4>
-                        <span class="feature-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5" fill="currentColor" fill-opacity="0.12"/><line x1="5" y1="18" x2="19" y2="18"/><line x1="11" y1="20.5" x2="13" y2="20.5"/><path d="M9 11l2 2 4-4"/></svg>
-                        </span>
-                        Works offline
-                    </h4>
-                    <p>Install as a PWA. No internet required. No account needed.</p>
-                </div>
-                <div class="feature-card reveal">
-                    <h4>
-                        <span class="feature-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg>
-                        </span>
-                        Share routines
-                    </h4>
-                    <p>Export and import .mcyc files. Share routines with your team.</p>
-                </div>
+                <button type="button" class="features-arrow features-arrow-next" aria-label="Next features" aria-controls="featuresCarousel">&#8250;</button>
+            </div>
+            <div class="features-dots" id="featuresDots" role="tablist" aria-label="Features navigation"></div>
+            <div class="features-progress" aria-hidden="true">
+                <div class="features-progress-bar" id="featuresProgressBar"></div>
             </div>
         </div>
     </section>
