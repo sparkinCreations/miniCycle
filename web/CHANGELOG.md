@@ -1,3 +1,8 @@
+## [2.203] - 2026-04-20
+- chore: updated screenshots and phone mock-ups
+- feat(product-page): rework with personal story, new header, and testimonials
+
+
 ## [2.202] - 2026-04-19
 - fix: make notifications fully interactive while modals are open
 - - modules/utils/notifications.js: switch drag from mouse+touch events to   pointer events with setPointerCapture. Fixes drag freezing when cursor   moves over the modal backdrop (inert area), since browsers suppress   mouse events over inert content. Pointer capture routes all gesture   events to the container regardless of hit target.yes
