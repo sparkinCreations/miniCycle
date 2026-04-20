@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>miniCycle - Complete. Cycle. Repeat.</title>
-    <meta name="description" content="miniCycle is a free, privacy-first routine manager. Build your checklist once — it resets every time you complete it. Perfect for rounds, inspections, opening procedures, and any repeating workflow.">
+    <meta name="description" content="miniCycle is a repeatable multi-step process tool. Routine checklists that reset automatically every time you finish. Built for shift inspections and any routine that repeats. Free, private, works offline.">
     <link rel="icon" type="image/png" href="../assets/images/logo/logo.png">
     <link rel="apple-touch-icon" href="../assets/images/logo/logo.png">
 
@@ -12,11 +12,11 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://minicycle.app/pages/product.html">
     <meta property="og:title" content="miniCycle - Routine Checklists That Reset Automatically">
-    <meta property="og:description" content="Build your checklist once — it resets every time you complete it. Free, private, works offline. No account needed.">
+    <meta property="og:description" content="A repeatable multi-step process tool. Build your checklist once — it resets every time you finish. Free, private, works offline. No account needed.">
     <meta property="og:image" content="https://minicycle.app/assets/images/Product/Mini_Cycle_List.png">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="miniCycle - Routine Checklists That Reset Automatically">
-    <meta name="twitter:description" content="Build your checklist once — it resets every time you complete it. Free, private, works offline.">
+    <meta name="twitter:description" content="A repeatable multi-step process tool. Build your checklist once — it resets every time you finish. Free, private, works offline.">
     <meta name="twitter:image" content="https://minicycle.app/assets/images/Product/Mini_Cycle_List.png">
 
     <link rel="preload" as="image" href="../assets/images/Product/phone-light-mode.png">
@@ -28,7 +28,7 @@
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "miniCycle",
-      "description": "A routine workflow companion that helps manage repeating task lists with auto-reset cycles and intelligent routine patterns",
+      "description": "A repeatable multi-step process tool. Build routine checklists once and miniCycle resets them every time you finish. Built for shift inspections and any routine that repeats.",
       "url": "https://minicycle.app",
       "applicationCategory": "ProductivityApplication",
       "genre": "Routine Workflow Companion",
@@ -37,7 +37,7 @@
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
       "creator": { "@type": "Organization", "name": "sparkinCreations", "url": "https://sparkincreations.com" },
       "screenshot": "https://minicycle.app/assets/images/Product/Mini_Cycle_List.png",
-      "softwareVersion": "2.201",
+      "softwareVersion": "2.202",
       "datePublished": "2025",
       "featureList": ["Auto-Reset Workflow Cycles","Recurring Task Scheduling","Task Search, Filter & Sort","Drag-and-Drop Reordering","Vocabulary Theme System","Achievement & Milestone Tracking","Undo/Redo History","Smart Routine Reminders","Export & Import .mcyc Files","Dark Mode & Custom Themes","Cross-Platform PWA"]
     }
@@ -117,14 +117,19 @@
             border-bottom: 1px solid rgba(0, 136, 255, 0.08);
         }
         .header-content { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header-subtitle { max-width: 1200px; margin: 0 auto; padding: 4px 20px 0; }
+        @media (min-width: 768px) { .header-subtitle { padding: 6px 20px 2px; } }
+        .logo-tagline { display: inline-block; font-family: var(--font-heading); font-size: 0.6rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255, 255, 255, 0.8); line-height: 1.2; }
+        @media (min-width: 768px) { .logo-tagline { font-size: 0.65rem; letter-spacing: 0.14em; } }
         .logo-link { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--color-white); }
         .logo-link img { height: 36px; width: auto; }
         .logo-wordmark { height: 28px; width: auto; filter: brightness(0) invert(1); }
         .header-nav { display: flex; gap: var(--space-md); align-items: center; }
         .header-nav a { color: rgba(255, 255, 255, 0.9); text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: color 0.2s; display: none; }
         .header-nav a:hover { color: var(--color-white); }
-        .header-nav .cta-btn { display: inline-block; background: var(--color-white); color: var(--color-primary); padding: 0.6rem 1.4rem; border-radius: var(--radius-pill); font-weight: 600; font-size: 0.95rem; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s, background 0.2s, color 0.2s; }
-        .header-nav .cta-btn:hover { background: transparent; color: var(--color-white); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85), 0 4px 16px rgba(0, 0, 0, 0.2); transform: translateY(-2px); }
+        header .cta-btn { display: inline-block; position: absolute; top: 50%; right: max(20px, calc(50% - 580px)); transform: translateY(-50%); z-index: 2; background: var(--color-white); color: var(--color-primary); padding: 0.6rem 1.4rem; border-radius: var(--radius-pill); font-weight: 600; font-size: 0.95rem; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s, background 0.2s, color 0.2s; }
+        header .cta-btn:hover { background: transparent; color: var(--color-white); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85), 0 4px 16px rgba(0, 0, 0, 0.2); transform: translateY(calc(-50% - 2px)); }
+        @media (min-width: 768px) { .header-nav { position: absolute; top: 50%; right: max(140px, calc(50% - 460px)); transform: translateY(-50%); z-index: 1; } }
 
         /* ============================
            Shared
@@ -145,6 +150,7 @@
         .hero-section { background: radial-gradient(ellipse 1200px 800px at 85% 10%, #c8daf2 0%, #a8c5e8 55%, #8eb4dc 100%); padding: var(--space-2xl) 0 var(--space-xl); overflow: visible; }
         .hero-grid { display: flex; flex-direction: column; align-items: center; gap: var(--space-lg); }
         .hero-text { text-align: center; max-width: 550px; }
+        .hero-eyebrow { font-family: var(--font-heading); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: var(--color-primary-dark); margin-bottom: 0.6rem; }
         .hero-headline { font-family: var(--font-heading); font-size: 2.2rem; font-weight: 600; color: var(--color-navy); margin-bottom: var(--space-sm); line-height: 1.15; }
         .hero-sub { font-size: 1.15rem; color: #3d4f62; margin-bottom: var(--space-lg); line-height: 1.7; }
         .hero-ctas { display: flex; flex-direction: column; gap: var(--space-sm); align-items: center; margin-bottom: var(--space-sm); }
@@ -186,7 +192,7 @@
         .why-line { font-size: 1.05rem; color: var(--color-text-muted); margin-bottom: var(--space-xs); }
         .why-line-bold { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 600; color: var(--color-primary); margin-top: var(--space-sm); }
         .usecase-row { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-xs); margin-top: var(--space-md); }
-        .usecase-chip { background: var(--color-bg); border: 1px solid var(--color-border); padding: 0.5rem 1rem; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 500; color: var(--color-text); display: inline-flex; align-items: center; gap: 0.5rem; }
+        .usecase-chip { background: var(--color-white); border: 1px solid rgba(0, 68, 187, 0.12); padding: 0.55rem 1.1rem; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 500; color: var(--color-text-dark); display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 8px rgba(0, 68, 187, 0.07); }
         .usecase-chip svg { width: 17px; height: 17px; color: var(--color-primary); flex-shrink: 0; }
 
         /* ============================
@@ -264,7 +270,29 @@
            ============================ */
         .story-section { background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-dark) 100%); color: var(--color-white); padding: var(--space-2xl) 0; text-align: center; }
         .story-section .section-title { color: var(--color-white); }
-        .story-lead { font-size: 1rem; opacity: 0.9; margin-bottom: var(--space-lg); max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+        .story-layout { display: flex; flex-direction: column; gap: var(--space-lg); align-items: center; }
+        .story-author { margin-bottom: 0; }
+        .story-content { display: flex; flex-direction: column; gap: var(--space-md); align-items: center; }
+        .story-photo { width: 140px; height: 140px; border-radius: 50%; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); border: 3px solid rgba(255, 255, 255, 0.15); object-fit: cover; display: block; margin: 0 auto var(--space-md); }
+        .story-pull-quote { font-size: 1.3rem; font-style: italic; font-weight: 500; line-height: 1.5; max-width: 600px; margin: 0 auto var(--space-xs); text-wrap: balance; opacity: 0.95; }
+        .story-attribution { font-size: 0.95rem; opacity: 0.65; margin-bottom: 0; font-weight: 500; letter-spacing: 0.02em; }
+        @media (min-width: 768px) {
+            .story-section .section-title { text-align: center; padding-left: calc(320px + var(--space-xl)); margin-bottom: var(--space-md); }
+            .story-layout { flex-direction: row; align-items: flex-start; gap: var(--space-xl); text-align: left; }
+            .story-author { flex-shrink: 0; max-width: 320px; margin: 0; text-align: center; }
+            .story-author .story-photo { margin: 0 auto var(--space-md); }
+            .story-author .story-pull-quote { margin-left: auto; margin-right: auto; max-width: 320px; }
+            .story-content { flex: 1; align-items: stretch; }
+            .story-content .story-sublead { margin-left: 0; max-width: none; text-align: left; }
+            .story-content .story-stats { flex-direction: row; justify-content: center; margin-bottom: 0; }
+            .story-content .story-quote { margin-left: 0; max-width: none; text-align: left; }
+        }
+        .story-sublead { font-size: 0.9rem; opacity: 0.7; margin-bottom: var(--space-lg); max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.65; }
+        .story-grid { display: flex; flex-direction: column; align-items: center; gap: var(--space-md); margin-bottom: var(--space-lg); }
+        .story-grid .story-stats { margin-bottom: 0; }
+        @media (min-width: 768px) {
+            .story-grid { flex-direction: row; justify-content: center; align-items: center; gap: var(--space-lg); }
+        }
         .story-stats { display: flex; flex-direction: column; gap: var(--space-md); align-items: center; margin-bottom: var(--space-lg); }
         .story-stat { padding: var(--space-md) var(--space-lg); text-align: center; min-width: 160px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius); }
         .story-stat-number { font-family: var(--font-heading); font-size: 2.2rem; font-weight: 600; color: var(--color-primary-light); line-height: 1; }
@@ -324,6 +352,8 @@
            Testimonial
            ============================ */
         .testimonial-section { background: var(--color-white); padding: var(--space-2xl) 0; }
+        .testimonials-grid { display: flex; flex-direction: column; gap: var(--space-xl); max-width: 720px; margin: 0 auto; }
+        @media (min-width: 768px) { .testimonials-grid { flex-direction: row; max-width: 1080px; align-items: flex-start; gap: var(--space-lg); } .testimonials-grid .testimonial { flex: 1; } }
         .testimonial { max-width: 720px; margin: 0 auto; text-align: center; padding: 0 var(--space-sm); position: relative; }
         .testimonial-quote-mark { width: 36px; height: 36px; color: var(--color-primary); opacity: 0.35; margin: 0 auto var(--space-sm); display: block; }
         .testimonial-quote { font-family: var(--font-heading); font-size: 1.2rem; font-weight: 500; line-height: 1.55; color: var(--color-text-dark); margin-bottom: var(--space-md); font-style: italic; }
@@ -417,14 +447,14 @@
 
             .hero-section { padding: var(--space-3xl) 0 var(--space-2xl); }
             .hero-section .container { max-width: 1220px; }
-            .hero-grid { flex-direction: row; align-items: center; justify-content: center; gap: 1.5rem; }
+            .hero-grid { flex-direction: row; align-items: center; justify-content: center; gap: 0; }
             .hero-text { text-align: left; max-width: 760px; margin: 0; }
             .hero-headline { font-size: 3.5rem; font-weight: 700; line-height: 1.1; margin-bottom: 1.5rem; text-wrap: balance; }
             .hero-sub { margin-bottom: 2.5rem; }
             .hero-ctas { justify-content: flex-start; margin-bottom: 1.25rem; }
             .trust-text { text-align: left; }
             .hero-desk-photo { display: none; }
-            .hero-mockup { display: block; flex-shrink: 0; width: 440px; max-width: 440px; height: 420px; margin: 0 1rem 0 -30px; left: 0; }
+            .hero-mockup { display: block; flex-shrink: 0; width: 440px; max-width: 440px; height: 420px; margin: 0 0 0 -80px; left: 0; }
         }
     </style>
 </head>
@@ -442,8 +472,11 @@
                 <a href="#demos">See It In Action</a>
                 <a href="#features">Features</a>
                 <a href="#changelog">What's New</a>
-                <a href="../miniCycle.html" class="cta-btn">Try Now</a>
             </nav>
+            <a href="../miniCycle.html" class="cta-btn">Try Now</a>
+        </div>
+        <div class="header-subtitle">
+            <span class="logo-tagline">A repeatable multi-step process tool</span>
         </div>
     </header>
 
@@ -455,7 +488,7 @@
             <div class="hero-grid">
                 <div class="hero-text">
                     <h1 class="hero-headline">Routine checklists that reset automatically.</h1>
-                    <p class="hero-sub">From shift rounds to morning rituals &mdash; build your routine once, and miniCycle resets it every time you finish.</p>
+                    <p class="hero-sub">Built for shift inspections. Works for any routine that repeats. Build it once and miniCycle resets it every time you finish.</p>
                     <div class="hero-ctas">
                         <a href="../miniCycle.html" class="cta-primary">Try miniCycle</a>
                         <a href="#demos" class="cta-secondary">See It In Action</a>
@@ -515,12 +548,12 @@
             </div>
             <div class="usecase-row reveal">
                 <span class="usecase-chip">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3a1 1 0 0 1 1-1h1.5v4A3.5 3.5 0 0 0 10 9.5v0A3.5 3.5 0 0 0 13.5 6V2H15a1 1 0 0 1 1 1v3a6 6 0 0 1-6 6v0a6 6 0 0 1-6-6z" fill="currentColor" fill-opacity="0.12"/><path d="M10 12v3a5 5 0 0 0 5 5v0a5 5 0 0 0 5-5v-2"/><circle cx="20" cy="10" r="2" fill="currentColor" fill-opacity="0.2"/><path d="M20 12v0"/></svg>
-                    Nurse shift rounds
-                </span>
-                <span class="usecase-chip">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.18"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                     Equipment inspections
+                </span>
+                <span class="usecase-chip">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3a1 1 0 0 1 1-1h1.5v4A3.5 3.5 0 0 0 10 9.5v0A3.5 3.5 0 0 0 13.5 6V2H15a1 1 0 0 1 1 1v3a6 6 0 0 1-6 6v0a6 6 0 0 1-6-6z" fill="currentColor" fill-opacity="0.12"/><path d="M10 12v3a5 5 0 0 0 5 5v0a5 5 0 0 0 5-5v-2"/><circle cx="20" cy="10" r="2" fill="currentColor" fill-opacity="0.2"/><path d="M20 12v0"/></svg>
+                    Nurse shift rounds
                 </span>
                 <span class="usecase-chip">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="18" rx="2" fill="currentColor" fill-opacity="0.12"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8.5 12l1.5 1.5L13 11"/><line x1="14.5" y1="12.5" x2="16.5" y2="12.5"/><path d="M8.5 17l1.5 1.5L13 16"/><line x1="14.5" y1="17.5" x2="16.5" y2="17.5"/></svg>
@@ -632,18 +665,32 @@
     <!-- Testimonial -->
     <section class="testimonial-section">
         <div class="container">
-            <figure class="testimonial reveal">
-                <svg class="testimonial-quote-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M7.5 6C4.5 6 2 8.5 2 11.5v6.5h6.5v-6.5H5c0-1.9 1.6-3.5 3.5-3.5V6h-1zm10 0c-3 0-5.5 2.5-5.5 5.5v6.5H18.5v-6.5H15c0-1.9 1.6-3.5 3.5-3.5V6h-1z"/>
-                </svg>
-                <blockquote class="testimonial-quote">
-                    &ldquo;It&rsquo;s blowing me away. All the customization, the gamification, the pre-populated samples, reminders to save. This thing feels legit. It is very impressive.&rdquo;
-                </blockquote>
-                <figcaption class="testimonial-cite">
-                    <span class="testimonial-name">Dan R.</span>
-                    <span class="testimonial-role">Software Developer</span>
-                </figcaption>
-            </figure>
+            <div class="testimonials-grid">
+                <figure class="testimonial reveal">
+                    <svg class="testimonial-quote-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M7.5 6C4.5 6 2 8.5 2 11.5v6.5h6.5v-6.5H5c0-1.9 1.6-3.5 3.5-3.5V6h-1zm10 0c-3 0-5.5 2.5-5.5 5.5v6.5H18.5v-6.5H15c0-1.9 1.6-3.5 3.5-3.5V6h-1z"/>
+                    </svg>
+                    <blockquote class="testimonial-quote">
+                        &ldquo;It&rsquo;s blowing me away. All the customization, the gamification, the pre-populated samples, reminders to save. This thing feels legit. It is very impressive.&rdquo;
+                    </blockquote>
+                    <figcaption class="testimonial-cite">
+                        <span class="testimonial-name">Dan R.</span>
+                        <span class="testimonial-role">Software Developer</span>
+                    </figcaption>
+                </figure>
+                <figure class="testimonial reveal">
+                    <svg class="testimonial-quote-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M7.5 6C4.5 6 2 8.5 2 11.5v6.5h6.5v-6.5H5c0-1.9 1.6-3.5 3.5-3.5V6h-1zm10 0c-3 0-5.5 2.5-5.5 5.5v6.5H18.5v-6.5H15c0-1.9 1.6-3.5 3.5-3.5V6h-1z"/>
+                    </svg>
+                    <blockquote class="testimonial-quote">
+                        &ldquo;100% privacy lets me use it for both business and personal. It reminds me of tasks that need my attention. This app allows no room for forgetfulness.&rdquo;
+                    </blockquote>
+                    <figcaption class="testimonial-cite">
+                        <span class="testimonial-name">Venetia</span>
+                        <span class="testimonial-role">Warehouse Supervisor (Mo&rsquo;s Mom)</span>
+                    </figcaption>
+                </figure>
+            </div>
         </div>
     </section>
 
@@ -749,22 +796,31 @@
     <section class="story-section">
         <div class="container">
             <h2 class="section-title reveal">Built Different</h2>
-            <p class="story-lead reveal">Built by a quality inspector who taught himself to code. No frameworks. No shortcuts. Every feature tested with real routines.</p>
-            <div class="story-stats">
-                <div class="story-stat reveal">
-                    <div class="story-stat-number">17</div>
-                    <div class="story-stat-label">months of development</div>
+            <div class="story-layout">
+                <div class="story-author reveal">
+                    <img class="story-photo" src="../assets/images/Product/Mo_Casual_Outdoors.jpeg" alt="Mo, creator of miniCycle" loading="lazy">
+                    <blockquote class="story-pull-quote">&ldquo;I needed a checklist that reset every time I finished my routine. I couldn&rsquo;t find one. So I built it.&rdquo;</blockquote>
+                    <p class="story-attribution">&mdash; Mo</p>
                 </div>
-                <div class="story-stat reveal">
-                    <div class="story-stat-number">108</div>
-                    <div class="story-stat-label">hand-built modules</div>
-                </div>
-                <div class="story-stat reveal">
-                    <div class="story-stat-number">557+</div>
-                    <div class="story-stat-label">cycles completed</div>
+                <div class="story-content reveal">
+                    <p class="story-sublead">A quality inspector who taught himself to code. No frameworks. No shortcuts. Every feature tested with real routines.</p>
+                    <div class="story-stats">
+                        <div class="story-stat">
+                            <div class="story-stat-number">17+</div>
+                            <div class="story-stat-label">months of development</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">119+</div>
+                            <div class="story-stat-label">modules</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">557+</div>
+                            <div class="story-stat-label">cycles completed</div>
+                        </div>
+                    </div>
+                    <p class="story-quote">Your data never touches a server. Not because of a privacy policy. Because there is no server.</p>
                 </div>
             </div>
-            <p class="story-quote reveal">Your data never touches a server. Not because of a privacy policy. Because there is no server.</p>
         </div>
     </section>
 

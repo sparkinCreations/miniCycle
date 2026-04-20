@@ -635,9 +635,9 @@ export const DEFAULT_LABELS = deepFreeze({
         // Reminder notifications
         reminderTasksToComplete: 'You have tasks to complete:',
         reminderEnabled:         'Reminder enabled: {settings}',
-        reminderClickToConfigure:'Click to configure',
         reminderCustomSettings:  'Custom settings',
         reminderEveryFrequency:  'Every {freq} {unit}',
+        reminderOpenSettings:    'Reminder Settings',
 
         // Error notifications
         errorMultipleSuppressed: 'Multiple errors detected. Further error notifications will be suppressed. Check the console for details.',

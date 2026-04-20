@@ -808,7 +808,6 @@ export class MiniCycleReminders {
             // Update undo/redo button states
             this.deps.updateUndoRedoButtons();
 
-            // ✅ Enhanced notification with settings info and click-to-configure
             if (isActive) {
                 const reminderSettings = schemaData.reminders || {};
                 const freq = reminderSettings.frequencyValue || 0;
@@ -817,31 +816,23 @@ export class MiniCycleReminders {
                     ? getLabel('notify.reminderEveryFrequency', { vars: { freq, unit } })
                     : getLabel('notify.reminderCustomSettings');
 
-                const message = `🔔 ${getLabel('notify.reminderEnabled', { vars: { settings: settingsText } })}\n${getLabel('notify.reminderClickToConfigure')}`;
-                const notificationElement = this.deps.showNotification(message, "success", UI_TIMEOUTS.NOTIFICATION_SLOW);
-
-                // Add click listener to open reminders modal
-                if (notificationElement) {
-                    const clickHandler = async (e) => {
-                        // Don't trigger if clicking the close button
-                        if (e.target.classList.contains(DOM_CLASSES.CLOSE_BTN)) return;
-
-                        const opened = await this.openRemindersModal();
-                        if (opened) {
-                            notificationElement.remove();
+                const message = `🔔 ${getLabel('notify.reminderEnabled', { vars: { settings: settingsText } })}`;
+                const notificationElement = this.deps.showNotification(
+                    message,
+                    "success",
+                    UI_TIMEOUTS.NOTIFICATION_SLOW,
+                    {
+                        actionButton: {
+                            label: getLabel('notify.reminderOpenSettings'),
+                            onClick: () => this.openRemindersModal()
                         }
-                    };
-
-                    notificationElement._clickHandler = clickHandler;
-                    safeAdd(notificationElement, 'click', notificationElement._clickHandler);
-                    notificationElement.style.cursor = 'pointer';
-                    notificationElement.title = getLabel('reminders.configureTooltip');
-
-                    // ✅ Enable line breaks in notification
-                    const notificationContent = notificationElement.querySelector(DOM_SELECTORS.NOTIFICATION_CONTENT);
-                    if (notificationContent) {
-                        notificationContent.style.whiteSpace = 'pre-line';
                     }
+                );
+
+                // Enable line breaks in the notification content
+                const notificationContent = notificationElement?.querySelector(DOM_SELECTORS.NOTIFICATION_CONTENT);
+                if (notificationContent) {
+                    notificationContent.style.whiteSpace = 'pre-line';
                 }
             } else {
                 this.deps.showNotification('🔕 ' + getLabel('notify.taskReminderDisabled'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);
