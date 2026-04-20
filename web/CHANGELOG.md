@@ -1,3 +1,7 @@
+## [2.204] - 2026-04-20
+- chore: update version to v2.303
+
+
 ## [2.203] - 2026-04-20
 - chore: updated screenshots and phone mock-ups
 - feat(product-page): rework with personal story, new header, and testimonials

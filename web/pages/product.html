@@ -40,7 +40,7 @@
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
       "creator": { "@type": "Organization", "name": "sparkinCreations", "url": "https://sparkincreations.com" },
       "screenshot": "https://minicycle.app/assets/images/Product/Light_and_Dark_no_background.png",
-      "softwareVersion": "2.203",
+      "softwareVersion": "2.204",
       "datePublished": "2025",
       "featureList": ["Auto-Reset Workflow Cycles","Recurring Task Scheduling","Task Search, Filter & Sort","Drag-and-Drop Reordering","Vocabulary Theme System","Achievement & Milestone Tracking","Undo/Redo History","Smart Routine Reminders","Export & Import .mcyc Files","Dark Mode & Custom Themes","Cross-Platform PWA"]
     }
@@ -242,7 +242,7 @@
         /* ============================
            Features Carousel
            ============================ */
-        .features-section { background: #eaf1f9; }
+        .features-section { background: #fff; }
         .features-carousel-wrapper { display: flex; align-items: center; gap: var(--space-xs); }
         .features-carousel { flex: 1 1 0%; min-width: 0; display: flex; gap: var(--space-sm); overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 4px 0 12px; scroll-padding-left: 0; }
         .features-carousel::-webkit-scrollbar { display: none; }
@@ -305,7 +305,7 @@
         /* ============================
            What's New — Timeline + Changelog
            ============================ */
-        .changelog-section { background: #fff; }
+        .changelog-section { background: #eaf1f9; }
         .changelog-intro { text-align: center; font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: var(--space-lg); }
 
         /* Timeline */
@@ -313,7 +313,7 @@
         .whats-new-timeline::before { content: ''; position: absolute; left: 7px; top: 8px; bottom: 8px; width: 2px; background: var(--color-primary); opacity: 0.25; border-radius: 1px; }
         .timeline-item { position: relative; padding-bottom: 1.4rem; }
         .timeline-item:last-child { padding-bottom: 0; }
-        .timeline-item::before { content: ''; position: absolute; left: -24px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--color-primary); border: 2px solid #fff; }
+        .timeline-item::before { content: ''; position: absolute; left: -24px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--color-primary); border: 2px solid #eaf1f9; }
         .timeline-item:first-child::before { background: var(--color-primary); box-shadow: 0 0 0 3px rgba(0, 136, 255, 0.2); }
         .timeline-date { font-size: 0.75rem; color: var(--color-text-light); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.15rem; }
         .timeline-title { font-family: var(--font-heading); font-size: 0.95rem; font-weight: 600; color: var(--color-text-dark); margin-bottom: 0.15rem; }
@@ -665,38 +665,6 @@
         </div>
     </section>
 
-    <!-- Testimonial -->
-    <section class="testimonial-section">
-        <div class="container">
-            <div class="testimonials-grid">
-                <figure class="testimonial reveal">
-                    <svg class="testimonial-quote-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                        <path d="M7.5 6C4.5 6 2 8.5 2 11.5v6.5h6.5v-6.5H5c0-1.9 1.6-3.5 3.5-3.5V6h-1zm10 0c-3 0-5.5 2.5-5.5 5.5v6.5H18.5v-6.5H15c0-1.9 1.6-3.5 3.5-3.5V6h-1z"/>
-                    </svg>
-                    <blockquote class="testimonial-quote">
-                        &ldquo;It&rsquo;s blowing me away. All the customization, the gamification, the pre-populated samples, reminders to save. This thing feels legit. It is very impressive.&rdquo;
-                    </blockquote>
-                    <figcaption class="testimonial-cite">
-                        <span class="testimonial-name">Dan R.</span>
-                        <span class="testimonial-role">Software Developer</span>
-                    </figcaption>
-                </figure>
-                <figure class="testimonial reveal">
-                    <svg class="testimonial-quote-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                        <path d="M7.5 6C4.5 6 2 8.5 2 11.5v6.5h6.5v-6.5H5c0-1.9 1.6-3.5 3.5-3.5V6h-1zm10 0c-3 0-5.5 2.5-5.5 5.5v6.5H18.5v-6.5H15c0-1.9 1.6-3.5 3.5-3.5V6h-1z"/>
-                    </svg>
-                    <blockquote class="testimonial-quote">
-                        &ldquo;100% privacy lets me use it for both business and personal. It reminds me of tasks that need my attention. This app allows no room for forgetfulness.&rdquo;
-                    </blockquote>
-                    <figcaption class="testimonial-cite">
-                        <span class="testimonial-name">Venetia</span>
-                        <span class="testimonial-role">Warehouse Supervisor (Mo&rsquo;s Mom)</span>
-                    </figcaption>
-                </figure>
-            </div>
-        </div>
-    </section>
-
     <!-- Features -->
     <section id="features" class="features-section">
         <div class="container">
@@ -823,6 +791,38 @@
                     </div>
                     <p class="story-quote">Your data never touches a server. Not because of a privacy policy. Because there is no server.</p>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonial -->
+    <section class="testimonial-section">
+        <div class="container">
+            <div class="testimonials-grid">
+                <figure class="testimonial reveal">
+                    <svg class="testimonial-quote-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M7.5 6C4.5 6 2 8.5 2 11.5v6.5h6.5v-6.5H5c0-1.9 1.6-3.5 3.5-3.5V6h-1zm10 0c-3 0-5.5 2.5-5.5 5.5v6.5H18.5v-6.5H15c0-1.9 1.6-3.5 3.5-3.5V6h-1z"/>
+                    </svg>
+                    <blockquote class="testimonial-quote">
+                        &ldquo;It&rsquo;s blowing me away. All the customization, the gamification, the pre-populated samples, reminders to save. This thing feels legit. It is very impressive.&rdquo;
+                    </blockquote>
+                    <figcaption class="testimonial-cite">
+                        <span class="testimonial-name">Dan R.</span>
+                        <span class="testimonial-role">Software Developer</span>
+                    </figcaption>
+                </figure>
+                <figure class="testimonial reveal">
+                    <svg class="testimonial-quote-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M7.5 6C4.5 6 2 8.5 2 11.5v6.5h6.5v-6.5H5c0-1.9 1.6-3.5 3.5-3.5V6h-1zm10 0c-3 0-5.5 2.5-5.5 5.5v6.5H18.5v-6.5H15c0-1.9 1.6-3.5 3.5-3.5V6h-1z"/>
+                    </svg>
+                    <blockquote class="testimonial-quote">
+                        &ldquo;100% privacy lets me use it for both business and personal. It reminds me of tasks that need my attention. This app allows no room for forgetfulness.&rdquo;
+                    </blockquote>
+                    <figcaption class="testimonial-cite">
+                        <span class="testimonial-name">Venetia</span>
+                        <span class="testimonial-role">Mom and Warehouse Supervisor</span>
+                    </figcaption>
+                </figure>
             </div>
         </div>
     </section>
