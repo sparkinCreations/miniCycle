@@ -1,3 +1,8 @@
+## [2.205] - 2026-04-21
+- feat: add export button for mobile preferences modal and archive routine reset checklist PDF
+- updated testimonals
+
+
 ## [2.204] - 2026-04-20
 - chore: update version to v2.303
 
