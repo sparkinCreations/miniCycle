@@ -1427,11 +1427,11 @@ dialog.preferences-modal::backdrop {
     .preferences-footer {
         padding: 10px var(--space-3);
     }
-
+/*  Add export button back on mobile, but hide on desktop since it's redundant with right-click export in presets list   
     .preferences-preset-btn.export-btn {
         display: none;
     }
-
+*/
     .preferences-modal .close-btn {
         padding: var(--space-3);
         font-size: var(--font-size-sm);
