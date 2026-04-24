@@ -206,9 +206,16 @@
             <h3>Bulk Task Actions</h3>
             <p>Access bulk operations through the hamburger menu (☰) → Task Actions & Features:</p>
             <ul>
-                <li><strong>Uncheck All:</strong> Reset all tasks to incomplete</li>
+                <li><strong>Auto-uncheck daily:</strong> Automatically uncheck all tasks at a set time each day (see below)</li>
+                <li><strong>Uncheck All:</strong> Reset all tasks to incomplete (one-time, immediate)</li>
                 <li><strong>Delete All:</strong> Remove all tasks from the current routine</li>
             </ul>
+
+            <h3 id="auto-uncheck-daily">Auto-Uncheck Daily</h3>
+            <p>Toggle <strong>Auto-uncheck daily</strong> in the hamburger menu (☰) → Task Actions & Features to make all tasks in the current routine uncheck themselves at a configurable time every day. The default time is 12:00 AM (midnight). Each routine has its own setting — you can enable it on some routines and leave it off on others.</p>
+            <p>Once enabled, a small italic indicator appears above the task list showing when the next reset will happen (e.g. <em>"All tasks auto-uncheck daily at 12:00 AM"</em>). Tap the indicator to change the time, or use the time button next to the toggle in the menu.</p>
+            <p><strong>This is different from completing a cycle.</strong> The auto-uncheck only resets your tasks for the day — it does <em>not</em> increment your cycle count, unlock badges, or trigger any milestone events. It's designed for routines where you want a fresh slate every morning regardless of whether yesterday's tasks all got done (morning checklists, hygiene routines, end-of-day rituals).</p>
+            <p>If your device is asleep or the app is closed when the time arrives, the reset still happens the next time you open the app — you'll see a brief notification confirming what was reset. The setting also travels with the routine when you export it as a <code>.mcyc</code> file and share it with others.</p>
 
             <h3>Importing Routines</h3>
             <p>Import .mcyc files from other devices or users using the hamburger menu (☰) → Routine Actions → "Import", or the "Import Routine" button in the routine switcher. You can also drag and drop .mcyc files directly into the app window.</p>
@@ -507,7 +514,7 @@
             <h3>More Information</h3>
             <p>Visit <a href="https://minicycleapp.com">minicycleapp.com</a> for the latest updates and documentation.</p>
 
-            <p class="last-updated">Last updated: March 2026 (v2.145)</p>
+            <p class="last-updated">Last updated: April 2026 (v2.206)</p>
         </footer>
     </main>
 </body>

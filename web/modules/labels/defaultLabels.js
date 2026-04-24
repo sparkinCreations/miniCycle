@@ -839,6 +839,12 @@ export const DEFAULT_LABELS = deepFreeze({
         selectToDuplicate:       'Please select a routine to duplicate.',
         selectFirst:             'Please select a routine first.',
         failedToSwitch:          'Failed to switch routine. Please try again.',
+
+        // Auto-uncheck daily (per-routine soft reset — does NOT complete a cycle)
+        autoUncheckEnabled:      '"{name}" auto-unchecks daily at {time}. (Won’t complete a cycle.)',
+        autoUncheckDisabled:     'Auto-uncheck turned off for "{name}"',
+        autoUncheckTimeUpdated:  '"{name}" auto-uncheck time updated to {time}',
+        autoUncheckPending:      '"{name}" was auto-unchecked at {time}',
     },
 
     // ========================================================================
@@ -903,12 +909,19 @@ export const DEFAULT_LABELS = deepFreeze({
         importWithProgress:       'Import with Progress',
         importWithProgressDesc:   'Keep cycle count, completed tasks, and due dates',
         orStartFromSample:        'or start from a sample',
-        chooseSample:             'Choose a Sample'
+        chooseSample:             'Choose a Sample',
+        autoUncheckTimeTitle:     'Auto-uncheck time for "{name}"',
+        autoUncheckTimeMessage:   'All tasks will uncheck at this time daily.'
     },
 
     // ========================================================================
     // 11. EMPTY STATES
     // ========================================================================
+
+    banner: {
+        autoUncheckDaily:        'All tasks auto-uncheck daily at {time}',
+        autoUncheckDailyAria:    'Auto-uncheck enabled. Tap to change time.'
+    },
 
     empty: {
         noTasks:              'No tasks yet',
@@ -1109,7 +1122,11 @@ export const DEFAULT_LABELS = deepFreeze({
         personalization:         'Personalization',
         settings:                'Settings',
         aria:                    'Menu',
-        close:                   'Close Main Menu'
+        close:                   'Close Main Menu',
+        autoUncheckDaily:        'Auto-uncheck daily',
+        autoUncheckDailyTitle:   'Automatically uncheck all tasks in this routine at a set time each day',
+        autoUncheckDailyAt:      'Daily at {time}',
+        changeTime:              'Change Time'
     },
 
     // ========================================================================

@@ -146,6 +146,7 @@ export function setupShareRoutineButton() {
             taskOptionButtons: cycle.taskOptionButtons || null,
             recurringTemplates: cycle.recurringTemplates || {},
             reminders: cycle.reminders || null,
+            autoUncheckDaily: cycle.autoUncheckDaily || null,
             createdAt: cycle.createdAt || null,
             theme: cycle.theme || 'classic',
             history: cycle.history || null,

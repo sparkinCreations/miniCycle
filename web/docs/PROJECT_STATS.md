@@ -5,7 +5,7 @@
 > This file contains metrics that change frequently (version, counts, etc.).
 > All other documentation should reference this file instead of hardcoding these values.
 
-**Last Updated**: April 21, 2026
+**Last Updated**: April 24, 2026
 
 ---
 
@@ -13,15 +13,15 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.205 |
+| **App Version** | 2.207 |
 | **Lite Version** | 2.088 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 120 |
-| **Total Tests** | 2349 |
+| **Total Modules** | 121 |
+| **Total Tests** | 2373 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 41 |
-| **JSDoc Blocks** | 1233 |
-| **Documentation Files** | 202 |
+| **JSDoc Blocks** | 1239 |
+| **Documentation Files** | 203 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
 
@@ -35,7 +35,7 @@
 |-----------|-------|---------|
 | `boot/` | 7 | Boot sequence, orchestration, module loading |
 | `core/` | 9 | AppState, appInit, appContext, DI base, constants |
-| `task/` | 12 | Task CRUD, DOM, events, drag-drop, validation |
+| `task/` | 13 | Task CRUD, DOM, events, drag-drop, validation |
 | `routine/` | 5 | Routine management, switching, migration |
 | `recurring/` | 15 | Recurring task scheduling, panel, activation |
 | `ui/` | 32 | Modals, menus, settings, onboarding, gestures |
@@ -45,7 +45,7 @@
 | `progress/` | 1 | Cycle completion tracking |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **120** | |
+| **Total** | **121** | |
 
 ---
 
@@ -66,8 +66,8 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 2349 |
-| Test Files | 114 |
+| Total Tests | 2373 |
+| Test Files | 115 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
 

@@ -65,6 +65,7 @@
   * [Task Options Customizer](features/TASK_OPTIONS_CUSTOMIZER.md)
   * [Recurring Tasks Guide](features/minicycle-recurring-guide.md)
   * [Recurring Watch Function](features/RECURRING_WATCH_FUNCTION.md)
+  * [Auto-Uncheck Daily](features/AUTO_UNCHECK_DAILY.md)
 
 * **Guides**
   * [Confirmation & Notification Modal](guides/confirmation-and-notification-modal.md)

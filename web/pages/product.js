@@ -517,7 +517,11 @@
     function loadAndShowChangelog() {
         if (!changelogLoaded) {
             changelogLoaded = true;
-            fetch('../CHANGELOG.md')
+            // Daily cache-buster: forces refetch once a day for visitors whose browsers
+            // cached the original 1-year-max-age response. Within a day, the URL is stable
+            // so the netlify.toml *.md rule (max-age=300, must-revalidate) handles the rest.
+            var cacheKey = new Date().toISOString().split('T')[0];
+            fetch('../CHANGELOG.md?v=' + cacheKey)
                 .then(function (response) { return response.text(); })
                 .then(function (markdown) {
                     var entries = parseChangelog(markdown);

@@ -50,6 +50,11 @@
   --color-purple: #7B1FA2;            /* to-do mode indicator */
   --color-red: #f44336;               /* storage critical / pure red */
   --color-red-light: #ef5350;         /* storage critical gradient secondary */
+  /* Badge tap-animation accent glows (contextual micro-interactions) */
+  --color-flame: #ff8c00;                       /* 🔥 badge flicker accent */
+  --color-flame-glow: rgba(255, 140, 0, 0.6);   /* 🔥 drop-shadow glow */
+  --color-gold: #ffd700;                        /* 👑 badge shine accent */
+  --color-gold-glow: rgba(255, 215, 0, 0.6);    /* 👑 drop-shadow glow */
   /* Extended blue palette */
   --color-blue-medium: #3498db;       /* recurring / reminder option icons */
   --color-blue-light: #5dade2;        /* reminder icons on dark bg */
@@ -360,6 +365,13 @@
   --animation-pulse: 2s;         /* infinite pulse animations */
   --transition-stagger: 800ms;   /* sequential reveal delays */
 
+  /* Badge tap-animation durations (contextual per emoji) */
+  --anim-badge-flicker: 600ms;   /* 🔥 flame flicker */
+  --anim-badge-flex: 500ms;      /* 💪 muscle flex */
+  --anim-badge-bob: 600ms;       /* 📚 book bob */
+  --anim-badge-sweep: 700ms;     /* 🧹 broom sweep */
+  --anim-badge-shine: 800ms;     /* 👑 crown shine */
+
   /* ═══════════════════════════════════════════════════════════════════════════
      BORDERS & RADIUS
      ═══════════════════════════════════════════════════════════════════════════ */
@@ -494,6 +506,11 @@
     --animation-spin: 0ms;
     --animation-pulse: 0ms;
     --transition-stagger: 0ms;
+    --anim-badge-flicker: 0ms;
+    --anim-badge-flex: 0ms;
+    --anim-badge-bob: 0ms;
+    --anim-badge-sweep: 0ms;
+    --anim-badge-shine: 0ms;
   }
 }
 
@@ -510,4 +527,9 @@ html.reduced-motion {
     --animation-spin: 0ms;
     --animation-pulse: 0ms;
     --transition-stagger: 0ms;
+    --anim-badge-flicker: 0ms;
+    --anim-badge-flex: 0ms;
+    --anim-badge-bob: 0ms;
+    --anim-badge-sweep: 0ms;
+    --anim-badge-shine: 0ms;
 }

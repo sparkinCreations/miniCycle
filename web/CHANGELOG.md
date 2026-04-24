@@ -1,3 +1,19 @@
+## [2.207] - 2026-04-24
+- chore: update version to v2.205 and reflect changes across documentation and files
+
+
+## [2.206] - 2026-04-24
+
+- feat: add per-routine "Auto-uncheck Daily" — soft daily reset that unchecks all tasks at a configurable local time (default midnight) without triggering a cycle completion
+- New menu toggle under "Uncheck All" with inline time button + native time picker modal
+- Always-visible status banner above the task list when enabled (also a tap-to-edit shortcut)
+- Catch-up: fires on next app open or visibility change if the trigger time passed while the app was closed
+- Per-routine notification: silent at fire time; shows "Tasks were auto-unchecked at HH:MM" the next time the user views the affected routine
+- New module `modules/task/dailyResetManager.js` (DI-pure, self-contained 60s tick + visibility-change catch-up + AppState subscription for per-cycle UI sync)
+- `.mcyc` import/export round-trip preserves the user's intent (enabled/hour/minute) and resets transient runtime fields (lastResetDate, pendingNotification) on import
+- 16 new label keys in defaultLabels.js (menu/banner/notify/modal categories)
+- 19 tests covering helpers, fire/idempotency logic, view-time notification, user actions, and defensive paths
+
 ## [2.205] - 2026-04-21
 - feat: add export button for mobile preferences modal and archive routine reset checklist PDF
 - updated testimonals
@@ -14,7 +30,7 @@
 
 ## [2.202] - 2026-04-19
 - fix: make notifications fully interactive while modals are open
-- - modules/utils/notifications.js: switch drag from mouse+touch events to   pointer events with setPointerCapture. Fixes drag freezing when cursor   moves over the modal backdrop (inert area), since browsers suppress   mouse events over inert content. Pointer capture routes all gesture   events to the container regardless of hit target.yes
+- modules/utils/notifications.js: switch drag from mouse+touch events to pointer events with setPointerCapture. Fixes drag freezing when cursor moves over the modal backdrop (inert area), since browsers suppress mouse events over inert content. Pointer capture routes all gesture events to the container regardless of hit target.
 
 
 ## [2.201] - 2026-04-19

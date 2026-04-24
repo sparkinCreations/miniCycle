@@ -413,6 +413,7 @@
             <option value="clearedTasksManager">🗑️ Cleared Tasks Manager</option>
             <option value="taskCompletion">✅ Task Completion</option>
             <option value="taskCRUD">✏️ Task CRUD</option>
+            <option value="dailyResetManager">🕛 Daily Reset Manager</option>
             <option value="recurringMatcher">🔁 Recurring Matcher</option>
             <option value="recurringCalculators">🔢 Recurring Calculators</option>
             <option value="recurringActivation">⚡ Recurring Activation</option>
@@ -562,6 +563,7 @@
         const { runClearedTasksManagerTests } = await import(`./clearedTasksManager.tests.js?v=${cacheBuster}`);
         const { runTaskCompletionTests } = await import(`./taskCompletion.tests.js?v=${cacheBuster}`);
         const { runTaskCRUDTests } = await import(`./taskCRUD.tests.js?v=${cacheBuster}`);
+        const { runDailyResetManagerTests } = await import(`./dailyResetManager.tests.js?v=${cacheBuster}`);
         const { runRecurringMatcherTests } = await import(`./recurringMatcher.tests.js?v=${cacheBuster}`);
         const { runRecurringCalculatorsTests } = await import(`./recurringCalculators.tests.js?v=${cacheBuster}`);
         const { runRecurringActivationTests } = await import(`./recurringActivation.tests.js?v=${cacheBuster}`);
@@ -1718,6 +1720,10 @@
                     await import(`../modules/task/taskCRUD.js?v=${cacheBuster}`);
                     currentModule = 'taskCRUD';
                     resultsDiv.innerHTML = '<p>✅ TaskCRUD loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'dailyResetManager') {
+                    await import(`../modules/task/dailyResetManager.js?v=${cacheBuster}`);
+                    currentModule = 'dailyResetManager';
+                    resultsDiv.innerHTML = '<p>✅ DailyResetManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'recurringMatcher') {
                     await import(`../modules/recurring/recurringMatcher.js?v=${cacheBuster}`);
                     currentModule = 'recurringMatcher';
@@ -2001,6 +2007,8 @@
                 await runTaskCompletionTests(resultsDiv);
             } else if (currentModule === 'taskCRUD') {
                 await runTaskCRUDTests(resultsDiv);
+            } else if (currentModule === 'dailyResetManager') {
+                await runDailyResetManagerTests(resultsDiv);
             } else if (currentModule === 'recurringMatcher') {
                 await runRecurringMatcherTests(resultsDiv);
             } else if (currentModule === 'recurringCalculators') {
@@ -2565,6 +2573,7 @@
                 { name: 'ClearedTasksManager', key: 'clearedTasksManager', runFn: runClearedTasksManagerTests, importPath: '../modules/features/clearedTasksManager.js' },
                 { name: 'TaskCompletion', key: 'taskCompletion', runFn: runTaskCompletionTests, importPath: '../modules/task/taskCompletion.js' },
                 { name: 'TaskCRUD', key: 'taskCRUD', runFn: runTaskCRUDTests, importPath: '../modules/task/taskCRUD.js' },
+                { name: 'DailyResetManager', key: 'dailyResetManager', runFn: runDailyResetManagerTests, importPath: '../modules/task/dailyResetManager.js' },
                 { name: 'RecurringMatcher', key: 'recurringMatcher', runFn: runRecurringMatcherTests, importPath: '../modules/recurring/recurringMatcher.js' },
                 { name: 'RecurringCalculators', key: 'recurringCalculators', runFn: runRecurringCalculatorsTests, importPath: '../modules/recurring/recurringCalculators.js' },
                 { name: 'RecurringActivation', key: 'recurringActivation', runFn: runRecurringActivationTests, importPath: '../modules/recurring/recurringActivation.js' },

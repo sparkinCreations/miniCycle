@@ -636,6 +636,24 @@ export async function processImportedData(fileContent) {
         };
     }
 
+    // Sanitize autoUncheckDaily — preserve user intent (enabled, hour, minute);
+    // reset transient runtime fields (lastResetDate, pendingNotification) so the
+    // imported routine doesn't think it already fired today on the source machine
+    // and doesn't surface a "tasks were auto-unchecked" toast for a foreign event.
+    let safeAutoUncheckDaily = null;
+    if (importedData.autoUncheckDaily && typeof importedData.autoUncheckDaily === 'object') {
+        const a = importedData.autoUncheckDaily;
+        const h = typeof a.hour === 'number' ? Math.max(0, Math.min(23, Math.floor(a.hour))) : 0;
+        const m = typeof a.minute === 'number' ? Math.max(0, Math.min(59, Math.floor(a.minute))) : 0;
+        safeAutoUncheckDaily = {
+            enabled: !!a.enabled,
+            hour: h,
+            minute: m,
+            lastResetDate: null,
+            pendingNotification: false
+        };
+    }
+
     // ✅ Resolve theme — use imported theme if unlocked, otherwise fall back to Classic
     const importedTheme = importedData.theme ?? 'classic';
     const currentState = appState.get();
@@ -710,6 +728,7 @@ export async function processImportedData(fileContent) {
             recurringTemplates: mergedTemplates,
             taskOptionButtons: safeTaskOptionButtons,
             reminders: safeReminders,
+            autoUncheckDaily: safeAutoUncheckDaily,
             history: safeHistory,
             clearedTasks: safeClearedTasks
         };

@@ -699,6 +699,28 @@
     font-weight: bold;
 }
 
+/* Tap-triggered contextual animations per milestone (unlocked only).
+   Applied transiently by _playBadgeTapAnim() and removed on animationend. */
+.badge.unlocked.animate-tap[data-milestone="5"] {
+    animation: badge-flicker var(--anim-badge-flicker) ease-out;
+}
+
+.badge.unlocked.animate-tap[data-milestone="25"] {
+    animation: badge-flex var(--anim-badge-flex) ease-out;
+}
+
+.badge.unlocked.animate-tap[data-milestone="50"] {
+    animation: badge-bob var(--anim-badge-bob) ease-out;
+}
+
+.badge.unlocked.animate-tap[data-milestone="75"] {
+    animation: badge-sweep var(--anim-badge-sweep) ease-out;
+}
+
+.badge.unlocked.animate-tap[data-milestone="100"] {
+    animation: badge-shine var(--anim-badge-shine) ease-out;
+}
+
 
 /* =============================================================================
    CUSTOM PREFERENCE COLORS (Default Theme Only)

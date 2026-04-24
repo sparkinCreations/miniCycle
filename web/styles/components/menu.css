@@ -831,6 +831,62 @@ body.theme-golden-glow .menu-section-grid #menu-task-options .icon-text {
 }
 
 /* =============================================================================
+   AUTO-UNCHECK DAILY ROW (per-routine soft-reset toggle, sits in tasks grid)
+   Spans both grid columns so the checkbox + time button don't get squeezed.
+   ============================================================================= */
+.menu-section-grid .auto-uncheck-row {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--menu-button-text, var(--theme-text-on-surface));
+    background: var(--menu-button-bg, var(--overlay-faint));
+    border-radius: var(--radius-2xl);
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+}
+
+.menu-section-grid .auto-uncheck-row:hover {
+    background: var(--menu-button-hover-bg, var(--overlay-medium));
+}
+
+.menu-section-grid .auto-uncheck-row input[type="checkbox"] {
+    margin: 0;
+    cursor: pointer;
+}
+
+.menu-section-grid .auto-uncheck-row-text {
+    flex: 1;
+}
+
+.menu-section-grid .auto-uncheck-row-time-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-0-5) var(--space-2);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--theme-accent, var(--color-primary));
+    background: transparent;
+    border: 1px solid currentColor;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: background var(--transition-fast) ease, color var(--transition-fast) ease;
+}
+
+.menu-section-grid .auto-uncheck-row-time-btn:hover {
+    background: var(--theme-accent, var(--color-primary));
+    color: var(--color-white);
+}
+
+.menu-section-grid .auto-uncheck-row-time-btn.hidden {
+    display: none;
+}
+
+/* =============================================================================
    iOS PWA Safe Area Fix for Menu
    The .ios-pwa class is added by JavaScript detection in miniCycle.html
    ============================================================================= */

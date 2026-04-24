@@ -176,6 +176,78 @@
 
 
 /* =============================================================================
+   BADGE TAP ANIMATIONS (contextual micro-interactions per milestone emoji)
+   ============================================================================= */
+
+/* 🔥 Habit Tracker — flame flicker */
+@keyframes badge-flicker {
+    0%, 100% {
+        filter: brightness(1);
+        transform: scale(1);
+    }
+    40% {
+        filter: brightness(1.6) drop-shadow(0 0 6px var(--color-flame-glow));
+        transform: scale(1.15);
+    }
+    70% {
+        filter: brightness(1.2);
+        transform: scale(0.95);
+    }
+}
+
+/* 💪 Fitness — muscle flex */
+@keyframes badge-flex {
+    0%, 100% {
+        transform: scaleY(1);
+    }
+    30% {
+        transform: scaleY(1.25) translateY(-2px);
+    }
+    60% {
+        transform: scaleY(0.9);
+    }
+}
+
+/* 📚 Scholar — book bob */
+@keyframes badge-bob {
+    0%, 100% {
+        transform: translateY(0) rotateZ(0);
+    }
+    40% {
+        transform: translateY(-5px) rotateZ(-4deg);
+    }
+    70% {
+        transform: translateY(-2px) rotateZ(3deg);
+    }
+}
+
+/* 🧹 Cleaning — broom sweep */
+@keyframes badge-sweep {
+    0%, 100% {
+        transform: rotate(0);
+    }
+    30% {
+        transform: rotate(-18deg);
+    }
+    60% {
+        transform: rotate(12deg);
+    }
+}
+
+/* 👑 Crowned — crown shine */
+@keyframes badge-shine {
+    0%, 100% {
+        transform: translateY(0);
+        filter: brightness(1);
+    }
+    50% {
+        transform: translateY(-3px);
+        filter: brightness(1.4) drop-shadow(0 0 6px var(--color-gold-glow));
+    }
+}
+
+
+/* =============================================================================
    PULSE ANIMATIONS
    ============================================================================= */
 

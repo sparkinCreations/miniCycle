@@ -10,7 +10,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.205">
+<meta name="app-version" content="2.207">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -29,20 +29,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.205"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.207"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.205" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.205" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.205" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.205" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.205" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.205" as="style">
+<link rel="preload" href="styles/main.css?v=2.207" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.207" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.207" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.207" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.207" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.207" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.205" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.207" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.205"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.207"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -53,7 +53,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.205"></script>
+<script src="./version.js?v=2.207"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -1146,6 +1146,14 @@ window.installApp = () => {
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
                 <div class="menu-section-grid" id="menu-section-tasks">
+                    <label class="auto-uncheck-row" for="auto-uncheck-daily-toggle" title="Automatically uncheck all tasks in this routine at a set time each day">
+                        <input type="checkbox" id="auto-uncheck-daily-toggle">
+                        <span class="auto-uncheck-row-text">Auto-uncheck daily</span>
+                        <button type="button" id="auto-uncheck-daily-time-btn" class="auto-uncheck-row-time-btn hidden" title="Change auto-uncheck time">
+                            <span id="auto-uncheck-daily-time-label">12:00 AM</span>
+                            <i class="fas fa-clock" aria-hidden="true"></i>
+                        </button>
+                    </label>
                     <button id="clear-mini-cycle-tasks" title="Uncheck all tasks in this routine"><i class="fas fa-eraser"></i>Uncheck All</button>
                     <button id="delete-all-mini-cycle-tasks" title="Delete all tasks in this routine"><i class="fas fa-trash"></i>Delete All</button>
                     <button id="open-reminders-modal" title="Configure reminders and notifications"><i class="fas fa-bell"></i>Reminders</button>
@@ -1693,6 +1701,11 @@ window.installApp = () => {
             <input type="text" id="task-search-input" class="task-search-input" placeholder="Search tasks..." aria-label="Search tasks">
             <button id="task-search-clear" class="task-search-clear" aria-label="Clear search" title="Clear search">×</button>
         </div>
+        <!-- Auto-uncheck status banner (per-routine; populated by dailyResetManager) -->
+        <button type="button" id="auto-uncheck-banner" class="auto-uncheck-banner hidden" aria-hidden="true" tabindex="-1">
+            <span class="auto-uncheck-banner-icon" aria-hidden="true">🕛</span>
+            <span id="auto-uncheck-banner-text" class="auto-uncheck-banner-text">All tasks auto-uncheck daily at 12:00 AM</span>
+        </button>
         <!--Tasks will go here-->
         <ul id="taskList" class="task-list" aria-label="Task list" aria-live="polite" aria-relevant="additions removals"></ul>
 
@@ -1852,7 +1865,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.205"></script>
+ <script type="module" src="miniCycle-main.js?v=2.207"></script>
 
 <script>
 // Sync About modal version with meta app-version

@@ -302,6 +302,17 @@ export const MODULE_MANIFESTS = {
         after: ['taskDOM']
     },
 
+    dailyResetManager: {
+        path: '../task/dailyResetManager.js',
+        phase: PHASES.RECURRING,
+        requires: ['AppState', 'showNotification'],
+        optionalDeps: ['safeAddEventListener', 'loadMiniCycle'],
+        provides: ['dailyResetManager'],
+        provideInstance: 'dailyResetManager',
+        api: 'task',
+        after: ['notifications']
+    },
+
     // =========================================================================
     // PHASE 5: CYCLE MANAGEMENT
     // =========================================================================

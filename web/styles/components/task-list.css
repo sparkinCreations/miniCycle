@@ -1106,3 +1106,50 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"]:checked::after {
     color: var(--pref-checkmark, rgb(18, 70, 9));
 }
+
+/* =============================================================================
+   AUTO-UNCHECK BANNER (per-routine status indicator above the task list)
+   Subtle, centered, low-opacity. Acts as a tap-to-edit shortcut.
+   ============================================================================= */
+.auto-uncheck-banner {
+    /* width: max-content + margin auto = centered, with hit-area limited to
+       the text + icon (no full-row clickable strip, no hover background). */
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    width: max-content;
+    max-width: 100%;
+    margin: var(--space-0-5) auto var(--space-1);
+    padding: var(--space-0-5) var(--space-1);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-normal);
+    font-style: italic;
+    color: var(--theme-text-on-surface);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    font-family: inherit;
+}
+
+.auto-uncheck-banner:hover {
+    background: transparent;
+}
+
+.auto-uncheck-banner:focus-visible {
+    outline: 1px dotted var(--theme-accent, var(--color-primary));
+    outline-offset: 2px;
+}
+
+.auto-uncheck-banner.hidden {
+    display: none;
+}
+
+.auto-uncheck-banner-icon {
+    font-size: var(--font-size-xs);
+    line-height: 1;
+}
+
+.auto-uncheck-banner-text {
+    flex: 0 0 auto;
+}

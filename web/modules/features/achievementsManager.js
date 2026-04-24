@@ -514,12 +514,16 @@ export class AchievementsManager {
                 badge.title = tooltip;
 
                 // Store handler reference for safeAddEventListener
-                badge._badgeClickHandler = () => this.showBadgeDetail(milestone);
+                badge._badgeClickHandler = () => {
+                    this._playBadgeTapAnim(badge);
+                    this.showBadgeDetail(milestone);
+                };
 
                 // Keyboard activation (Enter/Space)
                 badge._badgeKeyHandler = (e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
+                        this._playBadgeTapAnim(badge);
                         this.showBadgeDetail(milestone);
                     }
                 };
@@ -558,6 +562,25 @@ export class AchievementsManager {
             });
         }
 
+    }
+
+    /**
+     * Play contextual tap animation on a badge/coin element.
+     * Forces reflow so the class re-adds cleanly when tapped in rapid succession,
+     * then removes the class on animationend so :hover transforms are restored.
+     * No-ops gracefully under prefers-reduced-motion (duration is 0ms, animationend still fires).
+     * @param {HTMLElement} el
+     */
+    _playBadgeTapAnim(el) {
+        if (!el) return;
+        el.classList.remove('animate-tap');
+        void el.offsetWidth; // force reflow so re-adding class restarts the animation
+        el.classList.add('animate-tap');
+        const onEnd = () => {
+            el.classList.remove('animate-tap');
+            el.removeEventListener('animationend', onEnd);
+        };
+        el.addEventListener('animationend', onEnd);
     }
 
     /**
@@ -641,7 +664,7 @@ export class AchievementsManager {
         overlay.innerHTML = `
             <div class="badge-detail-popup" ${rewardAttr ? `data-reward="${rewardAttr}"` : ''}>
                 <div id="badge-spin-area" class="badge-spin-area ${isUnlocked ? 'interactive' : ''}">
-                    <div id="badge-coin" class="badge-coin ${isUnlocked ? '' : 'badge-coin--locked'}" ${rewardAttr ? `data-reward="${rewardAttr}"` : ''}>
+                    <div id="badge-coin" class="badge-coin ${isUnlocked ? '' : 'badge-coin--locked'}" data-milestone="${milestone}" ${rewardAttr ? `data-reward="${rewardAttr}"` : ''}>
                         <span class="badge-coin-emoji">${tierConfig.emoji}</span>
                     </div>
                 </div>
@@ -670,6 +693,9 @@ export class AchievementsManager {
         requestAnimationFrame(() => {
             overlay.style.opacity = '1';
             overlay.querySelector('.badge-detail-popup').style.transform = 'scale(1)';
+            if (isUnlocked) {
+                this._playBadgeTapAnim(this.deps.getElementById(DOM_IDS.BADGE_COIN));
+            }
         });
 
         // Add coin spin interaction for unlocked badges
@@ -678,11 +704,13 @@ export class AchievementsManager {
             const coin = this.deps.getElementById(DOM_IDS.BADGE_COIN);
             if (spinArea && coin) {
                 let isDragging = false;
+                let hasMoved = false;
                 let startX = 0;
                 let currentRotation = 0;
                 let velocity = 0;
                 let animationFrame = null;
                 let lastHapticRotation = 0;
+                const TAP_THRESHOLD_PX = 5;
 
                 // Haptic feedback helper
                 const triggerHaptic = (duration = 10) => {
@@ -693,6 +721,7 @@ export class AchievementsManager {
 
                 const onStart = (e) => {
                     isDragging = true;
+                    hasMoved = false;
                     startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
                     spinArea.style.cursor = 'grabbing';
                     coin.style.transition = 'none';
@@ -708,6 +737,7 @@ export class AchievementsManager {
                     if (!isDragging) return;
                     const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
                     const deltaX = clientX - startX;
+                    if (Math.abs(deltaX) > TAP_THRESHOLD_PX) hasMoved = true;
                     velocity = deltaX - (currentRotation % 360);
                     currentRotation = deltaX * 2; // Multiply for more spin
                     coin.style.transform = `rotateY(${currentRotation}deg)`;
@@ -723,6 +753,17 @@ export class AchievementsManager {
                     if (!isDragging) return;
                     isDragging = false;
                     spinArea.style.cursor = 'grab';
+
+                    // Tap (no real drag movement) → replay contextual badge animation.
+                    // Clear inline transform/transition first so the keyframe owns the transform.
+                    if (!hasMoved) {
+                        coin.style.transition = '';
+                        coin.style.transform = '';
+                        currentRotation = 0;
+                        velocity = 0;
+                        this._playBadgeTapAnim(coin);
+                        return;
+                    }
 
                     // Add momentum spin
                     const spinWithMomentum = () => {
@@ -787,6 +828,14 @@ export class AchievementsManager {
                         const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
                         coin.style.transition = reducedMotion ? 'none' : 'transform 0.3s ease-out';
                         coin.style.transform = `rotateY(${currentRotation}deg)`;
+                        triggerHaptic(5);
+                    } else if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        coin.style.transition = '';
+                        coin.style.transform = '';
+                        currentRotation = 0;
+                        velocity = 0;
+                        this._playBadgeTapAnim(coin);
                         triggerHaptic(5);
                     }
                 };
