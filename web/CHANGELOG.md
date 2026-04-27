@@ -1,3 +1,8 @@
+## [2.208] - 2026-04-27
+- chore: close DI gaps, centralize timing constants, polish CSS
+- feat: add Daily Reset Manager for per-routine auto-uncheck functionality
+
+
 ## [2.207] - 2026-04-24
 - chore: update version to v2.205 and reflect changes across documentation and files
 
