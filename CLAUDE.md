@@ -122,7 +122,11 @@ document.querySelector(DATA_SELECTORS.taskById(taskId))
 
 If a selector doesn't exist yet, **add it to `constants.js`** in the appropriate section.
 
-### 5. Always Use Z_INDEX from constants.js or CSS variables
+### 5. Always Use Numeric Constants from constants.js (Z_INDEX, UI_TIMEOUTS, INTERVALS, LIMITS)
+
+`core/constants.js` is the central home for all tunable numeric values. Modules should import from it, not hardcode numbers in their own bodies.
+
+**Z-index** — both JS and CSS:
 
 ```javascript
 // JS
@@ -133,7 +137,20 @@ element.style.zIndex = Z_INDEX.MODAL;
 z-index: var(--z-modal);
 ```
 
-**NEVER** hardcode z-index numbers. The scale is defined in `styles/base/variables.css`.
+**Timing values** — pick the right family:
+
+```javascript
+import { UI_TIMEOUTS, BOOT_TIMEOUTS, INTERVALS, LIMITS } from '../core/constants.js';
+
+setTimeout(fn, UI_TIMEOUTS.NOTIFICATION_SHORT);   // user-facing UI delays
+setTimeout(fn, BOOT_TIMEOUTS.SOMETHING);          // boot-phase timing
+setInterval(fn, INTERVALS.RECURRING_WATCHER);     // repeating timers
+if (count >= LIMITS.MAX_TASKS) { ... }            // numeric caps
+```
+
+**NEVER** hardcode `setTimeout(fn, 3000)` or `if (x > 100)` when the value is a tunable behavior knob. If the right constant doesn't exist yet, **add it to `constants.js`** in the appropriate `Object.freeze({...})` block with a comment describing what it tunes.
+
+**Exception:** truly local values that aren't user-tunable (e.g., a 5px tap-vs-drag threshold inside a single drag handler) can stay inline — but err on the side of centralizing.
 
 ### 6. Always Clean Up Event Listeners
 
@@ -246,7 +263,7 @@ orchestrator.js (sequence control + boot UI + early boot coordination)
 2. **Spreading deps with getters** — Use `Object.defineProperties`, not `{ ...deps }`.
 3. **Hardcoding strings** — Use `getLabel()`. Add missing keys to `defaultLabels.js`.
 4. **Hardcoding selectors** — Use `DOM_IDS`, `DOM_SELECTORS`, `DATA_SELECTORS` from constants.js.
-5. **Hardcoding z-index** — Use `Z_INDEX` constant or `var(--z-*)` CSS variables.
+5. **Hardcoding z-index or timing values** — Use `Z_INDEX`, `UI_TIMEOUTS`, `BOOT_TIMEOUTS`, `INTERVALS`, `LIMITS` from constants.js (or `var(--z-*)` CSS variables for z-index in CSS). Magic-number `setTimeout`s and thresholds belong in the appropriate constant block.
 6. **Forgetting listener cleanup** — Every addEventListener needs a corresponding removeEventListener path. Modules with listeners/timers should implement `destroy()` — it's called automatically on boot retry via `destroyAllModules()`.
 7. **Using innerHTML with user data** — Use `textContent`. Only use innerHTML for trusted static content.
 8. **Creating instances before wiring deps** — Always call `setModuleDependencies()` first.

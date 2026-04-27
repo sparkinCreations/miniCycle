@@ -94,9 +94,34 @@ dialog.mini-cycle-switch-modal::backdrop {
     text-align: center;
     max-height: 90vh;
     overflow-y: auto;
+    overflow-x: hidden;          /* content should fit width; never show a horizontal bar */
     overscroll-behavior: contain;
+    /* Dual-strategy scrollbar styling:
+       - scrollbar-width: thin → Firefox + Chrome 121+ + Safari 18.2+ (newer browsers)
+       - ::-webkit-scrollbar rules below → Chrome/Safari/iOS (including older versions)
+       Browsers that don't recognize scrollbar-width safely ignore it. */
+    scrollbar-width: thin;
     -webkit-backdrop-filter: blur(var(--theme-modal-blur));
     backdrop-filter: blur(var(--theme-modal-blur));
+}
+
+/* Subtle scrollbar styling for WebKit (Chrome/Safari/macOS-always-show users).
+   Thin track + semi-transparent thumb; doesn't fight the glass-blur background. */
+.mini-cycle-switch-modal-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.mini-cycle-switch-modal-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mini-cycle-switch-modal-content::-webkit-scrollbar-thumb {
+    background: var(--overlay-medium);
+    border-radius: var(--radius-10);
+}
+
+.mini-cycle-switch-modal-content::-webkit-scrollbar-thumb:hover {
+    background: var(--overlay-strong);
 }
 
 .mini-cycle-switch-title {
@@ -958,6 +983,11 @@ input.routine-search-input:focus {
     .mini-cycle-switch-modal-content {
         width: 680px;
         max-width: 90%;
+        /* Desktop has more vertical room; let the modal grow so the natural
+           content height (header + search + filter + list + actions + storage
+           + close) fits without scrolling on most screens. The 90vh fallback
+           still applies on very short windows / landscape phones. */
+        max-height: min(95vh, 900px);
     }
 
     /* Sort controls next to filter on desktop */

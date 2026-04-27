@@ -14,7 +14,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { STORAGE_KEYS } from '../core/constants.js';
+import { STORAGE_KEYS, INTERVALS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -54,9 +54,7 @@ const MAX_AUTO_BACKUPS = 10; // Keep last 10 auto-backups
 const MAX_SESSION_BACKUPS = 5; // Keep last 5 session backups
 const MAX_TEST_BACKUPS = 5; // Keep last 5 test backups
 const MAX_MANUAL_BACKUPS = 50; // Keep last 50 manual backups
-const BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000; // Only backup once per day
-const MIN_SESSION_INTERVAL_MS = 5 * 60 * 1000; // Skip session backup if last was < 5 min ago
-const MIN_TEST_INTERVAL_MS = 5 * 60 * 1000; // Skip test backup if last was < 5 min ago
+// Backup scheduling thresholds live in INTERVALS (BACKUP_DAILY, BACKUP_SESSION_MIN, BACKUP_TEST_MIN).
 
 const LITE_STORAGE_KEYS = Object.freeze([
     STORAGE_KEYS.LITE_DATA,
@@ -248,7 +246,7 @@ class BackupManager {
             const lastBackup = await this.getLastAutoBackup();
             if (lastBackup) {
                 const timeSinceLastBackup = Date.now() - lastBackup.timestamp;
-                if (timeSinceLastBackup < BACKUP_INTERVAL_MS) {
+                if (timeSinceLastBackup < INTERVALS.BACKUP_DAILY) {
                     return false;
                 }
             }
@@ -296,7 +294,7 @@ class BackupManager {
             const lastSessionBackup = await this.getLastBackupFromStore(SESSION_BACKUP_STORE);
             if (lastSessionBackup) {
                 const timeSinceLastBackup = Date.now() - lastSessionBackup.timestamp;
-                if (timeSinceLastBackup < MIN_SESSION_INTERVAL_MS) {
+                if (timeSinceLastBackup < INTERVALS.BACKUP_SESSION_MIN) {
                     return false;
                 }
             }
@@ -372,7 +370,7 @@ class BackupManager {
             const lastTestBackup = await this.getLastBackupFromStore(TEST_BACKUP_STORE);
             if (lastTestBackup) {
                 const timeSinceLastBackup = Date.now() - lastTestBackup.timestamp;
-                if (timeSinceLastBackup < MIN_TEST_INTERVAL_MS) {
+                if (timeSinceLastBackup < INTERVALS.BACKUP_TEST_MIN) {
                     return false;
                 }
             }

@@ -22,17 +22,22 @@ import { getLabel } from '../labels/labelResolver.js';
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
 
+// No-op stub for showNotification when nothing is injected — preserves
+// the original "fallback to silent no-op" behavior of the prior curated getter.
+const _noopNotification = () => {};
+
 const di = createDIModule('OnboardingManager', {
     appInit: optional(null),
     AppState: optional(null),
-    showNotification: optional(null),
+    showNotification: optional(_noopNotification),
     showCycleCreationModal: optional(null),
     completeInitialSetup: optional(null),
     safeAddEventListenerById: optional(null),
     safeAddEventListener: optional(null),
     AppMeta: optional(null),
     preloadGettingStartedCycle: optional(null),
-    createNewMiniCycle: optional(null)
+    createNewMiniCycle: optional(null),
+    startGuidedTour: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -57,38 +62,27 @@ export function setOnboardingManagerDependencies(dependencies) {
  * key features with step-by-step highlight tooltips.
  */
 export class OnboardingManager {
-    constructor(dependencies = {}) {
-        // For singleton created at module load time, use getter for late-binding
+    constructor(_dependencies = {}) {
+        // Dependencies arg accepted for API parity but ignored — instance reads
+        // from the live `di.resolve()` via the `deps` getter below.
         this.initialized = false;
-        this._fallbackNotification = this.fallbackNotification.bind(this);
-
-        // Instance version - late-binding via getter (singleton created before deps set)
-        Object.defineProperty(this, 'version', {
-            get: () => di.resolve().AppMeta?.version
-        });
-
-        // Use getter for late-binding (singleton created before deps set)
-        // IMPORTANT: Don't pass dependencies to resolve() - use injected deps from setDependencies
-        Object.defineProperty(this, 'deps', {
-            get: () => {
-                const resolvedDeps = di.resolve();
-                return {
-                    showNotification: resolvedDeps.showNotification || this._fallbackNotification,
-                    AppState: resolvedDeps.AppState,
-                    showCycleCreationModal: resolvedDeps.showCycleCreationModal,
-                    completeInitialSetup: resolvedDeps.completeInitialSetup,
-                    safeAddEventListenerById: resolvedDeps.safeAddEventListenerById,
-                    preloadGettingStartedCycle: resolvedDeps.preloadGettingStartedCycle,
-                    createNewMiniCycle: resolvedDeps.createNewMiniCycle
-                };
-            }
-        });
     }
 
     /**
-     * Fallback notification (console only)
+     * Late-binding dependency accessor — returns the live resolution from
+     * diBase so any dep declared in the manifest is reachable via this.deps.X
+     * without needing to be enumerated here. Matches the standard pattern used
+     * across the rest of the codebase (dailyResetManager, dueDates, etc.).
      */
-    fallbackNotification(message, type = 'info', duration = 3000) {
+    get deps() {
+        return di.resolve();
+    }
+
+    /**
+     * Late-binding version accessor (singleton is created before deps are set).
+     */
+    get version() {
+        return di.resolve().AppMeta?.version;
     }
 
     async init() {
@@ -111,7 +105,7 @@ export class OnboardingManager {
 
         if (this.deps.safeAddEventListenerById) {
             this._resetOnboardingHandler = () => this.resetOnboarding();
-            this.deps.safeAddEventListenerById("reset-onboarding", "click", this._resetOnboardingHandler);
+            this.deps.safeAddEventListenerById(DOM_IDS.RESET_ONBOARDING, "click", this._resetOnboardingHandler);
         } else {
             console.warn('⚠️ safeAddEventListenerById not available yet');
         }
@@ -204,19 +198,20 @@ export class OnboardingManager {
              <p class="onboarding-choice-hint">${getLabel('onboarding.step2Choice')}</p>`,
             `<h3>${getLabel('onboarding.step3Title')}</h3>
              <p>${getLabel('onboarding.step3Desc1')}</p>
-             <div class="onboarding-tour-animation" aria-hidden="true">
-               <svg viewBox="0 0 280 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animation of a cursor clicking a Start Tour button">
-                 <!-- Notification bar -->
-                 <rect class="tour-anim-bar" x="10" y="20" width="260" height="60" rx="10" />
-                 <!-- Notification text -->
-                 <text class="tour-anim-text" x="30" y="48" font-size="13">${getLabel('onboarding.step3TourPrompt')}</text>
-                 <!-- Start Tour button -->
-                 <g class="tour-anim-btn-group">
+             <div class="onboarding-tour-animation">
+               <svg viewBox="0 0 280 100" xmlns="http://www.w3.org/2000/svg">
+                 <!-- Decorative bar/text/cursor — hidden from AT so the screen
+                      reader only sees the interactive Start Tour button below. -->
+                 <rect class="tour-anim-bar" x="10" y="20" width="260" height="60" rx="10" aria-hidden="true" />
+                 <text class="tour-anim-text" x="30" y="48" font-size="13" aria-hidden="true">${getLabel('onboarding.step3TourPrompt')}</text>
+                 <!-- Start Tour button — interactive: tapping it loads the sample
+                      AND starts the guided tour immediately (skipping the 10s prompt). -->
+                 <g class="tour-anim-btn-group tour-anim-btn-interactive" id="${DOM_IDS.ONBOARDING_START_TOUR_BTN}" role="button" tabindex="0" aria-label="${getLabel('onboarding.step3TourBtn')}">
                    <rect class="tour-anim-btn" x="170" y="34" width="88" height="32" rx="6" />
                    <text class="tour-anim-btn-text" x="214" y="55" font-size="12" text-anchor="middle">${getLabel('onboarding.step3TourBtn')}</text>
                  </g>
-                 <!-- Animated cursor -->
-                 <g class="tour-anim-cursor">
+                 <!-- Animated cursor — decorative, hidden from AT and pointer events. -->
+                 <g class="tour-anim-cursor" aria-hidden="true">
                    <path d="M0,0 L0,17 L4,13 L8,20 L11,18.5 L7,12 L12,11 Z" fill="var(--theme-modal-text, #333)" />
                  </g>
                </svg>
@@ -236,7 +231,7 @@ export class OnboardingManager {
      */
     createOnboardingModal(theme) {
         const modal = document.createElement("div");
-        modal.id = "onboarding-modal";
+        modal.id = DOM_IDS.ONBOARDING_MODAL;
         modal.className = "onboarding-modal";
 
         // ✅ XSS PROTECTION: Sanitize theme value (allow only alphanumeric and hyphens)
@@ -322,6 +317,27 @@ export class OnboardingManager {
                         demoCleanup = this._startInteractiveDemo(stepContent);
                     };
                     safeAdd(tryBtn, 'click', tryBtn._clickHandler);
+                }
+            }
+
+            // Wire interactive "Start Tour" SVG button on step 3 (index 2).
+            // Loads the sample AND starts the guided tour immediately — skips
+            // the 10s prompt notification that would otherwise fire.
+            if (index === 2) {
+                const startTourBtn = stepContent.querySelector(`#${DOM_IDS.ONBOARDING_START_TOUR_BTN}`);
+                if (startTourBtn) {
+                    const onActivate = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this._startTourImmediately = true;
+                        completeOnboardingHandler();
+                    };
+                    startTourBtn._clickHandler = onActivate;
+                    startTourBtn._keyHandler = (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') onActivate(e);
+                    };
+                    safeAdd(startTourBtn, 'click', startTourBtn._clickHandler);
+                    safeAdd(startTourBtn, 'keydown', startTourBtn._keyHandler);
                 }
             }
         };
@@ -556,22 +572,34 @@ export class OnboardingManager {
                 if (this.deps.preloadGettingStartedCycle) {
                     const success = await this.deps.preloadGettingStartedCycle({ silent: true });
                     if (success) {
-                        // Show welcome notification with action button to create blank routine
-                        this.deps.showNotification(
-                            getLabel('notify.welcomeSampleLoaded'),
-                            'success',
-                            8000,
-                            {
-                                actionButton: {
-                                    label: getLabel('notify.startBlankRoutine'),
-                                    onClick: () => {
-                                        if (this.deps.createNewMiniCycle) {
-                                            this.deps.createNewMiniCycle();
+                        // If the user clicked the SVG "Start Tour" button on step 3:
+                        // 1. Show the welcome toast (so they can still pick "Start Blank")
+                        // 2. Schedule the tour for 3s later (default path, fires on sample)
+                        // 3. If they click "Start Blank" first: cancel the 3s timer,
+                        //    watch for the new routine to become active via AppState,
+                        //    then start the tour 1s after that — tour fires regardless.
+                        if (this._startTourImmediately) {
+                            this._startTourImmediately = false;
+                            this._scheduleStartTourFlow();
+                        } else {
+                            // Normal path: welcome toast + optional Start Blank Routine,
+                            // no auto-tour (user can opt in via the 10s prompt notification).
+                            this.deps.showNotification(
+                                getLabel('notify.welcomeSampleLoaded'),
+                                'success',
+                                8000,
+                                {
+                                    actionButton: {
+                                        label: getLabel('notify.startBlankRoutine'),
+                                        onClick: () => {
+                                            if (this.deps.createNewMiniCycle) {
+                                                this.deps.createNewMiniCycle();
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        );
+                            );
+                        }
                         document.dispatchEvent(new Event('onboarding:setup-complete'));
                     } else {
                         // Sample load failed (e.g., offline first visit) — fall back to creation modal
@@ -594,11 +622,113 @@ export class OnboardingManager {
                 (async () => {
                     await this.deps.completeInitialSetup(activeCycle, null, updatedState);
                     document.dispatchEvent(new Event('onboarding:setup-complete'));
+                    // Returning-user path (e.g. Reset Onboarding): no sample was loaded,
+                    // so no welcome toast — just schedule the tour with the same 3s delay.
+                    if (this._startTourImmediately) {
+                        this._startTourImmediately = false;
+                        this._scheduleStartTourFlow({ withWelcomeToast: false });
+                    }
                 })();
             } else {
                 console.warn('⚠️ completeInitialSetup not available');
             }
         }
+    }
+
+    /**
+     * Coordinate the "Start Tour" SVG flow: welcome toast + auto-tour after 3s,
+     * with a branch for "Start Blank Routine" that defers the tour until the
+     * new routine is active (then fires it ~1s later). Triggered by the
+     * interactive Start Tour button on onboarding step 3.
+     * @private
+     */
+    /**
+     * @param {Object} [options]
+     * @param {boolean} [options.withWelcomeToast=true] — Show the "sample loaded" toast
+     *   with the "Start Blank Routine" action button. Set false for the returning-user
+     *   path (Reset Onboarding) where no sample was loaded and the toast would be a lie.
+     */
+    _scheduleStartTourFlow({ withWelcomeToast = true } = {}) {
+        const SUBSCRIBER_KEY = 'onboardingManager-pending-tour';
+
+        // Cancel any prior in-flight start-tour flow before scheduling a new one
+        // (defensive — the SVG button is wired only once per modal, but this
+        // protects against re-entry if destroy()/init() ever overlaps).
+        this._cancelStartTourFlow?.();
+
+        let tourTimer = null;
+        let blankWatchGiveUp = null;
+        let appStateUnsub = null;
+
+        const cleanupBlankWatch = () => {
+            if (blankWatchGiveUp) { clearTimeout(blankWatchGiveUp); blankWatchGiveUp = null; }
+            if (appStateUnsub) { appStateUnsub(); appStateUnsub = null; }
+        };
+
+        // Expose a single cancel hook so destroy() can tear everything down.
+        this._cancelStartTourFlow = () => {
+            if (tourTimer) { clearTimeout(tourTimer); tourTimer = null; }
+            cleanupBlankWatch();
+            this._cancelStartTourFlow = null;
+        };
+
+        const startTourAfter = (delayMs) => {
+            if (tourTimer) clearTimeout(tourTimer);
+            tourTimer = setTimeout(() => {
+                tourTimer = null;
+                cleanupBlankWatch();
+                this._cancelStartTourFlow = null;
+                if (typeof this.deps.startGuidedTour === 'function') {
+                    this.deps.startGuidedTour();
+                }
+            }, delayMs);
+        };
+
+        // Default: tour fires 3s after the modal closes (matches user expectation
+        // regardless of whether a sample was loaded or they already had cycles).
+        startTourAfter(UI_TIMEOUTS.START_TOUR_AFTER_SAMPLE);
+
+        if (!withWelcomeToast) return;
+
+        this.deps.showNotification(
+            getLabel('notify.welcomeSampleLoaded'),
+            'success',
+            8000,
+            {
+                actionButton: {
+                    label: getLabel('notify.startBlankRoutine'),
+                    onClick: () => {
+                        // Cancel the sample-tour timer; we'll re-schedule after the
+                        // new blank routine becomes active.
+                        if (tourTimer) { clearTimeout(tourTimer); tourTimer = null; }
+
+                        const initialCycleId = this.deps.AppState?.get?.()?.appState?.activeCycleId;
+
+                        if (typeof this.deps.AppState?.subscribe === 'function') {
+                            const onChange = (newState) => {
+                                const newCycleId = newState?.appState?.activeCycleId;
+                                if (newCycleId && newCycleId !== initialCycleId) {
+                                    cleanupBlankWatch();
+                                    startTourAfter(UI_TIMEOUTS.START_TOUR_AFTER_BLANK);
+                                }
+                            };
+                            this.deps.AppState.subscribe(SUBSCRIBER_KEY, onChange);
+                            appStateUnsub = () => this.deps.AppState?.unsubscribe?.(SUBSCRIBER_KEY, onChange);
+                            // Safety: if user cancels the create-routine modal, give up
+                            // after 30s instead of holding the subscription forever.
+                            blankWatchGiveUp = setTimeout(() => cleanupBlankWatch(), UI_TIMEOUTS.START_TOUR_BLANK_WATCH_GIVEUP);
+                        } else {
+                            // No subscribe API available — fall back to a fixed delay.
+                            startTourAfter(UI_TIMEOUTS.START_TOUR_AFTER_SAMPLE);
+                        }
+
+                        if (this.deps.createNewMiniCycle) {
+                            this.deps.createNewMiniCycle();
+                        }
+                    }
+                }
+            }
+        );
     }
 
     /**
@@ -628,14 +758,20 @@ export class OnboardingManager {
      * Clean up event listeners
      */
     destroy() {
-        const resetBtn = document.getElementById('reset-onboarding');
+        // Cancel any pending start-tour flow (welcome toast → 3s timer →
+        // optional AppState subscription if user picked Start Blank Routine).
+        // Without this, a destroy() during the 3-30s window would leak the
+        // setTimeout + AppState subscription.
+        this._cancelStartTourFlow?.();
+
+        const resetBtn = document.getElementById(DOM_IDS.RESET_ONBOARDING);
         if (resetBtn && this._resetOnboardingHandler) {
             resetBtn.removeEventListener('click', this._resetOnboardingHandler);
             this._resetOnboardingHandler = null;
         }
 
         // Clean up orphaned onboarding modal listeners (if modal wasn't completed)
-        const modal = document.getElementById('onboarding-modal');
+        const modal = document.getElementById(DOM_IDS.ONBOARDING_MODAL);
         if (modal?._clickHandler) modal.removeEventListener('click', modal._clickHandler);
         const nextBtn = document.getElementById(DOM_IDS.ONBOARDING_NEXT);
         if (nextBtn?._clickHandler) nextBtn.removeEventListener('click', nextBtn._clickHandler);
@@ -643,6 +779,16 @@ export class OnboardingManager {
         if (prevBtn?._clickHandler) prevBtn.removeEventListener('click', prevBtn._clickHandler);
         const skipBtn = document.getElementById(DOM_IDS.ONBOARDING_SKIP);
         if (skipBtn?._clickHandler) skipBtn.removeEventListener('click', skipBtn._clickHandler);
+
+        // Clean up in-step transient handlers (try-it on step 2, start-tour on step 3).
+        // These usually die with modal.remove(), but defensive cleanup matches the
+        // chrome-button pattern above and protects against destroy() being called
+        // while the modal is mid-flow.
+        const tryBtn = modal?.querySelector(DOM_SELECTORS.ONBOARDING_TRY_BTN);
+        if (tryBtn?._clickHandler) tryBtn.removeEventListener('click', tryBtn._clickHandler);
+        const startTourBtn = document.getElementById(DOM_IDS.ONBOARDING_START_TOUR_BTN);
+        if (startTourBtn?._clickHandler) startTourBtn.removeEventListener('click', startTourBtn._clickHandler);
+        if (startTourBtn?._keyHandler) startTourBtn.removeEventListener('keydown', startTourBtn._keyHandler);
 
         this._eventListenersInitialized = false;
         this.initialized = false;

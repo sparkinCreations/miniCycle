@@ -1,0 +1,74 @@
+{
+  "name": "morning_routine",
+  "title": "🌅 Morning Routine",
+  "tasks": [
+    {
+      "id": "task-morning-001",
+      "text": "☕ Make coffee",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": { "cycle": false, "todo": true },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-morning-002",
+      "text": "💧 Drink a glass of water",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": { "cycle": false, "todo": true },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-morning-003",
+      "text": "🪥 Brush teeth & wash face",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": { "cycle": false, "todo": true },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-morning-004",
+      "text": "🧘 5 min stretch",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": { "cycle": false, "todo": true },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-morning-005",
+      "text": "📝 Review today's priorities",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": { "cycle": false, "todo": true },
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": true,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}

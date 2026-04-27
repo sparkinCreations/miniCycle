@@ -319,9 +319,31 @@ body.onboarding-active .onboarding-placeholder {
     animation: tourButtonPress 3.5s ease-in-out infinite;
 }
 
-/* Cursor slide + click */
+/* Interactive variant — applied when the button is wired as a real action
+   (onboarding step 3). Adds pointer cursor + keyboard focus indicator. */
+.tour-anim-btn-interactive {
+    cursor: pointer;
+}
+
+.tour-anim-btn-interactive:focus-visible {
+    outline: 2px solid var(--theme-accent, var(--color-primary));
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+/* Cursor slide + click — decorative, must NOT capture pointer events
+   (otherwise it sits on top of the interactive button for ~2s of the
+   animation cycle and intercepts user clicks). */
 .tour-anim-cursor {
     animation: tourCursorMove 3.5s ease-in-out infinite;
+    pointer-events: none;
+}
+
+/* Decorative SVG elements in the tour animation — non-interactive so
+   they never block clicks on the interactive button group. */
+.tour-anim-bar,
+.tour-anim-text {
+    pointer-events: none;
 }
 
 /* Cursor: slide in from right, hover over button, click, hold, reset */

@@ -372,6 +372,13 @@
   --anim-badge-sweep: 700ms;     /* 🧹 broom sweep */
   --anim-badge-shine: 800ms;     /* 👑 crown shine */
 
+  /* Badge loop-animation durations (slower, used while hovering / tap-holding) */
+  --anim-badge-flicker-loop: 1200ms;
+  --anim-badge-flex-loop: 1000ms;
+  --anim-badge-bob-loop: 1400ms;
+  --anim-badge-sweep-loop: 1400ms;
+  --anim-badge-shine-loop: 1600ms;
+
   /* ═══════════════════════════════════════════════════════════════════════════
      BORDERS & RADIUS
      ═══════════════════════════════════════════════════════════════════════════ */
@@ -511,6 +518,11 @@
     --anim-badge-bob: 0ms;
     --anim-badge-sweep: 0ms;
     --anim-badge-shine: 0ms;
+    --anim-badge-flicker-loop: 0ms;
+    --anim-badge-flex-loop: 0ms;
+    --anim-badge-bob-loop: 0ms;
+    --anim-badge-sweep-loop: 0ms;
+    --anim-badge-shine-loop: 0ms;
   }
 }
 
@@ -532,4 +544,9 @@ html.reduced-motion {
     --anim-badge-bob: 0ms;
     --anim-badge-sweep: 0ms;
     --anim-badge-shine: 0ms;
+    --anim-badge-flicker-loop: 0ms;
+    --anim-badge-flex-loop: 0ms;
+    --anim-badge-bob-loop: 0ms;
+    --anim-badge-sweep-loop: 0ms;
+    --anim-badge-shine-loop: 0ms;
 }

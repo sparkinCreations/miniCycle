@@ -23,7 +23,7 @@ const BG_IMAGE_STORE = 'backgroundImage';
 const BG_IMAGE_MAX_SIZE = 2 * 1024 * 1024; // 2MB
 const BG_IMAGE_MAX_UPLOAD_SIZE = 20 * 1024 * 1024; // 20MB - max file size to even attempt
 const BG_IMAGE_MAX_DIMENSION = 1920; // Max width/height for compression
-const BG_IMAGE_COMPRESSION_TIMEOUT = 30000; // 30 seconds timeout
+// Compression hard timeout — see UI_TIMEOUTS.BG_IMAGE_COMPRESSION_TIMEOUT.
 
 // Allowed image MIME types (security: block SVG to prevent XSS)
 const ALLOWED_IMAGE_TYPES = [
@@ -83,7 +83,7 @@ async function compressImage(file, maxSize = BG_IMAGE_MAX_SIZE, maxDimension = B
         const timeout = setTimeout(() => {
             cleanup();
             reject(new Error('Image processing timed out. The file may be corrupt.'));
-        }, BG_IMAGE_COMPRESSION_TIMEOUT);
+        }, UI_TIMEOUTS.BG_IMAGE_COMPRESSION_TIMEOUT);
 
         const img = new Image();
         let objectUrl = null;

@@ -7,6 +7,7 @@
  */
 
 import { getLabel } from '../labels/labelResolver.js';
+import { DOM_IDS } from '../core/constants.js';
 
 /** @type {string} HTML template for the recurring tasks panel modal */
 export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
@@ -1029,7 +1030,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                         <span class="settings-section-toggle">▼</span>
                     </div>
                     <div class="settings-section-content" id="settings-section-reset">
-                        <button id="reset-onboarding" class="settings-btn settings-btn-ghost"><i class="fas fa-redo"></i> ${getLabel('settings.resetOnboarding')}</button>
+                        <button id="${DOM_IDS.RESET_ONBOARDING}" class="settings-btn settings-btn-ghost"><i class="fas fa-redo"></i> ${getLabel('settings.resetOnboarding')}</button>
                         <button id="retake-guided-tour" class="settings-btn settings-btn-ghost"><i class="fas fa-route"></i> ${getLabel('tour.retakeTour')}</button>
                         <button id="reset-notification-position" class="settings-btn settings-btn-ghost"><i class="fas fa-bell"></i> ${getLabel('settings.resetNotifPosition')}</button>
                         <button id="reset-recurring-default" class="settings-btn settings-btn-ghost"><i class="fas fa-sync"></i> ${getLabel('settings.resetRecurringDefault')}</button>

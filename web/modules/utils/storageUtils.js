@@ -35,7 +35,7 @@
  * @property {number} percentUsed - Usage percentage
  */
 
-import { APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
+import { APP_VERSION, UI_TIMEOUTS, LIMITS } from '../core/constants.js';
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel } from '../labels/labelResolver.js';
 
@@ -320,8 +320,8 @@ export function formatBytes(bytes) {
  * @returns {boolean} True if warning was shown
  */
 export function checkStorageWarning(info, showNotification) {
-    // Only show once per session, and only at 75%+ (warning level)
-    if (_storageWarningShown || info.percentage < 75) {
+    // Only show once per session, and only at LIMITS.STORAGE_WARNING_PERCENTAGE+ (warning level)
+    if (_storageWarningShown || info.percentage < LIMITS.STORAGE_WARNING_PERCENTAGE) {
         return false;
     }
 

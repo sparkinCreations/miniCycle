@@ -136,6 +136,20 @@ const AUDIT_UNDECLARED_DEPS = false;
 const ENFORCE_REQUIRES = false;
 
 /**
+ * When true, log a warning at boot for any dep declared in a manifest's
+ * `requires`/`optionalDeps`/`lazyRequires` that is NOT in `depMappings` and NOT
+ * in `CORE_DEPS`. This catches the silent-failure bug class where a consumer's
+ * `optional()` default sentinel is used forever because nothing wired the dep.
+ *
+ * High-signal: each warning corresponds to a real missing wiring entry. The
+ * AUDIT_UNDECLARED_DEPS flag above catches the OPPOSITE direction (deps used
+ * but not declared) and has many false positives — this one doesn't.
+ *
+ * Default ON in development. Set false to suppress.
+ */
+const WARN_ON_UNMAPPED_DECLARED_DEPS = true;
+
+/**
  * Create a validated lazy wrapper that warns/throws on null provider access.
  * This catches missing dependencies at call time instead of silently returning undefined.
  *
@@ -806,15 +820,69 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         closeAllModals: createValidatedWrapper('closeAllModals',
             () => deps.ui?.modalManager?.closeAllModals),
         isModalOpen: () => deps.ui?.modalManager?.isModalOpen?.(),
+        // Overlay-active check (provided by uiBoot.js) — covers any open <dialog>,
+        // visible main menu, notifications, onboarding modal, etc. Used by
+        // gesturePanelManager + recurringIntegration to suppress swipes/gestures
+        // while a modal/overlay is up. Falls back to false if uiBoot hasn't run.
+        isOverlayActive: () => deps.ui?.isOverlayActive?.() ?? false,
         updateMainMenuHeader: createValidatedWrapper('updateMainMenuHeader',
             () => deps.ui?.updateMainMenuHeader),
         organizeCompletedTasks: (...args) => deps.ui?.completedTasksManager?.organize?.(...args),
         initCompletedTasksSection: (...args) => deps.ui?.completedTasksManager?.init?.(...args),
         handleTaskListMovement: (...args) => deps.ui?.completedTasksManager?.handleMovement?.(...args),
         updateCompletedTasksCount: (...args) => deps.ui?.completedTasksManager?.updateCount?.(...args),
+        // Returns the completedTasksManager INSTANCE when called (matches statsPanelManager pattern)
+        completedTasksManager: () => deps.ui?.completedTasksManager,
         updateStatsPanel: (...args) => deps.ui?.updateStatsPanel?.(...args),
         exportMiniCycleData: (...args) => deps.ui?.exportMiniCycleData?.(...args),
         startGuidedTour: (...args) => deps.ui?.startGuidedTour?.(...args),
+        // Provided by taskUI module
+        hideTaskButtons: (...args) => deps.task?.hideTaskButtons?.(...args),
+        // Provided by taskSearch module — toggles search row visibility
+        updateSearchVisibility: (...args) => deps.ui?.updateSearchVisibility?.(...args),
+        // Provided by basicPluginSystem module — instance accessor
+        pluginManager: () => deps.plugins?.pluginManager,
+        // Provided by dataValidator module — utils API category
+        DataValidator: () => deps.utils?.DataValidator,
+        // Provided by migration modules — exported function reference (resolves at call time)
+        createInitialSchema25Data: (...args) => (deps.utils?.createInitialSchema25Data || deps.cycle?.createInitialSchema25Data)?.(...args),
+
+        // ─── Boot/init helpers ───
+        // Method on appInit instance — modules use it as a top-level dep instead of accessing appInit.waitForCore()
+        waitForCore: (...args) => deps.core?.appInit?.waitForCore?.(...args),
+
+        // ─── Recurring system functions (provided by recurringCore / recurringPanel) ───
+        applyRecurringToTaskSchema25: (...args) => deps.recurring?.core?.applyRecurringToTaskSchema25?.(...args),
+        openRecurringSettingsPanelForTask: (...args) => deps.recurring?.panel?.openRecurringSettingsPanelForTask?.(...args),
+        calculateNextOccurrence: (...args) => deps.recurring?.core?.calculateNextOccurrence?.(...args),
+
+        // ─── Task DOM helpers ───
+        syncRecurringStateToDOM: (...args) => deps.task?.syncRecurringStateToDOM?.(...args),
+
+        // ─── Feature modules ───
+        setupDueDateButtonInteraction: (...args) => deps.features?.dueDates?.setupDueDateButtonInteraction?.(...args),
+
+        // ─── Storage / backup ───
+        // Returns the backupManager INSTANCE (matches statsPanelManager / completedTasksManager pattern)
+        BackupManager: () => deps.storage?.backupManager,
+
+        // ─── Settings ───
+        resetDefaultRecurringSettings: (...args) => deps.ui?.settingsManager?.resetDefaultRecurringSettings?.(...args),
+
+        // ─── Global state checks ───
+        // Returns the boolean flag (call-as-function for consistency with other depMappings)
+        isPerformingUndoRedo: () => deps.core?.AppGlobalState?.isPerformingUndoRedo ?? false,
+        // Notification drag state — used by gesture / swipe handlers to skip while dragging a toast
+        isDraggingNotification: () => deps.utils?.notifications?.isDraggingNotification ?? false,
+
+        // ─── Testing ───
+        appendToTestResults: (...args) => deps.testing?.appendToTestResults?.(...args),
+
+        // ─── Constants / migrations injected via deps.core (set by coreBoot) ───
+        // Direct value access (not a function wrapper) — depMappings is built per-module
+        // inside buildModuleDependencies, so deps.core is already populated by this point.
+        DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: deps.core?.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
+        performSchema25Migration: deps.core?.performSchema25Migration,
         showStatsTourNotification: (...args) => deps.ui?.showStatsTourNotification?.(...args),
         showPersonalizationTourNotification: (...args) => deps.ui?.showPersonalizationTourNotification?.(...args),
         showTaskOptionsTourNotification: (...args) => deps.ui?.showTaskOptionsTourNotification?.(...args),
@@ -1077,6 +1145,26 @@ function buildModuleDependencies(manifest, deps, coreResult) {
                 if (!CORE_DEPS.has(req)) {
                     console.warn(`⚠️ ${manifest.path}: Required dep '${req}' is undefined (not provided by any module)`);
                 }
+            }
+        }
+    }
+
+    // Audit: warn for any declared dep (incl. optionalDeps) that has no
+    // depMappings entry and isn't a core dep. This catches the silent-failure
+    // bug class where consumers fall back to their `optional()` default forever.
+    // See WARN_ON_UNMAPPED_DECLARED_DEPS at top of file for context.
+    if (WARN_ON_UNMAPPED_DECLARED_DEPS && !manifest.optional) {
+        const allDeclared = [
+            ...(manifest.requires || []),
+            ...(manifest.optionalDeps || []),
+            ...(manifest.lazyRequires || [])
+        ];
+        for (const dep of allDeclared) {
+            if (!(dep in depMappings) && !CORE_DEPS.has(dep)) {
+                console.warn(
+                    `⚠️ DI gap: ${manifest.path} declares "${dep}" but no depMappings entry exists. ` +
+                    `Consumer will fall back to its optional() default — function calls will silently no-op.`
+                );
             }
         }
     }

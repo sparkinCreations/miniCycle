@@ -18,6 +18,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { UI_TIMEOUTS, LIMITS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -48,12 +49,9 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const MS_14_DAYS = 14 * MS_PER_DAY;
 const MS_7_DAYS  = 7  * MS_PER_DAY;
 const MS_3_DAYS  = 3  * MS_PER_DAY;
-const CYCLE_INTERVAL = 25;
-const TASK_INTERVAL  = 100;
+// Reminder cadence — see LIMITS.BACKUP_REMINDER_EVERY_N_CYCLES / EVERY_N_TASKS.
 
-/** Delay before showing reminder (avoids competing with animations/boot) */
-const BOOT_DELAY_MS    = 3000;
-const TRIGGER_DELAY_MS = 2000;
+/** Delay before showing reminder — see UI_TIMEOUTS.BACKUP_REMINDER_BOOT / BACKUP_REMINDER_TRIGGER. */
 
 // ============================================================================
 // INTERNAL HELPERS
@@ -128,9 +126,9 @@ function _shouldShow(trigger) {
             return (now - s.lastShown) >= MS_14_DAYS;
         }
         case 'cycles':
-            return (p.cycles - s.cyclesAtLastReminder) >= CYCLE_INTERVAL;
+            return (p.cycles - s.cyclesAtLastReminder) >= LIMITS.BACKUP_REMINDER_EVERY_N_CYCLES;
         case 'tasks':
-            return (p.tasks - s.tasksAtLastReminder) >= TASK_INTERVAL;
+            return (p.tasks - s.tasksAtLastReminder) >= LIMITS.BACKUP_REMINDER_EVERY_N_TASKS;
         default:
             return false;
     }
@@ -199,7 +197,7 @@ export function checkBackupReminderOnBoot() {
  */
 export function checkBackupReminderOnCycleComplete() {
     if (_shouldShow('cycles')) {
-        setTimeout(_showReminder, TRIGGER_DELAY_MS);
+        setTimeout(_showReminder, UI_TIMEOUTS.BACKUP_REMINDER_TRIGGER);
     }
 }
 
@@ -209,6 +207,6 @@ export function checkBackupReminderOnCycleComplete() {
  */
 export function checkBackupReminderOnTaskClear() {
     if (_shouldShow('tasks')) {
-        setTimeout(_showReminder, TRIGGER_DELAY_MS);
+        setTimeout(_showReminder, UI_TIMEOUTS.BACKUP_REMINDER_TRIGGER);
     }
 }

@@ -11,9 +11,6 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS } from
 import { getLabel } from '../labels/labelResolver.js';
 
 const TOUR_ACTIVE_ATTR = 'data-tour-active';
-const RETURNING_USER_DELAY = 2000;
-const FIRST_RUN_DELAY = 10000;
-const TOUR_RESCHEDULE_DELAY = 3500;
 const TOUR_PADDING = 12;
 const TOOLTIP_MARGIN = 16;
 const ONBOARDING_SETUP_COMPLETE_EVENT = 'onboarding:setup-complete';
@@ -659,18 +656,18 @@ export class GuidedTourManager {
 
         if (onboardingCompleted) {
             if (this.deps.appInit?.isAppReady?.()) {
-                this._scheduleNotification(RETURNING_USER_DELAY);
+                this._scheduleNotification(UI_TIMEOUTS.TOUR_RETURNING_USER_DELAY);
             } else {
                 this._appReadyHandler = () => {
                     this._appReadyHandler = null;
-                    this._scheduleNotification(RETURNING_USER_DELAY);
+                    this._scheduleNotification(UI_TIMEOUTS.TOUR_RETURNING_USER_DELAY);
                 };
                 document.addEventListener(APP_READY_EVENT, this._appReadyHandler, { once: true });
             }
         } else {
             this._onboardingHandler = () => {
                 this._onboardingHandler = null;
-                this._scheduleNotification(FIRST_RUN_DELAY);
+                this._scheduleNotification(UI_TIMEOUTS.TOUR_FIRST_RUN_DELAY);
             };
             document.addEventListener(ONBOARDING_SETUP_COMPLETE_EVENT, this._onboardingHandler, { once: true });
         }
@@ -709,7 +706,7 @@ export class GuidedTourManager {
             this._scheduleTimeout = setTimeout(() => {
                 this._scheduleTimeout = null;
                 this._showWelcomeOrResumeNotification();
-            }, TOUR_RESCHEDULE_DELAY);
+            }, UI_TIMEOUTS.TOUR_RESCHEDULE_DELAY);
 
             return false;
         }
@@ -890,7 +887,7 @@ export class GuidedTourManager {
         this.initialized = false;
     }
 
-    _scheduleNotification(delay = RETURNING_USER_DELAY) {
+    _scheduleNotification(delay = UI_TIMEOUTS.TOUR_RETURNING_USER_DELAY) {
         if (this._scheduleTimeout) {
             clearTimeout(this._scheduleTimeout);
         }
@@ -917,7 +914,7 @@ export class GuidedTourManager {
             this._scheduleTimeout = setTimeout(() => {
                 this._scheduleTimeout = null;
                 this._showWelcomeOrResumeNotification();
-            }, TOUR_RESCHEDULE_DELAY);
+            }, UI_TIMEOUTS.TOUR_RESCHEDULE_DELAY);
             return;
         }
 

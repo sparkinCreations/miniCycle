@@ -41,7 +41,12 @@ const di = createDIModule('ModeManager', {
     syncAllTasksWithMode: optional(null),
     switchMiniCycle: optional(null),
     createNewMiniCycle: optional(null),
-    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: optional({ cycle: false, todo: true })
+    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: optional({ cycle: false, todo: true }),
+    // Used by the + button items (Add Task / Create New Routine) to flip back
+    // to task view when invoked from stats view, so the user lands where they
+    // can act on the action they just took.
+    showTaskView: optional(null),
+    statsPanelManager: optional(null)
 });
 
 /**
@@ -56,21 +61,21 @@ export function setModeManagerDependencies(dependencies) {
  * Manages app mode switching (cycle/todo) and mode-specific UI behavior
  */
 export class ModeManager {
-    constructor(dependencies = {}) {
-
-        // Resolve deps from diBase, with constructor overrides
-        const resolvedDeps = di.resolve(dependencies);
-
-        // Store dependencies with fallback for safeAddEventListener
-        this.deps = {
-            ...resolvedDeps,
-            safeAddEventListener: resolvedDeps.safeAddEventListener
-        };
-
-        // Debounce timer for refresh operations
+    constructor(_dependencies = {}) {
+        // Dependencies arg accepted for API parity but ignored — instance reads
+        // from the live `di.resolve()` via the `deps` getter below.
         this.refreshDebounceTimer = null;
-
         this._initialized = false;
+    }
+
+    /**
+     * Late-binding dependency accessor — returns the live `di.resolve()` so any
+     * dep declared in the manifest is reachable via this.deps.X. Matches the
+     * standard pattern used across the rest of the codebase (dailyResetManager,
+     * dueDates, etc.). Cheap: di.resolve() is cached when called without overrides.
+     */
+    get deps() {
+        return di.resolve();
     }
 
     /**
@@ -779,6 +784,7 @@ export class ModeManager {
                 // Update UI immediately
                 this._updateTaskInputVisibility(newVisible);
                 quickActionsMenu.style.display = 'none';
+                this._switchToTaskViewIfInStats();
 
                 // Focus the text input when showing the input bar
                 if (newVisible) {
@@ -812,6 +818,7 @@ export class ModeManager {
         if (createRoutineBtn) {
             this.deps.safeAddEventListener(createRoutineBtn, 'click', () => {
                 quickActionsMenu.style.display = 'none';
+                this._switchToTaskViewIfInStats();
 
                 if (this.deps.createNewMiniCycle) {
                     this.deps.createNewMiniCycle();
@@ -824,6 +831,25 @@ export class ModeManager {
             });
         }
 
+    }
+
+    /**
+     * If the user is currently viewing the stats panel, swap back to the task
+     * view. Used by the + button items so a user who triggers Add Task or
+     * Create New Routine while in stats lands where the action will visibly
+     * happen. No-op when already in task view (avoids redundant a11y announces).
+     * @private
+     */
+    _switchToTaskViewIfInStats() {
+        // depMappings exposes statsPanelManager as a nullary function that returns
+        // the instance ("returns instance when called as function" — see moduleLoader.js).
+        const manager = typeof this.deps.statsPanelManager === 'function'
+            ? this.deps.statsPanelManager()
+            : this.deps.statsPanelManager;
+        const inStats = manager?.state?.isStatsVisible === true;
+        if (inStats && typeof this.deps.showTaskView === 'function') {
+            this.deps.showTaskView();
+        }
     }
 
     /**

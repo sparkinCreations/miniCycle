@@ -11,7 +11,7 @@
  * @module consoleCapture
  */
 
-import { STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
+import { STORAGE_KEYS, UI_TIMEOUTS, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { createDIModule, optional } from '../core/diBase.js';
 
@@ -168,10 +168,10 @@ export class MiniCycleConsoleCapture {
         }, 2000);
     }
 
-    // Keep buffer size manageable (last 500 messages)
+    // Keep buffer size manageable (caps at LIMITS.CONSOLE_BUFFER_MAX)
     keepBufferManageable() {
-        if (this.consoleLogBuffer.length > 500) {
-            this.consoleLogBuffer = this.consoleLogBuffer.slice(-500);
+        if (this.consoleLogBuffer.length > LIMITS.CONSOLE_BUFFER_MAX) {
+            this.consoleLogBuffer = this.consoleLogBuffer.slice(-LIMITS.CONSOLE_BUFFER_MAX);
         }
     }
 
@@ -180,9 +180,9 @@ export class MiniCycleConsoleCapture {
         try {
             localStorage.setItem(STORAGE_KEYS.CONSOLE_CAPTURE_BUFFER, JSON.stringify(this.consoleLogBuffer));
         } catch (e) {
-            // Storage might be full, remove old entries
-            if (this.consoleLogBuffer.length > 100) {
-                this.consoleLogBuffer = this.consoleLogBuffer.slice(-100);
+            // Storage might be full, trim down to LIMITS.CONSOLE_BUFFER_TRIM_TARGET
+            if (this.consoleLogBuffer.length > LIMITS.CONSOLE_BUFFER_TRIM_TARGET) {
+                this.consoleLogBuffer = this.consoleLogBuffer.slice(-LIMITS.CONSOLE_BUFFER_TRIM_TARGET);
                 try {
                     localStorage.setItem(STORAGE_KEYS.CONSOLE_CAPTURE_BUFFER, JSON.stringify(this.consoleLogBuffer));
                 } catch (e2) {

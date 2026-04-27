@@ -248,7 +248,3 @@ miniCycle is AI-assisted software built by a human developer who:
 The AI accelerates implementation. The human does everything else.
 
 This is not vibe coding. This is a developer using modern tools effectively.
-
----
-
-*This document was written by Claude at the developer's request, using real examples from development sessions. The developer reviewed and approved it.*

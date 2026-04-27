@@ -351,6 +351,35 @@ export class MiniCycleNotifications {
   }
 
   /**
+   * Defensive recovery: rebuild the notification container if it's missing
+   * from the DOM. This protects against the edge case where a `<dialog>` that
+   * held the container (via NotificationDialogHost reparenting) was removed
+   * before the close event ran — the container would be orphaned/destroyed
+   * with the dialog. Re-creating it on body restores the same ID + popover
+   * attributes the original HTML had.
+   * @returns {HTMLElement|null} The recovered/created container
+   * @private
+   */
+  _recoverNotificationContainer() {
+    try {
+      const body = document.body;
+      if (!body) return null;
+      const recovered = document.createElement('div');
+      recovered.id = DOM_IDS.NOTIFICATION_CONTAINER;
+      recovered.setAttribute('popover', 'manual');
+      recovered.setAttribute('aria-live', 'polite');
+      recovered.setAttribute('aria-atomic', 'true');
+      recovered.setAttribute('role', 'status');
+      body.appendChild(recovered);
+      console.warn('⚠️ Notification container was missing — recreated. (Likely cause: a <dialog> that held it was removed before its close event reparented it back.)');
+      return recovered;
+    } catch (e) {
+      console.warn('⚠️ Failed to recover notification container:', e);
+      return null;
+    }
+  }
+
+  /**
    * 🎯 Core notification display function
    */
   show(message, type = "default", duration = null, options = {}) {
@@ -366,10 +395,15 @@ export class MiniCycleNotifications {
 
       // Optional container override — allows rendering inside a <dialog> where
       // the global notification container is blocked by showModal() inertness.
+      // Defensive recovery: if the container has been orphaned (e.g. a dialog
+      // that held it via NotificationDialogHost was removed before the close
+      // event reparented it back), recreate it on body so the toast still
+      // surfaces. Restores the same id/attributes the original HTML element had.
       const notificationContainer = options?.container
-        || document.getElementById(DOM_IDS.NOTIFICATION_CONTAINER);
+        || document.getElementById(DOM_IDS.NOTIFICATION_CONTAINER)
+        || this._recoverNotificationContainer();
       if (!notificationContainer) {
-        console.warn("⚠️ Notification container not found.");
+        console.warn("⚠️ Notification container not found and could not be recovered.");
         return;
       }
 

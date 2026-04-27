@@ -528,9 +528,25 @@ export class AchievementsManager {
                     }
                 };
 
+                // Loop animation while pointer is hovering or held.
+                // Only loops on UNLOCKED badges — locked badges shouldn't preview rewards.
+                badge._badgeLoopStartHandler = () => {
+                    if (!badge.classList.contains('unlocked')) return;
+                    badge.classList.remove('animate-tap'); // avoid conflicting one-shot
+                    badge.classList.add('animate-loop');
+                };
+                badge._badgeLoopEndHandler = () => {
+                    badge.classList.remove('animate-loop');
+                };
+
                 if (safeAddEventListener) {
                     safeAddEventListener(badge, 'click', badge._badgeClickHandler);
                     safeAddEventListener(badge, 'keydown', badge._badgeKeyHandler);
+                    safeAddEventListener(badge, 'mouseenter', badge._badgeLoopStartHandler);
+                    safeAddEventListener(badge, 'mouseleave', badge._badgeLoopEndHandler);
+                    safeAddEventListener(badge, 'touchstart', badge._badgeLoopStartHandler);
+                    safeAddEventListener(badge, 'touchend', badge._badgeLoopEndHandler);
+                    safeAddEventListener(badge, 'touchcancel', badge._badgeLoopEndHandler);
                 }
             }
         });
@@ -573,6 +589,9 @@ export class AchievementsManager {
      */
     _playBadgeTapAnim(el) {
         if (!el) return;
+        // Clear loop class first — same CSS specificity as tap, source-order wins,
+        // so a hovered/held badge would suppress the tap one-shot otherwise.
+        el.classList.remove('animate-loop');
         el.classList.remove('animate-tap');
         void el.offsetWidth; // force reflow so re-adding class restarts the animation
         el.classList.add('animate-tap');
@@ -731,13 +750,23 @@ export class AchievementsManager {
                         cancelAnimationFrame(animationFrame);
                         animationFrame = null;
                     }
+                    // Touch-hold preview: start loop on touchstart. If the user
+                    // actually drags (movement exceeds threshold), onMove kills it.
+                    if (e.type.includes('touch')) {
+                        coin.classList.add('animate-loop');
+                    }
                 };
 
                 const onMove = (e) => {
                     if (!isDragging) return;
                     const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
                     const deltaX = clientX - startX;
-                    if (Math.abs(deltaX) > TAP_THRESHOLD_PX) hasMoved = true;
+                    if (Math.abs(deltaX) > TAP_THRESHOLD_PX) {
+                        hasMoved = true;
+                        // Drag is winning — kill any active loop so inline
+                        // transform from the drag isn't fighting the keyframe.
+                        coin.classList.remove('animate-loop');
+                    }
                     velocity = deltaX - (currentRotation % 360);
                     currentRotation = deltaX * 2; // Multiply for more spin
                     coin.style.transform = `rotateY(${currentRotation}deg)`;
@@ -841,6 +870,20 @@ export class AchievementsManager {
                 };
                 spinArea.addEventListener('keydown', onKeydown);
 
+                // Hover-loop on desktop: start contextual pulse while pointer is
+                // over the coin (and not actively dragging). Skipped on touch —
+                // touch-hold is handled in onStart instead so it ties to the
+                // existing drag detection.
+                const onMouseEnter = () => {
+                    if (isDragging) return;
+                    coin.classList.add('animate-loop');
+                };
+                const onMouseLeave = () => {
+                    coin.classList.remove('animate-loop');
+                };
+                spinArea.addEventListener('mouseenter', onMouseEnter);
+                spinArea.addEventListener('mouseleave', onMouseLeave);
+
                 // Store cleanup function
                 this._badgeCoinCleanup = () => {
                     document.removeEventListener('mousemove', onMove);
@@ -848,6 +891,8 @@ export class AchievementsManager {
                     document.removeEventListener('touchmove', onMove);
                     document.removeEventListener('touchend', onEnd);
                     spinArea.removeEventListener('keydown', onKeydown);
+                    spinArea.removeEventListener('mouseenter', onMouseEnter);
+                    spinArea.removeEventListener('mouseleave', onMouseLeave);
                     if (animationFrame) cancelAnimationFrame(animationFrame);
                 };
             }

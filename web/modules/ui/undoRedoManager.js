@@ -608,7 +608,7 @@ export function captureStateSnapshot(state) {
   // trigger AppState.update() after isPerformingUndoRedo is cleared, which would
   // wipe the redo stack. The grace period prevents this.
   const completedAt = _deps.AppGlobalState.undoRedoCompletedAt || 0;
-  if (Date.now() - completedAt > 2000) {
+  if (Date.now() - completedAt > UI_TIMEOUTS.UNDO_REDO_GRACE_PERIOD) {
     _deps.AppGlobalState.activeRedoStack = [];
   }
   updateUndoRedoButtons();
@@ -1689,8 +1689,8 @@ async function isTestModeActive() {
             const data = getRequest.result;
             db.close();
             if (data && data.active) {
-              // Only consider active if set within last 10 minutes
-              if (Date.now() - data.timestamp < 600000) {
+              // Only consider active if set within UNDO_SESSION_LIFETIME (10 minutes)
+              if (Date.now() - data.timestamp < UI_TIMEOUTS.UNDO_SESSION_LIFETIME) {
                 resolve(true);
                 return;
               }

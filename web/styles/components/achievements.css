@@ -395,6 +395,29 @@
     animation: badge-shine var(--anim-badge-shine) ease-out;
 }
 
+/* Looped contextual animations for the modal coin — applied while pointer is
+   hovering or held (without dragging). Removed on drag start, mouseleave, or
+   touchend. Slower per-cycle + ease-in-out + infinite for a gentle preview. */
+.badge-coin.animate-loop[data-milestone="5"] {
+    animation: badge-flicker var(--anim-badge-flicker-loop) ease-in-out infinite;
+}
+
+.badge-coin.animate-loop[data-milestone="25"] {
+    animation: badge-flex var(--anim-badge-flex-loop) ease-in-out infinite;
+}
+
+.badge-coin.animate-loop[data-milestone="50"] {
+    animation: badge-bob var(--anim-badge-bob-loop) ease-in-out infinite;
+}
+
+.badge-coin.animate-loop[data-milestone="75"] {
+    animation: badge-sweep var(--anim-badge-sweep-loop) ease-in-out infinite;
+}
+
+.badge-coin.animate-loop[data-milestone="100"] {
+    animation: badge-shine var(--anim-badge-shine-loop) ease-in-out infinite;
+}
+
 /* Badge detail text */
 .badge-detail-name {
     margin: var(--space-2) 0 var(--space-1);

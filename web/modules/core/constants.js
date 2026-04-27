@@ -50,7 +50,8 @@ export const BOOT_TIMEOUTS = Object.freeze({
     PHASE_2: 20000,        // 20s for feature boot (largest phase - 40+ modules)
     PHASE_3: 15000,        // 15s for UI boot (event listeners, DOM init)
     TOTAL: 45000,          // 45s total boot timeout
-    RETRY_DELAY: 2000      // 2s delay before boot retry (iOS needs time to restart killed SW)
+    RETRY_DELAY: 2000,     // 2s delay before boot retry (iOS needs time to restart killed SW)
+    IDB_OPERATION: 1000    // 1s timeout for IndexedDB operations during boot recovery
 });
 
 /**
@@ -100,7 +101,28 @@ export const UI_TIMEOUTS = Object.freeze({
     NOTIFICATION_OVERLAY: 10000,   // 10000ms - Overlay/celebration auto-dismiss
     NOTIFICATION_RESUME_MIN: 1000, // 1000ms - Minimum time after hover/interaction before auto-dismiss
     CELEBRATION_DELAY: 1800,       // 1800ms - Delay before showing celebration overlay (lets reset animation play first)
-    TOOLTIP_HIDE: 3000             // 3000ms - Tooltip auto-hide delay
+    TOOLTIP_HIDE: 3000,            // 3000ms - Tooltip auto-hide delay
+
+    // Onboarding "Start Tour" SVG button flow (interactive button on step 3)
+    START_TOUR_AFTER_SAMPLE: 3000,        // 3000ms - Tour fires this long after sample loads (lets user read welcome toast / pick blank)
+    START_TOUR_AFTER_BLANK: 1000,         // 1000ms - Tour fires this long after a blank routine becomes active
+    START_TOUR_BLANK_WATCH_GIVEUP: 30000, // 30000ms - Give up the AppState subscription if user cancels create-routine modal
+
+    // Guided tour prompt notification (the 10s "want to take a tour?" toast)
+    TOUR_FIRST_RUN_DELAY: 10000,          // 10000ms - First-run delay before showing the tour prompt notification
+    TOUR_RETURNING_USER_DELAY: 2000,      // 2000ms - Returning-user delay before showing the tour prompt
+    TOUR_RESCHEDULE_DELAY: 3500,          // 3500ms - Delay before re-showing the tour prompt after user dismisses
+
+    // Backup reminder notification (per-session prompt to back up data)
+    BACKUP_REMINDER_BOOT: 3000,           // 3000ms - Delay after boot before considering whether to show the backup reminder
+    BACKUP_REMINDER_TRIGGER: 2000,        // 2000ms - Delay after trigger event before actually showing the reminder
+
+    // Background image preference compression (large user-uploaded images)
+    BG_IMAGE_COMPRESSION_TIMEOUT: 30000,  // 30000ms - Hard timeout for the bg-image compression worker
+
+    // Undo/redo behavior tuning
+    UNDO_REDO_GRACE_PERIOD: 2000,         // 2000ms - Wait this long after async render before allowing redo-stack clear (prevents race-condition wipes)
+    UNDO_SESSION_LIFETIME: 600000         // 600000ms (10min) - Stored undo state expires after this; older snapshots are discarded on load
 });
 
 /**
@@ -143,7 +165,10 @@ export const DEBOUNCE = Object.freeze({
 export const INTERVALS = Object.freeze({
     RECURRING_WATCHER: 15000,           // 15s - Recurring task watcher check interval (active)
     RECURRING_WATCHER_IDLE: 7200000,    // 2h - Recurring watcher interval when no templates exist
-    STATS_CACHE_TTL: 5000               // 5s - Task stats cache time-to-live
+    STATS_CACHE_TTL: 5000,              // 5s - Task stats cache time-to-live
+    BACKUP_DAILY: 86400000,             // 24h - Default daily auto-backup interval
+    BACKUP_SESSION_MIN: 300000,         // 5min - Minimum gap between auto-backups within a single session
+    BACKUP_TEST_MIN: 300000             // 5min - Minimum gap before re-running backup integrity tests
 });
 
 /**
@@ -173,7 +198,12 @@ export const LIMITS = Object.freeze({
     ERROR_LOG: 50,                 // Max errors to keep in error log
     MAX_ERRORS_BEFORE_SILENCE: 10, // Max error notifications before silencing
     TASK_CHARACTER: 500,           // Max characters for task text
-    CYCLE_NAME_CHARACTER: 100      // Max characters for cycle name
+    CYCLE_NAME_CHARACTER: 100,     // Max characters for cycle name
+    CONSOLE_BUFFER_MAX: 500,       // Max console log entries kept in the in-memory buffer
+    CONSOLE_BUFFER_TRIM_TARGET: 100, // After overflow, trim the buffer down to this size
+    STORAGE_WARNING_PERCENTAGE: 75,  // Show storage warning notification when localStorage usage exceeds this percentage
+    BACKUP_REMINDER_EVERY_N_CYCLES: 25,  // Trigger backup reminder every N completed cycles
+    BACKUP_REMINDER_EVERY_N_TASKS: 100   // Trigger backup reminder every N cleared tasks (To-Do mode)
 });
 
 // ============================================================================
@@ -931,10 +961,13 @@ export const DOM_IDS = Object.freeze({
     APP_SUBTITLE: 'app-subtitle',
 
     // ---- Onboarding ----
+    ONBOARDING_MODAL: 'onboarding-modal',
     ONBOARDING_STEP_CONTENT: 'onboarding-step-content',
     ONBOARDING_NEXT: 'onboarding-next',
     ONBOARDING_PREV: 'onboarding-prev',
     ONBOARDING_SKIP: 'onboarding-skip',
+    ONBOARDING_START_TOUR_BTN: 'onboarding-start-tour-btn',
+    RESET_ONBOARDING: 'reset-onboarding',
 
     // ---- Loading & UI ----
     APP_LOADER: 'app-loader',

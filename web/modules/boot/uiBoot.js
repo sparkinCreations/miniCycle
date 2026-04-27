@@ -464,10 +464,18 @@ export function isOverlayActive() {
   if (document.querySelector('dialog[open]')) return true;
   if (document.querySelector(DOM_SELECTORS.MENU_CONTAINER_VISIBLE)) return true;
 
+  // NOTE: do NOT include `.notification-container .notification` here. Toast
+  // notifications auto-dismiss in 2-8s and are popovers (not modal blockers) —
+  // including them would block swipe gestures every time a toast is visible.
+  // The separate `isDraggingNotification` check handles the case where the
+  // user is actively dragging a notification.
+  //
+  // Migrated to <dialog> — the `dialog[open]` check above handles them correctly:
+  //  - `#storage-viewer-overlay` (was a div with .hidden toggling)
+  //  - `#testing-modal` (was opened via inline `style.display = 'flex'`)
+  // Don't re-add their old detection patterns here; they'd over-match because
+  // the elements always exist in the DOM regardless of open state.
   const overlaySelectors = [
-    '#testing-modal[style*="display: flex"]',
-    '.notification-container .notification',
-    '#storage-viewer-overlay:not(.hidden)',
     '.onboarding-modal:not([style*="display: none"])'
   ];
 

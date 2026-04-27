@@ -41,7 +41,7 @@
  * @property {Object} utils.GlobalUtils - Global utility methods
  */
 
-import { STORAGE_KEYS, Z_INDEX } from '../core/constants.js';
+import { STORAGE_KEYS, Z_INDEX, BOOT_TIMEOUTS } from '../core/constants.js';
 
 // ============================================================================
 // POLYFILLS: Must run before any other code
@@ -85,7 +85,7 @@ document.documentElement.dataset.bootStartTime = Date.now().toString();
 
 const TEST_MODE_DB = 'miniCycleTestResultsDB';
 const TEST_MODE_STORE = 'results';
-const IDB_TIMEOUT_MS = 1000; // 1s timeout for IndexedDB operations (fail fast, minimal boot delay)
+// IndexedDB operation timeout — see BOOT_TIMEOUTS.IDB_OPERATION (fail fast, minimal boot delay).
 
 /**
  * Wrap a Promise with a timeout to prevent indefinite hanging
@@ -176,7 +176,7 @@ async function checkTestModeActive() {
         }
     });
 
-    return withTimeout(operation, IDB_TIMEOUT_MS, false);
+    return withTimeout(operation, BOOT_TIMEOUTS.IDB_OPERATION, false);
 }
 
 /**
@@ -236,7 +236,7 @@ async function getPreTestBackup() {
         }
     });
 
-    return withTimeout(operation, IDB_TIMEOUT_MS, null);
+    return withTimeout(operation, BOOT_TIMEOUTS.IDB_OPERATION, null);
 }
 
 /**
@@ -293,7 +293,7 @@ async function clearTestModeFlags() {
         }
     });
 
-    return withTimeout(operation, IDB_TIMEOUT_MS, undefined);
+    return withTimeout(operation, BOOT_TIMEOUTS.IDB_OPERATION, undefined);
 }
 
 /**

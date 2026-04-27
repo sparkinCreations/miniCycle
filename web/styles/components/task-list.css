@@ -997,12 +997,6 @@ body.checkmark-circle .task input[type="checkbox"]::after {
     #task-view {
         width: 90vw;
         max-width: none;
-        left: calc(50% - 10px);
-    }
-
-    /* Maintain nudge when .show class is applied after swipe */
-    #task-view.show {
-        left: calc(50% - 10px);
     }
 
     /* Give task text more horizontal space on mobile — buttons are behind three-dots */
