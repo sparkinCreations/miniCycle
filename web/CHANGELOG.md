@@ -1,3 +1,7 @@
+## [2.212] - 2026-04-28
+- fix: update privacy policy version and enhance clarity on data handling practices
+
+
 ## [2.211] - 2026-04-28
 - fix: enhance privacy statements in learn more and product pages
 

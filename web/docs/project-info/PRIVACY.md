@@ -35,7 +35,7 @@
 All data is stored **in your browser** using:
 
 **localStorage:**
-- Your cycles and tasks
+- Your routines and tasks
 - App settings and preferences
 - Theme selections
 - Onboarding state
@@ -135,13 +135,13 @@ miniCycle uses **zero cookies** — neither the app nor the marketing pages set 
 ```
 Your Device
   └── Browser
-      ├── localStorage (cycle data)
+      ├── localStorage (routine data)
       └── IndexedDB (undo history)
 ```
 
 **Your task data is not stored:**
 
-- ❌ On any server (no backend holds your routines, tasks, cycles, reminders, or settings)
+- ❌ On any server (no backend holds your routines, tasks, cycle history, reminders, or settings)
 - ❌ In any cloud
 - ❌ On any other device
 
@@ -152,8 +152,8 @@ Your Device
 - IndexedDB: ~50MB-unlimited (browser-dependent)
 
 **miniCycle usage:**
-- Typical: < 1MB for 10 cycles with 50 tasks each
-- Heavy: < 5MB for 50 cycles with 100 tasks each
+- Typical: < 1MB for 10 routines with 50 tasks each
+- Heavy: < 5MB for 50 routines with 100 tasks each
 
 ---
 
@@ -170,7 +170,7 @@ You have **complete control** over your data:
 
 **Delete:**
 - Clear individual tasks
-- Delete entire cycles
+- Delete entire routines
 - Factory reset (Settings → Clear All Data)
 
 **Modify:**
@@ -180,7 +180,7 @@ You have **complete control** over your data:
 
 **Transfer:**
 - Export → Import on another device
-- Share cycles with others
+- Share routines with others
 - Backup to your own cloud storage
 
 ---

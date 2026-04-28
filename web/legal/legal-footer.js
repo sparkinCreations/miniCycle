@@ -8,17 +8,10 @@
         yearEl.textContent = new Date().getFullYear();
     }
 
-    // Find the back button — must be an anchor pointing at miniCycle.html.
-    // Filtering by href avoids accidentally rewriting any unrelated .btn elements.
-    var candidates = document.querySelectorAll('a.back-button, a.btn');
-    var backBtn = null;
-    for (var i = 0; i < candidates.length; i++) {
-        var href = candidates[i].getAttribute('href') || '';
-        if (href.indexOf('miniCycle.html') !== -1) {
-            backBtn = candidates[i];
-            break;
-        }
-    }
+    // Find the back button by aria-label semantics — survives Netlify pretty-URL rewrites
+    // (deployed href is "/minicycle" rather than "../miniCycle.html"), and avoids matching
+    // unrelated buttons that happen to share a class.
+    var backBtn = document.querySelector('a[aria-label^="Back to"], a[aria-label^="Go back"]');
     if (!backBtn) return;
 
     var referrer = document.referrer;
