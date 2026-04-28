@@ -100,15 +100,15 @@ export async function runDailyResetManagerTests(resultsDiv) {
     });
 
     await test('formatTime12 handles midnight as 12:00 AM', () => {
-        if (formatTime12(0, 0) !== '12:00 AM') throw new Error(formatTime12(0, 0));
+        if (formatTime12(0, 0) !== '12:00 AM') throw new Error(formatTime12(0, 0));
     });
 
     await test('formatTime12 handles noon as 12:00 PM', () => {
-        if (formatTime12(12, 0) !== '12:00 PM') throw new Error(formatTime12(12, 0));
+        if (formatTime12(12, 0) !== '12:00 PM') throw new Error(formatTime12(12, 0));
     });
 
     await test('formatTime12 handles 6:30 PM', () => {
-        if (formatTime12(18, 30) !== '6:30 PM') throw new Error(formatTime12(18, 30));
+        if (formatTime12(18, 30) !== '6:30 PM') throw new Error(formatTime12(18, 30));
     });
 
     await test('formatTimeInput pads to HH:MM', () => {
