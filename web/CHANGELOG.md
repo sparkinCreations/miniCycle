@@ -1,3 +1,7 @@
+## [2.210] - 2026-04-28
+- chore: update app version to 2.209 and adjust related assets
+
+
 ## [2.209] - 2026-04-28
 - fix: correct spacing in AM/PM formatting for time display tests
 - chore: update version to v2.208 and reflect changes across documentation and files
