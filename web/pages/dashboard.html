@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>miniCycle Analytics Dashboard</title>
+    <title>miniCycle Dashboard</title>
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../assets/images/logo/logo.png">
     <style>
@@ -93,6 +93,25 @@
             display: none;
         }
 
+        .auth-remember {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: #a0aec0;
+            cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .auth-remember input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #0088ff;
+            cursor: pointer;
+        }
+
         /* Dashboard */
         .dashboard {
             display: none;
@@ -150,7 +169,7 @@
         /* Summary Cards */
         .summary-row {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 1rem;
             margin-bottom: 2rem;
         }
@@ -179,11 +198,124 @@
         .summary-card .value.blue { color: #0088ff; }
         .summary-card .value.green { color: #00c48c; }
 
+        .summary-card .delta {
+            font-size: 0.75rem;
+            margin-top: 0.4rem;
+            color: #7a8b9a;
+            font-weight: 500;
+            min-height: 1em;
+        }
+        .summary-card .delta.up { color: #00c48c; }
+        .summary-card .delta.down { color: #ff6b6b; }
+
+        /* Carousel */
+        .carousel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .carousel-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .carousel-arrow {
+            background: #1a2733;
+            border: 1px solid #2a3a4a;
+            color: #e0e6ed;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-family: inherit;
+            transition: background 0.15s, opacity 0.15s;
+            flex-shrink: 0;
+        }
+
+        .carousel-arrow:hover:not(:disabled) {
+            background: #2a3a4a;
+        }
+
+        .carousel-arrow:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .carousel-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .carousel-label {
+            color: #e0e6ed;
+            font-size: 0.95rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .carousel-dots {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .carousel-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #2a3a4a;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.15s;
+        }
+
+        .carousel-dot:hover {
+            background: #3a4a5a;
+        }
+
+        .carousel-dot.active {
+            background: #0088ff;
+            transform: scale(1.3);
+        }
+
+        .carousel-viewport {
+            overflow: hidden;
+            border-radius: 10px;
+        }
+
+        .carousel-track {
+            display: flex;
+            transition: transform 0.3s ease;
+        }
+
+        .carousel-slide {
+            flex: 0 0 100%;
+            min-width: 0;
+            max-height: calc(100vh - 280px);
+            overflow-y: auto;
+        }
+
         /* Page Sections */
         .page-section {
             background: #1a2733;
             border-radius: 10px;
-            margin-bottom: 1.5rem;
             overflow: hidden;
         }
 
@@ -350,9 +482,25 @@
             color: #4a5a6a;
         }
 
+        @media (max-width: 900px) {
+            .summary-row {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
         @media (max-width: 600px) {
             .summary-row {
                 grid-template-columns: repeat(2, 1fr);
+            }
+
+            .carousel-arrow {
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
+            }
+
+            .carousel-label {
+                font-size: 0.85rem;
             }
 
             .dashboard-header {
@@ -372,18 +520,25 @@
     <!-- Auth Screen -->
     <div class="auth-screen" id="authScreen">
         <div class="auth-card">
-            <h2>miniCycle Analytics</h2>
+            <h2>miniCycle Dashboard</h2>
             <p>Enter your secret to view click tracking data.</p>
-            <input type="password" class="auth-input" id="secretInput" placeholder="Enter secret" autofocus>
-            <button type="button" class="auth-btn" id="authBtn">View Dashboard</button>
-            <p class="auth-error" id="authError">Invalid secret. Please try again.</p>
+            <form id="authForm" autocomplete="on">
+                <input type="text" name="username" id="usernameInput" value="dashboard" autocomplete="username" hidden>
+                <input type="password" class="auth-input" id="secretInput" name="dashboard-secret" placeholder="Enter secret" autocomplete="current-password" autofocus>
+                <label class="auth-remember" for="rememberSecret">
+                    <input type="checkbox" id="rememberSecret">
+                    <span>Remember on this device</span>
+                </label>
+                <button type="submit" class="auth-btn" id="authBtn">View Dashboard</button>
+                <p class="auth-error" id="authError">Invalid secret. Please try again.</p>
+            </form>
         </div>
     </div>
 
     <!-- Dashboard -->
     <div class="dashboard" id="dashboard">
         <div class="dashboard-header">
-            <h1><span>miniCycle</span> Analytics</h1>
+            <h1><span>miniCycle</span> Dashboard</h1>
             <div class="header-actions">
                 <span class="last-updated" id="lastUpdated"></span>
                 <button type="button" class="refresh-btn" id="refreshBtn">Refresh</button>
@@ -394,18 +549,27 @@
             <div class="summary-card">
                 <div class="label">Total Clicks</div>
                 <div class="value blue" id="totalClicks">0</div>
+                <div class="delta" id="totalClicksDelta"></div>
+            </div>
+            <div class="summary-card">
+                <div class="label">Page Views</div>
+                <div class="value" id="totalViews">0</div>
+                <div class="delta" id="totalViewsDelta"></div>
             </div>
             <div class="summary-card">
                 <div class="label">Today</div>
                 <div class="value green" id="todayTotal">0</div>
+                <div class="delta" id="todayTotalDelta"></div>
             </div>
             <div class="summary-card">
                 <div class="label">Product Page</div>
                 <div class="value" id="productTotal">0</div>
+                <div class="delta" id="productTotalDelta"></div>
             </div>
             <div class="summary-card">
                 <div class="label">Learn More</div>
                 <div class="value" id="learnMoreTotal">0</div>
+                <div class="delta" id="learnMoreTotalDelta"></div>
             </div>
         </div>
 

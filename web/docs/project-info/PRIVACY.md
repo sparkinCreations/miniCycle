@@ -3,20 +3,22 @@
 > **How miniCycle handles your data**
 
 **Effective Date:** November 13, 2025
-**Version:** 1.0
-**miniCycle Version:** 1.352
+**Last Updated:** April 28, 2026
+**Version:** 2.0
+**miniCycle Version:** 2.208
 
 ---
 
 ## TL;DR (Summary)
 
-**miniCycle collects ZERO data.**
+**The miniCycle app collects ZERO data.** All your task data, settings, and history stay on your device. The app makes no analytics, telemetry, or tracking calls.
 
-- ✅ All data stored locally on your device
-- ✅ No servers, no cloud, no tracking
-- ✅ No analytics, no telemetry, no cookies
+**The miniCycle marketing pages** (product page and learn-more page) use a small self-hosted counter to record button clicks and page views in aggregate — no cookies, no IP addresses, no personal data, no third-party services. See "Analytics & Tracking" below for the full disclosure.
+
+- ✅ The app: 100% local, zero data collection
 - ✅ No accounts, no authentication, no registration
-- ✅ **100% private by design**
+- ✅ No cookies anywhere
+- ⚠️ Marketing pages only: anonymous click & page-view counts (no PII, no cookies, no IPs stored)
 
 ---
 
@@ -24,7 +26,9 @@
 
 ### What We Collect
 
-**Nothing.** miniCycle collects zero data.
+**Inside the app: nothing.** miniCycle (the application at `miniCycle.html`) collects zero data.
+
+**On the marketing pages:** anonymous, aggregated click and page-view counts. No cookies, no IPs, no fingerprinting, no personal data. See "Analytics & Tracking" further down for the full disclosure.
 
 ### What We Store (Locally Only)
 
@@ -46,9 +50,9 @@ All data is stored **in your browser** using:
 
 ## Data Transmission
 
-### Network Activity
+### Network Activity (App)
 
-miniCycle makes **zero network requests** for:
+The miniCycle app makes **zero network requests** for:
 - ❌ No analytics
 - ❌ No error reporting
 - ❌ No telemetry
@@ -56,11 +60,15 @@ miniCycle makes **zero network requests** for:
 - ❌ No third-party scripts
 - ❌ No API calls
 
-**The only network activity:**
+**The only network activity in the app:**
 - Initial page load (downloading app files)
 - Service Worker updates (checking for new versions)
 
-**No data is transmitted.**
+### Network Activity (Marketing Pages)
+
+The product and learn-more pages POST anonymous click and page-view events to a self-hosted Netlify Function on our own infrastructure. See "Analytics & Tracking" below for what is and isn't included in those events.
+
+**No data from inside the app is ever transmitted.**
 
 ---
 
@@ -68,7 +76,9 @@ miniCycle makes **zero network requests** for:
 
 ### What We Use
 
-**None.**
+**For the app: none.** The application has no third-party integrations.
+
+**For the marketing pages:** anonymous event counts are stored using Netlify Blobs (our own hosting infrastructure). No third-party analytics, advertising, or tracking services are involved.
 
 - No Google Analytics
 - No Firebase
@@ -78,7 +88,7 @@ miniCycle makes **zero network requests** for:
 - No external fonts
 - No external scripts
 
-**100% self-contained application.**
+**The app itself remains 100% self-contained.**
 
 ---
 
@@ -86,18 +96,18 @@ miniCycle makes **zero network requests** for:
 
 ### Cookie Usage
 
-miniCycle uses **zero cookies**.
+miniCycle uses **zero cookies** — neither the app nor the marketing pages set cookies of any kind.
 
 - No tracking cookies
 - No analytics cookies
 - No advertising cookies
 - No session cookies
 
-**Local Storage != Cookies:**
-- localStorage is for app functionality
-- Stays on your device
-- Not sent to servers
-- You control it
+**localStorage and sessionStorage are not cookies:**
+
+- localStorage stores your task data (in the app) — never transmitted
+- sessionStorage stores a single per-tab flag on the marketing pages (`pv-product` / `pv-learn-more`) to deduplicate page views; never transmitted, automatically discarded when the tab closes
+- Both are isolated to the originating site by your browser and cannot be read by other websites
 
 ---
 
@@ -348,7 +358,9 @@ If you self-host miniCycle:
 
 ## Analytics & Tracking
 
-### What We Don't Track
+### Inside the App
+
+We do not track anything inside the miniCycle app:
 
 - ❌ Page views
 - ❌ Button clicks
@@ -358,9 +370,35 @@ If you self-host miniCycle:
 - ❌ Device info
 - ❌ IP addresses
 - ❌ User agents
-- ❌ Anything else
 
-**Exception:** GitHub (if you visit our repo) has their own analytics. We don't control that.
+### On the Marketing Pages: Anonymous Click & Page-View Counting
+
+The product page and learn-more page run a small self-hosted counter to help us understand which content engages visitors and gauge overall traffic. This is **the only place** any tracking happens.
+
+**What is collected:**
+
+- The visible label of any clicked button or link (e.g., "Get Started", "View on GitHub", "FAQ: Is miniCycle free?")
+- A page-view event when a marketing page is loaded
+- An ISO 8601 timestamp for each event, used only for aggregate trend charts (clicks per day, by hour of day) on our internal admin dashboard
+- A running total count for each named event
+
+**What is NOT collected:**
+
+- ❌ No cookies
+- ❌ No personal data — no names, emails, or identifiers
+- ❌ No IP addresses are stored in our counter database
+- ❌ No browser fingerprinting
+- ❌ No referrer URL, geolocation, or device information
+- ❌ No identifier links one event to another — events cannot be traced back to a specific visitor or session by us
+- ❌ No third-party analytics, advertising, or tracking services
+
+**Page-view deduplication:** When you load a marketing page, a per-tab flag is written to your browser's `sessionStorage` so that refreshing within the same tab doesn't double-count. The flag stays on your device, is never transmitted, and is automatically discarded when you close the tab.
+
+**Bot filtering:** Visits and clicks from browsers that announce themselves as automated (via `navigator.webdriver`) are excluded. We do not detect all bot traffic — counts may include legitimate web crawlers and link-preview fetchers.
+
+**Storage:** Counter data lives in Netlify Blobs on our own infrastructure. No third-party analytics services (Google Analytics, Firebase, Sentry, etc.) are involved.
+
+**Exception:** GitHub (if you visit our repo) has its own analytics. We don't control that.
 
 ---
 
@@ -423,20 +461,20 @@ miniCycle is open source:
 
 **miniCycle is private by design:**
 
-1. **No data leaves your device**
+1. **No app data ever leaves your device** (the app makes no analytics or tracking calls)
 2. **No accounts or authentication**
-3. **No servers or databases**
-4. **No analytics or tracking**
-5. **No third-party services**
-6. **You have complete control**
+3. **No servers or databases for user data**
+4. **No third-party tracking or advertising services**
+5. **You have complete control** over your task data
+6. **Marketing pages have anonymous, aggregate click & view counters** with no cookies, no IP storage, and no personal data — see "Analytics & Tracking" above
 
 **Questions?** See the FAQ or open a GitHub Issue.
 
 ---
 
-**Privacy Policy Version:** 1.0
+**Privacy Policy Version:** 2.0
 **Effective Date:** November 13, 2025
-**Last Updated:** November 13, 2025
-**miniCycle Version:** 1.352
+**Last Updated:** April 28, 2026
+**miniCycle Version:** 2.208
 
 *Your privacy is our priority. Always has been, always will be.*

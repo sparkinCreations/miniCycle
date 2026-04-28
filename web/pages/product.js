@@ -578,24 +578,56 @@
     });
 
     // =========================================================
-    // CTA Click Tracking
+    // Click Tracking — delegated, covers every <a> and <button>
     // =========================================================
-    function trackClick(event) {
+    function trackEvent(event, type) {
         try {
             fetch('/.netlify/functions/track', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ event: event }),
+                body: JSON.stringify({ event: event, type: type || 'click' }),
+                keepalive: true, // survive navigation when clicking external links
             }).catch(function () { /* silent fail — tracking is non-critical */ });
         } catch (e) { /* silent fail */ }
     }
 
-    document.querySelectorAll('a.cta-primary, a.cta-secondary, a.cta-btn').forEach(function (link) {
-        link.addEventListener('click', function () {
-            var label = this.textContent.trim().toLowerCase().replace(/\s+/g, '-');
-            trackClick('product-' + label);
-        });
+    function slug(s) {
+        return String(s || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
+
+    function inferLabel(elem) {
+        // 1. Explicit override
+        var explicit = elem.getAttribute('data-track');
+        if (explicit) return slug(explicit);
+
+        // 2. aria-label (e.g. carousel arrows) or text content
+        var label = slug(elem.getAttribute('aria-label') || elem.textContent);
+        if (label) return label;
+
+        // 3. Icon-only or empty — fall back to href hostname/path
+        if (elem.tagName === 'A' && elem.href) {
+            try {
+                var u = new URL(elem.href, location.href);
+                return 'href-' + slug(u.host + u.pathname);
+            } catch (e) { /* invalid URL */ }
+        }
+        return 'unlabeled';
+    }
+
+    document.addEventListener('click', function (e) {
+        var target = e.target.closest && e.target.closest('a, button');
+        if (!target) return;
+        if (target.hasAttribute('data-track-skip')) return;
+        trackEvent('product-' + inferLabel(target), 'click');
     });
+
+    // Pageview — once per session, skip announced bots
+    try {
+        if (!navigator.webdriver && !sessionStorage.getItem('pv-product')) {
+            sessionStorage.setItem('pv-product', '1');
+            trackEvent('product', 'view');
+        }
+    } catch (e) { /* sessionStorage disabled — skip dedup, don't fire */ }
 
     // =========================================================
     // Scroll Reveal (IntersectionObserver)

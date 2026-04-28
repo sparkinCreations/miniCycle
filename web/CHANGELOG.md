@@ -1,3 +1,8 @@
+## [2.209] - 2026-04-28
+- fix: correct spacing in AM/PM formatting for time display tests
+- chore: update version to v2.208 and reflect changes across documentation and files
+
+
 ## [2.208] - 2026-04-27
 - chore: close DI gaps, centralize timing constants, polish CSS
 - feat: add Daily Reset Manager for per-routine auto-uncheck functionality

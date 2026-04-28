@@ -1,13 +1,38 @@
-// track.js — Netlify Function for anonymous CTA click counting
+// track.js — Netlify Function for anonymous CTA click + pageview counting
 // Uses Netlify Blobs to persist counts across deploys
 // No personal data is collected — only event name, count, and timestamps
 
 import { getStore } from "@netlify/blobs";
 
-var MAX_TIMESTAMPS = 500; // Keep last 500 clicks per event to prevent unbounded growth
+var MAX_TIMESTAMPS = 5000; // Keep last N timestamps per event to bound blob size (~125 KB max)
+
+var STORES = {
+    click: "click-counts",
+    view: "page-views",
+};
+
+async function loadStore(name) {
+    var store = getStore(name);
+    var blobs = await store.list();
+    var out = {};
+    for (var i = 0; i < blobs.blobs.length; i++) {
+        var blob = blobs.blobs[i];
+        var raw = await store.get(blob.key);
+        try {
+            var parsed = JSON.parse(raw);
+            if (typeof parsed === "object" && parsed !== null && parsed.total !== undefined) {
+                out[blob.key] = parsed;
+            } else {
+                out[blob.key] = { total: parseInt(parsed, 10) || 0, clicks: [] };
+            }
+        } catch {
+            out[blob.key] = { total: parseInt(raw, 10) || 0, clicks: [] };
+        }
+    }
+    return out;
+}
 
 export default async function handler(request) {
-    // CORS headers
     var headers = {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
@@ -15,19 +40,15 @@ export default async function handler(request) {
         "Content-Type": "application/json",
     };
 
-    // Handle preflight
     if (request.method === "OPTIONS") {
         return new Response(null, { status: 204, headers });
     }
 
-    var store = getStore("click-counts");
-
-    // GET — return all counts (for you to check)
+    // GET — return click counts and pageview counts
     if (request.method === "GET") {
         var url = new URL(request.url);
         var secret = url.searchParams.get("secret");
 
-        // Simple secret to prevent public access to counts
         if (secret !== process.env.TRACK_SECRET) {
             return new Response(JSON.stringify({ error: "unauthorized" }), {
                 status: 401,
@@ -35,28 +56,16 @@ export default async function handler(request) {
             });
         }
 
-        var blobs = await store.list();
-        var events = {};
-        for (var i = 0; i < blobs.blobs.length; i++) {
-            var blob = blobs.blobs[i];
-            var raw = await store.get(blob.key);
-            try {
-                var parsed = JSON.parse(raw);
-                // Normalize: if parsed is a number or string, it's the old format
-                if (typeof parsed === 'object' && parsed !== null && parsed.total !== undefined) {
-                    events[blob.key] = parsed;
-                } else {
-                    events[blob.key] = { total: parseInt(parsed, 10) || 0, clicks: [] };
-                }
-            } catch {
-                events[blob.key] = { total: parseInt(raw, 10) || 0, clicks: [] };
-            }
-        }
+        var events = await loadStore(STORES.click);
+        var pageviews = await loadStore(STORES.view);
 
-        return new Response(JSON.stringify({ events: events }), { status: 200, headers });
+        return new Response(
+            JSON.stringify({ events: events, pageviews: pageviews }),
+            { status: 200, headers }
+        );
     }
 
-    // POST — increment a counter
+    // POST — increment a counter (click by default; type:"view" routes to pageviews)
     if (request.method === "POST") {
         var body;
         try {
@@ -85,7 +94,9 @@ export default async function handler(request) {
             });
         }
 
-        // Read current data, add timestamp, increment count
+        var type = body.type === "view" ? "view" : "click";
+        var store = getStore(STORES[type]);
+
         var current = await store.get(sanitized);
         var data;
         try {
@@ -98,7 +109,6 @@ export default async function handler(request) {
         data.total += 1;
         data.clicks.push(new Date().toISOString());
 
-        // Trim to last MAX_TIMESTAMPS to prevent unbounded growth
         if (data.clicks.length > MAX_TIMESTAMPS) {
             data.clicks = data.clicks.slice(-MAX_TIMESTAMPS);
         }

@@ -106,3 +106,19 @@ p {
         grid-template-columns: 1fr;
     }
 }
+
+/* Privacy policy callouts */
+.section-summary {
+    border: 2px solid #000000;
+    background: rgba(0, 136, 255, 0.12);
+}
+
+.section-bottom-line {
+    border: 2px solid #000000;
+    background: rgba(11, 164, 6, 0.233);
+}
+
+.copyright-text {
+    margin-top: 20px;
+    text-align: center;
+}
