@@ -1,3 +1,7 @@
+## [2.211] - 2026-04-28
+- fix: enhance privacy statements in learn more and product pages
+
+
 ## [2.210] - 2026-04-28
 - chore: update app version to 2.209 and adjust related assets
 

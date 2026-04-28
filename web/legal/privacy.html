@@ -17,7 +17,7 @@
     <div class="section">
       <p><strong>Last Updated:</strong> April 28, 2026</p>
       <p><strong>Effective Date:</strong> October 2, 2025</p>
-      <p><strong>Policy Version:</strong> 2.3</p>
+      <p><strong>Policy Version:</strong> 2.4</p>
     </div>
 
     <div class="section section-summary">
@@ -68,7 +68,7 @@
         <li><strong>Browser notifications</strong> - If enabled, task names will appear in your device's notification center (managed by your operating system). This means task data becomes visible outside the app and may be seen by others with access to your device. You can enable or disable this at any time in the Reminders settings</li>
         <li><strong>Submitting feedback or bug reports</strong> - May include your comments and optional contact information</li>
         <li><strong>Exporting task lists or cycles</strong> - You control where exported files are saved</li>
-        <li><strong>Participating in beta features</strong> - Some new features may require limited data sharing to function</li>
+        <li><strong>Participating in beta features</strong> - Some new features may require limited data sharing to function. No beta feature will transmit task data unless you are clearly told first and explicitly opt in.</li>
       </ul>
       <p><strong>Use of these features is always voluntary.</strong> miniCycle will never transmit data from your device unless you explicitly choose to activate one of these features. You will always be clearly informed before any data leaves your device.</p>
     </div>
@@ -95,7 +95,7 @@
       <p>miniCycle is designed to keep your task data private and secure:</p>
       <ul>
         <li><strong>No remote transmission</strong> - Your data never travels over the internet unless you use an optional export/sharing feature</li>
-        <li><strong>No servers store your task data</strong> - We don't maintain any backend that holds your routines, tasks, or settings</li>
+        <li><strong>No servers storing your task data</strong> - miniCycle does not maintain servers that store your routines, tasks, cycles, reminders, or settings</li>
         <li><strong>Input sanitization</strong> - Protection against malicious code injection</li>
         <li><strong>Browser security</strong> - Data stored in standard browser security contexts</li>
         <li><strong>Secure optional features</strong> - If you choose to use features that transmit data, that data is handled securely and only for its intended purpose</li>
@@ -115,14 +115,14 @@
     </div>
 
     <div class="section">
-      <h2>Legal Compliance</h2>
-      <p>This privacy policy complies with:</p>
+      <h2>Privacy Principles & Regulations</h2>
+      <p>This policy is designed with the following privacy principles in mind:</p>
       <ul>
         <li><strong>General Data Protection Regulation (GDPR)</strong> - European Union</li>
         <li><strong>California Consumer Privacy Act (CCPA)</strong> - United States</li>
-        <li><strong>Other applicable privacy laws</strong></li>
+        <li><strong>Other applicable privacy laws and best practices</strong></li>
       </ul>
-      <p>Since miniCycle doesn't collect personal data, most privacy regulations don't apply to our data practices. However, we've designed miniCycle to exceed privacy standards regardless.</p>
+      <p>Since miniCycle doesn't collect personal data inside the app, most privacy regulations don't apply to our data practices. We've designed the product to align with the spirit of these standards regardless.</p>
     </div>
 
     <div class="section">
@@ -148,6 +148,7 @@
       <p><strong>How page view deduplication works:</strong> When you load a landing page, a small flag (<code>pv-product</code> or <code>pv-learn-more</code>) is written to your browser's <code>sessionStorage</code> so that refreshing or navigating within the same tab does not double-count the visit. This flag stays on your device, is never transmitted to us, and is automatically discarded when you close the tab. <code>sessionStorage</code> is not a cookie and cannot be read by other websites.</p>
       <p><strong>Bot filtering:</strong> Visits and clicks from browsers that announce themselves as automated (via the <code>navigator.webdriver</code> flag, e.g. Selenium) are excluded from counting. We do not detect or distinguish all bot traffic — counts may include legitimate web crawlers and link previewers.</p>
       <p><strong>Important:</strong> This counter runs only on the product and learn more pages. It does <strong>not</strong> run inside the miniCycle app itself. Your task data, routines, and settings remain completely private and are never sent anywhere. Counter data is stored on our own Netlify infrastructure — no third-party analytics services are involved.</p>
+      <p><strong>Hosting provider note:</strong> Like most websites, our hosting provider may process standard technical request data needed to deliver the site. miniCycle does not access that hosting data. Our marketing pages use anonymous aggregate counters for page views and button clicks, but we do not track individual visitors, build user profiles, use cookies, fingerprint browsers, or connect events to a specific person or session.</p>
 
       <h3>The miniCycle App</h3>
       <p>The miniCycle app itself does not integrate with any third-party analytics, advertising, or data collection services. The app operates independently in your browser.</p>

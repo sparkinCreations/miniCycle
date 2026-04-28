@@ -4,7 +4,7 @@
 
 **Effective Date:** November 13, 2025
 **Last Updated:** April 28, 2026
-**Version:** 2.0
+**Version:** 2.1
 **miniCycle Version:** 2.208
 
 ---
@@ -139,8 +139,9 @@ Your Device
       └── IndexedDB (undo history)
 ```
 
-**Not stored:**
-- ❌ On any server
+**Your task data is not stored:**
+
+- ❌ On any server (no backend holds your routines, tasks, cycles, reminders, or settings)
 - ❌ In any cloud
 - ❌ On any other device
 
@@ -260,27 +261,27 @@ miniCycle is safe for all ages:
 
 ### GDPR (EU)
 
-**Compliant by design:**
+**Designed with these principles in mind:**
 
-- ✅ No personal data collected
-- ✅ No data processing
-- ✅ No data transfers
-- ✅ No consent required (nothing to consent to)
+- ✅ No personal data collected inside the app
+- ✅ No personal data processing inside the app
+- ✅ No data transfers of user task data
+- ✅ No consent required for app usage (nothing to consent to)
 - ✅ Right to erasure (you can delete anytime)
 - ✅ Data portability (export feature)
 
 ### CCPA (California)
 
-**Compliant by design:**
+**Designed with these principles in mind:**
 
 - ✅ No personal information collected
 - ✅ No personal information sold
 - ✅ No personal information shared
-- ✅ No opt-out required (nothing to opt out of)
+- ✅ No opt-out required for app usage
 
 ### Other Jurisdictions
 
-miniCycle respects privacy laws worldwide by **not collecting any data**.
+miniCycle is designed to respect privacy laws worldwide. The app collects no personal data; the marketing pages use only anonymous, aggregate counters as described in "Analytics & Tracking" below.
 
 ---
 
@@ -398,17 +399,24 @@ The product page and learn-more page run a small self-hosted counter to help us 
 
 **Storage:** Counter data lives in Netlify Blobs on our own infrastructure. No third-party analytics services (Google Analytics, Firebase, Sentry, etc.) are involved.
 
+**Hosting provider note:** Like most websites, our hosting provider may process standard technical request data needed to deliver the site. miniCycle does not access that hosting data. Our marketing pages use anonymous aggregate counters for page views and button clicks, but we do not track individual visitors, build user profiles, use cookies, fingerprint browsers, or connect events to a specific person or session.
+
 **Exception:** GitHub (if you visit our repo) has its own analytics. We don't control that.
 
 ---
 
 ## Future Plans
 
+### Beta Features
+
+Some new features may require limited data sharing to function. **No beta feature will transmit task data unless you are clearly told first and explicitly opt in.** This protects the core promise: your routines, tasks, and settings stay on your device by default, regardless of what's in development.
+
 ### Cloud Sync (Under Consideration)
 
 If we add cloud sync (optional):
 
 **Principles:**
+
 - 🔒 **End-to-end encryption** (we can't read your data)
 - 🎯 **Opt-in only** (default remains local)
 - 🔓 **Zero-knowledge** (server can't decrypt)
@@ -472,7 +480,7 @@ miniCycle is open source:
 
 ---
 
-**Privacy Policy Version:** 2.0
+**Privacy Policy Version:** 2.1
 **Effective Date:** November 13, 2025
 **Last Updated:** April 28, 2026
 **miniCycle Version:** 2.208
