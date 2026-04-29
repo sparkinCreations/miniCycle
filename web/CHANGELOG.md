@@ -1,3 +1,7 @@
+## [2.213] - 2026-04-29
+- chore: update app version to 2.212 and reflect changes across documentation and files
+
+
 ## [2.212] - 2026-04-28
 - fix: update privacy policy version and enhance clarity on data handling practices
 
