@@ -1,3 +1,8 @@
+## [2.214] - 2026-04-30
+- Add tests for menu section icons, mode radio group, and theme manager
+- fix: update terms of service for clarity and consistency in branding
+
+
 ## [2.213] - 2026-04-29
 - chore: update app version to 2.212 and reflect changes across documentation and files
 
