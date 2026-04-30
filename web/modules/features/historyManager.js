@@ -8,7 +8,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav, handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
@@ -814,7 +814,7 @@ export class HistoryManager {
                 detailText = `${count} ${taskNounPlural}: ${names}`;
             } else if (event.type === 'task_priority_set' && event.details.taskName !== undefined) {
                 const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(event.details.priorityColor)
-                    ? event.details.priorityColor : '#dc3545';
+                    ? event.details.priorityColor : COLORS.PRIORITY_DEFAULT;
                 detailText = `${this._escapeHtml(event.details.taskName)} <span class="history-priority-dot" style="background:${safeColor};" aria-hidden="true"></span>`;
             } else if (event.type === 'task_priority_removed' && event.details.taskName !== undefined) {
                 detailText = this._escapeHtml(event.details.taskName);

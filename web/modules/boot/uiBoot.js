@@ -256,6 +256,10 @@ export function attachMenuButtonListener(_GlobalUtils, menuButton, menu) {
       menu.classList.toggle(DOM_CLASSES.VISIBLE);
       const isVisible = menu.classList.contains(DOM_CLASSES.VISIBLE);
       menuButton.setAttribute('aria-expanded', String(isVisible));
+      // Mirror menu visibility on body so CSS (backdrop blur, button
+      // elevation) can drive off body class — PWA-reliable alternative to
+      // :has() per existing project convention (see mode-selector.css).
+      document.body.classList.toggle(DOM_CLASSES.MAIN_MENU_OPEN, isVisible);
 
       if (isVisible) {
         menu._previousFocus = document.activeElement;
@@ -269,6 +273,7 @@ export function attachMenuButtonListener(_GlobalUtils, menuButton, menu) {
         menu._escHandler = (e) => {
           if (e.key === 'Escape') {
             menu.classList.remove(DOM_CLASSES.VISIBLE);
+            document.body.classList.remove(DOM_CLASSES.MAIN_MENU_OPEN);
             menuButton.setAttribute('aria-expanded', 'false');
             document.removeEventListener('keydown', menu._escHandler);
             document.removeEventListener('click', closeMenuOnClickOutside);
@@ -441,6 +446,7 @@ function closeMenuOnClickOutside(event) {
 
   if (menu && !menu.contains(event.target) && !menuButton?.contains(event.target)) {
     menu.classList.remove(DOM_CLASSES.VISIBLE);
+    document.body.classList.remove(DOM_CLASSES.MAIN_MENU_OPEN);
     menuButton?.setAttribute('aria-expanded', 'false');
     document.removeEventListener('click', closeMenuOnClickOutside);
     if (menu._escHandler) {

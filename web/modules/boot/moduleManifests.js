@@ -381,7 +381,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.CYCLE,  // Phase 5 (not Phase 6 UI_MANAGERS) because routineManager needs it in same phase
         requires: ['appInit', 'AppState', 'showNotification'],
         optionalDeps: ['checkCompleteAllButton', 'checkGamesUnlock', 'createNewMiniCycle', 'recurringPanel', 'showConfirmationModal', 'showPromptModal', 'switchMiniCycle', 'trackAction', 'updateCycleData', 'updateCycleModeDescription', 'updateProgressBar', 'updateStatsPanel', 'updateUndoRedoButtons'],
-        provides: ['hideMainMenu', 'updateMainMenuHeader'],
+        provides: ['hideMainMenu', 'updateMainMenuHeader', 'clearAllTasks', 'deleteAllTasks'],
         api: 'ui',            // Exports to deps.ui — api category != phase
         singleton: true
     },
@@ -553,7 +553,7 @@ export const MODULE_MANIFESTS = {
     focusMode: {
         path: '../ui/focusMode.js',
         phase: PHASES.UI_MANAGERS,
-        optionalDeps: ['showNotification', 'safeAddEventListener', 'AppState'],
+        optionalDeps: ['showNotification', 'safeAddEventListener', 'AppState', 'clearAllTasks', 'deleteAllTasks', 'switchMiniCycle', 'createNewMiniCycle'],
         provides: ['focusMode'],
         api: 'ui',
         optional: true

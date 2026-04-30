@@ -555,10 +555,11 @@ export function captureStateSnapshot(state) {
   if (!currentCycle) return;
 
   // Safety check: Ensure we're tracking the right cycle
-  // If activeCycleIdForUndo doesn't match, update it (handles edge cases)
+  // Self-heal via onCycleSwitched — stale activeCycleIdForUndo permanently disables undo
   if (_deps.AppGlobalState.activeCycleIdForUndo &&
       _deps.AppGlobalState.activeCycleIdForUndo !== activeCycle) {
-    console.warn(`⚠️ Cycle mismatch: tracking "${_deps.AppGlobalState.activeCycleIdForUndo}" but active is "${activeCycle}". Skipping snapshot.`);
+    console.warn(`⚠️ Cycle mismatch: was tracking "${_deps.AppGlobalState.activeCycleIdForUndo}", correcting to "${activeCycle}"`);
+    onCycleSwitched(activeCycle).catch(() => {});
     return;
   }
 

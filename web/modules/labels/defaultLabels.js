@@ -926,6 +926,7 @@ export const DEFAULT_LABELS = deepFreeze({
     empty: {
         noTasks:              'No tasks yet',
         noTasksHint:          'Press the + button to show the task bar to add a task or create a new routine',
+        noTasksHintFocus:     'Open the {menuIcon} menu at the top and tap {showHide} to start adding tasks',
         createFirst:          'Create your first routine',
         orTrySample:          'or try a sample',
         noRecurringTasks:     'Add a task from this routine to make it recurring',
@@ -1115,6 +1116,9 @@ export const DEFAULT_LABELS = deepFreeze({
         taskOptionsTitle:        'Add or remove task option buttons',
         recurring:               'Recurring',
         recurringTitle:          'Manage recurring tasks',
+        inputBar:                'Input Bar',
+        inputBarTitle:           'Show or hide the task input bar',
+        modeRadioGroupAria:      'Switch routine mode',
         themes:                  'Themes',
         games:                   'Games',
         userManual:              'User Manual',
@@ -1401,7 +1405,21 @@ export const DEFAULT_LABELS = deepFreeze({
         enterAria:      'Enter focus mode — hides header, navigation, and other UI elements',
         exitAria:       'Exit focus mode — restores all UI elements',
         activated:      'Focus mode activated',
-        deactivated:    'Focus mode deactivated'
+        deactivated:    'Focus mode deactivated',
+        menuTitle:      'Focus mode actions',
+        menuAria:       'Open focus mode actions menu',
+        switchRoutines: 'Switch routines',
+        createRoutine:  'Create new routine',
+        toggleInputBar: 'Show/hide input bar',
+        uncheckAll:     'Uncheck all',
+        deleteAll:      'Delete all',
+        exitItem:       'Exit focus mode',
+        modeItemPrefix: 'Mode',
+        modeAutoName:   'Auto Cycle',
+        modeManualName: 'Manual Cycle',
+        modeTodoName:   'To-Do',
+        modeModalTitle: 'Switch Mode',
+        modeModalDone:  'Done'
     },
 
     // ========================================================================
@@ -2260,6 +2278,10 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'focusMode.exitAria',
     'focusMode.activated',
     'focusMode.deactivated',
+    'focusMode.modeAutoName',
+    'focusMode.modeManualName',
+    'focusMode.modeTodoName',
+    'focusMode.createRoutine',
 
     // Feedback
     'feedback.sending',
@@ -2292,6 +2314,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     // Empty states
     'empty.noTasks',
     'empty.noTasksHint',
+    'empty.noTasksHintFocus',
     'empty.createFirst',
     'empty.noRecurringTasks',
     'empty.noRoutineTasks',
@@ -2310,7 +2333,15 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'menu.taskActions',
     'menu.taskOptions',
     'menu.taskOptionsTitle',
+    'menu.recurring',
     'menu.recurringTitle',
+    'menu.reminders',
+    'menu.remindersTitle',
+    'menu.inputBar',
+    'menu.inputBarTitle',
+    'menu.autoUncheckDaily',
+    'menu.autoUncheckDailyTitle',
+    'menu.modeRadioGroupAria',
 
     // Settings
     'settings.scrollToNew',

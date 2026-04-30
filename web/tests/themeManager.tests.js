@@ -13,6 +13,7 @@ import {
 
 // Will need to use setThemeManagerDependencies inside tests
 let setThemeManagerDependencies = null;
+let _setMenuButtonLabel = null;
 
 export async function runThemeManagerTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🎨 ThemeManager Tests</h2><h3>Setting up mocks...</h3>';
@@ -26,6 +27,7 @@ export async function runThemeManagerTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const themeModule = await import(`../modules/features/themeManager.js?v=${cacheBuster}`);
     setThemeManagerDependencies = themeModule.setThemeManagerDependencies;
+    _setMenuButtonLabel = themeModule._setMenuButtonLabel;
 
     // Inject mock dependencies using testHelpers mocks
     setThemeManagerDependencies({
@@ -268,6 +270,109 @@ export async function runThemeManagerTests(resultsDiv) {
         // updateThemeColor checks for document.body
         tm.updateThemeColor();
         // Should not throw
+    });
+
+    // === _setMenuButtonLabel TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🔧 _setMenuButtonLabel</h4>';
+
+    /**
+     * Build a menu button with the standard `<i><text>` structure used
+     * everywhere in the main menu. Returns the button + the icon ref.
+     */
+    function buildMenuButton(id) {
+        document.getElementById(id)?.remove();
+        const btn = document.createElement('button');
+        btn.id = id;
+        btn.title = 'placeholder title';
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-eraser';
+        btn.appendChild(icon);
+        btn.appendChild(document.createTextNode('Placeholder Text'));
+        document.body.appendChild(btn);
+        return { btn, icon };
+    }
+
+    await test('_setMenuButtonLabel is exported as a function', () => {
+        if (typeof _setMenuButtonLabel !== 'function') {
+            throw new Error('_setMenuButtonLabel should be exported');
+        }
+    });
+
+    await test('_setMenuButtonLabel updates the text node and preserves the icon', () => {
+        const { btn, icon } = buildMenuButton('menu-test-button');
+        // 'action.clearAllMenu' resolves to "Uncheck All" in default labels
+        _setMenuButtonLabel('menu-test-button', 'action.clearAllMenu', 'action.clearAllTitle');
+
+        // Icon must still be present and unchanged
+        if (!btn.contains(icon)) {
+            throw new Error('Icon element should survive the label update');
+        }
+        if (icon.className !== 'fas fa-eraser') {
+            throw new Error('Icon className should not be modified');
+        }
+
+        // Text node should now read "Uncheck All"
+        const textNode = Array.from(btn.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
+        if (!textNode || !textNode.textContent.includes('Uncheck All')) {
+            throw new Error(`Text node should be "Uncheck All", got: ${textNode?.textContent}`);
+        }
+
+        btn.remove();
+    });
+
+    await test('_setMenuButtonLabel sets the title attribute when titleKey is provided', () => {
+        const { btn } = buildMenuButton('menu-test-button-title');
+        _setMenuButtonLabel('menu-test-button-title', 'action.clearAllMenu', 'action.clearAllTitle');
+
+        if (!btn.title.includes('Uncheck all tasks')) {
+            throw new Error(`Title should reflect action.clearAllTitle, got: ${btn.title}`);
+        }
+        btn.remove();
+    });
+
+    await test('_setMenuButtonLabel does not change title when titleKey is omitted', () => {
+        const { btn } = buildMenuButton('menu-test-button-no-title');
+        const originalTitle = btn.title;
+        _setMenuButtonLabel('menu-test-button-no-title', 'action.clearAllMenu', null);
+
+        if (btn.title !== originalTitle) {
+            throw new Error(`Title should remain unchanged, got: ${btn.title}`);
+        }
+        btn.remove();
+    });
+
+    await test('_setMenuButtonLabel fails soft when element does not exist', () => {
+        try {
+            _setMenuButtonLabel('this-id-definitely-does-not-exist', 'action.clearAllMenu', 'action.clearAllTitle');
+        } catch (e) {
+            throw new Error('Should not throw when element is missing: ' + e.message);
+        }
+    });
+
+    await test('_setMenuButtonLabel appends a text node when button has only an icon', () => {
+        // Edge case: button with no existing text node (icon-only button)
+        document.getElementById('menu-test-button-icon-only')?.remove();
+        const btn = document.createElement('button');
+        btn.id = 'menu-test-button-icon-only';
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-bell';
+        btn.appendChild(icon);
+        document.body.appendChild(btn);
+
+        _setMenuButtonLabel('menu-test-button-icon-only', 'menu.reminders', null);
+
+        const textNode = Array.from(btn.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
+        if (!textNode) {
+            throw new Error('A new text node should have been appended');
+        }
+        if (!textNode.textContent.includes('Reminders')) {
+            throw new Error(`Appended text should be "Reminders", got: ${textNode.textContent}`);
+        }
+        // Icon must still be there
+        if (!btn.contains(icon)) {
+            throw new Error('Icon should still be present after text-node append');
+        }
+        btn.remove();
     });
 
     // Summary

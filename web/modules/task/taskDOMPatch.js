@@ -16,7 +16,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
+import { COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 
 // ============================================================================
@@ -134,9 +134,12 @@ export class TaskDOMPatch {
         taskElement.classList.toggle(DOM_CLASSES.HIGH_PRIORITY, isHighPriority);
 
         // Apply or clear per-task priority color via CSS custom property
-        if (isHighPriority && taskData.priorityColor) {
-            taskElement.style.setProperty('--task-priority-color', taskData.priorityColor);
-        } else if (!isHighPriority) {
+        // Use task's own color or the default red — settings.priorityColor is only
+        // baked into per-task color at toggle time, not re-applied on every render
+        if (isHighPriority) {
+            const resolvedColor = taskData.priorityColor ?? COLORS.PRIORITY_DEFAULT;
+            taskElement.style.setProperty('--task-priority-color', resolvedColor);
+        } else {
             taskElement.style.removeProperty('--task-priority-color');
         }
 
@@ -152,8 +155,9 @@ export class TaskDOMPatch {
      * @private
      */
     _patchPriorityColor(taskElement, taskData) {
-        if (taskData.highPriority && taskData.priorityColor) {
-            taskElement.style.setProperty('--task-priority-color', taskData.priorityColor);
+        if (taskData.highPriority) {
+            const resolvedColor = taskData.priorityColor ?? COLORS.PRIORITY_DEFAULT;
+            taskElement.style.setProperty('--task-priority-color', resolvedColor);
         } else {
             taskElement.style.removeProperty('--task-priority-color');
         }

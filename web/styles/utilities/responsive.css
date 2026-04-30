@@ -168,7 +168,9 @@
     }
 
     .landscape-compact .task-list-container {
+        /* See dvh note on #task-view in app-container.css. */
         max-height: calc(100vh - 200px);
+        max-height: calc(100dvh - 200px);
     }
 }
 

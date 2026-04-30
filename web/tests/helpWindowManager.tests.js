@@ -402,52 +402,84 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
     // === STATUS MESSAGES ===
     resultsDiv.innerHTML += '<h4 class="test-section">📝 Status Messages</h4>';
 
-    await test('getCurrentStatusMessage returns string', () => {
+    await test('getCurrentStatusMessage returns parts object', () => {
         const manager = new HelpWindowManager();
-        const message = manager.getCurrentStatusMessage();
+        const parts = manager.getCurrentStatusMessage();
 
-        if (typeof message !== 'string') {
-            throw new Error('Should return a string');
+        if (typeof parts !== 'object' || parts === null) {
+            throw new Error('Should return a parts object, not a string');
+        }
+        if (!('icon' in parts) || !('body' in parts) || !('size' in parts)) {
+            throw new Error('Parts must have icon, body, and size keys');
         }
     });
 
     await test('status message shows no tasks message when empty', () => {
         const manager = new HelpWindowManager();
         // taskListEl is empty
-        const message = manager.getCurrentStatusMessage();
+        const parts = manager.getCurrentStatusMessage();
 
-        if (!message.includes('Add your first task')) {
-            throw new Error('Should show add first task message');
+        if (!parts.body.includes('Add your first task')) {
+            throw new Error('Should show add first task message in body');
+        }
+    });
+
+    await test('status message uses 📝 icon when empty', () => {
+        const manager = new HelpWindowManager();
+        const parts = manager.getCurrentStatusMessage();
+
+        if (parts.icon !== '📝') {
+            throw new Error(`Empty list icon should be 📝, got: ${parts.icon}`);
         }
     });
 
     await test('status message shows remaining tasks count', () => {
         addMockTasks(5, 2); // 5 tasks, 2 completed = 3 remaining
         const manager = new HelpWindowManager();
-        const message = manager.getCurrentStatusMessage();
+        const parts = manager.getCurrentStatusMessage();
 
-        if (!message.includes('3 tasks remaining')) {
-            throw new Error('Should show 3 tasks remaining');
+        if (!parts.body.includes('3 tasks remaining')) {
+            throw new Error('Should show 3 tasks remaining in body');
         }
     });
 
     await test('status message shows singular task remaining', () => {
         addMockTasks(3, 2); // 3 tasks, 2 completed = 1 remaining
         const manager = new HelpWindowManager();
-        const message = manager.getCurrentStatusMessage();
+        const parts = manager.getCurrentStatusMessage();
 
-        if (!message.includes('1 task remaining')) {
-            throw new Error('Should show 1 task remaining (singular)');
+        if (!parts.body.includes('1 task remaining')) {
+            throw new Error('Should show 1 task remaining (singular) in body');
         }
     });
 
     await test('status message shows all tasks complete', () => {
         addMockTasks(3, 3); // 3 tasks, all completed
         const manager = new HelpWindowManager();
-        const message = manager.getCurrentStatusMessage();
+        const parts = manager.getCurrentStatusMessage();
 
-        if (!message.includes('All tasks complete')) {
-            throw new Error('Should show all tasks complete');
+        if (!parts.body.includes('All tasks complete')) {
+            throw new Error('Should show all tasks complete in body');
+        }
+    });
+
+    await test('status message uses 🎉 icon when all complete', () => {
+        addMockTasks(3, 3);
+        const manager = new HelpWindowManager();
+        const parts = manager.getCurrentStatusMessage();
+
+        if (parts.icon !== '🎉') {
+            throw new Error(`All-complete icon should be 🎉, got: ${parts.icon}`);
+        }
+    });
+
+    await test('status message uses 📋 icon when tasks remain', () => {
+        addMockTasks(3, 1); // 2 remaining
+        const manager = new HelpWindowManager();
+        const parts = manager.getCurrentStatusMessage();
+
+        if (parts.icon !== '📋') {
+            throw new Error(`In-progress icon should be 📋, got: ${parts.icon}`);
         }
     });
 
@@ -458,10 +490,10 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
 
         addMockTasks(3, 1);
         const manager = new HelpWindowManager();
-        const message = manager.getCurrentStatusMessage();
+        const parts = manager.getCurrentStatusMessage();
 
-        if (!message.includes('5 cycles completed')) {
-            throw new Error('Should show 5 cycles completed');
+        if (!parts.body.includes('5 cycles completed')) {
+            throw new Error('Should show 5 cycles completed in body');
         }
     });
 
@@ -472,10 +504,10 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
 
         addMockTasks(3, 3);
         const manager = new HelpWindowManager();
-        const message = manager.getCurrentStatusMessage();
+        const parts = manager.getCurrentStatusMessage();
 
-        if (!message.includes('1 cycle completed')) {
-            throw new Error('Should show 1 cycle completed (singular)');
+        if (!parts.body.includes('1 cycle completed')) {
+            throw new Error('Should show 1 cycle completed (singular) in body');
         }
     });
 
@@ -486,10 +518,92 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
 
         addMockTasks(3, 1);
         const manager = new HelpWindowManager();
-        const message = manager.getCurrentStatusMessage();
+        const parts = manager.getCurrentStatusMessage();
 
-        if (!message.includes('Complete your first cycle')) {
-            throw new Error('Should prompt for first cycle');
+        if (!parts.body.includes('Complete your first cycle')) {
+            throw new Error('Should prompt for first cycle in body');
+        }
+    });
+
+    // === PARTS RENDERING & XSS ESCAPING ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Parts Rendering & XSS</h4>';
+
+    await test('_renderStatusContent escapes script tags in body', () => {
+        const manager = new HelpWindowManager();
+        manager._renderStatusContent({
+            icon: '📋',
+            body: '<script>alert(1)</script>',
+            size: ''
+        });
+        if (helpWindowEl.innerHTML.includes('<script>')) {
+            throw new Error('Body must not render raw <script> tags');
+        }
+        if (!helpWindowEl.innerHTML.includes('&lt;script&gt;')) {
+            throw new Error('Body should be HTML-entity-escaped');
+        }
+    });
+
+    await test('_renderStatusContent escapes HTML in size', () => {
+        const manager = new HelpWindowManager();
+        manager._renderStatusContent({
+            icon: '📋',
+            body: 'safe text',
+            size: '<img src=x onerror=alert(1)>'
+        });
+        if (helpWindowEl.innerHTML.includes('onerror=')) {
+            throw new Error('Size must not render raw event handlers');
+        }
+    });
+
+    await test('_renderStatusContent escapes HTML in icon', () => {
+        const manager = new HelpWindowManager();
+        manager._renderStatusContent({
+            icon: '<img src=x onerror=alert(1)>',
+            body: 'safe',
+            size: ''
+        });
+        if (helpWindowEl.innerHTML.includes('onerror=')) {
+            throw new Error('Icon must not render raw event handlers');
+        }
+    });
+
+    await test('_renderStatusContent wraps icon in .help-window-icon span', () => {
+        const manager = new HelpWindowManager();
+        manager._renderStatusContent({ icon: '📋', body: 'test', size: '' });
+        if (!helpWindowEl.querySelector('.help-window-icon')) {
+            throw new Error('Icon should be wrapped in .help-window-icon span');
+        }
+    });
+
+    await test('_renderStatusContent wraps size in .help-window-size span', () => {
+        const manager = new HelpWindowManager();
+        manager._renderStatusContent({ icon: '📋', body: 'test', size: '~1.2 KB' });
+        if (!helpWindowEl.querySelector('.help-window-size')) {
+            throw new Error('Size should be wrapped in .help-window-size span');
+        }
+    });
+
+    await test('_renderStatusContent omits icon span when icon is empty', () => {
+        const manager = new HelpWindowManager();
+        manager._renderStatusContent({ icon: '', body: 'test', size: '~1 KB' });
+        if (helpWindowEl.querySelector('.help-window-icon')) {
+            throw new Error('Icon span should be omitted when icon is empty');
+        }
+    });
+
+    await test('_renderStatusContent omits size span when size is empty', () => {
+        const manager = new HelpWindowManager();
+        manager._renderStatusContent({ icon: '📋', body: 'test', size: '' });
+        if (helpWindowEl.querySelector('.help-window-size')) {
+            throw new Error('Size span should be omitted when size is empty');
+        }
+    });
+
+    await test('_renderStatusContent renders body text', () => {
+        const manager = new HelpWindowManager();
+        manager._renderStatusContent({ icon: '📋', body: 'hello world', size: '' });
+        if (!helpWindowEl.textContent.includes('hello world')) {
+            throw new Error('Body text should be visible in rendered content');
         }
     });
 

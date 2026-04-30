@@ -13,10 +13,11 @@
    #slide-left              → DOM_IDS.SLIDE_LEFT
    #slide-right             → DOM_IDS.SLIDE_RIGHT
    #quick-actions-window    → DOM_IDS.QUICK_ACTIONS_WINDOW
-   #help-window             → DOM_IDS.HELP_WINDOW
    #footer-container        → DOM_IDS.FOOTER_CONTAINER
    #personalization-btn     → DOM_IDS.PERSONALIZATION_BTN
-   #quick-dark-toggle       → DOM_IDS.QUICK_DARK_TOGGLE */
+   #quick-dark-toggle       → DOM_IDS.QUICK_DARK_TOGGLE
+   Note: #help-window stays visible in focus mode, but its leading icon
+   and storage size are hidden via .help-window-icon / .help-window-size. */
 /* Overlay base — uses ::after since ::before is the SVG pattern (background.css) */
 body::after {
     content: '';
@@ -81,7 +82,6 @@ body.focus-mode #task-view .task-list-container {
 #slide-left,
 #slide-right,
 #quick-actions-window,
-#help-window,
 #footer-container,
 #personalization-btn,
 #quick-dark-toggle {
@@ -92,11 +92,452 @@ body.focus-mode .fixed-header-container,
 body.focus-mode #slide-left,
 body.focus-mode #slide-right,
 body.focus-mode #quick-actions-window,
-body.focus-mode #help-window,
 body.focus-mode #footer-container,
 body.focus-mode #personalization-btn,
 body.focus-mode #quick-dark-toggle {
     opacity: 0;
+    pointer-events: none;
+}
+
+/* Help window stays visible in focus mode, but strip the leading
+   status icon and the storage-size suffix for a cleaner look. */
+body.focus-mode #help-window .help-window-icon,
+body.focus-mode #help-window .help-window-size {
+    display: none;
+}
+
+/* Mode-description title: the default accent color (blue) clashes with
+   the dim blue focus-mode overlay. White reads cleanly against the
+   blurred backdrop and stays distinct from the body text below. */
+body.focus-mode #help-window h4 {
+    color: var(--color-white);
+}
+
+/* Help-window clearance — focus-mode override (mobile/tablet only).
+   Normal-mode margin-bottom (var(--help-window-clearance) ≈ 55–80px) is
+   calibrated against the original #footer-container layout. In focus mode
+   #nav-dots is reparented to position: fixed; bottom: 80px with ~44px
+   height, occupying the 80–124px band from the viewport bottom. The
+   default clearance leaves the help-window's lower edge inside that band.
+   Bump it so the help-window sits cleanly above the reparented nav.
+   Desktop (≥1024px) skips this — .help-window is absolutely positioned to
+   the right of #task-view there, so vertical clearance doesn't apply. */
+@media (max-width: 1023px) {
+    body.focus-mode .help-window {
+        margin-bottom: 150px;
+    }
+}
+
+/* Undo/redo buttons are reparented to <body> in focus mode (out of the
+   hidden footer). Pin them to roughly their normal visual position via
+   fixed positioning so they stay reachable without cluttering the view.
+   Inner buttons keep their existing left:38% / right:38% offsets, which
+   now resolve against the viewport (full-width container). */
+body.focus-mode #undo-redo-buttons {
+    position: fixed;
+    bottom: 50px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: var(--z-notification);
+    pointer-events: auto;
+}
+
+@media (max-width: 768px) {
+    body.focus-mode #undo-redo-buttons {
+        bottom: 58px;
+    }
+}
+
+/* Low-key undo/redo styling — reachable but not distracting.
+   Brightens on hover / keyboard focus so it's still discoverable. */
+body.focus-mode .undo-redo-btn {
+    opacity: 0.4;
+    background: rgba(0, 0, 0, 0.2);
+    font-weight: 500;
+    transition: opacity var(--transition-normal) ease,
+                background var(--transition-fast) ease;
+}
+
+body.focus-mode .undo-redo-btn:hover,
+body.focus-mode .undo-redo-btn:focus-visible {
+    opacity: 0.95;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+/* =============================================================================
+   FOCUS MODE — THREE-DOTS MENU (top-right corner)
+   Hidden by default; revealed only when body.focus-mode is active.
+   ============================================================================= */
+
+#focus-mode-menu-btn,
+#focus-mode-menu {
+    display: none;
+}
+
+body.focus-mode #focus-mode-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    width: 52px;
+    height: 30px;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--pref-panel-text, var(--color-white));
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    z-index: var(--z-notification);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    transition: background var(--transition-fast) ease,
+                transform var(--transition-fast) ease;
+}
+
+body.focus-mode #focus-mode-menu-btn:hover,
+body.focus-mode #focus-mode-menu-btn:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+    transform: scale(1.05);
+}
+
+body.focus-mode #focus-mode-menu-btn:active {
+    transform: scale(0.95);
+}
+
+body.focus-mode #focus-mode-menu[hidden] {
+    display: none;
+}
+
+body.focus-mode #focus-mode-menu {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 68px;
+    right: 16px;
+    min-width: 180px;
+    background: rgba(15, 25, 45, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    z-index: var(--z-notification);
+    overflow: hidden;
+    padding: 4px;
+}
+
+body.focus-mode .focus-mode-menu-item {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    border: none;
+    background: transparent;
+    color: var(--color-white);
+    font-size: var(--font-size-sm);
+    text-align: left;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast) ease;
+}
+
+body.focus-mode .focus-mode-menu-item:hover,
+body.focus-mode .focus-mode-menu-item:focus-visible {
+    background: rgba(255, 255, 255, 0.12);
+    outline: none;
+}
+
+/* Group separator — thin line between semantic groups (routine / view /
+   bulk / exit). Subtle so it doesn't compete with menu items. */
+body.focus-mode .focus-mode-menu-separator {
+    height: 1px;
+    margin: 4px 6px;
+    background: rgba(255, 255, 255, 0.12);
+    border: none;
+    pointer-events: none;
+}
+
+/* Destructive item modifier — Delete all gets red treatment to match
+   iOS/macOS destructive-action convention. The action itself is still
+   confirmed via menuManager.deleteAllTasks (showConfirmationModal). */
+body.focus-mode .focus-mode-menu-item--destructive {
+    color: var(--color-red-light, #ef5350);
+}
+
+body.focus-mode .focus-mode-menu-item--destructive:hover,
+body.focus-mode .focus-mode-menu-item--destructive:focus-visible {
+    background: rgba(244, 67, 54, 0.18);
+    color: var(--color-red, #f44336);
+}
+
+/* Mode-switch menu item: trailing "▸" arrow rendered via pseudo so we
+   can scale it independently of the label text. */
+body.focus-mode #focus-mode-mode-item::after {
+    content: "▸";
+    margin-left: 8px;
+    font-size: 1.6em;
+    line-height: 1;
+    opacity: 0.8;
+}
+
+/* =============================================================================
+   FOCUS MODE — EMPTY-STATE HINT SWAP
+   The task list's #empty-state has a normal hint and a focus-mode hint
+   (injected by focusMode.js). Show one or the other based on body class.
+   ============================================================================= */
+
+/* Focus-mode hint is hidden by default (normal mode shows the regular hint).
+   Visual styling matches `.empty-state-hint` (task-list.css) so the message
+   reads identically when focus mode swaps it in. */
+.empty-state-hint-focus {
+    display: none;
+    font-size: var(--font-size-sm);
+    color: rgba(255, 255, 255, 0.7);
+    max-width: 250px;
+    line-height: 1.4;
+}
+
+/* In focus mode: hide the regular hint, show the focus-mode hint */
+body.focus-mode #empty-state .empty-state-hint {
+    display: none;
+}
+
+body.focus-mode #empty-state .empty-state-hint-focus {
+    display: block;
+}
+
+/* =============================================================================
+   FOCUS MODE — MODE-SWITCH MODAL
+   Triggered by the "Mode: <name> ▸" item in the focus-mode menu.
+   ============================================================================= */
+
+.focus-mode-mode-modal-backdrop[hidden],
+.focus-mode-mode-modal[hidden] {
+    display: none;
+}
+
+body.focus-mode .focus-mode-mode-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    z-index: var(--z-modal-backdrop);
+}
+
+body.focus-mode .focus-mode-mode-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(420px, calc(100vw - 32px));
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+    background: rgba(20, 28, 50, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    z-index: var(--z-modal);
+    padding: 20px;
+    color: var(--color-white);
+}
+
+.focus-mode-mode-modal-title {
+    margin: 0 0 12px 0;
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-white);
+}
+
+.focus-mode-mode-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    margin: 4px 0;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+}
+
+.focus-mode-mode-option:hover,
+.focus-mode-mode-option:focus-within {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.focus-mode-mode-option input[type="radio"] {
+    flex-shrink: 0;
+    margin-top: 2px;
+    cursor: pointer;
+    accent-color: var(--color-accent, var(--color-white));
+}
+
+.focus-mode-mode-option-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.focus-mode-mode-option-name {
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    color: var(--color-white);
+}
+
+.focus-mode-mode-option-desc {
+    margin-top: 2px;
+    font-size: var(--font-size-sm);
+    line-height: 1.35;
+    opacity: 0.7;
+    color: var(--color-white);
+}
+
+.focus-mode-mode-done-btn {
+    display: block;
+    margin-left: auto;
+    margin-top: 12px;
+    padding: 8px 18px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: var(--radius-md);
+    color: var(--color-white);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+}
+
+.focus-mode-mode-done-btn:hover,
+.focus-mode-mode-done-btn:focus-visible {
+    background: rgba(255, 255, 255, 0.25);
+    outline: none;
+}
+
+/* Mobile: bigger tap targets, position respects safe-area */
+@media (max-width: 1023px) {
+    body.focus-mode #focus-mode-menu-btn {
+        top: calc(env(safe-area-inset-top) + 12px);
+        right: 12px;
+        width: 56px;
+        height: 38px;
+    }
+
+    body.focus-mode #focus-mode-menu {
+        top: calc(env(safe-area-inset-top) + 64px);
+        right: 12px;
+        min-width: 200px;
+    }
+
+    body.focus-mode .focus-mode-menu-item {
+        padding: 12px 16px;
+        font-size: var(--font-size-base);
+        min-height: 44px;
+    }
+}
+
+/* =============================================================================
+   FOCUS MODE — NAV DOTS RESTYLED AS "ROUTINE | STATS" TEXT SWITCHER
+   Reparented to <body> in focus mode (out of hidden footer). The same
+   <button role="tab"> elements get re-skinned via CSS — click handlers
+   and ARIA wiring stay untouched.
+   ============================================================================= */
+
+body.focus-mode #nav-dots {
+    position: fixed;
+    bottom: 65px;
+    top: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--z-notification);
+    gap: 0;
+    background: transparent;
+    pointer-events: auto;
+}
+
+/* Hide the original pill background */
+body.focus-mode #nav-dots::before {
+    display: none;
+}
+
+/* Reshape the dot buttons as text labels */
+body.focus-mode #nav-dots .dot {
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    color: var(--color-white);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    opacity: 0.4;
+    text-align: center;
+    justify-content: center;
+    transition: opacity var(--transition-normal) ease;
+}
+
+/* Neutralize the original 7px circle on ::after */
+body.focus-mode #nav-dots .dot::after {
+    width: 0;
+    height: 0;
+    background: transparent;
+    transform: none;
+    border-radius: 0;
+    content: '';
+}
+
+/* Inject the text labels via ::before */
+body.focus-mode #nav-dots .dot[aria-controls="task-view"]::before {
+    content: "Routine";
+}
+
+body.focus-mode #nav-dots .dot[aria-controls="stats-panel"]::before {
+    content: "Stats";
+}
+
+/* Symmetric gaps around the "|" separator.
+   The "|" is inside Routine's box (as its ::after), so Routine's
+   right padding inflates the perceived gap. Zero both inner paddings
+   so spacing is governed purely by the separator's symmetric margins. */
+body.focus-mode #nav-dots .dot[aria-controls="task-view"] {
+    padding-right: 0;
+}
+
+body.focus-mode #nav-dots .dot[aria-controls="stats-panel"] {
+    padding-left: 0;
+}
+
+/* Active tab = full opacity, inactive = faded (handled by base .dot rule) */
+body.focus-mode #nav-dots .dot.active {
+    opacity: 0.95;
+}
+
+/* Hover/focus lifts the faded tab so it's still discoverable */
+body.focus-mode #nav-dots .dot:hover,
+body.focus-mode #nav-dots .dot:focus-visible {
+    opacity: 0.85;
+}
+
+body.focus-mode #nav-dots .dot.active:hover,
+body.focus-mode #nav-dots .dot.active:focus-visible {
+    opacity: 1;
+}
+
+/* Separator "|" between the two tabs — repurpose ::after on the first one.
+   Symmetric horizontal margins keep the visual rhythm centered. */
+body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
+    content: "|";
+    width: auto;
+    height: auto;
+    color: var(--color-white);
+    opacity: 0.3;
+    margin: 0 6px;
+    font-weight: 300;
     pointer-events: none;
 }
 
@@ -247,5 +688,24 @@ body.focus-mode .focus-mode-btn svg {
     body.focus-mode .focus-mode-btn svg {
         width: 20px;
         height: 20px;
+    }
+
+    /* Nav-dots text switcher — mobile/iPhone:
+       - sits just above undo/redo (bottom: 58px) with breathing room
+       - larger padding hits the 44px tap-target guideline */
+    body.focus-mode #nav-dots {
+        bottom: 80px;
+    }
+
+    body.focus-mode #nav-dots .dot {
+        padding: 10px 14px;
+        font-size: var(--font-size-base);
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
+        margin: 0 6px;
     }
 }

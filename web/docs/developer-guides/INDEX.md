@@ -173,6 +173,19 @@
 - URL encoding/decoding workflow
 - Coordinate map for positioning
 
+#### [MESSAGING_SURFACES.md](./MESSAGING_SURFACES.md)
+
+**What it is**: Decision guide for the four user-facing message surfaces (help window, empty state, notifications, modals)
+**Read if**: You're adding any user-facing string and aren't sure which UI surface it belongs in
+**Time**: 8 minutes
+
+**Topics:**
+
+- Quick decision tree (action feedback → notification, blocking decision → modal, etc.)
+- Each surface's purpose, lifecycle, and when not to use it
+- Anti-patterns we've hit (onboarding text in help window, multi-mutation races on empty-state)
+- Where labels live (`help.*`, `empty.*`, `notify.*`, `modal.*`) and `LENS_SENSITIVE_KEYS` cross-reference
+
 ---
 
 ### ⚡ Performance Testing

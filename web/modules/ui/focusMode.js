@@ -27,6 +27,10 @@ const di = createDIModule('FocusMode', {
     showNotification: optional(null),
     safeAddEventListener: optional(null),
     AppState: optional(null),
+    clearAllTasks: optional(null),
+    deleteAllTasks: optional(null),
+    switchMiniCycle: optional(null),
+    createNewMiniCycle: optional(null),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
     getBody: optional(() => document.body),
@@ -48,8 +52,9 @@ export function setFocusModeDependencies(dependencies) {
 let focusModeInstance = null;
 
 /**
- * Implements focus mode, which highlights the next incomplete task
- * and dims all others to reduce visual clutter.
+ * Implements focus mode, which hides UI chrome (header, footer,
+ * navigation, help window) to reduce visual clutter while keeping
+ * the task list and progress bar visible.
  */
 export class FocusMode {
     constructor() {
@@ -58,6 +63,26 @@ export class FocusMode {
         this._progressRow = null;
         this._clickHandler = null;
         this._keyHandler = null;
+        this._undoRedoOriginalParent = null;
+        this._undoRedoNextSibling = null;
+        this._navDotsOriginalParent = null;
+        this._navDotsNextSibling = null;
+        this._menuBtn = null;
+        this._menu = null;
+        this._menuOpen = false;
+        this._menuBtnHandler = null;
+        this._menuClickHandler = null;
+        this._menuOutsideClickHandler = null;
+        this._modeItem = null;
+        this._modeModal = null;
+        this._modeBackdrop = null;
+        this._modeModalOpen = false;
+        this._modeRadioHandler = null;
+        this._modeBackdropHandler = null;
+        this._modeDoneHandler = null;
+        this._modeTrapHandler = null;
+        this._modeFocusReturnTarget = null;
+        this._emptyStateHint = null;
         this.initialized = false;
     }
 
@@ -72,6 +97,8 @@ export class FocusMode {
         if (this.initialized) return;
 
         this._createButton();
+        this._createMenu();
+        this._injectEmptyStateHint();
         this._attachListeners();
         this.initialized = true;
 
@@ -97,7 +124,7 @@ export class FocusMode {
         // Create focus button
         this._button = document.createElement('button');
         this._button.id = DOM_IDS.FOCUS_MODE_BTN;
-        this._button.className = 'focus-mode-btn';
+        this._button.className = DOM_CLASSES.FOCUS_MODE_BTN;
         this._button.title = getLabel('focusMode.enterTitle');
         this._button.setAttribute('aria-label', getLabel('focusMode.enterAria'));
         this._button.innerHTML = getIcon('expand');
@@ -116,6 +143,187 @@ export class FocusMode {
     }
 
     /**
+     * Create the three-dots menu button + dropdown menu.
+     * Both elements are appended directly to <body> and hidden by default;
+     * CSS scoped to body.focus-mode reveals them only when focus mode is active.
+     */
+    _createMenu() {
+        const body = this.deps.getBody();
+        if (!body) return;
+
+        // Three-dots trigger button
+        this._menuBtn = document.createElement('button');
+        this._menuBtn.id = DOM_IDS.FOCUS_MODE_MENU_BTN;
+        this._menuBtn.className = DOM_CLASSES.FOCUS_MODE_MENU_BTN;
+        this._menuBtn.title = getLabel('focusMode.menuTitle');
+        this._menuBtn.setAttribute('aria-label', getLabel('focusMode.menuAria'));
+        this._menuBtn.setAttribute('aria-haspopup', 'menu');
+        this._menuBtn.setAttribute('aria-expanded', 'false');
+        this._menuBtn.setAttribute('aria-controls', DOM_IDS.FOCUS_MODE_MENU);
+        this._menuBtn.textContent = '⋯'; // horizontal ellipsis (meatball menu — global/overflow actions)
+        body.appendChild(this._menuBtn);
+
+        // Dropdown menu
+        this._menu = document.createElement('div');
+        this._menu.id = DOM_IDS.FOCUS_MODE_MENU;
+        this._menu.className = DOM_CLASSES.FOCUS_MODE_MENU;
+        this._menu.setAttribute('role', 'menu');
+        this._menu.setAttribute('aria-labelledby', DOM_IDS.FOCUS_MODE_MENU_BTN);
+        this._menu.hidden = true;
+
+        // Items grouped semantically. A horizontal separator is inserted
+        // wherever the `group` value changes between consecutive items.
+        // Groups: 'routine' (mode + routine management), 'view' (UI toggles),
+        // 'bulk' (task data ops), 'exit' (dismiss).
+        const items = [
+            { action: 'switch-mode',     group: 'routine', label: '' /* set dynamically in _refreshModeItemLabel */ },
+            { action: 'switch-routines', group: 'routine', label: getLabel('focusMode.switchRoutines') },
+            { action: 'create-routine',  group: 'routine', label: getLabel('focusMode.createRoutine') },
+            { action: 'toggle-input-bar', group: 'view',    label: getLabel('focusMode.toggleInputBar') },
+            { action: 'uncheck-all',     group: 'bulk',    label: getLabel('focusMode.uncheckAll') },
+            { action: 'delete-all',      group: 'bulk',    label: getLabel('focusMode.deleteAll'), destructive: true },
+            { action: 'exit',            group: 'exit',    label: getLabel('focusMode.exitItem') },
+        ];
+
+        let prevGroup = null;
+        for (const { action, group, label, destructive } of items) {
+            if (prevGroup !== null && prevGroup !== group) {
+                const sep = document.createElement('div');
+                sep.className = DOM_CLASSES.FOCUS_MODE_MENU_SEPARATOR;
+                sep.setAttribute('role', 'separator');
+                this._menu.appendChild(sep);
+            }
+            prevGroup = group;
+
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = DOM_CLASSES.FOCUS_MODE_MENU_ITEM;
+            if (destructive) {
+                item.classList.add(DOM_CLASSES.FOCUS_MODE_MENU_ITEM_DESTRUCTIVE);
+            }
+            item.setAttribute('role', 'menuitem');
+            item.dataset.action = action;
+            item.textContent = label;
+            if (action === 'switch-mode') {
+                item.id = DOM_IDS.FOCUS_MODE_MODE_ITEM;
+                this._modeItem = item;
+            }
+            this._menu.appendChild(item);
+        }
+
+        body.appendChild(this._menu);
+
+        // Build the mode-switch modal (hidden until opened)
+        this._createModeModal();
+    }
+
+    /**
+     * Inject a focus-mode-specific hint into the task list's #empty-state.
+     * Sits alongside the normal `.empty-state-hint`; CSS scoped to
+     * body.focus-mode swaps which one is visible. This avoids racing
+     * routineManager (which rewrites the normal hint on cycle creation).
+     */
+    _injectEmptyStateHint() {
+        const emptyState = this.deps.getElementById(DOM_IDS.EMPTY_STATE);
+        if (!emptyState) {
+            console.warn('FocusMode: empty-state not found');
+            return;
+        }
+        // Don't double-inject if init() somehow runs twice
+        if (emptyState.querySelector(`.${DOM_CLASSES.EMPTY_STATE_HINT_FOCUS}`)) return;
+
+        this._emptyStateHint = document.createElement('div');
+        this._emptyStateHint.className = DOM_CLASSES.EMPTY_STATE_HINT_FOCUS;
+        // Cross-reference focusMode.toggleInputBar so the hint stays in sync
+        // if that label is renamed or themed; menu glyph passed as a var so
+        // we don't bake visual decoration into translatable text.
+        this._emptyStateHint.textContent = getLabel('empty.noTasksHintFocus', {
+            vars: {
+                menuIcon: '⋯',
+                showHide: getLabel('focusMode.toggleInputBar')
+            }
+        });
+        emptyState.appendChild(this._emptyStateHint);
+    }
+
+    /**
+     * Build the mode-switch modal — backdrop + dialog with three radios.
+     * The dialog is keyboard accessible (Escape, Tab, Enter on radio).
+     * Switching is immediate on radio change; "Done" closes the modal.
+     */
+    _createModeModal() {
+        const body = this.deps.getBody();
+        if (!body) return;
+
+        // Backdrop sits behind the dialog and absorbs outside clicks
+        this._modeBackdrop = document.createElement('div');
+        this._modeBackdrop.id = DOM_IDS.FOCUS_MODE_MODE_MODAL_BACKDROP;
+        this._modeBackdrop.className = DOM_CLASSES.FOCUS_MODE_MODE_MODAL_BACKDROP;
+        this._modeBackdrop.hidden = true;
+        body.appendChild(this._modeBackdrop);
+
+        // Dialog
+        const titleId = `${DOM_IDS.FOCUS_MODE_MODE_MODAL}-title`;
+        this._modeModal = document.createElement('div');
+        this._modeModal.id = DOM_IDS.FOCUS_MODE_MODE_MODAL;
+        this._modeModal.className = DOM_CLASSES.FOCUS_MODE_MODE_MODAL;
+        this._modeModal.setAttribute('role', 'dialog');
+        this._modeModal.setAttribute('aria-modal', 'true');
+        this._modeModal.setAttribute('aria-labelledby', titleId);
+        this._modeModal.hidden = true;
+
+        const heading = document.createElement('h2');
+        heading.id = titleId;
+        heading.className = DOM_CLASSES.FOCUS_MODE_MODE_MODAL_TITLE;
+        heading.textContent = getLabel('focusMode.modeModalTitle');
+        this._modeModal.appendChild(heading);
+
+        const modeOptions = [
+            { value: 'auto-cycle',   nameKey: 'focusMode.modeAutoName',   descKey: 'help.modeAutoShort' },
+            { value: 'manual-cycle', nameKey: 'focusMode.modeManualName', descKey: 'help.modeManualShort' },
+            { value: 'todo-mode',    nameKey: 'focusMode.modeTodoName',   descKey: 'help.modeTodoShort' },
+        ];
+
+        const radioName = 'focus-mode-mode-radio';
+        for (const { value, nameKey, descKey } of modeOptions) {
+            const optionLabel = document.createElement('label');
+            optionLabel.className = DOM_CLASSES.FOCUS_MODE_MODE_OPTION;
+
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = radioName;
+            radio.value = value;
+
+            const text = document.createElement('div');
+            text.className = DOM_CLASSES.FOCUS_MODE_MODE_OPTION_TEXT;
+
+            const name = document.createElement('div');
+            name.className = DOM_CLASSES.FOCUS_MODE_MODE_OPTION_NAME;
+            name.textContent = getLabel(nameKey);
+
+            const desc = document.createElement('div');
+            desc.className = DOM_CLASSES.FOCUS_MODE_MODE_OPTION_DESC;
+            desc.textContent = getLabel(descKey);
+
+            text.appendChild(name);
+            text.appendChild(desc);
+
+            optionLabel.appendChild(radio);
+            optionLabel.appendChild(text);
+            this._modeModal.appendChild(optionLabel);
+        }
+
+        const doneBtn = document.createElement('button');
+        doneBtn.type = 'button';
+        doneBtn.id = DOM_IDS.FOCUS_MODE_MODE_DONE_BTN;
+        doneBtn.className = DOM_CLASSES.FOCUS_MODE_MODE_DONE_BTN;
+        doneBtn.textContent = getLabel('focusMode.modeModalDone');
+        this._modeModal.appendChild(doneBtn);
+
+        body.appendChild(this._modeModal);
+    }
+
+    /**
      * Attach click and keyboard listeners.
      */
     _attachListeners() {
@@ -130,13 +338,276 @@ export class FocusMode {
             this._button.addEventListener('click', this._clickHandler);
         }
 
-        // Escape key exits focus mode (skip if a modal/dialog is open)
+        // Three-dots menu button toggles the dropdown
+        if (this._menuBtn) {
+            this._menuBtnHandler = (e) => {
+                e.stopPropagation();
+                this._toggleMenu();
+            };
+            this._menuBtn.addEventListener('click', this._menuBtnHandler);
+        }
+
+        // Click on a menu item dispatches the action
+        if (this._menu) {
+            this._menuClickHandler = (e) => {
+                const item = e.target.closest(DOM_SELECTORS.FOCUS_MODE_MENU_ITEM);
+                if (!item) return;
+                e.stopPropagation();
+                this._handleMenuAction(item.dataset.action);
+            };
+            this._menu.addEventListener('click', this._menuClickHandler);
+        }
+
+        // Click outside the menu closes it
+        this._menuOutsideClickHandler = (e) => {
+            if (!this._menuOpen) return;
+            if (this._menu?.contains(e.target)) return;
+            if (this._menuBtn?.contains(e.target)) return;
+            this._closeMenu();
+        };
+        document.addEventListener('click', this._menuOutsideClickHandler);
+
+        // Mode modal: radio change → apply mode immediately
+        if (this._modeModal) {
+            this._modeRadioHandler = (e) => {
+                const radio = e.target.closest(DOM_SELECTORS.FOCUS_MODE_MODE_RADIO);
+                if (!radio || !radio.checked) return;
+                this._applyMode(radio.value);
+            };
+            this._modeModal.addEventListener('change', this._modeRadioHandler);
+
+            // Done button closes the modal
+            this._modeDoneHandler = () => this._closeModeModal();
+            const doneBtn = this.deps.getElementById(DOM_IDS.FOCUS_MODE_MODE_DONE_BTN);
+            doneBtn?.addEventListener('click', this._modeDoneHandler);
+        }
+
+        // Backdrop click closes modal
+        if (this._modeBackdrop) {
+            this._modeBackdropHandler = () => this._closeModeModal();
+            this._modeBackdrop.addEventListener('click', this._modeBackdropHandler);
+        }
+
+        // Escape priority: mode modal → menu → exit focus mode
         this._keyHandler = (e) => {
-            if (e.key === 'Escape' && this._active && !this.deps.querySelector('dialog[open]')) {
+            if (e.key !== 'Escape') return;
+            if (this._modeModalOpen) {
+                this._closeModeModal();
+                return;
+            }
+            if (this._menuOpen) {
+                this._closeMenu(true); // restore focus to the trigger button
+                return;
+            }
+            if (this._active && !this.deps.querySelector('dialog[open]')) {
                 this.deactivate();
             }
         };
         document.addEventListener('keydown', this._keyHandler);
+    }
+
+    /**
+     * Read the active routine's mode from AppState.
+     * @returns {'auto-cycle'|'manual-cycle'|'todo-mode'}
+     */
+    _getCurrentMode() {
+        const state = this.deps.AppState?.get?.();
+        const cycle = state?.data?.cycles?.[state?.appState?.activeCycleId];
+        if (cycle?.deleteCheckedTasks) return 'todo-mode';
+        if (cycle?.autoReset) return 'auto-cycle';
+        return 'manual-cycle';
+    }
+
+    /**
+     * Map a mode key to its short display name.
+     * @param {string} mode
+     * @returns {string}
+     */
+    _getModeShortName(mode) {
+        switch (mode) {
+            case 'auto-cycle':   return getLabel('focusMode.modeAutoName');
+            case 'manual-cycle': return getLabel('focusMode.modeManualName');
+            case 'todo-mode':    return getLabel('focusMode.modeTodoName');
+            default:             return getLabel('focusMode.modeManualName');
+        }
+    }
+
+    /**
+     * Refresh the "Mode: <name> ▸" menu item label to match the current mode.
+     */
+    _refreshModeItemLabel() {
+        if (!this._modeItem) return;
+        const mode = this._getCurrentMode();
+        const prefix = getLabel('focusMode.modeItemPrefix');
+        // The "▸" arrow is rendered separately via the ::after pseudo
+        // so it can be sized independently of the label text.
+        this._modeItem.textContent = `${prefix}: ${this._getModeShortName(mode)}`;
+    }
+
+    /**
+     * Toggle the three-dots menu open/closed.
+     */
+    _toggleMenu() {
+        if (this._menuOpen) {
+            this._closeMenu();
+        } else {
+            this._openMenu();
+        }
+    }
+
+    /**
+     * Open the three-dots menu.
+     */
+    _openMenu() {
+        if (!this._menu || !this._menuBtn || this._menuOpen) return;
+        // Refresh the mode label so it reflects current state every time
+        this._refreshModeItemLabel();
+        this._menu.hidden = false;
+        this._menuBtn.setAttribute('aria-expanded', 'true');
+        this._menuOpen = true;
+        // Move focus to first item for keyboard users
+        const firstItem = this._menu.querySelector(DOM_SELECTORS.FOCUS_MODE_MENU_ITEM);
+        firstItem?.focus();
+    }
+
+    /**
+     * Open the mode-switch modal. Pre-checks the radio for the current mode
+     * and moves focus to the dialog for keyboard users.
+     */
+    _openModeModal() {
+        if (!this._modeModal || !this._modeBackdrop || this._modeModalOpen) return;
+
+        const currentMode = this._getCurrentMode();
+        const radios = this._modeModal.querySelectorAll(DOM_SELECTORS.FOCUS_MODE_MODE_RADIO);
+        radios.forEach(r => { r.checked = (r.value === currentMode); });
+
+        this._modeFocusReturnTarget = this.deps.getActiveElement?.() || this._menuBtn;
+
+        this._modeBackdrop.hidden = false;
+        this._modeModal.hidden = false;
+        this._modeModalOpen = true;
+
+        // Focus the checked radio so keyboard users land on the current selection
+        const checked = this._modeModal.querySelector(`${DOM_SELECTORS.FOCUS_MODE_MODE_RADIO}:checked`);
+        (checked || radios[0])?.focus();
+
+        // Focus trap: keep Tab within the modal
+        this._modeTrapHandler = (e) => {
+            if (e.key !== 'Tab' || !this._modeModalOpen || !this._modeModal) return;
+            const focusables = this._getModeModalFocusables();
+            if (focusables.length === 0) return;
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            const active = this.deps.getActiveElement?.();
+            if (e.shiftKey && active === first) {
+                e.preventDefault();
+                last.focus();
+            } else if (!e.shiftKey && active === last) {
+                e.preventDefault();
+                first.focus();
+            }
+        };
+        document.addEventListener('keydown', this._modeTrapHandler);
+    }
+
+    /**
+     * Close the mode-switch modal and restore focus to wherever it was before.
+     */
+    _closeModeModal() {
+        if (!this._modeModal || !this._modeBackdrop || !this._modeModalOpen) return;
+        this._modeModal.hidden = true;
+        this._modeBackdrop.hidden = true;
+        this._modeModalOpen = false;
+
+        // Tear down the focus trap
+        if (this._modeTrapHandler) {
+            document.removeEventListener('keydown', this._modeTrapHandler);
+            this._modeTrapHandler = null;
+        }
+
+        // Restore focus
+        this._modeFocusReturnTarget?.focus?.();
+        this._modeFocusReturnTarget = null;
+    }
+
+    /**
+     * Get focusable elements inside the mode modal in tab order.
+     * @returns {HTMLElement[]}
+     */
+    _getModeModalFocusables() {
+        if (!this._modeModal) return [];
+        // Radios + Done button — the only interactive elements in the dialog
+        return Array.from(this._modeModal.querySelectorAll(
+            `${DOM_SELECTORS.FOCUS_MODE_MODE_RADIO}, #${DOM_IDS.FOCUS_MODE_MODE_DONE_BTN}`
+        )).filter(el => !el.disabled && !el.hidden);
+    }
+
+    /**
+     * Apply a new mode by driving the existing #mode-selector dropdown.
+     * Dispatching a synthetic 'change' event runs the existing change handler
+     * (toggle checkboxes, AppState update, UI refresh, notification) so we
+     * don't duplicate any mode-switch logic.
+     * @param {'auto-cycle'|'manual-cycle'|'todo-mode'} newMode
+     */
+    _applyMode(newMode) {
+        const modeSelector = this.deps.getElementById(DOM_IDS.MODE_SELECTOR);
+        if (!modeSelector) return;
+        if (modeSelector.value === newMode) return;
+        modeSelector.value = newMode;
+        modeSelector.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    /**
+     * Close the three-dots menu.
+     * @param {boolean} [restoreFocus=false] - If true, return focus to the
+     *   trigger button. Set when closing via keyboard (Escape) so focus
+     *   doesn't get stranded on a hidden menu item.
+     */
+    _closeMenu(restoreFocus = false) {
+        if (!this._menu || !this._menuBtn || !this._menuOpen) return;
+        this._menu.hidden = true;
+        this._menuBtn.setAttribute('aria-expanded', 'false');
+        this._menuOpen = false;
+        if (restoreFocus) {
+            this._menuBtn.focus();
+        }
+    }
+
+    /**
+     * Run the action associated with a menu item, then close the menu.
+     * @param {'switch-mode'|'switch-routines'|'create-routine'|'toggle-input-bar'|'uncheck-all'|'delete-all'|'exit'} action
+     */
+    _handleMenuAction(action) {
+        this._closeMenu();
+
+        switch (action) {
+            case 'switch-mode':
+                this._openModeModal();
+                break;
+            case 'switch-routines':
+                this.deps.switchMiniCycle?.();
+                break;
+            case 'create-routine':
+                this.deps.createNewMiniCycle?.();
+                break;
+            case 'toggle-input-bar': {
+                // Trigger the existing toggle button — same pattern as
+                // quickActionsManager (avoids duplicating the toggle logic).
+                const btn = this.deps.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_BTN);
+                btn?.click();
+                break;
+            }
+            case 'uncheck-all':
+                this.deps.clearAllTasks?.();
+                break;
+            case 'delete-all':
+                // Wired to menuManager.deleteAllTasks which shows a confirmation modal
+                this.deps.deleteAllTasks?.();
+                break;
+            case 'exit':
+                this.deactivate();
+                break;
+        }
     }
 
     /**
@@ -151,6 +622,26 @@ export class FocusMode {
     }
 
     /**
+     * Collect the chrome elements that are visually hidden in focus mode.
+     * Returned elements get `inert` toggled so keyboard / screen-reader
+     * users don't tab into invisible chrome.
+     * @returns {HTMLElement[]}
+     */
+    _getInertChromeElements() {
+        const { getElementById, querySelector } = this.deps;
+        const elements = [
+            querySelector(`.${DOM_CLASSES.FIXED_HEADER_CONTAINER}`),
+            getElementById(DOM_IDS.SLIDE_LEFT),
+            getElementById(DOM_IDS.SLIDE_RIGHT),
+            getElementById(DOM_IDS.QUICK_ACTIONS_WINDOW),
+            getElementById(DOM_IDS.FOOTER_CONTAINER),
+            getElementById(DOM_IDS.PERSONALIZATION_BTN),
+            getElementById(DOM_IDS.QUICK_DARK_TOGGLE),
+        ];
+        return elements.filter(Boolean);
+    }
+
+    /**
      * Activate focus mode — hide chrome.
      * Reparents button to document.body so position:fixed works
      * (escapes #task-view's transform containing block).
@@ -159,13 +650,40 @@ export class FocusMode {
         if (this._active) return;
         this._active = true;
 
-        this.deps.getBody().classList.add(DOM_CLASSES.FOCUS_MODE);
+        const body = this.deps.getBody();
+        body.classList.add(DOM_CLASSES.FOCUS_MODE);
 
         if (this._button) {
-            this.deps.getBody().appendChild(this._button);
+            body.appendChild(this._button);
             this._button.innerHTML = getIcon('compress');
             this._button.title = getLabel('focusMode.exitTitle');
             this._button.setAttribute('aria-label', getLabel('focusMode.exitAria'));
+        }
+
+        // Lift undo/redo buttons out of the hidden footer so they remain
+        // usable in focus mode. Cache origin so deactivate() can restore.
+        const undoRedo = this.deps.getElementById(DOM_IDS.UNDO_REDO_BUTTONS);
+        if (undoRedo && undoRedo.parentNode !== body) {
+            this._undoRedoOriginalParent = undoRedo.parentNode;
+            this._undoRedoNextSibling = undoRedo.nextSibling;
+            body.appendChild(undoRedo);
+        }
+
+        // Lift nav-dots out of the hidden footer too — in focus mode it's
+        // restyled as a minimal "Routine | Stats" text switcher (CSS only).
+        const navDots = this.deps.getElementById(DOM_IDS.NAV_DOTS);
+        if (navDots && navDots.parentNode !== body) {
+            this._navDotsOriginalParent = navDots.parentNode;
+            this._navDotsNextSibling = navDots.nextSibling;
+            body.appendChild(navDots);
+        }
+
+        // Make hidden chrome inert — removes it from the tab order and the
+        // accessibility tree so keyboard / screen-reader users don't land on
+        // invisible buttons. Done after undo-redo reparent so the footer's
+        // inert state doesn't affect them.
+        for (const el of this._getInertChromeElements()) {
+            el.inert = true;
         }
 
         this.deps.AppState?.update?.(state => {
@@ -193,6 +711,11 @@ export class FocusMode {
             taskView.style.height = `${taskView.offsetHeight}px`;
         }
 
+        // Restore chrome to the tab order / accessibility tree.
+        for (const el of this._getInertChromeElements()) {
+            el.inert = false;
+        }
+
         this.deps.getBody().classList.remove(DOM_CLASSES.FOCUS_MODE);
 
         // After a frame, remove the pinned height so it collapses with transition
@@ -214,6 +737,30 @@ export class FocusMode {
                 this._progressRow.appendChild(this._button);
             } else if (this._button && taskView) {
                 taskView.appendChild(this._button);
+            }
+
+            // Restore undo/redo buttons to their original footer location
+            const undoRedo = this.deps.getElementById(DOM_IDS.UNDO_REDO_BUTTONS);
+            if (undoRedo && this._undoRedoOriginalParent) {
+                if (this._undoRedoNextSibling && this._undoRedoNextSibling.parentNode === this._undoRedoOriginalParent) {
+                    this._undoRedoOriginalParent.insertBefore(undoRedo, this._undoRedoNextSibling);
+                } else {
+                    this._undoRedoOriginalParent.appendChild(undoRedo);
+                }
+                this._undoRedoOriginalParent = null;
+                this._undoRedoNextSibling = null;
+            }
+
+            // Restore nav-dots to its original footer location
+            const navDots = this.deps.getElementById(DOM_IDS.NAV_DOTS);
+            if (navDots && this._navDotsOriginalParent) {
+                if (this._navDotsNextSibling && this._navDotsNextSibling.parentNode === this._navDotsOriginalParent) {
+                    this._navDotsOriginalParent.insertBefore(navDots, this._navDotsNextSibling);
+                } else {
+                    this._navDotsOriginalParent.appendChild(navDots);
+                }
+                this._navDotsOriginalParent = null;
+                this._navDotsNextSibling = null;
             }
         }, 400);
 
@@ -242,10 +789,84 @@ export class FocusMode {
         if (this._keyHandler) {
             document.removeEventListener('keydown', this._keyHandler);
         }
+        if (this._menuBtn && this._menuBtnHandler) {
+            this._menuBtn.removeEventListener('click', this._menuBtnHandler);
+        }
+        if (this._menu && this._menuClickHandler) {
+            this._menu.removeEventListener('click', this._menuClickHandler);
+        }
+        if (this._menuOutsideClickHandler) {
+            document.removeEventListener('click', this._menuOutsideClickHandler);
+        }
+        if (this._modeModal && this._modeRadioHandler) {
+            this._modeModal.removeEventListener('change', this._modeRadioHandler);
+        }
+        if (this._modeBackdrop && this._modeBackdropHandler) {
+            this._modeBackdrop.removeEventListener('click', this._modeBackdropHandler);
+        }
+        if (this._modeDoneHandler) {
+            const doneBtn = this.deps.getElementById(DOM_IDS.FOCUS_MODE_MODE_DONE_BTN);
+            doneBtn?.removeEventListener('click', this._modeDoneHandler);
+        }
+        if (this._modeTrapHandler) {
+            document.removeEventListener('keydown', this._modeTrapHandler);
+        }
+        // Remove the menu + modal DOM nodes (they were appended to <body>)
+        this._menuBtn?.remove();
+        this._menu?.remove();
+        this._modeModal?.remove();
+        this._modeBackdrop?.remove();
+        this._emptyStateHint?.remove();
+
+        // Restore undo/redo buttons synchronously so they don't get stranded
+        // on <body> if destroy() runs while focus mode is active (boot retry).
+        const undoRedo = this.deps.getElementById(DOM_IDS.UNDO_REDO_BUTTONS);
+        if (undoRedo && this._undoRedoOriginalParent) {
+            if (this._undoRedoNextSibling && this._undoRedoNextSibling.parentNode === this._undoRedoOriginalParent) {
+                this._undoRedoOriginalParent.insertBefore(undoRedo, this._undoRedoNextSibling);
+            } else {
+                this._undoRedoOriginalParent.appendChild(undoRedo);
+            }
+        }
+        const navDots = this.deps.getElementById(DOM_IDS.NAV_DOTS);
+        if (navDots && this._navDotsOriginalParent) {
+            if (this._navDotsNextSibling && this._navDotsNextSibling.parentNode === this._navDotsOriginalParent) {
+                this._navDotsOriginalParent.insertBefore(navDots, this._navDotsNextSibling);
+            } else {
+                this._navDotsOriginalParent.appendChild(navDots);
+            }
+        }
+
+        // Clear inert from chrome so a subsequent reinit doesn't start with
+        // half the UI unreachable.
+        for (const el of this._getInertChromeElements()) {
+            el.inert = false;
+        }
+
         this._clickHandler = null;
         this._keyHandler = null;
         this._button = null;
         this._progressRow = null;
+        this._undoRedoOriginalParent = null;
+        this._undoRedoNextSibling = null;
+        this._navDotsOriginalParent = null;
+        this._navDotsNextSibling = null;
+        this._menuBtn = null;
+        this._menu = null;
+        this._menuOpen = false;
+        this._menuBtnHandler = null;
+        this._menuClickHandler = null;
+        this._menuOutsideClickHandler = null;
+        this._modeItem = null;
+        this._modeModal = null;
+        this._modeBackdrop = null;
+        this._modeModalOpen = false;
+        this._modeRadioHandler = null;
+        this._modeBackdropHandler = null;
+        this._modeDoneHandler = null;
+        this._modeTrapHandler = null;
+        this._modeFocusReturnTarget = null;
+        this._emptyStateHint = null;
         this._active = false;
         this.initialized = false;
         this.deps.getBody().classList.remove(DOM_CLASSES.FOCUS_MODE);

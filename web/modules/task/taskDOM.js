@@ -29,7 +29,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, COLORS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
 
@@ -556,9 +556,11 @@ export class TaskDOMManager {
         const taskItem = this.createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle, deleteWhenComplete, deleteWhenCompleteSettings);
 
         // Apply per-task priority color via CSS custom property (more reliable than borderLeftColor
-        // because it doesn't conflict with the border-left shorthand in the stylesheet)
-        if (highPriority && priorityColor) {
-            taskItem.style.setProperty('--task-priority-color', priorityColor);
+        // because it doesn't conflict with the border-left shorthand in the stylesheet).
+        // Use fallback chain matching toggleTaskPriorityImpl: task color → global default → red
+        if (highPriority) {
+            const resolvedColor = priorityColor ?? COLORS.PRIORITY_DEFAULT;
+            taskItem.style.setProperty('--task-priority-color', resolvedColor);
         }
 
         // Accessibility: descriptive aria-label for screen readers
@@ -1381,7 +1383,7 @@ function buildTaskContext(taskItem, taskId) {
 
 function extractTaskDataFromDOM() {
     if (typeof TaskUtils?.extractTaskDataFromDOM === 'function') {
-        return TaskUtils.extractTaskDataFromDOM();
+        return TaskUtils.extractTaskDataFromDOM(undefined, _deps.AppState);
     }
     // TaskUtils not available - return empty array (will be populated once TaskUtils loads)
     console.warn('⚠️ TaskUtils not initialized yet, returning empty array');

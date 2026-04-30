@@ -430,6 +430,14 @@ export class ModeManager {
 
         descriptionBox.innerHTML = `<strong>${modeTitle}:</strong><br>${modeDetail}`;
 
+        // Sync the mode-radio-group's checked state with the current mode
+        // so the radios reflect mode changes from any source (header dropdown,
+        // focus-mode modal, or this radio group itself).
+        const radios = document.querySelectorAll(DOM_SELECTORS.MODE_RADIO);
+        radios.forEach(radio => {
+            radio.checked = (radio.value === currentMode);
+        });
+
         // Update the mode badge on the toggle button (visible when collapsed)
         const toggleBtn = this.deps.getElementById(DOM_IDS.MODE_DESCRIPTION_TOGGLE);
         if (toggleBtn) {
@@ -627,6 +635,9 @@ export class ModeManager {
         // ✅ Setup mode description toggle (collapsible)
         this.setupModeDescriptionToggle();
 
+        // ✅ Setup mode radio group (horizontal switcher under description)
+        this.setupModeRadioGroup();
+
     }
 
     /**
@@ -681,6 +692,47 @@ export class ModeManager {
     }
 
     /**
+     * Setup the mode radio group inside #mode-description-wrapper.
+     * Each radio's change drives the existing #mode-selector — same synthetic
+     * event pattern used by the focus-mode mode-switch modal — so we don't
+     * duplicate any mode-switch logic. Initial checked state is set by
+     * updateCycleModeDescription() on its first run.
+     */
+    setupModeRadioGroup() {
+        if (this._modeRadioGroupSetupComplete) return;
+
+        const radios = document.querySelectorAll(DOM_SELECTORS.MODE_RADIO);
+        if (radios.length === 0) {
+            // The radio group HTML may not be present in older builds;
+            // fail soft so this doesn't break mode functionality.
+            return;
+        }
+
+        const modeSelector = this.deps.getElementById(DOM_IDS.MODE_SELECTOR);
+        if (!modeSelector) {
+            console.warn('⚠️ ModeManager: mode-selector not found — radio group will not switch modes');
+            return;
+        }
+
+        const safeAdd = this.deps.safeAddEventListener;
+        radios.forEach(radio => {
+            const handler = () => {
+                if (!radio.checked) return;
+                if (modeSelector.value === radio.value) return;
+                modeSelector.value = radio.value;
+                modeSelector.dispatchEvent(new Event('change', { bubbles: true }));
+            };
+            if (safeAdd) {
+                safeAdd(radio, 'change', handler);
+            } else {
+                radio.addEventListener('change', handler);
+            }
+        });
+
+        this._modeRadioGroupSetupComplete = true;
+    }
+
+    /**
      * Setup quick actions button and dropdown menu
      * Handles toggle task input and create new routine actions
      */
@@ -720,11 +772,20 @@ export class ModeManager {
             }
         }
 
+        // Single source of truth for quick-actions-menu visibility.
+        // Class-only (no inline style) so CSS controls display, plus a body
+        // class so the page-level backdrop blur can react. Body class is the
+        // PWA-reliable alternative to :has() — see CSS comment in menu.css.
+        const setQuickActionsVisible = (visible) => {
+            quickActionsMenu.classList.toggle(DOM_CLASSES.VISIBLE, visible);
+            document.body.classList.toggle(DOM_CLASSES.QUICK_ACTIONS_OPEN, visible);
+        };
+
         // Toggle menu on button click
         this.deps.safeAddEventListener(quickActionsBtn, 'click', (e) => {
             e.stopPropagation();
-            const isVisible = quickActionsMenu.style.display !== 'none';
-            quickActionsMenu.style.display = isVisible ? 'none' : 'block';
+            const isVisible = quickActionsMenu.classList.contains(DOM_CLASSES.VISIBLE);
+            setQuickActionsVisible(!isVisible);
 
             // Remove first-time shimmer on first click
             if (quickActionsBtn.classList.contains(DOM_CLASSES.FIRST_TIME_SHIMMER)) {
@@ -741,9 +802,12 @@ export class ModeManager {
         // Close menu on outside click
         this.deps.safeAddEventListener(document, 'click', (e) => {
             if (!quickActionsBtn.contains(e.target) && !quickActionsMenu.contains(e.target)) {
-                quickActionsMenu.style.display = 'none';
+                setQuickActionsVisible(false);
             }
         });
+
+        // Expose closer for inline-action handlers below (toggle-task-input, create-routine)
+        this._closeQuickActionsMenu = () => setQuickActionsVisible(false);
 
         // Toggle task input visibility
         if (toggleTaskInputBtn && taskInput) {
@@ -783,7 +847,7 @@ export class ModeManager {
 
                 // Update UI immediately
                 this._updateTaskInputVisibility(newVisible);
-                quickActionsMenu.style.display = 'none';
+                this._closeQuickActionsMenu?.();
                 this._switchToTaskViewIfInStats();
 
                 // Focus the text input when showing the input bar
@@ -817,7 +881,7 @@ export class ModeManager {
         // Create new routine
         if (createRoutineBtn) {
             this.deps.safeAddEventListener(createRoutineBtn, 'click', () => {
-                quickActionsMenu.style.display = 'none';
+                this._closeQuickActionsMenu?.();
                 this._switchToTaskViewIfInStats();
 
                 if (this.deps.createNewMiniCycle) {

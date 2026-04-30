@@ -246,6 +246,27 @@ this.deps.AppState.update(state => {
 }, true); // true = immediate save
 ```
 
+> ⚠️ **Variable scope warning:** Variables declared with `let`/`const` *inside* the
+> `update(state => { … })` callback are scoped to that callback. Reading them
+> outside silently returns `undefined` — no error is thrown. If you need a value
+> both inside and after the update, declare it in the outer scope first and
+> assign within the callback.
+>
+> ```javascript
+> // WRONG — `mode` is scoped to the callback
+> this.deps.AppState.update(state => {
+>     const mode = state.data.cycles[id].deleteCheckedTasks ? 'todo' : 'cycle';
+> });
+> if (mode === 'todo') { ... }  // mode is undefined here, no error
+>
+> // RIGHT — declare outside, assign inside
+> let mode;
+> this.deps.AppState.update(state => {
+>     mode = state.data.cycles[id].deleteCheckedTasks ? 'todo' : 'cycle';
+> });
+> if (mode === 'todo') { ... }  // works
+> ```
+
 ### DI Patterns (Critical)
 
 **1. Use `Object.defineProperties` to preserve lazy getters:**

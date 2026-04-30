@@ -253,7 +253,9 @@ body.hide-quick-actions .quick-actions-menu-row {
    ============================================================================= */
 
 .quick-actions-menu-row {
-    padding: var(--space-1) var(--space-3);
+    /* Tightened in-menu version — smaller than the floating desktop panel
+       since the menu surface is already busy and this is a header strip. */
+    padding: var(--space-0-5) var(--space-2-5);
 }
 
 /* Override default menu-section collapsed behavior — always visible */
@@ -263,16 +265,21 @@ body.hide-quick-actions .quick-actions-menu-row {
 }
 
 .quick-actions-menu-row .quick-actions-header {
-    margin-bottom: var(--space-2-5);
+    margin-bottom: var(--space-1-5);
+    gap: var(--space-1-5);
 }
 
 .quick-actions-menu-row .quick-actions-title {
     color: rgba(0, 0, 0, 0.7);
+    font-size: 11px;
+    min-width: 80px;
 }
 
 .quick-actions-menu-row .quick-actions-nav {
     background: transparent;
     color: rgba(0, 0, 0, 0.5);
+    font-size: 10px;
+    padding: 2px var(--space-1-5);
 }
 
 .quick-actions-menu-row .quick-actions-nav:hover {
@@ -296,17 +303,19 @@ body.hide-quick-actions .quick-actions-menu-row {
 }
 
 .quick-actions-menu-row .quick-actions-slots {
-    gap: var(--space-2);
+    gap: var(--space-1-5);
 }
 
 .quick-actions-menu-row .quick-actions-slot {
-    width: 42px;
-    height: 42px;
-    border-radius: var(--radius-lg);
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-md);
+    font-size: 15px;
 }
 
 .quick-actions-menu-row .quick-actions-empty-msg {
     color: rgba(0, 0, 0, 0.5);
+    font-size: var(--font-size-xs);
 }
 
 /* Desktop: hide the menu row version (desktop uses floating panel instead) */

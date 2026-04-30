@@ -64,6 +64,7 @@ export class HelpWindowManager {
         this.helpWindow = _deps.getModal('help');
         this.isVisible = false;
         this.currentMessage = null;
+        this._currentPartsKey = null;
         this.isShowingCycleComplete = false;
         this.isShowingModeDescription = false;
         this.currentMode = null;
@@ -252,12 +253,14 @@ export class HelpWindowManager {
         // Don't update if showing cycle completion message or mode description
         if (this.isShowingCycleComplete || this.isShowingModeDescription) return;
 
-        const message = this.getCurrentStatusMessage();
+        const parts = this.getCurrentStatusMessage();
+        const partsKey = `${parts.icon}|${parts.body}|${parts.size}`;
 
-        if (message !== this.currentMessage) {
-            this.currentMessage = message;
+        if (partsKey !== this._currentPartsKey) {
+            this._currentPartsKey = partsKey;
+            this.currentMessage = parts;
             if (this.isVisible) {
-                this.updateContent(message);
+                this._renderStatusContent(parts);
             }
         }
     }
@@ -284,6 +287,7 @@ export class HelpWindowManager {
 
         // Force re-evaluation of the constant message by clearing the cache
         this.currentMessage = null;
+        this._currentPartsKey = null;
         this.updateConstantMessage();
     }
 
@@ -500,6 +504,13 @@ export class HelpWindowManager {
         }, 10000);
     }
 
+    /**
+     * Build the parts of the current status message.
+     * Returns a structured object so the renderer can wrap the leading
+     * icon and the storage-size suffix in their own spans (used by
+     * focus mode to hide them via CSS).
+     * @returns {{icon: string, body: string, size: string}}
+     */
     getCurrentStatusMessage() {
         const totalTasks = document.querySelectorAll(DOM_SELECTORS.TASK).length;
         const completedTasks = document.querySelectorAll(DOM_SELECTORS.TASK_INPUT_CHECKED).length;
@@ -544,35 +555,58 @@ export class HelpWindowManager {
             }
         }
 
-        // Size suffix for messages (💾 floppy disk icon for storage)
-        const sizeSuffix = routineSize ? ` • 💾 ${routineSize}` : '';
-
         // Mode-aware progress text: show cleared tasks in To-Do mode, cycles in other modes
         const progressText = isToDoMode
             ? getLabel('help.progressCleared', { vars: { count: clearedTasksCount, taskWord: getLabel('noun.task', { count: clearedTasksCount }) } })
             : getLabel('help.progressCycles', { vars: { count: cycleCount, cycleWord: getLabel('noun.cycle', { count: cycleCount }) } });
 
-        // Return different constant messages based on state
+        // Return parts for different constant messages based on state
         if (totalTasks === 0) {
-            return `📝 ${getLabel('help.addFirstTask')} • ${progressText}${sizeSuffix}`;
+            return { icon: '📝', body: `${getLabel('help.addFirstTask')} • ${progressText}`, size: routineSize };
         }
 
         if (remaining === 0 && totalTasks > 0) {
-            return `🎉 ${getLabel('help.allComplete')} • ${progressText}${sizeSuffix}`;
+            return { icon: '🎉', body: `${getLabel('help.allComplete')} • ${progressText}`, size: routineSize };
         }
 
         const remainingText = getLabel('help.tasksRemaining', { vars: { remaining, taskWord: getLabel('noun.task', { count: remaining }) } });
 
         // First-time message for either mode
         if (isToDoMode && clearedTasksCount === 0) {
-            return `📋 ${remainingText} • ${getLabel('help.clearFirst')}${sizeSuffix}`;
+            return { icon: '📋', body: `${remainingText} • ${getLabel('help.clearFirst')}`, size: routineSize };
         }
         if (!isToDoMode && cycleCount === 0) {
-            return `📋 ${remainingText} • ${getLabel('help.completeFirst')}${sizeSuffix}`;
+            return { icon: '📋', body: `${remainingText} • ${getLabel('help.completeFirst')}`, size: routineSize };
         }
 
         // Show progress and cycle count or cleared tasks
-        return `📋 ${remainingText} • ${progressText}${sizeSuffix}`;
+        return { icon: '📋', body: `${remainingText} • ${progressText}`, size: routineSize };
+    }
+
+    /**
+     * Render structured status parts inside the help window.
+     * Wraps the leading icon and storage-size in dedicated spans so
+     * focus mode can strip them via CSS (.help-window-icon / .help-window-size).
+     * Each dynamic part is escaped individually for XSS safety (Fix #40).
+     * @param {{icon: string, body: string, size: string}} parts
+     * @returns {void}
+     */
+    _renderStatusContent(parts) {
+        if (!this.helpWindow) return;
+
+        const escapeHtml = (str) => {
+            if (typeof str !== 'string') return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g, '&#x2F;');
+        };
+
+        const iconHtml = parts.icon
+            ? `<span class="help-window-icon">${escapeHtml(parts.icon)} </span>`
+            : '';
+        const sizeHtml = parts.size
+            ? `<span class="help-window-size"> • 💾 ${escapeHtml(parts.size)}</span>`
+            : '';
+
+        this.helpWindow.innerHTML = `<p>${iconHtml}${escapeHtml(parts.body)}${sizeHtml}</p>`;
     }
 
     updateContent(message) {
@@ -592,12 +626,16 @@ export class HelpWindowManager {
     show() {
         if (!this.helpWindow || this.isVisible) return;
 
-        const message = this.currentMessage || this.getCurrentStatusMessage();
-
         if (!this.isShowingModeDescription && !this.isShowingCycleComplete) {
-            this.helpWindow.innerHTML = `
-                <p>${message}</p>
-            `;
+            // currentMessage is either a parts object (normal status) or a
+            // plain string (e.g. the welcome message during init).
+            if (this.currentMessage && typeof this.currentMessage === 'object') {
+                this._renderStatusContent(this.currentMessage);
+            } else if (typeof this.currentMessage === 'string') {
+                this.updateContent(this.currentMessage);
+            } else {
+                this._renderStatusContent(this.getCurrentStatusMessage());
+            }
         }
 
         this.helpWindow.classList.remove(DOM_CLASSES.HIDE);

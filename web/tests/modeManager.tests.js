@@ -856,6 +856,173 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    // === MODE RADIO GROUP TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">📻 Mode Radio Group (DI)</h4>';
+
+    /**
+     * Build a mode-radio-group + mode-selector scaffold for the radio tests.
+     */
+    function setupRadioGroupDOM() {
+        // Clean any previous run
+        document.getElementById('mode-radio-group')?.remove();
+        document.getElementById('mode-selector')?.remove();
+
+        const group = document.createElement('div');
+        group.id = 'mode-radio-group';
+        group.className = 'mode-radio-row';
+        group.setAttribute('role', 'radiogroup');
+        for (const value of ['auto-cycle', 'manual-cycle', 'todo-mode']) {
+            const label = document.createElement('label');
+            label.className = 'mode-radio-option';
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = 'mode-radio';
+            radio.value = value;
+            label.appendChild(radio);
+            group.appendChild(label);
+        }
+        document.body.appendChild(group);
+
+        const selector = document.createElement('select');
+        selector.id = 'mode-selector';
+        for (const v of ['auto-cycle', 'manual-cycle', 'todo-mode']) {
+            const opt = document.createElement('option');
+            opt.value = v;
+            selector.appendChild(opt);
+        }
+        document.body.appendChild(selector);
+
+        return { group, selector };
+    }
+
+    function teardownRadioGroupDOM() {
+        document.getElementById('mode-radio-group')?.remove();
+        document.getElementById('mode-selector')?.remove();
+    }
+
+    await test('setupModeRadioGroup is defined as a method', () => {
+        const manager = new ModeManager();
+        if (typeof manager.setupModeRadioGroup !== 'function') {
+            throw new Error('setupModeRadioGroup should be a function');
+        }
+    });
+
+    await test('setupModeRadioGroup fails soft when radio group is missing', () => {
+        // Don't set up the DOM scaffold — radios don't exist
+        teardownRadioGroupDOM();
+        const manager = new ModeManager();
+        setModeManagerDependencies({
+            getElementById: (id) => document.getElementById(id),
+            safeAddEventListener: (el, evt, fn) => el.addEventListener(evt, fn)
+        });
+        try {
+            manager.setupModeRadioGroup();
+        } catch (e) {
+            throw new Error('Should not throw when radio group is missing: ' + e.message);
+        }
+    });
+
+    await test('setupModeRadioGroup fails soft when #mode-selector is missing', () => {
+        document.getElementById('mode-radio-group')?.remove();
+        document.getElementById('mode-selector')?.remove();
+        // Create just the radio group, no mode-selector
+        const group = document.createElement('div');
+        group.id = 'mode-radio-group';
+        for (const value of ['auto-cycle', 'manual-cycle', 'todo-mode']) {
+            const label = document.createElement('label');
+            label.className = 'mode-radio-option';
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = 'mode-radio';
+            radio.value = value;
+            label.appendChild(radio);
+            group.appendChild(label);
+        }
+        document.body.appendChild(group);
+
+        const manager = new ModeManager();
+        setModeManagerDependencies({
+            getElementById: (id) => document.getElementById(id),
+            safeAddEventListener: (el, evt, fn) => el.addEventListener(evt, fn)
+        });
+        try {
+            manager.setupModeRadioGroup();
+        } catch (e) {
+            throw new Error('Should not throw when mode-selector is missing: ' + e.message);
+        }
+        teardownRadioGroupDOM();
+    });
+
+    await test('Radio change drives the #mode-selector change event', () => {
+        const { selector } = setupRadioGroupDOM();
+        let changeFired = false;
+        let changedValue = null;
+        selector.addEventListener('change', (e) => {
+            changeFired = true;
+            changedValue = e.target.value;
+        });
+
+        const manager = new ModeManager();
+        setModeManagerDependencies({
+            getElementById: (id) => document.getElementById(id),
+            safeAddEventListener: (el, evt, fn) => el.addEventListener(evt, fn)
+        });
+        manager.setupModeRadioGroup();
+
+        // Simulate user selecting the To-Do radio
+        const todoRadio = document.querySelector('input[type="radio"][value="todo-mode"]');
+        todoRadio.checked = true;
+        todoRadio.dispatchEvent(new Event('change', { bubbles: true }));
+
+        teardownRadioGroupDOM();
+        if (!changeFired) throw new Error('Selecting a radio should fire change on #mode-selector');
+        if (changedValue !== 'todo-mode') {
+            throw new Error(`Expected todo-mode, got: ${changedValue}`);
+        }
+    });
+
+    await test('Radio change does NOT re-fire when value already matches selector', () => {
+        const { selector } = setupRadioGroupDOM();
+        selector.value = 'manual-cycle';
+        let fireCount = 0;
+        selector.addEventListener('change', () => { fireCount++; });
+
+        const manager = new ModeManager();
+        setModeManagerDependencies({
+            getElementById: (id) => document.getElementById(id),
+            safeAddEventListener: (el, evt, fn) => el.addEventListener(evt, fn)
+        });
+        manager.setupModeRadioGroup();
+
+        // Selecting a radio whose value matches selector.value should be a no-op
+        const manualRadio = document.querySelector('input[type="radio"][value="manual-cycle"]');
+        manualRadio.checked = true;
+        manualRadio.dispatchEvent(new Event('change', { bubbles: true }));
+
+        teardownRadioGroupDOM();
+        if (fireCount !== 0) {
+            throw new Error(`Expected 0 fires (no-op when same), got: ${fireCount}`);
+        }
+    });
+
+    await test('setupModeRadioGroup is idempotent (second call is a no-op)', () => {
+        setupRadioGroupDOM();
+        const manager = new ModeManager();
+        setModeManagerDependencies({
+            getElementById: (id) => document.getElementById(id),
+            safeAddEventListener: (el, evt, fn) => el.addEventListener(evt, fn)
+        });
+        manager.setupModeRadioGroup();
+        const firstFlag = manager._modeRadioGroupSetupComplete;
+        // Calling a second time should not throw and should not re-wire handlers
+        manager.setupModeRadioGroup();
+        const secondFlag = manager._modeRadioGroupSetupComplete;
+        teardownRadioGroupDOM();
+        if (!firstFlag || !secondFlag) {
+            throw new Error('Idempotency flag should be true after either call');
+        }
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

@@ -136,6 +136,91 @@ const _deps = new Proxy({}, {
 - Always guard optional dependencies: `if (_deps.showNotification) { ... }`
 - Always handle missing DOM elements: `if (!element) return`
 
+### The 5 patterns you'll use daily
+
+The DI scaffolding above is *how* to structure a module. These are the daily habits that decide whether your code matches the rest of the codebase or fights it. You'll touch most of these in your first PR.
+
+#### 1. Use `getLabel()` for every user-facing string
+
+Notification text, modal titles, button labels, ARIA labels, hint text — everything. Hardcoded strings break vocab themes (Habit Tracker, Fitness, etc.) and skip the central registry.
+
+```javascript
+import { getLabel } from '../labels/labelResolver.js';
+
+button.textContent = getLabel('action.addTask');
+button.setAttribute('aria-label', getLabel('action.addTaskAria'));
+```
+
+If a label key doesn't exist yet, **add it to `modules/labels/defaultLabels.js` first**, then use it. Never inline emojis or icons (`📝`, `⋯`) into label text — pass them as `vars` for interpolation.
+
+→ Deep dive: [`CODING_STANDARDS.md`](CODING_STANDARDS.md) §Label System
+
+#### 2. Use constants from `constants.js`, never hardcoded selectors / classes / IDs
+
+```javascript
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS } from '../core/constants.js';
+
+document.getElementById(DOM_IDS.TASK_LIST);                  // not 'taskList'
+element.classList.add(DOM_CLASSES.HIDDEN);                   // not 'hidden'
+element.querySelector(DOM_SELECTORS.TASK_TEXT);              // not '.task-text'
+```
+
+Same rule for timing values (`UI_TIMEOUTS.NOTIFICATION_BRIEF`), z-index (`Z_INDEX.MODAL`), and limits (`LIMITS.MAX_TASKS`). If the constant doesn't exist yet, add it before using.
+
+→ Deep dive: [`CONSTANTS_SYSTEM_GUIDE.md`](CONSTANTS_SYSTEM_GUIDE.md)
+
+#### 3. Wire shared functions through the 4-step DI pipeline
+
+If your code needs a function from another module, the wiring path is *exactly* four layers — miss any and the dep silently resolves to `undefined`:
+
+1. The provider's manifest entry adds the function name to `provides`
+2. `moduleLoader.js` `depMappings` adds an entry pointing into the provider
+3. The consumer's manifest adds it to `optionalDeps` (or `requires`)
+4. The consumer's `createDIModule({ ... })` declares it with `optional()` / `required()`
+
+```javascript
+// Consumer module
+const di = createDIModule('MyModule', {
+    clearAllTasks: optional(null),  // ← step 4
+});
+
+// Then in code:
+this.deps.clearAllTasks?.();
+```
+
+→ Deep dive: [`MAKING_CODE_CHANGES.md`](MAKING_CODE_CHANGES.md)
+
+#### 4. Clean up every event listener you add
+
+Every `addEventListener` needs a removal path. Memory leaks in modals are the #1 source of accumulated bugs in this codebase. Store the handler reference, attach via `safeAddEventListener` when possible, and remove in `destroy()` / `closeModal()`.
+
+```javascript
+// Store reference so we can remove later
+this._clickHandler = (e) => this.handleClick(e);
+this._element.addEventListener('click', this._clickHandler);
+
+// In destroy() or close handler:
+this._element.removeEventListener('click', this._clickHandler);
+```
+
+→ Deep dive: [`EVENT_LISTENER_GUIDE.md`](EVENT_LISTENER_GUIDE.md) and the modal checklist in [`HOW_TO_ADD_COOKBOOK.md`](HOW_TO_ADD_COOKBOOK.md)
+
+#### 5. Update state via `AppState.update(state => …)`, never directly
+
+```javascript
+this.deps.AppState.update(state => {
+    state.data.cycles[cycleId].tasks.push(newTask);
+}, true); // true = save immediately, default is debounced
+```
+
+Direct mutation (`state.data.cycles[id].tasks = []`) skips the undo system, the debounced save, and the change notifications. **Always go through `update`.** Variables declared `inside` the callback are scoped to the callback — declare them in the outer scope first if you need to read them after.
+
+→ Deep dive: [`developer-guides/CLAUDE.md`](CLAUDE.md) §State Management
+
+#### Bonus: Where does this user-facing message belong?
+
+If you're adding a string but aren't sure whether it's a notification, a modal, an empty-state hint, or a help-window message, see [`MESSAGING_SURFACES.md`](MESSAGING_SURFACES.md) — it has a decision tree.
+
 ### Add or update tests
 
 If you changed behavior, update or add tests. Copy the test template to get started:

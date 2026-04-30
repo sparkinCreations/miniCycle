@@ -1,0 +1,273 @@
+{
+  "name": "Your First Routine ✅",
+  "title": "Your First Routine ✅",
+  "tasks": [
+    {
+      "id": "task-getting-started-1",
+      "text": "Tap or click here to complete this task",
+      "completed": true,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-getting-started-2",
+      "text": "Add tasks with input bar above",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-getting-started-5",
+      "text": "Watch tasks reset when all are completed",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": true,
+  "cycleCount": 5,
+  "deleteCheckedTasks": false,
+  "taskOptionButtons": null,
+  "recurringTemplates": {},
+  "reminders": {
+    "enabled": false,
+    "indefinite": false,
+    "dueDatesReminders": false,
+    "repeatCount": 0,
+    "frequencyValue": 30,
+    "frequencyUnit": "minutes"
+  },
+  "autoUncheckDaily": null,
+  "createdAt": 1777446061644,
+  "theme": "classic",
+  "history": {
+    "events": [
+      {
+        "id": "evt-1777447794637-duz8k",
+        "type": "achievement_unlocked",
+        "timestamp": 1777447794637,
+        "details": {
+          "achievementId": "milestone-5",
+          "achievementName": "Habit Tracker",
+          "unlockedVia": "cycles",
+          "_eventLabel": "Achievement Unlocked"
+        }
+      },
+      {
+        "id": "evt-1777447794633-fven1",
+        "type": "cycle_completed",
+        "timestamp": 1777447794633,
+        "details": {
+          "cycleCount": 5,
+          "cycleName": "Getting Started 🚀",
+          "_eventLabel": "Cycle Completed",
+          "_eventIcon": "✔",
+          "_cycleNoun": "cycle"
+        }
+      },
+      {
+        "id": "evt-1777447788311-0ymj0",
+        "type": "cycle_completed",
+        "timestamp": 1777447788311,
+        "details": {
+          "cycleCount": 4,
+          "cycleName": "Getting Started 🚀",
+          "_eventLabel": "Cycle Completed",
+          "_eventIcon": "✔",
+          "_cycleNoun": "cycle"
+        }
+      },
+      {
+        "id": "evt-1777447773613-xozfd",
+        "type": "task_edited",
+        "timestamp": 1777447773613,
+        "details": {
+          "oldName": "🔁 Watch tasks reset when all are completed",
+          "newName": "Watch tasks reset when all are completed",
+          "_eventLabel": "Task Edited"
+        }
+      },
+      {
+        "id": "evt-1777447741905-ug51a",
+        "type": "task_edited",
+        "timestamp": 1777447741905,
+        "details": {
+          "oldName": "Tap or click here to complete this task!",
+          "newName": "Tap or click here to complete this task",
+          "_eventLabel": "Task Edited"
+        }
+      },
+      {
+        "id": "evt-1777447730746-5fzhb",
+        "type": "task_edited",
+        "timestamp": 1777447730746,
+        "details": {
+          "oldName": "➕ Press or click the plus button above to add your own tasks",
+          "newName": "Add tasks with input bar above",
+          "_eventLabel": "Task Edited"
+        }
+      },
+      {
+        "id": "evt-1777447688615-5g1fm",
+        "type": "task_edited",
+        "timestamp": 1777447688615,
+        "details": {
+          "oldName": "✅ Tap or click here to complete this task!",
+          "newName": "Tap or click here to complete this task!",
+          "_eventLabel": "Task Edited"
+        }
+      },
+      {
+        "id": "evt-1777447663745-xy1cv",
+        "type": "cycle_completed",
+        "timestamp": 1777447663745,
+        "details": {
+          "cycleCount": 3,
+          "cycleName": "Getting Started 🚀",
+          "_eventLabel": "Cycle Completed",
+          "_eventIcon": "✔",
+          "_cycleNoun": "cycle"
+        }
+      },
+      {
+        "id": "evt-1777447203111-on5am",
+        "type": "redo",
+        "timestamp": 1777447203111,
+        "details": {
+          "description": "Task completed"
+        }
+      },
+      {
+        "id": "evt-1777447202195-q62wa",
+        "type": "redo",
+        "timestamp": 1777447202195,
+        "details": {
+          "description": "Task completed"
+        }
+      },
+      {
+        "id": "evt-1777447175287-qgfqr",
+        "type": "undo",
+        "timestamp": 1777447175287,
+        "details": {
+          "description": "Task uncompleted"
+        }
+      },
+      {
+        "id": "evt-1777447172987-iq9ay",
+        "type": "undo",
+        "timestamp": 1777447172987,
+        "details": {
+          "description": "Task uncompleted"
+        }
+      },
+      {
+        "id": "evt-1777446489555-k5ox2",
+        "type": "tasks_cleared",
+        "timestamp": 1777446489555,
+        "details": {
+          "tasksCleared": 2,
+          "_eventLabel": "Tasks Cleared",
+          "_taskNoun": "tasks"
+        }
+      },
+      {
+        "id": "evt-1777446292203-ug1tx",
+        "type": "cycle_completed",
+        "timestamp": 1777446292203,
+        "details": {
+          "cycleCount": 2,
+          "cycleName": "Getting Started 🚀",
+          "_eventLabel": "Cycle Completed",
+          "_eventIcon": "✔",
+          "_cycleNoun": "cycle"
+        }
+      },
+      {
+        "id": "evt-1777446085485-23t2l",
+        "type": "cycle_completed",
+        "timestamp": 1777446085485,
+        "details": {
+          "cycleCount": 1,
+          "cycleName": "Getting Started 🚀",
+          "_eventLabel": "Cycle Completed",
+          "_eventIcon": "✔",
+          "_cycleNoun": "cycle"
+        }
+      }
+    ],
+    "maxEvents": 100
+  },
+  "clearedTasks": {
+    "entries": [
+      {
+        "id": "clr-1777446489555-0-o9y9c",
+        "taskText": "📊 Swipe left to explore stats and achievements",
+        "clearedAt": 1777446489555,
+        "wasHighPriority": false,
+        "hadDueDate": false,
+        "dueDate": null,
+        "priorityColor": null,
+        "remindersEnabled": false,
+        "deleteWhenComplete": true,
+        "deleteWhenCompleteSettings": {
+          "cycle": false,
+          "todo": true
+        },
+        "recurring": false,
+        "recurringSettings": {},
+        "clearedInMode": "todo"
+      },
+      {
+        "id": "clr-1777446489555-1-vpaxh",
+        "taskText": "📱 Long press or click and drag to rearrange tasks",
+        "clearedAt": 1777446489555,
+        "wasHighPriority": false,
+        "hadDueDate": false,
+        "dueDate": null,
+        "priorityColor": null,
+        "remindersEnabled": false,
+        "deleteWhenComplete": true,
+        "deleteWhenCompleteSettings": {
+          "cycle": false,
+          "todo": true
+        },
+        "recurring": false,
+        "recurringSettings": {},
+        "clearedInMode": "todo"
+      }
+    ],
+    "totalCleared": 2,
+    "autoPruneEnabled": true
+  }
+}

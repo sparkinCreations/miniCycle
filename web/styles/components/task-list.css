@@ -23,7 +23,9 @@
     position: relative;
     width: 100%;
     height: auto;
+    /* See dvh note on #task-view in app-container.css. */
     max-height: calc(100vh - 385px); /* Accounts for header + 200px bottom padding */
+    max-height: calc(100dvh - 385px);
     min-height: 200px; /* Reserve space to prevent CLS when tasks load from IndexedDB */
     overflow-y: auto;
     background: rgba(255, 255, 255, 0.15);
@@ -42,6 +44,7 @@
 /* Shorter task list when Complete/Clear button is visible — prevents button overlapping nav dots */
 #task-view.complete-btn-visible .task-list-container {
     max-height: calc(100vh - var(--task-card-offset-with-btn) - var(--nav-area-height) - 30px);
+    max-height: calc(100dvh - var(--task-card-offset-with-btn) - var(--nav-area-height) - 30px);
 }
 
 /* Custom scrollbar - water themed */
@@ -370,7 +373,7 @@ body.onboarding-active .complete-all-and-help-window-container {
 .mini-cycle-title {
     position: sticky;
     font-family: 'Inter', sans-serif;
-    text-decoration: underline;
+    text-decoration: none;
     font-weight: 600;
     font-size: var(--font-size-lg);
     text-align: center;

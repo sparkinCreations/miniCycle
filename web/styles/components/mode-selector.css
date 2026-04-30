@@ -256,6 +256,10 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
    ============================================================================= */
 
 .quick-actions-menu {
+    /* Hidden by default; class-only visibility (no inline style.display).
+       JS toggles .visible to show. Pairs with body.quick-actions-open
+       (set by modeManager) which drives the page-level backdrop blur. */
+    display: none;
     position: absolute;
     top: 100%;
     left: 0;
@@ -269,6 +273,12 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
     overflow: visible;
 }
 
+.quick-actions-menu.visible {
+    display: block;
+}
+
+/* Legacy .hidden class kept for any third-party code that might toggle it;
+   default state is already display: none, so .hidden is now redundant. */
 .quick-actions-menu.hidden {
     display: none;
 }

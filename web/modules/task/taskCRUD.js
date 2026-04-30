@@ -41,7 +41,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { LIMITS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
+import { LIMITS, UI_TIMEOUTS, COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -809,7 +809,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
         // Apply or clear per-task priority color via CSS custom property
         if (newHighPriority) {
             // Use task's own saved color, falling back to global default
-            const taskColor = task.priorityColor ?? currentState?.settings?.priorityColor ?? '#dc3545';
+            const taskColor = task.priorityColor ?? currentState?.settings?.priorityColor ?? COLORS.PRIORITY_DEFAULT;
             taskItem.style.setProperty('--task-priority-color', taskColor);
         } else {
             taskItem.style.removeProperty('--task-priority-color');
@@ -820,7 +820,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
             // Resolve the color now so it's persisted even if the user
             // dismisses the color picker without clicking a swatch
             const resolvedColor = newHighPriority
-                ? (task.priorityColor ?? currentState?.settings?.priorityColor ?? '#dc3545')
+                ? (task.priorityColor ?? currentState?.settings?.priorityColor ?? COLORS.PRIORITY_DEFAULT)
                 : null;
 
             AppState.update(state => {
@@ -842,7 +842,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
             if (newHighPriority) {
                 // Show color picker notification with a callback that saves the chosen color
                 const notifications = _deps.notifications;
-                const taskColor = task.priorityColor ?? currentState?.settings?.priorityColor ?? '#dc3545';
+                const taskColor = task.priorityColor ?? currentState?.settings?.priorityColor ?? COLORS.PRIORITY_DEFAULT;
                 if (notifications?.showPriorityColorPickerNotification) {
                     // onColorSelect closes over AppState and taskId — reliable save path
                     const onColorSelect = async (color) => {

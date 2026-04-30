@@ -5,9 +5,10 @@
     {
       "id": "task-4ps-001",
       "text": "Intro: Safety check",
-      "completed": true,
+      "completed": false,
       "dueDate": null,
       "highPriority": true,
+      "priorityColor": "#28a745",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
@@ -21,9 +22,10 @@
     {
       "id": "task-4ps-002",
       "text": "Pain: 0–10? Meds needed?",
-      "completed": true,
+      "completed": false,
       "dueDate": null,
       "highPriority": true,
+      "priorityColor": "#dc3545",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
@@ -37,9 +39,10 @@
     {
       "id": "task-4ps-003",
       "text": "Personal needs: Restroom?",
-      "completed": true,
+      "completed": false,
       "dueDate": null,
       "highPriority": true,
+      "priorityColor": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
@@ -53,9 +56,10 @@
     {
       "id": "task-4ps-004",
       "text": "Position: Reposition/comfort",
-      "completed": true,
+      "completed": false,
       "dueDate": null,
       "highPriority": true,
+      "priorityColor": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
@@ -72,6 +76,7 @@
       "completed": false,
       "dueDate": null,
       "highPriority": true,
+      "priorityColor": "#28a745",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
@@ -88,6 +93,7 @@
       "completed": false,
       "dueDate": null,
       "highPriority": true,
+      "priorityColor": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
@@ -104,6 +110,7 @@
       "completed": false,
       "dueDate": null,
       "highPriority": true,
+      "priorityColor": "#28a745",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
@@ -119,7 +126,8 @@
       "text": "Closing: Anything else?",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "highPriority": true,
+      "priorityColor": "#facc15",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
@@ -132,394 +140,16 @@
     }
   ],
   "autoReset": true,
-  "cycleCount": 3,
+  "cycleCount": 0,
   "deleteCheckedTasks": false,
   "taskOptionButtons": null,
   "recurringTemplates": {},
   "reminders": null,
-  "createdAt": 1775240353208,
+  "autoUncheckDaily": null,
+  "createdAt": 1777581033448,
   "theme": "classic",
   "history": {
-    "events": [
-      {
-        "id": "evt-1775240551915-buw3i",
-        "type": "cycle_completed",
-        "timestamp": 1775240551915,
-        "details": {
-          "cycleCount": 3,
-          "cycleName": "📋 The \"4 Ps\" Hourly Rounding",
-          "_eventLabel": "Cycle Completed",
-          "_eventIcon": "✔",
-          "_cycleNoun": "cycle"
-        }
-      },
-      {
-        "id": "evt-1775240549060-lsfn5",
-        "type": "cycle_completed",
-        "timestamp": 1775240549060,
-        "details": {
-          "cycleCount": 2,
-          "cycleName": "📋 The \"4 Ps\" Hourly Rounding",
-          "_eventLabel": "Cycle Completed",
-          "_eventIcon": "✔",
-          "_cycleNoun": "cycle"
-        }
-      },
-      {
-        "id": "evt-1775240545892-gednl",
-        "type": "cycle_completed",
-        "timestamp": 1775240545892,
-        "details": {
-          "cycleCount": 1,
-          "cycleName": "📋 The \"4 Ps\" Hourly Rounding",
-          "_eventLabel": "Cycle Completed",
-          "_eventIcon": "✔",
-          "_cycleNoun": "cycle"
-        }
-      },
-      {
-        "id": "evt-1775240445668-8a4lj",
-        "type": "task_priority_color_changed",
-        "timestamp": 1775240445668,
-        "details": {
-          "taskName": "Trash can nearby",
-          "priorityColor": "#28a745",
-          "_eventLabel": "Priority Color Changed"
-        }
-      },
-      {
-        "id": "evt-1775240444599-2q44b",
-        "type": "task_priority_set",
-        "timestamp": 1775240444599,
-        "details": {
-          "taskName": "Trash can nearby",
-          "priorityColor": "#facc15",
-          "_eventLabel": "Priority Assigned"
-        }
-      },
-      {
-        "id": "evt-1775240442824-46a9j",
-        "type": "task_priority_color_changed",
-        "timestamp": 1775240442824,
-        "details": {
-          "taskName": "Phone/water/glasses near",
-          "priorityColor": "#facc15",
-          "_eventLabel": "Priority Color Changed"
-        }
-      },
-      {
-        "id": "evt-1775240441420-hy4i4",
-        "type": "task_priority_set",
-        "timestamp": 1775240441420,
-        "details": {
-          "taskName": "Phone/water/glasses near",
-          "priorityColor": "#dc3545",
-          "_eventLabel": "Priority Assigned"
-        }
-      },
-      {
-        "id": "evt-1775240437790-3n6dd",
-        "type": "task_priority_set",
-        "timestamp": 1775240437790,
-        "details": {
-          "taskName": "Position: Reposition/comfort",
-          "priorityColor": "#dc3545",
-          "_eventLabel": "Priority Assigned"
-        }
-      },
-      {
-        "id": "evt-1775240435493-znvbp",
-        "type": "task_priority_color_changed",
-        "timestamp": 1775240435493,
-        "details": {
-          "taskName": "Call light in reach",
-          "priorityColor": "#dc3545",
-          "_eventLabel": "Priority Color Changed"
-        }
-      },
-      {
-        "id": "evt-1775240429316-rdjrt",
-        "type": "task_priority_set",
-        "timestamp": 1775240429316,
-        "details": {
-          "taskName": "Call light in reach",
-          "priorityColor": "#28a745",
-          "_eventLabel": "Priority Assigned"
-        }
-      },
-      {
-        "id": "evt-1775240426226-omvo1",
-        "type": "task_priority_color_changed",
-        "timestamp": 1775240426226,
-        "details": {
-          "taskName": "Intro: Safety check",
-          "priorityColor": "#28a745",
-          "_eventLabel": "Priority Color Changed"
-        }
-      },
-      {
-        "id": "evt-1775240425336-xoi9t",
-        "type": "task_priority_set",
-        "timestamp": 1775240425336,
-        "details": {
-          "taskName": "Intro: Safety check",
-          "priorityColor": "#dc3545",
-          "_eventLabel": "Priority Assigned"
-        }
-      },
-      {
-        "id": "evt-1775240421433-2m4od",
-        "type": "task_priority_color_changed",
-        "timestamp": 1775240421433,
-        "details": {
-          "taskName": "Personal needs: Restroom?",
-          "priorityColor": "#dc3545",
-          "_eventLabel": "Priority Color Changed"
-        }
-      },
-      {
-        "id": "evt-1775240419760-yf8rp",
-        "type": "task_priority_set",
-        "timestamp": 1775240419760,
-        "details": {
-          "taskName": "Personal needs: Restroom?",
-          "priorityColor": "#dc3545",
-          "_eventLabel": "Priority Assigned"
-        }
-      },
-      {
-        "id": "evt-1775240418133-ph7fj",
-        "type": "task_priority_color_changed",
-        "timestamp": 1775240418133,
-        "details": {
-          "taskName": "Pain: 0–10? Meds needed?",
-          "priorityColor": "#dc3545",
-          "_eventLabel": "Priority Color Changed"
-        }
-      },
-      {
-        "id": "evt-1775240416892-fnr22",
-        "type": "task_priority_set",
-        "timestamp": 1775240416892,
-        "details": {
-          "taskName": "Pain: 0–10? Meds needed?",
-          "priorityColor": "#facc15",
-          "_eventLabel": "Priority Assigned"
-        }
-      },
-      {
-        "id": "evt-1775240414104-nka90",
-        "type": "task_priority_removed",
-        "timestamp": 1775240414104,
-        "details": {
-          "taskName": "Closing: Anything else?",
-          "_eventLabel": "Priority Removed"
-        }
-      },
-      {
-        "id": "evt-1775240412054-sqb1l",
-        "type": "task_priority_removed",
-        "timestamp": 1775240412054,
-        "details": {
-          "taskName": "Trash can nearby",
-          "_eventLabel": "Priority Removed"
-        }
-      },
-      {
-        "id": "evt-1775240410436-f8kpi",
-        "type": "task_priority_removed",
-        "timestamp": 1775240410436,
-        "details": {
-          "taskName": "Phone/water/glasses near",
-          "_eventLabel": "Priority Removed"
-        }
-      },
-      {
-        "id": "evt-1775240409234-a0o0m",
-        "type": "task_priority_removed",
-        "timestamp": 1775240409234,
-        "details": {
-          "taskName": "Call light in reach",
-          "_eventLabel": "Priority Removed"
-        }
-      },
-      {
-        "id": "evt-1775240408005-4jv7m",
-        "type": "task_priority_removed",
-        "timestamp": 1775240408005,
-        "details": {
-          "taskName": "Position: Reposition/comfort",
-          "_eventLabel": "Priority Removed"
-        }
-      },
-      {
-        "id": "evt-1775240406387-hufr7",
-        "type": "task_priority_removed",
-        "timestamp": 1775240406387,
-        "details": {
-          "taskName": "Personal needs: Restroom?",
-          "_eventLabel": "Priority Removed"
-        }
-      },
-      {
-        "id": "evt-1775240405307-w35jt",
-        "type": "task_priority_removed",
-        "timestamp": 1775240405307,
-        "details": {
-          "taskName": "Pain: 0–10? Meds needed?",
-          "_eventLabel": "Priority Removed"
-        }
-      },
-      {
-        "id": "evt-1775240404040-o81an",
-        "type": "task_priority_removed",
-        "timestamp": 1775240404040,
-        "details": {
-          "taskName": "Intro: Safety check",
-          "_eventLabel": "Priority Removed"
-        }
-      },
-      {
-        "type": "task_priority_color_changed",
-        "timestamp": 1775240280985,
-        "details": {
-          "taskName": "Closing: Anything else?",
-          "priorityColor": "#facc15"
-        }
-      },
-      {
-        "type": "task_priority_set",
-        "timestamp": 1775240278186,
-        "details": {
-          "taskName": "Closing: Anything else?",
-          "priorityColor": "#28a745"
-        }
-      },
-      {
-        "type": "task_priority_color_changed",
-        "timestamp": 1775240276577,
-        "details": {
-          "taskName": "Trash can nearby",
-          "priorityColor": "#28a745"
-        }
-      },
-      {
-        "type": "task_priority_set",
-        "timestamp": 1775240275623,
-        "details": {
-          "taskName": "Trash can nearby",
-          "priorityColor": "#facc15"
-        }
-      },
-      {
-        "type": "task_priority_color_changed",
-        "timestamp": 1775240272171,
-        "details": {
-          "taskName": "Phone/water/glasses near",
-          "priorityColor": "#facc15"
-        }
-      },
-      {
-        "type": "task_priority_set",
-        "timestamp": 1775240271009,
-        "details": {
-          "taskName": "Phone/water/glasses near",
-          "priorityColor": "#dc3545"
-        }
-      },
-      {
-        "type": "task_priority_set",
-        "timestamp": 1775240261254,
-        "details": {
-          "taskName": "Position: Reposition/comfort",
-          "priorityColor": "#dc3545"
-        }
-      },
-      {
-        "type": "task_priority_removed",
-        "timestamp": 1775240260884,
-        "details": {
-          "taskName": "Position: Reposition/comfort"
-        }
-      },
-      {
-        "type": "task_priority_set",
-        "timestamp": 1775240259074,
-        "details": {
-          "taskName": "Personal needs: Restroom?",
-          "priorityColor": "#dc3545"
-        }
-      },
-      {
-        "type": "task_priority_removed",
-        "timestamp": 1775240258594,
-        "details": {
-          "taskName": "Personal needs: Restroom?"
-        }
-      },
-      {
-        "type": "task_priority_color_changed",
-        "timestamp": 1775240257224,
-        "details": {
-          "taskName": "Pain: 0–10? Meds needed?",
-          "priorityColor": "#dc3545"
-        }
-      },
-      {
-        "type": "task_priority_set",
-        "timestamp": 1775240255981,
-        "details": {
-          "taskName": "Pain: 0–10? Meds needed?",
-          "priorityColor": "#28a745"
-        }
-      },
-      {
-        "type": "task_priority_color_changed",
-        "timestamp": 1775240254356,
-        "details": {
-          "taskName": "Intro: Safety check",
-          "priorityColor": "#28a745"
-        }
-      },
-      {
-        "type": "task_priority_set",
-        "timestamp": 1775240253386,
-        "details": {
-          "taskName": "Intro: Safety check",
-          "priorityColor": "#dc3545"
-        }
-      },
-      {
-        "type": "task_priority_removed",
-        "timestamp": 1775240251423,
-        "details": {
-          "taskName": "Intro: Safety check"
-        }
-      },
-      {
-        "type": "task_priority_removed",
-        "timestamp": 1775240248941,
-        "details": {
-          "taskName": "Pain: 0–10? Meds needed?"
-        }
-      },
-      {
-        "type": "task_priority_color_changed",
-        "timestamp": 1775240243887,
-        "details": {
-          "taskName": "Intro: Safety check",
-          "priorityColor": "#dc3545"
-        }
-      },
-      {
-        "type": "task_priority_set",
-        "timestamp": 1775240240058,
-        "details": {
-          "taskName": "Intro: Safety check",
-          "priorityColor": "#28a745"
-        }
-      }
-    ],
+    "events": [],
     "maxEvents": 100
   },
   "clearedTasks": null

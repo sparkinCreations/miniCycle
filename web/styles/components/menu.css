@@ -35,6 +35,64 @@
 }
 
 /* =============================================================================
+   MAIN MENU BACKDROP
+   Subtle dim + blur behind the menu (and the +-button dropdown) when either
+   is open. Driven by body classes (.main-menu-open / .quick-actions-open) for
+   PWA reliability — see precedent in mode-selector.css for .tasks-empty.
+   Uses opacity/visibility so the transition fades cleanly both ways.
+   ============================================================================= */
+
+.main-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.15);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    /* Sit just below the menu (--z-menu = 500) so the menu remains on top */
+    z-index: calc(var(--z-menu) - 1);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+/* Body-class triggers — JS-managed for PWA reliability (matches the
+   existing precedent in mode-selector.css for .tasks-empty). uiBoot.js
+   toggles .main-menu-open; modeManager.js toggles .quick-actions-open. */
+body.main-menu-open .main-menu-backdrop,
+body.quick-actions-open .main-menu-backdrop {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Elevate the hamburger menu button above the backdrop when the menu
+   is open — this keeps it crisp (not blurred) and visually anchors the
+   close-affordance for the user. */
+body.main-menu-open .menu-button {
+    position: relative;
+    z-index: var(--z-menu);
+}
+
+/* The +-button and dropdown live inside .fixed-header-container, which has
+   its own stacking context (position: fixed; z-index: var(--z-header)).
+   Children can't escape a parent's stacking context, so lift the whole
+   header above the backdrop while the dropdown is open. This single rule
+   covers the +-button, the wrapper, and the dropdown in one shot — do NOT
+   add `position: relative` to the dropdown itself, because it's natively
+   `position: absolute` (top: 100%; left: 0) and overriding that pulls it
+   into normal flow, which expands the header row and shifts the task list. */
+body.quick-actions-open .fixed-header-container {
+    z-index: var(--z-menu);
+}
+
+/* The desktop side panel lives outside .fixed-header-container, so it needs
+   its own elevation. No `position: relative` here — the element already has
+   its own positioning rules in quick-actions.css. */
+body.quick-actions-open #quick-actions-window {
+    z-index: var(--z-menu);
+}
+
+/* =============================================================================
    MENU HEADER
    ============================================================================= */
 
@@ -109,8 +167,8 @@
 
 .menu-section {
     background: var(--menu-section-bg, rgba(255, 255, 255, 0.5));
-    backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
     border-radius: var(--radius-md);
     padding: var(--space-2-5) var(--space-3);
     border: 1px solid var(--menu-section-border, rgba(255, 255, 255, 0.3));
@@ -136,6 +194,7 @@
     margin: calc(-1 * var(--space-2-5)) calc(-1 * var(--space-3)) var(--space-2) calc(-1 * var(--space-3));
     border-radius: var(--radius-6) var(--radius-6) 0 0;
     transition: background var(--transition-fast) ease;
+    -webkit-user-select: none;
     user-select: none;
 }
 
@@ -161,6 +220,38 @@
     color: var(--menu-section-header, #555);
     transition: transform var(--transition-fast) ease;
     opacity: 0.7;
+}
+
+/* Section header label group — wraps the icon + title so the
+   parent's `justify-content: space-between` keeps them grouped on
+   the left while the toggle stays on the right. */
+.menu-section-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* Icon styling — covers both states:
+   1. Before initIcons() runs (or if FontAwesome's CSS loads first):
+      <i class="fas fa-x menu-section-icon">
+   2. After replaceFAIcon() swaps it (offline-safe SVG fallback):
+      <span class="icon"> (sibling of the title <span> inside .menu-section-label)
+   Both share the same sizing rules so the layout doesn't shift on swap. */
+.menu-section-label .menu-section-icon,
+.menu-section-label > .icon {
+    font-size: 0.95em;
+    line-height: 1;
+    width: 1em;
+    height: 1em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.menu-section-label > .icon svg {
+    width: 100%;
+    height: 100%;
 }
 
 /* Collapsed state */
@@ -352,27 +443,61 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: var(--space-2) var(--space-3);
+    padding: var(--space-1-5) var(--space-2-5);
     background: rgba(0, 0, 0, 0.05);
     border: none;
     border-radius: var(--radius-md);
-    font-size: 13px;
+    font-size: 12px; /* base — badge inherits from this so "Manual Cycle" stays readable */
     font-weight: 600;
     color: #555;
     cursor: pointer;
     transition: background var(--transition-fast) ease;
 }
 
+/* "Mode Info" label specifically — smaller than the badge to read
+   as a quiet section heading rather than primary content. */
+.mode-description-toggle .toggle-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 .mode-description-toggle:hover {
     background: rgba(0, 0, 0, 0.1);
 }
 
-.mode-description-toggle .toggle-icon {
+/* Scoped under .menu-container to outrank the global
+   `.menu-container button .icon { width: 22px; height: 22px }` rule. */
+.menu-container .mode-description-toggle .toggle-icon {
     font-size: 12px;
+    width: 12px;
+    height: 12px;
     transition: transform var(--transition-fast) ease;
 }
 
-.mode-description-toggle[aria-expanded="false"] .toggle-icon {
+/* Mode Info leading icon (fa-book). Same dual-state pattern as the
+   section header icons: targets both the pre-replace <i> and the
+   post-replace <span class="icon"> sibling. */
+.menu-container .mode-description-toggle .mode-info-icon,
+.menu-container .mode-description-toggle > .icon {
+    font-size: 14px;
+    line-height: 1;
+    width: 14px;
+    height: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: var(--space-1);
+    opacity: 0.6;
+}
+
+.menu-container .mode-description-toggle > .icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.menu-container .mode-description-toggle[aria-expanded="false"] .toggle-icon {
     transform: rotate(-90deg);
 }
 
@@ -396,11 +521,11 @@
 }
 
 .mode-description {
-    margin-top: var(--space-2);
-    padding: var(--space-3);
+    margin-top: var(--space-1-5);
+    padding: var(--space-2) var(--space-2-5);
     background: var(--color-gray-100);
     color: var(--theme-text-on-surface);
-    border-radius: var(--radius-10);
+    border-radius: var(--radius-md);
     box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.08);
     font-size: var(--font-size-sm);
     font-weight: 500;
@@ -419,8 +544,96 @@
 .mode-description.collapsed {
     max-height: 0;
     opacity: 0;
-    padding: 0 var(--space-3);
+    padding: 0 var(--space-2-5);
     margin-top: 0;
+}
+
+/* =============================================================================
+   MODE RADIO ROW — horizontal mode switcher under the description
+   Visible only when Mode Info is expanded (mirrors .mode-description).
+   ============================================================================= */
+
+.mode-radio-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5);
+    justify-content: center;
+    margin-top: var(--space-1-5);
+    overflow: hidden;
+    transition: max-height var(--transition-normal) ease,
+                opacity var(--transition-normal) ease,
+                margin var(--transition-normal) ease;
+}
+
+/* Hide the radio row when the toggle is collapsed (sibling combinator
+   from the toggle button's aria-expanded state) */
+.mode-description-toggle[aria-expanded="false"] ~ .mode-radio-row {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    pointer-events: none;
+}
+
+.mode-radio-option {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1-5);
+    cursor: pointer;
+    padding: var(--space-1) var(--space-1-5);
+    border-radius: var(--radius-6);
+    transition: background var(--transition-fast) ease;
+}
+
+.mode-radio-option:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* Visible radio circle — matches the .theme-radio-option pattern in
+   themes-modal.css for visual consistency across radio surfaces. */
+.mode-radio-option input[type="radio"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: var(--space-3);
+    height: var(--space-3);
+    border: 1.5px solid var(--theme-border, var(--color-gray-400));
+    border-radius: 50%;
+    margin: 0;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    background: transparent;
+}
+
+.mode-radio-option input[type="radio"]:checked {
+    border-color: var(--theme-accent, var(--color-primary, var(--color-blue-medium)));
+}
+
+/* Keyboard-only focus ring on the radio circle itself.
+   :focus-visible only fires from keyboard navigation, so mouse clicks
+   stay clean while Tab users keep a visible target. */
+.mode-radio-option input[type="radio"]:focus-visible {
+    outline: 2px solid var(--color-accent, var(--color-blue-medium));
+    outline-offset: 2px;
+}
+
+.mode-radio-option input[type="radio"]:checked::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: var(--space-1-5);
+    height: var(--space-1-5);
+    background: var(--theme-accent, var(--color-primary, var(--color-blue-medium)));
+    border-radius: 50%;
+}
+
+.mode-radio-label {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--theme-text-on-surface);
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 /* =============================================================================

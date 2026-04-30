@@ -735,6 +735,9 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // UI functions (from appContext or deps.ui) - validated lazy wrappers
         hideMainMenu: createValidatedWrapper('hideMainMenu',
             () => getHideMainMenu() || deps.ui?.hideMainMenu),
+        // Provided by menuManager — focusMode menu calls these for "uncheck all" / "delete all"
+        clearAllTasks: (...args) => deps.ui?.clearAllTasks?.(...args),
+        deleteAllTasks: (...args) => deps.ui?.deleteAllTasks?.(...args),
         updateProgressBar: createValidatedWrapper('updateProgressBar',
             () => deps.progress?.updateProgressBar),
         checkCompleteAllButton: createValidatedWrapper('checkCompleteAllButton',

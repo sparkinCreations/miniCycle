@@ -35,7 +35,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { reshowPopover } from './popoverUtils.js';
 
@@ -1448,18 +1448,18 @@ async setDefaultPosition(notificationContainer) {
    * @param {string|null} [taskId=null] - Task ID for immediate DOM update
    * @param {Function|null} [onColorSelect=null] - Callback(color) to persist the chosen color
    */
-  showPriorityColorPickerNotification(currentColor = '#dc3545', duration = 8000, taskId = null, onColorSelect = null) {
+  showPriorityColorPickerNotification(currentColor = COLORS.PRIORITY_DEFAULT, duration = 8000, taskId = null, onColorSelect = null) {
     const vocabThemeId = document.documentElement.dataset?.vocabTheme;
     const activeThemeDef = (vocabThemeId && vocabThemeId !== 'classic') ? _deps.vocabThemeManager?.getThemeDefinition(vocabThemeId) : null;
-    const COLORS = activeThemeDef?.priorityColors
+    const colorSwatches = activeThemeDef?.priorityColors
       ? activeThemeDef.priorityColors.map(c => ({ hex: c.hex, label: getLabel(c.labelKey) }))
       : [
-          { hex: '#dc3545', label: getLabel('notify.priorityColorRed') },
+          { hex: COLORS.PRIORITY_DEFAULT, label: getLabel('notify.priorityColorRed') },
           { hex: '#facc15', label: getLabel('notify.priorityColorYellow') },
           { hex: '#28a745', label: getLabel('notify.priorityColorGreen') },
         ];
 
-    const swatchesHTML = COLORS.map(c => {
+    const swatchesHTML = colorSwatches.map(c => {
       const isSelected = c.hex === currentColor;
       const dotOpacity = isSelected ? '1' : '0';
       const swatchOutline = isSelected ? '2px solid rgba(255,255,255,0.9)' : '2px solid transparent';

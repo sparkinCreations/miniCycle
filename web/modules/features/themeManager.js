@@ -231,11 +231,83 @@ function _refreshLiveLensLabels() {
         if (emptyText) emptyText.textContent = getLabel('empty.noTasks');
         const emptyHint = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
         if (emptyHint) emptyHint.textContent = getLabel('empty.noTasksHint');
+        const emptyHintFocus = emptyState.querySelector(`.${DOM_CLASSES.EMPTY_STATE_HINT_FOCUS}`);
+        if (emptyHintFocus) {
+            emptyHintFocus.textContent = getLabel('empty.noTasksHintFocus', {
+                vars: {
+                    menuIcon: '⋯',
+                    showHide: getLabel('focusMode.toggleInputBar')
+                }
+            });
+        }
+    }
+
+    // Main menu — Tasks section button labels and titles.
+    // Each button has an FA icon followed by a text node; we update only the
+    // text node so the icon survives.
+    _setMenuButtonLabel(DOM_IDS.CLEAR_MINI_CYCLE_TASKS, 'action.clearAllMenu', 'action.clearAllTitle');
+    _setMenuButtonLabel(DOM_IDS.DELETE_ALL_MINI_CYCLE_TASKS, 'action.deleteAllMenu', 'action.deleteAllTitle');
+    _setMenuButtonLabel(DOM_IDS.OPEN_REMINDERS_MODAL, 'menu.reminders', 'menu.remindersTitle');
+    _setMenuButtonLabel(DOM_IDS.MENU_TOGGLE_INPUT_BAR, 'menu.inputBar', 'menu.inputBarTitle');
+    _setMenuButtonLabel(DOM_IDS.MENU_TASK_OPTIONS, 'menu.taskOptions', 'menu.taskOptionsTitle');
+    _setMenuButtonLabel(DOM_IDS.OPEN_RECURRING_PANEL, 'menu.recurring', 'menu.recurringTitle');
+
+    // Auto-uncheck daily row label and its parent label's title attribute.
+    const autoUncheckText = _deps.querySelector(DOM_SELECTORS.AUTO_UNCHECK_ROW_TEXT);
+    if (autoUncheckText) {
+        autoUncheckText.textContent = getLabel('menu.autoUncheckDaily');
+    }
+    const autoUncheckRow = _deps.querySelector(DOM_SELECTORS.AUTO_UNCHECK_ROW);
+    if (autoUncheckRow) {
+        autoUncheckRow.title = getLabel('menu.autoUncheckDailyTitle');
+    }
+
+    // Mode radio group — the three mode-switcher radios under Mode Info.
+    // Reuses focusMode.modeAutoName/modeManualName/modeTodoName so the radio
+    // text matches the focus-mode mode-switch modal (one source of truth for
+    // themed mode short-names).
+    const modeRadioGroup = _deps.getElementById(DOM_IDS.MODE_RADIO_GROUP);
+    if (modeRadioGroup) {
+        modeRadioGroup.setAttribute('aria-label', getLabel('menu.modeRadioGroupAria'));
+        const labelMap = {
+            'auto-cycle':   getLabel('focusMode.modeAutoName'),
+            'manual-cycle': getLabel('focusMode.modeManualName'),
+            'todo-mode':    getLabel('focusMode.modeTodoName'),
+        };
+        modeRadioGroup.querySelectorAll(DOM_SELECTORS.MODE_RADIO_OPTION).forEach(option => {
+            const radio = option.querySelector(DOM_SELECTORS.MODE_RADIO_INPUT);
+            const labelEl = option.querySelector(DOM_SELECTORS.MODE_RADIO_LABEL);
+            if (radio && labelEl && labelMap[radio.value]) {
+                labelEl.textContent = labelMap[radio.value];
+            }
+        });
     }
 
     // Keep the Themes modal section content fresh so it always reflects the active routine's theme,
     // regardless of which code path opens the modal (themeManager, preferencesManager, statsPanel).
     renderVocabThemes();
+}
+
+/**
+ * Update a menu button's visible text and title without disturbing its icon.
+ * Menu buttons follow the pattern `<button><i class="fas fa-x"></i>Text</button>`,
+ * where the text is a sibling text node next to the `<i>`. Setting
+ * `.textContent` on the button would wipe the icon — instead we find the
+ * existing text node and update it in place.
+ *
+ * Exported for testing — internal use only otherwise.
+ */
+export function _setMenuButtonLabel(elementId, textKey, titleKey) {
+    const btn = _deps.getElementById(elementId);
+    if (!btn) return;
+    if (titleKey) btn.title = getLabel(titleKey);
+    const textNode = Array.from(btn.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
+    if (textNode) {
+        textNode.textContent = getLabel(textKey);
+    } else {
+        // No existing text node — append one (handles unusual icon-first DOM)
+        btn.appendChild(document.createTextNode(getLabel(textKey)));
+    }
 }
 
 export class ThemeManager {

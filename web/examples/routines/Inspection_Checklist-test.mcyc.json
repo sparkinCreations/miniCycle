@@ -1,0 +1,315 @@
+{
+  "name": "Inspection Checklist",
+  "title": "Inspection Checklist",
+  "tasks": [
+    {
+      "id": "task-1757828127526-565",
+      "text": "Job Number",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1757828127536-831",
+      "text": "Part Number",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1757828127539-167",
+      "text": "Serial Number",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1757828127540-697",
+      "text": "Save Markings Spreadsheet?",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1758231182461-833",
+      "text": "Visual Inspection",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1757828127542-777",
+      "text": "Ran CMM or N/A",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1757828127548-181",
+      "text": "Date Traveler",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1757828127543-345",
+      "text": "Engineering Review Note or N/A",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1757828127549-782",
+      "text": "Entered entry in Job Time",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "id-1765208807767-ar1p3u7cm",
+      "text": "task 1",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "daily",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": {
+          "hour": 12,
+          "minute": 18,
+          "meridiem": "PM",
+          "military": false
+        },
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": []
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": "2025-12-27T17:17:19.864Z"
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        },
+        "defaultRecurTime": "2025-12-27T17:17:21.351Z"
+      },
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": true,
+        "todo": true
+      },
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": true,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false,
+  "taskOptionButtons": {
+    "customize": true,
+    "moveArrows": false,
+    "threeDots": false,
+    "highPriority": true,
+    "rename": true,
+    "delete": true,
+    "recurring": true,
+    "dueDate": true,
+    "reminders": true,
+    "deleteWhenComplete": false
+  },
+  "recurringTemplates": {
+    "id-1765208807767-ar1p3u7cm": {
+      "id": "id-1765208807767-ar1p3u7cm",
+      "text": "task 1",
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "daily",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": {
+          "hour": 12,
+          "minute": 18,
+          "meridiem": "PM",
+          "military": false
+        },
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": []
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": "2025-12-27T17:17:19.864Z"
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        },
+        "defaultRecurTime": "2025-12-27T17:17:21.351Z"
+      },
+      "nextScheduledOccurrence": 1777565880000,
+      "schemaVersion": 2
+    }
+  },
+  "reminders": null,
+  "createdAt": 1777492809294,
+  "theme": "classic",
+  "history": {
+    "events": [
+      {
+        "id": "evt-1777492902962-31w87",
+        "type": "task_priority_color_changed",
+        "timestamp": 1777492902962,
+        "details": {
+          "taskName": "Job Number",
+          "priorityColor": "#28a745",
+          "_eventLabel": "Priority Color Changed"
+        }
+      },
+      {
+        "id": "evt-1777492901831-19tth",
+        "type": "task_priority_set",
+        "timestamp": 1777492901831,
+        "details": {
+          "taskName": "Job Number",
+          "priorityColor": "#dc3545",
+          "_eventLabel": "Priority Assigned"
+        }
+      },
+      {
+        "id": "evt-1777492900463-n41eu",
+        "type": "task_priority_removed",
+        "timestamp": 1777492900463,
+        "details": {
+          "taskName": "Job Number",
+          "_eventLabel": "Priority Removed"
+        }
+      }
+    ],
+    "maxEvents": 100
+  },
+  "clearedTasks": null
+}

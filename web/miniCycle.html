@@ -1034,7 +1034,7 @@ window.installApp = () => {
         <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path>
       </svg>
     </button>
-    <div id="quick-actions-menu" class="quick-actions-menu" style="display: none;">
+    <div id="quick-actions-menu" class="quick-actions-menu">
       <button id="toggle-task-input-btn" class="quick-action-item">
         <span class="quick-action-icon">📝</span>
         <span id="toggle-task-input-text" class="quick-action-text"></span>
@@ -1061,6 +1061,9 @@ window.installApp = () => {
   <div id="saving-indicator" class="saving-indicator">Saving...</div>
 </div><!-- /fixed-header-container -->
 
+
+    <!-- Main Menu Backdrop — fades in via CSS when .menu-container.visible -->
+    <div id="main-menu-backdrop" class="main-menu-backdrop" aria-hidden="true"></div>
 
     <!-- Main Menu -->
     <nav id="main-menu" class="menu-container has-corner-logo" data-modal data-menu>
@@ -1126,7 +1129,10 @@ window.installApp = () => {
             <!-- Routines Section -->
             <div class="menu-section collapsed" data-section="routines">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="routines" aria-expanded="false" aria-label="Toggle Routine Actions section" aria-controls="menu-section-routines" title="Create, open, import, export, and share routines">
-                    <span>Routine Actions</span>
+                    <span class="menu-section-label">
+                        <i class="fas fa-list menu-section-icon" aria-hidden="true"></i>
+                        <span>Routine Actions</span>
+                    </span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
                 <div class="menu-section-grid" id="menu-section-routines">
@@ -1142,7 +1148,10 @@ window.installApp = () => {
             <!-- Tasks Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="tasks">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="tasks" aria-expanded="false" aria-label="Toggle Task Actions section" aria-controls="menu-section-tasks" title="Manage tasks, reminders, recurring schedules, and task options">
-                    <span>Task Actions & Features</span>
+                    <span class="menu-section-label">
+                        <i class="fas fa-check-circle menu-section-icon" aria-hidden="true"></i>
+                        <span>Task Actions & Features</span>
+                    </span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
                 <div class="menu-section-grid" id="menu-section-tasks">
@@ -1157,6 +1166,7 @@ window.installApp = () => {
                     <button id="clear-mini-cycle-tasks" title="Uncheck all tasks in this routine"><i class="fas fa-eraser"></i>Uncheck All</button>
                     <button id="delete-all-mini-cycle-tasks" title="Delete all tasks in this routine"><i class="fas fa-trash"></i>Delete All</button>
                     <button id="open-reminders-modal" title="Configure reminders and notifications"><i class="fas fa-bell"></i>Reminders</button>
+                    <button id="menu-toggle-input-bar" title="Show or hide the task input bar"><i class="fas fa-edit"></i>Input Bar</button>
                     <button id="menu-task-options" title="Customize task option buttons"><span class="icon-text">-/+</span>Task Options</button>
                     <button id="open-recurring-panel" title="Manage recurring tasks"><i class="fas fa-repeat"></i>Recurring</button>
                 </div>
@@ -1167,7 +1177,10 @@ window.installApp = () => {
             <!-- Rewards Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="rewards">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="rewards" aria-expanded="false" aria-label="Toggle Rewards section" aria-controls="menu-section-rewards" title="Unlock themes and mini-games as you complete cycles">
-                    <span>Rewards & Extras</span>
+                    <span class="menu-section-label">
+                        <i class="fas fa-trophy menu-section-icon" aria-hidden="true"></i>
+                        <span>Rewards & Extras</span>
+                    </span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
                 <div class="menu-section-grid" id="menu-section-rewards">
@@ -1183,7 +1196,10 @@ window.installApp = () => {
             <!-- Help Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="help">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="help" aria-expanded="false" aria-label="Toggle Help section" aria-controls="menu-section-help" title="User manual, feedback, updates, and sharing">
-                    <span>Help & Support</span>
+                    <span class="menu-section-label">
+                        <i class="fas fa-question-circle menu-section-icon" aria-hidden="true"></i>
+                        <span>Help & Support</span>
+                    </span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
                 <div class="menu-section-grid" id="menu-section-help">
@@ -1200,7 +1216,10 @@ window.installApp = () => {
             <!-- Legal Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="legal">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="legal" aria-expanded="false" aria-label="Toggle Legal section" aria-controls="menu-section-legal" title="Privacy policy, terms of service, accessibility, and security">
-                    <span>Legal & Info</span>
+                    <span class="menu-section-label">
+                        <i class="fas fa-balance-scale menu-section-icon" aria-hidden="true"></i>
+                        <span>Legal & Info</span>
+                    </span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
                 <div class="menu-section-grid" id="menu-section-legal">
@@ -1214,7 +1233,10 @@ window.installApp = () => {
                     <!-- App Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="app">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="app" aria-expanded="false" aria-label="Toggle Settings section" aria-controls="menu-section-app" title="Customize colors, accessibility, and app preferences">
-                    <span>Settings & Personalization</span>
+                    <span class="menu-section-label">
+                        <i class="fas fa-cog menu-section-icon" aria-hidden="true"></i>
+                        <span>Settings & Personalization</span>
+                    </span>
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
                 <div class="menu-section-grid" id="menu-section-app">
@@ -1227,11 +1249,26 @@ window.installApp = () => {
         <div class="main-menu-controls-container">
             <div class="mode-description-wrapper">
                 <button id="mode-description-toggle" class="mode-description-toggle" aria-expanded="true" aria-controls="mode-description">
+                    <i class="fas fa-scroll mode-info-icon" aria-hidden="true"></i>
                     <span class="toggle-label">Mode Info</span>
                     <span class="mode-badge" aria-hidden="true"></span>
                     <i class="fas fa-chevron-down toggle-icon"></i>
                 </button>
                 <div id="mode-description" class="mode-description" aria-live="polite"></div>
+                <div id="mode-radio-group" class="mode-radio-row" role="radiogroup" aria-label="Switch routine mode">
+                    <label class="mode-radio-option">
+                        <input type="radio" name="mode-radio" value="auto-cycle">
+                        <span class="mode-radio-label">Auto Cycle</span>
+                    </label>
+                    <label class="mode-radio-option">
+                        <input type="radio" name="mode-radio" value="manual-cycle">
+                        <span class="mode-radio-label">Manual Cycle</span>
+                    </label>
+                    <label class="mode-radio-option">
+                        <input type="radio" name="mode-radio" value="todo-mode">
+                        <span class="mode-radio-label">To-Do</span>
+                    </label>
+                </div>
             </div>
            <div class="toggle-container" id="autoResetContainer" style="display: none;">
             <label class="switch">

@@ -184,6 +184,7 @@ export class MenuManager {
         const openBtn = this.deps.getElementById(DOM_IDS.OPEN_MINI_CYCLE);
         const clearBtn = this.deps.getElementById(DOM_IDS.CLEAR_MINI_CYCLE_TASKS);
         const deleteBtn = this.deps.getElementById(DOM_IDS.DELETE_ALL_MINI_CYCLE_TASKS);
+        const toggleInputBarBtn = this.deps.getElementById(DOM_IDS.MENU_TOGGLE_INPUT_BAR);
         const newBtn = this.deps.getElementById(DOM_IDS.NEW_MINI_CYCLE);
         const closeBtn = this.deps.getElementById(DOM_IDS.CLOSE_MAIN_MENU);
 
@@ -197,6 +198,19 @@ export class MenuManager {
         replaceStoredEventListener(clearBtn, "click", "__miniCycleMenuManagerClickHandler", () => this.clearAllTasks());
 
         replaceStoredEventListener(deleteBtn, "click", "__miniCycleMenuManagerClickHandler", () => this.deleteAllTasks());
+
+        // Show/Hide Input Bar — delegates to the existing quick-action toggle
+        // button so we don't duplicate the toggle logic. Same pattern as
+        // quickActionsManager 'toggleTaskInput' and the focus-mode menu.
+        replaceStoredEventListener(toggleInputBarBtn, "click", "__miniCycleMenuManagerClickHandler", () => {
+            this.hideMainMenu();
+            // Defer one tick so the menu-close transition starts before the
+            // input bar toggles (avoids visual flicker).
+            setTimeout(() => {
+                const btn = this.deps.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_BTN);
+                btn?.click();
+            }, 0);
+        });
 
         replaceStoredEventListener(newBtn, "click", "__miniCycleMenuManagerClickHandler", () => this.deps.createNewMiniCycle());
 
@@ -369,6 +383,7 @@ export class MenuManager {
         if (this.elements.menu) {
             this.elements.menu.classList.remove(DOM_CLASSES.VISIBLE);
         }
+        document.body.classList.remove(DOM_CLASSES.MAIN_MENU_OPEN);
     }
 
     /**
@@ -433,6 +448,7 @@ export class MenuManager {
         if (menu) {
             menu.classList.remove(DOM_CLASSES.VISIBLE);
         }
+        document.body.classList.remove(DOM_CLASSES.MAIN_MENU_OPEN);
     }
 
     /**
@@ -450,6 +466,7 @@ export class MenuManager {
         if (menu && menuButton) {
             if (!menu.contains(event.target) && !menuButton.contains(event.target)) {
                 menu.classList.remove(DOM_CLASSES.VISIBLE); // Hide the menu
+                document.body.classList.remove(DOM_CLASSES.MAIN_MENU_OPEN);
                 // Fix #3: Use bound handler reference for proper removal
                 // Note: This method is likely unused - uiBoot.js handles menu close via named function
                 if (this._boundCloseMenuHandler) {

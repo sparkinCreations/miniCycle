@@ -35,6 +35,15 @@ export const DEFAULT_RECURRING_DELETE_SETTINGS = Object.freeze({
     todo: true     // Recurring always deletes in To-Do mode
 });
 
+/**
+ * Default color values used as last-resort fallbacks
+ * CSS equivalent lives in variables.css (--priority-color)
+ * @constant {Object}
+ */
+export const COLORS = Object.freeze({
+    PRIORITY_DEFAULT: '#dc3545'  // Red — fallback when task.priorityColor and settings.priorityColor are both absent
+});
+
 // ============================================================================
 // TIMEOUTS (milliseconds)
 // ============================================================================
@@ -486,12 +495,42 @@ export const DOM_CLASSES = Object.freeze({
 
     // ---- Layout ----
     MODE_DESCRIPTION_VISIBLE: 'mode-description-visible',
+    MODE_RADIO_ROW: 'mode-radio-row',
+    MODE_RADIO_OPTION: 'mode-radio-option',
     HELP_WINDOW_SIDE: 'help-window-side',
     ONBOARDING_ACTIVE: 'onboarding-active',
     FOCUS_MODE: 'focus-mode',
     FIXED_HEADER_CONTAINER: 'fixed-header-container',
     DROPDOWN_OPEN: 'dropdown-open',
     REFRESHING: 'refreshing',
+
+    // ---- Empty State (focus-mode variant of the task list empty hint) ----
+    EMPTY_STATE_HINT_FOCUS: 'empty-state-hint-focus',
+
+    // ---- Main Menu section headers (icon + label grouping) ----
+    MENU_SECTION_LABEL: 'menu-section-label',
+    MENU_SECTION_ICON: 'menu-section-icon',
+    MAIN_MENU_BACKDROP: 'main-menu-backdrop',
+
+    // ---- Body-level open-state flags (PWA-reliable alternative to :has()) ----
+    MAIN_MENU_OPEN: 'main-menu-open',
+    QUICK_ACTIONS_OPEN: 'quick-actions-open',
+
+    // ---- Focus Mode (component classes used in JS for createElement.className) ----
+    FOCUS_MODE_BTN: 'focus-mode-btn',
+    FOCUS_MODE_MENU: 'focus-mode-menu',
+    FOCUS_MODE_MENU_BTN: 'focus-mode-menu-btn',
+    FOCUS_MODE_MENU_ITEM: 'focus-mode-menu-item',
+    FOCUS_MODE_MENU_ITEM_DESTRUCTIVE: 'focus-mode-menu-item--destructive',
+    FOCUS_MODE_MENU_SEPARATOR: 'focus-mode-menu-separator',
+    FOCUS_MODE_MODE_MODAL: 'focus-mode-mode-modal',
+    FOCUS_MODE_MODE_MODAL_BACKDROP: 'focus-mode-mode-modal-backdrop',
+    FOCUS_MODE_MODE_MODAL_TITLE: 'focus-mode-mode-modal-title',
+    FOCUS_MODE_MODE_OPTION: 'focus-mode-mode-option',
+    FOCUS_MODE_MODE_OPTION_TEXT: 'focus-mode-mode-option-text',
+    FOCUS_MODE_MODE_OPTION_NAME: 'focus-mode-mode-option-name',
+    FOCUS_MODE_MODE_OPTION_DESC: 'focus-mode-mode-option-desc',
+    FOCUS_MODE_MODE_DONE_BTN: 'focus-mode-mode-done-btn',
 
     // ---- Routine Switcher ----
     MINI_CYCLE_SWITCH_ITEM: 'mini-cycle-switch-item',
@@ -946,6 +985,9 @@ export const DOM_IDS = Object.freeze({
     // ---- Undo/Redo ----
     UNDO_BTN: 'undo-btn',
     REDO_BTN: 'redo-btn',
+    UNDO_REDO_BUTTONS: 'undo-redo-buttons',
+    MENU_TOGGLE_INPUT_BAR: 'menu-toggle-input-bar',
+    MODE_RADIO_GROUP: 'mode-radio-group',
 
     // ---- Quick Actions ----
     QUICK_ACTIONS_WINDOW: 'quick-actions-window',
@@ -976,7 +1018,14 @@ export const DOM_IDS = Object.freeze({
     LOADING_OVERLAY: 'loading-overlay',
     CLEAR_CACHE_BTN: 'clear-cache-btn',
     HELP_WINDOW: 'help-window',
+    MAIN_MENU_BACKDROP: 'main-menu-backdrop',
     FOCUS_MODE_BTN: 'focus-mode-btn',
+    FOCUS_MODE_MENU_BTN: 'focus-mode-menu-btn',
+    FOCUS_MODE_MENU: 'focus-mode-menu',
+    FOCUS_MODE_MODE_ITEM: 'focus-mode-mode-item',
+    FOCUS_MODE_MODE_MODAL: 'focus-mode-mode-modal',
+    FOCUS_MODE_MODE_MODAL_BACKDROP: 'focus-mode-mode-modal-backdrop',
+    FOCUS_MODE_MODE_DONE_BTN: 'focus-mode-mode-done-btn',
     FOOTER_CONTAINER: 'footer-container',
     COMPLETE_ALL_CONTAINER: 'complete-all-and-help-window-container',
     NOTIFICATION_CONTAINER: 'notification-container',
@@ -1063,6 +1112,15 @@ export const DOM_SELECTORS = Object.freeze({
     RECURRING_BTN: '.recurring-btn',
     RECURRING_INDICATOR: '.recurring-indicator',
     THREE_DOTS_BTN: '.three-dots-btn',
+    FOCUS_MODE_MENU_ITEM: '.focus-mode-menu-item',
+    FOCUS_MODE_MODE_RADIO: '.focus-mode-mode-option input[type="radio"]',
+    MODE_RADIO: '#mode-radio-group input[type="radio"]',
+    MODE_RADIO_OPTION: '.mode-radio-option',
+    MODE_RADIO_LABEL: '.mode-radio-label',
+    MODE_RADIO_INPUT: 'input[type="radio"]',
+    AUTO_UNCHECK_ROW: '.auto-uncheck-row',
+    AUTO_UNCHECK_ROW_TEXT: '.auto-uncheck-row-text',
+    FOCUS_MODE_MODE_OPTION: '.focus-mode-mode-option',
     MOVE_UP: '.move-up',
     MOVE_DOWN: '.move-down',
     MOVE_ARROWS: '.move-up, .move-down',
@@ -1367,7 +1425,7 @@ export const DATA_SELECTORS = Object.freeze({
     menuSectionByName: (name) => `.menu-section[data-section="${name}"]`,
     settingsSectionByName: (name) => `.settings-section[data-section="${name}"]`,
     preferencesSectionByName: (name) => `.preferences-section[data-section="${name}"], .preferences-preview-section[data-section="${name}"]`,
-    cycleByKey: (key) => `[data-cycle-key="${key}"]`,
+    cycleByKey: (key) => `[data-cycle-key="${CSS.escape(key)}"]`,
     // Data attribute names (for setAttribute/removeAttribute/getAttribute)
     ATTR_RECURRING_SETTINGS: 'data-recurring-settings'
 });

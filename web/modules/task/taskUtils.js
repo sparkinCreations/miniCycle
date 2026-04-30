@@ -138,12 +138,25 @@ export class TaskUtils {
      * @param {Function} getElementById - Function to get element by ID
      * @returns {Array} - Array of task objects
      */
-    static extractTaskDataFromDOM(getElementById = (id) => document.getElementById(id)) {
+    static extractTaskDataFromDOM(getElementById = (id) => document.getElementById(id), AppState = null) {
         const taskListElement = getElementById(DOM_IDS.TASK_LIST);
         if (!taskListElement) {
             console.warn('⚠️ Task list element not found');
             return [];
         }
+
+        // Build a lookup map from AppState so we can read priorityColor from
+        // the source of truth instead of scraping it from a CSS custom property.
+        const stateTasks = (() => {
+            if (!AppState?.isReady?.()) return {};
+            const state = AppState.get();
+            const cid = state?.appState?.activeCycleId;
+            const tasks = state?.data?.cycles?.[cid]?.tasks;
+            if (!Array.isArray(tasks)) return {};
+            const map = {};
+            for (const t of tasks) { if (t?.id) map[t.id] = t; }
+            return map;
+        })();
 
         return [...taskListElement.children].map(taskElement => {
             const taskTextElement = taskElement.querySelector(DOM_SELECTORS.TASK_TEXT);
@@ -176,12 +189,16 @@ export class TaskUtils {
                 }
             }
 
+            // Read priorityColor from AppState (source of truth), not from DOM
+            const priorityColor = stateTasks[taskId]?.priorityColor || null;
+
             return {
                 id: taskId,
                 text: taskTextElement.textContent,
                 completed: taskElement.querySelector("input[type='checkbox']")?.checked || false,
                 dueDate: taskElement.querySelector(DOM_SELECTORS.DUE_DATE)?.value || null,
                 highPriority: taskElement.classList.contains(DOM_CLASSES.HIGH_PRIORITY),
+                priorityColor,
                 remindersEnabled: taskElement.querySelector(DOM_SELECTORS.ENABLE_TASK_REMINDERS)?.classList.contains(DOM_CLASSES.REMINDER_ACTIVE) || false,
                 recurring: taskElement.querySelector(DOM_SELECTORS.RECURRING_BTN)?.classList.contains(DOM_CLASSES.ACTIVE) || false,
                 recurringSettings,
@@ -303,6 +320,7 @@ export class TaskUtils {
                     recurring: true,
                     recurringSettings: structuredClone(recurringSettings),
                     highPriority: highPriority || false,
+                    priorityColor: priorityColor || null,
                     dueDate: dueDate || null,
                     remindersEnabled: remindersEnabled || false,
                     deleteWhenComplete: true, // Recurring tasks always auto-remove
@@ -399,7 +417,7 @@ function buildTaskContext(taskItem, taskId) {
 }
 
 function extractTaskDataFromDOM() {
-    return TaskUtils.extractTaskDataFromDOM();
+    return TaskUtils.extractTaskDataFromDOM(undefined, _deps.AppState);
 }
 
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {

@@ -160,6 +160,32 @@ element.classList.add('hidden');
 - Layout: `FOCUS_MODE`, `ONBOARDING_ACTIVE`, `DROPDOWN_OPEN`
 - Accessibility: `REDUCED_MOTION`, `HIGH_CONTRAST`
 
+### When creating elements via `createElement`
+
+Set `element.className` (or `element.classList.add(...)`) from `DOM_CLASSES`, **not** from `DOM_IDS` and **not** from a hardcoded string. The class table and the ID table are different sources — even when the values look similar.
+
+```javascript
+// CORRECT — class comes from DOM_CLASSES
+const btn = document.createElement('button');
+btn.id = DOM_IDS.FOCUS_MODE_MENU_BTN;
+btn.className = DOM_CLASSES.FOCUS_MODE_MENU_BTN;
+
+// WRONG — class hardcoded
+btn.className = 'focus-mode-menu-btn';
+
+// ALSO WRONG — pulling the class from the ID table
+// (works by coincidence today, drifts the moment one is renamed)
+btn.className = DOM_IDS.FOCUS_MODE_MENU_BTN;
+```
+
+**Quick rule of thumb:**
+
+- `DOM_IDS.X` → `element.id = …`
+- `DOM_CLASSES.X` → `element.className = …` / `classList.add(…)`
+- `DOM_SELECTORS.X` → `querySelector(…)` / `querySelectorAll(…)` / `closest(…)`
+
+If a class doesn't exist in `DOM_CLASSES` yet, add it there first — same rule as IDs and selectors.
+
 ---
 
 ## Z_INDEX — Stacking Layers
