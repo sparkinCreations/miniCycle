@@ -71,6 +71,8 @@ export class FocusMode {
         this._menu = null;
         this._menuOpen = false;
         this._menuBtnHandler = null;
+        this._exitBtn = null;
+        this._exitBtnHandler = null;
         this._menuClickHandler = null;
         this._menuOutsideClickHandler = null;
         this._modeItem = null;
@@ -98,6 +100,7 @@ export class FocusMode {
 
         this._createButton();
         this._createMenu();
+        this._createExitButton();
         this._injectEmptyStateHint();
         this._attachListeners();
         this.initialized = true;
@@ -218,6 +221,25 @@ export class FocusMode {
     }
 
     /**
+     * Create the exit button — top-left counterpart to the three-dots menu.
+     * Same styling, single-tap exits focus mode (no menu open required).
+     * Appended to <body>, hidden by default; CSS scoped to body.focus-mode
+     * reveals it only when focus mode is active.
+     */
+    _createExitButton() {
+        const body = this.deps.getBody();
+        if (!body) return;
+
+        this._exitBtn = document.createElement('button');
+        this._exitBtn.id = DOM_IDS.FOCUS_MODE_EXIT_BTN;
+        this._exitBtn.className = DOM_CLASSES.FOCUS_MODE_EXIT_BTN;
+        this._exitBtn.title = getLabel('focusMode.exitTitle');
+        this._exitBtn.setAttribute('aria-label', getLabel('focusMode.exitAria'));
+        this._exitBtn.textContent = '×'; // multiplication sign — close affordance
+        body.appendChild(this._exitBtn);
+    }
+
+    /**
      * Inject a focus-mode-specific hint into the task list's #empty-state.
      * Sits alongside the normal `.empty-state-hint`; CSS scoped to
      * body.focus-mode swaps which one is visible. This avoids racing
@@ -329,7 +351,20 @@ export class FocusMode {
     _attachListeners() {
         if (!this._button) return;
 
-        this._clickHandler = () => this.toggle();
+        this._clickHandler = () => {
+            // Outside focus mode: toggle to enter focus mode (original behavior)
+            if (!this._active) {
+                this.toggle();
+                return;
+            }
+            // In focus mode: this button is repurposed as the mode action
+            // (Cycle in manual, Clear in to-do). Auto-cycle hides the button
+            // entirely via CSS, so this branch shouldn't run there.
+            const mode = this._getCurrentMode();
+            if (mode === 'auto-cycle') return;
+            const completeAllBtn = this.deps.getElementById(DOM_IDS.COMPLETE_ALL);
+            completeAllBtn?.click();
+        };
 
         const { safeAddEventListener } = this.deps;
         if (safeAddEventListener) {
@@ -345,6 +380,15 @@ export class FocusMode {
                 this._toggleMenu();
             };
             this._menuBtn.addEventListener('click', this._menuBtnHandler);
+        }
+
+        // Exit button (top-left) — single-tap exit
+        if (this._exitBtn) {
+            this._exitBtnHandler = (e) => {
+                e.stopPropagation();
+                this.deactivate();
+            };
+            this._exitBtn.addEventListener('click', this._exitBtnHandler);
         }
 
         // Click on a menu item dispatches the action
@@ -465,6 +509,7 @@ export class FocusMode {
         this._menu.hidden = false;
         this._menuBtn.setAttribute('aria-expanded', 'true');
         this._menuOpen = true;
+        this.deps.getBody?.()?.classList.add(DOM_CLASSES.FOCUS_MODE_MENU_OPEN);
         // Move focus to first item for keyboard users
         const firstItem = this._menu.querySelector(DOM_SELECTORS.FOCUS_MODE_MENU_ITEM);
         firstItem?.focus();
@@ -555,6 +600,73 @@ export class FocusMode {
         if (modeSelector.value === newMode) return;
         modeSelector.value = newMode;
         modeSelector.dispatchEvent(new Event('change', { bubbles: true }));
+        // Refresh action button. Pass newMode explicitly because
+        // modeManager's change handler is async (awaits syncTogglesFromMode
+        // → syncModeFromToggles before the body class flips), so reading
+        // the body class here would return the previous mode and the
+        // visible label (data-label) would lag the emoji by one step.
+        this._updateActionButtonAria(newMode);
+    }
+
+    /**
+     * Public refresh hook — called by themeManager.refreshThemeLabels()
+     * when vocab theme changes so the action button picks up new
+     * cycleActionLabel / clearActionLabel values without waiting for the
+     * next mode toggle. No-op when focus mode isn't active.
+     */
+    refreshActionButton() {
+        this._updateActionButtonAria();
+    }
+
+    /**
+     * Sync the bottom-right .focus-mode-btn's title + aria-label to its
+     * current behavior. Outside focus mode it's the "enter focus mode"
+     * trigger; inside focus mode it's the mode action (Cycle in manual,
+     * Clear in to-do, hidden in auto-cycle). The visible label below the
+     * circle comes from data-label (set here, rendered by CSS attr()),
+     * keeping the text on the label/vocab-theme system.
+     */
+    _updateActionButtonAria(modeOverride) {
+        if (!this._button) return;
+        if (!this._active) {
+            this._button.title = getLabel('focusMode.enterTitle');
+            this._button.setAttribute('aria-label', getLabel('focusMode.enterAria'));
+            this._button.removeAttribute('data-label');
+            return;
+        }
+        // The visible label below the circle is rendered via CSS
+        // `content: attr(data-label)` so vocab themes can override the
+        // value through getLabel() (e.g., Fitness theme could rename
+        // 'Cycle' to 'Workout'). Title/aria-label come from getLabel() too.
+        //
+        // Mode resolution:
+        // - When called from _applyMode after a user mode-switch, the
+        //   caller passes modeOverride because the body class hasn't
+        //   flipped yet (modeManager's change handler is async).
+        // - All other callers (activate, refreshActionButton on theme
+        //   change) leave it undefined; we read the body class instead,
+        //   which is the same source the CSS pseudo-elements key off so
+        //   emoji + label stay perfectly in sync.
+        let mode = modeOverride;
+        if (!mode) {
+            const body = this.deps.getBody?.();
+            mode = body?.classList.contains(DOM_CLASSES.TODO_MODE_MODE)
+                ? 'todo-mode'
+                : body?.classList.contains(DOM_CLASSES.AUTO_CYCLE_MODE)
+                    ? 'auto-cycle'
+                    : 'manual-cycle';
+        }
+        if (mode === 'todo-mode') {
+            this._button.title = getLabel('focusMode.clearActionTitle');
+            this._button.setAttribute('aria-label', getLabel('focusMode.clearActionAria'));
+            this._button.setAttribute('data-label', getLabel('focusMode.clearActionLabel'));
+        } else if (mode === 'manual-cycle') {
+            this._button.title = getLabel('focusMode.cycleActionTitle');
+            this._button.setAttribute('aria-label', getLabel('focusMode.cycleActionAria'));
+            this._button.setAttribute('data-label', getLabel('focusMode.cycleActionLabel'));
+        }
+        // auto-cycle: button is hidden via CSS; leave the labels as-is
+        // (they'd never be announced because the button has display: none).
     }
 
     /**
@@ -568,6 +680,7 @@ export class FocusMode {
         this._menu.hidden = true;
         this._menuBtn.setAttribute('aria-expanded', 'false');
         this._menuOpen = false;
+        this.deps.getBody?.()?.classList.remove(DOM_CLASSES.FOCUS_MODE_MENU_OPEN);
         if (restoreFocus) {
             this._menuBtn.focus();
         }
@@ -656,8 +769,9 @@ export class FocusMode {
         if (this._button) {
             body.appendChild(this._button);
             this._button.innerHTML = getIcon('compress');
-            this._button.title = getLabel('focusMode.exitTitle');
-            this._button.setAttribute('aria-label', getLabel('focusMode.exitAria'));
+            // Aria/title now reflect the mode-action role (Cycle/Clear)
+            // since exit is owned by the top-left #focus-mode-exit-btn.
+            this._updateActionButtonAria();
         }
 
         // Lift undo/redo buttons out of the hidden footer so they remain
@@ -703,6 +817,9 @@ export class FocusMode {
     deactivate() {
         if (!this._active) return;
         this._active = false;
+        // If the three-dots menu was open when focus mode was toggled off,
+        // clear the body-class flag so the backdrop blur doesn't linger.
+        this.deps.getBody?.()?.classList.remove(DOM_CLASSES.FOCUS_MODE_MENU_OPEN);
 
         const taskView = this.deps.getElementById(DOM_IDS.TASK_VIEW);
 
@@ -792,6 +909,9 @@ export class FocusMode {
         if (this._menuBtn && this._menuBtnHandler) {
             this._menuBtn.removeEventListener('click', this._menuBtnHandler);
         }
+        if (this._exitBtn && this._exitBtnHandler) {
+            this._exitBtn.removeEventListener('click', this._exitBtnHandler);
+        }
         if (this._menu && this._menuClickHandler) {
             this._menu.removeEventListener('click', this._menuClickHandler);
         }
@@ -814,6 +934,7 @@ export class FocusMode {
         // Remove the menu + modal DOM nodes (they were appended to <body>)
         this._menuBtn?.remove();
         this._menu?.remove();
+        this._exitBtn?.remove();
         this._modeModal?.remove();
         this._modeBackdrop?.remove();
         this._emptyStateHint?.remove();
@@ -855,6 +976,8 @@ export class FocusMode {
         this._menu = null;
         this._menuOpen = false;
         this._menuBtnHandler = null;
+        this._exitBtn = null;
+        this._exitBtnHandler = null;
         this._menuClickHandler = null;
         this._menuOutsideClickHandler = null;
         this._modeItem = null;

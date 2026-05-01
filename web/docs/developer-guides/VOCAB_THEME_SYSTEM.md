@@ -36,11 +36,16 @@ Each theme lives in `THEME_DEFINITIONS` in `themes.js`:
     id:       'habit-tracker',
     unlockAt: { cycles: 5 },
     labels: {
-        'action.addTask':             'Add habit',
-        'action.completeCycle':       'Complete Habits',
-        'action.clearCompletedTasks': 'Clear Habits',
-        'noun.task':                  { one: 'habit', other: 'habits' },
-        'noun.cycle':                 { one: 'streak', other: 'streaks' },
+        'action.addTask':              'Add habit',
+        'action.completeCycle':        'Complete Habits',
+        'action.clearCompletedTasks':  'Clear Habits',
+        'noun.task':                   { one: 'habit', other: 'habits' },
+        'noun.cycle':                  { one: 'streak', other: 'streaks' },
+        // Focus-mode action button (bottom-right). Two-line label —
+        // verb on top, themed noun below — rendered via CSS attr().
+        // Embed `\n` in the string for the line break.
+        'focusMode.cycleActionLabel':  'Complete\nStreak',
+        'focusMode.clearActionLabel':  'Clear\nHabits',
     },
     icons: { cycleComplete: '⚡', celebrate: '🔥' },
 }

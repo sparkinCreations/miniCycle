@@ -280,18 +280,18 @@ export const DEFAULT_LABELS = deepFreeze({
     stats: {
         title:              'Stats',
         currentRoutine:     'Current Routine',
-        completion:         '{completed} of {total} {taskWord} Completed This Cycle',
+        completion:         '{completed} of {total} {taskWord} Completed This {cycleWord}',
         cyclesCompleted:    '{count} {cycleWord} Completed',
         clearedTasks:       '{count} Cleared {taskWord}',
         milestoneRewards:   'Milestone Rewards',
         achievementBadges:  'Achievement Badges',
         allRoutines:        'All Routines:',
-        allRoutinesValue:   '{count} Cycles',
+        allRoutinesValue:   '{count} {cycleWord}',
         progressToNext:     'Progress to next milestone',
-        progressCleared:    '{current} of {next} cleared tasks to next milestone',
-        progressCycles:     '{current} of {next} cycles to next milestone',
+        progressCleared:    '{current} of {next} cleared {taskWord} to next milestone',
+        progressCycles:     '{current} of {next} {cycleWord} to next milestone',
         globalDisplay:      '{cycles} {cycleText} / {cleared} {clearedText}',
-        progressCircleAria: 'Current cycle task completion',
+        progressCircleAria: 'Current {cycleWord} {taskWord} completion',
         allBadgesUnlocked:  'All badges unlocked!',
         clearedToMilestone: '{remaining} more cleared {taskWord} to next badge',
         cyclesToMilestone:  '{remaining} more {cycleWord} to next badge',
@@ -1419,7 +1419,27 @@ export const DEFAULT_LABELS = deepFreeze({
         modeManualName: 'Manual Cycle',
         modeTodoName:   'To-Do',
         modeModalTitle: 'Switch Mode',
-        modeModalDone:  'Done'
+        modeModalDone:  'Done',
+        // Bottom-right action button (repurposed from exit-focus when focus
+        // mode is active — manual cycle triggers Cycle, to-do mode triggers
+        // Clear, auto-cycle hides the button entirely). The visible labels
+        // (cycleActionLabel / clearActionLabel) are vocab-themable — themes
+        // like Fitness or Habit Tracker can override them via themes.js
+        // (e.g., 'Cycle' → 'Round'/'Set').
+        // Visible label below the action button. Vocab themes override
+        // these keys (see themes.js) to follow each theme's vocabulary —
+        // e.g., Fitness uses 'Complete\nWorkout' / 'Clear\nExercises' to
+        // match the main mode button wording. The literal \n renders as
+        // a line break via CSS `white-space: pre-line` on the ::after.
+        // Classic stays single-word — the focus button doesn't need the
+        // verb prefix when the noun ("Cycle"/"Clear") already reads as
+        // an action.
+        cycleActionLabel: 'Cycle',
+        cycleActionTitle: 'Complete cycle',
+        cycleActionAria:  'Complete cycle and reset tasks',
+        clearActionLabel: 'Clear\nTasks',
+        clearActionTitle: 'Clear completed tasks',
+        clearActionAria:  'Clear all completed tasks'
     },
 
     // ========================================================================
@@ -2282,6 +2302,8 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'focusMode.modeManualName',
     'focusMode.modeTodoName',
     'focusMode.createRoutine',
+    'focusMode.cycleActionLabel',
+    'focusMode.clearActionLabel',
 
     // Feedback
     'feedback.sending',

@@ -43,6 +43,25 @@ body.focus-mode::after {
     opacity: 1;
 }
 
+/* When the three-dots menu is open, blur EVERYTHING except the menu itself
+   and the three-dots trigger. Lift the body::after backdrop above all the
+   fixed-position UI (nav-dots, undo/redo, focus-mode-btn, etc. all sit at
+   z-notification = 100000), then promote the menu and trigger above the
+   backdrop. Using the project's existing notification z-index ladder so
+   the layering matches conventions: backdrop = z-notification-active,
+   menu/trigger = z-notification-btn. */
+body.focus-mode.focus-mode-menu-open::after {
+    background: rgba(0, 0, 0, 0.45);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    z-index: var(--z-notification-active);
+}
+
+body.focus-mode.focus-mode-menu-open #focus-mode-menu-btn,
+body.focus-mode.focus-mode-menu-open #focus-mode-menu {
+    z-index: var(--z-notification-btn);
+}
+
 /* =============================================================================
    FOCUS MODE LAYOUT — Expand task list into freed vertical space
    ============================================================================= */
@@ -61,20 +80,34 @@ body.focus-mode::after {
     transition: max-height var(--transition-normal) ease;
 }
 
+/* Desktop sizing (mobile/tablet has its own override at max-width: 1023).
+   Task-view is centered (top: 50%, transform: -50%), so the reduction
+   constant is split top + bottom. With 200px the bottom edge sits ~100px
+   from the viewport bottom — clears the bottom controls band where the
+   action button (top ~106px), nav-dots (top ~95px), and undo/redo (top
+   ~80px) live. The task-card / task-list-container constants are bumped
+   in lock-step so the inner-element ratios stay the same as before. */
 body.focus-mode #task-view {
-    max-height: calc(100vh - 40px);
-    max-height: calc(100dvh - 40px);
+    /* Shift the centered task-view up — content drives height (no explicit
+       `height` here) so the bottom edge stays where it naturally lands
+       based on content, and only the top moves higher up the viewport.
+       Three-dots and exit buttons (top: 16px) at the viewport corners
+       don't conflict with the centered task-card (max-width: 50vw).
+       Tunable via --focus-mode-top-offset in variables.css. */
+    top: calc(50% - var(--focus-mode-top-offset));
+    max-height: calc(100vh - 150px);
+    max-height: calc(100dvh - 150px);
 }
 
 body.focus-mode #task-view .task-card {
-    max-height: calc(100vh - 120px);
-    max-height: calc(100dvh - 120px);
+    max-height: calc(100vh - 230px);
+    max-height: calc(100dvh - 230px);
 }
 
-/* The real scroll constraint — normally calc(100vh - 385px) */
 body.focus-mode #task-view .task-list-container {
-    max-height: calc(100vh - 150px);
-    max-height: calc(100dvh - 150px);
+    /* Tunable via --focus-task-list-reduction-desktop in variables.css. */
+    max-height: calc(100vh - var(--focus-task-list-reduction-desktop));
+    max-height: calc(100dvh - var(--focus-task-list-reduction-desktop));
 }
 
 /* Chrome elements fade in/out */
@@ -114,17 +147,15 @@ body.focus-mode #help-window h4 {
 }
 
 /* Help-window clearance — focus-mode override (mobile/tablet only).
-   Normal-mode margin-bottom (var(--help-window-clearance) ≈ 55–80px) is
-   calibrated against the original #footer-container layout. In focus mode
-   #nav-dots is reparented to position: fixed; bottom: 80px with ~44px
-   height, occupying the 80–124px band from the viewport bottom. The
-   default clearance leaves the help-window's lower edge inside that band.
-   Bump it so the help-window sits cleanly above the reparented nav.
-   Desktop (≥1024px) skips this — .help-window is absolutely positioned to
-   the right of #task-view there, so vertical clearance doesn't apply. */
+   Normal-mode margin-bottom (--help-window-clearance) is calibrated against
+   the original #footer-container layout. In focus mode #nav-dots is
+   reparented to fixed-position higher up the viewport, so we use the
+   focus-specific clearance variable instead. See variables.css for the
+   geometry rationale. Desktop is excluded because .help-window is
+   absolutely positioned beside #task-view there. */
 @media (max-width: 1023px) {
     body.focus-mode .help-window {
-        margin-bottom: 150px;
+        margin-bottom: var(--focus-help-window-clearance);
     }
 }
 
@@ -171,17 +202,18 @@ body.focus-mode .undo-redo-btn:focus-visible {
    ============================================================================= */
 
 #focus-mode-menu-btn,
-#focus-mode-menu {
+#focus-mode-menu,
+#focus-mode-exit-btn {
     display: none;
 }
 
-body.focus-mode #focus-mode-menu-btn {
+body.focus-mode #focus-mode-menu-btn,
+body.focus-mode #focus-mode-exit-btn {
     display: flex;
     align-items: center;
     justify-content: center;
     position: fixed;
     top: 16px;
-    right: 16px;
     width: 52px;
     height: 30px;
     border-radius: var(--radius-md);
@@ -199,13 +231,19 @@ body.focus-mode #focus-mode-menu-btn {
                 transform var(--transition-fast) ease;
 }
 
+body.focus-mode #focus-mode-menu-btn { right: 16px; }
+body.focus-mode #focus-mode-exit-btn { left: 16px; }
+
 body.focus-mode #focus-mode-menu-btn:hover,
-body.focus-mode #focus-mode-menu-btn:focus-visible {
+body.focus-mode #focus-mode-menu-btn:focus-visible,
+body.focus-mode #focus-mode-exit-btn:hover,
+body.focus-mode #focus-mode-exit-btn:focus-visible {
     background: rgba(255, 255, 255, 0.22);
     transform: scale(1.05);
 }
 
-body.focus-mode #focus-mode-menu-btn:active {
+body.focus-mode #focus-mode-menu-btn:active,
+body.focus-mode #focus-mode-exit-btn:active {
     transform: scale(0.95);
 }
 
@@ -420,11 +458,29 @@ body.focus-mode .focus-mode-mode-modal {
 
 /* Mobile: bigger tap targets, position respects safe-area */
 @media (max-width: 1023px) {
-    body.focus-mode #focus-mode-menu-btn {
+    body.focus-mode #focus-mode-menu-btn,
+    body.focus-mode #focus-mode-exit-btn {
         top: calc(env(safe-area-inset-top) + 12px);
-        right: 12px;
         width: 56px;
         height: 38px;
+    }
+    body.focus-mode #focus-mode-menu-btn { right: 12px; }
+    body.focus-mode #focus-mode-exit-btn { left: 12px; }
+
+    /* The three-dots button above sits at top: env() + 12px with height 38px,
+       so its bottom edge is at env() + 50px from the viewport top. The
+       routine title (.title-row inside .task-card) starts ~30px from the
+       viewport top in focus mode (per #task-view's centering math), which
+       lands behind the button. Push the title down with task-card padding
+       that scales with safe-area so it sits flush against the button.
+
+       margin-top: 0 cancels the normal-mode .task-card margin from
+       task-list.css (var(--space-4-5) at ≤768px and calc(15px + env()/2) at
+       ≤480px) — focus mode controls the top spacing entirely via the
+       padding-top above, so the title doesn't drift below the button. */
+    body.focus-mode #task-view .task-card {
+        padding-top: calc(env(safe-area-inset-top, 0px) + 28px);
+        margin-top: 0;
     }
 
     body.focus-mode #focus-mode-menu {
@@ -590,8 +646,8 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
     cursor: pointer;
     transition: all var(--transition-fast) ease;
     padding: 0;
-    backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
 }
 
 .focus-mode-btn:hover {
@@ -612,20 +668,70 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
 /* Active state — fixed to bottom-right of viewport so it's always reachable */
 body.focus-mode .focus-mode-btn {
     position: fixed;
-    bottom: 24px;
+    bottom: 50px;
     right: 24px;
-    width: 48px;
-    height: 48px;
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-full);
     background: rgba(255, 255, 255, 0.25);
     border-color: rgba(255, 255, 255, 0.4);
     color: var(--pref-panel-text, var(--color-white));
     z-index: var(--z-notification);
     box-shadow: var(--shadow-md);
+    /* Allow ::after label to escape below the circle (position: fixed
+       creates a containing block for absolutely positioned children). */
+    overflow: visible;
 }
 
+/* In focus mode this button is repurposed as the mode-action button
+   (Cycle in manual, Clear in to-do). Hide the original SVG glyph and use
+   ::before for the emoji centered in the circle, with ::after as a
+   floating label positioned just below the circle. */
 body.focus-mode .focus-mode-btn svg {
-    width: 20px;
-    height: 20px;
+    display: none;
+}
+
+body.focus-mode .focus-mode-btn::before {
+    font-size: 26px;
+    line-height: 1;
+}
+
+body.focus-mode .focus-mode-btn::after {
+    /* Visible label is sourced from the button's data-label attribute,
+       which focusMode.js sets via getLabel() — keeps the text on the
+       label/vocab-theme system instead of hardcoded in CSS. The \n
+       embedded in the label text renders as a line break thanks to
+       `white-space: pre-line` (verb on top, themed noun below). */
+    content: attr(data-label);
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    line-height: 1.2;
+    color: var(--color-white);
+    white-space: pre-line;
+    text-align: center;
+    /* Subtle shadow so the label reads against any background */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Mode-specific emoji icon — visual affordance, not vocab; stays in CSS.
+   Leverages the existing body mode classes set by modeManager. */
+body.focus-mode.manual-cycle-mode .focus-mode-btn::before { content: "↻"; }
+body.focus-mode.todo-mode-mode .focus-mode-btn::before    { content: "🧹"; }
+
+/* Auto cycle has no manual action — hide the button entirely. */
+body.focus-mode.auto-cycle-mode .focus-mode-btn {
+    display: none;
+}
+
+/* Hide the original Complete/Clear button in focus mode; the bottom-right
+   focus-mode-btn now drives the action. */
+body.focus-mode #complete-all-and-help-window-container {
+    display: none;
 }
 
 /* =============================================================================
@@ -659,7 +765,11 @@ body.focus-mode .focus-mode-btn svg {
 
 @media (max-width: 1023px) {
     /* Focus mode: near-full viewport. Explicit max-heights at each level
-       so task-list-container knows when to scroll (max-height: none won't trigger scrollbar) */
+       so task-list-container knows when to scroll (max-height: none won't
+       trigger scrollbar). The task-list-container reduction is the key
+       knob — its bottom edge lands just above the fixed bottom controls
+       band (action button + nav-dots top sits at ~124px from viewport
+       bottom in this media query). */
     body.focus-mode #task-view {
         top: calc(50% + 25px);
         transform: translate(-50%, -50%);
@@ -671,13 +781,17 @@ body.focus-mode .focus-mode-btn svg {
     }
 
     body.focus-mode #task-view .task-list-container {
-        max-height: calc(100dvh - 120px);
+        /* Tunable via --focus-task-list-reduction-mobile in variables.css. */
+        max-height: calc(100dvh - var(--focus-task-list-reduction-mobile));
     }
 
-    /* Focus mode: fixed to bottom-right of viewport */
+    /* Focus mode: fixed to bottom-right of viewport.
+       Bumped from env+16 → env+32 so the two-line label below the button
+       (Complete\nCycle etc.) doesn't get clipped against the home
+       indicator / viewport bottom on devices without env(). */
     body.focus-mode .focus-mode-btn {
         position: fixed;
-        bottom: calc(env(safe-area-inset-bottom) + 16px);
+        bottom: calc(env(safe-area-inset-bottom) + 32px);
         right: 16px;
         z-index: var(--z-notification);
         width: 44px;

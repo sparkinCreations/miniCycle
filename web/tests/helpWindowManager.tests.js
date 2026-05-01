@@ -550,7 +550,7 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
             body: 'safe text',
             size: '<img src=x onerror=alert(1)>'
         });
-        if (helpWindowEl.innerHTML.includes('onerror=')) {
+        if (helpWindowEl.querySelector('img')) {
             throw new Error('Size must not render raw event handlers');
         }
     });
@@ -562,7 +562,7 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
             body: 'safe',
             size: ''
         });
-        if (helpWindowEl.innerHTML.includes('onerror=')) {
+        if (helpWindowEl.querySelector('img')) {
             throw new Error('Icon must not render raw event handlers');
         }
     });
@@ -787,7 +787,7 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         const manager = new HelpWindowManager();
         const message = manager.getCurrentStatusMessage();
 
-        if (!message.includes('10 cycles')) {
+        if (!message.body.includes('10 cycles')) {
             throw new Error('Should use loadMiniCycleData for cycle count');
         }
     });
@@ -805,7 +805,7 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         const manager = new HelpWindowManager();
         const message = manager.getCurrentStatusMessage();
 
-        if (!message.includes('20 cycles')) {
+        if (!message.body.includes('20 cycles')) {
             throw new Error('AppState should take precedence');
         }
     });

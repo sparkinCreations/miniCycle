@@ -523,6 +523,133 @@ export async function runFocusModeTests(resultsDiv) {
     });
 
     // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🏷️ _updateActionButtonAria</h4>';
+
+    /**
+     * Build a fresh FocusMode instance ready to exercise the action-button
+     * methods. Caller decides _active. Returns { instance, cleanup }.
+     */
+    function createReadyInstance() {
+        setupDOMScaffold();
+        mod.setFocusModeDependencies({
+            AppState: createMockAppState(),
+            getElementById: (id) => document.getElementById(id),
+            querySelector: (sel) => document.querySelector(sel),
+            getBody: () => document.body,
+            safeAddEventListener: (el, evt, fn) => el.addEventListener(evt, fn)
+        });
+        const instance = new mod.FocusMode();
+        instance.init();
+        return {
+            instance,
+            cleanup: () => {
+                document.body.classList.remove('todo-mode-mode', 'auto-cycle-mode', 'manual-cycle-mode');
+                instance.destroy();
+                teardownDOMScaffold();
+            }
+        };
+    }
+
+    await test('inactive state: clears data-label and uses enter aria', () => {
+        const { instance, cleanup } = createReadyInstance();
+        instance._active = false;
+        instance._button.setAttribute('data-label', 'leftover');
+        instance._updateActionButtonAria();
+        const hasDataLabel = instance._button.hasAttribute('data-label');
+        const ariaLabel = instance._button.getAttribute('aria-label') || '';
+        cleanup();
+        if (hasDataLabel) throw new Error('data-label should be removed when inactive');
+        if (!ariaLabel.toLowerCase().includes('focus')) {
+            throw new Error('aria-label should be the enter-focus label, got: ' + ariaLabel);
+        }
+    });
+
+    await test('todo-mode override sets clear labels and themed data-label', () => {
+        const { instance, cleanup } = createReadyInstance();
+        instance._active = true;
+        instance._updateActionButtonAria('todo-mode');
+        const dataLabel = instance._button.getAttribute('data-label') || '';
+        const ariaLabel = instance._button.getAttribute('aria-label') || '';
+        cleanup();
+        if (!dataLabel.toLowerCase().includes('clear')) {
+            throw new Error('data-label should contain "Clear" for todo mode, got: ' + dataLabel);
+        }
+        if (!ariaLabel.toLowerCase().includes('clear')) {
+            throw new Error('aria-label should describe clear action, got: ' + ariaLabel);
+        }
+    });
+
+    await test('manual-cycle override sets cycle labels and themed data-label', () => {
+        const { instance, cleanup } = createReadyInstance();
+        instance._active = true;
+        instance._updateActionButtonAria('manual-cycle');
+        const dataLabel = instance._button.getAttribute('data-label') || '';
+        const ariaLabel = instance._button.getAttribute('aria-label') || '';
+        cleanup();
+        if (!dataLabel.toLowerCase().includes('cycle')) {
+            throw new Error('data-label should contain "Cycle" for manual mode, got: ' + dataLabel);
+        }
+        if (!ariaLabel.toLowerCase().includes('cycle')) {
+            throw new Error('aria-label should describe cycle action, got: ' + ariaLabel);
+        }
+    });
+
+    await test('reads mode from body class when no override given', () => {
+        const { instance, cleanup } = createReadyInstance();
+        instance._active = true;
+        document.body.classList.add('todo-mode-mode');
+        instance._updateActionButtonAria();
+        const dataLabel = instance._button.getAttribute('data-label') || '';
+        cleanup();
+        if (!dataLabel.toLowerCase().includes('clear')) {
+            throw new Error('Should read todo-mode from body class, got: ' + dataLabel);
+        }
+    });
+
+    await test('explicit override takes precedence over body class', () => {
+        const { instance, cleanup } = createReadyInstance();
+        instance._active = true;
+        // Body says todo, override says manual-cycle — override wins.
+        document.body.classList.add('todo-mode-mode');
+        instance._updateActionButtonAria('manual-cycle');
+        const dataLabel = instance._button.getAttribute('data-label') || '';
+        cleanup();
+        if (!dataLabel.toLowerCase().includes('cycle') ||
+            dataLabel.toLowerCase().includes('clear')) {
+            throw new Error('Override should win over body class; got: ' + dataLabel);
+        }
+    });
+
+    await test('auto-cycle is a no-op (button hidden by CSS, labels stay intact)', () => {
+        const { instance, cleanup } = createReadyInstance();
+        instance._active = true;
+        instance._updateActionButtonAria('manual-cycle');
+        const before = instance._button.getAttribute('data-label');
+        instance._updateActionButtonAria('auto-cycle');
+        const after = instance._button.getAttribute('data-label');
+        cleanup();
+        if (before !== after) {
+            throw new Error(`auto-cycle should not change labels; before="${before}" after="${after}"`);
+        }
+    });
+
+    await test('refreshActionButton() delegates to _updateActionButtonAria', () => {
+        const { instance, cleanup } = createReadyInstance();
+        instance._active = true;
+        let called = 0;
+        const original = instance._updateActionButtonAria.bind(instance);
+        instance._updateActionButtonAria = function (...args) {
+            called++;
+            return original(...args);
+        };
+        instance.refreshActionButton();
+        cleanup();
+        if (called !== 1) {
+            throw new Error(`refreshActionButton should call _updateActionButtonAria once, got ${called}`);
+        }
+    });
+
+    // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

@@ -18,7 +18,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS, DOM_CLASSES } from '../core/constants.js';
+import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, COLORS, DOM_IDS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
@@ -264,6 +264,12 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
       task.highPriority = Boolean(task.highPriority);
       tasksModified = true;
       console.warn('⚠️ Repaired task with invalid highPriority field:', task.id);
+    }
+
+    // Enforce invariant: highPriority tasks must have a priorityColor
+    if (task.highPriority && !task.priorityColor) {
+      task.priorityColor = COLORS.PRIORITY_DEFAULT;
+      tasksModified = true;
     }
 
     if (typeof task.remindersEnabled !== 'boolean') {

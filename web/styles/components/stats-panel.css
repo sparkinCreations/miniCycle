@@ -9,7 +9,7 @@
 
 .stats-panel {
     position: fixed;
-    top: 52%;
+    top: 47%;
     left: 50%;
     transform: translate(200%, -50%);
     transition: transform var(--animation-pop) ease-in-out, opacity var(--animation-pop) ease-in-out;
@@ -142,7 +142,7 @@
 @media (max-width: 768px) {
     .stats-panel {
         width: 90vw;
-        top: 55%; /* Center pushed down so top edge clears the fixed header */
+        top: 51%; /* Center pushed down a touch so top edge clears the fixed header */
         max-height: 54vh; /* Bottom edge stays above nav dots on small phones */
         padding: var(--space-2) 10px;
     }

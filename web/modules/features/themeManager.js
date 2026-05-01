@@ -52,6 +52,7 @@ const di = createDIModule('ThemeManager', {
     updateStatsPanel: optional(null),
     updateMainMenuHeader: optional(null),
     updateHelpWindow: optional(null),
+    refreshFocusActionButton: optional(null),
     applyCustomColors: optional(null),
     logHistoryEvent: optional(null),
     getBody: optional(() => document.body),
@@ -194,6 +195,9 @@ function _refreshLiveLensLabels() {
     _deps.updateStatsPanel?.();
     _deps.updateMainMenuHeader?.();
     _deps.updateHelpWindow?.();
+    // Focus-mode action button — refreshes data-label + aria so vocab
+    // themes can rename "Cycle"/"Clear" while focus mode is active.
+    _deps.refreshFocusActionButton?.();
 
     // Task input placeholder ("Add task" → "Add habit" etc.)
     const taskInputEl = _deps.getElementById(DOM_IDS.TASK_INPUT);

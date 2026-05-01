@@ -1002,7 +1002,7 @@ export class StatsPanelManager {
         // ✅ Update current cycle progress text with proper singular/plural
         if (this.elements.currentCycleProgressText) {
             this.elements.currentCycleProgressText.textContent =
-                getLabel('stats.completion', { vars: { completed: completedTasks, total: totalTasks, taskWord: getLabel('noun.task', { count: totalTasks }) } });
+                getLabel('stats.completion', { vars: { completed: completedTasks, total: totalTasks, taskWord: getLabel('noun.task', { count: totalTasks }), cycleWord: getLabel('noun.cycle', { count: 1 }) } });
         }
 
         // ✅ Show global cycles count (primary metric for rewards) with proper singular/plural
@@ -1046,8 +1046,8 @@ export class StatsPanelManager {
         if (this.elements.statsProgressBar) {
             this.elements.statsProgressBar.style.transform = `scaleX(${milestoneProgress / 100})`;
             const ariaLabel = isToDoMode
-                ? getLabel('stats.progressCleared', { vars: { current: globalTasksCleared, next: nextMilestone } })
-                : getLabel('stats.progressCycles', { vars: { current: globalCyclesCompleted, next: nextMilestone } });
+                ? getLabel('stats.progressCleared', { vars: { current: globalTasksCleared, next: nextMilestone, taskWord: getLabel('noun.task', { count: nextMilestone }) } })
+                : getLabel('stats.progressCycles', { vars: { current: globalCyclesCompleted, next: nextMilestone, cycleWord: getLabel('noun.cycle', { count: nextMilestone }) } });
             this.elements.statsProgressBar.setAttribute('aria-label', ariaLabel);
             this.elements.statsProgressBar.setAttribute('aria-valuenow', Math.round(milestoneProgress));
         }

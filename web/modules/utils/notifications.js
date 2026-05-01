@@ -1049,8 +1049,6 @@ async setDefaultPosition(notificationContainer) {
           notificationContainer.style.top = `${newY}px`;
           notificationContainer.style.left = `${newX}px`;
           notificationContainer.style.right = "auto";
-
-          savePositionToSchema25(newX, newY);
         }
       };
 
@@ -1061,6 +1059,10 @@ async setDefaultPosition(notificationContainer) {
           notificationContainer.classList.remove(DOM_CLASSES.DRAGGING);
           document.body.style.userSelect = '';
           document.body.style.overflow = '';
+
+          // Save final position once on drag end (not during movement)
+          const finalRect = notificationContainer.getBoundingClientRect();
+          savePositionToSchema25(finalRect.left, finalRect.top);
           if (Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY) > dragThreshold) {
             ev.preventDefault();
             ev.stopPropagation();

@@ -193,6 +193,10 @@ export class PullToRefresh {
         // Only allow pull-to-refresh on main task view
         if (!this.isMainTaskViewActive()) return;
 
+        // Don't trigger pull-to-refresh when dragging notifications
+        const notificationContainer = document.getElementById(DOM_IDS.NOTIFICATION_CONTAINER);
+        if (notificationContainer && notificationContainer.contains(e.target)) return;
+
         // Store the touch target to check scrollable containers
         this.touchStartTarget = e.target;
         // Invalidate cached containers in case DOM changed since last gesture

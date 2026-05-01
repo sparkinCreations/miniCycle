@@ -137,6 +137,13 @@ html, body {
   gap: 10px;
   max-width: 300px;
   cursor: move;
+  -webkit-user-select: none;
+  user-select: none;
+  /* Prevent long-press context menu on iOS during drag */
+  -webkit-touch-callout: none;
+  /* Let JS handle all touch gestures — without this the browser
+     intercepts touch for pan/scroll before pointermove fires */
+  touch-action: none;
   /* Override UA popover defaults */
   margin: 0;
   padding: 0;

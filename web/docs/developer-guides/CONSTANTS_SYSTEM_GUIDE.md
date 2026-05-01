@@ -158,6 +158,10 @@ element.classList.add('hidden');
 - Theme: `DARK_MODE`, `DARK_OCEAN`, `GOLDEN_GLOW`
 - Animation: `LOGO_SPIN`, `COMPLETE_ANIMATION`, `CLEAR_ANIMATION`
 - Layout: `FOCUS_MODE`, `ONBOARDING_ACTIVE`, `DROPDOWN_OPEN`
+- Body-level open-state flags (PWA-reliable alternative to `:has()`):
+  `MAIN_MENU_OPEN`, `QUICK_ACTIONS_OPEN`, `FOCUS_MODE_MENU_OPEN`
+- Focus mode (component classes): `FOCUS_MODE_BTN`, `FOCUS_MODE_EXIT_BTN`,
+  `FOCUS_MODE_MENU_BTN`, `FOCUS_MODE_MENU`, `FOCUS_MODE_MENU_ITEM`, etc.
 - Accessibility: `REDUCED_MOTION`, `HIGH_CONTRAST`
 
 ### When creating elements via `createElement`

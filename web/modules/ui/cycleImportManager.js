@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { LIMITS, DOM_SELECTORS, Z_INDEX, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
+import { LIMITS, COLORS, DOM_SELECTORS, Z_INDEX, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -490,7 +490,7 @@ export async function processImportedData(fileContent) {
             completed: task.completed || false,
             dueDate: task.dueDate || null,
             highPriority: task.highPriority || false,
-            priorityColor: task.priorityColor || null,
+            priorityColor: task.priorityColor || (task.highPriority ? COLORS.PRIORITY_DEFAULT : null),
             remindersEnabled: task.remindersEnabled || false,
             recurring: task.recurring || false,
             recurringSettings: safeSettings,
@@ -532,7 +532,7 @@ export async function processImportedData(fileContent) {
                     text: task.text,
                     dueDate: task.dueDate || null,
                     highPriority: task.highPriority || false,
-                    priorityColor: task.priorityColor || null,
+                    priorityColor: task.priorityColor || (task.highPriority ? COLORS.PRIORITY_DEFAULT : null),
                     remindersEnabled: task.remindersEnabled || false,
                     recurring: true,
                     recurringSettings: structuredClone(task.recurringSettings),

@@ -494,6 +494,33 @@
   --task-card-offset-with-btn: 380px;     /* When Complete/Clear button is visible */
   --nav-area-height: 55px;                /* Nav dots bottom position on mobile */
   --help-window-clearance: 55px;          /* Help window margin-bottom to clear nav dots */
+
+  /* ─── Focus Mode Geometry ──────────────────────────────────────────────
+     These tokens centralize the focus-mode layout values that were tuned
+     iteratively against real device heights. Bump these instead of
+     hand-editing calc() values inside focus-mode.css when re-tuning.
+
+     Help-window clearance — focus mode reparents #nav-dots to position:
+     fixed; bottom: 80px with ~44px height, occupying ~80–124px from
+     viewport bottom. The normal-mode --help-window-clearance (above) is
+     calibrated against the original #footer-container layout and isn't
+     enough to clear the focus-mode band. Mobile/tablet only — desktop
+     pins .help-window absolutely beside #task-view. */
+  --focus-help-window-clearance: 150px;
+
+  /* Task-view upward shift on desktop (used as `top: calc(50% - var(--*))`).
+     Higher values move the centered task-view further up the viewport,
+     freeing space for the title row to sit above the centerline. Capped
+     by the three-dots / exit buttons at top: 16px (height: 30px). */
+  --focus-mode-top-offset: 35px;
+
+  /* Task-list-container max-height reduction in focus mode — controls how
+     much the scrollable list shrinks below 100dvh so its bottom edge
+     clears the bottom controls band (action button / nav-dots / undo).
+     Desktop and mobile are separate because their bottom-control layouts
+     differ. Larger value → shorter list, more clearance. */
+  --focus-task-list-reduction-desktop: 340px;
+  --focus-task-list-reduction-mobile:  310px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

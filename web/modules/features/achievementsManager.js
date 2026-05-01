@@ -701,6 +701,11 @@ export class AchievementsManager {
                     <p class="badge-detail-reward">
                         <strong>${getLabel('achievement.rewardLabel')}</strong> ${tierConfig.rewardLabel}
                     </p>
+                    ${isUnlocked && tierConfig.rewardType ? `
+                        <button class="badge-detail-reward-btn" id="badge-detail-reward-btn">
+                            ${tierConfig.rewardType === 'game' ? getLabel('action.openGamesModal') : getLabel('action.openThemesModal')}
+                        </button>
+                    ` : ''}
                 ` : ''}
             </div>
         `;
@@ -742,7 +747,7 @@ export class AchievementsManager {
                     isDragging = true;
                     hasMoved = false;
                     startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-                    spinArea.style.cursor = 'grabbing';
+                    dragTarget.style.cursor = 'grabbing';
                     coin.style.transition = 'none';
                     lastHapticRotation = currentRotation;
                     triggerHaptic(5); // Light tap on grab
@@ -781,7 +786,7 @@ export class AchievementsManager {
                 const onEnd = () => {
                     if (!isDragging) return;
                     isDragging = false;
-                    spinArea.style.cursor = 'grab';
+                    dragTarget.style.cursor = 'grab';
 
                     // Tap (no real drag movement) → replay contextual badge animation.
                     // Clear inline transform/transition first so the keyframe owns the transform.
@@ -834,13 +839,24 @@ export class AchievementsManager {
                     }
                 };
 
-                // Mouse events - attach to spin area for larger hit target
-                spinArea.addEventListener('mousedown', onStart);
+                // Attach drag events to the entire popup for a larger hit target
+                const popup = overlay.querySelector('.badge-detail-popup');
+                const dragTarget = popup || spinArea;
+                dragTarget.classList.add('badge-interactive');
+
+                const onDragStart = (e) => {
+                    // Don't drag from interactive elements (reward button, etc.)
+                    if (e.target.closest('button')) return;
+                    onStart(e);
+                };
+
+                // Mouse events
+                dragTarget.addEventListener('mousedown', onDragStart);
                 document.addEventListener('mousemove', onMove);
                 document.addEventListener('mouseup', onEnd);
 
                 // Touch events
-                spinArea.addEventListener('touchstart', onStart, { passive: true });
+                dragTarget.addEventListener('touchstart', onDragStart, { passive: true });
                 document.addEventListener('touchmove', onMove, { passive: true });
                 document.addEventListener('touchend', onEnd);
 
@@ -871,7 +887,7 @@ export class AchievementsManager {
                 spinArea.addEventListener('keydown', onKeydown);
 
                 // Hover-loop on desktop: start contextual pulse while pointer is
-                // over the coin (and not actively dragging). Skipped on touch —
+                // over the popup (and not actively dragging). Skipped on touch —
                 // touch-hold is handled in onStart instead so it ties to the
                 // existing drag detection.
                 const onMouseEnter = () => {
@@ -881,18 +897,20 @@ export class AchievementsManager {
                 const onMouseLeave = () => {
                     coin.classList.remove('animate-loop');
                 };
-                spinArea.addEventListener('mouseenter', onMouseEnter);
-                spinArea.addEventListener('mouseleave', onMouseLeave);
+                dragTarget.addEventListener('mouseenter', onMouseEnter);
+                dragTarget.addEventListener('mouseleave', onMouseLeave);
 
                 // Store cleanup function
                 this._badgeCoinCleanup = () => {
+                    dragTarget.removeEventListener('mousedown', onDragStart);
                     document.removeEventListener('mousemove', onMove);
                     document.removeEventListener('mouseup', onEnd);
+                    dragTarget.removeEventListener('touchstart', onDragStart);
                     document.removeEventListener('touchmove', onMove);
                     document.removeEventListener('touchend', onEnd);
                     spinArea.removeEventListener('keydown', onKeydown);
-                    spinArea.removeEventListener('mouseenter', onMouseEnter);
-                    spinArea.removeEventListener('mouseleave', onMouseLeave);
+                    dragTarget.removeEventListener('mouseenter', onMouseEnter);
+                    dragTarget.removeEventListener('mouseleave', onMouseLeave);
                     if (animationFrame) cancelAnimationFrame(animationFrame);
                 };
             }
@@ -918,6 +936,23 @@ export class AchievementsManager {
             this.hideBadgeDetail();
         };
         overlay.addEventListener('cancel', this._badgeDetailCancelHandler);
+
+        // Reward action button — opens themes or games modal
+        const rewardBtn = overlay.querySelector('#badge-detail-reward-btn');
+        if (rewardBtn && tierConfig.rewardType && isUnlocked) {
+            this._badgeRewardBtnHandler = () => {
+                this.hideBadgeDetail();
+                // Delay until badge dialog is fully removed from the top layer,
+                // otherwise showModal() on the target dialog can fail
+                const targetId = tierConfig.rewardType === 'game'
+                    ? DOM_IDS.OPEN_GAMES_PANEL
+                    : DOM_IDS.OPEN_THEMES_PANEL;
+                setTimeout(() => {
+                    this.deps.getElementById(targetId)?.click();
+                }, UI_TIMEOUTS.ANIMATION_SHORT + 50);
+            };
+            rewardBtn.addEventListener('click', this._badgeRewardBtnHandler);
+        }
     }
 
     /**
@@ -957,6 +992,12 @@ export class AchievementsManager {
         if (this._badgeDetailCancelHandler && overlay) {
             overlay.removeEventListener('cancel', this._badgeDetailCancelHandler);
             this._badgeDetailCancelHandler = null;
+        }
+
+        if (this._badgeRewardBtnHandler && overlay) {
+            const rewardBtn = overlay.querySelector('#badge-detail-reward-btn');
+            rewardBtn?.removeEventListener('click', this._badgeRewardBtnHandler);
+            this._badgeRewardBtnHandler = null;
         }
     }
 

@@ -515,9 +515,11 @@ export const DOM_CLASSES = Object.freeze({
     // ---- Body-level open-state flags (PWA-reliable alternative to :has()) ----
     MAIN_MENU_OPEN: 'main-menu-open',
     QUICK_ACTIONS_OPEN: 'quick-actions-open',
+    FOCUS_MODE_MENU_OPEN: 'focus-mode-menu-open',
 
     // ---- Focus Mode (component classes used in JS for createElement.className) ----
     FOCUS_MODE_BTN: 'focus-mode-btn',
+    FOCUS_MODE_EXIT_BTN: 'focus-mode-exit-btn',
     FOCUS_MODE_MENU: 'focus-mode-menu',
     FOCUS_MODE_MENU_BTN: 'focus-mode-menu-btn',
     FOCUS_MODE_MENU_ITEM: 'focus-mode-menu-item',
@@ -1020,6 +1022,7 @@ export const DOM_IDS = Object.freeze({
     HELP_WINDOW: 'help-window',
     MAIN_MENU_BACKDROP: 'main-menu-backdrop',
     FOCUS_MODE_BTN: 'focus-mode-btn',
+    FOCUS_MODE_EXIT_BTN: 'focus-mode-exit-btn',
     FOCUS_MODE_MENU_BTN: 'focus-mode-menu-btn',
     FOCUS_MODE_MENU: 'focus-mode-menu',
     FOCUS_MODE_MODE_ITEM: 'focus-mode-mode-item',

@@ -29,6 +29,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS,
+    COLORS,
     DOM_IDS,
     DOM_SELECTORS,
     DOM_CLASSES
@@ -292,7 +293,7 @@ export class TaskUtils {
                 completed,
                 dueDate,
                 highPriority,
-                priorityColor: priorityColor || null,
+                priorityColor: priorityColor || (highPriority ? COLORS.PRIORITY_DEFAULT : null),
                 remindersEnabled,
                 recurring,
                 recurringSettings,
@@ -320,7 +321,7 @@ export class TaskUtils {
                     recurring: true,
                     recurringSettings: structuredClone(recurringSettings),
                     highPriority: highPriority || false,
-                    priorityColor: priorityColor || null,
+                    priorityColor: priorityColor || (highPriority ? COLORS.PRIORITY_DEFAULT : null),
                     dueDate: dueDate || null,
                     remindersEnabled: remindersEnabled || false,
                     deleteWhenComplete: true, // Recurring tasks always auto-remove

@@ -1050,6 +1050,11 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         updateHelpWindow: (...args) => deps.ui?.helpWindowManager?.refreshLabels?.(...args),
         showCustomizerTip: (...args) => deps.ui?.helpWindowManager?.showCustomizerTip?.(...args),
 
+        // Focus-mode action button refresh — called by themeManager when
+        // vocab theme changes so the button's data-label / aria pick up
+        // new theme values without waiting for the next mode toggle.
+        refreshFocusActionButton: (...args) => deps.ui?.focusMode?.refreshActionButton?.(...args),
+
         // Stats panel manager (from deps.ui) - returns instance when called as function
         statsPanelManager: () => deps.ui?.statsPanelManager,
 

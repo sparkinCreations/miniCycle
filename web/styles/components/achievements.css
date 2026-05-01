@@ -343,6 +343,13 @@
     cursor: grab;
 }
 
+/* Entire popup is draggable when badge is unlocked (class set by JS) */
+.badge-detail-popup.badge-interactive {
+    cursor: grab;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
 /* Badge coin */
 .badge-coin {
     width: 80px;
@@ -448,6 +455,28 @@
     margin: var(--space-3) 0 0;
     font-size: var(--font-size-xs);
     color: var(--color-primary);
+}
+
+.badge-detail-reward-btn {
+    margin: var(--space-3) auto 0;
+    display: block;
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-white);
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.badge-detail-reward-btn:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.badge-detail-reward-btn:active {
+    transform: scale(0.95);
 }
 
 /* Badge detail progress bar */
