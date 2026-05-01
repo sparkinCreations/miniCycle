@@ -1,3 +1,8 @@
+## [2.215] - 2026-05-01
+- Add minicycle_6_cycle image to product assets feat(focus-mode): redesign exit + action button, integrate vocab themes
+- chore: update version to 2.214 and reflect changes across documentation and files
+
+
 ## [2.214] - 2026-04-30
 - Add tests for menu section icons, mode radio group, and theme manager
 - fix: update terms of service for clarity and consistency in branding
