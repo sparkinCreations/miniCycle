@@ -59,6 +59,7 @@ import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, Z_INDEX } from '../core/constan
 | `LIMITS` | Size limits | `LIMITS.TASKS_PER_CYCLE` → `150` |
 | `GESTURE` | Touch/mouse gesture thresholds | `GESTURE.SWIPE_THRESHOLD` → `400` |
 | `MILESTONES` | Achievement milestone tiers | `MILESTONES.TIERS[0].cycles` → `5` |
+| `COLORS` | Default color fallbacks (CSS equivalents in variables.css) | `COLORS.PRIORITY_DEFAULT` → `'#dc3545'` |
 
 ---
 
@@ -300,6 +301,23 @@ Five achievement tiers defined in `MILESTONES.TIERS[]`:
 - 50 cycles → Scholar theme
 - 75 cycles → Cleaning theme
 - 100 cycles → Whack-a-Order game
+
+### COLORS
+Default color fallbacks for JS code. CSS equivalents live in `variables.css`.
+
+```javascript
+import { COLORS } from '../core/constants.js';
+
+// Use as last-resort fallback in the priority color resolution chain:
+// task.priorityColor → settings.priorityColor (toggle-time only) → COLORS.PRIORITY_DEFAULT
+const resolvedColor = task.priorityColor ?? COLORS.PRIORITY_DEFAULT;
+```
+
+| Constant | Value | CSS Equivalent | Purpose |
+|----------|-------|----------------|---------|
+| `PRIORITY_DEFAULT` | `'#dc3545'` | `--priority-color` | Fallback when `task.priorityColor` is absent |
+
+**Invariant:** When `task.highPriority` is `true`, `task.priorityColor` must never be `null`. This is enforced at import, boot repair, task creation, and toggle time. `COLORS.PRIORITY_DEFAULT` is the value used to backfill missing colors.
 
 ---
 

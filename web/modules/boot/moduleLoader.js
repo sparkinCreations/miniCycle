@@ -38,6 +38,7 @@ let validateCrossPhaseDeps = () => ({ valid: true, warnings: [] });
 export { MODULE_MANIFESTS, PHASES, getLoadOrder };
 
 let _manifestsLoaded = false;
+let _depMappingKeys = null; // Populated after loadAllModules — used by DI wiring tests
 
 // ============================================================================
 // APPCONTEXT DYNAMIC IMPORT
@@ -1124,6 +1125,11 @@ function buildModuleDependencies(manifest, deps, coreResult) {
 
     };
 
+    // Store keys for test verification (populated once on first module)
+    if (!_depMappingKeys) {
+        _depMappingKeys = new Set(Object.keys(depMappings));
+    }
+
     // Add required dependencies
     for (const req of manifest.requires || []) {
         if (req in depMappings) {
@@ -1410,6 +1416,14 @@ function capitalize(str) {
  * @param {string} name - Module name
  * @returns {Object|null}
  */
+/**
+ * Get the set of depMappings keys (for DI wiring tests)
+ * @returns {Set<string>|null} Keys available in depMappings, or null if boot hasn't run
+ */
+export function getDepMappingKeys() {
+    return _depMappingKeys;
+}
+
 export function getLoadedModule(name) {
     return loadedModules.get(name) || null;
 }

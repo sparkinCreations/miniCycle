@@ -430,6 +430,7 @@
             <option value="taskCycleReset">🔄 Task Cycle Reset</option>
             <option value="backupReminder">🔔 Backup Reminder</option>
             <option value="orchestrator">🎭 Orchestrator</option>
+            <option value="diWiring">🔌 DI Wiring Verification</option>
             <option value="moduleLoader">📦 Module Loader</option>
             <option value="moduleManifests">📋 Module Manifests</option>
             <option value="modalTemplates">🖼️ Modal Templates</option>
@@ -610,6 +611,7 @@
         const { runRecurringSettingsTests } = await import(`./recurringSettings.tests.js?v=${cacheBuster}`);
         const { runRecurringSettingsApplicatorTests } = await import(`./recurringSettingsApplicator.tests.js?v=${cacheBuster}`);
         const { runRecurringWatcherTests } = await import(`./recurringWatcher.tests.js?v=${cacheBuster}`);
+        const { runDIWiringTests } = await import(`./diWiring.tests.js?v=${cacheBuster}`);
 
         // 🚦 TEST MODE FLAG - Tells app to skip IndexedDB restoration after tests
         // Uses same DB as test results for simplicity
@@ -1784,8 +1786,9 @@
                     await import(`../modules/features/backupReminder.js?v=${cacheBuster}`);
                     currentModule = 'backupReminder';
                     resultsDiv.innerHTML = '<p>✅ BackupReminder loaded. Click "Run Tests" to begin.</p>';
-                } else if (['orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','nameUtils','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher'].includes(moduleName)) {
+                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','nameUtils','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher'].includes(moduleName)) {
                     const pathMap = {
+                        diWiring: '../modules/boot/moduleLoader.js',
                         orchestrator: '../modules/boot/orchestrator.js',
                         moduleLoader: '../modules/boot/moduleLoader.js',
                         moduleManifests: '../modules/boot/moduleManifests.js',
@@ -2040,6 +2043,7 @@
             } else if (currentModule === 'backupReminder') {
                 await runBackupReminderTests(resultsDiv);
             } else if (currentModule === 'orchestrator') { await runOrchestratorTests(resultsDiv);
+            } else if (currentModule === 'diWiring') { await runDIWiringTests(resultsDiv);
             } else if (currentModule === 'moduleLoader') { await runModuleLoaderTests(resultsDiv);
             } else if (currentModule === 'moduleManifests') { await runModuleManifestsTests(resultsDiv);
             } else if (currentModule === 'modalTemplates') { await runModalTemplatesTests(resultsDiv);
@@ -2590,6 +2594,7 @@
                 { name: 'TaskCycleReset', key: 'taskCycleReset', runFn: runTaskCycleResetTests, importPath: '../modules/task/taskCycleReset.js' },
                 { name: 'BackupReminder', key: 'backupReminder', runFn: runBackupReminderTests, importPath: '../modules/features/backupReminder.js' },
                 { name: 'Orchestrator', key: 'orchestrator', runFn: runOrchestratorTests, importPath: '../modules/boot/orchestrator.js' },
+                { name: 'DI Wiring Verification', key: 'diWiring', runFn: runDIWiringTests, importPath: '../modules/boot/moduleLoader.js' },
                 { name: 'ModuleLoader', key: 'moduleLoader', runFn: runModuleLoaderTests, importPath: '../modules/boot/moduleLoader.js' },
                 { name: 'ModuleManifests', key: 'moduleManifests', runFn: runModuleManifestsTests, importPath: '../modules/boot/moduleManifests.js' },
                 { name: 'ModalTemplates', key: 'modalTemplates', runFn: runModalTemplatesTests, importPath: '../modules/boot/modalTemplates.js' },

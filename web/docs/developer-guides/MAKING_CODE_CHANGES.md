@@ -182,6 +182,12 @@ setTimeout(() => {
 
 Miss any one of these and the dep silently resolves to `undefined`.
 
+### Automated Safety Net: DI Wiring Test
+
+The test suite includes `diWiring.tests.js` which verifies that **every declared dependency** (requires, optionalDeps, lazyRequires) across all module manifests has a corresponding `depMappings` or `CORE_DEPS` entry. If you add a new dep to a manifest but forget the `depMappings` entry, this test fails immediately — no more silent `undefined` from optional chaining.
+
+Run it: select **DI Wiring Verification** in the test suite module picker.
+
 ---
 
 ## Constructor Patterns

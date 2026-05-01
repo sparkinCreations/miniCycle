@@ -1,3 +1,7 @@
+## [2.216] - 2026-05-01
+- chore: update version to 2.215 and reflect changes across documentation and files
+
+
 ## [2.215] - 2026-05-01
 - Add minicycle_6_cycle image to product assets feat(focus-mode): redesign exit + action button, integrate vocab themes
 - chore: update version to 2.214 and reflect changes across documentation and files

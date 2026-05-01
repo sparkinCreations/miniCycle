@@ -137,9 +137,9 @@ document.querySelector(DATA_SELECTORS.taskById(taskId))
 
 If a selector doesn't exist yet, **add it to `constants.js`** in the appropriate section.
 
-### 5. Always Use Numeric Constants from constants.js (Z_INDEX, UI_TIMEOUTS, INTERVALS, LIMITS)
+### 5. Always Use Constants from constants.js (Z_INDEX, UI_TIMEOUTS, INTERVALS, LIMITS, COLORS)
 
-`core/constants.js` is the central home for all tunable numeric values. Modules should import from it, not hardcode numbers in their own bodies.
+`core/constants.js` is the central home for all tunable values. Modules should import from it, not hardcode numbers or colors in their own bodies.
 
 **Z-index** — both JS and CSS:
 
@@ -163,7 +163,16 @@ setInterval(fn, INTERVALS.RECURRING_WATCHER);     // repeating timers
 if (count >= LIMITS.MAX_TASKS) { ... }            // numeric caps
 ```
 
-**NEVER** hardcode `setTimeout(fn, 3000)` or `if (x > 100)` when the value is a tunable behavior knob. If the right constant doesn't exist yet, **add it to `constants.js`** in the appropriate `Object.freeze({...})` block with a comment describing what it tunes.
+**Color values:**
+
+```javascript
+import { COLORS } from '../core/constants.js';
+
+// Priority color fallback chain: task color → COLORS.PRIORITY_DEFAULT
+const resolvedColor = task.priorityColor ?? COLORS.PRIORITY_DEFAULT;
+```
+
+**NEVER** hardcode `setTimeout(fn, 3000)`, `if (x > 100)`, or `'#dc3545'` when the value is a tunable behavior knob or default color. If the right constant doesn't exist yet, **add it to `constants.js`** in the appropriate `Object.freeze({...})` block with a comment describing what it tunes.
 
 **Exception:** truly local values that aren't user-tunable (e.g., a 5px tap-vs-drag threshold inside a single drag handler) can stay inline — but err on the side of centralizing.
 
@@ -278,7 +287,7 @@ orchestrator.js (sequence control + boot UI + early boot coordination)
 2. **Spreading deps with getters** — Use `Object.defineProperties`, not `{ ...deps }`.
 3. **Hardcoding strings** — Use `getLabel()`. Add missing keys to `defaultLabels.js`.
 4. **Hardcoding selectors** — Use `DOM_IDS`, `DOM_SELECTORS`, `DATA_SELECTORS` from constants.js.
-5. **Hardcoding z-index or timing values** — Use `Z_INDEX`, `UI_TIMEOUTS`, `BOOT_TIMEOUTS`, `INTERVALS`, `LIMITS` from constants.js (or `var(--z-*)` CSS variables for z-index in CSS). Magic-number `setTimeout`s and thresholds belong in the appropriate constant block.
+5. **Hardcoding z-index, timing, or color values** — Use `Z_INDEX`, `UI_TIMEOUTS`, `BOOT_TIMEOUTS`, `INTERVALS`, `LIMITS`, `COLORS` from constants.js (or `var(--z-*)` CSS variables for z-index in CSS). Magic-number `setTimeout`s, thresholds, and default colors belong in the appropriate constant block.
 6. **Forgetting listener cleanup** — Every addEventListener needs a corresponding removeEventListener path. Modules with listeners/timers should implement `destroy()` — it's called automatically on boot retry via `destroyAllModules()`.
 7. **Using innerHTML with user data** — Use `textContent`. Only use innerHTML for trusted static content.
 8. **Creating instances before wiring deps** — Always call `setModuleDependencies()` first.

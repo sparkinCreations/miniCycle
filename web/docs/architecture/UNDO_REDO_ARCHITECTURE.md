@@ -323,7 +323,7 @@ function filterValidSnapshots(snapshots, cycleId) {
 
 1. **On cycle switch** - Loaded stacks are validated before populating in-memory state
 2. **On cache load** - localStorage cache is validated before use
-3. **On snapshot capture** - Cycle mismatch check prevents capturing for wrong cycle
+3. **On snapshot capture** - Cycle mismatch self-heals by calling `onCycleSwitched()` to re-target the correct cycle
 
 ### Why Validation Matters
 
@@ -823,6 +823,12 @@ console.log(JSON.parse(cache));
 - This can happen if routineSwitcher (phase 5) tries to call before undoRedoManager (phase 6) loads
 - Solution: Lazy getters in moduleLoader.js resolve at runtime, not initialization
 - Check console for "Cleared undo stack, active ID, and cache" log after switching
+
+**Cycle mismatch self-heal (fixed April 2026):**
+- If `activeCycleIdForUndo` becomes stale (e.g., boot timing, missed `onCycleSwitched` call), `captureStateSnapshot()` detects the mismatch and calls `onCycleSwitched(activeCycle)` to self-correct
+- Previously, the mismatch check only warned and returned — permanently disabling undo for the session
+- The self-heal saves old cycle stacks to IndexedDB, clears in-memory state, loads correct cycle's stacks, and re-enables snapshot capture
+- Console shows: `⚠️ Cycle mismatch: was tracking "X", correcting to "Y"`
 
 **Clear Undo History button does nothing (fixed March 2026):**
 - Root cause: `clearAllUndoHistory` was in the manifest's `provides` and the consumer's `optionalDeps`, but missing from `depMappings` in `moduleLoader.js`
