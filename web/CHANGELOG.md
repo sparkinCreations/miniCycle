@@ -1,3 +1,8 @@
+## [2.221] - 2026-05-03
+- fix: remove priorityColor field from tasks and correct createdAt timestamp
+- feat: add manual cycle mode constant and update related dependencies
+
+
 ## [2.220] - 2026-05-03
 - feat: update app version to 2.219 and reflect changes across documentation and files
 

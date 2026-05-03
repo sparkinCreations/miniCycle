@@ -88,10 +88,19 @@ export class GuidedTourManager {
     /**
      * Active tour's steps (getter replaces former _steps field).
      * All rendering/navigation code references this transparently.
+     * When a tour is running, returns the filtered list so progress
+     * counts reflect only steps that will actually be shown.
      */
     get _steps() {
+        if (this._filteredSteps) return this._filteredSteps;
         const tourId = this._activeTourId || 'main';
         return this._tours.get(tourId)?.steps || [];
+    }
+
+    _isStepAvailable(step) {
+        if (!this._resolveTarget(step)) return false;
+        if (typeof step.onEnter === 'function' && step.onEnter() === 'skip') return false;
+        return true;
     }
 
     /**
@@ -689,6 +698,8 @@ export class GuidedTourManager {
      * @returns {boolean} Whether the tour was successfully started
      */
     startTour(tourId = 'main') {
+        if (!this.initialized) return false;
+
         if (this._scheduleTimeout) {
             clearTimeout(this._scheduleTimeout);
             this._scheduleTimeout = null;
@@ -716,6 +727,17 @@ export class GuidedTourManager {
         }
 
         this._activeTourId = tourId;
+
+        // Filter out steps whose targets are missing or whose onEnter() returns 'skip'
+        // so progress count and prev/next reflect only steps that will actually display.
+        const filteredSteps = (tourDef?.steps || []).filter(step => this._isStepAvailable(step));
+        if (filteredSteps.length === 0) {
+            this._markDone();
+            this._activeTourId = null;
+            return false;
+        }
+        this._filteredSteps = filteredSteps;
+
         this._active = true;
         this._previousFocus = this.deps.getActiveElement();
         this.deps.getRootElement?.()?.setAttribute(TOUR_ACTIVE_ATTR, 'true');
@@ -797,8 +819,6 @@ export class GuidedTourManager {
      */
     nextStep() {
         if (!this._active) return;
-
-        this._steps[this._currentStepIndex]?.onExit?.();
 
         if (this._currentStepIndex >= this._steps.length - 1) {
             this.completeTour();
@@ -1745,6 +1765,7 @@ export class GuidedTourManager {
         this._active = false;
         this._currentStepIndex = 0;
         this._activeTourId = null;
+        this._filteredSteps = null;
 
         this.deps.getRootElement?.()?.removeAttribute(TOUR_ACTIVE_ATTR);
 

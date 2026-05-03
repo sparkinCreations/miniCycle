@@ -1,3 +1,8 @@
+html[data-tour-active],
+html[data-tour-active] body {
+    overflow: hidden;
+}
+
 .tour-overlay {
     position: fixed;
     inset: 0;
