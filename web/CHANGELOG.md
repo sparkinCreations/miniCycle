@@ -1,3 +1,8 @@
+## [2.217] - 2026-05-02
+- Add new images and study routines for calculus and cleaning tasks
+- feat: update app version to 2.216 and reflect changes across documentation and files
+
+
 ## [2.216] - 2026-05-01
 - chore: update version to 2.215 and reflect changes across documentation and files
 
