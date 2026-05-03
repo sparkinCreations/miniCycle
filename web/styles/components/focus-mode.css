@@ -146,6 +146,20 @@ body.focus-mode #help-window h4 {
     color: var(--color-white);
 }
 
+/* Routine title — strip the silver/glass background, border, blur, and
+   shadow so it reads as a flat title against the dimmed focus-mode
+   backdrop. Color is intentionally NOT overridden here — the
+   preference-color rule in task-list.css (specificity 0,4,1) wins, so
+   themes/user prefs can still drive the text color. */
+body.focus-mode .task-card .mini-cycle-title {
+    background: transparent;
+    background-color: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border: none;
+    box-shadow: none;
+}
+
 /* Help-window clearance — focus-mode override (mobile/tablet only).
    Normal-mode margin-bottom (--help-window-clearance) is calibrated against
    the original #footer-container layout. In focus mode #nav-dots is
@@ -520,12 +534,16 @@ body.focus-mode #nav-dots::before {
     display: none;
 }
 
-/* Reshape the dot buttons as text labels */
+/* Reshape the dot buttons as text labels.
+   padding-bottom is bumped (was 6px) to reserve space for the active-tab
+   dot indicator (drawn via background-image on .active below). Both tabs
+   get the extra padding so they stay equal-height regardless of which is
+   active — otherwise the inactive tab would visually shift up. */
 body.focus-mode #nav-dots .dot {
     width: auto;
     height: auto;
     margin: 0;
-    padding: 6px 12px;
+    padding: 6px 12px 12px;
     border-radius: var(--radius-sm);
     color: var(--color-white);
     font-size: var(--font-size-sm);
@@ -535,6 +553,23 @@ body.focus-mode #nav-dots .dot {
     text-align: center;
     justify-content: center;
     transition: opacity var(--transition-normal) ease;
+}
+
+/* Active-tab dot indicator — small white circle ~4px below the text.
+   Drawn via background-image (radial-gradient) so it doesn't conflict
+   with ::after (which holds the "|" separator on Routine). */
+body.focus-mode #nav-dots .dot.active {
+    background-image: radial-gradient(circle 2px, rgba(255, 255, 255, 0.95) 100%, transparent 0);
+    background-position: center calc(100% - 4px);
+    background-repeat: no-repeat;
+    background-size: 4px 4px;
+}
+
+/* Stats has padding-left: 0 (to balance the "|" separator on Routine),
+   which shifts its text 6px left of the button center. Without this
+   override the dot appears too far right relative to the text. */
+body.focus-mode #nav-dots .dot[aria-controls="stats-panel"].active {
+    background-position: calc(50% - 6px) calc(100% - 4px);
 }
 
 /* Neutralize the original 7px circle on ::after */
@@ -812,11 +847,24 @@ body.focus-mode #complete-all-and-help-window-container {
     }
 
     body.focus-mode #nav-dots .dot {
-        padding: 10px 14px;
+        padding: 10px 14px 16px;  /* extra bottom for active-tab dot indicator */
         font-size: var(--font-size-base);
         min-height: 44px;
         display: inline-flex;
         align-items: center;
+    }
+
+    /* Mobile dot indicator sits a touch lower (and slightly larger) since the
+       button is taller and the text is centered via flex align-items. */
+    body.focus-mode #nav-dots .dot.active {
+        background-position: center calc(100% - 5px);
+        background-size: 5px 5px;
+        background-image: radial-gradient(circle 2.5px, rgba(255, 255, 255, 0.95) 100%, transparent 0);
+    }
+
+    /* Stats-side offset (mobile padding is 14px right, 0 left → 7px shift). */
+    body.focus-mode #nav-dots .dot[aria-controls="stats-panel"].active {
+        background-position: calc(50% - 7px) calc(100% - 5px);
     }
 
     body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {

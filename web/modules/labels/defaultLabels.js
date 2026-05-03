@@ -352,6 +352,10 @@ export const DEFAULT_LABELS = deepFreeze({
         priorityColorSaved:     'Priority color saved',
         taskInputShown:         'Add tasks using the input bar. Press + to hide it when you\'re done.',
         taskInputHidden:        'Task input hidden. Press + to show it again.',
+        // Focus-mode variants — the + button is hidden in focus mode, so
+        // the user toggles via the ⋯ menu in the top-right corner instead.
+        taskInputShownFocus:    'Add tasks using the input bar. Press the ⋯ menu above to hide it when you\'re done.',
+        taskInputHiddenFocus:   'Task input hidden. Press the ⋯ menu above to show it again.',
         taskSystemLimited:      'Task system initialized with limited functionality',
         taskDisplayLimited:     'Task display may not work properly',
         featureUnavailable:     'Feature temporarily unavailable',

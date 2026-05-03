@@ -2,10 +2,10 @@
 
 > **How miniCycle handles your data**
 
-**Effective Date:** November 13, 2025
-**Last Updated:** April 28, 2026
-**Version:** 2.1
-**miniCycle Version:** 2.208
+**Effective Date:** October 2, 2025
+**Last Updated:** May 2, 2026
+**Version:** 2.5
+**miniCycle Version:** 2.216
 
 ---
 
@@ -13,12 +13,12 @@
 
 **The miniCycle app collects ZERO data.** All your task data, settings, and history stay on your device. The app makes no analytics, telemetry, or tracking calls.
 
-**The miniCycle marketing pages** (product page and learn-more page) use a small self-hosted counter to record button clicks and page views in aggregate — no cookies, no IP addresses, no personal data, no third-party services. See "Analytics & Tracking" below for the full disclosure.
+**The miniCycle marketing pages** (product page and learn-more page) use a small self-hosted counter to record button clicks and page views in aggregate — no cookies, no stored IP addresses, no personal data, no third-party analytics, and no advertising trackers. See "Analytics & Tracking" below for the full disclosure.
 
 - ✅ The app: 100% local, zero data collection
 - ✅ No accounts, no authentication, no registration
 - ✅ No cookies anywhere
-- ⚠️ Marketing pages only: anonymous click & page-view counts (no PII, no cookies, no IPs stored)
+- ⚠️ Marketing pages only: anonymous click & page-view counts (no PII, no cookies, no IPs stored, no third-party analytics or ad trackers)
 
 ---
 
@@ -289,17 +289,16 @@ miniCycle is designed to respect privacy laws worldwide. The app collects no per
 
 ### How We Notify
 
-If this policy changes:
+If this policy changes, please refer to the changelog at [minicycleapp.com](https://minicycleapp.com). We will:
 
-1. Update this document
-2. Update "Last Updated" date
-3. Announce in release notes
-4. GitHub notification
+1. Post the change in the changelog on the product page at [minicycleapp.com](https://minicycleapp.com)
+2. Update this document and the "Last Updated" date at the top of the policy
+3. Document the change in the project CHANGELOG
 
-**Major changes** (e.g., introducing analytics):
-- Require user opt-in
-- Clearly communicated
-- Documented in CHANGELOG
+**Material changes** (e.g., introducing analytics or any new data collection):
+
+- Require explicit user opt-in
+- Are documented in the changelog
 
 ---
 
@@ -307,8 +306,7 @@ If this policy changes:
 
 ### Privacy Questions
 
-- **GitHub Issues:** Privacy-related questions
-- **Email:** privacy@minicycle.app (if available)
+- **Email:** [admin@sparkinCreations.com](mailto:admin@sparkinCreations.com)
 
 ### Data Requests
 
@@ -318,25 +316,6 @@ Since we don't collect data, we can't:
 - Correct data we don't keep
 
 **You have all your data** in your browser.
-
----
-
-## Self-Hosting
-
-### Privacy for Self-Hosters
-
-If you self-host miniCycle:
-
-**You are responsible for:**
-- Server logs (may contain IP addresses)
-- Access controls
-- TLS/SSL certificates
-- Privacy policy for your users
-
-**miniCycle itself still:**
-- Doesn't collect data
-- Doesn't transmit data
-- Stores everything locally
 
 ---
 
@@ -399,7 +378,7 @@ The product page and learn-more page run a small self-hosted counter to help us 
 
 **Storage:** Counter data lives in Netlify Blobs on our own infrastructure. No third-party analytics services (Google Analytics, Firebase, Sentry, etc.) are involved.
 
-**Hosting provider note:** Like most websites, our hosting provider may process standard technical request data needed to deliver the site. miniCycle does not access that hosting data. Our marketing pages use anonymous aggregate counters for page views and button clicks, but we do not track individual visitors, build user profiles, use cookies, fingerprint browsers, or connect events to a specific person or session.
+**Hosting provider note:** Every website on the internet relies on a hosting provider, and as part of delivering pages they routinely process standard technical request data — this is true of any site you visit. miniCycle is no different in that respect, and we do not access or use that hosting data. The only tracking miniCycle itself performs is the anonymous click and page-view counter on the product and learn-more pages. We do not track individual visitors, build user profiles, use cookies, fingerprint browsers, or connect events to a specific person or session.
 
 **Exception:** GitHub (if you visit our repo) has its own analytics. We don't control that.
 
@@ -435,14 +414,13 @@ If we add cloud sync (optional):
 
 ## Transparency
 
-### Open Source
+### Source-Available
 
-miniCycle is open source:
+miniCycle's source code is publicly viewable for verification and educational purposes under a proprietary license (see [LICENSE](../../../LICENSE)):
 
 - **Code is public** - Verify our claims
 - **No hidden behavior** - Audit yourself
-- **Community reviewed** - Others check it
-- **Forkable** - Run your own version
+- **Independently reviewable** - Others can inspect it
 
 **See for yourself:** Browse the code on GitHub.
 
@@ -461,7 +439,6 @@ miniCycle is open source:
 | **Third-party Scripts** | No | Yes | Yes | Yes |
 | **Ad Tracking** | No | Free tier: Yes | No | No |
 | **Data Portability** | Yes | Limited | Limited | Limited |
-| **Self-Hostable** | Yes | No | No | No |
 
 ---
 
@@ -480,9 +457,9 @@ miniCycle is open source:
 
 ---
 
-**Privacy Policy Version:** 2.1
-**Effective Date:** November 13, 2025
-**Last Updated:** April 28, 2026
-**miniCycle Version:** 2.208
+**Privacy Policy Version:** 2.5
+**Effective Date:** October 2, 2025
+**Last Updated:** May 2, 2026
+**miniCycle Version:** 2.216
 
 *Your privacy is our priority. Always has been, always will be.*

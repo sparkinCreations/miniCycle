@@ -869,8 +869,14 @@ export class ModeManager {
                 }
 
                 if (this.deps.showNotification) {
+                    // Focus mode hides the + button, so its variant of the
+                    // notification points to the ⋯ menu instead.
+                    const inFocusMode = document.body.classList.contains(DOM_CLASSES.FOCUS_MODE);
+                    const labelKey = newVisible
+                        ? (inFocusMode ? 'notify.taskInputShownFocus' : 'notify.taskInputShown')
+                        : (inFocusMode ? 'notify.taskInputHiddenFocus' : 'notify.taskInputHidden');
                     this.deps.showNotification(
-                        getLabel(newVisible ? 'notify.taskInputShown' : 'notify.taskInputHidden'),
+                        getLabel(labelKey),
                         'info',
                         UI_TIMEOUTS.NOTIFICATION_EXTENDED
                     );

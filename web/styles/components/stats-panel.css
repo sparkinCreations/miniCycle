@@ -9,7 +9,7 @@
 
 .stats-panel {
     position: fixed;
-    top: 47%;
+    top: 52%;
     left: 50%;
     transform: translate(200%, -50%);
     transition: transform var(--animation-pop) ease-in-out, opacity var(--animation-pop) ease-in-out;
@@ -52,6 +52,18 @@
     transform: translateX(200%) translateY(-50%);
     opacity: 0;
     pointer-events: none;
+}
+
+/* Focus mode hides the fixed header, so the stats panel can sit higher
+   without crowding any chrome. Override the normal-mode top values
+   (which are calibrated against the visible header). */
+body.focus-mode .stats-panel {
+    top: 47%;
+}
+@media (max-width: 768px) {
+    body.focus-mode .stats-panel {
+        top: 51%;
+    }
 }
 
 /* =============================================================================
@@ -142,7 +154,7 @@
 @media (max-width: 768px) {
     .stats-panel {
         width: 90vw;
-        top: 51%; /* Center pushed down a touch so top edge clears the fixed header */
+        top: 55%; /* Center pushed down so top edge clears the fixed header */
         max-height: 54vh; /* Bottom edge stays above nav dots on small phones */
         padding: var(--space-2) 10px;
     }

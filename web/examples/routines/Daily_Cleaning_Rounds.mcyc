@@ -1,0 +1,295 @@
+{
+  "name": "cycle_cleaning_rounds_1777640993196",
+  "title": "🧽 Daily Cleaning Rounds",
+  "tasks": [
+    {
+      "id": "clean-task-01",
+      "text": "Check assigned areas",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "clean-task-02",
+      "text": "Gather cart, supplies, and PPE",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "clean-task-03",
+      "text": "Place wet floor signs if needed",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "clean-task-04",
+      "text": "Empty trash and replace liners",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "clean-task-05",
+      "text": "Wipe door handles and push plates",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "clean-task-06",
+      "text": "Disinfect high-touch surfaces",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "clean-task-07",
+      "text": "Spot clean glass and mirrors",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "clean-task-08",
+      "text": "Clean restroom sinks and counters",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "clean-task-09",
+      "text": "Clean toilets and urinals",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "clean-task-10",
+      "text": "Restock soap and paper supplies",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "clean-task-11",
+      "text": "Sweep or vacuum visible debris",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "clean-task-12",
+      "text": "Mop spills and sticky spots",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "clean-task-13",
+      "text": "Check breakroom counters and sink",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "clean-task-14",
+      "text": "Remove loose boxes or clutter",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "clean-task-15",
+      "text": "Report damage or safety issues",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "clean-task-16",
+      "text": "Log round as completed",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    }
+  ],
+  "autoReset": true,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false,
+  "createdAt": 1777640993196,
+  "taskOptionButtons": null,
+  "recurringTemplates": {},
+  "reminders": null,
+  "theme": "classic",
+  "history": {
+    "events": [],
+    "maxEvents": 100
+  },
+  "clearedTasks": {
+    "entries": [],
+    "totalCleared": 0,
+    "autoPruneEnabled": true
+  }
+}

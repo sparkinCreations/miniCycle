@@ -15,15 +15,15 @@
     <h1>🔐 Security Policy for miniCycle</h1>
 
     <div class="section">
-      <p><strong>Last Updated:</strong> February 16, 2026</p>
-      <p><strong>Version:</strong> 1.0</p>
+      <p><strong>Last Updated:</strong> May 2, 2026</p>
+      <p><strong>Version:</strong> 1.1</p>
     </div>
 
     <div class="section">
       <h2>Reporting a Vulnerability</h2>
       <p>If you discover a security vulnerability in miniCycle, please report it responsibly:</p>
       <ul>
-        <li><strong>Email:</strong> <a href="mailto:admin@sparkincreations.com">admin@sparkincreations.com</a></li>
+        <li><strong>Email:</strong> <a href="mailto:admin@sparkinCreations.com">admin@sparkinCreations.com</a></li>
         <li><strong>Subject line:</strong> <code>[SECURITY] miniCycle vulnerability report</code></li>
       </ul>
       <p><strong>Please do not</strong> open a public GitHub issue for security vulnerabilities. Use email for responsible disclosure.</p>
@@ -57,8 +57,8 @@
         <li><strong>Content Security Policy (CSP)</strong> — Strict script and resource loading rules with SHA-256 hashes for inline scripts</li>
         <li><strong>XSS Protection</strong> — Input sanitization and HTML escaping across all user-facing outputs</li>
         <li><strong>Security Headers</strong> — X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, and HSTS</li>
-        <li><strong>No External Dependencies</strong> — Self-hosted fonts and assets; no third-party scripts except contact form submission</li>
-        <li><strong>Import Validation</strong> — Imported .mcyc files are sanitized and validated before processing</li>
+        <li><strong>No External Dependencies</strong> — Self-hosted fonts, assets, and scripts; no third-party analytics, advertising, or tracking libraries. Marketing pages post anonymous click and page-view events to a self-hosted Netlify Function on our own infrastructure</li>
+        <li><strong>Import Validation</strong> — Imported .mcyc files are validated, sanitized, and rejected when they do not match miniCycle's expected structure. As a general best practice, only import routine files from people you trust</li>
         <li><strong>Local-Only Data</strong> — All user data stored in browser localStorage; no server-side storage or transmission</li>
       </ul>
     </div>
