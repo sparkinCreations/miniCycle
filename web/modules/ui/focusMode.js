@@ -650,11 +650,33 @@ export class FocusMode {
         let mode = modeOverride;
         if (!mode) {
             const body = this.deps.getBody?.();
-            mode = body?.classList.contains(DOM_CLASSES.TODO_MODE_MODE)
-                ? 'todo-mode'
-                : body?.classList.contains(DOM_CLASSES.AUTO_CYCLE_MODE)
-                    ? 'auto-cycle'
-                    : 'manual-cycle';
+            const hasTodo = body?.classList.contains(DOM_CLASSES.TODO_MODE_MODE);
+            const hasAuto = body?.classList.contains(DOM_CLASSES.AUTO_CYCLE_MODE);
+            // Manual-cycle has no constant; check the literal class.
+            const hasManual = body?.classList.contains('manual-cycle-mode');
+            if (hasTodo) {
+                mode = 'todo-mode';
+            } else if (hasAuto) {
+                mode = 'auto-cycle';
+            } else if (hasManual) {
+                mode = 'manual-cycle';
+            } else {
+                // Boot-time race: focusMode.activate() (restoring saved state)
+                // can run before modeManager.syncModeFromToggles() applies the
+                // body class. Reading the body would silently fall through to
+                // 'manual-cycle' and label the button "Cycle" even in to-do
+                // mode. Fall back to AppState — the persisted source of truth.
+                const state = this.deps.AppState?.get?.();
+                const cycleId = state?.appState?.activeCycleId;
+                const cycle = cycleId ? state?.data?.cycles?.[cycleId] : null;
+                if (cycle?.deleteCheckedTasks) {
+                    mode = 'todo-mode';
+                } else if (cycle?.autoReset) {
+                    mode = 'auto-cycle';
+                } else {
+                    mode = 'manual-cycle';
+                }
+            }
         }
         if (mode === 'todo-mode') {
             this._button.title = getLabel('focusMode.clearActionTitle');
