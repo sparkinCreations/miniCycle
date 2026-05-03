@@ -8,7 +8,6 @@
       "completed": false,
       "dueDate": null,
       "highPriority": false,
-      "priorityColor": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
@@ -25,7 +24,6 @@
       "completed": false,
       "dueDate": null,
       "highPriority": false,
-      "priorityColor": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
@@ -42,7 +40,6 @@
       "completed": false,
       "dueDate": null,
       "highPriority": false,
-      "priorityColor": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
@@ -68,8 +65,7 @@
     "frequencyUnit": "minutes",
     "customMessages": []
   },
-  "autoUncheckDaily": null,
-  "createdAt": 1777780934488,
+  "createdAt": 1777782939936,
   "theme": "classic",
   "history": null,
   "clearedTasks": null
