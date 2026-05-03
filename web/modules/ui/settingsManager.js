@@ -58,6 +58,7 @@ const di = createDIModule('SettingsManager', {
     loadMiniCycle: optional(null),
     showLoader: optional(null),
     hideLoader: optional(null),
+    onCycleCreated: optional(null),
     showPromptModal: optional(null)
 });
 
@@ -222,7 +223,8 @@ function wireSubModuleDependencies(dependencies) {
         vocabThemeManager: dependencies.vocabThemeManager,
         loadMiniCycle: dependencies.loadMiniCycle,
         showLoader: dependencies.showLoader,
-        hideLoader: dependencies.hideLoader
+        hideLoader: dependencies.hideLoader,
+        onCycleCreated: dependencies.onCycleCreated
     });
 
     _subModules.setBackupRestoreManagerDependencies({

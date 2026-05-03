@@ -31,6 +31,7 @@ const di = createDIModule('HistoryManager', {
     showConfirmationModal: optional(null),
     clearedTasksManager: optional(null),
     updateStatsPanel: optional(null),
+    updateHelpWindow: optional(null),
     addTask: optional(null),
     showHistoryTourNotification: optional(null),
     showClearedTasksTourNotification: optional(null)
@@ -211,6 +212,9 @@ export class HistoryManager {
             if (this.deps.updateStatsPanel) {
                 this.deps.updateStatsPanel();
             }
+
+            // Refresh help window so cycle count / status reflects the reset
+            this.deps.updateHelpWindow?.();
         };
 
         const confirmModal = this.deps.showConfirmationModal;

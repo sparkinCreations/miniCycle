@@ -652,8 +652,7 @@ export class FocusMode {
             const body = this.deps.getBody?.();
             const hasTodo = body?.classList.contains(DOM_CLASSES.TODO_MODE_MODE);
             const hasAuto = body?.classList.contains(DOM_CLASSES.AUTO_CYCLE_MODE);
-            // Manual-cycle has no constant; check the literal class.
-            const hasManual = body?.classList.contains('manual-cycle-mode');
+            const hasManual = body?.classList.contains(DOM_CLASSES.MANUAL_CYCLE_MODE);
             if (hasTodo) {
                 mode = 'todo-mode';
             } else if (hasAuto) {

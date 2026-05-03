@@ -555,6 +555,7 @@ export const DOM_CLASSES = Object.freeze({
 
     // ---- Mode Buttons ----
     AUTO_CYCLE_MODE: 'auto-cycle-mode',
+    MANUAL_CYCLE_MODE: 'manual-cycle-mode',
     TODO_MODE_MODE: 'todo-mode-mode',
     TODO_MODE_BTN: 'todo-mode-btn',
     CYCLE_MODE_BTN: 'cycle-mode-btn',

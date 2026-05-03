@@ -37,7 +37,8 @@ const di = createDIModule('CycleImportManager', {
     vocabThemeManager: optional(null),  // For theme validation during import
     loadMiniCycle: optional(null),  // For in-place UI refresh after import (replaces location.reload)
     showLoader: optional(null),  // Loading overlay from uiBoot
-    hideLoader: optional(null)   // Loading overlay from uiBoot
+    hideLoader: optional(null),   // Loading overlay from uiBoot
+    onCycleCreated: optional(null)  // Initializes per-cycle undo stacks for the imported routine
 });
 
 /** @type {{AppState: Object, showNotification: Function, safeAddEventListener: Function, DataValidator: Object|null, calculateNextOccurrence: Function|null, AppMeta: Object|null}} */
@@ -737,6 +738,17 @@ export async function processImportedData(fileContent) {
         state.metadata.lastModified = Date.now();
         state.metadata.totalCyclesCreated++;
     }, true); // immediate save
+
+    // Initialize empty undo stacks for the imported cycle and reset the
+    // in-memory active stack. Without this, the previous routine's undo
+    // history bleeds into the imported routine — clicking Undo would pop
+    // a snapshot from the old cycle and switch the user back to it.
+    // Same pattern routineManager uses after creating a new routine.
+    if (typeof _deps.onCycleCreated === 'function') {
+        _deps.onCycleCreated(finalCycleTitle).catch(err => {
+            console.warn('Failed to initialize undo stack for imported cycle:', err);
+        });
+    }
 
     const recurringCount = Object.keys(recurringTemplates).length;
 
