@@ -1,3 +1,7 @@
+## [2.222] - 2026-05-03
+- feat: enhance guided tour functionality with step filtering and CSS adjustments
+
+
 ## [2.221] - 2026-05-03
 - fix: remove priorityColor field from tasks and correct createdAt timestamp
 - feat: add manual cycle mode constant and update related dependencies

@@ -1201,7 +1201,7 @@ export const DEFAULT_LABELS = deepFreeze({
         done:            'Done',
         stepOf:          '{current} of {total}',
         step1:           'Switch between Auto Cycle, Manual, and To-Do modes to match your workflow.',
-        step2:           'Minimize distractions — Focus Mode hides everything except your tasks.',
+        step2:           'Minimize distractions — Focus View hides everything except your tasks.',
         step3:           'Your at-a-glance status — shows the current mode, tasks remaining, and tips.',
         step4:           'Customize your colors, background image, and theme. The dark mode toggle is on the opposite side.',
         step5:           'Switch between your routines — each has its own tasks and cycle count.',
@@ -1398,26 +1398,28 @@ export const DEFAULT_LABELS = deepFreeze({
     },
 
     // ========================================================================
-    // 18b. FOCUS MODE
+    // 18b. FOCUS VIEW
+    // (Label keys keep the `focusMode` namespace for code-stability;
+    //  user-facing strings say "Focus View".)
     // ========================================================================
 
     focusMode: {
-        enter:          'Focus Mode',
+        enter:          'Focus View',
         enterTitle:     'Hide distractions and focus on tasks',
-        exit:           'Exit Focus Mode',
-        exitTitle:      'Show all UI elements',
-        enterAria:      'Enter focus mode — hides header, navigation, and other UI elements',
-        exitAria:       'Exit focus mode — restores all UI elements',
-        activated:      'Focus mode activated',
-        deactivated:    'Focus mode deactivated',
-        menuTitle:      'Focus mode actions',
-        menuAria:       'Open focus mode actions menu',
+        exit:           'Exit Focus View',
+        exitTitle:      'Return to Home View',
+        enterAria:      'Enter Focus View — hides header, navigation, and other UI elements',
+        exitAria:       'Exit Focus View — return to Home View',
+        activated:      'Focus View activated',
+        deactivated:    'Back in Home View',
+        menuTitle:      'Focus View actions',
+        menuAria:       'Open Focus View actions menu',
         switchRoutines: 'Switch routines',
         createRoutine:  'Create new routine',
         toggleInputBar: 'Show/hide input bar',
         uncheckAll:     'Uncheck all',
         deleteAll:      'Delete all',
-        exitItem:       'Exit focus mode',
+        exitItem:       'Exit Focus View',
         modeItemPrefix: 'Mode',
         modeAutoName:   'Auto Cycle',
         modeManualName: 'Manual Cycle',
@@ -1444,6 +1446,18 @@ export const DEFAULT_LABELS = deepFreeze({
         clearActionLabel: 'Clear\nTasks',
         clearActionTitle: 'Clear completed tasks',
         clearActionAria:  'Clear all completed tasks'
+    },
+
+    // ========================================================================
+    // 18c. HOME VIEW
+    // The default home of the app — paired with Focus View. Use these
+    // strings whenever copy needs to point at the non-focus state by name.
+    // ========================================================================
+
+    homeView: {
+        name:           'Home View',
+        backToHome:     'Back to Home View',
+        backToHomeAria: 'Return to Home View'
     },
 
     // ========================================================================
