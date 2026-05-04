@@ -1203,6 +1203,112 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         }
     });
 
+    // === preloadInitialRunCycle (focus-first onboarding) ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🚀 preloadInitialRunCycle</h4>';
+
+    await test('preloadInitialRunCycle fetches from examples/initial-run/ and skips success toast', async () => {
+        const originalFetch = window.fetch;
+        const fetchCalls = [];
+        let toastShown = false;
+
+        window.fetch = async (url) => {
+            fetchCalls.push(url);
+            if (url.includes('initial-run/Your_First_Routine.mcyc')) {
+                return new Response(JSON.stringify({
+                    name: 'Your First Routine',
+                    title: 'Your First Routine',
+                    tasks: [{ id: 't1', text: 'sample', completed: false, schemaVersion: 2 }],
+                    showTaskInput: true,
+                    autoReset: true,
+                    cycleCount: 0
+                }), { status: 200 });
+            }
+            return new Response('not found', { status: 404 });
+        };
+
+        try {
+            const deps = createValidDeps({
+                showNotification: () => { toastShown = true; },
+                loadMiniCycle: () => {},
+                hideMainMenu: () => {},
+                updateMainMenuHeader: () => {},
+                updateProgressBar: () => {},
+                checkCompleteAllButton: () => {},
+                refreshThemeLabels: () => {}
+            });
+            const instance = new RoutineManager(deps);
+
+            const result = await instance.preloadInitialRunCycle();
+
+            if (!result) throw new Error('preloadInitialRunCycle should return true on success');
+            const fetchedInitialRun = fetchCalls.some(u => u.includes('initial-run/Your_First_Routine.mcyc'));
+            if (!fetchedInitialRun) throw new Error(`Did not fetch from initial-run/. Calls: ${JSON.stringify(fetchCalls)}`);
+            if (toastShown) throw new Error('silent option should suppress success toast');
+        } finally {
+            window.fetch = originalFetch;
+        }
+    });
+
+    await test('preloadInitialRunCycle passes showTaskInput from file into cycle state', async () => {
+        const originalFetch = window.fetch;
+        let savedState = null;
+
+        window.fetch = async () => new Response(JSON.stringify({
+            name: 'Your First Routine',
+            title: 'Your First Routine',
+            tasks: [],
+            showTaskInput: true,
+            autoReset: true
+        }), { status: 200 });
+
+        try {
+            const mockState = createMockSchemaData();
+            mockState.data.cycles = {};
+            const deps = createValidDeps({
+                AppState: {
+                    isReady: () => true,
+                    get: () => mockState,
+                    update: (fn) => { fn(mockState); savedState = mockState; return mockState; },
+                    isInitialized: true
+                },
+                loadMiniCycle: () => {},
+                hideMainMenu: () => {},
+                updateMainMenuHeader: () => {},
+                updateProgressBar: () => {},
+                checkCompleteAllButton: () => {},
+                refreshThemeLabels: () => {}
+            });
+            const instance = new RoutineManager(deps);
+
+            await instance.preloadInitialRunCycle();
+
+            const cycles = Object.values(savedState?.data?.cycles || {});
+            if (cycles.length === 0) throw new Error('No cycle was created');
+            const created = cycles[0];
+            if (created.showTaskInput !== true) {
+                throw new Error(`showTaskInput should be true on the created cycle, got ${created.showTaskInput}`);
+            }
+        } finally {
+            window.fetch = originalFetch;
+        }
+    });
+
+    await test('preloadInitialRunCycle returns false when fetch fails', async () => {
+        const originalFetch = window.fetch;
+        window.fetch = async () => new Response('not found', { status: 404 });
+
+        try {
+            const deps = createValidDeps();
+            const instance = new RoutineManager(deps);
+
+            const result = await instance.preloadInitialRunCycle();
+
+            if (result !== false) throw new Error('preloadInitialRunCycle should return false on fetch failure');
+        } finally {
+            window.fetch = originalFetch;
+        }
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

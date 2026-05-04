@@ -111,6 +111,20 @@ export const UI_TIMEOUTS = Object.freeze({
     NOTIFICATION_RESUME_MIN: 1000, // 1000ms - Minimum time after hover/interaction before auto-dismiss
     CELEBRATION_DELAY: 1800,       // 1800ms - Delay before showing celebration overlay (lets reset animation play first)
     TOOLTIP_HIDE: 3000,            // 3000ms - Tooltip auto-hide delay
+    FIRST_RUN_WELCOME_SLIDE_HOLD: 8000,    // 8000ms - How long each first-run welcome banner slide is visible before auto-advance
+
+    // Cycle-demo SVG choreography (slide 3) — relative offsets WITHIN one
+    // iteration of the loop. Each iteration runs end-to-end then schedules
+    // itself to start again, so the demo plays continuously while the slide
+    // is visible (~3 cycles fit in an 8s slide hold).
+    CYCLE_DEMO_TASK_1: 300,                // Task 1 ticks
+    CYCLE_DEMO_TASK_2: 700,                // Task 2 ticks
+    CYCLE_DEMO_TASK_3: 1100,               // Task 3 ticks
+    CYCLE_DEMO_COMPLETE: 1500,             // Counter morphs → "Cycle Complete!"
+    CYCLE_DEMO_COUNTER_UPDATE: 1900,       // Counter text increments (still hidden behind overlay)
+    CYCLE_DEMO_RESET: 2000,                // Task checks clear (still under overlay)
+    CYCLE_DEMO_RESTORE: 2300,              // Overlay fades, counter reappears with new number + pulses
+    CYCLE_DEMO_LOOP: 2900,                 // Iteration ends, next iteration begins immediately
 
     // Onboarding "Start Tour" SVG button flow (interactive button on step 3)
     START_TOUR_AFTER_SAMPLE: 3000,        // 3000ms - Tour fires this long after sample loads (lets user read welcome toast / pick blank)
@@ -118,7 +132,7 @@ export const UI_TIMEOUTS = Object.freeze({
     START_TOUR_BLANK_WATCH_GIVEUP: 30000, // 30000ms - Give up the AppState subscription if user cancels create-routine modal
 
     // Guided tour prompt notification (the 10s "want to take a tour?" toast)
-    TOUR_FIRST_RUN_DELAY: 10000,          // 10000ms - First-run delay before showing the tour prompt notification
+    TOUR_FIRST_RUN_DELAY: 17000,          // 17000ms - First-run delay before showing the tour prompt notification (lets the Home View welcome notification be read + auto-dismiss first)
     TOUR_RETURNING_USER_DELAY: 2000,      // 2000ms - Returning-user delay before showing the tour prompt
     TOUR_RESCHEDULE_DELAY: 3500,          // 3500ms - Delay before re-showing the tour prompt after user dismisses
 
@@ -412,6 +426,20 @@ export const STORAGE_KEYS = Object.freeze({
 });
 
 // ============================================================================
+// CUSTOM EVENT NAMES — Single source of truth for document.dispatchEvent
+// ============================================================================
+
+/**
+ * Custom event names dispatched on `document` for cross-module coordination.
+ * Use these instead of string literals so callers and listeners stay in sync.
+ * @constant {Object}
+ */
+export const EVENTS = Object.freeze({
+    FOCUS_MODE_ACTIVATED: 'focusMode:activated',
+    FOCUS_MODE_DEACTIVATED: 'focusMode:deactivated'
+});
+
+// ============================================================================
 // DOM CSS CLASSES — Single source of truth for classList operations
 // ============================================================================
 
@@ -500,6 +528,45 @@ export const DOM_CLASSES = Object.freeze({
     HELP_WINDOW_SIDE: 'help-window-side',
     ONBOARDING_ACTIVE: 'onboarding-active',
     FOCUS_MODE: 'focus-mode',
+    FIRST_RUN_WELCOME: 'first-run-welcome',
+    FIRST_RUN_WELCOME_VISIBLE: 'first-run-welcome--visible',
+    FIRST_RUN_WELCOME_ACTIVE: 'first-run-welcome-active',
+    FIRST_RUN_WELCOME_MESSAGE: 'first-run-welcome__message',
+    FIRST_RUN_WELCOME_MESSAGE_FADING: 'first-run-welcome__message--fading',
+    FIRST_RUN_WELCOME_TITLE_FADING: 'first-run-welcome__title--fading',
+    FIRST_RUN_WELCOME_TOGGLE: 'first-run-welcome__toggle',
+    FIRST_RUN_WELCOME_PAUSED: 'first-run-welcome--paused',
+    FIRST_RUN_WELCOME_NAV: 'first-run-welcome__nav',
+    FIRST_RUN_WELCOME_NAV_PREV: 'first-run-welcome__nav--prev',
+    FIRST_RUN_WELCOME_NAV_NEXT: 'first-run-welcome__nav--next',
+    FIRST_RUN_WELCOME_NAV_HIDDEN: 'first-run-welcome__nav--hidden',
+    FIRST_RUN_WELCOME_LOGO: 'first-run-welcome__logo',
+    // Cycle-demo SVG (slide 3 of the welcome carousel — animated demonstration
+    // of three tasks completing and the cycle counter advancing).
+    CYCLE_DEMO: 'cycle-demo',
+    CYCLE_DEMO_TASK: 'cycle-demo__task',
+    CYCLE_DEMO_TASK_DONE: 'cycle-demo__task--done',
+    CYCLE_DEMO_CIRCLE: 'cycle-demo__circle',
+    CYCLE_DEMO_CHECK: 'cycle-demo__check',
+    CYCLE_DEMO_LABEL: 'cycle-demo__label',
+    CYCLE_DEMO_STRIKE: 'cycle-demo__strike',
+    CYCLE_DEMO_COUNTER: 'cycle-demo__counter',
+    CYCLE_DEMO_COUNT: 'cycle-demo__count',
+    CYCLE_DEMO_COMPLETE_TEXT: 'cycle-demo__complete',
+    CYCLE_DEMO_COMPLETE_VISIBLE: 'cycle-demo--complete',
+    CYCLE_DEMO_COUNTER_PULSE: 'cycle-demo--counter-pulse',
+    CYCLE_DEMO_DIVIDER: 'cycle-demo__divider',
+    CYCLE_DEMO_SUBTITLE: 'cycle-demo__subtitle',
+    CYCLE_DEMO_ARROW: 'cycle-demo__arrow',
+    FIRST_RUN_SPLASH: 'first-run-splash',
+    FIRST_RUN_SPLASH_VISIBLE: 'first-run-splash--visible',
+    FIRST_RUN_SPLASH_FADING: 'first-run-splash--fading',
+    FIRST_RUN_SPLASH_CHAR: 'first-run-splash__char',
+    FIRST_RUN_SPLASH_TITLE: 'first-run-splash__title',
+    FIRST_RUN_SPLASH_LINE: 'first-run-splash__line',
+    FIRST_RUN_SPLASH_WORD: 'first-run-splash__word',
+    FIRST_RUN_SPLASH_WORD_LANDING: 'first-run-splash__word--landing',
+    FIRST_RUN_WELCOME_TITLE: 'first-run-welcome__title',
     FIXED_HEADER_CONTAINER: 'fixed-header-container',
     DROPDOWN_OPEN: 'dropdown-open',
     REFRESHING: 'refreshing',
@@ -839,6 +906,13 @@ export const DOM_IDS = Object.freeze({
     // ---- Stats & Navigation ----
     STATS_PANEL: 'stats-panel',
     TASK_VIEW: 'task-view',
+    FIRST_RUN_WELCOME: 'first-run-welcome',
+    FIRST_RUN_WELCOME_DISMISS: 'first-run-welcome-dismiss',
+    FIRST_RUN_WELCOME_TOGGLE: 'first-run-welcome-toggle',
+    FIRST_RUN_WELCOME_PREV: 'first-run-welcome-prev',
+    FIRST_RUN_WELCOME_NEXT: 'first-run-welcome-next',
+    FIRST_RUN_SPLASH: 'first-run-splash',
+    FIRST_RUN_SPLASH_TITLE: 'first-run-splash-title',
     LIVE_REGION: 'live-region',
     SLIDE_LEFT: 'slide-left',
     SLIDE_RIGHT: 'slide-right',

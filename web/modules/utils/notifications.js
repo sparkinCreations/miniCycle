@@ -431,6 +431,14 @@ export class MiniCycleNotifications {
         notification.classList.add(type);
       }
 
+      // Optional caller-supplied class for targeted styling (e.g. bold-title
+      // variant). Sanitized to prevent injection via the className option.
+      if (typeof options?.className === 'string') {
+        options.className.split(/\s+/)
+          .filter(c => /^[A-Za-z0-9_-]+$/.test(c))
+          .forEach(c => notification.classList.add(c));
+      }
+
       // Accessibility: role="alert" for urgent types, role="status" for others
       notification.setAttribute('role', (type === 'error' || type === 'warning') ? 'alert' : 'status');
 

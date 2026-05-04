@@ -501,6 +501,78 @@ export async function runFocusModeTests(resultsDiv) {
         if (!deactivated) throw new Error('exit action should call deactivate');
     });
 
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🔕 Deactivate Notification Gating</h4>';
+
+    /**
+     * On first focus-view exit, onboardingManager shows its own "Welcome to
+     * Home View" notification with a CTA — focusMode's own "Back to Home View"
+     * toast would be redundant noise. Gate is `state.settings.onboardingCompleted`:
+     *   • false → suppress the toast (first exit)
+     *   • true  → show the toast (every subsequent exit)
+     */
+    await test('deactivate suppresses notification on first exit (onboardingCompleted=false)', () => {
+        setupDOMScaffold();
+        const notificationCalls = [];
+        mod.setFocusModeDependencies({
+            AppState: createMockAppState({
+                settings: { focusModeActive: true, onboardingCompleted: false }
+            }),
+            getElementById: (id) => document.getElementById(id),
+            querySelector: (sel) => document.querySelector(sel),
+            getBody: () => document.body,
+            safeAddEventListener: (el, evt, fn) => el.addEventListener(evt, fn),
+            showNotification: (msg, type, duration) => {
+                notificationCalls.push({ msg, type, duration });
+            }
+        });
+        const instance = new mod.FocusMode();
+        instance.init();
+        instance.activate(true);  // silent — don't pollute the call log
+        notificationCalls.length = 0;  // clear any stragglers
+        instance.deactivate();
+        instance.destroy();
+        teardownDOMScaffold();
+
+        if (notificationCalls.length !== 0) {
+            throw new Error(
+                `Expected zero notifications on first exit, got ${notificationCalls.length}: ` +
+                JSON.stringify(notificationCalls)
+            );
+        }
+    });
+
+    await test('deactivate shows notification on subsequent exits (onboardingCompleted=true)', () => {
+        setupDOMScaffold();
+        const notificationCalls = [];
+        mod.setFocusModeDependencies({
+            AppState: createMockAppState({
+                settings: { focusModeActive: true, onboardingCompleted: true }
+            }),
+            getElementById: (id) => document.getElementById(id),
+            querySelector: (sel) => document.querySelector(sel),
+            getBody: () => document.body,
+            safeAddEventListener: (el, evt, fn) => el.addEventListener(evt, fn),
+            showNotification: (msg, type, duration) => {
+                notificationCalls.push({ msg, type, duration });
+            }
+        });
+        const instance = new mod.FocusMode();
+        instance.init();
+        instance.activate(true);
+        notificationCalls.length = 0;
+        instance.deactivate();
+        instance.destroy();
+        teardownDOMScaffold();
+
+        if (notificationCalls.length !== 1) {
+            throw new Error(
+                `Expected exactly one notification on subsequent exit, got ${notificationCalls.length}: ` +
+                JSON.stringify(notificationCalls)
+            );
+        }
+    });
+
     await test('switch-mode action opens the mode-switch modal', () => {
         setupDOMScaffold();
         mod.setFocusModeDependencies({

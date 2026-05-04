@@ -180,6 +180,10 @@
      ═══════════════════════════════════════════════════════════════════════════ */
   --theme-modal-bg: var(--color-blue-pale);
   --theme-modal-glass-bg: rgba(214, 228, 247, 0.82);
+  /* Whiter, more transparent glass tint — used by surfaces that want a
+     glossy frosted-glass read rather than the bluish modal glass (e.g. the
+     first-run welcome banner). */
+  --theme-modal-glass-bg-soft: rgba(255, 255, 255, 0.28);
   --theme-modal-blur: 20px;
   --theme-modal-text: #333333;
   --theme-modal-border: transparent;

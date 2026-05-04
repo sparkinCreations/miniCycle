@@ -15,7 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getIcon } from '../utils/icons.js';
 
@@ -828,6 +828,8 @@ export class FocusMode {
         if (!silent) {
             this.deps.showNotification?.(getLabel('focusMode.activated'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);
         }
+
+        document.dispatchEvent(new CustomEvent(EVENTS.FOCUS_MODE_ACTIVATED));
     }
 
     /**
@@ -902,11 +904,20 @@ export class FocusMode {
             }
         }, 400);
 
+        const onboardingCompleted = !!this.deps.AppState?.get?.()?.settings?.onboardingCompleted;
+
         this.deps.AppState?.update?.(state => {
             state.settings.focusModeActive = false;
         });
 
-        this.deps.showNotification?.(getLabel('focusMode.deactivated'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);
+        // Suppress the "Back to Home View" toast on the very first exit —
+        // the onboarding manager shows its own "Welcome to Home View"
+        // notification with a CTA, so this would just be noise.
+        if (onboardingCompleted) {
+            this.deps.showNotification?.(getLabel('focusMode.deactivated'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);
+        }
+
+        document.dispatchEvent(new CustomEvent(EVENTS.FOCUS_MODE_DEACTIVATED));
     }
 
     /**

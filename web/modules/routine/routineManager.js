@@ -270,6 +270,22 @@ export class RoutineManager {
     }
 
     /**
+     * Preload the first-run "Your First Routine" cycle from examples/initial-run/.
+     * Used by the focus-first onboarding flow: routine loads, focus view activates,
+     * welcome toast / tour are deferred until first focus-view exit.
+     * Distinct from preloadGettingStartedCycle so the menu-accessible sample
+     * stays untouched.
+     * @returns {Promise<boolean>} True if loaded successfully
+     */
+    async preloadInitialRunCycle() {
+        return this.loadSampleRoutine('Your_First_Routine.mcyc', {
+            folder: 'initial-run',
+            isOnboarding: false,
+            silent: true
+        });
+    }
+
+    /**
      * Create a basic fallback cycle if sample loading fails
      */
     async createBasicFallbackCycle() {
@@ -456,18 +472,25 @@ export class RoutineManager {
     }
 
     /**
-     * Load a sample routine from the examples/sample-routines/ folder
+     * Load a sample routine from a configurable examples folder.
      * @param {string} filename - The .mcyc filename to fetch
      * @param {Object} [options={}] - Options
      * @param {boolean} [options.isOnboarding=false] - True = onboarding path (completeInitialSetup), false = menu path (loadMiniCycle)
      * @param {HTMLDialogElement} [options.dialog=null] - Dialog to close on completion
+     * @param {string} [options.folder='sample-routines'] - Subfolder under examples/ to fetch from
+     * @param {boolean} [options.silent=false] - Suppress the success "sample loaded" toast (menu path)
      * @returns {Promise<boolean>} True if sample loaded successfully
      */
     async loadSampleRoutine(filename, options = {}) {
-        const { isOnboarding = false, dialog = null } = options;
+        const {
+            isOnboarding = false,
+            dialog = null,
+            folder = 'sample-routines',
+            silent = false
+        } = options;
 
         try {
-            const response = await fetch(`examples/sample-routines/${filename}`);
+            const response = await fetch(`examples/${folder}/${filename}`);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -493,6 +516,7 @@ export class RoutineManager {
                     autoReset: sample.autoReset !== false,
                     cycleCount: sample.cycleCount || 0,
                     deleteCheckedTasks: sample.deleteCheckedTasks || false,
+                    showTaskInput: sample.showTaskInput === true,
                     createdAt: Date.now(),
                     theme: 'classic',
                     recurringTemplates: {},
@@ -526,7 +550,8 @@ export class RoutineManager {
 
             // Onboarding path: skip generic toast — onboardingManager shows its own
             // welcomeSampleLoaded notification with the blank-routine CTA.
-            if (!isOnboarding) {
+            // Silent path: caller (e.g., first-run focus-view flow) handles all messaging.
+            if (!isOnboarding && !silent) {
                 this.deps.showNotification(
                     '✨ ' + getLabel('notify.sampleLoaded', { vars: { name: sampleTitle } }),
                     'success',

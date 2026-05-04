@@ -136,6 +136,7 @@ body.dark-mode:not([data-theme]) {
     --theme-stats-bg: var(--dark-surface-primary);
     --theme-modal-bg: var(--dark-surface-primary);
     --theme-modal-glass-bg: rgba(42, 42, 42, 0.82);
+    --theme-modal-glass-bg-soft: rgba(255, 255, 255, 0.10);
     --theme-modal-text: var(--theme-text-primary);
     --theme-modal-border: var(--dark-button-hover-bg);
     --theme-card-bg: #2e2e2e;

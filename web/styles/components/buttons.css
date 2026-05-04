@@ -521,7 +521,12 @@ body.hide-help-window .help-window {
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    /* --cycle-complete-y-offset is set by JS in cycleCompletion.js when the
+       first-run welcome banner is showing, so the green checkmark lands on
+       the task list's actual rendered center instead of viewport center
+       (which can sit above the task list while the banner is active).
+       Defaults to 0px → unchanged viewport-centered behavior. */
+    transform: translate(-50%, calc(-50% + var(--cycle-complete-y-offset, 0px)));
     background: var(--pref-celebration-bg, rgba(76, 175, 79, 0.97));
     color: var(--color-black);
     width: 120px;

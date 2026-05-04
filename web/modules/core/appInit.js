@@ -337,17 +337,44 @@ class AppInit {
 		// This avoids a race condition where AppState.isReady() returns false on initial load
 		// because data was just created by dataAccess and AppState wasn't re-initialized
 		const hasSeenOnboarding = settings?.onboardingCompleted || false;
-		if (!hasSeenOnboarding) {
-			const onboardingManager = _deps.getOnboardingManager?.();
-			// Pass schemaData to avoid AppState race condition
-			onboardingManager?.showOnboarding?.(cycles, activeCycle, schemaData);
-			return;
-		}
-
-		// 🛡️ DATA INTEGRITY CHECK: Ensure valid routines exist
 		const cycleCount = Object.keys(cycles || {}).length;
 		const hasValidActiveCycle = activeCycle && cycles[activeCycle];
 
+		// First-run focus-first flow: brand-new user with zero cycles.
+		// Loads Your First Routine into Focus View; welcome toast + tour
+		// notification defer until first focus-view exit (or app close).
+		if (!hasSeenOnboarding && cycleCount === 0) {
+			const onboardingManager = _deps.getOnboardingManager?.();
+			if (onboardingManager?.runFirstRunFlow) {
+				onboardingManager.runFirstRunFlow().catch(err => {
+					console.error('❌ runFirstRunFlow failed:', err);
+				});
+			} else {
+				console.warn('⚠️ runFirstRunFlow unavailable — falling back to legacy welcome modal');
+				onboardingManager?.showOnboarding?.(cycles, activeCycle, schemaData);
+			}
+			return;
+		}
+
+		// Onboarding incomplete but cycles exist — either the user closed the
+		// app mid-first-run (still in Focus View) OR they hit "Reset Onboarding"
+		// in Settings. We split on focusModeActive:
+		//   • Focus View → re-arm the first-session lifecycle so the welcome
+		//     banner reappears and focus-exit / unload finalize onboarding.
+		//   • Home View → show the legacy 3-step welcome modal (the original
+		//     onboarding experience) for a refresher walkthrough.
+		if (!hasSeenOnboarding) {
+			const onboardingManager = _deps.getOnboardingManager?.();
+			const focusModeActive = !!settings?.focusModeActive;
+			if (!focusModeActive && onboardingManager?.showOnboarding) {
+				onboardingManager.showOnboarding(cycles, activeCycle, schemaData);
+				return;
+			}
+			onboardingManager?.armFirstSessionLifecycle?.();
+			// Fall through to normal init
+		}
+
+		// 🛡️ DATA INTEGRITY CHECK: Ensure valid routines exist
 		if (cycleCount === 0) {
 			// No routines exist at all - show onboarding flow
 			console.warn('⚠️ DATA INTEGRITY: No routines exist - showing onboarding with sample option');

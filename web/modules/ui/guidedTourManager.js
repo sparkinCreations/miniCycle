@@ -7,7 +7,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 const TOUR_ACTIVE_ATTR = 'data-tour-active';
@@ -902,6 +902,11 @@ export class GuidedTourManager {
             this._onboardingHandler = null;
         }
 
+        if (this._focusExitDeferHandler) {
+            document.removeEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._focusExitDeferHandler);
+            this._focusExitDeferHandler = null;
+        }
+
         this._removeRuntimeListeners();
         this._teardownTourUI();
         this.initialized = false;
@@ -925,8 +930,22 @@ export class GuidedTourManager {
     }
 
     _showWelcomeOrResumeNotification() {
-        const guidedTourStep = this.deps.AppState?.get?.()?.settings?.guidedTourStep ?? null;
+        const state = this.deps.AppState?.get?.();
+        const guidedTourStep = state?.settings?.guidedTourStep ?? null;
         if (guidedTourStep === 'done') {
+            return;
+        }
+
+        // Focus View defer: tour highlights chrome that's hidden in Focus View,
+        // so the welcome/resume notification (and subsequent tour) must wait
+        // until the user exits. Listen once for focusMode:deactivated and retry.
+        if (state?.settings?.focusModeActive) {
+            if (this._focusExitDeferHandler) return;
+            this._focusExitDeferHandler = () => {
+                this._focusExitDeferHandler = null;
+                this._showWelcomeOrResumeNotification();
+            };
+            document.addEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._focusExitDeferHandler, { once: true });
             return;
         }
 
@@ -1018,6 +1037,13 @@ export class GuidedTourManager {
         // Returning users (cyclesCompleted >= 1) see it on first stats open.
         const cyclesCompleted = state?.userProgress?.cyclesCompleted ?? 0;
         if (cyclesCompleted < 1) return;
+
+        // Main-view only — the stats tour highlights main-view chrome and
+        // would feel out of place in focus view's simplified layout. The
+        // user can still open the stats panel in focus view; the tour
+        // notification just stays silent until they exit focus view and
+        // open stats again.
+        if (state?.settings?.focusModeActive) return;
 
         this.deps.showNotification?.(
             getLabel('statsTour.welcomeMessage'),

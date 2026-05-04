@@ -839,6 +839,57 @@ export class StatsPanelManager {
         this.announceViewChange(getLabel('accessibility.statsPanelOpened'));
         this.updateNavDots();
         this._maybeShowStatsTour();
+
+        // After the panel becomes visible, check whether the first-run
+        // welcome banner overlaps its natural top edge. If so, set a
+        // panel-specific shift so the panel slides clear of the banner
+        // (its own shift, computed independently of task-view's because
+        // the panel sits at a different natural position).
+        requestAnimationFrame(() => this._measureWelcomeBannerOverlapForStats());
+    }
+
+    /**
+     * Measure whether the first-run welcome banner overlaps the stats
+     * panel's natural top, and set --first-run-welcome-stats-shift on
+     * the panel by exactly the overlap amount + a small gap. Defaults
+     * to 0 (variable removed) when the banner isn't active or when the
+     * panel sits naturally below the banner already.
+     * @private
+     */
+    _measureWelcomeBannerOverlapForStats() {
+        const panel = this.elements.statsPanel;
+        if (!panel) return;
+
+        const banner = document.getElementById('first-run-welcome');
+        if (!banner) {
+            panel.style.removeProperty('--first-run-welcome-stats-shift');
+            return;
+        }
+
+        const bannerBottom = banner.getBoundingClientRect().bottom;
+
+        // Compute the panel's natural top edge from CSS, not from
+        // getBoundingClientRect. Reading the rect mid-transition (the
+        // 400ms slide-in animation) would return a partial position and
+        // backtracking via the current shift would drift the value
+        // cumulatively on every open-close cycle. getComputedStyle.top is
+        // the CSS-resolved `top` (47% or 51% mobile), unaffected by
+        // transforms; combined with offsetHeight (the rendered height)
+        // and the existing translateY(-50%), the natural top edge is:
+        //     naturalTop = topPx - height/2
+        const computed = getComputedStyle(panel);
+        const topPx = parseFloat(computed.top) || 0;
+        const height = panel.offsetHeight;
+        const naturalTop = topPx - height / 2;
+
+        const GAP_PX = 3;
+        const requiredShift = Math.max(0, bannerBottom - naturalTop + GAP_PX);
+
+        if (requiredShift > 0) {
+            panel.style.setProperty('--first-run-welcome-stats-shift', `${requiredShift}px`);
+        } else {
+            panel.style.removeProperty('--first-run-welcome-stats-shift');
+        }
     }
 
     /**

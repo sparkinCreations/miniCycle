@@ -142,7 +142,7 @@ All `--theme-*` variables can be overridden by themes:
 | Cards | `--theme-card-bg`, `--theme-card-border`, `--theme-card-shadow` |
 | Inputs | `--theme-input-bg`, `--theme-input-text`, `--theme-input-border` |
 | Buttons | `--theme-button-primary-bg`, `--theme-button-secondary-bg` |
-| Modals | `--theme-modal-bg`, `--theme-modal-glass-bg`, `--theme-modal-text`, `--theme-modal-border`, `--theme-modal-overlay` |
+| Modals | `--theme-modal-bg`, `--theme-modal-glass-bg`, `--theme-modal-glass-bg-soft`, `--theme-modal-text`, `--theme-modal-border`, `--theme-modal-overlay` |
 | Tasks | `--theme-task-bg`, `--theme-task-completed-bg`, `--theme-task-checkmark` |
 | Header | `--theme-header-bg`, `--theme-header-text`, `--theme-header-border` |
 | Stats | `--theme-stats-bg`, `--theme-stats-text` |

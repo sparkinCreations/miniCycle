@@ -43,7 +43,13 @@
    ============================================================================= */
 
 #stats-panel.show {
-    transform: translateX(-50%) translateY(-50%);
+    /* --first-run-welcome-stats-shift is JS-set by statsPanel.showStatsPanel()
+       when the welcome banner is up AND would overlap the panel's natural
+       top. Defaults to 0px → unchanged centered transform. Calculated
+       independently from --first-run-welcome-shift (task-view's offset)
+       because the stats panel has a different natural top edge and would
+       over-shift if it reused the task-view value. */
+    transform: translateX(-50%) translateY(calc(-50% + var(--first-run-welcome-stats-shift, 0px)));
     opacity: 1;
     pointer-events: all;
 }

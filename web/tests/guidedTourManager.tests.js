@@ -44,6 +44,10 @@ function wait(ms = 0) {
 export async function runGuidedTourManagerTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     GuidedTourModule = await import(`../modules/ui/guidedTourManager.js?v=${cacheBuster}`);
+    // Pull constants from the live source so the test tracks future tweaks
+    // (e.g., TOUR_FIRST_RUN_DELAY was bumped from 10s → 17s — assert against
+    // the constant, not a literal).
+    const { UI_TIMEOUTS } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
 
     resultsDiv.innerHTML = '<h2>GuidedTourManager Tests</h2><h3>Running tests...</h3>';
 
@@ -231,8 +235,8 @@ export async function runGuidedTourManagerTests(resultsDiv) {
 
         document.dispatchEvent(new Event('onboarding:setup-complete'));
 
-        if (scheduledDelay !== 10000) {
-            throw new Error(`Expected 10000ms delay, got ${scheduledDelay}`);
+        if (scheduledDelay !== UI_TIMEOUTS.TOUR_FIRST_RUN_DELAY) {
+            throw new Error(`Expected ${UI_TIMEOUTS.TOUR_FIRST_RUN_DELAY}ms delay (TOUR_FIRST_RUN_DELAY), got ${scheduledDelay}`);
         }
     });
 
@@ -315,30 +319,53 @@ export async function runGuidedTourManagerTests(resultsDiv) {
 
         manager.startTour();
 
+        // Filter: setupTargets() omits focus-mode-btn (step 1 of original 5) and
+        // routine-switcher-btn (step 4), so _filteredSteps = [mode-selector,
+        // help-window, personalization-btn]. Persisted step 2 = personalization-btn.
         if (manager._currentStepIndex !== 2) {
             throw new Error(`Expected current step 2, got ${manager._currentStepIndex}`);
         }
-        if (!document.querySelector('.tour-message')?.textContent?.includes('at-a-glance status')) {
-            throw new Error('Expected step 3 message to render');
+        // Substring is the durable part of tour.step4 — survives copy tweaks like
+        // "Customize your colors..." → "Customize colors, backgrounds, and themes here..."
+        if (!document.querySelector('.tour-message')?.textContent?.includes('Customize colors')) {
+            throw new Error('Expected personalization step message to render');
         }
     });
 
-    await test('showStep skips missing task rows and advances to the next available step', async () => {
-        setupTargets({ withTask: false });
+    await test('startTour filters out steps with missing targets', async () => {
+        // setupTargets() omits focus-mode-btn and routine-switcher-btn from main tour
+        setupTargets();
         const manager = await createManager({
             appReady: false,
             settings: { onboardingCompleted: true, guidedTourStep: null }
         });
 
         manager.startTour();
-        manager.showStep(1);
 
-        if (manager._currentStepIndex !== 2) {
-            throw new Error(`Expected skip to step 2, got ${manager._currentStepIndex}`);
+        // Original main tour has 5 steps; filter should remove the 2 missing ones
+        if (manager._steps.length !== 3) {
+            throw new Error(`Expected 3 filtered steps, got ${manager._steps.length}`);
         }
     });
 
-    await test('showStep skips hidden help window and advances', async () => {
+    await test('startTour skips entirely when no steps have valid targets', async () => {
+        // No targets at all — every main-tour step should filter out
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: null }
+        });
+
+        const started = manager.startTour();
+
+        if (started !== false) {
+            throw new Error('startTour should return false when no steps are available');
+        }
+        if (manager._active) {
+            throw new Error('manager should not be active after empty-filter early return');
+        }
+    });
+
+    await test('startTour shrinks step count further when help window is hidden', async () => {
         setupTargets({ withHelpWindow: false });
         const manager = await createManager({
             appReady: false,
@@ -346,49 +373,29 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         });
 
         manager.startTour();
-        manager.showStep(2); // help window (index 2)
 
-        if (manager._currentStepIndex === 2) {
-            throw new Error('Expected help window step to be skipped');
-        }
-        // Should advance to next available — personalization-btn (3) or beyond
-        if (manager._currentStepIndex < 3) {
-            throw new Error(`Expected skip past step 2, got ${manager._currentStepIndex}`);
+        // Without help-window, filtered = [mode-selector, personalization-btn]
+        if (manager._steps.length !== 2) {
+            throw new Error(`Expected 2 filtered steps, got ${manager._steps.length}`);
         }
     });
 
-    await test('showStep skips missing focus mode button and advances', async () => {
-        setupTargets(); // setupTargets does not create focus-mode-btn
+    await test('prevStep walks back through filtered steps', async () => {
+        setupTargets();
         const manager = await createManager({
             appReady: false,
             settings: { onboardingCompleted: true, guidedTourStep: null }
         });
 
-        manager.startTour();
-        manager.showStep(1); // focus-mode-btn (index 1) — not in DOM
-
-        if (manager._currentStepIndex === 1) {
-            throw new Error('Expected focus mode step to be skipped');
-        }
-        // Should advance to help-window (2) or beyond
-        if (manager._currentStepIndex < 2) {
-            throw new Error(`Expected skip past step 1, got ${manager._currentStepIndex}`);
-        }
-    });
-
-    await test('prevStep skips backwards over missing targets', async () => {
-        setupTargets({ withTask: false });
-        const manager = await createManager({
-            appReady: false,
-            settings: { onboardingCompleted: true, guidedTourStep: null }
-        });
-
+        // Filtered steps: [mode-selector (0), help-window (1), personalization-btn (2)]
         manager.startTour();
         manager.showStep(2);
         manager.prevStep();
 
-        if (manager._currentStepIndex !== 0) {
-            throw new Error(`Expected previous valid step 0, got ${manager._currentStepIndex}`);
+        // After filter, prevStep is a simple decrement — every filtered step
+        // already has a valid target.
+        if (manager._currentStepIndex !== 1) {
+            throw new Error(`Expected previous step 1, got ${manager._currentStepIndex}`);
         }
     });
 
@@ -608,7 +615,7 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         }
     });
 
-    await test('stats tour skips missing history button', async () => {
+    await test('stats tour filters out missing history button', async () => {
         setupStatsPanelTargets({ withHistoryBtn: false });
         const manager = await createManager({
             appReady: false,
@@ -616,14 +623,11 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         });
 
         manager.startTour('stats');
-        manager.showStep(1); // history btn step
 
-        // Should skip past step 1 (history btn) to step 2 (badge container)
-        if (manager._currentStepIndex === 1) {
-            throw new Error('Expected history button step to be skipped');
-        }
-        if (manager._currentStepIndex < 2) {
-            throw new Error(`Expected skip past step 1, got ${manager._currentStepIndex}`);
+        // Original stats tour has 4 steps; with history-btn missing the filter
+        // should drop it to 3.
+        if (manager._steps.length !== 3) {
+            throw new Error(`Expected 3 filtered steps, got ${manager._steps.length}`);
         }
     });
 

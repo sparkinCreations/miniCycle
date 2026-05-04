@@ -168,7 +168,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/onboardingManager.js',
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListenerById', 'safeAddEventListener'],
-        optionalDeps: ['preloadGettingStartedCycle', 'createNewMiniCycle', 'completeInitialSetup', 'showCycleCreationModal'],
+        optionalDeps: ['preloadGettingStartedCycle', 'preloadInitialRunCycle', 'createNewMiniCycle', 'completeInitialSetup', 'showCycleCreationModal', 'activateFocusMode'],
         // Cross-phase: startGuidedTour comes from guidedTourManager (Phase 6, UI_MANAGERS)
         // and is only called when the user clicks the SVG "Start Tour" button on step 3.
         lazyRequires: ['startGuidedTour'],
@@ -348,7 +348,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'updateMainMenuHeader'],
         optionalDeps: ['refreshThemeLabels', 'onCycleCreated', 'syncModeFromToggles', 'updateRecurringInfoLink', 'loadMiniCycle', 'DEFAULT_TASK_OPTION_BUTTONS', 'checkCompleteAllButton', 'completeInitialSetup', 'hideMainMenu', 'updateProgressBar'],
-        provides: ['showCycleCreationModal', 'createNewMiniCycle', 'preloadGettingStartedCycle'],
+        provides: ['showCycleCreationModal', 'createNewMiniCycle', 'preloadGettingStartedCycle', 'preloadInitialRunCycle'],
         api: 'cycle',
         after: ['menuManager']  // Needs hideMainMenu and updateMainMenuHeader from menuManager
     },
@@ -554,7 +554,8 @@ export const MODULE_MANIFESTS = {
         path: '../ui/focusMode.js',
         phase: PHASES.UI_MANAGERS,
         optionalDeps: ['showNotification', 'safeAddEventListener', 'AppState', 'clearAllTasks', 'deleteAllTasks', 'switchMiniCycle', 'createNewMiniCycle'],
-        provides: ['focusMode'],
+        provides: ['activateFocusMode'],
+        provideInstance: 'focusMode',
         api: 'ui',
         optional: true
     },

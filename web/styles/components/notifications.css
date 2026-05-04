@@ -204,6 +204,14 @@
     white-space: pre-line;
 }
 
+/* Bold-title variant — bolds the first wrapped line of the message so
+   notifications with a "Title\n\nBody" structure read like a heading.
+   Opt-in via showNotification(..., { className: 'notification-titled' }). */
+.notification.notification-titled .notification-message::first-line,
+.notification.notification-titled .notification-content::first-line {
+    font-weight: var(--font-weight-bold);
+}
+
 /* =============================================================================
    NOTIFICATION BUTTONS
    ============================================================================= */

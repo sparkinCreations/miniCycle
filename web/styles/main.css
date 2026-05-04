@@ -96,6 +96,9 @@
 /* Onboarding screens */
 @import url('./components/onboarding.css?v=2.222');
 
+/* First-run welcome banner (focus-first initial launch) */
+@import url('./components/first-run-welcome.css?v=2.222');
+
 /* Guided tour overlay */
 @import url('./components/guided-tour.css?v=2.222');
 

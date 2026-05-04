@@ -116,6 +116,21 @@ export function showCompletionAnimation() {
 
     document.body.appendChild(animation);
 
+    // While the first-run welcome banner is showing, the task list is shifted
+    // down (or sits at a focus-mode-offset position) — viewport center may
+    // sit above the task list, making the centered checkmark land on the
+    // banner / input bar instead. Translate it to the task list's actual
+    // rendered center so it visually celebrates *that*.
+    if (document.body.classList.contains(DOM_CLASSES.FIRST_RUN_WELCOME_ACTIVE)) {
+        const taskView = document.getElementById('task-view');
+        if (taskView) {
+            const rect = taskView.getBoundingClientRect();
+            const taskCenterY = rect.top + rect.height / 2;
+            const offset = taskCenterY - window.innerHeight / 2;
+            animation.style.setProperty('--cycle-complete-y-offset', `${offset}px`);
+        }
+    }
+
     // Announce to screen readers (theme-sensitive: adapts to active vocabulary theme)
     const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
     if (liveRegion) liveRegion.textContent = getLabel('notify.cycleComplete');

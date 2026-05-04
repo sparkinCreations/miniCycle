@@ -1191,7 +1191,7 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     tour: {
-        welcomeMessage:  'Ready to learn the basics?',
+        welcomeMessage:  'Want a quick tour of Home View?',
         resumeMessage:   'Welcome back! Continue where you left off?',
         startButton:     'Take a Quick Tour',
         resumeButton:    'Resume Tour',
@@ -1203,7 +1203,7 @@ export const DEFAULT_LABELS = deepFreeze({
         step1:           'Switch between Auto Cycle, Manual, and To-Do modes to match your workflow.',
         step2:           'Minimize distractions — Focus View hides everything except your tasks.',
         step3:           'Your at-a-glance status — shows the current mode, tasks remaining, and tips.',
-        step4:           'Customize your colors, background image, and theme. The dark mode toggle is on the opposite side.',
+        step4:           'Customize colors, backgrounds, and themes here. The 🌙 moon button on the opposite side switches light and dark mode.',
         step5:           'Switch between your routines — each has its own tasks and cycle count.',
         complete:        'You\'re all set! Enjoy building your routines.',
         retakeTour:      'Reset All Tours',
@@ -1455,9 +1455,76 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     homeView: {
-        name:           'Home View',
-        backToHome:     'Back to Home View',
-        backToHomeAria: 'Return to Home View'
+        name:                     'Home View',
+        backToHome:               'Back to Home View',
+        backToHomeAria:           'Return to Home View',
+        welcomeNotification:      'Welcome to Home View\n\nManage routines, customize your setup, and explore features.\n\nQuick tours may appear the first time you visit new areas.',
+        startBlankRoutineButton:  'Start with a blank routine'
+    },
+
+    // ========================================================================
+    // 18d. FIRST-RUN WELCOME BANNER
+    // Floating banner shown above the input bar on the very first launch.
+    // Distinct from the legacy 3-step onboarding modal — content is intentionally
+    // short so it can be iterated on quickly. Dismissable; once closed, stays
+    // closed (persisted via state.settings.firstRunWelcomeDismissed).
+    // ========================================================================
+
+    firstRunWelcome: {
+        title:             'Welcome to miniCycle',
+        message:           'Manage routines you repeat — daily, weekly, or multiple times a day.',
+        titleReset:        'How Cycles Work',
+        // `|` is a paragraph break — the renderer splits on it so each
+        // segment becomes its own <p> with a gap between paragraphs.
+        messageReset:      'Build your routine once and then complete as many cycles as you like.|Complete all tasks in your routine — then they automatically reset!',
+        titleCycleDemo:    'Example of a Cycle',
+        // `|` is a line break in the title (renderer converts to \n + CSS pre-line).
+        titleTryIt:        'Complete your first|cycle',
+        // Per-task labels for the cycle-demo SVG, `|`-delimited (one entry
+        // per task row). 3 entries = 3 task rows. Keep each entry short
+        // (≤7 chars) so it fits within the strike-through line at the SVG's
+        // small render scale. Cleaning steps make the demo feel like a real
+        // routine rather than abstract placeholders.
+        cycleDemoTasks:    'Sweep|Wipe|Mop',
+        cycleDemoCycles:   'Cycles:',
+        cycleDemoComplete: 'Cycle Complete!',
+        // Right-of-divider captions on the cycle-demo SVG. The `|` character
+        // is a line break — the renderer splits on it into separate <tspan>s
+        // so the text wraps to multiple lines without auto-wrap.
+        // - cycleDemoSubtitle → passive observation copy (slide 3, "Example of a Cycle")
+        // - tryItSubtitle     → call-to-action with downward arrow pointing
+        //                       at the user's sample routine (slide 4, "Try it yourself")
+        cycleDemoSubtitle: 'When you finish|your routine,|your count grows',
+        // tryItSubtitle is the right-of-divider caption used by the SVG
+        // demo render. Slide 4 currently uses tryItMessage in text-mode
+        // (no SVG) — the caption is kept here for any future SVG-mode
+        // slide that wants a CTA-style right column. The trailing `↓` is
+        // detected by the renderer and animated to bounce.
+        tryItSubtitle:     'Try your|sample routine|below ↓',
+        // Slide 4 ("Try it yourself") body text — two paragraphs with a
+        // gap between, ending in a `↓` that's wrapped in an animated span
+        // by _setFirstRunWelcomeMessageText. `|` is the paragraph break.
+        tryItMessage:      'Try checking off the tasks in the sample routine below and watch them reset ↓',
+        // Slides 5 & 6 — appended dynamically when the user completes their
+        // first cycle. Slide 5 celebrates and reveals advanced affordances;
+        // slide 6 explains how to graduate from focus view to main view.
+        // `|` is a paragraph break in messages, a line break in titles.
+        titleCelebration:    'First Cycle Complete!',
+        messageCelebration:  'Long press or click and drag tasks to rearrange.|Swipe left for stats and achievements 📊',
+        // Slide-6 view names interpolated from the canonical labels
+        // (focusMode.enter for "Focus View", homeView.name for "Home View")
+        // so a future rename in one place propagates everywhere automatically.
+        titleFocusView:      'All Set!',
+        messageFocusView:    'Open the ⋯ menu above to exit {focusName} and go to {homeName}.|Or stay here to keep running cycles.',
+        cycleDemoAria:        'Demonstration: three tasks get completed and the cycle counter advances each time.',
+        dismiss:           'Dismiss',
+        dismissAria:       'Dismiss welcome message',
+        pauseAria:         'Pause welcome slides',
+        playAria:          'Resume welcome slides',
+        replayAria:        'Replay welcome slides',
+        prevAria:          'Previous slide',
+        nextAria:          'Next slide',
+        logoAlt:           'miniCycle logo'
     },
 
     // ========================================================================

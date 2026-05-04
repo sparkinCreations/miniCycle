@@ -310,19 +310,10 @@ export class MenuManager {
         const state = this.deps.AppState?.get();
         const collapsedSections = state?.settings?.menuCollapsedSections;
 
-        // No saved preference — expand all sections on desktop by default
+        // No saved preference — leave sections in their HTML-authored state
+        // (all collapsed by default). Mode Info has its own toggle outside
+        // the data-section system and stays expanded.
         if (!collapsedSections) {
-            const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
-            if (isDesktop) {
-                const sections = this.deps.querySelectorAll(DOM_SELECTORS.MENU_SECTION_BY_DATA);
-                sections.forEach(section => {
-                    section.classList.remove(DOM_CLASSES.COLLAPSED);
-                    const header = section.querySelector(DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE);
-                    if (header) {
-                        header.setAttribute('aria-expanded', 'true');
-                    }
-                });
-            }
             return;
         }
 

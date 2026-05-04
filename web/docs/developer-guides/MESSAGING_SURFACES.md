@@ -109,7 +109,25 @@ emptyHint.textContent = isFocusMode ? focusText : normalText;
 
 **Types:** `'info'` (default), `'success'`, `'warning'`, `'error'`.
 
-**Labels live in:** `defaultLabels.js` under the `notify:` block. Many keys are themed via `LENS_SENSITIVE_KEYS`.
+**Advanced options (4th arg):**
+
+```javascript
+showNotification(message, 'info', UI_TIMEOUTS.NOTIFICATION_OVERLAY, {
+    actionButton: {
+        label: getLabel('homeView.startBlankRoutineButton'),
+        onClick: () => createNewMiniCycle()
+    },
+    className: 'notification-titled'  // opt-in: bolds the first wrapped line via ::first-line
+});
+```
+
+- **`actionButton: { label, onClick }`** — embeds an inline button in the notification (used by the guided-tour offer, the Home View welcome, and similar CTAs).
+- **`className`** — appends a sanitized class (matches `[A-Za-z0-9_-]+`, multi-class via space-split) to the notification element. Used for opt-in cosmetic variants like `notification-titled` (bolds the first wrapped line so a `Title\n\nBody` message reads like a heading).
+- **Multi-line content** — `.notification-content` has `white-space: pre-line`, so `\n` becomes a soft break and `\n\n` becomes a paragraph break. Use this instead of HTML in the message string (the message is HTML-escaped by default; the v1.353 security fix removed the bypass).
+
+**The "first focus-exit" graduation surface:** When a brand-new user exits Focus View for the first time, `_firstFocusExitHandler` in `onboardingManager.js` fires a persistent welcome notification with an action button (*Start with a blank routine*) using the `notification-titled` className. This is the canonical pattern for "graduation" notifications that combine welcome copy with a single primary CTA — preferred over a standalone modal because it's non-blocking.
+
+**Labels live in:** `defaultLabels.js` under the `notify:` block (and `homeView:` for the welcome / blank-routine button labels). Many keys are themed via `LENS_SENSITIVE_KEYS`.
 
 ---
 

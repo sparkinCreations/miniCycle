@@ -40,14 +40,18 @@
     100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
 }
 
-/* Bounce in then fade out (cycle completion checkmark) */
+/* Bounce in then fade out (cycle completion checkmark).
+   Each frame's `transform` includes --cycle-complete-y-offset (default 0px)
+   so the JS-set offset for welcome-banner mode persists through the
+   animation. Without this, the animation would clobber the centered-on-
+   task-list translate and the checkmark would snap back to viewport center. */
 @keyframes completionBounce {
-    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
-    20% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
-    35% { opacity: 1; transform: translate(-50%, -50%) scale(0.95); }
-    50% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    75% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    0%   { opacity: 0; transform: translate(-50%, calc(-50% + var(--cycle-complete-y-offset, 0px))) scale(0.3); }
+    20%  { opacity: 1; transform: translate(-50%, calc(-50% + var(--cycle-complete-y-offset, 0px))) scale(1.15); }
+    35%  { opacity: 1; transform: translate(-50%, calc(-50% + var(--cycle-complete-y-offset, 0px))) scale(0.95); }
+    50%  { opacity: 1; transform: translate(-50%, calc(-50% + var(--cycle-complete-y-offset, 0px))) scale(1); }
+    75%  { opacity: 1; transform: translate(-50%, calc(-50% + var(--cycle-complete-y-offset, 0px))) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, calc(-50% + var(--cycle-complete-y-offset, 0px))) scale(0.9); }
 }
 
 

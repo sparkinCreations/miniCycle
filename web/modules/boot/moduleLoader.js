@@ -810,6 +810,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         showCycleCreationModal: (...args) => deps.cycle?.showCycleCreationModal?.(...args),
         createNewMiniCycle: (...args) => deps.cycle?.createNewMiniCycle?.(...args),
         preloadGettingStartedCycle: (...args) => deps.cycle?.preloadGettingStartedCycle?.(...args),
+        preloadInitialRunCycle: (...args) => deps.cycle?.preloadInitialRunCycle?.(...args),
         checkMiniCycle: (...args) => deps.progress?.checkMiniCycle?.(...args),
         incrementCycleCount: (...args) => deps.progress?.incrementCycleCount?.(...args),
         showCompletionAnimation: (...args) => deps.progress?.showCompletionAnimation?.(...args),
@@ -1055,6 +1056,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // vocab theme changes so the button's data-label / aria pick up
         // new theme values without waiting for the next mode toggle.
         refreshFocusActionButton: (...args) => deps.ui?.focusMode?.refreshActionButton?.(...args),
+        activateFocusMode: (...args) => deps.ui?.focusMode?.activate?.(...args),
 
         // Stats panel manager (from deps.ui) - returns instance when called as function
         statsPanelManager: () => deps.ui?.statsPanelManager,

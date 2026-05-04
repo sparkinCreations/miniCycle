@@ -99,13 +99,13 @@ export async function runOnboardingManagerTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization</h4>';
 
-    test('OnboardingManager class exists', () => {
+    await test('OnboardingManager class exists', () => {
         if (typeof OnboardingManager === 'undefined') {
             throw new Error('OnboardingManager class not found');
         }
     });
 
-    test('creates instance with DI successfully', () => {
+    await test('creates instance with DI successfully', () => {
         const mockDeps = createMockDeps();
         setOnboardingManagerDependencies(mockDeps);
         const om = new OnboardingManager();
@@ -114,7 +114,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('module exports singleton instance', () => {
+    await test('module exports singleton instance', () => {
         // Module exports onboardingManager as named export
         if (!onboardingManagerInstance) {
             throw new Error('Module-level onboardingManager instance not found');
@@ -124,7 +124,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('accepts dependency injection with AppMeta', () => {
+    await test('accepts dependency injection with AppMeta', () => {
         const mockDeps = createMockDeps();
         setOnboardingManagerDependencies(mockDeps);
         const om = new OnboardingManager();
@@ -138,7 +138,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">💾 AppState Integration (DI)</h4>';
 
-    test('shouldShowOnboarding handles AppState not ready (DI)', () => {
+    await test('shouldShowOnboarding handles AppState not ready (DI)', () => {
         // Inject deps with AppState that's not ready
         setOnboardingManagerDependencies({
             AppState: { isReady: () => false, get: () => null },
@@ -153,7 +153,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('shouldShowOnboarding reads from injected AppState', () => {
+    await test('shouldShowOnboarding reads from injected AppState', () => {
         const mockState = {
             settings: { onboardingCompleted: false }
         };
@@ -172,7 +172,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('shouldShowOnboarding returns false when already completed (DI)', () => {
+    await test('shouldShowOnboarding returns false when already completed (DI)', () => {
         const mockState = {
             settings: { onboardingCompleted: true }
         };
@@ -191,7 +191,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('completeOnboarding updates AppState (DI)', () => {
+    await test('completeOnboarding updates AppState (DI)', () => {
         let updateCalled = false;
         const mockState = {
             settings: { onboardingCompleted: false }
@@ -224,7 +224,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('resetOnboarding clears flag in AppState (DI)', () => {
+    await test('resetOnboarding clears flag in AppState (DI)', () => {
         let updateCalled = false;
         let notificationShown = false;
         const mockState = {
@@ -255,7 +255,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('resetOnboarding handles AppState not ready (DI)', () => {
+    await test('resetOnboarding handles AppState not ready (DI)', () => {
         let notificationShown = false;
 
         setOnboardingManagerDependencies({
@@ -277,7 +277,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">🎨 DOM Manipulation (DI)</h4>';
 
-    test('createOnboardingModal creates modal with correct structure (DI)', () => {
+    await test('createOnboardingModal creates modal with correct structure (DI)', () => {
         setOnboardingManagerDependencies(createMockDeps());
         const om = new OnboardingManager();
 
@@ -303,7 +303,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    test('createOnboardingModal applies theme correctly (DI)', () => {
+    await test('createOnboardingModal applies theme correctly (DI)', () => {
         setOnboardingManagerDependencies(createMockDeps());
         const om = new OnboardingManager();
 
@@ -318,7 +318,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    test('showOnboarding creates modal in DOM (DI)', () => {
+    await test('showOnboarding creates modal in DOM (DI)', () => {
         const mockState = {
             settings: { theme: 'default', onboardingCompleted: false }
         };
@@ -342,7 +342,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    test('showOnboarding handles AppState not ready (DI)', () => {
+    await test('showOnboarding handles AppState not ready (DI)', () => {
         setOnboardingManagerDependencies({
             AppState: { isReady: () => false, get: () => null },
             AppMeta: { version: '1.0.0' }
@@ -360,7 +360,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('showOnboarding handles missing settings object (DI)', () => {
+    await test('showOnboarding handles missing settings object (DI)', () => {
         setOnboardingManagerDependencies({
             AppState: {
                 isReady: () => true,
@@ -383,7 +383,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('modal contains 3 steps of content (DI)', () => {
+    await test('modal contains 3 steps of content (DI)', () => {
         const mockState = {
             settings: { theme: 'default', onboardingCompleted: false }
         };
@@ -416,7 +416,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">🎮 Modal Controls (DI)</h4>';
 
-    test('next button advances to step 2 (DI)', () => {
+    await test('next button advances to step 2 (DI)', () => {
         const mockState = {
             settings: { theme: 'default' }
         };
@@ -447,7 +447,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    test('prev button goes back to step 1 (DI)', () => {
+    await test('prev button goes back to step 1 (DI)', () => {
         const mockState = {
             settings: { theme: 'default' }
         };
@@ -482,7 +482,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    test('prev button hidden on first step (DI)', () => {
+    await test('prev button hidden on first step (DI)', () => {
         const mockState = {
             settings: { theme: 'default' }
         };
@@ -508,7 +508,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    test('next button shows "Let\'s Go!" on last step (DI)', () => {
+    await test('next button shows "Let\'s Go!" on last step (DI)', () => {
         const mockState = {
             settings: { theme: 'default' }
         };
@@ -539,7 +539,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    test('skip button completes onboarding (DI)', () => {
+    await test('skip button completes onboarding (DI)', () => {
         let updateCalled = false;
         const mockState = {
             settings: { theme: 'default', onboardingCompleted: false }
@@ -574,7 +574,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('clicking outside modal completes onboarding (DI)', () => {
+    await test('clicking outside modal completes onboarding (DI)', () => {
         let updateCalled = false;
         const mockState = {
             settings: { theme: 'default', onboardingCompleted: false }
@@ -614,7 +614,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
     // NOTE: Async test for 'showCycleCreationModal when no cycle' removed - flaky in automated
     // test environment due to setTimeout timing issues. Run manually in browser test suite.
 
-    test('completeOnboarding calls completeInitialSetup when has cycle (DI)', () => {
+    await test('completeOnboarding calls completeInitialSetup when has cycle (DI)', () => {
         let setupCalled = false;
 
         setOnboardingManagerDependencies({
@@ -641,7 +641,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('completeOnboarding removes modal from DOM (DI)', () => {
+    await test('completeOnboarding removes modal from DOM (DI)', () => {
         setOnboardingManagerDependencies({
             AppState: {
                 isReady: () => true,
@@ -665,7 +665,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('completeOnboarding handles missing dependencies gracefully (DI)', () => {
+    await test('completeOnboarding handles missing dependencies gracefully (DI)', () => {
         setOnboardingManagerDependencies({
             AppState: {
                 isReady: () => true,
@@ -688,19 +688,19 @@ export async function runOnboardingManagerTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">📦 Module Exports</h4>';
 
-    test('OnboardingManager class is exported', () => {
+    await test('OnboardingManager class is exported', () => {
         if (typeof OnboardingManager !== 'function') {
             throw new Error('OnboardingManager class not exported');
         }
     });
 
-    test('setOnboardingManagerDependencies function is exported', () => {
+    await test('setOnboardingManagerDependencies function is exported', () => {
         if (typeof setOnboardingManagerDependencies !== 'function') {
             throw new Error('setOnboardingManagerDependencies not exported');
         }
     });
 
-    test('module instance can call showOnboarding', () => {
+    await test('module instance can call showOnboarding', () => {
         if (!onboardingManagerInstance) {
             throw new Error('Module instance not available');
         }
@@ -709,7 +709,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('module instance is OnboardingManager type', () => {
+    await test('module instance is OnboardingManager type', () => {
         if (!onboardingManagerInstance) {
             throw new Error('Module instance not available');
         }
@@ -722,7 +722,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling (DI)</h4>';
 
-    test('handles null AppState gracefully (DI)', () => {
+    await test('handles null AppState gracefully (DI)', () => {
         setOnboardingManagerDependencies({
             AppState: null,
             AppMeta: { version: '1.0.0' },
@@ -736,7 +736,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         om.resetOnboarding();
     });
 
-    test('handles missing AppState.get gracefully (DI)', () => {
+    await test('handles missing AppState.get gracefully (DI)', () => {
         setOnboardingManagerDependencies({
             AppState: {
                 isReady: () => true
@@ -750,7 +750,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         om.shouldShowOnboarding();
     });
 
-    test('handles null cycles and activeCycle (DI)', () => {
+    await test('handles null cycles and activeCycle (DI)', () => {
         setOnboardingManagerDependencies({
             AppState: {
                 isReady: () => true,
@@ -768,7 +768,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         om.completeOnboarding(modal, undefined, undefined);
     });
 
-    test('resetOnboarding handles missing showNotification (DI)', () => {
+    await test('resetOnboarding handles missing showNotification (DI)', () => {
         setOnboardingManagerDependencies({
             AppState: {
                 isReady: () => true,
@@ -782,6 +782,346 @@ export async function runOnboardingManagerTests(resultsDiv) {
 
         // Should not throw (uses fallback notification)
         om.resetOnboarding();
+    });
+
+    // ===== FIRST-RUN FOCUS-FIRST FLOW =====
+
+    resultsDiv.innerHTML += '<h4 class="test-section">🚀 First-Run Focus-First Flow</h4>';
+
+    await test('runFirstRunFlow loads sample, sets focus state, attaches lifecycle', async () => {
+        const state = { settings: {}, data: { cycles: {} } };
+        let preloadCalled = false;
+        let activateCalled = false;
+
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => state,
+                update: (fn) => { fn(state); return state; }
+            },
+            preloadInitialRunCycle: async () => { preloadCalled = true; return true; },
+            activateFocusMode: () => { activateCalled = true; },
+            appInit: { isAppReady: () => true }
+        }));
+        const om = new OnboardingManager();
+
+        const ok = await om.runFirstRunFlow();
+
+        if (!ok) throw new Error('runFirstRunFlow returned false on success path');
+        if (!preloadCalled) throw new Error('preloadInitialRunCycle was not called');
+        if (state.settings.focusModeActive !== true) {
+            throw new Error('state.settings.focusModeActive should be true after runFirstRunFlow');
+        }
+        if (!activateCalled) throw new Error('activateFocusMode was not called when isAppReady=true');
+
+        // Cleanup any listeners that armFirstSessionLifecycle attached
+        om.destroy();
+    });
+
+    await test('runFirstRunFlow rolls back focus state when sample load fails', async () => {
+        const state = { settings: {}, data: { cycles: {} } };
+        let creationModalShown = false;
+
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => state,
+                update: (fn) => { fn(state); return state; }
+            },
+            preloadInitialRunCycle: async () => false,
+            activateFocusMode: () => {},
+            showCycleCreationModal: () => { creationModalShown = true; },
+            appInit: { isAppReady: () => true }
+        }));
+        const om = new OnboardingManager();
+
+        const ok = await om.runFirstRunFlow();
+
+        if (ok) throw new Error('runFirstRunFlow should return false when load fails');
+        if (state.settings.focusModeActive !== false) {
+            throw new Error('focusModeActive should be rolled back to false on failure');
+        }
+        if (!creationModalShown) throw new Error('showCycleCreationModal should be called as fallback');
+
+        om.destroy();
+    });
+
+    await test('runFirstRunFlow defers activation until init:app-ready when app not ready', async () => {
+        const state = { settings: {}, data: { cycles: {} } };
+        let activateCalled = false;
+
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => state,
+                update: (fn) => { fn(state); return state; }
+            },
+            preloadInitialRunCycle: async () => true,
+            activateFocusMode: () => { activateCalled = true; },
+            appInit: { isAppReady: () => false }
+        }));
+        const om = new OnboardingManager();
+
+        await om.runFirstRunFlow();
+
+        if (activateCalled) throw new Error('activate should NOT fire before init:app-ready when app not ready');
+
+        // Simulate the app-ready event firing
+        document.dispatchEvent(new Event('init:app-ready'));
+
+        if (!activateCalled) throw new Error('activate should fire after init:app-ready');
+
+        om.destroy();
+    });
+
+    await test('first focus-view exit marks onboardingCompleted + dispatches setup-complete', async () => {
+        const state = { settings: {}, data: { cycles: {} } };
+        let setupCompleteFired = false;
+        const onSetupComplete = () => { setupCompleteFired = true; };
+        document.addEventListener('onboarding:setup-complete', onSetupComplete);
+
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => state,
+                update: (fn) => { fn(state); return state; }
+            },
+            preloadInitialRunCycle: async () => true,
+            activateFocusMode: () => {},
+            appInit: { isAppReady: () => true }
+        }));
+        const om = new OnboardingManager();
+
+        await om.runFirstRunFlow();
+
+        // Simulate user exiting focus view
+        document.dispatchEvent(new CustomEvent('focusMode:deactivated'));
+
+        if (state.settings.onboardingCompleted !== true) {
+            throw new Error('onboardingCompleted should be true after first focus exit');
+        }
+        if (!setupCompleteFired) throw new Error('onboarding:setup-complete event should fire on first focus exit');
+
+        document.removeEventListener('onboarding:setup-complete', onSetupComplete);
+        om.destroy();
+    });
+
+    await test('first focus-view exit shows Home View welcome notification with action button', async () => {
+        const state = { settings: {}, data: { cycles: {} } };
+        const notificationCalls = [];
+        let createNewCalled = 0;
+
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => state,
+                update: (fn) => { fn(state); return state; }
+            },
+            preloadInitialRunCycle: async () => true,
+            activateFocusMode: () => {},
+            appInit: { isAppReady: () => true },
+            showNotification: (msg, type, duration, options) => {
+                notificationCalls.push({ msg, type, duration, options });
+            },
+            createNewMiniCycle: () => { createNewCalled++; }
+        }));
+        const om = new OnboardingManager();
+
+        await om.runFirstRunFlow();
+        document.dispatchEvent(new CustomEvent('focusMode:deactivated'));
+
+        // Should have exactly one notification with the home-view welcome message
+        // (the activation toast was muted by runFirstRunFlow's silent activate).
+        const welcomeCalls = notificationCalls.filter(
+            n => typeof n.msg === 'string' && /Welcome to Home View/.test(n.msg)
+        );
+        if (welcomeCalls.length !== 1) {
+            throw new Error(
+                `Expected exactly one Home View welcome notification, got ${welcomeCalls.length}. ` +
+                `All calls: ${JSON.stringify(notificationCalls.map(c => c.msg))}`
+            );
+        }
+
+        // Notification should carry the action button + className opt-in
+        const call = welcomeCalls[0];
+        if (!call.options?.actionButton?.label) {
+            throw new Error('Welcome notification should have an actionButton with a label');
+        }
+        if (typeof call.options.actionButton.onClick !== 'function') {
+            throw new Error('Welcome notification actionButton should have an onClick function');
+        }
+        if (call.options.className !== 'notification-titled') {
+            throw new Error(`Expected className "notification-titled", got "${call.options.className}"`);
+        }
+
+        // Action button should call createNewMiniCycle when clicked
+        call.options.actionButton.onClick();
+        if (createNewCalled !== 1) {
+            throw new Error(`Expected createNewMiniCycle to be called once, got ${createNewCalled}`);
+        }
+
+        om.destroy();
+    });
+
+    await test('Home View welcome notification fires only once (one-shot listener)', async () => {
+        const state = { settings: {}, data: { cycles: {} } };
+        const notificationCalls = [];
+
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => state,
+                update: (fn) => { fn(state); return state; }
+            },
+            preloadInitialRunCycle: async () => true,
+            activateFocusMode: () => {},
+            appInit: { isAppReady: () => true },
+            showNotification: (msg, type, duration, options) => {
+                notificationCalls.push({ msg, type, duration, options });
+            }
+        }));
+        const om = new OnboardingManager();
+
+        await om.runFirstRunFlow();
+        // Fire the event multiple times — only the first should trigger the welcome
+        document.dispatchEvent(new CustomEvent('focusMode:deactivated'));
+        document.dispatchEvent(new CustomEvent('focusMode:deactivated'));
+        document.dispatchEvent(new CustomEvent('focusMode:deactivated'));
+
+        const welcomeCalls = notificationCalls.filter(
+            n => typeof n.msg === 'string' && /Welcome to Home View/.test(n.msg)
+        );
+        if (welcomeCalls.length !== 1) {
+            throw new Error(
+                `Welcome notification should fire exactly once across multiple focus-exits, got ${welcomeCalls.length}`
+            );
+        }
+
+        om.destroy();
+    });
+
+    await test('resetOnboarding does NOT mount welcome banner immediately (deferred to next launch)', () => {
+        const state = { settings: { onboardingCompleted: true } };
+
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => state,
+                update: (fn) => { fn(state); return state; }
+            }
+        }));
+        const om = new OnboardingManager();
+
+        // Spy on _attachFirstSessionLifecycle to verify it is NOT invoked
+        let attachCalled = 0;
+        const original = om._attachFirstSessionLifecycle?.bind(om);
+        om._attachFirstSessionLifecycle = function (...args) {
+            attachCalled++;
+            return original?.(...args);
+        };
+
+        om.resetOnboarding();
+
+        if (attachCalled !== 0) {
+            throw new Error(
+                `resetOnboarding should defer onboarding to next launch — ` +
+                `_attachFirstSessionLifecycle should NOT be called, got ${attachCalled} calls`
+            );
+        }
+
+        // Flags should still be cleared so the next launch picks the right surface
+        if (state.settings.onboardingCompleted !== false) {
+            throw new Error('resetOnboarding should clear onboardingCompleted to false');
+        }
+        if (state.settings.firstRunWelcomeDismissed !== false) {
+            throw new Error('resetOnboarding should clear firstRunWelcomeDismissed to false');
+        }
+
+        om.destroy();
+    });
+
+    await test('beforeunload does NOT graduate onboarding (closing app keeps welcome+splash on reload)', async () => {
+        const state = { settings: {}, data: { cycles: {} } };
+
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => state,
+                update: (fn) => { fn(state); return state; }
+            },
+            preloadInitialRunCycle: async () => true,
+            activateFocusMode: () => {},
+            appInit: { isAppReady: () => true }
+        }));
+        const om = new OnboardingManager();
+
+        await om.runFirstRunFlow();
+
+        // Simulate beforeunload — should NOT mark onboarding complete.
+        // Per spec: only dismiss-welcome OR exit-focus-mode graduates the user.
+        window.dispatchEvent(new Event('beforeunload'));
+
+        if (state.settings.onboardingCompleted === true) {
+            throw new Error('onboardingCompleted should NOT be true after just a beforeunload');
+        }
+
+        om.destroy();
+    });
+
+    await test('armFirstSessionLifecycle is idempotent', async () => {
+        const state = { settings: {}, data: { cycles: {} } };
+        let updateCount = 0;
+
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => state,
+                update: (fn) => { updateCount++; fn(state); return state; }
+            }
+        }));
+        const om = new OnboardingManager();
+
+        om.armFirstSessionLifecycle();
+        om.armFirstSessionLifecycle();  // second call should be a no-op
+        om.armFirstSessionLifecycle();  // third too
+
+        // Only one set of listeners should be registered — fire the focus-exit
+        // event once and confirm only one update happens.
+        document.dispatchEvent(new CustomEvent('focusMode:deactivated'));
+
+        if (updateCount !== 1) {
+            throw new Error(`Expected exactly 1 AppState.update from focus-exit, got ${updateCount}`);
+        }
+
+        om.destroy();
+    });
+
+    await test('destroy cleans up first-session lifecycle listeners', async () => {
+        const state = { settings: {}, data: { cycles: {} } };
+        let updateCount = 0;
+
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => state,
+                update: (fn) => { updateCount++; fn(state); return state; }
+            },
+            preloadInitialRunCycle: async () => true,
+            activateFocusMode: () => {},
+            appInit: { isAppReady: () => true }
+        }));
+        const om = new OnboardingManager();
+
+        await om.runFirstRunFlow();
+        om.destroy();
+
+        // Listeners should be removed — events post-destroy should not flip state
+        document.dispatchEvent(new CustomEvent('focusMode:deactivated'));
+        window.dispatchEvent(new Event('beforeunload'));
+
+        if (state.settings.onboardingCompleted === true) {
+            throw new Error('onboardingCompleted should not flip after destroy');
+        }
     });
 
     // ===== SUMMARY =====
