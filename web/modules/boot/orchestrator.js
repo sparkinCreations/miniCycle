@@ -274,6 +274,34 @@ function isCacheError(error) {
 }
 
 /**
+ * Replace the boot-error UI with a friendly "Updating to latest version..."
+ * overlay during automatic cache recovery. Called immediately before
+ * `attemptCacheRecovery()` so the user sees a clear, non-alarming explanation
+ * for the brief moment between cache clear and reload (typically <1s, longer
+ * on slow networks).
+ *
+ * The recovery itself triggers a full page reload, so this DOM is replaced
+ * shortly after — no listener cleanup needed.
+ * @returns {void}
+ */
+function showUpdatingOverlay() {
+  const loader = document.getElementById(DOM_IDS.APP_LOADER);
+  if (!loader) return;
+
+  loader.style.display = 'flex';
+  loader.classList.remove(DOM_CLASSES.FADE_OUT);
+
+  const headline = escapeHtml(getLabel('boot.updatingToLatest'));
+  const detail   = escapeHtml(getLabel('boot.updatingDetail'));
+
+  loader.innerHTML = `
+    <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle" class="loader-logo" width="120" height="96">
+    <div class="loader-text" style="animation: none; margin-top: 16px;">${headline}</div>
+    <div style="margin-top: 8px; color: rgba(255,255,255,0.75); font-size: 13px;">${detail}</div>
+  `;
+}
+
+/**
  * Show boot error to user with retry or lite fallback
  * Uses the existing #app-loader for consistent branding
  * @param {string} phase - Which phase failed
@@ -677,6 +705,23 @@ async function initApp() {
   } catch (error) {
     const phase = error.message.includes('Phase') ? error.message.split(' timed')[0] : 'initialization';
 
+    // ✅ FAST-PATH: A "binding name not found" / "Importing"-class error is a
+    // signature stale-cache failure (e.g. a static import like
+    // `import { EVENTS } from '../core/constants.js'` resolved against an old
+    // cached constants.js missing a newly-added export). Retrying without
+    // clearing caches just hits the same stale entry again and burns ~3s of
+    // user-facing error screen. Recover immediately on the first such failure.
+    if (isCacheError(error) && !isRecoveryExhausted() && navigator.onLine) {
+      console.warn('🧹 Cache-class error on attempt ' + bootAttempt + ' — fast-path recovery');
+      // Show a friendly "Updating to latest version..." overlay so the user
+      // doesn't see a generic boot-error screen during the brief moment
+      // before the reload kicks in.
+      showUpdatingOverlay();
+      const recovered = await attemptCacheRecovery('orchestrator-cacheErrorFastPath');
+      if (recovered) return;
+      // Recovery exhausted — fall through to retry/error path
+    }
+
     if (bootAttempt <= MAX_BOOT_RETRIES) {
       // Always retry at least once — on iOS, the SW process needs time to restart
       // after being killed while backgrounded. The retry delay gives it time to spin up.
@@ -685,14 +730,8 @@ async function initApp() {
       await new Promise(resolve => setTimeout(resolve, BOOT_TIMEOUTS.RETRY_DELAY));
       return initApp(); // Retry
     } else {
-      // ⚠️ Only attempt cache recovery when online — clearing caches offline
-      // destroys the only available files and bricks the app
-      if (isCacheError(error) && !isRecoveryExhausted() && navigator.onLine) {
-        console.warn('🧹 Cache error after retries - attempting recovery');
-        const recovered = await attemptCacheRecovery('orchestrator-bootFailure');
-        if (recovered) return;
-      }
-      // Max retries exceeded (or offline) - show final error with lite option
+      // Max retries exceeded - show final error with lite option (cache recovery
+      // was already attempted via the fast-path above when applicable)
       showBootError(phase, error, false);
     }
   }

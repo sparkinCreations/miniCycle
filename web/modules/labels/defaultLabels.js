@@ -1852,6 +1852,8 @@ export const DEFAULT_LABELS = deepFreeze({
         useLite:          'Use Lite Version',
         failedAt:         'Failed at: {phase} (attempt {number})',
         appUpdated:       'App updated! Cache refreshed automatically.',
+        updatingToLatest: 'Updating to latest version...',
+        updatingDetail:   'This only takes a moment.',
         dataRestored:     'Data restored after interrupted test run',
         updateAvailable:  'Update Available!',
         oldCachedVersion: 'Your browser has an old cached version.',

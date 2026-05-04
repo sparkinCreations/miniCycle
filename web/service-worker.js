@@ -1,9 +1,9 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.223';
-var CACHE_VERSION = 'v1066';
-var CACHE_VERSION_NUMBER = 1066; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.224';
+var CACHE_VERSION = 'v1067';
+var CACHE_VERSION_NUMBER = 1067; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -887,9 +887,38 @@ self.addEventListener('fetch', function (event) {
       // ═══════════════════════════════════════════════════════════════════
       // STALE-WHILE-REVALIDATE: Non-critical files for faster repeat loads
       // Serves cached version instantly, updates in background
+      //
+      // ⚠️ STATIC IMPORT FRESHNESS GUARD:
+      // Activate keeps the previous static cache as an offline fallback, so a
+      // broad `caches.match()` may return the OLD cached copy of an unversioned
+      // file (e.g. `constants.js`) even when the NEW STATIC_CACHE has the
+      // updated version. That breaks static imports the moment a deploy adds
+      // a new export to a file other modules statically import (e.g. adding
+      // `EVENTS` to constants.js → "Importing binding name 'EVENTS' is not
+      // found" because consumers got the stale copy).
+      //
+      // Fix: for unversioned module/CSS requests, look in the CURRENT
+      // STATIC_CACHE / DYNAMIC_CACHE first; fall back to the broad search only
+      // if neither has the file (e.g. a brand-new module the precache missed).
+      // Versioned (?v=) requests skip this — their URL already includes the
+      // version, so the broad search safely returns the matching entry.
       // ═══════════════════════════════════════════════════════════════════
+      var preferCurrentCaches = !requestVersion && (isModuleFile || url.pathname.endsWith('.css'));
+      var matchPromise = preferCurrentCaches
+        ? caches.open(STATIC_CACHE).then(function (sc) {
+            return sc.match(cacheRequest);
+          }).then(function (staticHit) {
+            if (staticHit) return staticHit;
+            return caches.open(DYNAMIC_CACHE).then(function (dc) {
+              return dc.match(cacheRequest);
+            });
+          }).then(function (currentHit) {
+            return currentHit || caches.match(cacheRequest);
+          })
+        : caches.match(cacheRequest);
+
       event.respondWith(
-        caches.match(cacheRequest).then(function (cached) {
+        matchPromise.then(function (cached) {
           // ✅ OFFLINE: Skip background fetch entirely when offline.
           // On iOS, firing 80+ fetch() calls with cache:'no-cache' when offline:
           // - Generates 80+ "Failed to load resource" errors in Safari console

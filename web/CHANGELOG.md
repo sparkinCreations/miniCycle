@@ -1,3 +1,7 @@
+## [2.224] - 2026-05-04
+- chore: update version to 2.223 across all relevant files and documentation
+
+
 ## [2.223] - 2026-05-04
 - Add first-run routine and welcome banner styles
 - feat: update label strings from "Focus Mode" to "Focus View" for consistency and clarity
