@@ -1,3 +1,8 @@
+## [2.223] - 2026-05-04
+- Add first-run routine and welcome banner styles
+- feat: update label strings from "Focus Mode" to "Focus View" for consistency and clarity
+
+
 ## [2.222] - 2026-05-03
 - feat: enhance guided tour functionality with step filtering and CSS adjustments
 
