@@ -5,7 +5,7 @@
   "version_name": "Chrome Edition v1.0",
   "description": "A simple, lightweight routine manager. Tasks reset on cycle completion.",
   "author": "sparkinCreations",
-  "homepage_url": "https://minicycle.app",
+  "homepage_url": "https://minicycleapp.com",
 
   "action": {
     "default_title": "miniCycle lite",
