@@ -652,7 +652,10 @@ body.focus-mode .stats-panel {
 
 .badge-tap-hint {
     font-size: var(--font-size-xs);
-    color: var(--color-gray-600);
+    /* Semantic muted-text token — auto-adapts to dark mode (#999) and
+       respects vocab themes. Was --color-gray-600, a static palette token
+       that read too dim on dark backgrounds. */
+    color: var(--theme-text-muted);
     text-align: center;
     margin: var(--space-2) 0 0;
     font-style: italic;

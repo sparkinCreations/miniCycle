@@ -127,6 +127,14 @@ export function attachGlobalEventListeners(_GlobalUtils, _options = {}) {
     handleResetNotificationPosition
   );
 
+  // ========== Reset Task View Layout ==========
+  replaceStoredEventListener(
+    document.getElementById('reset-task-view-layout'),
+    'click',
+    '__miniCycleUiBootResetTaskViewLayoutClickHandler',
+    handleResetTaskViewLayoutClick
+  );
+
   // ========== First Touch Interaction ==========
   replaceStoredEventListener(
     document,
@@ -375,6 +383,49 @@ function handleGlobalClickForTaskButtons(event) {
 // Note: Switch modal deselection was previously handled here as a fallback.
 // Removed in refactor (Apr 2026) — routineSwitcher.setupModalClickOutside()
 // owns all deselection logic via _deselectRoutine().
+
+/**
+ * Handle reset task view layout click — confirms with the user, then
+ * clears every saved position so all elements snap back to defaults.
+ */
+function handleResetTaskViewLayoutClick() {
+  const showNotification = getShowNotification();
+  const showConfirmationModal = getUiApi()?.showConfirmationModal;
+  const resetTaskViewLayout = getUiApi()?.resetTaskViewLayout;
+
+  if (typeof resetTaskViewLayout !== 'function') {
+    console.warn('⚠️ resetTaskViewLayout not available');
+    return;
+  }
+
+  const doReset = () => {
+    try {
+      const ok = resetTaskViewLayout();
+      if (ok) {
+        showNotification?.('🔄 ' + getLabel('notify.taskViewLayoutReset'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
+      } else {
+        showNotification?.('❌ ' + getLabel('notify.taskViewLayoutResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
+      }
+    } catch (err) {
+      console.error('❌ Failed to reset task view layout:', err);
+      showNotification?.('❌ ' + getLabel('notify.taskViewLayoutResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
+    }
+  };
+
+  if (typeof showConfirmationModal === 'function') {
+    showConfirmationModal({
+      title: getLabel('modal.resetTaskViewLayoutTitle'),
+      message: getLabel('modal.resetTaskViewLayoutMessage'),
+      confirmText: getLabel('modal.resetTaskViewLayoutConfirm'),
+      callback: (confirmed) => {
+        if (confirmed) doReset();
+      }
+    });
+  } else {
+    // Confirmation modal not available — proceed without confirmation.
+    doReset();
+  }
+}
 
 /**
  * Handle reset notification position click

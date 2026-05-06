@@ -656,7 +656,14 @@ export class ModeManager {
         // ✅ Load initial collapsed state from AppState
         const AppState = this.deps.AppState;
         const currentState = AppState?.get();
-        const isCollapsed = currentState?.settings?.modeDescriptionCollapsed ?? false;
+        // Default-collapsed across all viewports — Mode Info takes vertical
+        // space that pushes the "Enter Focus View" primary action down. On
+        // mobile the menu is already taller (Quick Actions panel adds ~120px)
+        // so compaction matters more there, not less. Saved preference still
+        // wins, so users who actively switch modes can expand it once and
+        // their choice persists.
+        const savedCollapsed = currentState?.settings?.modeDescriptionCollapsed;
+        const isCollapsed = savedCollapsed ?? true;
 
         // Apply initial state
         if (isCollapsed) {

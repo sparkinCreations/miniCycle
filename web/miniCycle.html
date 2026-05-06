@@ -10,7 +10,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.224">
+<meta name="app-version" content="2.225">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -29,20 +29,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.224"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.225"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.224" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.224" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.224" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.224" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.224" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.224" as="style">
+<link rel="preload" href="styles/main.css?v=2.225" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.225" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.225" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.225" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.225" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.225" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.224" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.225" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.224"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.225"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -53,7 +53,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.224"></script>
+<script src="./version.js?v=2.225"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -1292,6 +1292,16 @@ window.installApp = () => {
           </div>
     </div>
 
+    <div class="main-menu-primary-action-row">
+        <button id="menu-enter-focus-view" class="menu-primary-action" type="button" title="Enter Focus View" aria-label="Enter Focus View">
+            <svg class="menu-primary-action-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                <!-- Four corner brackets — universal "expand to fill" affordance -->
+                <path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"/>
+            </svg>
+            <span>Enter Focus View</span>
+        </button>
+    </div>
+
     <button id="close-main-menu" aria-label="Close Main Menu">Close</button>
     <!--<button id="exit-mini-cycle"><i class="fas fa-sign-out-alt"></i> Exit to Main Menu </button>-->
         
@@ -1684,19 +1694,23 @@ window.installApp = () => {
     🌓
   </button>
     <!-- Left Arrow — visible in stats view, navigates to task view -->
-<div id="slide-left" class="slide-arrow" tabindex="0" role="button" aria-label="Show Tasks" title="Show Tasks">❯</div>
+<div id="slide-left" class="slide-arrow" tabindex="0" role="button" aria-label="Show Routine View" title="Show Routine View">❯</div>
 
 <!-- Right Arrow — visible in task view, navigates to stats panel -->
 <div id="slide-right" class="slide-arrow" tabindex="0" role="button" aria-label="Show Statistics" title="Show Statistics">❮</div>
 
 
 <div id="task-view">
+    <!-- Add task input bar — sibling of #task-card-group so it can be
+         independently dragged with #task-view as its positioned ancestor.
+         Default flex order keeps it visually above the routine card. -->
+    <div id="task-input-row" class="task-input hidden">
+        <label for="taskInput" class="visually-hidden">Add a new task</label>
+        <input type="text" id="taskInput" name="taskInput" class="taskInput" placeholder="Enter a task..." title="Type a task and press Add or Enter" tabindex="-1">
+        <button id="addTaskBtn" title="Add task" tabindex="-1">Add</button>
+    </div>
+    <div id="task-card-group" class="task-card-group">
     <div class="task-card">
-        <div class="task-input hidden">
-            <label for="taskInput" class="visually-hidden">Add a new task</label>
-            <input type="text" id="taskInput" name="taskInput" class="taskInput" placeholder="Enter a task..." title="Type a task and press Add or Enter" tabindex="-1">
-            <button id="addTaskBtn" title="Add task" tabindex="-1">Add</button>
-        </div>
         <div class="title-row">
             <div id="mini-cycle-title" class="mini-cycle-title" contenteditable="true" role="textbox" aria-label="Routine name"></div>
             <!-- Task Search Icon (hidden until 3+ tasks) -->
@@ -1775,6 +1789,7 @@ window.installApp = () => {
     <div class="progress-container">
         <div id="progressBar" class="progress-bar"></div>
     </div>
+    </div><!-- end task-card-group -->
     <div id="complete-all-and-help-window-container" class="complete-all-and-help-window-container">
         <!-- Complete All Button -->
   <button id="completeAll" class="complete-all-btn" title="Complete all checked tasks">Complete</button>
@@ -1902,7 +1917,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.224"></script>
+ <script type="module" src="miniCycle-main.js?v=2.225"></script>
 
 <script>
 // Sync About modal version with meta app-version

@@ -407,6 +407,7 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     updateMainMenuHeader: deps.ui?.updateMainMenuHeader,
     closeAllModals: deps.ui?.closeAllModals,
     resetNotificationPosition: deps.utils?.resetNotificationPosition,
+    resetTaskViewLayout: deps.ui?.resetTaskViewLayout,
     syncCurrentSettingsToStorage: deps.ui?.syncCurrentSettingsToStorage,
     // Additional UI functions
     onboardingManager: deps.ui?.onboardingManager,

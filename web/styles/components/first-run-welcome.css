@@ -99,7 +99,15 @@
        hidden entirely while the banner is up — see the .first-run-welcome-active
        hide rule below — so they don't need offset variables anymore. */
     --first-run-welcome-height-fallback: 80px;
-    --first-run-welcome-gap: var(--space-0-75); /* 3px — tight gap between banner bottom and input bar / task-view top, applied only when the banner would overlap */
+    --first-run-welcome-gap: var(--space-4); /* 16px desktop — comfortable gap between banner bottom and input bar / task-view top, applied only when the banner would overlap */
+}
+
+/* Mobile: tighter gap so the welcome banner + content don't crowd the
+   shorter viewport. */
+@media (max-width: 768px) {
+    body {
+        --first-run-welcome-gap: var(--space-2); /* 8px on mobile */
+    }
 }
 
 
@@ -173,18 +181,21 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0) 55%),
         var(--pref-modal-bg, var(--theme-modal-glass-bg-soft, var(--theme-modal-glass-bg, var(--theme-modal-bg))));
-    color: var(--pref-modal-text, var(--theme-modal-text));
+    /* White text + dark halo — the previous "dark text + white halo" strategy
+       lost contrast on slides where the backdrop's blue gradient brightened
+       behind the text. White-on-dark-shadow stays legible across the full
+       gradient range and matches the splash's hero treatment. */
+    color: var(--color-white);
     /* Bumped from default 400 — heavier glyph weight reads more crisply
        against the translucent glass surface. The title already sets its
        own --font-weight-bold (700), so this only affects body copy + SVG. */
     font-weight: var(--font-weight-semibold);
-    /* Soft white halo behind text restores contrast against the very low-
-       alpha glass surface without sacrificing transparency. The halo sits
-       under each glyph, thickening the apparent stroke-weight slightly. */
+    /* Soft dark halo behind text — anchors the white glyphs against the
+       lighter regions of the glass gradient without sacrificing transparency. */
     text-shadow:
-        0 0 var(--space-px) rgba(255, 255, 255, 0.55),
-        0 0 var(--space-1) rgba(255, 255, 255, 0.35);
-    border: var(--space-px) solid color-mix(in srgb, var(--pref-modal-text, var(--theme-modal-text)) 14%, transparent);
+        0 var(--space-px) var(--space-px) rgba(0, 0, 0, 0.45),
+        0 0 var(--space-2) rgba(0, 0, 0, 0.35);
+    border: var(--space-px) solid color-mix(in srgb, var(--color-white) 22%, transparent);
     /* Two-stop inset highlight along the top edge sells the glossy curvature. */
     box-shadow:
         0 var(--space-4) var(--space-8) rgba(15, 23, 42, 0.22),
@@ -315,7 +326,10 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
 .first-run-welcome__arrow {
     display: inline-block;
     margin-left: 0.25em;
-    color: var(--theme-button-bg, currentColor);
+    /* Black for high contrast against the glass gradient. The banner's
+       inherited dark text-shadow is low-alpha (0.45/0.35) so it doesn't
+       muddy a solid-black glyph. */
+    color: var(--color-black);
     font-weight: var(--font-weight-bold);
     /* Size up well past the body text — the arrow is the directional cue,
        not just punctuation. Em-relative so it scales with any future
@@ -561,7 +575,10 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
        balanced (tasks left of divider, caption right of divider, counter
        below), so centering reads cleanly without leaning the whole demo. */
     margin: 0 auto;
-    color: var(--pref-modal-text, var(--theme-modal-text));
+    /* Inherit white from the banner so the demo's <text> elements match the
+       new contrast strategy. (Was theme-modal-text — dark — which lost
+       contrast on the brighter regions of the glass gradient.) */
+    color: var(--color-white);
     font-family: inherit;
     /* Parent .first-run-welcome__message dims to 0.85 for text mode; the
        SVG should render at full strength so the green check + accent pop. */
@@ -582,9 +599,9 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
     font-size: 9px;
     font-family: inherit;
     font-weight: var(--font-weight-semibold);
-    /* SVG <text> doesn't honor text-shadow — use drop-shadow to add the same
-       white halo as the banner's plain text for parity on the glass surface. */
-    filter: drop-shadow(0 0 var(--space-px) rgba(255, 255, 255, 0.6));
+    /* SVG <text> doesn't honor text-shadow — use drop-shadow to mirror the
+       banner's dark halo for parity on the glass surface. */
+    filter: drop-shadow(0 var(--space-px) var(--space-px) rgba(0, 0, 0, 0.5));
 }
 
 .cycle-demo__counter {
@@ -604,8 +621,10 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
 .cycle-demo__count {
     transform-box: fill-box;
     transform-origin: center;
-    /* Slight emphasis so the number reads as the focal element. */
-    fill: var(--theme-button-bg, currentColor);
+    /* Inherit white from the demo. Was --theme-button-bg (theme purple/blue),
+       which lost contrast against the glass gradient. The parent .cycle-demo__counter
+       already provides bold weight + slight size bump for focal emphasis. */
+    fill: currentColor;
 }
 
 /* --- Task row --- */
@@ -647,7 +666,10 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
 }
 
 .cycle-demo__task--done .cycle-demo__label {
-    opacity: 0.45;
+    /* Bumped from 0.45 — with the new white-on-glass text, 0.45 dimmed
+       the labels into the gradient. The check icon still carries the
+       primary "done" signal; this just keeps the label readable. */
+    opacity: 0.7;
 }
 
 .cycle-demo__strike {
@@ -755,6 +777,7 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
     background: var(--color-black);
     color: var(--color-white);
     pointer-events: auto;
+    cursor: pointer;
     /* Center the title (two-line layout) in the middle of the entire
        viewport — vertically AND horizontally — so "Welcome to / miniCycle"
        reads as a centered hero before the splash fades to reveal the

@@ -784,6 +784,144 @@ body.quick-actions-open #quick-actions-window {
    CLOSE MAIN MENU BUTTON
    ============================================================================= */
 
+/* Group dividers — two-tone hairlines between logical clusters of menu
+   sections. The light row + dark row stack guarantees ONE of the two
+   shows up against any backdrop color (light blue gradient on top of
+   the menu, darker blue toward the bottom, dark mode flat-gray, etc.).
+   Groups (top → bottom):
+     • Routine Actions + Task Actions
+     • Rewards & Extras (alone)
+     • Help & Support + Legal & Info
+     • Settings & Personalization (alone)
+   Positioned in the flex gap below each group-end section via ::after,
+   so the existing 10px section gap stays consistent. */
+.menu-sections > .menu-section[data-section="tasks"],
+.menu-sections > .menu-section[data-section="rewards"],
+.menu-sections > .menu-section[data-section="legal"] {
+    position: relative;
+    /* Extra spacing below dividered sections — pushes the next section
+       further down so the divider line gets visible breathing room above
+       AND below it (rather than crammed into the standard 10px flex gap). */
+    margin-bottom: var(--space-5);
+}
+.menu-sections > .menu-section[data-section="tasks"]::after,
+.menu-sections > .menu-section[data-section="rewards"]::after,
+.menu-sections > .menu-section[data-section="legal"]::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    /* Centered in the now-30px gap (10px flex-gap + 20px section margin). */
+    bottom: calc(-1 * var(--space-4) + 1px);
+    height: 1px;
+    background: color-mix(in srgb, currentColor 32%, transparent);
+    pointer-events: none;
+}
+
+/* Mobile: trim divider breathing room from the desktop 20px down to 6px.
+   Group breaks stay visible without eating as much vertical space — each
+   section block is already a distinct card on small screens, and the
+   menu is taller (Quick Actions panel adds height). */
+@media (max-width: 768px) {
+    .menu-sections > .menu-section[data-section="tasks"],
+    .menu-sections > .menu-section[data-section="rewards"],
+    .menu-sections > .menu-section[data-section="legal"] {
+        margin-bottom: var(--space-1-5);
+    }
+    .menu-sections > .menu-section[data-section="tasks"]::after,
+    .menu-sections > .menu-section[data-section="rewards"]::after,
+    .menu-sections > .menu-section[data-section="legal"]::after {
+        /* Recenter in the now-16px gap (10px flex-gap + 6px section margin). */
+        bottom: calc(-1 * var(--space-2) - 0px);
+    }
+}
+
+/* Primary-action row sits between the controls container (Mode Info / mode
+   radio group) and the bottom Close slab. Centers a single dedicated button
+   that elevates a high-priority view-state action (Enter Focus View) to a
+   glanceable spot, peer to Mode Info, distinct from the section grids.
+   A faint divider above signals the transition from "menu sections" to
+   "primary action." */
+.main-menu-primary-action-row {
+    display: flex;
+    justify-content: center;
+    /* Multi-color blue spectrum hairline — same texture as the section
+       group dividers above for visual consistency. Rendered via ::before
+       so the gradient fills the line cleanly (a single-color border-top
+       can't render a horizontal gradient). */
+    position: relative;
+    padding-top: var(--space-2);
+    /* Larger negative pull-up — cancels the 7px bottom margin on
+       .mode-description-wrapper above AND eats into the toggle button's
+       own bottom padding so the primary-action sits visually tucked
+       up against Mode Info. */
+    margin-top: calc(-1 * var(--space-3));
+}
+
+.main-menu-primary-action-row::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 1px;
+    background: color-mix(in srgb, currentColor 32%, transparent);
+    pointer-events: none;
+}
+
+.menu-primary-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1-5);
+    min-width: 60%;
+    padding: var(--space-2) var(--space-4);
+    background: var(--theme-button-bg, var(--color-steel-blue));
+    color: var(--theme-button-text, var(--color-white));
+    /* Light border carries the "clickable" cue — no drop shadow. */
+    border: var(--space-px) solid color-mix(in srgb, var(--color-white) 35%, transparent);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition-fast) ease,
+                border-color var(--transition-fast) ease;
+}
+
+.menu-primary-action:hover,
+.menu-primary-action:focus-visible {
+    background: color-mix(in srgb, var(--theme-button-bg, var(--color-steel-blue)) 82%, var(--color-white));
+    border-color: color-mix(in srgb, var(--color-white) 50%, transparent);
+}
+
+.menu-primary-action:active {
+    background: color-mix(in srgb, var(--theme-button-bg, var(--color-steel-blue)) 92%, var(--color-black));
+}
+
+/* Inline SVG icon — fixed pixel dimensions render predictably without
+   Font Awesome's font-metric resistance. SVG attributes width/height set
+   the box; CSS reinforces them in case any global rule tries to override. */
+.menu-primary-action-icon {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+    opacity: 0.9;
+    display: inline-block;
+}
+
+/* Tighten the gap to the Close slab when the primary-action row is present
+   — pull Close upward so the primary action visually anchors to the slab. */
+.main-menu-primary-action-row + #close-main-menu {
+    margin-top: calc(-1 * var(--space-1-5));
+}
+
+/* Trim the row's own bottom padding too — the button sits flush against
+   the Close slab as the natural visual cap. */
+.main-menu-primary-action-row {
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
 #close-main-menu {
     width: calc(100% + 2 * var(--space-2-5));
     margin-left: calc(-1 * var(--space-2-5));

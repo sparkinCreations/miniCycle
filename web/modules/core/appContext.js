@@ -80,6 +80,7 @@ const DEV_MODE = false; // Production mode - set to true for development
  * @property {Function} updateMainMenuHeader - Update menu header
  * @property {Function} closeAllModals - Close all open modals
  * @property {Function} resetNotificationPosition - Reset notification position
+ * @property {Function} resetTaskViewLayout - Reset all task view layout customizations
  */
 
 /**
@@ -173,6 +174,7 @@ const legacy = {
     showConfirmationModal: null,
     showPromptModal: null,
     resetNotificationPosition: null,
+    resetTaskViewLayout: null,
 
     // Utilities
     GlobalUtils: null,

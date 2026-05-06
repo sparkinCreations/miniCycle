@@ -554,6 +554,8 @@ export const DEFAULT_LABELS = deepFreeze({
         recoveredRoutine:        'Recovered: Activated "{name}"',
         positionReset:           'Notification position reset.',
         positionResetFailed:     'Unable to reset position.',
+        taskViewLayoutReset:     'Home view layout reset.',
+        taskViewLayoutResetFailed: 'Unable to reset home view layout.',
         uiUpdateFailed:          'UI update failed',
 
         // Routine notifications
@@ -673,8 +675,8 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Keyboard shortcut notifications
         keyboardStatsOpened:     'Keyboard shortcut - Stats Panel opened',
-        keyboardTaskOpened:      'Keyboard shortcut - Task View opened',
-        quickToggleTask:         'Quick toggle - Task View',
+        keyboardTaskOpened:      'Keyboard shortcut - Routine View opened',
+        quickToggleTask:         'Quick toggle - Routine View',
         quickToggleStats:        'Quick toggle - Stats Panel',
 
         // Migration notifications
@@ -874,6 +876,9 @@ export const DEFAULT_LABELS = deepFreeze({
         clearUndoHistoryTitle:   'Clear Undo History?',
         clearUndoHistoryMessage: 'This will permanently clear all undo and redo history for every routine. You won\'t be able to undo recent changes.',
         clearUndoHistoryConfirm: 'Clear History',
+        resetTaskViewLayoutTitle:   'Reset Home View Layout?',
+        resetTaskViewLayoutMessage: 'All your customized element positions on the home view will be cleared. Elements will return to their default places.',
+        resetTaskViewLayoutConfirm: 'Reset Layout',
         duplicateRoutine:         'Duplicate Routine',
         duplicateMessage:         'Enter a new name for your copy of "{name}":',
         duplicatePlaceholder:     'e.g., My Custom Routine',
@@ -1122,6 +1127,8 @@ export const DEFAULT_LABELS = deepFreeze({
         recurringTitle:          'Manage recurring tasks',
         inputBar:                'Input Bar',
         inputBarTitle:           'Show or hide the task input bar',
+        enterFocusView:          'Enter Focus View',
+        enterFocusViewTitle:     'Hide chrome and focus on the task list',
         modeRadioGroupAria:      'Switch routine mode',
         themes:                  'Themes',
         games:                   'Games',
@@ -1159,6 +1166,8 @@ export const DEFAULT_LABELS = deepFreeze({
         resetNotifPosition:   'Reset Notification Position',
         resetRecurringDefault: 'Reset Recurring Default',
         resetAchievements:    'Reset Achievements',
+        resetTaskViewLayout:  'Reset Home View Layout',
+        resetTaskViewLayoutDesc: 'Move all customized elements back to their default positions on the home view.',
         advanced:             'Advanced',
         debugMode:            'Debug Mode',
         diagnostics:          'App Diagnostics',
@@ -1417,6 +1426,7 @@ export const DEFAULT_LABELS = deepFreeze({
         switchRoutines: 'Switch routines',
         createRoutine:  'Create new routine',
         toggleInputBar: 'Show/hide input bar',
+        toggleDarkMode: 'Toggle dark mode',
         uncheckAll:     'Uncheck all',
         deleteAll:      'Delete all',
         exitItem:       'Exit Focus View',
@@ -1947,9 +1957,15 @@ export const DEFAULT_LABELS = deepFreeze({
         editRoutineName: 'Edit routine name',
         editPresetName: 'Edit preset name',
         taskAdded: 'Task added: {name}',
-        taskViewOpened: 'Task view opened',
+        taskViewOpened: 'Routine view opened',
         statsPanelOpened: 'Stats panel opened',
-        dayNumber: 'Day {day}'
+        dayNumber: 'Day {day}',
+        dragHandleTaskCard:      'Drag handle, task card group',
+        dragHandleCompleteCycle: 'Drag handle, complete cycle button',
+        dragHandleAddTask:       'Drag handle, add task input',
+        dragHandleQuickActions:  'Drag handle, quick actions panel',
+        dragHandleStatusBubble:  'Drag handle, status bubble',
+        dropToDock:              'Drop to dock'
     },
 
     // ========================================================================

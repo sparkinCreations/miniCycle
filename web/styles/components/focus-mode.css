@@ -43,6 +43,31 @@ body.focus-mode::after {
     opacity: 1;
 }
 
+/* Dark mode bumps the overlay to near-opaque — the underlying pattern reads
+   muddy at the lighter alpha because both layers are dark. Going to 0.78
+   gives a clean, solid backdrop in dark mode while light mode keeps its
+   softer "dimmed glass" feel. */
+body.focus-mode.dark-mode::after {
+    background: rgba(38, 42, 48, 0.92);
+}
+
+/* In dark-mode focus view, drop the task-list container alpha so the soft
+   gray backdrop reads through. Default dark-mode is 0.6 — that reads as a
+   hard-edged panel against the new ::after gray. 0.25 keeps the card
+   boundary defined (border + box-shadow still draw it) without the slab look. */
+body.focus-mode.dark-mode .task-list-container {
+    background: rgba(40, 40, 45, 0.25);
+}
+
+/* Suppress the SVG body::before pattern in dark-mode focus view — even at
+   0.45 opacity it bleeds through the overlay and reads as faint shading.
+   Focus view is meant to hide chrome; the pattern qualifies. Light mode
+   keeps the pattern visible since the softer 0.4 dim there benefits from
+   it. */
+body.focus-mode.dark-mode::before {
+    opacity: 0;
+}
+
 /* When the three-dots menu is open, blur EVERYTHING except the menu itself
    and the three-dots trigger. Lift the body::after backdrop above all the
    fixed-position UI (nav-dots, undo/redo, focus-mode-btn, etc. all sit at
@@ -247,6 +272,14 @@ body.focus-mode #focus-mode-exit-btn {
 
 body.focus-mode #focus-mode-menu-btn { right: 16px; }
 body.focus-mode #focus-mode-exit-btn { left: 16px; }
+
+/* While the first-run welcome banner is up, hide the upper-left exit
+   button so the user reads the welcome flow first — the 3-dots menu
+   on the right still offers an "Exit Focus View" option for anyone
+   who wants out before dismissing the banner. */
+body.focus-mode.first-run-welcome-active #focus-mode-exit-btn {
+    display: none;
+}
 
 body.focus-mode #focus-mode-menu-btn:hover,
 body.focus-mode #focus-mode-menu-btn:focus-visible,
@@ -481,19 +514,14 @@ body.focus-mode .focus-mode-mode-modal {
     body.focus-mode #focus-mode-menu-btn { right: 12px; }
     body.focus-mode #focus-mode-exit-btn { left: 12px; }
 
-    /* The three-dots button above sits at top: env() + 12px with height 38px,
-       so its bottom edge is at env() + 50px from the viewport top. The
-       routine title (.title-row inside .task-card) starts ~30px from the
-       viewport top in focus mode (per #task-view's centering math), which
-       lands behind the button. Push the title down with task-card padding
-       that scales with safe-area so it sits flush against the button.
-
-       margin-top: 0 cancels the normal-mode .task-card margin from
-       task-list.css (var(--space-4-5) at ≤768px and calc(15px + env()/2) at
-       ≤480px) — focus mode controls the top spacing entirely via the
-       padding-top above, so the title doesn't drift below the button. */
+    /* Top-clearance is now provided by #task-view's padding-top (see rule
+       above) so the layout works whether the input bar is visible or
+       hidden. Just zero the normal-mode margins on #task-input-row and
+       .task-card so they don't stack on top of that padding. */
+    body.focus-mode #task-input-row {
+        margin-top: 0;
+    }
     body.focus-mode #task-view .task-card {
-        padding-top: calc(env(safe-area-inset-top, 0px) + 28px);
         margin-top: 0;
     }
 
@@ -799,16 +827,20 @@ body.focus-mode #complete-all-and-help-window-container {
    ============================================================================= */
 
 @media (max-width: 1023px) {
-    /* Focus mode: near-full viewport. Explicit max-heights at each level
-       so task-list-container knows when to scroll (max-height: none won't
-       trigger scrollbar). The task-list-container reduction is the key
-       knob — its bottom edge lands just above the fixed bottom controls
-       band (action button + nav-dots top sits at ~124px from viewport
-       bottom in this media query). */
+    /* Focus mode: keep the existing centering math so content sits in
+       the middle of the viewport when there's room. The deliberate
+       top-clearance below the close/menu buttons is enforced via
+       padding-top on #task-view itself — putting it on the parent
+       guarantees the offset applies regardless of whether the input
+       bar is visible (the input bar's `.hidden` state doesn't reliably
+       preserve flex space in this configuration, so we can't rely on
+       margin on #task-input-row alone). */
     body.focus-mode #task-view {
         top: calc(50% + 25px);
         transform: translate(-50%, -50%);
         max-height: calc(100dvh - 10px);
+        padding-top: calc(env(safe-area-inset-top, 0px) + 25px);
+        box-sizing: border-box;
     }
 
     body.focus-mode #task-view .task-card {

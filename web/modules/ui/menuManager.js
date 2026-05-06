@@ -62,6 +62,11 @@ const di = createDIModule('MenuManager', {
     recurringPanel: optional(null),
     AppMeta: optional(null),
     trackAction: optional(null),
+    // Cross-phase: focusMode loads in PHASES.UI_MANAGERS (Phase 6) while
+    // menuManager loads in PHASES.CYCLE (Phase 5). Optional + only-called-
+    // on-click means by the time the user opens the menu and clicks the
+    // button, the dep is wired.
+    activateFocusMode: optional(null),
     // DOM query functions (can be injected for testing)
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
@@ -133,7 +138,8 @@ export class MenuManager {
             checkCompleteAllButton: resolvedDeps.checkCompleteAllButton,
             updateUndoRedoButtons: resolvedDeps.updateUndoRedoButtons,
             recurringPanel: resolvedDeps.recurringPanel,
-            trackAction: resolvedDeps.trackAction
+            trackAction: resolvedDeps.trackAction,
+            activateFocusMode: resolvedDeps.activateFocusMode
         };
 
         // Cache DOM elements (will be set in init)
@@ -185,6 +191,7 @@ export class MenuManager {
         const clearBtn = this.deps.getElementById(DOM_IDS.CLEAR_MINI_CYCLE_TASKS);
         const deleteBtn = this.deps.getElementById(DOM_IDS.DELETE_ALL_MINI_CYCLE_TASKS);
         const toggleInputBarBtn = this.deps.getElementById(DOM_IDS.MENU_TOGGLE_INPUT_BAR);
+        const enterFocusViewBtn = this.deps.getElementById(DOM_IDS.MENU_ENTER_FOCUS_VIEW);
         const newBtn = this.deps.getElementById(DOM_IDS.NEW_MINI_CYCLE);
         const closeBtn = this.deps.getElementById(DOM_IDS.CLOSE_MAIN_MENU);
 
@@ -213,6 +220,15 @@ export class MenuManager {
         });
 
         replaceStoredEventListener(newBtn, "click", "__miniCycleMenuManagerClickHandler", () => this.deps.createNewMiniCycle());
+
+        // Enter Focus View — closes the menu first so the focus-mode entry
+        // animation isn't covered by the closing menu, then activates focus mode.
+        replaceStoredEventListener(enterFocusViewBtn, "click", "__miniCycleMenuManagerClickHandler", () => {
+            this.hideMainMenu();
+            setTimeout(() => {
+                this.deps.activateFocusMode?.();
+            }, 0);
+        });
 
         replaceStoredEventListener(closeBtn, "click", "__miniCycleMenuManagerClickHandler", () => this.closeMainMenu());
 

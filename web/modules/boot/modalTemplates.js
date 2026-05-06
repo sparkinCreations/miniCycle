@@ -1033,6 +1033,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                         <button id="${DOM_IDS.RESET_ONBOARDING}" class="settings-btn settings-btn-ghost"><i class="fas fa-redo"></i> ${getLabel('settings.resetOnboarding')}</button>
                         <button id="retake-guided-tour" class="settings-btn settings-btn-ghost"><i class="fas fa-route"></i> ${getLabel('tour.retakeTour')}</button>
                         <button id="reset-notification-position" class="settings-btn settings-btn-ghost"><i class="fas fa-bell"></i> ${getLabel('settings.resetNotifPosition')}</button>
+                        <button id="reset-task-view-layout" class="settings-btn settings-btn-ghost"><i class="fas fa-arrows-alt"></i> ${getLabel('settings.resetTaskViewLayout')}</button>
                         <button id="reset-recurring-default" class="settings-btn settings-btn-ghost"><i class="fas fa-sync"></i> ${getLabel('settings.resetRecurringDefault')}</button>
                         <button id="reset-achievement-progress" class="settings-btn settings-btn-ghost"><i class="fas fa-trophy"></i> ${getLabel('settings.resetAchievements')}</button>
                         <button id="clear-undo-history" class="settings-btn settings-btn-ghost"><i class="fas fa-history"></i> ${getLabel('settings.clearUndoHistory')}</button>

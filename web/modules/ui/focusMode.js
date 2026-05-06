@@ -183,6 +183,7 @@ export class FocusMode {
             { action: 'switch-routines', group: 'routine', label: getLabel('focusMode.switchRoutines') },
             { action: 'create-routine',  group: 'routine', label: getLabel('focusMode.createRoutine') },
             { action: 'toggle-input-bar', group: 'view',    label: getLabel('focusMode.toggleInputBar') },
+            { action: 'toggle-dark-mode', group: 'view',    label: getLabel('focusMode.toggleDarkMode') },
             { action: 'uncheck-all',     group: 'bulk',    label: getLabel('focusMode.uncheckAll') },
             { action: 'delete-all',      group: 'bulk',    label: getLabel('focusMode.deleteAll'), destructive: true },
             { action: 'exit',            group: 'exit',    label: getLabel('focusMode.exitItem') },
@@ -709,7 +710,7 @@ export class FocusMode {
 
     /**
      * Run the action associated with a menu item, then close the menu.
-     * @param {'switch-mode'|'switch-routines'|'create-routine'|'toggle-input-bar'|'uncheck-all'|'delete-all'|'exit'} action
+     * @param {'switch-mode'|'switch-routines'|'create-routine'|'toggle-input-bar'|'toggle-dark-mode'|'uncheck-all'|'delete-all'|'exit'} action
      */
     _handleMenuAction(action) {
         this._closeMenu();
@@ -728,6 +729,15 @@ export class FocusMode {
                 // Trigger the existing toggle button — same pattern as
                 // quickActionsManager (avoids duplicating the toggle logic).
                 const btn = this.deps.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_BTN);
+                btn?.click();
+                break;
+            }
+            case 'toggle-dark-mode': {
+                // Click the existing #quick-dark-toggle button — same pattern
+                // as quickActionsManager. The button is `inert` while focus
+                // mode is active (it lives in hidden chrome) but programmatic
+                // .click() bypasses inert so the toggle still fires.
+                const btn = this.deps.getElementById(DOM_IDS.QUICK_DARK_TOGGLE);
                 btn?.click();
                 break;
             }

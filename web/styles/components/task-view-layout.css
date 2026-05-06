@@ -1,0 +1,328 @@
+/* =============================================================================
+   TASK VIEW LAYOUT
+   Layout management for the desktop drag-customize feature.
+
+   Phase 1: structural sub-wrapper (.task-card-group).
+   Phase 2: hover-revealed drag handle + dragging state.
+
+   See: docs/future-work/TASK_VIEW_CUSTOMIZATION_PLAN.md
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   SETTINGS BUTTON VISIBILITY
+   The "Reset Home View Layout" button is only meaningful on desktop —
+   drag-customization is desktop-only, so a tablet/mobile user has no
+   custom layout to reset. Hide it everywhere except true desktop input
+   (matching the same media query that gates handle visibility).
+   ----------------------------------------------------------------------------- */
+#reset-task-view-layout {
+    display: none;
+}
+
+@media (hover: hover) and (pointer: fine) and (min-width: 1024px) {
+    #reset-task-view-layout {
+        display: revert;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   COMPONENT TOKENS
+   The drag handle reuses the global overlay tokens for its base appearance.
+   The snap-back hover treatment (the dashed outline + glow shown when the
+   user is about to re-dock an element) is unique to this component — define
+   its colors here so they're tunable without polluting variables.css.
+   ----------------------------------------------------------------------------- */
+:root {
+    --tvl-snap-hover-color: rgba(80, 160, 255, 0.85);   /* dashed outline when in snap zone */
+    --tvl-snap-hover-glow:  rgba(80, 160, 255, 0.25);   /* soft shadow halo for snap zone */
+}
+
+/* -----------------------------------------------------------------------------
+   PHASE 1 — Sub-wrapper
+   Visually transparent flex column so .task-card and .progress-container stack
+   and center exactly as they did when they were direct children of #task-view.
+   ----------------------------------------------------------------------------- */
+#task-card-group.task-card-group {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Mobile flex-shrink chain: pre-Phase-1, .task-card was a direct child of
+   #task-view and had `flex: 1 1 auto; min-height: 0` (task-list.css ~1002)
+   so it could shrink to fit short viewports. Now that .task-card is nested
+   inside #task-card-group, the wrapper has to forward that flex behavior
+   so .task-card still has space to fill/shrink within. Without this, the
+   task list stops shrinking on mobile and pushes content off-screen. */
+@media (max-width: 768px) {
+    #task-card-group.task-card-group {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    /* Pre-restructure, .task-card was a direct flex child of #task-view
+       and its `margin-top: var(--space-4-5)` (~18px) gave breathing room
+       above the WHOLE card area (which then contained the input bar).
+       Now that the input bar is its own sibling above #task-card-group,
+       that margin stacks on top of the input bar's own margin-bottom and
+       creates an oversized gap between them. Zero the margin-top on
+       mobile so the visible gap matches the input bar's intended ~16px
+       margin-bottom alone. */
+    #task-card-group .task-card {
+        margin-top: 0;
+    }
+
+    /* Mobile home-view nudge: visually shift the input bar, routine card
+       (task list + progress bar + focus button), the Complete button, and
+       the help window all down 10px. Using transform instead of margin so
+       the offsets are pure visual without affecting flex flow. Scoped to
+       home view (`:not(.focus-mode)`) so focus view's deliberate
+       top-clearance math is unaffected. */
+    body:not(.focus-mode) #task-input-row {
+        transform: translateY(10px);
+    }
+    body:not(.focus-mode) #task-card-group.task-card-group {
+        transform: translateY(10px);
+    }
+    body:not(.focus-mode) #complete-all-and-help-window-container {
+        transform: translateY(10px);
+    }
+    body:not(.focus-mode) #help-window {
+        transform: translateY(10px);
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   PHASE 2 — Draggable host
+   Any element registered as a draggable gets `position: relative` so the
+   absolute-positioned drag handle can anchor to its top-left corner. This
+   does NOT remove elements from flow (relative leaves flow intact); the
+   drag system flips them to `position: absolute` only after the user
+   actually drags one.
+
+   `.tvl-handle-host` is set on a CHILD of the draggable when the
+   draggable's bounding box is much wider than its visible body (e.g.,
+   the Complete Cycle container is a wide flex column with the button
+   centered inside transparent space). The handle attaches to the host
+   instead so it lands ON the visible button.
+   ----------------------------------------------------------------------------- */
+.tvl-draggable {
+    position: relative;
+}
+
+.tvl-handle-host {
+    position: relative;
+    /* Prevent text wrapping inside a host that has the handle floating
+       outside its left edge — wrapped text would visually misalign with
+       the handle and turn rectangular buttons into squares. */
+    white-space: nowrap;
+}
+
+/* -----------------------------------------------------------------------------
+   PHASE 2 — Drag handle
+   Hidden by default. Revealed on hover OR keyboard focus-within, but only on
+   true desktop input (fine pointer + hover capability). On touch / coarse
+   pointer devices the handle never appears, regardless of viewport width.
+   ----------------------------------------------------------------------------- */
+.tvl-handle {
+    /* Anchored absolutely to its host — exact placement chosen by the
+       per-position modifier classes below. */
+    position: absolute;
+
+    /* Stack above task-card content (mini-cycle-title at z 1, task-search
+       at z 5) so the handle stays visible regardless of how the card's
+       contents reflow when sibling draggables move. The dragged element's
+       parent gets a higher z-index (--z-task-view-dragging) so dragging
+       still keeps the dragged item above non-dragged handles. */
+    z-index: var(--z-task-view-handle);
+
+    /* Sized for comfortable cursor targeting without dominating the host. */
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    /* Visual: subtle by default, slightly stronger on hover. */
+    background: var(--overlay-white-medium);
+    color: var(--overlay-heavy);
+    border: 1px solid var(--overlay-light);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+
+    /* Hidden by default — revealed via hover/focus-within rules below. */
+    opacity: 0;
+    pointer-events: none;
+    cursor: grab;
+
+    /* Smooth fade respecting prefers-reduced-motion (transition var auto-zeroes). */
+    transition: opacity var(--transition-fast) ease, background-color var(--transition-fast) ease;
+}
+
+/* Default placement — top-left of the host (good for large containers
+   like the task card group). */
+.tvl-handle--inside-top-left {
+    top: 6px;
+    left: 6px;
+}
+
+/* Outside-left placement — handle floats just to the left of the host,
+   vertically centered. Used when the host is a small button we don't
+   want to overlay (e.g., Complete Cycle). */
+.tvl-handle--outside-left {
+    top: 50%;
+    right: calc(100% + 6px);
+    transform: translateY(-50%);
+}
+
+/* Top-center-above placement — handle floats just above the host's top
+   edge, horizontally centered. Used for the Add-task input bar where
+   placing the handle above keeps it clear of the input field itself. */
+.tvl-handle--top-center-above {
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.tvl-handle svg {
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+}
+
+/* Reveal handle when its draggable is hovered. Gated to desktop-only via
+   the media query below.
+
+   We trigger off the JS-managed `.tvl-hovered` class (toggled by mouseenter/
+   mouseleave listeners in taskViewLayoutManager) rather than `:hover`. CSS
+   `:hover` proved unreliable in our setup — specifically when a draggable
+   gets re-parented mid-session, sibling :hover propagation across the
+   re-parented hierarchy stops working in some browser states. The class
+   is set/unset on the same lifecycle as :hover but bypasses any browser
+   quirks. The handle's own `:hover` is also kept as a secondary trigger
+   so a handle floating outside its host's geometric box stays revealed
+   when the cursor is on it. */
+@media (hover: hover) and (pointer: fine) and (min-width: 1024px) {
+    /* Descendant selector (not `>`) so the rule matches whether the
+       handle is a direct child of the draggable or nested inside a deeper
+       handle host (e.g., #task-card-group's handle lives inside .title-row
+       which is a grandchild). The three registered draggables are now flat
+       siblings of #task-view, so no nested-draggable bleed risk.
+
+       Scoped to `body:not(.focus-mode)` — focus view is meant to be
+       distraction-free with a deliberate layout; user drag-customization
+       is home-view only. */
+    body:not(.focus-mode) .tvl-draggable.tvl-hovered .tvl-handle,
+    body:not(.focus-mode) .tvl-handle:hover,
+    body:not(.focus-mode) .tvl-handle:focus-visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    body:not(.focus-mode) .tvl-handle:hover {
+        background: var(--overlay-white-strong);
+        color: var(--color-gray-700);
+    }
+}
+
+.tvl-handle:active {
+    cursor: grabbing;
+}
+
+/* -----------------------------------------------------------------------------
+   PHASE 2 — Dragging state
+   Active during pointermove. Disables transitions on the dragged element so
+   its position tracks the cursor with no easing lag.
+   ----------------------------------------------------------------------------- */
+.tvl-dragging {
+    transition: none !important;
+    cursor: grabbing;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.tvl-dragging .tvl-handle {
+    opacity: 1;
+    pointer-events: auto;
+    background: var(--overlay-white-strong);
+    cursor: grabbing;
+}
+
+/* -----------------------------------------------------------------------------
+   PHASE 2 — Snap-back hover (on the dragged element)
+   When the dragged element is inside its snap-back zone, give a visual cue
+   so the user knows releasing here will re-dock the element. Subtle outline
+   + slight lift; no movement so the cursor stays on the handle.
+   ----------------------------------------------------------------------------- */
+.tvl-snap-hover {
+    outline: 2px dashed var(--tvl-snap-hover-color);
+    outline-offset: 4px;
+    box-shadow: 0 4px 16px var(--tvl-snap-hover-glow);
+}
+
+/* -----------------------------------------------------------------------------
+   PHASE 2 — Snap-target indicator (the dock zone itself)
+   A dashed-outline rectangle with a "Drop to dock" label showing exactly
+   where dropping will re-attach the dragged element. Hidden by default.
+   Visible (with subtle background tint) while drag is in progress;
+   brightens fully when the dragged element is currently inside the zone.
+   `pointer-events: none` ensures it never intercepts the drag pointer.
+   ----------------------------------------------------------------------------- */
+.tvl-snap-target {
+    position: absolute;
+    display: none;
+    pointer-events: none;
+    border: 2px dashed var(--tvl-snap-hover-color);
+    border-radius: var(--radius-md);
+    background: var(--tvl-snap-hover-glow);
+    opacity: 0.55;
+    z-index: var(--z-content);
+    /* Center the label inside the rectangle. */
+    align-items: center;
+    justify-content: center;
+    transition: opacity var(--transition-fast) ease, box-shadow var(--transition-fast) ease, border-width var(--transition-fast) ease;
+}
+
+.tvl-snap-target--visible {
+    display: flex;
+}
+
+.tvl-snap-target--active {
+    opacity: 1;
+    border-width: 3px;
+    box-shadow: 0 4px 20px var(--tvl-snap-hover-glow);
+}
+
+.tvl-snap-target__label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--tvl-snap-hover-color);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    -webkit-user-select: none;
+    user-select: none;
+    /* Subtle background pill so the label reads on any underlying color. */
+    background: var(--color-white);
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+}
+
+.tvl-snap-target--active .tvl-snap-target__label {
+    color: var(--color-white);
+    background: var(--tvl-snap-hover-color);
+}
+
+/* -----------------------------------------------------------------------------
+   PHASE 2 — prefers-reduced-motion
+   The transition var should already zero in reduced-motion mode (per the
+   variables.css convention), but belt-and-suspenders: explicitly remove
+   handle fade so users with motion sensitivity get instant show/hide.
+   ----------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .tvl-handle {
+        transition: none;
+    }
+}

@@ -1058,6 +1058,16 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         refreshFocusActionButton: (...args) => deps.ui?.focusMode?.refreshActionButton?.(...args),
         activateFocusMode: (...args) => deps.ui?.focusMode?.activate?.(...args),
 
+        // Task View Layout reset — called from settings "Reset Task View
+        // Layout" button to clear all customized positions.
+        resetTaskViewLayout: (...args) => deps.ui?.taskViewLayoutManager?.resetTaskViewLayout?.(...args),
+
+        // Task View Layout refresh — called by undoRedoManager after a
+        // snapshot restore so dragged elements visually follow the state
+        // change. Reconciles inline drag styles to the just-restored
+        // state.settings.taskViewLayout.positions map.
+        refreshTaskViewLayout: (...args) => deps.ui?.taskViewLayoutManager?.refreshTaskViewLayout?.(...args),
+
         // Stats panel manager (from deps.ui) - returns instance when called as function
         statsPanelManager: () => deps.ui?.statsPanelManager,
 

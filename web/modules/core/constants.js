@@ -226,7 +226,23 @@ export const LIMITS = Object.freeze({
     CONSOLE_BUFFER_TRIM_TARGET: 100, // After overflow, trim the buffer down to this size
     STORAGE_WARNING_PERCENTAGE: 75,  // Show storage warning notification when localStorage usage exceeds this percentage
     BACKUP_REMINDER_EVERY_N_CYCLES: 25,  // Trigger backup reminder every N completed cycles
-    BACKUP_REMINDER_EVERY_N_TASKS: 100   // Trigger backup reminder every N cleared tasks (To-Do mode)
+    BACKUP_REMINDER_EVERY_N_TASKS: 100,  // Trigger backup reminder every N cleared tasks (To-Do mode)
+    LAYOUT_DRAG_THRESHOLD: 5,             // px - Task View Layout: pointer travel before drag starts (forgive hover jitter)
+    LAYOUT_DOCK_GAP: 20                   // px - Task View Layout: vertical gap between an anchor element and its docked dependent
+});
+
+/**
+ * Inset rectangle for the Task View Layout drag bounds. Defines the
+ * "play area" — the region a user can drag elements into. Values are
+ * pixels measured inward from each viewport edge so dragged elements
+ * can't slide under the header, footer, or off-screen.
+ * @constant {Object}
+ */
+export const LAYOUT_PLAY_AREA_INSETS = Object.freeze({
+    top: 90,        // header + mode pill clearance
+    bottom: 90,     // nav-dots + footer clearance
+    left: 20,       // edge gutter
+    right: 20       // edge gutter
 });
 
 // ============================================================================
@@ -369,6 +385,8 @@ export const Z_INDEX = Object.freeze({
     TOUR_OVERLAY: 10500,     // Guided tour overlay
     TOUR_TOOLTIP: 10501,     // Guided tour tooltip
     DEBUG: 99999,            // Debug utilities
+    TASK_VIEW_HANDLE: 10,    // Task View Layout: drag handle — above task-search (5) and mini-cycle-title (1) so it doesn't get covered when card content shifts
+    TASK_VIEW_DRAGGING: 20,  // Task View Layout: element being dragged — above other draggables' handles so it stays on top during drag
     NOTIFICATION: 100000,    // Notification container (above all overlays)
     NOTIFICATION_ACTIVE: 100001, // Dragging notification
     NOTIFICATION_BTN: 100002,    // Notification interactive buttons
@@ -522,6 +540,18 @@ export const DOM_CLASSES = Object.freeze({
     MILESTONE_ANIMATION: 'mini-cycle-milestone',
 
     // ---- Layout ----
+    TASK_CARD_GROUP: 'task-card-group',
+    TVL_DRAGGABLE: 'tvl-draggable',          // Task View Layout: an element registered as draggable
+    TVL_HANDLE: 'tvl-handle',                // Task View Layout: drag handle button injected into a draggable
+    TVL_HANDLE_HOST: 'tvl-handle-host',      // Task View Layout: child element that visually hosts the handle (positioned ancestor for the handle)
+    TVL_HOVERED: 'tvl-hovered',              // Task View Layout: JS-tracked hover state on a draggable (replaces :hover so reveal is deterministic)
+    TVL_DRAGGING: 'tvl-dragging',            // Task View Layout: applied to element while drag is in progress
+    TVL_CUSTOMIZED: 'tvl-customized',        // Task View Layout: element has been moved from its default position
+    TVL_SNAP_HOVER: 'tvl-snap-hover',        // Task View Layout: dragged element is inside its snap-back zone
+    TVL_SNAP_TARGET: 'tvl-snap-target',      // Task View Layout: visual indicator showing the snap-back zone
+    TVL_SNAP_TARGET_VISIBLE: 'tvl-snap-target--visible',  // Task View Layout: indicator is shown (drag in progress)
+    TVL_SNAP_TARGET_ACTIVE: 'tvl-snap-target--active',    // Task View Layout: dragged element is currently inside this indicator's zone
+    TVL_SNAP_TARGET_LABEL: 'tvl-snap-target__label',      // Task View Layout: text label inside the snap-target indicator
     MODE_DESCRIPTION_VISIBLE: 'mode-description-visible',
     MODE_RADIO_ROW: 'mode-radio-row',
     MODE_RADIO_OPTION: 'mode-radio-option',
@@ -733,6 +763,7 @@ export const DOM_IDS = Object.freeze({
     MAIN_MENU_TITLE: 'main-menu-mini-cycle-title',
     CURRENT_DATE: 'current-date',
     MENU_TASK_OPTIONS: 'menu-task-options',
+    MENU_ENTER_FOCUS_VIEW: 'menu-enter-focus-view',
     OPEN_USER_MANUAL: 'open-user-manual',
     EXIT_MINI_CYCLE: 'exit-mini-cycle',
     SAVE_AS_MINI_CYCLE: 'save-as-mini-cycle',
@@ -906,6 +937,8 @@ export const DOM_IDS = Object.freeze({
     // ---- Stats & Navigation ----
     STATS_PANEL: 'stats-panel',
     TASK_VIEW: 'task-view',
+    TASK_CARD_GROUP: 'task-card-group',
+    TASK_INPUT_ROW: 'task-input-row',
     FIRST_RUN_WELCOME: 'first-run-welcome',
     FIRST_RUN_WELCOME_DISMISS: 'first-run-welcome-dismiss',
     FIRST_RUN_WELCOME_TOGGLE: 'first-run-welcome-toggle',
@@ -1064,6 +1097,7 @@ export const DOM_IDS = Object.freeze({
     REDO_BTN: 'redo-btn',
     UNDO_REDO_BUTTONS: 'undo-redo-buttons',
     MENU_TOGGLE_INPUT_BAR: 'menu-toggle-input-bar',
+    MENU_ENTER_FOCUS_VIEW: 'menu-enter-focus-view',
     MODE_RADIO_GROUP: 'mode-radio-group',
 
     // ---- Quick Actions ----
@@ -1170,6 +1204,9 @@ export const DOM_SELECTORS = Object.freeze({
     TASK_CHECKBOX: 'input[type="checkbox"]',
     TASK_INPUT: '.task-input',
     TASK_LIST_CONTAINER: '.task-list-container',
+    TASK_CARD: '.task-card',
+    TITLE_ROW: '.title-row',
+    COMPLETE_ALL_BTN: '.complete-all-btn',
     EMPTY_STATE_TEXT: '.empty-state-text',
     EMPTY_STATE_HINT: '.empty-state-hint',
     TASK_NOT_FOUND: '.task-not-found',

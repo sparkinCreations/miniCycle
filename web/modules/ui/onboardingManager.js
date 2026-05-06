@@ -279,6 +279,17 @@ export class OnboardingManager {
         document.body.appendChild(splash);
         this._firstRunSplash = splash;
 
+        // Tap/click anywhere on the splash dismisses it early. The banner
+        // is already mounted underneath (showFirstRunWelcome runs first),
+        // so fading the splash reveals it. _hideFirstRunSplash is
+        // idempotent and clears the hold timer, so racing with the
+        // automatic finish is safe.
+        const dismissOnTap = () => {
+            splash.removeEventListener('pointerdown', dismissOnTap);
+            this._hideFirstRunSplash();
+        };
+        splash.addEventListener('pointerdown', dismissOnTap);
+
         // Self-managing lifecycle: after the LAST character's SHRINK
         // animation ends (phase 2 of the cascade) + a brief hold, fade
         // the splash out automatically. We filter on animation name
@@ -776,10 +787,12 @@ export class OnboardingManager {
         const currentShift = parseFloat(currentShiftStr) || 0;
         const naturalTop = taskTop - currentShift;
 
-        // GAP_PX must match --first-run-welcome-gap (--space-0-75 = 3px) in CSS.
+        // GAP_PX must match --first-run-welcome-gap in CSS:
+        //   desktop (>768px viewport): --space-4 = 16px (comfortable)
+        //   mobile  (≤768px viewport): --space-2 = 8px  (tighter for shorter viewport)
         // Hardcoded here since CSS custom properties returning `var()` chains
         // don't resolve to pixels via getPropertyValue alone.
-        const GAP_PX = 3;
+        const GAP_PX = window.innerWidth <= 768 ? 8 : 16;
         const requiredShift = Math.max(0, bannerBottom - naturalTop + GAP_PX);
 
         // Bottom-anchored controls (#nav-dots, #undo-redo-buttons) are hidden

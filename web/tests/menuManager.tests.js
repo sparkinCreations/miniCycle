@@ -276,6 +276,72 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    test('this.deps exposes activateFocusMode (curated-whitelist regression)', () => {
+        // Regression test for the silent-fail bug we hit during development:
+        // even with the dep wired through manifest + depMappings + DI definition,
+        // menuManager's `this.deps` is a literal object that explicitly
+        // enumerates which deps to expose. If `activateFocusMode` is dropped
+        // from that list, `this.deps.activateFocusMode?.()` becomes a silent
+        // no-op (the curated-whitelist failure pattern documented in
+        // feedback_di_consumer_surface).
+        const sentinel = () => 'focus-activated';
+        setMenuManagerDependencies(createMockDeps({ activateFocusMode: sentinel }));
+        const instance = new MenuManager();
+        if (instance.deps.activateFocusMode !== sentinel) {
+            throw new Error('this.deps.activateFocusMode missing from curated whitelist — would silently no-op in production');
+        }
+    });
+
+    test('Enter Focus View click invokes activateFocusMode (DI)', () => {
+        // End-to-end-ish: wire setupMainMenu against real button elements,
+        // dispatch a click on the menu's Enter Focus View button, and verify
+        // activateFocusMode is called. Catches both the curated-whitelist
+        // bug AND any regression in the click handler wiring itself.
+        let activateCalled = 0;
+        // Map of element-id → button. setupMainMenu calls getElementById
+        // multiple times; giving each id a stable button avoids cross-talk
+        // in replaceStoredEventListener (which stores the handler on the
+        // element under a fixed key).
+        const buttons = new Map();
+        const getOrMake = (id) => {
+            if (!buttons.has(id)) {
+                const btn = document.createElement('button');
+                btn.id = id;
+                buttons.set(id, btn);
+            }
+            return buttons.get(id);
+        };
+
+        setMenuManagerDependencies(createMockDeps({
+            getElementById: getOrMake,
+            activateFocusMode: () => { activateCalled++; }
+        }));
+        const instance = new MenuManager();
+
+        // hideMainMenu uses querySelector, not getElementById — stub it so
+        // it doesn't throw when the click handler invokes it.
+        instance.hideMainMenu = () => {};
+
+        instance.setupMainMenu();
+
+        // The click handler defers activateFocusMode via setTimeout(fn, 0)
+        // (so the menu close transition starts before the focus-mode
+        // activation). Stub setTimeout to run synchronously for this test
+        // so the sync `test()` wrapper can observe the result.
+        const realSetTimeout = window.setTimeout;
+        window.setTimeout = (fn) => { fn(); return 0; };
+        try {
+            const focusBtn = getOrMake('menu-enter-focus-view');
+            focusBtn.dispatchEvent(new Event('click'));
+        } finally {
+            window.setTimeout = realSetTimeout;
+        }
+
+        if (activateCalled !== 1) {
+            throw new Error(`activateFocusMode should fire exactly once, got ${activateCalled}`);
+        }
+    });
+
     test('closeMainMenu hides menu container (DI)', () => {
         const menu = document.createElement('div');
         menu.className = 'menu-container visible';

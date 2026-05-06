@@ -370,7 +370,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/undoRedoManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListener', 'refreshUIFromState', 'UIOrchestrator', 'requestUIUpdate'],
-        optionalDeps: ['logHistoryEvent', 'organizeCompletedTasks', 'refreshHistoryIfOpen', 'updateRecurringInfoLink', 'updateHelpWindow', 'syncModeFromToggles', 'refreshThemeLabels', 'updateRecurringPanel', 'AppGlobalState'],
+        optionalDeps: ['logHistoryEvent', 'organizeCompletedTasks', 'refreshHistoryIfOpen', 'updateRecurringInfoLink', 'updateHelpWindow', 'syncModeFromToggles', 'refreshThemeLabels', 'updateRecurringPanel', 'refreshTaskViewLayout', 'AppGlobalState'],
         provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction', 'wrapAppStateForUndo', 'setupStateBasedUndoRedo', 'initUndoSystemForApp', 'onCycleCreated', 'onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'clearAllUndoHistory'],
         api: 'undo',
         after: ['taskDOM', 'uiOrchestrator']
@@ -380,7 +380,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/menuManager.js',
         phase: PHASES.CYCLE,  // Phase 5 (not Phase 6 UI_MANAGERS) because routineManager needs it in same phase
         requires: ['appInit', 'AppState', 'showNotification'],
-        optionalDeps: ['checkCompleteAllButton', 'checkGamesUnlock', 'createNewMiniCycle', 'recurringPanel', 'showConfirmationModal', 'showPromptModal', 'switchMiniCycle', 'trackAction', 'updateCycleData', 'updateCycleModeDescription', 'updateProgressBar', 'updateStatsPanel', 'updateUndoRedoButtons'],
+        optionalDeps: ['activateFocusMode', 'checkCompleteAllButton', 'checkGamesUnlock', 'createNewMiniCycle', 'recurringPanel', 'showConfirmationModal', 'showPromptModal', 'switchMiniCycle', 'trackAction', 'updateCycleData', 'updateCycleModeDescription', 'updateProgressBar', 'updateStatsPanel', 'updateUndoRedoButtons'],
         provides: ['hideMainMenu', 'updateMainMenuHeader', 'clearAllTasks', 'deleteAllTasks'],
         api: 'ui',            // Exports to deps.ui — api category != phase
         singleton: true
@@ -558,6 +558,17 @@ export const MODULE_MANIFESTS = {
         provideInstance: 'focusMode',
         api: 'ui',
         optional: true
+    },
+
+    taskViewLayoutManager: {
+        path: '../ui/taskViewLayoutManager.js',
+        phase: PHASES.UI_MANAGERS,
+        optionalDeps: ['AppState', 'appInit', 'enableUndoSystemOnFirstInteraction'],
+        provides: ['resetTaskViewLayout', 'refreshTaskViewLayout'],
+        provideInstance: 'taskViewLayoutManager',
+        api: 'ui',
+        optional: true,
+        after: ['focusMode', 'undoRedoManager']
     },
 
     // =========================================================================

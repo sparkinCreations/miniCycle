@@ -272,7 +272,8 @@ const di = createDIModule('UndoRedoManager', {
   updateHelpWindow: optional(null),  // () => void — refreshes help window status message
   syncModeFromToggles: optional(null),  // () => void — syncs delete-checked/auto-reset toggles from state
   refreshThemeLabels: optional(null),  // () => void — refreshes vocab theme labels/colors after undo/redo
-  updateRecurringPanel: optional(null)  // () => void — refreshes recurring panel after undo/redo
+  updateRecurringPanel: optional(null),  // () => void — refreshes recurring panel after undo/redo
+  refreshTaskViewLayout: optional(null)  // () => void — reconciles drag positions after undo/redo restores state.settings.taskViewLayout
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
@@ -573,6 +574,12 @@ export function captureStateSnapshot(state) {
     cycleCount: currentCycle.cycleCount || 0,  // ✅ Include cycle count in snapshot
     theme: currentCycle.theme || 'classic',
     clearedTasks: currentCycle.clearedTasks ? structuredClone(currentCycle.clearedTasks) : null,
+    // Task view drag layout is global (state.settings) but captured per
+    // snapshot so undo/redo restores the layout that was active when the
+    // snapshot was taken alongside the per-cycle data.
+    taskViewLayout: state.settings?.taskViewLayout
+      ? structuredClone(state.settings.taskViewLayout)
+      : null,
     timestamp: Date.now()
   };
 
@@ -642,7 +649,11 @@ export function buildSnapshotSignature(s) {
       const tmpl = s.recurringTemplates[k];
       return { id: k, rs: JSON.stringify(tmpl?.recurringSettings || {}) };
     }),
-    ct: s.clearedTasks?.totalCleared || 0
+    ct: s.clearedTasks?.totalCleared || 0,
+    // Task view layout — without this in the signature, a layout-only
+    // change (drag-end or dock-back) would dedup against the previous
+    // snapshot and never push, leaving the move outside undo history.
+    tvl: JSON.stringify(s.taskViewLayout?.positions || {})
   });
 }
 
@@ -1038,6 +1049,9 @@ export async function performStateBasedUndo() {
       cycleCount: currentCycle?.cycleCount || 0,  // ✅ Include cycle count
       theme: currentCycle?.theme || 'classic',
       clearedTasks: currentCycle?.clearedTasks ? structuredClone(currentCycle.clearedTasks) : null,
+      taskViewLayout: currentState.settings?.taskViewLayout
+        ? structuredClone(currentState.settings.taskViewLayout)
+        : null,
       timestamp: Date.now()
     };
 
@@ -1081,6 +1095,13 @@ export async function performStateBasedUndo() {
       if ('cycleCount' in snap) cycle.cycleCount = snap.cycleCount;  // ✅ Restore cycle count
       if ('theme' in snap) cycle.theme = snap.theme;
       if ('clearedTasks' in snap) cycle.clearedTasks = snap.clearedTasks ? structuredClone(snap.clearedTasks) : null;
+      // Task view layout lives in state.settings (global), restored alongside per-cycle data.
+      if ('taskViewLayout' in snap) {
+        if (!state.settings) state.settings = {};
+        state.settings.taskViewLayout = snap.taskViewLayout
+          ? structuredClone(snap.taskViewLayout)
+          : null;
+      }
 
       // ✅ Delta-based userProgress adjustment
       // Reverse global counters by the per-routine diff between snapshots
@@ -1107,6 +1128,9 @@ export async function performStateBasedUndo() {
     _deps.updateRecurringInfoLink?.();
     _deps.updateHelpWindow?.();
     _deps.syncModeFromToggles?.();
+    // Reconcile drag positions so the visible task-view layout follows the
+    // restored state.settings.taskViewLayout.positions map.
+    _deps.refreshTaskViewLayout?.();
 
     updateUndoRedoButtons();
 
@@ -1205,6 +1229,9 @@ export async function performStateBasedRedo() {
       cycleCount: currentCycle?.cycleCount || 0,  // ✅ Include cycle count
       theme: currentCycle?.theme || 'classic',
       clearedTasks: currentCycle?.clearedTasks ? structuredClone(currentCycle.clearedTasks) : null,
+      taskViewLayout: currentState.settings?.taskViewLayout
+        ? structuredClone(currentState.settings.taskViewLayout)
+        : null,
       timestamp: Date.now()
     };
 
@@ -1248,6 +1275,13 @@ export async function performStateBasedRedo() {
       if ('cycleCount' in snap) cycle.cycleCount = snap.cycleCount;  // ✅ Restore cycle count
       if ('theme' in snap) cycle.theme = snap.theme;
       if ('clearedTasks' in snap) cycle.clearedTasks = snap.clearedTasks ? structuredClone(snap.clearedTasks) : null;
+      // Task view layout lives in state.settings (global), restored alongside per-cycle data.
+      if ('taskViewLayout' in snap) {
+        if (!state.settings) state.settings = {};
+        state.settings.taskViewLayout = snap.taskViewLayout
+          ? structuredClone(snap.taskViewLayout)
+          : null;
+      }
 
       // ✅ Delta-based userProgress adjustment
       // Restore global counters by the per-routine diff between snapshots
@@ -1274,6 +1308,9 @@ export async function performStateBasedRedo() {
     _deps.updateRecurringInfoLink?.();
     _deps.updateHelpWindow?.();
     _deps.syncModeFromToggles?.();
+    // Reconcile drag positions so the visible task-view layout follows the
+    // restored state.settings.taskViewLayout.positions map.
+    _deps.refreshTaskViewLayout?.();
 
     updateUndoRedoButtons();
 
