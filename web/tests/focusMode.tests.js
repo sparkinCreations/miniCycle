@@ -253,7 +253,7 @@ export async function runFocusModeTests(resultsDiv) {
         const actions = Array.from(menuItems).map(el => el.dataset.action);
         const expected = [
             'switch-mode', 'switch-routines', 'create-routine',
-            'toggle-input-bar', 'uncheck-all', 'delete-all', 'exit'
+            'toggle-input-bar', 'toggle-dark-mode', 'uncheck-all', 'delete-all', 'exit'
         ];
         instance.destroy();
         teardownDOMScaffold();
