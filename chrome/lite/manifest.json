@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "miniCycle lite",
+  "version": "1.0",
+  "version_name": "Chrome Edition v1.0",
+  "description": "A simple, lightweight routine manager. Tasks reset on cycle completion.",
+  "author": "sparkinCreations",
+  "homepage_url": "https://minicycle.app",
+
+  "action": {
+    "default_title": "miniCycle lite",
+    "default_popup": "miniCycle-lite.html",
+    "default_icon": {
+      "16":  "icons/minicycle_logo_icon.png",
+      "32":  "icons/minicycle_logo_icon.png",
+      "48":  "icons/minicycle_logo_icon.png",
+      "128": "icons/icon-192.png"
+    }
+  },
+
+  "icons": {
+    "16":  "icons/minicycle_logo_icon.png",
+    "32":  "icons/minicycle_logo_icon.png",
+    "48":  "icons/minicycle_logo_icon.png",
+    "128": "icons/icon-192.png",
+    "192": "icons/icon-192.png",
+    "512": "icons/icon-512.png"
+  },
+
+  "host_permissions": [
+    "https://api.web3forms.com/*"
+  ]
+}

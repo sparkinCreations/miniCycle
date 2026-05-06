@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sed -i '' '68,319d' /Users/mjaynumberone/Documents/Programs/Code/miniCycle/chrome/lite/miniCycle-lite.html)",
+      "Bash(sed -n '65,72p' /Users/mjaynumberone/Documents/Programs/Code/miniCycle/chrome/lite/miniCycle-lite.html)"
+    ]
+  }
+}

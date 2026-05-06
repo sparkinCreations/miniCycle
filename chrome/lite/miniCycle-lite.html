@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+📱 miniCycle LITE - Static Fallback Version
+================================================================================
+
+PURPOSE:
+This is a STATIC, FROZEN version of miniCycle designed for:
+  • Older devices that cannot run the full ES6+ version
+  • Slow connections where the full app takes too long to load
+  • Users who want a simple, lightweight task manager with just the basics
+
+THIS VERSION IS NOT MEANT TO BE MAINTAINED OR UPDATED.
+It exists as a permanent fallback that provides the core miniCycle concept
+(routine tracking with auto-reset) without the advanced features of the full app.
+
+DO NOT:
+  ✗ Add new features from the main app to this version
+  ✗ Try to keep this in sync with miniCycle.html
+  ✗ Refactor or modernize the JavaScript (ES5 is intentional)
+  ✗ Add dependencies or build steps
+
+WHY THIS EXISTS:
+The main miniCycle app uses modern JavaScript (ES6+, async/await, modules).
+If a user's browser doesn't support these features, or if the full app fails
+to load within 8 seconds, they are redirected here automatically.
+This ensures EVERY user can benefit from miniCycle's core concept.
+
+FEATURES INCLUDED (basic set only):
+  • Add/edit/delete tasks
+  • Three modes: Auto Cycle, Manual Cycle, To-Do
+  • Dark mode toggle
+  • Basic stats and milestones
+  • Undo/redo (limited stack)
+  • LocalStorage persistence
+
+FEATURES NOT INCLUDED (full app only):
+  • Multiple cycles
+  • Recurring tasks
+  • Due dates & reminders
+  • Theme unlocks & gamification
+  • Import/export
+  • Advanced settings
+
+Last meaningful update: v2.088 (intentionally static thereafter)
+© 2026 sparkinCreations - https://sparkincreations.com
+================================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<!-- ✅ Cache prevention for development -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
+<title>miniCycle lite - Routine Manager</title>
+
+<!-- Icon -->
+<link rel="icon" type="image/png" href="assets/taskcycle_logo_blackandwhite_transparent.png" />
+
+<!-- Main stylesheet -->
+<link rel="stylesheet" href="miniCycle-lite-styles.css">
+<link rel="stylesheet" href="popup.css">
+<meta name="theme-color" content="black" id="theme-color-meta">
+
+
+</head>
+<body>
+<!-- ✅ Skip Link for Keyboard Navigation -->
+<a href="#taskList" class="skip-link" tabindex="0">Skip to task list</a>
+
+<!-- Initial App Loader -->
+<div id="app-loader">
+  <img src="assets/minicycle_logo_icon.png" alt="Loading..." class="loader-logo">
+  <div class="loader-text">Loading miniCycle Lite...</div>
+</div>
+
+<!-- Loading Overlay for Operations -->
+<div id="loading-overlay" class="loading-overlay">
+  <div class="loading-spinner">
+    <img src="assets/minicycle_logo_icon.png" alt="Loading...">
+    <div class="loading-spinner-text">Processing...</div>
+  </div>
+</div>
+
+<!-- ✅ Header with tooltips -->
+<header class="mini-cycle-header-row">
+  <div class="mode-selector-container">
+    <label for="mode-selector" class="sr-only">Task completion mode</label>
+    <select id="mode-selector" class="mode-selector" data-tooltip="Choose how tasks behave when completed" aria-describedby="mode-selector-desc">
+      <option value="auto-cycle">Auto Cycle ↻</option>
+      <option value="manual-cycle">Manual Cycle ✔︎↻</option>
+      <option value="todo-mode">To-Do Mode ✓</option>
+    </select>
+    <span id="mode-selector-desc" class="sr-only">Auto Cycle resets tasks automatically, Manual Cycle requires button press, To-Do Mode deletes completed tasks</span>
+  </div>
+  <div class="header-branding">
+    <img src="assets/logo.png" alt="miniCycle Logo" class="header-logo">
+    <img src="assets/miniCycle_lite.png" alt="miniCycle" class="app-name">
+  </div>
+  <button id="menu-button" class="menu-button" aria-label="Open menu" tabindex="0" data-tooltip="Open main menu">Menu</button>
+</header>
+
+<!-- ✅ Mobile Mode Selector with tooltip -->
+<div class="mobile-mode-selector-wrapper">
+  <label for="mobile-mode-selector" class="sr-only">Task completion mode</label>
+  <select id="mobile-mode-selector" class="mode-selector" data-tooltip="Choose your task completion mode">
+    <option value="auto-cycle">Auto Cycle ↻</option>
+    <option value="manual-cycle">Manual Cycle ✔︎↻</option>
+    <option value="todo-mode">To-Do Mode ✓</option>
+  </select>
+</div>
+
+
+<!-- ✅ Menu with tooltips and full version option -->
+<nav class="menu-container" data-modal data-menu role="navigation">
+  <div id="main-menu-header-row" class="main-menu-header-row">
+    <div class="main-menu-header-logo">
+      <img src="assets/logo.png" alt="miniCycle Logo" width="22" height="22">
+    </div>
+    <div class="main-menu-header">miniCycle Lite</div>
+    <div id="current-date" class="current-date"></div>
+    <button id="close-main-menu" class="close-btn menu-close-btn" aria-label="Close menu" tabindex="0" data-tooltip="Close this menu">✕</button>
+  </div>
+  
+  <div class="main-menu-row">
+    <ul role="list">
+      <li>
+        <button id="clear-mini-cycle-tasks" tabindex="0" data-tooltip="Uncheck all tasks without deleting them">
+          <svg class="menu-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.53a4.008 4.008 0 0 1-5.66 0L2.81 17c-.78-.79-.78-2.05 0-2.84L13.4 3.56c.79-.78 2.05-.78 2.84 0M4.22 15.58l3.54 3.53c.78.79 2.04.79 2.83 0l3.53-3.53l-4.95-4.95l-4.95 4.95Z"/></svg>
+          <span>Uncheck All</span>
+        </button>
+      </li>
+      <li>
+        <button id="delete-all-mini-cycle-tasks" tabindex="0" data-tooltip="Permanently delete all tasks">
+          <svg class="menu-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M9 3v1H4v2h1v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6h1V4h-5V3H9m0 5h2v9H9V8m4 0h2v9h-2V8z"/></svg>
+          <span>Delete All</span>
+        </button>
+      </li>
+      <li>
+        <button id="open-feedback-modal" tabindex="0" data-tooltip="Send feedback to improve miniCycle">
+          <svg class="menu-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M9 22a1 1 0 0 1-1-1v-3H4a2 2 0 0 1-2-2V4c0-1.1.9-2 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6.1l-3.7 3.71c-.2.18-.45.29-.7.29H9z"/></svg>
+          <span>Feedback</span>
+        </button>
+      </li>
+      <li>
+        <button id="reset-all-stats" tabindex="0" data-tooltip="Reset all statistics and badges to zero">
+          <svg class="menu-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M11 2v20a10 10 0 0 1-1-19.95V2h1m2 0v9h9a10 10 0 0 0-9-9m9.95 11H13l6.74 6.74A10 10 0 0 0 22.95 13z"/></svg>
+          <span>Reset Stats</span>
+        </button>
+      </li>
+      <li>
+        <button id="toggle-notifications" tabindex="0" data-tooltip="Turn notifications on or off">
+          <svg class="menu-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2m6-6V11c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+          <span id="toggle-notifications-label">Notifications: On</span>
+        </button>
+      </li>
+      <!-- ✅ NEW: Try Full Version button -->
+      <li>
+        <button id="try-full-version" tabindex="0" data-tooltip="Switch to the full-featured miniCycle version (may be slower on older devices)">
+          <img src="assets/logo.png" alt="" aria-hidden="true" class="menu-icon-logo">
+          <span>Try Full Version</span>
+        </button>
+      </li>
+    </ul>
+  </div>
+  
+  <button id="exit-mini-cycle" tabindex="0" data-tooltip="Exit to the main TaskCycle website">
+    <svg class="menu-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M16 17v-3H9v-4h7V7l5 5l-5 5M14 2a2 2 0 0 1 2 2v2h-2V4H5v16h9v-2h2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9z"/></svg>
+    <span>Exit miniCycle</span>
+  </button>
+</nav>
+<!-- ✅ Task management section with tooltips -->
+<main id="app-container" role="main">
+  <div id="task-view" role="region" aria-label="Task management">
+    <!-- ✅ Add Task Button (opens modal) -->
+    <div class="add-task-button-container">
+      <button id="open-add-task-modal" class="add-task-btn" aria-label="Add new tasks" tabindex="0" data-tooltip="Open the add tasks dialog">
+        <span class="add-task-icon">+</span>
+        <span class="add-task-text">Add Tasks</span>
+      </button>
+    </div>
+    
+    <div id="mini-cycle-title"
+         class="mini-cycle-title"
+         contenteditable="true"
+         role="textbox"
+         aria-label="Task list title - editable"
+         aria-multiline="false"
+         spellcheck="true"
+         tabindex="0"
+         data-tooltip="Click to edit the title of your task list">My Tasks</div>
+    
+    <div class="task-list-container" role="region" aria-label="Task list">
+      <ul id="taskList" class="task-list" role="list" aria-live="polite"></ul>
+    </div>
+    
+    <div class="progress-row">
+      <div class="progress-container" role="progressbar" aria-label="Task completion progress" data-tooltip="Shows your progress completing all tasks">
+        <div id="progressBar" class="progress-bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+      </div>
+      <button id="focus-toggle" aria-label="Toggle focus mode" title="Toggle focus mode" tabindex="0" aria-pressed="false" data-tooltip="Toggle focus mode">
+        <svg class="focus-icon-expand" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+        <svg class="focus-icon-collapse" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+      </button>
+    </div>
+    
+    <div class="complete-all-and-help-window-container">
+      <button id="completeAll" 
+              class="complete-all-btn" 
+              style="display: none;"
+              aria-label="Complete all tasks"
+              tabindex="0"
+              data-tooltip="Complete all tasks and start a new cycle">Complete All</button>
+      
+      <div id="help-window" class="help-window" role="complementary" aria-label="Help information">
+        <p><strong>Auto mode:</strong> Tasks reset automatically when all complete</p>
+        <p><strong>Manual mode:</strong> Task reset by complete button</p>
+        <p><strong>To-Do mode:</strong> Checked tasks removed by complete button</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Quick action buttons with tooltips -->
+  <button id="quick-dark-toggle" aria-label="Toggle dark mode" title="Toggle dark mode" tabindex="0" data-tooltip="Switch between light and dark themes">🌓</button>
+  <button id="quick-help-toggle" aria-label="Toggle help window" title="Toggle help window" tabindex="0" data-tooltip="Show or hide help information">❓</button>
+
+  <!-- ✅ Stats panel with tooltips -->
+  <section id="stats-panel" class="stats-panel" role="region" aria-label="Statistics">
+    <h2>📊 Stats</h2>
+
+    <!-- ✅ Overview Stats Card -->
+    <div class="stats-grid" role="list">
+      <p role="listitem" data-tooltip="Total number of tasks you've created"><strong>Total Tasks</strong> <span id="total-tasks" aria-live="polite">0</span></p>
+      <p role="listitem" data-tooltip="Number of tasks you've completed"><strong>Completed</strong> <span id="completed-tasks" aria-live="polite">0</span></p>
+      <p role="listitem" data-tooltip="Percentage of tasks completed"><strong>Completion Rate</strong> <span id="completion-rate" aria-live="polite">0%</span></p>
+    </div>
+
+    <!-- ✅ Cycle Progress Section -->
+    <div class="stats-section" role="region" aria-label="Cycle progress achievements">
+      <div class="stats-section-header">
+        <h3>🏅 Cycle Progress</h3>
+      </div>
+      <div class="badges" role="list">
+        <div class="badge" data-milestone="5" role="listitem" aria-label="5 cycles milestone" data-tooltip="Complete 5 cycles to earn this badge">5</div>
+        <div class="badge" data-milestone="10" role="listitem" aria-label="10 cycles milestone" data-tooltip="Complete 10 cycles to earn this badge">10</div>
+        <div class="badge" data-milestone="25" role="listitem" aria-label="25 cycles milestone" data-tooltip="Complete 25 cycles to earn this badge">25</div>
+        <div class="badge" data-milestone="50" role="listitem" aria-label="50 cycles milestone" data-tooltip="Complete 50 cycles to earn this badge">50</div>
+      </div>
+      <div class="stats-count" data-tooltip="Number of complete cycles you've finished">
+        <strong>Cycles Completed</strong>
+        <span id="mini-cycle-count" aria-live="polite">0</span>
+      </div>
+    </div>
+
+    <!-- ✅ Tasks Cleared Section -->
+    <div class="stats-section" role="region" aria-label="Tasks cleared achievements">
+      <div class="stats-section-header">
+        <h3>🗑️ Tasks Cleared</h3>
+      </div>
+      <div class="badges cleared-badges" role="list">
+        <div class="badge cleared-badge" data-cleared-milestone="10" role="listitem" aria-label="10 tasks cleared milestone" data-tooltip="Clear 10 tasks in To-Do mode to earn this badge">10</div>
+        <div class="badge cleared-badge" data-cleared-milestone="25" role="listitem" aria-label="25 tasks cleared milestone" data-tooltip="Clear 25 tasks in To-Do mode to earn this badge">25</div>
+        <div class="badge cleared-badge" data-cleared-milestone="50" role="listitem" aria-label="50 tasks cleared milestone" data-tooltip="Clear 50 tasks in To-Do mode to earn this badge">50</div>
+        <div class="badge cleared-badge" data-cleared-milestone="100" role="listitem" aria-label="100 tasks cleared milestone" data-tooltip="Clear 100 tasks in To-Do mode to earn this badge">100</div>
+      </div>
+      <div class="stats-count" data-tooltip="Tasks cleared via Clear Completed in To-Do mode">
+        <strong>Total Cleared</strong>
+        <span id="todo-deleted-tasks" aria-live="polite">0</span>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ✅ Navigation arrows with tooltips -->
+  <button class="slide-arrow" id="slide-right" aria-label="View statistics" title="Click to view stats" tabindex="0" data-tooltip="Click to view your statistics">←</button>
+  <button class="slide-arrow" id="slide-left" aria-label="View tasks" title="Click to view tasks" tabindex="0" data-tooltip="Click to view your tasks">→</button>
+
+
+</main>
+
+
+
+<!-- ✅ Undo/Redo buttons with tooltips -->
+<footer id="footer-container" role="contentinfo">
+  <div id="undo-redo-buttons" class="undo-container" role="toolbar" aria-label="Undo and redo actions">
+    <button id="undo-btn" class="undo-redo-btn" style="display: none;" aria-label="Undo last action" tabindex="0" data-tooltip="Undo your last action">Undo</button>
+    <button id="redo-btn" class="undo-redo-btn" style="display: none;" aria-label="Redo last action" tabindex="0" data-tooltip="Redo your last undone action">Redo</button>
+  </div>
+    <!-- ✅ Navigation dots with tooltips -->
+<div class="navigation-dots" role="tablist" aria-label="View navigation">
+  <button class="dot active" data-view="tasks" role="tab" aria-selected="true" aria-label="Tasks view" tabindex="0" data-tooltip="Switch to tasks view"></button>
+  <button class="dot" data-view="stats" role="tab" aria-selected="false" aria-label="Statistics view" tabindex="0" data-tooltip="Switch to statistics view"></button>
+</div>
+  <ul class="footer-links">
+    <li>&copy; 2026 <a href="https://sparkincreations.com" target="_blank" rel="noopener">sparkinCreations</a></li>
+    <li>• <a href="https://minicycleapp.com" target="_blank" rel="noopener" class="footer-product-link">miniCycle Lite</a> •</li>
+  </ul>
+</footer>
+
+<!-- ✅ Screen reader only styles -->
+<!-- ✅ Add Task Modal -->
+<div id="add-task-modal" class="add-task-modal" role="dialog" aria-modal="true" aria-labelledby="add-task-modal-title" style="display: none;">
+  <div class="add-task-modal-overlay"></div>
+  <div class="add-task-modal-content">
+    <div class="add-task-modal-header">
+      <h3 id="add-task-modal-title">Add Tasks</h3>
+      <button id="close-add-task-modal" class="add-task-modal-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="add-task-modal-body">
+      <div class="add-task-input-row">
+        <label for="modalTaskInput" class="sr-only">Enter a new task</label>
+        <input type="text"
+               id="modalTaskInput"
+               class="modal-task-input"
+               placeholder="Enter a task..."
+               maxlength="100"
+               autocomplete="off"
+               spellcheck="true">
+        <button id="modalAddTask" class="modal-add-btn" aria-label="Add task">Add</button>
+      </div>
+      <div id="added-tasks-list" class="added-tasks-list" role="list" aria-live="polite">
+        <!-- Added tasks will appear here -->
+      </div>
+    </div>
+    <div class="add-task-modal-footer">
+      <span id="tasks-added-count" class="tasks-added-count"></span>
+      <button id="done-adding-tasks" class="done-adding-btn">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Feedback Modal -->
+<div id="feedback-modal" class="feedback-modal" role="dialog" aria-modal="true" aria-labelledby="feedback-modal-title" style="display: none;">
+  <div class="feedback-modal-overlay close-feedback-modal"></div>
+  <div class="feedback-modal-content">
+    <div class="feedback-modal-header">
+      <h3 id="feedback-modal-title">💬 Send Feedback</h3>
+      <button class="close-feedback-modal feedback-modal-close" aria-label="Close">&times;</button>
+    </div>
+    <form id="feedback-form" action="https://api.web3forms.com/submit" method="POST">
+      <!-- Web3Forms Access Key -->
+      <input type="hidden" name="access_key" value="691907ec-ad04-4447-9d45-861ee622a091">
+      <!-- Subject line for email identification -->
+      <input type="hidden" name="subject" value="miniCycle Lite Feedback">
+      <!-- Honeypot Spam Protection -->
+      <input type="checkbox" name="botcheck" style="display: none;" tabindex="-1" autocomplete="off">
+      <div class="feedback-modal-body">
+        <p>Help us improve miniCycle Lite! Share your thoughts, report bugs, or suggest features.</p>
+        <label for="feedback-text" class="sr-only">Your feedback</label>
+        <textarea id="feedback-text" name="message" placeholder="Your feedback..." rows="4" required></textarea>
+        <label for="feedback-email" class="sr-only">Email (optional)</label>
+        <input type="email" id="feedback-email" name="email" placeholder="Email (optional)" autocomplete="email">
+      </div>
+      <div class="feedback-modal-footer">
+        <button type="button" class="close-feedback-modal feedback-cancel-btn">Cancel</button>
+        <button type="submit" id="submit-feedback" class="feedback-submit-btn">Submit</button>
+      </div>
+    </form>
+    <div id="thank-you-message" style="display: none; text-align: center; padding: 20px;">
+      ✅ Thank you for your feedback!
+    </div>
+  </div>
+</div>
+
+<!-- Hidden input for compatibility with existing JS -->
+<input type="hidden" id="taskInput" value="">
+
+<!-- ✅ Load JavaScript last -->
+<!-- Load JavaScript last -->
+<script src="miniCycle-lite-scripts.js"></script>
+<script src="popup-notifications.js"></script>
+
+<!-- ✅ Enhanced fallback for very old browsers -->
+<noscript>
+  <div style="position: fixed; top: 0; left: 0; right: 0; background: #ff4444; color: white; padding: 15px; text-align: center; z-index: 9999; font-family: Arial, sans-serif;">
+    <strong>JavaScript Required</strong><br>
+    miniCycle requires JavaScript to function. Please enable JavaScript in your browser settings and refresh this page.
+  </div>
+</noscript>
+
+</body>
+</html>

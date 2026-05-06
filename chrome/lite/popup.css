@@ -1,0 +1,384 @@
+/* Popup-specific overrides — Chrome popups have no viewport, so we set
+   explicit dimensions on <html>/<body>. Chrome caps popups at ~800x600.
+   Loaded AFTER miniCycle-lite-styles.css so these win on conflict. */
+
+html {
+  width: 400px;
+}
+
+body {
+  /* width compensates so that after zoom the rendered width = 400px (400 / 0.85 ≈ 470) */
+  width: 470px;
+  min-height: 706px; /* 600 / 0.85 */
+  margin: 0;
+  overflow-x: hidden;
+  zoom: 0.85; /* global 15% compression */
+}
+
+/* Inset task rows so they sit more centered inside the task container */
+.task-list-container {
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+/* Make the title + task container a little thinner so they don't span full width */
+.mini-cycle-title,
+.task-list-container {
+  max-width: 390px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Progress bar — main stylesheet has width:80% which keeps it wide; force narrower */
+.progress-container {
+  width: 305px;
+  max-width: 305px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Lift the fixed Undo/Redo bar up off the footer */
+.undo-container {
+  bottom: 70px;
+}
+
+/* The footer holds Undo + the Tasks/Stats pill but had z-index:0, so #task-view
+   (z-index:1, position:fixed, ~75% viewport) was eating clicks across this area. */
+#footer-container {
+  z-index: 200 !important;
+}
+
+/* Lift the help (?) and dark mode (🌙) toggles above the footer so clicks reach them. */
+#quick-help-toggle,
+#quick-dark-toggle {
+  z-index: 250 !important;
+}
+
+/* ─── Focus mode ─────────────────────────────────────────────────────── */
+
+/* Progress bar + focus toggle live in a flex row so the button is naturally
+   in line with the progress bar — no JS measurement, no z-index juggling. */
+.progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 15px; /* matches the progress-container's original margin-top */
+  width: 100%;
+}
+
+/* Invisible spacer mirrors the focus-toggle's width so the progress bar
+   stays centered with the task list above it (symmetric flex layout). */
+.progress-row::before {
+  content: '';
+  display: block;
+  width: 36px; /* matches #focus-toggle width */
+  flex-shrink: 0;
+}
+
+/* In focus mode the focus button is fixed-positioned (out of the flex row),
+   so the balancing spacer would push the progress bar off-center. Hide it. */
+body.focus-mode .progress-row::before {
+  display: none;
+}
+
+/* The progress-container had margin-top:15px; the row owns that now.
+   Also clear the auto side-margins — inside the flex row those absorb free
+   space and push the focus button against the edge regardless of `gap`. */
+.progress-row .progress-container {
+  margin: 0 !important;
+}
+
+#focus-toggle {
+  position: relative;
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.95);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+
+#focus-toggle:hover {
+  background: rgba(0, 0, 0, 0.45);
+  border-color: #ffffff;
+  transform: scale(1.05);
+}
+
+body.dark-mode #focus-toggle {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+/* Icon swap — show expand by default, collapse only in focus mode */
+#focus-toggle .focus-icon-collapse { display: none; }
+body.focus-mode #focus-toggle .focus-icon-expand { display: none; }
+body.focus-mode #focus-toggle .focus-icon-collapse { display: inline-block; }
+
+/* When focus is on: hide ALL chrome — leave only the title, task list,
+   progress bar, complete-all/clear-completed button, and the focus toggle. */
+body.focus-mode .mini-cycle-header-row,
+body.focus-mode .mobile-mode-selector-wrapper,
+body.focus-mode #quick-help-toggle,
+body.focus-mode #quick-dark-toggle,
+body.focus-mode .footer-links,
+body.focus-mode .add-task-button-container,
+body.focus-mode .navigation-dots,
+body.focus-mode .undo-container {
+  display: none !important;
+}
+
+/* Strip body's safe-area / bottom paddings in focus mode so the app pins to the top. */
+body.focus-mode {
+  padding: 0 !important;
+}
+
+/* Header + Add Tasks button are gone — pull the task area up to the top
+   and lay out as a flex column so the task list can flex-grow and push
+   the progress bar + Complete button to the bottom.
+   Use absolute positioning so it sits flush against the body top
+   regardless of the lite stylesheet's 100vh / safe-area calculations. */
+body.focus-mode #app-container {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  padding-top: 28px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: auto !important;
+  min-height: 0 !important;
+  z-index: 50;
+}
+
+body.focus-mode .mini-cycle-title {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  box-shadow: none !important; /* drop separation shadow so it docks to the task container */
+  flex-shrink: 0;
+}
+
+/* The lite stylesheet centers #task-view via top:50% + translate(-50%,-50%)
+   and caps it at max-height:75% — that's why the task list didn't reach the
+   top. In focus mode, undo the centering and let it fill the popup. */
+body.focus-mode #task-view {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
+  width: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  height: 100% !important;
+  flex: 1 1 auto !important;
+}
+
+/* Task list grows to fill all available space between title and progress bar */
+body.focus-mode .task-list-container {
+  max-height: none !important;
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+}
+
+/* In focus mode the chrome is gone — let the title, task list, and progress
+   bar use the full popup width instead of the narrower normal-mode caps. */
+body.focus-mode .mini-cycle-title,
+body.focus-mode .task-list-container {
+  max-width: none !important;
+  width: 96% !important;
+}
+
+body.focus-mode .progress-container {
+  width: 80% !important;
+  max-width: none !important;
+}
+
+/* Push Complete button toward the bottom with a little breathing room */
+body.focus-mode .complete-all-and-help-window-container {
+  margin-top: 8px !important;
+  margin-bottom: 16px !important;
+}
+
+/* Pull the focus toggle out of the flex row and pin it to the bottom-right
+   corner of the popup when focus is active. */
+body.focus-mode #focus-toggle {
+  position: fixed !important;
+  bottom: 14px !important;
+  right: 14px !important;
+  z-index: 250 !important;
+}
+
+/* Feedback modal — error block (used when submission fails) */
+#thank-you-message.feedback-error-block {
+  text-align: center;
+  padding: 20px 18px;
+  background: rgba(220, 53, 69, 0.08);
+  border: 1px solid rgba(220, 53, 69, 0.35);
+  border-radius: 10px;
+  color: #842029;
+  margin: 8px 4px;
+}
+
+#thank-you-message.feedback-error-block .feedback-error-icon {
+  font-size: 28px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+#thank-you-message.feedback-error-block .feedback-error-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #b02a37;
+}
+
+#thank-you-message.feedback-error-block .feedback-error-body {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #842029;
+  opacity: 0.9;
+}
+
+body.dark-mode #thank-you-message.feedback-error-block {
+  background: rgba(220, 53, 69, 0.15);
+  border-color: rgba(255, 120, 130, 0.45);
+  color: #ffd5d8;
+}
+
+body.dark-mode #thank-you-message.feedback-error-block .feedback-error-title {
+  color: #ff8b94;
+}
+
+body.dark-mode #thank-you-message.feedback-error-block .feedback-error-body {
+  color: #ffd5d8;
+}
+
+/* Menu SVG icons — match the sizing the original .menu-container button i had */
+.menu-container button svg.menu-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ─── Stats panel polish ─────────────────────────────────────────────── */
+/* Tighter spacing so content fits without a scrollbar in the popup */
+
+#stats-panel.stats-panel {
+  max-height: 520px !important;
+  width: 90% !important;
+  max-width: 360px !important;
+  padding: 12px 14px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+/* Hide scrollbar visually but keep scrolling functional if content overflows */
+#stats-panel.stats-panel::-webkit-scrollbar { width: 0; height: 0; }
+
+#stats-panel h2 {
+  margin: 0 0 6px 0 !important;
+  font-size: 14px !important;
+}
+
+#stats-panel .stats-grid {
+  margin-bottom: 6px !important;
+  padding: 4px !important;
+  gap: 2px !important;
+}
+
+#stats-panel .stats-grid p {
+  padding: 5px 9px !important;
+}
+
+#stats-panel .stats-section {
+  padding: 6px 10px !important;
+  margin-bottom: 6px !important;
+}
+
+#stats-panel .stats-section:last-of-type {
+  margin-bottom: 0 !important;
+}
+
+#stats-panel .stats-section-header {
+  margin-bottom: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+#stats-panel .badges {
+  padding: 3px 0 !important;
+  gap: 6px !important;
+  flex-wrap: nowrap !important; /* prevent badge wrap that creates extra rows */
+}
+
+#stats-panel .stats-count {
+  margin-top: 4px !important;
+  padding-top: 4px !important;
+}
+
+/* Replace navigation dots with a clean Tasks/Stats toggle.
+   !important is used to win against several existing dot rules in the
+   shared lite stylesheet (round shape, dark active bg, etc.). */
+.navigation-dots {
+  display: inline-flex !important;
+  width: auto !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  bottom: 32px !important;
+  gap: 4px !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  z-index: 101 !important; /* sit above .undo-container (z:100) so clicks land here */
+  pointer-events: auto !important;
+}
+
+.navigation-dots button.dot {
+  width: auto !important;
+  height: auto !important;
+  padding: 5px 14px !important;
+  margin: 0 !important;
+  background: rgba(0, 0, 0, 0.28) !important;       /* dark translucent for inactive — better contrast on blue bg */
+  background-color: rgba(0, 0, 0, 0.28) !important;
+  background-clip: border-box !important;
+  box-sizing: border-box !important;
+  border: 1px solid rgba(255, 255, 255, 0.55) !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  transform: none !important;
+  line-height: 1 !important;
+  letter-spacing: 0.02em !important;
+  cursor: pointer;
+  pointer-events: auto !important;
+}
+
+.navigation-dots button.dot[data-view="tasks"]::before { content: "Tasks"; }
+.navigation-dots button.dot[data-view="stats"]::before { content: "Stats"; }
+
+.navigation-dots button.dot:hover {
+  background-color: rgba(0, 0, 0, 0.42) !important;
+  border-color: #ffffff !important;
+  transform: none !important;
+}
+
+.navigation-dots button.dot.active,
+.navigation-dots button.dot.active:hover {
+  background-color: #ffffff !important;
+  color: #1a1f4a !important;     /* deeper navy for stronger active contrast */
+  border-color: #ffffff !important;
+  transform: none !important;
+}
