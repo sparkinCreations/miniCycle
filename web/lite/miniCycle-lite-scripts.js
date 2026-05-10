@@ -37,7 +37,7 @@
 //   • Multiple cycles, Recurring tasks, Due dates, Reminders
 //   • Theme unlocks, Gamification, Import/export, Advanced settings
 //
-// Last meaningful update: v2.088 (intentionally static thereafter)
+// Last meaningful update: v2.089 (intentionally static thereafter)
 // © 2026 sparkinCreations - https://sparkincreations.com
 // ================================================================================
 
@@ -86,7 +86,7 @@ console.log('📱 miniCycle Lite Mode Activated for maximum compatibility!');
 
 
 
-var currentVersion = '2.088'; 
+var currentVersion = '2.089'; 
 
 // ✅ ADD version display function
 function showVersionInfo() {
@@ -197,6 +197,7 @@ console.log('🚀 Initializing miniCycle Lite v' + currentVersion + '...');
   setupTryFullVersionButton();
   setupMobileInputOverlay();
   setupAddTaskModal(); // ✅ Add task modal system
+  setupFocusToggle();
 
   // ✅ Initial stats update
   setTimeout(function() {
@@ -2137,7 +2138,7 @@ function sanitizeInput(input) {
   
   // Remove dangerous characters but keep emoji and international text
   return input
-    .replace(/[<>\"']/g, '') // Remove HTML/script dangerous chars
+    .replace(/[<>"]/g, '') // Remove HTML/script dangerous chars (apostrophes are safe with textContent)
     .replace(/^\s+|\s+$/g, '') // Trim whitespace
     .substring(0, TASK_LIMIT); // Enforce length limit
 }
@@ -2811,7 +2812,7 @@ function handleTryFullVersion() {
     return; // User cancelled
   }
 
-  var currentVersion = '2.088';
+  var currentVersion = '2.089';
 
   // Show confirmation
   showNotification(
@@ -3061,6 +3062,46 @@ function clearCompletedTasks() {
 
 function showNotification(message, type) {
   console.log('🔔 ' + (type || 'info').toUpperCase() + ':', message);
+}
+
+// ==========================================
+// 🎯 FOCUS MODE
+// ==========================================
+// Toggle a class on <body> that hides chrome and gives the task list
+// more room. CSS handles all visibility (including swapping the
+// expand/collapse SVG icons via body.focus-mode selectors).
+var FOCUS_MODE_KEY = 'miniCycleLiteFocusMode';
+
+function setupFocusToggle() {
+  var btn = document.getElementById('focus-toggle');
+  if (!btn) return;
+
+  // Restore saved state
+  try {
+    if (localStorage.getItem(FOCUS_MODE_KEY) === 'on') {
+      addClass(document.body, 'focus-mode');
+      btn.setAttribute('aria-pressed', 'true');
+    }
+  } catch (e) { /* ignore */ }
+
+  btn.addEventListener('click', function() {
+    var enable = !hasClass(document.body, 'focus-mode');
+    if (enable) {
+      addClass(document.body, 'focus-mode');
+    } else {
+      removeClass(document.body, 'focus-mode');
+    }
+    btn.setAttribute('aria-pressed', enable ? 'true' : 'false');
+    try { localStorage.setItem(FOCUS_MODE_KEY, enable ? 'on' : 'off'); } catch (e) {}
+
+    if (typeof showNotification === 'function') {
+      showNotification(
+        enable ? '🎯 Focus view on' : '↩️ Focus view off',
+        'info',
+        1500
+      );
+    }
+  });
 }
 
 // ==========================================

@@ -2138,7 +2138,7 @@ function sanitizeInput(input) {
   
   // Remove dangerous characters but keep emoji and international text
   return input
-    .replace(/[<>\"']/g, '') // Remove HTML/script dangerous chars
+    .replace(/[<>"]/g, '') // Remove HTML/script dangerous chars (apostrophes are safe with textContent)
     .replace(/^\s+|\s+$/g, '') // Trim whitespace
     .substring(0, TASK_LIMIT); // Enforce length limit
 }

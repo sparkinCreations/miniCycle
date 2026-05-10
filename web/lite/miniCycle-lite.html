@@ -42,7 +42,7 @@ FEATURES NOT INCLUDED (full app only):
   • Import/export
   • Advanced settings
 
-Last meaningful update: v2.088 (intentionally static thereafter)
+Last meaningful update: v2.089 (intentionally static thereafter)
 © 2026 sparkinCreations - https://sparkincreations.com
 ================================================================================
 -->
@@ -66,7 +66,8 @@ Last meaningful update: v2.088 (intentionally static thereafter)
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" onerror="this.disabled=true;">
 
 <!-- ✅ Main stylesheet -->
-<link rel="stylesheet" href="miniCycle-lite-styles.css?v=2.088">
+<link rel="stylesheet" href="miniCycle-lite-styles.css?v=2.089">
+<link rel="stylesheet" href="miniCycle-lite-polish.css?v=2.089">
 
 <!-- ✅ ADD: Web App Manifest and Theme -->
 <link rel="manifest" href="../manifest-lite.json">
@@ -466,8 +467,14 @@ window.addEventListener('appinstalled', function () {
       <ul id="taskList" class="task-list" role="list" aria-live="polite"></ul>
     </div>
     
-    <div class="progress-container" role="progressbar" aria-label="Task completion progress" data-tooltip="Shows your progress completing all tasks">
-      <div id="progressBar" class="progress-bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+    <div class="progress-row">
+      <div class="progress-container" role="progressbar" aria-label="Task completion progress" data-tooltip="Shows your progress completing all tasks">
+        <div id="progressBar" class="progress-bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+      </div>
+      <button id="focus-toggle" aria-label="Toggle focus mode" title="Toggle focus mode" tabindex="0" aria-pressed="false" data-tooltip="Toggle focus mode">
+        <svg class="focus-icon-expand" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+        <svg class="focus-icon-collapse" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+      </button>
     </div>
     
     <div class="complete-all-and-help-window-container">
@@ -634,7 +641,7 @@ window.addEventListener('appinstalled', function () {
 <input type="hidden" id="taskInput" value="">
 
 <!-- ✅ Load JavaScript last -->
-<script src="miniCycle-lite-scripts.js?v=2.088"></script>
+<script src="miniCycle-lite-scripts.js?v=2.089"></script>
 <script>
 // ES5 toast implementation - Single notification mode (replaces instead of stacking)
 (function () {

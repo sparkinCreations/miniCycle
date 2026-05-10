@@ -1,3 +1,9 @@
+## [2.227] - 2026-05-10
+- fix: update homepage URL in manifest.json
+- Add miniCycle Lite static fallback version and related styles/scripts
+- chore: update app version to 2.226 across all relevant files and documentation
+
+
 ## [2.225] - 2026-05-06
 - chore: update version to 2.224 across all relevant files and documentation
 
