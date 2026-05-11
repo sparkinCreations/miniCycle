@@ -7,7 +7,14 @@
       "Bash(magick --version)",
       "Read(//private/tmp/**)",
       "Bash(cp /Users/mjaynumberone/Documents/Programs/Code/miniCycle/web/assets/images/logo/logo.png logo_src.png)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(unzip -l /Users/mjaynumberone/Documents/Programs/Code/miniCycle/chrome/lite/assets/lite.zip)",
+      "Bash(unzip -l /Users/mjaynumberone/Documents/Programs/Code/miniCycle/chrome/assets/lite.zip)",
+      "Bash(mkdir -p chrome/promo)",
+      "Bash(mv chrome/lite/assets/chrome.png chrome/lite/assets/chrome-small.png chrome/promo/)",
+      "Bash(rm chrome/assets/lite.zip)",
+      "Bash(zip -r ../lite.zip . -x \"*.DS_Store\" -x \"__MACOSX/*\")",
+      "Bash(unzip -l chrome/lite.zip)"
     ]
   }
 }
