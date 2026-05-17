@@ -1,3 +1,9 @@
+## [2.229] - 2026-05-17
+- Improve small-screen mobile UX: banner padding, modal scroll, proportional sizing
+- Add chrome promotional image
+- Add new assets and styles for miniCycle Lite polish
+
+
 ## [2.227] - 2026-05-10
 - fix: update homepage URL in manifest.json
 - Add miniCycle Lite static fallback version and related styles/scripts
