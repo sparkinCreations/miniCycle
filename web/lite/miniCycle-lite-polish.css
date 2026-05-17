@@ -121,8 +121,10 @@ body.focus-mode .mini-cycle-title {
 }
 
 /* The lite stylesheet centers #task-view via top:50% + translate(-50%,-50%)
-   and caps it at max-height:75% — undo that so it fills the focus area. */
-body.focus-mode #task-view {
+   and caps it at max-height:75% — undo that so it fills the focus area.
+   Scoped to :not(.hide) so the slide-out transform applied during
+   swipe-to-stats can still take effect (see the .hide rule below). */
+body.focus-mode #task-view:not(.hide) {
   position: static !important;
   top: auto !important;
   left: auto !important;
@@ -134,22 +136,50 @@ body.focus-mode #task-view {
   flex: 1 1 auto !important;
 }
 
+/* Preserve the swipe-to-stats slide animation while in focus mode.
+   Without this, the focus-mode rule above wins on specificity over
+   #task-view.hide and clamps transform back to none — the task list
+   sits still as the stats panel slides in over it. Use translateX
+   only (no Y shift) since in focus mode the task-view fills the
+   panel and isn't vertically centered. */
+body.focus-mode #task-view.hide {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  height: 100% !important;
+  flex: 1 1 auto !important;
+  -webkit-transform: translateX(-200%) !important;
+  -ms-transform: translateX(-200%) !important;
+  transform: translateX(-200%) !important;
+}
+
 body.focus-mode .task-list-container {
   max-height: none !important;
   flex: 1 1 auto !important;
   overflow-y: auto !important;
   width: 96% !important;
-  max-width: none !important;
+  /* Cap to ~task-list width + a little breathing room. The inner
+     .task-list maxes at 800px and individual .task at 760px (see
+     the @media (min-width: 1024px) block in miniCycle-lite-styles.css);
+     a 96% / 840px cap keeps the container's background hugging the
+     content on desktop instead of sprawling to viewport width. */
+  max-width: 840px !important;
 }
 
 body.focus-mode .mini-cycle-title {
   width: 96% !important;
-  max-width: none !important;
+  max-width: 840px !important;
 }
 
 body.focus-mode .progress-container {
   width: 80% !important;
-  max-width: none !important;
+  /* Narrower than the .task max-width (760px) on desktop — the
+     progress bar reads as a slim indicator rather than competing
+     visually with the task list above it. */
+  max-width: 720px !important;
 }
 
 body.focus-mode .complete-all-and-help-window-container {
@@ -258,11 +288,23 @@ body.dark-mode #thank-you-message.feedback-error-block .feedback-error-body {
   padding-top: 4px !important;
 }
 
-/* ─── Tasks/Stats pill (replaces nav dots — visual only) ────────────
-   Container positioning is left to the main lite stylesheet. */
+/* ─── Tasks/Stats pill (replaces nav dots — visual only) ───────────
+   The main lite stylesheet centers .navigation-dots via width: 100%
+   + justify-content: center. We override width to auto (pill should
+   only be as wide as its content), so we have to re-center it
+   explicitly with left: 50% + translateX(-50%) — the same pattern
+   .undo-container already uses. Without this, position: absolute
+   leaves the pill at its static position (~viewport center as the
+   *start* of the inline element, not the middle), shifting it
+   right of center by half its own width. */
 .navigation-dots {
   display: inline-flex !important;
   width: auto !important;
+  left: 50% !important;
+  right: auto !important;
+  -webkit-transform: translateX(-50%) !important;
+  -ms-transform: translateX(-50%) !important;
+  transform: translateX(-50%) !important;
   gap: 4px !important;
   background: transparent !important;
   border: none !important;
@@ -306,4 +348,57 @@ body.dark-mode #thank-you-message.feedback-error-block .feedback-error-body {
   color: #1a1f4a !important;
   border-color: #ffffff !important;
   transform: none !important;
+}
+
+/* ─── Mobile non-focus: tighter task container ────────────────────
+   The base lite stylesheet lets .task-list-container fill the full
+   #task-view width (95% of viewport on mobile), which makes the
+   container hug the viewport edges and reads as too wide / not
+   centered relative to the narrower .task max-width (360px).
+   Cap the width so the container has visible breathing room on the
+   sides, and trim max-height so it doesn't take up most of the
+   viewport vertically. Focus-mode rules above override this with
+   their own width: 96% / max-width: 840px. */
+@media (max-width: 480px) {
+  body:not(.focus-mode) .task-list-container {
+    max-width: 380px !important;
+    /* Aggressive cap so the container is visibly shorter — the
+       previous 50vh wasn't visibly changing the layout because the
+       natural content height didn't reach it. 280px shows roughly
+       3 tasks before scrolling kicks in. */
+    max-height: 280px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  body:not(.focus-mode) .mini-cycle-title {
+    max-width: 380px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  /* Push undo/redo above the Tasks/Stats pill. The base lite mobile
+     override puts undo at bottom: 50px; the pill sits at bottom: 25px
+     with ~23px height, so undo overlapped the pill by ~2px. 60px
+     leaves a small ~12px gap — close enough to feel grouped without
+     touching. */
+  body:not(.focus-mode) .undo-container {
+    bottom: 60px !important;
+  }
+  /* Keep "Undo (1)" / "Redo (1)" on a single line. Without this the
+     "(1)" badge wrapped to a second line on narrow viewports, making
+     each button ~46px tall instead of ~28px. */
+  body:not(.focus-mode) .undo-redo-btn {
+    white-space: nowrap !important;
+  }
+  /* Shrink task pills on mobile — base lite .task uses min-height: 50px
+     which rendered at ~56px including the 24px checkbox. Drop to 38px
+     for a more compact list, and pull max-width slightly under the
+     container's 380px cap so each task has visible breathing room
+     (centered inside, not edge-hugging). */
+  body:not(.focus-mode) .task-list .task,
+  body:not(.focus-mode) .task-list li {
+    min-height: 38px !important;
+    padding: 4px 10px !important;
+    margin-bottom: 6px !important;
+    max-width: 340px !important;
+  }
 }
