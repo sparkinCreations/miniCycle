@@ -91,6 +91,12 @@ body.onboarding-active .onboarding-placeholder {
     padding: var(--space-12) var(--space-6) var(--space-5);
     width: 420px;
     max-width: 95%;
+    /* Cap height to viewport with a small margin so the modal can never
+       overflow off-screen on short viewports (landscape, browser-chrome
+       visible). overflow-y allows the user to scroll to the Skip button
+       and step indicator when content is taller than the viewport. */
+    max-height: calc(100dvh - var(--space-4));
+    overflow-y: auto;
     border-radius: var(--radius-10);
     text-align: center;
     position: relative;
@@ -250,6 +256,15 @@ body.onboarding-active .onboarding-placeholder {
    ============================================================================= */
 
 @media (max-width: 768px) {
+    /* Anchor the modal near the top instead of vertically centering. On
+       short viewports the modal can't slip above the top of the screen,
+       so the Skip × button and content remain reachable; internal
+       overflow-y scrolls anything that doesn't fit. */
+    .onboarding-modal {
+        align-items: flex-start;
+        padding-top: var(--space-2);
+    }
+
     .onboarding-content {
         padding: var(--space-10) var(--space-4) var(--space-4);
     }

@@ -469,6 +469,7 @@
   --z-task-view-handle: 10;          /* Task View Layout: drag handle (above task content) */
   --z-task-view-dragging: 20;        /* Task View Layout: element being dragged (above handles) */
   --z-edit-focus: 50;                /* Edit focus overlay (below header) */
+  --z-onboarding-scrim: 50;          /* Fade strip under welcome banner during onboarding scroll */
   --z-header: 100;                   /* Fixed header */
   --z-menu: 500;                     /* Main menu overlay */
   --z-modal-backdrop: 999;           /* Modal backdrops */
@@ -583,3 +584,4 @@ html.reduced-motion {
     --anim-badge-sweep-loop: 0ms;
     --anim-badge-shine-loop: 0ms;
 }
+

@@ -100,6 +100,9 @@
        hide rule below — so they don't need offset variables anymore. */
     --first-run-welcome-height-fallback: 80px;
     --first-run-welcome-gap: var(--space-4); /* 16px desktop — comfortable gap between banner bottom and input bar / task-view top, applied only when the banner would overlap */
+    /* Used by the small-screen onboarding scrim (main.css EXPERIMENT block):
+       length of the fade-out region directly below the banner's bottom edge. */
+    --first-run-welcome-scrim-fade: var(--space-8-75); /* 35px ≈ space-9 */
 }
 
 /* Mobile: tighter gap so the welcome banner + content don't crowd the
@@ -227,6 +230,11 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
 
 .first-run-welcome__title {
     margin: 0 0 var(--space-1) 0;
+    /* Reserve horizontal space for the absolutely-positioned logo (left)
+       and dismiss × (right) so a wrapping title's first line cannot
+       collide with them on narrow viewports (≤330px — iPhone SE 1st gen,
+       very narrow Androids, split-screen). */
+    padding: 0 calc(var(--first-run-welcome-dismiss-size) + var(--space-2));
     /* Same size as the slide-0 hero title so banner total height stays
        consistent across all slides — prevents layout jitter when the
        carousel rotates. (Without this, typography.css's <h2> default of
