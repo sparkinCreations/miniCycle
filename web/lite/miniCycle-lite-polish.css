@@ -390,15 +390,28 @@ body.dark-mode #thank-you-message.feedback-error-block .feedback-error-body {
     white-space: nowrap !important;
   }
   /* Shrink task pills on mobile — base lite .task uses min-height: 50px
-     which rendered at ~56px including the 24px checkbox. Drop to 38px
-     for a more compact list, and pull max-width slightly under the
-     container's 380px cap so each task has visible breathing room
-     (centered inside, not edge-hugging). */
+     which rendered at ~56px including the 24px checkbox. Drop to 34px
+     for a more compact list. box-sizing: border-box is required: the
+     base .task uses content-box, so width: 100% + padding overflows
+     the parent .task-list by ~20px (visibly off-center, edge-hugging).
+     max-width: 280px ensures visible breathing room inside the
+     container even on the narrowest viewports (<400px). */
   body:not(.focus-mode) .task-list .task,
   body:not(.focus-mode) .task-list li {
-    min-height: 38px !important;
+    box-sizing: border-box !important;
+    min-height: 34px !important;
     padding: 4px 10px !important;
     margin-bottom: 6px !important;
-    max-width: 340px !important;
+    max-width: 280px !important;
+  }
+  /* The three-dots options button defaults to 44px tall (WCAG tap
+     target), which forced the task pill to ~52px even with min-height
+     above. Trim padding to bring the button closer to ~32px while
+     still being comfortably tappable. */
+  body:not(.focus-mode) .task-list .three-dots-btn {
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 4px 8px !important;
+    font-size: 16px !important;
   }
 }
