@@ -1,3 +1,11 @@
+## [2.230] - 2026-05-18
+- feat(notifications): enhance action button handling and styling
+- chore(lite): bump lite version
+- fix(lite): shorter, properly-centered task pills on mobile
+- chore(lite): bump lite version to 2.09
+- fix(lite): mobile polish — pill centering, focus-mode slide-out, tighter widths/heights
+
+
 ## [2.229] - 2026-05-17
 - Improve small-screen mobile UX: banner padding, modal scroll, proportional sizing
 - Add chrome promotional image

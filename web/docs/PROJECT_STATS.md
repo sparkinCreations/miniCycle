@@ -5,7 +5,7 @@
 > This file contains metrics that change frequently (version, counts, etc.).
 > All other documentation should reference this file instead of hardcoding these values.
 
-**Last Updated**: May 17, 2026
+**Last Updated**: May 18, 2026
 
 ---
 
@@ -13,8 +13,8 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.229 |
-| **Lite Version** | 2.089 (frozen) |
+| **App Version** | 2.230 |
+| **Lite Version** | 2.091 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 122 |
 | **Total Tests** | 2447 |
