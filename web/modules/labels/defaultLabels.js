@@ -1483,7 +1483,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
     firstRunWelcome: {
         title:             'Welcome to miniCycle',
-        message:           'A checklist app for repeatable routines. |Compete. Cycle. Repeat.',
+        message:           'A checklist app for repeatable routines. |Complete. Cycle. Repeat.',
         // `|` is a paragraph break — the renderer splits on it so each
         // segment becomes its own <p> with a gap between paragraphs.
         titleReset:        'Why miniCycle?',
