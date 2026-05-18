@@ -1,3 +1,7 @@
+## [2.231] - 2026-05-18
+- chore(release): update version to 2.230 and reflect changes across documentation and files
+
+
 ## [2.230] - 2026-05-18
 - feat(notifications): enhance action button handling and styling
 - chore(lite): bump lite version
