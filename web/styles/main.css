@@ -276,122 +276,167 @@
         font-size: calc(var(--font-size-sm) * 0.85);
     }
 
-    /* Allow the page to scroll while the welcome banner or legacy
-       onboarding modal is visible — reset.css locks html/body to
-       overflow: hidden + height: 100vh for the fixed-layout app, but
-       during first-run the content stack (banner → input → task list)
-       can exceed a small viewport. We also un-fix #task-view so it
-       flows in document order; otherwise scrollHeight stays at 100vh
-       and overflow-y: auto has nothing to scroll. The welcome banner
-       stays position: fixed at the top, and task-view scrolls
-       underneath it as the user scrolls down. */
-    html:has(body.first-run-welcome-active),
-    html:has(body.onboarding-active),
-    body.first-run-welcome-active,
-    body.onboarding-active {
-        overflow-y: auto;
-        height: auto;
-        min-height: 100vh;
-        min-height: 100dvh;
-    }
-
-    /* Lock the page gradient to the viewport so the fade overlay (which
-       is position: fixed) shows the same color at the same viewport
-       y-position. Otherwise the body gradient scrolls with content and
-       creates a visible color band where the fade ends. Matches the
-       :not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow)
-       chain used by the user-prefs color rule, plus our own class, to
-       win on specificity (the prefs rule's background shorthand
-       otherwise resets background-attachment to scroll). */
-    body.first-run-welcome-active:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow),
-    body.onboarding-active:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
-        background-attachment: fixed;
-    }
-
-    body.first-run-welcome-active #task-view:not(.hide),
-    body.onboarding-active #task-view:not(.hide) {
-        position: relative;
-        top: auto;
-        left: auto;
-        transform: none;
-        max-height: none;
-        /* Push below the fixed welcome banner. Tracks the JS-set banner
-           height across slides (--first-run-welcome-height) so the gap
-           stays consistent. Math: --first-run-welcome-top (64px) +
-           banner_height + ~16px gap − app-root padding-top (~110px) ≈
-           banner_height − 30px. The −30 collapses the fixed terms;
-           --space-7-5 (30px) is the closest token. */
-        margin: calc(var(--first-run-welcome-height, 190px) - var(--space-7-5)) auto var(--space-10);
-        transition: transform var(--animation-pop) ease-in-out;
-    }
-
-    /* Preserve the swipe-left-to-stats animation while in onboarding —
-       the base #task-view.hide rule uses translate(-200%, -50%) which is
-       built for the centered position: fixed layout. In our relative
-       layout we only need the horizontal slide; the -50% Y would yank
-       the view upward and read as a glitch. Keep position: relative so
-       there's no jarring snap when .show ↔ .hide. */
-    body.first-run-welcome-active #task-view.hide,
-    body.onboarding-active #task-view.hide {
-        position: relative;
-        top: auto;
-        left: auto;
-        max-height: none;
-        margin: calc(var(--first-run-welcome-height, 190px) - var(--space-7-5)) auto var(--space-10);
-        transform: translateX(-200%);
-        transition: transform var(--animation-pop) ease-in-out;
-    }
-
-    /* Task list inside the un-fixed task-view: let it grow with content
-       instead of using its own internal scroll, so all scrolling happens
-       on the page during onboarding. */
-    body.first-run-welcome-active .task-list-container,
-    body.onboarding-active .task-list-container {
-        max-height: none;
-    }
-
     /* Suppress the focus-mode dimming/blur (body::after — 40% black +
        backdrop blur from focus-mode.css) while the welcome banner is up.
-       Otherwise it shows through where our fade strip ends, creating a
-       visible dark color band below the banner. The welcome banner is
-       already a foreground overlay; focus-mode's "remove distractions"
-       effect doesn't add value during onboarding. */
+       Mobile-only because the dimming + the fade-strip end create a
+       dark band on small viewports; on desktop the band is less
+       noticeable and the dimming is a defining part of focus-mode's
+       look so we leave it in (see the unscoped scroll/fade rules
+       below). */
     body.first-run-welcome-active.focus-mode::after,
     body.onboarding-active.focus-mode::after {
         opacity: 0;
     }
+}
 
-    /* Hide task list content as it scrolls under the welcome banner.
-       Fixed-position fade strip sits between task-view (z-content: 1)
-       and the banner (z-menu: 500). Uses the SAME --theme-bg-gradient
-       as body, fixed to the viewport, so the strip's color is identical
-       to the body's at every y-position. A mask-image alpha gradient
-       handles the fade-to-transparent at the bottom edge.
-       Banner-bottom and fade-end are derived from --first-run-welcome-top
-       + the JS-set --first-run-welcome-height (with 190px fallback —
-       the tallest expected slide before JS measures). */
-    body.first-run-welcome-active::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        pointer-events: none;
-        z-index: var(--z-onboarding-scrim);
-        background: var(--theme-bg-gradient);
-        background-attachment: fixed;
-        -webkit-mask-image: linear-gradient(
+/* ═══════════════════════════════════════════════════════════════════════════
+   ONBOARDING SCROLL + FADE — universal (applies at all viewports)
+   ───────────────────────────────────────────────────────────────────────────
+   Make the page scrollable while the welcome banner / legacy onboarding
+   modal is visible, un-fix #task-view so it flows in document order,
+   and overlay a fade strip below the banner so task content disappears
+   into the gradient as it scrolls under. Originally mobile-only; lifted
+   out to apply on desktop too. The focus-mode dimming suppression stays
+   mobile-only (see the @media block above), so on desktop the focus-mode
+   ::after dim sits behind the fade and a darker band may appear where
+   the fade ends — intentional trade-off so focus-mode keeps its dimming.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Allow the page to scroll while the welcome banner or legacy
+   onboarding modal is visible — reset.css locks html/body to
+   overflow: hidden + height: 100vh for the fixed-layout app, but
+   during first-run the content stack (banner → input → task list)
+   can exceed the viewport. We also un-fix #task-view so it flows in
+   document order; otherwise scrollHeight stays at 100vh and
+   overflow-y: auto has nothing to scroll. The welcome banner stays
+   position: fixed at the top, and task-view scrolls underneath it. */
+html:has(body.first-run-welcome-active),
+html:has(body.onboarding-active),
+body.first-run-welcome-active,
+body.onboarding-active {
+    overflow-y: auto;
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+/* Lock the page gradient to the viewport so the fade overlay (which
+   is position: fixed) shows the same color at the same viewport
+   y-position. Otherwise the body gradient scrolls with content and
+   creates a visible color band where the fade ends. Matches the
+   :not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow)
+   chain used by the user-prefs color rule, plus our own class, to
+   win on specificity (the prefs rule's background shorthand
+   otherwise resets background-attachment to scroll). */
+body.first-run-welcome-active:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow),
+body.onboarding-active:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
+    background-attachment: fixed;
+}
+
+body.first-run-welcome-active #task-view:not(.hide),
+body.onboarding-active #task-view:not(.hide) {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    max-height: none;
+    /* Push below the fixed welcome banner. Tracks the JS-set banner
+       height across slides (--first-run-welcome-height) so the gap
+       stays consistent. Math: --first-run-welcome-top (64px) +
+       banner_height + ~16px gap − app-root padding-top (~110px) ≈
+       banner_height − 30px. The −30 collapses the fixed terms;
+       --space-7-5 (30px) is the closest token. */
+    margin: calc(var(--first-run-welcome-height, 190px) - var(--space-7-5)) auto var(--space-10);
+    transition: transform var(--animation-pop) ease-in-out;
+}
+
+/* Preserve the swipe-left-to-stats animation while in onboarding —
+   the base #task-view.hide rule uses translate(-200%, -50%) which is
+   built for the centered position: fixed layout. In our relative
+   layout we only need the horizontal slide; the -50% Y would yank
+   the view upward and read as a glitch. Keep position: relative so
+   there's no jarring snap when .show ↔ .hide. */
+body.first-run-welcome-active #task-view.hide,
+body.onboarding-active #task-view.hide {
+    position: relative;
+    top: auto;
+    left: auto;
+    max-height: none;
+    margin: calc(var(--first-run-welcome-height, 190px) - var(--space-7-5)) auto var(--space-10);
+    transform: translateX(-200%);
+    transition: transform var(--animation-pop) ease-in-out;
+}
+
+/* Task list inside the un-fixed task-view: let it grow with content
+   instead of using its own internal scroll, so all scrolling happens
+   on the page during onboarding. */
+body.first-run-welcome-active .task-list-container,
+body.onboarding-active .task-list-container {
+    max-height: none;
+}
+
+/* Hide task list content as it scrolls under the welcome banner.
+   Fixed-position fade strip sits between task-view (z-content: 1)
+   and the banner (z-menu: 500). Uses the SAME --theme-bg-gradient
+   as body, fixed to the viewport, so the strip's color is identical
+   to the body's at every y-position. A mask-image alpha gradient
+   handles the fade-to-transparent at the bottom edge.
+   Banner-bottom and fade-end are derived from --first-run-welcome-top
+   + the JS-set --first-run-welcome-height (with 190px fallback —
+   the tallest expected slide before JS measures). */
+body.first-run-welcome-active::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: var(--z-onboarding-scrim);
+    /* Two layered backgrounds (top first):
+       1. A dark gradient that's fully transparent at viewport top and
+          fades in to 60% black at the fade-out boundary. The 60%
+          overshoots the focus-mode dim's default 40%, so we pair this
+          with a body::after override (below) that bumps the dim to
+          60% during onboarding — making the strip's bottom edge and
+          the dim below it match exactly, with no visible band where
+          the strip fades out.
+       2. The body's --theme-bg-gradient (fixed to viewport so it
+          aligns with the body's gradient at every y-position).
+       Together: page color near the top of the viewport, smoothly
+       darkening to 60% by the fade-out boundary, seamlessly
+       continuing as 60% dim across the rest of the page below. */
+    background:
+        linear-gradient(
             to bottom,
-            black 0,
-            black calc(var(--first-run-welcome-top) + var(--first-run-welcome-height, 190px)),
-            transparent calc(var(--first-run-welcome-top) + var(--first-run-welcome-height, 190px) + var(--first-run-welcome-scrim-fade))
-        );
-        mask-image: linear-gradient(
-            to bottom,
-            black 0,
-            black calc(var(--first-run-welcome-top) + var(--first-run-welcome-height, 190px)),
-            transparent calc(var(--first-run-welcome-top) + var(--first-run-welcome-height, 190px) + var(--first-run-welcome-scrim-fade))
-        );
-    }
+            rgba(15, 25, 65, 0) 0,
+            rgba(15, 25, 65, 0.55) calc(var(--first-run-welcome-top) + var(--first-run-welcome-height, 190px) + var(--first-run-welcome-scrim-fade))
+        ),
+        var(--theme-bg-gradient);
+    background-attachment: fixed, fixed;
+    -webkit-mask-image: linear-gradient(
+        to bottom,
+        black 0,
+        black calc(var(--first-run-welcome-top) + var(--first-run-welcome-height, 190px)),
+        transparent calc(var(--first-run-welcome-top) + var(--first-run-welcome-height, 190px) + var(--first-run-welcome-scrim-fade))
+    );
+    mask-image: linear-gradient(
+        to bottom,
+        black 0,
+        black calc(var(--first-run-welcome-top) + var(--first-run-welcome-height, 190px)),
+        transparent calc(var(--first-run-welcome-top) + var(--first-run-welcome-height, 190px) + var(--first-run-welcome-scrim-fade))
+    );
+}
+
+/* While the welcome banner / legacy onboarding modal is up, bump the
+   focus-mode dimming (body::after) from 40% to 60% black so it matches
+   the strip's vignette endpoint exactly — eliminates the lighter band
+   that otherwise appears just below where the strip's mask fades out.
+   Selector specificity (body+focus-mode+first-run-welcome-active +
+   ::after = 0,3,2) wins over focus-mode.css's `body.focus-mode::after`
+   (0,2,2). No effect on mobile because the mobile @media block above
+   suppresses ::after with opacity: 0. */
+body.first-run-welcome-active.focus-mode::after,
+body.onboarding-active.focus-mode::after {
+    background: rgba(15, 25, 65, 0.55);
 }

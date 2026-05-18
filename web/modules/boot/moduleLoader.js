@@ -841,6 +841,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         updateStatsPanel: (...args) => deps.ui?.updateStatsPanel?.(...args),
         exportMiniCycleData: (...args) => deps.ui?.exportMiniCycleData?.(...args),
         startGuidedTour: (...args) => deps.ui?.startGuidedTour?.(...args),
+        markTourWelcomeShown: (...args) => deps.ui?.markTourWelcomeShown?.(...args),
         // Provided by taskUI module
         hideTaskButtons: (...args) => deps.task?.hideTaskButtons?.(...args),
         // Provided by taskSearch module — toggles search row visibility

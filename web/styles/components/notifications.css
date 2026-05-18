@@ -212,6 +212,18 @@
     font-weight: var(--font-weight-bold);
 }
 
+/* Center body text in titled notifications. Mirror the right-side
+   padding (which clears the close button) on the left so text reads
+   truly centered. With an action row, stretch the message span so
+   its inherited text-align: center has full width to work with. */
+.notification.notification-titled .notification-content {
+    text-align: center;
+    padding-left: var(--space-7);
+}
+.notification.notification-titled .notification-content.notification-has-action .notification-message {
+    align-self: stretch;
+}
+
 /* =============================================================================
    NOTIFICATION BUTTONS
    ============================================================================= */
@@ -287,6 +299,18 @@
 .notification .notification-action-btn:focus-visible {
     outline: 2px solid rgba(255, 255, 255, 0.8);
     outline-offset: 2px;
+}
+
+/* Two-button layout — both action buttons sit centered under the message.
+   align-self: stretch lets the row span full width (overriding parent's
+   align-items: flex-start) so justify-content: center can actually center. */
+.notification .notification-content.notification-has-action .notification-actions {
+    display: flex;
+    flex-direction: row;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    justify-content: center;
+    align-self: stretch;
 }
 
 /* =============================================================================

@@ -253,6 +253,21 @@ body.hide-help-window .help-window {
 .help-window p {
     margin: 0;
     line-height: 1.4;
+    /* Constrain the paragraph to the help-window's content width so the
+       nowrap preamble + CTA spans actually break between each other
+       instead of overflowing the box. Without this, the flex parent
+       (align-items: center) lets the p grow to its content width. */
+    max-width: 100%;
+}
+
+/* Preamble + CTA tail both kept on single lines so when the help-window
+   wraps, the only valid break point is the gap between them — giving a
+   clean preamble-on-line-1 / CTA-on-line-2 split rather than tearing
+   either phrase mid-word. The leading " • " is inside the .cta span so
+   it drops to the second line with the rest of the CTA. */
+.help-window-body,
+.help-window-cta {
+    white-space: nowrap;
 }
 
 /* =============================================================================

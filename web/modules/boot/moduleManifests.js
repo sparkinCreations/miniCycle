@@ -169,9 +169,11 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListenerById', 'safeAddEventListener'],
         optionalDeps: ['preloadGettingStartedCycle', 'preloadInitialRunCycle', 'createNewMiniCycle', 'completeInitialSetup', 'showCycleCreationModal', 'activateFocusMode'],
-        // Cross-phase: startGuidedTour comes from guidedTourManager (Phase 6, UI_MANAGERS)
-        // and is only called when the user clicks the SVG "Start Tour" button on step 3.
-        lazyRequires: ['startGuidedTour'],
+        // Cross-phase: startGuidedTour + markTourWelcomeShown come from
+        // guidedTourManager (Phase 6, UI_MANAGERS). Only called from user
+        // interactions (SVG "Start Tour" button on step 3, and the merged
+        // Home View welcome notification's action buttons + onDismiss).
+        lazyRequires: ['startGuidedTour', 'markTourWelcomeShown'],
         provides: [],
         provideInstance: 'onboardingManager',
         api: 'ui',
@@ -402,7 +404,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'getElementById', 'querySelector', 'getBody', 'getRootElement', 'getActiveElement', 'showNotification', 'safeAddEventListener'],
         optionalDeps: ['isModalOpen'],
-        provides: ['startGuidedTour', 'showStatsTourNotification', 'showPersonalizationTourNotification', 'showTaskOptionsTourNotification', 'showRemindersTourNotification', 'showMenuTourNotification', 'showSettingsTourNotification', 'showRoutineSwitcherTourNotification', 'showRecurringListTourNotification', 'showRecurringSettingsTourNotification', 'showHistoryTourNotification', 'showClearedTasksTourNotification', 'showAchievementsTourNotification'],
+        provides: ['startGuidedTour', 'markTourWelcomeShown', 'showStatsTourNotification', 'showPersonalizationTourNotification', 'showTaskOptionsTourNotification', 'showRemindersTourNotification', 'showMenuTourNotification', 'showSettingsTourNotification', 'showRoutineSwitcherTourNotification', 'showRecurringListTourNotification', 'showRecurringSettingsTourNotification', 'showHistoryTourNotification', 'showClearedTasksTourNotification', 'showAchievementsTourNotification'],
         provideInstance: 'guidedTourManager',
         api: 'ui',
         after: ['onboardingManager']

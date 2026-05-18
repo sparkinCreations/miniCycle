@@ -1,0 +1,75 @@
+{
+  "name": "quick_linguine_beef_recipe",
+  "title": "Quick Linguine & Beef Pasta",
+  "tasks": [
+    {
+      "id": "t1",
+      "text": "Fill a large pot with water, add a pinch of salt, and bring to a boil (about 8-10 minutes).",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t2",
+      "text": "While waiting, heat a pan over medium heat and brown the ground beef for 7-10 minutes. Break it apart while cooking.",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t3",
+      "text": "Drain excess grease from the beef if needed.",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t4",
+      "text": "Add frozen peppers and onions to the beef and cook for 4-5 minutes until softened.",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t5",
+      "text": "Season the meat and vegetables with Nature's Seasons, garlic powder, black pepper, and a small pinch of salt.",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t6",
+      "text": "Optional: Add 1-2 teaspoons of brown sugar to slightly balance the tomato sauce acidity.",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t7",
+      "text": "Add the Ragu Tomato, Garlic & Onion sauce to the pan and simmer on low for 8-10 minutes.",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t8",
+      "text": "Add linguine to the boiling water and cook according to package directions (usually 9-11 minutes). Stir occasionally.",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t9",
+      "text": "Drain the linguine once tender.",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t10",
+      "text": "Mix the linguine with the sauce and beef mixture or serve the sauce on top.",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t11",
+      "text": "Taste and adjust seasoning if needed. Serve hot.",
+      "completed": false,
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": false,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}

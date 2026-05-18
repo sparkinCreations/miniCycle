@@ -1468,8 +1468,9 @@ export const DEFAULT_LABELS = deepFreeze({
         name:                     'Home View',
         backToHome:               'Back to Home View',
         backToHomeAria:           'Return to Home View',
-        welcomeNotification:      'Welcome to Home View\n\nManage routines, customize your setup, and explore features.\n\nQuick tours may appear the first time you visit new areas.',
-        startBlankRoutineButton:  'Start with a blank routine'
+        welcomeNotification:      'Welcome to Home View\n\nManage and customize your routines and setup.',
+        startBlankRoutineButton:  'Start with a blank routine',
+        startTourButton:          'Explore Home View',
     },
 
     // ========================================================================
@@ -1482,14 +1483,14 @@ export const DEFAULT_LABELS = deepFreeze({
 
     firstRunWelcome: {
         title:             'Welcome to miniCycle',
-        message:           'Manage routines you repeat — daily, weekly, or multiple times a day.',
-        titleReset:        'How Cycles Work',
+        message:           'A checklist app for repeatable routines. |Compete. Cycle. Repeat.',
         // `|` is a paragraph break — the renderer splits on it so each
         // segment becomes its own <p> with a gap between paragraphs.
-        messageReset:      'Build your routine once and then complete as many cycles as you like.|Complete all tasks in your routine — then they automatically reset!',
+        titleReset:        'Why miniCycle?',
+        messageReset:      'Unlike regular To-Do lists, miniCycle resets your tasks as soon as all are completed.|We start you off in Focus View.',
         titleCycleDemo:    'Example of a Cycle',
         // `|` is a line break in the title (renderer converts to \n + CSS pre-line).
-        titleTryIt:        'Complete your first|cycle',
+        titleTryIt:        'Try it yourself',
         // Per-task labels for the cycle-demo SVG, `|`-delimited (one entry
         // per task row). 3 entries = 3 task rows. Keep each entry short
         // (≤7 chars) so it fits within the strike-through line at the SVG's
@@ -1504,17 +1505,29 @@ export const DEFAULT_LABELS = deepFreeze({
         // - cycleDemoSubtitle → passive observation copy (slide 3, "Example of a Cycle")
         // - tryItSubtitle     → call-to-action with downward arrow pointing
         //                       at the user's sample routine (slide 4, "Try it yourself")
-        cycleDemoSubtitle: 'When you finish|your routine,|your count grows',
+        cycleDemoSubtitle: 'Complete your routine, |the cycle count grows.',
         // tryItSubtitle is the right-of-divider caption used by the SVG
         // demo render. Slide 4 currently uses tryItMessage in text-mode
         // (no SVG) — the caption is kept here for any future SVG-mode
         // slide that wants a CTA-style right column. The trailing `↓` is
         // detected by the renderer and animated to bounce.
         tryItSubtitle:     'Try your|sample routine|below ↓',
-        // Slide 4 ("Try it yourself") body text — two paragraphs with a
-        // gap between, ending in a `↓` that's wrapped in an animated span
-        // by _setFirstRunWelcomeMessageText. `|` is the paragraph break.
-        tryItMessage:      'Try checking off the tasks in the sample routine below and watch them reset ↓',
+        // Slide 4 ("Try it yourself") body text — dynamic. The slide
+        // renders one of these based on the sample routine's current
+        // completion state. Trailing `↓` is auto-wrapped in an animated
+        // span by _setFirstRunWelcomeMessageText.
+        // - tryItMessage:    initial state, no tasks checked yet
+        // - tryItProgress:   some tasks checked, multiple remaining
+        //                    ({remaining} interpolated)
+        // - tryItAlmost:     exactly one task remaining
+        // - tryItComplete:   all tasks checked
+        // - tryItUnchecked:  user just unchecked a task they'd checked
+        //                    (transient — reverts after a short delay)
+        tryItMessage:      'Check off all of the sample tasks below and watch them reset ↓',
+        tryItProgress:     'Nice — keep going! {remaining} {taskWord} left ↓',
+        tryItAlmost:       'Almost there — one more! ↓',
+        tryItComplete:     '🎉 Cycle complete!',
+        tryItUnchecked:    'No worries — finish them in any order.',
         // Slides 5 & 6 — appended dynamically when the user completes their
         // first cycle. Slide 5 celebrates and reveals advanced affordances;
         // slide 6 explains how to graduate from focus view to main view.
@@ -1525,10 +1538,11 @@ export const DEFAULT_LABELS = deepFreeze({
         // (focusMode.enter for "Focus View", homeView.name for "Home View")
         // so a future rename in one place propagates everywhere automatically.
         titleFocusView:      'All Set!',
-        messageFocusView:    'Open the ⋯ menu above to exit {focusName} and go to {homeName}.|Or stay here to keep running cycles.',
+        messageFocusView:    'Open the ⋯ menu above to exit {focusName} and enter {homeName} — or create your own routine below.',
+        createRoutineCta:    'Create your own routine',
         cycleDemoAria:        'Demonstration: three tasks get completed and the cycle counter advances each time.',
-        dismiss:           'Dismiss',
-        dismissAria:       'Dismiss welcome message',
+        dismiss:           'Skip',
+        dismissAria:       'Skip welcome',
         pauseAria:         'Pause welcome slides',
         playAria:          'Resume welcome slides',
         replayAria:        'Replay welcome slides',

@@ -71,7 +71,7 @@
        paragraph message fits in ~96–138px on common viewports (single
        paragraph ~2 lines × 21px + 12px gap), so 140px keeps the banner
        at a consistent height across all rotations on most viewports. */
-    --first-run-welcome-body-min-height: 140px;
+    --first-run-welcome-body-min-height: 110px;
     /* Banner padding-bottom adds a 32px reserved strip below the body so
        the prev/next nav arrows (28px tall, anchored at bottom) don't
        overlap the SVG's counter row. Top padding stays at the standard
@@ -263,10 +263,10 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
    min-height. The slide 0 message ("Manage routines …") is short enough
    that the reduced body still fits its text comfortably. */
 .first-run-welcome[data-slide-index="0"] {
-    /* Hero treatment — generous extra top padding pushes the larger title
-       down toward the banner's vertical center. */
-    padding-top: calc(var(--space-3-5) + var(--space-12) + var(--space-2));
-    /* = 14 + 48 + 8 = 70px (was 42px) */
+    /* Hero treatment — extra top padding pushes the larger title down
+       toward the banner's vertical center. */
+    padding-top: calc(var(--space-3-5) + var(--space-8) + var(--space-1));
+    /* = 14 + 32 + 4 = 50px (was 70px) */
 }
 
 .first-run-welcome[data-slide-index="0"] .first-run-welcome__title {
@@ -281,8 +281,9 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
     /* Compensate for the extra top padding + larger title so the total
        banner height stays the same as other slides. The slide-0 message
        is short enough that the reduced body still wraps cleanly with
-       breathing room. Reduction = --space-12 + --space-2 (48 + 8 = 56px). */
-    min-height: calc(var(--first-run-welcome-body-min-height) - var(--space-12) - var(--space-2));
+       breathing room. Reduction = --space-8 + --space-1 (32 + 4 = 36px),
+       matching the slide-0 hero padding boost above the standard top. */
+    min-height: calc(var(--first-run-welcome-body-min-height) - var(--space-8) - var(--space-1));
 }
 
 /* Slides 4 and 6 each have 2-line titles ("Complete your first|cycle" and
@@ -419,20 +420,57 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
     outline-offset: var(--space-0-5);
 }
 
+/* Slide-6 CTA button — sits below the message paragraph in the flex column.
+   Glassy surface matching .first-run-welcome__toggle aesthetic, with a
+   pill shape so it reads as an action distinct from the icon-button row. */
+.first-run-welcome__cta {
+    margin: 0;
+    padding: var(--space-1-5) var(--space-4);
+    border-radius: var(--radius-full);
+    border: var(--space-px) solid color-mix(in srgb, currentColor 32%, transparent);
+    background: color-mix(in srgb, currentColor 8%, transparent);
+    color: inherit;
+    font: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.2;
+    cursor: pointer;
+    transition:
+        transform var(--transition-fast) ease,
+        background-color var(--transition-fast) ease,
+        border-color var(--transition-fast) ease;
+}
+
+.first-run-welcome__cta:hover {
+    transform: translateY(calc(-1 * var(--space-px)));
+    background: color-mix(in srgb, currentColor 14%, transparent);
+    border-color: color-mix(in srgb, currentColor 48%, transparent);
+}
+
+.first-run-welcome__cta:focus-visible {
+    outline: var(--space-0-5) solid var(--theme-button-bg);
+    outline-offset: var(--space-0-5);
+}
+
 .first-run-welcome__dismiss {
     /* Absolutely positioned so it doesn't push the title off-center. Top
        offset is slightly tighter than the banner's vertical padding so the
-       × hugs the top-right corner; matches .first-run-welcome__toggle. */
+       button hugs the top-right corner; matches .first-run-welcome__toggle.
+       Renders text ("Skip") rather than an icon — auto width with padding,
+       min-width preserves the original tap-target footprint. */
     position: absolute;
     top: var(--space-2-5);
     right: var(--space-4);
-    width: var(--first-run-welcome-dismiss-size);
+    min-width: var(--first-run-welcome-dismiss-size);
     height: var(--first-run-welcome-dismiss-size);
+    padding: 0 var(--space-3);
     border-radius: var(--radius-full);
     border: var(--space-px) solid color-mix(in srgb, currentColor 18%, transparent);
     background: transparent;
     color: inherit;
     font: inherit;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
     line-height: 1;
     cursor: pointer;
     display: inline-flex;

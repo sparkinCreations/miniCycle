@@ -4,7 +4,7 @@
   "tasks": [
     {
       "id": "task-getting-started-1",
-      "text": "✅ Tap or click here to complete this task",
+      "text": "👆 Tap or click here to complete this task",
       "completed": false,
       "dueDate": null,
       "highPriority": false,
@@ -20,7 +20,7 @@
     },
     {
       "id": "task-getting-started-2",
-      "text": "➕Optional: Add tasks with input bar",
+      "text": "➕ Optional: Add tasks with input bar",
       "completed": false,
       "dueDate": null,
       "highPriority": false,

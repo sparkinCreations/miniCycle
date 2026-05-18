@@ -501,27 +501,50 @@ export class MiniCycleNotifications {
         _safeAddEventListener(closeBtn, "click", closeBtn._clickHandler);
       }
 
-      // Optional action button — appended as second flex child inside notification-has-action
+      // Optional action button(s) — appended inside notification-has-action.
+      // When secondaryActionButton is also provided, both sit in a
+      // .notification-actions row container under the message.
+      //
+      // NOTE: For 3+ action buttons, migrate to `actionButtons: [...]` (array)
+      // and delete both `actionButton` + `secondaryActionButton` in the same
+      // pass. Don't keep adding ordinal slots (tertiary, quaternary...) —
+      // that's the trigger to switch to an array API.
       if (hasAction) {
-        const { label: btnLabel, onClick } = options.actionButton;
         const contentDiv = notification.querySelector(DOM_SELECTORS.NOTIFICATION_CONTENT);
+        const secondary = options?.secondaryActionButton;
+        const hasSecondary = !!(secondary && typeof secondary.label === 'string');
+        const { label: btnLabel, onClick } = options.actionButton;
+
         if (contentDiv && typeof btnLabel === 'string') {
-          const actionBtn = document.createElement('button');
-          actionBtn.className = 'notification-action-btn';
-          actionBtn.textContent = btnLabel; // textContent for XSS safety
-          actionBtn._clickHandler = (e) => {
-            e.stopPropagation();
-            if (notificationRemoved) return;
-            notificationRemoved = true;
-            if (cleanupTimeouts) cleanupTimeouts();
-            notification.classList.remove(DOM_CLASSES.SHOW);
-            setTimeout(() => {
-              notification.remove();
-              if (typeof onClick === 'function') onClick();
-            }, UI_TIMEOUTS.NOTIFICATION_FADE);
+          const makeBtn = (label, handler) => {
+            const btn = document.createElement('button');
+            btn.className = 'notification-action-btn';
+            btn.textContent = label; // textContent for XSS safety
+            btn._clickHandler = (e) => {
+              e.stopPropagation();
+              if (notificationRemoved) return;
+              notificationRemoved = true;
+              if (cleanupTimeouts) cleanupTimeouts();
+              notification.classList.remove(DOM_CLASSES.SHOW);
+              setTimeout(() => {
+                notification.remove();
+                if (typeof handler === 'function') handler();
+              }, UI_TIMEOUTS.NOTIFICATION_FADE);
+            };
+            _safeAddEventListener(btn, 'click', btn._clickHandler);
+            return btn;
           };
-          _safeAddEventListener(actionBtn, 'click', actionBtn._clickHandler);
-          contentDiv.appendChild(actionBtn);
+
+          const primaryBtn = makeBtn(btnLabel, onClick);
+          if (hasSecondary) {
+            const row = document.createElement('div');
+            row.className = 'notification-actions';
+            row.appendChild(primaryBtn);
+            row.appendChild(makeBtn(secondary.label, secondary.onClick));
+            contentDiv.appendChild(row);
+          } else {
+            contentDiv.appendChild(primaryBtn);
+          }
         }
       }
 

@@ -1,0 +1,129 @@
+{
+  "name": "quick_linguine_beef_recipe_short",
+  "title": "Quick Linguine & Beef Pasta",
+  "tasks": [
+    {
+      "id": "t1",
+      "text": "Fill a large pot with water.",
+      "completed": false
+    },
+    {
+      "id": "t2",
+      "text": "Add a pinch of salt to the water.",
+      "completed": false
+    },
+    {
+      "id": "t3",
+      "text": "Bring water to a boil (8-10 min).",
+      "completed": false
+    },
+    {
+      "id": "t4",
+      "text": "Heat a pan over medium heat.",
+      "completed": false
+    },
+    {
+      "id": "t5",
+      "text": "Add ground beef to the pan.",
+      "completed": false
+    },
+    {
+      "id": "t6",
+      "text": "Cook beef for 7-10 minutes.",
+      "completed": false
+    },
+    {
+      "id": "t7",
+      "text": "Break apart beef while cooking.",
+      "completed": false
+    },
+    {
+      "id": "t8",
+      "text": "Drain grease if needed.",
+      "completed": false
+    },
+    {
+      "id": "t9",
+      "text": "Add frozen peppers and onions.",
+      "completed": false
+    },
+    {
+      "id": "t10",
+      "text": "Cook vegetables for 4-5 minutes.",
+      "completed": false
+    },
+    {
+      "id": "t11",
+      "text": "Add Nature's Seasons seasoning.",
+      "completed": false
+    },
+    {
+      "id": "t12",
+      "text": "Add garlic powder.",
+      "completed": false
+    },
+    {
+      "id": "t13",
+      "text": "Add black pepper.",
+      "completed": false
+    },
+    {
+      "id": "t14",
+      "text": "Add a small pinch of salt.",
+      "completed": false
+    },
+    {
+      "id": "t15",
+      "text": "Optional: Add 1-2 tsp brown sugar.",
+      "completed": false
+    },
+    {
+      "id": "t16",
+      "text": "Pour in Ragu pasta sauce.",
+      "completed": false
+    },
+    {
+      "id": "t17",
+      "text": "Simmer sauce for 8-10 minutes.",
+      "completed": false
+    },
+    {
+      "id": "t18",
+      "text": "Add linguine to boiling water.",
+      "completed": false
+    },
+    {
+      "id": "t19",
+      "text": "Cook linguine for 9-11 minutes.",
+      "completed": false
+    },
+    {
+      "id": "t20",
+      "text": "Stir pasta occasionally.",
+      "completed": false
+    },
+    {
+      "id": "t21",
+      "text": "Drain the linguine.",
+      "completed": false
+    },
+    {
+      "id": "t22",
+      "text": "Mix pasta with the sauce.",
+      "completed": false
+    },
+    {
+      "id": "t23",
+      "text": "Taste and adjust seasoning.",
+      "completed": false
+    },
+    {
+      "id": "t24",
+      "text": "Serve hot and enjoy.",
+      "completed": false
+    }
+  ],
+  "autoReset": false,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}

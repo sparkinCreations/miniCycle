@@ -693,6 +693,26 @@ export class GuidedTourManager {
     }
 
     /**
+     * Marks the main tour as dismissed so the auto-welcome notification
+     * (scheduled via _scheduleNotification after onboarding:setup-complete
+     * or init:app-ready) won't fire. Called by onboardingManager when the
+     * merged home view welcome notification is dismissed or its action
+     * buttons clicked — that notification already offers Start Tour and
+     * Start Blank Routine, so the auto tour-welcome would be redundant.
+     *
+     * Cancels any pending scheduled notification timeout, then persists
+     * guidedTourStep='done'. If the user then chooses Start Tour,
+     * startTour()→_persistStep(0) overwrites it and the tour proceeds.
+     */
+    markTourWelcomeShown() {
+        if (this._scheduleTimeout) {
+            clearTimeout(this._scheduleTimeout);
+            this._scheduleTimeout = null;
+        }
+        this._markDone();
+    }
+
+    /**
      * Starts the specified tour, creating overlay elements and showing the first step.
      * @param {string} tourId - Registered tour identifier to start
      * @returns {boolean} Whether the tour was successfully started

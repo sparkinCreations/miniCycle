@@ -39,7 +39,8 @@ const di = createDIModule('OnboardingManager', {
     preloadInitialRunCycle: optional(null),
     activateFocusMode: optional(null),
     createNewMiniCycle: optional(null),
-    startGuidedTour: optional(null)
+    startGuidedTour: optional(null),
+    markTourWelcomeShown: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -479,15 +480,13 @@ export class OnboardingManager {
                 render: (container) => this._buildCycleDemo(container)
             },
             {
-                // Slide 4 — pure text-mode CTA. Slide 3's demo already showed
-                // what a cycle looks like; slide 4 directs the user to the
-                // sample routine below with explicit instructions. The
-                // trailing `↓` in the message is auto-wrapped in an animated
-                // span by _setFirstRunWelcomeMessageText to draw the eye
-                // toward the routine. Carousel parks here at the end —
-                // replay button on the bottom-row toggle restarts from slide 0.
+                // Slide 4 — dynamic CTA that responds to the sample routine's
+                // completion state. Watches AppState for task-check changes
+                // and swaps the message between initial / progress / almost
+                // / complete / unchecked states. Render returns a cleanup
+                // that unsubscribes when the carousel leaves the slide.
                 title:   getLabel('firstRunWelcome.titleTryIt'),
-                message: getLabel('firstRunWelcome.tryItMessage')
+                render: (container) => this._buildTryItDynamic(container)
             }
         ];
         this._firstRunWelcomeSlideIndex = 0;
@@ -552,7 +551,7 @@ export class OnboardingManager {
         dismissBtn.className = 'first-run-welcome__dismiss';
         dismissBtn.type = 'button';
         dismissBtn.setAttribute('aria-label', getLabel('firstRunWelcome.dismissAria'));
-        dismissBtn.innerHTML = '<span aria-hidden="true">×</span>';
+        dismissBtn.textContent = getLabel('firstRunWelcome.dismiss');
 
         this._firstRunWelcomeDismissHandler = () => this._hideFirstRunWelcome({ persist: true });
         dismissBtn.addEventListener('click', this._firstRunWelcomeDismissHandler);
@@ -691,13 +690,6 @@ export class OnboardingManager {
         if (!this._firstRunWelcomeSlides) return;
         this._firstRunWelcomeCelebrationTriggered = true;
 
-        // Resolve view names from canonical labels so slide-6 copy stays
-        // in sync if either is ever renamed.
-        const viewVars = {
-            focusName: getLabel('focusMode.enter'),
-            homeName:  getLabel('homeView.name')
-        };
-
         this._firstRunWelcomeSlides.push(
             {
                 title:   getLabel('firstRunWelcome.titleCelebration'),
@@ -708,8 +700,11 @@ export class OnboardingManager {
                 extraHold: UI_TIMEOUTS.NOTIFICATION_OVERLAY
             },
             {
-                title:   getLabel('firstRunWelcome.titleFocusView',   { vars: viewVars }),
-                message: getLabel('firstRunWelcome.messageFocusView', { vars: viewVars })
+                // Slide 6 — "All Set!" with a CTA button that opens the
+                // create-routine modal. render-mode so the body can host
+                // both the message and the button.
+                title:  getLabel('firstRunWelcome.titleFocusView'),
+                render: (container) => this._buildFocusViewWithCta(container)
             }
         );
 
@@ -930,21 +925,27 @@ export class OnboardingManager {
         const PULSE = DOM_CLASSES.CYCLE_DEMO_COUNTER_PULSE;
 
         const svg = document.createElementNS(NS, 'svg');
-        svg.setAttribute('viewBox', '0 0 200 100');
+        // Shorter viewBox (200×78 vs old 200×100) — renders at 280×~109px
+        // instead of 280×140px (–31px), pulling the cycle-demo slide's
+        // total banner height down so it matches the other (text-only)
+        // slides more closely. Task rows + counter were re-stacked tighter
+        // and pushed up to fit the shorter box.
+        svg.setAttribute('viewBox', '0 0 200 78');
         svg.setAttribute('class', DOM_CLASSES.CYCLE_DEMO);
         svg.setAttribute('role', 'img');
         svg.setAttribute('aria-label', getLabel('firstRunWelcome.cycleDemoAria'));
 
         // Three task rows — circles + labels + strike-throughs.
-        // Stacked higher in the viewBox now to leave room for the bottom counter row.
+        // Tighter row spacing (16 vs 22) and started higher (y=14 vs 22)
+        // so the whole list reads as a compact group at the top of the SVG.
         // Labels come from the `|`-delimited cycleDemoTasks label so the demo
         // can showcase concrete routine steps (default: cleaning verbs) rather
         // than abstract "Task 1/2/3" placeholders.
         const taskLabels = getLabel('firstRunWelcome.cycleDemoTasks').split('|');
         const taskRows = [
-            { i: 1, y: 22 },
-            { i: 2, y: 44 },
-            { i: 3, y: 66 }
+            { i: 1, y: 14 },
+            { i: 2, y: 30 },
+            { i: 3, y: 46 }
         ];
         taskRows.forEach(({ i, y }) => {
             const g = document.createElementNS(NS, 'g');
@@ -985,21 +986,22 @@ export class OnboardingManager {
 
         // Vertical divider between the task column and the right-side caption.
         // Sits just past the strike line's right edge (x=78) and brackets the
-        // height of the task rows so it doesn't extend down past the counter.
+        // tighter task-row stack (y=14, 30, 46) without extending down past
+        // the counter.
         const divider = document.createElementNS(NS, 'line');
         divider.setAttribute('class', DOM_CLASSES.CYCLE_DEMO_DIVIDER);
         divider.setAttribute('x1', '88');
         divider.setAttribute('x2', '88');
-        divider.setAttribute('y1', '15');
-        divider.setAttribute('y2', '75');
+        divider.setAttribute('y1', '8');
+        divider.setAttribute('y2', '54');
         svg.appendChild(divider);
 
         // Right-of-divider caption — short explanation of why the counter
         // grows. Lines split on `|` from the label and align with the task
-        // rows (y=22, 44, 66) so the right column reads in rhythm with the
+        // rows (y=14, 30, 46) so the right column reads in rhythm with the
         // left. Text-anchor "start" + x=96 left-align just past the divider.
         const subtitleLines = getLabel(subtitleKey).split('|');
-        const subtitleY = [22, 44, 66];
+        const subtitleY = [14, 30, 46];
         const subtitleText = document.createElementNS(NS, 'text');
         subtitleText.setAttribute('class', DOM_CLASSES.CYCLE_DEMO_SUBTITLE);
         subtitleText.setAttribute('text-anchor', 'start');
@@ -1009,7 +1011,7 @@ export class OnboardingManager {
             // Fall back to evenly-spaced y values if the label has more than
             // 3 lines (defensive — keeps overflow lines visible rather than
             // stacking on top of each other).
-            tspan.setAttribute('y', String(subtitleY[idx] ?? (subtitleY[2] + (idx - 2) * 22)));
+            tspan.setAttribute('y', String(subtitleY[idx] ?? (subtitleY[2] + (idx - 2) * 16)));
 
             // Detect a trailing arrow character (e.g. `↓`) and split it into
             // its own tspan so CSS can animate the arrow alone (bounce) to
@@ -1036,7 +1038,7 @@ export class OnboardingManager {
         const counterText = document.createElementNS(NS, 'text');
         counterText.setAttribute('class', DOM_CLASSES.CYCLE_DEMO_COUNTER);
         counterText.setAttribute('x', '8');
-        counterText.setAttribute('y', '92');
+        counterText.setAttribute('y', '70');
         counterText.setAttribute('text-anchor', 'start');
         counterText.appendChild(document.createTextNode(`${getLabel('firstRunWelcome.cycleDemoCycles')} `));
         const countSpan = document.createElementNS(NS, 'tspan');
@@ -1048,7 +1050,7 @@ export class OnboardingManager {
         const completeText = document.createElementNS(NS, 'text');
         completeText.setAttribute('class', DOM_CLASSES.CYCLE_DEMO_COMPLETE_TEXT);
         completeText.setAttribute('x', '8');
-        completeText.setAttribute('y', '92');
+        completeText.setAttribute('y', '70');
         completeText.setAttribute('text-anchor', 'start');
         completeText.textContent = getLabel('firstRunWelcome.cycleDemoComplete');
         svg.appendChild(completeText);
@@ -1123,6 +1125,137 @@ export class OnboardingManager {
             active = false;
             pendingTimers.forEach(clearTimeout);
             pendingTimers.clear();
+        };
+    }
+
+    /**
+     * Build the slide-4 dynamic CTA. Reads the active routine's tasks,
+     * picks an appropriate message based on completion state, and
+     * subscribes to AppState so the message updates as the user checks
+     * and unchecks tasks. Returns a cleanup function that unsubscribes
+     * when the carousel leaves the slide.
+     *
+     * State → message mapping:
+     *   - remaining === total           → tryItMessage (initial)
+     *   - remaining === 0               → tryItComplete
+     *   - remaining === 1               → tryItAlmost
+     *   - 1 < remaining < total         → tryItProgress (interpolated)
+     *
+     * Uncheck detection: when remaining increases vs. the previous
+     * observed value AND the user had made progress, briefly show
+     * tryItUnchecked before reverting to the current-state message.
+     * @param {HTMLElement} container - the .first-run-welcome__message div
+     * @returns {Function} cleanup
+     * @private
+     */
+    /**
+     * Build the slide-6 ("All Set!") body — short copy with a CTA button
+     * that opens the create-routine modal. Catches users who'd otherwise
+     * never exit Focus View (the home-view notification's matching CTA
+     * only fires if they do exit).
+     *
+     * Returns a cleanup fn that removes the button's listener when the
+     * carousel leaves the slide.
+     * @private
+     */
+    _buildFocusViewWithCta(container) {
+        // Interpolate view names from canonical labels so a future rename
+        // in one place (focusMode.enter / homeView.name) propagates here.
+        const viewVars = {
+            focusName: getLabel('focusMode.enter'),
+            homeName:  getLabel('homeView.name')
+        };
+        this._setFirstRunWelcomeMessageText(
+            container,
+            getLabel('firstRunWelcome.messageFocusView', { vars: viewVars })
+        );
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'first-run-welcome__cta';
+        btn.textContent = getLabel('firstRunWelcome.createRoutineCta');
+
+        const handler = () => {
+            this._hideFirstRunWelcome({ persist: true });
+            this.deps.showCycleCreationModal?.();
+        };
+        btn.addEventListener('click', handler);
+
+        container.appendChild(btn);
+
+        return () => {
+            btn.removeEventListener('click', handler);
+        };
+    }
+
+    _buildTryItDynamic(container) {
+        const computeRemaining = () => {
+            const state = this.deps.AppState?.get?.();
+            const activeId = state?.appState?.activeCycleId;
+            const tasks = state?.data?.cycles?.[activeId]?.tasks || [];
+            const total = tasks.length;
+            const remaining = tasks.filter(t => !t.completed).length;
+            return { total, remaining };
+        };
+
+        const messageForState = ({ total, remaining }) => {
+            if (total === 0) return getLabel('firstRunWelcome.tryItMessage');
+            if (remaining === 0) return getLabel('firstRunWelcome.tryItComplete');
+            if (remaining === total) return getLabel('firstRunWelcome.tryItMessage');
+            if (remaining === 1) return getLabel('firstRunWelcome.tryItAlmost');
+            return getLabel('firstRunWelcome.tryItProgress', {
+                vars: {
+                    remaining,
+                    taskWord: getLabel('noun.task', { count: remaining })
+                }
+            });
+        };
+
+        let prevRemaining = computeRemaining().remaining;
+        let prevTotal = computeRemaining().total;
+        let uncheckRevertTimer = null;
+
+        // Initial paint
+        this._setFirstRunWelcomeMessageText(container, messageForState(computeRemaining()));
+
+        const subKey = 'firstRunWelcome:tryItProgress';
+        const handler = () => {
+            // Bail if the container was torn down (slide changed) before
+            // this update fired. Cleanup will unsubscribe; this is just
+            // a defensive check for the race window.
+            if (!container.isConnected) return;
+            const next = computeRemaining();
+            const showUncheck = next.remaining > prevRemaining && prevRemaining < prevTotal;
+            prevRemaining = next.remaining;
+            prevTotal = next.total;
+
+            if (showUncheck) {
+                this._setFirstRunWelcomeMessageText(container, getLabel('firstRunWelcome.tryItUnchecked'));
+                if (uncheckRevertTimer) clearTimeout(uncheckRevertTimer);
+                uncheckRevertTimer = setTimeout(() => {
+                    if (!container.isConnected) return;
+                    this._setFirstRunWelcomeMessageText(container, messageForState(computeRemaining()));
+                    uncheckRevertTimer = null;
+                }, UI_TIMEOUTS.NOTIFICATION_BRIEF || 2500);
+                return;
+            }
+
+            this._setFirstRunWelcomeMessageText(container, messageForState(next));
+        };
+
+        const hasSubscribe = typeof this.deps.AppState?.subscribe === 'function';
+        if (hasSubscribe) {
+            this.deps.AppState.subscribe(subKey, handler);
+        }
+
+        return () => {
+            if (uncheckRevertTimer) {
+                clearTimeout(uncheckRevertTimer);
+                uncheckRevertTimer = null;
+            }
+            if (hasSubscribe) {
+                this.deps.AppState.unsubscribe?.(subKey, handler);
+            }
         };
     }
 
@@ -1441,6 +1574,13 @@ export class OnboardingManager {
             this._detachFirstSessionLifecycle();
             if (!wasFresh) return;
             document.dispatchEvent(new Event('onboarding:setup-complete'));
+            // Suppress the auto tour-welcome immediately — the merged Home
+            // View notification already offers both "Start tour" and
+            // "Start blank routine", so the 17s-delayed auto-welcome would
+            // either pile on top of this one or fire just after the user
+            // chooses an option. Calling upfront (not per-handler) closes
+            // the race where the user takes >17s to interact.
+            this.deps.markTourWelcomeShown?.();
             this.deps.showNotification?.(
                 getLabel('homeView.welcomeNotification'),
                 'info',
@@ -1450,6 +1590,10 @@ export class OnboardingManager {
                     actionButton: {
                         label: getLabel('homeView.startBlankRoutineButton'),
                         onClick: () => this.deps.createNewMiniCycle?.()
+                    },
+                    secondaryActionButton: {
+                        label: getLabel('homeView.startTourButton'),
+                        onClick: () => this.deps.startGuidedTour?.()
                     }
                 }
             );

@@ -560,27 +560,32 @@ export class HelpWindowManager {
             ? getLabel('help.progressCleared', { vars: { count: clearedTasksCount, taskWord: getLabel('noun.task', { count: clearedTasksCount }) } })
             : getLabel('help.progressCycles', { vars: { count: cycleCount, cycleWord: getLabel('noun.cycle', { count: cycleCount }) } });
 
-        // Return parts for different constant messages based on state
+        // Return parts for different constant messages based on state.
+        // `body` is the preamble (e.g. "3 tasks remaining"); `cta` is the
+        // post-bullet phrase (e.g. "Complete your first cycle!"). The
+        // renderer joins them with " • " and wraps `cta` in a nowrap span
+        // so when the line wraps it breaks at the bullet rather than
+        // splitting the call-to-action mid-phrase.
         if (totalTasks === 0) {
-            return { icon: '📝', body: `${getLabel('help.addFirstTask')} • ${progressText}`, size: routineSize };
+            return { icon: '📝', body: getLabel('help.addFirstTask'), cta: progressText, size: routineSize };
         }
 
         if (remaining === 0 && totalTasks > 0) {
-            return { icon: '🎉', body: `${getLabel('help.allComplete')} • ${progressText}`, size: routineSize };
+            return { icon: '🎉', body: getLabel('help.allComplete'), cta: progressText, size: routineSize };
         }
 
         const remainingText = getLabel('help.tasksRemaining', { vars: { remaining, taskWord: getLabel('noun.task', { count: remaining }) } });
 
         // First-time message for either mode
         if (isToDoMode && clearedTasksCount === 0) {
-            return { icon: '📋', body: `${remainingText} • ${getLabel('help.clearFirst')}`, size: routineSize };
+            return { icon: '📋', body: remainingText, cta: getLabel('help.clearFirst'), size: routineSize };
         }
         if (!isToDoMode && cycleCount === 0) {
-            return { icon: '📋', body: `${remainingText} • ${getLabel('help.completeFirst')}`, size: routineSize };
+            return { icon: '📋', body: remainingText, cta: getLabel('help.completeFirst'), size: routineSize };
         }
 
         // Show progress and cycle count or cleared tasks
-        return { icon: '📋', body: `${remainingText} • ${progressText}`, size: routineSize };
+        return { icon: '📋', body: remainingText, cta: progressText, size: routineSize };
     }
 
     /**
@@ -605,8 +610,22 @@ export class HelpWindowManager {
         const sizeHtml = parts.size
             ? `<span class="help-window-size"> • 💾 ${escapeHtml(parts.size)}</span>`
             : '';
+        // Wrap the preamble + CTA in their own inline spans with
+        // white-space: nowrap. The browser keeps each span intact, so
+        // when the line wraps the only valid break point is the gap
+        // between the spans — giving a clean preamble-on-line-1 /
+        // CTA-on-line-2 split rather than tearing either phrase
+        // mid-word. The leading " • " is inside the CTA span so it
+        // travels with the CTA when it drops to the second line.
+        const bodyHtml = `<span class="help-window-body">${escapeHtml(parts.body)}</span>`;
+        // Leading space lives OUTSIDE the CTA span — that's the only
+        // valid break opportunity between the two nowrap spans, so it's
+        // where the browser wraps when the line is too narrow.
+        const ctaHtml = parts.cta
+            ? ` <span class="help-window-cta">• ${escapeHtml(parts.cta)}</span>`
+            : '';
 
-        this.helpWindow.innerHTML = `<p>${iconHtml}${escapeHtml(parts.body)}${sizeHtml}</p>`;
+        this.helpWindow.innerHTML = `<p>${iconHtml}${bodyHtml}${ctaHtml}${sizeHtml}</p>`;
     }
 
     updateContent(message) {
