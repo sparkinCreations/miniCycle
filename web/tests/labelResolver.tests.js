@@ -307,6 +307,70 @@ export async function runLabelResolverTests(resultsDiv) {
     });
 
     // ============================================
+    // 🛡️ BOOT RESILIENCE (regression — white screen on old devices)
+    // ============================================
+    // A torn-down AppState during a boot retry makes the theme lens getter throw
+    // ("AppState?.get is not a function" — the callable proxy is always truthy, so
+    // optional chaining can't short-circuit it). getLabel()/getIcon() run on the
+    // boot-error renderer and global-error-handler paths, so a throw here turned a
+    // recoverable boot failure into a blank white screen. These tests lock in the
+    // try/catch guard: lens failure must fall back to defaults, never throw.
+    resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Boot Resilience</h4>';
+
+    await test('getLabel does NOT throw when active lens getter throws', () => {
+        setLabelResolverDependencies({
+            getActiveLens: () => { throw new TypeError('AppState?.get is not a function'); },
+            getRoutineLens: null
+        }, { replace: true });
+
+        let result;
+        try {
+            result = getLabel('action.addTask');
+        } catch (e) {
+            throw new Error(`getLabel threw instead of falling back: ${e.message}`);
+        } finally {
+            setLabelResolverDependencies({ getActiveLens: null, getRoutineLens: null }, { replace: true });
+        }
+        if (result !== 'Add task') throw new Error(`Expected default "Add task", got "${result}"`);
+    });
+
+    await test('getLabel does NOT throw when routine lens getter throws', () => {
+        setLabelResolverDependencies({
+            getActiveLens: null,
+            getRoutineLens: () => { throw new TypeError('AppState?.get is not a function'); }
+        }, { replace: true });
+
+        let result;
+        try {
+            result = getLabel('noun.task', { count: 1, routineId: 'routine-1' });
+        } catch (e) {
+            throw new Error(`getLabel threw instead of falling back: ${e.message}`);
+        } finally {
+            setLabelResolverDependencies({ getActiveLens: null, getRoutineLens: null }, { replace: true });
+        }
+        if (result !== 'task') throw new Error(`Expected default "task", got "${result}"`);
+    });
+
+    await test('getIcon does NOT throw when active lens getter throws', () => {
+        setLabelResolverDependencies({
+            getActiveLens: () => { throw new TypeError('AppState?.get is not a function'); },
+            getRoutineLens: null
+        }, { replace: true });
+
+        let result;
+        try {
+            result = getIcon('cycleComplete');
+        } catch (e) {
+            throw new Error(`getIcon threw instead of falling back: ${e.message}`);
+        } finally {
+            setLabelResolverDependencies({ getActiveLens: null, getRoutineLens: null }, { replace: true });
+        }
+        if (typeof result !== 'string' || result.length === 0) {
+            throw new Error(`Expected a default icon string, got "${result}"`);
+        }
+    });
+
+    // ============================================
     // ⚠️ ERROR HANDLING
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';

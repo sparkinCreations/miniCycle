@@ -56,11 +56,15 @@ export const COLORS = Object.freeze({
 export const BOOT_TIMEOUTS = Object.freeze({
     MODULE_IMPORT: 10000,  // 10s for initial module imports
     PHASE_1: 15000,        // 15s for core boot (AppState, GlobalUtils, migration)
-    PHASE_2: 20000,        // 20s for feature boot (largest phase - 40+ modules)
+    PHASE_2: 30000,        // 30s for feature boot (largest phase - 40+ modules); raised
+                           // from 20s for slow/old devices. Phases race independently,
+                           // so worst case 15+30+15=60s stays at the HTML 60s lite cap.
     PHASE_3: 15000,        // 15s for UI boot (event listeners, DOM init)
-    TOTAL: 45000,          // 45s total boot timeout
+    TOTAL: 60000,          // 60s — documentation-only (not enforced); matches the sum of
+                           // raised phase budgets and the HTML load-timeout lite fallback
     RETRY_DELAY: 2000,     // 2s delay before boot retry (iOS needs time to restart killed SW)
-    IDB_OPERATION: 1000    // 1s timeout for IndexedDB operations during boot recovery
+    IDB_OPERATION: 3000    // 3s timeout for IndexedDB ops during boot recovery; raised from
+                           // 1s — old/slow devices were timing out test-mode/backup checks
 });
 
 /**

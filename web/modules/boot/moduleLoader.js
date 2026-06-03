@@ -636,6 +636,17 @@ function buildModuleDependencies(manifest, deps, coreResult) {
     // - this.deps.AppState?.isReady?.() works via property access (for taskCore, etc.)
     // - this.deps.AppState.data = x works via property assignment (for cycleManager, etc.)
     const appStateGetter = () => deps.core?.AppState;
+    // Methods the codebase calls on AppState. When the underlying manager is not
+    // yet available (boot retry / teardown), accessing any of these must yield a
+    // SAFE NO-OP function rather than `undefined` — otherwise `AppState?.get()`
+    // throws "AppState?.get is not a function" (the `?.` can't short-circuit a
+    // truthy Proxy), which crashes the boot-error renderer and the global error
+    // handler and produces a blank white screen. Returning `() => undefined`
+    // honors the `if (!state) ...` guards that already exist at ~50 call sites.
+    const APPSTATE_SAFE_METHODS = new Set([
+        'get', 'update', 'subscribe', 'unsubscribe', 'isReady', 'forceSave',
+        'set', 'reload', 'init', 'destroy', 'save', '_initializeInternal'
+    ]);
     result.AppState = new Proxy(appStateGetter, {
         get(target, prop) {
             if (prop === 'apply' || prop === 'call' || prop === 'bind') {
@@ -644,7 +655,13 @@ function buildModuleDependencies(manifest, deps, coreResult) {
             // Proxy property access to the actual AppState
             // Must bind methods to preserve 'this' context when called
             const appState = deps.core?.AppState;
-            const value = appState?.[prop];
+            if (!appState) {
+                // Not ready: method-style access becomes a safe no-op (returns
+                // undefined when called); property reads (data, saveTimeout, …)
+                // resolve to undefined, which all consumers treat as falsy.
+                return APPSTATE_SAFE_METHODS.has(prop) ? () => undefined : undefined;
+            }
+            const value = appState[prop];
             if (typeof value === 'function') {
                 return value.bind(appState);
             }

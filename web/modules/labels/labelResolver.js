@@ -85,11 +85,21 @@ export function getLabel(key, options = {}) {
     const category = parts[0];
     const labelKey = parts.slice(1).join('.');
 
-    // Check for active theme override (uses full dot-path key)
+    // Check for active theme override (uses full dot-path key).
+    // Wrapped in try/catch so a theme-resolution failure (e.g. AppState torn
+    // down during a boot retry) can never make getLabel() throw. getLabel() runs
+    // on the boot-error renderer and the global error-handler paths, so it must
+    // always return — a throw here is what turned a recoverable boot failure into
+    // a blank white screen on slow/stale-cache devices.
     const deps = di.resolve();
-    const theme = routineId
-        ? deps.getRoutineLens?.(routineId)
-        : deps.getActiveLens?.();
+    let theme = null;
+    try {
+        theme = routineId
+            ? deps.getRoutineLens?.(routineId)
+            : deps.getActiveLens?.();
+    } catch (err) {
+        console.warn('LabelResolver: theme lens resolution failed, using defaults:', err?.message);
+    }
 
     let label;
     if (theme?.labels?.[key] !== undefined) {
@@ -140,9 +150,15 @@ export function getLabel(key, options = {}) {
  * getIcon('celebrate')      // '🎉'
  */
 export function getIcon(key) {
-    // Check active theme's icon overrides first
+    // Check active theme's icon overrides first. Guarded for the same reason as
+    // getLabel() — a torn-down AppState during a boot retry must not throw here.
     const deps = di.resolve();
-    const theme = deps.getActiveLens?.();
+    let theme = null;
+    try {
+        theme = deps.getActiveLens?.();
+    } catch (err) {
+        console.warn('LabelResolver: theme lens resolution failed, using defaults:', err?.message);
+    }
     if (theme?.icons?.[key] !== undefined) {
         return theme.icons[key];
     }
