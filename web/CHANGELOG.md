@@ -1,3 +1,10 @@
+## [2.232] - 2026-06-03
+- fix(sw): serve fresh module on current-cache miss to avoid stale imports
+- fix(boot): prevent white-screen on boot retry from torn-down AppState
+- chore(release): update version to 2.231 and reflect changes across documentation and files
+- fix(labels): correct spelling in firstRunWelcome message
+
+
 ## [2.231] - 2026-05-18
 - chore(release): update version to 2.230 and reflect changes across documentation and files
 
