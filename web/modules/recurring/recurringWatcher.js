@@ -243,9 +243,15 @@ export async function catchUpMissedRecurringTasks() {
     // Wait for core systems to be ready
     await Deps.appInit?.waitForCore();
 
-    // Read from AppState
-    assertInjected('AppState', Deps.AppState);
-    const state = Deps.AppState?.get();
+    // Read from AppState. The AppState Proxy is always truthy, so `?.get()` can't
+    // short-circuit when it's torn down — guard on `get` being a function instead.
+    // This is the path the switch-back-to-tab (visibilitychange) handler hits.
+    const getState = Deps.AppState?.get;
+    if (typeof getState !== 'function') {
+        console.warn('⚠️ Recurring catch-up skipped — AppState not ready');
+        return { added: 0, updated: 0 };
+    }
+    const state = Deps.AppState.get();
     const activeCycleId = state?.appState?.activeCycleId;
 
     if (!activeCycleId) {

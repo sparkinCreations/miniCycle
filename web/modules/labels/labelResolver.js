@@ -91,14 +91,26 @@ export function getLabel(key, options = {}) {
     // on the boot-error renderer and the global error-handler paths, so it must
     // always return — a throw here is what turned a recoverable boot failure into
     // a blank white screen on slow/stale-cache devices.
-    const deps = di.resolve();
     let theme = null;
     try {
+        // di.resolve() is inside the try as well — a torn-down DI container must
+        // not crash getLabel() either.
+        const deps = di.resolve();
         theme = routineId
             ? deps.getRoutineLens?.(routineId)
             : deps.getActiveLens?.();
     } catch (err) {
-        console.warn('LabelResolver: theme lens resolution failed, using defaults:', err?.message);
+        // Reaching this catch means the lens getter ran and *threw* (most commonly
+        // AppState torn down during a boot retry). A lens getter that was never
+        // wired is swallowed silently by the ?. above and falls through to defaults,
+        // so "missing" never lands here — only "errored" does. Include the routineId
+        // (when present) and the error type so it's diagnosable in the wild.
+        console.warn(
+            `LabelResolver: theme lens resolution threw for key "${key}"` +
+            (routineId ? ` (routineId="${routineId}")` : ' (active lens)') +
+            ` — falling back to default labels. Likely AppState torn down during ` +
+            `boot retry. ${err?.name ?? 'Error'}: ${err?.message ?? err}`
+        );
     }
 
     let label;
@@ -152,12 +164,17 @@ export function getLabel(key, options = {}) {
 export function getIcon(key) {
     // Check active theme's icon overrides first. Guarded for the same reason as
     // getLabel() — a torn-down AppState during a boot retry must not throw here.
-    const deps = di.resolve();
     let theme = null;
     try {
+        // di.resolve() inside the try so a torn-down DI container can't crash getIcon() either.
+        const deps = di.resolve();
         theme = deps.getActiveLens?.();
     } catch (err) {
-        console.warn('LabelResolver: theme lens resolution failed, using defaults:', err?.message);
+        console.warn(
+            `LabelResolver: active-lens resolution threw for icon "${key}" — ` +
+            `falling back to default icons. Likely AppState torn down during boot ` +
+            `retry. ${err?.name ?? 'Error'}: ${err?.message ?? err}`
+        );
     }
     if (theme?.icons?.[key] !== undefined) {
         return theme.icons[key];

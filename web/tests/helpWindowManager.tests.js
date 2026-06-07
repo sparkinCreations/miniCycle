@@ -492,8 +492,8 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         const manager = new HelpWindowManager();
         const parts = manager.getCurrentStatusMessage();
 
-        if (!parts.body.includes('5 cycles completed')) {
-            throw new Error('Should show 5 cycles completed in body');
+        if (!parts.cta.includes('5 cycles completed')) {
+            throw new Error('Should show 5 cycles completed in cta');
         }
     });
 
@@ -506,8 +506,8 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         const manager = new HelpWindowManager();
         const parts = manager.getCurrentStatusMessage();
 
-        if (!parts.body.includes('1 cycle completed')) {
-            throw new Error('Should show 1 cycle completed (singular) in body');
+        if (!parts.cta.includes('1 cycle completed')) {
+            throw new Error('Should show 1 cycle completed (singular) in cta');
         }
     });
 
@@ -520,8 +520,8 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         const manager = new HelpWindowManager();
         const parts = manager.getCurrentStatusMessage();
 
-        if (!parts.body.includes('Complete your first cycle')) {
-            throw new Error('Should prompt for first cycle in body');
+        if (!parts.cta.includes('Complete your first cycle')) {
+            throw new Error('Should prompt for first cycle in cta');
         }
     });
 
@@ -787,7 +787,7 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         const manager = new HelpWindowManager();
         const message = manager.getCurrentStatusMessage();
 
-        if (!message.body.includes('10 cycles')) {
+        if (!message.cta.includes('10 cycles')) {
             throw new Error('Should use loadMiniCycleData for cycle count');
         }
     });
@@ -805,7 +805,7 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         const manager = new HelpWindowManager();
         const message = manager.getCurrentStatusMessage();
 
-        if (!message.body.includes('20 cycles')) {
+        if (!message.cta.includes('20 cycles')) {
             throw new Error('AppState should take precedence');
         }
     });

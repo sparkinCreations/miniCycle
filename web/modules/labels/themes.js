@@ -417,7 +417,11 @@ export class VocabThemeManager {
      * @returns {ThemeDefinition}
      */
     getActiveTheme() {
-        const state = this.deps.AppState?.get();
+        // AppState is injected as a callable Proxy, which is always truthy — so
+        // `AppState?.get()` can't short-circuit when AppState is torn down during a
+        // boot retry. Guard on `get` actually being a function instead.
+        const get = this.deps.AppState?.get;
+        const state = typeof get === 'function' ? this.deps.AppState.get() : null;
         if (!state) return THEME_DEFINITIONS.classic;
 
         const activeCycleId = state.appState?.activeCycleId;
@@ -436,7 +440,10 @@ export class VocabThemeManager {
      * @returns {ThemeDefinition}
      */
     getRoutineTheme(routineId) {
-        const state = this.deps.AppState?.get();
+        // See getActiveTheme() — guard on `get` being a function because the AppState
+        // Proxy stays truthy even after teardown, so `?.` alone can't protect us.
+        const get = this.deps.AppState?.get;
+        const state = typeof get === 'function' ? this.deps.AppState.get() : null;
         if (!state) return THEME_DEFINITIONS.classic;
 
         const cycle = state.data?.cycles?.[routineId];

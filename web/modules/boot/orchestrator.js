@@ -503,6 +503,14 @@ async function runBootSequence() {
     // beforeunload/storage listeners must be removed here, before deps.core is cleared.
     deps.core?.AppState?.destroy?.();
 
+    // ✅ Root-cause guard for the broken `?.AppState` pattern: null the reference the
+    // instant it's destroyed. destroy() does NOT clear the instance's `data`, so until
+    // the delete loop below runs the AppState Proxy would still resolve `.get()` to the
+    // destroyed instance and hand back stale data. Nulling it here makes the Proxy fall
+    // through to its safe no-op path for the entire teardown→rebuild window, which is
+    // what the ~287 `AppState?.get()` guards across the codebase expect to happen.
+    if (deps.core) deps.core.AppState = null;
+
     // ✅ CRITICAL FIX 2: Clear nested objects to prevent stale references
     // On retry, we need to rebuild all deps from scratch so Proxy getters work correctly
     // IMPORTANT: We must CLEAR properties, not replace objects, because moduleLoader
